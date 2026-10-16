@@ -1,4 +1,4 @@
-# Two wow.export models — 2026-10-16
+# wow.export model checks — 2026-10-16
 
 Both models render with their embedded PNG textures through standard Bevy glTF/PBR.
 The character also plays the selected stand, walk and run clips. These are local
@@ -91,3 +91,54 @@ snapshot hashes, initial and fresh validator reports, test/build/lint logs and
 `native/{building,stand,walk,run}/` reports, loader logs and screenshots. The initial
 pre-re-export character had different mesh/material counts; its results are not
 substituted for the checked snapshot above. Native Windows remains unqualified.
+
+## RustyWolfPup
+
+The additional `/home/steven/wow.export/creatures/RustyWolfPup.glb` renders with
+embedded textures and selected animations in the existing inspector, without code
+changes. Its original bytes remain external and untouched. Checked snapshot:
+4,363,660 bytes; SHA-256
+`e172562f41abf30fc2f6a9412ccea0f17717ab62ed95978177db9c40b7cb1453`.
+
+The GLB contains two mesh primitives, 608 triangles, two materials, two embedded
+PNGs, authored normals/UVs, one 66-joint skin and 46 animation clips. The inspector
+reports 1,114 stored vertex entries and 557 referenced entries summed per primitive.
+Undeformed bounds span approximately 3.765 x 1.869 x 1.024 source units. Neither
+gameplay scale nor animated skin bounds were qualified.
+
+| Exact clip name | Duration | Sampled transforms changed |
+|---|---|---|
+| `Stand (ID 0 variation 0)` | 1.333 s | 26 |
+| `Walk (ID 4 variation 0)` | 1.000 s | 31 |
+| `Run (ID 5 variation 0)` | 0.666 s | 30 |
+| `AttackUnarmed (ID 16 variation 0)` | 1.500 s | 28 |
+
+Each run instantiated one animation player, exited successfully and saved a real
+1280x720 screenshot plus report. Screenshots were inspected: textures and distinct
+skinned poses are visible. All four runs used RX 7900 XTX / RADV on a private
+headless Wayland display, with actual Khronos Vulkan validation activation and no
+VUIDs, validation errors or panics. The other 42 clips, transitions, gameplay/NPC
+integration, material fidelity against the source game and Windows remain untested.
+
+Strict glTF validation **fails**. Khronos Validator `2.0.0-dev.3.10`, with its issue
+limit disabled, reports 3,084 errors, two warnings and two informational messages;
+the report is not truncated. All errors are `ACCESSOR_TOTAL_OFFSET_ALIGNMENT`:
+for example, accessor 5 starts at byte offset 2,432,926, which is not a multiple
+of four for its component type. The other messages are `NODE_SKINNED_MESH_NON_ROOT`
+and `UNUSED_OBJECT`. This is an exporter/buffer layout issue, not missing BLP
+textures. Re-exporting or repairing a separate derived copy to align accessors is
+needed before calling the asset portable/clean; successful Bevy playback does not
+remove that requirement. No repair was applied to this source.
+
+Reproduce selected playback:
+
+```sh
+cargo run --locked -p theia-client -- --inspect-asset /home/steven/wow.export/creatures/RustyWolfPup.glb --animation "Run (ID 5 variation 0)" --capture build/wolf-preview
+```
+
+Ignored evidence is under `build/qualification/rusty-wolf-pup/`: `input.json`, an
+immutable input snapshot, `validator-full.json`, the native host harness and
+`native/{stand,walk,run,attack}/` logs/reports/screenshots. `native/verification.json`
+records source, executable, Cargo.lock and screenshot hashes. This was asset-only
+qualification using the previously built client; no runtime code changed and the
+workspace tests were not rerun for this documentation update.

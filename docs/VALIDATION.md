@@ -223,3 +223,14 @@ preserved unchanged. These results supersede the previous geometry-only limit fo
 these particular new exports, but do not validate all character animations or
 complete WoW asset compatibility. The character's strict glTF errors remain real;
 successful Bevy rendering is not a substitute for a valid portable source export.
+
+## RustyWolfPup — 2026-10-16
+
+Four further native inspector runs qualify stand, walk, run and attack playback
+for the user's external `creatures/RustyWolfPup.glb`. Each saves an actual textured
+skinned screenshot and reports sampled transform changes. RX 7900 XTX / RADV,
+private headless Wayland and active Vulkan validation were used; no validation
+errors or panics occurred. Strict glTF validation separately fails with 3,084
+alignment errors. [Exact input, counts, reproduction and limitations](ASSET_CHECK_2026_10_16.md#rustywolfpup).
+Evidence: ignored `build/qualification/rusty-wolf-pup/`. No runtime changes or
+additional workspace test run were needed for this asset/documentation check.

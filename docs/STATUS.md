@@ -59,6 +59,13 @@ the character still has empty clips and incorrect accessor metadata, despite the
 selected animations working. Large redundant vertex buffers also need cleanup.
 Both source exports remain outside Git and unchanged. [Detailed model checks](ASSET_CHECK_2026_10_16.md).
 
+The additional RustyWolfPup GLB also renders its embedded textures and plays stand,
+walk, run and attack in the inspector on RX 7900 XTX / RADV with active Vulkan
+validation. Its 66-joint skin and selected clips work, but the source fails strict
+glTF validation with 3,084 accessor alignment errors. It remains an external local
+compatibility reference, with no NPC/gameplay integration. The same detailed report
+records the exact source hash and limitations.
+
 No local prediction, general terrain/mesh collision, gameplay character animation states,
 targeting, combat, quests, inventory, accounts or persistence is implemented.
 The network executables currently allow loopback only; eight peers is a prototype
