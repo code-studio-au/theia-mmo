@@ -75,6 +75,12 @@ clip using Bevy's standard animation graph; capture reports sampled pose changes
 This is inspection-only, not a gameplay animation state machine. Three clips of
 the supplied character are tested; see the asset check for remaining export errors.
 
+The selected human, wolf and farmhouse can now appear together in an opt-in
+[reference game scene](REFERENCE_SCENE.md), including multiplayer human locomotion.
+That guide describes local preparation, derived-file validation and the explicitly
+authored solid building envelope. The wolf remains a nonblocking enemy placeholder;
+NPC gameplay, housing systems and general terrain collision remain separate work.
+
 Keep source files/export settings, establish metre scale and a sensible placement
 pivot, and keep doors/props static. GLB is the delivery target; `.blend`, OBJ/MTL,
 BLP and any terrain heightmaps remain source/intermediate data. Test original or

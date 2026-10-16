@@ -234,3 +234,19 @@ errors or panics occurred. Strict glTF validation separately fails with 3,084
 alignment errors. [Exact input, counts, reproduction and limitations](ASSET_CHECK_2026_10_16.md#rustywolfpup).
 Evidence: ignored `build/qualification/rusty-wolf-pup/`. No runtime changes or
 additional workspace test run were needed for this asset/documentation check.
+
+## Integrated reference scene — 2026-10-16
+
+[Reference scene qualification](REFERENCE_SCENE.md) records prepared-file hashes,
+remaining human skin errors, animated local/remote players, an idle nonblocking
+wolf and the static farmhouse. Twenty-three Rust tests, four Python repair tests,
+formatting, denied-warning all-target Clippy and build pass. Seven native client
+runs pass on RX 7900 XTX / RADV with active Vulkan validation: reference locomotion,
+imported-house world/camera smoke, two connected reference clients, two connected
+graybox clients and the original offline movement smoke. All save actual rendered
+screenshots. No VUIDs, Vulkan validation errors or panics occur in successful runs.
+
+The shared building envelope is enlarged for sensible reference-model scale.
+Door contact moves to Z=-2.54; both the actual QUIC door test and native camera
+checks use the new geometry. The wolf has no collider. Native Windows, NPC AI/
+authority, combat, traversable house interiors and terrain collision remain open.

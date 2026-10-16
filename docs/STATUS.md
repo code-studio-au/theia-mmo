@@ -66,8 +66,20 @@ glTF validation with 3,084 accessor alignment errors. It remains an external loc
 compatibility reference, with no NPC/gameplay integration. The same detailed report
 records the exact source hash and limitations.
 
-No local prediction, general terrain/mesh collision, gameplay character animation states,
+An opt-in [reference game scene](REFERENCE_SCENE.md) now uses the human for local
+and remote players, an idle nonblocking wolf enemy placeholder and a static
+farmhouse. Player stand/walk/run follows actual movement. Both clients and server
+use an enlarged shared solid building envelope; native two-client, locomotion,
+wolf pass-through and house/camera checks pass. Derived models stay under ignored
+`build/reference-scene/`; the default scene remains procedural. The prepared wolf
+has zero glTF errors, while deeper human validation still finds skin-data errors.
+Twenty-three Rust tests and four offline repair tests now pass, with format,
+denied-warning Clippy and build passing too.
+
+No local prediction, general terrain/mesh collision, animation blending,
 targeting, combat, quests, inventory, accounts or persistence is implemented.
+The wolf currently supplies presentation only, without server-owned NPC state or AI;
+the solid house has no usable interior, ownership or housing persistence.
 The network executables currently allow loopback only; eight peers is a prototype
 cap, not a qualified capacity. Manual multiplayer keyboard interaction, adverse
 network behaviour and the user-visible walkthrough remain outstanding.
@@ -76,8 +88,8 @@ Confirmed gameplay constraints: environment items are static (including doors),
 and players never physically collide with other players or NPCs. NPC pass-through
 is a requirement for future NPCs; this slice contains players only.
 
-Next: clean/qualify the character export, integrate representative original/licensed
-art with reviewed static collision and movement-driven animation, then a shared
+Next: qualify general terrain/asset collision and representative original/licensed
+art, resolve the remaining character skin errors, then add a shared
 target/ability/health loop. The direct GLBs already contain PNGs and preserve UVs;
 the earlier missing-texture problem is resolved for these new exports.
 Current world collision is

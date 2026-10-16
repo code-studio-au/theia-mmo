@@ -244,8 +244,8 @@ async fn authoritative_world_stops_network_movement_at_the_fixed_door() {
         axes: [0, -1000],
         sprint: false,
     });
-    let contact = until(&mut client.state, |s| s.players[0].xz[1] <= -4.53).await;
-    assert!((contact.players[0].xz[1] + 4.54).abs() < 0.0001);
+    let contact = until(&mut client.state, |s| s.players[0].xz[1] <= -2.53).await;
+    assert!((contact.players[0].xz[1] + 2.54).abs() < 0.0001);
     let later = until(&mut client.state, |s| s.tick > contact.tick + 12).await;
     assert_eq!(later.players[0].xz, contact.players[0].xz);
     assert!(later.players[0].applied_sequence > contact.players[0].applied_sequence);

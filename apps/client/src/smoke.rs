@@ -67,7 +67,14 @@ pub fn observe(
     adapter: Res<RenderAdapterInfo>,
     camera: Query<&Transform, (With<Camera3d>, Without<LocalPawn>)>,
     orbit: Res<crate::camera::Orbit>,
+    (references, ready): (
+        Option<Res<crate::reference_scene::Config>>,
+        Option<Res<crate::reference_scene::Ready>>,
+    ),
 ) {
+    if references.is_some() && ready.is_none() {
+        return;
+    }
     if if run.world {
         matches!(run.frame, 59 | 143 | 263)
     } else {

@@ -3,6 +3,8 @@ mod asset_preview;
 mod camera;
 mod movement;
 mod network;
+mod reference_scene;
+mod reference_smoke;
 mod scene;
 mod smoke;
 
@@ -11,10 +13,11 @@ use movement::{LocalPawn, MoveIntent};
 use std::time::Duration;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let args: Vec<_> = std::env::args().skip(1).collect();
+    let mut args: Vec<_> = std::env::args().skip(1).collect();
     if args.first().is_some_and(|a| a == "--inspect-asset") {
         return asset_preview::run(&args);
     }
+    let references = reference_scene::Config::parse(&mut args)?;
     let connected = args
         .first()
         .is_some_and(|arg| matches!(arg.as_str(), "--connect" | "--network-smoke"));
@@ -30,18 +33,36 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     let scripted = smoke.is_some();
     let mut app = App::new();
+    let mut plugins = DefaultPlugins.set(WindowPlugin {
+        primary_window: Some(Window {
+            title: "Theia MMO — movement sandbox".into(),
+            resolution: WindowResolution::new(1280, 720).with_scale_factor_override(1.),
+            ..default()
+        }),
+        ..default()
+    });
+    if let Some(references) = references {
+        plugins = plugins.set(AssetPlugin {
+            file_path: references
+                .directory
+                .to_str()
+                .ok_or("Asset directory must be UTF-8")?
+                .to_owned(),
+            ..default()
+        });
+        if let Some(output) = &references.capture {
+            app.insert_resource(reference_smoke::Run::new(output.clone()))
+                .add_systems(Last, reference_smoke::observe);
+        }
+        app.insert_resource(references)
+            .add_systems(Startup, reference_scene::load)
+            .add_systems(Update, reference_scene::tick.after(network::present));
+    }
     app.insert_resource(ClearColor(Color::srgb(0.16, 0.23, 0.33)))
         .insert_resource(Time::<Fixed>::from_hz(60.))
         .init_resource::<MoveIntent>()
         .init_resource::<camera::Orbit>()
-        .add_plugins(DefaultPlugins.set(WindowPlugin {
-            primary_window: Some(Window {
-                title: "Theia MMO — movement sandbox".into(),
-                resolution: WindowResolution::new(1280, 720).with_scale_factor_override(1.),
-                ..default()
-            }),
-            ..default()
-        }))
+        .add_plugins(plugins)
         .add_systems(Startup, scene::setup)
         .add_systems(
             PreUpdate,
@@ -74,11 +95,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 }
 
+#[derive(bevy::ecs::system::SystemParam)]
+struct InputMode<'w> {
+    smoke: Option<Res<'w, smoke::Run>>,
+    network: Option<Res<'w, network::Network>>,
+    references: Option<Res<'w, reference_scene::Config>>,
+    ready: Option<Res<'w, reference_scene::Ready>>,
+    reference_smoke: Option<Res<'w, reference_smoke::Run>>,
+}
+
 fn input(
     keys: Res<ButtonInput<KeyCode>>,
     mut intent: ResMut<MoveIntent>,
-    smoke: Option<Res<smoke::Run>>,
-    network: Option<Res<network::Network>>,
+    mode: InputMode,
     mut pawn: Query<&mut Transform, With<LocalPawn>>,
     mut exit: MessageWriter<AppExit>,
     orbit: Res<camera::Orbit>,
@@ -86,7 +115,16 @@ fn input(
     if keys.just_pressed(KeyCode::Escape) {
         exit.write(AppExit::Success);
     }
-    if let Some(run) = smoke {
+    if mode.references.is_some() && mode.ready.is_none() {
+        intent.direction = Vec2::ZERO;
+        intent.sprint = false;
+        return;
+    }
+    if let Some(run) = mode.reference_smoke {
+        (intent.direction, intent.sprint) = run.intent();
+        return;
+    }
+    if let Some(run) = mode.smoke {
         intent.direction = if run.world() {
             match run.frame {
                 60..144 => Vec2::NEG_X,
@@ -109,7 +147,7 @@ fn input(
         held(KeyCode::KeyS, KeyCode::ArrowDown) - held(KeyCode::KeyW, KeyCode::ArrowUp),
     ));
     intent.sprint = keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight);
-    if network.is_none()
+    if mode.network.is_none()
         && keys.just_pressed(KeyCode::KeyR)
         && let Ok(mut pawn) = pawn.single_mut()
     {

@@ -70,6 +70,15 @@ Newer textured building/character exports were also checked. Add
 run are tested for the user's human model. See [model results and commands](docs/ASSET_CHECK_2026_10_16.md)
 for the successful rendering and remaining character export errors.
 
+To use the local human players, idle wolf and static farmhouse together:
+
+```sh
+cargo run --locked -p theia-client -- --reference-scene build/reference-scene
+```
+
+This opt-in mode needs prepared local assets; see [preparation and scope](docs/REFERENCE_SCENE.md).
+Add the usual `--connect` arguments after the asset flag for multiplayer.
+
 ## Check
 
 ```sh

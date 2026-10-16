@@ -15,7 +15,7 @@ def verify(output):
     report = json.loads(report_path.read_bytes())
     assert report["schema"] == 1 and report["completed"] and report["offline"]
     world = report.get("mode", "movement") == "world"
-    expected = ([(59, [0., .9, 0.]), (143, [-7., .9, 0.]), (263, [-7., .9, -4.54])]
+    expected = ([(59, [0., .9, 0.]), (143, [-7., .9, 0.]), (263, [-7., .9, -2.54])]
                 if world else [(59, [0., .9, 0.]), (119, [0., .9, -5.]), (179, [5., .9, -5.])])
     assert len(report["checkpoints"]) == len(expected)
     for actual, (frame, position) in zip(report["checkpoints"], expected):

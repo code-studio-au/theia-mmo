@@ -1,6 +1,6 @@
 //! Presentation bridge. QUIC I/O runs on a bounded background worker, never in Update.
 use crate::{
-    movement::{LocalPawn, MoveIntent},
+    movement::{LocalPawn, Motion, MoveIntent},
     scene::{NetworkHud, PawnAssets},
 };
 use bevy::prelude::*;
@@ -140,10 +140,14 @@ pub fn present(
     mut commands: Commands,
     mut network: ResMut<Network>,
     assets: Res<PawnAssets>,
-    mut local: Query<(&mut Transform, &mut Visibility), With<LocalPawn>>,
-    mut remotes: Query<(Entity, &mut RemotePawn, &mut Transform), Without<LocalPawn>>,
+    mut local: Query<(&mut Transform, &mut Visibility, &mut Motion), With<LocalPawn>>,
+    mut remotes: Query<(Entity, &mut RemotePawn, &mut Transform, &mut Motion), Without<LocalPawn>>,
     mut hud: Query<&mut Text, With<NetworkHud>>,
-    time: Res<Time>,
+    (time, references, ready): (
+        Res<Time>,
+        Option<Res<crate::reference_scene::Config>>,
+        Option<Res<crate::reference_scene::Ready>>,
+    ),
 ) {
     let state = network.state.borrow().clone();
     if let Some(error) = &state.error {
@@ -151,10 +155,10 @@ pub fn present(
             **text =
                 format!("THEIA\nDisconnected: {error}\nEsc: quit; restart client to reconnect");
         }
-        for (entity, _, _) in &remotes {
+        for (entity, _, _, _) in &remotes {
             commands.entity(entity).despawn();
         }
-        if let Ok((_, mut visibility)) = local.single_mut() {
+        if let Ok((_, mut visibility, _)) = local.single_mut() {
             *visibility = Visibility::Hidden;
         }
         if let Some(smoke) = &network.smoke {
@@ -177,10 +181,14 @@ pub fn present(
             );
         }
         if snapshot.tick > network.latest_tick {
+            let interval = (snapshot.tick - network.latest_tick) as f32 / TICK_HZ as f32;
             network.latest_tick = snapshot.tick;
             if let Some(smoke) = &mut network.smoke {
                 smoke.max_players = smoke.max_players.max(snapshot.players.len());
-                if snapshot.players.len() >= 2 && smoke.ready.is_none() {
+                if snapshot.players.len() >= 2
+                    && smoke.ready.is_none()
+                    && (references.is_none() || ready.is_some())
+                {
                     smoke.ready = Some(Instant::now());
                     smoke.first = Some(snapshot.clone());
                 }
@@ -188,14 +196,16 @@ pub fn present(
             for player in &snapshot.players {
                 let position = Vec3::new(player.xz[0], theia_network::world::PAWN_Y, player.xz[1]);
                 if player.id == id {
-                    if let Ok((mut transform, mut visibility)) = local.single_mut() {
+                    if let Ok((mut transform, mut visibility, mut motion)) = local.single_mut() {
+                        motion.0 = position.distance(transform.translation) / interval;
                         *visibility = Visibility::Inherited;
                         face_and_move(&mut transform, position);
                     }
-                } else if let Some((_, mut remote, transform)) = remotes
+                } else if let Some((_, mut remote, transform, mut motion)) = remotes
                     .iter_mut()
-                    .find(|(_, remote, _)| remote.id == player.id)
+                    .find(|(_, remote, _, _)| remote.id == player.id)
                 {
+                    motion.0 = position.distance(remote.to) / interval;
                     remote.from = transform.translation;
                     remote.to = position;
                     remote.elapsed = 0.;
@@ -210,17 +220,18 @@ pub fn present(
                         Mesh3d(assets.mesh.clone()),
                         MeshMaterial3d(assets.remote.clone()),
                         Transform::from_translation(position),
+                        Motion::default(),
                     ));
                 }
             }
-            for (entity, remote, _) in &remotes {
+            for (entity, remote, _, _) in &remotes {
                 if !snapshot.players.iter().any(|p| p.id == remote.id) {
                     commands.entity(entity).despawn();
                 }
             }
         }
     }
-    for (_, mut remote, mut transform) in &mut remotes {
+    for (_, mut remote, mut transform, _) in &mut remotes {
         remote.elapsed += time.delta_secs();
         let position = remote
             .from
@@ -240,6 +251,13 @@ fn face_and_move(transform: &mut Transform, position: Vec3) {
     transform.translation = position;
 }
 
+#[derive(bevy::ecs::system::SystemParam)]
+pub struct ReferenceArt<'w, 's> {
+    config: Option<Res<'w, crate::reference_scene::Config>>,
+    visuals: Query<'w, 's, &'static crate::reference_scene::Visual>,
+    houses: Query<'w, 's, Entity, With<crate::reference_scene::House>>,
+}
+
 pub fn capture(
     mut commands: Commands,
     mut network: ResMut<Network>,
@@ -247,6 +265,7 @@ pub fn capture(
     remotes: Query<(&RemotePawn, &Transform)>,
     adapter: Res<bevy::render::renderer::RenderAdapterInfo>,
     mut exit: MessageWriter<bevy::app::AppExit>,
+    art: ReferenceArt,
 ) {
     use bevy::render::view::window::screenshot::{Screenshot, ScreenshotCaptured};
     let state = network.state.borrow().clone();
@@ -265,6 +284,26 @@ pub fn capture(
     if !smoke.ready.is_some_and(|t| t.elapsed().as_secs_f32() > 4.) {
         return;
     }
+    let reference_visuals = if art.config.is_some() {
+        let humans = art
+            .visuals
+            .iter()
+            .filter(|v| v.kind == 0 && !v.players.is_empty())
+            .count();
+        let wolves = art
+            .visuals
+            .iter()
+            .filter(|v| v.kind == 1 && !v.players.is_empty())
+            .count();
+        if humans != 2 || wolves != 1 || art.houses.iter().count() != 1 {
+            return;
+        }
+        Some(
+            serde_json::json!({"humans":humans,"wolves":wolves,"houses":art.houses.iter().count()}),
+        )
+    } else {
+        None
+    };
     let snapshot = state.snapshot.expect("Connected snapshot");
     assert_eq!(
         snapshot.players.len(),
@@ -286,7 +325,8 @@ pub fn capture(
         "local_render_position":local.single().unwrap().translation.to_array(),
         "remote_render_positions":remotes.iter().map(|(r,t)|serde_json::json!({"id":r.id,"position":t.translation.to_array()})).collect::<Vec<_>>(),
         "gpu":{"name":adapter.name,"backend":format!("{:?}",adapter.backend)},
-        "scope":"actual QUIC authority and two Bevy clients; no prediction, collision, combat or MMO capacity claim"});
+        "reference_visuals":reference_visuals,
+        "scope":"actual QUIC authority and two Bevy clients; optional reference art; no prediction, NPC gameplay, combat or MMO capacity claim"});
     let output = smoke.output.clone();
     smoke.capture_requested = true;
     commands

@@ -1,7 +1,8 @@
 # Static graybox world and third-person camera
 
 Environment items, including doors, stay static. Players pass through players and
-NPCs; targeting/hit detection is separate. No NPCs or combat exist yet.
+NPCs; targeting/hit detection is separate. An optional reference scene has an idle
+wolf presentation placeholder; authoritative NPC simulation and combat do not exist yet.
 
 ## Shared authored layout
 
@@ -46,6 +47,12 @@ The local body hides below a one-unit camera distance and reappears when space
 clears. Characters do not obstruct the camera. This is a simple orbit controller,
 not a complete WoW input scheme, smoothing system or imported-scene qualification.
 Local movement still follows server poses directly; prediction is absent.
+
+The [reference art scene](REFERENCE_SCENE.md) enlarges the shared building to an
+8 x 6.4 x 8 body plus roof/door, to fit a uniformly scaled farmhouse. The same
+envelope is used in the plain scene and on the server. Door contact is now
+Z=-2.54; historical smoke evidence used the earlier smaller house. Collision
+stays conservative and solid, with no traversable imported interior.
 
 ## Verification scope
 

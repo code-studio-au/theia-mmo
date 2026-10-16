@@ -15,6 +15,7 @@ to this MMO repository; historical engine decisions remain in `theia-engine`.
 | All environment items remain static, including doors | No opening doors, moving props or destructible environment; character animation is separate |
 | Go services when a concrete requirement needs them | No distributed-service scaffold in the first playable slice |
 | Start with two clients in one authoritative world | Do not substitute synthetic proxy counts for working multiplayer |
+| Use the supplied human for players, RustyWolfPup for enemy NPCs and the farmhouse for building/housing tests | Opt-in local reference scene first; NPC authority/combat and housing gameplay are separate from visual roles |
 
 The previous custom ash/Vulkan renderer, mandatory task/mesh capability, Slang-first
 shaders, custom GPU ECS, visibility-buffer pipeline and bespoke vector UI are not

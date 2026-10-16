@@ -36,14 +36,19 @@ These are game outcomes, not a continuation of the old engine's M0–M6 schedule
   Local compatibility checks now render the user's textured farmhouse and character;
   stand/walk/run playback works in the inspector. The character export still fails
   strict glTF validation. Representative game content remains a separate step.
-- [ ] Integrate reviewed asset placement and server collision into the shared world;
-  viewing an imported mesh does not create a gameplay collider.
+- [x] First explicit reference placement with conservative server collision:
+  textured farmhouse inside the shared solid envelope, human players and a
+  nonblocking idle wolf placeholder. [Scope and checks](REFERENCE_SCENE.md).
+- [ ] Qualify final representative asset placement and colliders; viewing imported
+  meshes does not automatically create server collision or usable interiors.
 - [x] First static-world collision pass for the flat procedural scene: solid
   building, fixed door and rocks. Rendering and authority share authored geometry.
 - [x] Orbit/zoom camera, camera-relative movement and static camera obstruction.
 - [ ] Qualify general authored-world collision alongside imported assets; slopes,
   steps, jumping and mesh colliders are not in the flat prototype.
-- [ ] Character animation states and an ordinary gameplay HUD.
+- [x] First movement-driven character animation states: human stand/walk/run for
+  local and remote players, alongside the existing controls/connection HUD.
+- [ ] Animation blending/combat states and the gameplay target/health/ability HUD.
   Environment geometry stays static, including doors. Players do not physically
   collide with either players or NPCs; targeting/hit detection is separate.
 - Define an asset layout and stable game identifiers; avoid custom cooked formats

@@ -18,6 +18,7 @@ pub fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     network: Option<Res<crate::network::Network>>,
+    references: Option<Res<crate::reference_scene::Config>>,
 ) {
     let grass = materials.add(Color::srgb(0.16, 0.35, 0.17));
     let road = materials.add(Color::srgb(0.48, 0.40, 0.29));
@@ -28,7 +29,10 @@ pub fn setup(
         MeshMaterial3d(grass),
     ));
     let unit_box = meshes.add(Cuboid::new(1., 1., 1.));
-    for prop in theia_network::world::PROPS {
+    for (index, prop) in theia_network::world::PROPS.into_iter().enumerate() {
+        if references.is_some() && (2..=4).contains(&index) {
+            continue;
+        }
         let material = match prop.surface {
             theia_network::world::Surface::Road => road.clone(),
             theia_network::world::Surface::Stone => stone.clone(),
@@ -49,23 +53,27 @@ pub fn setup(
         mesh: capsule.clone(),
         remote: materials.add(Color::srgb(0.95, 0.25, 0.12)),
     });
-    commands
-        .spawn((
-            LocalPawn,
+    let mut pawn = commands.spawn((
+        LocalPawn,
+        crate::movement::Motion::default(),
+        Transform::from_translation(START),
+        if network.is_some() {
+            Visibility::Hidden
+        } else {
+            Visibility::Inherited
+        },
+    ));
+    if references.is_none() {
+        pawn.insert((
             Mesh3d(capsule),
             MeshMaterial3d(materials.add(Color::srgb(0.12, 0.42, 0.95))),
-            Transform::from_translation(START),
-            if network.is_some() {
-                Visibility::Hidden
-            } else {
-                Visibility::Inherited
-            },
-        ))
-        .with_child((
+        ));
+        pawn.with_child((
             Mesh3d(unit_box),
             MeshMaterial3d(materials.add(Color::srgb(1., 0.65, 0.12))),
             Transform::from_xyz(0., 0.25, -0.35).with_scale(Vec3::new(0.3, 0.18, 0.18)),
         ));
+    }
     commands.spawn((
         DirectionalLight {
             illuminance: 8_000.,
@@ -76,7 +84,11 @@ pub fn setup(
     ));
     commands.spawn((
         Camera3d::default(),
-        Tonemapping::None,
+        if references.is_some() {
+            Tonemapping::Reinhard
+        } else {
+            Tonemapping::None
+        },
         DebandDither::Disabled,
         Transform::from_xyz(0., 7.9, 12.).looking_at(START, Vec3::Y),
     ));

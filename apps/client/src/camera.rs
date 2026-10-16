@@ -219,7 +219,7 @@ mod tests {
     fn camera_obstruction_hides_close_body_and_restores_it_after_orbiting() {
         let mut app = App::new();
         app.init_resource::<Orbit>().add_systems(Update, follow);
-        let target = Vec3::new(-7., 0.9, -4.54);
+        let target = Vec3::new(-7., 0.9, -2.54);
         let pawn = app
             .world_mut()
             .spawn((

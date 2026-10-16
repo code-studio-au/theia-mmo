@@ -19,7 +19,7 @@ def sha256(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def run(output, binaries):
+def run(output, binaries, references=None):
     suffix = ".exe" if os.name == "nt" else ""
     server_binary = binaries / f"theia-server{suffix}"
     client_binary = binaries / f"theia-client{suffix}"
@@ -55,7 +55,7 @@ def run(output, binaries):
             log = (directory / "run.log").open("w")
             logs.append(log)
             process = subprocess.Popen(
-                [str(client_binary), "--network-smoke", address,
+                [str(client_binary), *(["--reference-scene", str(references)] if references else []), "--network-smoke", address,
                  str(certificate), str(directory), direction],
                 stdout=log, stderr=subprocess.STDOUT,
             )
@@ -86,10 +86,17 @@ def run(output, binaries):
             assert image.size == (1280, 720)
             blue = sum(b > r * 2.5 and b > g * 1.8 for r, g, b in image.getdata())
             red = sum(r > g * 2 and r > b * 2 for r, g, b in image.getdata())
-            assert blue > 100 and red > 100, f"Missing pawn pixels: {blue=}, {red=}"
+            if references:
+                assert report['reference_visuals'] == {'humans': 2, 'wolves': 1, 'houses': 1}
+                assert len(image.getcolors(image.width * image.height)) > 256
+            else:
+                assert blue > 100 and red > 100, f"Missing pawn pixels: {blue=}, {red=}"
             log = (output / name / "run.log").read_text()
             for marker in ("VUID-", "Validation Error", " ERROR ", "panicked at"):
                 assert marker not in log, f"Diagnostic {marker}: inspect {name}/run.log"
+            if references:
+                walking = set(re.findall(r'Reference actor (\S+): Walk', log))
+                assert len(walking) == 2, 'Both local and remote humans must enter walking playback'
             validation_active = 'Insert instance layer "VK_LAYER_KHRONOS_validation"' in log
             if "VK_LAYER_KHRONOS_validation" in os.environ.get("VK_INSTANCE_LAYERS", ""):
                 assert validation_active, "Enable VK_LOADER_DEBUG=layer to prove layer activation"
@@ -105,7 +112,8 @@ def run(output, binaries):
                   "server_sha256": sha256(server_binary),
                   "lock_sha256": sha256(Path(__file__).resolve().parents[1] / "Cargo.lock"),
                   "validation_requested": os.environ.get("VK_INSTANCE_LAYERS", ""),
-                  "scope": "loopback QUIC + two Bevy presentations; no capacity or latency benchmark"}
+                  "reference_assets": str(references) if references else None,
+                  "scope": "loopback QUIC + two Bevy presentations; no capacity, texture fidelity or latency benchmark"}
         proof.write_text(json.dumps(result, indent=2) + "\n")
         print(json.dumps(result, indent=2))
     finally:
@@ -125,5 +133,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("output", type=Path)
     parser.add_argument("--binaries", type=Path, default=Path("target/debug"))
+    parser.add_argument("--reference-assets", type=Path)
     args = parser.parse_args()
-    run(args.output.resolve(), args.binaries.resolve())
+    run(args.output.resolve(), args.binaries.resolve(), args.reference_assets.resolve() if args.reference_assets else None)

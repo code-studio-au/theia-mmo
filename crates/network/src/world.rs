@@ -30,18 +30,18 @@ pub const PROPS: [Prop; 7] = [
         surface: Surface::Road,
     },
     Prop {
-        center: [-7., 1.5, -7.],
-        size: [4., 3., 4.],
+        center: [-7., 3.2, -7.],
+        size: [8., 6.4, 8.],
         surface: Surface::Stone,
     },
     Prop {
-        center: [-7., 3.2, -7.],
-        size: [4.6, 0.4, 4.6],
+        center: [-7., 6.6, -7.],
+        size: [8.6, 0.4, 8.6],
         surface: Surface::Wood,
     },
     Prop {
-        center: [-7., 0.7, -4.95],
-        size: [0.8, 1.4, 0.12],
+        center: [-7., 0.9, -2.95],
+        size: [1.6, 1.8, 0.12],
         surface: Surface::Wood,
     },
     Prop {
@@ -143,15 +143,15 @@ mod tests {
     }
     #[test]
     fn closed_door_building_and_rocks_block_sweeps_in_both_directions() {
-        assert!((move_player([-7., 0.], intent([0, -1000]), 10.)[1] + 4.54).abs() < 0.00001);
-        assert!((move_player([-7., -15.], intent([0, 1000]), 10.)[1] + 9.35).abs() < 0.00001);
-        assert!((move_player([-15., -7.], intent([1000, 0]), 10.)[0] + 9.35).abs() < 0.00001);
-        assert!((move_player([0., -7.], intent([-1000, 0]), 10.)[0] + 4.65).abs() < 0.00001);
+        assert!((move_player([-7., 0.], intent([0, -1000]), 10.)[1] + 2.54).abs() < 0.00001);
+        assert!((move_player([-7., -15.], intent([0, 1000]), 10.)[1] + 11.35).abs() < 0.00001);
+        assert!((move_player([-15., -7.], intent([1000, 0]), 10.)[0] + 11.35).abs() < 0.00001);
+        assert!((move_player([0., -7.], intent([-1000, 0]), 10.)[0] + 2.65).abs() < 0.00001);
         assert!((move_player([8., 0.], intent([0, 1000]), 10.)[1] - 3.).abs() < 0.00001);
     }
     #[test]
     fn walls_allow_sliding_and_retreat_without_entering_solid_geometry() {
-        let start = [-4.65, -7.];
+        let start = [-2.65, -7.];
         let slid = move_player(start, intent([-1000, 1000]), 0.1);
         assert_eq!(slid[0], start[0]);
         assert!(slid[1] > start[1]);
@@ -161,10 +161,10 @@ mod tests {
     }
     #[test]
     fn camera_retracts_at_static_geometry_and_restores_in_clear_space() {
-        let blocked = camera_fraction([-7., 0.9, -4.54], [-7., 7.9, -16.54]);
+        let blocked = camera_fraction([-7., 0.9, -2.54], [-7., 7.9, -14.54]);
         assert!(blocked > 0. && blocked < 0.1);
         assert_eq!(camera_fraction([0., 0.9, 0.], [0., 7.9, 12.]), 1.);
         // Roof is included for the camera, even though overhead pawn movement ignores it.
-        assert!(camera_fraction([-10., 4., -7.], [0., 2., -7.]) < 1.);
+        assert!(camera_fraction([-13., 7., -7.], [0., 5., -7.]) < 1.);
     }
 }

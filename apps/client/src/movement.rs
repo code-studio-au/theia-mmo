@@ -6,6 +6,35 @@ pub const START: Vec3 = Vec3::new(0., theia_network::world::PAWN_Y, 0.);
 #[derive(Component)]
 pub struct LocalPawn;
 
+/// Presentation speed sampled from actual movement, never a gameplay authority.
+#[derive(Component, Default)]
+pub struct Motion(pub f32);
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Gait {
+    Stand,
+    Walk,
+    Run,
+}
+impl Gait {
+    pub fn from_speed(speed: f32) -> Self {
+        if speed > 6.5 {
+            Self::Run
+        } else if speed > 0.1 {
+            Self::Walk
+        } else {
+            Self::Stand
+        }
+    }
+    pub fn index(self) -> usize {
+        match self {
+            Self::Stand => 0,
+            Self::Walk => 1,
+            Self::Run => 2,
+        }
+    }
+}
+
 #[derive(Resource, Default)]
 pub struct MoveIntent {
     pub direction: Vec2,
@@ -16,7 +45,7 @@ pub fn move_local_pawn(
     time: Res<Time<Fixed>>,
     intent: Res<MoveIntent>,
     network: Option<Res<crate::network::Network>>,
-    mut pawns: Query<&mut Transform, With<LocalPawn>>,
+    mut pawns: Query<(&mut Transform, Option<&mut Motion>), With<LocalPawn>>,
 ) {
     if network.is_some() {
         return;
@@ -29,7 +58,8 @@ pub fn move_local_pawn(
         ],
         sprint: intent.sprint,
     };
-    for mut pawn in &mut pawns {
+    for (mut pawn, motion) in &mut pawns {
+        let before = pawn.translation;
         let xz = theia_network::world::move_player(
             [pawn.translation.x, pawn.translation.z],
             intent,
@@ -37,6 +67,9 @@ pub fn move_local_pawn(
         );
         pawn.translation.x = xz[0];
         pawn.translation.z = xz[1];
+        if let Some(mut motion) = motion {
+            motion.0 = pawn.translation.distance(before) / time.delta_secs().max(1e-6);
+        }
         if direction != Vec2::ZERO {
             pawn.rotation = Quat::from_rotation_y((-direction.x).atan2(-direction.y));
         }
@@ -48,6 +81,39 @@ mod tests {
     use super::*;
     use std::time::Duration;
     use theia_network::wire::WORLD_LIMIT;
+
+    #[test]
+    fn gait_distinguishes_rest_walking_and_running() {
+        assert_eq!(Gait::from_speed(0.), Gait::Stand);
+        assert_eq!(Gait::from_speed(5.), Gait::Walk);
+        assert_eq!(Gait::from_speed(8.), Gait::Run);
+    }
+
+    #[test]
+    fn pressing_into_a_wall_reports_idle_despite_movement_input() {
+        let mut app = App::new();
+        let mut time = Time::<Fixed>::from_hz(60.);
+        time.advance_by(Duration::from_secs_f64(1. / 60.));
+        app.insert_resource(time)
+            .insert_resource(MoveIntent {
+                direction: Vec2::NEG_X,
+                sprint: true,
+            })
+            .add_systems(FixedUpdate, move_local_pawn);
+        let pawn = app
+            .world_mut()
+            .spawn((
+                LocalPawn,
+                Motion::default(),
+                Transform::from_xyz(-2.65, START.y, -7.),
+            ))
+            .id();
+        app.world_mut().run_schedule(FixedUpdate);
+        assert_eq!(
+            Gait::from_speed(app.world().get::<Motion>(pawn).unwrap().0),
+            Gait::Stand
+        );
+    }
 
     fn simulate(direction: Vec2, sprint: bool, hz: u32, ticks: u32) -> Vec3 {
         let mut app = App::new();
