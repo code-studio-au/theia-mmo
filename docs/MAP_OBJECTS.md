@@ -3,7 +3,8 @@
 The Ruins of Lordaeron reference tile now has a single assembled GLB containing
 its terrain and static object placements, including nested building props. Source
 exports remain outside Git and untouched. This is an inspector scene; multiplayer
-movement, collision, liquids and NPC gameplay are not connected to this map yet.
+movement, collision and NPC gameplay are not connected to this map yet. Liquid
+geometry now has a separate [derived preview](MAP_LIQUIDS.md).
 
 ## Run or reproduce
 
@@ -108,6 +109,9 @@ derived GLBs, full validator output, transform/alignment diagnostics, test/lint/
 build logs, pinned upstream reference files and `native/{assembled-map,town,wolf}/`
 reports/logs/PNGs. Inputs and large third-party assets are not added to Git.
 
-Next: interpret liquid data, then add server-owned terrain movement and reviewed
+Update: [liquid geometry and capture readiness](MAP_LIQUIDS.md) now have a separate
+qualified preview. This report's original static-object evidence is retained.
+
+Next: add server-owned terrain movement and reviewed
 static-world clearance/camera obstruction before using the map for multiplayer.
 The flat procedural world and separate human/wolf/farmhouse scene remain available.

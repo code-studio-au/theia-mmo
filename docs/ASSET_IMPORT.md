@@ -91,6 +91,11 @@ WMO doodad sets using the exporter's placement conventions. Its optional inspect
 `--focus x,y,z,radius` can frame a town or building without changing asset geometry.
 Scene bounds/counts remain whole-asset values even when the camera is focused.
 
+Focus can also append `yaw,pitch` in radians for a repeatable viewing angle.
+Inspector captures now wait for compiled render pipelines in addition to asset/
+pose readiness; a fixed warmup alone could capture partially rendered large scenes.
+[Liquid geometry and executed checks](MAP_LIQUIDS.md) document the issue and fix.
+
 Keep source files/export settings, establish metre scale and a sensible placement
 pivot, and keep doors/props static. GLB is the delivery target; `.blend`, OBJ/MTL,
 BLP and any terrain heightmaps remain source/intermediate data. Test original or

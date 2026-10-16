@@ -279,3 +279,20 @@ and build pass. The focus option records camera framing separately from whole-sc
 statistics. Native Windows, liquids, map collision/movement, lights/particles and
 exact WoW shader reproduction remain unqualified or unimplemented as detailed in
 the report. The multiplayer simulation and protocol are unchanged by this slice.
+
+## Static map liquids and capture readiness — 2026-10-16
+
+[Liquid qualification](MAP_LIQUIDS.md) adds 30 source-masked patches, 1,825 vertices
+and 2,744 triangles using absolute liquid heights and standard translucent PBR.
+The original map buffer is retained unchanged. Khronos validation reports zero
+errors/warnings, the existing empty smoke-node info and 2,393 optional buffer-target
+hints. Raw liquid IDs are preserved without guessing their database classification.
+
+Early fixed-warmup captures were visually incomplete despite successful CPU scene
+instantiation. The inspector now observes Bevy render-pipeline readiness and records
+pending/failed/compiled counts before allowing a capture. Final native lake and
+matching no-water views, plus a wolf animation regression, use RX 7900 XTX / RADV
+with active Vulkan validation. Saved PNGs are inspected; pre-readiness captures
+are retained as rejected evidence. Twenty-seven Rust tests, 22 Python asset-tool
+tests, format, denied-warning Clippy and build pass. Water rendering remains a
+static material preview; terrain movement, water gameplay and native Windows are open.

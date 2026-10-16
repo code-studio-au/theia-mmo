@@ -1,6 +1,7 @@
 //! Bevy presentation: offline sandbox or server-owned multiplayer walking.
 mod asset_preview;
 mod camera;
+mod capture_ready;
 mod movement;
 mod network;
 mod reference_scene;

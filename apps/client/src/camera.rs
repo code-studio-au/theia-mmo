@@ -47,6 +47,14 @@ impl Orbit {
         self.zoom_step = (radius * 0.1).max(1.);
         self.yaw = 0.5;
     }
+    pub fn set_angles(&mut self, yaw: f32, pitch: f32) {
+        self.yaw =
+            (yaw + std::f32::consts::PI).rem_euclid(std::f32::consts::TAU) - std::f32::consts::PI;
+        self.pitch = pitch.clamp(0.12, 1.35);
+    }
+    pub fn angles(&self) -> Vec2 {
+        Vec2::new(self.yaw, self.pitch)
+    }
     pub fn unobstructed_eye(&self, target: Vec3) -> Vec3 {
         let offset = Vec3::new(
             self.yaw.sin() * self.pitch.cos(),
@@ -136,6 +144,16 @@ pub fn follow(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn explicit_view_angles_wrap_yaw_and_keep_pitch_in_the_orbit_range() {
+        let mut orbit = Orbit::default();
+        orbit.set_angles(-std::f32::consts::FRAC_PI_2, 0.9);
+        assert!((orbit.angles().x + std::f32::consts::FRAC_PI_2).abs() < 1e-6);
+        assert_eq!(orbit.angles().y, 0.9);
+        orbit.set_angles(20., -10.);
+        assert!(orbit.angles().x.abs() <= std::f32::consts::PI);
+        assert_eq!(orbit.angles().y, 0.12);
+    }
     #[test]
     fn asset_framing_keeps_large_models_inside_the_zoom_range() {
         let mut orbit = Orbit::default();

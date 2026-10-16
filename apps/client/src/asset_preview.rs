@@ -38,6 +38,7 @@ struct Preview {
 struct Focus {
     center: Vec3,
     radius: f32,
+    angles: Option<Vec2>,
 }
 impl Focus {
     fn parse(value: &str) -> Result<Self, &'static str> {
@@ -45,17 +46,20 @@ impl Focus {
             .split(',')
             .map(|v| v.trim().parse::<f32>())
             .collect::<Result<_, _>>()
-            .map_err(|_| "Focus must be x,y,z,radius")?;
-        if values.len() != 4
+            .map_err(|_| "Focus must be x,y,z,radius[,yaw,pitch]")?;
+        if !matches!(values.len(), 4 | 6)
             || values.iter().any(|v| !v.is_finite())
             || values[3] <= 0.
             || !(values[3] * 10.).is_finite()
         {
-            return Err("Focus needs four finite numbers and a positive, finite-range radius");
+            return Err(
+                "Focus needs x,y,z,radius with optional yaw,pitch; finite numbers and positive radius required",
+            );
         }
         Ok(Self {
             center: Vec3::new(values[0], values[1], values[2]),
             radius: values[3],
+            angles: (values.len() == 6).then(|| Vec2::new(values[4], values[5])),
         })
     }
 }
@@ -64,7 +68,7 @@ struct Hud;
 
 pub fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     if args.len() < 2 || !args.len().is_multiple_of(2) {
-        return Err("Use --inspect-asset <file.glb> [--capture <directory>] [--animation <clip>] [--focus x,y,z,radius]".into());
+        return Err("Use --inspect-asset <file.glb> [--capture <directory>] [--animation <clip>] [--focus x,y,z,radius[,yaw,pitch]]".into());
     }
     let mut capture_path = None;
     let mut clip = None;
@@ -116,6 +120,7 @@ pub fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
                 ..default()
             }),
     )
+    .add_plugins(crate::capture_ready::CaptureReadyPlugin)
     .insert_resource(Preview {
         source,
         capture: capture_output,
@@ -337,8 +342,18 @@ fn frame(world: &mut World) {
     let focus = world.resource::<Preview>().focus.unwrap_or(Focus {
         center,
         radius: size.length() / 2.,
+        angles: None,
     });
-    world.resource_mut::<Orbit>().frame_asset(focus.radius);
+    {
+        let mut orbit = world.resource_mut::<Orbit>();
+        orbit.frame_asset(focus.radius);
+        if let Some(angles) = focus.angles {
+            orbit.set_angles(angles.x, angles.y);
+        }
+    }
+    world
+        .resource_mut::<crate::capture_ready::CaptureReady>()
+        .reset();
     let mut preview = world.resource_mut::<Preview>();
     preview.center = focus.center;
     preview.radius = focus.radius;
@@ -372,6 +387,9 @@ fn follow(
     if preview.stats.is_some() {
         if keys.just_pressed(KeyCode::Home) {
             orbit.frame_asset(preview.radius);
+            if let Some(angles) = preview.focus.and_then(|f| f.angles) {
+                orbit.set_angles(angles.x, angles.y);
+            }
         }
         if let Ok((mut camera, mut projection)) = camera.single_mut() {
             *camera = Transform::from_translation(orbit.unobstructed_eye(preview.center))
@@ -391,6 +409,8 @@ fn capture(
     mut preview: ResMut<Preview>,
     adapter: Res<bevy::render::renderer::RenderAdapterInfo>,
     playback: Res<animation::Playback>,
+    orbit: Res<Orbit>,
+    ready: Res<crate::capture_ready::CaptureReady>,
 ) {
     use bevy::render::view::window::screenshot::{Screenshot, ScreenshotCaptured};
     let Some(output) = preview.capture.clone() else {
@@ -407,7 +427,7 @@ fn capture(
     {
         return;
     }
-    if !playback.ready_to_capture() {
+    if !playback.ready_to_capture() || !ready.ready() {
         return;
     }
     preview.requested = true;
@@ -418,8 +438,9 @@ fn capture(
         .unwrap()
         .to_string_lossy()
         .into_owned();
-    let view = json!({"center":preview.center.to_array(),"radius":preview.radius,"explicit_focus":preview.focus.is_some()});
-    let report = json!({"schema":1,"completed":true,"file":filename,"stats":stats,"view":view,"animation":playback.report(),"gpu":{"name":adapter.name,"backend":format!("{:?}",adapter.backend)},"scope":"actual Bevy glTF import/rendering and optional sampled animation playback; no gameplay integration or asset-rights qualification"});
+    let view = json!({"center":preview.center.to_array(),"radius":preview.radius,"explicit_focus":preview.focus.is_some(),"angles":orbit.angles().to_array()});
+    let pipelines = json!({"pending":ready.pending,"failed":ready.failed,"compiled":ready.compiled,"clear_frames":ready.clear_frames});
+    let report = json!({"schema":1,"completed":true,"file":filename,"stats":stats,"view":view,"pipelines":pipelines,"animation":playback.report(),"gpu":{"name":adapter.name,"backend":format!("{:?}",adapter.backend)},"scope":"actual Bevy glTF import/rendering and optional sampled animation playback; no gameplay integration or asset-rights qualification"});
     commands.spawn(Screenshot::primary_window()).observe(
         move |event: On<ScreenshotCaptured>, mut exit: MessageWriter<AppExit>| {
             event
@@ -447,6 +468,9 @@ mod tests {
         let focus = Focus::parse("245, 40,2250,70").unwrap();
         assert_eq!(focus.center, Vec3::new(245., 40., 2250.));
         assert_eq!(focus.radius, 70.);
+        assert!(focus.angles.is_none());
+        let focus = Focus::parse("55,22,2490,100,-1.57,0.9").unwrap();
+        assert_eq!(focus.angles.unwrap(), Vec2::new(-1.57, 0.9));
         for value in [
             "",
             "1,2,3",
@@ -456,6 +480,7 @@ mod tests {
             "1,2,3,-4",
             "1,2,3,inf",
             "1,2,3,3e38",
+            "1,2,3,4,nan,0.9",
         ] {
             assert!(Focus::parse(value).is_err(), "{value}");
         }

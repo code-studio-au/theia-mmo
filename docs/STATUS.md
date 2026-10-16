@@ -9,7 +9,7 @@ directional light/shadows, a local capsule pawn, fixed-step keyboard movement,
 orbit/zoom camera, camera-relative controls, reset/quit and screenshot smoke
 mode. There is no dependency on the old custom engine or its benchmark crate.
 
-Linux build, denied-warning Clippy, formatting, 25 Rust tests and 14 offline
+Linux build, denied-warning Clippy, formatting, 27 Rust tests and 22 offline
 Python asset-tool tests pass.
 Private native Wayland runs on RX 7900 XTX / RADV pass scripted movement,
 static-world/camera checks and real 1280x720 screenshots with active Vulkan validation
@@ -80,8 +80,11 @@ a separately inspected GLB: 65,504 triangles and 256 textured patches, with zero
 glTF errors/warnings. A further [static map assembly](MAP_OBJECTS.md) now includes
 846 top-level placements and 624 nested building props using shared model parts.
 The combined GLB renders through Bevy with no glTF errors/warnings. One empty
-smoke emitter has no visible effect. Liquids and playable terrain collision remain
-unimplemented; the assembled map is still separate from the authoritative world.
+smoke emitter has no visible effect. [Static liquid surfaces](MAP_LIQUIDS.md) now
+add 30 masked patches using source heights and a generic translucent PBR material.
+The inspector waits for render pipeline readiness before captures; CPU asset loading
+alone was insufficient for reliable screenshots. Playable terrain collision and
+liquid gameplay remain unimplemented; the map is separate from the authoritative world.
 [Original map inventory](MAP_CHECK_2026_10_16.md).
 
 No local prediction, general terrain/mesh collision, animation blending,
