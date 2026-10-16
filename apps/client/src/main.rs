@@ -8,6 +8,7 @@ mod reference_scene;
 mod reference_smoke;
 mod scene;
 mod smoke;
+mod terrain_scene;
 
 use bevy::{app::AppExit, prelude::*, time::TimeUpdateStrategy, window::WindowResolution};
 use movement::{LocalPawn, MoveIntent};
@@ -18,12 +19,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if args.first().is_some_and(|a| a == "--inspect-asset") {
         return asset_preview::run(&args);
     }
+    let terrain = terrain_scene::Config::parse(&mut args)?;
     let references = reference_scene::Config::parse(&mut args)?;
+    if terrain.is_some() && references.is_some() {
+        return Err("Terrain and reference modes are separate scenes".into());
+    }
     let connected = args
         .first()
         .is_some_and(|arg| matches!(arg.as_str(), "--connect" | "--network-smoke"));
+    if terrain.is_some() && !connected {
+        return Err("Terrain walking currently requires --connect or --network-smoke".into());
+    }
     let net = if connected {
-        Some(network::Network::from_args(&args)?)
+        Some(network::Network::from_args(
+            &args,
+            terrain
+                .as_ref()
+                .map_or(theia_network::terrain::GRAYBOX_ID, |t| t.terrain.identity),
+        )?)
     } else {
         None
     };
@@ -42,6 +55,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }),
         ..default()
     });
+    if let Some(terrain) = terrain {
+        plugins = plugins.set(AssetPlugin {
+            file_path: terrain
+                .directory
+                .to_str()
+                .ok_or("Terrain directory must be UTF-8")?
+                .to_owned(),
+            ..default()
+        });
+        app.insert_resource(terrain)
+            .add_systems(Startup, terrain_scene::load)
+            .add_systems(Update, terrain_scene::tick);
+    }
     if let Some(references) = references {
         plugins = plugins.set(AssetPlugin {
             file_path: references
@@ -64,6 +90,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .init_resource::<MoveIntent>()
         .init_resource::<camera::Orbit>()
         .add_plugins(plugins)
+        .add_plugins(capture_ready::CaptureReadyPlugin)
         .add_systems(Startup, scene::setup)
         .add_systems(
             PreUpdate,
@@ -103,6 +130,8 @@ struct InputMode<'w> {
     references: Option<Res<'w, reference_scene::Config>>,
     ready: Option<Res<'w, reference_scene::Ready>>,
     reference_smoke: Option<Res<'w, reference_smoke::Run>>,
+    terrain: Option<Res<'w, terrain_scene::Config>>,
+    terrain_ready: Option<Res<'w, terrain_scene::Ready>>,
 }
 
 fn input(
@@ -116,7 +145,9 @@ fn input(
     if keys.just_pressed(KeyCode::Escape) {
         exit.write(AppExit::Success);
     }
-    if mode.references.is_some() && mode.ready.is_none() {
+    if (mode.references.is_some() && mode.ready.is_none())
+        || (mode.terrain.is_some() && mode.terrain_ready.is_none())
+    {
         intent.direction = Vec2::ZERO;
         intent.sprint = false;
         return;

@@ -127,9 +127,18 @@ pub fn follow(
     mut pawn: Query<(&Transform, &mut Visibility), With<LocalPawn>>,
     mut camera: Query<&mut Transform, (With<Camera3d>, Without<LocalPawn>)>,
     network: Option<Res<crate::network::Network>>,
+    terrain: Option<Res<crate::terrain_scene::Config>>,
 ) {
     if let (Ok((pawn, mut visible)), Ok(mut camera)) = (pawn.single_mut(), camera.single_mut()) {
-        let eye = orbit.eye(pawn.translation);
+        let eye = if let Some(terrain) = terrain {
+            let desired = orbit.unobstructed_eye(pawn.translation);
+            let fraction = terrain
+                .terrain
+                .camera_fraction(pawn.translation.to_array(), desired.to_array());
+            pawn.translation + (desired - pawn.translation) * fraction
+        } else {
+            orbit.eye(pawn.translation)
+        };
         *camera = Transform::from_translation(eye).looking_at(pawn.translation, Vec3::Y);
         // Avoid filling the view with the local body when a wall forces the eye in.
         *visible = if eye.distance(pawn.translation) < 1. || network.is_some_and(|n| !n.connected())

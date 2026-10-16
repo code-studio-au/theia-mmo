@@ -9,7 +9,7 @@ directional light/shadows, a local capsule pawn, fixed-step keyboard movement,
 orbit/zoom camera, camera-relative controls, reset/quit and screenshot smoke
 mode. There is no dependency on the old custom engine or its benchmark crate.
 
-Linux build, denied-warning Clippy, formatting, 27 Rust tests and 22 offline
+Linux build, denied-warning Clippy, formatting, 32 Rust tests and 24 offline
 Python asset-tool tests pass.
 Private native Wayland runs on RX 7900 XTX / RADV pass scripted movement,
 static-world/camera checks and real 1280x720 screenshots with active Vulkan validation
@@ -83,11 +83,13 @@ The combined GLB renders through Bevy with no glTF errors/warnings. One empty
 smoke emitter has no visible effect. [Static liquid surfaces](MAP_LIQUIDS.md) now
 add 30 masked patches using source heights and a generic translucent PBR material.
 The inspector waits for render pipeline readiness before captures; CPU asset loading
-alone was insufficient for reliable screenshots. Playable terrain collision and
-liquid gameplay remain unimplemented; the map is separate from the authoritative world.
+alone was insufficient for reliable screenshots. The full assembled map remains a visual inspector scene. A separate bounded
+[terrain walking patch](TERRAIN_WALKING.md) now has server-owned height and slope
+checks, matching visual/collision triangles, world identity checks and two rendered
+multiplayer clients. Liquid gameplay and full authored-world collision remain outstanding.
 [Original map inventory](MAP_CHECK_2026_10_16.md).
 
-No local prediction, general terrain/mesh collision, animation blending,
+No local prediction, general world mesh collision, animation blending,
 targeting, combat, quests, inventory, accounts or persistence is implemented.
 The wolf currently supplies presentation only, without server-owned NPC state or AI;
 the solid house has no usable interior, ownership or housing persistence.
@@ -99,12 +101,14 @@ Confirmed gameplay constraints: environment items are static (including doors),
 and players never physically collide with other players or NPCs. NPC pass-through
 is a requirement for future NPCs; this slice contains players only.
 
-Next: qualify general terrain/asset collision and representative original/licensed
+Next: integrate reviewed static asset clearance and animated actors into the terrain
+walking slice, qualify broader terrain/asset collision and representative original/licensed
 art, resolve the remaining character skin errors, then add a shared
 target/ability/health loop. The direct GLBs already contain PNGs and preserve UVs;
 the earlier missing-texture problem is resolved for these new exports.
-Current world collision is
-flat-ground boxes only; slopes, steps and jumping remain unimplemented.
+The default/reference world still uses flat-ground boxes. The opt-in terrain patch
+adds sampled height/slope movement; general steps, jumping and arbitrary mesh
+collision remain unimplemented.
 The [WoW-style game direction](GAME_DIRECTION.md), [network slice](NETWORKING.md)
 and [roadmap](ROADMAP.md) distinguish intended gameplay from current capability.
 

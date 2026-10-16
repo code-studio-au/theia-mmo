@@ -11,3 +11,4 @@ serde_json.workspace = true
 quinn.workspace = true
 rcgen.workspace = true
 tokio.workspace = true
+ring = "=0.17.14"

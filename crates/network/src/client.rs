@@ -18,7 +18,26 @@ pub async fn run(
     certificate: &[u8],
     input: watch::Receiver<Intent>,
     state: watch::Sender<State>,
+    shutdown: watch::Receiver<bool>,
+) -> Result<()> {
+    run_in_world(
+        address,
+        certificate,
+        input,
+        state,
+        shutdown,
+        crate::terrain::GRAYBOX_ID,
+    )
+    .await
+}
+
+pub async fn run_in_world(
+    address: SocketAddr,
+    certificate: &[u8],
+    input: watch::Receiver<Intent>,
+    state: watch::Sender<State>,
     mut shutdown: watch::Receiver<bool>,
+    expected_world: [u8; 32],
 ) -> Result<()> {
     let endpoint = tls::client(address, certificate)?;
     let connecting = endpoint.connect(address, "localhost")?;
@@ -29,14 +48,17 @@ pub async fn run(
     let welcome = tokio::select! {
         result = tokio::time::timeout(Duration::from_secs(5), async {
             let mut stream = connection.accept_uni().await?;
-            Ok::<_, Box<dyn std::error::Error + Send + Sync>>(stream.read_to_end(12).await?)
+            Ok::<_, Box<dyn std::error::Error + Send + Sync>>(stream.read_to_end(44).await?)
         }) => result??,
         _ = shutdown.changed() => return Ok(()),
     };
-    if welcome.len() != 12 || u32::from_le_bytes(welcome[..4].try_into()?) != VERSION {
+    if welcome.len() != 44 || u32::from_le_bytes(welcome[..4].try_into()?) != VERSION {
         return Err("Invalid welcome".into());
     }
-    let id = u64::from_le_bytes(welcome[4..].try_into()?);
+    let id = u64::from_le_bytes(welcome[4..12].try_into()?);
+    if welcome[12..] != expected_world {
+        return Err("Server world does not match local terrain/graybox".into());
+    }
     if id == 0 {
         return Err("Invalid player identity".into());
     }

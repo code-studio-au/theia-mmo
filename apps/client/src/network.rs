@@ -34,7 +34,10 @@ impl Network {
         let state = self.state.borrow();
         state.snapshot.is_some() && state.error.is_none()
     }
-    pub fn from_args(args: &[String]) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn from_args(
+        args: &[String],
+        expected_world: [u8; 32],
+    ) -> Result<Self, Box<dyn std::error::Error>> {
         let smoke = args.first().is_some_and(|arg| arg == "--network-smoke");
         if (!smoke && args.len() != 3) || (smoke && args.len() != 5) {
             return Err("Use --connect <address> <public-cert.der> or --network-smoke <address> <public-cert.der> <output> <x|z>".into());
@@ -78,12 +81,13 @@ impl Network {
         let worker = std::thread::Builder::new()
             .name("theia-network".into())
             .spawn(move || {
-                if let Err(error) = runtime.block_on(client::run(
+                if let Err(error) = runtime.block_on(client::run_in_world(
                     address,
                     &cert,
                     inputs,
                     states.clone(),
                     shutdown,
+                    expected_world,
                 )) {
                     states.send_modify(|state| {
                         state.error = Some(error.to_string());
@@ -136,6 +140,15 @@ pub fn send_input(intent: Res<MoveIntent>, network: Res<Network>) {
     network.input.send_replace(value);
 }
 
+#[derive(bevy::ecs::system::SystemParam)]
+pub struct SceneState<'w> {
+    time: Res<'w, Time>,
+    references: Option<Res<'w, crate::reference_scene::Config>>,
+    ready: Option<Res<'w, crate::reference_scene::Ready>>,
+    terrain: Option<Res<'w, crate::terrain_scene::Config>>,
+    terrain_ready: Option<Res<'w, crate::terrain_scene::Ready>>,
+}
+
 pub fn present(
     mut commands: Commands,
     mut network: ResMut<Network>,
@@ -143,12 +156,15 @@ pub fn present(
     mut local: Query<(&mut Transform, &mut Visibility, &mut Motion), With<LocalPawn>>,
     mut remotes: Query<(Entity, &mut RemotePawn, &mut Transform, &mut Motion), Without<LocalPawn>>,
     mut hud: Query<&mut Text, With<NetworkHud>>,
-    (time, references, ready): (
-        Res<Time>,
-        Option<Res<crate::reference_scene::Config>>,
-        Option<Res<crate::reference_scene::Ready>>,
-    ),
+    scene: SceneState,
 ) {
+    let SceneState {
+        time,
+        references,
+        ready,
+        terrain,
+        terrain_ready,
+    } = scene;
     let state = network.state.borrow().clone();
     if let Some(error) = &state.error {
         if let Ok(mut text) = hud.single_mut() {
@@ -188,16 +204,17 @@ pub fn present(
                 if snapshot.players.len() >= 2
                     && smoke.ready.is_none()
                     && (references.is_none() || ready.is_some())
+                    && (terrain.is_none() || terrain_ready.is_some())
                 {
                     smoke.ready = Some(Instant::now());
                     smoke.first = Some(snapshot.clone());
                 }
             }
             for player in &snapshot.players {
-                let position = Vec3::new(player.xz[0], theia_network::world::PAWN_Y, player.xz[1]);
+                let position = Vec3::new(player.xz[0], player.y, player.xz[1]);
                 if player.id == id {
                     if let Ok((mut transform, mut visibility, mut motion)) = local.single_mut() {
-                        motion.0 = position.distance(transform.translation) / interval;
+                        motion.0 = position.xz().distance(transform.translation.xz()) / interval;
                         *visibility = Visibility::Inherited;
                         face_and_move(&mut transform, position);
                     }
@@ -205,7 +222,7 @@ pub fn present(
                     .iter_mut()
                     .find(|(_, remote, _, _)| remote.id == player.id)
                 {
-                    motion.0 = position.distance(remote.to) / interval;
+                    motion.0 = position.xz().distance(remote.to.xz()) / interval;
                     remote.from = transform.translation;
                     remote.to = position;
                     remote.elapsed = 0.;
@@ -239,7 +256,7 @@ pub fn present(
         face_and_move(&mut transform, position);
     }
     assert!(
-        network.smoke.is_none() || network.started.elapsed().as_secs() < 30,
+        network.smoke.is_none() || network.started.elapsed().as_secs() < 90,
         "Network smoke timed out"
     );
 }
@@ -256,6 +273,8 @@ pub struct ReferenceArt<'w, 's> {
     config: Option<Res<'w, crate::reference_scene::Config>>,
     visuals: Query<'w, 's, &'static crate::reference_scene::Visual>,
     houses: Query<'w, 's, Entity, With<crate::reference_scene::House>>,
+    pipelines: Res<'w, crate::capture_ready::CaptureReady>,
+    terrain: Option<Res<'w, crate::terrain_scene::Config>>,
 }
 
 pub fn capture(
@@ -282,6 +301,9 @@ pub fn capture(
         return;
     }
     if !smoke.ready.is_some_and(|t| t.elapsed().as_secs_f32() > 4.) {
+        return;
+    }
+    if !art.pipelines.ready() {
         return;
     }
     let reference_visuals = if art.config.is_some() {
@@ -326,6 +348,8 @@ pub fn capture(
         "remote_render_positions":remotes.iter().map(|(r,t)|serde_json::json!({"id":r.id,"position":t.translation.to_array()})).collect::<Vec<_>>(),
         "gpu":{"name":adapter.name,"backend":format!("{:?}",adapter.backend)},
         "reference_visuals":reference_visuals,
+        "terrain_world":art.terrain.as_ref().map(|t|t.terrain.identity),
+        "pipelines":{"pending":art.pipelines.pending,"failed":art.pipelines.failed,"compiled":art.pipelines.compiled,"clear_frames":art.pipelines.clear_frames},
         "scope":"actual QUIC authority and two Bevy clients; optional reference art; no prediction, NPC gameplay, combat or MMO capacity claim"});
     let output = smoke.output.clone();
     smoke.capture_requested = true;

@@ -2,6 +2,7 @@
 pub mod client;
 pub mod server;
 pub mod simulation;
+pub mod terrain;
 pub mod tls;
 pub mod wire;
 pub mod world;

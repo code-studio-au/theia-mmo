@@ -79,6 +79,11 @@ cargo run --locked -p theia-client -- --reference-scene build/reference-scene
 This opt-in mode needs prepared local assets; see [preparation and scope](docs/REFERENCE_SCENE.md).
 Add the usual `--connect` arguments after the asset flag for multiplayer.
 
+A bounded imported terrain patch is also playable through the authoritative
+server, with source-triangle ground height and slope checks. See
+[terrain preparation, launch commands and limits](docs/TERRAIN_WALKING.md).
+The full assembled map remains a separate visual preview.
+
 ## Check
 
 ```sh

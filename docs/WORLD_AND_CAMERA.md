@@ -68,3 +68,8 @@ back to a clear screenshot. `tools/verify_smoke.py` checks this and the original
 movement smoke. Scripted GPU runs exercise camera transforms/rendering; physical
 mouse/keyboard, OS cursor capture, resize/recovery and native Windows need separate
 manual/runtime qualification.
+
+A separate [bounded terrain walking mode](TERRAIN_WALKING.md) now uses source
+triangles, server-owned height/slope checks and sampled terrain camera clearance.
+The flat graybox and reference-scene limits above still apply to those modes;
+the full map inspector does not establish general world collision.

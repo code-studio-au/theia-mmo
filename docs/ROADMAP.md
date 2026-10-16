@@ -44,12 +44,14 @@ These are game outcomes, not a continuation of the old engine's M0–M6 schedule
 - [x] First static-world collision pass for the flat procedural scene: solid
   building, fixed door and rocks. Rendering and authority share authored geometry.
 - [x] Orbit/zoom camera, camera-relative movement and static camera obstruction.
-- [ ] Qualify general authored-world collision alongside imported assets; slopes,
-  steps, jumping and mesh colliders are not in the flat prototype.
+- [x] First bounded terrain-only walking patch: shared source triangles, server-owned
+  height/slope checks and two rendered multiplayer clients. [Scope](TERRAIN_WALKING.md).
+- [ ] Qualify general authored-world collision alongside imported assets; steps,
+  jumping and general mesh colliders remain outstanding.
   The Ruins of Lordaeron terrain and 846 top-level placements plus 624 nested props
   now have a qualified [static visual assembly](MAP_OBJECTS.md). Exported liquid
-  geometry also has a [static PBR preview](MAP_LIQUIDS.md). Server-owned terrain
-  movement and liquid gameplay remain outstanding.
+  geometry also has a [static PBR preview](MAP_LIQUIDS.md). Connecting the full
+  assembled map to reviewed world collision and liquid gameplay remains outstanding.
 - [x] First movement-driven character animation states: human stand/walk/run for
   local and remote players, alongside the existing controls/connection HUD.
 - [ ] Animation blending/combat states and the gameplay target/health/ability HUD.

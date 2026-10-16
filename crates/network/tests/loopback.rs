@@ -124,10 +124,10 @@ async fn malformed_input_closes_the_actual_connection() {
         .accept_uni()
         .await
         .unwrap()
-        .read_to_end(12)
+        .read_to_end(44)
         .await
         .unwrap();
-    assert_eq!(welcome.len(), 12);
+    assert_eq!(welcome.len(), 44);
     conn.send_datagram(b"{malformed}".as_slice().into())
         .unwrap();
     let error = timeout(Duration::from_secs(3), conn.closed())
@@ -162,13 +162,13 @@ async fn reordered_inputs_do_not_reverse_or_refresh_a_stale_intent() {
             .accept_uni()
             .await
             .unwrap()
-            .read_to_end(12)
+            .read_to_end(44)
             .await
             .unwrap()
     })
     .await
     .unwrap();
-    let id = u64::from_le_bytes(welcome[4..].try_into().unwrap());
+    let id = u64::from_le_bytes(welcome[4..12].try_into().unwrap());
     let initial = until(&mut observer.state, |s| s.players.len() == 2).await;
     connection
         .send_datagram(
@@ -251,6 +251,59 @@ async fn authoritative_world_stops_network_movement_at_the_fixed_door() {
     assert!(later.players[0].applied_sequence > contact.players[0].applied_sequence);
     client.stop.send(true).unwrap();
     client.task.await.unwrap().unwrap();
+    stop.send(true).unwrap();
+    server.await.unwrap().unwrap();
+}
+
+#[tokio::test]
+async fn terrain_height_is_authoritative_and_mismatched_world_is_rejected() {
+    use theia_network::{simulation::World, terrain::Terrain};
+    let a = [-24., -7.2, -24.];
+    let b = [24., 7.2, -24.];
+    let c = [24., 7.2, 24.];
+    let d = [-24., -7.2, 24.];
+    let data=serde_json::to_vec(&serde_json::json!({"schema":1,"source_origin":[180,34,2400],"visual_sha256":vec![0;32],"triangles":[[a,c,b],[a,d,c]]})).unwrap();
+    let terrain = Terrain::decode(&data).unwrap();
+    let identity = terrain.identity;
+    let (endpoint, cert) = tls::server("127.0.0.1:0".parse().unwrap()).unwrap();
+    let address = endpoint.local_addr().unwrap();
+    let (stop, shutdown) = watch::channel(false);
+    let server = tokio::spawn(server::run_world(
+        endpoint,
+        shutdown,
+        World::with_terrain(terrain),
+    ));
+    let wrong = connect(address, cert.clone());
+    let error = timeout(Duration::from_secs(6), wrong.task)
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap_err();
+    assert!(error.to_string().contains("world does not match"));
+    let (input, inputs) = watch::channel(Intent::default());
+    let (states, mut state) = watch::channel(State::default());
+    let (client_stop, shutdown) = watch::channel(false);
+    let client = tokio::spawn(async move {
+        client::run_in_world(address, &cert, inputs, states, shutdown, identity).await
+    });
+    until(&mut state, |s| s.players.len() == 1).await;
+    let id = state.borrow().id.unwrap();
+    let initial = state.borrow().snapshot.as_ref().unwrap().players[0].clone();
+    input.send_replace(Intent {
+        axes: [1000, 0],
+        sprint: false,
+    });
+    let later = until(&mut state, |s| {
+        s.players
+            .iter()
+            .any(|p| p.id == id && p.xz[0] > initial.xz[0] + 1.)
+    })
+    .await;
+    let player = later.players.iter().find(|p| p.id == id).unwrap();
+    assert!((player.y - (player.xz[0] * 0.3 + 0.9)).abs() < 1e-5);
+    assert!(player.y > initial.y + 0.3);
+    client_stop.send(true).unwrap();
+    client.await.unwrap().unwrap();
     stop.send(true).unwrap();
     server.await.unwrap().unwrap();
 }

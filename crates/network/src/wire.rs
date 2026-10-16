@@ -1,7 +1,7 @@
 //! Versioned, bounded datagrams. No client coordinates, elapsed time or player ID.
 use serde::{Deserialize, Serialize};
 
-pub const VERSION: u32 = 1;
+pub const VERSION: u32 = 2;
 pub const MAX_PLAYERS: usize = 8;
 pub const MAX_BYTES: usize = 1200;
 pub const TICK_HZ: u32 = 30;
@@ -41,6 +41,7 @@ impl Input {
 pub struct Player {
     pub id: u64,
     pub xz: [f32; 2],
+    pub y: f32,
     pub applied_sequence: u64,
 }
 
@@ -56,10 +57,12 @@ impl Snapshot {
         let value: Self = decode(bytes)?;
         if value.version != VERSION
             || value.players.len() > MAX_PLAYERS
-            || value
-                .players
-                .iter()
-                .any(|p| p.id == 0 || p.xz.iter().any(|v| !v.is_finite() || v.abs() > WORLD_LIMIT))
+            || value.players.iter().any(|p| {
+                p.id == 0
+                    || !p.y.is_finite()
+                    || p.y.abs() > 1024.
+                    || p.xz.iter().any(|v| !v.is_finite() || v.abs() > WORLD_LIMIT)
+            })
             || value.players.windows(2).any(|p| p[0].id >= p[1].id)
         {
             return Err("Invalid snapshot".into());
@@ -99,10 +102,10 @@ mod tests {
             assert!(Input::decode(&bytes[..len]).is_err());
         }
         for bytes in [
-            br#"{"version":1,"sequence":1,"intent":{"axes":[1001,0],"sprint":false}}"#.as_slice(),
-            br#"{"version":2,"sequence":1,"intent":{"axes":[0,0],"sprint":false}}"#,
-            br#"{"version":1,"sequence":0,"intent":{"axes":[0,0],"sprint":false}}"#,
-            br#"{"version":1,"sequence":1,"intent":{"axes":[0,0],"sprint":false},"position":[19,19]}"#,
+            br#"{"version":2,"sequence":1,"intent":{"axes":[1001,0],"sprint":false}}"#.as_slice(),
+            br#"{"version":999,"sequence":1,"intent":{"axes":[0,0],"sprint":false}}"#,
+            br#"{"version":2,"sequence":0,"intent":{"axes":[0,0],"sprint":false}}"#,
+            br#"{"version":2,"sequence":1,"intent":{"axes":[0,0],"sprint":false},"position":[19,19]}"#,
         ] { assert!(Input::decode(bytes).is_err()); }
         assert!(Input::decode(&vec![0; MAX_BYTES + 1]).is_err());
     }
@@ -116,15 +119,20 @@ mod tests {
                 .map(|id| Player {
                     id: u64::MAX - MAX_PLAYERS as u64 + id,
                     xz: [18.123456, -18.123456],
+                    y: 123.12345,
                     applied_sequence: u64::MAX,
                 })
                 .collect(),
         };
         let bytes = encode(&snapshot).unwrap();
         assert_eq!(Snapshot::decode(&bytes).unwrap(), snapshot);
-        snapshot.players.swap(0, 1);
-        assert!(Snapshot::decode(&encode(&snapshot).unwrap()).is_err());
+        let mut unordered = snapshot.clone();
+        unordered.players.swap(0, 1);
+        assert!(Snapshot::decode(&encode(&unordered).unwrap()).is_err());
         snapshot.players[0].xz[0] = 20.;
+        assert!(Snapshot::decode(&encode(&snapshot).unwrap()).is_err());
+        snapshot.players[0].xz[0] = 18.;
+        snapshot.players[0].y = 1025.;
         assert!(Snapshot::decode(&encode(&snapshot).unwrap()).is_err());
     }
 }

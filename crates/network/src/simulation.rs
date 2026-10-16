@@ -8,6 +8,7 @@ pub struct World {
     tick: u64,
     next_id: u64,
     players: BTreeMap<u64, Actor>,
+    terrain: Option<crate::terrain::Terrain>,
 }
 struct Actor {
     player: Player,
@@ -15,6 +16,17 @@ struct Actor {
     input_tick: u64,
 }
 impl World {
+    pub fn with_terrain(terrain: crate::terrain::Terrain) -> Self {
+        Self {
+            terrain: Some(terrain),
+            ..Self::default()
+        }
+    }
+    pub fn identity(&self) -> [u8; 32] {
+        self.terrain
+            .as_ref()
+            .map_or(crate::terrain::GRAYBOX_ID, |t| t.identity)
+    }
     pub fn join(&mut self) -> Option<u64> {
         if self.players.len() >= MAX_PLAYERS {
             return None;
@@ -27,6 +39,9 @@ impl World {
                 player: Player {
                     id,
                     xz: [((id - 1) % 4) as f32 * 2., 0.],
+                    y: self.terrain.as_ref().map_or(crate::world::PAWN_Y, |t| {
+                        t.spawn_y([((id - 1) % 4) as f32 * 2., 0.])
+                    }),
                     applied_sequence: 0,
                 },
                 intent: Intent::default(),
@@ -59,8 +74,15 @@ impl World {
             if self.tick - actor.input_tick > INPUT_TIMEOUT_TICKS {
                 actor.intent = Intent::default();
             }
-            actor.player.xz =
-                crate::world::move_player(actor.player.xz, actor.intent, 1. / TICK_HZ as f32);
+            if let Some(terrain) = &self.terrain {
+                actor.player.xz =
+                    terrain.move_player(actor.player.xz, actor.intent, 1. / TICK_HZ as f32);
+                actor.player.y = terrain.height(actor.player.xz).expect("Legal terrain pose")
+                    + crate::world::PAWN_Y;
+            } else {
+                actor.player.xz =
+                    crate::world::move_player(actor.player.xz, actor.intent, 1. / TICK_HZ as f32);
+            }
         }
         Snapshot {
             version: VERSION,
@@ -83,6 +105,32 @@ mod tests {
                 sprint: false,
             },
         }
+    }
+    #[test]
+    fn terrain_players_pass_through_and_snapshots_follow_surface_height() {
+        let a = [-24., -7.2, -24.];
+        let b = [24., 7.2, -24.];
+        let c = [24., 7.2, 24.];
+        let d = [-24., -7.2, 24.];
+        let bytes=serde_json::to_vec(&serde_json::json!({"schema":1,"source_origin":[0,0,0],"visual_sha256":vec![0;32],"triangles":[[a,c,b],[a,d,c]]})).unwrap();
+        let mut world = World::with_terrain(crate::terrain::Terrain::decode(&bytes).unwrap());
+        let a = world.join().unwrap();
+        let b = world.join().unwrap();
+        let mut crossed = false;
+        for sequence in 1..=30 {
+            world.input(b, moving(sequence, [-1000, 0]));
+            let s = world.step();
+            for p in &s.players {
+                assert!((p.y - (p.xz[0] * 0.3 + 0.9)).abs() < 1e-5);
+            }
+            let first = s.players.iter().find(|p| p.id == a).unwrap();
+            let second = s.players.iter().find(|p| p.id == b).unwrap();
+            crossed |= (second.xz[0] - first.xz[0]).abs() < 0.1;
+            if sequence == 30 {
+                assert!(second.xz[0] < first.xz[0] - 2.9);
+            }
+        }
+        assert!(crossed, "Players share terrain without blocking each other");
     }
     #[test]
     fn speed_diagonal_stale_timeout_and_bounds_are_server_owned() {

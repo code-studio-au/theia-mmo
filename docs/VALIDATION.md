@@ -296,3 +296,39 @@ with active Vulkan validation. Saved PNGs are inspected; pre-readiness captures
 are retained as rejected evidence. Twenty-seven Rust tests, 22 Python asset-tool
 tests, format, denied-warning Clippy and build pass. Water rendering remains a
 static material preview; terrain movement, water gameplay and native Windows are open.
+
+## Bounded authoritative terrain walking — 2026-10-16
+
+[Terrain walking qualification](TERRAIN_WALKING.md) connects a small source-map
+patch to the existing Rust authority and two independent Bevy clients. Six textured
+parts / 576 source triangles produce a 15,299,184-byte GLB and an exact matching
+triangle profile. Strict Khronos validation has zero errors/warnings/infos and
+21 optional-buffer-target hints. Actual prepared visual/profile triangles compare
+bit-for-bit at float32 precision. Original OBJ/MTL/PNG hashes remain unchanged.
+
+The server determines ground height and sampled slope/boundary legality. Wire
+version/ALPN 2 adds authoritative Y and a world identity, while retaining bounded
+intent-only inputs. Real QUIC tests check changing height and mismatched-world
+rejection. Player overlap/pass-through also passes on sloped terrain. Thirty-two
+Rust tests, 24 Python asset-tool tests, formatting, denied-warning all-target Clippy
+and build pass.
+
+Final native checks launch six actual GPU clients in three independent two-client/
+server runs: terrain patch, procedural graybox and the existing human/wolf/farmhouse
+reference scene. All run on RX 7900 XTX / RADV with actual Khronos Vulkan validation
+active, no VUIDs/validation errors/panics, compiled render pipelines and saved
+1280x720 PNGs. Local/remote XYZ agrees with authority. A separate Python triangle
+interpolator checks terrain ground heights, and both players change server-owned Y.
+Both final terrain PNGs are inspected. Existing reference actors still enter
+walking animation. Final executable hashes are recorded by each verifier.
+
+Evidence: ignored `build/qualification/terrain-walking/`, including `world/`,
+`geometry.json`, `validator.json`, test/build/lint logs and
+`native-final/{terrain,graybox,reference}/`. Earlier and interrupted native runs
+remain separate from these final accepted reports. The private display harness
+is a host qualification tool; no old-engine code/runtime dependency is added.
+
+This qualifies a bounded terrain-only fixture with capsule actors, sampled square
+clearance and a terrain camera. General static-object mesh clearance, animated
+actors on this patch, interiors, steps/jumping/falling, full-map gameplay, water
+rules, scale/performance, adverse networks and native Windows remain open.

@@ -22,8 +22,16 @@ struct Peer {
 }
 
 /// One authority owns the world. Each connection has one superseding input slot.
-pub async fn run(endpoint: Endpoint, mut shutdown: watch::Receiver<bool>) -> Result<()> {
-    let mut world = World::default();
+pub async fn run(endpoint: Endpoint, shutdown: watch::Receiver<bool>) -> Result<()> {
+    run_world(endpoint, shutdown, World::default()).await
+}
+
+pub async fn run_world(
+    endpoint: Endpoint,
+    mut shutdown: watch::Receiver<bool>,
+    mut world: World,
+) -> Result<()> {
+    let identity = world.identity();
     let mut peers = BTreeMap::<u64, Peer>::new();
     let (joins_tx, mut joins) = mpsc::channel::<Join>(MAX_PLAYERS);
     let permits = Arc::new(Semaphore::new(MAX_PLAYERS));
@@ -63,7 +71,7 @@ pub async fn run(endpoint: Endpoint, mut shutdown: watch::Receiver<bool>) -> Res
                 let joins = joins_tx.clone();
                 sessions.spawn(async move {
                     let _permit = permit;
-                    if let Err(error) = session(incoming, joins).await { eprintln!("session_end: {error}"); }
+                    if let Err(error) = session(incoming, joins, identity).await { eprintln!("session_end: {error}"); }
                 });
             }
             Some(_) = sessions.join_next(), if !sessions.is_empty() => {}
@@ -75,7 +83,11 @@ pub async fn run(endpoint: Endpoint, mut shutdown: watch::Receiver<bool>) -> Res
     Ok(())
 }
 
-async fn session(incoming: quinn::Incoming, joins: mpsc::Sender<Join>) -> Result<()> {
+async fn session(
+    incoming: quinn::Incoming,
+    joins: mpsc::Sender<Join>,
+    identity: [u8; 32],
+) -> Result<()> {
     let connection = tokio::time::timeout(Duration::from_secs(5), incoming).await??;
     let (inputs_tx, inputs) = watch::channel(None);
     let (welcome, id) = oneshot::channel();
@@ -90,6 +102,7 @@ async fn session(incoming: quinn::Incoming, joins: mpsc::Sender<Join>) -> Result
     let mut stream = connection.open_uni().await?;
     let mut welcome = VERSION.to_le_bytes().to_vec();
     welcome.extend(id.to_le_bytes());
+    welcome.extend(identity);
     stream.write_all(&welcome).await?;
     stream.finish()?;
     let mut latest = 0;

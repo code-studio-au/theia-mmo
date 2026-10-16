@@ -45,3 +45,9 @@ reflected type registration. A separate visual inspector preserves source scale
 and never establishes server collision. The user's supplied house is a local
 compatibility reference; it is not original Theia world content. Current import
 scope and source provenance are recorded in [ASSET_IMPORT.md](ASSET_IMPORT.md).
+
+A bounded terrain-only walking fixture now qualifies authoritative ground height
+and sampled slope clearance using the same source triangles as its visual GLB.
+It is an opt-in implementation slice, with world consistency in wire version 2,
+not approval of general mesh physics or a new cooked-world architecture. See
+[TERRAIN_WALKING.md](TERRAIN_WALKING.md).

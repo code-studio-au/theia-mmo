@@ -4,7 +4,9 @@ The exported map now includes 30 static liquid patches using the source heights
 and cell visibility masks. They use a generic translucent blue PBR material for
 geometry inspection. This does not implement swimming, buoyancy, liquid collision,
 source-game liquid textures, refraction, animated waves or gameplay liquid rules.
-The authoritative world remains the existing flat walking scene.
+This full assembled map remains a visual preview. A separate
+[terrain-only walking patch](TERRAIN_WALKING.md) now qualifies authoritative ground
+height; it contains no liquids.
 
 ## View or reproduce
 

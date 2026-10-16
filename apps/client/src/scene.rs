@@ -19,18 +19,21 @@ pub fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
     network: Option<Res<crate::network::Network>>,
     references: Option<Res<crate::reference_scene::Config>>,
+    terrain: Option<Res<crate::terrain_scene::Config>>,
 ) {
     let grass = materials.add(Color::srgb(0.16, 0.35, 0.17));
     let road = materials.add(Color::srgb(0.48, 0.40, 0.29));
     let stone = materials.add(Color::srgb(0.45, 0.49, 0.54));
     let wood = materials.add(Color::srgb(0.42, 0.22, 0.10));
-    commands.spawn((
-        Mesh3d(meshes.add(Plane3d::default().mesh().size(40., 40.))),
-        MeshMaterial3d(grass),
-    ));
+    if terrain.is_none() {
+        commands.spawn((
+            Mesh3d(meshes.add(Plane3d::default().mesh().size(40., 40.))),
+            MeshMaterial3d(grass),
+        ));
+    }
     let unit_box = meshes.add(Cuboid::new(1., 1., 1.));
     for (index, prop) in theia_network::world::PROPS.into_iter().enumerate() {
-        if references.is_some() && (2..=4).contains(&index) {
+        if terrain.is_some() || (references.is_some() && (2..=4).contains(&index)) {
             continue;
         }
         let material = match prop.surface {
@@ -84,7 +87,7 @@ pub fn setup(
     ));
     commands.spawn((
         Camera3d::default(),
-        if references.is_some() {
+        if references.is_some() || terrain.is_some() {
             Tonemapping::Reinhard
         } else {
             Tonemapping::None

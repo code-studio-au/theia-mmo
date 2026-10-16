@@ -112,6 +112,8 @@ reports/logs/PNGs. Inputs and large third-party assets are not added to Git.
 Update: [liquid geometry and capture readiness](MAP_LIQUIDS.md) now have a separate
 qualified preview. This report's original static-object evidence is retained.
 
-Next: add server-owned terrain movement and reviewed
-static-world clearance/camera obstruction before using the map for multiplayer.
+A subsequent [terrain-only patch](TERRAIN_WALKING.md) now qualifies server-owned
+height/slope movement and sampled terrain camera clearance. Reviewed static object
+clearance and broader map collision are still required before using this full
+assembly for multiplayer.
 The flat procedural world and separate human/wolf/farmhouse scene remain available.

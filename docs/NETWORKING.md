@@ -11,7 +11,7 @@ The server advances the shared XZ world at 30 Hz using its own clock. Each playe
 has a server-assigned, increasing ID, a position and a latest movement intent.
 Players have no blocking collision with each other and must also pass through
 NPCs when those are added. NPC targeting/hit checks remain separate. There are no
-NPC entities in this slice yet. The ground is flat at Y=0.9
+NPC entities in this slice yet. The default/reference ground is flat at Y=0.9
 for the capsule centre; world bounds are XZ +/-19. Solid building/door/rock boxes
 now block movement through the shared [static layout](WORLD_AND_CAMERA.md).
 Players and NPCs are excluded from environment collision.
@@ -25,10 +25,11 @@ Camera-relative controls produce world-space intent axes on the client; the serv
 still owns movement and collision. Camera angles are not sent.
 
 Quinn QUIC DATAGRAM carries superseding inputs and full snapshots; one reliable
-server-to-client unidirectional stream sends version and assigned ID. The ALPN is
-`theia-mmo-walk-1`; JSON datagrams have version 1, a 1200-byte maximum and reject
+server-to-client unidirectional stream sends version, assigned ID and a 32-byte
+world identity. Snapshots now also include authoritative Y. The ALPN is
+`theia-mmo-walk-2`; JSON datagrams have version 2, a 1200-byte maximum and reject
 unknown fields. Full snapshots have bounded, sorted unique IDs and finite bounded
-positions. This is a new prototype wire format, not compatibility with old Theia
+positions (XZ +/-19, Y +/-1024). This is a new prototype wire format, not compatibility with old Theia
 Engine protocols. No cross-repository dependencies exist.
 
 Each connection has one latest-input mailbox; the Bevy bridge also uses bounded
@@ -67,3 +68,9 @@ replication schema and benchmark machinery were not imported. The old repo remai
 independent and is not needed to build/run this workspace.
 
 Run commands and actual qualification evidence belong in README and VALIDATION.
+
+An optional [terrain walking fixture](TERRAIN_WALKING.md) now uses the same authority
+and transport with source-triangle height and slope checks. The welcome identifies
+the exact terrain profile/visual pair, rejecting mismatched clients. Graybox and
+reference-art clients explicitly request the default world identity. Version-1
+executables must be rebuilt; their ALPN and snapshots are incompatible.
