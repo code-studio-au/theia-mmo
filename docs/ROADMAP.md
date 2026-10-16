@@ -30,10 +30,14 @@ These are game outcomes, not a continuation of the old engine's M0–M6 schedule
 
 - Qualify Bevy's ordinary glTF/GLB model and animation loading with an original or
   appropriately licensed character, terrain, building and props.
-- Add world collision, character animation states and an ordinary game HUD.
+- [x] First static-world collision pass for the flat procedural scene: solid
+  building, fixed door and rocks. Rendering and authority share authored geometry.
+- [x] Orbit/zoom camera, camera-relative movement and static camera obstruction.
+- [ ] Qualify general authored-world collision alongside imported assets; slopes,
+  steps, jumping and mesh colliders are not in the flat prototype.
+- [ ] Character animation states and an ordinary gameplay HUD.
   Environment geometry stays static, including doors. Players do not physically
   collide with either players or NPCs; targeting/hit detection is separate.
-- Add orbit/follow camera controls suitable for the third-person game direction.
 - Define an asset layout and stable game identifiers; avoid custom cooked formats
   until a measured requirement needs them.
 - Verify the same small scene and connection flow on native Windows.

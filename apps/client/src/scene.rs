@@ -28,38 +28,23 @@ pub fn setup(
         MeshMaterial3d(grass),
     ));
     let unit_box = meshes.add(Cuboid::new(1., 1., 1.));
-    for (position, size, material) in [
-        (
-            Vec3::new(0., 0.015, 0.),
-            Vec3::new(3., 0.03, 40.),
-            road.clone(),
-        ),
-        (Vec3::new(0., 0.016, -5.), Vec3::new(40., 0.03, 3.), road),
-        (
-            Vec3::new(-7., 1.5, -7.),
-            Vec3::new(4., 3., 4.),
-            stone.clone(),
-        ),
-        (
-            Vec3::new(-7., 3.2, -7.),
-            Vec3::new(4.6, 0.4, 4.6),
-            wood.clone(),
-        ),
-        (Vec3::new(-7., 0.7, -4.95), Vec3::new(0.8, 1.4, 0.12), wood),
-        (
-            Vec3::new(8., 0.6, 4.),
-            Vec3::new(1.8, 1.2, 1.3),
-            stone.clone(),
-        ),
-        (Vec3::new(10., 0.4, 6.), Vec3::new(1.2, 0.8, 1.8), stone),
-    ] {
+    for prop in theia_network::world::PROPS {
+        let material = match prop.surface {
+            theia_network::world::Surface::Road => road.clone(),
+            theia_network::world::Surface::Stone => stone.clone(),
+            theia_network::world::Surface::Wood => wood.clone(),
+        };
         commands.spawn((
             Mesh3d(unit_box.clone()),
             MeshMaterial3d(material),
-            Transform::from_translation(position).with_scale(size),
+            Transform::from_translation(Vec3::from_array(prop.center))
+                .with_scale(Vec3::from_array(prop.size)),
         ));
     }
-    let capsule = meshes.add(Capsule3d::new(0.35, 1.1));
+    let capsule = meshes.add(Capsule3d::new(
+        theia_network::world::PAWN_RADIUS,
+        theia_network::world::PAWN_HEIGHT - 2. * theia_network::world::PAWN_RADIUS,
+    ));
     commands.insert_resource(PawnAssets {
         mesh: capsule.clone(),
         remote: materials.add(Color::srgb(0.95, 0.25, 0.12)),
@@ -101,7 +86,7 @@ pub fn setup(
         BackgroundColor(Color::srgba(0.02, 0.03, 0.05, 0.9)),
     )).with_child((
         NetworkHud,
-        Text::new(if network.is_some() { "THEIA\nConnecting to local server...\nEsc: quit" } else { "THEIA\nLocal movement sandbox\nWASD / arrows: move | Shift: run\nR: reset | Esc: quit" }),
+        Text::new(if network.is_some() { "THEIA\nConnecting to local server...\nEsc: quit" } else { "THEIA\nLocal movement sandbox\nWASD / arrows: move | Shift: run\nR: reset | Esc: quit\nHold RMB: orbit | Wheel: zoom | Home: camera reset" }),
         TextFont { font_size: FontSize::Px(18.), ..default() },
         TextColor(Color::WHITE),
     ));

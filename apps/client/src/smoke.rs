@@ -16,14 +16,20 @@ pub struct Run {
     pub frame: u32,
     output: PathBuf,
     checkpoints: Vec<Value>,
+    world: bool,
+    camera_checks: Vec<Value>,
 }
 impl Run {
+    pub fn world(&self) -> bool {
+        self.world
+    }
     pub fn from_args(
         mut args: impl Iterator<Item = String>,
     ) -> Result<Option<Self>, Box<dyn std::error::Error>> {
         match args.next().as_deref() {
             None => Ok(None),
-            Some("--smoke-test") => {
+            Some(mode @ ("--smoke-test"|"--world-smoke")) => {
+                let world=mode=="--world-smoke";
                 let output = PathBuf::from(
                     args.next()
                         .ok_or("--smoke-test needs an output directory")?,
@@ -42,10 +48,12 @@ impl Run {
                     frame: 0,
                     output,
                     checkpoints: Vec::new(),
+                    world,
+                    camera_checks:Vec::new(),
                 }))
             }
             Some(arg) => Err(format!(
-                "Unknown argument {arg}; use --smoke-test <directory> or no arguments"
+                "Unknown argument {arg}; use --smoke-test <directory>, --world-smoke <directory> or no arguments"
             )
             .into()),
         }
@@ -57,8 +65,14 @@ pub fn observe(
     mut run: ResMut<Run>,
     pawn: Query<&Transform, With<LocalPawn>>,
     adapter: Res<RenderAdapterInfo>,
+    camera: Query<&Transform, (With<Camera3d>, Without<LocalPawn>)>,
+    orbit: Res<crate::camera::Orbit>,
 ) {
-    if matches!(run.frame, 59 | 119 | 179) {
+    if if run.world {
+        matches!(run.frame, 59 | 143 | 263)
+    } else {
+        matches!(run.frame, 59 | 119 | 179)
+    } {
         let position = pawn
             .single()
             .expect("One local pawn")
@@ -68,9 +82,17 @@ pub fn observe(
         run.checkpoints
             .push(json!({"frame":frame,"position":position}));
     }
-    if run.frame == 239 {
+    if run.world && matches!(run.frame, 279 | 298) {
+        let target = pawn.single().unwrap().translation;
+        let eye = camera.single().unwrap().translation;
+        let frame = run.frame;
+        run.camera_checks.push(json!({"frame":frame,"eye":eye.to_array(),"target":target.to_array(),"distance":eye.distance(target),"yaw":orbit.yaw}));
+    }
+    if run.frame == if run.world { 299 } else { 239 } {
         let output = run.output.clone();
         let checkpoints = run.checkpoints.clone();
+        let mode = if run.world { "world" } else { "movement" };
+        let camera_checks = run.camera_checks.clone();
         let gpu = json!({"name":adapter.name,"backend":format!("{:?}",adapter.backend),"device_id":adapter.device});
         let capture = move |event: On<ScreenshotCaptured>, mut exit: MessageWriter<AppExit>| {
             event
@@ -82,9 +104,10 @@ pub fn observe(
                 .expect("Save screenshot");
             let report = json!({
                 "schema": 1, "completed": true, "offline": true,
+                "mode":mode,"camera_checks":camera_checks,
                 "checkpoints": checkpoints, "gpu": gpu,
                 "extent": [event.image.width(), event.image.height()],
-                "scope": "scripted local movement; rendered screenshot; no networking, collision, animation or gameplay authority"
+                "scope": "offline scripted movement/static-world collision and camera; real rendered screenshot; no network authority or imported geometry qualification"
             });
             std::fs::write(
                 output.join("report.json"),

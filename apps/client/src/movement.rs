@@ -1,10 +1,7 @@
 //! Temporary offline presentation movement, intentionally not server authority.
 use bevy::prelude::*;
 
-pub const START: Vec3 = Vec3::new(0., 0.9, 0.);
-const WALK_SPEED: f32 = 5.;
-const RUN_SPEED: f32 = 8.;
-const WORLD_LIMIT: f32 = 19.;
+pub const START: Vec3 = Vec3::new(0., theia_network::world::PAWN_Y, 0.);
 
 #[derive(Component)]
 pub struct LocalPawn;
@@ -25,11 +22,21 @@ pub fn move_local_pawn(
         return;
     }
     let direction = intent.direction.clamp_length_max(1.);
-    let speed = if intent.sprint { RUN_SPEED } else { WALK_SPEED };
+    let intent = theia_network::wire::Intent {
+        axes: [
+            (intent.direction.x.clamp(-1., 1.) * 1000.) as i16,
+            (intent.direction.y.clamp(-1., 1.) * 1000.) as i16,
+        ],
+        sprint: intent.sprint,
+    };
     for mut pawn in &mut pawns {
-        pawn.translation += Vec3::new(direction.x, 0., direction.y) * speed * time.delta_secs();
-        pawn.translation.x = pawn.translation.x.clamp(-WORLD_LIMIT, WORLD_LIMIT);
-        pawn.translation.z = pawn.translation.z.clamp(-WORLD_LIMIT, WORLD_LIMIT);
+        let xz = theia_network::world::move_player(
+            [pawn.translation.x, pawn.translation.z],
+            intent,
+            time.delta_secs(),
+        );
+        pawn.translation.x = xz[0];
+        pawn.translation.z = xz[1];
         if direction != Vec2::ZERO {
             pawn.rotation = Quat::from_rotation_y((-direction.x).atan2(-direction.y));
         }
@@ -40,6 +47,7 @@ pub fn move_local_pawn(
 mod tests {
     use super::*;
     use std::time::Duration;
+    use theia_network::wire::WORLD_LIMIT;
 
     fn simulate(direction: Vec2, sprint: bool, hz: u32, ticks: u32) -> Vec3 {
         let mut app = App::new();

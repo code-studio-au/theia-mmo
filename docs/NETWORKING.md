@@ -12,13 +12,17 @@ has a server-assigned, increasing ID, a position and a latest movement intent.
 Players have no blocking collision with each other and must also pass through
 NPCs when those are added. NPC targeting/hit checks remain separate. There are no
 NPC entities in this slice yet. The ground is flat at Y=0.9
-for the capsule centre; world bounds are XZ +/-19. Props have no collision yet.
+for the capsule centre; world bounds are XZ +/-19. Solid building/door/rock boxes
+now block movement through the shared [static layout](WORLD_AND_CAMERA.md).
+Players and NPCs are excluded from environment collision.
 
 Clients send integer axes in [-1000,1000], a sprint flag and a sequence number.
 They cannot send a player identity, position, speed or elapsed time. The server
 normalizes diagonal movement, owns walk/run speeds (5/8 units per second), clamps
 bounds and drops stale sequences. Extra packets do not advance simulation. After
 ten ticks without a fresh intent the server stops that player's movement.
+Camera-relative controls produce world-space intent axes on the client; the server
+still owns movement and collision. Camera angles are not sent.
 
 Quinn QUIC DATAGRAM carries superseding inputs and full snapshots; one reliable
 server-to-client unidirectional stream sends version and assigned ID. The ALPN is

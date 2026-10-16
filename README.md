@@ -5,7 +5,8 @@ Two clients can now move together in a small world controlled by a Rust server.
 
 The current application is a **local multiplayer walking prototype**: original
 graybox geometry, a lit scene, capsule players, follow camera and keyboard controls.
-Combat, quests, collision and persistence are still future work. See [status](docs/STATUS.md),
+Static graybox collision and an orbit camera are implemented; combat, quests and
+persistence are still future work. See [status](docs/STATUS.md),
 [decisions](docs/DECISIONS.md) and the [playable roadmap](docs/ROADMAP.md).
 
 ## Run
@@ -40,13 +41,15 @@ clients after restarting the server. These executables currently accept loopback
 addresses only; there is no account authentication or session resume.
 
 WASD/arrows move, Shift runs, Escape exits. R resets only in offline mode.
-Movement follows world XZ with Y up and a fixed follow camera. Props have no
-collision yet. The server owns connected movement; local prediction is not yet
-implemented. See [network behaviour/provenance](docs/NETWORKING.md) and
+Hold right mouse to orbit, wheel to zoom and Home to reset the camera. Movement
+follows camera yaw in world XZ with Y up. The building, fixed door and rocks block
+movement; the camera pulls in around static scenery. The server owns connected
+movement; local prediction is not yet implemented.
+See [world/camera scope](docs/WORLD_AND_CAMERA.md), [network behaviour/provenance](docs/NETWORKING.md) and
 [game direction](docs/GAME_DIRECTION.md).
 
 Environment items stay static, including doors. Players pass through other players
-and NPCs; future world collision and combat hit detection are separate systems.
+and NPCs; environment collision and combat hit detection are separate systems.
 
 ## Check
 
@@ -67,6 +70,14 @@ With Python 3 and Pillow installed, check its output using
 `python3 tools/verify_smoke.py build/smoke`. See the [local qualification record](docs/VALIDATION.md).
 After building, `target/debug/theia-client` (or `theia-client.exe` on Windows)
 also launches the sandbox directly.
+
+The static-world smoke walks into the fixed door, records camera obstruction and
+restoration, then saves a clear orbit view:
+
+```sh
+cargo run --locked -p theia-client -- --world-smoke build/world-smoke
+python3 tools/verify_smoke.py build/world-smoke
+```
 
 After building, run the actual two-client/server smoke test on a graphical display
 (or an independently prepared private headless compositor):

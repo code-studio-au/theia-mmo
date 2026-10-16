@@ -124,3 +124,42 @@ python3 tools/verify_multiplayer.py build/multiplayer
 The tool requires Python 3/Pillow, launches/cleans up its own server and clients,
 and checks diagnostic logs as well as received state and real screenshots. The
 reusable smoke is not a performance or latency benchmark.
+
+## Static-world and camera qualification — 2026-10-16
+
+The renderer and server now use one immutable graybox box layout. The server owns
+collision against the solid building, fixed door and rocks; players remain
+nonblocking. This is conservative flat-ground clearance with X/Z wall sliding,
+not general terrain physics. The local camera supports right-drag orbit, wheel
+zoom, Home reset, camera-relative movement and static-box obstruction.
+
+Eighteen workspace tests pass (six client, eight shared/core, four real QUIC).
+New checks cover obstacle sweeps in both directions, sliding/retreat, clear roads,
+camera obstruction/recovery, angle/zoom limits, rotated movement including
+diagonals, cursor release on focus loss and close-body hiding/restoration. The new
+transport test keeps submitting fresh movement into the door; snapshots remain
+at contact while acknowledged input sequences advance.
+
+Formatting, denied-warning all-target Clippy and workspace build pass. Native
+Wayland/Weston headless GL on the same RX 7900 XTX / RADV device passes:
+
+- The real server/two-client rendered smoke, with matching authoritative poses.
+- The original offline movement smoke with unchanged expected checkpoints.
+- The new `--world-smoke`: pawn reaches approximately `(-7,0.9,-4.54)` at the
+  fixed door, camera retracts to approximately 0.232 units when pointed into the
+  building, then restores to 10 units after orbiting away. A real 1280x720 PNG is
+  saved and visually inspected; it shows the pawn outside the fixed door.
+
+All four client processes prove Vulkan validation activation through loader
+insertion logs, with no validation errors, VUIDs, renderer errors or panics. The
+existing benign window-decoration warning remains. Ignored local evidence lives
+under `build/qualification/static-world/`: test/lint/build logs and native reports,
+PNGs, loader logs and artifact hashes. No dependency or hardware changes were
+needed. The private host compositor harness remains a qualification tool only.
+
+The camera's native test scripts angles/zoom and records CPU transforms. OS cursor
+capture and physical mouse/keyboard operation are covered only by resource/system
+tests, not manual native interaction. Native Windows, imported terrain/collision,
+slopes/steps/jumps, jitter/loss and local prediction remain unqualified. No NPCs
+exist yet; NPC nonblocking remains a requirement. Static environment items have no
+opening, movement or destruction.

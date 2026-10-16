@@ -30,6 +30,10 @@ pub struct Smoke {
     capture_requested: bool,
 }
 impl Network {
+    pub fn connected(&self) -> bool {
+        let state = self.state.borrow();
+        state.snapshot.is_some() && state.error.is_none()
+    }
     pub fn from_args(args: &[String]) -> Result<Self, Box<dyn std::error::Error>> {
         let smoke = args.first().is_some_and(|arg| arg == "--network-smoke");
         if (!smoke && args.len() != 3) || (smoke && args.len() != 5) {
@@ -167,7 +171,7 @@ pub fn present(
         let id = state.id.expect("Snapshot requires welcome");
         if let Ok(mut text) = hud.single_mut() {
             **text = format!(
-                "THEIA | server authority\nPlayer {id} | {} connected | tick {}\nWASD / arrows: move | Shift: run | Esc: quit",
+                "THEIA | server authority\nPlayer {id} | {} connected | tick {}\nWASD / arrows: move | Shift: run | Esc: quit\nHold RMB: orbit | Wheel: zoom | Home: camera reset",
                 snapshot.players.len(),
                 snapshot.tick
             );
@@ -182,7 +186,7 @@ pub fn present(
                 }
             }
             for player in &snapshot.players {
-                let position = Vec3::new(player.xz[0], 0.9, player.xz[1]);
+                let position = Vec3::new(player.xz[0], theia_network::world::PAWN_Y, player.xz[1]);
                 if player.id == id {
                     if let Ok((mut transform, mut visibility)) = local.single_mut() {
                         *visibility = Visibility::Inherited;

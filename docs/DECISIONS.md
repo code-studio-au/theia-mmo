@@ -32,3 +32,8 @@ for the intended gameplay and first starting-zone loop. The implementation uses
 original content and standard Bevy systems; these targets do not imply existing
 combat, quests or WoW asset compatibility. Local networking choices and reviewed
 code provenance are documented in [NETWORKING.md](NETWORKING.md).
+
+The graybox now has a single shared geometry definition for rendering and server
+collision, with a flat-ground box sweep and a local orbit camera. This qualifies
+only the current scene, not general terrain physics. Scope and limitations are
+recorded in [WORLD_AND_CAMERA.md](WORLD_AND_CAMERA.md).

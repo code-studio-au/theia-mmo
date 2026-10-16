@@ -1,5 +1,5 @@
 //! Server-only fixed-step authority. Inputs never choose timestep, speed or position.
-use crate::wire::{Input, Intent, MAX_PLAYERS, Player, Snapshot, TICK_HZ, VERSION, WORLD_LIMIT};
+use crate::wire::{Input, Intent, MAX_PLAYERS, Player, Snapshot, TICK_HZ, VERSION};
 use std::collections::BTreeMap;
 
 pub const INPUT_TIMEOUT_TICKS: u64 = 10;
@@ -59,13 +59,8 @@ impl World {
             if self.tick - actor.input_tick > INPUT_TIMEOUT_TICKS {
                 actor.intent = Intent::default();
             }
-            let axes = actor.intent.axes.map(|v| f32::from(v) / 1000.);
-            let length = axes[0].hypot(axes[1]).max(1.);
-            let speed = if actor.intent.sprint { 8. } else { 5. };
-            for (position, axis) in actor.player.xz.iter_mut().zip(axes) {
-                *position = (*position + axis / length * speed / TICK_HZ as f32)
-                    .clamp(-WORLD_LIMIT, WORLD_LIMIT);
-            }
+            actor.player.xz =
+                crate::world::move_player(actor.player.xz, actor.intent, 1. / TICK_HZ as f32);
         }
         Snapshot {
             version: VERSION,
@@ -78,6 +73,7 @@ impl World {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::wire::WORLD_LIMIT;
     fn moving(sequence: u64, axes: [i16; 2]) -> Input {
         Input {
             version: VERSION,

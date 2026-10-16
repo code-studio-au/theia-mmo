@@ -1,4 +1,5 @@
 //! Bevy presentation: offline sandbox or server-owned multiplayer walking.
+mod camera;
 mod movement;
 mod network;
 mod scene;
@@ -28,6 +29,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     app.insert_resource(ClearColor(Color::srgb(0.16, 0.23, 0.33)))
         .insert_resource(Time::<Fixed>::from_hz(60.))
         .init_resource::<MoveIntent>()
+        .init_resource::<camera::Orbit>()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 title: "Theia MMO — movement sandbox".into(),
@@ -37,17 +39,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             ..default()
         }))
         .add_systems(Startup, scene::setup)
-        .add_systems(PreUpdate, input.after(bevy::input::InputSystems))
+        .add_systems(
+            PreUpdate,
+            (camera::controls, input)
+                .chain()
+                .after(bevy::input::InputSystems),
+        )
         .add_systems(FixedUpdate, movement::move_local_pawn);
     if let Some(net) = net {
         app.insert_resource(net)
             .add_systems(
                 Update,
-                (network::send_input, network::present, follow_camera).chain(),
+                (network::send_input, network::present, camera::follow).chain(),
             )
             .add_systems(Last, network::capture);
     } else {
-        app.add_systems(Update, follow_camera);
+        app.add_systems(Update, camera::follow);
     }
     if let Some(run) = smoke {
         app.insert_resource(run)
@@ -70,39 +77,38 @@ fn input(
     network: Option<Res<network::Network>>,
     mut pawn: Query<&mut Transform, With<LocalPawn>>,
     mut exit: MessageWriter<AppExit>,
+    orbit: Res<camera::Orbit>,
 ) {
     if keys.just_pressed(KeyCode::Escape) {
         exit.write(AppExit::Success);
     }
     if let Some(run) = smoke {
-        intent.direction = match run.frame {
-            60..120 => Vec2::NEG_Y,
-            120..180 => Vec2::X,
-            _ => Vec2::ZERO,
+        intent.direction = if run.world() {
+            match run.frame {
+                60..144 => Vec2::NEG_X,
+                144..264 => Vec2::NEG_Y,
+                _ => Vec2::ZERO,
+            }
+        } else {
+            match run.frame {
+                60..120 => Vec2::NEG_Y,
+                120..180 => Vec2::X,
+                _ => Vec2::ZERO,
+            }
         };
         intent.sprint = false;
         return;
     }
     let held = |a, b| f32::from(u8::from(keys.pressed(a) || keys.pressed(b)));
-    intent.direction = Vec2::new(
+    intent.direction = orbit.world_direction(Vec2::new(
         held(KeyCode::KeyD, KeyCode::ArrowRight) - held(KeyCode::KeyA, KeyCode::ArrowLeft),
         held(KeyCode::KeyS, KeyCode::ArrowDown) - held(KeyCode::KeyW, KeyCode::ArrowUp),
-    );
+    ));
     intent.sprint = keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight);
     if network.is_none()
         && keys.just_pressed(KeyCode::KeyR)
         && let Ok(mut pawn) = pawn.single_mut()
     {
         pawn.translation = movement::START;
-    }
-}
-
-fn follow_camera(
-    pawn: Query<&Transform, With<LocalPawn>>,
-    mut camera: Query<&mut Transform, (With<Camera3d>, Without<LocalPawn>)>,
-) {
-    if let (Ok(pawn), Ok(mut camera)) = (pawn.single(), camera.single_mut()) {
-        *camera = Transform::from_translation(pawn.translation + Vec3::new(0., 7., 12.))
-            .looking_at(pawn.translation, Vec3::Y);
     }
 }

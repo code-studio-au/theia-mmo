@@ -226,3 +226,31 @@ async fn reordered_inputs_do_not_reverse_or_refresh_a_stale_intent() {
     stop.send(true).unwrap();
     server.await.unwrap().unwrap();
 }
+
+#[tokio::test]
+async fn authoritative_world_stops_network_movement_at_the_fixed_door() {
+    let (endpoint, cert) = tls::server("127.0.0.1:0".parse().unwrap()).unwrap();
+    let address = endpoint.local_addr().unwrap();
+    let (stop, shutdown) = watch::channel(false);
+    let server = tokio::spawn(server::run(endpoint, shutdown));
+    let mut client = connect(address, cert);
+    until(&mut client.state, |s| s.players.len() == 1).await;
+    client.input.send_replace(Intent {
+        axes: [-1000, 0],
+        sprint: false,
+    });
+    until(&mut client.state, |s| s.players[0].xz[0] <= -6.6).await;
+    client.input.send_replace(Intent {
+        axes: [0, -1000],
+        sprint: false,
+    });
+    let contact = until(&mut client.state, |s| s.players[0].xz[1] <= -4.53).await;
+    assert!((contact.players[0].xz[1] + 4.54).abs() < 0.0001);
+    let later = until(&mut client.state, |s| s.tick > contact.tick + 12).await;
+    assert_eq!(later.players[0].xz, contact.players[0].xz);
+    assert!(later.players[0].applied_sequence > contact.players[0].applied_sequence);
+    client.stop.send(true).unwrap();
+    client.task.await.unwrap().unwrap();
+    stop.send(true).unwrap();
+    server.await.unwrap().unwrap();
+}
