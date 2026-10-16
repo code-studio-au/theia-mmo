@@ -131,7 +131,11 @@ pub fn follow(
 ) {
     if let (Ok((pawn, mut visible)), Ok(mut camera)) = (pawn.single_mut(), camera.single_mut()) {
         let eye = if let Some(terrain) = terrain {
-            let desired = orbit.unobstructed_eye(pawn.translation);
+            let desired = if network.as_ref().is_some_and(|n| n.camera_test_blocked()) {
+                pawn.translation + Vec3::new(0., 7., -12.)
+            } else {
+                orbit.unobstructed_eye(pawn.translation)
+            };
             let fraction = terrain
                 .terrain
                 .camera_fraction(pawn.translation.to_array(), desired.to_array());

@@ -68,7 +68,6 @@ pub fn move_player(mut position: [f32; 2], intent: Intent, seconds: f32) -> [f32
     let speed = if intent.sprint { 8. } else { 5. };
     let delta = axes.map(|axis| axis / length * speed * seconds);
     for axis in 0..2 {
-        let other = 1 - axis;
         let mut end = (position[axis] + delta[axis]).clamp(-WORLD_LIMIT, WORLD_LIMIT);
         for prop in PROPS {
             let bottom = prop.center[1] - prop.size[1] / 2.;
@@ -76,25 +75,7 @@ pub fn move_player(mut position: [f32; 2], intent: Intent, seconds: f32) -> [f32
             if top <= 0.05 || bottom >= PAWN_HEIGHT {
                 continue;
             }
-            let c = [prop.center[0], prop.center[2]];
-            let half = [
-                prop.size[0] / 2. + PAWN_RADIUS,
-                prop.size[2] / 2. + PAWN_RADIUS,
-            ];
-            // A tangent contact must slide freely rather than snag the next axis.
-            if position[other] <= c[other] - half[other]
-                || position[other] >= c[other] + half[other]
-            {
-                continue;
-            }
-            let min = c[axis] - half[axis];
-            let max = c[axis] + half[axis];
-            if position[axis] <= min && end > min {
-                end = end.min(min);
-            }
-            if position[axis] >= max && end < max {
-                end = end.max(max);
-            }
+            end = sweep_box_axis(position, end, axis, prop.center, prop.size);
         }
         position[axis] = end;
     }
@@ -104,32 +85,62 @@ pub fn move_player(mut position: [f32; 2], intent: Intent, seconds: f32) -> [f32
 /// A small swept camera volume against the same static 3D boxes. Return the
 /// unobstructed fraction along the target-to-eye segment; no character collision.
 pub fn camera_fraction(target: [f32; 3], eye: [f32; 3]) -> f32 {
-    let mut fraction = 1.0f32;
-    for prop in PROPS {
-        let mut near = 0.0f32;
-        let mut far = 1.0f32;
-        for axis in 0..3 {
-            let half = prop.size[axis] / 2. + 0.15;
-            let min = prop.center[axis] - half;
-            let max = prop.center[axis] + half;
-            let direction = eye[axis] - target[axis];
-            if direction.abs() < 1e-7 {
-                if target[axis] < min || target[axis] > max {
-                    far = -1.;
-                    break;
-                }
-            } else {
-                let a = (min - target[axis]) / direction;
-                let b = (max - target[axis]) / direction;
-                near = near.max(a.min(b));
-                far = far.min(a.max(b));
+    PROPS
+        .iter()
+        .map(|p| box_camera_fraction(target, eye, p.center, p.size))
+        .fold(1., f32::min)
+}
+
+/// Axis sweep with square pawn clearance. Caller decides which static boxes apply.
+pub(crate) fn sweep_box_axis(
+    position: [f32; 2],
+    mut end: f32,
+    axis: usize,
+    center: [f32; 3],
+    size: [f32; 3],
+) -> f32 {
+    let other = 1 - axis;
+    let c = [center[0], center[2]];
+    let half = [size[0] / 2. + PAWN_RADIUS, size[2] / 2. + PAWN_RADIUS];
+    if position[other] <= c[other] - half[other] || position[other] >= c[other] + half[other] {
+        return end;
+    }
+    let min = c[axis] - half[axis];
+    let max = c[axis] + half[axis];
+    if position[axis] <= min && end > min {
+        end = end.min(min);
+    }
+    if position[axis] >= max && end < max {
+        end = end.max(max);
+    }
+    end
+}
+
+pub(crate) fn box_camera_fraction(
+    target: [f32; 3],
+    eye: [f32; 3],
+    center: [f32; 3],
+    size: [f32; 3],
+) -> f32 {
+    let mut near = 0.0f32;
+    let mut far = 1.0f32;
+    for axis in 0..3 {
+        let half = size[axis] / 2. + 0.15;
+        let min = center[axis] - half;
+        let max = center[axis] + half;
+        let direction = eye[axis] - target[axis];
+        if direction.abs() < 1e-7 {
+            if target[axis] < min || target[axis] > max {
+                return 1.;
             }
-        }
-        if near <= far {
-            fraction = fraction.min(near);
+        } else {
+            let a = (min - target[axis]) / direction;
+            let b = (max - target[axis]) / direction;
+            near = near.max(a.min(b));
+            far = far.min(a.max(b));
         }
     }
-    fraction
+    if near <= far { near } else { 1. }
 }
 
 #[cfg(test)]

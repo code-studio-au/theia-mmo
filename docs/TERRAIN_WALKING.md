@@ -8,8 +8,10 @@ rendered this slice on RX 7900 XTX / RADV with active Vulkan validation.
 This is a small walking fixture, separate from the full map inspector and the
 human/wolf/farmhouse scene. Players remain nonblocking. The patch defaults to
 capsules; optional human player visuals now use the same authoritative roots.
-Buildings, props, water and NPCs are absent from this patch. Their visual previews
-do not establish reviewed gameplay collision.
+The original patch has no buildings, props, water or NPCs. A separate
+[authored farmhouse fixture](TERRAIN_STATIC_OBJECTS.md) now adds one static building
+and foundation with shared collision. Full-map previews do not establish reviewed
+gameplay collision.
 
 ## Prepare and run
 
@@ -80,8 +82,8 @@ Both actors must produce child-local sampled motion in stand, walk and run;
 changing terrain/root height cannot satisfy this animation check. Reports include
 per-actor `human_animation.pose_changes` in stand/walk/run order. Sampling is enabled
 only for network smoke diagnostics. The checker also verifies server/renderer XYZ,
-source-triangle height, matching worlds, pipeline readiness and no wolf/house in
-this terrain mode. Saved human/terrain PNGs are inspected separately.
+source-triangle height, matching worlds, pipeline readiness and no additional reference-scene wolf/house spawns.
+An embedded static house can instead be part of the authored world GLB. Saved human/terrain PNGs are inspected separately.
 
 ## Geometry, authority and protocol
 
@@ -130,7 +132,7 @@ stable compiled render pipelines, not just CPU asset loading.
 
 ## Executed checks and limits
 
-34 Rust tests and 24 Python asset-tool tests pass, with formatting, denied-warning
+36 Rust tests and 26 Python asset-tool tests pass, with formatting, denied-warning
 all-target Clippy and build. Tests cover triangle interpolation, safe spawn,
 steep/missing ground and sampled step rejection, sliding/retreat/bounds, player
 pass-through on sloped ground, independent wire validation, matching Y through
@@ -162,4 +164,5 @@ falling, jumping, step climbing, bridges/caves/stacked floors, navigation, full-
 streaming, authored building interiors, swimming or water gameplay. The sampler
 selects the highest overlapping surface, so overlapping walkable floors require
 a future qualified collision representation. Reviewed static object clearance and
-broader authored-world collision remain next work.
+broader authored-world collision remain next work beyond the
+[single authored farmhouse](TERRAIN_STATIC_OBJECTS.md).

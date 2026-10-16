@@ -9,7 +9,7 @@ directional light/shadows, a local capsule pawn, fixed-step keyboard movement,
 orbit/zoom camera, camera-relative controls, reset/quit and screenshot smoke
 mode. There is no dependency on the old custom engine or its benchmark crate.
 
-Linux build, denied-warning Clippy, formatting, 34 Rust tests and 24 offline
+Linux build, denied-warning Clippy, formatting, 36 Rust tests and 26 offline
 Python asset-tool tests pass.
 Private native Wayland runs on RX 7900 XTX / RADV pass scripted movement,
 static-world/camera checks and real 1280x720 screenshots with active Vulkan validation
@@ -88,7 +88,9 @@ alone was insufficient for reliable screenshots. The full assembled map remains 
 checks, matching visual/collision triangles, world identity checks and two rendered
 multiplayer clients. An optional `--player-assets` mode now attaches the existing
 human to both local and remote terrain players, with sampled stand/walk/run
-evidence from real connected clients. Liquid gameplay and full authored-world collision remain outstanding.
+evidence from real connected clients. A separate [authored farmhouse placement](TERRAIN_STATIC_OBJECTS.md)
+now adds a fixed foundation and shared solid boundary, with server collision and
+real camera obstruction/body visibility checks. Liquid gameplay and full authored-world collision remain outstanding.
 [Original map inventory](MAP_CHECK_2026_10_16.md).
 
 No local prediction, general world mesh collision, animation blending,
@@ -103,8 +105,8 @@ Confirmed gameplay constraints: environment items are static (including doors),
 and players never physically collide with other players or NPCs. NPC pass-through
 is a requirement for future NPCs; this slice contains players only.
 
-Next: integrate reviewed static asset clearance into the terrain
-walking slice, qualify broader terrain/asset collision and representative original/licensed
+Next: broaden reviewed terrain/asset collision beyond the single authored farmhouse,
+qualify general world clearance and representative original/licensed
 art, resolve the remaining character skin errors, then add a shared
 target/ability/health loop. The direct GLBs already contain PNGs and preserve UVs;
 the earlier missing-texture problem is resolved for these new exports.

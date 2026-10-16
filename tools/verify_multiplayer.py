@@ -19,9 +19,10 @@ def sha256(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def run(output, binaries, references=None, terrain=None, player_assets=None):
+def run(output, binaries, references=None, terrain=None, player_assets=None, collision=False):
     assert not (references and terrain), "Use separate reference or terrain scenes"
     assert not player_assets or (terrain and not references), "Player assets require terrain mode"
+    assert not collision or terrain, "Static collision smoke requires terrain mode"
     suffix = ".exe" if os.name == "nt" else ""
     server_binary = binaries / f"theia-server{suffix}"
     client_binary = binaries / f"theia-client{suffix}"
@@ -55,7 +56,7 @@ def run(output, binaries, references=None, terrain=None, player_assets=None):
             time.sleep(0.05)
         assert address, "Server did not become ready"
         clients = []
-        for name, direction in [("a", "z-gaits" if player_assets else "z"), ("b", "x-gaits" if player_assets else "x")]:
+        for name, direction in [("a", "house" if collision else "z-gaits" if player_assets else "z"), ("b", "x-gaits" if player_assets else "x")]:
             directory = output / name
             directory.mkdir(exist_ok=True)
             (directory / "network.json").unlink(missing_ok=True)
@@ -109,7 +110,8 @@ def run(output, binaries, references=None, terrain=None, player_assets=None):
                     assert abs(player['y']-.9-height(*player['xz'])) < .001
                 own=players[report['id']]
                 initial=next(p for p in report['initial']['players'] if p['id']==report['id'])
-                assert abs(own['y']-initial['y']) > .02, 'Server height must change on this terrain walk'
+                if not collision:
+                    assert abs(own['y']-initial['y']) > .02, 'Server height must change on this terrain walk'
             png = output / name / "scene.png"
             image = Image.open(png).convert("RGB")
             assert image.size == (1280, 720)
@@ -130,9 +132,22 @@ def run(output, binaries, references=None, terrain=None, player_assets=None):
             if player_assets:
                 evidence = report['human_animation']
                 assert len(evidence) == 2 and len({e['owner'] for e in evidence}) == 2
-                assert all(all(n > 0 for n in e['pose_changes']) for e in evidence), 'Both humans need sampled stand/walk/run motion'
+                count = 2 if collision else 3
+                assert all(all(n > 0 for n in e['pose_changes'][:count]) for e in evidence), 'Humans need sampled locomotion motion'
                 for gait in ['Stand', 'Walk', 'Run']:
-                    assert len(set(re.findall(r'Reference actor (\S+): '+gait, log))) == 2
+                    expected = 1 if collision and gait == 'Run' else 2
+                    assert len(set(re.findall(r'Reference actor (\S+): '+gait, log))) == expected
+            if collision:
+                assert profile['solids'], 'Expected authored house collision'
+                for player in players.values():
+                    for solid in profile['solids']:
+                        dx=abs(player['xz'][0]-solid['center'][0]); dz=abs(player['xz'][1]-solid['center'][2])
+                        assert dx >= solid['size'][0]/2+.35-.001 or dz >= solid['size'][2]/2+.35-.001
+                if name == 'a':
+                    own=players[report['id']]
+                    initial_x=next(p['xz'][0] for p in report['initial']['players'] if p['id']==report['id'])
+                    assert abs(own['xz'][0]-initial_x+8) < .8 and abs(own['xz'][1]+3.35) < .001
+                    assert report['static_collision'] == {'camera_blocked':True,'camera_restored':True}
             validation_active = 'Insert instance layer "VK_LAYER_KHRONOS_validation"' in log
             if "VK_LAYER_KHRONOS_validation" in os.environ.get("VK_INSTANCE_LAYERS", ""):
                 assert validation_active, "Enable VK_LOADER_DEBUG=layer to prove layer activation"
@@ -151,6 +166,7 @@ def run(output, binaries, references=None, terrain=None, player_assets=None):
                   "reference_assets": str(references) if references else None,
                   "terrain_world": str(terrain) if terrain else None,
                   "player_assets": str(player_assets) if player_assets else None,
+                  "static_collision": collision,
                   "scope": "loopback QUIC + two Bevy presentations; no capacity, texture fidelity or latency benchmark"}
         proof.write_text(json.dumps(result, indent=2) + "\n")
         print(json.dumps(result, indent=2))
@@ -174,5 +190,6 @@ if __name__ == "__main__":
     parser.add_argument("--reference-assets", type=Path)
     parser.add_argument("--terrain-world", type=Path)
     parser.add_argument("--player-assets", type=Path)
+    parser.add_argument("--static-collision", action="store_true")
     args = parser.parse_args()
-    run(args.output.resolve(), args.binaries.resolve(), args.reference_assets.resolve() if args.reference_assets else None, args.terrain_world.resolve() if args.terrain_world else None, args.player_assets.resolve() if args.player_assets else None)
+    run(args.output.resolve(), args.binaries.resolve(), args.reference_assets.resolve() if args.reference_assets else None, args.terrain_world.resolve() if args.terrain_world else None, args.player_assets.resolve() if args.player_assets else None, args.static_collision)

@@ -25,12 +25,22 @@ pub struct Smoke {
     output: PathBuf,
     direction: [i16; 2],
     gaits: bool,
+    house: bool,
+    camera_blocked: bool,
+    camera_restored: bool,
     ready: Option<Instant>,
     first: Option<theia_network::wire::Snapshot>,
     max_players: usize,
     capture_requested: bool,
 }
 impl Network {
+    pub fn camera_test_blocked(&self) -> bool {
+        self.smoke.as_ref().is_some_and(|s| {
+            s.house
+                && s.ready
+                    .is_some_and(|t| (2.8..3.2).contains(&t.elapsed().as_secs_f32()))
+        })
+    }
     pub fn connected(&self) -> bool {
         let state = self.state.borrow();
         state.snapshot.is_some() && state.error.is_none()
@@ -49,11 +59,13 @@ impl Network {
         }
         let cert = std::fs::read(&args[2])?;
         let smoke = if smoke {
+            let house = args[4] == "house";
             let gaits = args[4].ends_with("-gaits");
             let direction = match args[4].strip_suffix("-gaits").unwrap_or(&args[4]) {
+                "house" => [-1000, 0],
                 "x" => [1000, 0],
                 "z" => [0, -1000],
-                _ => return Err("Smoke direction must be x, z, x-gaits or z-gaits".into()),
+                _ => return Err("Smoke direction must be x, z, x-gaits, z-gaits or house".into()),
             };
             let output = PathBuf::from(&args[3]);
             std::fs::create_dir_all(&output)?;
@@ -67,6 +79,9 @@ impl Network {
                 output,
                 direction,
                 gaits,
+                house,
+                camera_blocked: false,
+                camera_restored: false,
                 ready: None,
                 first: None,
                 max_players: 0,
@@ -138,7 +153,15 @@ pub fn send_input(intent: Res<MoveIntent>, network: Res<Network>) {
         value = Intent::default();
         if let Some(ready) = smoke.ready {
             let elapsed = ready.elapsed().as_secs_f32();
-            if elapsed < if smoke.gaits { 2.1 } else { 1. } {
+            if smoke.house {
+                value.axes = if elapsed < 1.6 {
+                    [-1000, 0]
+                } else if elapsed < 3.8 {
+                    [0, -1000]
+                } else {
+                    [0, 0]
+                };
+            } else if elapsed < if smoke.gaits { 2.1 } else { 1. } {
                 value.sprint = smoke.gaits && elapsed >= 1.6;
                 value.axes = if value.sprint {
                     smoke.direction.map(|v| -v)
@@ -286,12 +309,13 @@ pub struct ReferenceArt<'w, 's> {
     houses: Query<'w, 's, Entity, With<crate::reference_scene::House>>,
     pipelines: Res<'w, crate::capture_ready::CaptureReady>,
     terrain: Option<Res<'w, crate::terrain_scene::Config>>,
+    camera: Query<'w, 's, &'static Transform, With<Camera3d>>,
 }
 
 pub fn capture(
     mut commands: Commands,
     mut network: ResMut<Network>,
-    local: Query<&Transform, With<LocalPawn>>,
+    local: Query<(&Transform, &Visibility), With<LocalPawn>>,
     remotes: Query<(&RemotePawn, &Transform)>,
     adapter: Res<bevy::render::renderer::RenderAdapterInfo>,
     mut exit: MessageWriter<bevy::app::AppExit>,
@@ -302,6 +326,21 @@ pub fn capture(
     let Some(smoke) = &mut network.smoke else {
         return;
     };
+    if smoke.house
+        && let Some(ready) = smoke.ready
+    {
+        let elapsed = ready.elapsed().as_secs_f32();
+        if let (Ok((local, visibility)), Ok(camera)) = (local.single(), art.camera.single()) {
+            let distance = camera.translation.distance(local.translation);
+            if (2.85..3.15).contains(&elapsed) && distance < 1. && *visibility == Visibility::Hidden
+            {
+                smoke.camera_blocked = true;
+            }
+            if elapsed > 3.4 && distance > 2. && *visibility == Visibility::Inherited {
+                smoke.camera_restored = true;
+            }
+        }
+    }
     if smoke.capture_requested {
         // Keep this peer alive while the other client completes its own capture.
         if smoke.ready.is_some_and(|t| t.elapsed().as_secs_f32() > 9.)
@@ -359,10 +398,11 @@ pub fn capture(
     );
     let report = serde_json::json!({"schema":1,"completed":true,"offline":false,"id":id,
         "initial":first,"final":snapshot,"max_players":smoke.max_players,
-        "local_render_position":local.single().unwrap().translation.to_array(),
+        "local_render_position":local.single().unwrap().0.translation.to_array(),
         "remote_render_positions":remotes.iter().map(|(r,t)|serde_json::json!({"id":r.id,"position":t.translation.to_array()})).collect::<Vec<_>>(),
         "gpu":{"name":adapter.name,"backend":format!("{:?}",adapter.backend)},
         "reference_visuals":reference_visuals,
+        "static_collision": smoke.house.then_some(serde_json::json!({"camera_blocked":smoke.camera_blocked,"camera_restored":smoke.camera_restored})),
         "human_animation":art.visuals.iter().filter(|v|v.kind==0).map(|v|serde_json::json!({"owner":format!("{:?}",v.owner),"pose_changes":v.pose_changes})).collect::<Vec<_>>(),
         "terrain_world":art.terrain.as_ref().map(|t|t.terrain.identity),
         "pipelines":{"pending":art.pipelines.pending,"failed":art.pipelines.failed,"compiled":art.pipelines.compiled,"clear_frames":art.pipelines.clear_frames},

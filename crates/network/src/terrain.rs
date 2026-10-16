@@ -1,4 +1,4 @@
-//! Bounded terrain-only walking fixture. Static mesh triangles are authority;
+//! Bounded terrain walking fixture with authored static solid envelopes;
 //! no player or NPC geometry enters this module.
 use crate::{
     Result,
@@ -20,12 +20,24 @@ struct Profile {
     source_origin: [f32; 3],
     visual_sha256: [u8; 32],
     triangles: Vec<[[f32; 3]; 3]>,
+    #[serde(default)]
+    solids: Vec<Solid>,
+}
+
+/// Authored ground-blocking column with a finite box for camera obstruction.
+/// These envelopes do not support walking underneath or inside an object.
+#[derive(Clone, Copy, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Solid {
+    pub center: [f32; 3],
+    pub size: [f32; 3],
 }
 
 pub struct Terrain {
     triangles: Vec<[[f32; 3]; 3]>,
     pub identity: [u8; 32],
     pub visual_sha256: [u8; 32],
+    pub solids: Vec<Solid>,
 }
 
 pub fn sha256(bytes: &[u8]) -> [u8; 32] {
@@ -56,6 +68,17 @@ impl Terrain {
         {
             return Err("Invalid bounded terrain profile".into());
         }
+        if profile.solids.len() > 64
+            || profile.solids.iter().any(|b| {
+                b.center.iter().any(|v| !v.is_finite() || v.abs() > 1023.)
+                    || b.size
+                        .iter()
+                        .any(|v| !v.is_finite() || *v <= 0. || *v > 128.)
+                    || (0..3).any(|i| b.center[i].abs() + b.size[i] / 2. > 1023.)
+            })
+        {
+            return Err("Invalid bounded static solid envelopes".into());
+        }
         for t in &profile.triangles {
             let determinant = cross(t[0], t[1], t[2]);
             if determinant >= -1e-6 {
@@ -66,6 +89,7 @@ impl Terrain {
             triangles: profile.triangles,
             identity: sha256(bytes),
             visual_sha256: profile.visual_sha256,
+            solids: profile.solids,
         };
         for x in [0., 2., 4., 6.] {
             if terrain.standing([x, 0.]).is_none() {
@@ -92,6 +116,12 @@ impl Terrain {
         if p.iter()
             .any(|v| !v.is_finite() || v.abs() > 19. - PAWN_RADIUS)
         {
+            return None;
+        }
+        if self.solids.iter().any(|b| {
+            (p[0] - b.center[0]).abs() < b.size[0] / 2. + PAWN_RADIUS
+                && (p[1] - b.center[2]).abs() < b.size[2] / 2. + PAWN_RADIUS
+        }) {
             return None;
         }
         for dx in [-PAWN_RADIUS, 0., PAWN_RADIUS] {
@@ -127,6 +157,10 @@ impl Terrain {
                 }
                 let mut next = p;
                 next[axis] += d[axis] / steps as f32;
+                for solid in &self.solids {
+                    next[axis] =
+                        crate::world::sweep_box_axis(p, next[axis], axis, solid.center, solid.size);
+                }
                 if let (Some(before), Some(after)) = (self.standing(p), self.standing(next))
                     && (after - before).abs() <= (next[axis] - p[axis]).abs() * MAX_SLOPE + 0.0001
                 {
@@ -138,6 +172,11 @@ impl Terrain {
     }
     /// Sampled camera clearance for the terrain patch, excluding all actors.
     pub fn camera_fraction(&self, target: [f32; 3], eye: [f32; 3]) -> f32 {
+        let static_fraction = self
+            .solids
+            .iter()
+            .map(|s| crate::world::box_camera_fraction(target, eye, s.center, s.size))
+            .fold(1., f32::min);
         let d = [eye[0] - target[0], eye[1] - target[1], eye[2] - target[2]];
         let length = (d[0] * d[0] + d[1] * d[1] + d[2] * d[2]).sqrt();
         let steps = (length / 0.05).ceil().max(1.) as usize;
@@ -148,10 +187,10 @@ impl Terrain {
                 .height(p)
                 .is_none_or(|h| target[1] + d[1] * f < h + 0.15)
             {
-                return (i - 1) as f32 / steps as f32;
+                return static_fraction.min((i - 1) as f32 / steps as f32);
             }
         }
-        1.
+        static_fraction
     }
 }
 fn cross(a: [f32; 3], b: [f32; 3], c: [f32; 3]) -> f32 {
@@ -272,6 +311,57 @@ mod tests {
                 1. / 30.,
             );
             assert!(p[0] < x, "Retreat from {mode}");
+        }
+    }
+    #[test]
+    fn authored_solids_stop_slide_and_obstruct_camera_on_slopes() {
+        let mut profile: serde_json::Value = serde_json::from_slice(&plane(0.1)).unwrap();
+        profile["solids"] = serde_json::json!([{"center":[-8,3,-8],"size":[8.6,10,8.6]}]);
+        let t = Terrain::decode(&serde_json::to_vec(&profile).unwrap()).unwrap();
+        let mut p = [-8., 0.];
+        for _ in 0..90 {
+            p = t.move_player(
+                p,
+                Intent {
+                    axes: [0, -1000],
+                    sprint: true,
+                },
+                1. / 30.,
+            );
+        }
+        assert!((p[1] + 3.35).abs() < 1e-5);
+        let slid = t.move_player(
+            p,
+            Intent {
+                axes: [1000, -1000],
+                sprint: true,
+            },
+            1. / 30.,
+        );
+        assert!(slid[0] > p[0]);
+        assert_eq!(slid[1], p[1]);
+        assert!(
+            t.move_player(
+                p,
+                Intent {
+                    axes: [0, 1000],
+                    sprint: false
+                },
+                1. / 30.
+            )[1] > p[1]
+        );
+        let target = [p[0], t.spawn_y(p), p[1]];
+        assert!(t.camera_fraction(target, [target[0], target[1] + 7., target[2] - 12.]) < 0.1);
+        assert_eq!(
+            t.camera_fraction(target, [target[0], target[1] + 7., target[2] + 12.]),
+            1.
+        );
+        for invalid in [
+            serde_json::json!({"center":[0,3,0],"size":[8,8,8]}),
+            serde_json::json!({"center":[-8,3,-8],"size":[0,8,8]}),
+        ] {
+            profile["solids"] = serde_json::json!([invalid]);
+            assert!(Terrain::decode(&serde_json::to_vec(&profile).unwrap()).is_err());
         }
     }
     #[test]

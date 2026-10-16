@@ -48,6 +48,8 @@ These are game outcomes, not a continuation of the old engine's M0–M6 schedule
   height/slope checks and two rendered multiplayer clients. [Scope](TERRAIN_WALKING.md).
 - [x] Animated local/remote human players on the bounded terrain patch, with actual
   stand/walk/run sampling alongside server-owned height.
+- [x] One authored farmhouse/foundation on terrain with shared server/camera solid
+  boundaries and actual connected contact checks. [Scope](TERRAIN_STATIC_OBJECTS.md).
 - [ ] Qualify general authored-world collision alongside imported assets; steps,
   jumping and general mesh colliders remain outstanding.
   The Ruins of Lordaeron terrain and 846 top-level placements plus 624 nested props

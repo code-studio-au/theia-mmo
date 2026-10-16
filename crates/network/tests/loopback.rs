@@ -14,13 +14,15 @@ struct Client {
     task: JoinHandle<theia_network::Result<()>>,
 }
 fn connect(address: SocketAddr, certificate: Vec<u8>) -> Client {
+    connect_world(address, certificate, theia_network::terrain::GRAYBOX_ID)
+}
+fn connect_world(address: SocketAddr, certificate: Vec<u8>, identity: [u8; 32]) -> Client {
     let (input, inputs) = watch::channel(Intent::default());
     let (states, state) = watch::channel(State::default());
     let (stop, shutdown) = watch::channel(false);
-    let task =
-        tokio::spawn(
-            async move { client::run(address, &certificate, inputs, states, shutdown).await },
-        );
+    let task = tokio::spawn(async move {
+        client::run_in_world(address, &certificate, inputs, states, shutdown, identity).await
+    });
     Client {
         input,
         state,
@@ -304,6 +306,51 @@ async fn terrain_height_is_authoritative_and_mismatched_world_is_rejected() {
     assert!(player.y > initial.y + 0.3);
     client_stop.send(true).unwrap();
     client.await.unwrap().unwrap();
+    stop.send(true).unwrap();
+    server.await.unwrap().unwrap();
+}
+
+#[tokio::test]
+async fn terrain_solid_stops_persistent_network_input_on_uneven_ground() {
+    use theia_network::{simulation::World, terrain::Terrain};
+    let a = [-24., -2.4, -24.];
+    let b = [24., 2.4, -24.];
+    let c = [24., 2.4, 24.];
+    let d = [-24., -2.4, 24.];
+    let bytes = serde_json::to_vec(
+        &serde_json::json!({"schema":1,"source_origin":[0,0,0],"visual_sha256":vec![0;32],
+        "triangles":[[a,c,b],[a,d,c]],"solids":[{"center":[-8,3,-8],"size":[8.6,10,8.6]}]}),
+    )
+    .unwrap();
+    let terrain = Terrain::decode(&bytes).unwrap();
+    let identity = terrain.identity;
+    let (endpoint, cert) = tls::server("127.0.0.1:0".parse().unwrap()).unwrap();
+    let address = endpoint.local_addr().unwrap();
+    let (stop, shutdown) = watch::channel(false);
+    let server = tokio::spawn(server::run_world(
+        endpoint,
+        shutdown,
+        World::with_terrain(terrain),
+    ));
+    let mut client = connect_world(address, cert, identity);
+    until(&mut client.state, |s| s.players.len() == 1).await;
+    client.input.send_replace(Intent {
+        axes: [-1000, 0],
+        sprint: false,
+    });
+    until(&mut client.state, |s| s.players[0].xz[0] < -7.6).await;
+    client.input.send_replace(Intent {
+        axes: [0, -1000],
+        sprint: false,
+    });
+    let contact = until(&mut client.state, |s| s.players[0].xz[1] < -3.34).await;
+    assert!((contact.players[0].xz[1] + 3.35).abs() < 1e-5);
+    assert!((contact.players[0].y - (contact.players[0].xz[0] * 0.1 + 0.9)).abs() < 1e-5);
+    let later = until(&mut client.state, |s| s.tick > contact.tick + 15).await;
+    assert_eq!(later.players[0].xz, contact.players[0].xz);
+    assert!(later.players[0].applied_sequence > contact.players[0].applied_sequence);
+    client.stop.send(true).unwrap();
+    client.task.await.unwrap().unwrap();
     stop.send(true).unwrap();
     server.await.unwrap().unwrap();
 }

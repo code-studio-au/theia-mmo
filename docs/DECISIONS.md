@@ -56,3 +56,9 @@ The terrain fixture can now use the already approved human player visuals throug
 standard Bevy asset loading/animation. This optional presentation reuses the same
 authoritative player roots; it adds no character collision or protocol authority.
 The separate reference scene retains the wolf and farmhouse.
+
+The first terrain static-object slice uses an explicitly authored solid farmhouse/
+foundation envelope shared by server movement and client camera clearance. This
+is conservative ground-blocking collision, not automatic general mesh collision,
+traversable housing or a change to nonblocking players/NPCs. See
+[TERRAIN_STATIC_OBJECTS.md](TERRAIN_STATIC_OBJECTS.md).

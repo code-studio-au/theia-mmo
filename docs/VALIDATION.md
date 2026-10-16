@@ -369,3 +369,50 @@ screenshots recorded in the surrounding qualification directory.
 This establishes animated multiplayer presentation on the small terrain fixture.
 Foot IK, animation blending, static object clearance, full-map collision/gameplay,
 NPC authority, combat, performance/scale and native Windows remain open.
+
+## Authored static farmhouse on terrain — 2026-10-16
+
+The [static terrain object fixture](TERRAIN_STATIC_OBJECTS.md) adds one explicitly
+authored farmhouse/foundation and a shared collision envelope. Source origin
+`(350,37,2400)` gives a shallow foundation without changing terrain geometry.
+The original terrain and house binary buffers are retained exactly; the model
+is uniformly fitted to the authored envelope. The 24,194,636-byte GLB contains
+2,143 triangles / 30 meshes / 19 materials / 18 images. Strict Khronos validation
+reports zero errors/warnings/infos and 23 optional-buffer-target hints.
+
+The bounded terrain profile now accepts at most 64 validated static solids.
+Server movement uses expanded XZ sweeps against their ground-blocking footprints;
+client camera clearance uses their finite 3D boxes. Primitive helpers are shared
+with the graybox, preserving its existing height filtering and behavior. No
+character/NPC enters world collision. New profile/visual pairs retain the existing
+world-identity checks; wire version 2 and authority rules are unchanged.
+
+36 Rust tests, 26 Python asset-tool tests, formatting, denied-warning all-target
+Clippy and build pass. New checks cover slope-aware movement plus solid stopping,
+sliding/retreat, camera clearance, rejected bounds/spawns, exact clipped foundation
+heights, fitted visual bounds and unchanged binary payloads. An actual QUIC test
+continues submitting movement at contact and confirms stationary authoritative
+poses while applied input sequences advance.
+
+Three independent server/two-client native checks pass on RX 7900 XTX / RADV:
+terrain house with animated humans, existing human terrain-only and procedural
+graybox. The house run reaches local Z=-3.35, continues pressing against the wall,
+returns to idle from actual zero displacement, then records a real shortened
+camera/hidden body and restored camera/body before screenshot capture. Local and
+remote XYZ matches server snapshots and independently interpolated terrain height.
+All accepted runs have actual Khronos Vulkan validation activation, ready compiled
+pipelines, no validation errors/panics and real 1280x720 screenshots. Both house
+captures are inspected. No benchmark/capacity or native Windows claim follows.
+
+The first steep-footprint placement needed a tall foundation and was replaced
+with a flatter source crop. Initial checker assumptions also required nontrivial
+Y change on the nearly flat contact route and an absolute initial X=0; the final
+checker instead verifies exact ground height and movement relative to the actual
+server-assigned spawn. The existing sloped locomotion case retains its changing-Y
+requirement. Initial candidates/checker outputs remain separate from accepted
+`build/qualification/terrain-house/native-proof/` evidence.
+
+The surrounding ignored directory records source/prepared hashes, GLBs, strict
+validator results, tests/build/lint and qualification JSON. The source exports
+remain unchanged and outside Git. This is a conservative solid building/foundation,
+without interiors, walkable roofs, opening doors, mesh physics or full-map gameplay.

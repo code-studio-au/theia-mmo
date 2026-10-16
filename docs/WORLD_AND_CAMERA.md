@@ -73,3 +73,8 @@ A separate [bounded terrain walking mode](TERRAIN_WALKING.md) now uses source
 triangles, server-owned height/slope checks and sampled terrain camera clearance.
 The flat graybox and reference-scene limits above still apply to those modes;
 the full map inspector does not establish general world collision.
+
+The [authored terrain farmhouse](TERRAIN_STATIC_OBJECTS.md) now reuses the same
+box sweep/slab primitives with explicit terrain-world solid envelopes. These are
+ground-blocking columns for movement and finite boxes for camera clearance.
+This does not establish general imported mesh collision or usable interiors.
