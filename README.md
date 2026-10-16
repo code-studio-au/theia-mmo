@@ -51,6 +51,20 @@ See [world/camera scope](docs/WORLD_AND_CAMERA.md), [network behaviour/provenanc
 Environment items stay static, including doors. Players pass through other players
 and NPCs; environment collision and combat hit detection are separate systems.
 
+## Inspect a GLB
+
+```sh
+cargo run --locked -p theia-client -- --inspect-asset apps/client/assets/reference/duskwoodhouse_medium.glb
+```
+
+The user's reference house loads in a separate visual inspector with orbit/zoom,
+actual bounds and a 1.8-unit scale capsule. It has **no UVs, materials or textures**;
+this export renders plain shaded. It does not replace the server's graybox world
+or establish collision. See [asset import/export guidance](docs/ASSET_IMPORT.md).
+
+Add `--capture build/asset-check` to save `asset.json` and `scene.png`, then run
+`python3 tools/verify_asset.py build/asset-check apps/client/assets/reference/duskwoodhouse_medium.glb`.
+
 ## Check
 
 ```sh

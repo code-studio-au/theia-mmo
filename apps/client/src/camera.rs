@@ -10,6 +10,7 @@ pub struct Orbit {
     pub yaw: f32,
     pitch: f32,
     distance: f32,
+    max_distance: f32,
 }
 impl Default for Orbit {
     fn default() -> Self {
@@ -17,6 +18,7 @@ impl Default for Orbit {
             yaw: 0.,
             pitch: 7.0f32.atan2(12.),
             distance: 7.0f32.hypot(12.),
+            max_distance: 22.,
         }
     }
 }
@@ -33,14 +35,25 @@ impl Orbit {
             .rem_euclid(std::f32::consts::TAU)
             - std::f32::consts::PI;
         self.pitch = (self.pitch + motion.y * 0.003).clamp(0.12, 1.35);
-        self.distance = (self.distance - scroll).clamp(2.5, 22.);
+        self.distance = (self.distance - scroll).clamp(2.5, self.max_distance);
     }
-    pub fn eye(&self, target: Vec3) -> Vec3 {
+    pub fn frame_asset(&mut self, radius: f32) {
+        // Default perspective is 45 degrees vertically. Fit the bounding sphere
+        // with margin; preserve the source geometry's actual scale and pivot.
+        self.distance = (radius.max(1.) / (std::f32::consts::FRAC_PI_8).sin() * 1.15).max(2.5);
+        self.max_distance = (self.distance * 3.).max(22.);
+        self.yaw = 0.5;
+    }
+    pub fn unobstructed_eye(&self, target: Vec3) -> Vec3 {
         let offset = Vec3::new(
             self.yaw.sin() * self.pitch.cos(),
             self.pitch.sin(),
             self.yaw.cos() * self.pitch.cos(),
         ) * self.distance;
+        target + offset
+    }
+    pub fn eye(&self, target: Vec3) -> Vec3 {
+        let offset = self.unobstructed_eye(target) - target;
         let desired = target + offset;
         target
             + offset * theia_network::world::camera_fraction(target.to_array(), desired.to_array())
@@ -117,6 +130,17 @@ pub fn follow(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn asset_framing_keeps_large_models_inside_the_zoom_range() {
+        let mut orbit = Orbit::default();
+        orbit.frame_asset(20.);
+        let distance = orbit.distance;
+        assert!(distance > 22.);
+        orbit.adjust(Vec2::ZERO, 0.);
+        assert_eq!(orbit.distance, distance);
+        orbit.adjust(Vec2::ZERO, 1e6);
+        assert_eq!(orbit.distance, 2.5);
+    }
     #[test]
     fn orbit_clamps_pitch_and_zoom_and_rotates_movement() {
         let mut orbit = Orbit::default();

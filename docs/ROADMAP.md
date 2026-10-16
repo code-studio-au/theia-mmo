@@ -28,8 +28,13 @@ These are game outcomes, not a continuation of the old engine's M0–M6 schedule
 
 ## Representative game scene
 
-- Qualify Bevy's ordinary glTF/GLB model and animation loading with an original or
+- [x] Enable ordinary Bevy glTF loading and an independent bounds/scale inspector.
+- [x] Qualify the user's geometry-only house GLB and move it into the repo as a
+  compatibility reference. No authored UVs/materials/textures exist in that file.
+- [ ] Qualify textured static assets and animation loading with original or
   appropriately licensed character, terrain, building and props.
+- [ ] Integrate reviewed asset placement and server collision into the shared world;
+  viewing an imported mesh does not create a gameplay collider.
 - [x] First static-world collision pass for the flat procedural scene: solid
   building, fixed door and rocks. Rendering and authority share authored geometry.
 - [x] Orbit/zoom camera, camera-relative movement and static camera obstruction.

@@ -37,3 +37,10 @@ The graybox now has a single shared geometry definition for rendering and server
 collision, with a flat-ground box sweep and a local orbit camera. This qualifies
 only the current scene, not general terrain physics. Scope and limitations are
 recorded in [WORLD_AND_CAMERA.md](WORLD_AND_CAMERA.md).
+
+Building/prop delivery target: glTF 2.0, preferably GLB, with original/intermediate
+sources retained. Standard Bevy loading is enabled, including its normal automatic
+reflected type registration. A separate visual inspector preserves source scale
+and never establishes server collision. The user's supplied house is a local
+compatibility reference; it is not original Theia world content. Current import
+scope and source provenance are recorded in [ASSET_IMPORT.md](ASSET_IMPORT.md).

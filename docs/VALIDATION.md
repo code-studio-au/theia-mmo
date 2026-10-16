@@ -163,3 +163,45 @@ tests, not manual native interaction. Native Windows, imported terrain/collision
 slopes/steps/jumps, jitter/loss and local prediction remain unqualified. No NPCs
 exist yet; NPC nonblocking remains a requirement. Static environment items have no
 opening, movement or destruction.
+
+## Geometry-only GLB inspection — 2026-10-16
+
+The user's 9884-byte `duskwoodhouse_medium.glb` was inspected read-only in Downloads,
+then moved into the client's `assets/reference/` after actual rendering succeeded.
+Original bytes/hash are recorded in that folder's README. The ZIP left in Downloads
+contains the same GLB only; no loose BLP files were available for conversion.
+
+Khronos glTF Validator `2.0.0-dev.3.10` reports zero errors/warnings: one mesh,
+425 vertices, 672 triangles, no UVs/materials/images/animation/skin. Bevy's standard
+loader instantiates it and generates flat normals, yielding 2016 render vertices.
+Instantiated bounds match the source bounds; size is about 18.433 x 16.776 x 25.009
+source units. No geometry, material assignments or unit scale were altered.
+The inspector adjusts its camera/floor and supplies a separate 1.8-unit capsule.
+
+The first native attempt was rejected: the minimal Bevy feature configuration did
+not register reflected scene types, causing a scene-instantiation panic and abnormal
+shutdown. Enabling Bevy's standard `reflect_auto_register` feature fixes that
+configuration; no custom scene clone or manual per-type workaround was introduced.
+Rejected logs remain under `build/qualification/gltf/native-rejected-reflection/`.
+The subsequent actual GPU run loads/renders successfully with Vulkan validation
+active and no validation errors. The plain-shaded house screenshot was inspected.
+Reinhard tone mapping in the inspector keeps the untextured white material readable.
+
+Twenty workspace tests pass, including GLB header preflight and framing/zooming a
+large asset without snapping to the game's camera limit. Workspace build, formatting
+and denied-warning all-target Clippy pass. Successful native evidence uses the same
+RX 7900 XTX / RADV and owned private Wayland/Weston headless GL compositor. The
+existing two-client, offline movement and world/camera smokes are also rerun after
+enabling glTF/reflection support. A malformed GLB must exit unsuccessfully without
+producing a successful report/screenshot.
+
+Ignored evidence is under `build/qualification/gltf/`: validator report, build/test/
+Clippy logs, rejected and passing native runs, per-client logs/reports/PNGs and the
+final asset screenshot. The validator's pinned npm installation is a local ignored
+qualification dependency, not part of the game runtime. The game remains independent
+of the old engine; the existing external compositor harness is only a test host.
+
+Only geometry import of this file is qualified. PNG/JPEG decoding is enabled but
+textured import, BLP conversion, UV/material preservation, character animation,
+custom WoW shaders, imported-world collision and native Windows remain unqualified.
+Physical camera input is still not manually qualified; the asset run uses auto-fit.

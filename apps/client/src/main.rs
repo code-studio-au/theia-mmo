@@ -1,4 +1,5 @@
 //! Bevy presentation: offline sandbox or server-owned multiplayer walking.
+mod asset_preview;
 mod camera;
 mod movement;
 mod network;
@@ -11,6 +12,9 @@ use std::time::Duration;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<_> = std::env::args().skip(1).collect();
+    if args.first().is_some_and(|a| a == "--inspect-asset") {
+        return asset_preview::run(&args);
+    }
     let connected = args
         .first()
         .is_some_and(|arg| matches!(arg.as_str(), "--connect" | "--network-smoke"));
