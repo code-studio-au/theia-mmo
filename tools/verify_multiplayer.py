@@ -19,8 +19,9 @@ def sha256(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def run(output, binaries, references=None, terrain=None):
+def run(output, binaries, references=None, terrain=None, player_assets=None):
     assert not (references and terrain), "Use separate reference or terrain scenes"
+    assert not player_assets or (terrain and not references), "Player assets require terrain mode"
     suffix = ".exe" if os.name == "nt" else ""
     server_binary = binaries / f"theia-server{suffix}"
     client_binary = binaries / f"theia-client{suffix}"
@@ -31,6 +32,8 @@ def run(output, binaries, references=None, terrain=None):
     certificate.unlink(missing_ok=True)
     client_scene = (["--reference-scene", str(references)] if references else
                     ["--terrain-world", str(terrain)] if terrain else [])
+    if player_assets:
+        client_scene.extend(["--player-assets", str(player_assets)])
     server_scene = ["--terrain-world", str(terrain)] if terrain else []
     processes, logs = [], []
     try:
@@ -52,7 +55,7 @@ def run(output, binaries, references=None, terrain=None):
             time.sleep(0.05)
         assert address, "Server did not become ready"
         clients = []
-        for name, direction in [("a", "z"), ("b", "x")]:
+        for name, direction in [("a", "z-gaits" if player_assets else "z"), ("b", "x-gaits" if player_assets else "x")]:
             directory = output / name
             directory.mkdir(exist_ok=True)
             (directory / "network.json").unlink(missing_ok=True)
@@ -112,17 +115,24 @@ def run(output, binaries, references=None, terrain=None):
             assert image.size == (1280, 720)
             blue = sum(b > r * 2.5 and b > g * 1.8 for r, g, b in image.getdata())
             red = sum(r > g * 2 and r > b * 2 for r, g, b in image.getdata())
-            if references:
-                assert report['reference_visuals'] == {'humans': 2, 'wolves': 1, 'houses': 1}
+            if references or player_assets:
+                expected_environment = int(not player_assets)
+                assert report['reference_visuals'] == {'humans': 2, 'wolves': expected_environment, 'houses': expected_environment}
                 assert len(image.getcolors(image.width * image.height)) > 256
             else:
                 assert blue > 100 and red > 100, f"Missing pawn pixels: {blue=}, {red=}"
             log = (output / name / "run.log").read_text()
             for marker in ("VUID-", "Validation Error", " ERROR ", "panicked at"):
                 assert marker not in log, f"Diagnostic {marker}: inspect {name}/run.log"
-            if references:
+            if references or player_assets:
                 walking = set(re.findall(r'Reference actor (\S+): Walk', log))
                 assert len(walking) == 2, 'Both local and remote humans must enter walking playback'
+            if player_assets:
+                evidence = report['human_animation']
+                assert len(evidence) == 2 and len({e['owner'] for e in evidence}) == 2
+                assert all(all(n > 0 for n in e['pose_changes']) for e in evidence), 'Both humans need sampled stand/walk/run motion'
+                for gait in ['Stand', 'Walk', 'Run']:
+                    assert len(set(re.findall(r'Reference actor (\S+): '+gait, log))) == 2
             validation_active = 'Insert instance layer "VK_LAYER_KHRONOS_validation"' in log
             if "VK_LAYER_KHRONOS_validation" in os.environ.get("VK_INSTANCE_LAYERS", ""):
                 assert validation_active, "Enable VK_LOADER_DEBUG=layer to prove layer activation"
@@ -140,6 +150,7 @@ def run(output, binaries, references=None, terrain=None):
                   "validation_requested": os.environ.get("VK_INSTANCE_LAYERS", ""),
                   "reference_assets": str(references) if references else None,
                   "terrain_world": str(terrain) if terrain else None,
+                  "player_assets": str(player_assets) if player_assets else None,
                   "scope": "loopback QUIC + two Bevy presentations; no capacity, texture fidelity or latency benchmark"}
         proof.write_text(json.dumps(result, indent=2) + "\n")
         print(json.dumps(result, indent=2))
@@ -162,5 +173,6 @@ if __name__ == "__main__":
     parser.add_argument("--binaries", type=Path, default=Path("target/debug"))
     parser.add_argument("--reference-assets", type=Path)
     parser.add_argument("--terrain-world", type=Path)
+    parser.add_argument("--player-assets", type=Path)
     args = parser.parse_args()
-    run(args.output.resolve(), args.binaries.resolve(), args.reference_assets.resolve() if args.reference_assets else None, args.terrain_world.resolve() if args.terrain_world else None)
+    run(args.output.resolve(), args.binaries.resolve(), args.reference_assets.resolve() if args.reference_assets else None, args.terrain_world.resolve() if args.terrain_world else None, args.player_assets.resolve() if args.player_assets else None)

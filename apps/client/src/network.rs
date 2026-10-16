@@ -24,6 +24,7 @@ pub struct Network {
 pub struct Smoke {
     output: PathBuf,
     direction: [i16; 2],
+    gaits: bool,
     ready: Option<Instant>,
     first: Option<theia_network::wire::Snapshot>,
     max_players: usize,
@@ -48,10 +49,11 @@ impl Network {
         }
         let cert = std::fs::read(&args[2])?;
         let smoke = if smoke {
-            let direction = match args[4].as_str() {
+            let gaits = args[4].ends_with("-gaits");
+            let direction = match args[4].strip_suffix("-gaits").unwrap_or(&args[4]) {
                 "x" => [1000, 0],
                 "z" => [0, -1000],
-                _ => return Err("Smoke direction must be x or z".into()),
+                _ => return Err("Smoke direction must be x, z, x-gaits or z-gaits".into()),
             };
             let output = PathBuf::from(&args[3]);
             std::fs::create_dir_all(&output)?;
@@ -64,6 +66,7 @@ impl Network {
             Some(Smoke {
                 output,
                 direction,
+                gaits,
                 ready: None,
                 first: None,
                 max_players: 0,
@@ -133,8 +136,16 @@ pub fn send_input(intent: Res<MoveIntent>, network: Res<Network>) {
     };
     if let Some(smoke) = &network.smoke {
         value = Intent::default();
-        if smoke.ready.is_some_and(|t| t.elapsed().as_secs_f32() < 1.) {
-            value.axes = smoke.direction;
+        if let Some(ready) = smoke.ready {
+            let elapsed = ready.elapsed().as_secs_f32();
+            if elapsed < if smoke.gaits { 2.1 } else { 1. } {
+                value.sprint = smoke.gaits && elapsed >= 1.6;
+                value.axes = if value.sprint {
+                    smoke.direction.map(|v| -v)
+                } else {
+                    smoke.direction
+                };
+            }
         }
     }
     network.input.send_replace(value);
@@ -306,7 +317,7 @@ pub fn capture(
     if !art.pipelines.ready() {
         return;
     }
-    let reference_visuals = if art.config.is_some() {
+    let reference_visuals = if let Some(config) = &art.config {
         let humans = art
             .visuals
             .iter()
@@ -317,7 +328,11 @@ pub fn capture(
             .iter()
             .filter(|v| v.kind == 1 && !v.players.is_empty())
             .count();
-        if humans != 2 || wolves != 1 || art.houses.iter().count() != 1 {
+        let environment_count = usize::from(!config.players_only);
+        if humans != 2
+            || wolves != environment_count
+            || art.houses.iter().count() != environment_count
+        {
             return;
         }
         Some(
@@ -348,6 +363,7 @@ pub fn capture(
         "remote_render_positions":remotes.iter().map(|(r,t)|serde_json::json!({"id":r.id,"position":t.translation.to_array()})).collect::<Vec<_>>(),
         "gpu":{"name":adapter.name,"backend":format!("{:?}",adapter.backend)},
         "reference_visuals":reference_visuals,
+        "human_animation":art.visuals.iter().filter(|v|v.kind==0).map(|v|serde_json::json!({"owner":format!("{:?}",v.owner),"pose_changes":v.pose_changes})).collect::<Vec<_>>(),
         "terrain_world":art.terrain.as_ref().map(|t|t.terrain.identity),
         "pipelines":{"pending":art.pipelines.pending,"failed":art.pipelines.failed,"compiled":art.pipelines.compiled,"clear_frames":art.pipelines.clear_frames},
         "scope":"actual QUIC authority and two Bevy clients; optional reference art; no prediction, NPC gameplay, combat or MMO capacity claim"});

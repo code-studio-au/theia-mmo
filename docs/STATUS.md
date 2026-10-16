@@ -9,7 +9,7 @@ directional light/shadows, a local capsule pawn, fixed-step keyboard movement,
 orbit/zoom camera, camera-relative controls, reset/quit and screenshot smoke
 mode. There is no dependency on the old custom engine or its benchmark crate.
 
-Linux build, denied-warning Clippy, formatting, 32 Rust tests and 24 offline
+Linux build, denied-warning Clippy, formatting, 34 Rust tests and 24 offline
 Python asset-tool tests pass.
 Private native Wayland runs on RX 7900 XTX / RADV pass scripted movement,
 static-world/camera checks and real 1280x720 screenshots with active Vulkan validation
@@ -86,7 +86,9 @@ The inspector waits for render pipeline readiness before captures; CPU asset loa
 alone was insufficient for reliable screenshots. The full assembled map remains a visual inspector scene. A separate bounded
 [terrain walking patch](TERRAIN_WALKING.md) now has server-owned height and slope
 checks, matching visual/collision triangles, world identity checks and two rendered
-multiplayer clients. Liquid gameplay and full authored-world collision remain outstanding.
+multiplayer clients. An optional `--player-assets` mode now attaches the existing
+human to both local and remote terrain players, with sampled stand/walk/run
+evidence from real connected clients. Liquid gameplay and full authored-world collision remain outstanding.
 [Original map inventory](MAP_CHECK_2026_10_16.md).
 
 No local prediction, general world mesh collision, animation blending,
@@ -101,7 +103,7 @@ Confirmed gameplay constraints: environment items are static (including doors),
 and players never physically collide with other players or NPCs. NPC pass-through
 is a requirement for future NPCs; this slice contains players only.
 
-Next: integrate reviewed static asset clearance and animated actors into the terrain
+Next: integrate reviewed static asset clearance into the terrain
 walking slice, qualify broader terrain/asset collision and representative original/licensed
 art, resolve the remaining character skin errors, then add a shared
 target/ability/health loop. The direct GLBs already contain PNGs and preserve UVs;

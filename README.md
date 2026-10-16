@@ -82,7 +82,8 @@ Add the usual `--connect` arguments after the asset flag for multiplayer.
 A bounded imported terrain patch is also playable through the authoritative
 server, with source-triangle ground height and slope checks. See
 [terrain preparation, launch commands and limits](docs/TERRAIN_WALKING.md).
-The full assembled map remains a separate visual preview.
+Add `--player-assets build/reference-scene` after the terrain directory for animated
+human players. The full assembled map remains a separate visual preview.
 
 ## Check
 

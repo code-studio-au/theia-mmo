@@ -332,3 +332,40 @@ This qualifies a bounded terrain-only fixture with capsule actors, sampled squar
 clearance and a terrain camera. General static-object mesh clearance, animated
 actors on this patch, interiors, steps/jumping/falling, full-map gameplay, water
 rules, scale/performance, adverse networks and native Windows remain open.
+
+## Animated players on terrain — 2026-10-16
+
+The bounded [terrain walking slice](TERRAIN_WALKING.md#animated-human-players) now
+accepts `--player-assets`, using Bevy's named file asset source for the prepared
+human independently of the terrain assets. Both local and remote visuals inherit
+existing server-owned XYZ roots, camera visibility, interpolation and lifetime.
+Only the human is loaded in this mode; the full reference scene still includes
+the wolf and house in its original world. Wire/authority and source assets are
+unchanged. The known human skin-data validation failures remain unresolved.
+
+Thirty-four Rust tests, 24 Python asset-tool tests, formatting, denied-warning
+all-target Clippy and build pass. New tests verify foot/forward-axis placement at
+several ground heights, child cleanup with the player and rejection of parent
+terrain/root movement as sampled animation evidence. The network smoke now records
+child-local transform changes by gait, only during smoke diagnostics.
+
+Six native GPU clients run in three independent two-client/server checks: human
+terrain, capsule terrain and the existing human/wolf/house reference scene. The
+human terrain run uses a directory containing only `human.glb`, walks outward,
+sprints back and stops. Both actors in both clients have sampled motion in stand,
+walk and run, changing server-owned heights and matching rendered/server XYZ.
+Both final 1280x720 human-terrain screenshots visibly contain both players and
+are inspected. All final cases use RX 7900 XTX / RADV with actual Khronos Vulkan
+validation active, stable compiled pipelines and no validation errors or panics.
+
+An initial checker run exposed a Python option variable shadowed by the snapshot
+player dictionary. It produced incorrect asset metadata and a false reference
+scene assertion; this is corrected before the final accepted checks. Initial
+widely separated gait captures and that checker output remain under `native/`;
+accepted evidence is `build/qualification/terrain-players/native-final/`, with
+source/prepared hashes, pose-change counts, executable hashes, logs, reports and
+screenshots recorded in the surrounding qualification directory.
+
+This establishes animated multiplayer presentation on the small terrain fixture.
+Foot IK, animation blending, static object clearance, full-map collision/gameplay,
+NPC authority, combat, performance/scale and native Windows remain open.

@@ -25,6 +25,17 @@ cargo run --locked -p theia-client -- --reference-scene build/reference-scene --
 Run the second command in two terminals. The server does not load art or trust
 client placement/collision. The plain graybox remains available without the flag.
 
+For the separate terrain walking world, use only the human player visuals:
+
+```sh
+target/debug/theia-client --terrain-world build/qualification/terrain-walking/world --player-assets build/reference-scene --connect 127.0.0.1:5000 build/terrain-server-cert.der
+```
+
+Start the terrain server as documented in [terrain walking](TERRAIN_WALKING.md).
+This option needs only `human.glb` and reuses the existing player attachment and
+animation code. It does not load the wolf or house or introduce a new collider.
+The full reference-scene command above retains its original flat world.
+
 ## Placement and animation
 
 Human meshes are children of existing player roots; server poses, identities,

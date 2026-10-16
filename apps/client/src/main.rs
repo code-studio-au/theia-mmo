@@ -21,8 +21,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     let terrain = terrain_scene::Config::parse(&mut args)?;
     let references = reference_scene::Config::parse(&mut args)?;
-    if terrain.is_some() && references.is_some() {
-        return Err("Terrain and reference modes are separate scenes".into());
+    if let Some(references) = &references
+        && terrain.is_some() != references.players_only
+    {
+        return Err(
+            "Use --player-assets only after --terrain-world; --reference-scene is a separate world"
+                .into(),
+        );
     }
     let connected = args
         .first()
@@ -69,14 +74,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .add_systems(Update, terrain_scene::tick);
     }
     if let Some(references) = references {
-        plugins = plugins.set(AssetPlugin {
-            file_path: references
-                .directory
-                .to_str()
-                .ok_or("Asset directory must be UTF-8")?
-                .to_owned(),
-            ..default()
-        });
+        if references.players_only {
+            use bevy::asset::{
+                AssetApp,
+                io::{AssetSourceBuilder, file::FileAssetReader},
+            };
+            let directory = references.directory.clone();
+            app.register_asset_source(
+                "players",
+                AssetSourceBuilder::new(move || Box::new(FileAssetReader::new(directory.clone()))),
+            );
+        } else {
+            plugins = plugins.set(AssetPlugin {
+                file_path: references
+                    .directory
+                    .to_str()
+                    .ok_or("Asset directory must be UTF-8")?
+                    .to_owned(),
+                ..default()
+            });
+        }
         if let Some(output) = &references.capture {
             app.insert_resource(reference_smoke::Run::new(output.clone()))
                 .add_systems(Last, reference_smoke::observe);

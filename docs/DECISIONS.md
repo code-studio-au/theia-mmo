@@ -51,3 +51,8 @@ and sampled slope clearance using the same source triangles as its visual GLB.
 It is an opt-in implementation slice, with world consistency in wire version 2,
 not approval of general mesh physics or a new cooked-world architecture. See
 [TERRAIN_WALKING.md](TERRAIN_WALKING.md).
+
+The terrain fixture can now use the already approved human player visuals through
+standard Bevy asset loading/animation. This optional presentation reuses the same
+authoritative player roots; it adds no character collision or protocol authority.
+The separate reference scene retains the wolf and farmhouse.
