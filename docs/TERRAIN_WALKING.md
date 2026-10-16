@@ -132,7 +132,7 @@ stable compiled render pipelines, not just CPU asset loading.
 
 ## Executed checks and limits
 
-36 Rust tests and 26 Python asset-tool tests pass, with formatting, denied-warning
+37 Rust tests and 28 Python asset-tool tests pass, with formatting, denied-warning
 all-target Clippy and build. Tests cover triangle interpolation, safe spawn,
 steep/missing ground and sampled step rejection, sliding/retreat/bounds, player
 pass-through on sloped ground, independent wire validation, matching Y through
@@ -166,3 +166,7 @@ selects the highest overlapping surface, so overlapping walkable floors require
 a future qualified collision representation. Reviewed static object clearance and
 broader authored-world collision remain next work beyond the
 [single authored farmhouse](TERRAIN_STATIC_OBJECTS.md).
+
+A separate [enterable farmhouse](ENTERABLE_HOUSE.md) now supplies approved floor/
+ramp support, camera-only ceiling boxes and a bounded height-seam allowance.
+Profiles without these fields retain the original terrain-only behavior above.

@@ -84,7 +84,8 @@ server, with source-triangle ground height and slope checks. See
 [terrain preparation, launch commands and limits](docs/TERRAIN_WALKING.md).
 Add `--player-assets build/reference-scene` after the terrain directory for animated
 human players. A [static farmhouse fixture](docs/TERRAIN_STATIC_OBJECTS.md) also
-adds shared world/camera collision. The full assembled map remains a separate
+adds shared world/camera collision. An [enterable ground-floor variant](docs/ENTERABLE_HOUSE.md)
+also provides a fixed ramp, open doorway and floor support. The full assembled map remains a separate
 visual preview.
 
 ## Check

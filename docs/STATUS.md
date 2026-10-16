@@ -9,7 +9,7 @@ directional light/shadows, a local capsule pawn, fixed-step keyboard movement,
 orbit/zoom camera, camera-relative controls, reset/quit and screenshot smoke
 mode. There is no dependency on the old custom engine or its benchmark crate.
 
-Linux build, denied-warning Clippy, formatting, 36 Rust tests and 26 offline
+Linux build, denied-warning Clippy, formatting, 37 Rust tests and 28 offline
 Python asset-tool tests pass.
 Private native Wayland runs on RX 7900 XTX / RADV pass scripted movement,
 static-world/camera checks and real 1280x720 screenshots with active Vulkan validation
@@ -90,13 +90,17 @@ multiplayer clients. An optional `--player-assets` mode now attaches the existin
 human to both local and remote terrain players, with sampled stand/walk/run
 evidence from real connected clients. A separate [authored farmhouse placement](TERRAIN_STATIC_OBJECTS.md)
 now adds a fixed foundation and shared solid boundary, with server collision and
-real camera obstruction/body visibility checks. Liquid gameplay and full authored-world collision remain outstanding.
+real camera obstruction/body visibility checks. A new [enterable ground-floor
+fixture](ENTERABLE_HOUSE.md) uses measured wall boundaries, source floor triangles,
+a permanently open doorway and a fixed ramp. Native networked entry, interior wall
+contact, exit and re-entry pass with camera clearance below the ceiling. Liquid gameplay and full authored-world collision remain outstanding.
 [Original map inventory](MAP_CHECK_2026_10_16.md).
 
 No local prediction, general world mesh collision, animation blending,
 targeting, combat, quests, inventory, accounts or persistence is implemented.
 The wolf currently supplies presentation only, without server-owned NPC state or AI;
-the solid house has no usable interior, ownership or housing persistence.
+the older solid-house fixtures remain closed, while the new ground-floor fixture
+has authored access. Housing ownership/persistence and loft access are absent.
 The network executables currently allow loopback only; eight peers is a prototype
 cap, not a qualified capacity. Manual multiplayer keyboard interaction, adverse
 network behaviour and the user-visible walkthrough remain outstanding.
@@ -111,8 +115,8 @@ art, resolve the remaining character skin errors, then add a shared
 target/ability/health loop. The direct GLBs already contain PNGs and preserve UVs;
 the earlier missing-texture problem is resolved for these new exports.
 The default/reference world still uses flat-ground boxes. The opt-in terrain patch
-adds sampled height/slope movement; general steps, jumping and arbitrary mesh
-collision remain unimplemented.
+adds sampled height/slope movement; general stair climbing, jumping and arbitrary mesh collision remain unimplemented;
+the new house permits only bounded small support seams and its authored ramp.
 The [WoW-style game direction](GAME_DIRECTION.md), [network slice](NETWORKING.md)
 and [roadmap](ROADMAP.md) distinguish intended gameplay from current capability.
 

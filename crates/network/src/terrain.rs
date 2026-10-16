@@ -22,6 +22,12 @@ struct Profile {
     triangles: Vec<[[f32; 3]; 3]>,
     #[serde(default)]
     solids: Vec<Solid>,
+    #[serde(default)]
+    walk_surfaces: Vec<[[f32; 3]; 3]>,
+    #[serde(default)]
+    camera_solids: Vec<Solid>,
+    #[serde(default)]
+    step_height: f32,
 }
 
 /// Authored ground-blocking column with a finite box for camera obstruction.
@@ -38,6 +44,9 @@ pub struct Terrain {
     pub identity: [u8; 32],
     pub visual_sha256: [u8; 32],
     pub solids: Vec<Solid>,
+    walk_surfaces: Vec<[[f32; 3]; 3]>,
+    camera_solids: Vec<Solid>,
+    step_height: f32,
 }
 
 pub fn sha256(bytes: &[u8]) -> [u8; 32] {
@@ -57,29 +66,36 @@ impl Terrain {
         let profile: Profile = serde_json::from_slice(bytes)?;
         if profile.schema != 1
             || profile.triangles.is_empty()
-            || profile.triangles.len() > 8192
+            || profile.triangles.len() + profile.walk_surfaces.len() > 8192
+            || !profile.step_height.is_finite()
+            || !(0.0..=0.25).contains(&profile.step_height)
             || profile.source_origin.iter().any(|v| !v.is_finite())
             || profile
                 .triangles
                 .iter()
+                .chain(profile.walk_surfaces.iter())
                 .flatten()
                 .flatten()
                 .any(|v| !v.is_finite() || v.abs() > 1023.)
         {
             return Err("Invalid bounded terrain profile".into());
         }
-        if profile.solids.len() > 64
-            || profile.solids.iter().any(|b| {
-                b.center.iter().any(|v| !v.is_finite() || v.abs() > 1023.)
-                    || b.size
-                        .iter()
-                        .any(|v| !v.is_finite() || *v <= 0. || *v > 128.)
-                    || (0..3).any(|i| b.center[i].abs() + b.size[i] / 2. > 1023.)
-            })
+        if profile.solids.len() + profile.camera_solids.len() > 64
+            || profile
+                .solids
+                .iter()
+                .chain(profile.camera_solids.iter())
+                .any(|b| {
+                    b.center.iter().any(|v| !v.is_finite() || v.abs() > 1023.)
+                        || b.size
+                            .iter()
+                            .any(|v| !v.is_finite() || *v <= 0. || *v > 128.)
+                        || (0..3).any(|i| b.center[i].abs() + b.size[i] / 2. > 1023.)
+                })
         {
             return Err("Invalid bounded static solid envelopes".into());
         }
-        for t in &profile.triangles {
+        for t in profile.triangles.iter().chain(profile.walk_surfaces.iter()) {
             let determinant = cross(t[0], t[1], t[2]);
             if determinant >= -1e-6 {
                 return Err("Terrain must have upward nonvertical triangles".into());
@@ -90,6 +106,9 @@ impl Terrain {
             identity: sha256(bytes),
             visual_sha256: profile.visual_sha256,
             solids: profile.solids,
+            walk_surfaces: profile.walk_surfaces,
+            camera_solids: profile.camera_solids,
+            step_height: profile.step_height,
         };
         for x in [0., 2., 4., 6.] {
             if terrain.standing([x, 0.]).is_none() {
@@ -109,6 +128,7 @@ impl Terrain {
         }
         self.triangles
             .iter()
+            .chain(self.walk_surfaces.iter())
             .filter_map(|t| sample(t, p))
             .max_by(|a, b| a.0.total_cmp(&b.0))
     }
@@ -162,7 +182,8 @@ impl Terrain {
                         crate::world::sweep_box_axis(p, next[axis], axis, solid.center, solid.size);
                 }
                 if let (Some(before), Some(after)) = (self.standing(p), self.standing(next))
-                    && (after - before).abs() <= (next[axis] - p[axis]).abs() * MAX_SLOPE + 0.0001
+                    && (after - before).abs()
+                        <= ((next[axis] - p[axis]).abs() * MAX_SLOPE + 0.0001).max(self.step_height)
                 {
                     p = next;
                 }
@@ -175,6 +196,7 @@ impl Terrain {
         let static_fraction = self
             .solids
             .iter()
+            .chain(self.camera_solids.iter())
             .map(|s| crate::world::box_camera_fraction(target, eye, s.center, s.size))
             .fold(1., f32::min);
         let d = [eye[0] - target[0], eye[1] - target[1], eye[2] - target[2]];
@@ -363,6 +385,78 @@ mod tests {
             profile["solids"] = serde_json::json!([invalid]);
             assert!(Terrain::decode(&serde_json::to_vec(&profile).unwrap()).is_err());
         }
+    }
+    #[test]
+    fn authored_floor_and_ramp_allow_entry_exit_and_keep_walls_solid() {
+        let mut profile: serde_json::Value = serde_json::from_slice(&plane(0.)).unwrap();
+        let quad = |x0: f32, x1: f32, z0: f32, z1: f32, y0: f32, y1: f32| {
+            let a = [x0, y0, z0];
+            let b = [x1, y0, z0];
+            let c = [x1, y1, z1];
+            let d = [x0, y1, z1];
+            vec![[a, b, c], [a, c, d]]
+        };
+        let mut surfaces = quad(-3., 3., -2., -8., 1.5, 1.5);
+        surfaces.extend(quad(-1., 1., 2., -2., 0., 1.5));
+        profile["walk_surfaces"] = serde_json::json!(surfaces);
+        profile["step_height"] = serde_json::json!(0.2);
+        profile["solids"] = serde_json::json!([
+            {"center":[-3.1,2,-5],"size":[0.2,4,6]},
+            {"center":[3.1,2,-5],"size":[0.2,4,6]},
+            {"center":[-2,2,-2],"size":[2,4,0.2]},
+            {"center":[2,2,-2],"size":[2,4,0.2]},
+            {"center":[0,2,-8.1],"size":[6.4,4,0.2]}]);
+        profile["camera_solids"] = serde_json::json!([{"center":[0,4.1,-5],"size":[6,1,6]}]);
+        let t = Terrain::decode(&serde_json::to_vec(&profile).unwrap()).unwrap();
+        let mut p = [0., 3.];
+        for _ in 0..48 {
+            p = t.move_player(
+                p,
+                Intent {
+                    axes: [0, -1000],
+                    sprint: false,
+                },
+                1. / 30.,
+            );
+        }
+        assert!(p[1] < -4.9 && p[1] > -5.1);
+        assert!((t.height(p).unwrap() - 1.5).abs() < 1e-5);
+        assert!(t.camera_fraction([p[0], 2.4, p[1]], [p[0], 9.4, p[1] + 12.]) < 0.5);
+        for _ in 0..40 {
+            p = t.move_player(
+                p,
+                Intent {
+                    axes: [1000, 0],
+                    sprint: true,
+                },
+                1. / 30.,
+            );
+        }
+        assert!((p[0] - 2.65).abs() < 1e-5);
+        for _ in 0..16 {
+            p = t.move_player(
+                p,
+                Intent {
+                    axes: [-1000, 0],
+                    sprint: false,
+                },
+                1. / 30.,
+            );
+        }
+        assert!(p[0].abs() < 0.1);
+        for _ in 0..48 {
+            p = t.move_player(
+                p,
+                Intent {
+                    axes: [0, 1000],
+                    sprint: false,
+                },
+                1. / 30.,
+            );
+        }
+        assert!(p[1] > 2.8 && t.height(p).unwrap().abs() < 1e-5);
+        profile["step_height"] = serde_json::json!(1.0);
+        assert!(Terrain::decode(&serde_json::to_vec(&profile).unwrap()).is_err());
     }
     #[test]
     fn steep_missing_degenerate_and_unsafe_spawn_are_rejected() {

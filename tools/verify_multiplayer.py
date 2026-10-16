@@ -19,9 +19,10 @@ def sha256(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def run(output, binaries, references=None, terrain=None, player_assets=None, collision=False):
+def run(output, binaries, references=None, terrain=None, player_assets=None, collision=False, interior=False):
     assert not (references and terrain), "Use separate reference or terrain scenes"
     assert not player_assets or (terrain and not references), "Player assets require terrain mode"
+    assert not interior or (terrain and player_assets and not collision), "Interior smoke requires terrain and player assets"
     assert not collision or terrain, "Static collision smoke requires terrain mode"
     suffix = ".exe" if os.name == "nt" else ""
     server_binary = binaries / f"theia-server{suffix}"
@@ -56,7 +57,7 @@ def run(output, binaries, references=None, terrain=None, player_assets=None, col
             time.sleep(0.05)
         assert address, "Server did not become ready"
         clients = []
-        for name, direction in [("a", "house" if collision else "z-gaits" if player_assets else "z"), ("b", "x-gaits" if player_assets else "x")]:
+        for name, direction in [("a", "inside" if interior else "house" if collision else "z-gaits" if player_assets else "z"), ("b", "x-interior" if interior else "x-gaits" if player_assets else "x")]:
             directory = output / name
             directory.mkdir(exist_ok=True)
             (directory / "network.json").unlink(missing_ok=True)
@@ -99,7 +100,7 @@ def run(output, binaries, references=None, terrain=None, player_assets=None, col
                 profile=json.loads(profile_bytes)
                 def height(x,z):
                     heights=[]
-                    for a,b,c in profile['triangles']:
+                    for a,b,c in profile['triangles'] + profile.get('walk_surfaces', []):
                         def cross(p,q,r): return (q[0]-p[0])*(r[2]-p[2])-(q[2]-p[2])*(r[0]-p[0])
                         area=cross(a,b,c); p=[x,0,z]
                         u=cross(p,b,c)/area; v=cross(a,p,c)/area; w=1-u-v
@@ -110,7 +111,7 @@ def run(output, binaries, references=None, terrain=None, player_assets=None, col
                     assert abs(player['y']-.9-height(*player['xz'])) < .001
                 own=players[report['id']]
                 initial=next(p for p in report['initial']['players'] if p['id']==report['id'])
-                if not collision:
+                if not collision and not interior:
                     assert abs(own['y']-initial['y']) > .02, 'Server height must change on this terrain walk'
             png = output / name / "scene.png"
             image = Image.open(png).convert("RGB")
@@ -132,18 +133,28 @@ def run(output, binaries, references=None, terrain=None, player_assets=None, col
             if player_assets:
                 evidence = report['human_animation']
                 assert len(evidence) == 2 and len({e['owner'] for e in evidence}) == 2
-                count = 2 if collision else 3
+                count = 2 if collision or interior else 3
                 assert all(all(n > 0 for n in e['pose_changes'][:count]) for e in evidence), 'Humans need sampled locomotion motion'
                 for gait in ['Stand', 'Walk', 'Run']:
-                    expected = 1 if collision and gait == 'Run' else 2
+                    expected = 1 if (collision or interior) and gait == 'Run' else 2
                     assert len(set(re.findall(r'Reference actor (\S+): '+gait, log))) == expected
-            if collision:
+            if interior and name == 'a':
+                evidence=report['interior']
+                assert evidence['stage']==7 and evidence['camera_inside']
+                entered,exited,wall=evidence['entered'],evidence['exited'],evidence['wall']
+                assert entered['xz'][1]<-6.8 and exited['xz'][1]>2.8
+                assert entered['y']>exited['y']+2.3
+                assert wall['xz'][0]>entered['xz'][0]+2 and abs(wall['xz'][0]+4.9157)<.04
+                own=players[report['id']]
+                assert abs(own['xz'][0]+8.913)<.15 and abs(own['xz'][1]+7)<.15
+                assert own['applied_sequence']>wall['applied_sequence']>entered['applied_sequence']
+            if collision or interior:
                 assert profile['solids'], 'Expected authored house collision'
                 for player in players.values():
                     for solid in profile['solids']:
                         dx=abs(player['xz'][0]-solid['center'][0]); dz=abs(player['xz'][1]-solid['center'][2])
                         assert dx >= solid['size'][0]/2+.35-.001 or dz >= solid['size'][2]/2+.35-.001
-                if name == 'a':
+                if collision and name == 'a':
                     own=players[report['id']]
                     initial_x=next(p['xz'][0] for p in report['initial']['players'] if p['id']==report['id'])
                     assert abs(own['xz'][0]-initial_x+8) < .8 and abs(own['xz'][1]+3.35) < .001
@@ -167,6 +178,7 @@ def run(output, binaries, references=None, terrain=None, player_assets=None, col
                   "terrain_world": str(terrain) if terrain else None,
                   "player_assets": str(player_assets) if player_assets else None,
                   "static_collision": collision,
+                  "interior": interior,
                   "scope": "loopback QUIC + two Bevy presentations; no capacity, texture fidelity or latency benchmark"}
         proof.write_text(json.dumps(result, indent=2) + "\n")
         print(json.dumps(result, indent=2))
@@ -191,5 +203,6 @@ if __name__ == "__main__":
     parser.add_argument("--terrain-world", type=Path)
     parser.add_argument("--player-assets", type=Path)
     parser.add_argument("--static-collision", action="store_true")
+    parser.add_argument("--interior", action="store_true")
     args = parser.parse_args()
-    run(args.output.resolve(), args.binaries.resolve(), args.reference_assets.resolve() if args.reference_assets else None, args.terrain_world.resolve() if args.terrain_world else None, args.player_assets.resolve() if args.player_assets else None, args.static_collision)
+    run(args.output.resolve(), args.binaries.resolve(), args.reference_assets.resolve() if args.reference_assets else None, args.terrain_world.resolve() if args.terrain_world else None, args.player_assets.resolve() if args.player_assets else None, args.static_collision, args.interior)

@@ -62,3 +62,10 @@ foundation envelope shared by server movement and client camera clearance. This
 is conservative ground-blocking collision, not automatic general mesh collision,
 traversable housing or a change to nonblocking players/NPCs. See
 [TERRAIN_STATIC_OBJECTS.md](TERRAIN_STATIC_OBJECTS.md).
+
+The user requested walking inside the house. A separate authored ground-floor
+fixture now qualifies a permanently open doorway, fixed access ramp, measured
+walls and source floor support for the fixed player size. The old solid-house
+fixtures stay available. This adds no movable environment or player/NPC blocking;
+general multi-floor physics and housing systems remain separate. See
+[ENTERABLE_HOUSE.md](ENTERABLE_HOUSE.md).

@@ -50,6 +50,9 @@ These are game outcomes, not a continuation of the old engine's M0–M6 schedule
   stand/walk/run sampling alongside server-owned height.
 - [x] One authored farmhouse/foundation on terrain with shared server/camera solid
   boundaries and actual connected contact checks. [Scope](TERRAIN_STATIC_OBJECTS.md).
+- [x] One enterable farmhouse ground floor: measured open doorway, fixed ramp,
+  source floor support and networked entry/exit with interior wall/camera checks.
+  [Scope](ENTERABLE_HOUSE.md).
 - [ ] Qualify general authored-world collision alongside imported assets; steps,
   jumping and general mesh colliders remain outstanding.
   The Ruins of Lordaeron terrain and 846 top-level placements plus 624 nested props

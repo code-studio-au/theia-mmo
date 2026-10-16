@@ -6,6 +6,9 @@ human players and server-owned terrain movement. Players stop at its conservativ
 boundary; the camera retracts against the same box. Players/NPCs remain excluded
 from world collision.
 
+A newer [enterable ground-floor fixture](ENTERABLE_HOUSE.md) now provides a
+separate open-door/ramp/floor layout. The solid fixture described here is preserved.
+
 This is a single authored placement, not automatic collision for the full map.
 The farmhouse/foundation is solid throughout: no usable interior, opening door,
 housing ownership, step climbing or walkable roof is implemented.

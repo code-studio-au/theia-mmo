@@ -28,6 +28,14 @@ pub struct Smoke {
     house: bool,
     camera_blocked: bool,
     camera_restored: bool,
+    interior: bool,
+    route: bool,
+    route_stage: usize,
+    stage_started: Option<Instant>,
+    entered: Option<theia_network::wire::Player>,
+    exited: Option<theia_network::wire::Player>,
+    wall: Option<theia_network::wire::Player>,
+    inside_camera: bool,
     ready: Option<Instant>,
     first: Option<theia_network::wire::Snapshot>,
     max_players: usize,
@@ -60,9 +68,13 @@ impl Network {
         let cert = std::fs::read(&args[2])?;
         let smoke = if smoke {
             let house = args[4] == "house";
-            let gaits = args[4].ends_with("-gaits");
+            let interior = matches!(args[4].as_str(), "inside" | "x-interior");
+            let route = args[4] == "inside";
+            let gaits = args[4].ends_with("-gaits") || args[4] == "x-interior";
             let direction = match args[4].strip_suffix("-gaits").unwrap_or(&args[4]) {
                 "house" => [-1000, 0],
+                "inside" => [0, -1000],
+                "x-interior" => [1000, 0],
                 "x" => [1000, 0],
                 "z" => [0, -1000],
                 _ => return Err("Smoke direction must be x, z, x-gaits, z-gaits or house".into()),
@@ -82,6 +94,14 @@ impl Network {
                 house,
                 camera_blocked: false,
                 camera_restored: false,
+                interior,
+                route,
+                route_stage: 0,
+                stage_started: None,
+                entered: None,
+                exited: None,
+                wall: None,
+                inside_camera: false,
                 ready: None,
                 first: None,
                 max_players: 0,
@@ -141,7 +161,7 @@ pub struct RemotePawn {
     elapsed: f32,
 }
 
-pub fn send_input(intent: Res<MoveIntent>, network: Res<Network>) {
+pub fn send_input(intent: Res<MoveIntent>, mut network: ResMut<Network>) {
     let mut value = Intent {
         axes: [
             (intent.direction.x.clamp(-1., 1.) * 1000.) as i16,
@@ -149,11 +169,21 @@ pub fn send_input(intent: Res<MoveIntent>, network: Res<Network>) {
         ],
         sprint: intent.sprint,
     };
-    if let Some(smoke) = &network.smoke {
+    let state = network.state.borrow().clone();
+    let player = state
+        .snapshot
+        .as_ref()
+        .and_then(|s| s.players.iter().find(|p| Some(p.id) == state.id))
+        .cloned();
+    if let Some(smoke) = &mut network.smoke {
         value = Intent::default();
         if let Some(ready) = smoke.ready {
             let elapsed = ready.elapsed().as_secs_f32();
-            if smoke.house {
+            if smoke.route {
+                if let Some(player) = player {
+                    value = smoke.interior_intent(player);
+                }
+            } else if smoke.house {
                 value.axes = if elapsed < 1.6 {
                     [-1000, 0]
                 } else if elapsed < 3.8 {
@@ -172,6 +202,47 @@ pub fn send_input(intent: Res<MoveIntent>, network: Res<Network>) {
         }
     }
     network.input.send_replace(value);
+}
+
+impl Smoke {
+    fn interior_intent(&mut self, player: theia_network::wire::Player) -> Intent {
+        let mut value = Intent::default();
+        if self.route_stage >= 7 {
+            return value;
+        }
+        if self.route_stage == 3 {
+            let started = self.stage_started.get_or_insert_with(Instant::now);
+            if started.elapsed().as_secs_f32() < 1.8 {
+                value.axes = [1000, 0];
+            } else {
+                self.wall = Some(player);
+                self.route_stage = 4;
+            }
+            return value;
+        }
+        let goal = match self.route_stage {
+            0 => [0., 3.],
+            1 | 5 => [-8.913, 3.],
+            2 | 4 | 6 => [-8.913, -7.],
+            _ => unreachable!(),
+        };
+        let delta = Vec2::new(goal[0] - player.xz[0], goal[1] - player.xz[1]);
+        if delta.length() < 0.12 {
+            if self.route_stage == 2 {
+                self.entered = Some(player.clone());
+                self.stage_started = Some(Instant::now());
+            }
+            if self.route_stage == 5 {
+                self.exited = Some(player);
+            }
+            self.route_stage += 1;
+        } else {
+            // Intent only; the server still decides every position and height.
+            let direction = delta.normalize();
+            value.axes = [(direction.x * 1000.) as i16, (direction.y * 1000.) as i16];
+        }
+        value
+    }
 }
 
 #[derive(bevy::ecs::system::SystemParam)]
@@ -343,14 +414,32 @@ pub fn capture(
     }
     if smoke.capture_requested {
         // Keep this peer alive while the other client completes its own capture.
-        if smoke.ready.is_some_and(|t| t.elapsed().as_secs_f32() > 9.)
+        if smoke
+            .ready
+            .is_some_and(|t| t.elapsed().as_secs_f32() > if smoke.interior { 30. } else { 9. })
             && smoke.output.join("network.json").exists()
         {
             exit.write(bevy::app::AppExit::Success);
         }
         return;
     }
-    if !smoke.ready.is_some_and(|t| t.elapsed().as_secs_f32() > 4.) {
+    if smoke.route
+        && smoke.route_stage >= 3
+        && let (Ok((local, _)), Ok(camera)) = (local.single(), art.camera.single())
+    {
+        let distance = camera.translation.distance(local.translation);
+        if local.translation.z < -5.
+            && camera.translation.y < local.translation.y + 2.
+            && distance > 1.
+            && distance < 10.
+        {
+            smoke.inside_camera = true;
+        }
+    }
+    if !smoke
+        .ready
+        .is_some_and(|t| t.elapsed().as_secs_f32() > if smoke.interior { 25. } else { 4. })
+    {
         return;
     }
     if !art.pipelines.ready() {
@@ -402,6 +491,7 @@ pub fn capture(
         "remote_render_positions":remotes.iter().map(|(r,t)|serde_json::json!({"id":r.id,"position":t.translation.to_array()})).collect::<Vec<_>>(),
         "gpu":{"name":adapter.name,"backend":format!("{:?}",adapter.backend)},
         "reference_visuals":reference_visuals,
+        "interior": smoke.route.then_some(serde_json::json!({"stage":smoke.route_stage,"entered":smoke.entered,"exited":smoke.exited,"wall":smoke.wall,"camera_inside":smoke.inside_camera})),
         "static_collision": smoke.house.then_some(serde_json::json!({"camera_blocked":smoke.camera_blocked,"camera_restored":smoke.camera_restored})),
         "human_animation":art.visuals.iter().filter(|v|v.kind==0).map(|v|serde_json::json!({"owner":format!("{:?}",v.owner),"pose_changes":v.pose_changes})).collect::<Vec<_>>(),
         "terrain_world":art.terrain.as_ref().map(|t|t.terrain.identity),

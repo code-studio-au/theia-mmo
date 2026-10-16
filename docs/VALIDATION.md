@@ -416,3 +416,42 @@ The surrounding ignored directory records source/prepared hashes, GLBs, strict
 validator results, tests/build/lint and qualification JSON. The source exports
 remain unchanged and outside Git. This is a conservative solid building/foundation,
 without interiors, walkable roofs, opening doors, mesh physics or full-map gameplay.
+
+## Enterable farmhouse ground floor — 2026-10-16
+
+The [enterable house fixture](ENTERABLE_HOUSE.md) replaces the single envelope in
+a separate derived world with measured wall boundaries and an open doorway. The
+model scale is increased to 0.6 to give the fixed 1.8 m player about 1.998 m of
+entrance clearance. A fixed brown ramp bypasses the source model's steep textured
+entrance face. The door/environment never moves. Original terrain/house buffers
+and source files remain unchanged; proprietary assets are not added to Git.
+
+Eighty source ground-floor triangles plus six authored ramp/landing/foundation
+support triangles determine authoritative height. Seven blocking wall/exclusion
+boxes and two camera-only ceiling/lintel boxes qualify this layout. Optional
+profile fields default to the prior behavior; a bounded 0.2 m seam allowance is
+enabled only for this fixture. The highest-support approach is not general
+multi-floor physics, and the loft/stair area stays blocked. The old solid-house
+and graybox scenes retain their previous behavior.
+
+37 Rust tests, 28 Python asset-tool tests, formatting, denied-warning all-target
+Clippy and build pass. New checks cover entry, raised-floor support, wall blocking,
+exit, ceiling camera restriction, step bounds, measured door/ceiling clearance,
+ramp slope, the open collision gap and source/output protection. Strict Khronos
+validation reports zero errors/warnings/infos and 26 optional-buffer-target hints.
+
+Six actual GPU clients across three independent two-client/server sessions pass
+on RX 7900 XTX / RADV: entry/exit, previous solid-house collision and procedural
+graybox. Client A enters the real model, presses against its interior wall, walks
+back outside and enters again. Snapshots record interior Y=4.70959 for the pawn
+centre and outside Y=1.98166 on the tested approach. Interior wall contact is near
+X=-4.91566. Independent triangle interpolation, local/remote XYZ agreement,
+advancing input sequences, actual ceiling-limited camera and sampled locomotion
+are verified. The final interior image visibly places the human in the room.
+
+All accepted native runs have actual Khronos Vulkan validation activation, ready
+compiled pipelines, real 1280x720 screenshots and no validation errors/panics.
+Ignored `build/qualification/house-interior/` records source hashes, measured
+layout, prepared GLBs, strict validation, tests/build/lint, native logs/reports/
+PNGs and aggregate qualification JSON. No general mesh collision, full-map,
+performance/scale, NPC gameplay or native Windows qualification is claimed.
