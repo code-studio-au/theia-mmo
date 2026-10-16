@@ -17,7 +17,8 @@ It keeps source transforms and units rather than rescaling the model to fit.
 The asset root is the selected file's parent, so ordinary relative dependencies
 can resolve through Bevy. Missing/decode-failed dependencies cause failure; they
 are not silently replaced with claimed working textures. Only this self-contained
-geometry-only reference has been qualified so far.
+geometry-only reference was the initial qualification. The user's newer textured
+farmhouse and character now have separate [executed checks](ASSET_CHECK_2026_10_16.md).
 
 Capture through an actual graphical display or a prepared native headless display:
 
@@ -67,6 +68,12 @@ this tested loader configuration. BLP images can be converted offline; [Pillow's
 format documentation](https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#blp)
 describes its decoder support. No BLP samples were available for actual conversion
 qualification in this run. Do not claim conversion recreates missing UVs/materials.
+
+For the newer direct GLB exports, PNGs are already embedded. No BLP conversion is
+needed for those files. `--animation "Exact clip name"` optionally plays a named
+clip using Bevy's standard animation graph; capture reports sampled pose changes.
+This is inspection-only, not a gameplay animation state machine. Three clips of
+the supplied character are tested; see the asset check for remaining export errors.
 
 Keep source files/export settings, establish metre scale and a sensible placement
 pivot, and keep doors/props static. GLB is the delivery target; `.blend`, OBJ/MTL,

@@ -16,6 +16,8 @@ use std::{
     path::PathBuf,
     time::{Duration, Instant},
 };
+#[path = "preview_animation.rs"]
+mod animation;
 
 #[derive(Resource)]
 struct Preview {
@@ -35,8 +37,17 @@ struct Preview {
 struct Hud;
 
 pub fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
-    if args.len() != 2 && !(args.len() == 4 && args[2] == "--capture") {
-        return Err("Use --inspect-asset <file.glb> [--capture <output-directory>]".into());
+    if args.len() < 2 || !args.len().is_multiple_of(2) {
+        return Err("Use --inspect-asset <file.glb> [--capture <output-directory>] [--animation <exact-clip-name>]".into());
+    }
+    let mut capture_path = None;
+    let mut clip = None;
+    for flag in args[2..].as_chunks::<2>().0 {
+        match flag[0].as_str() {
+            "--capture" if capture_path.is_none() => capture_path = Some(PathBuf::from(&flag[1])),
+            "--animation" if clip.is_none() => clip = Some(flag[1].clone()),
+            _ => return Err(format!("Unknown or duplicate option {}", flag[0]).into()),
+        }
     }
     let source = PathBuf::from(&args[1]).canonicalize()?;
     let mut file = std::fs::File::open(&source)?;
@@ -49,8 +60,7 @@ pub fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
         .to_str()
         .ok_or("Asset path must be UTF-8")?
         .to_owned();
-    let capture_output = if args.len() == 4 {
-        let output = PathBuf::from(&args[3]);
+    let capture_output = if let Some(output) = capture_path {
         std::fs::create_dir_all(&output)?;
         for name in ["asset.json", "scene.png"] {
             let path = output.join(name);
@@ -92,15 +102,16 @@ pub fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
         requested: false,
     })
     .insert_resource(ClearColor(Color::srgb(0.10, 0.15, 0.22)))
+    .insert_resource(animation::Playback::new(clip))
     .init_resource::<Orbit>()
     .add_systems(Startup, setup)
     .add_systems(
         PreUpdate,
         crate::camera::controls.after(bevy::input::InputSystems),
     )
-    .add_systems(Update, (load, follow).chain())
+    .add_systems(Update, (load, animation::start, follow).chain())
     .add_systems(PostUpdate, frame.after(TransformSystems::Propagate))
-    .add_systems(Last, capture);
+    .add_systems(Last, (animation::sample_motion, capture).chain());
     match app.run() {
         AppExit::Success => Ok(()),
         AppExit::Error(code) => {
@@ -216,6 +227,7 @@ fn frame(world: &mut World) {
     let mut triangles = 0usize;
     let mut normal_meshes = 0usize;
     let mut uv_meshes = 0usize;
+    let mut referenced_vertices = 0usize;
     while let Some(entity) = stack.pop() {
         if let Some(children) = world.get::<Children>(entity) {
             stack.extend(children.iter());
@@ -244,6 +256,9 @@ fn frame(world: &mut World) {
         }
         instances += 1;
         vertices += positions.len();
+        referenced_vertices += mesh.indices().map_or(positions.len(), |v| {
+            v.iter().collect::<std::collections::HashSet<_>>().len()
+        });
         triangles += mesh.indices().map_or(positions.len(), |v| v.len()) / 3;
         normal_meshes += usize::from(mesh.attribute(Mesh::ATTRIBUTE_NORMAL).is_some());
         uv_meshes += usize::from(mesh.attribute(Mesh::ATTRIBUTE_UV_0).is_some());
@@ -263,7 +278,7 @@ fn frame(world: &mut World) {
     let materials = gltf.materials.len();
     let images = source.images().count();
     let animations = source.animations().count();
-    let stats = json!({"bounds":{"min":min.to_array(),"max":max.to_array(),"size":size.to_array()},"mesh_instances":instances,"render_vertices":vertices,"triangles":triangles,"meshes_with_normals":normal_meshes,"meshes_with_uv0":uv_meshes,"authored_materials":materials,"images":images,"animations":animations,"source_meshes":gltf.meshes.len()});
+    let stats = json!({"bounds":{"min":min.to_array(),"max":max.to_array(),"size":size.to_array()},"mesh_instances":instances,"render_vertices":vertices,"referenced_vertices":referenced_vertices,"triangles":triangles,"meshes_with_normals":normal_meshes,"meshes_with_uv0":uv_meshes,"authored_materials":materials,"images":images,"animations":animations,"skins":source.skins().count(),"skin_joints":source.skins().map(|s|s.joints().count()).collect::<Vec<_>>(),"source_meshes":gltf.meshes.len()});
     info!("GLB instantiated: {stats}");
     let floor_mesh = world
         .resource_mut::<Assets<Mesh>>()
@@ -341,6 +356,7 @@ fn capture(
     mut commands: Commands,
     mut preview: ResMut<Preview>,
     adapter: Res<bevy::render::renderer::RenderAdapterInfo>,
+    playback: Res<animation::Playback>,
 ) {
     use bevy::render::view::window::screenshot::{Screenshot, ScreenshotCaptured};
     let Some(output) = preview.capture.clone() else {
@@ -357,6 +373,9 @@ fn capture(
     {
         return;
     }
+    if !playback.ready_to_capture() {
+        return;
+    }
     preview.requested = true;
     let stats = preview.stats.clone().unwrap();
     let filename = preview
@@ -365,7 +384,7 @@ fn capture(
         .unwrap()
         .to_string_lossy()
         .into_owned();
-    let report = json!({"schema":1,"completed":true,"file":filename,"stats":stats,"gpu":{"name":adapter.name,"backend":format!("{:?}",adapter.backend)},"scope":"actual Bevy glTF scene instantiation and rendered inspection; no gameplay collision, rigging or asset rights qualification"});
+    let report = json!({"schema":1,"completed":true,"file":filename,"stats":stats,"animation":playback.report(),"gpu":{"name":adapter.name,"backend":format!("{:?}",adapter.backend)},"scope":"actual Bevy glTF import/rendering and optional sampled animation playback; no gameplay integration or asset-rights qualification"});
     commands.spawn(Screenshot::primary_window()).observe(
         move |event: On<ScreenshotCaptured>, mut exit: MessageWriter<AppExit>| {
             event

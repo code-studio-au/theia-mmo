@@ -65,6 +65,11 @@ or establish collision. See [asset import/export guidance](docs/ASSET_IMPORT.md)
 Add `--capture build/asset-check` to save `asset.json` and `scene.png`, then run
 `python3 tools/verify_asset.py build/asset-check apps/client/assets/reference/duskwoodhouse_medium.glb`.
 
+Newer textured building/character exports were also checked. Add
+`--animation "Exact clip name"` to inspect a selected animation; stand, walk and
+run are tested for the user's human model. See [model results and commands](docs/ASSET_CHECK_2026_10_16.md)
+for the successful rendering and remaining character export errors.
+
 ## Check
 
 ```sh

@@ -51,7 +51,15 @@ The inspector frames actual scene bounds, shows a scale reference and can save
 a real screenshot/report. It does not create gameplay collision or alter the
 authoritative world. [Import workflow and export guidance](ASSET_IMPORT.md).
 
-No local prediction, general terrain/mesh collision, skeletal animation,
+The newer farmhouse and re-exported human character also render with embedded
+textures. The inspector now supports explicit named-clip playback with Bevy's
+standard animation graphs. Stand, walk and run have actual sampled joint motion
+and native rendered-pose evidence. The farmhouse passes glTF validation cleanly;
+the character still has empty clips and incorrect accessor metadata, despite the
+selected animations working. Large redundant vertex buffers also need cleanup.
+Both source exports remain outside Git and unchanged. [Detailed model checks](ASSET_CHECK_2026_10_16.md).
+
+No local prediction, general terrain/mesh collision, gameplay character animation states,
 targeting, combat, quests, inventory, accounts or persistence is implemented.
 The network executables currently allow loopback only; eight peers is a prototype
 cap, not a qualified capacity. Manual multiplayer keyboard interaction, adverse
@@ -61,9 +69,10 @@ Confirmed gameplay constraints: environment items are static (including doors),
 and players never physically collide with other players or NPCs. NPC pass-through
 is a requirement for future NPCs; this slice contains players only.
 
-Next: qualify a texture-preserving export with UVs/materials, representative
-original/licensed assets and character animation, then a shared target/ability/health
-loop. The user's BLP/source export is still needed to test that textured workflow.
+Next: clean/qualify the character export, integrate representative original/licensed
+art with reviewed static collision and movement-driven animation, then a shared
+target/ability/health loop. The direct GLBs already contain PNGs and preserve UVs;
+the earlier missing-texture problem is resolved for these new exports.
 Current world collision is
 flat-ground boxes only; slopes, steps and jumping remain unimplemented.
 The [WoW-style game direction](GAME_DIRECTION.md), [network slice](NETWORKING.md)

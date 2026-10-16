@@ -33,6 +33,9 @@ These are game outcomes, not a continuation of the old engine's M0–M6 schedule
   compatibility reference. No authored UVs/materials/textures exist in that file.
 - [ ] Qualify textured static assets and animation loading with original or
   appropriately licensed character, terrain, building and props.
+  Local compatibility checks now render the user's textured farmhouse and character;
+  stand/walk/run playback works in the inspector. The character export still fails
+  strict glTF validation. Representative game content remains a separate step.
 - [ ] Integrate reviewed asset placement and server collision into the shared world;
   viewing an imported mesh does not create a gameplay collider.
 - [x] First static-world collision pass for the flat procedural scene: solid

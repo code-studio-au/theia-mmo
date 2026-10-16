@@ -205,3 +205,21 @@ Only geometry import of this file is qualified. PNG/JPEG decoding is enabled but
 textured import, BLP conversion, UV/material preservation, character animation,
 custom WoW shaders, imported-world collision and native Windows remain unqualified.
 Physical camera input is still not manually qualified; the asset run uses auto-fit.
+
+## Textured building and character — 2026-10-16
+
+The [two-model report](ASSET_CHECK_2026_10_16.md) records the exact fresh exports,
+hashes, validation issues, image/mesh counts and stand/walk/run playback evidence.
+Bevy's `gltf_animation` feature and standard animation graphs are now enabled in
+the inspector. A requested clip must have a player and sampled transform changes
+before a successful capture is written. Building playback is not automatic and
+the authoritative game remains separate.
+
+Twenty workspace tests, formatting, denied-warning all-target Clippy and build
+pass. Four native checks render the textured building and the three character
+clips on RX 7900 XTX / RADV, with active Vulkan validation and no validation errors.
+Textures and changing skinned poses are visible in the PNGs; all source files are
+preserved unchanged. These results supersede the previous geometry-only limit for
+these particular new exports, but do not validate all character animations or
+complete WoW asset compatibility. The character's strict glTF errors remain real;
+successful Bevy rendering is not a substitute for a valid portable source export.
