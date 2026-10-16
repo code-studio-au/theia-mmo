@@ -263,3 +263,19 @@ The large-asset inspector now scales camera depth/zoom; loading/capture remain b
 Twenty-four Rust tests, seven Python asset-tool tests, format, denied-warning Clippy
 and build pass. Map object placements, liquids and terrain-aware authoritative
 movement remain unimplemented; this establishes visual import only.
+
+## Static map objects — 2026-10-16
+
+The [assembly report](MAP_OBJECTS.md) records primary-source placement conventions,
+846 top-level and 624 nested placements, 183 distinct model inputs, source hashes
+and an assembled GLB with 253,552 triangles. One smoke emitter has no source
+geometry. Khronos validation reports no errors/warnings, one empty-node info and
+2,322 optional buffer-target hints. Default/focused map captures and a wolf
+animation regression use RX 7900 XTX / RADV with actual Vulkan validation active
+and no validation errors or panics. Shared mesh references survive assembly.
+
+Twenty-five Rust tests, 14 Python asset-tool tests, format, denied-warning Clippy
+and build pass. The focus option records camera framing separately from whole-scene
+statistics. Native Windows, liquids, map collision/movement, lights/particles and
+exact WoW shader reproduction remain unqualified or unimplemented as detailed in
+the report. The multiplayer simulation and protocol are unchanged by this slice.

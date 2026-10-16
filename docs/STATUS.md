@@ -9,7 +9,7 @@ directional light/shadows, a local capsule pawn, fixed-step keyboard movement,
 orbit/zoom camera, camera-relative controls, reset/quit and screenshot smoke
 mode. There is no dependency on the old custom engine or its benchmark crate.
 
-Linux build, denied-warning Clippy, formatting, 24 Rust tests and seven offline
+Linux build, denied-warning Clippy, formatting, 25 Rust tests and 14 offline
 Python asset-tool tests pass.
 Private native Wayland runs on RX 7900 XTX / RADV pass scripted movement,
 static-world/camera checks and real 1280x720 screenshots with active Vulkan validation
@@ -77,9 +77,12 @@ has zero glTF errors, while deeper human validation still finds skin-data errors
 
 The supplied Ruins of Lordaeron map tile also converts from textured OBJ/MTL into
 a separately inspected GLB: 65,504 triangles and 256 textured patches, with zero
-glTF errors/warnings. All 94 model files referenced by its 846 placements exist,
-but placed objects, liquids and playable terrain collision are not integrated.
-[Map inventory, preview and outstanding work](MAP_CHECK_2026_10_16.md).
+glTF errors/warnings. A further [static map assembly](MAP_OBJECTS.md) now includes
+846 top-level placements and 624 nested building props using shared model parts.
+The combined GLB renders through Bevy with no glTF errors/warnings. One empty
+smoke emitter has no visible effect. Liquids and playable terrain collision remain
+unimplemented; the assembled map is still separate from the authoritative world.
+[Original map inventory](MAP_CHECK_2026_10_16.md).
 
 No local prediction, general terrain/mesh collision, animation blending,
 targeting, combat, quests, inventory, accounts or persistence is implemented.

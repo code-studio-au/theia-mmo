@@ -46,9 +46,9 @@ These are game outcomes, not a continuation of the old engine's M0–M6 schedule
 - [x] Orbit/zoom camera, camera-relative movement and static camera obstruction.
 - [ ] Qualify general authored-world collision alongside imported assets; slopes,
   steps, jumping and mesh colliders are not in the flat prototype.
-  The Ruins of Lordaeron terrain tile now has a qualified textured visual import;
-  its 846 placed objects, liquids and server-owned terrain movement remain separate
-  [outstanding map work](MAP_CHECK_2026_10_16.md#remaining-integration).
+  The Ruins of Lordaeron terrain and 846 top-level placements plus 624 nested props
+  now have a qualified [static visual assembly](MAP_OBJECTS.md). Liquids and
+  server-owned terrain movement remain outstanding.
 - [x] First movement-driven character animation states: human stand/walk/run for
   local and remote players, alongside the existing controls/connection HUD.
 - [ ] Animation blending/combat states and the gameplay target/health/ability HUD.

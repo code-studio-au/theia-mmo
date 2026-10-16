@@ -86,6 +86,11 @@ inspection workflow in [the map report](MAP_CHECK_2026_10_16.md). No runtime OBJ
 loader is needed. Object placements, liquids and terrain movement are separately
 qualified tasks; the first converted tile is a visual preview only.
 
+The [assembled map workflow](MAP_OBJECTS.md) adds static buildings/props and nested
+WMO doodad sets using the exporter's placement conventions. Its optional inspector
+`--focus x,y,z,radius` can frame a town or building without changing asset geometry.
+Scene bounds/counts remain whole-asset values even when the camera is focused.
+
 Keep source files/export settings, establish metre scale and a sensible placement
 pivot, and keep doors/props static. GLB is the delivery target; `.blend`, OBJ/MTL,
 BLP and any terrain heightmaps remain source/intermediate data. Test original or

@@ -32,20 +32,48 @@ struct Preview {
     started: Instant,
     framed_at: Option<Instant>,
     requested: bool,
+    focus: Option<Focus>,
+}
+#[derive(Clone, Copy, Debug)]
+struct Focus {
+    center: Vec3,
+    radius: f32,
+}
+impl Focus {
+    fn parse(value: &str) -> Result<Self, &'static str> {
+        let values: Vec<f32> = value
+            .split(',')
+            .map(|v| v.trim().parse::<f32>())
+            .collect::<Result<_, _>>()
+            .map_err(|_| "Focus must be x,y,z,radius")?;
+        if values.len() != 4
+            || values.iter().any(|v| !v.is_finite())
+            || values[3] <= 0.
+            || !(values[3] * 10.).is_finite()
+        {
+            return Err("Focus needs four finite numbers and a positive, finite-range radius");
+        }
+        Ok(Self {
+            center: Vec3::new(values[0], values[1], values[2]),
+            radius: values[3],
+        })
+    }
 }
 #[derive(Component)]
 struct Hud;
 
 pub fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     if args.len() < 2 || !args.len().is_multiple_of(2) {
-        return Err("Use --inspect-asset <file.glb> [--capture <output-directory>] [--animation <exact-clip-name>]".into());
+        return Err("Use --inspect-asset <file.glb> [--capture <directory>] [--animation <clip>] [--focus x,y,z,radius]".into());
     }
     let mut capture_path = None;
     let mut clip = None;
+    let mut focus = None;
     for flag in args[2..].as_chunks::<2>().0 {
         match flag[0].as_str() {
             "--capture" if capture_path.is_none() => capture_path = Some(PathBuf::from(&flag[1])),
             "--animation" if clip.is_none() => clip = Some(flag[1].clone()),
+            "--focus" if focus.is_none() => focus = Some(Focus::parse(&flag[1])?),
             _ => return Err(format!("Unknown or duplicate option {}", flag[0]).into()),
         }
     }
@@ -100,6 +128,7 @@ pub fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
         started: Instant::now(),
         framed_at: None,
         requested: false,
+        focus,
     })
     .insert_resource(ClearColor(Color::srgb(0.10, 0.15, 0.22)))
     .insert_resource(animation::Playback::new(clip))
@@ -305,12 +334,14 @@ fn frame(world: &mut World) {
         MeshMaterial3d(reference_material),
         Transform::from_xyz(max.x + 1.5, min.y + 0.9, center.z),
     ));
-    world
-        .resource_mut::<Orbit>()
-        .frame_asset(size.length() / 2.);
+    let focus = world.resource::<Preview>().focus.unwrap_or(Focus {
+        center,
+        radius: size.length() / 2.,
+    });
+    world.resource_mut::<Orbit>().frame_asset(focus.radius);
     let mut preview = world.resource_mut::<Preview>();
-    preview.center = center;
-    preview.radius = size.length() / 2.;
+    preview.center = focus.center;
+    preview.radius = focus.radius;
     preview.stats = Some(stats);
     preview.framed_at = Some(Instant::now());
     let filename = preview
@@ -387,7 +418,8 @@ fn capture(
         .unwrap()
         .to_string_lossy()
         .into_owned();
-    let report = json!({"schema":1,"completed":true,"file":filename,"stats":stats,"animation":playback.report(),"gpu":{"name":adapter.name,"backend":format!("{:?}",adapter.backend)},"scope":"actual Bevy glTF import/rendering and optional sampled animation playback; no gameplay integration or asset-rights qualification"});
+    let view = json!({"center":preview.center.to_array(),"radius":preview.radius,"explicit_focus":preview.focus.is_some()});
+    let report = json!({"schema":1,"completed":true,"file":filename,"stats":stats,"view":view,"animation":playback.report(),"gpu":{"name":adapter.name,"backend":format!("{:?}",adapter.backend)},"scope":"actual Bevy glTF import/rendering and optional sampled animation playback; no gameplay integration or asset-rights qualification"});
     commands.spawn(Screenshot::primary_window()).observe(
         move |event: On<ScreenshotCaptured>, mut exit: MessageWriter<AppExit>| {
             event
@@ -410,6 +442,24 @@ fn capture(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn focus_parses_world_coordinates_and_rejects_invalid_camera_ranges() {
+        let focus = Focus::parse("245, 40,2250,70").unwrap();
+        assert_eq!(focus.center, Vec3::new(245., 40., 2250.));
+        assert_eq!(focus.radius, 70.);
+        for value in [
+            "",
+            "1,2,3",
+            "1,2,3,4,5",
+            "1,nan,3,4",
+            "1,2,3,0",
+            "1,2,3,-4",
+            "1,2,3,inf",
+            "1,2,3,3e38",
+        ] {
+            assert!(Focus::parse(value).is_err(), "{value}");
+        }
+    }
     #[test]
     fn glb_preflight_rejects_wrong_versions_and_incomplete_files() {
         let mut header = *b"glTF\x02\x00\x00\x00\x14\x00\x00\x00";
