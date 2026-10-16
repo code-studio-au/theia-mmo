@@ -9,9 +9,10 @@ to this MMO repository; historical engine decisions remain in `theia-engine`.
 | Fresh repository, preserve the old engine | No wholesale copy or runtime dependency on the experimental renderer |
 | Keep Theia as the project name | Bevy is the engine foundation; this is a game project |
 | Rust client and authoritative server | Client input/presentation never establishes trusted gameplay truth |
-| QUIC via Quinn remains the intended transport | No networking code is implemented yet; adapt prior work only after review |
+| QUIC via Quinn remains the intended transport | Implement the bounded local walking slice first; review and record any adapted old code |
 | Linux primary, Windows first-class | Preserve portability and qualify platforms separately |
-| Static authored world; ordinary characters do not block each other | World collision, hit detection and navigation still need implementation |
+| Static authored world; players do not collide with other players or NPCs | Environment collision, targeting/hit detection and navigation are separate requirements |
+| All environment items remain static, including doors | No opening doors, moving props or destructible environment; character animation is separate |
 | Go services when a concrete requirement needs them | No distributed-service scaffold in the first playable slice |
 | Start with two clients in one authoritative world | Do not substitute synthetic proxy counts for working multiplayer |
 
@@ -25,3 +26,9 @@ Bootstrap implementation choices: pin [Bevy 0.20.0](https://bevy.org/news/bevy-0
 use Rust 2024 and Rust 1.99.0, and keep keyboard
 movement explicitly offline until the authoritative slice. Keep changes local
 until the user authorizes a GitHub push.
+
+The user's subsequent direction is a WoW-style MMORPG. See [game direction](GAME_DIRECTION.md)
+for the intended gameplay and first starting-zone loop. The implementation uses
+original content and standard Bevy systems; these targets do not imply existing
+combat, quests or WoW asset compatibility. Local networking choices and reviewed
+code provenance are documented in [NETWORKING.md](NETWORKING.md).

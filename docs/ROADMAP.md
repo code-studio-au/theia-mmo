@@ -11,23 +11,29 @@ These are game outcomes, not a continuation of the old engine's M0–M6 schedule
 
 ## First multiplayer slice — two players walking together
 
-- One local Rust authoritative server with a fixed simulation tick.
-- Review/reuse suitable protocol and Quinn code from the old project, preserving
+- [x] One local Rust authoritative server with a fixed simulation tick.
+- [x] Review/reuse suitable protocol and Quinn code from the old project, preserving
   provenance and relevant tests. Do not copy the whole engine or assume its
   experimental protocol is production-ready.
-- Two independently launched clients connect, receive distinct player identities
+- [x] Two independently launched clients connect, receive distinct player identities
   and see each other's server-owned movement in the same scene.
-- Clients submit bounded input intents; server controls speed, bounds and state.
-- Predict the local presentation where needed; interpolate remote state. Test
-  correction, disconnect/reconnect and malformed/stale inputs.
-- A repeatable local two-client/server verification records actual connections
-  and authoritative state, alongside a visible walkthrough.
+- [x] Clients submit bounded input intents; server controls speed, bounds and state.
+- [x] Basic remote interpolation, direct local server poses, disconnect/reconnect
+  and malformed/stale input tests. Rendered poses agree with server snapshots.
+- [x] Repeatable local two-client/server verification with actual GPU screenshots.
+- [ ] Local prediction/reconciliation when needed for responsiveness; qualify
+  jitter/loss/delay and recovery. Direct server poses currently provide correction.
+- [ ] Manual two-client walkthrough on request; current GPU checks use an owned
+  private headless display. Automatic session resume is not implemented.
 
 ## Representative game scene
 
 - Qualify Bevy's ordinary glTF/GLB model and animation loading with an original or
   appropriately licensed character, terrain, building and props.
 - Add world collision, character animation states and an ordinary game HUD.
+  Environment geometry stays static, including doors. Players do not physically
+  collide with either players or NPCs; targeting/hit detection is separate.
+- Add orbit/follow camera controls suitable for the third-person game direction.
 - Define an asset layout and stable game identifiers; avoid custom cooked formats
   until a measured requirement needs them.
 - Verify the same small scene and connection flow on native Windows.
@@ -39,3 +45,7 @@ playable experience needs them. Increase entities/clients while measuring actual
 simulation, replication, asset and rendering costs. Interest management, larger
 world streaming and services follow observed constraints. No MMO-scale capacity
 is claimed by the bootstrap or first two-client milestone.
+
+The intended game is WoW-style: begin with a targetable NPC, one server-validated
+ability, health/cooldown, then one quest and reward before broadening systems.
+See [GAME_DIRECTION.md](GAME_DIRECTION.md) for the small starting-zone outcome.

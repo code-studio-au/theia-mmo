@@ -18,8 +18,12 @@ pub struct MoveIntent {
 pub fn move_local_pawn(
     time: Res<Time<Fixed>>,
     intent: Res<MoveIntent>,
+    network: Option<Res<crate::network::Network>>,
     mut pawns: Query<&mut Transform, With<LocalPawn>>,
 ) {
+    if network.is_some() {
+        return;
+    }
     let direction = intent.direction.clamp_length_max(1.);
     let speed = if intent.sprint { RUN_SPEED } else { WALK_SPEED };
     for mut pawn in &mut pawns {

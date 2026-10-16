@@ -1,5 +1,6 @@
-//! Offline movement sandbox. Gameplay authority belongs to the future server.
+//! Bevy presentation: offline sandbox or server-owned multiplayer walking.
 mod movement;
+mod network;
 mod scene;
 mod smoke;
 
@@ -8,7 +9,20 @@ use movement::{LocalPawn, MoveIntent};
 use std::time::Duration;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let smoke = smoke::Run::from_args(std::env::args().skip(1))?;
+    let args: Vec<_> = std::env::args().skip(1).collect();
+    let connected = args
+        .first()
+        .is_some_and(|arg| matches!(arg.as_str(), "--connect" | "--network-smoke"));
+    let net = if connected {
+        Some(network::Network::from_args(&args)?)
+    } else {
+        None
+    };
+    let smoke = if connected {
+        None
+    } else {
+        smoke::Run::from_args(args.into_iter())?
+    };
     let scripted = smoke.is_some();
     let mut app = App::new();
     app.insert_resource(ClearColor(Color::srgb(0.16, 0.23, 0.33)))
@@ -24,8 +38,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }))
         .add_systems(Startup, scene::setup)
         .add_systems(PreUpdate, input.after(bevy::input::InputSystems))
-        .add_systems(FixedUpdate, movement::move_local_pawn)
-        .add_systems(Update, follow_camera);
+        .add_systems(FixedUpdate, movement::move_local_pawn);
+    if let Some(net) = net {
+        app.insert_resource(net)
+            .add_systems(
+                Update,
+                (network::send_input, network::present, follow_camera).chain(),
+            )
+            .add_systems(Last, network::capture);
+    } else {
+        app.add_systems(Update, follow_camera);
+    }
     if let Some(run) = smoke {
         app.insert_resource(run)
             .insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_secs_f64(
@@ -33,7 +56,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             )))
             .add_systems(Last, smoke::observe);
     }
-    info!("Theia offline sandbox; scripted smoke mode: {scripted}; no server connection");
+    info!("Theia; connected mode: {connected}; offline smoke mode: {scripted}");
     match app.run() {
         AppExit::Success => Ok(()),
         AppExit::Error(code) => Err(format!("Client exited with code {code}").into()),
@@ -44,6 +67,7 @@ fn input(
     keys: Res<ButtonInput<KeyCode>>,
     mut intent: ResMut<MoveIntent>,
     smoke: Option<Res<smoke::Run>>,
+    network: Option<Res<network::Network>>,
     mut pawn: Query<&mut Transform, With<LocalPawn>>,
     mut exit: MessageWriter<AppExit>,
 ) {
@@ -65,7 +89,8 @@ fn input(
         held(KeyCode::KeyS, KeyCode::ArrowDown) - held(KeyCode::KeyW, KeyCode::ArrowUp),
     );
     intent.sprint = keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight);
-    if keys.just_pressed(KeyCode::KeyR)
+    if network.is_none()
+        && keys.just_pressed(KeyCode::KeyR)
         && let Ok(mut pawn) = pawn.single_mut()
     {
         pawn.translation = movement::START;

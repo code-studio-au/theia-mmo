@@ -5,10 +5,19 @@ use bevy::{
     text::FontSize,
 };
 
+#[derive(Resource)]
+pub struct PawnAssets {
+    pub mesh: Handle<Mesh>,
+    pub remote: Handle<StandardMaterial>,
+}
+#[derive(Component)]
+pub struct NetworkHud;
+
 pub fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    network: Option<Res<crate::network::Network>>,
 ) {
     let grass = materials.add(Color::srgb(0.16, 0.35, 0.17));
     let road = materials.add(Color::srgb(0.48, 0.40, 0.29));
@@ -50,12 +59,22 @@ pub fn setup(
             Transform::from_translation(position).with_scale(size),
         ));
     }
+    let capsule = meshes.add(Capsule3d::new(0.35, 1.1));
+    commands.insert_resource(PawnAssets {
+        mesh: capsule.clone(),
+        remote: materials.add(Color::srgb(0.95, 0.25, 0.12)),
+    });
     commands
         .spawn((
             LocalPawn,
-            Mesh3d(meshes.add(Capsule3d::new(0.35, 1.1))),
+            Mesh3d(capsule),
             MeshMaterial3d(materials.add(Color::srgb(0.12, 0.42, 0.95))),
             Transform::from_translation(START),
+            if network.is_some() {
+                Visibility::Hidden
+            } else {
+                Visibility::Inherited
+            },
         ))
         .with_child((
             Mesh3d(unit_box),
@@ -81,7 +100,8 @@ pub fn setup(
             padding: UiRect::all(px(12)), ..default() },
         BackgroundColor(Color::srgba(0.02, 0.03, 0.05, 0.9)),
     )).with_child((
-        Text::new("THEIA\nLocal movement sandbox\nWASD / arrows: move | Shift: run\nR: reset | Esc: quit"),
+        NetworkHud,
+        Text::new(if network.is_some() { "THEIA\nConnecting to local server...\nEsc: quit" } else { "THEIA\nLocal movement sandbox\nWASD / arrows: move | Shift: run\nR: reset | Esc: quit" }),
         TextFont { font_size: FontSize::Px(18.), ..default() },
         TextColor(Color::WHITE),
     ));

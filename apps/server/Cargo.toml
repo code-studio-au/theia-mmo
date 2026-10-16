@@ -1,0 +1,10 @@
+[package]
+name = "theia-server"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+theia-network.workspace = true
+tokio.workspace = true

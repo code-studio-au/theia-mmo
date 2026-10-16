@@ -1,11 +1,11 @@
 # Theia MMO
 
-A Rust MMO project using **Bevy 0.20.0**. The first target is two clients moving
-together in a small world controlled by an authoritative Rust server.
+A Rust WoW-style MMO project using **Bevy 0.20.0**, with original content.
+Two clients can now move together in a small world controlled by a Rust server.
 
-The current application is an **offline movement sandbox**: original graybox
-geometry, a lit scene, capsule pawn, follow camera and keyboard controls. Networking
-and gameplay authority are not implemented yet. See [status](docs/STATUS.md),
+The current application is a **local multiplayer walking prototype**: original
+graybox geometry, a lit scene, capsule players, follow camera and keyboard controls.
+Combat, quests, collision and persistence are still future work. See [status](docs/STATUS.md),
 [decisions](docs/DECISIONS.md) and the [playable roadmap](docs/ROADMAP.md).
 
 ## Run
@@ -24,8 +24,29 @@ toolchain with Visual Studio C++ build tools/Windows SDK and a working GPU drive
 the same Cargo command applies. Native Windows execution is not yet qualified.
 Audio and gamepad dependencies are intentionally absent from this bootstrap.
 
-WASD/arrows move, Shift runs, R resets, Escape exits. Movement follows world XZ,
-with a fixed follow camera and Y-up coordinates. Props have no collision yet.
+The no-argument client is the offline sandbox. For multiplayer, build both apps,
+start the server and launch a client in each of two other terminals:
+
+```sh
+cargo build --locked --workspace
+cargo run --locked -p theia-server
+cargo run --locked -p theia-client -- --connect 127.0.0.1:5000 build/server-cert.der
+```
+
+Run the final command twice. Each client shows its own blue pawn, other players in
+red, its server-assigned ID and the connected-player count. The server creates an
+ephemeral localhost identity and writes only its public certificate. Restart
+clients after restarting the server. These executables currently accept loopback
+addresses only; there is no account authentication or session resume.
+
+WASD/arrows move, Shift runs, Escape exits. R resets only in offline mode.
+Movement follows world XZ with Y up and a fixed follow camera. Props have no
+collision yet. The server owns connected movement; local prediction is not yet
+implemented. See [network behaviour/provenance](docs/NETWORKING.md) and
+[game direction](docs/GAME_DIRECTION.md).
+
+Environment items stay static, including doors. Players pass through other players
+and NPCs; future world collision and combat hit detection are separate systems.
 
 ## Check
 
@@ -46,6 +67,20 @@ With Python 3 and Pillow installed, check its output using
 `python3 tools/verify_smoke.py build/smoke`. See the [local qualification record](docs/VALIDATION.md).
 After building, `target/debug/theia-client` (or `theia-client.exe` on Windows)
 also launches the sandbox directly.
+
+After building, run the actual two-client/server smoke test on a graphical display
+(or an independently prepared private headless compositor):
+
+```sh
+python3 tools/verify_multiplayer.py build/multiplayer
+```
+
+It launches a server on an ephemeral loopback port and two Bevy clients, scripts
+distinct movement intents, checks matching authoritative/rendered poses, saves
+both screenshots and cleans up the processes. For Vulkan qualification, also set
+`WGPU_BACKEND=vulkan WGPU_VALIDATION=1 WGPU_DEBUG=1`,
+`VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation` and `VK_LOADER_DEBUG=layer`.
+The checker proves layer activation from loader output when that layer is requested.
 
 The old `theia-engine` repository remains a separate research/reference project.
 This repository has no path dependencies on it and imports none of its private
