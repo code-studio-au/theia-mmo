@@ -332,7 +332,7 @@ fn follow(
     preview: Res<Preview>,
     mut orbit: ResMut<Orbit>,
     keys: Res<ButtonInput<KeyCode>>,
-    mut camera: Query<&mut Transform, With<Camera3d>>,
+    mut camera: Query<(&mut Transform, &mut Projection), With<Camera3d>>,
     mut exit: MessageWriter<AppExit>,
 ) {
     if keys.just_pressed(KeyCode::Escape) {
@@ -342,12 +342,15 @@ fn follow(
         if keys.just_pressed(KeyCode::Home) {
             orbit.frame_asset(preview.radius);
         }
-        if let Ok(mut camera) = camera.single_mut() {
+        if let Ok((mut camera, mut projection)) = camera.single_mut() {
             *camera = Transform::from_translation(orbit.unobstructed_eye(preview.center))
                 .looking_at(preview.center, Vec3::Y);
+            if let Projection::Perspective(perspective) = &mut *projection {
+                perspective.far = orbit.asset_far_plane(preview.radius);
+            }
         }
     }
-    if preview.started.elapsed() > Duration::from_secs(30) && preview.stats.is_none() {
+    if preview.started.elapsed() > Duration::from_secs(60) && preview.stats.is_none() {
         error!("GLB loading/instantiation timed out");
         exit.write(AppExit::error());
     }
@@ -363,7 +366,7 @@ fn capture(
         return;
     };
     assert!(
-        preview.started.elapsed() < Duration::from_secs(45),
+        preview.started.elapsed() < Duration::from_secs(90),
         "Asset screenshot timed out"
     );
     if preview.requested

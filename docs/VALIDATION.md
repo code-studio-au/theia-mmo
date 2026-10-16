@@ -250,3 +250,16 @@ The shared building envelope is enlarged for sensible reference-model scale.
 Door contact moves to Z=-2.54; both the actual QUIC door test and native camera
 checks use the new geometry. The wolf has no collider. Native Windows, NPC AI/
 authority, combat, traversable house interiors and terrain collision remain open.
+
+## Map terrain visual import — 2026-10-16
+
+The [map report](MAP_CHECK_2026_10_16.md) records the supplied Ruins of Lordaeron
+tile, source/derived hashes, exact texture preservation and separate native Bevy
+terrain capture. All 65,504 triangles and 256 textured patches survive conversion;
+two identical PNGs share one image. Khronos validation has zero errors/warnings and
+516 optional-buffer-target hints. RX 7900 XTX / RADV runs with active Vulkan
+validation pass for both terrain rendering and a wolf animation regression.
+The large-asset inspector now scales camera depth/zoom; loading/capture remain bounded.
+Twenty-four Rust tests, seven Python asset-tool tests, format, denied-warning Clippy
+and build pass. Map object placements, liquids and terrain-aware authoritative
+movement remain unimplemented; this establishes visual import only.

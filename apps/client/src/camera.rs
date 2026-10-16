@@ -11,6 +11,7 @@ pub struct Orbit {
     pitch: f32,
     distance: f32,
     max_distance: f32,
+    zoom_step: f32,
 }
 impl Default for Orbit {
     fn default() -> Self {
@@ -19,6 +20,7 @@ impl Default for Orbit {
             pitch: 7.0f32.atan2(12.),
             distance: 7.0f32.hypot(12.),
             max_distance: 22.,
+            zoom_step: 1.,
         }
     }
 }
@@ -35,13 +37,14 @@ impl Orbit {
             .rem_euclid(std::f32::consts::TAU)
             - std::f32::consts::PI;
         self.pitch = (self.pitch + motion.y * 0.003).clamp(0.12, 1.35);
-        self.distance = (self.distance - scroll).clamp(2.5, self.max_distance);
+        self.distance = (self.distance - scroll * self.zoom_step).clamp(2.5, self.max_distance);
     }
     pub fn frame_asset(&mut self, radius: f32) {
         // Default perspective is 45 degrees vertically. Fit the bounding sphere
         // with margin; preserve the source geometry's actual scale and pivot.
         self.distance = (radius.max(1.) / (std::f32::consts::FRAC_PI_8).sin() * 1.15).max(2.5);
         self.max_distance = (self.distance * 3.).max(22.);
+        self.zoom_step = (radius * 0.1).max(1.);
         self.yaw = 0.5;
     }
     pub fn unobstructed_eye(&self, target: Vec3) -> Vec3 {
@@ -51,6 +54,9 @@ impl Orbit {
             self.yaw.cos() * self.pitch.cos(),
         ) * self.distance;
         target + offset
+    }
+    pub fn asset_far_plane(&self, radius: f32) -> f32 {
+        (self.distance + radius * 4.).max(1000.)
     }
     pub fn eye(&self, target: Vec3) -> Vec3 {
         let offset = self.unobstructed_eye(target) - target;
@@ -140,6 +146,18 @@ mod tests {
         assert_eq!(orbit.distance, distance);
         orbit.adjust(Vec2::ZERO, 1e6);
         assert_eq!(orbit.distance, 2.5);
+    }
+    #[test]
+    fn terrain_framing_keeps_the_entire_tile_inside_the_camera_depth_range() {
+        let mut orbit = Orbit::default();
+        orbit.frame_asset(380.);
+        assert!(orbit.distance > 1000.);
+        assert!(orbit.asset_far_plane(380.) > orbit.distance + 380.);
+        let distance = orbit.distance;
+        orbit.adjust(Vec2::ZERO, 1.);
+        assert!((distance - orbit.distance - 38.).abs() < 0.001);
+        orbit.adjust(Vec2::ZERO, -10000.);
+        assert!(orbit.asset_far_plane(380.) > orbit.distance + 380.);
     }
     #[test]
     fn orbit_clamps_pitch_and_zoom_and_rotates_movement() {

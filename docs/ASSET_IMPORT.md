@@ -81,6 +81,11 @@ That guide describes local preparation, derived-file validation and the explicit
 authored solid building envelope. The wolf remains a nonblocking enemy placeholder;
 NPC gameplay, housing systems and general terrain collision remain separate work.
 
+For the supplied map's OBJ/MTL/PNG terrain export, use the offline conversion and
+inspection workflow in [the map report](MAP_CHECK_2026_10_16.md). No runtime OBJ
+loader is needed. Object placements, liquids and terrain movement are separately
+qualified tasks; the first converted tile is a visual preview only.
+
 Keep source files/export settings, establish metre scale and a sensible placement
 pivot, and keep doors/props static. GLB is the delivery target; `.blend`, OBJ/MTL,
 BLP and any terrain heightmaps remain source/intermediate data. Test original or

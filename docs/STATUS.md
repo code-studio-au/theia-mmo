@@ -9,7 +9,8 @@ directional light/shadows, a local capsule pawn, fixed-step keyboard movement,
 orbit/zoom camera, camera-relative controls, reset/quit and screenshot smoke
 mode. There is no dependency on the old custom engine or its benchmark crate.
 
-Linux build, denied-warning Clippy, formatting and twenty tests pass.
+Linux build, denied-warning Clippy, formatting, 24 Rust tests and seven offline
+Python asset-tool tests pass.
 Private native Wayland runs on RX 7900 XTX / RADV pass scripted movement,
 static-world/camera checks and real 1280x720 screenshots with active Vulkan validation
 and no validation errors.
@@ -73,8 +74,12 @@ use an enlarged shared solid building envelope; native two-client, locomotion,
 wolf pass-through and house/camera checks pass. Derived models stay under ignored
 `build/reference-scene/`; the default scene remains procedural. The prepared wolf
 has zero glTF errors, while deeper human validation still finds skin-data errors.
-Twenty-three Rust tests and four offline repair tests now pass, with format,
-denied-warning Clippy and build passing too.
+
+The supplied Ruins of Lordaeron map tile also converts from textured OBJ/MTL into
+a separately inspected GLB: 65,504 triangles and 256 textured patches, with zero
+glTF errors/warnings. All 94 model files referenced by its 846 placements exist,
+but placed objects, liquids and playable terrain collision are not integrated.
+[Map inventory, preview and outstanding work](MAP_CHECK_2026_10_16.md).
 
 No local prediction, general terrain/mesh collision, animation blending,
 targeting, combat, quests, inventory, accounts or persistence is implemented.
