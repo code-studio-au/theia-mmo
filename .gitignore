@@ -1,0 +1,9 @@
+/target/
+/build/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+__pycache__/
+*.pyc

@@ -1,0 +1,21 @@
+[workspace]
+members = ["apps/client"]
+resolver = "3"
+
+[workspace.package]
+edition = "2024"
+rust-version = "1.99"
+publish = false
+
+[workspace.dependencies]
+bevy = { version = "=0.20.0", default-features = false, features = [
+    "std", "async_executor", "multi_threaded", "bevy_asset", "bevy_log",
+    "bevy_winit", "bevy_render", "bevy_core_pipeline", "bevy_pbr", "bevy_light",
+    "bevy_window", "bevy_camera", "bevy_image", "bevy_mesh", "bevy_shader",
+    "bevy_color", "x11", "wayland", "bevy_ui", "bevy_ui_render", "bevy_text",
+    "default_font", "png",
+] }
+serde_json = "1"
+
+[profile.release]
+debug = 1
