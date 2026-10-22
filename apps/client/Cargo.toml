@@ -6,7 +6,17 @@ rust-version.workspace = true
 publish.workspace = true
 
 [dependencies]
-bevy.workspace = true
+bevy = { workspace = true, features = [
+    "std", "async_executor", "multi_threaded", "bevy_asset", "bevy_log",
+    "bevy_winit", "bevy_render", "bevy_core_pipeline", "bevy_pbr", "bevy_light",
+    "bevy_window", "bevy_camera", "bevy_image", "bevy_mesh", "bevy_shader",
+    "bevy_color", "x11", "wayland", "bevy_ui", "bevy_ui_render", "bevy_text",
+    "default_font", "png", "jpeg", "bevy_gltf", "reflect_auto_register", "gltf_animation",
+    "mesh_picking", "pbr_light_textures",
+] }
+avian3d.workspace = true
 serde_json.workspace = true
+serde.workspace = true
 theia-network.workspace = true
+theia-core.workspace = true
 tokio.workspace = true

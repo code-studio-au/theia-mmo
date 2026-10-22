@@ -1,5 +1,9 @@
 # Static liquid surfaces
 
+Subsequent work: the [full-tile development world](DEVELOPMENT_WORLD.md) now uses
+this visual assembly for outdoor multiplayer movement with conservative collision
+and water exclusions. This document records the original visual import checks.
+
 The exported map now includes 30 static liquid patches using the source heights
 and cell visibility masks. They use a generic translucent blue PBR material for
 geometry inspection. This does not implement swimming, buoyancy, liquid collision,

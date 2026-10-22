@@ -8,6 +8,7 @@ pub struct Config {
     pub directory: PathBuf,
     pub capture: Option<PathBuf>,
     pub players_only: bool,
+    pub polygon: bool,
 }
 impl Config {
     pub fn parse(args: &mut Vec<String>) -> Result<Option<Self>, Box<dyn std::error::Error>> {
@@ -19,7 +20,10 @@ impl Config {
             return Err("Reference/player assets need an asset directory".into());
         }
         let directory = std::fs::canonicalize(&args[1])?;
-        let files = if players_only {
+        let polygon = players_only && directory.join("character.glb").is_file();
+        let files = if polygon {
+            &["character.glb"][..]
+        } else if players_only {
             &["human.glb"][..]
         } else {
             &["human.glb", "wolf.glb", "house.glb"][..]
@@ -54,6 +58,7 @@ impl Config {
             directory,
             capture,
             players_only,
+            polygon,
         }))
     }
 }
@@ -81,8 +86,9 @@ pub struct Visual {
     pub kind: usize,
     pub players: Vec<Entity>,
     pub gait: Option<Gait>,
+    clip: Option<usize>,
     pub pose_changes: [usize; 3],
-    samples: [Vec<(Entity, Transform)>; 3],
+    samples: [Vec<(Entity, Transform)>; 4],
 }
 #[derive(Component)]
 pub struct House;
@@ -90,7 +96,11 @@ pub struct House;
 pub fn load(mut commands: Commands, server: Res<AssetServer>, config: Res<Config>) {
     commands.insert_resource(Loading {
         models: if config.players_only {
-            vec![server.load("players://human.glb")]
+            vec![server.load(if config.polygon {
+                "players://character.glb"
+            } else {
+                "players://human.glb"
+            })]
         } else {
             vec![
                 server.load("human.glb"),
@@ -135,7 +145,9 @@ fn catalog(world: &mut World) -> Result<Option<Catalog>, String> {
                 .ok_or("Missing GLB scene")?,
         );
         if i < 2 {
-            let names = if i == 0 {
+            let names = if i == 0 && world.resource::<Config>().polygon {
+                &["Idle", "Walk", "Run", "Jump"][..]
+            } else if i == 0 {
                 &[
                     "Stand (ID 0 variation 0)",
                     "Walk (ID 4 variation 0)",
@@ -210,12 +222,14 @@ pub fn tick(world: &mut World) {
                 if !world.resource::<Config>().players_only {
                     world.spawn((
                         House,
+                        crate::floating_origin::Anchored::at(house_transform().translation),
                         WorldAssetRoot(assets.scenes[2].clone()),
                         house_transform(),
                     ));
                     // A nonblocking enemy presentation spawn; AI/combat are separate.
                     world.spawn((
                         Wolf,
+                        crate::floating_origin::Anchored::at(Vec3::new(3., 0.9, -4.)),
                         Motion::default(),
                         Transform::from_xyz(3., 0.9, -4.),
                         Visibility::Inherited,
@@ -251,13 +265,18 @@ pub fn tick(world: &mut World) {
             .insert(Attached);
         world.spawn((
             WorldAssetRoot(scene),
-            actor_transform(kind),
+            if world.resource::<Config>().polygon {
+                polygon_transform()
+            } else {
+                actor_transform(kind)
+            },
             ChildOf(actor),
             Visual {
                 owner: actor,
                 kind,
                 players: Vec::new(),
                 gait: None,
+                clip: None,
                 pose_changes: [0; 3],
                 samples: std::array::from_fn(|_| Vec::new()),
             },
@@ -294,8 +313,27 @@ pub fn tick(world: &mut World) {
         } else {
             Gait::Stand
         };
-        if visual.gait != Some(gait) {
-            let index = world.resource::<Catalog>().indices[visual.kind][gait.index()];
+        let airborne = world
+            .get_resource::<crate::graybox::Graybox>()
+            .is_some_and(|g| {
+                world.get::<Transform>(visual.owner).is_some_and(|t| {
+                    world
+                        .resource::<crate::floating_origin::Frame>()
+                        .render
+                        .to_global(
+                            theia_core::coordinates::LocalPosition::new(t.translation.to_array())
+                                .unwrap(),
+                        )
+                        .is_some_and(|p| g.airborne(p))
+                })
+            });
+        let clip = if world.resource::<Config>().polygon && airborne {
+            3
+        } else {
+            gait.index()
+        };
+        if visual.clip != Some(clip) {
+            let index = world.resource::<Catalog>().indices[visual.kind][clip];
             let players = visual.players.clone();
             let owner = visual.owner;
             for player in players {
@@ -308,12 +346,15 @@ pub fn tick(world: &mut World) {
                     .repeat();
             }
             info!("Reference actor {:?}: {:?}", owner, gait);
-            world.get_mut::<Visual>(root).unwrap().gait = Some(gait);
+            let mut visual = world.get_mut::<Visual>(root).unwrap();
+            visual.gait = Some(gait);
+            visual.clip = Some(clip);
         }
     }
-    if world
-        .get_resource::<crate::network::Network>()
-        .is_some_and(|n| n.smoke.is_some())
+    if world.contains_resource::<crate::graybox::Graybox>()
+        || world
+            .get_resource::<crate::network::Network>()
+            .is_some_and(|n| n.smoke.is_some())
     {
         sample_poses(world);
     }
@@ -339,6 +380,12 @@ pub fn tick(world: &mut World) {
     }
 }
 
+fn polygon_transform() -> Transform {
+    // Source bind-pose toes extend along +Z; gameplay forward is -Z.
+    Transform::from_xyz(0., -theia_network::world::PAWN_Y, 0.)
+        .with_rotation(Quat::from_rotation_y(std::f32::consts::PI))
+}
+
 fn actor_transform(kind: usize) -> Transform {
     let scale = if kind == 0 { 1.8 / 2.1322405 } else { 0.5 };
     let floor_offset = if kind == 0 {
@@ -355,7 +402,7 @@ fn sample_poses(world: &mut World) {
     let roots: Vec<_> = world
         .query::<(Entity, &Visual)>()
         .iter(world)
-        .filter_map(|(e, v)| v.gait.map(|g| (e, g.index())))
+        .filter_map(|(e, v)| v.clip.or(v.gait.map(|g| g.index())).map(|g| (e, g)))
         .collect();
     for (root, gait) in roots {
         let visual = world.get::<Visual>(root).unwrap();
@@ -377,7 +424,12 @@ fn sample_poses(world: &mut World) {
                 })
                 .count();
             let mut visual = world.get_mut::<Visual>(root).unwrap();
-            visual.pose_changes[gait] = visual.pose_changes[gait].max(changes);
+            if gait < 3 {
+                visual.pose_changes[gait] = visual.pose_changes[gait].max(changes);
+            }
+            if let Some(mut gray) = world.get_resource_mut::<crate::graybox::Graybox>() {
+                gray.pose_changes[gait] = gray.pose_changes[gait].max(changes);
+            }
         }
     }
 }
@@ -385,6 +437,12 @@ fn sample_poses(world: &mut World) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn polygon_feet_and_source_positive_z_follow_gameplay_forward() {
+        let t = polygon_transform();
+        assert!((t.rotation * Vec3::Z).distance(Vec3::NEG_Z) < 1e-6);
+        assert!((t.transform_point(Vec3::ZERO).y + theia_network::world::PAWN_Y).abs() < 1e-6);
+    }
     #[test]
     fn human_feet_follow_the_authoritative_ground_and_forward_axis() {
         let transform = actor_transform(0);
@@ -409,6 +467,7 @@ mod tests {
                     kind: 0,
                     players: Vec::new(),
                     gait: Some(Gait::Walk),
+                    clip: None,
                     pose_changes: [0; 3],
                     samples: std::array::from_fn(|_| Vec::new()),
                 },

@@ -20,4 +20,21 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo fmt --check
       - run: cargo clippy --locked --workspace --all-targets -- -D warnings
-      - run: cargo test --locked --workspace
+      - run: cargo test --locked --workspace -j 1
+
+  asset-tools:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: tools/requirements-assets.txt
+      - run: python -m pip install -r tools/requirements-assets.txt
+      - run: python -m unittest discover -s tools/asset_tests
+      - run: python -m unittest discover -s tools -p test_align_glb.py

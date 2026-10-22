@@ -1,14 +1,16 @@
-"""Join two unextended, embedded static GLBs, retaining shared mesh references.
+"""Join static GLBs with qualified material extensions, retaining mesh references.
 
-This narrow offline helper accepts no animation, skins, cameras or external data.
+This narrow offline helper rejects animation, skins and cameras. External images
+require an explicit caller opt-in and caller-side path/dependency validation.
 It rebases standard glTF indices; it never decodes/re-encodes image payloads.
 """
 import copy
 import json
 import struct
+from static_material_extensions import validate as validate_extensions
 
 
-def read(path):
+def read(path, allow_external_images=False):
     with path.open('rb') as file:
         header = file.read(12)
         if len(header) != 12 or struct.unpack('<4sII', header) != (b'glTF', 2, path.stat().st_size):
@@ -21,13 +23,14 @@ def read(path):
         binary = file.read(size)
         if kind != b'BIN\0' or len(binary) != size or size % 4 or file.read(1):
             raise ValueError('Expected exactly one aligned BIN chunk')
-    if any(doc.get(k) for k in ('extensionsUsed', 'extensionsRequired', 'animations', 'skins', 'cameras')):
-        raise ValueError('Only unextended static GLBs are supported')
+    validate_extensions(doc)
+    if any(doc.get(k) for k in ('animations', 'skins', 'cameras')):
+        raise ValueError('Only static, unskinned camera-free GLBs are supported')
     if len(doc.get('scenes', [])) != 1 or len(doc.get('buffers', [])) != 1 or 'uri' in doc['buffers'][0]:
         raise ValueError('Expected one scene and one embedded buffer')
     if not 0 <= len(binary) - doc['buffers'][0]['byteLength'] <= 3:
         raise ValueError('Invalid embedded buffer length')
-    if any('uri' in image or 'bufferView' not in image for image in doc.get('images', [])):
+    if not allow_external_images and any('uri' in image or 'bufferView' not in image for image in doc.get('images', [])):
         raise ValueError('External images are unsupported')
     if any('sparse' in a or 'bufferView' not in a for a in doc.get('accessors', [])):
         raise ValueError('Sparse/implicit accessors are unsupported')
@@ -39,7 +42,8 @@ def read(path):
     return doc, binary
 
 
-def merge_documents(first, second, binary_offset):
+def merge_documents(first, second, binary_offset, allow_external_images=False):
+    validate_extensions(first); validate_extensions(second)
     result, added = copy.deepcopy(first), copy.deepcopy(second)
     keys = ('accessors', 'bufferViews', 'images', 'samplers', 'textures', 'materials', 'meshes', 'nodes')
     offset = {key: len(result.get(key, [])) for key in keys}
@@ -52,6 +56,8 @@ def merge_documents(first, second, binary_offset):
             raise ValueError('Sparse/implicit accessors are unsupported')
         accessor['bufferView'] += offset['bufferViews']
     for image in added.get('images', []):
+        if allow_external_images and 'uri' in image and 'bufferView' not in image:
+            continue
         if 'uri' in image or 'bufferView' not in image:
             raise ValueError('External images are unsupported')
         image['bufferView'] += offset['bufferViews']
@@ -87,6 +93,9 @@ def merge_documents(first, second, binary_offset):
             result.setdefault(key, []).extend(added[key])
     result['scenes'][0].setdefault('nodes', []).extend(n + offset['nodes'] for n in added['scenes'][0].get('nodes', []))
     result['asset'] = {'version': '2.0', 'generator': 'Theia offline static map assembly'}
+    for key in ['extensionsUsed','extensionsRequired']:
+        values=sorted(set(first.get(key,[]))|set(second.get(key,[])))
+        if values:result[key]=values
     return result
 
 

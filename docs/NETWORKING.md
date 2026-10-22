@@ -1,4 +1,36 @@
+Current graybox update, 2026-10-22: the default launcher selects the
+[continental graybox](GRAYBOX_WORLD.md), with wire v11, authoritative procedural
+terrain and recipient-centred snapshots. The launcher now enables the explicit
+Renet prediction profile (`TC01` commands / `TP01` owner corrections) for this world.
+The authority executes bounded tick-addressed inputs; the client reconciles a
+64-step history and interpolates predicted local poses. Remote actors still use
+server-pose interpolation. `--no-prediction` retains the previous graybox path;
+imported maps and Quinn stay on held input. Two-client impaired UDP/native checks,
+teleport/held-jump resets and the full native continent crossing pass. See the
+[prediction contract](PREDICTION_CONTRACT.md) for exact evidence and limits.
+Earlier protocol/default/direct-placement descriptions below are history.
+
 # Local authoritative walking slice
+
+The [Renet executable bridge](NETWORKING_RENET.md) is now the default through
+`python3 tools/play.py --clients 2` after [local qualification](RENET_QUALIFICATION.md).
+The Quinn implementation below remains available through `--transport quinn`.
+Follow the [foundation execution order](engineering/EXECUTION_ORDER.md).
+
+Collision now uses the shared pinned Avian 0.8-dev backend in the server and normal
+client. See [physics migration](PHYSICS_AVIAN.md). Wire/ALPN 10 adds [authority offers](CHUNK_HANDOVER.md) and acknowledged
+[per-client chunk readiness](CHUNK_READINESS.md) to the [global/frame/identity contracts](COORDINATES_IDENTITY.md)
+and [held jump/shared movement](KINEMATIC_CONTROLLER.md). Older protocol revisions
+cannot connect; rebuild and restart both applications together.
+Dynamic paired publication remains open. See [current status](STATUS.md) for
+qualification. Earlier versions below describe historical
+checkpoints.
+
+Architecture alignment, 2026-10-19: Renet/netcode 2.0.0 are now pinned with secure
+transport helpers, explicit bounded channels and real two-client UDP authority
+tests. The launcher now defaults to Renet after the controlled local network gate.
+See [alignment scope](engineering/ALIGNMENT.md); the Renet proof does not establish
+production authentication, ticket replay protection or adverse-network capacity.
 
 This is a small loopback prototype: one Rust server, up to eight admitted
 connections, and ordinary Bevy presentation clients. Two simultaneous rendered
@@ -7,7 +39,8 @@ MMO capacity. There are no accounts, character selection or persistence yet.
 
 ## Authority and wire
 
-The server advances the shared XZ world at 30 Hz using its own clock. Each player
+The server advances the shared XZ world at a configured 20/30/60 Hz (default 30)
+using its own clock. Snapshot tick rate drives presentation interpolation. Each player
 has a server-assigned, increasing ID, a position and a latest movement intent.
 Players have no blocking collision with each other and must also pass through
 NPCs when those are added. NPC targeting/hit checks remain separate. There are no
@@ -20,16 +53,18 @@ Clients send integer axes in [-1000,1000], a sprint flag and a sequence number.
 They cannot send a player identity, position, speed or elapsed time. The server
 normalizes diagonal movement, owns walk/run speeds (5/8 units per second), clamps
 bounds and drops stale sequences. Extra packets do not advance simulation. After
-ten ticks without a fresh intent the server stops that player's movement.
+approximately one third of a second without a fresh intent (ten ticks at the
+default 30 Hz) the server stops that player's movement.
 Camera-relative controls produce world-space intent axes on the client; the server
 still owns movement and collision. Camera angles are not sent.
 
 Quinn QUIC DATAGRAM carries superseding inputs and full snapshots; one reliable
 server-to-client unidirectional stream sends version, assigned ID and a 32-byte
 world identity. Snapshots now also include authoritative Y. The ALPN is
-`theia-mmo-walk-2`; JSON datagrams have version 2, a 1200-byte maximum and reject
+`theia-mmo-walk-5`; JSON datagrams have version 5, a 1200-byte maximum and reject
 unknown fields. Full snapshots have bounded, sorted unique IDs and finite bounded
-positions (XZ +/-19, Y +/-1024). This is a new prototype wire format, not compatibility with old Theia
+positions (XZ +/-1023, Y +/-1024). Each server world enforces its own movement
+bounds; the graybox remains +/-19. This is a new prototype wire format, not compatibility with old Theia
 Engine protocols. No cross-repository dependencies exist.
 
 Each connection has one latest-input mailbox; the Bevy bridge also uses bounded
@@ -72,5 +107,9 @@ Run commands and actual qualification evidence belong in README and VALIDATION.
 An optional [terrain walking fixture](TERRAIN_WALKING.md) now uses the same authority
 and transport with source-triangle height and slope checks. The welcome identifies
 the exact terrain profile/visual pair, rejecting mismatched clients. Graybox and
-reference-art clients explicitly request the default world identity. Version-1
-executables must be rebuilt; their ALPN and snapshots are incompatible.
+reference-art clients explicitly request the default world identity. Version-1/2
+executables must be rebuilt; their ALPN/coordinate limits are incompatible. The
+[complete development tile](DEVELOPMENT_WORLD.md) uses this same authority, shared
+world identity and presentation path, with profile-specific bounds and spatial
+lookup for terrain/prop clearance. Buildings use solid envelopes and water cells
+are excluded until further gameplay is implemented.

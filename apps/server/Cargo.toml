@@ -6,5 +6,6 @@ rust-version.workspace = true
 publish.workspace = true
 
 [dependencies]
+theia-core.workspace = true
 theia-network.workspace = true
 tokio.workspace = true

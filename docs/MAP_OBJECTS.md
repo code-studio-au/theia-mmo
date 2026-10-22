@@ -1,5 +1,9 @@
 # Static map buildings and props
 
+Subsequent work: the [full-tile development world](DEVELOPMENT_WORLD.md) now uses
+this visual assembly for outdoor multiplayer movement with conservative collision
+and water exclusions. This document records the original visual import checks.
+
 The Ruins of Lordaeron reference tile now has a single assembled GLB containing
 its terrain and static object placements, including nested building props. Source
 exports remain outside Git and untouched. This is an inspector scene; multiplayer

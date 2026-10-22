@@ -1,5 +1,6 @@
 /target/
 /build/
+/crates/*/build/
 .env
 .env.*
 !.env.example

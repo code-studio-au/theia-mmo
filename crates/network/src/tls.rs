@@ -7,13 +7,13 @@ use quinn::{
     rustls,
 };
 use std::{net::SocketAddr, sync::Arc, time::Duration};
-const ALPN: &[u8] = b"theia-mmo-walk-2";
+const ALPN: &[u8] = b"theia-mmo-walk-11";
 fn transport() -> Arc<TransportConfig> {
     let mut config = TransportConfig::default();
     config
         .max_concurrent_bidi_streams(0u8.into())
         .max_concurrent_uni_streams(1u8.into())
-        .stream_receive_window(64u32.into())
+        .stream_receive_window(128u32.into())
         .receive_window(4096u32.into())
         .send_window(4096)
         .datagram_receive_buffer_size(Some(8192))

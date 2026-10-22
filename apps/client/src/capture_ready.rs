@@ -5,6 +5,7 @@ use bevy::{
         ExtractSchedule, MainWorld, RenderApp,
         render_resource::{CachedPipelineState, PipelineCache},
     },
+    shader::ShaderCacheError,
 };
 
 pub struct CaptureReadyPlugin;
@@ -42,23 +43,57 @@ impl CaptureReady {
     }
 }
 fn observe(mut main: ResMut<MainWorld>, pipelines: Res<PipelineCache>) {
-    let pending = pipelines.waiting_pipelines().count();
+    let retrying = pipelines
+        .pipelines()
+        .filter(|p| matches!(&p.state, CachedPipelineState::Err(error) if !terminal_error(error)))
+        .count();
+    let pending = pipelines.waiting_pipelines().count().max(retrying);
     let failed = pipelines
         .pipelines()
-        .filter(|p| matches!(p.state, CachedPipelineState::Err(_)))
+        .filter(|p| matches!(&p.state, CachedPipelineState::Err(error) if terminal_error(error)))
         .count();
     let compiled = pipelines
         .pipelines()
         .filter(|p| matches!(p.state, CachedPipelineState::Ok(_)))
         .count();
     if let Some(mut ready) = main.get_resource_mut::<CaptureReady>() {
+        if ready.failed == 0 && failed > 0 {
+            for pipeline in pipelines.pipelines() {
+                if let CachedPipelineState::Err(error) = &pipeline.state
+                    && terminal_error(error)
+                {
+                    error!("Render pipeline compilation failed: {error}");
+                }
+            }
+        }
         ready.record(pending, failed, compiled);
     }
+}
+fn terminal_error(error: &ShaderCacheError) -> bool {
+    matches!(
+        error,
+        ShaderCacheError::ProcessShaderError(_) | ShaderCacheError::CreateShaderModule(_)
+    )
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn shader_import_retries_are_distinct_from_permanent_compilation_failures() {
+        assert!(!terminal_error(&ShaderCacheError::ShaderNotLoaded(
+            Handle::<bevy::shader::Shader>::default().id()
+        )));
+        assert!(!terminal_error(
+            &ShaderCacheError::ShaderImportNotYetAvailable
+        ));
+        assert!(terminal_error(&ShaderCacheError::ProcessShaderError(
+            "synthetic test error".into()
+        )));
+        assert!(terminal_error(&ShaderCacheError::CreateShaderModule(
+            "synthetic test error".into()
+        )));
+    }
     #[test]
     fn capture_needs_observed_compilation_and_stable_ready_frames() {
         let mut ready = CaptureReady::default();

@@ -18,6 +18,12 @@ use std::{
 };
 #[path = "preview_animation.rs"]
 mod animation;
+#[path = "preview_images.rs"]
+mod images;
+#[path = "preview_lighting.rs"]
+mod lighting;
+#[path = "preview_render_flags.rs"]
+pub(crate) mod render_flags;
 
 #[derive(Resource)]
 struct Preview {
@@ -68,16 +74,38 @@ struct Hud;
 
 pub fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     if args.len() < 2 || !args.len().is_multiple_of(2) {
-        return Err("Use --inspect-asset <file.glb> [--capture <directory>] [--animation <clip>] [--focus x,y,z,radius[,yaw,pitch]]".into());
+        return Err("Use --inspect-asset <file.glb> [--capture <directory>] [--animation <clip>] [--focus x,y,z,radius[,yaw,pitch]] [--lighting <metadata>] [--triplanar <metadata> | --triplanar-diagnostic <metadata> | --triplanar-normals <metadata>] [--texture-origin x,y,z]".into());
     }
     let mut capture_path = None;
     let mut clip = None;
     let mut focus = None;
+    let mut triplanar = None;
+    let mut lighting = None;
+    let mut diagnostic = 0;
+    let mut texture_origin = None;
     for flag in args[2..].as_chunks::<2>().0 {
         match flag[0].as_str() {
             "--capture" if capture_path.is_none() => capture_path = Some(PathBuf::from(&flag[1])),
+            "--lighting" if lighting.is_none() => lighting = Some(PathBuf::from(&flag[1])),
             "--animation" if clip.is_none() => clip = Some(flag[1].clone()),
+            "--triplanar" if triplanar.is_none() => triplanar = Some(PathBuf::from(&flag[1])),
+            "--triplanar-diagnostic" if triplanar.is_none() => {
+                triplanar = Some(PathBuf::from(&flag[1]));
+                diagnostic = 1;
+            }
+            "--triplanar-normals" if triplanar.is_none() => {
+                triplanar = Some(PathBuf::from(&flag[1]));
+                diagnostic = 2;
+            }
             "--focus" if focus.is_none() => focus = Some(Focus::parse(&flag[1])?),
+            "--texture-origin" if texture_origin.is_none() => {
+                let values = flag[1]
+                    .split(',')
+                    .map(str::parse::<f64>)
+                    .collect::<Result<Vec<_>, _>>()?;
+                texture_origin =
+                    Some(<[f64; 3]>::try_from(values).map_err(|_| "Texture origin needs x,y,z")?);
+            }
             _ => return Err(format!("Unknown or duplicate option {}", flag[0]).into()),
         }
     }
@@ -104,6 +132,21 @@ pub fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     } else {
         None
     };
+    let mut triplanar = triplanar
+        .map(|p| crate::triplanar::Config::load(&p, &source, diagnostic))
+        .transpose()?;
+    if let Some(origin) = texture_origin {
+        triplanar
+            .as_mut()
+            .ok_or("--texture-origin requires triplanar inspection")?
+            .set_texture_origin(origin)?;
+    }
+    if lighting.is_some() && diagnostic != 0 {
+        return Err("Source lighting is only available in lit inspection".into());
+    }
+    let lighting = lighting
+        .map(|p| lighting::Config::load(&p, &source))
+        .transpose()?;
     let mut app = App::new();
     app.add_plugins(
         DefaultPlugins
@@ -144,8 +187,20 @@ pub fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
         crate::camera::controls.after(bevy::input::InputSystems),
     )
     .add_systems(Update, (load, animation::start, follow).chain())
-    .add_systems(PostUpdate, frame.after(TransformSystems::Propagate))
+    .add_systems(
+        PostUpdate,
+        (render_flags::apply, lighting::apply_layers, frame)
+            .chain()
+            .after(TransformSystems::Propagate),
+    )
     .add_systems(Last, (animation::sample_motion, capture).chain());
+    if let Some(config) = lighting {
+        app.insert_resource(config);
+    }
+    if let Some(config) = triplanar {
+        app.insert_resource(config)
+            .add_plugins(crate::triplanar::TriplanarPlugin);
+    }
     match app.run() {
         AppExit::Success => Ok(()),
         AppExit::Error(code) => {
@@ -162,7 +217,13 @@ fn validate_header(header: [u8; 12], length: u64) -> Result<(), Box<dyn std::err
     }
     Ok(())
 }
-fn setup(mut commands: Commands, server: Res<AssetServer>, mut preview: ResMut<Preview>) {
+fn setup(
+    mut commands: Commands,
+    server: Res<AssetServer>,
+    mut preview: ResMut<Preview>,
+    config: Option<Res<crate::triplanar::Config>>,
+    mut lighting: Option<ResMut<lighting::Config>>,
+) {
     let name = preview
         .source
         .file_name()
@@ -176,20 +237,34 @@ fn setup(mut commands: Commands, server: Res<AssetServer>, mut preview: ResMut<P
             settings.include_source = true;
         })
         .load(name);
-    commands.spawn((
+    let mut camera = commands.spawn((
         Camera3d::default(),
-        Tonemapping::Reinhard,
+        if config.as_ref().is_some_and(|c| c.diagnostic()) {
+            Tonemapping::None
+        } else {
+            Tonemapping::Reinhard
+        },
         DebandDither::Disabled,
         Transform::from_xyz(0., 7., 12.).looking_at(Vec3::ZERO, Vec3::Y),
     ));
-    commands.spawn((
-        DirectionalLight {
-            illuminance: 8000.,
-            shadow_maps_enabled: true,
-            ..default()
-        },
-        Transform::from_xyz(10., 20., 12.).looking_at(Vec3::ZERO, Vec3::Y),
-    ));
+    if let Some(config) = lighting.as_ref() {
+        camera.insert(lighting::camera_layers());
+        if let Some(fog) = config.fog() {
+            camera.insert(fog);
+        }
+    }
+    if let Some(config) = lighting.as_mut() {
+        lighting::setup(&mut commands, &server, config);
+    } else {
+        commands.spawn((
+            DirectionalLight {
+                illuminance: 8000.,
+                shadow_maps_enabled: true,
+                ..default()
+            },
+            Transform::from_xyz(10., 20., 12.).looking_at(Vec3::ZERO, Vec3::Y),
+        ));
+    }
     commands.spawn((
         Hud,
         Text::new("THEIA | Asset inspection\nLoading GLB..."),
@@ -253,14 +328,61 @@ fn frame(world: &mut World) {
         return;
     }
     let root = preview.root.unwrap();
+    let triplanar = crate::triplanar::report(world);
+    let extras: Vec<String> = world
+        .query::<(&bevy::gltf::GltfMaterialExtras, &Mesh3d)>()
+        .iter(world)
+        .map(|(extra, _)| extra.value.clone())
+        .collect();
+    if let Some(config) = world.get_resource::<crate::triplanar::Config>() {
+        let material_count = world
+            .resource::<Assets<Gltf>>()
+            .get(&world.resource::<Preview>().handle)
+            .unwrap()
+            .materials
+            .len();
+        match config.validate_scene(material_count, &extras) {
+            Ok(true) => {}
+            Ok(false) => return,
+            Err(error) => {
+                error!("{error}");
+                world.write_message(AppExit::error());
+                return;
+            }
+        }
+    } else if extras
+        .iter()
+        .any(|extra| crate::triplanar::material_profile(extra) != Ok(None))
+    {
+        error!("Triplanar material requires --triplanar metadata");
+        world.write_message(AppExit::error());
+        return;
+    }
+    match lighting::ready(world) {
+        Ok(true) => {}
+        Ok(false) => return,
+        Err(e) => {
+            error!("{e}");
+            world.write_message(AppExit::error());
+            return;
+        }
+    }
     let mut stack = vec![root];
     let mut min = Vec3::splat(f32::INFINITY);
     let mut max = Vec3::splat(f32::NEG_INFINITY);
     let mut instances = 0usize;
+    let mut standard_material_instances = 0usize;
     let mut vertices = 0usize;
     let mut triangles = 0usize;
     let mut normal_meshes = 0usize;
     let mut uv_meshes = 0usize;
+    let mut uv1_meshes = 0usize;
+    let mut material_uv_channels = std::collections::BTreeMap::new();
+    let mut mesh_layers = std::collections::BTreeMap::new();
+    let mut unlit_instances = 0usize;
+    let mut emissive_max_rgb = Vec3::ZERO;
+    let mut no_shadow_casters = 0usize;
+    let mut no_shadow_receivers = 0usize;
     let mut referenced_vertices = 0usize;
     while let Some(entity) = stack.pop() {
         if let Some(children) = world.get::<Children>(entity) {
@@ -289,13 +411,53 @@ fn frame(world: &mut World) {
             max = max.max(position);
         }
         instances += 1;
+        let layers = world
+            .get::<bevy::camera::visibility::RenderLayers>(entity)
+            .map(|v| v.iter().collect::<Vec<_>>())
+            .unwrap_or_else(|| vec![0]);
+        *mesh_layers.entry(layers).or_insert(0usize) += 1;
+        standard_material_instances += usize::from(
+            world
+                .get::<MeshMaterial3d<StandardMaterial>>(entity)
+                .is_some(),
+        );
+        if let Some(handle) = world.get::<MeshMaterial3d<StandardMaterial>>(entity) {
+            let Some(material) = world.resource::<Assets<StandardMaterial>>().get(&handle.0) else {
+                return;
+            };
+            let channel = |value: &bevy::mesh::UvChannel| match value {
+                bevy::mesh::UvChannel::Uv0 => 0_u8,
+                bevy::mesh::UvChannel::Uv1 => 1_u8,
+            };
+            unlit_instances += usize::from(material.unlit);
+            emissive_max_rgb = emissive_max_rgb.max(Vec3::new(
+                material.emissive.red,
+                material.emissive.green,
+                material.emissive.blue,
+            ));
+            *material_uv_channels
+                .entry((
+                    channel(&material.base_color_channel),
+                    channel(&material.normal_map_channel),
+                    channel(&material.occlusion_channel),
+                ))
+                .or_insert(0usize) += 1;
+        }
         vertices += positions.len();
+        no_shadow_casters +=
+            usize::from(world.get::<bevy::light::NotShadowCaster>(entity).is_some());
+        no_shadow_receivers += usize::from(
+            world
+                .get::<bevy::light::NotShadowReceiver>(entity)
+                .is_some(),
+        );
         referenced_vertices += mesh.indices().map_or(positions.len(), |v| {
             v.iter().collect::<std::collections::HashSet<_>>().len()
         });
         triangles += mesh.indices().map_or(positions.len(), |v| v.len()) / 3;
         normal_meshes += usize::from(mesh.attribute(Mesh::ATTRIBUTE_NORMAL).is_some());
         uv_meshes += usize::from(mesh.attribute(Mesh::ATTRIBUTE_UV_0).is_some());
+        uv1_meshes += usize::from(mesh.attribute(Mesh::ATTRIBUTE_UV_1).is_some());
     }
     if instances == 0 || !min.is_finite() || !max.is_finite() {
         error!("GLB scene contains no finite renderable geometry");
@@ -303,42 +465,91 @@ fn frame(world: &mut World) {
         return;
     }
     let center = (min + max) / 2.;
+    if !triplanar.is_null()
+        && (!min.is_finite()
+            || !max.is_finite()
+            || min.abs().max_element() > 4096.
+            || max.abs().max_element() > 4096.)
+    {
+        error!("Triplanar prototype exceeds bounded source frame");
+        world.write_message(AppExit::error());
+        return;
+    }
     let size = max - min;
+    let lighting_report = lighting::report(world);
     let gltf = world
         .resource::<Assets<Gltf>>()
         .get(&world.resource::<Preview>().handle)
         .unwrap();
+    let Some(image_inventory) = images::inventory(world, gltf) else {
+        return;
+    };
     let source = gltf.source.as_ref().expect("Retained glTF source");
     let materials = gltf.materials.len();
     let images = source.images().count();
     let animations = source.animations().count();
-    let stats = json!({"bounds":{"min":min.to_array(),"max":max.to_array(),"size":size.to_array()},"mesh_instances":instances,"render_vertices":vertices,"referenced_vertices":referenced_vertices,"triangles":triangles,"meshes_with_normals":normal_meshes,"meshes_with_uv0":uv_meshes,"authored_materials":materials,"images":images,"animations":animations,"skins":source.skins().count(),"skin_joints":source.skins().map(|s|s.joints().count()).collect::<Vec<_>>(),"source_meshes":gltf.meshes.len()});
+    let mut stats = json!({"bounds":{"min":min.to_array(),"max":max.to_array(),"size":size.to_array()},"mesh_instances":instances,"render_vertices":vertices,"referenced_vertices":referenced_vertices,"triangles":triangles,"meshes_with_normals":normal_meshes,"meshes_with_uv0":uv_meshes,"authored_materials":materials,"images":images,"animations":animations,"skins":source.skins().count(),"skin_joints":source.skins().map(|s|s.joints().count()).collect::<Vec<_>>(),"source_meshes":gltf.meshes.len()});
+    stats["meshes_with_uv1"] = json!(uv1_meshes);
+    stats["mesh_render_layers"] = json!(
+        mesh_layers
+            .into_iter()
+            .map(|(layers, primitives)| json!({"layers":layers,"primitives":primitives}))
+            .collect::<Vec<_>>()
+    );
+    stats["gltf_core_image_inventory"] = image_inventory;
+    if !lighting_report.is_null() {
+        stats["lighting"] = lighting_report;
+    }
+    stats["unlit_standard_material_instances"] = json!(unlit_instances);
+    stats["standard_material_emissive_max_rgb"] = json!(emissive_max_rgb.to_array());
+    stats["meshes_not_shadow_casters"] = json!(no_shadow_casters);
+    stats["meshes_not_shadow_receivers"] = json!(no_shadow_receivers);
+    stats["standard_material_uv_channels"] = json!(
+        material_uv_channels
+            .into_iter()
+            .map(|((base_color, normal, occlusion), primitives)| {
+                json!({"base_color":base_color,"normal":normal,"occlusion":occlusion,"primitives":primitives})
+            })
+            .collect::<Vec<_>>()
+    );
+    if !triplanar.is_null() {
+        stats["triplanar"] = triplanar.clone();
+        stats["standard_material_instances"] = json!(standard_material_instances);
+    }
     info!("GLB instantiated: {stats}");
-    let floor_mesh = world
-        .resource_mut::<Assets<Mesh>>()
-        .add(Plane3d::default().mesh().size(
-            size.x.max(size.z).max(5.) * 3.,
-            size.x.max(size.z).max(5.) * 3.,
+    if !triplanar.is_null() {
+        info!("Triplanar material applied: {triplanar}");
+    }
+    if !world
+        .get_resource::<crate::triplanar::Config>()
+        .is_some_and(|c| c.diagnostic())
+    {
+        let floor_mesh = world
+            .resource_mut::<Assets<Mesh>>()
+            .add(Plane3d::default().mesh().size(
+                size.x.max(size.z).max(5.) * 3.,
+                size.x.max(size.z).max(5.) * 3.,
+            ));
+        let floor_material = world
+            .resource_mut::<Assets<StandardMaterial>>()
+            .add(Color::srgb(0.18, 0.24, 0.19));
+        world.spawn((
+            Mesh3d(floor_mesh),
+            MeshMaterial3d(floor_material),
+            Transform::from_xyz(center.x, min.y - 0.03, center.z),
         ));
-    let floor_material = world
-        .resource_mut::<Assets<StandardMaterial>>()
-        .add(Color::srgb(0.18, 0.24, 0.19));
-    world.spawn((
-        Mesh3d(floor_mesh),
-        MeshMaterial3d(floor_material),
-        Transform::from_xyz(center.x, min.y - 0.03, center.z),
-    ));
-    let reference_mesh = world
-        .resource_mut::<Assets<Mesh>>()
-        .add(Capsule3d::new(0.35, 1.1));
-    let reference_material = world
-        .resource_mut::<Assets<StandardMaterial>>()
-        .add(Color::srgb(0.12, 0.42, 0.95));
-    world.spawn((
-        Mesh3d(reference_mesh),
-        MeshMaterial3d(reference_material),
-        Transform::from_xyz(max.x + 1.5, min.y + 0.9, center.z),
-    ));
+        let reference_mesh = world
+            .resource_mut::<Assets<Mesh>>()
+            .add(Capsule3d::new(0.35, 1.1));
+        let reference_material = world
+            .resource_mut::<Assets<StandardMaterial>>()
+            .add(Color::srgb(0.12, 0.42, 0.95));
+        world.spawn((
+            Mesh3d(reference_mesh),
+            MeshMaterial3d(reference_material),
+            Transform::from_xyz(max.x + 1.5, min.y + 0.9, center.z),
+        ));
+    }
     let focus = world.resource::<Preview>().focus.unwrap_or(Focus {
         center,
         radius: size.length() / 2.,
@@ -380,7 +591,13 @@ fn follow(
     keys: Res<ButtonInput<KeyCode>>,
     mut camera: Query<(&mut Transform, &mut Projection), With<Camera3d>>,
     mut exit: MessageWriter<AppExit>,
+    ready: Res<crate::capture_ready::CaptureReady>,
 ) {
+    if ready.failed > 0 {
+        error!("Asset render pipeline compilation failed");
+        exit.write(AppExit::error());
+        return;
+    }
     if keys.just_pressed(KeyCode::Escape) {
         exit.write(AppExit::Success);
     }
@@ -411,15 +628,17 @@ fn capture(
     playback: Res<animation::Playback>,
     orbit: Res<Orbit>,
     ready: Res<crate::capture_ready::CaptureReady>,
+    camera: Query<(&Projection, &GlobalTransform), With<Camera3d>>,
 ) {
     use bevy::render::view::window::screenshot::{Screenshot, ScreenshotCaptured};
     let Some(output) = preview.capture.clone() else {
         return;
     };
-    assert!(
-        preview.started.elapsed() < Duration::from_secs(90),
-        "Asset screenshot timed out"
-    );
+    if preview.started.elapsed() >= Duration::from_secs(90) {
+        error!("Asset screenshot timed out");
+        commands.write_message(AppExit::error());
+        return;
+    }
     if preview.requested
         || !preview
             .framed_at
@@ -440,7 +659,10 @@ fn capture(
         .into_owned();
     let view = json!({"center":preview.center.to_array(),"radius":preview.radius,"explicit_focus":preview.focus.is_some(),"angles":orbit.angles().to_array()});
     let pipelines = json!({"pending":ready.pending,"failed":ready.failed,"compiled":ready.compiled,"clear_frames":ready.clear_frames});
-    let report = json!({"schema":1,"completed":true,"file":filename,"stats":stats,"view":view,"pipelines":pipelines,"animation":playback.report(),"gpu":{"name":adapter.name,"backend":format!("{:?}",adapter.backend)},"scope":"actual Bevy glTF import/rendering and optional sampled animation playback; no gameplay integration or asset-rights qualification"});
+    let clip_from_world = camera.single().ok().map(|(projection, transform)| {
+        (projection.get_clip_from_view() * transform.to_matrix().inverse()).to_cols_array()
+    });
+    let report = json!({"clip_from_world":clip_from_world,"schema":1,"completed":true,"file":filename,"stats":stats,"view":view,"pipelines":pipelines,"animation":playback.report(),"gpu":{"name":adapter.name,"backend":format!("{:?}",adapter.backend)},"scope":"actual Bevy glTF import/rendering and optional sampled animation playback; no gameplay integration or asset-rights qualification"});
     commands.spawn(Screenshot::primary_window()).observe(
         move |event: On<ScreenshotCaptured>, mut exit: MessageWriter<AppExit>| {
             event

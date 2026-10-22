@@ -1,3 +1,4 @@
+use crate::floating_origin::Anchored;
 use crate::movement::{LocalPawn, START};
 use bevy::{
     core_pipeline::tonemapping::{DebandDither, Tonemapping},
@@ -19,21 +20,36 @@ pub fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
     network: Option<Res<crate::network::Network>>,
     references: Option<Res<crate::reference_scene::Config>>,
-    terrain: Option<Res<crate::terrain_scene::Config>>,
+    (terrain, graybox): (
+        Option<Res<crate::terrain_scene::Config>>,
+        Option<Res<crate::graybox::Graybox>>,
+    ),
+    chunks: Option<Res<crate::chunk_world::Config>>,
 ) {
+    if terrain.is_some() || chunks.is_some() {
+        commands.insert_resource(GlobalAmbientLight {
+            brightness: 350.,
+            ..default()
+        });
+    }
     let grass = materials.add(Color::srgb(0.16, 0.35, 0.17));
     let road = materials.add(Color::srgb(0.48, 0.40, 0.29));
     let stone = materials.add(Color::srgb(0.45, 0.49, 0.54));
     let wood = materials.add(Color::srgb(0.42, 0.22, 0.10));
-    if terrain.is_none() {
+    if terrain.is_none() && chunks.is_none() && graybox.is_none() {
         commands.spawn((
+            Anchored::ZERO,
             Mesh3d(meshes.add(Plane3d::default().mesh().size(40., 40.))),
             MeshMaterial3d(grass),
         ));
     }
     let unit_box = meshes.add(Cuboid::new(1., 1., 1.));
     for (index, prop) in theia_network::world::PROPS.into_iter().enumerate() {
-        if terrain.is_some() || (references.is_some() && (2..=4).contains(&index)) {
+        if graybox.is_some()
+            || terrain.is_some()
+            || chunks.is_some()
+            || (references.is_some() && (2..=4).contains(&index))
+        {
             continue;
         }
         let material = match prop.surface {
@@ -42,6 +58,7 @@ pub fn setup(
             theia_network::world::Surface::Wood => wood.clone(),
         };
         commands.spawn((
+            Anchored::at(Vec3::from_array(prop.center)),
             Mesh3d(unit_box.clone()),
             MeshMaterial3d(material),
             Transform::from_translation(Vec3::from_array(prop.center))
@@ -78,6 +95,7 @@ pub fn setup(
         ));
     }
     commands.spawn((
+        Anchored::at(Vec3::new(8., 12., 6.)),
         DirectionalLight {
             illuminance: 8_000.,
             shadow_maps_enabled: true,
@@ -87,7 +105,7 @@ pub fn setup(
     ));
     commands.spawn((
         Camera3d::default(),
-        if references.is_some() || terrain.is_some() {
+        if references.is_some() || terrain.is_some() || chunks.is_some() {
             Tonemapping::Reinhard
         } else {
             Tonemapping::None
@@ -101,7 +119,7 @@ pub fn setup(
         BackgroundColor(Color::srgba(0.02, 0.03, 0.05, 0.9)),
     )).with_child((
         NetworkHud,
-        Text::new(if network.is_some() { "THEIA\nConnecting to local server...\nEsc: quit" } else { "THEIA\nLocal movement sandbox\nWASD / arrows: move | Shift: run\nR: reset | Esc: quit\nHold RMB: orbit | Wheel: zoom | Home: camera reset" }),
+        Text::new(if network.is_some() { "THEIA\nConnecting to local server...\nEsc: quit" } else { "THEIA\nLocal movement sandbox\nWASD / arrows: move | Shift: run | Space: jump\nR: reset | Esc: quit\nHold RMB: orbit | Wheel: zoom | Home: camera reset" }),
         TextFont { font_size: FontSize::Px(18.), ..default() },
         TextColor(Color::WHITE),
     ));

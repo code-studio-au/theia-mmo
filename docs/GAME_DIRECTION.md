@@ -1,4 +1,10 @@
-# Game direction — 2026-10-16
+# Game direction
+
+Updated 2026-10-19 to follow the adopted [architecture](engineering/README.md).
+The target is modernized WoW-style presentation and tab targeting with GW2-inspired
+mobile combat: moving while casting by default unless an ability restricts it,
+a configurable hybrid 1.5-second GCD and 300 ms input queue, with explicit ability
+exceptions. These are design constraints, not existing combat implementation.
 
 The user wants a WoW-style MMORPG. Theia is now a game built with Bevy, rather
 than a replacement general-purpose engine. Use WoW as the gameplay reference and
@@ -15,11 +21,12 @@ user. Physical world collision applies to terrain, buildings and solid props.
 NPC targeting, ability range and hit detection remain separate gameplay checks;
 an NPC being nonblocking does not make it untargetable or invulnerable.
 
-All environment items are static, including doors: no opening/closing doors,
-moving props or destructible scenery. Players and NPCs can still move and animate.
-Quest/loot state and UI do not require moving environment geometry. Future asset
-imports and collision should preserve these rules rather than adding interactive
-doors or physics-driven scenery.
+The world is predominantly static. Scripted server-authoritative elevators and
+moving platforms are allowed; client vegetation wind/bending is a presentation
+effect. Buildings, doors and ordinary props remain static unless explicitly
+specified. No general destructible or freely simulated scenery system is planned.
+Players and NPCs can move and animate; quest/loot state does not itself require
+moving environment geometry. None of the platform/vegetation systems exists yet.
 
 Build a small starting-zone experience before expanding the world:
 

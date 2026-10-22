@@ -1,0 +1,8 @@
+# Isolated Python 3.13 conversion tool; not a client/server dependency.
+bpy==5.2.2
+PyYAML==6.0.3
+xxhash==3.6.0
+# Offline source texture adaptation, matching the asset qualification environment.
+Pillow==12.0.0
+numpy==2.5.4
+trimesh==4.10.0

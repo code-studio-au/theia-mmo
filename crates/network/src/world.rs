@@ -56,91 +56,74 @@ pub const PROPS: [Prop; 7] = [
     },
 ];
 
-/// Fixed-height pawn against expanded XZ boxes. Swept axes prevent tunnelling
-/// and allow wall sliding. X then Z is deterministic, with square corner clearance.
-/// Roads are walkable; overhead roof geometry does not block a standing pawn.
+/// Avian world queries shared by the offline client and authoritative graybox.
+/// Actors are deliberately absent from the obstacle set.
+pub fn physics_scene() -> &'static crate::physics::StaticScene {
+    static SCENE: std::sync::OnceLock<crate::physics::StaticScene> = std::sync::OnceLock::new();
+    if let Some(scene) = SCENE.get() {
+        return scene;
+    }
+    // Build outside the OnceLock initializer: Bevy startup can execute other
+    // callers on its shared pool. Holding the initializer across that work can
+    // deadlock those callers (including recursive work-stealing on this thread).
+    // Concurrent cold callers may build this tiny scene more than once; only one
+    // complete immutable scene is published and all callers use that winner.
+    let scene = {
+        use crate::physics::{CAMERA, GROUND, PlacedCollider, SOLID, StaticScene};
+        use avian3d::prelude::Collider;
+        use bevy::prelude::Vec3;
+        let mut colliders: Vec<_> = PROPS
+            .iter()
+            .map(|p| PlacedCollider {
+                shape: Collider::cuboid(p.size[0], p.size[1], p.size[2]),
+                center: Vec3::from_array(p.center),
+                layer: SOLID | CAMERA,
+            })
+            .collect();
+        colliders.push(PlacedCollider {
+            shape: Collider::cuboid(40., 0.1, 40.),
+            center: Vec3::new(0., -0.05, 0.),
+            layer: GROUND,
+        });
+        StaticScene::new(colliders)
+    };
+    SCENE.get_or_init(|| scene)
+}
+
+/// Fixed-height sandbox controller with Avian capsule sweeps and axis sliding.
+/// Its flat-ground contract is retained; it does not implement gravity/jumping.
 pub fn move_player(mut position: [f32; 2], intent: Intent, seconds: f32) -> [f32; 2] {
-    if !intent.valid() || !seconds.is_finite() || seconds < 0. {
+    use crate::physics::{self, SOLID};
+    use bevy::prelude::Vec3;
+    if !intent.valid()
+        || !seconds.is_finite()
+        || seconds < 0.
+        || position.iter().any(|v| !v.is_finite())
+    {
         return position;
     }
     let axes = intent.axes.map(|v| f32::from(v) / 1000.);
     let length = axes[0].hypot(axes[1]).max(1.);
     let speed = if intent.sprint { 8. } else { 5. };
     let delta = axes.map(|axis| axis / length * speed * seconds);
+    let shape = physics::character_shape(0.);
     for axis in 0..2 {
-        let mut end = (position[axis] + delta[axis]).clamp(-WORLD_LIMIT, WORLD_LIMIT);
-        for prop in PROPS {
-            let bottom = prop.center[1] - prop.size[1] / 2.;
-            let top = prop.center[1] + prop.size[1] / 2.;
-            if top <= 0.05 || bottom >= PAWN_HEIGHT {
-                continue;
-            }
-            end = sweep_box_axis(position, end, axis, prop.center, prop.size);
-        }
-        position[axis] = end;
+        let end = (position[axis] + delta[axis]).clamp(-WORLD_LIMIT, WORLD_LIMIT);
+        let mut next = position;
+        next[axis] = end;
+        let fraction = physics_scene().cast(
+            &shape,
+            physics::character_center(position, 0.),
+            Vec3::new(next[0] - position[0], 0., next[1] - position[1]),
+            SOLID,
+        );
+        position[axis] += (end - position[axis]) * fraction;
     }
     position
 }
 
-/// A small swept camera volume against the same static 3D boxes. Return the
-/// unobstructed fraction along the target-to-eye segment; no character collision.
 pub fn camera_fraction(target: [f32; 3], eye: [f32; 3]) -> f32 {
-    PROPS
-        .iter()
-        .map(|p| box_camera_fraction(target, eye, p.center, p.size))
-        .fold(1., f32::min)
-}
-
-/// Axis sweep with square pawn clearance. Caller decides which static boxes apply.
-pub(crate) fn sweep_box_axis(
-    position: [f32; 2],
-    mut end: f32,
-    axis: usize,
-    center: [f32; 3],
-    size: [f32; 3],
-) -> f32 {
-    let other = 1 - axis;
-    let c = [center[0], center[2]];
-    let half = [size[0] / 2. + PAWN_RADIUS, size[2] / 2. + PAWN_RADIUS];
-    if position[other] <= c[other] - half[other] || position[other] >= c[other] + half[other] {
-        return end;
-    }
-    let min = c[axis] - half[axis];
-    let max = c[axis] + half[axis];
-    if position[axis] <= min && end > min {
-        end = end.min(min);
-    }
-    if position[axis] >= max && end < max {
-        end = end.max(max);
-    }
-    end
-}
-
-pub(crate) fn box_camera_fraction(
-    target: [f32; 3],
-    eye: [f32; 3],
-    center: [f32; 3],
-    size: [f32; 3],
-) -> f32 {
-    let mut near = 0.0f32;
-    let mut far = 1.0f32;
-    for axis in 0..3 {
-        let half = size[axis] / 2. + 0.15;
-        let min = center[axis] - half;
-        let max = center[axis] + half;
-        let direction = eye[axis] - target[axis];
-        if direction.abs() < 1e-7 {
-            if target[axis] < min || target[axis] > max {
-                return 1.;
-            }
-        } else {
-            let a = (min - target[axis]) / direction;
-            let b = (max - target[axis]) / direction;
-            near = near.max(a.min(b));
-            far = far.min(a.max(b));
-        }
-    }
-    if near <= far { near } else { 1. }
+    physics_scene().camera_fraction(target, eye)
 }
 
 #[cfg(test)]
@@ -148,17 +131,18 @@ mod tests {
     use super::*;
     fn intent(axes: [i16; 2]) -> Intent {
         Intent {
+            jump: false,
             axes,
             sprint: false,
         }
     }
     #[test]
     fn closed_door_building_and_rocks_block_sweeps_in_both_directions() {
-        assert!((move_player([-7., 0.], intent([0, -1000]), 10.)[1] + 2.54).abs() < 0.00001);
-        assert!((move_player([-7., -15.], intent([0, 1000]), 10.)[1] + 11.35).abs() < 0.00001);
-        assert!((move_player([-15., -7.], intent([1000, 0]), 10.)[0] + 11.35).abs() < 0.00001);
-        assert!((move_player([0., -7.], intent([-1000, 0]), 10.)[0] + 2.65).abs() < 0.00001);
-        assert!((move_player([8., 0.], intent([0, 1000]), 10.)[1] - 3.).abs() < 0.00001);
+        assert!((move_player([-7., 0.], intent([0, -1000]), 10.)[1] + 2.54).abs() < 0.001);
+        assert!((move_player([-7., -15.], intent([0, 1000]), 10.)[1] + 11.35).abs() < 0.001);
+        assert!((move_player([-15., -7.], intent([1000, 0]), 10.)[0] + 11.35).abs() < 0.001);
+        assert!((move_player([0., -7.], intent([-1000, 0]), 10.)[0] + 2.65).abs() < 0.001);
+        assert!((move_player([8., 0.], intent([0, 1000]), 10.)[1] - 3.).abs() < 0.001);
     }
     #[test]
     fn walls_allow_sliding_and_retreat_without_entering_solid_geometry() {

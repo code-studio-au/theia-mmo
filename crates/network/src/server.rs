@@ -1,10 +1,11 @@
 use crate::{
     Result,
     simulation::World,
-    wire::{Input, MAX_PLAYERS, TICK_HZ, VERSION, encode},
+    wire::{Input, MAX_PLAYERS, Welcome, encode},
 };
 use quinn::{Connection, Endpoint};
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
+use theia_core::time::TickMetrics;
 use tokio::{
     sync::{Semaphore, mpsc, oneshot, watch},
     task::JoinSet,
@@ -31,12 +32,19 @@ pub async fn run_world(
     mut shutdown: watch::Receiver<bool>,
     mut world: World,
 ) -> Result<()> {
+    if world.chunks().is_some() {
+        return Err("Chunk worlds require the Renet readiness transport".into());
+    }
     let identity = world.identity();
+    let epoch = world.epoch();
+    let origin = world.origin();
     let mut peers = BTreeMap::<u64, Peer>::new();
     let (joins_tx, mut joins) = mpsc::channel::<Join>(MAX_PLAYERS);
     let permits = Arc::new(Semaphore::new(MAX_PLAYERS));
     let mut sessions = JoinSet::new();
-    let mut tick = tokio::time::interval(Duration::from_secs_f64(1. / f64::from(TICK_HZ)));
+    let rate = world.tick_rate();
+    let mut metrics = TickMetrics::default();
+    let mut tick = tokio::time::interval(rate.period());
     tick.set_missed_tick_behavior(MissedTickBehavior::Skip);
     loop {
         tokio::select! {
@@ -49,7 +57,8 @@ pub async fn run_world(
                     let _ = join.welcome.send(id);
                 } else { join.connection.close(1u32.into(), b"World full"); }
             }
-            _ = tick.tick() => {
+            scheduled = tick.tick() => {
+                let started = Instant::now();
                 peers.retain(|id, peer| {
                     if peer.connection.close_reason().is_some() {
                         world.leave(*id); println!("player_leave id={id}"); false
@@ -64,6 +73,7 @@ pub async fn run_world(
                     // A newer full snapshot supersedes any lost datagram.
                     let _ = peer.connection.send_datagram(bytes.clone().into());
                 }
+                metrics.record(rate, started.elapsed(), started.saturating_duration_since(scheduled));
             }
             incoming = endpoint.accept() => {
                 let Some(incoming) = incoming else { break; };
@@ -71,12 +81,20 @@ pub async fn run_world(
                 let joins = joins_tx.clone();
                 sessions.spawn(async move {
                     let _permit = permit;
-                    if let Err(error) = session(incoming, joins, identity).await { eprintln!("session_end: {error}"); }
+                    if let Err(error) = session(incoming, joins, identity, epoch, origin).await { eprintln!("session_end: {error}"); }
                 });
             }
             Some(_) = sessions.join_next(), if !sessions.is_empty() => {}
         }
     }
+    println!(
+        "simulation_summary tick_hz={} steps={} missed_deadlines={} max_work_us={} max_lateness_us={}",
+        rate.hz(),
+        metrics.steps,
+        metrics.missed_deadlines,
+        metrics.max_work.as_micros(),
+        metrics.max_lateness.as_micros()
+    );
     endpoint.close(0u32.into(), b"Server stopping");
     sessions.abort_all();
     while sessions.join_next().await.is_some() {}
@@ -87,6 +105,8 @@ async fn session(
     incoming: quinn::Incoming,
     joins: mpsc::Sender<Join>,
     identity: [u8; 32],
+    epoch: u64,
+    origin: [f64; 3],
 ) -> Result<()> {
     let connection = tokio::time::timeout(Duration::from_secs(5), incoming).await??;
     let (inputs_tx, inputs) = watch::channel(None);
@@ -100,10 +120,17 @@ async fn session(
         .await?;
     let id = id.await?;
     let mut stream = connection.open_uni().await?;
-    let mut welcome = VERSION.to_le_bytes().to_vec();
-    welcome.extend(id.to_le_bytes());
-    welcome.extend(identity);
-    stream.write_all(&welcome).await?;
+    stream
+        .write_all(
+            &Welcome {
+                id,
+                epoch,
+                world: identity,
+                origin,
+            }
+            .encode(),
+        )
+        .await?;
     stream.finish()?;
     let mut latest = 0;
     let mut period = Instant::now();
@@ -126,6 +153,9 @@ async fn session(
                 return Err(error);
             }
         };
+        if input.epoch != epoch {
+            continue;
+        }
         if input.sequence > latest {
             latest = input.sequence;
             inputs_tx.send_replace(Some(input));

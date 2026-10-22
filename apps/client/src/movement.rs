@@ -4,7 +4,11 @@ use bevy::prelude::*;
 pub const START: Vec3 = Vec3::new(0., theia_network::world::PAWN_Y, 0.);
 
 #[derive(Component)]
+#[require(Body)]
 pub struct LocalPawn;
+
+#[derive(Component, Default)]
+pub struct Body(pub theia_network::kinematic::Motion, pub bool);
 
 /// Presentation speed sampled from actual movement, never a gameplay authority.
 #[derive(Component, Default)]
@@ -39,36 +43,68 @@ impl Gait {
 pub struct MoveIntent {
     pub direction: Vec2,
     pub sprint: bool,
+    pub jump: bool,
 }
 
 pub fn move_local_pawn(
     time: Res<Time<Fixed>>,
     intent: Res<MoveIntent>,
     network: Option<Res<crate::network::Network>>,
-    mut pawns: Query<(&mut Transform, Option<&mut Motion>), With<LocalPawn>>,
+    mut pawns: Query<(&mut Transform, &mut Body, Option<&mut Motion>), With<LocalPawn>>,
 ) {
     if network.is_some() {
         return;
     }
     let direction = intent.direction.clamp_length_max(1.);
     let intent = theia_network::wire::Intent {
+        jump: false,
         axes: [
             (intent.direction.x.clamp(-1., 1.) * 1000.) as i16,
             (intent.direction.y.clamp(-1., 1.) * 1000.) as i16,
         ],
         sprint: intent.sprint,
     };
-    for (mut pawn, motion) in &mut pawns {
+    for (mut pawn, mut body, motion) in &mut pawns {
         let before = pawn.translation;
-        let xz = theia_network::world::move_player(
-            [pawn.translation.x, pawn.translation.z],
+        let rate = theia_core::time::TickRate::from_hz(
+            (1. / time.timestep().as_secs_f64()).round() as u32,
+        )
+        .expect("Qualified offline tick rate");
+        let feet = theia_core::coordinates::LocalPosition::new([
+            pawn.translation.x,
+            pawn.translation.y - theia_network::world::PAWN_Y,
+            pawn.translation.z,
+        ])
+        .unwrap();
+        let feet = if body.1 {
+            feet
+        } else {
+            body.1 = true;
+            theia_network::kinematic::spawn(theia_network::world::physics_scene(), feet)
+                .expect("Safe offline spawn")
+        };
+        let p = theia_network::kinematic::advance(
+            theia_network::world::physics_scene(),
+            &mut body.0,
+            feet,
             intent,
-            time.delta_secs(),
+            rate,
+        )
+        .expect("Qualified offline capsule")
+        .metres();
+        pawn.translation = Vec3::new(
+            p[0].clamp(
+                -theia_network::wire::WORLD_LIMIT,
+                theia_network::wire::WORLD_LIMIT,
+            ),
+            p[1] + theia_network::world::PAWN_Y,
+            p[2].clamp(
+                -theia_network::wire::WORLD_LIMIT,
+                theia_network::wire::WORLD_LIMIT,
+            ),
         );
-        pawn.translation.x = xz[0];
-        pawn.translation.z = xz[1];
         if let Some(mut motion) = motion {
-            motion.0 = pawn.translation.distance(before) / time.delta_secs().max(1e-6);
+            motion.0 = (pawn.translation - before).xz().length() / time.delta_secs().max(1e-6);
         }
         if direction != Vec2::ZERO {
             pawn.rotation = Quat::from_rotation_y((-direction.x).atan2(-direction.y));
@@ -98,6 +134,7 @@ mod tests {
             .insert_resource(MoveIntent {
                 direction: Vec2::NEG_X,
                 sprint: true,
+                jump: false,
             })
             .add_systems(FixedUpdate, move_local_pawn);
         let pawn = app
@@ -120,7 +157,11 @@ mod tests {
         let mut time = Time::<Fixed>::from_hz(f64::from(hz));
         time.advance_by(Duration::from_secs_f64(1. / f64::from(hz)));
         app.insert_resource(time)
-            .insert_resource(MoveIntent { direction, sprint })
+            .insert_resource(MoveIntent {
+                direction,
+                sprint,
+                jump: false,
+            })
             .add_systems(FixedUpdate, move_local_pawn);
         let entity = app
             .world_mut()
@@ -152,7 +193,11 @@ mod tests {
     #[test]
     fn movement_stays_on_the_ground_inside_the_sandbox() {
         let position = simulate(Vec2::ONE, true, 60, 600);
-        assert_eq!(position, Vec3::new(WORLD_LIMIT, START.y, WORLD_LIMIT));
-        assert_eq!(simulate(Vec2::ZERO, false, 60, 60), START);
+        assert_eq!(position.x, WORLD_LIMIT);
+        assert_eq!(position.z, WORLD_LIMIT);
+        assert!((position.y - (START.y + 0.008)).abs() < 0.001);
+        let idle = simulate(Vec2::ZERO, false, 60, 60);
+        assert_eq!(idle.xz(), START.xz());
+        assert!((idle.y - (START.y + 0.03 + 0.008)).abs() < 0.001);
     }
 }
