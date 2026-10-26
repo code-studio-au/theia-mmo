@@ -20,7 +20,7 @@
     "underscores": true,
     "urls": true
   },
-  "liteMode": false,
+  "liteMode": true,
   "onboarding": {
     "hasShownMobileBatteryNotice": false,
     "hasShownOnboardingTooltip": true
@@ -46,12 +46,12 @@
   "stats": {
     "generatedAudioFileCount": 0,
     "playSampleTextCounter": 14,
-    "readNoteCount": 13,
+    "readNoteCount": 15,
     "readTotalSeconds": 653.856,
     "restartFromBeginningCount": 0,
-    "selectCloseCount": 2,
-    "selectPauseCount": 5,
-    "selectPlayCount": 9,
+    "selectCloseCount": 3,
+    "selectPauseCount": 7,
+    "selectPlayCount": 13,
     "selectReloadCount": 1,
     "selectRewindCount": 0,
     "viewSettingsCount": 0
@@ -72,9 +72,9 @@
   "tts": {
     "pitch": -10,
     "provider": "online",
-    "speed": 1.12,
+    "speed": 1.3,
     "voiceLocal": "Microsoft Zira - English (United States)",
-    "voiceOnline": "en-US-AvaMultilingualNeural",
+    "voiceOnline": "en-US-AndrewMultilingualNeural",
     "voiceSelectorFilters": {
       "country": null,
       "gender": null,

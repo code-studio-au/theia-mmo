@@ -9,5 +9,6 @@
   "obsidian-leaflet-plugin",
   "obsidian-timeline",
   "note-reader",
-  "editing-toolbar"
+  "editing-toolbar",
+  "github-sync"
 ]
