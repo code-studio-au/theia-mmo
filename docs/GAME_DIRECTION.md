@@ -1,5 +1,9 @@
 # Game direction
 
+Theia's narrative design lives in [story and lore](story/README.md): worldbuilding,
+characters, campaign acts, quests and their approval/decision records. Narrative
+plans remain separate from implemented gameplay.
+
 Updated 2026-10-19 to follow the adopted [architecture](engineering/README.md).
 The target is modernized WoW-style presentation and tab targeting with GW2-inspired
 mobile combat: moving while casting by default unless an ability restricts it,

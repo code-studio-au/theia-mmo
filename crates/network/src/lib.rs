@@ -13,6 +13,7 @@ pub mod prediction_wire;
 pub mod procedural;
 pub mod renet_runtime;
 pub mod renet_transport;
+pub mod saved_terrain;
 pub mod server;
 pub mod shared_images;
 pub mod simulation;

@@ -1,5 +1,11 @@
 # Continental graybox development world
 
+Saved terrain continuation, 2026-10-23: the loader now has a checked saved-height
+source. Saved terrain is the qualified default; [saved terrain](SAVED_TERRAIN.md)
+records current acceptance/evidence. The original runtime-generated source is
+retained through `--graybox-world`. The representation below describes that
+original source; the same residency/controller budgets apply to saved tiles.
+
 User-directed replacement development target, 2026-10-22. Scope:
 P1-03/09/10/12 and P2-06/07/08/09; this slice does not complete those entire tasks.
 Prerequisites: checked coordinates, authoritative Renet sessions, the shared Avian
@@ -11,6 +17,7 @@ Base Locomotion sample. Forest reproduction is frozen; its fixtures remain avail
 Build optimized client/server, then launch:
 
 ```sh
+cargo run --release --locked -p theia-network --example bake_terrain -- bake build/graybox-terrain-v1
 cargo build --release --locked --workspace
 python3 tools/play.py
 # Server-configured accelerated development travel:

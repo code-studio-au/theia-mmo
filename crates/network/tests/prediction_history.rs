@@ -38,6 +38,190 @@ fn moving(tick: u64) -> Intent {
 fn unchanged(pose: Pose, _: Intent, _: TickRate) -> Result<Option<Pose>, &'static str> {
     Ok(Some(pose))
 }
+
+fn advance_one_metre(mut pose: Pose, _: Intent, _: TickRate) -> Result<Option<Pose>, &'static str> {
+    let mut feet = pose.feet.metres();
+    feet[0] += 1.;
+    pose.feet = theia_core::coordinates::GlobalPosition::new(feet).unwrap();
+    Ok(Some(pose))
+}
+
+#[test]
+fn correction_error_uses_the_completed_tick_and_updates_replayed_measurement_poses() {
+    let patch = Patch::build(ChunkId { x: 62, z: 62 });
+    let initial = anchor(&patch, TickRate::Hz30);
+    let mut history = History::new(initial).unwrap();
+    for _ in 0..3 {
+        history.predict(None, 1, advance_one_metre).unwrap();
+    }
+    let base = initial.pose.feet.metres();
+    let mut correction = initial;
+    correction.input.tick = 2;
+    correction.pose.feet =
+        theia_core::coordinates::GlobalPosition::new([base[0] + 2.25, base[1] + 0.5, base[2]])
+            .unwrap();
+    correction.pose.motion.grounded = !initial.pose.motion.grounded;
+    correction.pose.motion.vertical_speed = if correction.pose.motion.grounded {
+        0.
+    } else {
+        1.
+    };
+    correction.pose.motion.jump_held = !initial.pose.motion.jump_held;
+    let Reconciled::Applied {
+        replayed,
+        same_tick: Some(error),
+        ..
+    } = history.reconcile(correction, advance_one_metre).unwrap()
+    else {
+        panic!("Missing aligned error");
+    };
+    assert_eq!(replayed, 1);
+    assert_eq!(error.horizontal_metres, 0.25);
+    assert_eq!(error.vertical_metres, 0.5);
+    assert!((error.metres - 0.3125_f64.sqrt()).abs() < 1e-12);
+    assert!(error.grounded_mismatch && error.jump_held_mismatch);
+    assert_eq!(
+        history.pose().feet.metres(),
+        [base[0] + 3.25, base[1] + 0.5, base[2]]
+    );
+    correction.input.tick = 3;
+    correction.pose.feet =
+        theia_core::coordinates::GlobalPosition::new([base[0] + 3.25, base[1] + 0.5, base[2]])
+            .unwrap();
+    let Reconciled::Applied {
+        same_tick: Some(error),
+        ..
+    } = history.reconcile(correction, advance_one_metre).unwrap()
+    else {
+        panic!("Missing replayed measurement");
+    };
+    assert_eq!(
+        error.metres, 0.,
+        "Replay must refresh retained measurement poses"
+    );
+    assert!(!error.grounded_mismatch && !error.jump_held_mismatch);
+    assert!(!error.readiness_pending);
+    history.measure_pending_readiness(true);
+    history.predict(None, 1, advance_one_metre).unwrap();
+    history.measure_pending_readiness(false);
+    correction.input.tick = 4;
+    correction.pose.feet =
+        theia_core::coordinates::GlobalPosition::new([base[0] + 4.25, base[1] + 0.5, base[2]])
+            .unwrap();
+    correction.pose.motion.grounded = false;
+    correction.pose.motion.vertical_speed = 3.;
+    let Reconciled::Applied {
+        same_tick: Some(error),
+        ..
+    } = history.reconcile(correction, advance_one_metre).unwrap()
+    else {
+        panic!("Missing pending measurement");
+    };
+    assert_eq!(error.metres, 0.);
+    assert_eq!(error.vertical_speed_mps, 3.);
+    assert!(
+        error.readiness_pending,
+        "Remember the context in which a pose was predicted"
+    );
+}
+
+#[test]
+fn completed_input_measurements_distinguish_lost_intent_and_refresh_after_replay() {
+    let patch = Patch::build(ChunkId { x: 62, z: 62 });
+    let initial = anchor(&patch, TickRate::Hz30);
+    let mut history = History::new(initial).unwrap();
+    history.predict(Some(moving(1)), 1, unchanged).unwrap();
+    // No new command at tick two: replay must use the corrected held input.
+    history.predict(None, 1, unchanged).unwrap();
+    let mut truth = initial;
+    truth.input.tick = 1;
+    // Authority has not received the optimistic tick-one command.
+    let Reconciled::Applied {
+        same_tick: Some(error),
+        ..
+    } = history.reconcile(truth, unchanged).unwrap()
+    else {
+        panic!()
+    };
+    assert!(error.held_intent_mismatch);
+    assert!(error.applied_sequence_mismatch);
+    assert!(!error.freshness_mismatch);
+    assert_eq!(
+        error.metres, 0.,
+        "Input disagreement can exist without pose error"
+    );
+    truth.input.tick = 2;
+    let Reconciled::Applied {
+        same_tick: Some(error),
+        ..
+    } = history.reconcile(truth, unchanged).unwrap()
+    else {
+        panic!()
+    };
+    assert!(
+        !error.held_intent_mismatch
+            && !error.applied_sequence_mismatch
+            && !error.freshness_mismatch,
+        "Replay must refresh measured input as well as pose"
+    );
+    // A later command has the same intent but a different sequence/receipt time.
+    let intent = moving(1);
+    history.predict(Some(intent), 1, unchanged).unwrap();
+    truth.input.tick = 3;
+    truth.input.applied_sequence = 1;
+    truth.input.intent = intent;
+    truth.input.fresh_tick = 1;
+    let Reconciled::Applied {
+        same_tick: Some(error),
+        ..
+    } = history.reconcile(truth, unchanged).unwrap()
+    else {
+        panic!()
+    };
+    assert!(!error.held_intent_mismatch);
+    assert!(error.applied_sequence_mismatch && error.freshness_mismatch);
+}
+
+#[test]
+fn server_ahead_clock_catchup_is_not_reported_as_equal_tick_prediction_error() {
+    let patch = Patch::build(ChunkId { x: 62, z: 62 });
+    let initial = anchor(&patch, TickRate::Hz30);
+    let mut history = History::new(initial).unwrap();
+    for _ in 0..3 {
+        history.predict(None, 1, advance_one_metre).unwrap();
+    }
+    let mut correction = initial;
+    correction.input.tick = 10;
+    let mut feet = initial.pose.feet.metres();
+    feet[0] += 10.;
+    correction.pose.feet = theia_core::coordinates::GlobalPosition::new(feet).unwrap();
+    assert_eq!(
+        history.reconcile(correction, advance_one_metre).unwrap(),
+        Reconciled::Applied {
+            replayed: 0,
+            correction_metres: 7.,
+            same_tick: None
+        }
+    );
+    assert_eq!(
+        history.reconcile(correction, advance_one_metre).unwrap(),
+        Reconciled::Stale
+    );
+    history.predict(None, 1, advance_one_metre).unwrap();
+    correction.input.tick = 11;
+    correction.ready_sequence = 2;
+    assert_eq!(
+        history.reconcile(correction, advance_one_metre).unwrap(),
+        Reconciled::Reset(Reset::ReadinessChanged)
+    );
+    history.predict(None, 2, advance_one_metre).unwrap();
+    correction.input.tick = 12;
+    correction.input.stream_epoch = 2;
+    assert_eq!(
+        history.reconcile(correction, advance_one_metre).unwrap(),
+        Reconciled::Reset(Reset::StreamChanged)
+    );
+}
 fn distance(a: Pose, b: Pose) -> f64 {
     a.feet
         .metres()
@@ -128,6 +312,7 @@ fn immediate_prediction_reconciles_delayed_lost_reordered_commands_across_a_real
                     Reconciled::Applied {
                         replayed: count,
                         correction_metres,
+                        ..
                     } => {
                         replayed += count;
                         max_correction = max_correction.max(correction_metres);

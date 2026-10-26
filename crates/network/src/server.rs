@@ -123,6 +123,7 @@ async fn session(
     stream
         .write_all(
             &Welcome {
+                terrain_stream: false,
                 id,
                 epoch,
                 world: identity,

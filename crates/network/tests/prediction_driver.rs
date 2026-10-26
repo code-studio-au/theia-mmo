@@ -45,6 +45,152 @@ fn state(patch: &Patch, now: Instant) -> State {
     state.correction_ready = state.chunk_report.clone();
     state
 }
+
+#[test]
+fn first_playable_terrain_acquires_latency_lead_before_sampling_new_commands() {
+    let patch = Patch::build(ChunkId { x: 62, z: 62 });
+    let now = Instant::now();
+    let mut state = state(&patch, now);
+    state.chunk_report.as_mut().unwrap().chunks.clear();
+    state.correction_ready = state.chunk_report.clone();
+    let mut driver = Driver::default();
+    driver
+        .tick(&state, Intent::default(), Some(&patch), now)
+        .unwrap();
+    // Geometry can be ready while RTT is still the unknown initial zero.
+    state.chunk_report.as_mut().unwrap().chunks = patch.ids.iter().map(|id| [id.x, id.z]).collect();
+    state.correction_ready = state.chunk_report.clone();
+    driver
+        .tick(
+            &state,
+            Intent::default(),
+            Some(&patch),
+            now + Duration::from_millis(50),
+        )
+        .unwrap();
+    assert_eq!(
+        driver.stats.clock_acquisitions, 0,
+        "Do not lock in an unknown RTT"
+    );
+    // Acquire only after the real link RTT becomes known.
+    state.correction.as_mut().unwrap().state.input.tick = 3;
+    state.correction.as_mut().unwrap().state.ready_sequence = 2;
+    state.correction_received = Some(now + Duration::from_millis(100));
+    state.transport = Some(TransportStats {
+        rtt_ms: 200.,
+        ..TransportStats::default()
+    });
+    let report = state.chunk_report.as_mut().unwrap();
+    report.sequence = 2;
+    report.chunks = patch.ids.iter().map(|id| [id.x, id.z]).collect();
+    state.correction_ready = state.chunk_report.clone();
+    let intent = Intent {
+        axes: [1000, 0],
+        ..Intent::default()
+    };
+    let bootstrap = driver
+        .tick(
+            &state,
+            intent,
+            Some(&patch),
+            now + Duration::from_millis(100),
+        )
+        .unwrap()
+        .unwrap();
+    assert!(
+        bootstrap.reset && bootstrap.packet.is_none(),
+        "Acquisition must not fabricate historical input"
+    );
+    let next = driver
+        .tick(
+            &state,
+            intent,
+            Some(&patch),
+            now + Duration::from_millis(140),
+        )
+        .unwrap()
+        .unwrap();
+    let packet = next.packet.unwrap();
+    // At receipt the authority is three one-way ticks beyond this correction;
+    // delivery plus 40 ms puts it at tick 10. Old warm-up commands arrived late.
+    assert!(packet.commands.iter().all(|c| c.tick > 10 && c.tick <= 18));
+    assert_eq!(driver.stats.clock_acquisitions, 1);
+    assert_eq!(driver.stats.clock_phase_backsteps, 0);
+}
+
+#[test]
+fn latency_samples_crossing_lead_thresholds_cannot_burst_or_pause_the_prediction_clock() {
+    let patch = Patch::build(ChunkId { x: 62, z: 62 });
+    for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+        let now = Instant::now();
+        let mut state = state(&patch, now);
+        state.correction.as_mut().unwrap().state.rate = rate;
+        state
+            .correction
+            .as_mut()
+            .unwrap()
+            .state
+            .pose
+            .motion
+            .grounded = true;
+        let mut driver = Driver::default();
+        let mut server_tick = u64::MAX;
+        let mut previous_tick = None;
+        let mut previous_advance = None;
+        let mut intervals = 0;
+        // 800 FPS exposes sub-frame clock phase jumps; RTT straddles exactly
+        // one lead-quantization threshold on every fresh server sample.
+        for frame in 0..3200 {
+            let elapsed = f64::from(frame) / 800.;
+            let tick = (elapsed * f64::from(rate.hz())).floor() as u64;
+            let sample_time = now + Duration::from_secs_f64(elapsed);
+            if tick != server_tick {
+                server_tick = tick;
+                state.correction.as_mut().unwrap().state.input.tick = tick;
+                state.correction_received = Some(sample_time);
+                let half_rtt = 1. / f64::from(rate.hz())
+                    + if tick.is_multiple_of(2) {
+                        -0.0005
+                    } else {
+                        0.0005
+                    };
+                state.transport = Some(TransportStats {
+                    rtt_ms: half_rtt * 2000.,
+                    ..TransportStats::default()
+                });
+            }
+            let driven = driver
+                .tick(&state, Intent::default(), Some(&patch), sample_time)
+                .unwrap()
+                .unwrap();
+            if let Some(previous) = previous_tick {
+                assert!(driven.tick >= previous, "Prediction tick rewound");
+                if driven.tick > previous && !driven.reset {
+                    assert_eq!(
+                        driven.tick - previous,
+                        1,
+                        "RTT rounding caused a multi-step burst"
+                    );
+                    if let Some(last) = previous_advance {
+                        let interval = elapsed - last;
+                        assert!(
+                            interval > 0.85 / f64::from(rate.hz())
+                                && interval < 1.15 / f64::from(rate.hz()),
+                            "Prediction cadence jumped: {interval} at {rate:?}"
+                        );
+                        intervals += 1;
+                    }
+                    previous_advance = Some(elapsed);
+                }
+            }
+            previous_tick = Some(driven.tick);
+        }
+        assert!(intervals > 50);
+        assert_eq!(driver.stats.clock_phase_backsteps, 0);
+        assert!(driver.stats.max_clock_slew <= 0.05 + f64::EPSILON);
+        assert!(driver.stats.queue_drops == 0 && driver.stats.max_history <= 64);
+    }
+}
 #[test]
 fn stale_clocks_do_not_emit_commands_and_fresh_truth_resumes_without_sequence_reuse() {
     let patch = Patch::build(ChunkId { x: 62, z: 62 });

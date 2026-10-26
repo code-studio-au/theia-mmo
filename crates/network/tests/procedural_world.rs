@@ -155,6 +155,7 @@ fn full_continent_crossing_return_and_teleports_keep_physics_and_replication_bou
     let mut world = World::with_procedural([10., 8000.], 32.).unwrap();
     let id = world.join().unwrap();
     let welcome = Welcome {
+        terrain_stream: true,
         id,
         epoch: world.epoch(),
         world: world.identity(),

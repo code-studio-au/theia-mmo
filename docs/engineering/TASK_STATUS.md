@@ -1,3 +1,35 @@
+# Current checkpoint — stopped safely, 2026-10-26
+
+The user requested stopping. No soak is running; the final diagnostic full-suite
+relink was safely interrupted. Changes remain local and uncommitted.
+
+The actual 600-second, eight-peer saved-terrain soak passes identity return,
+bounded residency and zero missed simulation deadlines. Separate I/O pump misses
+under concurrent builds remain recorded. [Soak evidence](../SAVED_TERRAIN_SOAK.md).
+The poor-link test passes movement/convergence at 20/30 Hz and safe suspension
+outside the 60 Hz latency window. [Envelope](../PREDICTION_LATENCY.md). That checkpoint
+passes 235 workspace tests (ten private-fixture skips), denied-warning Clippy/fmt,
+221 asset Python tests and four GLB alignment tests.
+
+The subsequent bounded input-agreement diagnostics are implemented; all 11 focused
+history tests and workspace/all-target denied-warning Clippy pass. Their final
+full-suite/real-UDP run was interrupted, so these new counters have no completed
+runtime qualification. [Diagnostic checkpoint](../PREDICTION_CONTRACT.md). Resume with
+that verification before interpreting the remaining correction outliers. No next
+feature is active; no native Windows or MMO population capacity is qualified.
+
+Current continuation, 2026-10-23 — P1-10/P2-06/07 and initial P3-13:
+[saved continental terrain](../SAVED_TERRAIN.md), with the existing coordinate,
+controller, readiness and prediction prerequisites. Acceptance is recorded there;
+saved terrain now passes full runtime/default adoption checks. The user resumed work.
+The matched-tick/render diagnostics and bounded rate prediction clock also pass
+234 Rust tests and native Linux comparisons; [clock evidence](../PREDICTION_CONTRACT.md).
+The actual eight-peer, 180-second headless saved-terrain soak passes;
+[scope, remaining checks and safe stop](../SAVED_TERRAIN_SOAK.md). Work is stopped
+at the user’s request; changes remain local and uncommitted.
+Earlier queues/stops below are dated historical context. No region/shard service
+or complete P3-13 acceptance is implied.
+
 Current bounded slice, 2026-10-22 — P1-03/09/10/12, P2-05/06/07/08/09:
 [continental graybox adoption](../GRAYBOX_WORLD.md) passes headless and native
 Linux checks. Default launcher selects the 256 km² procedural world and POLYGON
@@ -37,9 +69,9 @@ and loot P3-09. Do not invent scope for P3-17/18.
 | P1-05 | 30Hz fixed timestep, bounded input queues | Partial | Bounded eight-peer graybox scheduler qualified at 20/30/60 Hz, with burst coalescing, expiry, controlled stall/recovery and budget removal; broader scene/soak qualification remains. See [evidence](../SCHEDULER_QUALIFICATION.md). |
 | P1-06 | Command schemas, sequencing, acknowledgements and loss tests | Partial | Bounded intents, monotonic acknowledgements, expiry and controlled impaired UDP tested; incarnation guards now active; eight-peer burst/replay/budget qualification now passes; action schemas and broader traffic qualification remain. |
 | P1-07 | Renet integration and validation (replaces comparative transport study) | Partial | Renet is the launcher default after real UDP loss/delay/reorder/outage/RTT/bandwidth/queue qualification; Internet security/load and production sessions remain. |
-| P1-08 | Replication protocol contracts | Partial | Wire/ALPN 10 adds bounded authority offers and tagged readiness acknowledgements. Confirmation requires the exact latest report and a post-application snapshot. General entity/delta/interest/session contracts remain. [Handover](../CHUNK_HANDOVER.md). [Readiness](../CHUNK_READINESS.md). |
+| P1-08 | Replication protocol contracts | Partial | Wire/ALPN 12 adds explicit terrain frame policy independent of content digest; bounded authority offers and tagged readiness acknowledgements remain. Confirmation requires the exact latest report and a post-application snapshot. General entity/delta/interest/session contracts remain. [Handover](../CHUNK_HANDOVER.md). [Readiness](../CHUNK_READINESS.md). |
 | P1-09 | Kinematic movement and collision contracts | Partial | Shared Avian capsule controller drives normal maps, graybox and offline motion. Coverage sweeps constrain input/gravity and missing-corner shortcuts; support validation/fallback handles imprecise convex contacts. Retained actor/recovery validation now gates opt-in paired replacement. Head-on feature-manifold refinement addresses reproduced sloped-wall drift; see current qualification evidence. Schema-2 complete-cell coverage now requires all geometry contributors for input/gravity/readiness. Platforms/prediction and full movement scope remain. [Contributors](../CHUNK_CONTRIBUTORS.md). [Boundaries](../CHUNK_BOUNDARIES.md). [Handover](../CHUNK_HANDOVER.md). |
-| P1-10 | Asset/terrain/animation content contracts | Partial | Stable package IDs/revisions, schema-3 general collision/explicit spawns and schema-2 geometry contributors exist. Manifest schema 2 now binds shared PNG variants (bytes/hash/colour space/sampler) with actual URI/path/header verification and standard Bevy loading. The offline extractor preserves source geometry/material/image bytes and stages the actual town separately. Real graph/terrain/collision partitioning, source collision fidelity, skeleton contracts and measured budgets remain. [Shared images](../SHARED_IMAGES.md). [Contributors](../CHUNK_CONTRIBUTORS.md). |
+| P1-10 | Asset/terrain/animation content contracts | Partial | Saved height tiles have a versioned, hashed manifest; offline bake/full-seam verification and worker read validation feed shared visual/collision samples. [Saved terrain](../SAVED_TERRAIN.md). Stable package IDs/revisions, schema-3 general collision/explicit spawns and schema-2 geometry contributors exist. Manifest schema 2 now binds shared PNG variants (bytes/hash/colour space/sampler) with actual URI/path/header verification and standard Bevy loading. The offline extractor preserves source geometry/material/image bytes and stages the actual town separately. Real graph/terrain/collision partitioning, source collision fidelity, skeleton contracts and measured budgets remain. [Shared images](../SHARED_IMAGES.md). [Contributors](../CHUNK_CONTRIBUTORS.md). |
 | P1-11 | Data-driven ability/combat schemas | Not started | Define data-driven abilities and server validation before gameplay loop. |
 | P1-12 | Tests, instrumentation and benchmark baselines | Partial | Fixed-memory timing quantiles, separate simulation/pump metrics and eight-peer real UDP scheduler qualification now exist; full-map/render/crowd/soak baselines remain. |
 
@@ -51,11 +83,11 @@ and loot P3-09. Do not invent scope for P3-17/18.
 | P2-02 | Connection/session management | Partial | Default executable Renet lifecycle and impaired-link/fresh-ticket recovery qualified; automatic resume, provider/character authorization and production sessions remain. |
 | P2-03 | Entity replication and lifecycles | Partial | Quinn and executable Renet player snapshots with world actor IDs/acks; incarnation/frame contracts now active; general entity replication remains. |
 | P2-04 | Prediction and reconciliation | Partial | Actual Renet command/correction profile, 64-step replay, bounded client clock/queues, readiness overlap and stream resets run in the normal procedural client/server. Actual impaired UDP at 20/30/60 Hz and native Linux 30 Hz traversal/camera/animation/teleport/held-jump checks pass. Graybox default adopts it; legacy interpolation remains. Wider latency polish, authored-map prediction, dense load and native Windows remain. [Evidence and limits](../PREDICTION_CONTRACT.md). |
-| P2-05 | Third-person camera/controls | Partial | Camera/controls qualified across client origin changes; general movement/prediction integration remains. |
-| P2-06 | Terrain chunk loading | Partial | Normal opt-in publication protects readiness, actors/recovery and complete geometry contributors. Compatible PNG variants now share actual Bevy image handles; invalid dependencies retain old scenes. Lookahead retains spare packages until new providers require the budget, avoiding unload-only offer churn. Actual graph/terrain/collision partitioning, wider lifecycle checks and measured production budgets remain; town launcher stays monolithic. [Shared images](../SHARED_IMAGES.md). [Handover](../CHUNK_HANDOVER.md). |
+| P2-05 | Third-person camera/controls | Partial | Camera/controls qualified across client origin changes and native graybox prediction; broader authored-map prediction and controls qualification remains. |
+| P2-06 | Terrain chunk loading | Partial | Saved continental height files stream through bounded workers with 81 visual roots maximum, actual mesh retirement and 3 × 3 collision patches; full native crossing, teleports and impaired prediction pass. [Saved terrain](../SAVED_TERRAIN.md). Normal opt-in publication protects readiness, actors/recovery and complete geometry contributors. Compatible PNG variants now share actual Bevy image handles; invalid dependencies retain old scenes. Lookahead retains spare packages until new providers require the budget, avoiding unload-only offer churn. Actual graph/terrain/collision partitioning, wider lifecycle checks and measured production budgets remain; town launcher stays monolithic. [Shared images](../SHARED_IMAGES.md). [Handover](../CHUNK_HANDOVER.md). |
 | P2-07 | Collision integration | Partial | Shared controller drives normal maps and graybox/offline motion. Paired publication replaces actual Avian bodies, with readiness withheld until live generation/column checks pass. Schema-2 collider envelopes and contributor-complete coverage protect nonlocal walls, actors, recovery and presentation. Source-mesh fidelity and measured production collision/streaming budgets remain. [Contributors](../CHUNK_CONTRIBUTORS.md). [Boundaries](../CHUNK_BOUNDARIES.md). |
 | P2-08 | GLB and asset loading | Partial | Standard Bevy GLB/PBR/image loading follows immutable manifest and dependency verification. Actual nested extents gate initial/replacement readiness; shared PNG variants preserve compatible handle reuse and distinct colour/sampler settings. New packages extract original images and geometry without changing the active map. Imported graph pruning/partitioning, skeleton/character contracts and measured asset budgets remain. [Shared images](../SHARED_IMAGES.md). [Contributors](../CHUNK_CONTRIBUTORS.md). |
-| P2-09 | Character skeletal animation | Partial | Stand/walk/run exist; blending, layered mobile casting and skeleton contracts remain. |
+| P2-09 | Character skeletal animation | Partial | POLYGON Idle/Walk/Run/Jump are qualified development animations. Production skin fidelity, blending, layered mobile casting and skeleton contracts remain. |
 | P2-10 | Lighting/materials/atmosphere | Partial | Existing PBR light/shadows and water preview; atmosphere/quality requirements remain. |
 | P2-11 | Targeting and interactions | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
 | P2-12 | One authoritative ability, damage, death and respawn | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
@@ -78,7 +110,7 @@ and loot P3-09. Do not invent scope for P3-17/18.
 | P3-10 | Experience and leveling | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
 | P3-11 | Quest objectives | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
 | P3-12 | NPC dialogue and vendors | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
-| P3-13 | Terrain streaming and initial LOD | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
+| P3-13 | Terrain streaming and initial LOD | Partial | Generated and saved 16 km graybox terrain have bounded streaming, distance LOD, geometric seam validation, independent physics/render origins and actual retirement. Full native saved crossing and two-client impaired-network checks pass. Hierarchical screen-error LOD, long vistas/flying, objects/materials and production budgets remain. [Evidence](../SAVED_TERRAIN.md). |
 | P3-14 | Animation, VFX and audio expansion | Precursor only | Existing locomotion is reusable; animation/VFX/audio expansion is unimplemented. |
 | P3-15 | Content authoring and validation | Precursor only | Offline conversion tests are reusable; gameplay authoring/validation is unimplemented. |
 | P3-16 | One complete persistent zone and login/logout proof | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |

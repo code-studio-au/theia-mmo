@@ -24,6 +24,77 @@ pub struct Stats {
     pub max_history: usize,
     pub max_correction_metres: f64,
     pub max_lead_ticks: u64,
+    pub same_tick_samples: u64,
+    pub unmatched_tick_samples: u64,
+    pub max_same_tick_error_metres: f64,
+    pub max_same_tick_horizontal_metres: f64,
+    pub max_same_tick_vertical_metres: f64,
+    pub max_same_tick_vertical_speed_mps: f64,
+    pub same_tick_grounded_mismatches: u64,
+    pub same_tick_jump_held_mismatches: u64,
+    /// Inclusive upper bounds below, then one overflow bucket. No sample log.
+    pub same_tick_error_buckets: [u64; 8],
+    pub pending_readiness_samples: u64,
+    pub max_pending_readiness_error_metres: f64,
+    pub stable_readiness_samples: u64,
+    pub max_stable_readiness_error_metres: f64,
+    pub stable_readiness_error_buckets: [u64; 8],
+    pub max_clock_slew: f64,
+    pub max_clock_phase_error_ticks: f64,
+    pub clock_phase_backsteps: u64,
+    pub clock_acquisitions: u64,
+    pub held_intent_agreement_samples: u64,
+    pub held_intent_mismatch_samples: u64,
+    pub applied_sequence_mismatches: u64,
+    pub input_freshness_mismatches: u64,
+    pub max_held_intent_agreement_error_metres: f64,
+    pub max_held_intent_mismatch_error_metres: f64,
+}
+pub const ERROR_BOUNDS_METRES: [f64; 7] = [0.0001, 0.001, 0.01, 0.05, 0.1, 0.5, 1.];
+impl Stats {
+    fn record_error(&mut self, error: Option<crate::prediction::PoseError>) {
+        let Some(error) = error else {
+            self.unmatched_tick_samples += 1;
+            return;
+        };
+        let bucket = ERROR_BOUNDS_METRES.partition_point(|&bound| error.metres > bound);
+        if error.readiness_pending {
+            self.pending_readiness_samples += 1;
+            self.max_pending_readiness_error_metres =
+                self.max_pending_readiness_error_metres.max(error.metres);
+        } else {
+            self.stable_readiness_samples += 1;
+            self.max_stable_readiness_error_metres =
+                self.max_stable_readiness_error_metres.max(error.metres);
+            self.stable_readiness_error_buckets[bucket] += 1;
+        }
+        if error.held_intent_mismatch {
+            self.held_intent_mismatch_samples += 1;
+            self.max_held_intent_mismatch_error_metres =
+                self.max_held_intent_mismatch_error_metres.max(error.metres);
+        } else {
+            self.held_intent_agreement_samples += 1;
+            self.max_held_intent_agreement_error_metres = self
+                .max_held_intent_agreement_error_metres
+                .max(error.metres);
+        }
+        self.applied_sequence_mismatches += u64::from(error.applied_sequence_mismatch);
+        self.input_freshness_mismatches += u64::from(error.freshness_mismatch);
+        self.same_tick_samples += 1;
+        self.max_same_tick_error_metres = self.max_same_tick_error_metres.max(error.metres);
+        self.max_same_tick_horizontal_metres = self
+            .max_same_tick_horizontal_metres
+            .max(error.horizontal_metres);
+        self.max_same_tick_vertical_metres = self
+            .max_same_tick_vertical_metres
+            .max(error.vertical_metres);
+        self.max_same_tick_vertical_speed_mps = self
+            .max_same_tick_vertical_speed_mps
+            .max(error.vertical_speed_mps);
+        self.same_tick_grounded_mismatches += u64::from(error.grounded_mismatch);
+        self.same_tick_jump_held_mismatches += u64::from(error.jump_held_mismatch);
+        self.same_tick_error_buckets[bucket] += 1;
+    }
 }
 #[derive(Default)]
 pub struct Driver {
@@ -31,6 +102,8 @@ pub struct Driver {
     accepted: Option<(u64, u64, u64)>,
     recent: VecDeque<Command>,
     clock: Option<(Instant, f64)>,
+    clock_rate: f64,
+    clock_ready: bool,
     pub stats: Stats,
 }
 pub struct Driven {
@@ -83,6 +156,21 @@ impl Driver {
             ),
             None => Ok(None),
         };
+        let readiness_pending = state
+            .chunk_report
+            .as_ref()
+            .is_none_or(|r| r.sequence != c.ready_sequence)
+            || state.correction_ready.as_ref().is_some_and(|report| {
+                report.sequence == c.ready_sequence
+                    && report.chunks.iter().any(|&[x, z]| {
+                        patch.is_none_or(|p| {
+                            !p.ids.contains(&theia_core::coordinates::ChunkId { x, z })
+                        })
+                    })
+            });
+        if let Some(history) = &mut self.history {
+            history.measure_pending_readiness(readiness_pending);
+        }
         let key = (c.input.stream_epoch, c.input.tick, c.ready_sequence);
         let mut reset = false;
         let fresh = self.accepted != Some(key);
@@ -96,8 +184,10 @@ impl Driver {
                     Reconciled::Applied {
                         replayed,
                         correction_metres,
+                        same_tick,
                     } => {
                         self.stats.corrections += 1;
+                        self.stats.record_error(same_tick);
                         self.stats.replayed_steps += replayed as u64;
                         self.stats.max_correction_metres =
                             self.stats.max_correction_metres.max(correction_metres);
@@ -115,6 +205,7 @@ impl Driver {
             }
         }
         let history = self.history.as_mut().unwrap();
+        history.measure_pending_readiness(readiness_pending);
         let elapsed = now.saturating_duration_since(received).as_secs_f64();
         let half_rtt = state
             .transport
@@ -142,28 +233,47 @@ impl Driver {
         }
         let lead = ((half_rtt * f64::from(c.rate.hz())).ceil() as u64 + 2).min(window - 1);
         self.stats.max_lead_ticks = self.stats.max_lead_ticks.max(lead);
-        // Track a monotonic-rate local clock, gently correcting its phase on new
-        // server samples. Arrival jitter must not become simulation cadence.
+        // Track prediction time, including input lead, at a positive bounded rate.
+        // Ordinary RTT/lead changes adjust frequency rather than jumping phase.
         if c.input.tick >= (1u64 << 53) - 128 {
             return Err("Prediction clock precision exhausted");
         }
-        let measured = c.input.tick as f64 + (elapsed + half_rtt) * f64::from(c.rate.hz());
+        let measured =
+            c.input.tick as f64 + (elapsed + half_rtt) * f64::from(c.rate.hz()) + lead as f64;
+        // Acquire the measured latency buffer once, during initial terrain
+        // readiness. Do not start play catching up from a zero RTT estimate.
+        let acquire = !self.clock_ready && half_rtt > 0. && !ready.is_empty() && patch.is_some();
+        self.clock_ready |= acquire;
+        if acquire {
+            self.stats.clock_acquisitions += 1;
+        }
         let mut estimate = self.clock.map_or(measured, |(last, tick)| {
-            tick + now.saturating_duration_since(last).as_secs_f64() * f64::from(c.rate.hz())
+            tick + now.saturating_duration_since(last).as_secs_f64()
+                * f64::from(c.rate.hz())
+                * self.clock_rate
         });
-        if fresh {
+        if self.clock.is_none() || acquire {
+            estimate = measured;
+            self.clock_rate = 1.;
+            reset |= acquire;
+        } else if fresh {
             let error = measured - estimate;
+            self.stats.max_clock_phase_error_ticks =
+                self.stats.max_clock_phase_error_ticks.max(error.abs());
             if error.abs() > 8. {
                 estimate = measured;
+                self.clock_rate = 1.;
                 reset = true;
             } else {
-                estimate += error.clamp(-0.1, 0.1);
+                self.clock_rate = (1. + error * 0.05).clamp(0.95, 1.05);
             }
         }
+        self.stats.max_clock_slew = self.stats.max_clock_slew.max((self.clock_rate - 1.).abs());
+        if !reset && self.clock.is_some_and(|(_, old)| estimate < old) {
+            self.stats.clock_phase_backsteps += 1;
+        }
         self.clock = Some((now, estimate));
-        let target = (estimate.floor() as u64)
-            .checked_add(lead)
-            .ok_or("Prediction clock exhausted")?;
+        let target = estimate.floor() as u64;
         if target.saturating_sub(history.input().tick) > 16 || reset {
             // Bootstrap/resume to the estimated clock using held input, with no
             // historical commands fabricated for a newly sampled intent.

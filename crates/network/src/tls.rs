@@ -7,7 +7,7 @@ use quinn::{
     rustls,
 };
 use std::{net::SocketAddr, sync::Arc, time::Duration};
-const ALPN: &[u8] = b"theia-mmo-walk-11";
+const ALPN: &[u8] = b"theia-mmo-walk-12";
 fn transport() -> Arc<TransportConfig> {
     let mut config = TransportConfig::default();
     config

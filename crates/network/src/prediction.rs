@@ -1,4 +1,4 @@
-//! Bounded P2-04 prediction/reconciliation core; not yet a wire-v11 client mode.
+//! Bounded P2-04 prediction/reconciliation core used by the live terrain client.
 //! Callers own the fixed clock, transport and prepared collision. No I/O, asset
 //! generation, rendering types or client-supplied authority positions live here.
 use crate::{
@@ -94,6 +94,9 @@ pub enum Reconciled {
     Applied {
         replayed: usize,
         correction_metres: f64,
+        /// Compared at the completed authority tick, before replay. None when
+        /// that tick was not predicted; ordinary clock advancement is not error.
+        same_tick: Option<PoseError>,
     },
     Reset(Reset),
 }
@@ -106,6 +109,49 @@ pub enum Predicted {
 struct Step {
     tick: u64,
     command: Option<Command>,
+    /// Measurement only: completed speculative input, refreshed during replay.
+    input: State,
+    pose: Pose,
+    readiness_pending: bool,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct PoseError {
+    pub metres: f64,
+    pub horizontal_metres: f64,
+    pub vertical_metres: f64,
+    pub vertical_speed_mps: f64,
+    pub grounded_mismatch: bool,
+    pub jump_held_mismatch: bool,
+    pub readiness_pending: bool,
+    /// Completed-tick comparisons, not proof that preceding input histories match.
+    pub held_intent_mismatch: bool,
+    pub applied_sequence_mismatch: bool,
+    pub freshness_mismatch: bool,
+}
+impl PoseError {
+    fn between(step: &Step, correction: Correction, readiness_pending: bool) -> Self {
+        let predicted = step.pose;
+        let truth = correction.pose;
+        let p = predicted.feet.metres();
+        let t = truth.feet.metres();
+        let [x, y, z]: [f64; 3] = std::array::from_fn(|i| p[i] - t[i]);
+        Self {
+            metres: (x * x + y * y + z * z).sqrt(),
+            horizontal_metres: (x * x + z * z).sqrt(),
+            vertical_metres: y.abs(),
+            vertical_speed_mps: (f64::from(predicted.motion.vertical_speed)
+                - f64::from(truth.motion.vertical_speed))
+            .abs(),
+            grounded_mismatch: predicted.motion.grounded != truth.motion.grounded,
+            jump_held_mismatch: predicted.motion.jump_held != truth.motion.jump_held,
+            readiness_pending,
+            held_intent_mismatch: step.input.intent != correction.input.intent,
+            applied_sequence_mismatch: step.input.applied_sequence
+                != correction.input.applied_sequence,
+            freshness_mismatch: step.input.fresh_tick != correction.input.fresh_tick,
+        }
+    }
 }
 
 pub struct History {
@@ -116,6 +162,7 @@ pub struct History {
     /// Never reuse a sequence after dropping speculative history in this stream.
     last_sequence: u64,
     suspended: Option<Reset>,
+    readiness_pending: bool,
 }
 impl History {
     pub fn new(anchor: Correction) -> Result<Self, &'static str> {
@@ -129,6 +176,7 @@ impl History {
             steps: VecDeque::with_capacity(MAX_HISTORY),
             last_sequence: anchor.input.applied_sequence,
             suspended: None,
+            readiness_pending: false,
         })
     }
     pub fn pose(&self) -> Pose {
@@ -142,6 +190,11 @@ impl History {
     }
     pub fn suspended(&self) -> Option<Reset> {
         self.suspended
+    }
+    /// Diagnostic label only. The driver identifies an outstanding local terrain
+    /// report; this flag never changes commands, collision, clocks or resets.
+    pub fn measure_pending_readiness(&mut self, pending: bool) {
+        self.readiness_pending = pending;
     }
     /// Drop speculative clock debt while preserving sequence allocation in this
     /// movement stream. The latest validated correction remains the anchor.
@@ -224,7 +277,13 @@ impl History {
         if let Some(command) = command {
             self.last_sequence = command.sequence;
         }
-        self.steps.push_back(Step { tick, command });
+        self.steps.push_back(Step {
+            tick,
+            command,
+            input: applied,
+            pose,
+            readiness_pending: self.readiness_pending,
+        });
         Ok(Predicted::Advanced(command))
     }
     /// Validate identity before mutation; old corrections cannot rewind progress.
@@ -263,6 +322,20 @@ impl History {
             return Err("Completed input or readiness sequence regressed");
         }
         let before = self.pose.feet.metres();
+        let same_tick = if changed.is_none() {
+            self.steps
+                .iter()
+                .find(|step| step.tick == correction.input.tick)
+                .map(|step| {
+                    PoseError::between(
+                        step,
+                        correction,
+                        step.readiness_pending || self.readiness_pending,
+                    )
+                })
+        } else {
+            None
+        };
         self.anchor = correction;
         if let Some(reason) = changed {
             self.last_sequence = if reason == Reset::StreamChanged {
@@ -287,7 +360,7 @@ impl History {
             self.steps.pop_front();
         }
         let mut replayed = 0;
-        for step in &self.steps {
+        for step in &mut self.steps {
             // A server-ahead correction drains the entire history. Otherwise
             // the retained suffix must be contiguous; no guessed catch-up ticks.
             if self.input.state().tick.checked_add(1) != Some(step.tick) {
@@ -315,6 +388,9 @@ impl History {
                     return Ok(Reconciled::Reset(Reset::SolverFailed));
                 }
             };
+            step.pose = self.pose;
+            step.input = applied;
+            step.readiness_pending = self.readiness_pending;
             replayed += 1;
         }
         let after = self.pose.feet.metres();
@@ -327,6 +403,7 @@ impl History {
         Ok(Reconciled::Applied {
             replayed,
             correction_metres,
+            same_tick,
         })
     }
 }

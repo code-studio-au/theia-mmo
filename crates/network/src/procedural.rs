@@ -41,18 +41,25 @@ pub struct Geometry {
 }
 pub fn geometry(id: ChunkId, cells: usize) -> Geometry {
     assert!(contains(id) && matches!(cells, 8 | 32));
+    let mut g = grid(cells);
+    for p in &mut g.positions {
+        p[1] = height(
+            id.x as f64 * 128. + f64::from(p[0]),
+            id.z as f64 * 128. + f64::from(p[2]),
+        );
+    }
+    g
+}
+/// Shared regular triangulation. Saved terrain never evaluates the recipe.
+pub fn grid(cells: usize) -> Geometry {
+    assert!(matches!(cells, 8 | 32));
     let mut positions = Vec::with_capacity((cells + 1).pow(2));
     for z in 0..=cells {
         for x in 0..=cells {
-            let lx = x as f32 * 128. / cells as f32;
-            let lz = z as f32 * 128. / cells as f32;
             positions.push([
-                lx,
-                height(
-                    id.x as f64 * 128. + f64::from(lx),
-                    id.z as f64 * 128. + f64::from(lz),
-                ),
-                lz,
+                x as f32 * 128. / cells as f32,
+                0.,
+                z as f32 * 128. / cells as f32,
             ]);
         }
     }
@@ -71,6 +78,25 @@ pub fn geometry(id: ChunkId, cells: usize) -> Geometry {
         triangles,
     }
 }
+#[derive(Clone)]
+pub enum Source {
+    Procedural,
+    Saved(Arc<crate::saved_terrain::Store>),
+}
+impl Source {
+    pub fn identity(&self) -> [u8; 32] {
+        match self {
+            Self::Procedural => IDENTITY,
+            Self::Saved(s) => s.identity(),
+        }
+    }
+    pub fn geometry(&self, id: ChunkId, cells: usize) -> crate::Result<Geometry> {
+        match self {
+            Self::Procedural => Ok(geometry(id, cells)),
+            Self::Saved(s) => s.geometry(id, cells),
+        }
+    }
+}
 pub struct Patch {
     pub owner: ChunkId,
     pub frame: LocalFrame,
@@ -79,52 +105,74 @@ pub struct Patch {
 }
 impl Patch {
     pub fn build(owner: ChunkId) -> Self {
-        assert!(contains(owner));
+        Self::load(owner, &Source::Procedural).expect("Procedural patch")
+    }
+    pub fn load(owner: ChunkId, source: &Source) -> crate::Result<Self> {
+        if !contains(owner) {
+            return Err("Patch outside terrain".into());
+        }
         let frame = LocalFrame::new(owner.origin(128).unwrap());
         let ids = neighbours(owner, PATCH_RADIUS);
-        let colliders = ids
+        let geometry: BTreeMap<_, _> = ids
             .iter()
-            .map(|&id| {
-                let g = geometry(id, CELLS);
-                PlacedCollider {
-                    shape: Collider::trimesh(
-                        g.positions.into_iter().map(Vec3::from_array).collect(),
-                        g.triangles,
-                    ),
-                    center: Vec3::new(
-                        (id.x - owner.x) as f32 * 128.,
-                        0.,
-                        (id.z - owner.z) as f32 * 128.,
-                    ),
-                    layer: SOLID | GROUND | CAMERA,
-                }
+            .map(|&id| Ok((id, source.geometry(id, CELLS)?)))
+            .collect::<crate::Result<_>>()?;
+        // A correctly hashed but incorrectly authored tile must not create a seam.
+        for (&id, g) in &geometry {
+            if let Some(next) = geometry.get(&ChunkId {
+                x: id.x + 1,
+                z: id.z,
+            }) && (0..=32).any(|i| {
+                g.positions[i * 33 + 32][1].to_bits() != next.positions[i * 33][1].to_bits()
+            }) {
+                return Err("Terrain patch X seam mismatch".into());
+            }
+            if let Some(next) = geometry.get(&ChunkId {
+                x: id.x,
+                z: id.z + 1,
+            }) && (0..=32)
+                .any(|i| g.positions[32 * 33 + i][1].to_bits() != next.positions[i][1].to_bits())
+            {
+                return Err("Terrain patch Z seam mismatch".into());
+            }
+        }
+        let colliders = geometry
+            .into_iter()
+            .map(|(id, g)| PlacedCollider {
+                shape: Collider::trimesh(
+                    g.positions.into_iter().map(Vec3::from_array).collect(),
+                    g.triangles,
+                ),
+                center: Vec3::new(
+                    (id.x - owner.x) as f32 * 128.,
+                    0.,
+                    (id.z - owner.z) as f32 * 128.,
+                ),
+                layer: SOLID | GROUND | CAMERA,
             })
             .collect();
-        Self {
+        Ok(Self {
             owner,
             frame,
             scene: StaticScene::new(colliders),
             ids,
-        }
+        })
     }
     pub fn spawn(&self, x: f64, z: f64) -> GlobalPosition {
-        let requested = GlobalPosition::new([x, f64::from(height(x, z)) + 2., z]).unwrap();
-        let mut local = self.frame.to_local(requested).unwrap().metres();
-        local[1] = self
-            .scene
-            .ground([local[0], local[2]], local[1])
-            .expect("Terrain surface")
-            .0
-            + 0.03;
-        self.frame
-            .to_global(
-                crate::kinematic::spawn(
-                    &self.scene,
-                    theia_core::coordinates::LocalPosition::new(local).unwrap(),
-                )
-                .expect("Gentle procedural terrain supports spawn"),
+        self.try_spawn(x, z)
+            .expect("Baseline terrain supports spawn")
+    }
+    pub fn try_spawn(&self, x: f64, z: f64) -> Option<GlobalPosition> {
+        let requested = GlobalPosition::new([x, 256., z])?;
+        let mut local = self.frame.to_local(requested)?.metres();
+        local[1] = self.scene.ground([local[0], local[2]], local[1])?.0 + 0.03;
+        self.frame.to_global(
+            crate::kinematic::spawn(
+                &self.scene,
+                theia_core::coordinates::LocalPosition::new(local)?,
             )
-            .unwrap()
+            .ok()?,
+        )
     }
     pub fn covers(&self, p: GlobalPosition, ready: Option<&BTreeSet<ChunkId>>) -> bool {
         let [x, y, z] = p.metres();
@@ -145,15 +193,20 @@ impl Patch {
 pub struct Runtime {
     pub patches: BTreeMap<ChunkId, Arc<Patch>>,
     sender: mpsc::SyncSender<ChunkId>,
-    receiver: Mutex<mpsc::Receiver<Arc<Patch>>>,
+    receiver: Mutex<mpsc::Receiver<crate::Result<Arc<Patch>>>>,
     pending: Option<ChunkId>,
     pub generated: u64,
     pub retired: u64,
+    pub source: Source,
+    pub error: Option<String>,
     pub spawn: [f64; 2],
     pub speed: f32,
 }
 impl Runtime {
     pub fn new(spawn: [f64; 2], speed: f32) -> crate::Result<Self> {
+        Self::with_source(spawn, speed, Source::Procedural)
+    }
+    pub fn with_source(spawn: [f64; 2], speed: f32, source: Source) -> crate::Result<Self> {
         if !matches!(speed, 1. | 8. | 32.)
             || spawn
                 .iter()
@@ -164,14 +217,18 @@ impl Runtime {
             );
         }
         let id = owner(GlobalPosition::new([spawn[0], 0., spawn[1]]).unwrap()).unwrap();
-        let patch = Arc::new(Patch::build(id));
+        let patch = Arc::new(Patch::load(id, &source)?);
+        let worker_source = source.clone();
         let (sender, jobs) = mpsc::sync_channel(1);
         let (results, receiver) = mpsc::sync_channel(1);
         std::thread::Builder::new()
             .name("terrain-collision".into())
             .spawn(move || {
                 while let Ok(id) = jobs.recv() {
-                    if results.send(Arc::new(Patch::build(id))).is_err() {
+                    if results
+                        .send(Patch::load(id, &worker_source).map(Arc::new))
+                        .is_err()
+                    {
                         break;
                     }
                 }
@@ -183,16 +240,29 @@ impl Runtime {
             pending: None,
             generated: 1,
             retired: 0,
+            source,
+            error: None,
             spawn,
             speed,
         })
     }
     /// Call from the owner pump, outside the fixed simulation step.
     pub fn poll(&mut self, positions: &[GlobalPosition]) {
-        if let Ok(patch) = self.receiver.lock().unwrap().try_recv() {
-            self.patches.insert(patch.owner, patch);
+        if self.error.is_some() {
+            return;
+        }
+        if let Ok(result) = self.receiver.lock().unwrap().try_recv() {
             self.pending = None;
-            self.generated += 1;
+            match result {
+                Ok(patch) => {
+                    self.patches.insert(patch.owner, patch);
+                    self.generated += 1;
+                }
+                Err(error) => {
+                    self.error = Some(format!("Terrain collision load failed: {error}"));
+                    return;
+                }
+            }
         }
         let spawn =
             owner(GlobalPosition::new([self.spawn[0], 0., self.spawn[1]]).unwrap()).unwrap();

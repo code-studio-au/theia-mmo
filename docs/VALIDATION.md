@@ -1,3 +1,56 @@
+# Diagnostic safe stop — 2026-10-26
+
+After the completed 235-test terrain/poor-link checkpoint below, bounded input
+agreement diagnostics pass 11 focused history tests and workspace/all-target
+denied-warning Clippy. The user requested stopping during the new full-suite
+relink; that invocation was interrupted and is not a pass
+(`build/prediction-input-workspace-v1.log`). New diagnostic real-UDP/native evidence
+remains unqualified. [Exact status](PREDICTION_CONTRACT.md). No soak is running;
+changes remain local and uncommitted.
+
+# Resumed terrain/network qualification — 2026-10-26
+
+The actual eight-peer 600-second saved-terrain soak passes return-identity and
+bounded-residency checks, with zero missed simulation deadlines. Separate I/O pump
+misses remain recorded. [Evidence](SAVED_TERRAIN_SOAK.md). The real encrypted UDP
+poor-link test passes movement at 20/30 Hz and unsupported-latency suspension at
+60 Hz. [Envelope and limits](PREDICTION_LATENCY.md). The fresh workspace suite
+passes 235 tests, ten private-fixture skips; denied-warning all-target Clippy/fmt,
+221 asset Python tests and four GLB alignment tests pass. This checkpoint precedes
+the next input-agreement diagnostic extension; do not attribute unrun checks to it.
+
+# Eight-peer saved-terrain checkpoint and safe stop — 2026-10-23
+
+The actual encrypted eight-peer headless 180-second soak passes with no missed
+server deadlines or movement recoveries, bounded collision residency and measured
+retirement/relevance pruning. Sampled combined RSS peaks at 166.33 MiB.
+[Exact evidence and limits](SAVED_TERRAIN_SOAK.md). The latest example-only
+return-identity/trace additions build and pass workspace/all-target denied-warning
+Clippy, but have not been runtime qualified. The full 234-test result below
+predates this soak example and server telemetry. No longer soak was started;
+work is stopped at the user’s request. Changes remain local and uncommitted.
+
+# Movement-clock qualification — 2026-10-23
+
+Saved terrain and the smoother prediction clock pass the full **234-test Rust**
+workspace suite (ten private-fixture skips), denied-warning Clippy/fmt, 221 asset
+Python tests and four alignment tests. Normal-speed native impaired-UDP steady
+held frames improve from about 9% to 0% / 0.152%; ordinary VSync records 0.463%
+at 60 FPS. A 1% scoped gate rejects the old baseline and accepts the final runs.
+The full saved 16 km crossing still passes at 823.40 FPS uncapped on RX 7900 XTX,
+with the established residency/retirement bounds. Rare packet-loss corrections
+remain. [Exact measurements, hashes, scope and limits](PREDICTION_CONTRACT.md).
+
+# Saved-terrain qualification — 2026-10-23
+
+The bounded saved-height terrain slice passes 228 Rust tests (10 explicit
+private-fixture skips), denied-warning Clippy/fmt, 221 asset-tool tests and four
+GLB alignment tests. Native Linux full-continent crossing, two-client impaired
+UDP/teleport/held-jump, corrupt-file shutdown, default launcher cleanup, retained
+town and generated-source checks pass. [Exact evidence](SAVED_TERRAIN.md).
+This is warm-cache graybox qualification, not production world/population/Windows
+capacity. Earlier checkpoints below identify earlier binaries and behavior.
+
 # Current qualification — 2026-10-22
 
 Final repository verification, 2026-10-22: **224 Rust tests pass**, zero failures;

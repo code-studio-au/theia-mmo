@@ -134,11 +134,10 @@ pub(crate) fn probe(
     terrain: Option<Res<crate::terrain_scene::Config>>,
     chunks: Option<Res<crate::chunk_world::Config>>,
 ) {
-    if network.as_ref().is_some_and(|n| {
-        n.state()
-            .welcome
-            .is_some_and(|w| w.world == theia_network::procedural::IDENTITY)
-    }) {
+    if network
+        .as_ref()
+        .is_some_and(|n| n.state().welcome.is_some_and(|w| w.terrain_stream))
+    {
         return;
     }
     backend.frame_revision = frame.revision;
@@ -373,6 +372,7 @@ mod tests {
                 let mut frame = app.world_mut().resource_mut::<Frame>();
                 frame.span = 2.;
                 frame.admit(&theia_network::wire::Welcome {
+                    terrain_stream: false,
                     id: 1,
                     epoch: if sign < 0. { 1 } else { 2 },
                     world: [0; 32],

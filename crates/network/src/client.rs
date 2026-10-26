@@ -69,7 +69,7 @@ impl State {
             if !welcome.accepts(snapshot) {
                 return Err("Snapshot outside admitted world/frame".into());
             }
-            if welcome.world == crate::procedural::IDENTITY {
+            if welcome.terrain_stream {
                 return Ok(view);
             }
             view.snapshot = Some(
@@ -194,6 +194,7 @@ mod tests {
         };
         let mut state = State {
             welcome: Some(Welcome {
+                terrain_stream: false,
                 id: 1,
                 epoch: 7,
                 world: [0; 32],

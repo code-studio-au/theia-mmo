@@ -1,3 +1,70 @@
+# Current checkpoint — stopped safely, 2026-10-26
+
+The user requested stopping. No soak is running; the final diagnostic full-suite
+relink was safely interrupted. Changes remain local and uncommitted.
+
+The actual 600-second, eight-peer saved-terrain soak passes identity return,
+bounded residency and zero missed simulation deadlines. Separate I/O pump misses
+under concurrent builds remain recorded. [Soak evidence](SAVED_TERRAIN_SOAK.md).
+The poor-link test passes movement/convergence at 20/30 Hz and safe suspension
+outside the 60 Hz latency window. [Envelope](PREDICTION_LATENCY.md). That checkpoint
+passes 235 workspace tests (ten private-fixture skips), denied-warning Clippy/fmt,
+221 asset Python tests and four GLB alignment tests.
+
+The subsequent bounded input-agreement diagnostics are implemented; all 11 focused
+history tests and workspace/all-target denied-warning Clippy pass. Their final
+full-suite/real-UDP run was interrupted, so these new counters have no completed
+runtime qualification. [Diagnostic checkpoint](PREDICTION_CONTRACT.md). Resume with
+that verification before interpreting the remaining correction outliers. No next
+feature is active; no native Windows or MMO population capacity is qualified.
+
+# Current status — 2026-10-23
+
+Saved continental terrain is the verified development default. The existing
+16 km × 16 km world is baked into 15,625 versioned, hashed 128 m height files.
+Visuals and collision load those samples on bounded workers; fixed simulation
+performs no file I/O. Missing/corrupt data fails explicitly, with no recipe
+fallback. `python3 tools/play.py` uses `build/graybox-terrain-v1` after its offline
+bake; `--graybox-world` retains generated terrain. Prediction remains enabled.
+
+P1-10/P2-06/07 and the initial P3-13 slice pass: full saved native crossing,
+125 visited columns, maximum 81 terrain roots, 2,345 loads / 2,300 retirements,
+zero movement recoveries or missed server deadlines. One-client Linux RX 7900
+XTX / Ryzen 7800X3D, 1280×720, validation off: **818.59 FPS**, mean **1.222 ms**.
+This is warm-cache empty-world evidence. Two clients under impaired UDP, held-jump
+teleports, explicit corrupt-file exit, default launcher cleanup, retained town and
+generated-source native regressions all pass. Wire/Quinn ALPN is **12**, with a
+77-byte welcome carrying explicit terrain frame policy.
+
+The initial saved-source checkpoint passed **228 Rust tests**, with ten private-fixture
+tests explicitly ignored; the strengthened
+saved non-spawn revisit tests also pass. Denied-warning Clippy, formatting,
+221 asset-tool and four GLB alignment tests pass. [Saved terrain](SAVED_TERRAIN.md)
+records exact binaries/content identities, commands, reports, failed attempts
+and remaining gates. New work remains local.
+P2-04 diagnostics now distinguish matched simulation ticks, pending readiness,
+input/loading transitions and steady rendered movement. The qualified client
+clock uses a continuous bounded rate and acquires its initial buffer after real
+RTT/terrain readiness. Steady held frames on the impaired native route fall from
+about 9% to **0% / 0.152%**; ordinary VSync records **0.463%** at 60 FPS. A scoped
+1% gate rejects the measured old baseline and accepts these final runs. Rare
+corrections under loss remain; broader latency/Windows/load limits are explicit.
+[Measurement/clock evidence](PREDICTION_CONTRACT.md). That checkpoint passes
+**234 Rust tests**, ten private-fixture skips and Clippy/fmt.
+
+The subsequent actual eight-peer, 180-second saved-terrain headless soak passes:
+zero server deadline misses/recoveries, maximum nine authority collision patches
+and two per client query runtime, with actual retirement and relevance pruning.
+Sampled combined RSS peaks at 166.33 MiB; long-term memory plateau remains open.
+[Soak evidence](SAVED_TERRAIN_SOAK.md) separates the completed v2 run from the
+latest example-only return-identity checks, which compile/Clippy but remain
+runtime unqualified. The full 234-test checkpoint predates the new soak/telemetry.
+
+**Stopped safely at the user’s request.** The build completed; no longer soak was
+started. Changes remain local and uncommitted. Larger roadmap tasks remain partial.
+
+## Earlier checkpoints
+
 # Current status — 2026-10-22
 
 The completed Linux development slice is the 16 km × 16 km graybox world with

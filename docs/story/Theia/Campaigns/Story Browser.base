@@ -1,0 +1,66 @@
+filters:
+  and:
+    - 'file.ext == "md"'
+    - 'type == "character" || type == "divine" || type == "primordial" || type == "location" || type == "quest" || type == "people" || type == "institution" || type == "event"'
+properties:
+  canon_status:
+    displayName: Approval status
+  quest_id:
+    displayName: Quest ID
+  planning_band:
+    displayName: Planning levels
+views:
+  - type: table
+    name: Characters
+    filters: 'type == "character" || type == "divine" || type == "primordial"'
+    order:
+      - file.name
+      - canon_status
+      - source
+    sort:
+      - property: file.name
+        direction: ASC
+  - type: table
+    name: Locations
+    filters: 'type == "location"'
+    order:
+      - file.name
+      - canon_status
+      - source
+    sort:
+      - property: file.name
+        direction: ASC
+  - type: table
+    name: Peoples and Institutions
+    filters: 'type == "people" || type == "institution"'
+    order:
+      - file.name
+      - type
+      - canon_status
+      - source
+    sort:
+      - property: file.name
+        direction: ASC
+  - type: table
+    name: Historical Events
+    filters: 'type == "event"'
+    order:
+      - file.name
+      - canon_status
+      - source
+    sort:
+      - property: file.name
+        direction: ASC
+  - type: table
+    name: Quests
+    filters: 'type == "quest"'
+    order:
+      - quest_id
+      - file.name
+      - act
+      - quest_kind
+      - planning_band
+      - canon_status
+    sort:
+      - property: quest_id
+        direction: ASC

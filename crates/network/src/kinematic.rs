@@ -28,7 +28,8 @@ pub struct Motion {
 }
 /// Gameplay state required to replay this controller. Positions, world/tick
 /// identity and input scheduling are separate correction contracts. Diagnostics
-/// are intentionally excluded. This is not yet part of the network protocol.
+/// are intentionally excluded. The terrain correction profile sends this state
+/// from authority to client; commands never supply it as gameplay truth.
 #[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct MotionState {

@@ -1,0 +1,145 @@
+{
+  "import_date": "2026-10-26",
+  "source_repository": "https://github.com/code-studio-au/theia-engine",
+  "source_local_ref": "refs/remotes/origin/main",
+  "source_commit": "94cc79228bc90db13d83116f76f6cdba51b72630",
+  "source_campaign_commit": "d89257a9ecb270a18542eed2f9f31acef0b65a3c",
+  "policy": "Preserve original narrative content and approval status. Import does not approve proposals or verify historical source-audit claims. Source repository remains unchanged.",
+  "files": [
+    {
+      "source_path": "docs/THEIA_CANON_RECONCILIATION_REPORT.md",
+      "destination_path": "docs/story/THEIA_CANON_RECONCILIATION_REPORT.md",
+      "source_sha256": "40212dd3e2bbfae1e8682189f3be99c0806d00886f24e1afe1f5a1af3b21384a",
+      "destination_sha256": "07904f8a5dc5d9cadadd7a65cee4ad226d78584f4a429665dc0c5b0590f2011f",
+      "changes": [
+        "Point the question-extractor link to its immutable Engine source; tool is not migrated."
+      ]
+    },
+    {
+      "source_path": "docs/THEIA_CHARACTER_ARCS.md",
+      "destination_path": "docs/story/THEIA_CHARACTER_ARCS.md",
+      "source_sha256": "a6ecbdb3a304398c226b3ada8514afb51c6547402758252687109b10e827307d",
+      "destination_sha256": "a6ecbdb3a304398c226b3ada8514afb51c6547402758252687109b10e827307d",
+      "changes": []
+    },
+    {
+      "source_path": "docs/THEIA_DETAILED_LORE_ARCHIVE.md",
+      "destination_path": "docs/story/THEIA_DETAILED_LORE_ARCHIVE.md",
+      "source_sha256": "1d1b0cb9817c06a6bef448d2db79c9d0fabb797068c4e77f4c2b83bbc0eedb87",
+      "destination_sha256": "1d1b0cb9817c06a6bef448d2db79c9d0fabb797068c4e77f4c2b83bbc0eedb87",
+      "changes": []
+    },
+    {
+      "source_path": "docs/THEIA_DOCUMENTATION_GUIDE.md",
+      "destination_path": "docs/story/THEIA_DOCUMENTATION_GUIDE.md",
+      "source_sha256": "9f431b2a8e8ae9149a46eb896dc5fe29fcbb01b7adc418d3ad12b8746d49c149",
+      "destination_sha256": "9f431b2a8e8ae9149a46eb896dc5fe29fcbb01b7adc418d3ad12b8746d49c149",
+      "changes": []
+    },
+    {
+      "source_path": "docs/THEIA_HUMAN_ACT_I_STORY.md",
+      "destination_path": "docs/story/THEIA_HUMAN_ACT_I_STORY.md",
+      "source_sha256": "8ab16ebd0d0b012ffe8cf3225564e28b16c81c0979b6eecedecd0c2bb9b99512",
+      "destination_sha256": "8ab16ebd0d0b012ffe8cf3225564e28b16c81c0979b6eecedecd0c2bb9b99512",
+      "changes": []
+    },
+    {
+      "source_path": "docs/THEIA_HUMAN_CAMPAIGN.md",
+      "destination_path": "docs/story/THEIA_HUMAN_CAMPAIGN.md",
+      "source_sha256": "75215252b57a5f789777a67b462e92d55c6c320299d1a9d4bb6364675980405f",
+      "destination_sha256": "75215252b57a5f789777a67b462e92d55c6c320299d1a9d4bb6364675980405f",
+      "changes": []
+    },
+    {
+      "source_path": "docs/THEIA_HUMAN_CAMPAIGN_REVIEW.md",
+      "destination_path": "docs/story/THEIA_HUMAN_CAMPAIGN_REVIEW.md",
+      "source_sha256": "ce121fb4dcf0246c248f39ecde29b2dd833403951ec4d0987f83eabe6aed359d",
+      "destination_sha256": "ce121fb4dcf0246c248f39ecde29b2dd833403951ec4d0987f83eabe6aed359d",
+      "changes": []
+    },
+    {
+      "source_path": "docs/THEIA_HUMAN_CAST_AND_PLACES.md",
+      "destination_path": "docs/story/THEIA_HUMAN_CAST_AND_PLACES.md",
+      "source_sha256": "24cad07c31dc2eb25f78e90161c04ce488172e55f499ae473f7a08864e4bb019",
+      "destination_sha256": "24cad07c31dc2eb25f78e90161c04ce488172e55f499ae473f7a08864e4bb019",
+      "changes": []
+    },
+    {
+      "source_path": "docs/THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md",
+      "destination_path": "docs/story/THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md",
+      "source_sha256": "85b1287144c8dbf1d9a3b57c7bfa01a22edce03e025459eed431be648d2aa307",
+      "destination_sha256": "85b1287144c8dbf1d9a3b57c7bfa01a22edce03e025459eed431be648d2aa307",
+      "changes": []
+    },
+    {
+      "source_path": "docs/THEIA_HUMAN_HEARTLANDS_SETTLEMENT_REGISTER.md",
+      "destination_path": "docs/story/THEIA_HUMAN_HEARTLANDS_SETTLEMENT_REGISTER.md",
+      "source_sha256": "1c141576137b806cd2d5d36200d9224a8df56bd608d616b6183c90d328421d76",
+      "destination_sha256": "1c141576137b806cd2d5d36200d9224a8df56bd608d616b6183c90d328421d76",
+      "changes": []
+    },
+    {
+      "source_path": "docs/THEIA_HUMAN_QUEST_REGISTER.md",
+      "destination_path": "docs/story/THEIA_HUMAN_QUEST_REGISTER.md",
+      "source_sha256": "fd79d128970194001421b98be55c3debb86314ad34348d1a447d15ae82901abb",
+      "destination_sha256": "fd79d128970194001421b98be55c3debb86314ad34348d1a447d15ae82901abb",
+      "changes": []
+    },
+    {
+      "source_path": "docs/THEIA_HUMAN_STORY_DUNGEONS.md",
+      "destination_path": "docs/story/THEIA_HUMAN_STORY_DUNGEONS.md",
+      "source_sha256": "34a04863bb57d27a95dfdad0d960cfc6b49a398030d5e500c17d5f125c8f1395",
+      "destination_sha256": "34a04863bb57d27a95dfdad0d960cfc6b49a398030d5e500c17d5f125c8f1395",
+      "changes": []
+    },
+    {
+      "source_path": "docs/THEIA_INTERWOVEN_CHRONICLE.md",
+      "destination_path": "docs/story/THEIA_INTERWOVEN_CHRONICLE.md",
+      "source_sha256": "9d6eb4a3034a3a013f7a02621b3ae35e8405d62a14a80bda656df86751ceaf3c",
+      "destination_sha256": "9d6eb4a3034a3a013f7a02621b3ae35e8405d62a14a80bda656df86751ceaf3c",
+      "changes": []
+    },
+    {
+      "source_path": "docs/THEIA_LINE_BY_LINE_VERIFICATION_STATUS.md",
+      "destination_path": "docs/story/THEIA_LINE_BY_LINE_VERIFICATION_STATUS.md",
+      "source_sha256": "b86926849b3cb9e03b2228ac95bc2fec880d0f73eae411986feb2802910fd962",
+      "destination_sha256": "b86926849b3cb9e03b2228ac95bc2fec880d0f73eae411986feb2802910fd962",
+      "changes": []
+    },
+    {
+      "source_path": "docs/THEIA_MEMORY_SCENES.md",
+      "destination_path": "docs/story/THEIA_MEMORY_SCENES.md",
+      "source_sha256": "01e91786dba277d1a5976f961be558d74a01afa3fa79fe69edf4c4bb86f63ae8",
+      "destination_sha256": "01e91786dba277d1a5976f961be558d74a01afa3fa79fe69edf4c4bb86f63ae8",
+      "changes": []
+    },
+    {
+      "source_path": "docs/THEIA_MODERN_STORY_REVELATION_TIMELINE.md",
+      "destination_path": "docs/story/THEIA_MODERN_STORY_REVELATION_TIMELINE.md",
+      "source_sha256": "abb257289d772fe5372ae7cc82d804f5358503316377def98a2eea8f515dd038",
+      "destination_sha256": "abb257289d772fe5372ae7cc82d804f5358503316377def98a2eea8f515dd038",
+      "changes": []
+    },
+    {
+      "source_path": "docs/THEIA_SOURCE_DECISION_RECOVERY.md",
+      "destination_path": "docs/story/THEIA_SOURCE_DECISION_RECOVERY.md",
+      "source_sha256": "868469d9c3b49eedf4626ab989ea2b73ba249c8e1ff82494482294ad9794c4dd",
+      "destination_sha256": "868469d9c3b49eedf4626ab989ea2b73ba249c8e1ff82494482294ad9794c4dd",
+      "changes": []
+    },
+    {
+      "source_path": "docs/THEIA_WORLD_BIBLE.md",
+      "destination_path": "docs/story/THEIA_WORLD_BIBLE.md",
+      "source_sha256": "a5a249eefb984aed286330433ba735c8b8ad1c0c83593654ab2d7a786b7223ae",
+      "destination_sha256": "a5a249eefb984aed286330433ba735c8b8ad1c0c83593654ab2d7a786b7223ae",
+      "changes": []
+    },
+    {
+      "source_path": "docs/THEIA_ZONE_POPULATION_FRAMEWORK.md",
+      "destination_path": "docs/story/THEIA_ZONE_POPULATION_FRAMEWORK.md",
+      "source_sha256": "e9c09ffca5cce697b16adf1ea701456c503c26d153e13c34a932dc5b77dafcf4",
+      "destination_sha256": "e9c09ffca5cce697b16adf1ea701456c503c26d153e13c34a932dc5b77dafcf4",
+      "changes": []
+    }
+  ]
+}

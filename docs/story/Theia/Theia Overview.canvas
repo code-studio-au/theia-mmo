@@ -1,0 +1,23 @@
+{
+	"nodes":[
+		{"id":"portal-1","type":"file","file":"Characters/Characters.md","x":480,"y":0,"width":420,"height":260},
+		{"id":"portal-2","type":"file","file":"Lore/Lore and World.md","x":960,"y":0,"width":420,"height":260},
+		{"id":"portal-3","type":"file","file":"History/Chronicles and History.md","x":0,"y":340,"width":420,"height":260},
+		{"id":"portal-4","type":"file","file":"History/Timelines.md","x":480,"y":340,"width":420,"height":260},
+		{"id":"portal-5","type":"file","file":"Atlas/Atlas.md","x":960,"y":340,"width":420,"height":260},
+		{"id":"portal-6","type":"file","file":"Campaigns/Human Campaign.md","x":0,"y":680,"width":420,"height":260},
+		{"id":"portal-7","type":"file","file":"Editorial/Canon and Open Questions.md","x":480,"y":680,"width":420,"height":260},
+		{"id":"portal-8","type":"file","file":"Source Library.md","x":960,"y":680,"width":420,"height":260},
+		{"id":"portal-0","type":"file","file":"Welcome.md","x":0,"y":0,"width":420,"height":260}
+	],
+	"edges":[
+		{"id":"home-1","fromNode":"portal-0","fromSide":"bottom","toNode":"portal-1","toSide":"top"},
+		{"id":"home-2","fromNode":"portal-0","fromSide":"bottom","toNode":"portal-2","toSide":"top"},
+		{"id":"home-3","fromNode":"portal-0","fromSide":"bottom","toNode":"portal-3","toSide":"top"},
+		{"id":"home-4","fromNode":"portal-0","fromSide":"bottom","toNode":"portal-4","toSide":"top"},
+		{"id":"home-5","fromNode":"portal-0","fromSide":"bottom","toNode":"portal-5","toSide":"top"},
+		{"id":"home-6","fromNode":"portal-0","fromSide":"bottom","toNode":"portal-6","toSide":"top"},
+		{"id":"home-7","fromNode":"portal-0","fromSide":"bottom","toNode":"portal-7","toSide":"top"},
+		{"id":"home-8","fromNode":"portal-0","fromSide":"bottom","toNode":"portal-8","toSide":"top"}
+	]
+}

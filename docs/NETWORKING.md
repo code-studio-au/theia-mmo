@@ -1,3 +1,10 @@
+Saved terrain continuation, 2026-10-23: wire/Quinn ALPN **12**, reliable welcome
+**77 bytes**, with an explicit strict 0/1 terrain-stream frame policy independent
+of content identity. Saved terrain admission binds to the manifest's content hash;
+TC01/TP01 layouts are unchanged. Rebuild both ends and issue fresh tickets.
+[Format and qualification](SAVED_TERRAIN.md). Earlier version numbers below
+refer to historical checkpoints.
+
 Current graybox update, 2026-10-22: the default launcher selects the
 [continental graybox](GRAYBOX_WORLD.md), with wire v11, authoritative procedural
 terrain and recipient-centred snapshots. The launcher now enables the explicit

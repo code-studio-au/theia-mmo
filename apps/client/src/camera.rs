@@ -669,6 +669,7 @@ mod tests {
         let mut frame = Frame::default();
         frame.span = 2.;
         frame.admit(&theia_network::wire::Welcome {
+            terrain_stream: false,
             id: 1,
             epoch: 1,
             world: [0; 32],

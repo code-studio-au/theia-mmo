@@ -1,3 +1,25 @@
+## Active repository and story home — 2026-10-26
+
+The user chose Theia-MMO as the active game repository after reviewing overlap
+with Theia-Engine, and requested that story, lore, characters, acts, quests and
+story decisions live here. [docs/story](story/README.md) now contains the 19
+curated narrative documents recovered from Engine's locally available main
+history, with per-file provenance. Preserve existing approval states: the complete
+human campaign packet remains Needs Review. This documentation transfer changes
+no runtime behavior and does not resume the interrupted engineering verification.
+Engine remains an independent research/reference source; no runtime dependency,
+source deletion, commit or push is part of this transfer.
+
+## Saved terrain continuation — 2026-10-23
+
+Bake the existing 16 km graybox into immutable, versioned 128 m height tiles.
+Keep runtime-generated terrain as an explicit regression path. Saved samples drive
+both visual LODs and authoritative/client collision on existing bounded workers;
+never fall back to recipe geometry on failed reads. A content-bound manifest is
+separate from explicit wire frame policy (v12 welcome). This does not choose a
+realm/shard model or couple gameplay zones to terrain chunks. The narrow saved
+format and qualification scope are in [SAVED_TERRAIN](SAVED_TERRAIN.md).
+
 ## Continental graybox development target — 2026-10-22
 
 The user explicitly adopted a 16 km × 16 km terrain square (256 km²) and the

@@ -1,6 +1,9 @@
 //! Wall-clock qualification of the exact executable Renet bridge over real UDP.
 #[path = "support/relay.rs"]
 mod relay;
+#[path = "support/saved_fixture.rs"]
+#[allow(dead_code)] // Shared authoring/fault helpers are exercised in saved_terrain.rs.
+mod saved_fixture;
 use relay::{Control, Profile, QUEUE_LIMIT, Relay};
 use renet_netcode::{
     ConnectToken, NetcodeServerTransport, ServerAuthentication, ServerConfig, generate_random_bytes,
@@ -492,8 +495,15 @@ async fn procedural_seams_and_readiness_withdrawal_survive_delayed_lost_reordere
     sleep(Duration::from_millis(1200)).await;
     let stopped = global(&a.state.borrow(), id);
     sleep(Duration::from_millis(350)).await;
-    assert_eq!(global(&a.state.borrow(), id), stopped);
-    b.until(|s| actor(s, id).is_some_and(|_| global(s, id) == stopped))
+    let settled = |p: theia_core::coordinates::GlobalPosition| {
+        let [x, y, z] = p.metres();
+        let [sx, sy, sz] = stopped.metres();
+        // Ground-query subtraction can alternate one f32 ULP at this height.
+        // Input expiry must stop X/Z exactly; support variation stays <0.01 mm.
+        x == sx && z == sz && (y - sy).abs() < 0.00001
+    };
+    assert!(settled(global(&a.state.borrow(), id)));
+    b.until(|s| actor(s, id).is_some_and(|_| settled(global(s, id))))
         .await;
     a.finish().await;
     b.finish().await;
@@ -515,19 +525,60 @@ async fn procedural_seams_and_readiness_withdrawal_survive_delayed_lost_reordere
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn prediction_profile_converges_over_real_encrypted_impaired_udp_at_every_tick_rate() {
-    use theia_core::{coordinates::ChunkId, time::TickRate};
-    use theia_network::{prediction_driver::Driver, procedural::Patch};
-    let profile = Profile {
+    prediction_profile(
+        theia_network::procedural::Source::Procedural,
+        "prediction-wifi",
+        prediction_wifi(),
+    )
+    .await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn saved_prediction_converges_over_real_encrypted_impaired_udp_at_every_tick_rate() {
+    let fixture = saved_fixture::Fixture::new();
+    let source = theia_network::procedural::Source::Saved(std::sync::Arc::new(fixture.open()));
+    prediction_profile(source, "saved-prediction-wifi", prediction_wifi()).await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn saved_prediction_survives_poor_link_at_every_tick_rate() {
+    let fixture = saved_fixture::Fixture::new();
+    let source = theia_network::procedural::Source::Saved(std::sync::Arc::new(fixture.open()));
+    prediction_profile(
+        source,
+        "saved-prediction-poor",
+        Profile {
+            name: "prediction-poor",
+            delay_ms: 100,
+            jitter_ms: 150,
+            loss_every: 5,
+            duplicate_every: 11,
+        },
+    )
+    .await;
+}
+
+fn prediction_wifi() -> Profile {
+    Profile {
         name: "prediction-wifi",
         delay_ms: 40,
         jitter_ms: 60,
         loss_every: 10,
         duplicate_every: 17,
-    };
-    let patch = Patch::build(ChunkId { x: 62, z: 62 });
+    }
+}
+
+async fn prediction_profile(
+    source: theia_network::procedural::Source,
+    report_name: &str,
+    profile: Profile,
+) {
+    use theia_core::{coordinates::ChunkId, time::TickRate};
+    use theia_network::{prediction_driver::Driver, procedural::Patch};
+    let patch = Patch::load(ChunkId { x: 62, z: 62 }, &source).unwrap();
     let mut reports = Vec::new();
     for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
-        let mut world = World::with_procedural([8062., 8000.], 1.).unwrap();
+        let mut world = World::with_terrain_source([8062., 8000.], 1., source.clone()).unwrap();
         assert!(world.set_tick_rate(rate));
         world.enable_prediction().unwrap();
         let authority = Authority::in_world(profile, world);
@@ -540,6 +591,46 @@ async fn prediction_profile_converges_over_real_encrypted_impaired_udp_at_every_
         })
         .await;
         let mut driver = Driver::default();
+        // The eight-tick command window deliberately cannot cover this link at
+        // 60 Hz. Verify real measured RTT suspends prediction without emitting
+        // late commands, rather than widening the server window to pass a test.
+        if profile.name == "prediction-poor" && rate == TickRate::Hz60 {
+            peer.until(|s| s.transport.as_ref().is_some_and(|t| t.rtt_ms > 210.))
+                .await;
+            let initial = peer.state.borrow().authority_focus().unwrap();
+            let initial_feet = peer.state.borrow().correction.unwrap().state.pose.feet;
+            let started = std::time::Instant::now();
+            while started.elapsed() < Duration::from_secs(2) {
+                let state = peer.state.borrow().clone();
+                assert!(state.error.is_none(), "{:?}", state.error);
+                let driven = driver
+                    .tick(
+                        &state,
+                        Intent {
+                            axes: [1000, 0],
+                            sprint: true,
+                            jump: true,
+                        },
+                        Some(&patch),
+                        std::time::Instant::now(),
+                    )
+                    .unwrap()
+                    .unwrap();
+                assert!(driven.packet.is_none(), "Unsupported RTT emitted a command");
+                assert_eq!(driven.pose.feet, initial_feet);
+                sleep(Duration::from_millis(4)).await;
+            }
+            assert_eq!(driver.stats.predicted_steps, 0);
+            assert!(driver.stats.waiting_frames > 100);
+            assert_eq!(peer.state.borrow().authority_focus(), Some(initial));
+            let stats = driver.stats.clone();
+            peer.finish().await;
+            let runtime = authority.finish().await;
+            assert_eq!(runtime["server"]["queued_commands"], 0);
+            assert_eq!(runtime["server"]["movement_recoveries"], 0);
+            reports.push(serde_json::json!({"tick_hz":rate.hz(),"outcome":"unsupported_latency_suspended","driver":stats,"runtime":runtime}));
+            continue;
+        }
         let started = std::time::Instant::now();
         let mut first_response = None;
         let mut start_x = None;
@@ -549,7 +640,14 @@ async fn prediction_profile_converges_over_real_encrypted_impaired_udp_at_every_
         let mut saw_airborne = false;
         let mut withdrawn = false;
         let mut granted = false;
-        while started.elapsed() < Duration::from_secs(10) {
+        // Poor links deliver fewer distinct completed corrections. Keep the
+        // same minimum measurement count with a longer stopped observation.
+        let duration = if profile.name == "prediction-poor" {
+            14
+        } else {
+            10
+        };
+        while started.elapsed() < Duration::from_secs(duration) {
             let elapsed = started.elapsed().as_secs_f64();
             if elapsed >= 3.5 && !withdrawn {
                 peer.ready.send_replace(Some(vec![]));
@@ -626,15 +724,50 @@ async fn prediction_profile_converges_over_real_encrypted_impaired_udp_at_every_
         assert!(final_pose.feet.metres()[0] > 8064., "No seam crossing");
         assert!(driver.stats.predicted_steps > 80 && driver.stats.replayed_steps > 0);
         assert!(driver.stats.max_history <= 64);
+        assert!(
+            driver.stats.same_tick_samples > 50,
+            "Insufficient aligned prediction measurements"
+        );
+        assert_eq!(
+            driver.stats.same_tick_samples + driver.stats.unmatched_tick_samples,
+            driver.stats.corrections
+        );
+        assert_eq!(
+            driver.stats.same_tick_error_buckets.iter().sum::<u64>(),
+            driver.stats.same_tick_samples
+        );
+        assert!(
+            driver.stats.stable_readiness_samples > 50,
+            "Insufficient stable samples: {:?}",
+            driver.stats
+        );
+        assert_eq!(
+            driver.stats.stable_readiness_samples + driver.stats.pending_readiness_samples,
+            driver.stats.same_tick_samples
+        );
+        assert_eq!(
+            driver
+                .stats
+                .stable_readiness_error_buckets
+                .iter()
+                .sum::<u64>(),
+            driver.stats.stable_readiness_samples
+        );
+        assert_eq!(
+            driver.stats.held_intent_agreement_samples + driver.stats.held_intent_mismatch_samples,
+            driver.stats.same_tick_samples
+        );
+        assert!(driver.stats.applied_sequence_mismatches <= driver.stats.same_tick_samples);
+        assert!(driver.stats.input_freshness_mismatches <= driver.stats.same_tick_samples);
         let stats = driver.stats.clone();
         peer.finish().await;
         let runtime = authority.finish().await;
         assert_eq!(runtime["server"]["movement_recoveries"], 0);
         assert!(runtime["server"]["queued_commands"].as_u64().unwrap() > 50);
-        reports.push(serde_json::json!({"tick_hz":rate.hz(),"first_local_response_ms":first_response.unwrap()*1000.,"stopped_error_metres":error,"driver":stats,"runtime":runtime}));
+        reports.push(serde_json::json!({"tick_hz":rate.hz(),"outcome":"movement_converged","first_local_response_ms":first_response.unwrap()*1000.,"stopped_error_metres":error,"driver":stats,"runtime":runtime}));
     }
     save(
-        "prediction-wifi",
-        &serde_json::json!({"profile":profile,"rates":reports}),
+        report_name,
+        &serde_json::json!({"profile":profile,"world":source.identity(),"rates":reports}),
     );
 }

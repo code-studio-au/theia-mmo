@@ -1,12 +1,16 @@
-> Development target: the 16 km × 16 km procedural graybox world with the POLYGON
-> Base Locomotion player. Run `python3 tools/play.py` after a release build.
+> Development target: the 16 km × 16 km saved graybox world with the POLYGON
+> Base Locomotion player. Bake terrain once, build release binaries, then run `python3 tools/play.py`.
 > See [graybox world](docs/GRAYBOX_WORLD.md) for controls, asset preparation,
 > developer travel and explicit legacy-map commands. Forest work is frozen.
 
 # Theia MMO
 
+The [story and lore folder](docs/story/README.md) contains the world bible,
+characters, campaign acts, quests and story decisions, including material awaiting
+creator review.
+
 A Rust WoW-style MMO project using **Bevy 0.20.0**.
-The development world is a 16 km × 16 km procedural graybox with the POLYGON
+The development world is a 16 km × 16 km saved graybox with the POLYGON
 Base Locomotion player. Original or appropriately licensed final world art remains
 planned; imported map experiments are retained as regressions.
 
@@ -28,6 +32,7 @@ See [physics migration and current limits](docs/PHYSICS_AVIAN.md).
 The continental graybox is the world for ongoing development:
 
 ```sh
+cargo run --release --locked -p theia-network --example bake_terrain -- bake build/graybox-terrain-v1
 cargo build --release --locked --workspace
 python3 tools/play.py
 ```
@@ -40,7 +45,9 @@ The default world uses the locally prepared `character.glb` under
 `build/synty-character-canonical-stage`. Add `--clients 2` for two connected players;
 see [graybox controls, travel and evidence](docs/GRAYBOX_WORLD.md). Client movement
 prediction is enabled by default; `--no-prediction` retains server-pose interpolation.
-Server authority remains unchanged.
+Server authority remains unchanged. Terrain is loaded from checked saved height
+tiles; `--graybox-world` selects the retained generated baseline. See
+[saved terrain](docs/SAVED_TERRAIN.md) for preparation, format and qualification.
 
 The retained town is explicit:
 `python3 tools/play.py --world build/development-world-town-v3`. Its [farmhouse](docs/MAP_FARMHOUSE.md) and

@@ -67,6 +67,25 @@ pub struct Smoke {
     capture_requested: bool,
 }
 impl Network {
+    pub(crate) fn current_intent(&self) -> Intent {
+        *self.input.borrow()
+    }
+    pub(crate) fn movement_measurement_context(
+        &self,
+        patch: Option<theia_core::coordinates::ChunkId>,
+    ) -> Option<crate::movement_metrics::Context> {
+        let state = self.state.borrow();
+        let correction = state.correction?;
+        Some(crate::movement_metrics::Context {
+            intent: self.current_intent(),
+            speed: correction.speed,
+            stream: correction.state.input.stream_epoch,
+            accepted_ready: correction.state.ready_sequence,
+            reported_ready: state.chunk_report.as_ref().map_or(0, |r| r.sequence),
+            patch,
+            clock_resets: self.prediction.as_ref().map_or(0, |p| p.stats.clock_resets),
+        })
+    }
     pub(crate) fn publish_chunks(&self, ids: Vec<theia_core::coordinates::ChunkId>) {
         self.chunk_ready.send_if_modified(|previous| {
             if previous.as_ref() == Some(&ids) {
@@ -1060,6 +1079,7 @@ mod rebase_tests {
         let mut frame = Frame::default();
         frame.span = 2.;
         frame.admit(&theia_network::wire::Welcome {
+            terrain_stream: false,
             id: 1,
             epoch: 1,
             world: [0; 32],

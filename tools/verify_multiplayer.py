@@ -346,7 +346,7 @@ def run(output, binaries, references=None, terrain=None, player_assets=None, col
         ground_checks = []
         for name, report in zip(("a", "b"), reports):
             assert report["completed"] and not report["offline"]
-            assert report['final']['version'] == 11
+            assert report['final']['version'] == 12
             coordinates = report['coordinates']
             expected_origin = world_origin if world_origin is not None else chunk_index["query_origin"] if chunk_world else [0., 0., 0.]
             assert coordinates['content_origin'] == expected_origin
@@ -420,7 +420,7 @@ def run(output, binaries, references=None, terrain=None, player_assets=None, col
                 assert report['chunk_world']['authority_confirmed']
                 sent = report['chunk_world']['report']
                 ack = report['chunk_world']['ack']
-                assert ack['version'] == 11 and ack['epoch'] == coordinates['epoch']
+                assert ack['version'] == 12 and ack['epoch'] == coordinates['epoch']
                 assert ack['sequence'] == sent['sequence'] > 0
                 expected_ids = report['chunk_world']['offer']['chunks'] if chunk_stream and not candidate_failure else initial_ids
                 assert ack['chunks'] == sent['chunks'] == expected_ids

@@ -17,6 +17,7 @@ async fn main() -> Result<()> {
     let mut chunk_stream = false;
     let mut world_selected = false;
     let mut graybox = false;
+    let mut terrain_source = theia_network::procedural::Source::Procedural;
     let mut predicted = false;
     let mut dev_tour = false;
     let mut dev_speed = 1.;
@@ -29,6 +30,8 @@ async fn main() -> Result<()> {
             "--dev-relays" => dev_relays=Some(args.next().ok_or("Missing relay endpoints")?.split(',').map(str::parse).collect::<std::result::Result<_,_>>()?),
             "--prediction" => predicted=true,
             "--dev-tour" => {dev_tour=true;}
+            "--saved-terrain" => { if world_selected {return Err("Choose one world".into());} world_selected=true; graybox=true;
+                terrain_source=theia_network::procedural::Source::Saved(std::sync::Arc::new(theia_network::saved_terrain::Store::open(&PathBuf::from(args.next().ok_or("Missing saved terrain directory")?))?)); }
             "--graybox-world" => { if world_selected {return Err("Choose one world".into());} world_selected=true; graybox=true; }
             "--dev-speed" => {dev_speed=args.next().ok_or("Missing developer speed")?.parse()?;}
             "--dev-spawn" => {let values:Vec<f64>=args.next().ok_or("Missing developer spawn")?.split(',').map(str::parse).collect::<std::result::Result<_,_>>()?;dev_spawn=values.try_into().map_err(|_|"Expected x,z")?;}
@@ -82,7 +85,11 @@ async fn main() -> Result<()> {
             return Err("Graybox requires Renet and manages its own frames".into());
         }
         let rate = world.tick_rate();
-        world = theia_network::simulation::World::with_procedural(dev_spawn, dev_speed)?;
+        world = theia_network::simulation::World::with_terrain_source(
+            dev_spawn,
+            dev_speed,
+            terrain_source,
+        )?;
         world.set_tick_rate(rate);
         world.dev_tour = dev_tour;
     } else if dev_tour || dev_speed != 1. || dev_spawn != [8000., 8000.] {

@@ -113,6 +113,10 @@ struct Peer {
 
 #[derive(Clone, Debug, Default, serde::Serialize)]
 pub struct ServerStats {
+    pub terrain_peak_resident: usize,
+    pub terrain_generated: u64,
+    pub terrain_retired: u64,
+    pub terrain_resident: usize,
     pub queued_commands: u64,
     pub max_movement_queue_bytes: usize,
     pub max_event_queue_bytes: usize,
@@ -370,6 +374,13 @@ async fn run_server_inner(
             }
             scheduled = io.tick() => {
                 world.poll_terrain();
+                if let Some(error) = world.procedural().and_then(|t| t.error.as_ref()) { return Err(error.clone().into()); }
+                if let Some(terrain) = world.procedural() {
+                    stats.terrain_peak_resident=stats.terrain_peak_resident.max(terrain.patches.len());
+                    stats.terrain_generated=terrain.generated;
+                    stats.terrain_retired=terrain.retired;
+                    stats.terrain_resident=terrain.patches.len();
+                }
                 let current = Instant::now();
                 let delta = current.saturating_duration_since(last); last = current;
                 server.update(delta);
@@ -382,7 +393,7 @@ async fn run_server_inner(
                             }
                             if let Some(actor) = world.join() {
                                 peers.insert(client_id, Peer { actor, latest: None, received: 0, period: current, pending_chunk_ack: None, offered_generation:0 });
-                                server.send_message(client_id, EVENT_CHANNEL, Welcome {id:actor, epoch:world.epoch(),world:world.identity(),origin:world.origin()}.encode());
+                                server.send_message(client_id, EVENT_CHANNEL, Welcome {terrain_stream: world.procedural().is_some(),id:actor, epoch:world.epoch(),world:world.identity(),origin:world.origin()}.encode());
                                 println!("player_join id={actor} transport=renet");
                             } else { server.disconnect(client_id); }
                         }
@@ -482,7 +493,7 @@ async fn run_server_inner(
     if let Some(terrain) = world.procedural() {
         eprintln!(
             "{}",
-            serde_json::json!({"terrain_summary":{"generated":terrain.generated,"retired":terrain.retired,"resident":terrain.patches.len(),"movement_recoveries":world.movement_recoveries()}})
+            serde_json::json!({"terrain_summary":{"saved_terrain":match &terrain.source {crate::procedural::Source::Saved(s)=>Some(s.stats()), _=>None},"generated":terrain.generated,"retired":terrain.retired,"resident":terrain.patches.len(),"movement_recoveries":world.movement_recoveries()}})
         );
     }
     stats.movement_recoveries = world.movement_recoveries();
@@ -551,9 +562,6 @@ pub async fn run_client_predicted(
     ready: ChunkReadiness,
     commands: mpsc::Receiver<crate::prediction_wire::Commands>,
 ) -> Result<()> {
-    if expected_world != crate::procedural::IDENTITY {
-        return Err("Prediction requires the procedural world".into());
-    }
     run_client_inner(
         address,
         ticket,
@@ -623,6 +631,7 @@ async fn run_client_inner(
                     let Some(bytes) = client.receive_message(EVENT_CHANNEL) else { break; };
                     if id.is_none() {
                         let welcome=Welcome::decode(&bytes, expected_world)?;
+                        if commands.is_some() && !welcome.terrain_stream {return Err("Prediction requires streamed terrain".into());}
                         id=Some(welcome.id); last_origin=Some(welcome.origin);
                         admission=Some(welcome.clone());
                         state.send_replace(State {id,welcome:Some(welcome),..State::default()});

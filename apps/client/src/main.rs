@@ -7,6 +7,7 @@ mod chunk_world;
 mod floating_origin;
 mod graybox;
 mod movement;
+mod movement_metrics;
 mod network;
 mod physics;
 mod reference_scene;
@@ -30,12 +31,32 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if args.first().is_some_and(|a| a == "--chunk-smoke") {
         return chunk_scene::run(&args);
     }
-    let graybox = if let Some(i) = args.iter().position(|a| a == "--graybox-world") {
+    let saved = if let Some(i) = args.iter().position(|a| a == "--saved-terrain") {
+        args.remove(i);
+        if i >= args.len() {
+            return Err("Missing saved terrain directory".into());
+        }
+        Some(std::sync::Arc::new(
+            theia_network::saved_terrain::Store::open(std::path::Path::new(&args.remove(i)))
+                .map_err(|e| e.to_string())?,
+        ))
+    } else {
+        None
+    };
+    let graybox_flag = if let Some(i) = args.iter().position(|a| a == "--graybox-world") {
         args.remove(i);
         true
     } else {
         false
     };
+    if graybox_flag && saved.is_some() {
+        return Err("Choose generated or saved terrain".into());
+    }
+    let graybox = graybox_flag || saved.is_some();
+    let source = saved.map_or(
+        theia_network::procedural::Source::Procedural,
+        theia_network::procedural::Source::Saved,
+    );
     let prediction = if let Some(i) = args.iter().position(|a| a == "--prediction") {
         args.remove(i);
         true
@@ -86,7 +107,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             &args,
             prediction,
             if graybox {
-                theia_network::procedural::IDENTITY
+                source.identity()
             } else {
                 chunks.as_ref().map_or_else(
                     || {
@@ -117,7 +138,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         camera::CollisionMode::Visual
     }));
     if graybox {
-        graybox::install(&mut app);
+        graybox::install(&mut app, source);
     }
     let material_diagnostic = std::env::var("THEIA_RUNTIME_TRIPLANAR_DIAGNOSTIC")
         .ok()

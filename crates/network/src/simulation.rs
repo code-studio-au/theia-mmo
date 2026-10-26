@@ -131,8 +131,17 @@ impl World {
         })
     }
     pub fn with_procedural(spawn: [f64; 2], speed: f32) -> crate::Result<Self> {
+        Self::with_terrain_source(spawn, speed, crate::procedural::Source::Procedural)
+    }
+    pub fn with_terrain_source(
+        spawn: [f64; 2],
+        speed: f32,
+        source: crate::procedural::Source,
+    ) -> crate::Result<Self> {
         Ok(Self {
-            procedural: Some(crate::procedural::Runtime::new(spawn, speed)?),
+            procedural: Some(crate::procedural::Runtime::with_source(
+                spawn, speed, source,
+            )?),
             client_chunks_required: true,
             ..Self::default()
         })
@@ -187,7 +196,12 @@ impl World {
                 let p = GlobalPosition::new([x, 0., z]).unwrap();
                 if let Some(patch) = runtime.patches.get(&crate::procedural::owner(p).unwrap()) {
                     if let Some(actor) = self.players.get_mut(&id) {
-                        let mut p = patch.spawn(x, z).metres();
+                        let Some(feet) = patch.try_spawn(x, z) else {
+                            runtime.error =
+                                Some("Saved terrain teleport has no supported spawn".into());
+                            return;
+                        };
+                        let mut p = feet.metres();
                         p[1] += f64::from(crate::world::PAWN_Y);
                         actor.position = GlobalPosition::new(p).unwrap();
                         actor.body.reset(actor.intent.jump);
@@ -503,8 +517,8 @@ impl World {
             .activate(epoch, prepared, &actors)
     }
     pub fn identity(&self) -> [u8; 32] {
-        if self.procedural.is_some() {
-            return crate::procedural::IDENTITY;
+        if let Some(terrain) = &self.procedural {
+            return terrain.source.identity();
         }
         self.chunks.as_ref().map_or_else(
             || {
@@ -526,7 +540,7 @@ impl World {
             let x = runtime.spawn[0] + f64::from(x);
             let z = runtime.spawn[1];
             let patch = runtime.patch(GlobalPosition::new([x, 0., z]).unwrap())?;
-            let p = patch.spawn(x, z).metres();
+            let p = patch.try_spawn(x, z)?.metres();
             // Spawn storage is unused for this backend; global truth is assigned below.
             [0., (p[1] + f64::from(crate::world::PAWN_Y)) as f32, 0.]
         } else if let Some(chunks) = &self.chunks {
@@ -573,7 +587,7 @@ impl World {
             let z = runtime.spawn[1];
             let mut p = runtime
                 .patch(GlobalPosition::new([x, 0., z]).unwrap())?
-                .spawn(x, z)
+                .try_spawn(x, z)?
                 .metres();
             p[1] += f64::from(crate::world::PAWN_Y);
             self.players.get_mut(&id).unwrap().position = GlobalPosition::new(p)?;
@@ -982,6 +996,7 @@ mod tests {
         assert!(new.input(new_id, moving(&new, 1, [0, 0])));
         assert_eq!(new.step().players[0].applied_sequence, 1);
         let welcome = crate::wire::Welcome {
+            terrain_stream: false,
             id: new_id,
             epoch: new.epoch(),
             world: new.identity(),

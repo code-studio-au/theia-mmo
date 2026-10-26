@@ -10,7 +10,13 @@ import time
 import tempfile
 
 
-def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk_world=None, camera_collision=None, graybox=False, dev_speed=1, dev_spawn="8000,8000", dev_tour=False, prediction=False):
+def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk_world=None, camera_collision=None, graybox=False, dev_speed=1, dev_spawn="8000,8000", dev_tour=False, prediction=False, saved_terrain=None):
+    if saved_terrain is not None:
+        if world is not None or chunk_world is not None:
+            raise ValueError('Choose saved terrain or an imported world')
+        if not (saved_terrain / 'terrain.manifest.json').is_file():
+            raise ValueError(f'Missing saved terrain at {saved_terrain}; bake once with cargo run --release --locked -p theia-network --example bake_terrain -- bake "{saved_terrain}"; see docs/SAVED_TERRAIN.md')
+        graybox = True
     if prediction and not graybox:
         raise ValueError("Prediction requires the graybox world")
     if not graybox and (dev_speed != 1 or dev_spawn != "8000,8000" or dev_tour):
@@ -20,9 +26,9 @@ def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk
     suffix = '.exe' if os.name == 'nt' else ''
     server_binary = binaries / ('theia-server' + suffix)
     client_binary = binaries / ('theia-client' + suffix)
-    required = [] if graybox else ([chunk_world / 'world.chunks.json', chunk_world / 'world.session.json'] if chunk_world else
+    required = ([saved_terrain / 'terrain.manifest.json'] if saved_terrain else []) if graybox else ([chunk_world / 'world.chunks.json', chunk_world / 'world.session.json'] if chunk_world else
                 [world / 'world.manifest.json', world / 'terrain.json', world / 'terrain.glb'])
-    scene = ['--graybox-world', *(['--prediction'] if prediction else [])] if graybox else (['--chunk-world', str(chunk_world)] if chunk_world else ['--terrain-world', str(world)])
+    scene = [*(['--saved-terrain', str(saved_terrain)] if saved_terrain else ['--graybox-world']), *(['--prediction'] if prediction else [])] if graybox else (['--chunk-world', str(chunk_world)] if chunk_world else ['--terrain-world', str(world)])
     server_options = ['--dev-speed', str(dev_speed), '--dev-spawn', dev_spawn, *(['--dev-tour'] if dev_tour else [])] if graybox else []
     for path in [*required, players / ('character.glb' if graybox else 'human.glb'), server_binary, client_binary]:
         if not path.is_file():
@@ -88,7 +94,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     worlds = parser.add_mutually_exclusive_group()
     worlds.add_argument('--world', type=Path, help='Explicit legacy monolithic world')
-    worlds.add_argument('--graybox-world', action='store_true', help='256 km² procedural development world (default)')
+    worlds.add_argument('--graybox-world', action='store_true', help='Retained generated terrain baseline')
+    worlds.add_argument('--saved-terrain', type=Path, help='Versioned saved height terrain directory')
     worlds.add_argument('--chunk-world', type=Path, help='Opt-in prepared chunk index/session; requires Renet')
     parser.add_argument('--players', type=Path, help='Player assets; defaults to POLYGON for graybox')
     parser.add_argument('--prediction', action=argparse.BooleanOptionalAction, default=None, help='Movement prediction (default for graybox; --no-prediction retains server-pose interpolation)')
@@ -103,8 +110,9 @@ if __name__ == '__main__':
     parser.add_argument('--camera-collision', choices=['world', 'visual'],
                         help='Override authored world camera clearance or legacy visual-mesh refinement')
     args = parser.parse_args()
-    graybox = args.graybox_world or (args.world is None and args.chunk_world is None)
+    graybox = args.graybox_world or args.saved_terrain is not None or (args.world is None and args.chunk_world is None)
+    saved_terrain = (args.saved_terrain or Path('build/graybox-terrain-v1')).resolve() if graybox and not args.graybox_world else None
     prediction = graybox if args.prediction is None else args.prediction
     players = args.players or Path('build/synty-character-canonical-stage' if graybox else 'build/reference-scene')
     play(args.world.resolve() if args.world else None, players.resolve(), args.clients, args.binaries.resolve(), args.tick_hz, args.transport,
-         args.chunk_world.resolve() if args.chunk_world else None, args.camera_collision, graybox, args.dev_speed, args.dev_spawn, args.dev_tour, prediction)
+         args.chunk_world.resolve() if args.chunk_world else None, args.camera_collision, graybox, args.dev_speed, args.dev_spawn, args.dev_tour, prediction, saved_terrain)

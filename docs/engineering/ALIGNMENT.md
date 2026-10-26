@@ -1,3 +1,35 @@
+# Current checkpoint — stopped safely, 2026-10-26
+
+The user requested stopping. No soak is running; the final diagnostic full-suite
+relink was safely interrupted. Changes remain local and uncommitted.
+
+The actual 600-second, eight-peer saved-terrain soak passes identity return,
+bounded residency and zero missed simulation deadlines. Separate I/O pump misses
+under concurrent builds remain recorded. [Soak evidence](../SAVED_TERRAIN_SOAK.md).
+The poor-link test passes movement/convergence at 20/30 Hz and safe suspension
+outside the 60 Hz latency window. [Envelope](../PREDICTION_LATENCY.md). That checkpoint
+passes 235 workspace tests (ten private-fixture skips), denied-warning Clippy/fmt,
+221 asset Python tests and four GLB alignment tests.
+
+The subsequent bounded input-agreement diagnostics are implemented; all 11 focused
+history tests and workspace/all-target denied-warning Clippy pass. Their final
+full-suite/real-UDP run was interrupted, so these new counters have no completed
+runtime qualification. [Diagnostic checkpoint](../PREDICTION_CONTRACT.md). Resume with
+that verification before interpreting the remaining correction outliers. No next
+feature is active; no native Windows or MMO population capacity is qualified.
+
+Current continuation, 2026-10-23 — P1-10/P2-06/07 and initial P3-13:
+[saved continental terrain](../SAVED_TERRAIN.md), with the existing coordinate,
+controller, readiness and prediction prerequisites. Acceptance is recorded there;
+saved terrain now passes full runtime/default adoption checks. The user resumed work.
+The matched-tick/render diagnostics and bounded rate prediction clock also pass
+234 Rust tests and native Linux comparisons; [clock evidence](../PREDICTION_CONTRACT.md).
+The actual eight-peer, 180-second headless saved-terrain soak passes;
+[scope, remaining checks and safe stop](../SAVED_TERRAIN_SOAK.md). Work is stopped
+at the user’s request; changes remain local and uncommitted.
+Earlier queues/stops below are dated historical context. No region/shard service
+or complete P3-13 acceptance is implied.
+
 Current target correction, 2026-10-22: the user adopted a 16 km × 16 km graybox
 world with the POLYGON development player. See [scope and evidence](../GRAYBOX_WORLD.md).
 This keeps Bevy/Avian/Renet and authoritative movement, freezes forest reproduction,

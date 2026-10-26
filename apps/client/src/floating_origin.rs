@@ -217,6 +217,7 @@ mod chunk_tests {
     #[test]
     fn explicit_chunk_content_frame_is_independent_of_server_query_origin_and_render_rebases() {
         let welcome = Welcome {
+            terrain_stream: false,
             id: 1,
             epoch: 7,
             world: [1; 32],

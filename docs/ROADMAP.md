@@ -1,3 +1,32 @@
+# Current checkpoint — stopped safely, 2026-10-26
+
+The user requested stopping. No soak is running; the final diagnostic full-suite
+relink was safely interrupted. Changes remain local and uncommitted.
+
+The actual 600-second, eight-peer saved-terrain soak passes identity return,
+bounded residency and zero missed simulation deadlines. Separate I/O pump misses
+under concurrent builds remain recorded. [Soak evidence](SAVED_TERRAIN_SOAK.md).
+The poor-link test passes movement/convergence at 20/30 Hz and safe suspension
+outside the 60 Hz latency window. [Envelope](PREDICTION_LATENCY.md). That checkpoint
+passes 235 workspace tests (ten private-fixture skips), denied-warning Clippy/fmt,
+221 asset Python tests and four GLB alignment tests.
+
+The subsequent bounded input-agreement diagnostics are implemented; all 11 focused
+history tests and workspace/all-target denied-warning Clippy pass. Their final
+full-suite/real-UDP run was interrupted, so these new counters have no completed
+runtime qualification. [Diagnostic checkpoint](PREDICTION_CONTRACT.md). Resume with
+that verification before interpreting the remaining correction outliers. No next
+feature is active; no native Windows or MMO population capacity is qualified.
+
+Current continuation, 2026-10-23: [saved height terrain](SAVED_TERRAIN.md) passes
+its bounded Linux adoption checks. Same-tick diagnostics and the smoother prediction
+clock pass. The actual eight-peer, 180-second headless saved-terrain soak also
+passes; [scope and remaining checks](SAVED_TERRAIN_SOAK.md). Work is stopped at the
+user’s request, with changes local and uncommitted. The saved slice
+extends the existing continental loader (P1-10/P2-06/07, initial P3-13). Preserve
+procedural and imported-map regressions. Zone ownership, sharding, navigation,
+terrain editing/materials and population capacity remain separate work.
+
 Current priority, 2026-10-22: [256 km² graybox terrain](GRAYBOX_WORLD.md) and the
 POLYGON Base Locomotion development player. Forest reproduction is frozen. Complete
 and qualify bounded visual/collision generation, culling/unloading, long-distance

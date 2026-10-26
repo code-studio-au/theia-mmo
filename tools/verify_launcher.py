@@ -59,6 +59,7 @@ def run(output, binaries, world, players, *, use_default_world=False, chunk_worl
                     for pid in owned:
                         argv = Path(f'/proc/{pid}/cmdline').read_bytes().split(b'\0')
                         assert b'--prediction' in argv, 'Default launcher omitted the qualified prediction profile'
+                        assert b'--saved-terrain' in argv, 'Default launcher did not load saved terrain'
                 for expected_package in expected_packages:
                     expected = f"world_package content_id={expected_package['content_id']} revision={expected_package['revision']} collision_verified=true"
                     assert expected in text, 'Launcher selected the wrong content package/revision'
@@ -81,7 +82,7 @@ def run(output, binaries, world, players, *, use_default_world=False, chunk_worl
                 assert not any(p.exists() for p in ticket_directories), 'Temporary tickets survived'
                 results.append({'mode': mode, 'launcher_exit': code, 'owned_children': len(owned),
                                 'children_removed': True, 'tickets_removed': True, 'transport': 'renet',
-                                'default_world': use_default_world, 'chunk_world': chunk_world, 'prediction': use_default_world,
+                                'default_world': use_default_world, 'chunk_world': chunk_world, 'prediction': use_default_world, 'saved_terrain': use_default_world,
                                 **({'content_id': expected_packages[0]['content_id'], 'revision': expected_packages[0]['revision']} if expected_packages and not chunk_world else {}),
                                 'packages': [{'content_id': p['content_id'], 'revision': p['revision']} for p in expected_packages]})
             finally:

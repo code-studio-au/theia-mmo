@@ -5,7 +5,7 @@ use theia_core::{
     identity::{EntityId, WorldEpoch},
 };
 
-pub const VERSION: u32 = 11;
+pub const VERSION: u32 = 12;
 pub const MAX_PLAYERS: usize = 8;
 pub const MAX_BYTES: usize = 1200;
 pub const TICK_HZ: u32 = 30;
@@ -238,9 +238,11 @@ impl Snapshot {
 
 /// Bounded reliable welcome shared by both transports. Content coordinates are
 /// local to this immutable anchor; snapshot origins may change independently.
-pub const WELCOME_BYTES: usize = 76;
+pub const WELCOME_BYTES: usize = 77;
 #[derive(Clone, Debug)]
 pub struct Welcome {
+    /// Explicit frame policy, independent of the content digest.
+    pub terrain_stream: bool,
     pub id: u64,
     pub epoch: u64,
     pub world: [u8; 32],
@@ -255,6 +257,7 @@ impl Welcome {
         for axis in self.origin {
             bytes.extend(axis.to_le_bytes());
         }
+        bytes.push(u8::from(self.terrain_stream));
         bytes
     }
     pub fn decode(bytes: &[u8], expected_world: [u8; 32]) -> crate::Result<Self> {
@@ -267,7 +270,8 @@ impl Welcome {
         let origin = std::array::from_fn(|i| {
             f64::from_le_bytes(bytes[52 + i * 8..60 + i * 8].try_into().unwrap())
         });
-        if EntityId::new(id).is_none()
+        if bytes[76] > 1
+            || EntityId::new(id).is_none()
             || WorldEpoch::new(epoch).is_none()
             || GlobalPosition::new(origin).is_none()
             || world != expected_world
@@ -275,6 +279,7 @@ impl Welcome {
             return Err("Invalid welcome identity, origin or server world mismatch".into());
         }
         Ok(Self {
+            terrain_stream: bytes[76] == 1,
             id,
             epoch,
             world,
@@ -286,7 +291,7 @@ impl Welcome {
     }
     pub fn accepts(&self, snapshot: &Snapshot) -> bool {
         snapshot.epoch == self.epoch
-            && (if self.world == crate::procedural::IDENTITY {
+            && (if self.terrain_stream {
                 snapshot.players.iter().all(|p| {
                     snapshot
                         .global_position(p)
@@ -502,6 +507,7 @@ mod tests {
     #[test]
     fn welcome_and_snapshot_reject_invalid_identity_epoch_origin_and_trailing_bytes() {
         let welcome = Welcome {
+            terrain_stream: false,
             id: 1,
             epoch: 9,
             world: [0; 32],
@@ -517,6 +523,12 @@ mod tests {
         trailing.push(0);
         assert!(Welcome::decode(&trailing, [0; 32]).is_err());
         assert!(Welcome::decode(&encoded, [1; 32]).is_err());
+        let mut invalid_policy = encoded.clone();
+        invalid_policy[76] = 2;
+        assert!(Welcome::decode(&invalid_policy, [0; 32]).is_err());
+        let mut old_version = encoded.clone();
+        old_version[..4].copy_from_slice(&11_u32.to_le_bytes());
+        assert!(Welcome::decode(&old_version, [0; 32]).is_err());
         for position in [4, 12] {
             let mut bytes = encoded.clone();
             bytes[position..position + 8].fill(0);

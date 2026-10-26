@@ -1,5 +1,21 @@
 # Prediction and reconciliation
 
+Current continuation, 2026-10-23: saved terrain and same-tick diagnostics pass.
+A smoother prediction clock, with first-readiness RTT acquisition, passes the
+full 234-test workspace checkpoint; final native comparison passes.
+Historical analysis/checkpoints below retain their original scope and binaries.
+
+Measurement continuation implemented, 2026-10-23 — P2-04/P1-12. The saved-terrain
+Linux slice now passes; see [saved terrain](SAVED_TERRAIN.md) for current wire v12
+and source qualification. The next bounded slice retains post-step poses inside
+the existing 64-step history, compares corrections only at matching completed
+ticks, and refreshes those poses during replay. Report position/body differences
+separately from raw catch-up displacement and incompatible-context resets.
+Acceptance: analytical clock-ahead/aligned/replay tests, actual impaired UDP at
+20/30/60 Hz, bounded diagnostic counts and native normal-speed reports. The measurement-only sub-slice preserved gameplay,
+clock, collision permissions and server authority. The later clock change is
+qualified separately below.
+
 Current checkpoint, 2026-10-22: actual Renet completed-step commands and bounded
 client reconciliation are the default graybox profile. Linux native traversal,
 impaired UDP, teleport/held-jump reset and launcher checks pass. Broader P2-04
@@ -310,3 +326,232 @@ and **4 GLB alignment tests** pass. Workspace/all-target denied-warning Clippy,
 private models, Unity exports, tickets and binaries. Linux execution is qualified;
 no native Windows execution is claimed. No engine/plugin pins changed in this
 prediction continuation.
+
+
+## Measurement continuation — 2026-10-23
+
+Each retained speculative step now also stores its post-step pose, within the
+same 64-step cap. Before restoring a correction, compare its completed authority
+tick with that retained pose. Report three-dimensional/horizontal/vertical
+position error, vertical-speed difference, grounded and held-jump mismatches.
+Replay refreshes retained post-step poses, so later samples describe the updated
+prediction. An authority-ahead tick with no predicted counterpart is **unmatched**,
+not a fabricated error sample. Stale/foreign corrections and incompatible stream/
+readiness resets produce no aligned sample. The original `max_correction_metres`
+remains a raw before/after replay displacement for backwards diagnostic continuity.
+
+The driver separately labels pending readiness: an outstanding local report or
+accepted cells no longer present in the prepared query patch. Each prediction
+stores that label; a comparison is tagged if either its stored prediction or the
+current measurement context is pending. Replay refreshes the label as well.
+This diagnostic flag never changes input, collision permissions, solver calls,
+clock decisions, history resets, authority or the network protocol.
+
+Counts/maxima distinguish all aligned samples from those with stable readiness.
+Two fixed eight-counter histograms use inclusive upper bounds in metres:
+`[0.0001, 0.001, 0.01, 0.05, 0.1, 0.5, 1.0]`, then `>1.0`. Histogram counts must
+sum to their sample counts; stable + pending samples must equal total aligned
+samples; aligned + unmatched must equal applied corrections. There is no
+unbounded per-correction log or new wire traffic. These are simulation diagnostics,
+not rendered frame discontinuities or input-to-photon latency.
+
+Analytical tests distinguish a seven-tick clock advance from an actual same-tick
+position/body error, verify replay refreshes measured poses, and retain the pending
+label even when the report resolves before the correction arrives. Actual UDP and
+native normal-speed measurements below now qualify the bounded diagnostic slice. Intermediate v1 UDP results deliberately include terrain
+permission withdrawal and are not a pure continuous-movement error distribution.
+
+
+### Executed measurement evidence
+
+- `build/prediction-measurement-unit-v2.log`: ten history tests and four driver
+  tests pass, including analytical aligned/clock-ahead/replay/context cases.
+- `build/prediction-measurement-integration-v2.log`: **34** relevant network,
+  command/controller/replay/saved-terrain tests pass, including actual encrypted
+  impaired UDP at 20/30/60 Hz. `build/prediction-measurement-client-tests-v2.log`:
+  **50** client tests pass. Workspace/all-target denied-warning Clippy passes in
+  `build/prediction-measurement-clippy-final.log`. The subsequent full workspace checkpoint passes **230 tests**, with ten explicit
+  private-fixture skips (`build/prediction-measurement-workspace-final.log`).
+  All 221 asset-tool tests and four GLB alignment tests pass again.
+- Saved UDP profile (`build/prediction-measurement-network-v2/saved-prediction-wifi.json`):
+  stable readiness yields 172 / 258 / 385 matched samples at 20/30/60 Hz, maximum
+  position errors **0.0191 / 0.0155 / 0.0236 mm**. Every stable sample is in the
+  <=0.1 mm bucket. Deliberate pending-readiness transitions peak at **0.4020 /
+  0.2680 / 0.6701 m**. They remain included in the total-error counters.
+- The corresponding generated-terrain profile has one stable-readiness **0.134 m**
+  outlier at 60 Hz; all its other stable samples are <=0.1 mm. This is retained
+  openly. Packet scheduling/input changes mean these runs do not establish a
+  universal maximum error; stopped convergence and bounded history still pass.
+- `build/prediction-measurement-native-v2/verification.json`: two actual Linux
+  RX 7900 XTX clients, 1280×720, Vulkan validation, 65 seconds, normal speed,
+  saved terrain, 40 ms + 0–60 ms jitter, 10% loss and duplication/reorder. No
+  scripted teleports/permission withdrawal. Both perform walk/run/jump/stops,
+  actual tile replacement/retirement and all four animation clips. **3,237**
+  matched-tick samples, all <=0.1 mm; **3,212** have stable readiness, largest
+  error **0.005312 mm**. Grounded/latch mismatch counts and producer drops are
+  zero. Two authority-ahead samples remain explicitly unmatched. History peaks
+  at ten steps each. Server records zero recoveries and missed deadlines.
+
+Exact measured release client:
+`fc822e5b937daf8465f51e97f701c617353824dd4c5ac0933e22d4c9b326a5e2`;
+server:
+`5febc808ec78f24d83b9db4498d73935422e61aa07252b544ca505e2bfccf976`.
+Copies are preserved under `build/prediction-measurement-qualified-v2`.
+These diagnostics change no command/solver/clock/presentation behavior. The native
+run covers a straight route with gait changes and jumps, not every turn, network
+or authored collision condition. Simulation agreement is separate from visual
+frame pacing: the existing moving-tagged counter still records 290/4,003 and
+321/4,011 held samples. Input transitions and presentation timing need separate
+classification before attributing those to a particular cause or changing smoothing.
+
+
+### Render-motion classification continuation (in progress)
+
+P2-05/P2-04/P1-12: new bounded client observations distinguish unchanged desired
+input from starts/stops/turns, pending readiness, query-patch/stream/clock resets,
+half-second settling windows, >100 ms frame gaps and >=64 m horizontal or >32 m
+vertical displacements. Steady observations record held positions and a fixed
+speed/expected-speed histogram (inclusive bounds 0.1, 0.5, 0.9, 1.1, 1.5, 2, 4,
+then >4). Desired speed follows the existing axes, walk/run and server development
+multiplier. Fixed memory; no frame trace allocation or feedback into gameplay.
+
+Two controlled trace tests cover constant global speed and intentional idle/turn
+settling, actual held input, loading, large displacement and long frames. The
+client suite now passes **52 tests**; denied-warning Clippy passes. These are
+classification tests, not evidence of actual rendering. Native normal-speed
+observations are being collected in `build/render-motion-native-v1` before any
+smoothing/clock behavior changes. The samples observe CPU-side rendered transforms,
+not screen scanout. Constant desired input can still be legitimately blocked by
+world collision or a network pause; these counters alone do not establish jitter.
+
+
+### Native render-motion baseline and clock candidate
+
+`build/render-motion-native-v1/verification.json` passes the unchanged gameplay
+baseline plus the new classification checks. Two Linux/Vulkan validated clients,
+normal speed and the established impaired UDP profile, 65 seconds without scripted
+teleports: **285/3,184** and **281/3,162** steady-input frames hold position
+(**8.95% / 8.89%**). No >100 ms gaps or large displacements. Maximum observed
+horizontal speed/desired speed is **2.58 / 2.80**. Only 1,598/3,184 and 1,645/3,162
+samples fall in the 0.9–1.1 speed-ratio bucket. This confirms remaining render
+cadence variation on this route despite the closely matching simulation states.
+Client SHA `1bb4cb162f459b3c19b3ad72d2e39a678bf7e20d85e5b727d67b6add7ebdeb15`;
+server remains the measurement-v2 hash above. Copies:
+`build/render-motion-qualified-v1`. Existing qualified saved/procedural behavior
+remains recoverable with the launcher's explicit `--binaries` selection.
+
+The next candidate keeps a continuous local prediction clock that includes input
+lead. Fresh latency estimates change its rate within **0.95–1.05** of nominal;
+they no longer jump the clock's phase or add a separately rounded lead to each
+frame's target. Phase errors larger than eight ticks retain explicit resync.
+Server simulation remains fixed at its configured rate. No queue/window/expiry,
+authority, collision or wire contract changes. Tests oscillate RTT around a lead
+threshold at 800 FPS for 20/30/60 Hz and require single-step, regular, non-rewinding
+prediction cadence. Native comparison and broader qualification are in progress;
+this candidate is not yet claimed to fix the observed render holds.
+
+
+Clock candidate v1 native comparison (`build/prediction-clock-native-v1/verification.json`):
+steady holds fall from the baseline's 8.95% / 8.89% to **8/3,282 (0.244%)** and
+**2/3,369 (0.059%)** on the same two-client normal-speed impaired route. Maximum
+speed ratios fall from 2.58 / 2.80 to **1.60 / 1.58**. No >100 ms gaps, large
+jumps, clock backsteps or grounded/latch mismatches. One stable-readiness sample
+has a **0.1673 m** error on the second client; it is retained in the counters.
+
+`build/prediction-clock-paced-v1/verification.json`: actual ordinary VSync/focus
+pacing, one normal-speed client, validation off, impaired UDP, 40 seconds,
+**60.00 FPS**, 12/1,302 steady holds (0.922%), 1,253/1,302 speed ratios in 0.9–1.1.
+A 0.1673 m correction is also retained in this run. This is separate from the
+uncapped two-client comparison and is not a same-pacing baseline comparison.
+
+The full v1 saved crossing also passes (`build/prediction-clock-continent-v1/verification.json`):
+125 columns, maximum 81 roots, 2,345 loads / 2,300 retirements and the same eastern
+endpoint. Uncapped one-client RX 7900 XTX, validation off: 827.08 FPS, mean
+1.20907 ms, worst one-second p95 1.31693 ms; warm-cache empty-world evidence.
+Copies of these exact executables are in `build/prediction-clock-qualified-v1`:
+client `33ec54b76df5a986701afa21f1d58db1bdedea8e1f4fa65d7b72ac4d8a3ac0f4`,
+server `fd899f07707315677df60812b1f71d25fd4e49491c884f9fe822d873c2073449`.
+
+Startup follow-up: first terrain may become playable while the link's RTT is
+still the unknown initial zero. Acquire the measured prediction buffer once when
+both authorized live terrain and a positive measured RTT exist. Bootstrap that
+clock with held input rather than inventing past commands. Later latency changes
+still use the bounded rate adjustment. A controlled regression demonstrates that
+new commands remain future-dated on arrival after RTT discovery; ready geometry
+alone must not lock in the unknown RTT. Final v2 full/native checks are in progress.
+The earlier partial full-suite attempt was deliberately interrupted after this
+startup rule changed; `build/prediction-clock-workspace-final.log` is not a pass.
+
+
+Final startup/clock source checkpoint: **234 workspace tests pass**, ten explicit
+private-fixture tests skipped (`build/prediction-clock-workspace-v2.log`). The six
+focused driver tests pass, including ready terrain before RTT discovery and the
+20/30/60 Hz cadence regression (`build/prediction-clock-startup-unit-v2.log`).
+Denied-warning workspace/all-target Clippy and formatting pass in the final-v2
+logs. Final native runs use `build/prediction-clock-native-v2`,
+`build/prediction-clock-paced-v2` and `build/prediction-clock-continent-v2`;
+all three now pass with exactly one initial RTT acquisition and zero ordinary
+clock backsteps per client.
+
+
+### Final clock adoption — 2026-10-23
+
+Final v2 native comparison passes. Two validated clients on the same normal-speed
+impaired route record **0/3,280 (0%)** and **5/3,280 (0.152%)** steady held frames,
+versus the original 8.95% / 8.89%. Max speed ratios are 1.61 / 1.48. Body/latch
+mismatch counts, producer drops, >100 ms frame gaps and large displacements are
+zero. One first-client same-tick sample has a **0.2680 m** stable-readiness error;
+all its other 1,610 aligned samples are <=0.1 mm. All 1,615 aligned samples on the
+second client are <=0.1 mm. Packet-loss corrections remain possible; this is not
+a universal maximum-error or all-input latency guarantee.
+
+Ordinary pacing v2 passes at **60.00 FPS**: **6/1,297 (0.463%)** steady held
+frames, 1,248/1,297 speed ratios in 0.9–1.1, largest stable-readiness prediction
+error **0.00410 mm**. All 975 aligned samples are <=0.1 mm. Full saved-continent
+v2 passes again: all 125 columns, maximum 81 roots, 2,345 loads / 2,300 retirements,
+same finite-edge endpoint, **823.40 FPS**, mean **1.21447 ms**, worst one-second
+p95 **1.34346 ms** over 59,360 post-warmup frames (one client, validation off,
+warm cache). Input held at the finite world edge is legitimate blocking; the
+normal-speed cadence budget does not apply to this accelerated endpoint finish.
+
+Exact final client:
+`6fe925859aaaa8d62618c3feb0e11575b8be0f4313a2b87c3370070eece94d11`;
+server:
+`9ef5d4131e82ba2c7d65e47a76ed32406025ddf546fa428c04d25a1aa7100fe4`.
+Copies: `build/prediction-clock-qualified-v2`. Source checks: **234 Rust tests**,
+ten private-fixture skips, denied-warning Clippy/fmt; Python checks remain 221
+asset tests plus four alignment tests. Saved data/character identities are unchanged.
+
+The qualification tool supports `--paced` and an explicit normal-speed,
+no-tour `--steady-hold-budget 0.01`. The actual gate rejects both measured old
+baseline clients and accepts all three final native/VSync clients; evidence:
+`build/prediction-clock-cadence-budget-v2.json`. This is a scoped regression gate
+on the documented unobstructed route, not a claim that blocked movement, loading,
+Windows, crowds or arbitrary Internet links must meet the same count. The server
+still runs fixed 30 Hz by default; only the client prediction clock is slewed.
+
+
+### Completed-input diagnostic checkpoint — 2026-10-26
+
+P2-04/P1-12 adds the completed speculative input state to each of the existing
+64 bounded history entries. Matched-tick measurements compare held intent,
+applied sequence and receipt freshness with authoritative input state, and refresh
+that recorded state when replay refreshes a pose. Fixed counters/maxima partition
+held-intent agreement/disagreement; independent sequence/freshness mismatch counts
+remain separate. No gameplay branch, solver, wire, input-window or smoothing rule
+changes. Matching intent at one tick does not prove identical prior histories or
+establish that a residual error is a solver defect.
+
+All **11 prediction-history tests** pass, including analytical lost-command,
+same-intent/different-sequence/freshness and replay-refresh cases
+(`build/prediction-input-history-v1.log`). Denied-warning workspace/all-target
+Clippy passes (`build/prediction-input-clippy-v1.log`). The earlier complete
+workspace checkpoint passed **235 tests**, with ten explicit private-fixture skips,
+and includes the [poor-link regression](PREDICTION_LATENCY.md).
+
+The user requested a safe stop during the final diagnostic full-suite relink.
+The owned Cargo invocation was interrupted; `build/prediction-input-workspace-v1.log`
+is **not a full-suite pass**. Real encrypted UDP reports with these additional
+input counters remain unqualified, as does their native presentation observation.
+Resume with those checks before attributing the recorded 0.2–0.4 m corrections
+to input disagreement. No further soak was started. Work remains local/uncommitted.

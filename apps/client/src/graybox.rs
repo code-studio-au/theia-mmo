@@ -32,13 +32,15 @@ struct Built {
 }
 #[derive(Resource)]
 pub struct Graybox {
+    render_motion: crate::movement_metrics::Metrics,
+    saved: Option<Arc<theia_network::saved_terrain::Store>>,
     sender: mpsc::SyncSender<(ChunkId, usize)>,
-    receiver: Mutex<mpsc::Receiver<Built>>,
+    receiver: Mutex<mpsc::Receiver<theia_network::Result<Built>>>,
     pending: Option<(ChunkId, usize)>,
     prepared_visuals: std::collections::BTreeSet<ChunkId>,
     gpu_mesh_assets: usize,
     patch_sender: mpsc::SyncSender<ChunkId>,
-    patch_receiver: Mutex<mpsc::Receiver<Arc<Patch>>>,
+    patch_receiver: Mutex<mpsc::Receiver<theia_network::Result<Arc<Patch>>>>,
     patch_pending: Option<ChunkId>,
     pub patch: Option<Arc<Patch>>,
     material: Option<Handle<StandardMaterial>>,
@@ -61,7 +63,12 @@ pub struct Graybox {
     started: Instant,
 }
 impl Graybox {
-    pub fn new() -> Self {
+    pub fn new(source: procedural::Source) -> Self {
+        let saved = match &source {
+            procedural::Source::Saved(store) => Some(store.clone()),
+            _ => None,
+        };
+        let visual_source = source.clone();
         let (sender, jobs) = mpsc::sync_channel(1);
         let (results, receiver) = mpsc::sync_channel(1);
         std::thread::Builder::new()
@@ -69,11 +76,11 @@ impl Graybox {
             .spawn(move || {
                 while let Ok((id, cells)) = jobs.recv() {
                     if results
-                        .send(Built {
+                        .send(visual_source.geometry(id, cells).map(|geometry| Built {
                             id,
                             cells,
-                            geometry: procedural::geometry(id, cells),
-                        })
+                            geometry,
+                        }))
                         .is_err()
                     {
                         break;
@@ -87,13 +94,18 @@ impl Graybox {
             .name("terrain-camera".into())
             .spawn(move || {
                 while let Ok(id) = jobs.recv() {
-                    if results.send(Arc::new(Patch::build(id))).is_err() {
+                    if results
+                        .send(Patch::load(id, &source).map(Arc::new))
+                        .is_err()
+                    {
                         break;
                     }
                 }
             })
             .expect("Terrain collision worker");
         Self {
+            render_motion: Default::default(),
+            saved,
             sender,
             receiver: Mutex::new(receiver),
             pending: None,
@@ -229,6 +241,15 @@ fn setup(
         },
     ));
 }
+fn load_failed(world: &mut World, error: Box<dyn std::error::Error + Send + Sync>) {
+    eprintln!("Terrain load failed: {error}");
+    world
+        .resource::<crate::network::Network>()
+        .publish_chunks(Default::default());
+    world.write_message(bevy::app::AppExit::Error(
+        std::num::NonZeroU8::new(1).unwrap(),
+    ));
+}
 pub fn tick(world: &mut World) {
     let state = world.resource::<crate::network::Network>().state();
     let Some(global) = state.authority_focus() else {
@@ -261,7 +282,14 @@ pub fn tick(world: &mut World) {
         .unwrap()
         .try_recv()
         .ok();
-    if let Some(built) = built {
+    if let Some(result) = built {
+        let built = match result {
+            Ok(built) => built,
+            Err(error) => {
+                load_failed(world, error);
+                return;
+            }
+        };
         world.resource_mut::<Graybox>().pending = None;
         if desired.get(&built.id) == Some(&built.cells) {
             if let Some((entity, _, _, handle)) =
@@ -320,7 +348,14 @@ pub fn tick(world: &mut World) {
         .unwrap()
         .try_recv()
         .ok();
-    if let Some(patch) = patch {
+    if let Some(result) = patch {
+        let patch = match result {
+            Ok(patch) => patch,
+            Err(error) => {
+                load_failed(world, error);
+                return;
+            }
+        };
         world.resource_mut::<Graybox>().patch_pending = None;
         if patch.owner == owner {
             let bodies: Vec<_> = world
@@ -467,6 +502,12 @@ fn report(
             }
         }
         gray.last_render = Some(global);
+        if let Some(context) =
+            network.movement_measurement_context(gray.patch.as_ref().map(|p| p.owner))
+        {
+            let at = gray.started.elapsed().as_secs_f64();
+            gray.render_motion.observe(at, global, context);
+        }
     }
     if let (Some(patch), Ok((pawn, _))) = (&gray.patch, pawn.single()) {
         let global = frame
@@ -535,13 +576,13 @@ fn report(
     }
     eprintln!(
         "{}",
-        serde_json::json!({"graybox":{"seconds":gray.started.elapsed().as_secs_f64(),"position":p,"resident":resident,"visible":visible,"loaded":gray.loaded,"unloaded":gray.unloaded,"patches":gray.patches,"visited":gray.visited.len(),"max_resident":gray.max_resident,"mesh_bytes":mesh_bytes,"mean_ms":mean,"p95_ms":p95,"frame_count":gray.frames.len(),"mesh_assets":meshes.len(),"gpu_mesh_assets":gray.gpu_mesh_assets,"probes":gray.probes,"moving_frames":gray.moving_frames,"held_frames":gray.held_frames,"max_ground_error":gray.max_ground_error,"pose_changes":gray.pose_changes,"rebases":frame.revision}})
+        serde_json::json!({"graybox":{"render_motion":gray.render_motion,"saved_terrain": gray.saved.as_ref().map(|s| s.stats()),"seconds":gray.started.elapsed().as_secs_f64(),"position":p,"resident":resident,"visible":visible,"loaded":gray.loaded,"unloaded":gray.unloaded,"patches":gray.patches,"visited":gray.visited.len(),"max_resident":gray.max_resident,"mesh_bytes":mesh_bytes,"mean_ms":mean,"p95_ms":p95,"frame_count":gray.frames.len(),"mesh_assets":meshes.len(),"gpu_mesh_assets":gray.gpu_mesh_assets,"probes":gray.probes,"moving_frames":gray.moving_frames,"held_frames":gray.held_frames,"max_ground_error":gray.max_ground_error,"pose_changes":gray.pose_changes,"rebases":frame.revision}})
     );
     gray.frames.clear();
     gray.last_report = Instant::now();
 }
-pub fn install(app: &mut App) {
-    app.insert_resource(Graybox::new())
+pub fn install(app: &mut App, source: procedural::Source) {
+    app.insert_resource(Graybox::new(source))
         .add_systems(Startup, setup)
         .add_systems(PreUpdate, autoplay.after(crate::input))
         .add_systems(Last, qualification.after(report))
@@ -612,7 +653,7 @@ fn qualification(world: &mut World) {
         .prediction
         .as_ref()
         .map(|p| p.stats.clone());
-    let data = serde_json::json!({"held_jump_reset_samples":gray.held_jump_reset_samples,"held_jump_reset_failures":gray.held_jump_reset_failures,"prediction":prediction,"resident":resident,"max_resident":gray.max_resident,"mesh_assets":mesh_assets,"extra_meshes":extra_meshes,"gpu_mesh_assets":gray.gpu_mesh_assets,"loaded":gray.loaded,"unloaded":gray.unloaded,"visited":gray.visited.len(),"patches":gray.patches,"probes":gray.probes,"moving_frames":gray.moving_frames,"held_frames":gray.held_frames,"max_ground_error":gray.max_ground_error,"pose_changes":gray.pose_changes,"position":gray.last_position});
+    let data = serde_json::json!({"render_motion":gray.render_motion,"saved_terrain":gray.saved.as_ref().map(|s| s.stats()),"held_jump_reset_samples":gray.held_jump_reset_samples,"held_jump_reset_failures":gray.held_jump_reset_failures,"prediction":prediction,"resident":resident,"max_resident":gray.max_resident,"mesh_assets":mesh_assets,"extra_meshes":extra_meshes,"gpu_mesh_assets":gray.gpu_mesh_assets,"loaded":gray.loaded,"unloaded":gray.unloaded,"visited":gray.visited.len(),"patches":gray.patches,"probes":gray.probes,"moving_frames":gray.moving_frames,"held_frames":gray.held_frames,"max_ground_error":gray.max_ground_error,"pose_changes":gray.pose_changes,"position":gray.last_position});
     std::fs::write(
         output.join("world.json"),
         serde_json::to_vec_pretty(&data).unwrap(),
