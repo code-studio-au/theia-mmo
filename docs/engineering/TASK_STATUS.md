@@ -1,3 +1,145 @@
+# Active work — 2026-10-29: authenticated native admission
+
+The account HTTP/OIDC/session/owned-character boundary is qualified and frozen in
+`build/account-http-qualified-v1-20261029` (source copies/hashes and exact tested
+executable). Actual two-user Keycloak/PostgreSQL HTTP checks pass authorization,
+proof-bound collection/cancellation, revocation/supersession, strict inputs,
+measured bounds/deadlines, fail-closed backend loss, graceful shutdown and database/
+API restart preserving character IDs while invalidating old process credentials.
+[Exact evidence/limits](../ACCOUNT_HTTP_FOUNDATION.md).
+
+**294 workspace tests pass**, 13 explicit skips (ten private fixtures plus three
+actual-PostgreSQL contracts executed separately); formatting and workspace/all-
+target denied-warning Clippy pass. The standalone server remains headless. This
+has two synthetic accounts/nine database characters and no authenticated native
+game admission yet. Earlier OIDC/character/legacy native checkpoints are retained.
+
+Next is the [P3-01/P3-03 native admission slice](../AUTHENTICATED_ADMISSION.md):
+memory-only encrypted ticket signing, selected character/session binding,
+one-use nonce/generation, prepared saved-pose collision, bounded active/retiring
+ownership and final checkpoint before slot reuse. System-browser launcher entry,
+authenticated native reconnect/revocation, production HTTPS/provider/renewal and
+native Windows remain open. Ordinary development launch remains available.
+The memory-only loopback ticket issuer is now implemented: two real-UDP issuer
+checks plus twelve secure-runtime and two saved-pose regressions pass; network
+all-target denied-warning Clippy and formatting pass. This is ticket signing,
+not character/session admission. The 294-test workspace result above precedes
+this refactor; the sixteen focused tests cover its delta.
+
+The user authorized committing and pushing this engineering checkpoint on
+2026-10-29. Story/private export edits remain outside this checkpoint. Earlier
+local/uncommitted statements below describe historical work sessions.
+
+# Current development checkpoint — 2026-10-29: persistence qualified
+
+P3-02's initial ordinary-position persistence slice is qualified against actual
+PostgreSQL 16.15. Two native encrypted clients save authoritative checked f64
+positions, restart both database and server, reconnect in reversed order and
+restore their own positions around 15 km despite a changed default spawn. Stable
+character/owner IDs survive; runtime actor/world identity is fresh. Wrong-world
+startup rejects before listen, and actual database backend loss fails the session
+closed. [Exact behavior and evidence](../PERSISTENCE_FOUNDATION.md).
+
+**284 workspace tests pass**, with 12 explicit skips (ten private fixtures and two
+actual-PostgreSQL tests separately executed successfully); formatting and denied-
+warning all-target Clippy pass. Native integrated persistence/combat/UI/feedback
+passes under impaired UDP with 9,728 cosmetic requests per client and all critical
+cues delivered. Launcher interruption/child-failure cleanup closes database
+ownership too. The persistence-disabled one-client empty-world baseline passes at
+821.84 FPS uncapped, validation off; this does not establish MMO capacity.
+Qualified artifacts: `build/persistence-qualified-v1-20261029`.
+
+`python3 tools/play.py --persistence` opts into the development database boundary
+using private `THEIA_DATABASE_URL` (numeric loopback only); add `--spell-feedback`
+for combat/UI/effects. Ordinary launch still works without database configuration.
+This uses trusted development issuer slots, not external accounts. Character
+creation/selection, inventory/economy durability, power-loss recovery, process
+handoff, native Windows and production database transport remain open. Owned test
+clusters/processes stopped and plaintext password files were removed.
+
+Next is P3-01 provider-neutral OIDC, validated against an owned local Keycloak
+fixture, as selected by the user. Its initial scope and acceptance checks are in
+[AUTHENTICATION_FOUNDATION.md](../AUTHENTICATION_FOUNDATION.md). The provider
+fixture has passed discovery and a real authorization-page/PKCE code exchange;
+application verification, internal sessions and game admission remain unimplemented.
+Production identity-provider selection stays open. Engineering changes remain
+local/uncommitted; nothing was pushed and story edits remain untouched.
+Earlier checkpoints below are historical.
+
+# Current development checkpoint — 2026-10-29
+
+P2-14's initial action-slot/health/cast/cooldown UI is qualified. Standard Bevy
+widgets and the Digit 1 shortcut share the existing bounded cast-request path;
+all values come from authoritative health/tick deadlines. Two actual clients pass
+impaired encrypted UDP, five pointer presses/five widget requests plus five
+keyboard requests each, <0.47 px actual fill-width error and integrated
+movement/targeting/damage/death/respawn/critical cues. [Exact evidence](../COMBAT_UI.md).
+
+**280 workspace tests pass**, ten private-fixture skips, denied-warning
+workspace/all-target Clippy and formatting. A first full-build Rust linker
+segmentation fault is retained; the serial retry completed successfully.
+Native critical-only quality, isolated PCM, same-binary ordinary baseline
+(832.17 FPS uncapped, one empty-world client, validation off) and real two-client
+UI-only/feedback launcher interruption/child-failure cleanup pass. Binaries and
+original data are preserved in `build/combat-ui-qualified-v1-20261029`.
+
+Run `python3 tools/play.py --combat` for the clickable slot and bars, or
+`--spell-feedback` for the original spatial effects/audio too. Tab selects,
+Backspace clears; press the slot or Digit 1 to cast. This is one development slot,
+not a production multi-bar editor, full accessibility/responsive UI, player HP,
+physical OS input, Windows execution or population-capacity qualification.
+
+P3-02 persistence is now in progress. Actual PostgreSQL store/migration/worker
+checks pass, including ownership, stale/invalid writes, transactional rollback,
+bounded coalescing and cancellation/backend-loss behavior. The server adapter is
+wired; live save/restore acceptance is pending. See `docs/PERSISTENCE_FOUNDATION.md`. No PostgreSQL system service was
+installed; the owned test server is stopped. External identity-provider choice
+remains open. All changes stay local/uncommitted; story edits remain untouched.
+Earlier checkpoints below are historical.
+
+# Current development checkpoint — 2026-10-28
+
+The initial P2-13 spell feedback slice is qualified: original standard Bevy
+meshes/materials and spatial audio follow actual encrypted server outcomes,
+including damage/death after target retirement. Combat profile 2 binds checked
+global cue positions and ability IDs; old combat-profile clients fail admission.
+The full workspace run passed **278 tests** (ten private-fixture skips); final
+client tests, denied-warning all-target Clippy and formatting also pass.
+[Exact native evidence, hashes, prior failure and limits](../SPELL_FEEDBACK.md).
+
+Run `python3 tools/play.py --spell-feedback` (optionally `--clients 2`): Tab selects,
+Digit 1 casts, Backspace clears. The normal saved-terrain/prediction launch,
+selection-only `--targeting` and UI-only `--combat` remain available; these modes
+keep audio disabled. Two native Linux/Vulkan clients passed impaired UDP with
+10,240 synthetic cosmetic requests each: all 18 critical cues per client played
+and appeared under concurrent cosmetic load, with zero critical overflow/event
+gaps/large movement displacements. Peak visuals/voices were 50/26, within 64/32.
+Critical-only quality and live visual/audio origin shifts also pass.
+
+Owned isolated audio captures contain actual cue PCM, no foreign streams or
+default-sink changes; private sinks were removed. The same-binary one-client empty
+baseline passed at 826.78 FPS uncapped with validation off; this is not MMO
+capacity. Actual two-client feedback launcher interruption/child-failure cleanup
+passed. Binaries/data are preserved in `build/spell-feedback-qualified-v1-20261028`.
+
+Stopped safely after this completed slice at the user's request. Next planned
+work is P2-14 clickable action-slot and clearer health/cast presentation; it has
+not started. Broader combat/AI/navigation, persistence/rewards, native Windows,
+physical keyboard/mouse delivery, production sound design and population scale
+remain open. All engineering changes remain local and uncommitted; nothing was
+pushed. Story edits were left untouched. Earlier checkpoints below are historical.
+
+# Current task checkpoint — 2026-10-26
+
+Movement input diagnostics pass 236 full workspace tests and an uncontended
+600-second eight-peer soak with zero simulation/I/O misses. The P1-11 ability-data
+prerequisite passes 16 core tests, actual offline validation and Clippy/fmt.
+P2-11's server-owned targeting prerequisite passes four actual-World tests;
+the combined full regression now passes 245 tests and Clippy/fmt. Network/UI adoption remains open.
+See [input evidence](../PREDICTION_INPUT_DIAGNOSTICS.md),
+[ability data](../ABILITY_DATA.md) and [targeting](../TARGETING_FOUNDATION.md).
+Earlier stop records are historical; current work remains local.
+
 # Current checkpoint — stopped safely, 2026-10-26
 
 The user requested stopping. No soak is running; the final diagnostic full-suite
@@ -46,7 +188,7 @@ baseline. This closes the bounded Linux slice; broader P2-04 qualification remai
 
 # Live engineering task status
 
-Updated 2026-10-22. This is the active status overlay for all 112 imported task
+Updated 2026-10-28. This is the active status overlay for all 112 imported task
 entries. The supplied register stays unchanged for provenance. “Partial” and
 “Precursor only” do not satisfy the original task's acceptance criteria. No phase
 or wave is complete. Two source tasks remain unspecified.
@@ -72,8 +214,8 @@ and loot P3-09. Do not invent scope for P3-17/18.
 | P1-08 | Replication protocol contracts | Partial | Wire/ALPN 12 adds explicit terrain frame policy independent of content digest; bounded authority offers and tagged readiness acknowledgements remain. Confirmation requires the exact latest report and a post-application snapshot. General entity/delta/interest/session contracts remain. [Handover](../CHUNK_HANDOVER.md). [Readiness](../CHUNK_READINESS.md). |
 | P1-09 | Kinematic movement and collision contracts | Partial | Shared Avian capsule controller drives normal maps, graybox and offline motion. Coverage sweeps constrain input/gravity and missing-corner shortcuts; support validation/fallback handles imprecise convex contacts. Retained actor/recovery validation now gates opt-in paired replacement. Head-on feature-manifold refinement addresses reproduced sloped-wall drift; see current qualification evidence. Schema-2 complete-cell coverage now requires all geometry contributors for input/gravity/readiness. Platforms/prediction and full movement scope remain. [Contributors](../CHUNK_CONTRIBUTORS.md). [Boundaries](../CHUNK_BOUNDARIES.md). [Handover](../CHUNK_HANDOVER.md). |
 | P1-10 | Asset/terrain/animation content contracts | Partial | Saved height tiles have a versioned, hashed manifest; offline bake/full-seam verification and worker read validation feed shared visual/collision samples. [Saved terrain](../SAVED_TERRAIN.md). Stable package IDs/revisions, schema-3 general collision/explicit spawns and schema-2 geometry contributors exist. Manifest schema 2 now binds shared PNG variants (bytes/hash/colour space/sampler) with actual URI/path/header verification and standard Bevy loading. The offline extractor preserves source geometry/material/image bytes and stages the actual town separately. Real graph/terrain/collision partitioning, source collision fidelity, skeleton contracts and measured budgets remain. [Shared images](../SHARED_IMAGES.md). [Contributors](../CHUNK_CONTRIBUTORS.md). |
-| P1-11 | Data-driven ability/combat schemas | Not started | Define data-driven abilities and server validation before gameplay loop. |
-| P1-12 | Tests, instrumentation and benchmark baselines | Partial | Fixed-memory timing quantiles, separate simulation/pump metrics and eight-peer real UDP scheduler qualification now exist; full-map/render/crowd/soak baselines remain. |
+| P1-11 | Data-driven ability/combat schemas | Partial | Bounded immutable schema-1 JSON definitions, mobile/off-GCD rules, damage/range budgets and ceiling tick timing pass five new contract tests, all 16 core tests, denied-warning Clippy and an actual offline validator at 20/30/60 Hz. Bounded server execution, encrypted transport and native ability integration now pass the 272-test/full Linux slice; broader combat schemas remain. [Data](../ABILITY_DATA.md), [authority](../COMBAT_AUTHORITY.md). |
+| P1-12 | Tests, instrumentation and benchmark baselines | Partial | Fixed-memory timing quantiles, separate simulation/pump metrics, eight-peer scheduler qualification and a 600-second saved-terrain identity/retirement soak pass. Uncontended simulation and I/O deadlines both pass. Wider populations, authored content, rendered crowd and production/long-soak budgets remain. |
 
 ## Phase 2
 
@@ -81,26 +223,26 @@ and loot P3-09. Do not invent scope for P3-17/18.
 |---|---|---|---|
 | P2-01 | Bevy client bootstrap | Partial | Existing Bevy bootstrap qualified; complete target foundation integration before closing. |
 | P2-02 | Connection/session management | Partial | Default executable Renet lifecycle and impaired-link/fresh-ticket recovery qualified; automatic resume, provider/character authorization and production sessions remain. |
-| P2-03 | Entity replication and lifecycles | Partial | Quinn and executable Renet player snapshots with world actor IDs/acks; incarnation/frame contracts now active; general entity replication remains. |
-| P2-04 | Prediction and reconciliation | Partial | Actual Renet command/correction profile, 64-step replay, bounded client clock/queues, readiness overlap and stream resets run in the normal procedural client/server. Actual impaired UDP at 20/30/60 Hz and native Linux 30 Hz traversal/camera/animation/teleport/held-jump checks pass. Graybox default adopts it; legacy interpolation remains. Wider latency polish, authored-map prediction, dense load and native Windows remain. [Evidence and limits](../PREDICTION_CONTRACT.md). |
+| P2-03 | Entity replication and lifecycles | Partial | Quinn and executable Renet player snapshots with world actor IDs/acks; incarnation/frame contracts now active; bounded opt-in static targets now include reliable selection/state/removal with actual UDP and native evidence; general entity replication remains. [Runtime](../TARGETING_RUNTIME.md). |
+| P2-04 | Prediction and reconciliation | Partial | Actual Renet command/correction profile, 64-step replay, bounded client clock/queues, readiness overlap and stream resets run in the normal procedural client/server. Actual impaired UDP at 20/30/60 Hz and native Linux 30 Hz traversal/camera/animation/teleport/held-jump checks pass. Graybox default adopts it; legacy interpolation remains. Completed-input diagnostics and real poor-link checks now distinguish 20/30 Hz movement/convergence from unsupported-RTT suspension at 60 Hz. Severe-link corrections up to 1.6085 m remain; authored-map prediction, dense load and native Windows remain. [Evidence and limits](../PREDICTION_CONTRACT.md). |
 | P2-05 | Third-person camera/controls | Partial | Camera/controls qualified across client origin changes and native graybox prediction; broader authored-map prediction and controls qualification remains. |
 | P2-06 | Terrain chunk loading | Partial | Saved continental height files stream through bounded workers with 81 visual roots maximum, actual mesh retirement and 3 × 3 collision patches; full native crossing, teleports and impaired prediction pass. [Saved terrain](../SAVED_TERRAIN.md). Normal opt-in publication protects readiness, actors/recovery and complete geometry contributors. Compatible PNG variants now share actual Bevy image handles; invalid dependencies retain old scenes. Lookahead retains spare packages until new providers require the budget, avoiding unload-only offer churn. Actual graph/terrain/collision partitioning, wider lifecycle checks and measured production budgets remain; town launcher stays monolithic. [Shared images](../SHARED_IMAGES.md). [Handover](../CHUNK_HANDOVER.md). |
 | P2-07 | Collision integration | Partial | Shared controller drives normal maps and graybox/offline motion. Paired publication replaces actual Avian bodies, with readiness withheld until live generation/column checks pass. Schema-2 collider envelopes and contributor-complete coverage protect nonlocal walls, actors, recovery and presentation. Source-mesh fidelity and measured production collision/streaming budgets remain. [Contributors](../CHUNK_CONTRIBUTORS.md). [Boundaries](../CHUNK_BOUNDARIES.md). |
 | P2-08 | GLB and asset loading | Partial | Standard Bevy GLB/PBR/image loading follows immutable manifest and dependency verification. Actual nested extents gate initial/replacement readiness; shared PNG variants preserve compatible handle reuse and distinct colour/sampler settings. New packages extract original images and geometry without changing the active map. Imported graph pruning/partitioning, skeleton/character contracts and measured asset budgets remain. [Shared images](../SHARED_IMAGES.md). [Contributors](../CHUNK_CONTRIBUTORS.md). |
 | P2-09 | Character skeletal animation | Partial | POLYGON Idle/Walk/Run/Jump are qualified development animations. Production skin fidelity, blending, layered mobile casting and skeleton contracts remain. |
 | P2-10 | Lighting/materials/atmosphere | Partial | Existing PBR light/shadows and water preview; atmosphere/quality requirements remain. |
-| P2-11 | Targeting and interactions | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
-| P2-12 | One authoritative ability, damage, death and respawn | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
-| P2-13 | Spell VFX and audio hooks | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
-| P2-14 | Health/target/action-bar UI and integrated demo | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
+| P2-11 | Targeting and interactions | Partial | Optional static training target and authoritative selection/clear now run through real encrypted Renet and standard Bevy presentation. The 253-test regression, impaired two-client native GPU selection/rebase/relevance retirement/return and launcher cleanup pass. Owner removal and malicious traffic pass actual UDP tests; general interactions remain open. [Runtime](../TARGETING_RUNTIME.md). |
+| P2-12 | One authoritative ability, damage, death and respawn | Partial | The bounded NPC ability loop passes 272 full workspace tests, real encrypted adverse UDP, two native Linux Vulkan clients and launcher cleanup: mobile casting, range/LOS, queue/cooldowns, shared health, same-step death and fresh-ID respawn. Broader combat/player lifecycle and native Windows remain open. [Authority](../COMBAT_AUTHORITY.md). |
+| P2-13 | Spell VFX and audio hooks | Initial slice qualified | Actual encrypted profile-2 events drive bounded original Bevy pulses and spatial voices; native impaired two-client saturation, critical-only quality, live rebases and isolated PCM pass. 278 workspace tests plus final client tests/Clippy/fmt pass. Production content/readability/audio design and native Windows remain open; see `docs/SPELL_FEEDBACK.md`. |
+| P2-14 | Health/target/action-bar UI and integrated demo | Initial slice qualified | Standard Bevy clickable action slot, Digit 1 input, target health/cast/cooldown bars and numeric/state alternatives pass actual impaired two-client picking/layout, authority integration, feedback saturation, critical-only and cleanup checks. Full suite: 280 passed, ten private-fixture skips; Clippy/fmt pass. Multi-bar customization, full accessibility/responsive UI and broader player gameplay remain. [Evidence](../COMBAT_UI.md). |
 
 ## Phase 3
 
 | Task | Scope | Status | Remaining work / evidence |
 |---|---|---|---|
-| P3-01 | Authentication and sessions | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
-| P3-02 | PostgreSQL persistence/migrations | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
-| P3-03 | Character creation/selection | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
+| P3-01 | Authentication and sessions | HTTP boundary qualified; native admission in progress | Actual two-user HTTP/OIDC/PostgreSQL, proof-bound session collection/cancellation, ownership, revocation/supersession, bounds/deadlines, fail-closed/graceful shutdown and restart pass. 294 workspace tests and final Clippy pass; exact source/executable frozen. Native encrypted ticket/session/character binding and browser launcher remain open. [Evidence](../ACCOUNT_HTTP_FOUNDATION.md). |
+| P3-02 | PostgreSQL persistence/migrations | Initial slice qualified | Real migrations/upgrade, ownership/world checks, monotonic atomic checkpoints, bounded worker and actual two-native-client server/database restart restore pass. Wrong-world and live backend-loss fail closed; integrated combat/UI/feedback and cleanup pass. 284 workspace tests; exact artifacts/limits in [contract](../PERSISTENCE_FOUNDATION.md). External accounts/economy/Windows remain open. |
+| P3-03 | Character creation/selection | Initial database boundary qualified; integration open | Real PostgreSQL atomic create/name uniqueness, cap, owner/realm/world selection, restart and worker regressions pass. Actual OIDC/session owner selects its own persistent character. Eleven focused tests and workspace Clippy pass; legacy two-client native persistence regression passes. Source/binaries frozen. HTTP/browser/native authenticated entry remains open. [Evidence](../CHARACTER_SELECTION_FOUNDATION.md). |
 | P3-04 | Stats and resources | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
 | P3-05 | Inventory and items | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
 | P3-06 | Abilities and status effects | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |

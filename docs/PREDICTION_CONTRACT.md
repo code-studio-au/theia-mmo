@@ -555,3 +555,12 @@ is **not a full-suite pass**. Real encrypted UDP reports with these additional
 input counters remain unqualified, as does their native presentation observation.
 Resume with those checks before attributing the recorded 0.2–0.4 m corrections
 to input disagreement. No further soak was started. Work remains local/uncommitted.
+
+
+Resumed after commit `9497a18`: the new input diagnostics now pass the full
+**236-test workspace suite** (ten private-fixture skips), denied-warning Clippy,
+formatting and actual saved/generated impaired UDP. The interrupted v1 remains
+historical. [Completed input observations and limits](PREDICTION_INPUT_DIAGNOSTICS.md)
+record both matching/different-intent outliers, including a **1.6085 m** error on
+the severe 20 Hz profile. Stopped convergence passes; high-latency smoothness is
+not claimed. An uncontended eight-peer soak is in progress.

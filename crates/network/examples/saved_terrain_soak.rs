@@ -281,7 +281,9 @@ async fn main() -> Result<()> {
                 .collect();
             samples
                 .push(serde_json::json!({"seconds":elapsed,"rss_bytes":rss,"positions":positions}));
-            println!("soak_progress seconds={elapsed:.1} peers=8 rss_bytes={peak_rss}");
+            println!(
+                "soak_progress seconds={elapsed:.1} peers=8 rss_bytes={rss:?} peak_rss_bytes={peak_rss}"
+            );
             next_sample += 1.;
         }
     }
@@ -340,6 +342,16 @@ async fn main() -> Result<()> {
         }
         if seconds >= 60 && peer["collision_retired"] == 0 {
             failures.push("A peer did not retire actual collision".into());
+        }
+        let driver = &peer["driver"];
+        let aligned = driver["same_tick_samples"].as_u64().unwrap();
+        if driver["held_intent_agreement_samples"].as_u64().unwrap()
+            + driver["held_intent_mismatch_samples"].as_u64().unwrap()
+            != aligned
+            || driver["applied_sequence_mismatches"].as_u64().unwrap() > aligned
+            || driver["input_freshness_mismatches"].as_u64().unwrap() > aligned
+        {
+            failures.push("A peer's completed-input diagnostic counts are inconsistent".into());
         }
     }
     if seconds >= 150

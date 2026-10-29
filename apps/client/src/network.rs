@@ -31,6 +31,9 @@ pub struct Network {
     prediction_commands:
         Option<tokio::sync::mpsc::Sender<theia_network::prediction_wire::Commands>>,
     predicted_tick: u64,
+    target_choice: Option<watch::Sender<Option<theia_network::targeting::Choice>>>,
+    casts: Option<tokio::sync::mpsc::Sender<theia_network::renet_runtime::CastChoice>>,
+    combat_events: Option<tokio::sync::mpsc::Receiver<theia_network::combat_wire::Batch>>,
 }
 pub struct Smoke {
     output: PathBuf,
@@ -67,6 +70,24 @@ pub struct Smoke {
     capture_requested: bool,
 }
 impl Network {
+    pub(crate) fn request_cast(
+        &self,
+        ability: theia_core::content::ContentId,
+        target: theia_core::identity::EntityId,
+    ) -> bool {
+        self.casts.as_ref().is_some_and(|s| {
+            s.try_send(theia_network::renet_runtime::CastChoice { ability, target })
+                .is_ok()
+        })
+    }
+    pub(crate) fn next_combat_events(&mut self) -> Option<theia_network::combat_wire::Batch> {
+        self.combat_events.as_mut()?.try_recv().ok()
+    }
+    pub(crate) fn request_target(&self, target: Option<theia_core::identity::EntityId>) {
+        if let Some(choices) = &self.target_choice {
+            choices.send_replace(Some(theia_network::targeting::Choice { target }));
+        }
+    }
     pub(crate) fn current_intent(&self) -> Intent {
         *self.input.borrow()
     }
@@ -74,6 +95,10 @@ impl Network {
         &self,
         patch: Option<theia_core::coordinates::ChunkId>,
     ) -> Option<crate::movement_metrics::Context> {
+        // A transport correction can arrive between Update presentation and
+        // Last diagnostics. Do not sample the hidden startup placeholder before
+        // a first admitted global pose has actually been rendered.
+        self.local_global?;
         let state = self.state.borrow();
         let correction = state.correction?;
         Some(crate::movement_metrics::Context {
@@ -117,8 +142,16 @@ impl Network {
         args: &[String],
         prediction: bool,
         expected_world: [u8; 32],
+        targeted: bool,
+        combat_catalog: Option<std::sync::Arc<theia_core::abilities::Catalog>>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let renet = args.first().is_some_and(|arg| arg.starts_with("--renet-"));
+        if targeted && !renet {
+            return Err("Targeting requires secure Renet".into());
+        }
+        if combat_catalog.is_some() && !targeted {
+            return Err("Combat requires targeting".into());
+        }
         let smoke = args
             .first()
             .is_some_and(|arg| matches!(arg.as_str(), "--network-smoke" | "--renet-smoke"));
@@ -201,6 +234,10 @@ impl Network {
         let (input, inputs) = watch::channel(Intent::default());
         let (chunk_ready, ready) = watch::channel(None);
         let (prediction_commands, command_queue) = tokio::sync::mpsc::channel(8);
+        let (target_choice, target_choices) = watch::channel(None);
+        let (casts, cast_queue) = tokio::sync::mpsc::channel(8);
+        let (events, combat_events) = tokio::sync::mpsc::channel(16);
+        let combat_enabled = combat_catalog.is_some();
         let (states, state) = watch::channel(State::default());
         let (stop, shutdown) = watch::channel(false);
         let runtime = tokio::runtime::Builder::new_current_thread()
@@ -210,7 +247,42 @@ impl Network {
             .name("theia-network".into())
             .spawn(move || {
                 let result = runtime.block_on(async {
-                    if prediction {
+                    if let Some(catalog) = combat_catalog {
+                        theia_network::renet_runtime::run_client_combat(
+                            address,
+                            &cert,
+                            inputs,
+                            states.clone(),
+                            shutdown,
+                            expected_world,
+                            theia_network::renet_runtime::CombatClient {
+                                targeting: theia_network::renet_runtime::TargetingClient {
+                                    ready,
+                                    commands: prediction.then_some(command_queue),
+                                    choices: target_choices,
+                                },
+                                catalog,
+                                casts: cast_queue,
+                                events,
+                            },
+                        )
+                        .await
+                    } else if targeted {
+                        theia_network::renet_runtime::run_client_targeted(
+                            address,
+                            &cert,
+                            inputs,
+                            states.clone(),
+                            shutdown,
+                            expected_world,
+                            theia_network::renet_runtime::TargetingClient {
+                                ready,
+                                commands: prediction.then_some(command_queue),
+                                choices: target_choices,
+                            },
+                        )
+                        .await
+                    } else if prediction {
                         theia_network::renet_runtime::run_client_predicted(
                             address,
                             &cert,
@@ -269,6 +341,9 @@ impl Network {
             prediction: prediction.then(theia_network::prediction_driver::Driver::default),
             prediction_commands: prediction.then_some(prediction_commands),
             predicted_tick: 0,
+            target_choice: targeted.then_some(target_choice),
+            casts: combat_enabled.then_some(casts),
+            combat_events: combat_enabled.then_some(combat_events),
         })
     }
     pub fn configure_map_access(
@@ -312,6 +387,9 @@ pub struct RemotePawn {
 }
 
 impl RemotePawn {
+    pub(crate) fn actor_id(&self) -> u64 {
+        self.id
+    }
     pub(crate) fn global_endpoints(&self) -> [GlobalPosition; 2] {
         [self.from, self.to]
     }

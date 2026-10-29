@@ -1,3 +1,29 @@
+## Provider-neutral OIDC qualification and bounded account ownership — 2026-10-29
+
+The user selected provider-neutral OIDC with a local Keycloak test instance.
+Production provider choice remains open. Use established openidconnect protocol/
+signature verification, authorization code + PKCE/state/nonce, pinned provider
+origins and bounded asynchronous HTTP; system-browser integration follows the
+verified boundary. Explicit numeric-loopback HTTP is the initial development-only
+exception, not a production remote-transport decision.
+
+Map the verified exact (issuer, subject) to a persistent server-generated owner
+UUID; email/display names never establish ownership. Account mapping commits
+before returning its owner. Reuse the async database worker with a fixed request
+queue separate from superseding ordinary pose snapshots; neither database nor
+provider I/O belongs in World::step. Checksummed immutable migrations reject
+unknown future versions and preserve the earlier character checkpoint boundary.
+
+Initial account sessions are bounded process-local opaque 256-bit credentials,
+stored as digest keys, with monotonic expiry conservatively limited to five
+minutes and the verified token expiry. A new login supersedes that owner's prior
+account credential; restart invalidates sessions. This initial policy is stricter
+than allowing several account sessions and does not itself enforce/establish a
+native character session. Renewal, HTTP/browser UX, character authorization and
+single-character transport admission remain explicit subsequent work. Qualified
+boundaries and current limits are recorded in
+[AUTHENTICATION_FOUNDATION.md](AUTHENTICATION_FOUNDATION.md).
+
 ## Active repository and story home — 2026-10-26
 
 The user chose Theia-MMO as the active game repository after reviewing overlap

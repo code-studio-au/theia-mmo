@@ -10,13 +10,27 @@ import time
 import tempfile
 
 
-def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk_world=None, camera_collision=None, graybox=False, dev_speed=1, dev_spawn="8000,8000", dev_tour=False, prediction=False, saved_terrain=None):
+def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk_world=None, camera_collision=None, graybox=False, dev_speed=1, dev_spawn="8000,8000", dev_tour=False, prediction=False, saved_terrain=None, targeting=False, combat_catalog=None, feedback=None, persistence=False):
+    if persistence and (saved_terrain is None or not prediction or transport != 'renet' or dev_tour or dev_speed != 1):
+        raise ValueError('Persistence requires saved terrain, normal-speed prediction and Renet without a tour')
+    if persistence and not os.environ.get('THEIA_DATABASE_URL'):
+        raise ValueError('Persistence requires a local PostgreSQL THEIA_DATABASE_URL; see docs/PERSISTENCE_FOUNDATION.md')
     if saved_terrain is not None:
         if world is not None or chunk_world is not None:
             raise ValueError('Choose saved terrain or an imported world')
         if not (saved_terrain / 'terrain.manifest.json').is_file():
             raise ValueError(f'Missing saved terrain at {saved_terrain}; bake once with cargo run --release --locked -p theia-network --example bake_terrain -- bake "{saved_terrain}"; see docs/SAVED_TERRAIN.md')
         graybox = True
+    if feedback and not combat_catalog:
+        raise ValueError("Spell feedback requires combat")
+    if feedback:
+        required_feedback = feedback
+        if not required_feedback.is_file():
+            raise ValueError(f"Missing spell feedback {feedback}")
+    if combat_catalog is not None:
+        targeting = True
+    if targeting and (not graybox or transport != 'renet'):
+        raise ValueError("Targeting requires the graybox world and authenticated Renet")
     if prediction and not graybox:
         raise ValueError("Prediction requires the graybox world")
     if not graybox and (dev_speed != 1 or dev_spawn != "8000,8000" or dev_tour):
@@ -28,7 +42,10 @@ def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk
     client_binary = binaries / ('theia-client' + suffix)
     required = ([saved_terrain / 'terrain.manifest.json'] if saved_terrain else []) if graybox else ([chunk_world / 'world.chunks.json', chunk_world / 'world.session.json'] if chunk_world else
                 [world / 'world.manifest.json', world / 'terrain.json', world / 'terrain.glb'])
-    scene = [*(['--saved-terrain', str(saved_terrain)] if saved_terrain else ['--graybox-world']), *(['--prediction'] if prediction else [])] if graybox else (['--chunk-world', str(chunk_world)] if chunk_world else ['--terrain-world', str(world)])
+    scene = [*(['--saved-terrain', str(saved_terrain)] if saved_terrain else ['--graybox-world']), *(['--prediction'] if prediction else []), *(['--targeting'] if targeting else [])] if graybox else (['--chunk-world', str(chunk_world)] if chunk_world else ['--terrain-world', str(world)])
+    if combat_catalog is not None:
+        required.append(combat_catalog)
+        scene.extend(['--combat-catalog', str(combat_catalog)])
     server_options = ['--dev-speed', str(dev_speed), '--dev-spawn', dev_spawn, *(['--dev-tour'] if dev_tour else [])] if graybox else []
     for path in [*required, players / ('character.glb' if graybox else 'human.glb'), server_binary, client_binary]:
         if not path.is_file():
@@ -42,7 +59,7 @@ def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk
     try:
         with (session / 'server.log').open('w') as log:
             server = subprocess.Popen([str(server_binary), '127.0.0.1:0', str(certificate),
-                                       *scene, *server_options, '--tick-hz', str(tick_hz),
+                                       *scene, *server_options, *(['--dev-persistence'] if persistence else []), '--tick-hz', str(tick_hz),
                                        *(['--renet-tickets', tickets.name] if tickets else [])],
                                       stdout=log, stderr=subprocess.STDOUT)
             processes.append(server)
@@ -60,10 +77,14 @@ def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk
                 raise RuntimeError('Server readiness timed out')
             for index in range(clients):
                 processes.append(subprocess.Popen([str(client_binary),
-                    *(['--camera-collision', camera_collision] if camera_collision else []), *scene,
+                    *(['--camera-collision', camera_collision] if camera_collision else []), *(['--spell-feedback', str(feedback)] if feedback else []), *scene,
                     '--player-assets', str(players),
                     '--renet-connect' if tickets else '--connect', address,
                     str(Path(tickets.name) / f'client-{index+1}.token') if tickets else str(certificate)]))
+            if combat_catalog:
+                print('Combat: click the action slot or press 1 to cast; health, cooldown and respawn come from the server.', flush=True)
+            if targeting:
+                print('Training target: Tab selects/cycles; Backspace clears.', flush=True)
             print('Theia development map: WASD, Shift to run, Space to jump, RMB orbit, wheel zoom, Escape to quit.', flush=True)
             while all(p.poll() is None for p in processes):
                 time.sleep(.2)
@@ -99,6 +120,11 @@ if __name__ == '__main__':
     worlds.add_argument('--chunk-world', type=Path, help='Opt-in prepared chunk index/session; requires Renet')
     parser.add_argument('--players', type=Path, help='Player assets; defaults to POLYGON for graybox')
     parser.add_argument('--prediction', action=argparse.BooleanOptionalAction, default=None, help='Movement prediction (default for graybox; --no-prediction retains server-pose interpolation)')
+    parser.add_argument('--persistence', action='store_true', help='Opt-in trusted development character checkpoints; requires local THEIA_DATABASE_URL')
+    parser.add_argument('--spell-feedback', action='store_true', help='Opt-in original spell pulses and spatial audio; implies combat')
+    parser.add_argument('--combat', action='store_true', help='Opt-in authoritative mobile ability, health, death and respawn; implies targeting')
+    parser.add_argument('--abilities', type=Path, help='Combat catalog (default: content/gameplay/development-abilities.json); requires --combat')
+    parser.add_argument('--targeting', action='store_true', help='Opt-in authoritative training target, Tab selection and Backspace clear')
     parser.add_argument('--dev-speed', type=int, choices=[1, 8, 32], default=1)
     parser.add_argument('--dev-spawn', default='8000,8000', help='Graybox server spawn x,z in metres')
     parser.add_argument('--dev-tour', action='store_true', help='Server-owned teleport circuit for streaming qualification')
@@ -110,9 +136,13 @@ if __name__ == '__main__':
     parser.add_argument('--camera-collision', choices=['world', 'visual'],
                         help='Override authored world camera clearance or legacy visual-mesh refinement')
     args = parser.parse_args()
+    args.combat = args.combat or args.spell_feedback
+    if args.abilities and not args.combat:
+        parser.error('--abilities requires --combat')
+    combat_catalog = (args.abilities or Path('content/gameplay/development-abilities.json')).resolve() if args.combat else None
     graybox = args.graybox_world or args.saved_terrain is not None or (args.world is None and args.chunk_world is None)
     saved_terrain = (args.saved_terrain or Path('build/graybox-terrain-v1')).resolve() if graybox and not args.graybox_world else None
     prediction = graybox if args.prediction is None else args.prediction
     players = args.players or Path('build/synty-character-canonical-stage' if graybox else 'build/reference-scene')
     play(args.world.resolve() if args.world else None, players.resolve(), args.clients, args.binaries.resolve(), args.tick_hz, args.transport,
-         args.chunk_world.resolve() if args.chunk_world else None, args.camera_collision, graybox, args.dev_speed, args.dev_spawn, args.dev_tour, prediction, saved_terrain)
+         args.chunk_world.resolve() if args.chunk_world else None, args.camera_collision, graybox, args.dev_speed, args.dev_spawn, args.dev_tour, prediction, saved_terrain, args.targeting, combat_catalog, Path("content/gameplay/development-spell-feedback.json").resolve() if args.spell_feedback else None, args.persistence)

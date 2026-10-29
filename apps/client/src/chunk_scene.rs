@@ -113,6 +113,8 @@ pub fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
         .init_resource::<Captured>()
         .add_plugins(
             DefaultPlugins
+                .build()
+                .disable::<bevy::audio::AudioPlugin>()
                 .set(AssetPlugin {
                     file_path: directory
                         .to_str()

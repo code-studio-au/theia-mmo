@@ -9,3 +9,16 @@ publish.workspace = true
 theia-core.workspace = true
 theia-network.workspace = true
 tokio.workspace = true
+theia-persistence.workspace = true
+theia-auth.workspace = true
+serde_json.workspace = true
+serde.workspace = true
+axum = { version = "=0.8.9", default-features = false, features = ["http1", "json", "tokio", "original-uri"] }
+hyper = { version = "=1.12.0", features = ["server", "http1"] }
+hyper-util = { version = "=0.1.21", features = ["tokio", "service"] }
+ring = "0.17"
+subtle = "2"
+url = "2"
+
+[dev-dependencies]
+tokio-postgres = "=0.7.18"

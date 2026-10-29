@@ -150,6 +150,8 @@ pub fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     let mut app = App::new();
     app.add_plugins(
         DefaultPlugins
+            .build()
+            .disable::<bevy::audio::AudioPlugin>()
             .set(AssetPlugin {
                 file_path: parent,
                 ..default()

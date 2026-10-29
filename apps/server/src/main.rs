@@ -1,3 +1,4 @@
+mod persistence;
 use std::{net::SocketAddr, path::PathBuf};
 use theia_network::{Result, server, tls};
 
@@ -19,6 +20,9 @@ async fn main() -> Result<()> {
     let mut graybox = false;
     let mut terrain_source = theia_network::procedural::Source::Procedural;
     let mut predicted = false;
+    let mut targeted = false;
+    let mut combat_catalog = None;
+    let mut dev_persistence = false;
     let mut dev_tour = false;
     let mut dev_speed = 1.;
     let mut dev_spawn = [8000., 8000.];
@@ -29,6 +33,13 @@ async fn main() -> Result<()> {
         match option.as_str() {
             "--dev-relays" => dev_relays=Some(args.next().ok_or("Missing relay endpoints")?.split(',').map(str::parse).collect::<std::result::Result<_,_>>()?),
             "--prediction" => predicted=true,
+            "--dev-persistence" => dev_persistence=true,
+            "--targeting" => targeted=true,
+            "--combat-catalog" => {
+                if combat_catalog.is_some() {return Err("Choose one combat catalog".into());}
+                combat_catalog=Some(PathBuf::from(args.next().ok_or("Missing combat catalog")?));
+                targeted=true;
+            }
             "--dev-tour" => {dev_tour=true;}
             "--saved-terrain" => { if world_selected {return Err("Choose one world".into());} world_selected=true; graybox=true;
                 terrain_source=theia_network::procedural::Source::Saved(std::sync::Arc::new(theia_network::saved_terrain::Store::open(&PathBuf::from(args.next().ok_or("Missing saved terrain directory")?))?)); }
@@ -98,6 +109,31 @@ async fn main() -> Result<()> {
     if predicted {
         world.enable_prediction()?;
     }
+    if targeted {
+        if !graybox || tickets.is_none() {
+            return Err("Targeting requires a graybox world and secure Renet".into());
+        }
+        let x = if dev_spawn[0] + 8. <= 15999. {
+            dev_spawn[0] + 8.
+        } else {
+            dev_spawn[0] - 8.
+        };
+        let target = world.spawn_development_target([x, dev_spawn[1]])?;
+        println!("development_target id={}", target.entity.value());
+    }
+    if let Some(path) = combat_catalog {
+        use std::io::Read;
+        use theia_network::simulation::combat::{DEVELOPMENT_HEALTH, DEVELOPMENT_RESPAWN_MS};
+        let mut bytes = Vec::new();
+        std::fs::File::open(path)?
+            .take(theia_core::abilities::MAX_CATALOG_BYTES as u64 + 1)
+            .read_to_end(&mut bytes)?;
+        world.enable_combat(&bytes, DEVELOPMENT_HEALTH, DEVELOPMENT_RESPAWN_MS)?;
+        println!(
+            "development_combat abilities={}",
+            world.combat_catalog().unwrap().abilities().len()
+        );
+    }
     if let Some(origin) = origin
         && !world.set_origin(origin)
     {
@@ -121,6 +157,14 @@ async fn main() -> Result<()> {
     if !bind.ip().is_loopback() {
         return Err("Local prototype only: bind must be loopback".into());
     }
+    let persistent = if dev_persistence {
+        if tickets.is_none() || !graybox || !predicted || chunk_stream {
+            return Err("Development persistence requires saved terrain, predicted Renet and no chunk-stream override".into());
+        }
+        Some(persistence::prepare(&mut world).await?)
+    } else {
+        None
+    };
     if let Some(directory) = tickets {
         let socket = std::net::UdpSocket::bind(bind)?;
         let address = socket.local_addr()?;
@@ -131,10 +175,23 @@ async fn main() -> Result<()> {
         };
         println!("listening={address} local_tickets={}", directory.display());
         let (shutdown, stop) = tokio::sync::watch::channel(false);
+        let signal = shutdown.clone();
         tokio::spawn(async move {
             let _ = tokio::signal::ctrl_c().await;
-            let _ = shutdown.send(true);
+            let _ = signal.send(true);
         });
+        if let Some(persistent) = persistent {
+            let (bridge, manager) = persistent.into_parts(shutdown);
+            let (game, saved) = tokio::join!(
+                theia_network::renet_runtime::run_server_with_checkpoints(
+                    transport, stop, world, bridge
+                ),
+                manager
+            );
+            game?;
+            saved?;
+            return Ok(());
+        }
         return if chunk_stream {
             theia_network::renet_runtime::run_server_streaming(transport, stop, world)
                 .await

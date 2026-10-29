@@ -92,6 +92,34 @@ impl StaticScene {
         ))
     }
 
+    /// Bounded gameplay sight segment against static world geometry only.
+    pub fn line_clear(&self, origin: Vec3, end: Vec3) -> bool {
+        if !origin.is_finite() || !end.is_finite() {
+            return false;
+        }
+        let delta = end - origin;
+        let length = delta.length();
+        if !length.is_finite() || length > 256. {
+            return false;
+        }
+        let Ok(direction) = Dir3::new(delta) else {
+            return true;
+        };
+        let mut data = self.query.lock().expect("Avian query lock");
+        let (world, state) = &mut *data;
+        state
+            .get(world)
+            .expect("Initialized Avian query state")
+            .cast_ray(
+                origin,
+                direction,
+                length,
+                true,
+                &SpatialQueryFilter::from_mask(SOLID),
+            )
+            .is_none()
+    }
+
     pub fn cast(&self, shape: &Collider, origin: Vec3, delta: Vec3, mask: u32) -> f32 {
         let Ok(direction) = Dir3::new(delta) else {
             return 1.;
@@ -329,6 +357,28 @@ pub fn character_center(p: [f32; 2], ground: f32) -> Vec3 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn sight_segments_hit_static_solids_and_reject_invalid_or_unbounded_queries() {
+        let scene = StaticScene::new(vec![
+            PlacedCollider {
+                shape: Collider::cuboid(0.02, 4., 8.),
+                center: Vec3::ZERO,
+                layer: SOLID,
+            },
+            PlacedCollider {
+                shape: Collider::cuboid(0.02, 4., 8.),
+                center: Vec3::X * 4.,
+                layer: CAMERA,
+            },
+        ]);
+        assert!(!scene.line_clear(Vec3::NEG_X * 2., Vec3::X * 2.));
+        assert!(!scene.line_clear(Vec3::ZERO, Vec3::X));
+        assert!(scene.line_clear(Vec3::X * 2., Vec3::X * 6.));
+        assert!(scene.line_clear(Vec3::Y * 3. - Vec3::X * 2., Vec3::Y * 3. + Vec3::X * 2.));
+        assert!(scene.line_clear(Vec3::X, Vec3::X));
+        assert!(!scene.line_clear(Vec3::splat(f32::NAN), Vec3::ZERO));
+        assert!(!scene.line_clear(Vec3::X, Vec3::X * 300.));
+    }
     #[test]
     fn avian_casts_stop_at_thin_walls_allow_retreat_and_filter_layers() {
         let scene = StaticScene::new(vec![PlacedCollider {

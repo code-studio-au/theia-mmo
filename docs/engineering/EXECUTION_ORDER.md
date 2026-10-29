@@ -1,3 +1,154 @@
+# Active work — 2026-10-29: authenticated native admission
+
+The account HTTP/OIDC/session/owned-character boundary is qualified and frozen in
+`build/account-http-qualified-v1-20261029` (source copies/hashes and exact tested
+executable). Actual two-user Keycloak/PostgreSQL HTTP checks pass authorization,
+proof-bound collection/cancellation, revocation/supersession, strict inputs,
+measured bounds/deadlines, fail-closed backend loss, graceful shutdown and database/
+API restart preserving character IDs while invalidating old process credentials.
+[Exact evidence/limits](../ACCOUNT_HTTP_FOUNDATION.md).
+
+**294 workspace tests pass**, 13 explicit skips (ten private fixtures plus three
+actual-PostgreSQL contracts executed separately); formatting and workspace/all-
+target denied-warning Clippy pass. The standalone server remains headless. This
+has two synthetic accounts/nine database characters and no authenticated native
+game admission yet. Earlier OIDC/character/legacy native checkpoints are retained.
+
+Next is the [P3-01/P3-03 native admission slice](../AUTHENTICATED_ADMISSION.md):
+memory-only encrypted ticket signing, selected character/session binding,
+one-use nonce/generation, prepared saved-pose collision, bounded active/retiring
+ownership and final checkpoint before slot reuse. System-browser launcher entry,
+authenticated native reconnect/revocation, production HTTPS/provider/renewal and
+native Windows remain open. Ordinary development launch remains available.
+The memory-only loopback ticket issuer is now implemented: two real-UDP issuer
+checks plus twelve secure-runtime and two saved-pose regressions pass; network
+all-target denied-warning Clippy and formatting pass. This is ticket signing,
+not character/session admission. The 294-test workspace result above precedes
+this refactor; the sixteen focused tests cover its delta.
+
+The user authorized committing and pushing this engineering checkpoint on
+2026-10-29. Story/private export edits remain outside this checkpoint. Earlier
+local/uncommitted statements below describe historical work sessions.
+
+# Current development checkpoint — 2026-10-29: persistence qualified
+
+P3-02's initial ordinary-position persistence slice is qualified against actual
+PostgreSQL 16.15. Two native encrypted clients save authoritative checked f64
+positions, restart both database and server, reconnect in reversed order and
+restore their own positions around 15 km despite a changed default spawn. Stable
+character/owner IDs survive; runtime actor/world identity is fresh. Wrong-world
+startup rejects before listen, and actual database backend loss fails the session
+closed. [Exact behavior and evidence](../PERSISTENCE_FOUNDATION.md).
+
+**284 workspace tests pass**, with 12 explicit skips (ten private fixtures and two
+actual-PostgreSQL tests separately executed successfully); formatting and denied-
+warning all-target Clippy pass. Native integrated persistence/combat/UI/feedback
+passes under impaired UDP with 9,728 cosmetic requests per client and all critical
+cues delivered. Launcher interruption/child-failure cleanup closes database
+ownership too. The persistence-disabled one-client empty-world baseline passes at
+821.84 FPS uncapped, validation off; this does not establish MMO capacity.
+Qualified artifacts: `build/persistence-qualified-v1-20261029`.
+
+`python3 tools/play.py --persistence` opts into the development database boundary
+using private `THEIA_DATABASE_URL` (numeric loopback only); add `--spell-feedback`
+for combat/UI/effects. Ordinary launch still works without database configuration.
+This uses trusted development issuer slots, not external accounts. Character
+creation/selection, inventory/economy durability, power-loss recovery, process
+handoff, native Windows and production database transport remain open. Owned test
+clusters/processes stopped and plaintext password files were removed.
+
+Next is P3-01 provider-neutral OIDC, validated against an owned local Keycloak
+fixture, as selected by the user. Its initial scope and acceptance checks are in
+[AUTHENTICATION_FOUNDATION.md](../AUTHENTICATION_FOUNDATION.md). The provider
+fixture has passed discovery and a real authorization-page/PKCE code exchange;
+application verification, internal sessions and game admission remain unimplemented.
+Production identity-provider selection stays open. Engineering changes remain
+local/uncommitted; nothing was pushed and story edits remain untouched.
+Earlier checkpoints below are historical.
+
+# Current development checkpoint — 2026-10-29
+
+P2-14's initial action-slot/health/cast/cooldown UI is qualified. Standard Bevy
+widgets and the Digit 1 shortcut share the existing bounded cast-request path;
+all values come from authoritative health/tick deadlines. Two actual clients pass
+impaired encrypted UDP, five pointer presses/five widget requests plus five
+keyboard requests each, <0.47 px actual fill-width error and integrated
+movement/targeting/damage/death/respawn/critical cues. [Exact evidence](../COMBAT_UI.md).
+
+**280 workspace tests pass**, ten private-fixture skips, denied-warning
+workspace/all-target Clippy and formatting. A first full-build Rust linker
+segmentation fault is retained; the serial retry completed successfully.
+Native critical-only quality, isolated PCM, same-binary ordinary baseline
+(832.17 FPS uncapped, one empty-world client, validation off) and real two-client
+UI-only/feedback launcher interruption/child-failure cleanup pass. Binaries and
+original data are preserved in `build/combat-ui-qualified-v1-20261029`.
+
+Run `python3 tools/play.py --combat` for the clickable slot and bars, or
+`--spell-feedback` for the original spatial effects/audio too. Tab selects,
+Backspace clears; press the slot or Digit 1 to cast. This is one development slot,
+not a production multi-bar editor, full accessibility/responsive UI, player HP,
+physical OS input, Windows execution or population-capacity qualification.
+
+P3-02 persistence is now in progress. Actual PostgreSQL store/migration/worker
+checks pass, including ownership, stale/invalid writes, transactional rollback,
+bounded coalescing and cancellation/backend-loss behavior. The server adapter is
+wired; live save/restore acceptance is pending. See `docs/PERSISTENCE_FOUNDATION.md`. No PostgreSQL system service was
+installed; the owned test server is stopped. External identity-provider choice
+remains open. All changes stay local/uncommitted; story edits remain untouched.
+Earlier checkpoints below are historical.
+
+# Current development checkpoint — 2026-10-28
+
+The initial P2-13 spell feedback slice is qualified: original standard Bevy
+meshes/materials and spatial audio follow actual encrypted server outcomes,
+including damage/death after target retirement. Combat profile 2 binds checked
+global cue positions and ability IDs; old combat-profile clients fail admission.
+The full workspace run passed **278 tests** (ten private-fixture skips); final
+client tests, denied-warning all-target Clippy and formatting also pass.
+[Exact native evidence, hashes, prior failure and limits](../SPELL_FEEDBACK.md).
+
+Run `python3 tools/play.py --spell-feedback` (optionally `--clients 2`): Tab selects,
+Digit 1 casts, Backspace clears. The normal saved-terrain/prediction launch,
+selection-only `--targeting` and UI-only `--combat` remain available; these modes
+keep audio disabled. Two native Linux/Vulkan clients passed impaired UDP with
+10,240 synthetic cosmetic requests each: all 18 critical cues per client played
+and appeared under concurrent cosmetic load, with zero critical overflow/event
+gaps/large movement displacements. Peak visuals/voices were 50/26, within 64/32.
+Critical-only quality and live visual/audio origin shifts also pass.
+
+Owned isolated audio captures contain actual cue PCM, no foreign streams or
+default-sink changes; private sinks were removed. The same-binary one-client empty
+baseline passed at 826.78 FPS uncapped with validation off; this is not MMO
+capacity. Actual two-client feedback launcher interruption/child-failure cleanup
+passed. Binaries/data are preserved in `build/spell-feedback-qualified-v1-20261028`.
+
+Stopped safely after this completed slice at the user's request. Next planned
+work is P2-14 clickable action-slot and clearer health/cast presentation; it has
+not started. Broader combat/AI/navigation, persistence/rewards, native Windows,
+physical keyboard/mouse delivery, production sound design and population scale
+remain open. All engineering changes remain local and uncommitted; nothing was
+pushed. Story edits were left untouched. Earlier checkpoints below are historical.
+
+# Current development checkpoint — 2026-10-26
+
+Resumed after user commit `9497a18`. The input-agreement diagnostic gate now passes
+236 full workspace tests (ten private-fixture skips), denied-warning Clippy/fmt,
+actual saved/generated impaired UDP and an uncontended 600-second eight-peer soak.
+Both simulation and I/O record zero missed deadlines in the uncontended run;
+identity return, bounded terrain residency, diagnostic counts and cleanup pass.
+[Input evidence](../PREDICTION_INPUT_DIAGNOSTICS.md), [soak evidence](../SAVED_TERRAIN_SOAK.md).
+Severe-link errors up to 1.6085 m remain documented; stopped convergence is not a
+smoothness guarantee. Native Windows and MMO population capacity remain open.
+
+P1-11's bounded ability-data prerequisite is now qualified: immutable validated
+JSON, mobile-casting defaults, off-GCD options and ceiling simulation-tick timing.
+All 16 core tests, workspace/all-target Clippy/fmt and actual offline validation at
+20/30/60 Hz pass. [Ability data](../ABILITY_DATA.md). These checks follow the movement
+checkpoint; no combined 241-test result is claimed. Live targeting/casts/damage
+and the rest of P1-11/P2-11–14 remain open. All new changes stay local.
+
+## Previous checkpoint
+
 # Current checkpoint — stopped safely, 2026-10-26
 
 The user requested stopping. No soak is running; the final diagnostic full-suite

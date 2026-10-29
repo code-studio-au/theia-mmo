@@ -14,11 +14,17 @@ import sys
 import time
 
 
-def run(output, binaries, world, players, *, use_default_world=False, chunk_world=False):
+def run(output, binaries, world, players, *, use_default_world=False, chunk_world=False, targeting=False, combat=False, feedback=False, persistence=False, environment=None):
+    if persistence and not use_default_world:
+        raise ValueError("Persistent launcher qualification requires the default saved world")
+    combat = combat or feedback
     if sys.platform != 'linux':
         raise RuntimeError('This process-ownership qualifier requires Linux /proc')
     output.mkdir(parents=True, exist_ok=True)
     session = Path('build/development-session')
+    targeting = targeting or combat
+    if targeting and not use_default_world:
+        raise ValueError('Targeting verification requires the default saved world')
     if use_default_world and chunk_world:
         raise ValueError('Select default monolithic world or explicit chunk world')
     if use_default_world:
@@ -34,9 +40,9 @@ def run(output, binaries, world, players, *, use_default_world=False, chunk_worl
         owned = []
         with (output / f'{mode}.log').open('w') as log:
             launcher = subprocess.Popen([
-                sys.executable, 'tools/play.py', '--clients', '2',
+                sys.executable, 'tools/play.py', '--clients', '2', *(['--targeting'] if targeting else []), *(['--combat'] if combat else []), *(['--spell-feedback'] if feedback else []), *(['--persistence'] if persistence else []),
                 '--binaries', str(binaries), *([] if use_default_world else ['--chunk-world' if chunk_world else '--world', str(world)]), '--players', str(players),
-            ], stdout=log, stderr=subprocess.STDOUT)
+            ], env=dict(os.environ, **(environment or {})), stdout=log, stderr=subprocess.STDOUT)
             try:
                 deadline = time.monotonic() + 60
                 while time.monotonic() < deadline:
@@ -58,6 +64,10 @@ def run(output, binaries, world, players, *, use_default_world=False, chunk_worl
                 if use_default_world:
                     for pid in owned:
                         argv = Path(f'/proc/{pid}/cmdline').read_bytes().split(b'\0')
+                        assert (b'--spell-feedback' in argv) == (feedback and Path(f'/proc/{pid}/comm').read_text().strip() == 'theia-client'), 'Wrong feedback routing'
+                        assert (b'--dev-persistence' in argv) == (persistence and Path(f'/proc/{pid}/comm').read_text().strip() == 'theia-server'), 'Wrong persistence routing'
+                        assert (b'--combat-catalog' in argv) == combat, 'Wrong combat profile'
+                        assert (b'--targeting' in argv) == targeting, 'Wrong targeting profile'
                         assert b'--prediction' in argv, 'Default launcher omitted the qualified prediction profile'
                         assert b'--saved-terrain' in argv, 'Default launcher did not load saved terrain'
                 for expected_package in expected_packages:
@@ -78,11 +88,14 @@ def run(output, binaries, world, players, *, use_default_world=False, chunk_worl
                 if use_default_world:
                     summary = next(json.loads(line.removeprefix('transport_summary ')) for line in server_log.read_text().splitlines() if line.startswith('transport_summary '))
                     assert summary['queued_commands'] > 0, 'Default profile never queued actual commands'
+                    if persistence:
+                        saved = next(json.loads(line.removeprefix('persistence_summary ')) for line in server_log.read_text().splitlines() if line.startswith('persistence_summary '))
+                        assert not saved['failed'], saved
                 assert all(not Path(f'/proc/{pid}').exists() for pid in owned), 'Owned game child survived'
                 assert not any(p.exists() for p in ticket_directories), 'Temporary tickets survived'
                 results.append({'mode': mode, 'launcher_exit': code, 'owned_children': len(owned),
                                 'children_removed': True, 'tickets_removed': True, 'transport': 'renet',
-                                'default_world': use_default_world, 'chunk_world': chunk_world, 'prediction': use_default_world, 'saved_terrain': use_default_world,
+                                'persistence': persistence, 'feedback': feedback, 'combat': combat, 'targeting': targeting, 'default_world': use_default_world, 'chunk_world': chunk_world, 'prediction': use_default_world, 'saved_terrain': use_default_world,
                                 **({'content_id': expected_packages[0]['content_id'], 'revision': expected_packages[0]['revision']} if expected_packages and not chunk_world else {}),
                                 'packages': [{'content_id': p['content_id'], 'revision': p['revision']} for p in expected_packages]})
             finally:
@@ -106,8 +119,12 @@ if __name__ == '__main__':
     parser.add_argument('--world', type=Path, default=Path('build/development-world-town-v3'))
     parser.add_argument('--players', type=Path)
     parser.add_argument('--use-default-world', action='store_true', help='Verify the default continental graybox launcher and POLYGON player')
+    parser.add_argument('--targeting', action='store_true')
+    parser.add_argument('--persistence', action='store_true')
+    parser.add_argument('--spell-feedback', action='store_true')
+    parser.add_argument('--combat', action='store_true')
     parser.add_argument('--chunk-world', action='store_true', help='Treat --world as an opt-in chunk index/session directory')
     args = parser.parse_args()
     players = args.players or Path('build/synty-character-canonical-stage' if args.use_default_world else 'build/reference-scene')
     run(args.output.resolve(), args.binaries.resolve(), args.world.resolve(), players.resolve(),
-        use_default_world=args.use_default_world, chunk_world=args.chunk_world)
+        use_default_world=args.use_default_world, chunk_world=args.chunk_world, targeting=args.targeting, combat=args.combat, feedback=args.spell_feedback, persistence=args.persistence)

@@ -8,6 +8,45 @@ It runs client/server tasks inside one headless process. Published readiness is
 **collision-only test readiness**, not GPU/native-client readiness. It makes no
 claim about eight rendered clients, Internet deployment or MMO population capacity.
 
+## Resumed diagnostic continuation — 2026-10-26
+
+After the committed stop checkpoint, qualify the new completed-input counters over
+real encrypted UDP and repeat this soak without concurrent builds. Acceptance
+retains identity return, residency, simulation and cleanup checks; it additionally
+requires each peer's held-intent agreement/disagreement counts to partition matched
+ticks, with sequence/freshness mismatch counts bounded by matched samples. Current
+and peak RSS are labelled separately in progress output. Record I/O pump timing
+separately; the earlier build-contended run remains valid scoped evidence, not an
+isolated I/O benchmark. This continuation now passes (`build/prediction-input-soak-600-v1/verification.json`).
+The uncontended 600-second run records **18,002 simulation steps and 120,009 I/O
+pump observations**, zero missed deadlines in both domains, zero skipped intervals,
+recoveries or malformed input/readiness rejections. Simulation work p95 upper bound
+is 1,048.575 microseconds, maximum 1,011.947 microseconds; I/O work p95 upper bound
+is 131.071 microseconds, maximum 1,214.172 microseconds. This is a separate run,
+not proof that compilation caused every miss in the earlier contended run.
+
+All eight peers observe the same actor identities return after pruning. Authority
+collision residency peaks/finishes at nine patches, with 231 generated / 222 retired;
+client query residency remains bounded at two. Queues peak at 856/177 bytes.
+Sampled combined RSS peaks at **178,458,624 bytes (170.19 MiB)**; final 120-second
+samples range from 177,299,456 to 178,458,624 bytes (169.09–170.19 MiB). Samples
+include a bounded one-second JSON trace. This is ten-minute evidence, not an
+indefinite plateau or population-capacity guarantee. All diagnostic partitions
+pass, and bearer tickets are removed.
+
+Two peers record two different-intent observations each, with maximum errors
+0.2386/0.2294 m. Across all peers, largest matching-intent error is 0.0374 mm.
+These observed associations do not establish a universal correction bound or
+prove full input histories match. [Input diagnostics](PREDICTION_INPUT_DIAGNOSTICS.md).
+
+Exact example binary SHA256:
+`74bd145b55e9a180d778583186c3f06c769a6540afd3d52c47cd17a99cdefacc`;
+source SHA256:
+`30424980d6d98343b4bc97d07d9a05f2d32ac34c0d72f7be690c5840a01cad09`.
+The preserved executable and metadata are in `build/prediction-input-qualified-v1`.
+This run precedes the new ability-data module and makes no gameplay/schema
+integration claim. Linux Ryzen 7800X3D, headless collision readiness only.
+
 ## Acceptance
 
 - Eight authenticated peers with unique authority actor IDs; every peer initially

@@ -7,6 +7,8 @@ use tokio::{sync::watch, time::MissedTickBehavior};
 
 #[derive(Clone, Debug, Default)]
 pub struct State {
+    pub combat: Option<crate::combat_wire::State>,
+    pub targeting: Option<crate::targeting_wire::State>,
     pub correction: Option<crate::prediction_wire::Corrected>,
     pub correction_ready: Option<crate::wire::ChunkReady>,
     pub correction_received: Option<std::time::Instant>,
@@ -85,6 +87,11 @@ impl State {
 /// Observed Renet diagnostics; byte rates exclude UDP/netcode overhead.
 #[derive(Clone, Debug, Default, serde::Serialize)]
 pub struct TransportStats {
+    pub combat_states_received: u64,
+    pub combat_events_received: u64,
+    pub cast_requests_sent: u64,
+    pub target_states_received: u64,
+    pub target_selections_sent: u64,
     pub chunk_ready_reports_sent: u64,
     pub chunk_ready_acks_received: u64,
     pub chunk_offers_received: u64,

@@ -4,6 +4,7 @@ mod camera;
 mod capture_ready;
 mod chunk_scene;
 mod chunk_world;
+mod combat;
 mod floating_origin;
 mod graybox;
 mod movement;
@@ -16,6 +17,8 @@ mod runtime_materials;
 mod scene;
 mod shared_images;
 mod smoke;
+mod spell_feedback;
+mod targeting;
 mod terrain_scene;
 mod triplanar;
 
@@ -66,6 +69,40 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if prediction && !graybox {
         return Err("Prediction requires the graybox world".into());
     }
+    let combat_catalog = if let Some(i) = args.iter().position(|a| a == "--combat-catalog") {
+        args.remove(i);
+        if i >= args.len() {
+            return Err("Missing combat catalog".into());
+        }
+        Some(combat::load_catalog(std::path::Path::new(&args.remove(i)))?)
+    } else {
+        None
+    };
+    let feedback = if let Some(i) = args.iter().position(|a| a == "--spell-feedback") {
+        args.remove(i);
+        if i >= args.len() {
+            return Err("Missing spell feedback definition".into());
+        }
+        let (_, catalog) = combat_catalog
+            .as_ref()
+            .ok_or("Spell feedback requires combat")?;
+        Some(spell_feedback::data::Definition::load(
+            std::path::Path::new(&args.remove(i)),
+            catalog,
+        )?)
+    } else {
+        None
+    };
+    let targeting_flag = if let Some(i) = args.iter().position(|a| a == "--targeting") {
+        args.remove(i);
+        true
+    } else {
+        false
+    };
+    let targeted = targeting_flag || combat_catalog.is_some();
+    if targeted && !graybox {
+        return Err("Targeting requires a graybox world".into());
+    }
     let camera_collision = camera::CollisionMode::parse(&mut args)?;
     let chunks = chunk_world::Config::parse(&mut args)?;
     let terrain = terrain_scene::Config::parse(&mut args)?;
@@ -107,7 +144,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             &args,
             prediction,
             if graybox {
-                source.identity()
+                let base = if targeted {
+                    theia_network::targeting::profile_identity(source.identity())
+                } else {
+                    source.identity()
+                };
+                if let Some((bytes, _)) = &combat_catalog {
+                    use theia_network::simulation::combat::{
+                        self, DEVELOPMENT_HEALTH, DEVELOPMENT_RESPAWN_MS,
+                    };
+                    combat::profile_identity(
+                        base,
+                        bytes,
+                        DEVELOPMENT_HEALTH,
+                        DEVELOPMENT_RESPAWN_MS,
+                    )
+                    .map_err(|e| e.to_string())?
+                } else {
+                    base
+                }
             } else {
                 chunks.as_ref().map_or_else(
                     || {
@@ -118,6 +173,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     |chunks| chunks.data.identity(),
                 )
             },
+            targeted,
+            combat_catalog.as_ref().map(|(_, catalog)| catalog.clone()),
         )?)
     } else {
         None
@@ -176,6 +233,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }),
         ..default()
     });
+    if feedback.is_some() {
+        plugins = plugins.set(spell_feedback::audio_plugin());
+    } else {
+        plugins = plugins.disable::<bevy::audio::AudioPlugin>();
+    }
     if let Some(terrain) = terrain {
         plugins = plugins.set(AssetPlugin {
             file_path: terrain
@@ -278,6 +340,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .after(bevy::input::InputSystems),
         )
         .add_systems(FixedUpdate, movement::move_local_pawn);
+    if targeted {
+        targeting::install(&mut app);
+    }
+    if let Some((_, catalog)) = combat_catalog {
+        combat::install(&mut app, catalog);
+    }
+    if let Some(definition) = feedback {
+        spell_feedback::install(&mut app, definition);
+    }
     if let Some(net) = net {
         app.insert_resource(net)
             .add_systems(

@@ -13,6 +13,7 @@ bevy = { workspace = true, features = [
     "bevy_color", "x11", "wayland", "bevy_ui", "bevy_ui_render", "bevy_text",
     "default_font", "png", "jpeg", "bevy_gltf", "reflect_auto_register", "gltf_animation",
     "mesh_picking", "pbr_light_textures",
+    "bevy_audio", "wav", "bevy_ui_widgets", "ui_picking",
 ] }
 avian3d.workspace = true
 serde_json.workspace = true

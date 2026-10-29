@@ -1,5 +1,7 @@
 //! Executable Renet bridge. Transport polling and fixed simulation are separate;
 //! only superseding inputs/snapshots cross the presentation boundary.
+mod checkpoints;
+mod tickets;
 use crate::{
     Result,
     client::{State, TransportStats},
@@ -7,8 +9,9 @@ use crate::{
     simulation::World,
     wire::*,
 };
+pub use checkpoints::{ActorCheckpoint, AuthorityCheckpoint, CheckpointBridge};
 use renet::{RenetClient, RenetServer, ServerEvent};
-use renet_netcode::{ConnectToken, NetcodeServerTransport, generate_random_bytes};
+use renet_netcode::{ConnectToken, NetcodeServerTransport};
 use std::{
     collections::{BTreeMap, BTreeSet},
     io::Write,
@@ -17,6 +20,7 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 use theia_core::time::TickMetrics;
+pub use tickets::{IssuedTicket, TicketIssuer, secure_issuer};
 use tokio::{
     sync::{Semaphore, mpsc, oneshot, watch},
     time::{Instant, MissedTickBehavior},
@@ -40,22 +44,10 @@ pub fn issue_local_advertised(
     directory: &Path,
     advertised: Vec<SocketAddr>,
 ) -> Result<NetcodeServerTransport> {
-    if !socket.local_addr()?.ip().is_loopback()
-        || advertised.is_empty()
-        || advertised.len() > MAX_PLAYERS
-        || advertised
-            .iter()
-            .any(|a| !a.ip().is_loopback() || a.port() == 0)
-    {
-        return Err("Local issuer requires bounded loopback endpoints".into());
-    }
+    let (transport, issuer) = secure_issuer(socket, advertised)?;
     std::fs::create_dir_all(directory)?;
-    let key = generate_random_bytes();
-    let current = now()?;
     for id in 1..=MAX_PLAYERS as u64 {
-        let address = advertised[(id as usize - 1) % advertised.len()];
-        let token =
-            ConnectToken::generate(current, PROTOCOL_ID, 120, id, 5, vec![address], None, &key)?;
+        let ticket = issuer.issue(id, None, 120)?;
         let mut options = std::fs::OpenOptions::new();
         options.write(true).create_new(true);
         #[cfg(unix)]
@@ -64,19 +56,10 @@ pub fn issue_local_advertised(
             options.mode(0o600);
         }
         let mut file = options.open(directory.join(format!("client-{id}.token")))?;
-        token.write(&mut file)?;
+        file.write_all(ticket.bytes())?;
         file.flush()?;
     }
-    Ok(NetcodeServerTransport::new(
-        renet_netcode::ServerConfig {
-            current_time: current,
-            max_clients: MAX_PLAYERS,
-            protocol_id: PROTOCOL_ID,
-            public_addresses: advertised,
-            authentication: renet_netcode::ServerAuthentication::Secure { private_key: key },
-        },
-        socket,
-    )?)
+    Ok(transport)
 }
 
 pub fn read_ticket(bytes: &[u8], address: SocketAddr) -> Result<ConnectToken> {
@@ -109,10 +92,27 @@ struct Peer {
     period: Instant,
     pending_chunk_ack: Option<ChunkReady>,
     offered_generation: u64,
+    target_sequence: u64,
+    target_accepted: bool,
+    target_sent: Option<crate::targeting_wire::State>,
+    combat_sent: Option<crate::combat_wire::State>,
+    combat_event_sequence: u64,
+    cast_requests: u32,
 }
 
 #[derive(Clone, Debug, Default, serde::Serialize)]
 pub struct ServerStats {
+    pub checkpoint_publications: u64,
+    pub persistent_spawn_admissions: u64,
+    pub combat_states_sent: u64,
+    pub combat_events_sent: u64,
+    pub combat_backpressure_disconnects: u64,
+    pub cast_requests_accepted: u64,
+    pub cast_requests_rejected: u64,
+    pub cast_requests_ignored: u64,
+    pub target_states_sent: u64,
+    pub target_selections_accepted: u64,
+    pub target_selections_rejected: u64,
     pub terrain_peak_resident: usize,
     pub terrain_generated: u64,
     pub terrain_retired: u64,
@@ -184,33 +184,52 @@ impl ServerStats {
     }
 }
 
-/// Local owner-side management only; these requests are never client messages.
+/// Local owner-side world management only; these requests are never client messages.
 /// One transaction and one queued command per controller. Loading happens on a
 /// blocking worker; publication is serialized with authoritative actor updates.
 #[derive(Clone)]
-pub struct ChunkControl {
-    requests: mpsc::Sender<ChunkRequest>,
+pub struct WorldControl {
+    requests: mpsc::Sender<WorldRequest>,
     gate: std::sync::Arc<Semaphore>,
 }
-pub struct ChunkRequests(mpsc::Receiver<ChunkRequest>);
-enum ChunkRequest {
+pub struct WorldRequests(mpsc::Receiver<WorldRequest>);
+pub type ChunkControl = WorldControl;
+pub type ChunkRequests = WorldRequests;
+enum WorldRequest {
     Plan(
         Vec<theia_core::coordinates::ChunkId>,
         oneshot::Sender<Result<crate::chunk_world::LoadPlan>>,
     ),
     Publish(crate::chunk_world::Prepared, oneshot::Sender<Result<u64>>),
+    RemoveTarget(theia_core::identity::EntityKey, oneshot::Sender<bool>),
 }
 pub fn chunk_control() -> (ChunkControl, ChunkRequests) {
+    world_control()
+}
+pub fn world_control() -> (WorldControl, WorldRequests) {
     let (requests, receiver) = mpsc::channel(1);
     (
-        ChunkControl {
+        WorldControl {
             requests,
             gate: std::sync::Arc::new(Semaphore::new(1)),
         },
-        ChunkRequests(receiver),
+        WorldRequests(receiver),
     )
 }
-impl ChunkControl {
+impl WorldControl {
+    /// Trusted local management only; not a client message or combat hot path.
+    pub async fn remove_target(&self, key: theia_core::identity::EntityKey) -> Result<bool> {
+        let _permit = self
+            .gate
+            .clone()
+            .try_acquire_owned()
+            .map_err(|_| "World transaction already in flight")?;
+        let (reply, receive) = oneshot::channel();
+        self.requests
+            .send(WorldRequest::RemoveTarget(key, reply))
+            .await?;
+        Ok(receive.await?)
+    }
     pub async fn replace(&self, required: &[theia_core::coordinates::ChunkId]) -> Result<u64> {
         if required.len() > crate::chunks::MAX_RESIDENT {
             return Err("Chunk request exceeds bounded budget".into());
@@ -222,7 +241,7 @@ impl ChunkControl {
             .map_err(|_| "Chunk transaction already in flight")?;
         let (reply, receive) = oneshot::channel();
         self.requests
-            .send(ChunkRequest::Plan(required.to_vec(), reply))
+            .send(WorldRequest::Plan(required.to_vec(), reply))
             .await?;
         let plan = receive.await??;
         // Retain the permit inside the blocking task even if the caller cancels.
@@ -230,7 +249,7 @@ impl ChunkControl {
             tokio::task::spawn_blocking(move || (plan.load(), _permit)).await?;
         let (reply, receive) = oneshot::channel();
         self.requests
-            .send(ChunkRequest::Publish(candidate?, reply))
+            .send(WorldRequest::Publish(candidate?, reply))
             .await?;
         receive.await?
     }
@@ -244,7 +263,17 @@ pub async fn run_server_with_chunks(
     world: World,
     requests: ChunkRequests,
 ) -> Result<ServerStats> {
-    run_server_inner(transport, shutdown, world, requests, None).await
+    run_server_inner(transport, shutdown, world, requests, None, None).await
+}
+
+/// Production owner loop with bounded trusted management; requests are not wire data.
+pub async fn run_server_with_world_control(
+    transport: NetcodeServerTransport,
+    shutdown: watch::Receiver<bool>,
+    world: World,
+    requests: WorldRequests,
+) -> Result<ServerStats> {
+    run_server_inner(transport, shutdown, world, requests, None, None).await
 }
 
 type Demand = Option<Vec<theia_core::coordinates::ChunkId>>;
@@ -279,7 +308,7 @@ pub async fn run_server_streaming(
             }
         }
     });
-    let result = run_server_inner(transport, shutdown, world, requests, Some(updates)).await;
+    let result = run_server_inner(transport, shutdown, world, requests, Some(updates), None).await;
     owner.abort();
     let _ = owner.await;
     let stats = result?;
@@ -304,7 +333,120 @@ pub async fn run_server_measured(
     world: World,
 ) -> Result<ServerStats> {
     let (_, requests) = chunk_control();
-    run_server_inner(transport, shutdown, world, requests, None).await
+    run_server_inner(transport, shutdown, world, requests, None, None).await
+}
+/// Opt-in local-issuer persistence bridge. The application owns DB work and
+/// stable identities; this authority only restores validated poses and emits
+/// checked f64 snapshots through one bounded latest-value channel.
+pub async fn run_server_with_checkpoints(
+    transport: NetcodeServerTransport,
+    shutdown: watch::Receiver<bool>,
+    world: World,
+    bridge: CheckpointBridge,
+) -> Result<ServerStats> {
+    if world.procedural().is_none() {
+        return Err("Checkpoint bridge requires streamed terrain".into());
+    }
+    let (_, requests) = world_control();
+    let stats = run_server_inner(transport, shutdown, world, requests, None, Some(bridge)).await?;
+    println!("transport_summary {}", serde_json::to_string(&stats)?);
+    Ok(stats)
+}
+
+// Combat events are ordered gameplay data. A full reliable queue closes that
+// peer instead of silently dropping an event or coalescing through a death.
+fn retire_peers(
+    server: &mut RenetServer,
+    peers: &mut BTreeMap<u64, Peer>,
+    world: &mut World,
+    ids: &[u64],
+) {
+    for &id in ids {
+        server.disconnect(id);
+        if let Some(peer) = peers.remove(&id) {
+            world.leave(peer.actor);
+            println!("player_leave id={} transport=renet", peer.actor);
+        }
+    }
+}
+fn publish_combat_events(
+    server: &mut RenetServer,
+    peers: &mut BTreeMap<u64, Peer>,
+    world: &mut World,
+    stats: &mut ServerStats,
+    events: &[crate::simulation::combat::Event],
+) -> Result<()> {
+    if events.is_empty() {
+        return Ok(());
+    }
+    let catalog = world
+        .combat_catalog()
+        .ok_or("Combat event without catalog")?;
+    let tick = world.completed_tick();
+    let mut slow = Vec::new();
+    for (&id, peer) in peers.iter_mut() {
+        for chunk in events.chunks(crate::combat_wire::MAX_BATCH_EVENTS) {
+            let sequence = peer
+                .combat_event_sequence
+                .checked_add(1)
+                .ok_or("Combat event sequence exhausted")?;
+            let batch = crate::combat_wire::Batch {
+                epoch: world.epoch(),
+                sequence,
+                tick,
+                events: chunk.to_vec(),
+            };
+            let bytes = batch.encode(catalog)?;
+            if !server.can_send_message(id, EVENT_CHANNEL, bytes.len()) {
+                slow.push(id);
+                break;
+            }
+            server.send_message(id, EVENT_CHANNEL, bytes);
+            peer.combat_event_sequence = sequence;
+            stats.combat_events_sent += chunk.len() as u64;
+        }
+    }
+    stats.combat_backpressure_disconnects += slow.len() as u64;
+    retire_peers(server, peers, world, &slow);
+    Ok(())
+}
+fn publish_combat_state(
+    server: &mut RenetServer,
+    peers: &mut BTreeMap<u64, Peer>,
+    world: &mut World,
+    stats: &mut ServerStats,
+) -> Result<()> {
+    let Some(catalog) = world.combat_catalog() else {
+        return Ok(());
+    };
+    let mut slow = Vec::new();
+    for (&id, peer) in peers.iter_mut() {
+        let view = crate::combat_wire::State::new(
+            world.epoch(),
+            world
+                .combat_snapshot(peer.actor)
+                .ok_or("Combat peer without actor")?,
+            catalog,
+        )?;
+        if peer
+            .combat_sent
+            .as_ref()
+            .is_some_and(|old| old.same_view(&view))
+        {
+            continue;
+        }
+        let bytes = view.encode(catalog)?;
+        if !server.can_send_message(id, EVENT_CHANNEL, bytes.len()) {
+            slow.push(id);
+            continue;
+        }
+        server.send_message(id, EVENT_CHANNEL, bytes);
+        peer.combat_sent = Some(view);
+        stats.combat_states_sent += 1;
+    }
+    stats.combat_backpressure_disconnects += slow.len() as u64;
+    retire_peers(server, peers, world, &slow);
+    Ok(())
 }
 async fn run_server_inner(
     mut transport: NetcodeServerTransport,
@@ -312,6 +454,7 @@ async fn run_server_inner(
     mut world: World,
     mut requests: ChunkRequests,
     demand: Option<watch::Sender<Demand>>,
+    mut checkpoints: Option<CheckpointBridge>,
 ) -> Result<ServerStats> {
     world.require_client_chunks()?;
     let mut server = RenetServer::new(connection_config());
@@ -327,6 +470,7 @@ async fn run_server_inner(
     let mut last = Instant::now();
     let mut metrics = TickMetrics::default();
     let mut io_metrics = TickMetrics::default();
+    let mut combat_events = Vec::with_capacity(crate::simulation::combat::MAX_STEP_EVENTS);
     let wall_start = Instant::now();
     let mut previous_scheduled: Option<Instant> = None;
     let result: Result<()> = async {
@@ -344,6 +488,13 @@ async fn run_server_inner(
                     if let Some(input) = peer.latest.take() && world.input(peer.actor, input) { stats.applied_inputs += 1; }
                 }
                 let snapshot = world.step();
+                if let Some(bridge)=&mut checkpoints {
+                    stats.checkpoint_publications+=u64::from(bridge.capture(&world,&peers));
+                }
+                if world.combat_enabled() {
+                    let events = world.combat_events().to_vec();
+                    publish_combat_events(&mut server, &mut peers, &mut world, &mut stats, &events)?;
+                }
                 if world.procedural().is_some() {
                     for (&id,peer) in &peers {server.send_message(id,MOVEMENT_CHANNEL,encode(&world.snapshot_for(peer.actor))?); if let Some(correction)=world.correction(peer.actor) {server.send_message(id,MOVEMENT_CHANNEL,correction.encode()?);}}
                 } else {
@@ -351,6 +502,18 @@ async fn run_server_inner(
                     server.broadcast_message(MOVEMENT_CHANNEL, bytes);
                 }
                 for (&id, peer) in &mut peers {
+                    if world.targeting_enabled() {
+                        let view = crate::targeting_wire::State::new(world.epoch(), snapshot.tick,
+                            peer.target_sequence, peer.target_accepted, world.targeting_snapshot(peer.actor).unwrap());
+                        if peer.target_sent.as_ref().is_none_or(|old| !old.same_view(&view)) {
+                            let bytes = view.encode()?;
+                            if server.can_send_message(id, EVENT_CHANNEL, bytes.len()) {
+                                server.send_message(id, EVENT_CHANNEL, bytes);
+                                peer.target_sent = Some(view);
+                                stats.target_states_sent += 1;
+                            }
+                        }
+                    }
                     if let Some(report) = &peer.pending_chunk_ack {
                         let bytes = encode(&ChunkEvent::Ack(ChunkAck::new(report, snapshot.tick)))?;
                         if server.can_send_message(id, EVENT_CHANNEL, bytes.len()) {
@@ -360,20 +523,23 @@ async fn run_server_inner(
                         }
                     }
                 }
+                publish_combat_state(&mut server, &mut peers, &mut world, &mut stats)?;
                 stats.observe(&server, &peers);
                 metrics.record(rate, started.elapsed(), started.saturating_duration_since(scheduled));
             }
             Some(request) = requests.0.recv() => {
                 match request {
-                    ChunkRequest::Plan(ids, reply) => { let _ = reply.send(world.plan_chunks(&ids)); }
-                    ChunkRequest::Publish(candidate, reply) => {
+                    WorldRequest::RemoveTarget(key,reply)=>{let _=reply.send(world.remove_development_target(key));}
+                    WorldRequest::Plan(ids, reply) => { let _ = reply.send(world.plan_chunks(&ids)); }
+                    WorldRequest::Publish(candidate, reply) => {
                         let result = world.activate_chunks(candidate).map(|()| world.chunks().unwrap().residency().generation());
                         let _ = reply.send(result);
                     }
                 }
             }
             scheduled = io.tick() => {
-                world.poll_terrain();
+                if let Some(bridge)=&checkpoints {world.poll_terrain_keeping(&bridge.pending())?;}
+                else {world.poll_terrain();}
                 if let Some(error) = world.procedural().and_then(|t| t.error.as_ref()) { return Err(error.clone().into()); }
                 if let Some(terrain) = world.procedural() {
                     stats.terrain_peak_resident=stats.terrain_peak_resident.max(terrain.patches.len());
@@ -391,21 +557,30 @@ async fn run_server_inner(
                             if !(1..=MAX_PLAYERS as u64).contains(&client_id) || !spent.insert(client_id) {
                                 server.disconnect(client_id); continue;
                             }
-                            if let Some(actor) = world.join() {
-                                peers.insert(client_id, Peer { actor, latest: None, received: 0, period: current, pending_chunk_ack: None, offered_generation:0 });
+                            let restored=checkpoints.as_ref().and_then(|b|b.position(client_id));
+                            let actor=if let Some(position)=restored {world.join_restored(position)} else {world.join()};
+                            if let Some(actor) = actor {
+                                if let Some(bridge)=&mut checkpoints {
+                                    bridge.admitted(client_id);
+                                    println!("persistent_admit {}",serde_json::json!({"client_id":client_id,"actor":actor,"epoch":world.epoch(),"position":world.global_position(actor).unwrap().metres()}));
+                                }
+                                stats.persistent_spawn_admissions+=u64::from(restored.is_some());
+                                peers.insert(client_id, Peer { actor, latest: None, received: 0, period: current, pending_chunk_ack: None, offered_generation:0, target_sequence:0, target_accepted:false, target_sent:None, combat_sent:None, combat_event_sequence:0, cast_requests:0 });
                                 server.send_message(client_id, EVENT_CHANNEL, Welcome {terrain_stream: world.procedural().is_some(),id:actor, epoch:world.epoch(),world:world.identity(),origin:world.origin()}.encode());
                                 println!("player_join id={actor} transport=renet");
                             } else { server.disconnect(client_id); }
                         }
                         ServerEvent::ClientDisconnected { client_id, .. } => {
+                            if let Some(bridge)=&mut checkpoints {stats.checkpoint_publications+=u64::from(bridge.capture(&world,&peers));}
                             if let Some(peer) = peers.remove(&client_id) {
                                 world.leave(peer.actor); println!("player_leave id={} transport=renet", peer.actor);
                             }
                         }
                     }
                 }
+                let mut retired_combat_peers = Vec::new();
                 for (&id, peer) in &mut peers {
-                    if current.duration_since(peer.period) >= Duration::from_secs(1) { peer.period = current; peer.received = 0; }
+                    if current.duration_since(peer.period) >= Duration::from_secs(1) { peer.period = current; peer.received = 0; peer.cast_requests = 0; }
                     let mut controls = 0;
                     let mut invalid_control = false;
                     for _ in 0..8 {
@@ -413,6 +588,42 @@ async fn run_server_inner(
                         controls += 1; peer.received += 1;
                         if peer.received > 180 || (world.chunks().is_none() && world.procedural().is_none()) {
                             invalid_control = true; stats.rejected_chunk_ready += 1; break;
+                        }
+                        if bytes.starts_with(crate::combat_wire::REQUEST_TAG) {
+                            peer.cast_requests += 1;
+                            if !world.combat_enabled() || peer.cast_requests > 10 || combat_events.len()+2 > crate::simulation::combat::MAX_STEP_EVENTS {
+                                stats.cast_requests_rejected += 1; invalid_control=true; break;
+                            }
+                            let command = match crate::combat_wire::Request::decode(&bytes, world.combat_catalog().unwrap())
+                                .and_then(|message| message.command(world.combat_catalog().unwrap())) {
+                                Ok(command)=>command,
+                                Err(_)=>{stats.cast_requests_rejected+=1;invalid_control=true;break;}
+                            };
+                            let result=world.cast(peer.actor,command);
+                            use crate::simulation::combat::Outcome;
+                            match result.reply.outcome {
+                                Outcome::Ignored=>stats.cast_requests_ignored+=1,
+                                Outcome::Rejected(_)=>stats.cast_requests_rejected+=1,
+                                Outcome::Started {..} | Outcome::Queued {..}=>stats.cast_requests_accepted+=1,
+                            }
+                            combat_events.extend(result.events);
+                            continue;
+                        }
+                        if bytes.starts_with(crate::targeting_wire::SELECTION_TAG) {
+                            if !world.targeting_enabled() { invalid_control=true; stats.target_selections_rejected+=1; break; }
+                            let message = match crate::targeting_wire::Selection::decode(&bytes) {
+                                Ok(message)=>message,
+                                Err(_)=>{invalid_control=true;stats.target_selections_rejected+=1;break;}
+                            };
+                            if message.epoch!=world.epoch() || message.sequence<=peer.target_sequence
+                                || message.sequence.saturating_sub(peer.target_sequence)>128 {
+                                stats.target_selections_rejected+=1;continue;
+                            }
+                            peer.target_sequence=message.sequence;
+                            peer.target_accepted=world.select_target(peer.actor,message.target.map(|entity|
+                                theia_core::identity::EntityKey {epoch:theia_core::identity::WorldEpoch::new(message.epoch).unwrap(),entity}));
+                            if peer.target_accepted {stats.target_selections_accepted+=1;} else {stats.target_selections_rejected+=1;}
+                            continue;
                         }
                         match ChunkReady::decode(&bytes) {
                             Ok(message) => {
@@ -426,7 +637,7 @@ async fn run_server_inner(
                         }
                     }
                     stats.max_control_batch = stats.max_control_batch.max(controls);
-                    if invalid_control { peer.latest = None; server.disconnect(id); continue; }
+                    if invalid_control { peer.latest = None; server.disconnect(id); if world.combat_enabled() { retired_combat_peers.push(id); } continue; }
                     let mut batch = 0;
                     for _ in 0..32 {
                         let Some(bytes) = server.receive_message(id, MOVEMENT_CHANNEL) else { break; };
@@ -460,6 +671,13 @@ async fn run_server_inner(
                         }
                     }
                 }
+                if world.combat_enabled() {
+                    retired_combat_peers.extend(peers.keys().copied().filter(|id| !server.is_connected(*id)));
+                    retired_combat_peers.sort_unstable(); retired_combat_peers.dedup();
+                    retire_peers(&mut server,&mut peers,&mut world,&retired_combat_peers);
+                    publish_combat_events(&mut server,&mut peers,&mut world,&mut stats,&combat_events)?;
+                    combat_events.clear();
+                }
                 stats.observe(&server, &peers);
                 stats.max_players = stats.max_players.max(peers.len());
                 if let Some(updates)=&demand
@@ -474,6 +692,9 @@ async fn run_server_inner(
         }}
         Ok(())
     }.await;
+    if let Some(bridge) = &mut checkpoints {
+        stats.checkpoint_publications += u64::from(bridge.capture(&world, &peers));
+    }
     transport.disconnect_all(&mut server);
     println!(
         "simulation_summary transport=renet tick_hz={} steps={} missed_deadlines={} max_work_us={} max_lateness_us={}",
@@ -521,7 +742,7 @@ pub async fn run_client(
         state,
         shutdown,
         expected_world,
-        (None, None),
+        ClientMode::default(),
     )
     .await
 }
@@ -544,7 +765,10 @@ pub async fn run_client_with_chunks(
         state,
         shutdown,
         expected_world,
-        (Some(ready), None),
+        ClientMode {
+            ready: Some(ready),
+            ..ClientMode::default()
+        },
     )
     .await
 }
@@ -569,11 +793,106 @@ pub async fn run_client_predicted(
         state,
         shutdown,
         expected_world,
-        (Some(ready), Some(commands)),
+        ClientMode {
+            ready: Some(ready),
+            commands: Some(commands),
+            choices: None,
+            combat: None,
+        },
     )
     .await
 }
 
+pub type TargetChoices = watch::Receiver<Option<crate::targeting::Choice>>;
+/// The opt-in profile owns its readiness, optional prediction and target mailbox.
+pub struct TargetingClient {
+    pub ready: ChunkReadiness,
+    pub commands: Option<mpsc::Receiver<crate::prediction_wire::Commands>>,
+    pub choices: TargetChoices,
+}
+#[derive(Default)]
+struct ClientMode {
+    ready: Option<ChunkReadiness>,
+    commands: Option<mpsc::Receiver<crate::prediction_wire::Commands>>,
+    choices: Option<TargetChoices>,
+    combat: Option<CombatMode>,
+}
+/// expected_world includes targeting::profile_identity; baseline wrappers remain unchanged.
+pub async fn run_client_targeted(
+    address: SocketAddr,
+    ticket: &[u8],
+    input: watch::Receiver<Intent>,
+    state: watch::Sender<State>,
+    shutdown: watch::Receiver<bool>,
+    expected_world: [u8; 32],
+    mode: TargetingClient,
+) -> Result<()> {
+    run_client_inner(
+        address,
+        ticket,
+        input,
+        state,
+        shutdown,
+        expected_world,
+        ClientMode {
+            ready: Some(mode.ready),
+            commands: mode.commands,
+            choices: Some(mode.choices),
+            combat: None,
+        },
+    )
+    .await
+}
+
+/// A bounded action queue, unlike superseding movement/selection mailboxes.
+#[derive(Clone, Debug)]
+pub struct CastChoice {
+    pub ability: theia_core::content::ContentId,
+    pub target: theia_core::identity::EntityId,
+}
+pub struct CombatClient {
+    pub targeting: TargetingClient,
+    pub catalog: std::sync::Arc<theia_core::abilities::Catalog>,
+    pub casts: mpsc::Receiver<CastChoice>,
+    pub events: mpsc::Sender<crate::combat_wire::Batch>,
+}
+struct CombatMode {
+    catalog: std::sync::Arc<theia_core::abilities::Catalog>,
+    casts: mpsc::Receiver<CastChoice>,
+    events: mpsc::Sender<crate::combat_wire::Batch>,
+}
+pub async fn run_client_combat(
+    address: SocketAddr,
+    ticket: &[u8],
+    input: watch::Receiver<Intent>,
+    state: watch::Sender<State>,
+    shutdown: watch::Receiver<bool>,
+    expected_world: [u8; 32],
+    mode: CombatClient,
+) -> Result<()> {
+    if mode.casts.max_capacity() > 8 || mode.events.max_capacity() > 16 {
+        return Err("Combat action/event queue exceeds prototype budget".into());
+    }
+    run_client_inner(
+        address,
+        ticket,
+        input,
+        state,
+        shutdown,
+        expected_world,
+        ClientMode {
+            ready: Some(mode.targeting.ready),
+            commands: mode.targeting.commands,
+            choices: Some(mode.targeting.choices),
+            combat: Some(CombatMode {
+                catalog: mode.catalog,
+                casts: mode.casts,
+                events: mode.events,
+            }),
+        },
+    )
+    .await
+}
 async fn run_client_inner(
     address: SocketAddr,
     ticket: &[u8],
@@ -581,12 +900,14 @@ async fn run_client_inner(
     state: watch::Sender<State>,
     mut shutdown: watch::Receiver<bool>,
     expected_world: [u8; 32],
-    mode: (
-        Option<ChunkReadiness>,
-        Option<mpsc::Receiver<crate::prediction_wire::Commands>>,
-    ),
+    mode: ClientMode,
 ) -> Result<()> {
-    let (ready, mut commands) = mode;
+    let ClientMode {
+        ready,
+        mut commands,
+        mut choices,
+        mut combat,
+    } = mode;
     let token = read_ticket(ticket, address)?;
     let bind = if address.is_ipv4() {
         "127.0.0.1:0"
@@ -601,6 +922,11 @@ async fn run_client_inner(
     let started = last;
     let mut next_input = last;
     let mut sequence = 0u64;
+    let mut target_sequence = 0u64;
+    let mut cast_sequence = 0u64;
+    let mut combat_event_sequence = 0u64;
+    let mut combat_state: Option<crate::combat_wire::State> = None;
+    let mut targeting: Option<crate::targeting_wire::State> = None;
     let mut ready_sequence = 0u64;
     let mut last_ready = None;
     let mut last_report: Option<ChunkReady> = None;
@@ -627,6 +953,8 @@ async fn run_client_inner(
                 transport.update(delta, &mut client)?;
                 if id.is_none() && started.elapsed() > Duration::from_secs(5) { return Err("Renet welcome timed out".into()); }
                 if commands.is_some() && id.is_some() && correction.is_none() && started.elapsed()>Duration::from_secs(8) {return Err("Server did not enable prediction profile 1".into());}
+                if combat.is_some() && id.is_some() && combat_state.is_none() && started.elapsed()>Duration::from_secs(8) {return Err("Server did not enable combat profile 2".into());}
+                if choices.is_some() && id.is_some() && targeting.is_none() && started.elapsed()>Duration::from_secs(8) {return Err("Server did not enable targeting profile 1".into());}
                 for _ in 0..8 {
                     let Some(bytes) = client.receive_message(EVENT_CHANNEL) else { break; };
                     if id.is_none() {
@@ -636,6 +964,40 @@ async fn run_client_inner(
                         admission=Some(welcome.clone());
                         state.send_replace(State {id,welcome:Some(welcome),..State::default()});
                     } else {
+                        if bytes.starts_with(crate::combat_wire::STATE_TAG) {
+                            let mode=combat.as_ref().ok_or("Unexpected opt-in combat state")?;
+                            let view=crate::combat_wire::State::decode(&bytes,&mode.catalog)?;
+                            if view.epoch!=admission.as_ref().unwrap().epoch || view.reply.is_some_and(|r| r.sequence>cast_sequence) {
+                                return Err("Foreign or unsent combat acknowledgement".into());
+                            }
+                            if combat_state.as_ref().is_some_and(|old| view.tick<old.tick || view.reply.map_or(0,|r| r.sequence)<old.reply.map_or(0,|r| r.sequence)) {continue;}
+                            combat_state=Some(view);stats.combat_states_received+=1;
+                            state.send_modify(|value| {value.combat=combat_state.clone();value.transport=Some(stats.clone());});
+                            continue;
+                        }
+                        if bytes.starts_with(crate::combat_wire::EVENTS_TAG) {
+                            let mode=combat.as_ref().ok_or("Unexpected opt-in combat events")?;
+                            let batch=crate::combat_wire::Batch::decode(&bytes,&mode.catalog)?;
+                            if batch.epoch!=admission.as_ref().unwrap().epoch || batch.sequence!=combat_event_sequence.checked_add(1).ok_or("Combat event sequence exhausted")? {
+                                return Err("Foreign or discontinuous combat event stream".into());
+                            }
+                            let next=batch.sequence;let count=batch.events.len();
+                            mode.events.try_send(batch).map_err(|_| "Combat presentation queue full or closed; disconnecting instead of dropping gameplay events")?;
+                            combat_event_sequence=next;stats.combat_events_received+=count as u64;
+                            state.send_modify(|value| value.transport=Some(stats.clone()));
+                            continue;
+                        }
+                        if bytes.starts_with(crate::targeting_wire::STATE_TAG) {
+                            if choices.is_none() {return Err("Unexpected opt-in targeting state".into());}
+                            let view=crate::targeting_wire::State::decode(&bytes)?;
+                            if view.epoch!=admission.as_ref().unwrap().epoch || view.request_sequence>target_sequence {
+                                return Err("Foreign or unsent target acknowledgement".into());
+                            }
+                            if targeting.as_ref().is_some_and(|old| view.tick<old.tick || view.request_sequence<old.request_sequence) {continue;}
+                            targeting=Some(view);stats.target_states_received+=1;
+                            state.send_modify(|value| {value.targeting=targeting.clone();value.transport=Some(stats.clone());});
+                            continue;
+                        }
                         let ack=match ChunkEvent::decode(&bytes)? {
                             ChunkEvent::Ack(ack)=>ack,
                             ChunkEvent::Offer(offer)=>{
@@ -694,7 +1056,7 @@ async fn run_client_inner(
                         stats.rtt_ms = info.rtt * 1000.; stats.packet_loss = info.packet_loss;
                         stats.bytes_sent_per_second = info.bytes_sent_per_second;
                         stats.bytes_received_per_second = info.bytes_received_per_second;
-                        state.send_replace(State { id, snapshot: Some(snapshot), error: None, transport: Some(stats.clone()), welcome:admission.clone(), wire_rebases:rebases, chunk_report:last_report.clone(), chunk_ack:last_ack.clone(),chunk_offer:last_offer.clone(),correction,correction_received,correction_ready:correction_ready.clone() });
+                        state.send_replace(State { combat:combat_state.clone(), targeting:targeting.clone(), id, snapshot: Some(snapshot), error: None, transport: Some(stats.clone()), welcome:admission.clone(), wire_rebases:rebases, chunk_report:last_report.clone(), chunk_ack:last_ack.clone(),chunk_offer:last_offer.clone(),correction,correction_received,correction_ready:correction_ready.clone() });
                     }
                 }
                 if commands.is_none() && id.is_some() && current >= next_input {
@@ -712,6 +1074,28 @@ async fn run_client_inner(
                         let bytes=packet.encode()?;
                         if client.can_send_message(MOVEMENT_CHANNEL,bytes.len()) {client.send_message(MOVEMENT_CHANNEL,bytes);}
                     }
+                }
+                if let (Some(welcome),Some(mode))=(&admission,&mut combat) {
+                    for _ in 0..4 {
+                        if !client.can_send_message(EVENT_CHANNEL,crate::combat_wire::REQUEST_BYTES) {break;}
+                        let Ok(choice)=mode.casts.try_recv() else {break;};
+                        let next=cast_sequence.checked_add(1).ok_or("Cast request sequence exhausted")?;
+                        let request=crate::combat_wire::Request::new(welcome.epoch,next,&choice.ability,choice.target,&mode.catalog)?;
+                        client.send_message(EVENT_CHANNEL,request.encode()?);cast_sequence=next;stats.cast_requests_sent+=1;
+                    }
+                }
+                if let Some(welcome)=&admission
+                    && let Some(choices)=&mut choices
+                    && (target_sequence==0 || choices.has_changed().unwrap_or(false))
+                    && client.can_send_message(EVENT_CHANNEL,crate::targeting_wire::SELECTION_BYTES)
+                    && let Some(choice)=*choices.borrow_and_update() {
+                    // Consume the mailbox atomically only after capacity exists.
+                    // Repeating an explicit choice is a fresh user request even
+                    // if relevance previously cleared that same selected ID.
+                    let next=target_sequence.checked_add(1).ok_or("Target sequence exhausted")?;
+                    let message=crate::targeting_wire::Selection {epoch:welcome.epoch,sequence:next,target:choice.target};
+                    client.send_message(EVENT_CHANNEL,message.encode()?);target_sequence=next;
+                    stats.target_selections_sent+=1;
                 }
                 if let Some(welcome) = &admission
                     && let Some(chunks) = ready.as_ref().and_then(|r|r.borrow().clone())

@@ -591,7 +591,7 @@ pub fn install(app: &mut App, source: procedural::Source) {
 }
 
 /// Opt-in reproducible native qualification. Ordinary interactive input is unchanged.
-fn autoplay(gray: Res<Graybox>, mut intent: ResMut<crate::movement::MoveIntent>) {
+pub(crate) fn autoplay(gray: Res<Graybox>, mut intent: ResMut<crate::movement::MoveIntent>) {
     if std::env::var("THEIA_GRAYBOX_AUTOPLAY").as_deref() != Ok("1") {
         return;
     }
@@ -653,7 +653,10 @@ fn qualification(world: &mut World) {
         .prediction
         .as_ref()
         .map(|p| p.stats.clone());
-    let data = serde_json::json!({"render_motion":gray.render_motion,"saved_terrain":gray.saved.as_ref().map(|s| s.stats()),"held_jump_reset_samples":gray.held_jump_reset_samples,"held_jump_reset_failures":gray.held_jump_reset_failures,"prediction":prediction,"resident":resident,"max_resident":gray.max_resident,"mesh_assets":mesh_assets,"extra_meshes":extra_meshes,"gpu_mesh_assets":gray.gpu_mesh_assets,"loaded":gray.loaded,"unloaded":gray.unloaded,"visited":gray.visited.len(),"patches":gray.patches,"probes":gray.probes,"moving_frames":gray.moving_frames,"held_frames":gray.held_frames,"max_ground_error":gray.max_ground_error,"pose_changes":gray.pose_changes,"position":gray.last_position});
+    let connection = world.resource::<crate::network::Network>();
+    let connected = connection.connected();
+    let network_error = connection.state().error;
+    let data = serde_json::json!({"connected":connected,"network_error":network_error,"render_motion":gray.render_motion,"saved_terrain":gray.saved.as_ref().map(|s| s.stats()),"held_jump_reset_samples":gray.held_jump_reset_samples,"held_jump_reset_failures":gray.held_jump_reset_failures,"prediction":prediction,"resident":resident,"max_resident":gray.max_resident,"mesh_assets":mesh_assets,"extra_meshes":extra_meshes,"gpu_mesh_assets":gray.gpu_mesh_assets,"loaded":gray.loaded,"unloaded":gray.unloaded,"visited":gray.visited.len(),"patches":gray.patches,"probes":gray.probes,"moving_frames":gray.moving_frames,"held_frames":gray.held_frames,"max_ground_error":gray.max_ground_error,"pose_changes":gray.pose_changes,"position":gray.last_position});
     std::fs::write(
         output.join("world.json"),
         serde_json::to_vec_pretty(&data).unwrap(),

@@ -43,6 +43,7 @@ pub struct Stats {
 #[derive(Default)]
 pub struct Control {
     pub blocked: bool,
+    pub block_server_to_client: bool,
     pub stats: Stats,
     pub captures: VecDeque<Vec<u8>>,
     pub inject: Vec<Vec<u8>>,
@@ -110,7 +111,7 @@ impl Relay {
                                 if control.captures.len() == CAPTURE_LIMIT { control.captures.pop_front(); }
                                 control.captures.push_back(buffer[..len].to_vec());
                             }
-                            if control.blocked { control.stats.outage_drops += 1; continue; }
+                            if control.blocked || (direction == 1 && control.block_server_to_client) { control.stats.outage_drops += 1; continue; }
                             if self.profile.loss_every != 0 && serial.is_multiple_of(self.profile.loss_every) { control.stats.configured_drops += 1; continue; }
                             let copies = if self.profile.duplicate_every != 0 && serial.is_multiple_of(self.profile.duplicate_every) {
                                 control.stats.duplicates += 1; 2
@@ -127,7 +128,7 @@ impl Relay {
                     }
                     while pending.front().is_some_and(|p|p.due <= Instant::now()) {
                         let packet = pending.pop_front().unwrap();
-                        if control.blocked { control.stats.outage_drops += 1; continue; }
+                        if control.blocked || (packet.direction == 1 && control.block_server_to_client) { control.stats.outage_drops += 1; continue; }
                         let (socket, target) = if packet.direction == 0 { (&self.back, backend) } else { (&self.front, client.expect("Response requires client")) };
                         socket.send_to(&packet.bytes, target).unwrap();
                         let stats = &mut control.stats;

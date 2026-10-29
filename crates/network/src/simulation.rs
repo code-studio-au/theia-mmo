@@ -1,4 +1,5 @@
 //! Server-only fixed-step authority. Inputs never choose timestep, speed or position.
+pub mod combat;
 use crate::wire::{Input, Intent, MAX_PLAYERS, Player, Snapshot, TICK_HZ, VERSION};
 use std::collections::BTreeMap;
 use std::time::Duration;
@@ -19,6 +20,9 @@ pub struct World {
     next_id: u64,
     movement_recoveries: u64,
     players: BTreeMap<u64, Actor>,
+    targets: BTreeMap<u64, crate::targeting::Target>,
+    targeting_enabled: bool,
+    combat: Option<combat::Authority>,
     terrain: Option<crate::terrain::Terrain>,
     chunks: Option<crate::chunk_world::ChunkWorld>,
     client_chunks_required: bool,
@@ -40,6 +44,7 @@ struct Actor {
     ready: Option<std::collections::BTreeSet<theia_core::coordinates::ChunkId>>,
     ready_sequence: u64,
     commands: Option<crate::commands::Timeline>,
+    selected_target: Option<EntityKey>,
 }
 impl Default for World {
     fn default() -> Self {
@@ -64,6 +69,9 @@ impl Default for World {
             next_id: 0,
             movement_recoveries: 0,
             players: BTreeMap::new(),
+            targets: BTreeMap::new(),
+            targeting_enabled: false,
+            combat: None,
             terrain: None,
             chunks: None,
             client_chunks_required: false,
@@ -164,6 +172,34 @@ impl World {
         true
     }
     pub fn poll_terrain(&mut self) {
+        self.poll_terrain_inner(&[]);
+    }
+    /// Trusted owner-side preparation, outside the fixed step. Pending restored
+    /// admissions retain bounded collision demand until their peer joins.
+    pub fn poll_terrain_keeping(&mut self, additional: &[GlobalPosition]) -> crate::Result<()> {
+        if self.procedural.is_none() || additional.len() > MAX_PLAYERS {
+            return Err("Restored terrain demand exceeds supported backend/capacity".into());
+        }
+        let r = f64::from(crate::kinematic::FOOTPRINT_RADIUS);
+        if additional.iter().any(|p| {
+            let [x, y, z] = p.metres();
+            [-r, r].into_iter().any(|dx| {
+                [-r, r].into_iter().any(|dz| {
+                    GlobalPosition::new([x + dx, y, z + dz])
+                        .and_then(crate::procedural::owner)
+                        .is_none()
+                })
+            })
+        }) {
+            return Err("Restored admission footprint outside finite terrain".into());
+        }
+        self.poll_terrain_inner(additional);
+        if let Some(error) = self.procedural.as_ref().and_then(|r| r.error.as_ref()) {
+            return Err(error.clone().into());
+        }
+        Ok(())
+    }
+    fn poll_terrain_inner(&mut self, additional: &[GlobalPosition]) {
         if self.dev_tour
             && let Some(&id) = self.players.keys().next()
         {
@@ -191,6 +227,7 @@ impl World {
             if let Some((_, [x, z])) = self.terrain_teleport {
                 positions.push(GlobalPosition::new([x, 0., z]).unwrap());
             }
+            positions.extend_from_slice(additional);
             runtime.poll(&positions);
             if let Some((id, [x, z])) = self.terrain_teleport {
                 let p = GlobalPosition::new([x, 0., z]).unwrap();
@@ -220,6 +257,9 @@ impl World {
                         }
                     }
                     self.terrain_teleport = None;
+                    if let Some(combat) = &mut self.combat {
+                        combat.interrupt(id);
+                    }
                     eprintln!("terrain_teleport actor={id} x={x} z={z}");
                 }
             }
@@ -245,8 +285,7 @@ impl World {
                 .players
                 .values()
                 .filter_map(|a| {
-                    let [ax, _, az] = a.position.metres();
-                    if (ax - x).abs() > 1024. || (az - z).abs() > 1024. {
+                    if !crate::targeting::relevant(focus, a.position) {
                         return None;
                     }
                     let p = frame.to_local(a.position)?.metres();
@@ -341,6 +380,9 @@ impl World {
     pub fn epoch(&self) -> u64 {
         self.epoch.value()
     }
+    pub fn completed_tick(&self) -> u64 {
+        self.tick
+    }
     pub fn origin(&self) -> [f64; 3] {
         self.frame.origin().metres()
     }
@@ -392,7 +434,7 @@ impl World {
     }
     pub fn set_tick_rate(&mut self, rate: TickRate) -> bool {
         // Rate changes are configuration, never a live change to gameplay time.
-        if self.tick != 0 || !self.players.is_empty() {
+        if self.tick != 0 || !self.players.is_empty() || self.combat.is_some() {
             return false;
         }
         self.rate = rate;
@@ -518,7 +560,16 @@ impl World {
     }
     pub fn identity(&self) -> [u8; 32] {
         if let Some(terrain) = &self.procedural {
-            return terrain.source.identity();
+            let identity = terrain.source.identity();
+            let identity = if self.targeting_enabled {
+                crate::targeting::profile_identity(identity)
+            } else {
+                identity
+            };
+            return self
+                .combat
+                .as_ref()
+                .map_or(identity, |c| c.identity(identity));
         }
         self.chunks.as_ref().map_or_else(
             || {
@@ -529,7 +580,64 @@ impl World {
             |chunks| chunks.identity(),
         )
     }
+    pub fn terrain_prepared_for(&self, position: GlobalPosition) -> bool {
+        self.procedural
+            .as_ref()
+            .and_then(|r| r.patch(position))
+            .is_some_and(|p| p.covers(position, None))
+    }
+    /// Body-centre placement from the shared static controller, for a trusted
+    /// development fixture slot. No account or transport identity is created.
+    pub fn development_player_spawn(&self, slot: u8) -> Option<GlobalPosition> {
+        if !(1..=MAX_PLAYERS as u8).contains(&slot) {
+            return None;
+        }
+        let runtime = self.procedural.as_ref()?;
+        let offset = f64::from((slot - 1) % 4) * 2.;
+        let x = if runtime.spawn[0] + offset <= 15999. {
+            runtime.spawn[0] + offset
+        } else {
+            runtime.spawn[0] - offset
+        };
+        let z = runtime.spawn[1];
+        let requested = GlobalPosition::new([x, 0., z])?;
+        let mut p = runtime.patch(requested)?.try_spawn(x, z)?.metres();
+        p[1] += f64::from(crate::world::PAWN_Y);
+        GlobalPosition::new(p)
+    }
+    /// Stored body centres are never trusted without prepared world collision.
+    /// Controller velocity, held input, target and casts are deliberately fresh.
+    pub fn validate_restored_player(&self, position: GlobalPosition) -> crate::Result<()> {
+        let runtime = self
+            .procedural
+            .as_ref()
+            .ok_or("Restored admission requires streamed terrain")?;
+        let patch = runtime
+            .patch(position)
+            .ok_or("Restored admission collision is not prepared")?;
+        if !patch.covers(position, None) {
+            return Err("Restored footprint lacks finite terrain coverage".into());
+        }
+        let mut feet = position.metres();
+        feet[1] -= f64::from(crate::world::PAWN_Y);
+        let local = patch
+            .frame
+            .to_local(GlobalPosition::new(feet).ok_or("Invalid restored feet")?)
+            .ok_or("Restored pose outside bounded collision frame")?;
+        crate::kinematic::validate_pose(&patch.scene, local, false)?;
+        if crate::kinematic::support_below(&patch.scene, local).is_none() {
+            return Err("Restored pose has no bounded landing support".into());
+        }
+        Ok(())
+    }
+    pub fn join_restored(&mut self, position: GlobalPosition) -> Option<u64> {
+        self.validate_restored_player(position).ok()?;
+        self.join_inner(Some(position))
+    }
     pub fn join(&mut self) -> Option<u64> {
+        self.join_inner(None)
+    }
+    fn join_inner(&mut self, restored: Option<GlobalPosition>) -> Option<u64> {
         if self.players.len() >= MAX_PLAYERS {
             return None;
         }
@@ -537,8 +645,10 @@ impl World {
         let id = self.next_id;
         let x = ((id - 1) % 4) as f32 * 2.;
         let spawn = if let Some(runtime) = &self.procedural {
-            let x = runtime.spawn[0] + f64::from(x);
-            let z = runtime.spawn[1];
+            let [x, _, z] = restored.map_or(
+                [runtime.spawn[0] + f64::from(x), 0., runtime.spawn[1]],
+                GlobalPosition::metres,
+            );
             let patch = runtime.patch(GlobalPosition::new([x, 0., z]).unwrap())?;
             let p = patch.try_spawn(x, z)?.metres();
             // Spawn storage is unused for this backend; global truth is assigned below.
@@ -568,6 +678,7 @@ impl World {
                     .to_global(LocalPosition::new(spawn).unwrap())
                     .expect("Validated world anchor"),
                 applied_sequence: 0,
+                selected_target: None,
                 commands: self
                     .predicted
                     .then(|| crate::commands::Timeline::new(1, self.rate, self.tick).unwrap()),
@@ -582,7 +693,9 @@ impl World {
                     .expect("Validated capsule spawn"),
             },
         );
-        if let Some(runtime) = &self.procedural {
+        if let Some(position) = restored {
+            self.players.get_mut(&id).unwrap().position = position;
+        } else if let Some(runtime) = &self.procedural {
             let x = runtime.spawn[0] + f64::from(x);
             let z = runtime.spawn[1];
             let mut p = runtime
@@ -594,8 +707,107 @@ impl World {
         }
         Some(id)
     }
+    /// Trusted developer placement on prepared graybox geometry, before admission.
+    /// No collision object is constructed for a targetable entity.
+    pub fn spawn_development_target(&mut self, xz: [f64; 2]) -> crate::Result<EntityKey> {
+        if self.tick != 0
+            || !self.players.is_empty()
+            || self.combat.is_some()
+            || self.targets.len() >= crate::targeting::MAX_TARGETS
+        {
+            return Err(
+                "Targets require inactive graybox world and available target budget".into(),
+            );
+        }
+        let runtime = self
+            .procedural
+            .as_ref()
+            .ok_or("Development targets require graybox terrain")?;
+        let focus = GlobalPosition::new([xz[0], 0., xz[1]]).ok_or("Invalid target position")?;
+        if crate::procedural::owner(focus).is_none() {
+            return Err("Target outside graybox world".into());
+        }
+        let patch = runtime
+            .patch(focus)
+            .ok_or("Target collision is not prepared")?;
+        let mut position = patch
+            .try_spawn(xz[0], xz[1])
+            .ok_or("Target has no supported placement")?
+            .metres();
+        position[1] += f64::from(crate::world::PAWN_Y);
+        let position = GlobalPosition::new(position).ok_or("Invalid supported target position")?;
+        let next_id = self
+            .next_id
+            .checked_add(1)
+            .ok_or("Entity identity exhausted")?;
+        let key = EntityKey {
+            epoch: self.epoch,
+            entity: EntityId::new(next_id).unwrap(),
+        };
+        self.next_id = next_id;
+        self.targeting_enabled = true;
+        self.targets
+            .insert(next_id, crate::targeting::Target { key, position });
+        Ok(key)
+    }
+    pub fn targeting_enabled(&self) -> bool {
+        self.targeting_enabled
+    }
+    /// The caller binds actor_id from its admitted session, never from payload data.
+    pub fn select_target(&mut self, actor_id: u64, target: Option<EntityKey>) -> bool {
+        let Some(actor) = self.players.get_mut(&actor_id) else {
+            return false;
+        };
+        if let Some(key) = target {
+            let Some(entity) = self.targets.get(&key.entity.value()) else {
+                return false;
+            };
+            if key != entity.key || !crate::targeting::relevant(actor.position, entity.position) {
+                return false;
+            }
+        }
+        actor.selected_target = target;
+        true
+    }
+    pub fn remove_development_target(&mut self, key: EntityKey) -> bool {
+        let removed = self.retire_target(key);
+        let forgotten = self.combat.as_mut().is_some_and(|c| c.forget(key));
+        removed || forgotten
+    }
+    fn retire_target(&mut self, key: EntityKey) -> bool {
+        if self
+            .targets
+            .get(&key.entity.value())
+            .is_none_or(|target| target.key != key)
+        {
+            return false;
+        }
+        self.targets.remove(&key.entity.value());
+        for actor in self.players.values_mut() {
+            if actor.selected_target == Some(key) {
+                actor.selected_target = None;
+            }
+        }
+        true
+    }
+    /// Server-owner view only. Network/client adoption is a separate profile.
+    pub fn targeting_snapshot(&self, actor_id: u64) -> Option<crate::targeting::Snapshot> {
+        let actor = self.players.get(&actor_id)?;
+        Some(crate::targeting::Snapshot {
+            selected: actor.selected_target,
+            targets: self
+                .targets
+                .values()
+                .filter(|target| crate::targeting::relevant(actor.position, target.position))
+                .copied()
+                .collect(),
+        })
+    }
     pub fn leave(&mut self, id: u64) {
         self.players.remove(&id);
+        if let Some(combat) = &mut self.combat {
+            combat.leave(id);
+        }
     }
     pub fn input(&mut self, id: u64, input: Input) -> bool {
         if self.predicted {
@@ -617,6 +829,31 @@ impl World {
         true
     }
     pub fn step(&mut self) -> Snapshot {
+        let before = self.combat.as_ref().map(|_| {
+            self.players
+                .iter()
+                .map(|(&id, a)| (id, a.position))
+                .collect()
+        });
+        let snapshot = self.step_movement();
+        if let Some(before) = before {
+            self.advance_combat(before);
+        }
+        if !self.targets.is_empty() {
+            for actor in self.players.values_mut() {
+                if actor.selected_target.is_some_and(|key| {
+                    self.targets.get(&key.entity.value()).is_none_or(|target| {
+                        target.key != key
+                            || !crate::targeting::relevant(actor.position, target.position)
+                    })
+                }) {
+                    actor.selected_target = None;
+                }
+            }
+        }
+        snapshot
+    }
+    fn step_movement(&mut self) -> Snapshot {
         self.tick += 1;
         // Preserve the old 10/30 second timeout at every configured rate.
         let timeout = self

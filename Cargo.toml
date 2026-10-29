@@ -1,5 +1,5 @@
 [workspace]
-members = ["apps/client", "apps/server", "crates/core", "crates/network"]
+members = ["apps/client", "apps/server", "crates/core", "crates/network", "crates/persistence", "crates/auth"]
 resolver = "3"
 
 [workspace.package]
@@ -18,6 +18,8 @@ renet_netcode = "=2.0.0"
 rcgen = { version = "0.14", default-features = false, features = ["crypto", "ring"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "sync", "net", "signal"] }
 theia-network = { path = "crates/network" }
+theia-persistence = { path = "crates/persistence" }
+theia-auth = { path = "crates/auth" }
 theia-core = { path = "crates/core" }
 
 [profile.release]

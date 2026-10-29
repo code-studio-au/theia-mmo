@@ -2,6 +2,7 @@
 pub mod chunk_world;
 pub mod chunks;
 pub mod client;
+pub mod combat_wire;
 pub mod commands;
 pub mod content;
 pub mod kinematic;
@@ -18,6 +19,8 @@ pub mod server;
 pub mod shared_images;
 pub mod simulation;
 mod static_shapes;
+pub mod targeting;
+pub mod targeting_wire;
 pub mod terrain;
 pub mod tls;
 pub mod wire;
