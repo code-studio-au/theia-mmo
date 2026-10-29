@@ -10,4 +10,4 @@ Read these section labels together with later dated amendments in [[Sources/THEI
 
 [[Lore and World]] · [[Chronicles and History]] · [[Welcome|Home]]
 
-[[Humans]] · [[Dwarves]] · [[Aelari]] · [[Korrath]] · [[Orcs]] · [[Halflings]] · [[Vaelari]] · [[Vorrath]]
+[[Humans]] · [[Dwarves]] · [[Aelari]] · [[Korrath]] · [[Orcs]] · [[Halflings]] · [[Vaelari]] · [[Vorrath]] · [[Kel'vari]]

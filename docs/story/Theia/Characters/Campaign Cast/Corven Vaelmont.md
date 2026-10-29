@@ -25,4 +25,4 @@ Source: [[Sources/THEIA_HUMAN_CAST_AND_PLACES#Approved recurring humans: complet
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
 
-[[Atlas/Places/Tidehold|Tidehold]] · [[Lore/Kel'vari|Kel'vari]]
+[[Atlas/Places/Tidehold|Tidehold]] · [[Lore/Peoples/Kel'vari|Kel'vari]]

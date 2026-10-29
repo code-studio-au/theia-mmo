@@ -6,26 +6,26 @@
 
 ## 1. The core narrative principle
 
-Players begin as members of Covenant or Dominion, not as initiated members of the Guardians and not as witnesses to the omniscient Chronicle. Their immediate concerns are local obligations, political rivalries, the ongoing alliance war and unusual magical events whose origins are unknown.
+Players begin as members of [[Covenant]] or [[Dominion]], not as initiated members of the [[The Guardians|Guardians]] and not as witnesses to the omniscient Chronicle. Their immediate concerns are local obligations, political rivalries, the ongoing alliance war and unusual magical events whose origins are unknown.
 
 The story must not give the player knowledge merely because it appears in the Chronicle. The ancient truth is distributed unevenly among institutions and individuals. A recovered artifact may be authentic without its meaning being understood. An accurate historical record may be dismissed because it contradicts an accepted tradition. A Guardian may possess one part of the truth while another Guardian holds an incompatible fragment.
 
-The **Shattered Delegation** is remembered publicly as evidence of enemy treachery, with Covenant and Dominion holding conflicting accounts. Its orchestration by the Unmade is historical truth, not common knowledge. The orc leader's personal loss and the death of the human ruler's trusted adviser make the event a living grievance, not a remote archival puzzle.
+The **[[Shattered Delegation]]** is remembered publicly as evidence of enemy treachery, with Covenant and Dominion holding conflicting accounts. Its orchestration by the [[The Unmade|Unmade]] is historical truth, not common knowledge. The orc leader's personal loss and the death of the human ruler's trusted adviser make the event a living grievance, not a remote archival puzzle.
 
-The **magical awakening** is genuine. The resonance network built by the Conclave has changed the distribution and accessibility of existing primordial energy, producing both beneficial developments and instability. Nhal has not created magic and does not control every newly gifted person. Players should encounter legitimate healing, craft and defensive improvements as well as dangerous anomalies.
+The **magical awakening** is genuine. The resonance network built by the Conclave has changed the distribution and accessibility of existing primordial energy, producing both beneficial developments and instability. [[Nhal]] has not created magic and does not control every newly gifted person. Players should encounter legitimate healing, craft and defensive improvements as well as dangerous anomalies.
 
 ## 2. Knowledge at the beginning of play
 
 | Group | Likely knowledge at launch | Important ignorance or misconception |
 | --- | --- | --- |
-| Ordinary Covenant and Dominion citizens | The war, their people's history, public accounts of the Shattered Delegation, reports of unusual magical events | No reliable knowledge of Nhal, the Corrupted Conclave, the original breach or the true cause of the awakening |
+| Ordinary Covenant and Dominion citizens | The war, their people's history, public accounts of the Shattered Delegation, reports of unusual magical events | No reliable knowledge of Nhal, the [[The Corrupted Conclave\|Corrupted Conclave]], the original breach or the true cause of the awakening |
 | Local scholars and magical practitioners | The six disciplines, modern magical theory, inconsistent readings and unexpected activity in ancient works | No accepted theory linking distant anomalies to a distributed Anchor network |
 | Alliance rulers and militaries | Strategic implications of new magic, enemy incursions, valuable artifacts, suspicious supply activity | Usually attribute unexplained incidents to rival states, criminals or failed experiments; no verified common Unmade conspiracy |
-| Ordinary Guardian field cells | A duty to protect dangerous knowledge, fragments of First Anchor history, some Unmade patterns, local warning signs | Their records are incomplete; many do not know Kel'vari enclaves survive or understand the full network |
-| Select Guardian custodians and Oth'varen | Much deeper First Anchor evidence, Oth'varen's firsthand testimony, the five transformed scholars, the Shroud's peril | Not automatically a complete understanding of modern Anchor engineering or a proven inversion procedure |
+| Ordinary Guardian field cells | A duty to protect dangerous knowledge, fragments of First Anchor history, some Unmade patterns, local warning signs | Their records are incomplete; many do not know [[Kel'vari]] enclaves survive or understand the full network |
+| Select Guardian custodians and [[Oth'varen]] | Much deeper First Anchor evidence, Oth'varen's firsthand testimony, the five transformed scholars, the Shroud's peril | Not automatically a complete understanding of modern Anchor engineering or a proven inversion procedure |
 | Peripheral Unmade cells | Local assignments, forbidden research, selected contacts and expectations of a hidden patron | Many lack the full network plan or direct communication with Nhal |
 | Corrupted Conclave | The five founders' history, generational development of Minor, Regional and Major Anchors, restoration of selective contact with Nhal | Still cannot reproduce the First Anchor completely or act as though Nhal is free |
-| Nhal | Its own purpose and the selective communications now possible through the network | Still constrained by the Veil and The Binding; its influence is not unlimited |
+| Nhal | Its own purpose and the selective communications now possible through the network | Still constrained by the Veil and [[The Binding]]; its influence is not unlimited |
 
 These are **recommended starting knowledge boundaries**, not a claim that every individual within a group possesses identical information. Exceptional witnesses and secret custodians may know more.
 
@@ -93,7 +93,7 @@ The player gradually learns that the network's cumulative threshold caused the m
 
 **Player learns:** the First Anchor is the original breach; the Shroud contains it; the modern network strains that containment; Nhal is an intelligence beyond the Veil; the Conclave serves it.
 
-**Player does not automatically learn:** the full primordial history of Aethyr, Keeper's deliberate concealment of The Binding's permanent cost, or a guaranteed way to free the Seven.
+**Player does not automatically learn:** the full primordial history of [[Aethyr]], Keeper's deliberate concealment of The Binding's permanent cost, or a guaranteed way to free the Seven.
 
 ### Phase VII — Resonance inversion as a discovery
 
@@ -131,7 +131,7 @@ The Guardians can aid individuals from both sides through separate cells. They a
 
 **Oth'varen:** Begin with a trusted but enigmatic expert or distant source of evidence, subject to later character design. His knowledge of the First Anchor is firsthand; his transformed nature and struggle with corruption are not public information. His identity as the sixth scholar should be a significant revelation, not a character introduction.
 
-**The five Conclave founders:** Early appearances may be indirect through agents, doctrine, recovered work or unusual magical signatures. After formal identification, use both their personal names and titles: **Vaer'uun, the First Voice; Thes'var, the Architect; Su'vareth, the Veiled Hand; Oma'vira, the Harbinger; Khor'vun, the Warden.** Their ancient personal names need not be publicly known at the start.
+**The five Conclave founders:** Early appearances may be indirect through agents, doctrine, recovered work or unusual magical signatures. After formal identification, use both their personal names and titles: **[[Vaer'uun]], the First Voice; [[Thes'var]], the Architect; [[Su'vareth]], the Veiled Hand; [[Oma'vira]], the Harbinger; [[Khor'vun]], the Warden.** Their ancient personal names need not be publicly known at the start.
 
 **Modern Guardians:** Different cells should not all possess identical archives or interpretations. The player can earn trust without being handed every answer. The conflict between secrecy and disclosure should be an enduring internal tension.
 
@@ -139,7 +139,7 @@ The Guardians can aid individuals from both sides through separate cells. They a
 
 ## 7. Proposed launch endpoint and later campaigns
 
-A launch finale can involve a consequential victory against a senior Unmade operation and a dangerous modern Anchor without killing Nhal or dismantling the whole network. The working raid concept **The Severed Chain** concerns severing an Anchor's supports. Whether inversion becomes a tested option during the launch campaign or a later expansion remains open.
+A launch finale can involve a consequential victory against a senior Unmade operation and a dangerous modern Anchor without killing Nhal or dismantling the whole network. The working raid concept **[[The Severed Chain]]** concerns severing an Anchor's supports. Whether inversion becomes a tested option during the launch campaign or a later expansion remains open.
 
 The **Shrouded Lands** remain a later campaign destination. Restored larger Passage connections, separate Covenant and Dominion entry bases, Kel'vari enclaves and contested ancient sites belong to future development, not events already completed at launch.
 
@@ -167,7 +167,7 @@ The recommended next creative task is to define the **opening knowledge and firs
 
 The human level 1–20 racial arc moves from local supply theft and ordinary human outlaws through suspicious royal correspondence and a justified visit to the human **racial capital** around levels 10–15. The player encounters the King and his new adviser, hears the King's sincerely held but incomplete account of the Shattered Delegation and its personal cost, then follows a misleading trail that seems to implicate Dominion. Corroborated evidence eventually connects the new adviser to the original security compromise and subsequent concealment. The player challenges him **through the King and lawful royal authority**, not by casually attacking a court official. A level-20 climax may involve an attempted arrest, escape and pursuit through a concealed route, with capture preferred as a possible outcome; exact staging, identities and final disposition remain open. The King can recognise the adviser's guilt without immediately accepting that Dominion was wholly innocent or that a primordial conspiracy exists. This provides a satisfying local conclusion and a gateway into the larger mystery, **not the complete Shattered Delegation revelation**.
 
-**Political constraint:** The human King rules the inland human kingdom, while Covenant's hereditary High Ruler belongs to a separate branch of the royal dynasty and governs from the distinct multicultural coastal alliance capital. Do not conflate these offices or capitals. The King's identity, the deceased adviser's name, the new adviser's name, the royal investigator and marshal are not yet approved.
+**Political constraint:** The human King rules the inland human kingdom, while Covenant's hereditary High Ruler belongs to a separate branch of the royal dynasty and governs from the distinct multicultural coastal alliance capital. Do not conflate these offices or capitals. King Aldren Vaelmont, Lord Edric Halewyn, Lord Cassian Veyr, Mara Thorne and Garrick Ashford are creator-approved in the royal court character record below. Elara Fenwick and Covenant High Ruler Corven Vaelmont are also approved; precise quest staging and unapproved biographical details remain open.
 
 **Later racial questlines:** Each people retains continuing local and political stories after the shared campaign opens. Covenant and Dominion remain hostile; characters can discover different pieces of the Unmade conspiracy without a public cross-alliance partnership. The eight other opening designs, their precise local antagonists and their relation (if any) to the Unmade are still to be developed.
 
@@ -199,18 +199,18 @@ Travel should advance character relationships, cultural understanding and meanin
 
 ## Approved human royal court characters (15 October 2026)
 
-**King Aldren Vaelmont** rules the human kingdom, separately from Covenant's High Ruler. His grief over the Shattered Delegation and the death of his trusted counsellor has deepened his distrust of Dominion, though he remains a capable ruler who once supported negotiations.
+**[[King Aldren Vaelmont]]** rules the human kingdom, separately from Covenant's High Ruler. His grief over the Shattered Delegation and the death of his trusted counsellor has deepened his distrust of Dominion, though he remains a capable ruler who once supported negotiations.
 
-**Lord Edric Halewyn**, the former First Royal Counsellor, was Aldren's trusted confidant and a pragmatic advocate of peace. He died in the Shattered Delegation. His correspondence and former colleagues inform the later investigation.
+**[[Lord Edric Halewyn]]**, the former First Royal Counsellor, was Aldren's trusted confidant and a pragmatic advocate of peace. He died in the Shattered Delegation. His correspondence and former colleagues inform the later investigation.
 
-**Lord Cassian Veyr**, the current First Royal Counsellor, is a competent administrator who knowingly helped intermediaries connected to the Veiled Hand compromise the delegation to eliminate Edric and gain his office. He did not know the full Unmade plan. His contacts retain leverage over him, and he initially appears helpful to the player.
+**[[Lord Cassian Veyr]]**, the current First Royal Counsellor, is a competent administrator who knowingly helped intermediaries connected to the Veiled Hand compromise the delegation to eliminate Edric and gain his office. He did not know the full Unmade plan. His contacts retain leverage over him, and he initially appears helpful to the player.
 
-**Mara Thorne** is a methodical senior Royal Investigator who verifies evidence and becomes the player's recurring ally. The human Act I investigation culminates around level 20 in a challenge to Cassian through the King's lawful authority, without revealing the complete conspiracy or ending the war.
+**[[Mara Thorne]]** is a methodical senior Royal Investigator who verifies evidence and becomes the player's recurring ally. The human Act I investigation culminates around level 20 in a challenge to Cassian through the King's lawful authority, without revealing the complete conspiracy or ending the war.
 
-**Garrick Ashford**, the human Royal Marshal, is a veteran career commander whose loyalty is to the kingdom and the soldiers he leads. He opposed the Shattered Delegation negotiations on strategic grounds but had no involvement in the attack. He respects Edric's integrity, mistrusts Cassian's selective use of military intelligence, and becomes a recurring military contact for overseas expeditions and later Shroud operations.
+**[[Garrick Ashford]]**, the human Royal Marshal, is a veteran career commander whose loyalty is to the kingdom and the soldiers he leads. He opposed the Shattered Delegation negotiations on strategic grounds but had no involvement in the attack. He respects Edric's integrity, mistrusts Cassian's selective use of military intelligence, and becomes a recurring military contact for overseas expeditions and later Shroud operations.
 
-**Elara Fenwick**, a respected rural militia captain and Regional Warden, is the human player's first major mentor. She knows the starting district's people and problems, guides the player through local responsibilities and recognises when recovered royal correspondence requires Mara's investigation. She continues to represent the effect of larger events on the player's home region throughout the campaign.
+**[[Elara Fenwick]]**, a respected rural militia captain and Regional Warden, is the human player's first major mentor. She knows the starting district's people and problems, guides the player through local responsibilities and recognises when recovered royal correspondence requires Mara's investigation. She continues to represent the effect of larger events on the player's home region throughout the campaign.
 
-**Corven Vaelmont** is Covenant's hereditary **High Ruler**, from a separate branch of the human royal dynasty and a distant relation of Aldren. He governs the four-sovereign alliance from its multicultural coastal capital, not the human inland capital. A capable negotiator, he balances human, dwarven, Aelari and Korrath obligations. His caution may delay action. He becomes important in the alliance's overseas war, Shroud expedition and response to the Anchor network. His stronger support for the original peace negotiations than Aldren's remains a possible relationship detail, not a fixed event.
+**[[Corven Vaelmont]]** is Covenant's hereditary **High Ruler**, from a separate branch of the human royal dynasty and a distant relation of Aldren. He governs the four-sovereign alliance from its multicultural coastal capital, not the human inland capital. A capable negotiator, he balances human, dwarven, [[Aelari]] and [[Korrath]] obligations. His caution may delay action. He becomes important in the alliance's overseas war, Shroud expedition and response to the Anchor network. His stronger support for the original peace negotiations than Aldren's remains a possible relationship detail, not a fixed event.
 
-These three character names, roles, histories and broad arcs are creator-approved. Exact quest staging, the royal family's other members and succession arrangements remain open.
+These seven character names, roles, histories and broad arcs are creator-approved. Exact quest staging, the royal family's other members and succession arrangements remain open.

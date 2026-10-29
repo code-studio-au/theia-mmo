@@ -12,7 +12,10 @@ These are independent Kel'vari enclaves, not a single kingdom or the entire surv
 
 ![[Sources/THEIA_WORLD_BIBLE#2026-10-13 creator LOCK — Kel'vari federation and authorised First Anchor project]]
 
-[[Kel'vari]] · [[The Seventh]]
+[[Kel'vari]]
 
 [[Atlas]] · [[Welcome|Home]]
 
+## Related notes
+
+[[Sel'ora]] — proposed campaign archive custodian; Needs Review.

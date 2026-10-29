@@ -10,6 +10,10 @@ Alliance: [[Dominion]].
 
 Warrior-created and worshipping; confederation of **Great Clans** (never Great Houses); postwar grassland capital.
 
+## Notable characters
+
+- [[Captain Rukhan Graal]] — military officer defending a Dominion coast; Needs Review.
+
 ## Broader context
 ![[Sources/THEIA_WORLD_BIBLE#6. Playable races, allegiances and governments [CONFIRMED]]]
 
@@ -17,3 +21,6 @@ Warrior-created and worshipping; confederation of **Great Clans** (never Great H
 
 [[Peoples and Allegiances]] · [[Welcome|Home]]
 
+## Related notes
+
+[[The Warrior]]

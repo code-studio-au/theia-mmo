@@ -18,3 +18,7 @@ Represents the dwarf commission in this draft; respects hold autonomy. This does
 Source: [[Sources/THEIA_HUMAN_CAST_AND_PLACES#Allied and Kel'vari cast|Allied and Kel'vari cast]].
 
 [[Characters]] · [[Human Campaign]]
+
+## Related notes
+
+[[Dwarves]]

@@ -10,5 +10,20 @@ This reading page includes the full relevant source section; shared material may
 
 ![[Sources/THEIA_WORLD_BIBLE#2026-10-13 creator LOCK — The Corrupted Conclave and five leadership roles]]
 
-[[Lore and World]] · [[Welcome|Home]]
+## Founding scholars
 
+- [[Vaer'uun]] — First Voice.
+- [[Thes'var]] — Architect.
+- [[Su'vareth]] — Veiled Hand.
+- [[Oma'vira]] — Harbinger.
+- [[Khor'vun]] — Warden.
+
+The five are [[Kel'vari]] scholars who knowingly redirected the First Anchor project and were deliberately transformed by [[Nhal]]. Their former colleague [[Oth'varen]] resisted Nhal's attempt to claim him.
+
+Source: [[Sources/THEIA_WORLD_BIBLE#2026-10-13 creator LOCK — Kel'vari names and original scholarly status|Names and original scholarly status]].
+
+## Related institutions
+
+[[The Unmade]] · [[The Guardians]]
+
+[[Lore and World]] · [[Welcome|Home]]

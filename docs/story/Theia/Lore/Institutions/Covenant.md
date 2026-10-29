@@ -12,3 +12,6 @@ This reading page includes the full relevant source section; shared material may
 
 [[Lore and World]] · [[Welcome|Home]]
 
+## Related notes
+
+[[Humans]] · [[Dwarves]] · [[Aelari]] · [[Korrath]] · [[Corven Vaelmont]] · [[Dominion]]

@@ -31,4 +31,4 @@ Source: [[Sources/THEIA_HUMAN_QUEST_REGISTER#Act IV — Echoes of the Sundering|
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
 
-[[Characters/Campaign Cast/Aru'ven|Aru'ven]] · [[Lore/Kel'vari|Kel'vari]]
+[[Characters/Campaign Cast/Aru'ven|Aru'ven]] · [[Lore/Peoples/Kel'vari|Kel'vari]]

@@ -4,9 +4,9 @@
 
 ## Narrative premise
 
-The player begins as an ordinary human adventurer in an agricultural district of the inland human kingdom, far from the royal court. The continuing war with Dominion affects taxes, recruitment, transport and families, but the area is not an active battlefield. The player's first tasks concern local people and credible local threats, not a prophecy or an obvious Unmade conspiracy.
+The player begins as an ordinary human adventurer in an agricultural district of the inland human kingdom, far from the royal court. The continuing war with [[Dominion]] affects taxes, recruitment, transport and families, but the area is not an active battlefield. The player's first tasks concern local people and credible local threats, not a prophecy or an obvious [[The Unmade|Unmade]] conspiracy.
 
-**Captain Elara Fenwick**, the district's respected militia commander, becomes the player's first mentor. As the player proves reliable, a series of ordinary thefts reveals a supply-diversion scheme reaching into royal administration. That discovery carries the player to the human racial capital, where **Mara Thorne** investigates and **King Aldren Vaelmont** recounts his sincerely held understanding of the Shattered Delegation. The helpful **Lord Cassian Veyr**, the King's new First Royal Counsellor, secretly attempts to redirect the inquiry because he helped compromise the delegation to arrange the death of **Lord Edric Halewyn**, his predecessor.
+**Captain [[Elara Fenwick]]**, the district's respected militia commander, becomes the player's first mentor. As the player proves reliable, a series of ordinary thefts reveals a supply-diversion scheme reaching into royal administration. That discovery carries the player to the human racial capital, where **[[Mara Thorne]]** investigates and **[[King Aldren Vaelmont]]** recounts his sincerely held understanding of the [[Shattered Delegation]]. The helpful **[[Lord Cassian Veyr]]**, the King's new First Royal Counsellor, secretly attempts to redirect the inquiry because he helped compromise the delegation to arrange the death of **[[Lord Edric Halewyn]]**, his predecessor.
 
 The Act I climax exposes Cassian through corroborated evidence and the King's lawful authority. It does **not** reveal the full Unmade conspiracy, Nhal's identity, or definitively absolve Dominion.
 
@@ -56,7 +56,7 @@ At the deepest chamber Cassian discovers his contacts intend to silence him, not
 
 ### Aftermath
 
-Aldren confronts the betrayal of a trusted adviser and orders further inquiry. Cassian's guilt does not prove Dominion's innocence in the Shattered Delegation, end the war or reveal Nhal. The player receives a formal commission to continue helping Mara, naturally leading into Act II.
+Aldren confronts the betrayal of a trusted adviser and orders further inquiry. Cassian's guilt does not prove Dominion's innocence in the Shattered Delegation, end the war or reveal [[Nhal]]. The player receives a formal commission to continue helping Mara, naturally leading into Act II.
 
 ## Character development
 
@@ -65,11 +65,11 @@ Aldren confronts the betrayal of a trusted adviser and orders further inquiry. C
 - **King Aldren Vaelmont:** From grieving ruler convinced of Dominion treachery to a monarch forced to recognise betrayal within his own court.
 - **Lord Cassian Veyr:** From competent and seemingly helpful adviser to exposed collaborator, not an omniscient cult leader.
 - **Lord Edric Halewyn:** Present through records, former colleagues and his legacy of principled counsel.
-- **Garrick Ashford:** A possible early suspect because he opposed peace, but innocent of the attack and potentially a military ally after the evidence is established.
+- **[[Garrick Ashford]]:** A possible early suspect because he opposed peace, but innocent of the attack and potentially a military ally after the evidence is established.
 
 ## Continuation through Acts II–V
 
-**Act II:** Mara traces Cassian's intermediaries while Garrick introduces overseas military operations. **Act III:** Evidence suggests a conspiracy extending beyond the human kingdom, complicating relations with Covenant institutions. **Act IV:** Aldren and High Ruler Corven Vaelmont confront different responsibilities in preparing for the Shroud. **Act V:** The Anchor network's true danger challenges assumptions about the war and what the kingdom has failed to recognise.
+**Act II:** Mara traces Cassian's intermediaries while Garrick introduces overseas military operations. **Act III:** Evidence suggests a conspiracy extending beyond the human kingdom, complicating relations with [[Covenant]] institutions. **Act IV:** Aldren and High Ruler [[Corven Vaelmont]] confront different responsibilities in preparing for the Shroud. **Act V:** The Anchor network's true danger challenges assumptions about the war and what the kingdom has failed to recognise.
 
 ## Guardrails
 

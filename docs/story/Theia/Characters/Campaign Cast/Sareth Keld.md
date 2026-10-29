@@ -10,7 +10,7 @@ up: "[[Characters]]"
 > This campaign entry is Needs Review. Established facts explicitly identified by the source retain their existing status.
 
 ## Public role and location
-Human Unmade defensive commander at the Chainworks
+Human [[The Unmade|Unmade]] defensive commander at the Chainworks
 
 ## Knowledge and motivation
 Recruited outside the Shroud; arrived through limited covert transit; follows Khor'vun's doctrine

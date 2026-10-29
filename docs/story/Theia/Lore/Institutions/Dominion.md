@@ -12,3 +12,6 @@ This reading page includes the full relevant source section; shared material may
 
 [[Lore and World]] · [[Welcome|Home]]
 
+## Related notes
+
+[[Orcs]] · [[Halflings]] · [[Vaelari]] · [[Vorrath]] · [[First Archon Selrion]] · [[Covenant]]

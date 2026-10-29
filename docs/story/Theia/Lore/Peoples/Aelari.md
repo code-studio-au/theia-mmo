@@ -10,6 +10,11 @@ Alliance: [[Covenant]].
 
 Guardian-created elves, Guardian-worshipping; woodland monarchy, postwar primeval forest capital.
 
+## Notable characters
+
+- [[Queen Seralyth]] — approved Aelari ruler; proposed campaign developments remain Needs Review.
+- [[Caelith Rowan]] · [[Irielle Mossward]] — additional campaign cast; see their notes for approval scope.
+
 ## Broader context
 ![[Sources/THEIA_WORLD_BIBLE#6. Playable races, allegiances and governments [CONFIRMED]]]
 
@@ -17,3 +22,6 @@ Guardian-created elves, Guardian-worshipping; woodland monarchy, postwar primeva
 
 [[Peoples and Allegiances]] · [[Welcome|Home]]
 
+## Related notes
+
+[[The Guardian]]

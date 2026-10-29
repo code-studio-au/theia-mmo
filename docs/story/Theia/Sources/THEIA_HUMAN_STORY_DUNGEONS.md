@@ -14,11 +14,11 @@ Finite NPC reserves and task boundaries matter. Specialist actions are distinct 
 
 ## Act I — The Hidden Passage
 
-**Entry:** H1-17 after Aldren's lawful detention order. **Site:** disused storage and transport passages below an administrative complex near Valecrown. **Allies:** Mara, a small royal guard detail. **Principal opponents:** human smugglers, cleanup operatives and Varric Sorn. **Story goal:** capture Cassian alive and preserve the route to his intermediaries.
+**Entry:** H1-17 after Aldren's lawful detention order. **Site:** disused storage and transport passages below an administrative complex near [[Valecrown]]. **Allies:** Mara, a small royal guard detail. **Principal opponents:** human smugglers, cleanup operatives and [[Varric Sorn]]. **Story goal:** capture Cassian alive and preserve the route to his intermediaries.
 
 1. **The abandoned loading room.** The player secures the entry while Mara checks a registry case and guards hold the already open retreat. Smugglers fight to protect goods and escape, not because every participant knows the ancient cult. An optional surrender interaction adds testimony but never the only clue.
 2. **The witness alcove.** The player finds Cassian's frightened courier and checks a ledger copy against the route mark. The apparent time pressure resolves as a checkpointed scene. Mara escorts the courier to a safe existing side passage; an accompanying guard stays available to the player.
-3. **The cleanup station.** Sorn's team burns disposable copies while a dispatch duplicate sits in a protected lockbox. The player interrupts a courier, secures the box and stops Sorn's escape. The antagonist fights with disciplined hired guards, without revealing a Conclave emblem or Nhal monologue.
+3. **The cleanup station.** Sorn's team burns disposable copies while a dispatch duplicate sits in a protected lockbox. The player interrupts a courier, secures the box and stops Sorn's escape. The antagonist fights with disciplined hired guards, without revealing a Conclave emblem or [[Nhal]] monologue.
 4. **The man they will not rescue.** Cassian discovers the cleanup team intends to silence him. Sorn is defeated and detained. The player can protect Cassian without excusing him; a brief chase through an existing passage ends in surrender to Mara and the royal guards. Essential testimony can be taken again after a retry.
 
 **Player-facing scene:** Cassian says, “They promised one death.” Mara answers, “You bought it. The promise does not make you innocent.” The player chooses whether to ask about his ambition, the security leak or the surviving contacts; all three answers remain available in the case summary.
@@ -27,7 +27,7 @@ Finite NPC reserves and task boundaries matter. Specialist actions are distinct 
 
 ## Act II — The Silent Signal
 
-**Entry:** H2-15 after a documented cutoff plan. **Site:** an abandoned Dominion coastal signal house adapted by a covert cell. **Allies:** Sera and Brynja; limited written guidance from the Grey Surveyor. **Principal opponent:** Halvek Dorn. **Story goal:** disable a Minor Resonator and recover its observed design.
+**Entry:** H2-15 after a documented cutoff plan. **Site:** an abandoned [[Dominion]] coastal signal house adapted by a covert cell. **Allies:** Sera and Brynja; limited written guidance from the Grey Surveyor. **Principal opponent:** [[Halvek Dorn]]. **Story goal:** disable a Minor Resonator and recover its observed design.
 
 1. **A building with more than one occupant.** The player secures the adapted service passage. Ordinary cave fauna in side spaces are not all corrupted. A clear warning marks the route into the active installation. Brynja checks that the mechanical isolator matches the inspected housing.
 2. **Separate the controls.** The player moves a physical selector to isolate the local feed and defends Brynja while she locks its housing. Sera handles a separate access point. These are sequential, independent tasks; the player is not asked to stand on three pressure plates simultaneously.
@@ -36,11 +36,11 @@ Finite NPC reserves and task boundaries matter. Specialist actions are distinct 
 
 **Player-facing scene:** Brynja says, “I can tell you what stopped. I cannot yet tell you what else it was reaching.” Sera thanks the player for protecting both people and evidence without disclosing every Guardian secret.
 
-**Exit state:** Halvek detained, device disabled, evidence copied, feasible captives secured. The surrounding Dominion military still opposes Covenant. The independent garrison defence in H2-16 supplies the act's military consequence through an NPC story route if no live event is active.
+**Exit state:** Halvek detained, device disabled, evidence copied, feasible captives secured. The surrounding Dominion military still opposes [[Covenant]]. The independent garrison defence in H2-16 supplies the act's military consequence through an NPC story route if no live event is active.
 
 ## Act III — The Broken Measure
 
-**Entry:** H3-16 after the player interrupts the cell's incomplete destruction procedure. **Site:** old freight works below the Korrath expedition approach, repurposed around a Regional Anchor. **Allies:** Sera, Halden's recovery team and the Grey Surveyor. **Principal opponents:** a willing local Unmade cell and conditioned defenders. **Story goal:** save the exposed team and isolate the linked installation safely.
+**Entry:** H3-16 after the player interrupts the cell's incomplete destruction procedure. **Site:** old freight works below the [[Korrath]] expedition approach, repurposed around a Regional Anchor. **Allies:** Sera, Halden's recovery team and the Grey Surveyor. **Principal opponents:** a willing local [[The Unmade|Unmade]] cell and conditioned defenders. **Story goal:** save the exposed team and isolate the linked installation safely.
 
 1. **The warning proved.** A surge demonstrates that removing one support while its neighbours remain connected is dangerous. The player uses a marked emergency isolator to protect the recovery team. Halden hears the omitted measurement, sees its effect and changes orders; the dispute is resolved by evidence rather than humiliating him as a fool.
 2. **Three support stations.** Each station has a readable local task: secure an access lever, recover a calibration plate, then lock an external feed. Qualified team members perform their separate observations. The player chooses the next station from the safe sequence explained in the briefing. An unsafe attempt produces a warning and recoverable local reset, not an untelegraphed campaign-ending failure.
@@ -53,7 +53,7 @@ Finite NPC reserves and task boundaries matter. Specialist actions are distinct 
 
 ## Act IV — The Witness Vault
 
-**Entry:** H4-15 after storm-coast records point to the station and separate captive exits are surveyed. **Site:** an Unmade research outpost in the outer Shroud, away from protected enclave interiors. **Allies:** Sera, Oth'varen and a limited rescue party. **Principal opponents:** Teren Malrec and local conditioned forces; Oma'vira intervenes through a prepared installation. **Story goal:** rescue accessible captives and secure independent Delegation evidence.
+**Entry:** H4-15 after storm-coast records point to the station and separate captive exits are surveyed. **Site:** an Unmade research outpost in the outer Shroud, away from protected enclave interiors. **Allies:** Sera, [[Oth'varen]] and a limited rescue party. **Principal opponents:** [[Teren Malrec]] and local conditioned forces; [[Oma'vira]] intervenes through a prepared installation. **Story goal:** rescue accessible captives and secure independent Delegation evidence.
 
 1. **The captive route.** The player secures a transit room and disables a local restraint device. Noncombatants exit through a guarded existing passage. Opposing-alliance captives, if included in later production, receive no friendly quest state or shared military command; neutral civilian survivors are the default draft population.
 2. **The copied transaction.** Sera isolates archive storage while the player fights through the defended outer workspace. Records include dates, access instructions and false-attribution material; none contains a complete divine history. A duplicate case credit survives resetting the encounter.
@@ -66,7 +66,7 @@ Finite NPC reserves and task boundaries matter. Specialist actions are distinct 
 
 ## Act V — The Severed Chain
 
-**Entry:** H5-14–H5-16, after the four allied peoples' contributions, fourth overseas expedition and isolated inversion trial. **Site:** Chainworks Major Anchor installation, outer Shroud. **Allies:** Nessa's Covenant expedition, Garrick's human contribution, Oth'varen and cleared technical staff under enclave boundary agreements. **Principal local opponents:** Voss and Sareth Keld. **Founder involvement:** Thes'var directly, Khor'vun's defensive doctrine, Vaer'uun's operational directive. **Story goal:** prevent this branch's expansion and extract the team, with a bounded procedure choice.
+**Entry:** H5-14–H5-16, after the four allied peoples' contributions, fourth overseas expedition and isolated inversion trial. **Site:** [[Chainworks]] Major Anchor installation, outer Shroud. **Allies:** Nessa's Covenant expedition, Garrick's human contribution, Oth'varen and cleared technical staff under enclave boundary agreements. **Principal local opponents:** Voss and [[Sareth Keld]]. **Founder involvement:** [[Thes'var]] directly, Khor'vun's defensive doctrine, Vaer'uun's operational directive. **Story goal:** prevent this branch's expansion and extract the team, with a bounded procedure choice.
 
 1. **Before the assault is glory.** The player evacuates coerced workers and cuts the outer courier link. Darian leads an NPC extraction detail. Aru'ven's permitted boundary stays clear. Civilian rescue is essential staging, not a loot detour after a boss kill.
 2. **The last broker.** Voss tries to destroy timing evidence at a relay station. The player secures its lodged copy, defeats her guards and captures her. Mara's chain of custody remains distinct from Garrick's military objective.

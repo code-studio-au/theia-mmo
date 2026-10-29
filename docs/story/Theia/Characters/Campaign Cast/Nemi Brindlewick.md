@@ -21,3 +21,7 @@ No friendly trading or direct assistance. Her work reveals a discrepancy because
 Source: [[Sources/THEIA_HUMAN_CAST_AND_PLACES#Dominion characters required by this human route|Dominion characters required by this human route]].
 
 [[Characters]] · [[Human Campaign]]
+
+## Related notes
+
+[[Halflings]] · [[Dominion]]

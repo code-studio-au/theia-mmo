@@ -8,7 +8,7 @@
 
 The human Act I world includes a small rural starting village, an Upper Heartlands market town and the inland human racial capital, with distinct services appropriate to settlement size. Every racial starting region must provide convenient access to basic equipment, repairs, food and drink, essential class training and introductory professions. Larger towns and capitals provide broader inventories, specialist trainers, crafting stations, storage, transport and trade. Basic services must not disappear or become inaccessible because of story phasing.
 
-Existing characters should perform useful services when their established responsibilities fit. Not every vendor requires a large character arc, but named recurring NPCs should have consistent homes, professions, motives and appearances. The settlement economy must make sense independently of the Unmade. Human local criminals, wildlife, predators and old structures provide ordinary combat.
+Existing characters should perform useful services when their established responsibilities fit. Not every vendor requires a large character arc, but named recurring NPCs should have consistent homes, professions, motives and appearances. The settlement economy must make sense independently of the [[The Unmade|Unmade]]. Human local criminals, wildlife, predators and old structures provide ordinary combat.
 
 ## Settlement A — Lower Heartlands starting village
 
@@ -16,12 +16,12 @@ Existing characters should perform useful services when their established respon
 
 | NPC / service | Role | Narrative connection | Status |
 | --- | --- | --- | --- |
-| **Elara Fenwick** | Regional militia captain; introductory militia and combat guidance | First mentor; missing caravan investigation; later homeland stories | Approved |
-| **Tomas Greymere** | Village elder and civic contact | Local disputes, wartime obligations, community memory | Approved recurring local character |
-| **Brenna Holt** | Merchant, general goods, caravan operator | Stocks basic supplies; missing caravan; maintains trade with market town | Approved recurring local character |
-| **Sister Anwen** | Healer, medical goods, introductory Life-magic contact | Healing-house services and later awakening effects | Approved recurring local character |
-| **Darian Cole** | Militia recruit and introductory combat contact under Elara | Develops alongside player; possible later military service | Approved recurring local character; future outcome open |
-| **Master Oren Bell** | Travelling scholar, occasional visiting contact | Optional old wardstone and ruins investigations; not automatically a Guardian | Approved recurring local character |
+| **[[Elara Fenwick]]** | Regional militia captain; introductory militia and combat guidance | First mentor; missing caravan investigation; later homeland stories | Approved |
+| **[[Tomas Greymere]]** | Village elder and civic contact | Local disputes, wartime obligations, community memory | Approved recurring local character |
+| **[[Brenna Holt]]** | Merchant, general goods, caravan operator | Stocks basic supplies; missing caravan; maintains trade with market town | Approved recurring local character |
+| **[[Sister Anwen]]** | Healer, medical goods, introductory Life-magic contact | Healing-house services and later awakening effects | Approved recurring local character |
+| **[[Darian Cole]]** | Militia recruit and introductory combat contact under Elara | Develops alongside player; possible later military service | Approved recurring local character; future outcome open |
+| **[[Master Oren Bell]]** | Travelling scholar, occasional visiting contact | Optional old wardstone and ruins investigations; not automatically a Guardian | Approved recurring local character |
 | **Village smith** | Basic weapons, armour, repairs, introductory smithing | Rising iron costs and wartime demand | Service role approved; name open |
 | **Innkeeper** | Food, drink, rest/return point | Local rumours and social hub | Service role approved; name open |
 | **Additional class trainers** | Essential introductory class progression | Specific classes depend on future class system | Service function approved; assignments open |
@@ -60,9 +60,9 @@ Existing characters should perform useful services when their established respon
 | Market district | General goods, food, banking, auction house, major merchants | Merchant and shipment records |
 | Artisan district | Specialised weaponsmiths, armoursmiths, crafting stations, profession trainers | Materials, repairs and equipment |
 | Scholarly quarter | Magical training, archives, specialist reagents | Research and historical context |
-| Military quarter | Combat trainers, military suppliers, barracks | **Garrick Ashford** and royal military offices |
-| Royal quarter | Court, administration, investigative offices | **King Aldren Vaelmont**, **Mara Thorne**, **Lord Cassian Veyr** |
-| Transport district | Coaches, stables, couriers and routes | Connections to other Covenant territories |
+| Military quarter | Combat trainers, military suppliers, barracks | **[[Garrick Ashford]]** and royal military offices |
+| Royal quarter | Court, administration, investigative offices | **[[King Aldren Vaelmont]]**, **[[Mara Thorne]]**, **[[Lord Cassian Veyr]]** |
+| Transport district | Coaches, stables, couriers and routes | Connections to other [[Covenant]] territories |
 
 The King is not a routine vendor; his audiences are major narrative events. Mara works from an investigative office rather than permanently waiting in the throne room. Garrick has military headquarters and later provides overseas mission contacts. Edric Halewyn appears through records, testimony and legacy, not as a living NPC.
 

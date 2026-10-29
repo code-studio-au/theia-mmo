@@ -16,3 +16,6 @@ A primordial figure, distinct from [[The Seven Gods]].
 
 [[Primordial Cosmology]] · [[Welcome|Home]]
 
+## Related notes
+
+[[Aethyr]] · [[The Unmade]] · [[The Corrupted Conclave]] · [[Oth'varen]]

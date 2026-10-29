@@ -18,3 +18,7 @@ Defends her craft through original specifications, joins by contract, records li
 Source: [[Sources/THEIA_HUMAN_CAST_AND_PLACES#Allied and Kel'vari cast|Allied and Kel'vari cast]].
 
 [[Characters]] · [[Human Campaign]]
+
+## Related notes
+
+[[Dwarves]] · [[Edda Flintwake]]

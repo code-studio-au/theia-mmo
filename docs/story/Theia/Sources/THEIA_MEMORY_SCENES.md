@@ -4,9 +4,9 @@ This document preserves fully dramatised scenes separately from the chronologica
 
 ## Memory I — The Six Reunited
 
-**Placement:** After The Binding, during the earliest reorganisation of the Unmade, within the Shroud.
+**Placement:** After [[The Binding]], during the earliest reorganisation of the [[The Unmade|Unmade]], within the Shroud.
 
-**Participants:** Oth'varen, Vaer'uun, Thes'var, Su'vareth, Oma'vira, Khor'vun.
+**Participants:** [[Oth'varen]], [[Vaer'uun]], [[Thes'var]], [[Su'vareth]], [[Oma'vira]], [[Khor'vun]].
 
 **Status:** Approved dramatic scene; preserve the full dialogue rather than substituting the Chronicle's condensed summary.
 
@@ -28,7 +28,7 @@ Five figures waited among the remains of the sanctuary's ancient instruments.
 
 He recognised them, although the sight of what they had become filled him with dread.
 
-Their bodies bore the marks of the primordial energies unleashed by the First Anchor. Their magical structures had changed in ways no ordinary Kel'vari could have endured. The power surrounding them was immense, but it was not merely the extraordinary magic they had once commanded.
+Their bodies bore the marks of the primordial energies unleashed by the First Anchor. Their magical structures had changed in ways no ordinary [[Kel'vari]] could have endured. The power surrounding them was immense, but it was not merely the extraordinary magic they had once commanded.
 
 Something else had become part of them.
 
@@ -208,7 +208,7 @@ For a moment, the chamber seemed to change.
 
 He could feel the extraordinary power they possessed. The connections between their altered forms. The possibility of joining those connections and becoming something greater than any one of them.
 
-And beneath it all, the lingering influence of Nhal stirred.
+And beneath it all, the lingering influence of [[Nhal]] stirred.
 
 Not a voice.
 

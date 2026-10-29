@@ -2,7 +2,7 @@
 
 Before there was a world, there was no sky to divide above from below, no distance to cross, and no moment by which one event could be measured against another. Neither the Physical Realm nor the Void existed. There were no realms at all, no established laws of nature, and no boundary separating what could exist from what could not. Yet two primordial essences endured beyond every condition that later beings would call reality.
 
-**Aethyr** was the supreme creative will: not merely a god of life or light, but the potential for existence itself, the power by which something might arise where nothing had been. **Nhal** was its opposite: not a creature of darkness dwelling in some already formed abyss, but the supreme will to negate, to undo whatever might be made, until even the possibility of its existence was extinguished. Their power was older and more fundamental than the gods who would one day emerge. Where Aethyr sought to bring forth creation, Nhal sought to unmake it.
+**[[Aethyr]]** was the supreme creative will: not merely a god of life or light, but the potential for existence itself, the power by which something might arise where nothing had been. **[[Nhal]]** was its opposite: not a creature of darkness dwelling in some already formed abyss, but the supreme will to negate, to undo whatever might be made, until even the possibility of its existence was extinguished. Their power was older and more fundamental than the gods who would one day emerge. Where Aethyr sought to bring forth creation, Nhal sought to unmake it.
 
 Their struggle had no battlefield, because space did not yet exist. It had no beginning that could be recorded, because time had not yet begun. Later minds might describe it as lasting eons, but even that word borrows a measure from a universe that had not been born. Every expression of Aethyr's creative purpose met Nhal's opposing will; every act of unmaking was resisted by the possibility of becoming. Neither could overcome the other. Their contest settled into an immeasurable stalemate, and no creation could be assured of enduring while its destruction remained within Nhal's reach.
 
@@ -16,7 +16,7 @@ And so Aethyr chose.
 
 In an instant beyond the measure of any clock, Aethyr shattered itself.
 
-This was the **First Sundering**. The eruption of primordial energy did not merely fill an empty universe; it **brought two distinct realms into existence**. One was the **Physical Realm**, in which space, time, matter and the fundamental laws of magic could arise and endure. The other was the **Void**, not a second world of mountains and cities, but a realm of negation beyond the conditions of ordinary physical existence.
+This was the **[[First Sundering]]**. The eruption of primordial energy did not merely fill an empty universe; it **brought two distinct realms into existence**. One was the **Physical Realm**, in which space, time, matter and the fundamental laws of magic could arise and endure. The other was the **Void**, not a second world of mountains and cities, but a realm of negation beyond the conditions of ordinary physical existence.
 
 The force of the shattering drove Nhal into the newly formed Void. Aethyr's own shattered energies passed into the Physical Realm. In its final creative act, Aethyr established a **Veil between the two realms**—a fundamental separation intended to prevent Nhal from reaching across and unmaking the existence now taking shape.
 
@@ -60,7 +60,7 @@ The new races changed the other gods as profoundly as they changed the world. Th
 
 **Shaper then created the dwarves.** Inspired by the capacity of elves and orcs to act independently, Shaper envisioned people who would not merely inhabit a formed world but transform it through craft, construction and enduring works. Their aptitude for making was not a command to reproduce divine designs. It was an invitation to surpass them. When dwarves began inventing forms and techniques Shaper had not taught, the god experienced an extraordinary pride. Mortal admiration for Shaper's visible contributions would grow from these achievements, later becoming one source of Ascendant's envy.
 
-Seeker did not create a separate one of the original six mortal races. Instead, Seeker became increasingly fascinated by mortal discovery itself. The elves, orcs and dwarves could observe, test and challenge even divine explanations. Seeker's role as investigator and teacher would later make the god a principal patron of halflings and Vaelari, though neither people had been created by Seeker. The distinction between **creator** and **patron** began to matter long before the modern religions took shape.
+Seeker did not create a separate one of the original six mortal races. Instead, Seeker became increasingly fascinated by mortal discovery itself. The elves, orcs and dwarves could observe, test and challenge even divine explanations. Seeker's role as investigator and teacher would later make the god a principal patron of halflings and [[Vaelari]], though neither people had been created by Seeker. The distinction between **creator** and **patron** began to matter long before the modern religions took shape.
 
 As mortals formed relationships and communities, **Judge** confronted questions that had scarcely existed before free races appeared. What law could govern beings who could refuse their makers? How should competing claims be reconciled? What obligations did power create? Judge created **humans**, whose adaptability and capacity to form intricate institutions reflected those questions. Their later principal devotion to Guardian would show that an origin did not determine a people's permanent faith.
 
@@ -72,7 +72,7 @@ By this point **five mortal races existed: elves, orcs, dwarves, humans and half
 
 He admired much of what they had made. He also wondered whether they had left room for anything truly new. Seeker and Shaper's celebrated collaboration suggested a place for insight and invention, but Shaper was already beloved for the dwarves and other great works. Guardian and Warrior had proved that life could arise from different philosophies. Judge and Keeper had each contributed a people. Ascendant had extraordinary power, but no comparable legacy and no people who knew him as their maker.
 
-His desire to contribute could still have become an uncomplicated source of creativity. Instead, recognition slowly became entangled with identity. He wanted to demonstrate that the world could not merely be preserved, understood or shaped: it could be **improved beyond the limits its first makers had accepted**. Keeper possessed knowledge of magical stability that Ascendant's independent experiments could not fully reproduce. Their future collaboration in creating the trolls therefore offered both a practical partnership and a chance for a lasting legacy. The later Seventh project would carry that same desire to a far more dangerous scale.
+His desire to contribute could still have become an uncomplicated source of creativity. Instead, recognition slowly became entangled with identity. He wanted to demonstrate that the world could not merely be preserved, understood or shaped: it could be **improved beyond the limits its first makers had accepted**. Keeper possessed knowledge of magical stability that Ascendant's independent experiments could not fully reproduce. Their future collaboration in creating the trolls therefore offered both a practical partnership and a chance for a lasting legacy. The later Kel'vari project would carry that same desire to a far more dangerous scale.
 
 Ascendant's creative gifts were genuine, but recognition had become entangled with his sense of worth. Each new achievement offered the possibility of belonging, and each comparison with the others made that belonging feel more uncertain.
 
@@ -96,7 +96,7 @@ The consequences for Keeper and Ascendant were enduring. Keeper became more wary
 
 Mortals were never confined to their creators' intentions. The orcs developed scholars as well as champions; dwarves became healers as well as masons; elves could choose lives that required no magical training. The traces of Aethyr's primordial energy inherited by mortal bloodlines expressed themselves differently across families and generations. In most, the inheritance was subtle. In rare lineages it could produce unusual aptitude, but neither ancestry nor divine patronage removed the need for training, discipline and choice.
 
-The six peoples spread through the lands that became their ancestral homes. Human settlements followed rivers across inland plains, where dependable harvests made permanent institutions possible. Dwarven communities worked the mountains, opening mines and underground passages before expanding the great defensive and civic structures for which they became renowned. Orc Great Clans established communities across the grasslands, combining martial traditions with permanent settlements, sacred places and councils of their own. Halflings adapted underground valleys into networks of dwellings, waterways, workshops and mechanisms. Elves cultivated settlements within the primeval forests, developing traditions of stewardship alongside their understanding of living magic. Trolls established strongholds in rugged highlands, where chronicles, stonework and protective wards preserved the memory of earlier generations.
+The six peoples spread through the lands that became their ancestral homes. Human settlements followed rivers across inland plains, where dependable harvests made permanent institutions possible. Dwarven communities worked the mountains, opening mines and underground passages before expanding the great defensive and civic structures for which they became renowned. Orc Great Clans established communities across the grasslands, combining martial traditions with permanent settlements, sacred places and councils of their own. [[Halflings]] adapted underground valleys into networks of dwellings, waterways, workshops and mechanisms. Elves cultivated settlements within the primeval forests, developing traditions of stewardship alongside their understanding of living magic. Trolls established strongholds in rugged highlands, where chronicles, stonework and protective wards preserved the memory of earlier generations.
 
 These were beginnings, not rigid boundaries. Traders crossed the distances between peoples; scholars travelled to places where unfamiliar methods might answer their questions. A dwarven engineer could learn from a halfling regulator without becoming halfling, and a human settlement might adopt techniques first developed by elves. Geography shaped customs, but contact and migration ensured that no people possessed a single unchanging way of life.
 
@@ -126,15 +126,15 @@ Ascendant accepted the arrangement. At first the exchange was honest. His insigh
 
 **Using the research Keeper had willingly granted him access to, Ascendant devised his own methods to reconstruct the gaps in the knowledge Keeper had deliberately withheld.** He then extended those recovered principles through his own mastery of amplification and synthesis. He knew he had exceeded the agreement. He did not tell Keeper. He was acting from conviction, wounded pride and the desire to create something undeniably his own.
 
-His ambition had a precise object. The six original mortal races possessed distinct inherited affinities and could all learn magic through training, finite reserves, discipline and effort. Ascendant believed it possible to create a seventh race whose consciousness could apprehend the relationships among magical disciplines with an ease other mortals rarely achieved. Such beings would not possess limitless energy or immunity to death. They would still have to learn, practice, eat, build, argue and live. But they might see structures in Form and Passage that even accomplished scholars overlooked, and advance the arts of the Physical Realm far beyond their makers' expectations.
+His ambition had a precise object. The six original mortal races possessed distinct inherited affinities and could all learn magic through training, finite reserves, discipline and effort. Ascendant believed it possible to create the Kel'vari, whose consciousness could apprehend the relationships among magical disciplines with an ease other mortals rarely achieved. Such beings would not possess limitless energy or immunity to death. They would still have to learn, practice, eat, build, argue and live. But they might see structures in Form and Passage that even accomplished scholars overlooked, and advance the arts of the Physical Realm far beyond their makers' expectations.
 
-A second quality arose from the same radical design. The six original species could not ordinarily have children across species boundaries. **Ascendant's seventh race alone would be compatible with any of the six.** Whether he foresaw all the social consequences is not established; the compatibility expressed his central philosophy that creation should be able to cross limitations its predecessors accepted. 
+A second quality arose from the same radical design. The six original species could not ordinarily have children across species boundaries. **Ascendant's Kel'vari alone would be compatible with any of the six.** Whether he foresaw all the social consequences is not established; the compatibility expressed his central philosophy that creation should be able to cross limitations its predecessors accepted.
 
 Ascendant worked in secrecy, without the other gods contributing to the act of creation. He tested patterns, discarded failed structures and developed his own methods to combine the six magical fields with a precision previously unimagined in mortals. Many trials failed. Others succeeded because of his persistence and ingenuity. **Nhal neither guided these experiments nor contributed knowledge to the Kel'vari's creation.** The race's extraordinary aptitude was Ascendant's achievement, born of his determination to outshine the other gods. The unintended consequence was a possibility so remote that even Ascendant did not perceive it: in the hands of sufficiently gifted, trained and ambitious descendants, an exceptionally precise combination of all six fields might one day resonate with the Veil. This was not a flaw implanted by Nhal, an inevitable trait of every member of the race, or an open breach. It was an unrealized possibility within a creation whose potential exceeded its creator's foresight.
 
 Beyond the Veil, Nhal watched. It had witnessed the birth of the first six races and the gods' growing relationships; now it saw Ascendant create beings capable of bringing the six expressions of Aethyr's primordial energy together at a depth mortals had never reached. Nhal recognized the significance because it remembered the primordial power that had formed its prison. But **recognition was not intervention**. It could not whisper to Ascendant, improve his results or change the Kel'vari's design. It could only hope that one day these new mortals would discover a configuration capable of disturbing the boundary.
 
-Then the first of the **Kel'vari**, the seventh mortal race, awakened. The living consciousness was its own. Ascendant could not command its choices simply by having made it. More followed. They learned and formed attachments, developed preferences and disagreements, and began a history that did not belong to Ascendant alone. **He was their sole divine creator**, but he was not the author of every act they would undertake. At last he possessed a creation whose divine origin no other god could claim as shared labour.
+Then the first of the **[[Kel'vari]]** awakened. The living consciousness was its own. Ascendant could not command its choices simply by having made it. More followed. They learned and formed attachments, developed preferences and disagreements, and began a history that did not belong to Ascendant alone. **He was their sole divine creator**, but he was not the author of every act they would undertake. At last he possessed a creation whose divine origin no other god could claim as shared labour.
 
 He revealed them only after their independence and unusual aptitude could no longer be dismissed as speculation. Seeker was astonished by their capacity to understand magical relationships. Shaper admired the scale of Ascendant's accomplishment, even as the speed of its achievement unsettled old assumptions. Guardian saw free persons entitled to protection. Warrior respected their agency but warned that rulers might seek to possess their gifts. Judge questioned the secrecy of a creation whose consequences could affect every people. **Keeper recognized elements of research Ascendant had been forbidden to extend** and knew their agreement had been broken again.
 
@@ -142,7 +142,7 @@ Yet the other gods could not simply condemn the Kel'vari for their creator's con
 
 The Kel'vari did not remain a collection of individuals gathered around their creator. As generations passed, they established families, settlements and institutions of their own. Their extraordinary capacity to recognise relationships between magical fields gave them unusual opportunities, but it did not supply food, shelter, governance or the labour upon which any lasting society depended. Farmers, builders, artisans, healers and civic officials were as necessary to their survival as the scholars whose discoveries attracted the attention of other peoples.
 
-Their settlements developed into cities whose institutions reflected both their gifts and their disagreements. Some centres grew around archives and teaching halls; others became important through craft, cultivation, protective research or connections to the wider Passage network. Their ancestral language, **Oth'vaeri**, carried a distinct melodic cadence, with apostrophes marking meaningful sound boundaries in formal names. Shared language and ancestry did not prevent the cities from developing different customs, priorities and political traditions.
+Their settlements developed into cities whose institutions reflected both their gifts and their disagreements. Some centres grew around archives and teaching halls; others became important through craft, cultivation, protective research or connections to the wider Passage network. Their ancestral language, **[[Oth'vaeri]]**, carried a distinct melodic cadence, with apostrophes marking meaningful sound boundaries in formal names. Shared language and ancestry did not prevent the cities from developing different customs, priorities and political traditions.
 
 The Kel'vari's growing expertise brought them into close contact with the six older races. Visiting scholars exchanged methods with the great magical orders, while merchants and craftspeople carried practical discoveries between settlements. Kel'vari research contributed to improvements in healing, construction, defensive wards and Passage engineering. In return, their institutions drew upon the accumulated experience of civilizations that had existed before their own. They were unusually gifted at understanding complex relationships, but their achievements still depended upon training, cooperation and access to knowledge.
 
@@ -162,7 +162,7 @@ Encouraged by their results, the researchers continued combining the six fields 
 
 The research eventually supported a publicly authorised undertaking: a permanent connection with Ascendant. The Kel'vari federation and its scholarly authorities approved the legitimate objective after debate over cost, safety and the limits of existing knowledge. The undertaking became known as **the First Anchor**.
 
-Six principal scholars guided the project. **Vaer'uun** led resonance and communication research; **Thes'var** designed its complex structures; **Su'vareth** coordinated restricted records and external relationships; **Oma'vira** studied consciousness and perception; **Khor'vun** directed protective workings and containment; and **Oth'varen** independently verified the stability of the combined six fields. They were celebrated colleagues, and Oth'varen counted the other five among his closest friends.
+Six principal scholars guided the project. **[[Vaer'uun]]** led resonance and communication research; **[[Thes'var]]** designed its complex structures; **[[Su'vareth]]** coordinated restricted records and external relationships; **[[Oma'vira]]** studied consciousness and perception; **[[Khor'vun]]** directed protective workings and containment; and **[[Oth'varen]]** independently verified the stability of the combined six fields. They were celebrated colleagues, and Oth'varen counted the other five among his closest friends.
 
 Over years of repeated resonance, five of the scholars came to suspect an intelligence behind their extraordinary results and willingly pursued it. Nhal cultivated their ambitions and gradually distorted their judgement, subtly guiding the project towards an objective known only to itself. Vaer'uun interpreted discoveries as confirmation of a greater purpose. Thes'var incorporated concealed structural alterations. Su'vareth restricted records and concealed discrepancies. Oma'vira encouraged confidence in what she regarded as a revelation. Khor'vun adjusted safeguards to accommodate the altered workings. Their legitimate reputations and divided institutional oversight allowed the deception to continue.
 
@@ -330,7 +330,7 @@ Mortal rulers, academies and magical orders were drawn into the conflict. Some s
 
 The first attempts to seize forbidden research provoked resistance. Resistance brought harsher measures, and the resulting confrontations deepened the divisions among gods and mortals alike.
 
-**The Divine Schism had become the Divine War.**
+**The [[Divine Schism]] had become the [[Divine War]].**
 
 Amid the spreading conflict, Oth'varen and the surviving Kel'vari investigators recognised that their evidence could no longer be entrusted to any single divine authority, kingdom or magical institution.
 
@@ -340,7 +340,7 @@ They began seeking trusted allies among scholars, witnesses and protectors of th
 
 Some had already questioned the accounts used to justify the war. Others had protected Kel'vari refugees, preserved records of the catastrophe or resisted attempts to seize dangerous magical knowledge.
 
-Together, they established **the Guardians**.
+Together, they established **the [[The Guardians|Guardians]]**.
 
 From their founding, the Guardians were a multiracial organisation, united not by ancestry or allegiance to a particular god, but by a shared purpose: to preserve evidence of the manipulation behind the First Anchor, investigate the unknown intelligence responsible and prevent another catastrophe.
 
@@ -358,7 +358,7 @@ The followers of the hidden intelligence continued manipulating the conflict, wh
 
 And despite everything Oth'varen had witnessed, the true nature of the power behind the First Anchor remained unknown.
 
-The Divine War brought further destruction to a world already struggling to recover from the Second Sundering.
+The Divine War brought further destruction to a world already struggling to recover from the [[Second Sundering]].
 
 Surviving Passage routes became strategic objectives, fought over by forces seeking to move armies and supplies through the fractured continents. Fortified cities were besieged for their remaining protective structures, while magical institutions were attacked for the knowledge and artifacts they possessed.
 
@@ -406,7 +406,7 @@ Guardian, however, came to accept Keeper's evidence and the urgency of the threa
 
 Eventually, the Seven reached an agreement. Their trust was wounded, and their reasons for accepting the plan were not identical, but they recognized that the breach threatened everything they had made. **They consented to contribute what they believed was a limited portion of their power**, trusting Keeper's assurance that their sacrifice would end once the Shroud had been established.
 
-The final containment would come to be remembered as **The Binding**.
+The final containment would come to be remembered as **[[The Binding]]**.
 
 The Seven joined their power in one last act of cooperation. The boundary rose around the devastated homeland. The breach was contained. The spread of Nhal's influence was checked.
 
@@ -454,7 +454,7 @@ The Guardians maintained cells within the devastated homeland, protecting surviv
 
 Their work was increasingly difficult. The Shroud had restricted access to the wider world, while corrupted territories and unstable passages made movement between surviving communities hazardous.
 
-Not all Kel'vari within the Shroud were aligned with the Unmade. Most were ordinary survivors, struggling to preserve their families and what remained of their civilization.
+Not all Kel'vari within the Shroud were aligned with the [[The Unmade|Unmade]]. Most were ordinary survivors, struggling to preserve their families and what remained of their civilization.
 
 #### Beyond the Shroud
 
@@ -512,7 +512,7 @@ They did not interpret the destruction of their civilization as a reason to aban
 
 The loss of Nhal's guidance made their continued work more difficult, but it did not diminish their conviction.
 
-From the surviving followers and fragments of their former research, they established **the Corrupted Conclave**.
+From the surviving followers and fragments of their former research, they established **the [[The Corrupted Conclave|Corrupted Conclave]]**.
 
 Vaer'uun assumed the role of **the First Voice**, interpreting the remembered intentions of the intelligence they served.
 
@@ -544,7 +544,7 @@ His refusal ended the encounter. The sanctuary's protective workings turned agai
 
 He returned to the Guardians knowing that their task extended beyond preserving the evidence of the First Anchor. The five still sought to continue their work, and their corrupted convictions made another disaster possible. For Oth'varen, that knowledge carried the grief of an old friendship as well as the responsibility of preventing its consequences.
 
-The full dramatic encounter, including dialogue, is preserved separately as **Memory I — The Six Reunited** in [Theia Memory Scenes](THEIA_MEMORY_SCENES.md).
+The full dramatic encounter, including dialogue, is preserved separately as **Memory I — [[The Six Reunited]]** in [Theia Memory Scenes](THEIA_MEMORY_SCENES.md).
 
 ### The First Generations — Survival Becomes Inheritance
 
@@ -558,15 +558,15 @@ Without the means to restore their former federation, survivors established inde
 
 Over time, these refuges developed into **distinct Kel'vari enclaves**, each shaped by the surviving institutions and resources upon which its people depended.
 
-Among the most significant was **Veyr'athun**, a fortified enclave established around an ancient centre of defensive research. Its surviving protective workings provided shelter against the corruption surrounding it.
+Among the most significant was **[[Veyr'athun]]**, a fortified enclave established around an ancient centre of defensive research. Its surviving protective workings provided shelter against the corruption surrounding it.
 
-**Oth'irun** emerged around one of the civilization's great archives, where scholars and custodians dedicated themselves to preserving the knowledge and records that had survived the catastrophe.
+**[[Oth'irun]]** emerged around one of the civilization's great archives, where scholars and custodians dedicated themselves to preserving the knowledge and records that had survived the catastrophe.
 
-In the sheltered lands of **Oru'sava**, ancient cultivation and restorative workings allowed its inhabitants to sustain agriculture and provide for communities whose ancestral farmlands had been lost.
+In the sheltered lands of **[[Oru'sava]]**, ancient cultivation and restorative workings allowed its inhabitants to sustain agriculture and provide for communities whose ancestral farmlands had been lost.
 
-**Thuma'rei**, once a major centre of Passage research and transportation, became an important refuge through its surviving gates, maintaining limited connections between otherwise isolated regions.
+**[[Thuma'rei]]**, once a major centre of Passage research and transportation, became an important refuge through its surviving gates, maintaining limited connections between otherwise isolated regions.
 
-At **Soru'vaeth**, a former centre of material research and reconstruction, survivors began recovering resources, artifacts and knowledge from the ruins of their ancestral civilization.
+At **[[Soru'vaeth]]**, a former centre of material research and reconstruction, survivors began recovering resources, artifacts and knowledge from the ruins of their ancestral civilization.
 
 These five enclaves were among the most significant surviving Kel'vari settlements, but they were not the only ones. Smaller refuges remained scattered throughout the Shroud, some maintaining limited contact with their neighbours while others became increasingly isolated.
 
@@ -600,13 +600,13 @@ On the grasslands, the orc Great Clans faced their own questions of shared autho
 
 Among the elves, rebuilding reopened arguments the catastrophe had never settled. Scholars who sought to recover the ancient world's knowledge faced those who believed its unrestrained use had contributed to disaster. At first these disputes concerned the control of archives, the restoration of wards and the authority to approve experiments. They gradually divided communities over the obligations of magical power itself. Their original capital had been lost, leaving survivors to disagree over which traditions should guide the future.
 
-Those who became the **Aelari** built a woodland monarchy in the primeval forest, placing greater trust in Guardian's principles of protection, Life and restraint. Those who became the **Vaelari** gathered around a mountain-lake capital under arcane leadership, honouring Seeker and the pursuit of knowledge. Their choices arose from a shared history, but each increasingly understood the other's path as a danger to what remained of that inheritance. Separation became hostility, sustained by competing institutions and memories.
+Those who became the **[[Aelari]]** built a woodland monarchy in the primeval forest, placing greater trust in Guardian's principles of protection, Life and restraint. Those who became the **Vaelari** gathered around a mountain-lake capital under arcane leadership, honouring Seeker and the pursuit of knowledge. Their choices arose from a shared history, but each increasingly understood the other's path as a danger to what remained of that inheritance. Separation became hostility, sustained by competing institutions and memories.
 
-The trolls also carried an old disagreement into the reconstruction. Traditions honouring Keeper's stability and Ascendant's promise of change had long existed side by side. As religious authorities gained influence over sacred places, customs and political decisions, those differences became harder to reconcile. The **Korrath** retained the ancestral highland capital and its elders' councils, chiefly honouring Keeper. The people who became the **Vorrath** were exiled amid the conflict and established a sacred storm-coast capital under religious leadership, chiefly honouring Ascendant. The circumstances of that exile remained contested in the histories their descendants preserved.
+The trolls also carried an old disagreement into the reconstruction. Traditions honouring Keeper's stability and Ascendant's promise of change had long existed side by side. As religious authorities gained influence over sacred places, customs and political decisions, those differences became harder to reconcile. The **[[Korrath]]** retained the ancestral highland capital and its elders' councils, chiefly honouring Keeper. The people who became the **[[Vorrath]]** were exiled amid the conflict and established a sacred storm-coast capital under religious leadership, chiefly honouring Ascendant. The circumstances of that exile remained contested in the histories their descendants preserved.
 
-The growing divisions drew the older partnerships into wider commitments. The human–dwarf treaty offered a foundation upon which the Aelari and Korrath could join in mutual protection. Together they formed **Covenant**, an alliance of four sovereign civilizations. Its hereditary High Ruler came from a separate branch of the human royal dynasty; its multicultural coastal alliance capital was distinct from the human kingdom's inland capital. The arrangement allowed common defence while preserving separate laws, traditions and rulers.
+The growing divisions drew the older partnerships into wider commitments. The human–dwarf treaty offered a foundation upon which the Aelari and Korrath could join in mutual protection. Together they formed **[[Covenant]]**, an alliance of four sovereign civilizations. Its hereditary High Ruler came from a separate branch of the human royal dynasty; its multicultural coastal alliance capital was distinct from the human kingdom's inland capital. The arrangement allowed common defence while preserving separate laws, traditions and rulers.
 
-The orc–halfling partnership likewise broadened as the Vaelari and Vorrath sought allies whose interests and grievances differed from those of Covenant. Their union became **Dominion**, also comprising four sovereign civilizations. Authority over the alliance was vested in a High Ruler chosen through trials involving champions nominated by all four member peoples. Its multicultural highland capital stood apart from the orc racial capital. These political forms emerged through negotiations and competing needs, not because the older races had always been destined to divide into two camps.
+The orc–halfling partnership likewise broadened as the Vaelari and Vorrath sought allies whose interests and grievances differed from those of Covenant. Their union became **[[Dominion]]**, also comprising four sovereign civilizations. Authority over the alliance was vested in a High Ruler chosen through trials involving champions nominated by all four member peoples. Its multicultural highland capital stood apart from the orc racial capital. These political forms emerged through negotiations and competing needs, not because the older races had always been destined to divide into two camps.
 
 Within the Shroud, Kel'vari enclaves followed a different course. Distance, corruption and fragile passages continued to prevent a reunited federation. A settlement that preserved cultivation could not simply share its abundance with every isolated refuge; an archive that survived might possess knowledge another enclave had lost. The Guardians protected particular communities and repositories, but the loss of couriers and the increasing difficulty of contact meant that knowledge travelled less reliably with every generation.
 
@@ -652,7 +652,7 @@ The Architect's next ambition was to coordinate the scattered Regional Anchors t
 
 By the modern age, Covenant and Dominion remained hostile alliances of four sovereign civilizations each. The seas separating their continents did not prevent conflict. Warships supplied landing bases, garrisons, resource camps and research outposts on enemy shores. No ordinary public peace or cross-alliance cooperation united them. The Guardians and Unmade operated covertly within both societies.
 
-Covenant's hereditary High Ruler balanced the human monarchy, independent dwarf holds, Aelari royalty and Korrath elders. Dominion's trial-chosen High Ruler answered to orc Great Clans, halfling guilds, Vaelari arcane institutions and Vorrath religious authorities. **Queen Seralyth**, **First Archon Selrion** and **First Elder Dromak** were among the established leaders whose peoples carried these histories into modern government.
+Covenant's hereditary High Ruler balanced the human monarchy, independent dwarf holds, Aelari royalty and Korrath elders. Dominion's trial-chosen High Ruler answered to orc Great Clans, halfling guilds, Vaelari arcane institutions and Vorrath religious authorities. **[[Queen Seralyth]]**, **[[First Archon Selrion]]** and **[[First Elder Dromak]]** were among the established leaders whose peoples carried these histories into modern government.
 
 Generations of conflict had taken their toll upon Covenant and Dominion.
 
@@ -706,7 +706,7 @@ The negotiations were abandoned.
 
 Across both alliances, outrage overwhelmed those who had advocated peace. Leaders who had supported the gathering found their judgement questioned, while military authorities demanded retaliation.
 
-The event became known as **the Shattered Delegation**.
+The event became known as **the [[Shattered Delegation]]**.
 
 Its consequences spread rapidly.
 
@@ -781,11 +781,11 @@ The world had begun to awaken, and the old catastrophe was no longer merely a ma
 
 > **CREATOR'S PRIMORDIAL DRAFT (2026-10-12):** The opening now explicitly follows Aethyr's plan to confine Nhal by creating **both** realms and the Veil through deliberate self-sacrifice. This is a polished working narrative of the user's draft, not a final lock on metaphysical details.
 
-> **Editorial status.** This is a continuous dramatic account, told from the creator's omniscient perspective, not a sequence of standalone question answers. It integrates the recoverable decisions through Stage 61 (Q376–435) and subsequent explicit decisions concerning Aethyr, Nhal, the Seven's titles, the races, Covenant, Dominion, The Unmade, the Shattered Delegation and cross-continental incursions. Established decisions are preserved. The **cause and purpose of The Binding, Keeper's deliberate concealment, Ascendant's sole Seventh Creation, the First Anchor's breach, and the Guardians' multiracial founding** are now confirmed by later user decisions. The precise first-contact mechanism, wartime alignments, detailed sealing mechanics, individual officials and ultimate ending remain **WORKING/OPEN** where not selected. See [Master Bible](THEIA_WORLD_BIBLE.md) and [Decision Archive](THEIA_DETAILED_LORE_ARCHIVE.md). Questions Q436–444 were asked but not answered and MUST NOT be treated as resolved. This is not a verbatim transcript of the earlier “MMO Story” chat.
+> **Editorial status.** This is a continuous dramatic account, told from the creator's omniscient perspective, not a sequence of standalone question answers. It integrates the recoverable decisions through Stage 61 (Q376–435) and subsequent explicit decisions concerning Aethyr, Nhal, the Seven's titles, the races, Covenant, Dominion, The Unmade, the Shattered Delegation and cross-continental incursions. Established decisions are preserved. The **cause and purpose of The Binding, Keeper's deliberate concealment, Ascendant's sole Kel'vari creation, the First Anchor's breach, and the Guardians' multiracial founding** are now confirmed by later user decisions. The precise first-contact mechanism, wartime alignments, detailed sealing mechanics, individual officials and ultimate ending remain **WORKING/OPEN** where not selected. See [Master Bible](THEIA_WORLD_BIBLE.md) and [Decision Archive](THEIA_DETAILED_LORE_ARCHIVE.md). Questions Q436–444 were asked but not answered and MUST NOT be treated as resolved. This is not a verbatim transcript of the earlier “MMO Story” chat.
 
 > **SOURCE RECONCILIATION (2026-10-12):** This narrative has been expanded using the original 403-page “Create MMO Story” conversation PDF, not merely the earlier assistant summary. For the complete recovered decision index see [THEIA_SOURCE_DECISION_RECOVERY.md](THEIA_SOURCE_DECISION_RECOVERY.md). The **Binding's hidden betrayal** (Keeper knowingly deceiving all six other gods), the survival of all Seven and Ascendant's sole creation of the Kel'vari is now **locked**. The identity of the surviving original magical order, divine wartime sides and the final outcome remain open; rejected early pitches are excluded. **This is a working creator narrative, not a verbatim historical transcript.**
 
-> **FULL SOURCE AUDIT NOTE (12 October 2026):** The original 403-page conversation was re-indexed across all 444 question numbers, including separately reused prompts. The downloadable full register records 471 distinct numbered prompt occurrences from the collaborative pages. The earlier source decisions Q35 (direct ancestry), Q40 (then interpreted as hidden corruption during creation), Q42 (divine empowerment), Q47 (mixed divine morality), Q382 and Q420 (later revisions), and Q198–202 (territorial rules) remain documented. **The later creator decision supersedes Q40's earlier causal interpretation:** Nhal did not influence the creation of the Kel'vari; its first influence began only after the race's later researchers accidentally resonated with the Veil. The precise physics of the First Resonance, the surviving original magical order and unapproved modern NPC biographies remain **WORKING**. Keeper's conscious betrayal in **The Binding** is now locked; only its exact magical execution and other wartime particulars remain open.
+> **FULL SOURCE AUDIT NOTE (12 October 2026):** The original 403-page conversation was re-indexed across all 444 question numbers, including separately reused prompts. The downloadable full register records 471 distinct numbered prompt occurrences from the collaborative pages. The earlier source decisions Q35 (direct ancestry), Q40 (then interpreted as hidden corruption during creation), Q42 (divine empowerment), Q47 (mixed divine morality), Q382 and Q420 (later revisions), and Q198–202 (territorial rules) remain documented. **The later creator decision supersedes Q40's earlier causal interpretation:** Nhal did not influence the creation of the Kel'vari; its first influence began only after the race's later researchers accidentally resonated with the Veil. The precise physics of the [[First Resonance]], the surviving original magical order and unapproved modern NPC biographies remain **WORKING**. Keeper's conscious betrayal in **The Binding** is now locked; only its exact magical execution and other wartime particulars remain open.
 
 
 The sections above form the chronological historical narrative. The following notes preserve approved game-world constraints, possible later campaigns and unresolved decisions. They are **not events that have already occurred in the Chronicle**.
@@ -806,7 +806,7 @@ Overseas incursions are part of the established world: Covenant and Dominion use
 
 The proposed launch progression includes racial beginnings, regional conflicts, military and overseas expeditions, magical awakening, investigations into Unmade infiltration and a culminating operation against a modern Anchor. The approximate six thematic level bands and level-sixty cap are production proposals rather than established historical facts.
 
-The launch finale may allow each alliance independently to disrupt part of the same Unmade undertaking while remaining enemies. A senior Unmade operation can be defeated without destroying Nhal or the Corrupted Conclave. **The Severed Chain** remains a proposed raid name, and the exact circumstances of the Shattered Delegation revelation remain open.
+The launch finale may allow each alliance independently to disrupt part of the same Unmade undertaking while remaining enemies. A senior Unmade operation can be defeated without destroying Nhal or the Corrupted Conclave. **[[The Severed Chain]]** remains a proposed raid name, and the exact circumstances of the Shattered Delegation revelation remain open.
 
 ### The surviving ancient magical order — unresolved identity
 

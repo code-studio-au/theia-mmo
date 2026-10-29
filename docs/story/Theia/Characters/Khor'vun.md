@@ -10,3 +10,7 @@ The overarching arc is approved; specific scenes, dialogue and outcomes retain t
 ![[Sources/THEIA_CHARACTER_ARCS#Khor'vun, the Warden — the last defender]]
 
 [[Characters]] · [[Orders and Hidden Conflict]] · [[Timelines]]
+
+## Related notes
+
+[[Kel'vari]] · [[The Corrupted Conclave]] · [[The Unmade]] · [[Nhal]] · [[Oth'varen]] · [[The Six Reunited]]

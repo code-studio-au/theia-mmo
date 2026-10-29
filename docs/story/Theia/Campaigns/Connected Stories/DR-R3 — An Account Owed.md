@@ -16,7 +16,7 @@ up: "[[Connected Racial Stories]]"
 Shorvek: secure a local cache and file an accusation against the shipping intermediary through Dominion authority.
 
 ## Local resolution
-Local theft is documented and the coast stays defended; no proof of every Unmade leader is granted.
+Local theft is documented and the coast stays defended; no proof of every [[The Unmade|Unmade]] leader is granted.
 
 Source: [[Sources/THEIA_HUMAN_CONNECTED_RACIAL_STORIES#Vorrath — What the raid did not take|Vorrath — What the raid did not take]].
 

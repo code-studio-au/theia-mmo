@@ -18,3 +18,7 @@ Protects local legal process and workers' interests; authorises inspections rath
 Source: [[Sources/THEIA_HUMAN_CAST_AND_PLACES#Allied and Kel'vari cast|Allied and Kel'vari cast]].
 
 [[Characters]] · [[Human Campaign]]
+
+## Related notes
+
+[[Dwarves]]

@@ -6,7 +6,7 @@
 - [[The Seven Gods]]
 - [[Divine and Mortal History]]
 - [[The Binding and its Aftermath]]
-- [[The Seventh]]
+- [[Kel'vari]]
 - [[Memory Scenes]]
 
 [[Timelines]] separates historical truth from the order in which players learn it.

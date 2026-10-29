@@ -1,14 +1,14 @@
 # THEIA — CHARACTER ARCS AND MILESTONES
 
-**Status:** Oth'varen and all five Corrupted Conclave founders have **creator-approved overarching character arcs** (14–15 October 2026). Their ancient histories, original roles, names, titles, transformations and loyalties remain established canon. Specific encounters, dialogue, outcomes and production details remain open unless separately approved.
+**Status:** [[Oth'varen]] and all five [[The Corrupted Conclave|Corrupted Conclave]] founders have **creator-approved overarching character arcs** (14–15 October 2026). Their ancient histories, original roles, names, titles, transformations and loyalties remain established canon. Specific encounters, dialogue, outcomes and production details remain open unless separately approved.
 
 **Sources:** [Interwoven Chronicle](THEIA_INTERWOVEN_CHRONICLE.md) and [Modern Story and Revelation Timeline](THEIA_MODERN_STORY_REVELATION_TIMELINE.md). This is a player-facing development plan, not a replacement for the historical narrative.
 
 ## Oth'varen — locked overarching arc
 
-**Core movement:** *Keeper of Secrets → Restorer of Trust*. Oth'varen is the sixth scholar who resisted Nhal during the First Anchor's activation. His transformed body grants exceptional longevity and power, but he remains mortal, vulnerable and subject to the corruption's persistent pull. He helped found the multiracial Guardians, witnessed the five founders' corruption and survived their first post-Binding reunion. His modern identity remains to be designed.
+**Core movement:** *Keeper of Secrets → Restorer of Trust*. Oth'varen is the sixth scholar who resisted [[Nhal]] during the First Anchor's activation. His transformed body grants exceptional longevity and power, but he remains mortal, vulnerable and subject to the corruption's persistent pull. He helped found the multiracial [[The Guardians|Guardians]], witnessed the five founders' corruption and survived their first post-Binding reunion. His modern identity remains to be designed.
 
-**Inner conflict:** He believes dangerous knowledge must be contained because he saw trusted scholars conceal and misuse it. Centuries later, Guardian secrecy has also destroyed context, isolated cells and allowed the Unmade to exploit gaps in institutional memory. His challenge is to trust others with knowledge that could be used either to save or endanger Theia.
+**Inner conflict:** He believes dangerous knowledge must be contained because he saw trusted scholars conceal and misuse it. Centuries later, Guardian secrecy has also destroyed context, isolated cells and allowed the [[The Unmade|Unmade]] to exploit gaps in institutional memory. His challenge is to trust others with knowledge that could be used either to save or endanger Theia.
 
 ### Eight milestones — approved direction, not fixed levels
 
@@ -23,11 +23,11 @@
 
 ### Relationship pressures — approved direction
 
-- **Vaer'uun, the First Voice:** Oth'varen once respected his leadership; Vaer'uun regards his refusal as betrayal.
-- **Thes'var, the Architect:** Their shared technical mastery and opposing understanding of the First Anchor make inversion a central intellectual conflict.
-- **Su'vareth, the Veiled Hand:** Her knowledge of his habits and secrecy can be used against Guardian networks.
-- **Oma'vira, the Harbinger:** She attacks his conviction that he truly rejected the transformation's invitation.
-- **Khor'vun, the Warden:** He sees Oth'varen as a former colleague who abandoned those he once protected.
+- **[[Vaer'uun]], the First Voice:** Oth'varen once respected his leadership; Vaer'uun regards his refusal as betrayal.
+- **[[Thes'var]], the Architect:** Their shared technical mastery and opposing understanding of the First Anchor make inversion a central intellectual conflict.
+- **[[Su'vareth]], the Veiled Hand:** Her knowledge of his habits and secrecy can be used against Guardian networks.
+- **[[Oma'vira]], the Harbinger:** She attacks his conviction that he truly rejected the transformation's invitation.
+- **[[Khor'vun]], the Warden:** He sees Oth'varen as a former colleague who abandoned those he once protected.
 
 ### Three pivotal player decisions — approved direction
 
@@ -41,7 +41,7 @@
 
 ## Corrupted Conclave — proposed parallel character arcs
 
-The five are not interchangeable bosses. Each should pursue Nhal's purpose through an established scholarly talent and a personal interpretation of what the catastrophe meant. Their extraordinary longevity makes them recurring antagonists; they remain vulnerable and not divine. The Conclave formed after The Binding, and Nhal's voice returned only after the Major Anchor network crossed the critical resonance threshold.
+The five are not interchangeable bosses. Each should pursue Nhal's purpose through an established scholarly talent and a personal interpretation of what the catastrophe meant. Their extraordinary longevity makes them recurring antagonists; they remain vulnerable and not divine. The Conclave formed after [[The Binding]], and Nhal's voice returned only after the Major Anchor network crossed the critical resonance threshold.
 
 ### Vaer'uun, the First Voice — the burden of authority
 
@@ -57,7 +57,7 @@ As the hidden influence behind the experiments became apparent, Vaer'uun interpr
 
 #### Divine War and Binding
 
-The rupture transformed Vaer'uun and allowed Nhal's whispers to reach willing followers more clearly. He helped coordinate Unmade activity during the Divine War while Su'vareth cultivated networks of influence. At The Binding, reliable communication vanished. The Unmade turned to the five transformed scholars, and Vaer'uun assumed responsibility for interpreting remembered instructions.
+The rupture transformed Vaer'uun and allowed Nhal's whispers to reach willing followers more clearly. He helped coordinate Unmade activity during the [[Divine War]] while Su'vareth cultivated networks of influence. At The Binding, reliable communication vanished. The Unmade turned to the five transformed scholars, and Vaer'uun assumed responsibility for interpreting remembered instructions.
 
 His earliest interpretations may have been sincere efforts to preserve purpose, but over generations his authority came to depend on their acceptance. Doctrine and leadership became difficult for ordinary followers to distinguish from Nhal's will.
 
@@ -157,9 +157,9 @@ A late operation may centre on a partially activated Major Anchor. Thes'var alte
 
 ### Su'vareth, the Veiled Hand — the web of betrayal
 
-**Status: creator-approved and locked (14 October 2026).** The overarching character arc and eight milestones are approved; specific missions, the first Guardian betrayal, evidence recovered from the Shattered Delegation and her ultimate fate remain open.
+**Status: creator-approved and locked (14 October 2026).** The overarching character arc and eight milestones are approved; specific missions, the first Guardian betrayal, evidence recovered from the [[Shattered Delegation]] and her ultimate fate remain open.
 
-**Core movement:** From a trusted Kel'vari research coordinator responsible for records, external relationships and institutional confidence to the architect of a covert network embedded across hostile civilizations. Her greatest talent is not inventing obvious lies, but arranging authentic information so that people reach false conclusions.
+**Core movement:** From a trusted [[Kel'vari]] research coordinator responsible for records, external relationships and institutional confidence to the architect of a covert network embedded across hostile civilizations. Her greatest talent is not inventing obvious lies, but arranging authentic information so that people reach false conclusions.
 
 #### Before the First Anchor
 
@@ -296,7 +296,7 @@ Restrained, authoritative, observant, patient and ruthless when he judges a thre
 1. **The Unseen Defences — opening.** Players encounter unusually disciplined hostile forces defending ruins, supply routes and concealed research sites.
 2. **The Fortress Beneath the Ruins — early dungeon.** A hidden stronghold combines ancient Kel'vari safeguards with modern conditioning and military organisation.
 3. **The Warden's Doctrine — military investigation.** Recovered orders reveal a commander who prioritises research protection, personnel preservation and layered defence.
-4. **The Guardian Who Fell — historical revelation.** Oth'varen identifies Khor'vun's defensive methods and reveals his original role among the six scholars.
+4. **[[The Guardian]] Who Fell — historical revelation.** Oth'varen identifies Khor'vun's defensive methods and reveals his original role among the six scholars.
 5. **The Limits of Control — conditioning storyline.** Oma'vira's conditioned troops fail to adapt; Khor'vun intervenes with disciplined soldiers, revealing tension over imposed loyalty.
 6. **The Siege of the Anchor — major military campaign.** Players assault a fortified Regional or Major Anchor defended by troops, wards, constructs and fallback positions.
 7. **The Last Defence — major confrontation.** Oth'varen challenges Khor'vun's claim to have always protected his colleagues, confronting him with the lives endangered by that protection.
@@ -330,7 +330,7 @@ His major encounter should centre on a fortified Anchor complex. Players overcom
 ## Design guardrails
 
 1. Avoid revealing the five founders' modern titles and ancient identities all at once.
-2. Keep Covenant and Dominion hostile; separate investigations may uncover complementary evidence without producing a public alliance.
+2. Keep [[Covenant]] and [[Dominion]] hostile; separate investigations may uncover complementary evidence without producing a public alliance.
 3. Do not make the Unmade responsible for every legitimate local grievance or every benefit of the awakening.
 4. Do not treat a single Major Anchor's destruction or inversion as sufficient to end Nhal's communication or free the Seven.
 5. Preserve uncertainty around the method, cost and ultimate consequences of inversion.

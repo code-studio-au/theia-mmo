@@ -1,5 +1,6 @@
 ---
 type: event
+chronology_order: 5
 canon_status: source-specific
 source: "[[Sources/THEIA_DETAILED_LORE_ARCHIVE]]"
 up: "[[Historical Timeline]]"
@@ -12,3 +13,6 @@ Historical sequence and causes are distinct from [[Timelines|player revelation]]
 
 [[Historical Timeline]] · [[Welcome|Home]]
 
+## Related notes
+
+[[Nhal]] · [[Kel'vari]]

@@ -10,7 +10,7 @@ up: "[[Atlas]]"
 > This campaign geography is proposed. Exact distances, bearings and travel times require a map pass. Existing locked geographic constraints remain in force.
 
 ## Identity and terrain
-Working name for an Unmade outer-Shroud Major Anchor complex
+Working name for an [[The Unmade|Unmade]] outer-Shroud Major Anchor complex
 
 ## Connections
 Surveyed expedition track from Lantern Redoubt; external links traced overseas

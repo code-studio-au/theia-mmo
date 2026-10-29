@@ -10,6 +10,10 @@ Alliance: [[Dominion]].
 
 Keeper-created, principally Seeker-worshipping; guild government, modern surface capital, ancient ancestral underground-valley cities.
 
+## Notable characters
+
+- [[Nemi Brindlewick]] — garrison quartermaster; Needs Review.
+
 ## Broader context
 ![[Sources/THEIA_WORLD_BIBLE#6. Playable races, allegiances and governments [CONFIRMED]]]
 
@@ -17,3 +21,6 @@ Keeper-created, principally Seeker-worshipping; guild government, modern surface
 
 [[Peoples and Allegiances]] · [[Welcome|Home]]
 
+## Related notes
+
+[[The Keeper]] · [[The Seeker]]

@@ -30,4 +30,4 @@ Source: [[Sources/THEIA_HUMAN_QUEST_REGISTER#Optional local stories|Optional loc
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
 
-[[Characters/Campaign Cast/Sel'ora|Sel'ora]] · [[Lore/Kel'vari|Kel'vari]]
+[[Characters/Campaign Cast/Sel'ora|Sel'ora]] · [[Lore/Peoples/Kel'vari|Kel'vari]]

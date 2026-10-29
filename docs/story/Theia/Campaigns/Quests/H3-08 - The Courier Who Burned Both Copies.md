@@ -20,7 +20,7 @@ Mara's field agent
 [[H3-07 - The Rejected Component|H3-07]]
 
 ## Objective and completion evidence
-Intercept an Unmade courier before the cached archive is destroyed; retain redundancy through an already lodged duplicate.
+Intercept an [[The Unmade|Unmade]] courier before the cached archive is destroyed; retain redundancy through an already lodged duplicate.
 
 Source: [[Sources/THEIA_HUMAN_QUEST_REGISTER#Act III — The Hidden Design|Act III — The Hidden Design]], row **H3-08**. Apply the source's [[Sources/THEIA_HUMAN_QUEST_REGISTER#Progression conventions|progression conventions]] when reading dependencies.
 

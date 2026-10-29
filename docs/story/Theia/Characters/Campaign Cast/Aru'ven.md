@@ -22,4 +22,4 @@ Source: [[Sources/THEIA_HUMAN_CAST_AND_PLACES#Allied and Kel'vari cast|Allied an
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
 
-[[Lore/Kel'vari|Kel'vari]] · [[Atlas/Enclaves/Thuma'rei|Thuma'rei]]
+[[Lore/Peoples/Kel'vari|Kel'vari]] · [[Atlas/Enclaves/Thuma'rei|Thuma'rei]]

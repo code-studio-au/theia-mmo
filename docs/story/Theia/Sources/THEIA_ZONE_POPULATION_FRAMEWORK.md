@@ -4,7 +4,7 @@
 
 ## Design objective
 
-A player who ignores the main narrative must still find a functioning MMORPG world: native wildlife, neutral attackable creatures, aggressive threats, repeatable combat, exploration, gathering, local quests and occasional elites. The Unmade is a consequential hidden antagonist, **not the explanation for every hostile encounter**.
+A player who ignores the main narrative must still find a functioning MMORPG world: native wildlife, neutral attackable creatures, aggressive threats, repeatable combat, exploration, gathering, local quests and occasional elites. [[The Unmade]] is a consequential hidden antagonist, **not the explanation for every hostile encounter**.
 
 ### Disposition and behaviour
 
@@ -21,7 +21,7 @@ A player who ignores the main narrative must still find a functioning MMORPG wor
 4. **Disposition:** Why do they attack this player rather than remain neutral? Political dissent alone is insufficient.
 5. **Sustainability:** Where do they live, obtain supplies, recruit and retreat? A camp should not exist merely as a spawn cluster.
 
-For example, human bandits in the human inland plains require little special explanation; a human military group deep in orc grasslands needs a supported route and objective. An overseas Covenant outpost on a Dominion coast can be justified by the established war, but its reach inland must follow logistics.
+For example, human bandits in the human inland plains require little special explanation; a human military group deep in orc grasslands needs a supported route and objective. An overseas [[Covenant]] outpost on a [[Dominion]] coast can be justified by the established war, but its reach inland must follow logistics.
 
 ## Population layers
 
@@ -40,12 +40,12 @@ No fixed quota applies to any layer. Some starter zones can have no Unmade prese
 | --- | --- | --- | --- |
 | Human inland plains | Grazers, river wildlife, scavengers | Wolves, dangerous river fauna, local human outlaws | Covert supply diversion or old research site only if narratively justified |
 | Dwarven mountains | Mountain grazers, cave fauna | Predators, hazardous subterranean creatures, rogue mining equipment or constructs | Hidden excavation or artifact theft |
-| Aelari primeval forest | Forest herbivores, birds, small woodland fauna | Predators, territorial growths, locally grounded illegal hunters | Unusual ward disruption near a concealed working |
-| Korrath highlands | Highland grazers, birds, cave life | Predators, territorial cave inhabitants, justified local outcasts | Ancient wardstone disturbance only if connected to an operation |
+| [[Aelari]] primeval forest | Forest herbivores, birds, small woodland fauna | Predators, territorial growths, locally grounded illegal hunters | Unusual ward disruption near a concealed working |
+| [[Korrath]] highlands | Highland grazers, birds, cave life | Predators, territorial cave inhabitants, justified local outcasts | Ancient wardstone disturbance only if connected to an operation |
 | Orc grasslands | Herd animals, burrowers, scavengers | Grassland predators, dangerous herd leaders, outlaw orc warbands | Local recruited agents or covert transport rather than unexplained human camps |
 | Halfling surface settlements | Burrowers, valley fauna, gathering creatures | Dangerous insects, underground predators, malfunctioning mechanisms | Smuggling route or hidden artifact transfer |
-| Vaelari mountain-lake region | Lake wildlife, mountain fauna | Aquatic predators, rogue constructs, unstable magical manifestations | Compromised academy experiment or covert research |
-| Vorrath storm coast | Shore birds, coastal fauna, marine scavengers | Coastal predators, dangerous marine life, justified sectarian raiders | Concealed sea shipment or site tied to a local magical disturbance |
+| [[Vaelari]] mountain-lake region | Lake wildlife, mountain fauna | Aquatic predators, rogue constructs, unstable magical manifestations | Compromised academy experiment or covert research |
+| [[Vorrath]] storm coast | Shore birds, coastal fauna, marine scavengers | Coastal predators, dangerous marine life, justified sectarian raiders | Concealed sea shipment or site tied to a local magical disturbance |
 
 **Political constraints:** The Aelari and Vaelari are separate civilizations, as are Korrath and Vorrath. Avoid treating those divisions as blanket permission for indiscriminate hostile populations. Orc Great Clan rivalry does not make whole clans default red NPCs. Halfling guild disputes do not automatically create hostile criminal armies.
 
@@ -59,7 +59,7 @@ No fixed quota applies to any layer. Some starter zones can have no Unmade prese
 
 **Advanced region:** Larger military or magical threats, organised enemy camps and stronger elites. Minor Resonators or linked installations appear only in zones that logically contain them.
 
-**High-level/endgame region:** Fortified Regional/Major Anchor operations, serious corrupted territories, elite Unmade forces and major encounters. The Shroud has its own ancient ecology and Kel'vari inhabitants; it is not one continuous hostile army camp.
+**High-level/endgame region:** Fortified Regional/Major Anchor operations, serious corrupted territories, elite Unmade forces and major encounters. The Shroud has its own ancient ecology and [[Kel'vari]] inhabitants; it is not one continuous hostile army camp.
 
 ## Independent levelling loop
 
@@ -82,7 +82,7 @@ Before placing Unmade enemies, specify: which Conclave operation is present; why
 
 ## Worked example: an orc grassland zone
 
-A Great Clan settlement serves as a friendly hub. Nearby herds and scavengers are mostly neutral; predators and territorial beasts create predictable combat routes. A small band of dishonoured orc raiders threatens caravans for supplies, with its own camp, motive and local history. A cave contains dangerous creatures and a rare elite. Players can hunt, gather, explore and defeat raiders without hearing of Nhal.
+A Great Clan settlement serves as a friendly hub. Nearby herds and scavengers are mostly neutral; predators and territorial beasts create predictable combat routes. A small band of dishonoured orc raiders threatens caravans for supplies, with its own camp, motive and local history. A cave contains dangerous creatures and a rare elite. Players can hunt, gather, explore and defeat raiders without hearing of [[Nhal]].
 
 An optional investigation follows unusual thefts of particular metal components. Only after comparing shipments and discovering a hidden intermediary might players find an Unmade-linked cache. Its guards could be local willing recruits or conditioned defenders with a grounded reason for being there. No unexplained human bandit camp is needed.
 

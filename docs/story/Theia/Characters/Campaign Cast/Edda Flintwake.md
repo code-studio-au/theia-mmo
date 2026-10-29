@@ -18,3 +18,7 @@ Maintains Brynja's workshop services and handles local repair instruction while 
 Source: [[Sources/THEIA_HUMAN_CAST_AND_PLACES#Allied and Kel'vari cast|Allied and Kel'vari cast]].
 
 [[Characters]] · [[Human Campaign]]
+
+## Related notes
+
+[[Dwarves]] · [[Brynja Flintwake]]

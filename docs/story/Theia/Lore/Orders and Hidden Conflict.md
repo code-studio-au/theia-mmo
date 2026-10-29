@@ -11,3 +11,7 @@ Read these section labels together with later dated amendments in [[Sources/THEI
 ![[Sources/THEIA_WORLD_BIBLE#9. Hidden conflict [CONFIRMED]]]
 
 [[Lore and World]] · [[Chronicles and History]] · [[Welcome|Home]]
+
+## Related notes
+
+[[The Guardians]] · [[Oth'varen]] · [[The Unmade]] · [[The Corrupted Conclave]] · [[Nhal]]

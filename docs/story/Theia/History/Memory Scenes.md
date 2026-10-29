@@ -5,3 +5,7 @@
 [[Characters]] · [[Chronicles and History]] · [[Timelines]]
 
 [[The Six Reunited|Read the approved reunion scene]]
+
+## Related notes
+
+[[Oth'varen]] · [[Vaer'uun]] · [[Thes'var]] · [[Su'vareth]] · [[Oma'vira]] · [[Khor'vun]]

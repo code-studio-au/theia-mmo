@@ -92,7 +92,7 @@ Complete static navigation alongside the live browsing tables. Approval boundari
 
 ## event
 - [[History/Events/Age of Reconstruction|Age of Reconstruction]]
-- [[History/Events/Creation of the Seventh|Creation of the Seventh]]
+- [[History/Events/Creation of the Kel'vari|Creation of the Kel'vari]]
 - [[History/Events/Divine Schism|Divine Schism]]
 - [[History/Events/Divine War|Divine War]]
 - [[History/Events/First Resonance|First Resonance]]
@@ -142,7 +142,7 @@ Complete static navigation alongside the live browsing tables. Approval boundari
 - [[History/The Six Reunited|The Six Reunited]]
 
 ## people
-- [[Lore/Kel'vari|Kel'vari]]
+- [[Lore/Peoples/Kel'vari|Kel'vari]]
 - [[Lore/Peoples/Aelari|Aelari]]
 - [[Lore/Peoples/Dwarves|Dwarves]]
 - [[Lore/Peoples/Halflings|Halflings]]
@@ -311,6 +311,5 @@ Complete static navigation alongside the live browsing tables. Approval boundari
 - [[Lore/Primordial Cosmology|Primordial Cosmology]]
 - [[Lore/Resonance Inversion|Resonance Inversion]]
 - [[Lore/The Seven Gods|The Seven Gods]]
-- [[Lore/The Seventh|The Seventh]]
 
 [[Source Reading Maps]] · [[Source Library]] · [[Welcome|Home]]

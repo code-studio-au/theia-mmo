@@ -9,3 +9,7 @@ Read these section labels together with later dated amendments in [[Sources/THEI
 ![[Sources/THEIA_WORLD_BIBLE#4. Divine and mortal history]]
 
 [[Lore and World]] · [[Chronicles and History]] · [[Welcome|Home]]
+
+## Related notes
+
+[[The Seven Gods]] · [[Kel'vari]] · [[First Resonance]] · [[Second Sundering]] · [[Divine War]] · [[The Binding]]

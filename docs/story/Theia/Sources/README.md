@@ -11,7 +11,7 @@ quests, NPCs, combat, persistence or approved engineering requirements.
 |---|---|
 | Reading order and canon rules | [Imported documentation guide](THEIA_DOCUMENTATION_GUIDE.md), [local decisions and maintenance](DECISIONS.md) |
 | World and lore | [World Bible](THEIA_WORLD_BIBLE.md), [Detailed Lore Archive](THEIA_DETAILED_LORE_ARCHIVE.md), [Interwoven Chronicle](THEIA_INTERWOVEN_CHRONICLE.md) |
-| Characters | [Character Arcs](THEIA_CHARACTER_ARCS.md), [Human Cast and Places](THEIA_HUMAN_CAST_AND_PLACES.md) |
+| [[Characters]] | [Character Arcs](THEIA_CHARACTER_ARCS.md), [Human Cast and Places](THEIA_HUMAN_CAST_AND_PLACES.md) |
 | Campaign acts and revelation | [Modern Story Revelation Timeline](THEIA_MODERN_STORY_REVELATION_TIMELINE.md), [Human Act I](THEIA_HUMAN_ACT_I_STORY.md), [Complete Human Campaign](THEIA_HUMAN_CAMPAIGN.md) |
 | Quests and encounters | [Human Quest Register](THEIA_HUMAN_QUEST_REGISTER.md), [Human Story Dungeons](THEIA_HUMAN_STORY_DUNGEONS.md), [Connected Racial Stories](THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md) |
 | Settlements and world population | [Human Heartlands Settlement Register](THEIA_HUMAN_HEARTLANDS_SETTLEMENT_REGISTER.md), [Zone Population Framework](THEIA_ZONE_POPULATION_FRAMEWORK.md) |

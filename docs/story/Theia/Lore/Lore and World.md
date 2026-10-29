@@ -7,7 +7,7 @@
 - [[Divine and Mortal History]]
 - [[Magic]]
 - [[Peoples and Allegiances]]
-- [[The Seventh]]
+- [[Kel'vari]]
 - [[Orders and Hidden Conflict]]
 - [[Anchors and the Shroud]]
 

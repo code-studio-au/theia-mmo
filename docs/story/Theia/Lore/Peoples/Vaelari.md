@@ -10,6 +10,11 @@ Alliance: [[Dominion]].
 
 Guardian-created elves, chiefly Seeker-worshipping; arcane leadership and postwar mountain-lake capital.
 
+## Notable characters
+
+- [[First Archon Selrion]] — approved Vaelari ruler.
+- [[Ilyss Varen]] — researcher under a Dominion contract; Needs Review.
+
 ## Broader context
 ![[Sources/THEIA_WORLD_BIBLE#6. Playable races, allegiances and governments [CONFIRMED]]]
 
@@ -17,3 +22,6 @@ Guardian-created elves, chiefly Seeker-worshipping; arcane leadership and postwa
 
 [[Peoples and Allegiances]] · [[Welcome|Home]]
 
+## Related notes
+
+[[The Guardian]] · [[The Seeker]]

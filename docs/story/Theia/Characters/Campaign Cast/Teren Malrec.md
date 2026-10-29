@@ -10,7 +10,7 @@ up: "[[Characters]]"
 > This campaign entry is Needs Review. Established facts explicitly identified by the source retain their existing status.
 
 ## Public role and location
-Human Unmade conditioning commandant in the Shroud
+Human [[The Unmade|Unmade]] conditioning commandant in the Shroud
 
 ## Knowledge and motivation
 Trained in a limited part of Oma'vira's methods; willing allegiance

@@ -13,3 +13,6 @@ up: "[[Memory Scenes]]"
 
 [[Memory Scenes]] · [[Welcome|Home]]
 
+## Related notes
+
+[[Oth'varen]] · [[Vaer'uun]] · [[Thes'var]] · [[Su'vareth]] · [[Oma'vira]] · [[Khor'vun]] · [[The Corrupted Conclave]] · [[The Binding]]

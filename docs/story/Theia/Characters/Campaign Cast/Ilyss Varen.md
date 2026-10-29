@@ -16,7 +16,7 @@ Vaelari researcher under a Dominion contract
 An independently filed rejection of unstable parts
 
 ## Boundary and proposed resolution
-Not automatically Unmade or a defector. Remains with her people; useful observations do not create cooperation.
+Not automatically [[The Unmade|Unmade]] or a defector. Remains with her people; useful observations do not create cooperation.
 
 Source: [[Sources/THEIA_HUMAN_CAST_AND_PLACES#Dominion characters required by this human route|Dominion characters required by this human route]].
 

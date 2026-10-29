@@ -10,7 +10,7 @@ up: "[[Characters]]"
 > This campaign entry is Needs Review. Established facts explicitly identified by the source retain their existing status.
 
 ## Public role and location
-Covenant-facing supply factor, willing Unmade local operator
+Covenant-facing supply factor, willing [[The Unmade|Unmade]] local operator
 
 ## Knowledge and motivation
 Knows the small device's assignment, not full ancient cosmology

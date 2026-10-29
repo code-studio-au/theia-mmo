@@ -10,3 +10,7 @@ The overarching arc is approved; specific scenes, dialogue and outcomes retain t
 ![[Sources/THEIA_CHARACTER_ARCS#Oth'varen — locked overarching arc]]
 
 [[Characters]] · [[Orders and Hidden Conflict]] · [[Timelines]]
+
+## Related notes
+
+[[Kel'vari]] · [[The Guardians]] · [[The Corrupted Conclave]] · [[Nhal]] · [[The Six Reunited]]

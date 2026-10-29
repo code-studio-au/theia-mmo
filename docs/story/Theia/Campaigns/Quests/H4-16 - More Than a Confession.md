@@ -22,7 +22,7 @@ Mara
 [[H4-15 - The Witness Vault|H4-15]]
 
 ## Objective and completion evidence
-Cross-check payments, access, false-attribution instructions and ancient identity; establish Unmade orchestration through several sources.
+Cross-check payments, access, false-attribution instructions and ancient identity; establish [[The Unmade|Unmade]] orchestration through several sources.
 
 Source: [[Sources/THEIA_HUMAN_QUEST_REGISTER#Act IV — Echoes of the Sundering|Act IV — Echoes of the Sundering]], row **H4-16**. Apply the source's [[Sources/THEIA_HUMAN_QUEST_REGISTER#Progression conventions|progression conventions]] when reading dependencies.
 
