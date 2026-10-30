@@ -750,6 +750,16 @@
         }
       },
       "configuredAt": 1792979699364
+    },
+    {
+      "providerId": "9ed6750a-1994-4f60-be16-3f114d3e79f3",
+      "info": {
+        "id": "gpt-6.1-terra",
+        "displayName": "6.1 Terra",
+        "description": "GPT-6.1 Terra Codex model."
+      },
+      "configuredModelId": "a0bdab57-4767-463c-bb20-eb065393af64",
+      "configuredAt": 1793060682157
     }
   ],
   "backends": {

@@ -1,26 +1,84 @@
 //! Optional bounded server combat. No transport, renderer, file I/O or wall clock.
+mod statuses;
 use super::World;
+pub use statuses::{MAX_ACTIVE_STATUSES, MAX_TARGET_STATUSES, Status};
 use std::{collections::BTreeMap, time::Duration};
 use theia_core::{
     abilities::{Ability, Catalog, Effect},
     content::ContentId,
     coordinates::GlobalPosition,
     identity::EntityKey,
+    resources::{Pool, Profile, Vitals},
 };
 
 pub const MAX_STEP_EVENTS: usize = 64;
 pub const DEVELOPMENT_HEALTH: u32 = 100;
 pub const DEVELOPMENT_RESPAWN_MS: u32 = 5000;
-fn configuration(bytes: &[u8], health: u32, respawn_ms: u32) -> crate::Result<(Catalog, [u8; 32])> {
+struct Configuration {
+    catalog: Catalog,
+    digest: [u8; 32],
+    resources: Option<Profile>,
+    statuses: Option<theia_core::statuses::Catalog>,
+}
+fn configuration(
+    bytes: &[u8],
+    health: u32,
+    respawn_ms: u32,
+    resources: Option<&[u8]>,
+    statuses: Option<&[u8]>,
+) -> crate::Result<Configuration> {
     if health == 0 || health > 1_000_000 || !(100..=60_000).contains(&respawn_ms) {
         return Err("Combat health/respawn configuration exceeds bounded prototype".into());
     }
     let catalog = Catalog::from_json(bytes)?;
+    let profile = resources.map(Profile::from_json).transpose()?;
+    let status_catalog = statuses
+        .map(theia_core::statuses::Catalog::from_json)
+        .transpose()?;
+    if catalog.schema() != 1 && profile.is_none() {
+        return Err("Resource-cost catalogs require an explicit stats profile".into());
+    }
+    if (catalog.schema() == 3 && status_catalog.is_none())
+        || (status_catalog.is_some() && profile.is_none())
+    {
+        return Err("Status abilities require explicit status and resource profiles".into());
+    }
+    for ability in catalog.abilities() {
+        if let Effect::ApplyStatus { status } = ability.effect()
+            && status_catalog
+                .as_ref()
+                .and_then(|c| c.definition(&status))
+                .is_none()
+        {
+            return Err("Ability references an unknown status definition".into());
+        }
+    }
+    if let Some(profile) = &profile
+        && catalog
+            .abilities()
+            .iter()
+            .any(|a| a.mana_cost() > profile.maximum_mana())
+    {
+        return Err("Ability cost exceeds the configured maximum mana".into());
+    }
     let mut identity = b"theia-combat-profile-v2\0".to_vec();
     identity.extend(crate::terrain::sha256(bytes));
     identity.extend(health.to_le_bytes());
     identity.extend(respawn_ms.to_le_bytes());
-    Ok((catalog, crate::terrain::sha256(&identity)))
+    if let Some(bytes) = resources {
+        identity.extend(b"theia-resource-profile-v1\0");
+        identity.extend(crate::terrain::sha256(bytes));
+    }
+    if let Some(bytes) = statuses {
+        identity.extend(b"theia-status-profile-v1\0");
+        identity.extend(crate::terrain::sha256(bytes));
+    }
+    Ok(Configuration {
+        catalog,
+        digest: crate::terrain::sha256(&identity),
+        resources: profile,
+        statuses: status_catalog,
+    })
 }
 fn world_digest(base: [u8; 32], config: [u8; 32]) -> [u8; 32] {
     let mut identity = b"theia-combat-world-v2\0".to_vec();
@@ -36,8 +94,31 @@ pub fn profile_identity(
     health: u32,
     respawn_ms: u32,
 ) -> crate::Result<[u8; 32]> {
-    let (_, config) = configuration(bytes, health, respawn_ms)?;
-    Ok(world_digest(base, config))
+    let config = configuration(bytes, health, respawn_ms, None, None)?;
+    Ok(world_digest(base, config.digest))
+}
+pub fn resource_profile_identity(
+    base: [u8; 32],
+    bytes: &[u8],
+    health: u32,
+    respawn_ms: u32,
+    stats: &[u8],
+) -> crate::Result<[u8; 32]> {
+    let config = configuration(bytes, health, respawn_ms, Some(stats), None)?;
+    Ok(world_digest(base, config.digest))
+}
+pub fn status_profile_identity(
+    base: [u8; 32],
+    bytes: &[u8],
+    health: u32,
+    respawn_ms: u32,
+    stats: &[u8],
+    statuses: &[u8],
+) -> crate::Result<[u8; 32]> {
+    Ok(world_digest(
+        base,
+        configuration(bytes, health, respawn_ms, Some(stats), Some(statuses))?.digest,
+    ))
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Request {
@@ -59,6 +140,8 @@ pub enum Reason {
     Unavailable,
     Superseded,
     TimeExhausted,
+    InsufficientMana,
+    StatusCapacity,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Outcome {
@@ -137,6 +220,7 @@ pub struct Health {
 }
 #[derive(Clone, Debug, PartialEq)]
 pub struct Snapshot {
+    pub vitals: Option<Vitals>,
     pub tick: u64,
     pub reply: Option<Reply>,
     pub cast: Option<Cast>,
@@ -147,6 +231,7 @@ pub struct Snapshot {
 }
 #[derive(Default)]
 struct Actor {
+    mana: Option<Pool>,
     sequence: u64,
     reply: Option<Reply>,
     cast: Option<Cast>,
@@ -155,7 +240,16 @@ struct Actor {
     cooldowns: BTreeMap<ContentId, u64>,
     interrupted: bool,
 }
+struct Hit {
+    ability: ContentId,
+    actor: EntityKey,
+    sequence: u64,
+    target: EntityKey,
+    amount: u32,
+}
 pub(super) struct Authority {
+    statuses: Option<statuses::Registry>,
+    resources: Option<Profile>,
     catalog: Catalog,
     digest: [u8; 32],
     respawn_ticks: u64,
@@ -164,9 +258,56 @@ pub(super) struct Authority {
     events: Vec<Event>,
 }
 impl Authority {
-    fn create(world: &World, bytes: &[u8], health: u32, respawn_ms: u32) -> crate::Result<Self> {
-        let (catalog, digest) = configuration(bytes, health, respawn_ms)?;
+    fn damage(&mut self, world: &mut World, hit: Hit) {
+        let Some(creature) = self
+            .creatures
+            .iter_mut()
+            .find(|c| c.key == hit.target && c.current > 0)
+        else {
+            return;
+        };
+        let applied = hit.amount.min(creature.current);
+        creature.current -= applied;
+        self.events.push(Event::Damage {
+            ability: hit.ability,
+            actor: hit.actor,
+            sequence: hit.sequence,
+            target: hit.target,
+            position: creature.position,
+            amount: applied,
+            remaining: creature.current,
+        });
+        if creature.current == 0 {
+            let at = world.tick.saturating_add(self.respawn_ticks);
+            creature.respawn_at = Some(at);
+            world.retire_target(hit.target);
+            self.events.push(Event::Died {
+                target: hit.target,
+                position: creature.position,
+                respawn_at: at,
+            });
+            if let Some(statuses) = &mut self.statuses {
+                statuses.remove_target(hit.target);
+            }
+        }
+    }
+    fn create(
+        world: &World,
+        bytes: &[u8],
+        health: u32,
+        respawn_ms: u32,
+        stats: Option<&[u8]>,
+        status_data: Option<&[u8]>,
+    ) -> crate::Result<Self> {
+        let Configuration {
+            catalog,
+            digest,
+            resources,
+            statuses,
+        } = configuration(bytes, health, respawn_ms, stats, status_data)?;
         Ok(Self {
+            statuses: statuses.map(statuses::Registry::new),
+            resources,
             catalog,
             digest,
             respawn_ticks: world
@@ -188,18 +329,45 @@ impl Authority {
             events: Vec::with_capacity(MAX_STEP_EVENTS),
         })
     }
+    fn actor(&mut self, id: u64) -> &mut Actor {
+        let mana = self
+            .resources
+            .as_ref()
+            .map(|p| Pool::new(p.maximum_mana(), p.maximum_mana()).unwrap());
+        self.actors.entry(id).or_insert_with(|| Actor {
+            mana,
+            ..Default::default()
+        })
+    }
     pub(super) fn identity(&self, base: [u8; 32]) -> [u8; 32] {
         world_digest(base, self.digest)
     }
     pub(super) fn leave(&mut self, id: u64) {
         self.actors.remove(&id);
+        if let Some(statuses) = &mut self.statuses {
+            statuses.remove_source(id);
+        }
     }
     pub(super) fn interrupt(&mut self, id: u64) {
         if let Some(actor) = self.actors.get_mut(&id) {
             actor.interrupted = true;
         }
     }
+    pub(super) fn move_target(&mut self, key: EntityKey, position: GlobalPosition) -> bool {
+        let Some(target) = self
+            .creatures
+            .iter_mut()
+            .find(|c| c.key == key && c.current > 0)
+        else {
+            return false;
+        };
+        target.position = position;
+        true
+    }
     pub(super) fn forget(&mut self, key: EntityKey) -> bool {
+        if let Some(statuses) = &mut self.statuses {
+            statuses.remove_target(key);
+        }
         let count = self.creatures.len();
         self.creatures.retain(|c| c.key != key);
         self.creatures.len() != count
@@ -286,6 +454,11 @@ impl Authority {
         id: u64,
         request: Request,
     ) -> std::result::Result<Event, Reason> {
+        let mana_cost = self
+            .catalog
+            .ability(request.ability.as_str())
+            .unwrap()
+            .mana_cost();
         let timing = self
             .catalog
             .timing(request.ability.as_str(), world.rate)
@@ -302,6 +475,23 @@ impl Authority {
             .tick
             .checked_add(timing.cooldown_ticks)
             .ok_or(Reason::TimeExhausted)?;
+        if let Effect::ApplyStatus { status } = self
+            .catalog
+            .ability(request.ability.as_str())
+            .unwrap()
+            .effect()
+        {
+            let statuses = self.statuses.as_ref().ok_or(Reason::Unavailable)?;
+            let source = world.entity_key(id).ok_or(Reason::Interrupted)?;
+            statuses.can_apply(source, request.target, &status)?;
+            let timing = statuses
+                .catalog
+                .definition(&status)
+                .ok_or(Reason::Unavailable)?
+                .timing(world.rate);
+            theia_core::statuses::Schedule::start(completes, timing)
+                .map_err(|_| Reason::TimeExhausted)?;
+        }
         let cast = Cast {
             sequence: request.sequence,
             ability: request.ability,
@@ -309,7 +499,12 @@ impl Authority {
             started: world.tick,
             completes,
         };
-        let actor = self.actors.entry(id).or_default();
+        let actor = self.actor(id);
+        if let Some(mana) = &mut actor.mana
+            && !mana.spend(mana_cost)
+        {
+            return Err(Reason::InsufficientMana);
+        }
         actor.cast = Some(cast.clone());
         if timing.global_cooldown_ticks > 0 {
             actor.gcd_until = gcd;
@@ -342,7 +537,7 @@ impl Authority {
         {
             return ignored;
         }
-        self.actors.entry(id).or_default().sequence = request.sequence;
+        self.actor(id).sequence = request.sequence;
         let mut events = Vec::with_capacity(2);
         let outcome = (|| {
             if self.actors[&id].interrupted {
@@ -403,6 +598,13 @@ impl Authority {
     }
     fn advance(&mut self, world: &mut World, before: &BTreeMap<u64, GlobalPosition>) {
         self.events.clear();
+        if let Some(profile) = &self.resources {
+            for actor in self.actors.values_mut() {
+                if let Some(mana) = &mut actor.mana {
+                    mana.regenerate(world.rate, profile.mana_regeneration_per_second());
+                }
+            }
+        }
         for creature in &mut self.creatures {
             if creature.respawn_at.is_some_and(|at| at <= world.tick) {
                 let Some(next) = world.next_id.checked_add(1) else {
@@ -410,6 +612,9 @@ impl Authority {
                 };
                 let previous = creature.key;
                 creature.key.entity = theia_core::identity::EntityId::new(next).unwrap();
+                if let Some(home) = world.patrol_respawn(previous, creature.key) {
+                    creature.position = home;
+                }
                 creature.current = creature.maximum;
                 creature.respawn_at = None;
                 world.next_id = next;
@@ -480,32 +685,27 @@ impl Authority {
                     self.actors.get_mut(&id).unwrap().cast = None;
                     self.cancel(key, cast.sequence, reason);
                 } else if world.tick >= cast.completes {
-                    let Effect::Damage { amount } = ability.effect();
-                    let creature = self
-                        .creatures
-                        .iter_mut()
-                        .find(|c| c.key == cast.target)
-                        .unwrap();
-                    let applied = amount.min(creature.current);
-                    creature.current -= applied;
-                    self.events.push(Event::Damage {
-                        ability: cast.ability.clone(),
-                        actor: key,
-                        sequence: cast.sequence,
-                        target: cast.target,
-                        position: creature.position,
-                        amount: applied,
-                        remaining: creature.current,
-                    });
-                    if creature.current == 0 {
-                        let at = world.tick.saturating_add(self.respawn_ticks);
-                        creature.respawn_at = Some(at);
-                        world.retire_target(cast.target);
-                        self.events.push(Event::Died {
-                            target: cast.target,
-                            position: creature.position,
-                            respawn_at: at,
-                        });
+                    match ability.effect() {
+                        Effect::Damage { amount } => self.damage(
+                            world,
+                            Hit {
+                                ability: cast.ability.clone(),
+                                actor: key,
+                                sequence: cast.sequence,
+                                target: cast.target,
+                                amount,
+                            },
+                        ),
+                        Effect::ApplyStatus { status } => {
+                            let applied = self
+                                .statuses
+                                .as_mut()
+                                .ok_or(Reason::Unavailable)
+                                .and_then(|s| s.apply(world.tick, world.rate, key, &cast, &status));
+                            if let Err(reason) = applied {
+                                self.cancel(key, cast.sequence, reason);
+                            }
+                        }
                     }
                     self.actors.get_mut(&id).unwrap().cast = None;
                 }
@@ -549,6 +749,7 @@ impl Authority {
                 .cooldowns
                 .retain(|_, at| *at > world.tick);
         }
+        self.advance_statuses(world);
         // A later actor may kill a target after an earlier actor was already
         // visited. Publish one coherent completed-step state, with every cast
         // on that retired life cancelled in this same step.
@@ -590,6 +791,43 @@ impl World {
         health: u32,
         respawn_ms: u32,
     ) -> crate::Result<()> {
+        self.enable_combat_config(catalog, health, respawn_ms, None, None)
+    }
+    pub fn enable_resource_combat(
+        &mut self,
+        catalog: &[u8],
+        health: u32,
+        respawn_ms: u32,
+        stats: &[u8],
+    ) -> crate::Result<()> {
+        self.enable_combat_config(catalog, health, respawn_ms, Some(stats), None)
+    }
+    pub fn enable_status_combat(
+        &mut self,
+        catalog: &[u8],
+        health: u32,
+        respawn_ms: u32,
+        stats: &[u8],
+        statuses: &[u8],
+    ) -> crate::Result<()> {
+        self.enable_combat_config(catalog, health, respawn_ms, Some(stats), Some(statuses))
+    }
+    pub fn combat_status_catalog(&self) -> Option<&theia_core::statuses::Catalog> {
+        self.combat.as_ref()?.statuses.as_ref().map(|s| &s.catalog)
+    }
+    pub fn combat_status_snapshot(&self, actor: u64) -> Option<Vec<Status>> {
+        let authority = self.combat.as_ref()?;
+        let statuses = authority.statuses.as_ref()?;
+        Some(statuses.views(self.players.get(&actor)?.position, &authority.creatures))
+    }
+    fn enable_combat_config(
+        &mut self,
+        catalog: &[u8],
+        health: u32,
+        respawn_ms: u32,
+        stats: Option<&[u8]>,
+        statuses: Option<&[u8]>,
+    ) -> crate::Result<()> {
         if self.tick != 0
             || !self.players.is_empty()
             || self.procedural.is_none()
@@ -600,7 +838,9 @@ impl World {
                 "Combat requires inactive graybox world with prepared development targets".into(),
             );
         }
-        self.combat = Some(Authority::create(self, catalog, health, respawn_ms)?);
+        self.combat = Some(Authority::create(
+            self, catalog, health, respawn_ms, stats, statuses,
+        )?);
         Ok(())
     }
     pub fn combat_enabled(&self) -> bool {
@@ -640,6 +880,17 @@ impl World {
             .collect();
         targets.sort_by_key(|c| c.key.entity);
         Some(Snapshot {
+            vitals: authority.resources.as_ref().map(|p| {
+                Vitals::new(
+                    p.maximum_health(),
+                    p.maximum_health(),
+                    state
+                        .and_then(|a| a.mana)
+                        .map_or(p.maximum_mana(), |m| m.current()),
+                    p.maximum_mana(),
+                )
+                .unwrap()
+            }),
             tick: self.tick,
             reply: state.and_then(|a| a.reply),
             cast: state.and_then(|a| a.cast.clone()),

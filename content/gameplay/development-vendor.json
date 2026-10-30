@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "id": "theia.dev.training-vendor",
+  "npc": "theia.dev.guide",
+  "item_catalog": "theia.dev.equipment-items",
+  "offers": [
+    {
+      "id": "theia.dev.training-vendor.stones",
+      "name": "Training stones",
+      "cost": { "item": "theia.dev.training-token", "count": 1 },
+      "grant": { "item": "theia.dev.training-stone", "count": 3 }
+    }
+  ]
+}

@@ -307,6 +307,7 @@ def run(output, binaries, references=None, terrain=None, player_assets=None, col
                 # Gait acceptance below requires application info logs regardless
                 # of the caller's ambient logging filter.
                 env=dict(os.environ,
+                         THEIA_WINDOW_SIZE='1280x720',
                          RUST_LOG=os.environ.get('RUST_LOG', 'info') + ',theia_client=info',
                          THEIA_RENDER_SPAN=str(render_span if render_span is not None else 128),
                          THEIA_SMOKE_START_GATE=str(gate),

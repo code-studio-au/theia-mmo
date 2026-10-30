@@ -8,15 +8,24 @@ use theia_core::coordinates::GlobalPosition;
 use tokio::{task::JoinHandle, time::timeout};
 use tokio_postgres::{Client, Config, NoTls, config::Host};
 use uuid::Uuid;
+mod inventory;
+mod progression;
+mod quests;
+mod rewards;
+mod vendors;
 
 pub const MAX_BATCH: usize = 8;
 const TIMEOUT: Duration = Duration::from_secs(3);
 const MIGRATION_LOCK: i64 = -0x5448_4549_4100_0001;
-const MIGRATIONS: [&str; 4] = [
+const MIGRATIONS: [&str; 8] = [
     include_str!("../migrations/0001_characters.sql"),
     include_str!("../migrations/0002_development_bindings.sql"),
     include_str!("../migrations/0003_accounts.sql"),
     include_str!("../migrations/0004_character_names.sql"),
+    include_str!("../migrations/0005_backpacks.sql"),
+    include_str!("../migrations/0006_reward_claims.sql"),
+    include_str!("../migrations/0007_progression.sql"),
+    include_str!("../migrations/0008_quest_objectives.sql"),
 ];
 async fn bounded<T>(
     future: impl Future<Output = std::result::Result<T, tokio_postgres::Error>>,

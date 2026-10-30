@@ -29,7 +29,8 @@ def verify(output):
         assert abs(clear["yaw"] - .8) < .001
     image_path = output / "scene.png"
     image = Image.open(image_path).convert("RGB")
-    assert list(image.size) == report["extent"] == [1280, 720]
+    assert list(image.size) == report["extent"]
+    assert image.width >= 640 and image.height >= 480
     colours = image.getcolors(image.width * image.height)
     assert colours and len(colours) >= 256, "Expected a rendered scene, not a clear image"
     green = sum(count for count, (r, g, b) in colours if g > r * 1.1 and g > b * 1.1)

@@ -11,10 +11,16 @@ pub const MAX_ABILITIES: usize = 64;
 pub enum Target {
     HostileAlive,
 }
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
-#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Effect {
     Damage { amount: u32 },
+    ApplyStatus { status: ContentId },
+}
+#[derive(Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+enum RawEffect {
+    Damage { amount: u32 },
+    ApplyStatus { status: String },
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -36,7 +42,9 @@ struct RawAbility {
     cast_while_moving: bool,
     #[serde(default = "enabled")]
     uses_global_cooldown: bool,
-    effect: Effect,
+    #[serde(default)]
+    mana_cost: Option<u32>,
+    effect: RawEffect,
 }
 fn enabled() -> bool {
     true
@@ -51,6 +59,7 @@ pub struct Ability {
     cooldown_ms: u32,
     cast_while_moving: bool,
     uses_global_cooldown: bool,
+    mana_cost: u32,
     effect: Effect,
 }
 impl Ability {
@@ -69,12 +78,16 @@ impl Ability {
     pub fn uses_global_cooldown(&self) -> bool {
         self.uses_global_cooldown
     }
+    pub fn mana_cost(&self) -> u32 {
+        self.mana_cost
+    }
     pub fn effect(&self) -> Effect {
-        self.effect
+        self.effect.clone()
     }
 }
 #[derive(Clone, Debug)]
 pub struct Catalog {
+    schema: u32,
     abilities: Vec<Ability>,
     global_cooldown_ms: u32,
     queue_window_ms: u32,
@@ -98,7 +111,7 @@ impl Catalog {
         }
         let raw: RawCatalog =
             serde_json::from_slice(bytes).map_err(|e| format!("Invalid ability catalog: {e}"))?;
-        if raw.schema != 1 {
+        if !matches!(raw.schema, 1..=3) {
             return Err("Unsupported ability schema".into());
         }
         if raw.abilities.is_empty() || raw.abilities.len() > MAX_ABILITIES {
@@ -110,6 +123,15 @@ impl Catalog {
         let mut names = BTreeSet::new();
         let mut abilities = Vec::with_capacity(raw.abilities.len());
         for ability in raw.abilities {
+            let mana_cost = match (raw.schema, ability.mana_cost) {
+                (1, None) => 0,
+                (2 | 3, Some(cost)) if cost <= crate::resources::MAX_VALUE => cost,
+                _ => {
+                    return Err(
+                        "Ability mana cost is missing, unsupported or outside bounds".into(),
+                    );
+                }
+            };
             let id = ContentId::new(&ability.id).ok_or("Invalid stable ability ID")?;
             if !names.insert(ability.id) {
                 return Err("Duplicate ability ID".into());
@@ -123,12 +145,18 @@ impl Catalog {
             if ability.cast_ms > 60_000 || ability.cooldown_ms > 60_000 {
                 return Err("Ability timing exceeds prototype budget".into());
             }
-            match ability.effect {
-                Effect::Damage { amount } if amount == 0 || amount > 1_000_000 => {
+            let effect = match ability.effect {
+                RawEffect::Damage { amount } if amount == 0 || amount > 1_000_000 => {
                     return Err("Ability damage outside prototype budget".into());
                 }
-                _ => {}
-            }
+                RawEffect::Damage { amount } => Effect::Damage { amount },
+                RawEffect::ApplyStatus { status } if raw.schema == 3 => Effect::ApplyStatus {
+                    status: ContentId::new(&status).ok_or("Invalid status reference")?,
+                },
+                RawEffect::ApplyStatus { .. } => {
+                    return Err("Status effects require ability schema 3".into());
+                }
+            };
             abilities.push(Ability {
                 id,
                 target: ability.target,
@@ -137,14 +165,19 @@ impl Catalog {
                 cooldown_ms: ability.cooldown_ms,
                 cast_while_moving: ability.cast_while_moving,
                 uses_global_cooldown: ability.uses_global_cooldown,
-                effect: ability.effect,
+                mana_cost,
+                effect,
             });
         }
         Ok(Self {
+            schema: raw.schema,
             abilities,
             global_cooldown_ms: raw.global_cooldown_ms,
             queue_window_ms: raw.queue_window_ms,
         })
+    }
+    pub fn schema(&self) -> u32 {
+        self.schema
     }
     pub fn abilities(&self) -> &[Ability] {
         &self.abilities

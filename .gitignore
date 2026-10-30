@@ -8,3 +8,6 @@
 *.key
 __pycache__/
 *.pyc
+
+# Local Obsidian Copilot conversation exports; story documents remain tracked.
+/docs/story/**/copilot-conversations/

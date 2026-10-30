@@ -235,6 +235,7 @@ impl Orbit {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn controls(
     mut orbit: ResMut<Orbit>,
     buttons: Res<ButtonInput<MouseButton>>,
@@ -243,6 +244,8 @@ pub fn controls(
     mut window: Query<(&Window, &mut CursorOptions)>,
     smoke: Option<Res<crate::smoke::Run>>,
     keys: Res<ButtonInput<KeyCode>>,
+    dialogue: Option<Res<crate::dialogue::Ui>>,
+    inventory: Option<Res<crate::inventory::Ui>>,
 ) {
     if let Some(smoke) = smoke {
         if smoke.world() {
@@ -274,12 +277,18 @@ pub fn controls(
     if keys.just_pressed(KeyCode::Home) {
         *orbit = Orbit::default();
     }
-    let lines = scroll.delta.y
-        * if scroll.unit == MouseScrollUnit::Pixel {
-            1. / 40.
-        } else {
-            1.
-        };
+    let lines = if dialogue.as_ref().is_some_and(|ui| ui.open)
+        || inventory.as_ref().is_some_and(|ui| ui.open)
+    {
+        0.
+    } else {
+        scroll.delta.y
+            * if scroll.unit == MouseScrollUnit::Pixel {
+                1. / 40.
+            } else {
+                1.
+            }
+    };
     orbit.adjust(if rotating { motion.delta } else { Vec2::ZERO }, lines);
 }
 

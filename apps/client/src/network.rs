@@ -14,6 +14,8 @@ use tokio::sync::watch;
 
 #[derive(Resource)]
 pub struct Network {
+    dialogue: Option<tokio::sync::mpsc::Sender<theia_network::renet_runtime::dialogue::Intent>>,
+    items: Option<tokio::sync::mpsc::Sender<theia_core::inventory::ItemCommand>>,
     input: watch::Sender<Intent>,
     chunk_ready: watch::Sender<Option<Vec<theia_core::coordinates::ChunkId>>>,
     state: watch::Receiver<State>,
@@ -70,6 +72,105 @@ pub struct Smoke {
     capture_requested: bool,
 }
 impl Network {
+    pub(crate) fn request_dialogue(
+        &self,
+        revision: u64,
+        action: theia_network::dialogue::Action,
+    ) -> bool {
+        let state = self.state.borrow();
+        if state.error.is_some() || state.dialogue_pending {
+            return false;
+        }
+        if state.dialogue.is_none() {
+            return false;
+        }
+        self.dialogue.as_ref().is_some_and(|queue| {
+            queue
+                .try_send(theia_network::renet_runtime::dialogue::Intent {
+                    expected_revision: revision,
+                    action,
+                })
+                .is_ok()
+        })
+    }
+    pub(crate) fn request_reward(&self, claim: theia_core::rewards::ClaimId) -> bool {
+        if !self
+            .state
+            .borrow()
+            .rewards
+            .as_ref()
+            .is_some_and(|s| s.available.iter().any(|r| r.claim == claim))
+        {
+            return false;
+        }
+        self.request_item(|revision| {
+            theia_core::rewards::ClaimCommand {
+                claim,
+                expected_revision: revision,
+            }
+            .into()
+        })
+    }
+    pub(crate) fn request_vendor(&self, command: theia_core::vendors::Command) -> bool {
+        if self
+            .state
+            .borrow()
+            .inventory
+            .as_ref()
+            .is_none_or(|v| v.bag.revision() != command.expected_revision)
+        {
+            return false;
+        }
+        self.request_item(|_| command.into())
+    }
+    pub(crate) fn request_inventory(&self, operation: theia_core::inventory::Operation) -> bool {
+        self.request_item(|revision| {
+            theia_core::inventory::Command {
+                expected_revision: revision,
+                operation,
+            }
+            .into()
+        })
+    }
+    pub(crate) fn request_equipment(
+        &self,
+        operation: theia_core::inventory::EquipmentOperation,
+    ) -> bool {
+        if !self
+            .state
+            .borrow()
+            .inventory
+            .as_ref()
+            .is_some_and(|s| s.bag.equipment_enabled())
+        {
+            return false;
+        }
+        self.request_item(|revision| {
+            theia_core::inventory::EquipmentCommand {
+                expected_revision: revision,
+                operation,
+            }
+            .into()
+        })
+    }
+    fn request_item(
+        &self,
+        command: impl FnOnce(u64) -> theia_core::inventory::ItemCommand,
+    ) -> bool {
+        if !self.connected() {
+            return false;
+        }
+        let state = self.state.borrow();
+        let Some(view) = &state.inventory else {
+            return false;
+        };
+        if state.inventory_pending {
+            return false;
+        }
+        self.items
+            .as_ref()
+            .is_some_and(|sender| sender.try_send(command(view.bag.revision())).is_ok())
+    }
     pub(crate) fn request_cast(
         &self,
         ability: theia_core::content::ContentId,
@@ -138,14 +239,27 @@ impl Network {
         let state = self.state.borrow();
         state.snapshot.is_some() && state.error.is_none()
     }
+    #[allow(clippy::too_many_arguments)]
     pub fn from_args(
         args: &[String],
         prediction: bool,
         expected_world: [u8; 32],
         targeted: bool,
         combat_catalog: Option<std::sync::Arc<theia_core::abilities::Catalog>>,
+        inventory_profile: Option<theia_network::renet_runtime::inventory::Profile>,
+        status_catalog: Option<std::sync::Arc<theia_core::statuses::Catalog>>,
+        progression_profile: Option<std::sync::Arc<theia_network::progression_wire::Profile>>,
+        quest_profile: Option<std::sync::Arc<theia_network::quest_wire::Profile>>,
+        dialogue_profile: Option<std::sync::Arc<theia_network::dialogue::Profile>>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let renet = args.first().is_some_and(|arg| arg.starts_with("--renet-"));
+        if (inventory_profile.is_some()
+            || progression_profile.is_some()
+            || dialogue_profile.is_some())
+            && (!renet || !prediction)
+        {
+            return Err("Inventory requires predicted secure Renet".into());
+        }
         if targeted && !renet {
             return Err("Targeting requires secure Renet".into());
         }
@@ -238,6 +352,10 @@ impl Network {
         let (casts, cast_queue) = tokio::sync::mpsc::channel(8);
         let (events, combat_events) = tokio::sync::mpsc::channel(16);
         let combat_enabled = combat_catalog.is_some();
+        let inventory_enabled = inventory_profile.is_some();
+        let dialogue_enabled = dialogue_profile.is_some();
+        let (dialogue_actions, dialogue_queue) = tokio::sync::mpsc::channel(4);
+        let (items, item_queue) = tokio::sync::mpsc::channel(1);
         let (states, state) = watch::channel(State::default());
         let (stop, shutdown) = watch::channel(false);
         let runtime = tokio::runtime::Builder::new_current_thread()
@@ -247,7 +365,48 @@ impl Network {
             .name("theia-network".into())
             .spawn(move || {
                 let result = runtime.block_on(async {
-                    if let Some(catalog) = combat_catalog {
+                    if inventory_profile.is_some()
+                        || dialogue_profile.is_some()
+                        || status_catalog.is_some()
+                        || progression_profile.is_some()
+                    {
+                        theia_network::renet_runtime::run_client_gameplay(
+                            address,
+                            &cert,
+                            inputs,
+                            states.clone(),
+                            shutdown,
+                            expected_world,
+                            theia_network::renet_runtime::GameplayClient {
+                                dialogue: dialogue_profile.map(|profile| {
+                                    theia_network::renet_runtime::dialogue::Client {
+                                        profile,
+                                        actions: dialogue_queue,
+                                    }
+                                }),
+                                progression: progression_profile,
+                                quest: quest_profile,
+                                ready,
+                                commands: prediction.then_some(command_queue),
+                                choices: targeted.then_some(target_choices),
+                                combat: combat_catalog.map(|catalog| {
+                                    theia_network::renet_runtime::CombatActions {
+                                        catalog,
+                                        casts: cast_queue,
+                                        events,
+                                    }
+                                }),
+                                statuses: status_catalog,
+                                inventory: inventory_profile.map(|profile| {
+                                    theia_network::renet_runtime::inventory::Client {
+                                        profile,
+                                        commands: item_queue,
+                                    }
+                                }),
+                            },
+                        )
+                        .await
+                    } else if let Some(catalog) = combat_catalog {
                         theia_network::renet_runtime::run_client_combat(
                             address,
                             &cert,
@@ -325,6 +484,8 @@ impl Network {
                 }
             })?;
         Ok(Self {
+            dialogue: dialogue_enabled.then_some(dialogue_actions),
+            items: inventory_enabled.then_some(items),
             input,
             chunk_ready,
             state,
@@ -387,6 +548,18 @@ pub struct RemotePawn {
 }
 
 impl RemotePawn {
+    pub(crate) fn stationary(id: u64, position: GlobalPosition) -> Self {
+        Self {
+            id,
+            from: position,
+            to: position,
+            elapsed: 0.,
+            duration: 1. / 30.,
+        }
+    }
+    pub(crate) fn advance_presentation(&mut self, seconds: f32) {
+        self.elapsed += seconds.clamp(0., 0.25);
+    }
     pub(crate) fn actor_id(&self) -> u64 {
         self.id
     }
@@ -394,7 +567,7 @@ impl RemotePawn {
         [self.from, self.to]
     }
 
-    fn global_sample(&self) -> GlobalPosition {
+    pub(crate) fn global_sample(&self) -> GlobalPosition {
         let from = self.from.metres();
         let to = self.to.metres();
         let t = f64::from((self.elapsed / self.duration.max(1. / 120.)).clamp(0., 1.));
@@ -414,7 +587,7 @@ impl RemotePawn {
             authority.filter(|p| frame.render.to_local(*p).is_some())
         }
     }
-    fn retarget(&mut self, to: GlobalPosition, interval: f32) -> f32 {
+    pub(crate) fn retarget(&mut self, to: GlobalPosition, interval: f32) -> f32 {
         let a = self.to.metres();
         let b = to.metres();
         let distance = (b[0] - a[0]).hypot(b[2] - a[2]);

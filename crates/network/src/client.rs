@@ -7,6 +7,17 @@ use tokio::{sync::watch, time::MissedTickBehavior};
 
 #[derive(Clone, Debug, Default)]
 pub struct State {
+    pub dialogue: Option<crate::dialogue::View>,
+    pub guide: Option<crate::dialogue_wire::Presence>,
+    pub dialogue_reply: Option<crate::dialogue_wire::Reply>,
+    pub dialogue_pending: bool,
+    pub quest: Option<crate::quest_wire::State>,
+    pub progression: Option<crate::progression_wire::State>,
+    pub rewards: Option<crate::reward_wire::State>,
+    pub appearance: Option<crate::appearance_wire::State>,
+    pub statuses: Option<crate::status_wire::State>,
+    pub inventory: Option<crate::inventory_wire::State>,
+    pub inventory_pending: bool,
     pub combat: Option<crate::combat_wire::State>,
     pub targeting: Option<crate::targeting_wire::State>,
     pub correction: Option<crate::prediction_wire::Corrected>,
@@ -87,6 +98,16 @@ impl State {
 /// Observed Renet diagnostics; byte rates exclude UDP/netcode overhead.
 #[derive(Clone, Debug, Default, serde::Serialize)]
 pub struct TransportStats {
+    pub dialogue_views_received: u64,
+    pub guide_presences_received: u64,
+    pub dialogue_replies_received: u64,
+    pub dialogue_requests_sent: u64,
+    pub appearance_states_received: u64,
+    pub status_states_received: u64,
+    pub quest_states_received: u64,
+    pub progression_states_received: u64,
+    pub inventory_states_received: u64,
+    pub inventory_requests_sent: u64,
     pub combat_states_received: u64,
     pub combat_events_received: u64,
     pub cast_requests_sent: u64,

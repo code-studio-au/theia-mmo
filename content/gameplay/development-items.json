@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "id": "theia.dev.backpack-items",
+  "items": [
+    { "id": "theia.dev.training-stone", "name": "Training Stone", "maximum_stack": 20 },
+    { "id": "theia.dev.training-token", "name": "Training Token", "maximum_stack": 99 }
+  ]
+}

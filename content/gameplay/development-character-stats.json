@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "id": "theia.dev.player-vitals",
+  "maximum_health": 100,
+  "maximum_mana": 100,
+  "mana_regeneration_per_second": 5
+}

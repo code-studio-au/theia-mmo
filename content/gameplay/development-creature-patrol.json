@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "id": "theia.dev.training-creature",
+  "route": "theia.dev.training-patrol",
+  "speed_metres_per_second": 2.0,
+  "wait_ms": 1000
+}

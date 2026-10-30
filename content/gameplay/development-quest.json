@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "id": "theia.dev.training-exercise",
+  "name": "Development training",
+  "objective": {
+    "id": "theia.dev.training-exercise.kills",
+    "kind": "kill",
+    "creature": "theia.dev.training-creature",
+    "required": 3
+  }
+}

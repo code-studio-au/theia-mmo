@@ -5,6 +5,39 @@ use theia_core::{
 };
 const DATA: &[u8] = include_bytes!("../../../content/gameplay/development-abilities.json");
 const ID: &str = "theia.dev.arcane-bolt";
+#[test]
+fn status_references_require_explicit_schema_three_and_checked_ids() {
+    let bytes = include_bytes!("../../../content/gameplay/development-status-abilities.json");
+    let catalog = Catalog::from_json(bytes).unwrap();
+    assert_eq!(catalog.schema(), 3);
+    assert_eq!(
+        catalog.abilities()[0].effect(),
+        Effect::ApplyStatus {
+            status: theia_core::content::ContentId::new("theia.dev.scorch").unwrap()
+        }
+    );
+    let original: Value = serde_json::from_slice(bytes).unwrap();
+    for schema in [1, 2] {
+        let mut value = original.clone();
+        value["schema"] = json!(schema);
+        assert!(parse(&value).is_err());
+    }
+    for effect in [
+        json!({"kind":"apply_status","status":"../scorch"}),
+        json!({"kind":"apply_status","status":"theia.dev.scorch","amount":5}),
+        json!({"kind":"apply_status"}),
+    ] {
+        let mut value = original.clone();
+        value["abilities"][0]["effect"] = effect;
+        assert!(parse(&value).is_err());
+    }
+    let mut missing = original;
+    missing["abilities"][0]
+        .as_object_mut()
+        .unwrap()
+        .remove("mana_cost");
+    assert!(parse(&missing).is_err());
+}
 fn data() -> Value {
     serde_json::from_slice(DATA).unwrap()
 }
@@ -174,4 +207,39 @@ fn numeric_type_finite_range_damage_and_timing_budgets_are_enforced() {
             queue_window_ticks: 60,
         })
     );
+}
+
+#[test]
+fn explicit_schema_two_costs_preserve_schema_one_and_reject_ambiguous_or_invalid_costs() {
+    let legacy = Catalog::from_json(include_bytes!(
+        "../../../content/gameplay/development-abilities.json"
+    ))
+    .unwrap();
+    assert_eq!(legacy.schema(), 1);
+    assert_eq!(legacy.abilities()[0].mana_cost(), 0);
+    let data = include_bytes!("../../../content/gameplay/development-resource-abilities.json");
+    let resource = Catalog::from_json(data).unwrap();
+    assert_eq!(resource.schema(), 2);
+    assert_eq!(resource.abilities()[0].mana_cost(), 25);
+    let baseline: serde_json::Value = serde_json::from_slice(data).unwrap();
+    for bad in [
+        serde_json::json!(-1),
+        serde_json::json!(1.5),
+        serde_json::json!(true),
+        serde_json::json!(1_000_001),
+        serde_json::Value::Null,
+    ] {
+        let mut value = baseline.clone();
+        value["abilities"][0]["mana_cost"] = bad;
+        assert!(Catalog::from_json(&serde_json::to_vec(&value).unwrap()).is_err());
+    }
+    let mut missing = baseline.clone();
+    missing["abilities"][0]
+        .as_object_mut()
+        .unwrap()
+        .remove("mana_cost");
+    assert!(Catalog::from_json(&serde_json::to_vec(&missing).unwrap()).is_err());
+    let mut ambiguous = baseline;
+    ambiguous["schema"] = serde_json::json!(1);
+    assert!(Catalog::from_json(&serde_json::to_vec(&ambiguous).unwrap()).is_err());
 }

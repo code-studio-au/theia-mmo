@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "id": "theia.dev.progression",
+  "level_thresholds": [0, 100, 250],
+  "kill_rewards": [
+    { "creature": "theia.dev.training-creature", "experience": 25 }
+  ]
+}

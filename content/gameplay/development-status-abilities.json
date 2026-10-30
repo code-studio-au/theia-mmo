@@ -1,0 +1,16 @@
+{
+  "schema": 3,
+  "global_cooldown_ms": 1500,
+  "queue_window_ms": 300,
+  "abilities": [
+    {
+      "id": "theia.dev.scorch",
+      "target": "hostile_alive",
+      "range_metres": 30.0,
+      "cast_ms": 1000,
+      "cooldown_ms": 2000,
+      "mana_cost": 25,
+      "effect": { "kind": "apply_status", "status": "theia.dev.scorch" }
+    }
+  ]
+}

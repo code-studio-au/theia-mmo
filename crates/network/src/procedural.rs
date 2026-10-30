@@ -188,8 +188,9 @@ impl Patch {
         })
     }
 }
-/// One worker, one pending job, one result. Retains at most one patch per actor
-/// plus an admission patch; no all-world geometry or unbounded generation cache.
+/// One worker, one pending job, one result. Demand includes player/admission
+/// footprints and the optional single patrol's home patch. No all-world geometry
+/// or unbounded generation cache; patrol preparation shares this same cache.
 pub struct Runtime {
     pub patches: BTreeMap<ChunkId, Arc<Patch>>,
     sender: mpsc::SyncSender<ChunkId>,

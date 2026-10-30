@@ -11,9 +11,15 @@ use std::{
 use theia_core::{abilities::Catalog, coordinates::GlobalPosition};
 use theia_network::simulation::combat::{Event, Outcome, Reason};
 #[derive(Resource)]
-pub(crate) struct Config(pub Arc<Catalog>);
+pub(crate) struct Config(pub Arc<Catalog>, pub Option<theia_core::resources::Profile>);
 #[derive(Resource, Default, serde::Serialize)]
 pub(crate) struct Metrics {
+    pub resource_frames: u64,
+    pub mana_rejections: u64,
+    pub mana_decreases: u64,
+    pub mana_regenerations: u64,
+    pub last_mana: Option<u32>,
+    pub minimum_mana: Option<u32>,
     pub event_batches: u64,
     pub event_gaps: u64,
     pub last_batch: u64,
@@ -54,9 +60,23 @@ pub fn load_catalog(path: &Path) -> Result<(Vec<u8>, Arc<Catalog>), Box<dyn std:
     let catalog = Catalog::from_json(&bytes)?;
     Ok((bytes, Arc::new(catalog)))
 }
-pub fn install(app: &mut App, catalog: Arc<Catalog>) {
+pub fn load_resources(
+    path: &Path,
+) -> Result<(Vec<u8>, theia_core::resources::Profile), Box<dyn std::error::Error>> {
+    let mut bytes = Vec::new();
+    std::fs::File::open(path)?
+        .take(theia_core::resources::MAX_PROFILE_BYTES as u64 + 1)
+        .read_to_end(&mut bytes)?;
+    let profile = theia_core::resources::Profile::from_json(&bytes)?;
+    Ok((bytes, profile))
+}
+pub fn install(
+    app: &mut App,
+    catalog: Arc<Catalog>,
+    profile: Option<theia_core::resources::Profile>,
+) {
     ui::install(app);
-    app.insert_resource(Config(catalog))
+    app.insert_resource(Config(catalog, profile))
         .init_resource::<Metrics>()
         .init_resource::<Ui>()
         .add_systems(Startup, setup)
@@ -116,6 +136,8 @@ fn reason_text(reason: Reason) -> &'static str {
         Reason::OutOfRange => "Out of range",
         Reason::NotReady => "Waiting for terrain",
         Reason::Obstructed => "Line of sight blocked",
+        Reason::InsufficientMana => "Not enough mana",
+        Reason::StatusCapacity => "Too many active statuses",
         Reason::Moving => "Cannot cast while moving",
         Reason::Interrupted => "Cast interrupted",
         Reason::Unavailable => "Ability not ready",
@@ -162,6 +184,7 @@ fn present(
                 Event::Cancelled { actor, reason, .. } => {
                     metrics.cancelled += 1;
                     if Some(actor.entity.value()) == state.id {
+                        metrics.mana_rejections += u64::from(reason == Reason::InsufficientMana);
                         note(&mut ui, reason_text(reason));
                     }
                 }
@@ -179,6 +202,25 @@ fn present(
     }
     let mut label = "Waiting for combat state...".to_owned();
     if let Some(combat) = &state.combat {
+        if let Some(vitals) = combat.vitals {
+            metrics.resource_frames += 1;
+            if let Some(old) = metrics.last_mana {
+                metrics.mana_decreases += u64::from(vitals.mana() < old);
+                metrics.mana_regenerations += u64::from(vitals.mana() > old);
+            }
+            metrics.last_mana = Some(vitals.mana());
+            metrics.minimum_mana = Some(
+                metrics
+                    .minimum_mana
+                    .map_or(vitals.mana(), |old| old.min(vitals.mana())),
+            );
+            panel.vitals_ready = true;
+            panel.player_health = vitals.health() as f32 / vitals.maximum_health() as f32;
+            panel.mana = vitals.mana() as f32 / vitals.maximum_mana() as f32;
+            panel.player_health_text =
+                format!("Health {} / {}", vitals.health(), vitals.maximum_health());
+            panel.mana_text = format!("Mana {} / {}", vitals.mana(), vitals.maximum_mana());
+        }
         let ability = &config.0.abilities()[0];
         let selected = state.targeting.as_ref().and_then(|v| v.selected);
         if let Some(source) = input.0
@@ -204,6 +246,7 @@ fn present(
             ui.last_reply = reply.sequence;
             if let Outcome::Rejected(reason) = reply.outcome {
                 metrics.rejected_requests += 1;
+                metrics.mana_rejections += u64::from(reason == Reason::InsufficientMana);
                 note(&mut ui, reason_text(reason));
             } else {
                 ui.until = None;
@@ -277,6 +320,11 @@ fn present(
             )
         } else if ready_at > now {
             format!("Cooldown {:.1}s", ready_at.saturating_sub(now) as f64 / hz)
+        } else if combat
+            .vitals
+            .is_some_and(|vitals| vitals.mana() < ability.mana_cost())
+        {
+            "Needs mana".into()
         } else {
             "Ready".into()
         };

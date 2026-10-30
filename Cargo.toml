@@ -1,5 +1,5 @@
 [workspace]
-members = ["apps/client", "apps/server", "crates/core", "crates/network", "crates/persistence", "crates/auth"]
+members = ["apps/nav-bake", "apps/client", "apps/server", "crates/core", "crates/network", "crates/persistence", "crates/auth"]
 resolver = "3"
 
 [workspace.package]

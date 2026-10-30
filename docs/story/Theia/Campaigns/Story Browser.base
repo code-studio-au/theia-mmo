@@ -3,6 +3,8 @@ filters:
     - 'file.ext == "md"'
     - 'type == "character" || type == "divine" || type == "primordial" || type == "location" || type == "quest" || type == "people" || type == "institution" || type == "event"'
 properties:
+  chronology_order:
+    displayName: Milestone order
   canon_status:
     displayName: Approval status
   quest_id:
@@ -45,11 +47,12 @@ views:
     name: Historical Events
     filters: 'type == "event"'
     order:
+      - chronology_order
       - file.name
       - canon_status
       - source
     sort:
-      - property: file.name
+      - property: chronology_order
         direction: ASC
   - type: table
     name: Quests

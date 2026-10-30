@@ -20,6 +20,14 @@ struct CastFill;
 struct CooldownFill;
 #[derive(Component)]
 struct CastLabel;
+#[derive(Component)]
+struct PlayerHealthFill;
+#[derive(Component)]
+struct ManaFill;
+#[derive(Component)]
+struct PlayerHealthLabel;
+#[derive(Component)]
+struct ManaLabel;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Source {
     Keyboard,
@@ -29,6 +37,11 @@ pub(super) enum Source {
 pub(super) struct Input(pub Option<Source>);
 #[derive(Resource, Default, serde::Serialize)]
 pub(crate) struct Model {
+    pub vitals_ready: bool,
+    pub player_health: f32,
+    pub mana: f32,
+    pub player_health_text: String,
+    pub mana_text: String,
     pub health: f32,
     pub cast: f32,
     pub cooldown: f32,
@@ -41,6 +54,8 @@ pub(crate) struct Model {
 pub(crate) struct Metrics {
     pub button_layout_samples: u64,
     pub health_samples: u64,
+    pub player_health_samples: u64,
+    pub mana_samples: u64,
     pub cast_samples: u64,
     pub cooldown_samples: u64,
     pub max_fill_error_px: f32,
@@ -104,6 +119,63 @@ fn text(value: &str, size: f32) -> impl Bundle {
     )
 }
 fn setup(mut commands: Commands, config: Res<Config>) {
+    if config.1.is_some() {
+        commands
+            .spawn((
+                Node {
+                    position_type: PositionType::Absolute,
+                    right: px(12),
+                    top: px(12),
+                    width: px(300),
+                    padding: UiRect::all(px(10)),
+                    row_gap: px(6),
+                    flex_direction: FlexDirection::Column,
+                    ..default()
+                },
+                BackgroundColor(Color::srgba(0.02, 0.03, 0.05, 0.9)),
+            ))
+            .with_children(|panel| {
+                panel.spawn((PlayerHealthLabel, text("Waiting for health", 16.)));
+                panel
+                    .spawn((
+                        Node {
+                            width: percent(100),
+                            height: px(10),
+                            ..default()
+                        },
+                        BackgroundColor(Color::srgb(0.12, 0.16, 0.12)),
+                    ))
+                    .with_child((
+                        PlayerHealthFill,
+                        Node {
+                            width: percent(0),
+                            height: percent(100),
+                            ..default()
+                        },
+                        BackgroundColor(Color::srgb(0.2, 0.68, 0.37)),
+                    ));
+                panel.spawn((ManaLabel, text("Waiting for mana", 16.)));
+                panel
+                    .spawn((
+                        Node {
+                            width: percent(100),
+                            height: px(10),
+                            ..default()
+                        },
+                        BackgroundColor(Color::srgb(0.08, 0.12, 0.18)),
+                    ))
+                    .with_child((
+                        ManaFill,
+                        Node {
+                            width: percent(0),
+                            height: percent(100),
+                            ..default()
+                        },
+                        BackgroundColor(Color::srgb(0.18, 0.42, 0.92)),
+                    ));
+            });
+    }
+
     let name = config.0.abilities()[0]
         .id()
         .as_str()
@@ -112,14 +184,17 @@ fn setup(mut commands: Commands, config: Res<Config>) {
         .unwrap()
         .replace('-', " ");
     commands
-        .spawn((Node {
-            position_type: PositionType::Absolute,
-            left: percent(0),
-            bottom: px(108),
-            width: percent(100),
-            justify_content: JustifyContent::Center,
-            ..default()
-        },))
+        .spawn((
+            Node {
+                position_type: PositionType::Absolute,
+                left: percent(0),
+                bottom: px(108),
+                width: percent(100),
+                justify_content: JustifyContent::Center,
+                ..default()
+            },
+            bevy::picking::Pickable::IGNORE,
+        ))
         .with_children(|parent| {
             parent
                 .spawn((
@@ -158,14 +233,17 @@ fn setup(mut commands: Commands, config: Res<Config>) {
                 });
         });
     commands
-        .spawn((Node {
-            position_type: PositionType::Absolute,
-            left: percent(0),
-            bottom: px(208),
-            width: percent(100),
-            justify_content: JustifyContent::Center,
-            ..default()
-        },))
+        .spawn((
+            Node {
+                position_type: PositionType::Absolute,
+                left: percent(0),
+                bottom: px(208),
+                width: percent(100),
+                justify_content: JustifyContent::Center,
+                ..default()
+            },
+            bevy::picking::Pickable::IGNORE,
+        ))
         .with_children(|parent| {
             parent
                 .spawn((
@@ -199,22 +277,35 @@ type FillComponents<'a> = (
     Option<&'a HealthFill>,
     Option<&'a CastFill>,
     Option<&'a CooldownFill>,
+    Option<&'a PlayerHealthFill>,
+    Option<&'a ManaFill>,
+);
+type LabelComponents<'a> = (
+    &'a mut Text,
+    Option<&'a ActionLabel>,
+    Option<&'a CastLabel>,
+    Option<&'a PlayerHealthLabel>,
+    Option<&'a ManaLabel>,
 );
 type ButtonComponents<'a> = (Has<Pressed>, Option<&'a Hovered>, &'a mut BackgroundColor);
 fn paint(
     model: Res<Model>,
     config: Res<Config>,
     mut fills: Query<FillComponents<'_>>,
-    mut labels: Query<(&mut Text, Option<&ActionLabel>, Option<&CastLabel>)>,
+    mut labels: Query<LabelComponents<'_>>,
     mut buttons: Query<ButtonComponents<'_>, With<ActionButton>>,
 ) {
-    for (mut node, health, cast, cooldown) in &mut fills {
+    for (mut node, health, cast, cooldown, player_health, mana) in &mut fills {
         let ratio = if health.is_some() {
             model.health
         } else if cast.is_some() {
             model.cast
         } else if cooldown.is_some() {
             model.cooldown
+        } else if player_health.is_some() {
+            model.player_health
+        } else if mana.is_some() {
+            model.mana
         } else {
             continue;
         };
@@ -227,7 +318,7 @@ fn paint(
         .next()
         .unwrap()
         .replace('-', " ");
-    for (mut label, action, cast) in &mut labels {
+    for (mut label, action, cast, player_health, mana) in &mut labels {
         if action.is_some() {
             let state = if !model.connected {
                 "Disconnected / loading"
@@ -236,9 +327,26 @@ fn paint(
             } else {
                 &model.action
             };
-            **label = format!("[1] {name}\n{state}");
+            let cost = config.0.abilities()[0].mana_cost();
+            **label = if cost > 0 {
+                format!("[1] {name}\n{cost} mana | {state}")
+            } else {
+                format!("[1] {name}\n{state}")
+            };
         } else if cast.is_some() {
             **label = model.status.clone();
+        } else if player_health.is_some() {
+            **label = if model.vitals_ready {
+                model.player_health_text.clone()
+            } else {
+                "Waiting for health".into()
+            };
+        } else if mana.is_some() {
+            **label = if model.vitals_ready {
+                model.mana_text.clone()
+            } else {
+                "Waiting for mana".into()
+            };
         }
     }
     for (pressed, hovered, mut colour) in &mut buttons {
@@ -261,6 +369,8 @@ type FillLayout<'a> = (
     Option<&'a HealthFill>,
     Option<&'a CastFill>,
     Option<&'a CooldownFill>,
+    Option<&'a PlayerHealthFill>,
+    Option<&'a ManaFill>,
 );
 fn observe(
     model: Res<Model>,
@@ -274,7 +384,7 @@ fn observe(
             metrics.button_layout_samples += 1;
         }
     }
-    for (node, parent, health, cast, cooldown) in &fills {
+    for (node, parent, health, cast, cooldown, player_health, mana) in &fills {
         let ratio = if health.is_some() {
             metrics.health_samples += u64::from(model.health > 0. && model.health < 1.);
             model.health
@@ -284,6 +394,12 @@ fn observe(
         } else if cooldown.is_some() {
             metrics.cooldown_samples += u64::from(model.cooldown > 0. && model.cooldown < 1.);
             model.cooldown
+        } else if player_health.is_some() {
+            metrics.player_health_samples += u64::from(model.vitals_ready);
+            model.player_health
+        } else if mana.is_some() {
+            metrics.mana_samples += u64::from(model.vitals_ready && model.mana < 1.);
+            model.mana
         } else {
             continue;
         };

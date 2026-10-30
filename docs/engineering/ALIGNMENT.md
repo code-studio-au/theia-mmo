@@ -1,34 +1,335 @@
-# Active work — 2026-10-29: authenticated native admission
+# Stopped safely — 2026-10-30: initial persistent training-zone integration qualified
 
-The account HTTP/OIDC/session/owned-character boundary is qualified and frozen in
-`build/account-http-qualified-v1-20261029` (source copies/hashes and exact tested
-executable). Actual two-user Keycloak/PostgreSQL HTTP checks pass authorization,
-proof-bound collection/cancellation, revocation/supersession, strict inputs,
-measured bounds/deadlines, fail-closed backend loss, graceful shutdown and database/
-API restart preserving character IDs while invalidating old process credentials.
-[Exact evidence/limits](../ACCOUNT_HTTP_FOUNDATION.md).
+The combined two-account OIDC/encrypted/PostgreSQL native run passes at
+1920×1200 on Linux (RX 7900 XTX, RADV/Vulkan). Each character independently
+completes three kills, earns XP, claims one reward, barters and equips a distinct
+item. Exact bags, hands, progress and latest item receipts survive reconnect and
+database/server restart; ownership/replay fencing and backend-loss checks pass.
+[Scope, fixture settings and limits](../PERSISTENT_ZONE_INTEGRATION.md).
 
-**294 workspace tests pass**, 13 explicit skips (ten private fixtures plus three
-actual-PostgreSQL contracts executed separately); formatting and workspace/all-
-target denied-warning Clippy pass. The standalone server remains headless. This
-has two synthetic accounts/nine database characters and no authenticated native
-game admission yet. Earlier OIDC/character/legacy native checkpoints are retained.
+**441 workspace tests pass / 30 explicit skips**, with unchanged final source.
+Formatting, denied-warning workspace/all-target Clippy and nine Python helper tests
+pass. Exact source, binaries and proof are preserved in
+`build/zone-qualified-v1-20261030`; prior vendor and content checkpoints remain.
+This combined flow is qualified at 1920×1200 only; prior vendor checks cover
+1280×720 and 3440×1440 separately. Physical OS input, native Windows, 4K and
+MMO-scale capacity remain unqualified. Accelerated qualification fixtures do not
+change default gameplay balance.
 
-Next is the [P3-01/P3-03 native admission slice](../AUTHENTICATED_ADMISSION.md):
-memory-only encrypted ticket signing, selected character/session binding,
-one-use nonce/generation, prepared saved-pose collision, bounded active/retiring
-ownership and final checkpoint before slot reuse. System-browser launcher entry,
-authenticated native reconnect/revocation, production HTTPS/provider/renewal and
-native Windows remain open. Ordinary development launch remains available.
-The memory-only loopback ticket issuer is now implemented: two real-UDP issuer
-checks plus twelve secure-runtime and two saved-pose regressions pass; network
-all-target denied-warning Clippy and formatting pass. This is ticket signing,
-not character/session admission. The 294-test workspace result above precedes
-this refactor; the sixteen focused tests cover its delta.
+Development is stopped at the user's request; all current repository changes are
+prepared for commit and push, including concurrent story/Obsidian edits. Private
+conversation exports stay local and ignored. This is initial P3-16 training
+integration, not a completed authored production zone. P3-17/18 remain unspecified.
+Earlier notes below are historical.
 
-The user authorized committing and pushing this engineering checkpoint on
-2026-10-29. Story/private export edits remain outside this checkpoint. Earlier
-local/uncommitted statements below describe historical work sessions.
+# Active development — 2026-10-30: initial P3-15 offline gameplay validator qualified
+
+The ten-profile development bundle now has an offline validator using the actual
+core/runtime schemas. It checks item/NPC/creature references and ability/resource/
+status compatibility, bounds file reads/paths and reports deterministic exact-byte
+hashes. [Tool, acceptance and limits](../GAMEPLAY_CONTENT_VALIDATION.md). Runtime profile loading stays as
+qualified; this manifest is an authoring check, not an authoritative world identity.
+
+**441 workspace tests pass / 30 explicit skips**, with unchanged final source.
+Formatting, denied-warning workspace/all-target Clippy, eight focused tool tests
+and eight actual CLI refusal cases pass. Source inputs remain unchanged. Exact
+source, tool/test executables, docs and proof: `build/gameplay-content-qualified-v1-20261030`.
+All previously qualified vendor/gameplay source files remain byte-identical; the
+playable checkpoint remains `build/vendor-qualified-v1-20261030` (actual SQL and
+native purchasing at 1280×720, 1920×1200 and 3440×1440). No new runtime/native,
+performance or MMO-capacity claim is made for this offline tool.
+
+Next is a bounded P3-16 persistent training-zone integration check combining the
+existing initial gameplay systems through login, play, logout and reconnect;
+its acceptance still needs implementation/verification. Production authoring UI,
+navigation/terrain/assets, general quest acceptance/turn-in and other remaining
+systems stay open. P3-17/18 remain unspecified. Changes remain local/uncommitted;
+concurrent story edits are untouched. Earlier notes below are historical.
+
+# Active development — 2026-10-30: initial P3-12 live vendor barter qualified
+
+The guide offers one positive-cost barter through the existing shared item
+owner/sequence: one Training Token for three Training Stones. Live guide/session/
+range checks precede acceptance; accepted queued/executing work survives logout.
+The Bevy shop retains displayed offer/revisions and acknowledges committed items.
+[Exact current behavior, evidence and limitations](../VENDOR_BARTER_FOUNDATION.md).
+
+**433 workspace tests pass / 30 explicit skips**, with unchanged final source.
+Formatting, denied-warning workspace/all-target Clippy, nine Python helper tests,
+twenty actual SQL contracts/twenty-six commands, actual item/reward/vendor retirement
+and mixed-launcher cleanup pass. Two actual OIDC/native accounts pass purchases,
+own SQL/UI comparison, close, reconnect, database/server restart, distant restore
+and backend failure at **1280×720, 1920×1200 and 3440×1440 fullscreen**. Actual
+widgets were inspected. Windowed GPU validation is clean; fullscreen records only
+one specifically allowed upstream wgpu resize diagnostic per startup. Physical
+4K, physical OS input and native Windows remain unqualified.
+
+Exact source, five executed binaries, non-story docs and proof are frozen at
+`build/vendor-qualified-v1-20261030`; earlier checkpoints remain preserved. Currency,
+selling, stock/buyback, general quest acceptance/turn-in and production NPC/player
+lifecycle remain open. No new frame-rate or MMO-population claim is made.
+Next is a small P3-15 offline gameplay-content validation slice using the existing
+checked schemas. P3-17/18 remain unspecified. Changes remain local/uncommitted;
+concurrent story edits are untouched. Earlier notes below are historical.
+
+# Active development — 2026-10-30: P3-12 barter database prerequisite qualified
+
+The positive-cost barter now has an atomic backpack cost/output/receipt transaction
+and uses the existing bounded critical worker. Exact latest retries recover without
+another charge; superseded/conflicting input rejects. [Exact scope/proof](../VENDOR_BARTER_FOUNDATION.md).
+
+**Twenty actual SQL contracts/twenty-six commands pass**, including three new
+purchase contracts: rollback, owner/world/byte binding, shared-revision races,
+full-bag recovery, cancelled answers, queue saturation, backend loss and actual
+process/database restart. Eight barter/36 core regression tests remain qualified;
+core source is unchanged. Workspace check, formatting and denied-warning Clippy
+pass. Exact prerequisite source/probe/proof: `build/vendor-store-qualified-v1-20261030`.
+
+Live NPC/range entitlement, accepted item-owner retention, encrypted purchase
+commands and shop UI remain open. No native purchase or new full-workspace claim
+is made. The prior playable NPC/display remains frozen at
+`build/dialogue-qualified-v1-20261030`: 418 workspace passes/27 skips and actual
+OIDC/native dialogue at 1280×720, 1920×1200 and 3440×1440. P3-17/18 remain unspecified.
+All changes remain local/uncommitted; story edits are untouched. Earlier notes
+below are historical.
+
+# Active development — 2026-10-30: initial P3-12 informational dialogue qualified
+
+One noncombat guide now supports private authoritative branches, bounded Renet
+requests/acknowledgements and a standard Bevy panel. E talks, F1–F4 or buttons choose,
+Esc closes without exiting, and walking away closes the session. Clicks retain the
+observed choice/revision. [Exact source/evidence/limits](../NPC_DIALOGUE_FOUNDATION.md).
+
+**418 workspace tests pass / 27 explicit skips**, with unchanged final source.
+All seventeen SQL contracts/twenty-three commands separately pass; ten private-asset
+cases remain skipped. Formatting, denied-warning workspace/all-target Clippy and
+nine helper tests pass. Two actual OIDC accounts/native encrypted clients pass at
+**1280×720, 1920×1200 and 3440×1440 fullscreen**: distinct branches, actual Bevy
+keyboard/picking, close/reopen/walkaway, fresh sessions after reconnect/database/
+server restart, distant restore and backend loss. Informational dialogue creates
+no item/reward/XP/objective records. Actual panels were inspected. Windowed GPU
+validation is clean; fullscreen has one or two specifically allowed upstream wgpu
+resize diagnostics per startup and no other errors. Physical 4K/Windows remain open.
+
+The mixed Scorch/resources/statuses/creature/equipment/reward/XP/objective/dialogue
+launcher passes all three cleanup modes. Exact source, three executed binaries,
+docs and proof: `build/dialogue-qualified-v1-20261030`. Previous checkpoints stay
+preserved. This is the initial informational slice: vendors, quest acceptance/
+turn-in, production NPC art, occlusion and real player-death closure remain open.
+No new frame-rate or MMO-population claim is made. P3-17/18 remain unspecified.
+All changes stay local/uncommitted; story edits are untouched. Earlier notes below
+are historical.
+
+# Active development — 2026-10-30: initial P3-11 quest objective slice qualified
+
+One opt-in three-kill objective now uses trusted current-life facts, an atomic
+XP/objective transaction, accepted-work retirement, private committed observations
+and a standard Bevy journal. Completion grants no extra items or XP.
+[Exact behavior, evidence and limits](../QUEST_OBJECTIVES_FOUNDATION.md).
+
+**396 workspace tests pass / 27 explicit skips**, with unchanged final source.
+All seventeen actual PostgreSQL contracts/twenty-three commands separately pass;
+ten private-asset skips remain skips. Formatting, denied-warning workspace/all-target
+Clippy and nine Python helper tests pass. Actual OIDC/encrypted-ticket/SQL lease
+checks retain accepted objective work through logout without duplicate credit.
+
+Two actual accounts/native encrypted clients pass at **1920×1200 windowed** and
+**3440×1440 fullscreen**: distinct own 1/3 versus 3/3 journals, completion after
+XP caps, reconnect, database/server restart, distant restore and backend failure.
+Actual widgets were inspected. Windowed GPU validation is clean; fullscreen has
+one documented upstream wgpu resize diagnostic per startup and no other errors.
+The ordinary 1280×720 mixed Scorch/resources/statuses/equipment/reward/XP/objective
+launcher passes all three cleanup modes. Physical 4K and native Windows remain
+unqualified. No new performance or MMO population capacity claim is made.
+
+Exact source, four executables, documentation and proofs:
+`build/quests-qualified-v1-20261030`. Prior checkpoints remain preserved. Next is
+the bounded [P3-12 dialogue foundation](../NPC_DIALOGUE_FOUNDATION.md), currently
+plan only. General quest acceptance, dialogue/turn-in rewards and vendors remain
+open. P3-17/18 remain unspecified. All changes remain local/uncommitted; concurrent
+story edits are untouched. Nothing was pushed. Earlier notes below are historical.
+
+# Active development — 2026-10-30: P3-11 objective core/database prerequisite qualified
+
+One checked development objective and its durable kill receipts now share an
+atomic transaction with enabled XP. Completion stays finite; unfinished objectives
+can advance after XP caps. Existing XP-only callers retain their own transaction.
+[Exact scope and next acceptance](../QUEST_OBJECTIVES_FOUNDATION.md).
+
+Thirty focused core/item tests pass, including five objective tests. All seventeen
+actual PostgreSQL contracts/twenty-three commands pass: coupled rollback, old-event
+replay, competing recipients, cancelled answers, queue saturation, terminated
+backend and actual database/process restart. Formatting, workspace/all-target
+check and denied-warning Clippy pass. Exact prerequisite source, probe and proof:
+`build/quests-store-qualified-v1-20261030`.
+
+Live quest credit, accepted-work retirement integration, private observations and
+the Bevy journal remain open. No new full-workspace or native quest result is
+claimed. The qualified P3-10 game/display source and executables remain frozen at
+`build/progression-qualified-v1-20261030` (388 tests/24 skips, native 1920×1200 and
+3440×1440, 808.60 FPS empty-world baseline). Changes are local/uncommitted; story
+edits remain untouched. Earlier notes below are historical.
+
+# Active development — 2026-10-30: initial earned XP and display slice qualified
+
+P3-10's first opt-in slice now connects authoritative fatal-hit facts to atomic
+victim-life receipts, committed private XP observations and a standard Bevy
+level/bar. Accepted executing/distinct queued XP survives logout and prevents
+character reuse until completion. Item pickup and item revisions are independent.
+[Exact behavior and limits](../EXPERIENCE_LEVELING_FOUNDATION.md).
+
+**388 workspace tests pass / 24 explicit skips**. All fourteen SQL contracts/twenty
+commands separately pass; ten private-asset skips remain skips. Formatting,
+denied-warning workspace/all-target Clippy, five account-helper tests and four
+GPU-policy tests pass. Actual OIDC/encrypted-ticket/SQL retirement proof passes.
+
+Two actual OIDC/native encrypted clients pass kill-to-level, each own UI,
+rejoin/database/server restart, distant restore and backend-loss checks at both
+**1920×1200 windowed** and **3440×1440 borderless fullscreen**. The normal window
+now defaults to 1920×1200; `--window-size` selects dimensions and F11 toggles
+fullscreen. Mixed Scorch/resources/equipment/reward/XP launcher checks retain
+1280×720 and pass all three cleanup modes. 3840×2160 is accepted configuration;
+this 3440×1440 desktop clamps oversized windows, so physical 4K is unqualified.
+[Window options and exact display evidence](../DEVELOPMENT_WORLD.md).
+
+Linux RX 7900 XTX / RADV / Mesa 26.2.6 / Vulkan was inspected. Windowed validation
+is clean; fullscreen records one specifically documented wgpu resize diagnostic
+per startup and rejects other errors. The same release client passes a validation-
+off, single-client empty-world tour at **808.60 FPS uncapped, 1920×1200**, with
+834 loaded / 753 retired chunks and zero missed server simulation deadlines.
+This is not crowded MMO capacity or a native Windows result.
+
+Exact source, binaries and evidence: `build/progression-qualified-v1-20261030`.
+Prior reward/core-store checkpoints remain preserved. Next is the bounded
+[P3-11 objective foundation](../QUEST_OBJECTIVES_FOUNDATION.md); no quest
+code or journal is implemented yet. P3-17/18 remain unspecified. Changes are local/
+uncommitted; concurrent story edits are untouched. Nothing was pushed.
+Earlier checkpoint notes below are historical.
+
+# Paused — 2026-10-30: P3-10 experience core/database prerequisite qualified
+
+Stopped at the user's request after finishing this prerequisite. Checked progression
+profiles, integer level/XP proposals and durable atomic victim-life receipts are
+implemented on the existing bounded async worker. Old-event replay returns current
+committed progress without another award; cap, rollback, cancelled replies, queue
+saturation, competing recipients, backend loss and real restart checks pass.
+[Exact scope and remaining acceptance](../EXPERIENCE_LEVELING_FOUNDATION.md).
+
+**25 focused core/item tests pass**, including six progression tests. All fourteen
+actual PostgreSQL contracts/twenty qualification commands pass. Formatting,
+workspace/all-target checks and denied-warning Clippy pass. Exact source, store
+probe and evidence: `build/progression-store-qualified-v1-20261030`.
+Live kill-to-XP integration, admission/retirement integration, encrypted XP
+observations and Bevy XP UI remain open. No new full-workspace or native XP result
+is claimed; this prerequisite does not establish playable progression.
+
+The qualified P3-09 source/executables remain frozen at
+`build/rewards-qualified-v1-20261030` (**379 tests / 21 skips**, actual SQL,
+native two-account reward/rejoin/restart, ordinary launchers and 805.97 FPS empty-
+world baseline). Changes remain local/uncommitted; concurrent story edits are
+untouched. Nothing was pushed. Earlier checkpoint notes below are historical.
+
+# Active development — 2026-10-30: initial personal reward slice qualified
+
+P3-09's first opt-in training-kill reward is qualified: authoritative fatal-hit
+credit, durable nonrepeatable availability, explicit ordered pickup, atomic items/
+consumption/receipt and a standard Bevy widget. Two actual OIDC/native encrypted
+clients retain each own items through rejoin, real database/server restart,
+distant restore and backend-loss fail-closed behavior. Scorch-to-reward pickup
+and ordinary CLI interruption/child-failure/cancelled-login cleanup pass too.
+[Exact behavior and limits](../LOOT_REWARDS_FOUNDATION.md).
+
+**379 workspace tests pass / 21 explicit skips**, formatting and denied-warning
+workspace/all-target Clippy pass. All eleven SQL contracts/seventeen commands
+separately execute successfully, including full-bag retention, rollback and
+latest-receipt recovery; ten private-asset skips remain skips. Accepted executing
+and distinct queued offers, as well as pickup, retain character ownership through
+logout/retirement. The ordinary legacy backpack launcher also passes.
+
+Native screenshots were inspected on Linux RX 7900 XTX / RADV / Mesa 26.2.6,
+1280×720, with Vulkan validation. The same release binaries pass an empty-world
+one-client movement baseline at **805.97 FPS uncapped**, validation off. This is
+not MMO capacity or a native Windows result. Exact source/binaries/evidence:
+`build/rewards-qualified-v1-20261030`. Prior equipment/store checkpoints remain
+preserved. Changes stay local/uncommitted; story edits remain untouched.
+
+Next is [P3-10 experience and leveling](../EXPERIENCE_LEVELING_FOUNDATION.md):
+its proposed small curve, durable kill receipts, retirement and independent own-
+character UI contract are documented. No progression code/award/UI is implemented
+in the reward checkpoint. Broader loot/groups/instances and production balance
+remain separate work; P3-17/18 stay unspecified.
+
+Earlier checkpoint notes below are historical.
+
+# Active development — 2026-10-29: initial status-effect ability qualified
+
+P3-06's first opt-in Scorch slice is qualified: checked definitions, server-owned
+periodic damage and refresh, bounded independent sources, source/target cleanup,
+encrypted status observations and standard Bevy selected-target indicators.
+[Behavior, exact evidence and limitations](../STATUS_EFFECTS_FOUNDATION.md).
+
+**336 workspace tests pass**, with fifteen explicit skips. All five PostgreSQL
+contracts separately execute and pass; ten private-asset skips remain skips.
+Formatting, workspace/all-target denied-warning Clippy and five HTTP helper tests
+pass. The standalone server dependency graph remains headless.
+
+Two native encrypted clients pass impaired UDP, Vulkan validation, moving casts,
+mana depletion/recovery, 84 periodic hits and four deaths/respawns each, with
+protected hit cues under 32,768 cosmetic requests per client. Own/other status
+labels and cleared state are visible; screenshots were inspected on Linux
+RX 7900 XTX / RADV / Mesa 26.2.5 kisak, 1280×720. Ordinary status/resource/zero-cost
+launchers and the actual OIDC/PostgreSQL mixed backpack launcher pass cleanup.
+Exact source, binaries and evidence: `build/status-qualified-v1-20261029`.
+
+This is an initial periodic-damage slice, not all of P3-06 or persistent combat.
+Player damage/death, healing, dispels, crowd control, class scaling, durable combat
+and native Windows remain open. P3-07 creature AI and its minimum P4-03 navigation
+prerequisite are now in [offline bake/route prerequisite work](../CREATURE_AI_FOUNDATION.md);
+offline central/far saved-terrain packages and headless patrol timing/replication
+checks pass; client integration and native qualification are in progress. P3-17/18 stay unspecified. Changes remain local
+and concurrent story edits are untouched. Earlier checkpoints below are historical.
+
+# Active development — 2026-10-29: initial durable backpack qualified
+
+P3-05's first opt-in backpack slice is qualified: checked item definitions and
+sixteen slots, conserved move/merge/swap/split proposals, durable atomic mutations,
+latest-intent recovery and standard Bevy widgets. Neither queue acceptance nor a
+client-side proposal is acknowledged as a committed item change.
+[Exact behavior, proof and limits](../INVENTORY_FOUNDATION.md).
+
+**322 full workspace tests pass**, with fifteen explicit skips; formatting and
+workspace/all-target denied-warning Clippy pass. All five PostgreSQL contracts
+are separately executed on the final source, including dropped-response recovery,
+concurrent conflicts, queue saturation, actual blocked-backend loss and clean
+process restart. The other ten skips require private assets. Five HTTP helper tests
+pass. Skips are never counted as passes.
+
+Actual OIDC/encrypted-ticket/PostgreSQL lease checks retain both joined and
+never-joined characters until accepted item work finishes. An already committed
+pose alone cannot release a pending item transaction. Two real native encrypted
+clients perform six durable changes and one rejected split each through Bevy
+widgets; distinct arrangements match each own character's SQL contents through
+rejoin, actual database/authority restart, changed spawn and backend loss.
+Screenshots were inspected; Vulkan validation and 4×4 cell-layout checks pass on
+Linux RX 7900 XTX / RADV NAVI31 / Mesa 26.2.5 kisak, 1280×720.
+
+`python3 tools/play.py --account-login --inventory` opts in using the configured
+local OIDC/PostgreSQL boundary. Press I, select an item then a destination; Split
+one changes the next operation. Add `--resources --spell-feedback` to load those
+profiles too. The ordinary mixed launcher passes interruption/child failure and
+pending-browser cancellation, with owned children/tickets removed and database
+ownership closed. Exact source/binaries/evidence:
+`build/inventory-qualified-v1-20261029`. Prior resource/admission checkpoints remain
+preserved. [Resources and their separate performance proof](../STATS_RESOURCES.md).
+
+This is the first development backpack, not all of P3-05: equipment, instances,
+item use/destruction, currency, trade, vendors and rewards remain open. Durable
+items do not persist transient vitals/combat or complete the persistent zone.
+Production account hardening and native Windows remain open. Next is the scoped
+[P3-06 status-effect ability](../STATUS_EFFECTS_FOUNDATION.md); its checked definitions, authoritative timing and encrypted two-client replication
+pass focused tests. Native presentation and integrated regression qualification are
+in progress. Engineering changes remain local/unpushed and concurrent story
+edits are untouched. Earlier checkpoint notes below are historical.
 
 # Current development checkpoint — 2026-10-29: persistence qualified
 

@@ -1,5 +1,10 @@
 //! Server-only fixed-step authority. Inputs never choose timestep, speed or position.
 pub mod combat;
+pub mod creatures;
+pub mod dialogue;
+pub mod progression;
+pub mod quests;
+pub mod rewards;
 use crate::wire::{Input, Intent, MAX_PLAYERS, Player, Snapshot, TICK_HZ, VERSION};
 use std::collections::BTreeMap;
 use std::time::Duration;
@@ -22,7 +27,14 @@ pub struct World {
     players: BTreeMap<u64, Actor>,
     targets: BTreeMap<u64, crate::targeting::Target>,
     targeting_enabled: bool,
+    dialogue: Option<dialogue::Authority>,
+    vendor: Option<std::sync::Arc<crate::vendor_wire::Profile>>,
     combat: Option<combat::Authority>,
+    patrol: Option<creatures::Patrol>,
+    patrol_identity: Option<[u8; 32]>,
+    quest: Option<std::sync::Arc<crate::quest_wire::Profile>>,
+    progression: Option<std::sync::Arc<crate::progression_wire::Profile>>,
+    rewards: Option<std::sync::Arc<crate::reward_wire::Profile>>,
     terrain: Option<crate::terrain::Terrain>,
     chunks: Option<crate::chunk_world::ChunkWorld>,
     client_chunks_required: bool,
@@ -71,7 +83,14 @@ impl Default for World {
             players: BTreeMap::new(),
             targets: BTreeMap::new(),
             targeting_enabled: false,
+            dialogue: None,
+            vendor: None,
             combat: None,
+            patrol: None,
+            patrol_identity: None,
+            quest: None,
+            progression: None,
+            rewards: None,
             terrain: None,
             chunks: None,
             client_chunks_required: false,
@@ -228,6 +247,9 @@ impl World {
                 positions.push(GlobalPosition::new([x, 0., z]).unwrap());
             }
             positions.extend_from_slice(additional);
+            if let Some(patrol) = &self.patrol {
+                positions.push(patrol.home());
+            }
             runtime.poll(&positions);
             if let Some((id, [x, z])) = self.terrain_teleport {
                 let p = GlobalPosition::new([x, 0., z]).unwrap();
@@ -434,7 +456,11 @@ impl World {
     }
     pub fn set_tick_rate(&mut self, rate: TickRate) -> bool {
         // Rate changes are configuration, never a live change to gameplay time.
-        if self.tick != 0 || !self.players.is_empty() || self.combat.is_some() {
+        if self.tick != 0
+            || !self.players.is_empty()
+            || self.combat.is_some()
+            || self.patrol_identity.is_some()
+        {
             return false;
         }
         self.rate = rate;
@@ -566,10 +592,27 @@ impl World {
             } else {
                 identity
             };
-            return self
+            let identity = self.patrol_identity.unwrap_or(identity);
+            let identity = self
                 .combat
                 .as_ref()
                 .map_or(identity, |c| c.identity(identity));
+            let identity = self
+                .rewards
+                .as_ref()
+                .map_or(identity, |r| rewards::profile_identity(identity, r.hash()));
+            let identity = self.progression.as_ref().map_or(identity, |p| {
+                crate::progression_wire::profile_identity(identity, p.hash())
+            });
+            let identity = self.quest.as_ref().map_or(identity, |p| {
+                crate::quest_wire::profile_identity(identity, p.hash())
+            });
+            let identity = self.dialogue.as_ref().map_or(identity, |d| {
+                crate::dialogue::profile_identity(identity, d.profile.hash(), d.placement)
+            });
+            return self.vendor.as_ref().map_or(identity, |v| {
+                crate::vendor_wire::profile_identity(identity, v.hash())
+            });
         }
         self.chunks.as_ref().map_or_else(
             || {
@@ -770,9 +813,13 @@ impl World {
         true
     }
     pub fn remove_development_target(&mut self, key: EntityKey) -> bool {
+        let patrol = self.patrol.as_ref().is_some_and(|p| p.key == key);
+        if patrol {
+            self.patrol = None;
+        }
         let removed = self.retire_target(key);
         let forgotten = self.combat.as_mut().is_some_and(|c| c.forget(key));
-        removed || forgotten
+        removed || forgotten || patrol
     }
     fn retire_target(&mut self, key: EntityKey) -> bool {
         if self
@@ -805,6 +852,9 @@ impl World {
     }
     pub fn leave(&mut self, id: u64) {
         self.players.remove(&id);
+        if let Some(dialogue) = &mut self.dialogue {
+            dialogue.leave(id);
+        }
         if let Some(combat) = &mut self.combat {
             combat.leave(id);
         }
@@ -836,9 +886,12 @@ impl World {
                 .collect()
         });
         let snapshot = self.step_movement();
+        self.advance_patrol();
         if let Some(before) = before {
             self.advance_combat(before);
         }
+        self.sync_patrol_life();
+        self.advance_dialogue();
         if !self.targets.is_empty() {
             for actor in self.players.values_mut() {
                 if actor.selected_target.is_some_and(|key| {

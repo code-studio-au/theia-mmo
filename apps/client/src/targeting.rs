@@ -1,7 +1,8 @@
 //! Opt-in standard Bevy presentation of authoritative, nonblocking targets.
-use crate::{floating_origin::Frame, network::Network, scene::PawnAssets};
+use crate::{network::Network, scene::PawnAssets};
 use bevy::{prelude::*, text::FontSize};
 use theia_core::identity::{EntityId, EntityKey};
+mod motion;
 mod qualification;
 #[derive(Component)]
 pub(crate) struct TargetVisual {
@@ -15,7 +16,8 @@ struct Assets {
     normal: Handle<StandardMaterial>,
     selected: Handle<StandardMaterial>,
 }
-pub fn install(app: &mut App) {
+pub fn install(app: &mut App, moving_speed: Option<f32>) {
+    motion::install(app, moving_speed);
     app.add_systems(Startup, setup.after(crate::scene::setup))
         .add_systems(
             Update,
@@ -92,37 +94,62 @@ fn controls(keys: Res<ButtonInput<KeyCode>>, network: Res<Network>) {
         }
     }
 }
+type VisualComponents<'a> = (
+    Entity,
+    &'a TargetVisual,
+    Option<&'a mut motion::TargetMotion>,
+    &'a mut Transform,
+    &'a mut MeshMaterial3d<StandardMaterial>,
+    &'a mut Visibility,
+);
 fn present(
     mut commands: Commands,
-    network: Res<Network>,
-    frame: Res<Frame>,
-    assets: Res<Assets>,
-    mut visuals: Query<(
-        Entity,
-        &TargetVisual,
-        &mut Transform,
-        &mut MeshMaterial3d<StandardMaterial>,
-        &mut Visibility,
-    )>,
+    scene: motion::Presentation,
+    mut visuals: Query<VisualComponents<'_>>,
     mut hud: Query<&mut Text, With<TargetHud>>,
 ) {
+    let motion::Presentation {
+        network,
+        frame,
+        assets,
+        time,
+        mut metrics,
+    } = scene;
     let state = network.state();
     let view = state.targeting.as_ref().filter(|_| state.error.is_none());
     let mut existing = std::collections::BTreeSet::new();
-    for (entity, visual, mut transform, mut material, mut visibility) in &mut visuals {
+    for (entity, visual, motion, mut transform, mut material, mut visibility) in &mut visuals {
         let target = view.and_then(|v| v.targets.iter().find(|t| t.key == visual.key));
         let Some(target) = target else {
             commands.entity(entity).despawn();
             continue;
         };
         existing.insert(target.key.entity);
+        let global = if let Some(mut motion) = motion {
+            motion.observe(
+                target.position,
+                view.unwrap().tick,
+                state.snapshot.as_ref().map_or(30, |s| s.tick_hz),
+                time.delta_secs(),
+                &mut metrics,
+            )
+        } else {
+            target.position
+        };
         let shown = target.position.chunk(128).is_some_and(|id| {
             state
                 .chunk_report
                 .as_ref()
                 .is_some_and(|r| r.chunks.contains(&[id.x, id.z]))
         });
-        if let Some(local) = frame.render.to_local(target.position) {
+        let shown = shown
+            && global.chunk(128).is_some_and(|id| {
+                state
+                    .chunk_report
+                    .as_ref()
+                    .is_some_and(|r| r.chunks.contains(&[id.x, id.z]))
+            });
+        if let Some(local) = frame.render.to_local(global) {
             transform.translation = Vec3::from_array(local.metres());
             *visibility = if shown {
                 Visibility::Inherited
@@ -152,7 +179,7 @@ fn present(
                     .as_ref()
                     .is_some_and(|r| r.chunks.contains(&[id.x, id.z]))
             });
-            commands.spawn((
+            let mut entity = commands.spawn((
                 TargetVisual { key: target.key },
                 Mesh3d(assets.mesh.clone()),
                 MeshMaterial3d(if view.selected == Some(target.key.entity) {
@@ -167,6 +194,13 @@ fn present(
                     Visibility::Hidden
                 },
             ));
+            if metrics.enabled {
+                entity.insert(motion::TargetMotion::new(
+                    target.key,
+                    target.position,
+                    view.tick,
+                ));
+            }
         }
     }
     if let Ok(mut text) = hud.single_mut() {

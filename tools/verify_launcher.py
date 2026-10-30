@@ -14,10 +14,11 @@ import sys
 import time
 
 
-def run(output, binaries, world, players, *, use_default_world=False, chunk_world=False, targeting=False, combat=False, feedback=False, persistence=False, environment=None):
+def run(output, binaries, world, players, *, use_default_world=False, chunk_world=False, targeting=False, combat=False, feedback=False, persistence=False, environment=None, resources=False, status_effects=False, creatures=False):
     if persistence and not use_default_world:
         raise ValueError("Persistent launcher qualification requires the default saved world")
-    combat = combat or feedback
+    resources = resources or status_effects or creatures
+    combat = combat or feedback or resources
     if sys.platform != 'linux':
         raise RuntimeError('This process-ownership qualifier requires Linux /proc')
     output.mkdir(parents=True, exist_ok=True)
@@ -40,7 +41,7 @@ def run(output, binaries, world, players, *, use_default_world=False, chunk_worl
         owned = []
         with (output / f'{mode}.log').open('w') as log:
             launcher = subprocess.Popen([
-                sys.executable, 'tools/play.py', '--clients', '2', *(['--targeting'] if targeting else []), *(['--combat'] if combat else []), *(['--spell-feedback'] if feedback else []), *(['--persistence'] if persistence else []),
+                sys.executable, 'tools/play.py', '--clients', '2', *(['--targeting'] if targeting else []), *(['--combat'] if combat else []), *(['--resources'] if resources else []), *(['--status-effects'] if status_effects else []), *(['--creatures'] if creatures else []), *(['--spell-feedback'] if feedback else []), *(['--persistence'] if persistence else []),
                 '--binaries', str(binaries), *([] if use_default_world else ['--chunk-world' if chunk_world else '--world', str(world)]), '--players', str(players),
             ], env=dict(os.environ, **(environment or {})), stdout=log, stderr=subprocess.STDOUT)
             try:
@@ -67,6 +68,13 @@ def run(output, binaries, world, players, *, use_default_world=False, chunk_worl
                         assert (b'--spell-feedback' in argv) == (feedback and Path(f'/proc/{pid}/comm').read_text().strip() == 'theia-client'), 'Wrong feedback routing'
                         assert (b'--dev-persistence' in argv) == (persistence and Path(f'/proc/{pid}/comm').read_text().strip() == 'theia-server'), 'Wrong persistence routing'
                         assert (b'--combat-catalog' in argv) == combat, 'Wrong combat profile'
+                        assert (b'--character-stats' in argv) == resources, 'Wrong resource profile'
+                        if resources:
+                            assert Path(os.fsdecode(argv[argv.index(b'--combat-catalog')+1])).name == ('development-status-abilities.json' if status_effects else 'development-resource-abilities.json')
+                            assert Path(os.fsdecode(argv[argv.index(b'--character-stats')+1])).name == 'development-character-stats.json'
+                        assert (b'--creature-profile' in argv) == creatures, 'Wrong creature profile'
+                        assert (b'--navigation' in argv) == creatures, 'Wrong navigation package'
+                        assert (b'--status-catalog' in argv) == status_effects, 'Wrong status profile'
                         assert (b'--targeting' in argv) == targeting, 'Wrong targeting profile'
                         assert b'--prediction' in argv, 'Default launcher omitted the qualified prediction profile'
                         assert b'--saved-terrain' in argv, 'Default launcher did not load saved terrain'
@@ -95,7 +103,7 @@ def run(output, binaries, world, players, *, use_default_world=False, chunk_worl
                 assert not any(p.exists() for p in ticket_directories), 'Temporary tickets survived'
                 results.append({'mode': mode, 'launcher_exit': code, 'owned_children': len(owned),
                                 'children_removed': True, 'tickets_removed': True, 'transport': 'renet',
-                                'persistence': persistence, 'feedback': feedback, 'combat': combat, 'targeting': targeting, 'default_world': use_default_world, 'chunk_world': chunk_world, 'prediction': use_default_world, 'saved_terrain': use_default_world,
+                                'creatures': creatures, 'status_effects': status_effects, 'resources': resources, 'persistence': persistence, 'feedback': feedback, 'combat': combat, 'targeting': targeting, 'default_world': use_default_world, 'chunk_world': chunk_world, 'prediction': use_default_world, 'saved_terrain': use_default_world,
                                 **({'content_id': expected_packages[0]['content_id'], 'revision': expected_packages[0]['revision']} if expected_packages and not chunk_world else {}),
                                 'packages': [{'content_id': p['content_id'], 'revision': p['revision']} for p in expected_packages]})
             finally:
@@ -122,9 +130,12 @@ if __name__ == '__main__':
     parser.add_argument('--targeting', action='store_true')
     parser.add_argument('--persistence', action='store_true')
     parser.add_argument('--spell-feedback', action='store_true')
+    parser.add_argument('--creatures', action='store_true')
+    parser.add_argument('--status-effects', action='store_true')
+    parser.add_argument('--resources', action='store_true')
     parser.add_argument('--combat', action='store_true')
     parser.add_argument('--chunk-world', action='store_true', help='Treat --world as an opt-in chunk index/session directory')
     args = parser.parse_args()
     players = args.players or Path('build/synty-character-canonical-stage' if args.use_default_world else 'build/reference-scene')
     run(args.output.resolve(), args.binaries.resolve(), args.world.resolve(), players.resolve(),
-        use_default_world=args.use_default_world, chunk_world=args.chunk_world, targeting=args.targeting, combat=args.combat, feedback=args.spell_feedback, persistence=args.persistence)
+        use_default_world=args.use_default_world, chunk_world=args.chunk_world, targeting=args.targeting, combat=args.combat, feedback=args.spell_feedback, persistence=args.persistence, resources=args.resources, status_effects=args.status_effects, creatures=args.creatures)

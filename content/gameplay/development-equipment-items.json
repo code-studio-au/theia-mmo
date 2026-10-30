@@ -1,0 +1,12 @@
+{
+  "schema": 2,
+  "id": "theia.dev.equipment-items",
+  "items": [
+    { "id": "theia.dev.training-stone", "name": "Training Stone", "maximum_stack": 20 },
+    { "id": "theia.dev.training-token", "name": "Training Token", "maximum_stack": 99 },
+    { "id": "theia.dev.training-sword", "name": "Training Sword", "maximum_stack": 1,
+      "main_hand_appearance": "theia.dev.simple-sword" },
+    { "id": "theia.dev.training-wand", "name": "Training Wand", "maximum_stack": 1,
+      "main_hand_appearance": "theia.dev.simple-wand" }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "schema": 2,
+  "global_cooldown_ms": 1500,
+  "queue_window_ms": 300,
+  "abilities": [
+    {
+      "id": "theia.dev.arcane-bolt",
+      "target": "hostile_alive",
+      "range_metres": 30.0,
+      "cast_ms": 1000,
+      "cooldown_ms": 2000,
+      "effect": {
+        "kind": "damage",
+        "amount": 20
+      },
+      "mana_cost": 25
+    }
+  ]
+}

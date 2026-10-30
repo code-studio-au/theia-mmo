@@ -1,5 +1,5 @@
-//! In-process development account HTTP boundary. No renderer, transport-ticket
-//! issuer or simulation-step dependency; native game admission remains separate.
+//! In-process development account HTTP boundary. Optional account-owned ticket
+//! admission shares sessions; provider/SQL work stays outside simulation steps.
 mod routes;
 mod transport;
 use axum::{
@@ -146,7 +146,8 @@ pub struct Stats {
 struct Inner {
     provider: Arc<Provider>,
     publisher: Publisher,
-    sessions: Mutex<Sessions<OwnerId>>,
+    sessions: Arc<Mutex<Sessions<OwnerId>>>,
+    game: Mutex<Option<Arc<crate::admissions::GameAdmissions>>>,
     flows: Mutex<Flows>,
     request_slots: Arc<Semaphore>,
     connection_slots: Arc<Semaphore>,
@@ -297,7 +298,8 @@ impl AccountService {
         let state = Arc::new(Inner {
             provider,
             publisher,
-            sessions: Mutex::new(Sessions::default()),
+            sessions: Arc::new(Mutex::new(Sessions::default())),
+            game: Mutex::new(None),
             flows: Mutex::new(Flows::default()),
             request_slots: Arc::new(Semaphore::new(16)),
             connection_slots: Arc::new(Semaphore::new(64)),
@@ -316,6 +318,7 @@ impl AccountService {
             .route("/auth/logout", post(routes::logout))
             .route("/characters", get(routes::list).post(routes::create))
             .route("/characters/select", post(routes::select))
+            .route("/characters/enter", post(routes::enter))
             .route("/development/auth-metrics", get(routes::metrics))
             .layer(DefaultBodyLimit::max(4096))
             .layer(middleware::from_fn_with_state(
@@ -329,6 +332,144 @@ impl AccountService {
             state,
             fatal: fatal_receiver,
         })
+    }
+    /// Install before serving. Account-only qualification/ordinary development
+    /// remain valid without a game ticket issuer.
+    pub fn enable_game(
+        &mut self,
+        issuer: theia_network::renet_runtime::TicketIssuer,
+    ) -> Result<Arc<crate::admissions::GameAdmissions>> {
+        self.enable_game_with_inventory(issuer, None)
+    }
+    pub fn enable_game_with_inventory(
+        &mut self,
+        issuer: theia_network::renet_runtime::TicketIssuer,
+        inventory: Option<theia_persistence::InventoryCatalog>,
+    ) -> Result<Arc<crate::admissions::GameAdmissions>> {
+        self.enable_game_with_rewards(issuer, inventory, None)
+    }
+    pub fn enable_game_with_rewards(
+        &mut self,
+        issuer: theia_network::renet_runtime::TicketIssuer,
+        inventory: Option<theia_persistence::InventoryCatalog>,
+        rewards: Option<(
+            theia_persistence::RewardCatalog,
+            Arc<theia_network::reward_wire::Profile>,
+        )>,
+    ) -> Result<Arc<crate::admissions::GameAdmissions>> {
+        self.enable_game_with_progression(issuer, inventory, rewards, None)
+    }
+    pub fn enable_game_with_progression(
+        &mut self,
+        issuer: theia_network::renet_runtime::TicketIssuer,
+        inventory: Option<theia_persistence::InventoryCatalog>,
+        rewards: Option<(
+            theia_persistence::RewardCatalog,
+            Arc<theia_network::reward_wire::Profile>,
+        )>,
+        progression: Option<(
+            theia_persistence::ProgressionCatalog,
+            Arc<theia_network::progression_wire::Profile>,
+        )>,
+    ) -> Result<Arc<crate::admissions::GameAdmissions>> {
+        self.enable_game_with_objectives(issuer, inventory, rewards, progression, None)
+    }
+    pub fn enable_game_with_objectives(
+        &mut self,
+        issuer: theia_network::renet_runtime::TicketIssuer,
+        inventory: Option<theia_persistence::InventoryCatalog>,
+        rewards: Option<(
+            theia_persistence::RewardCatalog,
+            Arc<theia_network::reward_wire::Profile>,
+        )>,
+        progression: Option<(
+            theia_persistence::ProgressionCatalog,
+            Arc<theia_network::progression_wire::Profile>,
+        )>,
+        quest: Option<(
+            theia_persistence::QuestCatalog,
+            Arc<theia_network::quest_wire::Profile>,
+        )>,
+    ) -> Result<Arc<crate::admissions::GameAdmissions>> {
+        self.enable_game_with_vendors(issuer, inventory, rewards, progression, quest, None)
+    }
+    #[allow(clippy::too_many_arguments)]
+    pub fn enable_game_with_vendors(
+        &mut self,
+        issuer: theia_network::renet_runtime::TicketIssuer,
+        inventory: Option<theia_persistence::InventoryCatalog>,
+        rewards: Option<(
+            theia_persistence::RewardCatalog,
+            Arc<theia_network::reward_wire::Profile>,
+        )>,
+        progression: Option<(
+            theia_persistence::ProgressionCatalog,
+            Arc<theia_network::progression_wire::Profile>,
+        )>,
+        quest: Option<(
+            theia_persistence::QuestCatalog,
+            Arc<theia_network::quest_wire::Profile>,
+        )>,
+        vendor: Option<(
+            theia_persistence::VendorCatalog,
+            Arc<theia_network::vendor_wire::Profile>,
+        )>,
+    ) -> Result<Arc<crate::admissions::GameAdmissions>> {
+        let mut slot = self.state.game.lock().map_err(|_| ApiError::internal())?;
+        if slot.is_some() {
+            return Err(ApiError::internal());
+        }
+        let mut gate = if let Some((rewards, wire)) = rewards {
+            if inventory
+                .as_ref()
+                .is_none_or(|i| i.hash() != rewards.items().hash())
+            {
+                return Err(ApiError::internal());
+            }
+            crate::admissions::GameAdmissions::new_rewards(
+                self.state.sessions.clone(),
+                issuer,
+                self.state.world,
+                rewards,
+                wire,
+                self.state.publisher.clone(),
+            )
+            .map_err(|_| ApiError::internal())?
+        } else if let Some(profile) = inventory {
+            crate::admissions::GameAdmissions::new_inventory(
+                self.state.sessions.clone(),
+                issuer,
+                self.state.world,
+                profile,
+                self.state.publisher.clone(),
+            )
+            .map_err(|_| ApiError::internal())?
+        } else {
+            crate::admissions::GameAdmissions::new(
+                self.state.sessions.clone(),
+                issuer,
+                self.state.world,
+            )
+        };
+        if let Some((profile, wire)) = progression {
+            crate::admissions::GameAdmissions::with_progression(
+                &mut gate,
+                profile,
+                wire,
+                self.state.publisher.clone(),
+            )
+            .map_err(|_| ApiError::internal())?;
+        }
+        if let Some((profile, wire)) = quest {
+            crate::admissions::GameAdmissions::with_quest(&mut gate, profile, wire)
+                .map_err(|_| ApiError::internal())?;
+        }
+        if let Some((profile, wire)) = vendor {
+            crate::admissions::GameAdmissions::with_vendor(&mut gate, profile, wire)
+                .map_err(|_| ApiError::internal())?;
+        }
+        *slot = Some(gate.clone());
+        Ok(gate)
     }
     pub fn address(&self) -> &str {
         &self.state.base

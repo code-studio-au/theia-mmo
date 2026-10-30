@@ -67,6 +67,25 @@ impl Peer {
         catalog: Arc<Catalog>,
         event_capacity: usize,
     ) -> Self {
+        Self::start_profiles(
+            address,
+            ticket,
+            identity,
+            chunks,
+            catalog,
+            event_capacity,
+            None,
+        )
+    }
+    fn start_profiles(
+        address: SocketAddr,
+        ticket: Vec<u8>,
+        identity: [u8; 32],
+        chunks: Vec<ChunkId>,
+        catalog: Arc<Catalog>,
+        event_capacity: usize,
+        statuses: Option<Arc<theia_core::statuses::Catalog>>,
+    ) -> Self {
         let (input, inputs) = watch::channel(Intent::default());
         let (ready, readiness) = watch::channel(Some(chunks));
         let (choice, choices) = watch::channel(None);
@@ -76,22 +95,27 @@ impl Peer {
         let (stop, shutdown) = watch::channel(false);
         let data = catalog.clone();
         let task = tokio::spawn(async move {
-            let result = net::run_client_combat(
+            let result = net::run_client_gameplay(
                 address,
                 &ticket,
                 inputs,
                 states.clone(),
                 shutdown,
                 identity,
-                net::CombatClient {
-                    targeting: net::TargetingClient {
-                        ready: readiness,
-                        commands: None,
-                        choices,
-                    },
-                    catalog: data,
-                    casts: requests,
-                    events,
+                net::GameplayClient {
+                    dialogue: None,
+                    quest: None,
+                    progression: None,
+                    ready: readiness,
+                    commands: None,
+                    choices: Some(choices),
+                    combat: Some(net::CombatActions {
+                        catalog: data,
+                        casts: requests,
+                        events,
+                    }),
+                    inventory: None,
+                    statuses,
                 },
             )
             .await;
@@ -132,7 +156,13 @@ impl Peer {
             }
         })
         .await
-        .expect("Combat client observation timed out")
+        .unwrap_or_else(|_| {
+            let state = self.state.borrow();
+            panic!(
+                "Combat client observation timed out: error={:?} chunk_ack={:?} combat={:?}",
+                state.error, state.chunk_ack, state.combat
+            )
+        })
     }
     async fn cast(&self, target: EntityKey) {
         self.casts
@@ -831,4 +861,483 @@ async fn actual_encrypted_foreign_stale_forged_and_flooded_casts_fail_closed() {
     assert_eq!(stats.cast_requests_ignored, 3);
     assert!(stats.cast_requests_rejected >= 13);
     assert!(stats.max_control_batch <= 8 && stats.max_event_queue_bytes <= 8192);
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn two_impaired_encrypted_clients_get_independent_authoritative_mana_rejection_and_regeneration()
+ {
+    let mut abilities: serde_json::Value = serde_json::from_slice(include_bytes!(
+        "../../../content/gameplay/development-resource-abilities.json"
+    ))
+    .unwrap();
+    abilities["global_cooldown_ms"] = serde_json::json!(0);
+    abilities["abilities"][0]["cast_ms"] = serde_json::json!(100);
+    abilities["abilities"][0]["cooldown_ms"] = serde_json::json!(0);
+    abilities["abilities"][0]["effect"]["amount"] = serde_json::json!(1);
+    let data = serde_json::to_vec(&abilities).unwrap();
+    let mut stats: serde_json::Value = serde_json::from_slice(include_bytes!(
+        "../../../content/gameplay/development-character-stats.json"
+    ))
+    .unwrap();
+    stats["maximum_mana"] = serde_json::json!(30);
+    let mut world = World::with_procedural([8060., 8000.], 1.).unwrap();
+    let target = world.spawn_development_target([8068., 8000.]).unwrap();
+    world
+        .enable_resource_combat(&data, 1_000_000, 1000, &serde_json::to_vec(&stats).unwrap())
+        .unwrap();
+    let identity = world.identity();
+    let catalog = Arc::new(Catalog::from_json(&data).unwrap());
+    let chunks: Vec<_> = theia_network::procedural::neighbours(ChunkId { x: 62, z: 62 }, 1)
+        .into_iter()
+        .collect();
+    let profile = Profile {
+        name: "resource-wifi",
+        delay_ms: 15,
+        jitter_ms: 10,
+        loss_every: 10,
+        duplicate_every: 17,
+    };
+    let relays: Vec<_> = (0..2).map(|_| Relay::bind(profile)).collect();
+    let addresses: Vec<_> = relays.iter().map(|r| r.address).collect();
+    let tickets = tickets();
+    let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+    let backend = socket.local_addr().unwrap();
+    let transport = net::issue_local_advertised(socket, &tickets.0, addresses.clone()).unwrap();
+    let (stop, shutdown) = watch::channel(false);
+    let guard = Stop(stop.clone());
+    let relay_tasks: Vec<_> = relays
+        .into_iter()
+        .map(|r| tokio::spawn(r.run(backend, shutdown.clone())))
+        .collect();
+    let server = tokio::spawn(net::run_server_measured(transport, shutdown, world));
+    let mut a = Peer::start(
+        addresses[0],
+        fs::read(tickets.0.join("client-1.token")).unwrap(),
+        identity,
+        chunks.clone(),
+        catalog.clone(),
+        16,
+    );
+    let mut b = Peer::start(
+        addresses[1],
+        fs::read(tickets.0.join("client-2.token")).unwrap(),
+        identity,
+        chunks,
+        catalog,
+        16,
+    );
+    a.until(|state, _| {
+        state.chunk_ack.is_some()
+            && state
+                .combat
+                .as_ref()
+                .is_some_and(|c| c.vitals.is_some_and(|v| v.mana() == 30))
+    })
+    .await;
+    b.until(|state, _| {
+        state.chunk_ack.is_some()
+            && state
+                .combat
+                .as_ref()
+                .is_some_and(|c| c.vitals.is_some_and(|v| v.mana() == 30))
+    })
+    .await;
+    a.cast(target).await;
+    let spent = a
+        .until(|s, _| {
+            s.combat.as_ref().is_some_and(|c| {
+                c.reply.is_some_and(|r| r.sequence == 1) && c.vitals.is_some_and(|v| v.mana() < 10)
+            })
+        })
+        .await;
+    assert!(spent.combat.unwrap().vitals.unwrap().mana() >= 5);
+    // Await the actual completion before testing a direct rejection. A request
+    // during the short cast is legitimately queued; its later failure is an
+    // event, while the request reply remains Queued.
+    a.until(|s, _| s.combat.as_ref().is_some_and(|c| c.cast.is_none()))
+        .await;
+    assert_eq!(
+        b.state
+            .borrow()
+            .combat
+            .as_ref()
+            .unwrap()
+            .vitals
+            .unwrap()
+            .mana(),
+        30
+    );
+    a.cast(target).await;
+    a.until(|s, _| {
+        s.combat.as_ref().is_some_and(|c| {
+            c.reply.is_some_and(|r| {
+                r.sequence == 2 && r.outcome == Outcome::Rejected(Reason::InsufficientMana)
+            })
+        })
+    })
+    .await;
+    b.cast(target).await;
+    b.until(|s, _| {
+        s.combat.as_ref().is_some_and(|c| {
+            c.reply.is_some_and(|r| r.sequence == 1) && c.vitals.is_some_and(|v| v.mana() < 10)
+        })
+    })
+    .await;
+    a.until(|s, _| {
+        s.combat
+            .as_ref()
+            .is_some_and(|c| c.vitals.is_some_and(|v| v.mana() >= 25))
+    })
+    .await;
+    a.cast(target).await;
+    let recovered = a
+        .until(|s, _| {
+            s.combat.as_ref().is_some_and(|c| {
+                c.reply.is_some_and(|r| {
+                    r.sequence == 3 && matches!(r.outcome, Outcome::Started { .. })
+                }) && c.vitals.is_some_and(|v| v.mana() < 10)
+            })
+        })
+        .await;
+    assert!(recovered.transport.unwrap().combat_states_received > 10);
+    a.finish().await.unwrap();
+    b.finish().await.unwrap();
+    drop(guard);
+    let evidence = server.await.unwrap().unwrap();
+    assert_eq!(evidence.max_players, 2);
+    assert!(evidence.cast_requests_rejected >= 1 && evidence.cast_requests_accepted >= 3);
+    for task in relay_tasks {
+        task.await.unwrap();
+    }
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn encrypted_impaired_clients_share_status_refresh_source_leave_and_expiration() {
+    let data = include_bytes!("../../../content/gameplay/development-status-abilities.json");
+    let definitions = include_bytes!("../../../content/gameplay/development-statuses.json");
+    let resources = include_bytes!("../../../content/gameplay/development-character-stats.json");
+    let catalog = Arc::new(Catalog::from_json(data).unwrap());
+    let statuses = Arc::new(theia_core::statuses::Catalog::from_json(definitions).unwrap());
+    let mut world = World::with_procedural([8060., 8000.], 1.).unwrap();
+    let target = world.spawn_development_target([8068., 8000.]).unwrap();
+    world
+        .enable_status_combat(data, 1000, 1000, resources, definitions)
+        .unwrap();
+    let identity = world.identity();
+    let chunks: Vec<_> = theia_network::procedural::neighbours(ChunkId { x: 62, z: 62 }, 1)
+        .into_iter()
+        .collect();
+    let profile = Profile {
+        name: "status-wifi",
+        delay_ms: 15,
+        jitter_ms: 10,
+        loss_every: 10,
+        duplicate_every: 17,
+    };
+    let relays: Vec<_> = (0..2).map(|_| Relay::bind(profile)).collect();
+    let addresses: Vec<_> = relays.iter().map(|r| r.address).collect();
+    let tickets = tickets();
+    let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+    let backend = socket.local_addr().unwrap();
+    let transport = net::issue_local_advertised(socket, &tickets.0, addresses.clone()).unwrap();
+    let (stop, shutdown) = watch::channel(false);
+    let guard = Stop(stop.clone());
+    let workers: Vec<_> = relays
+        .into_iter()
+        .map(|r| tokio::spawn(r.run(backend, shutdown.clone())))
+        .collect();
+    let server = tokio::spawn(net::run_server_measured(transport, shutdown, world));
+    let mut peers: Vec<_> = (0..2)
+        .map(|i| {
+            Peer::start_profiles(
+                addresses[i],
+                fs::read(tickets.0.join(format!("client-{}.token", i + 1))).unwrap(),
+                identity,
+                chunks.clone(),
+                catalog.clone(),
+                16,
+                Some(statuses.clone()),
+            )
+        })
+        .collect();
+    for peer in &mut peers {
+        peer.until(|s, _| {
+            s.chunk_ack.is_some()
+                && s.combat.is_some()
+                && s.statuses.as_ref().is_some_and(|v| v.statuses.is_empty())
+        })
+        .await;
+    }
+    let mut b = peers.pop().unwrap();
+    let mut a = peers.pop().unwrap();
+    let a_id = a.state.borrow().id.unwrap();
+    let b_id = b.state.borrow().id.unwrap();
+    a.cast(target).await;
+    let first = b
+        .until(|s, _| s.statuses.as_ref().is_some_and(|v| v.statuses.len() == 1))
+        .await;
+    let first = &first.statuses.unwrap().statuses[0];
+    assert_eq!(first.source.entity.value(), a_id);
+    let first_expiry = first.expires_at;
+    b.cast(target).await;
+    for peer in [&mut a, &mut b] {
+        peer.until(|s, _| s.statuses.as_ref().is_some_and(|v| v.statuses.len() == 2))
+            .await;
+    }
+    // Wait for the authority cooldown, not a wall-clock guess under packet loss.
+    a.until(|s, _| {
+        s.combat
+            .as_ref()
+            .is_some_and(|c| c.cooldowns.iter().all(|c| c.1 <= c_tick(s)))
+    })
+    .await;
+    a.cast(target).await;
+    b.until(|s, events| {
+        s.statuses.as_ref().is_some_and(|v| {
+            v.statuses
+                .iter()
+                .any(|v| v.source.entity.value() == a_id && v.expires_at > first_expiry)
+        }) && events.iter().any(|e| matches!(e, Event::Damage { .. }))
+    })
+    .await;
+    a.finish().await.unwrap();
+    b.until(|s, _| {
+        s.statuses
+            .as_ref()
+            .is_some_and(|v| v.statuses.len() == 1 && v.statuses[0].source.entity.value() == b_id)
+    })
+    .await;
+    b.until(|s, _| s.statuses.as_ref().is_some_and(|v| v.statuses.is_empty()))
+        .await;
+    assert!(
+        b.state
+            .borrow()
+            .transport
+            .as_ref()
+            .unwrap()
+            .status_states_received
+            >= 5
+    );
+    b.finish().await.unwrap();
+    drop(guard);
+    let evidence = server.await.unwrap().unwrap();
+    assert_eq!(evidence.max_players, 2);
+    assert!(evidence.status_states_sent >= 10);
+    assert_eq!(evidence.status_backpressure_disconnects, 0);
+    for worker in workers {
+        worker.await.unwrap();
+    }
+}
+fn c_tick(state: &State) -> u64 {
+    state.combat.as_ref().unwrap().tick
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn encrypted_patrol_consumers_share_moving_hit_positions_and_a_fresh_home_respawn() {
+    // Checked route-consumer fixture, not an offline-baker proof. The separate
+    // actual saved-terrain bake/native qualification covers that composition.
+    use theia_network::{navigation as nav, simulation::creatures};
+    let tickets = tickets();
+    fs::create_dir_all(&tickets.0).unwrap();
+    let nav_root = tickets.0.join("navigation");
+    fs::create_dir(&nav_root).unwrap();
+    let mut world = World::with_procedural([8060., 8000.], 1.).unwrap();
+    let source = world.procedural().unwrap().source.clone();
+    let patch = theia_network::procedural::Patch::load(ChunkId { x: 63, z: 62 }, &source).unwrap();
+    let points = [
+        [8068., 8000.],
+        [8078., 8000.],
+        [8078., 8010.],
+        [8068., 8000.],
+    ]
+    .map(|[x, z]| patch.try_spawn(x, z).unwrap().metres())
+    .to_vec();
+    let vertices = vec![
+        [0., 0., 0.],
+        [0., 0., 128.],
+        [128., 0., 128.],
+        [128., 0., 0.],
+    ];
+    let tile = nav::Tile {
+        schema: 1,
+        id: [63, 62],
+        source: source.identity(),
+        agent: nav::Agent::development(),
+        vertices: vertices.clone(),
+        polygons: vec![vec![0, 1, 2, 3]],
+        detail: nav::Detail {
+            vertices,
+            triangles: vec![[0, 1, 2], [0, 2, 3]],
+            polygons: vec![[0, 4, 0, 2]],
+        },
+    };
+    let bytes = tile.encode().unwrap();
+    fs::write(nav_root.join(nav::tile_name(tile.id)), &bytes).unwrap();
+    let manifest = nav::Manifest {
+        schema: 1,
+        source: source.identity(),
+        agent: tile.agent,
+        tiles: vec![nav::TileRecord {
+            id: tile.id,
+            sha256: theia_network::terrain::sha256(&bytes),
+        }],
+        routes: vec![nav::Route {
+            id: "theia.dev.training-patrol".into(),
+            points,
+        }],
+    };
+    fs::write(nav_root.join(nav::MANIFEST), manifest.encode().unwrap()).unwrap();
+    let store = nav::Store::open(&nav_root, source.identity()).unwrap();
+    let profile = creatures::Profile::from_json(include_bytes!(
+        "../../../content/gameplay/development-creature-patrol.json"
+    ))
+    .unwrap();
+    let target = world
+        .enable_patrol(creatures::Prepared::load(profile, &store, &source).unwrap())
+        .unwrap();
+    let home = world.patrol_snapshot().unwrap().home;
+    world.enable_combat(DATA, 20, 500).unwrap();
+    let identity = world.identity();
+    let catalog = Arc::new(Catalog::from_json(DATA).unwrap());
+    let chunks: Vec<_> = theia_network::procedural::neighbours(ChunkId { x: 62, z: 62 }, 1)
+        .into_iter()
+        .collect();
+    let profile = Profile {
+        name: "patrol-wifi",
+        delay_ms: 15,
+        jitter_ms: 10,
+        loss_every: 10,
+        duplicate_every: 17,
+    };
+    let relays: Vec<_> = (0..2).map(|_| Relay::bind(profile)).collect();
+    let addresses: Vec<_> = relays.iter().map(|r| r.address).collect();
+    let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+    let backend = socket.local_addr().unwrap();
+    let transport = net::issue_local_advertised(socket, &tickets.0, addresses.clone()).unwrap();
+    let (stop, shutdown) = watch::channel(false);
+    let guard = Stop(stop.clone());
+    let workers: Vec<_> = relays
+        .into_iter()
+        .map(|r| tokio::spawn(r.run(backend, shutdown.clone())))
+        .collect();
+    let server = tokio::spawn(net::run_server_measured(transport, shutdown, world));
+    let mut a = Peer::start(
+        addresses[0],
+        fs::read(tickets.0.join("client-1.token")).unwrap(),
+        identity,
+        chunks.clone(),
+        catalog.clone(),
+        16,
+    );
+    let mut b = Peer::start(
+        addresses[1],
+        fs::read(tickets.0.join("client-2.token")).unwrap(),
+        identity,
+        chunks,
+        catalog,
+        16,
+    );
+    for peer in [&mut a, &mut b] {
+        peer.until(|s, _| s.chunk_ack.is_some() && s.combat.is_some())
+            .await;
+    }
+    let mut observed = [
+        std::collections::BTreeMap::new(),
+        std::collections::BTreeMap::new(),
+    ];
+    tokio::time::timeout(Duration::from_secs(8), async {
+        loop {
+            for (i, peer) in [&mut a, &mut b].into_iter().enumerate() {
+                peer.drain();
+                let s = peer.state.borrow();
+                assert!(s.error.is_none(), "{:?}", s.error);
+                if let Some(c) = &s.targeting {
+                    observed[i].insert(
+                        c.tick,
+                        c.targets
+                            .iter()
+                            .find(|t| t.key == target)
+                            .unwrap()
+                            .position
+                            .metres(),
+                    );
+                }
+            }
+            let matching = observed[0]
+                .iter()
+                .filter(|(tick, p)| observed[1].get(tick) == Some(*p))
+                .count();
+            let moved = observed[0]
+                .values()
+                .any(|p| (p[0] - home[0]).hypot(p[2] - home[2]) > 1.);
+            if matching >= 20 && moved {
+                break;
+            }
+            tokio::select! {v=a.state.changed()=>v.unwrap(),v=b.state.changed()=>v.unwrap()}
+        }
+    })
+    .await
+    .unwrap();
+    a.cast(target).await;
+    b.cast(target).await;
+    for peer in [&mut a, &mut b] {
+        peer.until(|_, events| {
+            events
+                .iter()
+                .any(|e| matches!(e,Event::Died{target:t,..} if *t==target))
+        })
+        .await;
+        assert!(peer.seen.iter().any(
+            |e| matches!(e,Event::Damage {position,..} if (position.metres()[0]-home[0]).abs()>1.)
+        ));
+    }
+    let respawn = b
+        .until(|s, _| {
+            s.combat.as_ref().is_some_and(|c| {
+                c.targets
+                    .iter()
+                    .any(|t| t.entity != target.entity && t.current == 20)
+            }) && s
+                .targeting
+                .as_ref()
+                .is_some_and(|v| v.targets.iter().any(|t| t.key != target))
+        })
+        .await;
+    let fresh = respawn.targeting.unwrap().targets[0];
+    assert_ne!(fresh.key, target);
+    assert!(
+        (fresh.position.metres()[0] - home[0]).abs() < 0.00001
+            && (fresh.position.metres()[2] - home[2]).abs() < 0.00001
+    );
+    a.cast(target).await;
+    a.until(|s, _| {
+        s.combat.as_ref().is_some_and(|c| {
+            c.reply.is_some_and(|r| {
+                r.sequence == 2 && r.outcome == Outcome::Rejected(Reason::UnknownTarget)
+            })
+        })
+    })
+    .await;
+    a.finish().await.unwrap();
+    b.until(|s, _| {
+        s.targeting.as_ref().is_some_and(|c| {
+            c.targets
+                .iter()
+                .any(|t| t.key == fresh.key && (t.position.metres()[0] - home[0]).abs() > 0.5)
+        })
+    })
+    .await;
+    b.finish().await.unwrap();
+    drop(guard);
+    let stats = server.await.unwrap().unwrap();
+    let patrol = stats.patrol.unwrap();
+    assert_eq!(patrol.actor, fresh.key.entity.value());
+    assert_eq!(patrol.blocked, 0);
+    assert_eq!(patrol.respawns, 1);
+    assert!(patrol.moving_ticks > 30);
+    assert_eq!(stats.max_players, 2);
+    assert_eq!(stats.combat_backpressure_disconnects, 0);
+    for worker in workers {
+        worker.await.unwrap();
+    }
 }

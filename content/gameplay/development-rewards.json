@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "id": "theia.dev.training-rewards",
+  "item_catalog": "theia.dev.equipment-items",
+  "rewards": [
+    {
+      "id": "theia.dev.first-training-kill",
+      "name": "First Training Kill",
+      "scope": "once_per_character",
+      "creature": "theia.dev.training-creature",
+      "grants": [{ "item": "theia.dev.training-token", "count": 1 }]
+    }
+  ]
+}

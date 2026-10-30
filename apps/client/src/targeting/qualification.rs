@@ -20,6 +20,9 @@ struct Run {
     empty_after_selection: u64,
     returned: u64,
     max_error: f64,
+    visible_moving_samples: u64,
+    steady_follow_direction: Option<Vec2>,
+    previous_displayed: std::collections::BTreeMap<u64, theia_core::coordinates::GlobalPosition>,
     physics_bodies: u64,
     max_visuals: usize,
     revisions: std::collections::BTreeSet<u64>,
@@ -53,6 +56,9 @@ pub(super) fn install(app: &mut App) {
         empty_after_selection: 0,
         returned: 0,
         max_error: 0.,
+        visible_moving_samples: 0,
+        steady_follow_direction: None,
+        previous_displayed: std::collections::BTreeMap::new(),
         physics_bodies: 0,
         max_visuals: 0,
         revisions: Default::default(),
@@ -191,6 +197,46 @@ fn input(
             };
             movement.sprint = (4. ..6.).contains(&t);
             movement.jump = (6. ..6.2).contains(&t);
+            if std::env::var("THEIA_CREATURE_QUALIFY").as_deref() == Ok("1") {
+                movement.direction = Vec2::ZERO;
+                if let Some(focus) = state.authority_focus()
+                    && let Some(target) = view
+                        .targets
+                        .iter()
+                        .find(|target| Some(target.key.entity) == view.selected)
+                        .or_else(|| view.targets.first())
+                {
+                    let a = focus.metres();
+                    let b = target.position.metres();
+                    let offset = Vec2::new((b[0] - 6. - a[0]) as f32, (b[2] - a[2]) as f32);
+                    movement.direction = (offset * 0.4).clamp_length_max(1.);
+                    // A short constant-input segment retains the existing
+                    // steady-motion checks before returning to closed-loop follow.
+                    let elapsed = run.changed.elapsed().as_secs_f64();
+                    if (8. ..12.).contains(&elapsed) {
+                        let direction = *run
+                            .steady_follow_direction
+                            .get_or_insert(movement.direction);
+                        movement.direction = direction;
+                        movement.sprint = false;
+                        movement.jump = false;
+                    }
+                    // Exercise an actual streamed boundary and return while
+                    // the home creature continues its independent patrol.
+                    if (20. ..30.).contains(&elapsed) {
+                        movement.direction = Vec2::X;
+                        movement.sprint = true;
+                        movement.jump = false;
+                    } else if (30. ..40.).contains(&elapsed) {
+                        movement.direction = -Vec2::X;
+                        movement.sprint = true;
+                        movement.jump = false;
+                    }
+                } else {
+                    movement.jump = false;
+                    movement.sprint = false;
+                }
+            }
             if ready && view.selected.is_none() && run.last_select.elapsed().as_secs_f64() > 0.5 {
                 keys.press(KeyCode::Tab);
                 run.last_select = Instant::now();
@@ -200,7 +246,10 @@ fn input(
                     .iter()
                     .any(|h| Some(h.entity) == view.selected && h.current > 0)
             });
-            if alive && Instant::now() >= run.next_cast {
+            // Allow the actual baked loop/waypoint waits before damaging it.
+            let patrol_ready = std::env::var("THEIA_CREATURE_QUALIFY").as_deref() != Ok("1")
+                || run.changed.elapsed().as_secs_f64() >= 72.;
+            if alive && patrol_ready && Instant::now() >= run.next_cast {
                 if run.action_ui && run.input_count % 2 == 1 {
                     run.pointer_pending = true;
                 } else {
@@ -218,11 +267,18 @@ fn observe(world: &mut World) {
     let render = world.resource::<Frame>().render;
     let revision = world.resource::<Frame>().revision;
     let selected_material = world.resource::<TargetAssets>().selected.clone();
+    run.previous_displayed.retain(|id, _| {
+        state
+            .targeting
+            .as_ref()
+            .is_some_and(|v| v.targets.iter().any(|t| t.key.entity.value() == *id))
+    });
+
     let mut visible_selected = false;
     let mut visible_clear = false;
     let mut count = 0;
     if let Some(view) = &state.targeting {
-        for (visual, transform, shown, visible, material, body) in world
+        for (visual, transform, shown, visible, material, body, motion) in world
             .query::<(
                 &TargetVisual,
                 &Transform,
@@ -230,6 +286,7 @@ fn observe(world: &mut World) {
                 &ViewVisibility,
                 &MeshMaterial3d<StandardMaterial>,
                 Option<&avian3d::prelude::Collider>,
+                Option<&super::motion::TargetMotion>,
             )>()
             .iter(world)
         {
@@ -242,7 +299,7 @@ fn observe(world: &mut World) {
                 continue;
             }
             let expected = render
-                .to_local(target.position)
+                .to_local(motion.map_or(target.position, |m| m.global()))
                 .expect("Visible target in bounded frame");
             let error = transform
                 .translation
@@ -250,7 +307,25 @@ fn observe(world: &mut World) {
             run.max_error = run.max_error.max(f64::from(error));
             run.samples += 1;
             run.revisions.insert(revision);
+            let displayed = render
+                .to_global(
+                    theia_core::coordinates::LocalPosition::new(transform.translation.to_array())
+                        .expect("Bounded displayed target"),
+                )
+                .expect("Checked displayed target global");
+            let previous = run
+                .previous_displayed
+                .insert(visual.key.entity.value(), displayed);
             if visible.get() {
+                if motion.is_some()
+                    && previous.is_some_and(|p| {
+                        let a = p.metres();
+                        let b = displayed.metres();
+                        (a[0] - b[0]).hypot(a[2] - b[2]) > 0.00001
+                    })
+                {
+                    run.visible_moving_samples += 1;
+                }
                 run.visible += 1;
                 if view.selected == Some(visual.key.entity) && material.0 == selected_material {
                     run.selected += 1;
@@ -295,6 +370,14 @@ fn observe(world: &mut World) {
     {
         for (name, shown) in [
             (
+                "mana-depleted.png",
+                metrics.mana_rejections > 0 && metrics.last_mana.is_some_and(|m| m < 25),
+            ),
+            (
+                "mana-recovered.png",
+                metrics.mana_rejections > 0 && metrics.last_mana.is_some_and(|m| m >= 25),
+            ),
+            (
                 "damaged.png",
                 visible_selected
                     && metrics
@@ -310,6 +393,27 @@ fn observe(world: &mut World) {
                 visible_selected
                     && metrics.respawns > 0
                     && metrics.last_health == Some(metrics.max_health),
+            ),
+        ] {
+            if shown && !run.combat_shots.contains(name) {
+                combat_shots.push(name);
+            }
+        }
+    }
+    if ready && let Some(metrics) = world.get_resource::<crate::status_effects::Metrics>() {
+        let active = world.get_resource::<Network>().is_some_and(|network| {
+            let state = network.state();
+            let selected = state.targeting.as_ref().and_then(|v| v.selected);
+            state
+                .statuses
+                .as_ref()
+                .is_some_and(|v| v.statuses.iter().any(|s| Some(s.target.entity) == selected))
+        });
+        for (name, shown) in [
+            ("statuses-active.png", active),
+            (
+                "statuses-cleared.png",
+                !active && metrics.active_frames > 100,
             ),
         ] {
             if shown && !run.combat_shots.contains(name) {
@@ -339,6 +443,9 @@ fn observe(world: &mut World) {
             "returned_samples":run.returned,"max_position_error_m":run.max_error,
             "physics_body_samples":run.physics_bodies,"max_visuals":run.max_visuals,
             "observed_revisions":run.revisions,"combat_shots":run.combat_shots,
+            "visible_moving_samples":run.visible_moving_samples,
+            "target_motion":world.get_resource::<super::motion::Metrics>(),
+            "statuses":world.get_resource::<crate::status_effects::Metrics>(),
             "action_ui":world.get_resource::<crate::combat::ui::Model>(),
             "ui_metrics":world.get_resource::<crate::combat::ui::Metrics>(),
             "pointer_inputs":run.pointer_inputs,

@@ -1,64 +1,153 @@
-## Provider-neutral OIDC qualification and bounded account ownership — 2026-10-29
+# Stopped safely — 2026-10-30: initial persistent training-zone integration qualified
 
-The user selected provider-neutral OIDC with a local Keycloak test instance.
-Production provider choice remains open. Use established openidconnect protocol/
-signature verification, authorization code + PKCE/state/nonce, pinned provider
-origins and bounded asynchronous HTTP; system-browser integration follows the
-verified boundary. Explicit numeric-loopback HTTP is the initial development-only
-exception, not a production remote-transport decision.
+The combined two-account OIDC/encrypted/PostgreSQL native run passes at
+1920×1200 on Linux (RX 7900 XTX, RADV/Vulkan). Each character independently
+completes three kills, earns XP, claims one reward, barters and equips a distinct
+item. Exact bags, hands, progress and latest item receipts survive reconnect and
+database/server restart; ownership/replay fencing and backend-loss checks pass.
+[Scope, fixture settings and limits](PERSISTENT_ZONE_INTEGRATION.md).
 
-Map the verified exact (issuer, subject) to a persistent server-generated owner
-UUID; email/display names never establish ownership. Account mapping commits
-before returning its owner. Reuse the async database worker with a fixed request
-queue separate from superseding ordinary pose snapshots; neither database nor
-provider I/O belongs in World::step. Checksummed immutable migrations reject
-unknown future versions and preserve the earlier character checkpoint boundary.
+**441 workspace tests pass / 30 explicit skips**, with unchanged final source.
+Formatting, denied-warning workspace/all-target Clippy and nine Python helper tests
+pass. Exact source, binaries and proof are preserved in
+`build/zone-qualified-v1-20261030`; prior vendor and content checkpoints remain.
+This combined flow is qualified at 1920×1200 only; prior vendor checks cover
+1280×720 and 3440×1440 separately. Physical OS input, native Windows, 4K and
+MMO-scale capacity remain unqualified. Accelerated qualification fixtures do not
+change default gameplay balance.
 
-Initial account sessions are bounded process-local opaque 256-bit credentials,
-stored as digest keys, with monotonic expiry conservatively limited to five
-minutes and the verified token expiry. A new login supersedes that owner's prior
-account credential; restart invalidates sessions. This initial policy is stricter
-than allowing several account sessions and does not itself enforce/establish a
-native character session. Renewal, HTTP/browser UX, character authorization and
-single-character transport admission remain explicit subsequent work. Qualified
-boundaries and current limits are recorded in
-[AUTHENTICATION_FOUNDATION.md](AUTHENTICATION_FOUNDATION.md).
+Development is stopped at the user's request; all current repository changes are
+prepared for commit and push, including concurrent story/Obsidian edits. Private
+conversation exports stay local and ignored. This is initial P3-16 training
+integration, not a completed authored production zone. P3-17/18 remain unspecified.
+Earlier notes below are historical.
 
-## Active repository and story home — 2026-10-26
+# Active development — 2026-10-30: initial P3-15 offline gameplay validator qualified
 
-The user chose Theia-MMO as the active game repository after reviewing overlap
-with Theia-Engine, and requested that story, lore, characters, acts, quests and
-story decisions live here. [docs/story](story/README.md) now contains the 19
-curated narrative documents recovered from Engine's locally available main
-history, with per-file provenance. Preserve existing approval states: the complete
-human campaign packet remains Needs Review. This documentation transfer changes
-no runtime behavior and does not resume the interrupted engineering verification.
-Engine remains an independent research/reference source; no runtime dependency,
-source deletion, commit or push is part of this transfer.
+The ten-profile development bundle now has an offline validator using the actual
+core/runtime schemas. It checks item/NPC/creature references and ability/resource/
+status compatibility, bounds file reads/paths and reports deterministic exact-byte
+hashes. [Tool, acceptance and limits](GAMEPLAY_CONTENT_VALIDATION.md). Runtime profile loading stays as
+qualified; this manifest is an authoring check, not an authoritative world identity.
 
-## Saved terrain continuation — 2026-10-23
+**441 workspace tests pass / 30 explicit skips**, with unchanged final source.
+Formatting, denied-warning workspace/all-target Clippy, eight focused tool tests
+and eight actual CLI refusal cases pass. Source inputs remain unchanged. Exact
+source, tool/test executables, docs and proof: `build/gameplay-content-qualified-v1-20261030`.
+All previously qualified vendor/gameplay source files remain byte-identical; the
+playable checkpoint remains `build/vendor-qualified-v1-20261030` (actual SQL and
+native purchasing at 1280×720, 1920×1200 and 3440×1440). No new runtime/native,
+performance or MMO-capacity claim is made for this offline tool.
 
-Bake the existing 16 km graybox into immutable, versioned 128 m height tiles.
-Keep runtime-generated terrain as an explicit regression path. Saved samples drive
-both visual LODs and authoritative/client collision on existing bounded workers;
-never fall back to recipe geometry on failed reads. A content-bound manifest is
-separate from explicit wire frame policy (v12 welcome). This does not choose a
-realm/shard model or couple gameplay zones to terrain chunks. The narrow saved
-format and qualification scope are in [SAVED_TERRAIN](SAVED_TERRAIN.md).
+Next is a bounded P3-16 persistent training-zone integration check combining the
+existing initial gameplay systems through login, play, logout and reconnect;
+its acceptance still needs implementation/verification. Production authoring UI,
+navigation/terrain/assets, general quest acceptance/turn-in and other remaining
+systems stay open. P3-17/18 remain unspecified. Changes remain local/uncommitted;
+concurrent story edits are untouched. Earlier notes below are historical.
 
-## Continental graybox development target — 2026-10-22
+# Active development — 2026-10-30: initial P3-12 live vendor barter qualified
 
-The user explicitly adopted a 16 km × 16 km terrain square (256 km²) and the
-POLYGON Base Locomotion sample as the development player. Freeze forest fidelity
-work and preserve its fixtures. Reuse Bevy, Avian, secure Renet and checked
-coordinates; do not enlarge legacy fixed-frame package budgets to fake large-world
-streaming. Use bounded procedural terrain preparation, moving local frames,
-readiness-gated authority and recipient-local snapshots for this slice.
-The eventual persistent map may be generated offline, edited and saved as defined,
-versioned chunks; this test recipe does not select final runtime world generation.
-Accept the documented four-weight character approximation as development art;
-production skin fidelity remains a separate gate. Evidence and limits:
-[graybox world](GRAYBOX_WORLD.md). Keep all changes local.
+The guide offers one positive-cost barter through the existing shared item
+owner/sequence: one Training Token for three Training Stones. Live guide/session/
+range checks precede acceptance; accepted queued/executing work survives logout.
+The Bevy shop retains displayed offer/revisions and acknowledges committed items.
+[Exact current behavior, evidence and limitations](VENDOR_BARTER_FOUNDATION.md).
+
+**433 workspace tests pass / 30 explicit skips**, with unchanged final source.
+Formatting, denied-warning workspace/all-target Clippy, nine Python helper tests,
+twenty actual SQL contracts/twenty-six commands, actual item/reward/vendor retirement
+and mixed-launcher cleanup pass. Two actual OIDC/native accounts pass purchases,
+own SQL/UI comparison, close, reconnect, database/server restart, distant restore
+and backend failure at **1280×720, 1920×1200 and 3440×1440 fullscreen**. Actual
+widgets were inspected. Windowed GPU validation is clean; fullscreen records only
+one specifically allowed upstream wgpu resize diagnostic per startup. Physical
+4K, physical OS input and native Windows remain unqualified.
+
+Exact source, five executed binaries, non-story docs and proof are frozen at
+`build/vendor-qualified-v1-20261030`; earlier checkpoints remain preserved. Currency,
+selling, stock/buyback, general quest acceptance/turn-in and production NPC/player
+lifecycle remain open. No new frame-rate or MMO-population claim is made.
+Next is a small P3-15 offline gameplay-content validation slice using the existing
+checked schemas. P3-17/18 remain unspecified. Changes remain local/uncommitted;
+concurrent story edits are untouched. Earlier notes below are historical.
+
+# Active development — 2026-10-30: P3-12 barter database prerequisite qualified
+
+The positive-cost barter now has an atomic backpack cost/output/receipt transaction
+and uses the existing bounded critical worker. Exact latest retries recover without
+another charge; superseded/conflicting input rejects. [Exact scope/proof](VENDOR_BARTER_FOUNDATION.md).
+
+**Twenty actual SQL contracts/twenty-six commands pass**, including three new
+purchase contracts: rollback, owner/world/byte binding, shared-revision races,
+full-bag recovery, cancelled answers, queue saturation, backend loss and actual
+process/database restart. Eight barter/36 core regression tests remain qualified;
+core source is unchanged. Workspace check, formatting and denied-warning Clippy
+pass. Exact prerequisite source/probe/proof: `build/vendor-store-qualified-v1-20261030`.
+
+Live NPC/range entitlement, accepted item-owner retention, encrypted purchase
+commands and shop UI remain open. No native purchase or new full-workspace claim
+is made. The prior playable NPC/display remains frozen at
+`build/dialogue-qualified-v1-20261030`: 418 workspace passes/27 skips and actual
+OIDC/native dialogue at 1280×720, 1920×1200 and 3440×1440. P3-17/18 remain unspecified.
+All changes remain local/uncommitted; story edits are untouched. Earlier notes
+below are historical.
+
+# Active development — 2026-10-30: initial P3-12 informational dialogue qualified
+
+One noncombat guide now supports private authoritative branches, bounded Renet
+requests/acknowledgements and a standard Bevy panel. E talks, F1–F4 or buttons choose,
+Esc closes without exiting, and walking away closes the session. Clicks retain the
+observed choice/revision. [Exact source/evidence/limits](NPC_DIALOGUE_FOUNDATION.md).
+
+**418 workspace tests pass / 27 explicit skips**, with unchanged final source.
+All seventeen SQL contracts/twenty-three commands separately pass; ten private-asset
+cases remain skipped. Formatting, denied-warning workspace/all-target Clippy and
+nine helper tests pass. Two actual OIDC accounts/native encrypted clients pass at
+**1280×720, 1920×1200 and 3440×1440 fullscreen**: distinct branches, actual Bevy
+keyboard/picking, close/reopen/walkaway, fresh sessions after reconnect/database/
+server restart, distant restore and backend loss. Informational dialogue creates
+no item/reward/XP/objective records. Actual panels were inspected. Windowed GPU
+validation is clean; fullscreen has one or two specifically allowed upstream wgpu
+resize diagnostics per startup and no other errors. Physical 4K/Windows remain open.
+
+The mixed Scorch/resources/statuses/creature/equipment/reward/XP/objective/dialogue
+launcher passes all three cleanup modes. Exact source, three executed binaries,
+docs and proof: `build/dialogue-qualified-v1-20261030`. Previous checkpoints stay
+preserved. This is the initial informational slice: vendors, quest acceptance/
+turn-in, production NPC art, occlusion and real player-death closure remain open.
+No new frame-rate or MMO-population claim is made. P3-17/18 remain unspecified.
+All changes stay local/uncommitted; story edits are untouched. Earlier notes below
+are historical.
+
+# Active development — 2026-10-30: initial P3-11 quest objective slice qualified
+
+One opt-in three-kill objective now uses trusted current-life facts, an atomic
+XP/objective transaction, accepted-work retirement, private committed observations
+and a standard Bevy journal. Completion grants no extra items or XP.
+[Exact behavior, evidence and limits](QUEST_OBJECTIVES_FOUNDATION.md).
+
+**396 workspace tests pass / 27 explicit skips**, with unchanged final source.
+All seventeen actual PostgreSQL contracts/twenty-three commands separately pass;
+ten private-asset skips remain skips. Formatting, denied-warning workspace/all-target
+Clippy and nine Python helper tests pass. Actual OIDC/encrypted-ticket/SQL lease
+checks retain accepted objective work through logout without duplicate credit.
+
+Two actual accounts/native encrypted clients pass at **1920×1200 windowed** and
+**3440×1440 fullscreen**: distinct own 1/3 versus 3/3 journals, completion after
+XP caps, reconnect, database/server restart, distant restore and backend failure.
+Actual widgets were inspected. Windowed GPU validation is clean; fullscreen has
+one documented upstream wgpu resize diagnostic per startup and no other errors.
+The ordinary 1280×720 mixed Scorch/resources/statuses/equipment/reward/XP/objective
+launcher passes all three cleanup modes. Physical 4K and native Windows remain
+unqualified. No new performance or MMO population capacity claim is made.
+
+Exact source, four executables, documentation and proofs:
+`build/quests-qualified-v1-20261030`. Prior checkpoints remain preserved. Next is
+the bounded [P3-12 dialogue foundation](NPC_DIALOGUE_FOUNDATION.md), currently
+plan only. General quest acceptance, dialogue/turn-in rewards and vendors remain
+open. P3-17/18 remain unspecified. All changes remain local/uncommitted; concurrent
+story edits are untouched. Nothing was pushed. Earlier notes below are historical.
 
 # Project decisions
 
@@ -971,3 +1060,55 @@ screenshots and asset counts do not establish acceptable performance. Preserve
 legacy camera regressions and use the existing accelerated CAMERA query geometry
 for normal chunk worlds. Keep explicit debug/visual-refinement modes for diagnosis.
 Current measured scope and pending checks are in [the performance record](FOREST_PERFORMANCE.md).
+
+
+## 2026-10-29 — Initial transient periodic status effects (P3-06)
+
+Scorch is opt-in development data, not final class/story balance. Apply only at
+validated cast completion; charge mana at actual start. Keep one instance per
+source/target/definition; refresh retains the next nominal tick. Bound sixteen
+instances world-wide/eight per target and recheck capacity at completion. First
+hit follows one interval; an exact-expiration tick is included. Fixed simulation
+ticks determine damage, independent of rendering/wall time.
+
+For this prototype, source departure cancels future ticks; target death/removal
+clears all its statuses, and fresh respawn carries none. No durable/offline combat
+credit is implied. Preserve CS01/CS02 resource observations; SS01 separately sends
+bounded status rows with admitted catalog identity and explicit authority tick
+rate. Client labels are observations only. Initial native Linux slice passes;
+[scope and evidence](STATUS_EFFECTS_FOUNDATION.md). Follow-on creature AI must define
+its navigation/steering prerequisite rather than treating task list order as proof
+of available pathfinding.
+
+
+## 2026-10-30 — Initial creature patrol consumes offline routes (P3-07 / P4-03)
+
+Use source/profile/hash-bound precomputed local navmesh routes for the first
+nonblocking creature. Keep generation/query libraries outside the authority's
+normal dependency graph and all path search/file I/O outside the fixed tick.
+Existing Avian static collision decides movement; missing/blocked paths stop,
+with no straight-line fallback. Keep home collision resident independently of
+player travel. Death pauses the patrol; fresh runtime respawn returns home and
+restarts its wait. Moving-target visuals reuse existing interpolation with bounded
+normal catch-up, while server positions drive combat. The tested initial slice
+passes; general chasing requires separately bounded worker queries and generation
+fences. [Scope and qualification](CREATURE_AI_FOUNDATION.md).
+
+
+## 2026-10-30 — Initial main-hand equipment and public appearance (P3-08)
+
+Keep backpack and main hand in one bounded state/revision/transaction. Equip
+replaces by returning the displaced item to its source slot; unequip requires an
+empty explicit destination. Schema 2 requires its nullable main-hand field, checked
+nonstackable eligibility and appearance ID; preserve schema-1 behavior and bytes.
+Do not migrate/reseed existing characters on catalog mismatch. Gear grants no
+statistics or damage in this first slice.
+
+IR02/IS02 explicitly version equipment/private item observations. EA01 separately
+publishes only relevant runtime actor/appearance IDs, with epoch/catalog checks;
+private contents/revisions remain private. Both kinds of item request share one
+pending stream and durable receipt boundary. Standard Bevy primitives parent to
+the inspected POLYGON Hand_R skin joint; source scale/joint mismatches are explicit
+errors, and no cosmetic prop becomes a collider or movement authority. Empty HUD
+layout containers pass pointer input through while child controls remain pickable.
+[Qualified behavior, driver/source/binary evidence and limits](EQUIPMENT_FOUNDATION.md).

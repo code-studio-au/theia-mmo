@@ -335,3 +335,47 @@ pub(super) async fn logout(
 pub(super) async fn metrics(State(state): State<Shared>) -> Result<Json<Stats>> {
     Ok(Json(state.stats()?))
 }
+
+/// Reserve before the asynchronous SELECT; a concurrent final save cannot race a
+/// stale character read into a replacement admission.
+pub(super) async fn enter(
+    State(state): State<Shared>,
+    headers: HeaderMap,
+    body: std::result::Result<Json<Select>, JsonRejection>,
+) -> Result<Json<serde_json::Value>> {
+    let context = state.authorize(&headers)?;
+    let select = json(body)?;
+    if select.character_id.len() > 64 {
+        return Err(ApiError::bad());
+    }
+    let character = CharacterId::parse(&select.character_id).ok_or_else(ApiError::bad)?;
+    let binding = Binding {
+        owner: *context.owner(),
+        character,
+    };
+    let gate = state
+        .game
+        .lock()
+        .map_err(|_| ApiError::internal())?
+        .clone()
+        .ok_or_else(ApiError::busy)?;
+    let admission_error = |error| match error {
+        crate::admissions::Error::Unauthorized => ApiError::unauthorized(),
+        crate::admissions::Error::Conflict => ApiError(
+            StatusCode::CONFLICT,
+            "Account or character already reserved",
+        ),
+        _ => ApiError::busy(),
+    };
+    let reservation = gate.reserve(context, binding).map_err(admission_error)?;
+    let selected = state
+        .publisher
+        .select_character(binding, state.world)
+        .await
+        .map_err(database)?;
+    let ticket = reservation.issue(selected.saved).map_err(admission_error)?;
+    // Deliberate private bearer response; never write ticket bytes to diagnostics.
+    Ok(Json(
+        serde_json::json!({"id":character.value().to_string(),"address":ticket.address().to_string(),"ticket":ticket.bytes(),"expires_in_seconds":20}),
+    ))
+}

@@ -34,9 +34,20 @@ def check_steady_motion(motion, budget):
     assert ratio <= budget, f'Steady held-frame ratio {ratio:.4%} exceeds {budget:.4%}'
 
 
-def run(output, binaries, players, *, duration=65, clients=1, tour=True, validation=True, speed=32, continent=False, prediction=False, impairment=False, hold_jump=False, saved_terrain=None, uncapped=True, steady_hold_budget=None, targeting=False, combat_catalog=None, feedback=None, action_ui=False, persistence=False, spawn=None, reverse_clients=False, environment=None):
+def run(output, binaries, players, *, duration=65, clients=1, tour=True, validation=True, speed=32, continent=False, prediction=False, impairment=False, hold_jump=False, saved_terrain=None, uncapped=True, steady_hold_budget=None, targeting=False, combat_catalog=None, feedback=None, action_ui=False, persistence=False, spawn=None, reverse_clients=False, environment=None, character_stats=None, status_catalog=None, creature_profile=None, navigation=None, window_size="1280x720"):
+    resolution=[int(n) for n in window_size.split('x')]
+    if len(resolution)!=2 or not (640<=resolution[0]<=7680 and 480<=resolution[1]<=4320):
+        raise ValueError("Invalid qualification window size")
     if persistence and (tour or continent or speed != 1 or not prediction or saved_terrain is None):
         raise ValueError("Persistence qualification requires saved terrain and normal-speed prediction without a tour")
+    if bool(creature_profile) != bool(navigation):
+        raise ValueError("Creature profile/navigation must be paired")
+    if creature_profile and (not combat_catalog or saved_terrain is None or not prediction):
+        raise ValueError("Creature qualification requires predicted saved-terrain combat")
+    if status_catalog and (not character_stats or not combat_catalog):
+        raise ValueError("Statuses require combat and character stats")
+    if character_stats and not combat_catalog:
+        raise ValueError("Character stats require combat")
     if action_ui and not combat_catalog:
         raise ValueError("Action UI requires combat")
     if feedback and not combat_catalog:
@@ -56,6 +67,10 @@ def run(output, binaries, players, *, duration=65, clients=1, tour=True, validat
     env = dict(os.environ)
     env.update(environment or {})
     env.update(THEIA_PERFORMANCE_UNCAPPED='1' if uncapped else '0', THEIA_GRAYBOX_AUTOPLAY='1', THEIA_GRAYBOX_AUTOPLAY_SPEED=str(speed), RUST_LOG='info')
+    if creature_profile:
+        env['THEIA_CREATURE_QUALIFY'] = '1'
+    else:
+        env.pop('THEIA_CREATURE_QUALIFY', None)
     if action_ui:
         env["THEIA_COMBAT_UI_QUALIFY"] = "1"
     else:
@@ -80,6 +95,12 @@ def run(output, binaries, players, *, duration=65, clients=1, tour=True, validat
     else:
         env.pop("THEIA_GRAYBOX_HOLD_JUMP_RESET", None)
     combat_options = ['--combat-catalog', str(combat_catalog)] if combat_catalog else []
+    if character_stats:
+        combat_options.extend(['--character-stats', str(character_stats)])
+    if status_catalog:
+        combat_options.extend(['--status-catalog', str(status_catalog)])
+    if creature_profile:
+        combat_options.extend(['--creature-profile', str(creature_profile), '--navigation', str(navigation)])
     terrain_options = ['--saved-terrain', str(saved_terrain)] if saved_terrain else ['--graybox-world']
     processes = []
     logs = []
@@ -114,7 +135,7 @@ def run(output, binaries, players, *, duration=65, clients=1, tour=True, validat
             with Recorder(output/'processes', os.getpid(), interval=.5):
                 for index in (reversed(range(clients)) if reverse_clients else range(clients)):
                     client_output = output/f'client-{index+1}'
-                    client_env = dict(env, THEIA_GRAYBOX_QUALIFY=str(client_output), THEIA_GRAYBOX_QUALIFY_SECONDS=str(duration))
+                    client_env = dict(env, THEIA_WINDOW_SIZE=window_size, THEIA_GRAYBOX_QUALIFY=str(client_output), THEIA_GRAYBOX_QUALIFY_SECONDS=str(duration))
                     log = (output/f'client-{index+1}.log').open('w')
                     logs.append(log)
                     client_address = f'{relays[index].address[0]}:{relays[index].address[1]}' if relays else address
@@ -220,7 +241,11 @@ def run(output, binaries, players, *, duration=65, clients=1, tour=True, validat
         mean = sum(r['mean_ms']*r['frame_count'] for r in steady)/frames
         result.update(mean_frame_ms=mean, fps=1000/mean, worst_one_second_p95_ms=max(r['p95_ms'] for r in steady), frames=frames)
         results.append(result)
-        assert (output/f'client-{index+1}'/'scene.png').is_file()
+        scene=output/f'client-{index+1}'/'scene.png'
+        assert scene.is_file()
+        header=scene.read_bytes()[:24]
+        assert header[:8]==b'\x89PNG\r\n\x1a\n'
+        assert [int.from_bytes(header[16:20],'big'),int.from_bytes(header[20:24],'big')]==resolution, 'Actual captured resolution differs from requested size'
         if targeting:
             target = json.loads((output/f'client-{index+1}'/'targeting.json').read_text())
             assert target['phase'] == 6, target
@@ -238,6 +263,31 @@ def run(output, binaries, players, *, duration=65, clients=1, tour=True, validat
                 assert target['pointer_inputs'] >= 2, target
                 assert target['combat']['widget_requests'] == target['pointer_inputs'], target
                 assert target['combat']['keyboard_requests'] >= 2, target
+            if creature_profile:
+                assert target['visible_moving_samples'] > 100, target
+                motion = target['target_motion']
+                assert motion['enabled'] and motion['moving_frames'] > 100 and motion['authority_updates'] > 30, motion
+                assert motion['max_authority_lag_m'] <= 3, motion
+                assert motion['max_presented_speed_mps'] <= motion['catch_up_speed_mps'] + .1, motion
+            if status_catalog:
+                statuses = target['statuses']
+                assert statuses['active_frames'] > 100 and statuses['empty_frames'] > 100, statuses
+                assert statuses['own_frames'] > 100, statuses
+                if clients > 1:
+                    assert statuses['other_frames'] > 100 and statuses['max_rows'] >= 2, statuses
+                assert statuses['max_rows'] <= 8, statuses
+                for image in ['statuses-active.png', 'statuses-cleared.png']:
+                    assert (output/f'client-{index+1}'/image).is_file(), image
+            if character_stats:
+                resources = target['combat']
+                assert resources['resource_frames'] > 100, resources
+                assert resources['mana_decreases'] > 0 and resources['mana_regenerations'] > 0, resources
+                assert resources['mana_rejections'] > 0, resources
+                assert resources['minimum_mana'] < 25, resources
+                for image in ['mana-depleted.png', 'mana-recovered.png']:
+                    assert (output/f'client-{index+1}'/image).is_file(), image
+                if action_ui:
+                    assert min(target['ui_metrics']['player_health_samples'], target['ui_metrics']['mana_samples']) > 100, target
             if feedback:
                 fx = target['feedback']
                 assert fx['critical_visuals'] > 0 and fx['critical_voices'] > 0, fx
@@ -274,6 +324,10 @@ def run(output, binaries, players, *, duration=65, clients=1, tour=True, validat
             assert summary['combat_events_sent'] >= 10*clients, summary
         else:
             assert summary['target_selections_accepted'] == 3*clients and summary['target_selections_rejected'] == 0, summary
+        if creature_profile:
+            patrol = summary['patrol']
+            assert patrol['moving_ticks'] > 100 and patrol['arrivals'] >= 3 and patrol['loops'] >= 1 and patrol['respawns'] > 0, patrol
+            assert patrol['blocked'] == 0 and patrol['travelled_metres'] > 10, patrol
         assert summary['max_event_queue_bytes'] <= 8192, summary
         if tour:
             assert any(c['targeting']['empty_after_selection'] > 10 and c['targeting']['returned_samples'] > 10 for c in results), 'No client retired and revisited its target'
@@ -284,8 +338,8 @@ def run(output, binaries, players, *, duration=65, clients=1, tour=True, validat
     if tour:
         assert server_text.count('terrain_teleport ') == 5, server_text
         assert any(c['visited'] >= 8 and c['patches'] >= 8 for c in results), 'No client completed the teleport/revisit route'
-    result = dict(passed=True, persistence=persistence, initial_spawn=spawn, reverse_clients=reverse_clients, action_ui=action_ui, audio=audio_report, feedback_config_sha256=hashlib.sha256(feedback.read_bytes()).hexdigest() if feedback else None, combat_catalog_sha256=hashlib.sha256(combat_catalog.read_bytes()).hexdigest() if combat_catalog else None, targeting=targeting, uncapped=uncapped, steady_hold_budget=steady_hold_budget, saved_terrain_manifest_sha256=hashlib.sha256((saved_terrain/"terrain.manifest.json").read_bytes()).hexdigest() if saved_terrain else None, prediction=prediction, network_impairment=impairment, held_jump_reset=hold_jump, relay_stats=[r.stats for r in relays], clients=results, validation=validation, tour=tour, dev_speed=speed,
-        continent=continent, resolution=[1280,720], display='caller native desktop',
+    result = dict(passed=True, creature_profile_sha256=hashlib.sha256(creature_profile.read_bytes()).hexdigest() if creature_profile else None, navigation_manifest_sha256=hashlib.sha256((navigation/'navigation.manifest.json').read_bytes()).hexdigest() if navigation else None, status_catalog_sha256=hashlib.sha256(status_catalog.read_bytes()).hexdigest() if status_catalog else None, character_stats_sha256=hashlib.sha256(character_stats.read_bytes()).hexdigest() if character_stats else None, persistence=persistence, initial_spawn=spawn, reverse_clients=reverse_clients, action_ui=action_ui, audio=audio_report, feedback_config_sha256=hashlib.sha256(feedback.read_bytes()).hexdigest() if feedback else None, combat_catalog_sha256=hashlib.sha256(combat_catalog.read_bytes()).hexdigest() if combat_catalog else None, targeting=targeting, uncapped=uncapped, steady_hold_budget=steady_hold_budget, saved_terrain_manifest_sha256=hashlib.sha256((saved_terrain/"terrain.manifest.json").read_bytes()).hexdigest() if saved_terrain else None, prediction=prediction, network_impairment=impairment, held_jump_reset=hold_jump, relay_stats=[r.stats for r in relays], clients=results, validation=validation, tour=tour, dev_speed=speed,
+        continent=continent, resolution=resolution, display='caller native desktop',
         client_sha256=hashlib.sha256((binaries/'theia-client').read_bytes()).hexdigest(),
         server_sha256=hashlib.sha256((binaries/'theia-server').read_bytes()).hexdigest(),
         character_sha256=hashlib.sha256((players/'character.glb').read_bytes()).hexdigest(),
@@ -297,6 +351,7 @@ def run(output, binaries, players, *, duration=65, clients=1, tour=True, validat
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('output', type=Path)
+    parser.add_argument('--window-size',default='1280x720')
     parser.add_argument('--binaries', type=Path, default=Path('target/release'))
     parser.add_argument('--players', type=Path, default=Path('build/synty-character-canonical-stage'))
     parser.add_argument('--duration', type=int, default=65)
@@ -313,6 +368,10 @@ if __name__ == '__main__':
     parser.add_argument('--reverse-clients', action='store_true')
     parser.add_argument('--action-ui', action='store_true', help='Alternate real Bevy picking/widget activation with keyboard input in combat fixture')
     parser.add_argument('--spell-feedback', type=Path)
+    parser.add_argument('--character-stats', type=Path)
+    parser.add_argument('--status-catalog', type=Path)
+    parser.add_argument('--creature-profile', type=Path)
+    parser.add_argument('--navigation', type=Path)
     parser.add_argument('--combat-catalog', type=Path, help='Native ability/death/respawn fixture; requires --prediction --speed 1 --no-tour')
     parser.add_argument('--continent', action='store_true', help='Continuous full-continent accelerated traversal')
     parser.add_argument('--no-tour', action='store_true')
@@ -320,4 +379,4 @@ if __name__ == '__main__':
     parser.add_argument('--speed', type=int, choices=[1,8,32], default=32)
     args = parser.parse_args()
     print(json.dumps(run(args.output, args.binaries.resolve(), args.players.resolve(), duration=args.duration,
-        clients=args.clients, tour=not args.no_tour, validation=not args.no_validation, speed=args.speed, continent=args.continent, prediction=args.prediction, impairment=args.impairment, hold_jump=args.hold_jump_teleport, saved_terrain=args.saved_terrain.resolve() if args.saved_terrain else None, uncapped=not args.paced, steady_hold_budget=args.steady_hold_budget, targeting=args.targeting, combat_catalog=args.combat_catalog.resolve() if args.combat_catalog else None, feedback=args.spell_feedback.resolve() if args.spell_feedback else None, action_ui=args.action_ui, persistence=args.persistence, spawn=args.spawn, reverse_clients=args.reverse_clients), indent=2))
+        clients=args.clients, tour=not args.no_tour, validation=not args.no_validation, speed=args.speed, continent=args.continent, prediction=args.prediction, impairment=args.impairment, hold_jump=args.hold_jump_teleport, saved_terrain=args.saved_terrain.resolve() if args.saved_terrain else None, uncapped=not args.paced, steady_hold_budget=args.steady_hold_budget, targeting=args.targeting, combat_catalog=args.combat_catalog.resolve() if args.combat_catalog else None, feedback=args.spell_feedback.resolve() if args.spell_feedback else None, action_ui=args.action_ui, persistence=args.persistence, spawn=args.spawn, reverse_clients=args.reverse_clients, character_stats=args.character_stats.resolve() if args.character_stats else None, status_catalog=args.status_catalog.resolve() if args.status_catalog else None, creature_profile=args.creature_profile.resolve() if args.creature_profile else None, navigation=args.navigation.resolve() if args.navigation else None, window_size=args.window_size), indent=2))

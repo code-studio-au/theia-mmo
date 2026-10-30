@@ -1,6 +1,10 @@
 //! Executable Renet bridge. Transport polling and fixed simulation are separate;
 //! only superseding inputs/snapshots cross the presentation boundary.
+mod admissions;
 mod checkpoints;
+pub mod dialogue;
+pub mod inventory;
+pub mod progression;
 mod tickets;
 use crate::{
     Result,
@@ -9,6 +13,7 @@ use crate::{
     simulation::World,
     wire::*,
 };
+pub use admissions::{AccountAdmissions, AdmissionLease, PlayerAdmission};
 pub use checkpoints::{ActorCheckpoint, AuthorityCheckpoint, CheckpointBridge};
 use renet::{RenetClient, RenetServer, ServerEvent};
 use renet_netcode::{ConnectToken, NetcodeServerTransport};
@@ -86,6 +91,11 @@ pub fn read_ticket(bytes: &[u8], address: SocketAddr) -> Result<ConnectToken> {
 }
 
 struct Peer {
+    dialogue: Option<dialogue::Peer>,
+    admission: Option<Box<dyn AdmissionLease>>,
+    progression: Option<progression::Peer>,
+    inventory: Option<inventory::Peer>,
+    inventory_requests: u32,
     actor: u64,
     latest: Option<Input>,
     received: u32,
@@ -96,12 +106,33 @@ struct Peer {
     target_accepted: bool,
     target_sent: Option<crate::targeting_wire::State>,
     combat_sent: Option<crate::combat_wire::State>,
+    status_sent: Option<crate::status_wire::State>,
+    appearance_sent: Option<crate::appearance_wire::State>,
     combat_event_sequence: u64,
     cast_requests: u32,
 }
 
 #[derive(Clone, Debug, Default, serde::Serialize)]
 pub struct ServerStats {
+    pub dialogue_requests_accepted: u64,
+    pub dialogue_requests_rejected: u64,
+    pub dialogue_views_sent: u64,
+    pub guide_presences_sent: u64,
+    pub dialogue_replies_sent: u64,
+    pub dialogue_backpressure_disconnects: u64,
+    pub experience_opportunities_forwarded: u64,
+    pub progression_states_sent: u64,
+    pub quest_states_sent: u64,
+    pub reward_opportunities_forwarded: u64,
+    pub reward_states_sent: u64,
+    pub appearance_states_sent: u64,
+    pub patrol: Option<crate::simulation::creatures::Snapshot>,
+    pub status_states_sent: u64,
+    pub status_backpressure_disconnects: u64,
+    pub inventory_states_sent: u64,
+    pub inventory_requests_forwarded: u64,
+    pub inventory_requests_ignored: u64,
+    pub inventory_backpressure_disconnects: u64,
     pub checkpoint_publications: u64,
     pub persistent_spawn_admissions: u64,
     pub combat_states_sent: u64,
@@ -263,7 +294,7 @@ pub async fn run_server_with_chunks(
     world: World,
     requests: ChunkRequests,
 ) -> Result<ServerStats> {
-    run_server_inner(transport, shutdown, world, requests, None, None).await
+    run_server_inner(transport, shutdown, world, requests, None, None, None).await
 }
 
 /// Production owner loop with bounded trusted management; requests are not wire data.
@@ -273,7 +304,7 @@ pub async fn run_server_with_world_control(
     world: World,
     requests: WorldRequests,
 ) -> Result<ServerStats> {
-    run_server_inner(transport, shutdown, world, requests, None, None).await
+    run_server_inner(transport, shutdown, world, requests, None, None, None).await
 }
 
 type Demand = Option<Vec<theia_core::coordinates::ChunkId>>;
@@ -308,7 +339,16 @@ pub async fn run_server_streaming(
             }
         }
     });
-    let result = run_server_inner(transport, shutdown, world, requests, Some(updates), None).await;
+    let result = run_server_inner(
+        transport,
+        shutdown,
+        world,
+        requests,
+        Some(updates),
+        None,
+        None,
+    )
+    .await;
     owner.abort();
     let _ = owner.await;
     let stats = result?;
@@ -333,7 +373,7 @@ pub async fn run_server_measured(
     world: World,
 ) -> Result<ServerStats> {
     let (_, requests) = chunk_control();
-    run_server_inner(transport, shutdown, world, requests, None, None).await
+    run_server_inner(transport, shutdown, world, requests, None, None, None).await
 }
 /// Opt-in local-issuer persistence bridge. The application owns DB work and
 /// stable identities; this authority only restores validated poses and emits
@@ -348,9 +388,145 @@ pub async fn run_server_with_checkpoints(
         return Err("Checkpoint bridge requires streamed terrain".into());
     }
     let (_, requests) = world_control();
-    let stats = run_server_inner(transport, shutdown, world, requests, None, Some(bridge)).await?;
+    let stats = run_server_inner(
+        transport,
+        shutdown,
+        world,
+        requests,
+        None,
+        Some(bridge),
+        None,
+    )
+    .await?;
     println!("transport_summary {}", serde_json::to_string(&stats)?);
     Ok(stats)
+}
+
+/// Account-authorized entry is opt-in; legacy tickets keep their lifetime replay
+/// guard. The application must monitor database health and retire leases durably.
+pub async fn run_server_with_admissions(
+    transport: NetcodeServerTransport,
+    shutdown: watch::Receiver<bool>,
+    world: World,
+    authority: std::sync::Arc<dyn AccountAdmissions>,
+) -> Result<ServerStats> {
+    if world.procedural().is_none() || !world.prediction_enabled() || world.dev_tour {
+        return Err("Account admission requires normal predicted streamed terrain".into());
+    }
+    let (_, requests) = world_control();
+    run_server_inner(
+        transport,
+        shutdown,
+        world,
+        requests,
+        None,
+        None,
+        Some(authority),
+    )
+    .await
+}
+fn admit_peer(
+    world: &mut World,
+    server: &mut RenetServer,
+    client: u64,
+    position: Option<theia_core::coordinates::GlobalPosition>,
+    admission: Option<Box<dyn AdmissionLease>>,
+    current: Instant,
+) -> Result<Option<Peer>> {
+    let actor = if let Some(position) = position {
+        world.join_restored(position)
+    } else {
+        world.join()
+    };
+    let Some(actor) = actor else {
+        server.disconnect(client);
+        return Ok(None);
+    };
+    let inventory = admission
+        .as_ref()
+        .map(|a| a.inventory())
+        .transpose()?
+        .flatten()
+        .map(inventory::Peer::new)
+        .transpose()?;
+    match (
+        world.reward_profile(),
+        inventory.as_ref().and_then(|p| p.port.rewards.as_ref()),
+    ) {
+        (None, None) => {}
+        (Some(a), Some(b)) if a.hash() == b.hash() => {}
+        _ => return Err("Admitted reward profile differs from authoritative world".into()),
+    }
+    match (
+        world.vendor_profile(),
+        inventory.as_ref().and_then(|p| p.port.vendor.as_ref()),
+    ) {
+        (None, None) => {}
+        (Some(a), Some(b)) if a.hash() == b.hash() => {}
+        _ => return Err("Admitted vendor profile differs from authoritative world".into()),
+    }
+    let progression = admission
+        .as_ref()
+        .map(|a| a.progression())
+        .transpose()?
+        .flatten()
+        .map(progression::Peer::new)
+        .transpose()?;
+    match (world.progression_profile(), progression.as_ref()) {
+        (None, None) => {}
+        (Some(a), Some(b)) if a.hash() == b.port.profile.hash() => {}
+        _ => return Err("Admitted XP profile differs from authoritative world".into()),
+    }
+    match (
+        world.quest_profile(),
+        progression.as_ref().and_then(|p| p.port.quest.as_ref()),
+    ) {
+        (None, None) => {}
+        (Some(a), Some(b)) if a.hash() == b.hash() => {}
+        _ => return Err("Admitted objective profile differs from authority".into()),
+    }
+    let peer = Peer {
+        dialogue: world.dialogue_profile().map(|_| dialogue::Peer::default()),
+        progression,
+        inventory,
+        inventory_requests: 0,
+        admission,
+        actor,
+        latest: None,
+        received: 0,
+        period: current,
+        pending_chunk_ack: None,
+        offered_generation: 0,
+        target_sequence: 0,
+        target_accepted: false,
+        target_sent: None,
+        combat_sent: None,
+        status_sent: None,
+        appearance_sent: None,
+        combat_event_sequence: 0,
+        cast_requests: 0,
+    };
+    admissions::capture(world, &peer)?;
+    if peer.admission.is_some() {
+        println!(
+            "account_admit {}",
+            serde_json::json!({"actor":actor,"epoch":world.epoch(),"position":world.global_position(actor).unwrap().metres(),"input_stream":world.correction(actor).map(|c|c.state.input.stream_epoch)})
+        );
+    }
+    server.send_message(
+        client,
+        EVENT_CHANNEL,
+        Welcome {
+            terrain_stream: world.procedural().is_some(),
+            id: actor,
+            epoch: world.epoch(),
+            world: world.identity(),
+            origin: world.origin(),
+        }
+        .encode(),
+    );
+    println!("player_join id={actor} transport=renet");
+    Ok(Some(peer))
 }
 
 // Combat events are ordered gameplay data. A full reliable queue closes that
@@ -360,14 +536,304 @@ fn retire_peers(
     peers: &mut BTreeMap<u64, Peer>,
     world: &mut World,
     ids: &[u64],
-) {
+) -> Result<()> {
     for &id in ids {
         server.disconnect(id);
         if let Some(peer) = peers.remove(&id) {
+            admissions::capture(world, &peer)?;
             world.leave(peer.actor);
             println!("player_leave id={} transport=renet", peer.actor);
         }
     }
+    Ok(())
+}
+fn publish_progression(
+    server: &mut RenetServer,
+    peers: &mut BTreeMap<u64, Peer>,
+    world: &mut World,
+    stats: &mut ServerStats,
+) -> Result<()> {
+    let mut retired = Vec::new();
+    for (&id, peer) in peers.iter_mut() {
+        let Some(owner) = &mut peer.progression else {
+            continue;
+        };
+        let view = owner.port.state.borrow().clone();
+        if view.failed {
+            return Err("Earned progression owner failed".into());
+        }
+        if view.closed {
+            retired.push(id);
+            continue;
+        }
+        let Some(progress) = view.progress else {
+            continue;
+        };
+        match (&owner.port.quest, &view.quest) {
+            (None, None) | (Some(_), Some(_)) => {}
+            (Some(_), None) => continue,
+            (None, Some(_)) => return Err("Unexpected committed objective state".into()),
+        }
+        let actor = world
+            .entity_key(peer.actor)
+            .ok_or("Progression actor missing")?;
+        if owner.sent.as_ref() != Some(&progress) {
+            let state = crate::progression_wire::State {
+                actor,
+                profile_hash: owner.port.profile.hash(),
+                progress: progress.clone(),
+            };
+            let bytes = state.encode(&owner.port.profile)?;
+            if !server.can_send_message(id, EVENT_CHANNEL, bytes.len()) {
+                retired.push(id);
+                continue;
+            }
+            server.send_message(id, EVENT_CHANNEL, bytes);
+            owner.sent = Some(progress);
+            stats.progression_states_sent += 1;
+        }
+        // XP can stay capped while an objective still advances. Its observation
+        // must not be hidden behind an unchanged XP revision/coalescing guard.
+        if let (Some(profile), Some(progress)) = (&owner.port.quest, view.quest)
+            && owner.quest_sent.as_ref() != Some(&progress)
+        {
+            let state = crate::quest_wire::State {
+                actor,
+                profile_hash: profile.hash(),
+                progress: progress.clone(),
+            };
+            let bytes = state.encode(profile)?;
+            if !server.can_send_message(id, EVENT_CHANNEL, bytes.len()) {
+                retired.push(id);
+                continue;
+            }
+            server.send_message(id, EVENT_CHANNEL, bytes);
+            owner.quest_sent = Some(progress);
+            stats.quest_states_sent += 1;
+        }
+    }
+    retire_peers(server, peers, world, &retired)
+}
+fn forward_experience_opportunity(
+    world: &World,
+    peer: &Peer,
+    stats: &mut ServerStats,
+    fact: crate::simulation::progression::Opportunity,
+) -> Result<()> {
+    if world.entity_key(peer.actor) != Some(fact.actor) {
+        return Err("XP source binding mismatch".into());
+    }
+    let port = &peer
+        .progression
+        .as_ref()
+        .ok_or("XP fact requires character owner")?
+        .port;
+    if world
+        .progression_profile()
+        .is_none_or(|p| p.hash() != port.profile.hash())
+    {
+        return Err("XP fact profile mismatch".into());
+    }
+    port.earned
+        .try_send(fact.event)
+        .map_err(|_| "XP fact queue unavailable")?;
+    stats.experience_opportunities_forwarded += 1;
+    Ok(())
+}
+fn forward_experience_opportunities(
+    world: &World,
+    peers: &BTreeMap<u64, Peer>,
+    stats: &mut ServerStats,
+    events: &[crate::simulation::combat::Event],
+) -> Result<()> {
+    for fact in world.experience_opportunities(events)? {
+        let peer = peers
+            .values()
+            .find(|p| world.entity_key(p.actor) == Some(fact.actor))
+            .ok_or("XP source has no admitted peer")?;
+        forward_experience_opportunity(world, peer, stats, fact)?;
+    }
+    Ok(())
+}
+fn publish_inventory(
+    server: &mut RenetServer,
+    peers: &mut BTreeMap<u64, Peer>,
+    world: &mut World,
+    stats: &mut ServerStats,
+) -> Result<()> {
+    let mut retired = Vec::new();
+    for (&id, peer) in peers.iter_mut() {
+        let Some(inventory) = &mut peer.inventory else {
+            continue;
+        };
+        match inventory.view(
+            world
+                .entity_key(peer.actor)
+                .ok_or("Inventory actor missing")?,
+        )? {
+            inventory::View::Loading => {}
+            inventory::View::Closed => retired.push(id),
+            inventory::View::State(state) => {
+                let bytes = state.encode(&inventory.port.catalog, inventory.port.hash)?;
+                if !server.can_send_message(id, EVENT_CHANNEL, bytes.len()) {
+                    stats.inventory_backpressure_disconnects += 1;
+                    retired.push(id);
+                    continue;
+                }
+                server.send_message(id, EVENT_CHANNEL, bytes);
+                inventory.sent(*state);
+                stats.inventory_states_sent += 1;
+            }
+        }
+        let actor = world.entity_key(peer.actor).ok_or("Reward actor missing")?;
+        if let Some(view) = inventory.rewards_view(actor)? {
+            let profile = inventory
+                .port
+                .rewards
+                .as_ref()
+                .ok_or("Reward profile missing")?;
+            let bytes = view.encode(profile.catalog(), profile.hash())?;
+            if !server.can_send_message(id, EVENT_CHANNEL, bytes.len()) {
+                stats.inventory_backpressure_disconnects += 1;
+                retired.push(id);
+                continue;
+            }
+            server.send_message(id, EVENT_CHANNEL, bytes);
+            inventory.rewards_sent(view);
+            stats.reward_states_sent += 1;
+        }
+    }
+    retire_peers(server, peers, world, &retired)
+}
+fn forward_reward_opportunity(
+    world: &World,
+    peer: &Peer,
+    stats: &mut ServerStats,
+    fact: crate::simulation::rewards::Opportunity,
+) -> Result<()> {
+    if world.entity_key(peer.actor) != Some(fact.actor) {
+        return Err("Earned reward source mismatch".into());
+    }
+    let port = &peer
+        .inventory
+        .as_ref()
+        .ok_or("Earned reward requires item owner")?
+        .port;
+    if port
+        .rewards
+        .as_ref()
+        .zip(world.reward_profile())
+        .is_none_or(|(a, b)| a.hash() != b.hash())
+    {
+        return Err("Earned reward profile mismatch".into());
+    }
+    port.opportunities
+        .as_ref()
+        .ok_or("Reward opportunity port missing")?
+        .try_send(fact.reward)
+        .map_err(|_| "Earned reward queue unavailable")?;
+    stats.reward_opportunities_forwarded += 1;
+    Ok(())
+}
+fn forward_reward_opportunities(
+    world: &World,
+    peers: &BTreeMap<u64, Peer>,
+    stats: &mut ServerStats,
+    events: &[crate::simulation::combat::Event],
+) -> Result<()> {
+    for fact in world.reward_opportunities(events)? {
+        let peer = peers
+            .values()
+            .find(|p| world.entity_key(p.actor) == Some(fact.actor))
+            .ok_or("Earned reward has no admitted peer")?;
+        forward_reward_opportunity(world, peer, stats, fact)?;
+    }
+    Ok(())
+}
+
+fn publish_appearance(
+    server: &mut RenetServer,
+    peers: &mut BTreeMap<u64, Peer>,
+    world: &mut World,
+    stats: &mut ServerStats,
+) -> Result<()> {
+    if world.completed_tick() == 0 {
+        return Ok(());
+    }
+    let mut committed = BTreeMap::new();
+    for peer in peers.values() {
+        let Some(inventory) = &peer.inventory else {
+            continue;
+        };
+        if !inventory.port.catalog.equipment_enabled() {
+            continue;
+        }
+        let state = inventory.port.state.borrow();
+        if state.failed || state.closed {
+            continue;
+        }
+        if let Some(bag) = &state.bag {
+            let hand = bag
+                .main_hand()
+                .map(|s| {
+                    inventory
+                        .port
+                        .catalog
+                        .definition(s.item())
+                        .and_then(|d| d.main_hand_appearance())
+                        .cloned()
+                        .ok_or("Committed item has no appearance")
+                })
+                .transpose()?;
+            committed.insert(peer.actor, (inventory.port.hash, hand));
+        }
+    }
+    let mut slow = Vec::new();
+    for (&id, peer) in peers.iter_mut() {
+        let Some(inventory) = &peer.inventory else {
+            continue;
+        };
+        if !inventory.port.catalog.equipment_enabled() {
+            continue;
+        }
+        let mut actors = Vec::new();
+        for player in world.snapshot_for(peer.actor).players {
+            if let Some((hash, hand)) = committed.get(&player.id) {
+                if hash != &inventory.port.hash {
+                    return Err("Visible equipment catalogs differ".into());
+                }
+                actors.push(crate::appearance_wire::Actor {
+                    key: world
+                        .entity_key(player.id)
+                        .ok_or("Appearance actor missing")?,
+                    main_hand: hand.clone(),
+                });
+            }
+        }
+        let view = crate::appearance_wire::State {
+            epoch: world.epoch(),
+            tick: world.completed_tick(),
+            catalog_hash: inventory.port.hash,
+            actors,
+        };
+        if peer
+            .appearance_sent
+            .as_ref()
+            .is_some_and(|old| old.same_view(&view))
+        {
+            continue;
+        }
+        let bytes = view.encode(&inventory.port.catalog, inventory.port.hash)?;
+        if !server.can_send_message(id, EVENT_CHANNEL, bytes.len()) {
+            stats.inventory_backpressure_disconnects += 1;
+            slow.push(id);
+            continue;
+        }
+        server.send_message(id, EVENT_CHANNEL, bytes);
+        peer.appearance_sent = Some(view);
+        stats.appearance_states_sent += 1;
+    }
+    retire_peers(server, peers, world, &slow)
 }
 fn publish_combat_events(
     server: &mut RenetServer,
@@ -407,8 +873,46 @@ fn publish_combat_events(
         }
     }
     stats.combat_backpressure_disconnects += slow.len() as u64;
-    retire_peers(server, peers, world, &slow);
+    retire_peers(server, peers, world, &slow)?;
     Ok(())
+}
+fn publish_status_state(
+    server: &mut RenetServer,
+    peers: &mut BTreeMap<u64, Peer>,
+    world: &mut World,
+    stats: &mut ServerStats,
+) -> Result<()> {
+    let Some(catalog) = world.combat_status_catalog() else {
+        return Ok(());
+    };
+    let mut slow = Vec::new();
+    for (&id, peer) in peers.iter_mut() {
+        let view = crate::status_wire::State {
+            epoch: world.epoch(),
+            tick: world.completed_tick(),
+            rate: world.tick_rate(),
+            statuses: world
+                .combat_status_snapshot(peer.actor)
+                .ok_or("Status peer without actor")?,
+        };
+        if peer
+            .status_sent
+            .as_ref()
+            .is_some_and(|old| old.same_view(&view))
+        {
+            continue;
+        }
+        let bytes = view.encode(catalog)?;
+        if !server.can_send_message(id, EVENT_CHANNEL, bytes.len()) {
+            slow.push(id);
+            continue;
+        }
+        server.send_message(id, EVENT_CHANNEL, bytes);
+        peer.status_sent = Some(view);
+        stats.status_states_sent += 1;
+    }
+    stats.status_backpressure_disconnects += slow.len() as u64;
+    retire_peers(server, peers, world, &slow)
 }
 fn publish_combat_state(
     server: &mut RenetServer,
@@ -445,7 +949,7 @@ fn publish_combat_state(
         stats.combat_states_sent += 1;
     }
     stats.combat_backpressure_disconnects += slow.len() as u64;
-    retire_peers(server, peers, world, &slow);
+    retire_peers(server, peers, world, &slow)?;
     Ok(())
 }
 async fn run_server_inner(
@@ -455,11 +959,13 @@ async fn run_server_inner(
     mut requests: ChunkRequests,
     demand: Option<watch::Sender<Demand>>,
     mut checkpoints: Option<CheckpointBridge>,
+    authority: Option<std::sync::Arc<dyn AccountAdmissions>>,
 ) -> Result<ServerStats> {
     world.require_client_chunks()?;
     let mut server = RenetServer::new(connection_config());
     let mut stats = ServerStats::default();
     let mut peers = BTreeMap::<u64, Peer>::new();
+    let mut pending = BTreeMap::<u64, admissions::Pending>::new();
     // A local ticket may create only one session in this server lifetime.
     let mut spent = BTreeSet::new();
     let mut io = tokio::time::interval(Duration::from_millis(5));
@@ -484,15 +990,24 @@ async fn run_server_inner(
                     stats.skipped_intervals = stats.skipped_intervals.saturating_add(intervals.saturating_sub(1) as u64);
                 }
                 previous_scheduled = Some(scheduled);
+                let mut revoked = Vec::new();
+                for (&id, peer) in &peers {
+                    if let Some(admission) = &peer.admission && !admission.live()? { revoked.push(id); }
+                }
+                retire_peers(&mut server, &mut peers, &mut world, &revoked)?;
                 for peer in peers.values_mut() {
                     if let Some(input) = peer.latest.take() && world.input(peer.actor, input) { stats.applied_inputs += 1; }
                 }
                 let snapshot = world.step();
+                stats.patrol = world.patrol_snapshot();
+                for peer in peers.values() { admissions::capture(&world, peer)?; }
                 if let Some(bridge)=&mut checkpoints {
                     stats.checkpoint_publications+=u64::from(bridge.capture(&world,&peers));
                 }
                 if world.combat_enabled() {
                     let events = world.combat_events().to_vec();
+                    forward_reward_opportunities(&world, &peers, &mut stats, &events)?;
+                    forward_experience_opportunities(&world, &peers, &mut stats, &events)?;
                     publish_combat_events(&mut server, &mut peers, &mut world, &mut stats, &events)?;
                 }
                 if world.procedural().is_some() {
@@ -524,6 +1039,8 @@ async fn run_server_inner(
                     }
                 }
                 publish_combat_state(&mut server, &mut peers, &mut world, &mut stats)?;
+                publish_status_state(&mut server,&mut peers,&mut world,&mut stats)?;
+                dialogue::publish(&mut server,&mut peers,&mut world,&mut stats)?;
                 stats.observe(&server, &peers);
                 metrics.record(rate, started.elapsed(), started.saturating_duration_since(scheduled));
             }
@@ -538,7 +1055,10 @@ async fn run_server_inner(
                 }
             }
             scheduled = io.tick() => {
-                if let Some(bridge)=&checkpoints {world.poll_terrain_keeping(&bridge.pending())?;}
+                if let Some(authority) = &authority {
+                    let retained = authority.retained_positions()?;
+                    world.poll_terrain_keeping(&retained.into_iter().flatten().collect::<Vec<_>>())?;
+                } else if let Some(bridge)=&checkpoints {world.poll_terrain_keeping(&bridge.pending())?;}
                 else {world.poll_terrain();}
                 if let Some(error) = world.procedural().and_then(|t| t.error.as_ref()) { return Err(error.clone().into()); }
                 if let Some(terrain) = world.procedural() {
@@ -554,33 +1074,61 @@ async fn run_server_inner(
                 while let Some(event) = server.get_event() {
                     match event {
                         ServerEvent::ClientConnected { client_id } => {
-                            if !(1..=MAX_PLAYERS as u64).contains(&client_id) || !spent.insert(client_id) {
-                                server.disconnect(client_id); continue;
+                            if !(1..=MAX_PLAYERS as u64).contains(&client_id) {server.disconnect(client_id);continue;}
+                            if let Some(authority) = &authority {
+                                if peers.contains_key(&client_id) || pending.contains_key(&client_id) {server.disconnect(client_id);continue;}
+                                let Some(data) = transport.user_data(client_id) else {server.disconnect(client_id);continue;};
+                                let Some(admission) = authority.clone().consume(client_id, &data)? else {server.disconnect(client_id);continue;};
+                                pending.insert(client_id, admissions::Pending {admission, deadline:current+Duration::from_secs(10)});
+                                continue;
                             }
+                            if !spent.insert(client_id) {server.disconnect(client_id);continue;}
                             let restored=checkpoints.as_ref().and_then(|b|b.position(client_id));
-                            let actor=if let Some(position)=restored {world.join_restored(position)} else {world.join()};
-                            if let Some(actor) = actor {
+                            if let Some(peer) = admit_peer(&mut world, &mut server, client_id, restored, None, current)? {
                                 if let Some(bridge)=&mut checkpoints {
                                     bridge.admitted(client_id);
-                                    println!("persistent_admit {}",serde_json::json!({"client_id":client_id,"actor":actor,"epoch":world.epoch(),"position":world.global_position(actor).unwrap().metres()}));
+                                    println!("persistent_admit {}",serde_json::json!({"client_id":client_id,"actor":peer.actor,"epoch":world.epoch(),"position":world.global_position(peer.actor).unwrap().metres()}));
                                 }
                                 stats.persistent_spawn_admissions+=u64::from(restored.is_some());
-                                peers.insert(client_id, Peer { actor, latest: None, received: 0, period: current, pending_chunk_ack: None, offered_generation:0, target_sequence:0, target_accepted:false, target_sent:None, combat_sent:None, combat_event_sequence:0, cast_requests:0 });
-                                server.send_message(client_id, EVENT_CHANNEL, Welcome {terrain_stream: world.procedural().is_some(),id:actor, epoch:world.epoch(),world:world.identity(),origin:world.origin()}.encode());
-                                println!("player_join id={actor} transport=renet");
-                            } else { server.disconnect(client_id); }
+                                peers.insert(client_id, peer);
+                            }
                         }
                         ServerEvent::ClientDisconnected { client_id, .. } => {
+                            pending.remove(&client_id);
                             if let Some(bridge)=&mut checkpoints {stats.checkpoint_publications+=u64::from(bridge.capture(&world,&peers));}
                             if let Some(peer) = peers.remove(&client_id) {
+                                admissions::capture(&world,&peer)?;
                                 world.leave(peer.actor); println!("player_leave id={} transport=renet", peer.actor);
                             }
                         }
                     }
                 }
+                // Connected peers wait for the saved pose's collision publication;
+                // no Welcome or actor is created against unprepared geometry.
+                let mut completed = Vec::new();
+                for (&id, reservation) in &pending {
+                    if !server.is_connected(id) || current >= reservation.deadline || !reservation.admission.lease.live()? {
+                        server.disconnect(id); completed.push((id, false));
+                    } else if world.terrain_prepared_for(reservation.admission.position) {
+                        completed.push((id, true));
+                    }
+                }
+                for (id, ready) in completed {
+                    let reservation = pending.remove(&id).unwrap();
+                    if ready {
+                        let PlayerAdmission {position, lease} = reservation.admission;
+                        if let Some(peer) = admit_peer(&mut world, &mut server, id, Some(position), Some(lease), current)? {
+                            stats.persistent_spawn_admissions += 1;
+                            peers.insert(id, peer);
+                        }
+                    }
+                }
                 let mut retired_combat_peers = Vec::new();
                 for (&id, peer) in &mut peers {
-                    if current.duration_since(peer.period) >= Duration::from_secs(1) { peer.period = current; peer.received = 0; peer.cast_requests = 0; }
+                    if let Some(admission) = &peer.admission && !admission.live()? {
+                        server.disconnect(id); retired_combat_peers.push(id); continue;
+                    }
+                    if current.duration_since(peer.period) >= Duration::from_secs(1) { peer.period = current; peer.received = 0; peer.cast_requests = 0; peer.inventory_requests = 0; }
                     let mut controls = 0;
                     let mut invalid_control = false;
                     for _ in 0..8 {
@@ -588,6 +1136,22 @@ async fn run_server_inner(
                         controls += 1; peer.received += 1;
                         if peer.received > 180 || (world.chunks().is_none() && world.procedural().is_none()) {
                             invalid_control = true; stats.rejected_chunk_ready += 1; break;
+                        }
+                        if bytes.starts_with(crate::dialogue_wire::REQUEST_TAG) {
+                            let Some(dialogue)=&mut peer.dialogue else {stats.dialogue_requests_rejected+=1;invalid_control=true;break;};
+                            if dialogue.request(&mut world,peer.actor,&bytes,&mut stats).is_err() {invalid_control=true;break;}
+                            continue;
+                        }
+                        if bytes.starts_with(crate::inventory_wire::REQUEST_TAG) || bytes.starts_with(crate::inventory_wire::ITEM_REQUEST_TAG) || bytes.starts_with(crate::reward_wire::REQUEST_TAG) || bytes.starts_with(crate::vendor_wire::REQUEST_TAG) {
+                            peer.inventory_requests+=1;
+                            if peer.inventory_requests>8 {invalid_control=true;break;}
+                            let Some(inventory)=&mut peer.inventory else {invalid_control=true;break;};
+                            match inventory.request_in_world(&world,peer.actor,&bytes) {
+                                Ok(true)=>stats.inventory_requests_forwarded+=1,
+                                Ok(false)=>stats.inventory_requests_ignored+=1,
+                                Err(_)=>{invalid_control=true;break;},
+                            }
+                            continue;
                         }
                         if bytes.starts_with(crate::combat_wire::REQUEST_TAG) {
                             peer.cast_requests += 1;
@@ -605,6 +1169,12 @@ async fn run_server_inner(
                                 Outcome::Ignored=>stats.cast_requests_ignored+=1,
                                 Outcome::Rejected(_)=>stats.cast_requests_rejected+=1,
                                 Outcome::Started {..} | Outcome::Queued {..}=>stats.cast_requests_accepted+=1,
+                            }
+                            for fact in world.experience_opportunities(&result.events)? {
+                                forward_experience_opportunity(&world, peer, &mut stats, fact)?;
+                            }
+                            for fact in world.reward_opportunities(&result.events)? {
+                                forward_reward_opportunity(&world, peer, &mut stats, fact)?;
                             }
                             combat_events.extend(result.events);
                             continue;
@@ -671,11 +1241,15 @@ async fn run_server_inner(
                         }
                     }
                 }
-                if world.combat_enabled() {
+                {
                     retired_combat_peers.extend(peers.keys().copied().filter(|id| !server.is_connected(*id)));
                     retired_combat_peers.sort_unstable(); retired_combat_peers.dedup();
-                    retire_peers(&mut server,&mut peers,&mut world,&retired_combat_peers);
-                    publish_combat_events(&mut server,&mut peers,&mut world,&mut stats,&combat_events)?;
+                    retire_peers(&mut server,&mut peers,&mut world,&retired_combat_peers)?;
+                    if world.combat_enabled() {publish_combat_events(&mut server,&mut peers,&mut world,&mut stats,&combat_events)?;}
+                    publish_inventory(&mut server,&mut peers,&mut world,&mut stats)?;
+                    publish_progression(&mut server,&mut peers,&mut world,&mut stats)?;
+                    publish_appearance(&mut server,&mut peers,&mut world,&mut stats)?;
+                    dialogue::publish(&mut server,&mut peers,&mut world,&mut stats)?;
                     combat_events.clear();
                 }
                 stats.observe(&server, &peers);
@@ -695,7 +1269,12 @@ async fn run_server_inner(
     if let Some(bridge) = &mut checkpoints {
         stats.checkpoint_publications += u64::from(bridge.capture(&world, &peers));
     }
+    let final_capture = peers
+        .values()
+        .try_for_each(|peer| admissions::capture(&world, peer));
     transport.disconnect_all(&mut server);
+    pending.clear();
+    peers.clear();
     println!(
         "simulation_summary transport=renet tick_hz={} steps={} missed_deadlines={} max_work_us={} max_lateness_us={}",
         rate.hz(),
@@ -705,6 +1284,7 @@ async fn run_server_inner(
         metrics.max_lateness.as_micros()
     );
     result?;
+    final_capture?;
     if let Some(chunks) = world.chunks() {
         stats.chunk_generation = chunks.residency().generation();
         stats.chunk_rejections = chunks.rejected();
@@ -798,6 +1378,11 @@ pub async fn run_client_predicted(
             commands: Some(commands),
             choices: None,
             combat: None,
+            dialogue: None,
+            quest: None,
+            progression: None,
+            inventory: None,
+            statuses: None,
         },
     )
     .await
@@ -812,10 +1397,15 @@ pub struct TargetingClient {
 }
 #[derive(Default)]
 struct ClientMode {
+    dialogue: Option<dialogue::Client>,
     ready: Option<ChunkReadiness>,
     commands: Option<mpsc::Receiver<crate::prediction_wire::Commands>>,
     choices: Option<TargetChoices>,
-    combat: Option<CombatMode>,
+    combat: Option<CombatActions>,
+    quest: Option<std::sync::Arc<crate::quest_wire::Profile>>,
+    progression: Option<std::sync::Arc<crate::progression_wire::Profile>>,
+    inventory: Option<inventory::Client>,
+    statuses: Option<std::sync::Arc<theia_core::statuses::Catalog>>,
 }
 /// expected_world includes targeting::profile_identity; baseline wrappers remain unchanged.
 pub async fn run_client_targeted(
@@ -839,6 +1429,11 @@ pub async fn run_client_targeted(
             commands: mode.commands,
             choices: Some(mode.choices),
             combat: None,
+            dialogue: None,
+            quest: None,
+            progression: None,
+            inventory: None,
+            statuses: None,
         },
     )
     .await
@@ -856,10 +1451,10 @@ pub struct CombatClient {
     pub casts: mpsc::Receiver<CastChoice>,
     pub events: mpsc::Sender<crate::combat_wire::Batch>,
 }
-struct CombatMode {
-    catalog: std::sync::Arc<theia_core::abilities::Catalog>,
-    casts: mpsc::Receiver<CastChoice>,
-    events: mpsc::Sender<crate::combat_wire::Batch>,
+pub struct CombatActions {
+    pub catalog: std::sync::Arc<theia_core::abilities::Catalog>,
+    pub casts: mpsc::Receiver<CastChoice>,
+    pub events: mpsc::Sender<crate::combat_wire::Batch>,
 }
 pub async fn run_client_combat(
     address: SocketAddr,
@@ -884,11 +1479,58 @@ pub async fn run_client_combat(
             ready: Some(mode.targeting.ready),
             commands: mode.targeting.commands,
             choices: Some(mode.targeting.choices),
-            combat: Some(CombatMode {
+            combat: Some(CombatActions {
                 catalog: mode.catalog,
                 casts: mode.casts,
                 events: mode.events,
             }),
+            dialogue: None,
+            quest: None,
+            progression: None,
+            inventory: None,
+            statuses: None,
+        },
+    )
+    .await
+}
+pub struct GameplayClient {
+    pub dialogue: Option<dialogue::Client>,
+    pub ready: ChunkReadiness,
+    pub commands: Option<mpsc::Receiver<crate::prediction_wire::Commands>>,
+    pub choices: Option<TargetChoices>,
+    pub combat: Option<CombatActions>,
+    pub quest: Option<std::sync::Arc<crate::quest_wire::Profile>>,
+    pub progression: Option<std::sync::Arc<crate::progression_wire::Profile>>,
+    pub inventory: Option<inventory::Client>,
+    pub statuses: Option<std::sync::Arc<theia_core::statuses::Catalog>>,
+}
+/// Combined opt-in gameplay profiles. Existing baseline wrappers remain valid.
+pub async fn run_client_gameplay(
+    address: SocketAddr,
+    ticket: &[u8],
+    input: watch::Receiver<Intent>,
+    state: watch::Sender<State>,
+    shutdown: watch::Receiver<bool>,
+    expected_world: [u8; 32],
+    mode: GameplayClient,
+) -> Result<()> {
+    run_client_inner(
+        address,
+        ticket,
+        input,
+        state,
+        shutdown,
+        expected_world,
+        ClientMode {
+            ready: Some(mode.ready),
+            commands: mode.commands,
+            choices: mode.choices,
+            combat: mode.combat,
+            dialogue: mode.dialogue,
+            quest: mode.quest,
+            progression: mode.progression,
+            inventory: mode.inventory,
+            statuses: mode.statuses,
         },
     )
     .await
@@ -907,7 +1549,26 @@ async fn run_client_inner(
         mut commands,
         mut choices,
         mut combat,
+        inventory,
+        dialogue,
+        progression,
+        quest,
+        statuses,
     } = mode;
+    if quest.is_some() && progression.is_none() {
+        return Err("Objectives require progression profile".into());
+    }
+    if statuses.is_some() && combat.is_none() {
+        return Err("Statuses require the combat profile".into());
+    }
+    let mut dialogue = dialogue.map(dialogue::ClientState::new).transpose()?;
+    let mut inventory = inventory.map(inventory::ClientState::new).transpose()?;
+    if combat
+        .as_ref()
+        .is_some_and(|m| m.casts.max_capacity() > 8 || m.events.max_capacity() > 16)
+    {
+        return Err("Combat action/event queue exceeds prototype budget".into());
+    }
     let token = read_ticket(ticket, address)?;
     let bind = if address.is_ipv4() {
         "127.0.0.1:0"
@@ -926,6 +1587,9 @@ async fn run_client_inner(
     let mut cast_sequence = 0u64;
     let mut combat_event_sequence = 0u64;
     let mut combat_state: Option<crate::combat_wire::State> = None;
+    let mut quest_state: Option<crate::quest_wire::State> = None;
+    let mut progression_state: Option<crate::progression_wire::State> = None;
+    let mut status_state: Option<crate::status_wire::State> = None;
     let mut targeting: Option<crate::targeting_wire::State> = None;
     let mut ready_sequence = 0u64;
     let mut last_ready = None;
@@ -955,6 +1619,11 @@ async fn run_client_inner(
                 if commands.is_some() && id.is_some() && correction.is_none() && started.elapsed()>Duration::from_secs(8) {return Err("Server did not enable prediction profile 1".into());}
                 if combat.is_some() && id.is_some() && combat_state.is_none() && started.elapsed()>Duration::from_secs(8) {return Err("Server did not enable combat profile 2".into());}
                 if choices.is_some() && id.is_some() && targeting.is_none() && started.elapsed()>Duration::from_secs(8) {return Err("Server did not enable targeting profile 1".into());}
+                if id.is_some() && let Some(mode)=&inventory {mode.check_deadline(current,started)?;}
+                if let Some(mode)=&dialogue {mode.check(started.elapsed(),id.is_some(),current)?;}
+                if quest.is_some() && id.is_some() && quest_state.is_none() && started.elapsed()>Duration::from_secs(8) {return Err("Server did not publish committed objective".into());}
+                if progression.is_some() && id.is_some() && progression_state.is_none() && started.elapsed()>Duration::from_secs(8) {return Err("Server did not publish committed XP".into());}
+                if statuses.is_some() && id.is_some() && status_state.is_none() && started.elapsed()>Duration::from_secs(8) {return Err("Server did not enable status profile 1".into());}
                 for _ in 0..8 {
                     let Some(bytes) = client.receive_message(EVENT_CHANNEL) else { break; };
                     if id.is_none() {
@@ -964,7 +1633,67 @@ async fn run_client_inner(
                         admission=Some(welcome.clone());
                         state.send_replace(State {id,welcome:Some(welcome),..State::default()});
                     } else {
-                        if bytes.starts_with(crate::combat_wire::STATE_TAG) {
+                        if dialogue::is_frame(&bytes) {
+                            let mode=dialogue.as_mut().ok_or("Unexpected dialogue observation")?;
+                            mode.receive(&bytes,admission.as_ref().ok_or("Dialogue before admission")?,&mut stats)?;
+                            state.send_modify(|s|{mode.copy_to(s);s.transport=Some(stats.clone());});
+                            continue;
+                        }
+                        if bytes.starts_with(crate::quest_wire::STATE_TAG) {
+                            let profile=quest.as_ref().ok_or("Unexpected objective observation")?;
+                            let view=crate::quest_wire::State::decode(&bytes,profile)?;
+                            let welcome=admission.as_ref().unwrap();
+                            let actor=theia_core::identity::EntityKey {epoch:theia_core::identity::WorldEpoch::new(welcome.epoch).unwrap(),entity:theia_core::identity::EntityId::new(welcome.id).unwrap()};
+                            view.validate_successor(actor,quest_state.as_ref())?;
+                            quest_state=Some(view);stats.quest_states_received+=1;
+                            state.send_modify(|s|{s.quest=quest_state.clone();s.transport=Some(stats.clone());});
+                            continue;
+                        }
+                        if bytes.starts_with(crate::progression_wire::STATE_TAG) {
+                            let profile=progression.as_ref().ok_or("Unexpected XP observation")?;
+                            let view=crate::progression_wire::State::decode(&bytes,profile)?;
+                            let welcome=admission.as_ref().unwrap();
+                            let actor=theia_core::identity::EntityKey {epoch:theia_core::identity::WorldEpoch::new(welcome.epoch).unwrap(),entity:theia_core::identity::EntityId::new(welcome.id).unwrap()};
+                            view.validate_successor(actor,progression_state.as_ref())?;
+                            progression_state=Some(view);stats.progression_states_received+=1;
+                            state.send_modify(|s|{s.progression=progression_state.clone();s.transport=Some(stats.clone());});
+                            continue;
+                        }
+                        if bytes.starts_with(crate::status_wire::STATE_TAG) {
+                            let catalog=statuses.as_ref().ok_or("Unexpected opt-in status state")?;
+                            let view=crate::status_wire::State::decode(&bytes,catalog)?;
+                            if view.epoch!=admission.as_ref().unwrap().epoch {return Err("Foreign status epoch".into());}
+                            if state.borrow().snapshot.as_ref().is_some_and(|s|s.tick_hz!=view.rate.hz()) {return Err("Status tick rate disagrees with authority snapshot".into());}
+                            if status_state.as_ref().is_some_and(|old|view.tick<old.tick) {continue;}
+                            status_state=Some(view);stats.status_states_received+=1;
+                            state.send_modify(|s|{s.statuses=status_state.clone();s.transport=Some(stats.clone());});
+                            continue;
+                        }
+                        if bytes.starts_with(crate::reward_wire::STATE_TAG) {
+                            let mode=inventory.as_mut().ok_or("Unexpected opt-in reward state")?;
+                            let welcome=admission.as_ref().unwrap();
+                            let actor=theia_core::identity::EntityKey {epoch:theia_core::identity::WorldEpoch::new(welcome.epoch).unwrap(),entity:theia_core::identity::EntityId::new(welcome.id).unwrap()};
+                            mode.receive_rewards(&bytes,actor)?;
+                            state.send_modify(|s|{s.rewards=mode.rewards.clone();s.transport=Some(stats.clone());});
+                            continue;
+                        }
+                        if bytes.starts_with(crate::appearance_wire::STATE_TAG) {
+                            let mode=inventory.as_mut().ok_or("Unexpected opt-in appearance state")?;
+                            let welcome=admission.as_ref().unwrap();
+                            let actor=theia_core::identity::EntityKey {epoch:theia_core::identity::WorldEpoch::new(welcome.epoch).unwrap(),entity:theia_core::identity::EntityId::new(welcome.id).unwrap()};
+                            mode.receive_appearance(&bytes,actor)?;stats.appearance_states_received+=1;
+                            state.send_modify(|s|{s.appearance=mode.appearance.clone();s.transport=Some(stats.clone());});
+                            continue;
+                        }
+                        if bytes.starts_with(crate::inventory_wire::STATE_TAG) || bytes.starts_with(crate::inventory_wire::ITEM_STATE_TAG) {
+                            let mode=inventory.as_mut().ok_or("Unexpected opt-in inventory state")?;
+                            let welcome=admission.as_ref().unwrap();
+                            let actor=theia_core::identity::EntityKey {epoch:theia_core::identity::WorldEpoch::new(welcome.epoch).unwrap(),entity:theia_core::identity::EntityId::new(welcome.id).unwrap()};
+                            mode.receive(&bytes,actor)?;stats.inventory_states_received+=1;
+                            state.send_modify(|s|{s.inventory=mode.view.clone();s.inventory_pending=mode.pending();s.transport=Some(stats.clone());});
+                            continue;
+                        }
+                        if bytes.starts_with(crate::combat_wire::STATE_TAG) || bytes.starts_with(crate::combat_wire::RESOURCE_STATE_TAG) {
                             let mode=combat.as_ref().ok_or("Unexpected opt-in combat state")?;
                             let view=crate::combat_wire::State::decode(&bytes,&mode.catalog)?;
                             if view.epoch!=admission.as_ref().unwrap().epoch || view.reply.is_some_and(|r| r.sequence>cast_sequence) {
@@ -1044,6 +1773,7 @@ async fn run_client_inner(
                         continue;
                     }
                     let snapshot = Snapshot::decode(&bytes)?;
+                    if status_state.as_ref().is_some_and(|s|s.rate.hz()!=snapshot.tick_hz) {return Err("Authority snapshot disagrees with status tick rate".into());}
                     stats.snapshots_received += 1;
                     if snapshot.tick <= latest_tick { stats.stale_snapshots_discarded += 1; }
                     if let Some(actor) = id && snapshot.tick > latest_tick {
@@ -1056,8 +1786,14 @@ async fn run_client_inner(
                         stats.rtt_ms = info.rtt * 1000.; stats.packet_loss = info.packet_loss;
                         stats.bytes_sent_per_second = info.bytes_sent_per_second;
                         stats.bytes_received_per_second = info.bytes_received_per_second;
-                        state.send_replace(State { combat:combat_state.clone(), targeting:targeting.clone(), id, snapshot: Some(snapshot), error: None, transport: Some(stats.clone()), welcome:admission.clone(), wire_rebases:rebases, chunk_report:last_report.clone(), chunk_ack:last_ack.clone(),chunk_offer:last_offer.clone(),correction,correction_received,correction_ready:correction_ready.clone() });
+                        let mut update=State { dialogue:None, guide:None, dialogue_reply:None, dialogue_pending:false, quest:quest_state.clone(), progression:progression_state.clone(), rewards:inventory.as_ref().and_then(|m|m.rewards.clone()), appearance:inventory.as_ref().and_then(|m|m.appearance.clone()), statuses:status_state.clone(), inventory:inventory.as_ref().and_then(|m|m.view.clone()), inventory_pending:inventory.as_ref().is_some_and(|m|m.pending()), combat:combat_state.clone(), targeting:targeting.clone(), id, snapshot: Some(snapshot), error: None, transport: Some(stats.clone()), welcome:admission.clone(), wire_rebases:rebases, chunk_report:last_report.clone(), chunk_ack:last_ack.clone(),chunk_offer:last_offer.clone(),correction,correction_received,correction_ready:correction_ready.clone() };
+                        if let Some(mode)=&dialogue {mode.copy_to(&mut update);}
+                        state.send_replace(update);
                     }
+                }
+                if let (Some(mode),Some(welcome))=(&mut dialogue,&admission)
+                    && mode.send(&mut client,welcome,current,&mut stats)? {
+                    state.send_modify(|s|{mode.copy_to(s);s.transport=Some(stats.clone());});
                 }
                 if commands.is_none() && id.is_some() && current >= next_input {
                     next_input = current + Duration::from_secs_f64(1. / f64::from(TICK_HZ));
@@ -1073,6 +1809,14 @@ async fn run_client_inner(
                         if packet.epoch!=welcome.epoch {return Err("Foreign local prediction commands".into());}
                         let bytes=packet.encode()?;
                         if client.can_send_message(MOVEMENT_CHANNEL,bytes.len()) {client.send_message(MOVEMENT_CHANNEL,bytes);}
+                    }
+                }
+                if let (Some(welcome),Some(mode))=(&admission,&mut inventory)
+                    && client.can_send_message(EVENT_CHANNEL,crate::reward_wire::REQUEST_BYTES) {
+                    let actor=theia_core::identity::EntityKey {epoch:theia_core::identity::WorldEpoch::new(welcome.epoch).unwrap(),entity:theia_core::identity::EntityId::new(welcome.id).unwrap()};
+                    if let Some(bytes)=mode.next(actor,current)? {
+                        client.send_message(EVENT_CHANNEL,bytes);stats.inventory_requests_sent+=1;
+                        state.send_modify(|s|{s.inventory_pending=true;s.transport=Some(stats.clone());});
                     }
                 }
                 if let (Some(welcome),Some(mode))=(&admission,&mut combat) {

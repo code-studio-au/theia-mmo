@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "id": "theia.dev.gameplay",
+  "revision": 1,
+  "items": "development-equipment-items.json",
+  "abilities": "development-status-abilities.json",
+  "stats": "development-character-stats.json",
+  "statuses": "development-statuses.json",
+  "creature": "development-creature-patrol.json",
+  "dialogue": "development-dialogue.json",
+  "vendor": "development-vendor.json",
+  "rewards": "development-rewards.json",
+  "progression": "development-progression.json",
+  "quest": "development-quest.json"
+}

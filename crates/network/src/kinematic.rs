@@ -19,6 +19,22 @@ const JUMP_SPEED: f32 = 7.;
 const MIN_UP: f32 = 0.76604444; // cos(40 degrees)
 const WORLD: u32 = SOLID | GROUND;
 const MAX_SLIDES: usize = 5;
+/// Shared static-world navigation clearance. Actors still never block actors.
+#[derive(Clone, Copy, Debug)]
+pub struct Clearance {
+    pub radius: f32,
+    pub height: f32,
+    pub step: f32,
+    pub minimum_up: f32,
+}
+pub fn clearance() -> Clearance {
+    Clearance {
+        radius: FOOTPRINT_RADIUS,
+        height: HEIGHT,
+        step: STEP,
+        minimum_up: MIN_UP,
+    }
+}
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Motion {
     vertical_speed: f32,

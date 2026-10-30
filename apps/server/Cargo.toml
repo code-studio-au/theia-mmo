@@ -22,3 +22,5 @@ url = "2"
 
 [dev-dependencies]
 tokio-postgres = "=0.7.18"
+renet.workspace = true
+renet_netcode.workspace = true

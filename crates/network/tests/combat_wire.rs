@@ -40,6 +40,7 @@ fn queued(catalog: &Catalog) -> Queued {
 }
 fn largest(catalog: &Catalog) -> State {
     State {
+        vitals: None,
         epoch: 7,
         tick: 10,
         reply: Some(Reply {
@@ -338,4 +339,42 @@ fn spatial_cues_keep_checked_global_positions_without_a_live_target_or_render_fr
             Some(position)
         );
     }
+}
+
+#[test]
+fn resource_state_has_an_explicit_tag_and_checked_vitals_without_changing_legacy_frames() {
+    use theia_core::resources::Vitals;
+    let catalog = catalog(64);
+    let legacy = largest(&catalog);
+    let legacy_bytes = legacy.encode(&catalog).unwrap();
+    assert!(legacy_bytes.starts_with(wire::STATE_TAG));
+    assert_eq!(legacy_bytes.len(), 1066);
+    let mut resource = legacy.clone();
+    resource.vitals = Some(Vitals::new(100, 100, 25, 100).unwrap());
+    resource.reply = Some(Reply {
+        sequence: 3,
+        outcome: Outcome::Rejected(Reason::InsufficientMana),
+    });
+    let bytes = resource.encode(&catalog).unwrap();
+    assert!(bytes.starts_with(wire::RESOURCE_STATE_TAG));
+    assert_eq!(bytes.len(), 1082);
+    assert_eq!(State::decode(&bytes, &catalog).unwrap(), resource);
+    assert!(!resource.same_view(&legacy));
+    let at = bytes.len() - 16;
+    for (offset, value) in [(0, 101u32), (4, 0), (8, 101), (12, 1_000_001)] {
+        let mut invalid = bytes.clone();
+        invalid[at + offset..at + offset + 4].copy_from_slice(&value.to_le_bytes());
+        assert!(State::decode(&invalid, &catalog).is_err());
+    }
+    for length in 0..bytes.len() {
+        assert!(State::decode(&bytes[..length], &catalog).is_err());
+    }
+    let mut trailing = bytes.clone();
+    trailing.push(0);
+    assert!(State::decode(&trailing, &catalog).is_err());
+    let mut wrong = bytes;
+    wrong[..4].copy_from_slice(wire::STATE_TAG);
+    assert!(State::decode(&wrong, &catalog).is_err());
+    resource.vitals = None;
+    assert!(resource.encode(&catalog).is_err());
 }

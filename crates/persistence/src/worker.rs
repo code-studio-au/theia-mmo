@@ -2,6 +2,11 @@
 //! belongs to this asynchronous owner;
 //! producers copy at most eight records and never await a database operation.
 mod accounts;
+mod inventory;
+mod progression;
+mod quests;
+mod rewards;
+mod vendors;
 use crate::{Error, Result, Saved, SavedCharacter, Store, store::MAX_BATCH};
 use accounts::Request;
 use std::sync::{
@@ -27,6 +32,7 @@ pub struct Publisher {
     latest: watch::Sender<Option<Batch>>,
     submitted: Arc<AtomicU64>,
     accounts: mpsc::Sender<Request>,
+    inventory: mpsc::Sender<inventory::Request>,
 }
 impl Publisher {
     /// Queue acceptance only. Successful publication never means database commit.
@@ -87,6 +93,33 @@ pub struct WorkerStatus {
     pub created_characters: u64,
     pub character_lists: u64,
     pub character_selections: u64,
+    pub processed_inventory_requests: u64,
+    pub inventory_ensures: u64,
+    pub inventory_loads: u64,
+    pub inventory_committed: u64,
+    pub inventory_replayed: u64,
+    pub inventory_rejected: u64,
+    pub vendor_committed: u64,
+    pub vendor_replayed: u64,
+    pub vendor_rejected: u64,
+    pub reward_offers: u64,
+    pub reward_lists: u64,
+    pub reward_committed: u64,
+    pub reward_replayed: u64,
+    pub reward_rejected: u64,
+    pub quest_ensures: u64,
+    pub quest_loads: u64,
+    pub quest_advances: u64,
+    pub quest_completions: u64,
+    pub quest_replayed: u64,
+    pub quest_noops: u64,
+    pub quest_rejected: u64,
+    pub progression_ensures: u64,
+    pub progression_loads: u64,
+    pub experience_committed: u64,
+    pub experience_replayed: u64,
+    pub experience_capped: u64,
+    pub progression_rejected: u64,
     pub failed: bool,
     pub error: Option<String>,
 }
@@ -109,12 +142,21 @@ impl Worker {
         let (stop, shutdown) = watch::channel(false);
         let (report, status) = watch::channel(WorkerStatus::default());
         let (accounts, requests) = mpsc::channel(16);
-        let task = tokio::spawn(run(store, receiver, requests, shutdown, report));
+        let (inventory, inventory_requests) = mpsc::channel(16);
+        let task = tokio::spawn(run(
+            store,
+            receiver,
+            requests,
+            inventory_requests,
+            shutdown,
+            report,
+        ));
         (
             Publisher {
                 latest,
                 submitted: Arc::new(AtomicU64::new(0)),
                 accounts,
+                inventory,
             },
             Self {
                 stop,
@@ -184,6 +226,7 @@ async fn run(
     mut store: Store,
     mut latest: watch::Receiver<Option<Batch>>,
     mut requests: mpsc::Receiver<Request>,
+    mut inventory_requests: mpsc::Receiver<inventory::Request>,
     mut stop: watch::Receiver<bool>,
     report: watch::Sender<WorkerStatus>,
 ) -> Result<WorkerStatus> {
@@ -201,6 +244,15 @@ async fn run(
                     return Err(error);
                 }
                 request=requests.recv()=>match request {
+                    Some(request)=>{
+                        let result=request.run(&mut store,&mut status).await;
+                        report.send_replace(status.clone());
+                        result?;
+                        continue;
+                    }
+                    None=>true,
+                },
+                request=inventory_requests.recv()=>match request {
                     Some(request)=>{
                         let result=request.run(&mut store,&mut status).await;
                         report.send_replace(status.clone());

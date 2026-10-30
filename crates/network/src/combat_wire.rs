@@ -8,9 +8,11 @@ use theia_core::{
     content::ContentId,
     coordinates::GlobalPosition,
     identity::{EntityId, EntityKey, WorldEpoch},
+    resources::Vitals,
 };
 pub const REQUEST_TAG: &[u8; 4] = b"CA01";
 pub const STATE_TAG: &[u8; 4] = b"CS01";
+pub const RESOURCE_STATE_TAG: &[u8; 4] = b"CS02";
 pub const EVENTS_TAG: &[u8; 4] = b"CE02";
 pub const REQUEST_BYTES: usize = 29;
 pub const MAX_BYTES: usize = 1200;
@@ -53,6 +55,8 @@ fn reason(value: u8) -> Result<Reason> {
         8 => Reason::Unavailable,
         9 => Reason::Superseded,
         10 => Reason::TimeExhausted,
+        11 => Reason::InsufficientMana,
+        12 => Reason::StatusCapacity,
         _ => return Err("Unknown combat rejection reason".into()),
     })
 }
@@ -69,6 +73,8 @@ fn reason_id(value: Reason) -> u8 {
         Reason::Unavailable => 8,
         Reason::Superseded => 9,
         Reason::TimeExhausted => 10,
+        Reason::InsufficientMana => 11,
+        Reason::StatusCapacity => 12,
     }
 }
 struct Read<'a> {
@@ -262,6 +268,7 @@ pub struct Health {
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct State {
+    pub vitals: Option<Vitals>,
     pub epoch: u64,
     pub tick: u64,
     pub reply: Option<Reply>,
@@ -294,6 +301,7 @@ impl State {
             .collect();
         targets.sort_by_key(|t| t.entity);
         let value = Self {
+            vitals: snapshot.vitals,
             epoch,
             tick: snapshot.tick,
             reply: snapshot.reply,
@@ -308,6 +316,7 @@ impl State {
     }
     pub fn same_view(&self, other: &Self) -> bool {
         self.epoch == other.epoch
+            && self.vitals == other.vitals
             && self.reply == other.reply
             && self.gcd_until == other.gcd_until
             && self.cast == other.cast
@@ -316,6 +325,13 @@ impl State {
             && self.targets == other.targets
     }
     fn validate(&self, catalog: &Catalog) -> Result<()> {
+        if self.vitals.is_none()
+            && self
+                .reply
+                .is_some_and(|r| r.outcome == Outcome::Rejected(Reason::InsufficientMana))
+        {
+            return Err("Mana rejection requires the resource state profile".into());
+        }
         if WorldEpoch::new(self.epoch).is_none()
             || self.targets.len() > 16
             || self.cooldowns.len() > 64
@@ -375,7 +391,11 @@ impl State {
     }
     pub fn encode(&self, catalog: &Catalog) -> Result<Vec<u8>> {
         self.validate(catalog)?;
-        let mut bytes = STATE_TAG.to_vec();
+        let mut bytes = if self.vitals.is_some() {
+            RESOURCE_STATE_TAG.to_vec()
+        } else {
+            STATE_TAG.to_vec()
+        };
         word(&mut bytes, self.epoch);
         word(&mut bytes, self.tick);
         bytes.push(
@@ -405,13 +425,31 @@ impl State {
             number(&mut bytes, target.maximum);
             word(&mut bytes, target.respawn_at.unwrap_or(0));
         }
+        if let Some(vitals) = self.vitals {
+            for value in [
+                vitals.health(),
+                vitals.maximum_health(),
+                vitals.mana(),
+                vitals.maximum_mana(),
+            ] {
+                number(&mut bytes, value);
+            }
+        }
         if bytes.len() > MAX_BYTES {
             return Err("Combat state exceeds message budget".into());
         }
         Ok(bytes)
     }
     pub fn decode(bytes: &[u8], catalog: &Catalog) -> Result<Self> {
-        let mut read = Read::new(bytes, STATE_TAG)?;
+        let resources = bytes.starts_with(RESOURCE_STATE_TAG);
+        let mut read = Read::new(
+            bytes,
+            if resources {
+                RESOURCE_STATE_TAG
+            } else {
+                STATE_TAG
+            },
+        )?;
         let epoch = read.word()?;
         let tick = read.word()?;
         let flags = read.byte()?;
@@ -459,8 +497,22 @@ impl State {
                 respawn_at: (at != 0).then_some(at),
             });
         }
+        let vitals = if resources {
+            Some(
+                Vitals::new(
+                    read.number()?,
+                    read.number()?,
+                    read.number()?,
+                    read.number()?,
+                )
+                .ok_or("Invalid player resource bounds")?,
+            )
+        } else {
+            None
+        };
         read.end()?;
         let value = Self {
+            vitals,
             epoch,
             tick,
             reply,

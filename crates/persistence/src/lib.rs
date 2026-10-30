@@ -1,13 +1,24 @@
 //! Async PostgreSQL boundary. No renderer, transport or simulation dependencies.
 //! Queries and commit acknowledgements belong to an owner worker, never World::step.
 mod characters;
+mod inventory;
+mod progression;
+mod quests;
+mod rewards;
 mod store;
+mod vendors;
 mod worker;
 pub use characters::{Character, CharacterName, CharacterSummary, MAX_CHARACTERS_PER_OWNER};
+pub use inventory::{InventoryApplied, InventoryCatalog};
+pub use progression::{ProgressionApplied, ProgressionCatalog};
+pub use quests::{EarnedProgression, QuestApplied, QuestCatalog};
+pub use rewards::{RewardCatalog, RewardClaim};
 use std::fmt;
 pub use store::Store;
 use theia_core::coordinates::GlobalPosition;
+pub use theia_core::rewards::ClaimId;
 use uuid::Uuid;
+pub use vendors::VendorCatalog;
 pub use worker::{Publisher, Worker, WorkerStatus};
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -24,6 +35,29 @@ pub enum Error {
     CharacterLimit,
     CharacterMissing,
     AccountMissing,
+    InventoryMissing,
+    InventoryBusy,
+    InventoryCatalogMismatch,
+    InventoryData,
+    InventoryStale,
+    InventoryConflict,
+    InventoryCommand(theia_core::inventory::Error),
+    VendorCommand(theia_core::vendors::Error),
+    RewardMissing,
+    RewardConsumed,
+    RewardCatalogMismatch,
+    RewardData,
+    RewardCommand(theia_core::rewards::Error),
+    QuestMissing,
+    QuestCatalogMismatch,
+    QuestData,
+    QuestConflict,
+    QuestCommand(theia_core::quests::Error),
+    ProgressionMissing,
+    ProgressionCatalogMismatch,
+    ProgressionData,
+    ProgressionConflict,
+    ProgressionCommand(theia_core::progression::Error),
 }
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -41,6 +75,29 @@ impl fmt::Display for Error {
             Self::CharacterLimit => "Character limit reached in this realm",
             Self::CharacterMissing => "Character unavailable",
             Self::AccountMissing => "Persistent account owner missing",
+            Self::InventoryMissing => "Persistent backpack unavailable",
+            Self::InventoryBusy => "Inventory request queue full",
+            Self::InventoryCatalogMismatch => "Persistent item catalog mismatch",
+            Self::InventoryData => "Invalid persistent backpack state",
+            Self::InventoryStale => "Backpack revision is stale; reload authoritative contents",
+            Self::InventoryConflict => "Backpack revision was committed with different input",
+            Self::InventoryCommand(_) => "Backpack operation rejected",
+            Self::VendorCommand(_) => "Vendor purchase rejected",
+            Self::RewardMissing => "Reward claim unavailable",
+            Self::RewardConsumed => "Reward was already claimed",
+            Self::RewardCatalogMismatch => "Persistent reward catalog mismatch",
+            Self::RewardData => "Invalid persistent reward claim",
+            Self::RewardCommand(_) => "Reward insertion rejected",
+            Self::QuestMissing => "Persistent objective unavailable",
+            Self::QuestCatalogMismatch => "Persistent objective profile mismatch",
+            Self::QuestData => "Invalid persistent objective state",
+            Self::QuestConflict => "Victim life belongs to a different objective award",
+            Self::QuestCommand(_) => "Objective progress rejected",
+            Self::ProgressionMissing => "Persistent progression unavailable",
+            Self::ProgressionCatalogMismatch => "Persistent progression profile mismatch",
+            Self::ProgressionData => "Invalid persistent progression state",
+            Self::ProgressionConflict => "Kill event already belongs to a different award",
+            Self::ProgressionCommand(_) => "Experience award rejected",
         })
     }
 }

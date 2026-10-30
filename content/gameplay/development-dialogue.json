@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "id": "theia.dev.guide-dialogue",
+  "npc": "theia.dev.guide",
+  "name": "Development guide",
+  "start": "theia.dev.guide.welcome",
+  "nodes": [
+    {
+      "id": "theia.dev.guide.welcome",
+      "text": "Welcome to the development field. What would you like to know?",
+      "choices": [
+        {
+          "id": "theia.dev.guide.ask-movement",
+          "label": "How do I move?",
+          "next": "theia.dev.guide.movement"
+        },
+        {
+          "id": "theia.dev.guide.ask-training",
+          "label": "How does training work?",
+          "next": "theia.dev.guide.training"
+        }
+      ]
+    },
+    {
+      "id": "theia.dev.guide.movement",
+      "text": "Use WASD or the arrow keys to move, Shift to run and Space to jump.",
+      "choices": [
+        {
+          "id": "theia.dev.guide.finish-movement",
+          "label": "Thank you.",
+          "next": "theia.dev.guide.goodbye"
+        }
+      ]
+    },
+    {
+      "id": "theia.dev.guide.training",
+      "text": "Select a training creature with Tab and use your action bar. Your journal shows saved objective progress when training is enabled.",
+      "choices": [
+        {
+          "id": "theia.dev.guide.finish-training",
+          "label": "Thank you.",
+          "next": "theia.dev.guide.goodbye"
+        }
+      ]
+    },
+    {
+      "id": "theia.dev.guide.goodbye",
+      "text": "Safe travels.",
+      "choices": []
+    }
+  ]
+}

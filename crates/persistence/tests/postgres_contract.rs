@@ -198,7 +198,7 @@ async fn real_postgres_migrations_ownership_monotonicity_atomicity_and_sql_bound
         assert_eq!(error.code(), Some(&SqlState::CHECK_VIOLATION));
     }
     store.close().await.unwrap();
-    admin.batch_execute("DROP TABLE theia.character_names; DROP TABLE theia.accounts; DROP TABLE theia.development_bindings; DELETE FROM theia.schema_migrations WHERE version>=2;").await.unwrap();
+    admin.batch_execute("DROP TABLE theia.quest_kill_receipts; DROP TABLE theia.quest_objectives; DROP TABLE theia.experience_receipts; DROP TABLE theia.progression; DROP TABLE theia.reward_claims; DROP TABLE theia.backpacks; DROP TABLE theia.character_names; DROP TABLE theia.accounts; DROP TABLE theia.development_bindings; DELETE FROM theia.schema_migrations WHERE version>=2;").await.unwrap();
     let store = Store::connect_loopback(&url, realm).await.unwrap();
     assert_eq!(
         store.load(binding, world).await.unwrap(),
@@ -210,12 +210,12 @@ async fn real_postgres_migrations_ownership_monotonicity_atomicity_and_sql_bound
         .await
         .unwrap()
         .get(0);
-    assert_eq!(versions, 4);
+    assert_eq!(versions, 8);
     let upgraded_binding = store.development_binding(1).await.unwrap();
     store.close().await.unwrap();
     admin
         .batch_execute(
-            "DROP TABLE theia.character_names; DROP TABLE theia.accounts; DELETE FROM theia.schema_migrations WHERE version>=3;",
+            "DROP TABLE theia.quest_kill_receipts; DROP TABLE theia.quest_objectives; DROP TABLE theia.experience_receipts; DROP TABLE theia.progression; DROP TABLE theia.reward_claims; DROP TABLE theia.backpacks; DROP TABLE theia.character_names; DROP TABLE theia.accounts; DELETE FROM theia.schema_migrations WHERE version>=3;",
         )
         .await
         .unwrap();

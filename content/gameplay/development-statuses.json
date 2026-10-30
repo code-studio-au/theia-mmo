@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "id": "theia.dev.combat-statuses",
+  "statuses": [
+    {
+      "id": "theia.dev.scorch",
+      "name": "Scorch",
+      "duration_ms": 6000,
+      "interval_ms": 1000,
+      "effect": { "kind": "periodic_damage", "amount": 5 }
+    }
+  ]
+}

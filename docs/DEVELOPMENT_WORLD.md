@@ -1,3 +1,53 @@
+# Development window — 2026-10-30
+
+The normal client/launcher defaults to **1920×1200**, as requested for more UI
+space. Use `python3 tools/play.py --window-size 1920x1200` to select it explicitly;
+`--window-size 1280x720` selects the smaller layout. Direct client runs accept the
+same option, and `THEIA_WINDOW_SIZE` supplies a default when no option is given.
+This sets the game window, with the existing 1:1 UI scale; it does not change the
+desktop mode. Small-window qualification explicitly retains 1280×720.
+Supported sizes include **3440×1440 ultrawide** and **3840×2160 4K**.
+Use `--window-size 3440x1440 --fullscreen` for borderless fullscreen on the current
+monitor; F11 toggles fullscreen/windowed during play. Fullscreen uses that monitor's
+native dimensions. Windowed size selection also accepts other aspect ratios.
+Native Linux checks pass at 1920×1200 windowed and 3440×1440 fullscreen, including
+actual account gameplay/widgets/restart. Exact artifacts are
+`build/progression-native-1920-v2-20261030` and
+`build/progression-native-ultrawide-v2-20261030`; both are frozen with source and
+executables under `build/progression-qualified-v1-20261030`. Fullscreen records the
+specific wgpu surface-resize diagnostic described in
+[XP/display validation](EXPERIENCE_LEVELING_FOUNDATION.md); other GPU errors fail.
+This desktop is 3440×1440. An oversized 3840×2160 window was clamped by its window
+manager to 3440×1368, so configuration support is not physical 4K qualification.
+Native Windows and DPI scaling beyond the existing 1:1 UI override remain open.
+
+The current informational dialogue slice additionally passes actual account/native
+keyboard/picking and reconnect/restart at 1280×720, 1920×1200 and 3440×1440.
+Exact artifacts: `build/dialogue-native-small-v1-20261030`,
+`build/dialogue-native-1920-v1-20261030` and
+`build/dialogue-native-ultrawide-v1-20261030`, frozen with source/executables under
+`build/dialogue-qualified-v1-20261030`. Windowed validation has no GPU diagnostics;
+this fullscreen run records one or two of the same specifically allowed wgpu
+resize diagnostics per startup. [Exact dialogue scope and limitations](NPC_DIALOGUE_FOUNDATION.md).
+Use `python3 tools/play.py --dialogue --window-size 3440x1440 --fullscreen` for the
+opt-in guide on the normal development map; normal player controls remain available.
+
+
+The opt-in vendor slice additionally passes actual two-account native trades and
+SQL/UI comparisons at these three sizes, through reconnect/database/server restart
+and backend failure. Final source/executables/proof are frozen under
+`build/vendor-qualified-v1-20261030`; native artifacts are
+`build/vendor-native-small-v2-20261030`, `build/vendor-native-1920-v1-20261030` and
+`build/vendor-native-ultrawide-v1-20261030`. Windowed runs have no GPU diagnostics;
+fullscreen records one of the same specifically allowed resize diagnostics per
+startup. [Vendor scope and exact proof](VENDOR_BARTER_FOUNDATION.md).
+With the existing local OIDC/database environment configured, use
+`python3 tools/play.py --account-login --vendors --window-size 3440x1440 --fullscreen`.
+E opens the guide and backpack; click the offer to trade, I toggles the backpack
+and Esc closes the conversation. A purchase uses the existing committed item
+stream and a positive token cost; it does not add a production currency wallet.
+
+
 > Superseded as the everyday development map on 2026-10-22. The default launcher
 > now targets the [continental graybox](GRAYBOX_WORLD.md). This document preserves
 > the imported-map experiments; select them explicitly with `--world` or
