@@ -350,3 +350,23 @@ The most consequential open questions are **Oth'varen's modern public identity**
 **Oma'vira, the Harbinger**, originally a scholar of Mind, consciousness and perception, is the Conclave's leading authority on devotion, mental influence and magical conditioning. Her centuries of work support recruitment and the transformation of willing recruits or unwilling captives into dangerous conditioned forces. Her teachings alone do not explain every hostile NPC. **Khor'vun, the Warden**, commands and deploys organised defensive forces and protects Anchor approaches and Unmade strongholds. He may favour disciplined fighters over unstable conditioned troops, creating a potential methodological tension with Oma'vira. The other founders provide doctrine, research, covert logistics and strategic purpose. Outside the Shroud, players mainly encounter organised operatives, hidden facilities, Anchor defenders and local corruption; within it, older corruption, transformed victims, wildlife, ancient constructs and enduring strongholds produce a distinct ecology of threats.
 
 This is a **locked world and MMO combat foundation**, not approval of particular enemy designs, irreversible corruption mechanics, specific rescue outcomes, or the full previously proposed Oma'vira eight-milestone character arc. Develop those separately.
+
+## 2026-10-29 creator LOCK — Oth'varen's final alignment and death
+
+After launch, Oth'varen dies stabilising the inverted Major Anchor network while the Seven coordinate their workings across the six energies against Nhal. He prepares the network and trains successors expecting to survive. When Nhal disrupts the alignment, he recognises the instability, shares the corrections with the player and distributed Guardian teams, and holds the central transition beyond his finite reserves. He sees the alignment hold but dies before Nhal's defeat.
+
+His knowledge survives him: the player, Guardians and Seven complete the operation. He is not resurrected, cleansed, made a vessel for divine power or bound as a permanent power source. His death enables the confrontation that forces Nhal's shattering and leaves a permanent personal and institutional loss. The launch survival constraint above remains intact.
+
+The creator explicitly locked this sequence on 29 October 2026. A Conclave founder attempting to prevent his correction remains a proposal; no founder's death or involvement is approved by this lock. The earlier suggested evacuation death is superseded. See the dated story decision ledger and Future Saga for scope.
+
+## 2026-10-29 creator LOCK — Conclave deaths and final succession
+
+The later scoped decision in the story ledger fixes these permanent endings and supersedes the older open-fate statements above:
+
+- Oma'vira dies in Act V at her actual conditioning facility in the Major Anchor complex. The player breaks the systems, rescues captives where possible and kills her. Act IV retains a limited projection. Her victims do not automatically recover.
+- Su'vareth dies at her intelligence headquarters during the investigation leading to the Veilbreaker, after the player corroborates her location, blocks escape and defeats her final deception. Incomplete project evidence survives; established contingency orders continue without implying she survived.
+- Khor'vun dies defending the Veilbreaker approaches during activation, refusing withdrawal. The player kills him and opens an evacuation route after activation has passed its stopping point.
+- Vaer'uun dies at a manifestation site after Nhal arrives. He knowingly chooses obedience despite the exposure of his doctrine's failures, binds himself to the communication working and is killed when the player dismantles its supports.
+- Thes'var is the last founder alive. Before attacking the final alignment, he confronts Oth'varen, recognises inversion works and rejects its purpose. The player kills him at a critical network junction; sabotage compounds Nhal's disruption and leaves instability that Oth'varen corrects at fatal cost.
+
+Oth'varen briefly becomes the last living scholar, sees the alignment hold and dies before Nhal's defeat. The player, trained Guardians and independent Seven finish the working. Exact site names, dialogue and encounter mechanics remain open. Essential story conclusions remain solo-accessible; this lock does not approve an expansion count or the full future draft.
