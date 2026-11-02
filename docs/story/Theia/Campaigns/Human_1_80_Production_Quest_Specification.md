@@ -17,6 +17,20 @@ The following packs collectively cover all Q001–Q184, providing staged gamepla
 - [Levels 70–80](Human_70_80_Playable_Quest_Pack.md)
 - [Levels 80 finale](Human_80_Finale_Playable_Quest_Pack.md)
 
+
+## Quest implementation briefs through level 80
+
+The [levels 1–10 vertical slice](Human_1_10_Vertical_Slice_Implementation.md) and the following implementation briefs provide per-quest proposed stages, narrative intent, prerequisites and recovery requirements. These are **authoring drafts**, not runtime quest data or playtested content.
+
+- [Levels 10–20 implementation brief](Human_10_20_Implementation_Brief.md)
+- [Levels 20–30 implementation brief](Human_20_30_Implementation_Brief.md)
+- [Levels 30–35 implementation brief](Human_30_35_Implementation_Brief.md)
+- [Levels 35–45 implementation brief](Human_35_45_Implementation_Brief.md)
+- [Levels 45–55 implementation brief](Human_45_55_Implementation_Brief.md)
+- [Levels 55–70 implementation brief](Human_55_70_Implementation_Brief.md)
+- [Levels 70–80 implementation brief](Human_70_80_Implementation_Brief.md)
+- [Levels 80 finale implementation brief](Human_80_Finale_Implementation_Brief.md)
+
 ## Runtime contract and content acceptance criteria
 
 - **Quest states:** locked → available → accepted → objectives-complete → turned-in; optional abandoned and retryable-instance states. Each objective has stable server-authoritative credit and idempotent turn-in. The final story chapter unlocks at character level 80, not from XP gained in the finale.
