@@ -169,3 +169,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Fixed source links in historical reading maps for Human Heartlands Settlement Register (`24e3a1b0`), Zone Population Framework (`15fb2791`), Modern Story Revelation Timeline (`4dff2c9a`), Line-by-Line Verification Status (`aace11dd`), Memory Scenes (`fadb8678`), and Documentation Guide (`0b36df3c`).
 - [x] Live-resolved all 13 Markdown file links in those six reading maps against current `main`; all targets exist.
 - [ ] Continue remaining reading maps and redundant redirect retirement; final full-tree validation still pending.
+
+## Human historical reading-map verification — 2 November 2026
+
+- [x] Live-verified 14 links across six Human historical reading maps (Quest Register, Story Dungeons, Campaign Review, Cast and Places, Connected Racial Stories, Heartlands Settlement Register); all resolve.
+- [x] Confirmed older `Reading Map - THEIA_CHARACTER_ARCS.md` and `Reading Map - THEIA_HUMAN_ACT_I_STORY.md` paths are absent; no replacement created without evidence of required incoming links.
+- [ ] Continue checking other old redirects and repository-wide links; historical H/HS ID crosswalk remains protected.
