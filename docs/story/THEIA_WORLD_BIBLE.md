@@ -252,7 +252,7 @@ The Guardians and Unmade may have cross-alliance agents and concealed channels, 
 - **First Elder Dromak**, Korrath leader. Replaces Korathun.
 - **First Archon Selrion**, Vaelari leader. Replaces Vaerith. Leader of the arcane council, supporter of magical inquiry, philosophical rival and former friend of Seralyth (**historical friendship must precede strict separation or be reworked**).
 
-**WORKING other personal names**, not user-approved final canon: Covenant High Ruler Alaric Veyne; human monarch Elowen Veyne; dwarf High Thane Bromund Stonevein; Dominion High Ruler Draven Korr; halfling Guildmaster Tessa Brindle; Vorrath High Oracle Vashara. Keep their offices and politics consistent with confirmed institutions, but don't lock every biography.
+**Approved human and Covenant rulers:** King Aldren Vaelmont is the human monarch; Corven Vaelmont is Covenant's hereditary High Ruler from a separate dynastic branch. **Working other personal names**, not user-approved final canon: dwarf High Thane Bromund Stonevein; Dominion High Ruler Draven Korr; halfling Guildmaster Tessa Brindle; Vorrath High Oracle Vashara. Keep their offices and politics consistent with confirmed institutions, but don't lock every biography.
 
 ## 11. Modern war and world access [CONFIRMED direction]
 
@@ -284,7 +284,7 @@ Broad creator-facing arc:
 7. Current war, Shattered Delegation sabotage, magical awakening, Guardians versus Unmade.
 8. Rediscovery of ancient passages and wider historical truth in later saga chapters.
 
-The previous suggested name **Aethren** for the vanished people should be retired because it is easily confused with **Aethyr**. Final name, society and fate: **OPEN**. The original names floated for individual gods are also **OPEN**.
+The previous suggested name **Aethren** for the vanished people should be retired because it is easily confused with **Aethyr**. Their confirmed name is **Kel'vari**; their former federation and surviving independent enclaves are established. Remaining societal details and their ultimate future fate remain open. The original names floated for individual gods are also **OPEN**.
 
 The launch aims for an open-world progression to a **working cap of 60**, with six *broad thematic movements* rather than mandatory linear quest gating:
 - 1–10: eight racial beginnings.
@@ -398,7 +398,7 @@ The First Anchor's activation physically fractured Theia, splitting once-connect
 
 ## 2026-10-13 creator LOCK — Kel'vari race and Oth'vaeri language
 
-The formerly unnamed seventh mortal race is officially **Kel'vari** (both singular and plural: one Kel'vari scholar; the Kel'vari people). Their ancestral language is **Oth'vaeri**. The ancient homeland may be called the Kel'vari homeland; its devastated territory was later enclosed within the Shrouded Lands. Oth'vaeri naming convention uses **apostrophes**, not hyphens, for meaningful sound boundaries in joined names; the intended sound is melodic, elegant and subtly unfamiliar, distinct from elven naming. These names supersede any earlier statement that the Seventh's race name remains undecided. Individual enclave names, Conclave founders' personal names, and a complete language grammar remain **proposed, not locked**.
+The people's official name is **Kel'vari** (both singular and plural: one Kel'vari scholar; the Kel'vari people). Their ancestral language is **Oth'vaeri**. The ancient homeland may be called the Kel'vari homeland; its devastated territory was later enclosed within the Shrouded Lands. Oth'vaeri naming convention uses **apostrophes**, not hyphens, for meaningful sound boundaries in joined names; the intended sound is melodic, elegant and subtly unfamiliar, distinct from elven naming. The Kel'vari and Oth'vaeri names are **locked**. The five Conclave founders' personal names, Oth'varen's name and the five significant enclave names are also **locked** by the creator decisions below. A complete language grammar remains open.
 
 ## 2026-10-13 creator LOCK — Kel'vari names and original scholarly status
 
