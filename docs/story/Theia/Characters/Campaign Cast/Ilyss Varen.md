@@ -1,7 +1,7 @@
 ---
 type: character
 canon_status: Needs Review
-source: "[[Sources/THEIA_HUMAN_CAST_AND_PLACES]]"
+source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
 up: "[[Characters]]"
 ---
 # Ilyss Varen
@@ -18,7 +18,7 @@ An independently filed rejection of unstable parts
 ## Boundary and proposed resolution
 Not automatically [[The Unmade|Unmade]] or a defector. Remains with her people; useful observations do not create cooperation.
 
-Source: [[Sources/THEIA_HUMAN_CAST_AND_PLACES#Dominion characters required by this human route|Dominion characters required by this human route]].
+Source: [Dominion characters required by this human route](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
 [[Characters]] · [[Human Campaign]]
 

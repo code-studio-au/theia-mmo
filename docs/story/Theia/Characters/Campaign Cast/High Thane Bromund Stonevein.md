@@ -1,7 +1,7 @@
 ---
 type: character
 canon_status: Needs Review
-source: "[[Sources/THEIA_HUMAN_CAST_AND_PLACES]]"
+source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
 up: "[[Characters]]"
 ---
 # High Thane Bromund Stonevein
@@ -15,7 +15,7 @@ Existing archive **working name**, still Needs Review
 ## Motivation, limitations and proposed outcome
 Represents the dwarf commission in this draft; respects hold autonomy. This does not lock confederation succession, new royal powers or unanswered original questions.
 
-Source: [[Sources/THEIA_HUMAN_CAST_AND_PLACES#Allied and Kel'vari cast|Allied and Kel'vari cast]].
+Source: [Allied and Kel'vari cast](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
 [[Characters]] · [[Human Campaign]]
 

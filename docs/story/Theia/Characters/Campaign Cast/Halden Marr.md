@@ -1,7 +1,7 @@
 ---
 type: character
 canon_status: Needs Review
-source: "[[Sources/THEIA_HUMAN_CAST_AND_PLACES]]"
+source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
 up: "[[Characters]]"
 ---
 # Halden Marr
@@ -18,7 +18,7 @@ Fears catastrophic misuse; inherited incomplete shutdown instructions
 ## Proposed quest role and endpoint
 Near-disaster prompts practical change; argues credibly for severance, then shares accountable records
 
-Source: [[Sources/THEIA_HUMAN_CAST_AND_PLACES#New human and expedition cast|New human and expedition cast]].
+Source: [New human and expedition cast](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
 [[Characters]] · [[Human Campaign]]
 

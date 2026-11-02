@@ -1,7 +1,7 @@
 ---
 type: character
 canon_status: Needs Review
-source: "[[Sources/THEIA_HUMAN_CAST_AND_PLACES]]"
+source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
 up: "[[Characters]]"
 ---
 # Heddan Pike
@@ -18,7 +18,7 @@ Wants tools and equipment villagers can afford; knows his own supply and workman
 ## Proposed quest role and endpoint
 Identifies a fitting; optional repair stories; remains at his smithy
 
-Source: [[Sources/THEIA_HUMAN_CAST_AND_PLACES#New human and expedition cast|New human and expedition cast]].
+Source: [New human and expedition cast](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
 [[Characters]] · [[Human Campaign]]
 
