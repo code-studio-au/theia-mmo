@@ -1,7 +1,7 @@
 ---
 type: people
 canon_status: confirmed-foundation; details-open
-source: "../../Sources/THEIA_WORLD_BIBLE.md"
+source: "../../../../THEIA_WORLD_BIBLE.md"
 up: "[[Peoples and Allegiances]]"
 ---
 # Dwarves
@@ -16,7 +16,7 @@ Shaper-created and worshipping; confederation of holds; ancient surviving mounta
 - [[Rurik Anvilmark]] · [[Brynja Flintwake]] · [[Edda Flintwake]] — additional campaign cast; see their notes for approval scope.
 
 ## Broader context
-[Read historical source section](../../Sources/THEIA_WORLD_BIBLE.md)
+[Read historical source section](../../../../THEIA_WORLD_BIBLE.md)
 
 [[Magic]] · [[The Seven Gods]]
 
