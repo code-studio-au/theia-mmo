@@ -37,3 +37,7 @@ The [legacy ideas archive](Human_Legacy_Sidequest_Zone_Character_Archive.md) now
 ## Complete historical objective comparison coverage
 
 The [64 exact-title objective comparison](Human_Legacy_64_Exact_Title_Objective_Comparison.md) now records original objective and current stage descriptions for every exact-title H-series candidate. The [ideas archive](Human_Legacy_Sidequest_Zone_Character_Archive.md) records stage-level triage for the 28 non-exact H-series candidates and all 24 HS-series optional quests. Thus **116/116 historical quest entries have documented comparison material**. This is **not 116/116 approved mappings**: NPC, dialogue, zone, choice, source-link and unique-detail reconciliation remain outstanding. Preserve historical source and mirrored copies until those checks are finished; do not alter the current manifest or Rust runtime to match obsolete drafts.
+
+## World Directory navigation retirement
+
+The former Obsidian-generated `Lore/World Directory.md` (281 wiki-link entries) is now a Markdown redirect to [World Directory Legacy Reference](../Lore/World_Directory_Legacy_Reference.md). The archived list is historical and may contain targets already removed in prior cleanup. **Do not treat conversion of link syntax as validation that all targets resolve.** Keep the redirect until remaining inbound links are migrated; the source register and lore material remain protected pending unique-detail reconciliation.
