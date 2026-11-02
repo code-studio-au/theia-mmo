@@ -1,7 +1,7 @@
 ---
 type: people
 canon_status: confirmed-foundation; details-open
-source: "[[Sources/THEIA_WORLD_BIBLE]]"
+source: "../../Sources/THEIA_WORLD_BIBLE.md"
 up: "[[Peoples and Allegiances]]"
 ---
 # Orcs
@@ -15,7 +15,7 @@ Warrior-created and worshipping; confederation of **Great Clans** (never Great H
 - [[Captain Rukhan Graal]] — military officer defending a Dominion coast; Needs Review.
 
 ## Broader context
-![[Sources/THEIA_WORLD_BIBLE#6. Playable races, allegiances and governments [CONFIRMED]]]
+[Read historical source section](../../Sources/THEIA_WORLD_BIBLE.md)
 
 [[Magic]] · [[The Seven Gods]]
 
