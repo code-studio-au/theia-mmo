@@ -45,3 +45,7 @@ The former Obsidian-generated `Lore/World Directory.md` (281 wiki-link entries) 
 ## Archive link correction
 
 Corrected 25 relative Lore-directory paths in `Lore/World_Directory_Legacy_Reference.md` after the initial wiki-link conversion. Other converted links remain unverified for target existence, including links to historically deleted quest notes. The legacy index is a provenance aid, not a guarantee of valid live navigation.
+
+## Legacy per-quest link retirement
+
+The historical World Directory no longer links directly to the 116 old H/HS per-quest Obsidian pages; those entries are plain historical labels linked to the preserved crosswalk. A sample of eight Lore link targets was verified to exist after correcting their relative paths. This does **not** establish repository-wide link validity or full content equivalence. Preserve surviving source notes until remaining unique details are reconciled.
