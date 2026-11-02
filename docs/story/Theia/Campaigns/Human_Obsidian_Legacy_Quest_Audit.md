@@ -49,3 +49,7 @@ Corrected 25 relative Lore-directory paths in `Lore/World_Directory_Legacy_Refer
 ## Legacy per-quest link retirement
 
 The historical World Directory no longer links directly to the 116 old H/HS per-quest Obsidian pages; those entries are plain historical labels linked to the preserved crosswalk. A sample of eight Lore link targets was verified to exist after correcting their relative paths. This does **not** establish repository-wide link validity or full content equivalence. Preserve surviving source notes until remaining unique details are reconciled.
+
+## Cleanup execution — repository-tree verified
+
+The repository tree was checked after commits `30c0cfe`, `3f93c16` and `6746658`. **38 remaining Obsidian application/plugin files, 43 surviving H/HS per-quest cards, and 12 Obsidian Copilot bundle files** were retired on `main`. The tree contains **zero** `docs/story/Theia/.obsidian/` paths, **zero** `docs/story/Theia/Campaigns/Quests/` paths, and **zero** story `.base` or `.canvas` files. The original 116 IDs/objectives are retained in the crosswalk and historical source register, with 116 comparison records and a noncanonical future-content idea archive. Git history preserves deleted cards. The source library, character/zone notes and historical register remain pending detailed unique-content and inbound-link reconciliation. Do not interpret removal of duplicate cards as approval of historical-to-current runtime mappings.
