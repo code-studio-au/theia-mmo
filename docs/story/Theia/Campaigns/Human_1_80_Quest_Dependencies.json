@@ -1,0 +1,3102 @@
+{
+  "schemaVersion": 1,
+  "status": "needs_review",
+  "quests": [
+    {
+      "id": 1,
+      "title": "Before the Next Caravan",
+      "location": "Millhaven, farms and roads",
+      "contact": "Elara",
+      "objective": "Meet the militia, healer and merchant; identify the immediate road and supply problems. Elara issues a local service assignment.",
+      "type": "main_story",
+      "minLevel": 1,
+      "prerequisites": [],
+      "completionFlag": "HUMAN_Q001_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 2,
+      "title": "The Road Patrol",
+      "location": "Millhaven, farms and roads",
+      "contact": "Darian",
+      "objective": "Scout predator signs and protect a delayed worker on the road; report conditions rather than an arbitrary kill count.",
+      "type": "main_story",
+      "minLevel": 1,
+      "prerequisites": [
+        "HUMAN_Q001_DONE"
+      ],
+      "completionFlag": "HUMAN_Q002_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 3,
+      "title": "What the Healing House Needs",
+      "location": "Millhaven, farms and roads",
+      "contact": "Anwen",
+      "objective": "Recover the delayed medical parcel from a safe roadside store and deliver it; establish why the caravan matters.",
+      "type": "main_story",
+      "minLevel": 1,
+      "prerequisites": [
+        "HUMAN_Q002_DONE"
+      ],
+      "completionFlag": "HUMAN_Q003_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 4,
+      "title": "The Missing Wheels",
+      "location": "Millhaven, farms and roads",
+      "contact": "Brenna",
+      "objective": "Trace the caravan's last confirmed stop, search its abandoned wagon and locate a surviving teamster.",
+      "type": "main_story",
+      "minLevel": 1,
+      "prerequisites": [
+        "HUMAN_Q003_DONE"
+      ],
+      "completionFlag": "HUMAN_Q004_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 5,
+      "title": "The Fence at Dawn",
+      "location": "Millhaven, farms and roads",
+      "contact": "Elara",
+      "objective": "Inspect broken pasture fencing, clear nearby predators and report the safe route; tutorial for manual facing and autoattack.",
+      "type": "regional_optional",
+      "minLevel": 1,
+      "prerequisites": [],
+      "completionFlag": "HUMAN_Q005_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 6,
+      "title": "Seed Before Winter",
+      "location": "Millhaven, farms and roads",
+      "contact": "Tomas",
+      "objective": "Count seed reserves and resolve a duplicate requisition without combat; unlock independent local quest board.",
+      "type": "regional_optional",
+      "minLevel": 1,
+      "prerequisites": [],
+      "completionFlag": "HUMAN_Q006_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 7,
+      "title": "A Cart That Can Move",
+      "location": "Millhaven, farms and roads",
+      "contact": "Heddan",
+      "objective": "Recover ordinary iron from a safe salvage site and repair a wheel assembly; teach gathering without profession gate.",
+      "type": "regional_optional",
+      "minLevel": 1,
+      "prerequisites": [],
+      "completionFlag": "HUMAN_Q007_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 8,
+      "title": "The Healer's Ledger",
+      "location": "Millhaven, farms and roads",
+      "contact": "Anwen",
+      "objective": "Interview patients, deliver supplies and document unexpectedly improved healing without claiming a cause.",
+      "type": "regional_optional",
+      "minLevel": 1,
+      "prerequisites": [],
+      "completionFlag": "HUMAN_Q008_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 9,
+      "title": "An Unusual Buyer",
+      "location": "Millhaven, Stoneford, Greyfall Quarry",
+      "contact": "Elara",
+      "objective": "Disrupt Iven Rusk's camp, recover selected cargo and a damaged royal-sealed document; record the buyer's instructions.",
+      "type": "main_story",
+      "minLevel": 5,
+      "prerequisites": [
+        "HUMAN_Q004_DONE"
+      ],
+      "completionFlag": "HUMAN_Q009_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 10,
+      "title": "A Seal Without a Name",
+      "location": "Millhaven, Stoneford, Greyfall Quarry",
+      "contact": "Elara / Heddan",
+      "objective": "Secure the document; compare a fitting with legitimate workshop stock; establish that authentication requires other authority.",
+      "type": "main_story",
+      "minLevel": 5,
+      "prerequisites": [
+        "HUMAN_Q009_DONE"
+      ],
+      "completionFlag": "HUMAN_Q010_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 11,
+      "title": "At the River Crossing",
+      "location": "Millhaven, Stoneford, Greyfall Quarry",
+      "contact": "Brenna",
+      "objective": "Accompany a caravan's arrival in Stoneford and check the regional warehouse; complete travel through a protected PvE route if desired.",
+      "type": "main_story",
+      "minLevel": 5,
+      "prerequisites": [
+        "HUMAN_Q010_DONE"
+      ],
+      "completionFlag": "HUMAN_Q011_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 12,
+      "title": "Three Books",
+      "location": "Millhaven, Stoneford, Greyfall Quarry",
+      "contact": "Mara's local correspondent",
+      "objective": "Compare Perrin's stock book, courier docket and warehouse tally; identify one shipment that cannot match all three.",
+      "type": "main_story",
+      "minLevel": 5,
+      "prerequisites": [
+        "HUMAN_Q011_DONE"
+      ],
+      "completionFlag": "HUMAN_Q012_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 13,
+      "title": "The Office After Edric",
+      "location": "Millhaven, Stoneford, Greyfall Quarry",
+      "contact": "Elara",
+      "objective": "Recover a payment instruction from Perrin's transfer cache and interview him under regional authority; obtain Elara's introduction to Mara.",
+      "type": "main_story",
+      "minLevel": 5,
+      "prerequisites": [
+        "HUMAN_Q012_DONE"
+      ],
+      "completionFlag": "HUMAN_Q013_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 14,
+      "title": "The Quarry Bell",
+      "location": "Millhaven, Stoneford, Greyfall Quarry",
+      "contact": "Joss",
+      "objective": "Locate missing quarry workers, defeat cave predators and return the shift tally.",
+      "type": "regional_optional",
+      "minLevel": 5,
+      "prerequisites": [],
+      "completionFlag": "HUMAN_Q014_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 15,
+      "title": "One Bridge, Two Claims",
+      "location": "Millhaven, Stoneford, Greyfall Quarry",
+      "contact": "Stoneford reeve",
+      "objective": "Inspect bridge damage and mediate transport priorities; reopen the ordinary crossing.",
+      "type": "regional_optional",
+      "minLevel": 5,
+      "prerequisites": [],
+      "completionFlag": "HUMAN_Q015_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 16,
+      "title": "The Warehouse Night Watch",
+      "location": "Millhaven, Stoneford, Greyfall Quarry",
+      "contact": "Brenna",
+      "objective": "Patrol the warehouse perimeter and intercept thieves unrelated to the conspiracy.",
+      "type": "regional_optional",
+      "minLevel": 5,
+      "prerequisites": [],
+      "completionFlag": "HUMAN_Q016_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 17,
+      "title": "The Long Way Home",
+      "location": "Millhaven, Stoneford, Greyfall Quarry",
+      "contact": "Elara",
+      "objective": "Escort a returned caravan segment to Millhaven; report on the changed route and survivors.",
+      "type": "regional_optional",
+      "minLevel": 5,
+      "prerequisites": [],
+      "completionFlag": "HUMAN_Q017_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 18,
+      "title": "An Investigator's Standard",
+      "location": "Valecrown and approaches",
+      "contact": "Mara",
+      "objective": "Present the sealed case in Valecrown; verify courier and warehouse testimony independently before receiving court access.",
+      "type": "main_story",
+      "minLevel": 10,
+      "prerequisites": [
+        "HUMAN_Q013_DONE"
+      ],
+      "completionFlag": "HUMAN_Q018_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 19,
+      "title": "Dates in the Register",
+      "location": "Valecrown and approaches",
+      "contact": "Lysa",
+      "objective": "Check authorised office records; make an authenticated copy of the post-delegation reorganisation dates.",
+      "type": "main_story",
+      "minLevel": 10,
+      "prerequisites": [
+        "HUMAN_Q018_DONE"
+      ],
+      "completionFlag": "HUMAN_Q019_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 20,
+      "title": "The King's Confidence",
+      "location": "Valecrown and approaches",
+      "contact": "Aldren / Cassian",
+      "objective": "Attend the audience, hear Aldren's account and accept a continuing warrant; Cassian supplies a plausible military lead.",
+      "type": "main_story",
+      "minLevel": 10,
+      "prerequisites": [
+        "HUMAN_Q019_DONE"
+      ],
+      "completionFlag": "HUMAN_Q020_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 21,
+      "title": "A Convenient Suspect",
+      "location": "Valecrown and approaches",
+      "contact": "Garrick",
+      "objective": "Check the alleged military source against Garrick's preserved logs; establish his opposition to peace is not proof of involvement.",
+      "type": "main_story",
+      "minLevel": 10,
+      "prerequisites": [
+        "HUMAN_Q020_DONE"
+      ],
+      "completionFlag": "HUMAN_Q021_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 22,
+      "title": "Before the Request",
+      "location": "Valecrown and approaches",
+      "contact": "Mara",
+      "objective": "Compare the authorisation time, office format and independently interviewed witness; record the contradictions without an accusation.",
+      "type": "main_story",
+      "minLevel": 10,
+      "prerequisites": [
+        "HUMAN_Q021_DONE"
+      ],
+      "completionFlag": "HUMAN_Q022_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 23,
+      "title": "The Clerk's Queue",
+      "location": "Valecrown and approaches",
+      "contact": "Lysa",
+      "objective": "Help restore a damaged public index to learn how Valecrown's records are accessed.",
+      "type": "regional_optional",
+      "minLevel": 10,
+      "prerequisites": [],
+      "completionFlag": "HUMAN_Q023_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 24,
+      "title": "Bread and Barracks",
+      "location": "Valecrown and approaches",
+      "contact": "City quartermaster",
+      "objective": "Investigate a legitimate ration shortage and secure a non-corrupt supply solution.",
+      "type": "regional_optional",
+      "minLevel": 10,
+      "prerequisites": [],
+      "completionFlag": "HUMAN_Q024_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 25,
+      "title": "A Witness's Own Words",
+      "location": "Valecrown and approaches",
+      "contact": "Mara",
+      "objective": "Interview a witness without leading questions; record and compare the independent account.",
+      "type": "regional_optional",
+      "minLevel": 10,
+      "prerequisites": [],
+      "completionFlag": "HUMAN_Q025_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 26,
+      "title": "The Walls Outside Court",
+      "location": "Valecrown and approaches",
+      "contact": "Garrick",
+      "objective": "Inspect a neglected approach road and repel opportunistic raiders, separating wartime danger from political suspicion.",
+      "type": "regional_optional",
+      "minLevel": 10,
+      "prerequisites": [],
+      "completionFlag": "HUMAN_Q026_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 27,
+      "title": "The Price of an Office",
+      "location": "Valecrown and Millhaven",
+      "contact": "Mara",
+      "objective": "Secure the surviving intermediary and independently stored payments linking Cassian to the security compromise and intended killing.",
+      "type": "main_story",
+      "minLevel": 15,
+      "prerequisites": [
+        "HUMAN_Q022_DONE"
+      ],
+      "completionFlag": "HUMAN_Q027_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 28,
+      "title": "A Warrant, Not a Challenge",
+      "location": "Valecrown and Millhaven",
+      "contact": "Aldren",
+      "objective": "Present the corroborated case in private; witness lawful detention ordered and Cassian's flight. No attack on a neutral court NPC.",
+      "type": "main_story",
+      "minLevel": 15,
+      "prerequisites": [
+        "HUMAN_Q027_DONE"
+      ],
+      "completionFlag": "HUMAN_Q028_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 29,
+      "title": "Before the Hidden Passage",
+      "location": "Valecrown and Millhaven",
+      "contact": "Mara",
+      "objective": "Secure civilian exits and establish an independent evidence-copy checkpoint before Cassian's capture.",
+      "type": "main_story",
+      "minLevel": 15,
+      "prerequisites": [
+        "HUMAN_Q028_DONE"
+      ],
+      "completionFlag": "HUMAN_Q029_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 30,
+      "title": "The Hidden Passage",
+      "location": "Valecrown and Millhaven",
+      "contact": "Mara",
+      "objective": "Finish the solo story dungeon; stop Sorn, secure a dispatch copy and capture Cassian alive. Group play is optional.",
+      "type": "main_story",
+      "minLevel": 15,
+      "prerequisites": [
+        "HUMAN_Q029_DONE"
+      ],
+      "completionFlag": "HUMAN_Q030_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 31,
+      "title": "The Commission",
+      "location": "Valecrown and Millhaven",
+      "contact": "Aldren / Elara",
+      "objective": "Confirm removal from office and lawful custody; receive the follow-up warrant and report home. Close the betrayal arc without absolving Dominion.",
+      "type": "main_story",
+      "minLevel": 15,
+      "prerequisites": [
+        "HUMAN_Q030_DONE"
+      ],
+      "completionFlag": "HUMAN_Q031_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 32,
+      "title": "After the Arrest",
+      "location": "Valecrown and Millhaven",
+      "contact": "Elara",
+      "objective": "Return recovered goods and inform affected households without disclosing protected witnesses.",
+      "type": "regional_optional",
+      "minLevel": 15,
+      "prerequisites": [],
+      "completionFlag": "HUMAN_Q032_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 33,
+      "title": "The Watch Restored",
+      "location": "Valecrown and Millhaven",
+      "contact": "Darian",
+      "objective": "Lead a local patrol and protect a newly reopened road without a mandatory escort timer.",
+      "type": "regional_optional",
+      "minLevel": 15,
+      "prerequisites": [],
+      "completionFlag": "HUMAN_Q033_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 34,
+      "title": "A Village Still Working",
+      "location": "Valecrown and Millhaven",
+      "contact": "Brenna",
+      "objective": "Choose a local relief priority and complete the delivery; the royal case ends but village life continues.",
+      "type": "regional_optional",
+      "minLevel": 15,
+      "prerequisites": [],
+      "completionFlag": "HUMAN_Q034_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 35,
+      "title": "A Ledger Reaches the Sea",
+      "location": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
+      "contact": "Mara",
+      "objective": "Trace the passage ledger's shipping reference to Tidehold; register the case with alliance customs through the human warrant.",
+      "type": "main_story",
+      "minLevel": 20,
+      "prerequisites": [
+        "HUMAN_Q031_DONE"
+      ],
+      "completionFlag": "HUMAN_Q035_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 36,
+      "title": "Four Peoples, One Harbour",
+      "location": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
+      "contact": "Corven",
+      "objective": "Attend the alliance briefing and distinguish the human commission from alliance authority; obtain a bounded inspection permit.",
+      "type": "main_story",
+      "minLevel": 20,
+      "prerequisites": [
+        "HUMAN_Q035_DONE"
+      ],
+      "completionFlag": "HUMAN_Q036_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 37,
+      "title": "Short of the Manifest",
+      "location": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
+      "contact": "Ysra",
+      "objective": "Audit the provision depot and secure exposed goods; separate ordinary loss from the false requisition chain.",
+      "type": "main_story",
+      "minLevel": 20,
+      "prerequisites": [
+        "HUMAN_Q036_DONE"
+      ],
+      "completionFlag": "HUMAN_Q037_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 38,
+      "title": "Northwatch Bound",
+      "location": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
+      "contact": "Nessa",
+      "objective": "Sail to Northwatch Landing, meet the garrison and Darian's support unit, and learn arrival/extraction procedures.",
+      "type": "main_story",
+      "minLevel": 20,
+      "prerequisites": [
+        "HUMAN_Q037_DONE"
+      ],
+      "completionFlag": "HUMAN_Q038_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 39,
+      "title": "The Stranded Supply Party",
+      "location": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
+      "contact": "Darian",
+      "objective": "Rescue a Covenant supply party by a PvE coastal route; return its military route report. No hostile-player interaction required.",
+      "type": "main_story",
+      "minLevel": 20,
+      "prerequisites": [
+        "HUMAN_Q038_DONE"
+      ],
+      "completionFlag": "HUMAN_Q039_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 40,
+      "title": "The Defender's Coast",
+      "location": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
+      "contact": "Nessa",
+      "objective": "Scout Rukhan's military posts and civilian boundaries; select a patrol-avoidance or guarded approach without entering civilian homes.",
+      "type": "main_story",
+      "minLevel": 20,
+      "prerequisites": [
+        "HUMAN_Q039_DONE"
+      ],
+      "completionFlag": "HUMAN_Q040_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 41,
+      "title": "A Loss Before the Raid",
+      "location": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
+      "contact": "Mara's expedition clerk",
+      "objective": "Recover depot accounting from a military store; compare Nemi's serial records with a private consignment removed before the reported attack.",
+      "type": "main_story",
+      "minLevel": 20,
+      "prerequisites": [
+        "HUMAN_Q040_DONE"
+      ],
+      "completionFlag": "HUMAN_Q041_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 42,
+      "title": "The Surveyor at the Signal House",
+      "location": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
+      "contact": "Sera",
+      "objective": "Find Sera, secure an unstable observation position and compare the small device's housing with Brynja's report.",
+      "type": "main_story",
+      "minLevel": 20,
+      "prerequisites": [
+        "HUMAN_Q041_DONE"
+      ],
+      "completionFlag": "HUMAN_Q042_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 43,
+      "title": "Keep the Evidence Safe",
+      "location": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
+      "contact": "Sera / Grey Surveyor",
+      "objective": "Choose sealed sample preservation or safe sample destruction after copying measurements; both retain the critical technical record.",
+      "type": "main_story",
+      "minLevel": 20,
+      "prerequisites": [
+        "HUMAN_Q042_DONE"
+      ],
+      "completionFlag": "HUMAN_Q043_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 44,
+      "title": "Instructions With Limits",
+      "location": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
+      "contact": "Brynja",
+      "objective": "Prepare separate mechanical isolators and a documented shutdown procedure; the Surveyor states its limits and emergency cutoff.",
+      "type": "main_story",
+      "minLevel": 20,
+      "prerequisites": [
+        "HUMAN_Q043_DONE"
+      ],
+      "completionFlag": "HUMAN_Q044_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 45,
+      "title": "The Silent Signal",
+      "location": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
+      "contact": "Sera",
+      "objective": "Complete the solo dungeon; defeat Halvek and disable the Minor Resonator while protecting essential observations and available captives.",
+      "type": "main_story",
+      "minLevel": 20,
+      "prerequisites": [
+        "HUMAN_Q044_DONE"
+      ],
+      "completionFlag": "HUMAN_Q045_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 46,
+      "title": "A Landing Still at War",
+      "location": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
+      "contact": "Nessa / Garrick",
+      "objective": "Support an NPC defensive action or equivalent instanced task; report the hidden operation separately from the continuing Dominion attack.",
+      "type": "main_story",
+      "minLevel": 20,
+      "prerequisites": [
+        "HUMAN_Q045_DONE"
+      ],
+      "completionFlag": "HUMAN_Q046_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 47,
+      "title": "What the Measurements Say",
+      "location": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
+      "contact": "Mara",
+      "objective": "Authenticate the device report in Tidehold and connect its procurement to a restricted Aelari material reference.",
+      "type": "main_story",
+      "minLevel": 20,
+      "prerequisites": [
+        "HUMAN_Q046_DONE"
+      ],
+      "completionFlag": "HUMAN_Q047_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 48,
+      "title": "A Different Kind of Healing",
+      "location": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
+      "contact": "Anwen / Oren",
+      "objective": "Return home, document a real healing benefit and make a local ward safe; distinguish the beneficial awakening from deliberate interference.",
+      "type": "main_story",
+      "minLevel": 20,
+      "prerequisites": [
+        "HUMAN_Q047_DONE"
+      ],
+      "completionFlag": "HUMAN_Q048_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 49,
+      "title": "The Mountain Contract",
+      "location": "Kar Durn, Sylvaren, hostile Dominion coast, Tidehold",
+      "contact": "Garrick",
+      "objective": "Establish why the altered fitting and the expedition's legitimate repair needs require a Kar Durn visit.",
+      "type": "main_story",
+      "minLevel": 25,
+      "prerequisites": [
+        "HUMAN_Q048_DONE"
+      ],
+      "completionFlag": "HUMAN_Q049_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 50,
+      "title": "No Fault in the Drawing",
+      "location": "Kar Durn, Sylvaren, hostile Dominion coast, Tidehold",
+      "contact": "Brynja",
+      "objective": "Inspect her original plans and a broker's substituted specification; secure hold permission to recover a measuring assembly.",
+      "type": "main_story",
+      "minLevel": 25,
+      "prerequisites": [
+        "HUMAN_Q049_DONE"
+      ],
+      "completionFlag": "HUMAN_Q050_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 51,
+      "title": "The Feeder Gallery",
+      "location": "Kar Durn, Sylvaren, hostile Dominion coast, Tidehold",
+      "contact": "Rurik",
+      "objective": "Restore maintenance access by securing its existing route and returning equipment; document a mundane pressure fault and neglected maintenance.",
+      "type": "main_story",
+      "minLevel": 25,
+      "prerequisites": [
+        "HUMAN_Q050_DONE"
+      ],
+      "completionFlag": "HUMAN_Q051_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 52,
+      "title": "Grain for Iron",
+      "location": "Kar Durn, Sylvaren, hostile Dominion coast, Tidehold",
+      "contact": "Brynja / hold authority",
+      "objective": "Settle the contested shipment with verified records; secure a limited engineering commission and an inspection report.",
+      "type": "main_story",
+      "minLevel": 25,
+      "prerequisites": [
+        "HUMAN_Q051_DONE"
+      ],
+      "completionFlag": "HUMAN_Q052_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 53,
+      "title": "The King's Correspondence",
+      "location": "Kar Durn royal court → Sylvaren",
+      "contact": "High King / Caelith",
+      "objective": "Obtain High King's sealed introduction and deliver Brynja's findings to Caelith.",
+      "type": "main_story",
+      "minLevel": 25,
+      "prerequisites": [
+        "HUMAN_Q052_DONE"
+      ],
+      "completionFlag": "HUMAN_Q053_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 54,
+      "title": "Permission to Ask",
+      "location": "Kar Durn, Sylvaren, hostile Dominion coast, Tidehold",
+      "contact": "Caelith",
+      "objective": "Enter Sylvaren and request a limited material inquiry; hear the ward-tenders' concerns before visiting restricted sites.",
+      "type": "main_story",
+      "minLevel": 25,
+      "prerequisites": [
+        "HUMAN_Q053_DONE"
+      ],
+      "completionFlag": "HUMAN_Q054_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 55,
+      "title": "The Nursery Route",
+      "location": "Kar Durn, Sylvaren, hostile Dominion coast, Tidehold",
+      "contact": "Caelith",
+      "objective": "Rescue workers and secure a woodland maintenance path threatened by local fauna and a neglected branch-ward.",
+      "type": "main_story",
+      "minLevel": 25,
+      "prerequisites": [
+        "HUMAN_Q054_DONE"
+      ],
+      "completionFlag": "HUMAN_Q055_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 56,
+      "title": "The Boundary Altered",
+      "location": "Kar Durn, Sylvaren, hostile Dominion coast, Tidehold",
+      "contact": "Caelith",
+      "objective": "Compare an abandoned research ward with its approved baseline; establish deliberate alteration without blaming every forest hazard.",
+      "type": "main_story",
+      "minLevel": 25,
+      "prerequisites": [
+        "HUMAN_Q055_DONE"
+      ],
+      "completionFlag": "HUMAN_Q056_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 57,
+      "title": "A Price for Observation",
+      "location": "Kar Durn, Sylvaren, hostile Dominion coast, Tidehold",
+      "contact": "Mara / Veylan",
+      "objective": "Recover Veylan's sale correspondence and obtain an accountable statement under Aelari authority; separate his grievance from his concealment.",
+      "type": "main_story",
+      "minLevel": 25,
+      "prerequisites": [
+        "HUMAN_Q056_DONE"
+      ],
+      "completionFlag": "HUMAN_Q057_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 58,
+      "title": "What the Queen Will Share",
+      "location": "Kar Durn, Sylvaren, hostile Dominion coast, Tidehold",
+      "contact": "Seralyth",
+      "objective": "Present the local work and findings; receive permission for a limited sample, Caelith's assistance and the coastal lead.",
+      "type": "main_story",
+      "minLevel": 25,
+      "prerequisites": [
+        "HUMAN_Q057_DONE"
+      ],
+      "completionFlag": "HUMAN_Q058_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 59,
+      "title": "Back Across the Water",
+      "location": "Kar Durn, Sylvaren, hostile Dominion coast, Tidehold",
+      "contact": "Nessa",
+      "objective": "Depart Tidehold via Northwatch for the second Dominion operation; establish the coastal extraction route.",
+      "type": "main_story",
+      "minLevel": 25,
+      "prerequisites": [
+        "HUMAN_Q058_DONE"
+      ],
+      "completionFlag": "HUMAN_Q059_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 60,
+      "title": "The Rejected Component",
+      "location": "Kar Durn, Sylvaren, hostile Dominion coast, Tidehold",
+      "contact": "Sera",
+      "objective": "Retrieve Ilyss's inspection copy from a military observation post by guarded PvE assault or a stealth route; no friendly enemy dialogue.",
+      "type": "main_story",
+      "minLevel": 25,
+      "prerequisites": [
+        "HUMAN_Q059_DONE"
+      ],
+      "completionFlag": "HUMAN_Q060_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 61,
+      "title": "The Courier Who Burned Both Copies",
+      "location": "Kar Durn, Sylvaren, hostile Dominion coast, Tidehold",
+      "contact": "Mara's field agent",
+      "objective": "Intercept an Unmade courier before the cached archive is destroyed; retain redundancy through an already lodged duplicate.",
+      "type": "main_story",
+      "minLevel": 25,
+      "prerequisites": [
+        "HUMAN_Q060_DONE"
+      ],
+      "completionFlag": "HUMAN_Q061_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 62,
+      "title": "A Common Hand",
+      "location": "Kar Durn, Sylvaren, hostile Dominion coast, Tidehold",
+      "contact": "Mara",
+      "objective": "Compare Aelari and Vaelari records and authorise the Korrath inquiry; establish common suppression, not universal infiltration.",
+      "type": "main_story",
+      "minLevel": 25,
+      "prerequisites": [
+        "HUMAN_Q061_DONE"
+      ],
+      "completionFlag": "HUMAN_Q062_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 63,
+      "title": "The City That Endured",
+      "location": "Drom Kar, freight works, mainland Chainworks",
+      "contact": "Urodan",
+      "objective": "Arrive at Drom Kar, hear its custodial limits and secure a water-route work assignment before archive access.",
+      "type": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q062_DONE"
+      ],
+      "completionFlag": "HUMAN_Q063_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 64,
+      "title": "Water and Memory",
+      "location": "Drom Kar, freight works, mainland Chainworks",
+      "contact": "Urodan / Tarek",
+      "objective": "Secure the existing maintenance route and retrieve records from the endangered store; obtain the omitted warning.",
+      "type": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q063_DONE"
+      ],
+      "completionFlag": "HUMAN_Q064_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 65,
+      "title": "The Missing Margin",
+      "location": "Drom Kar, freight works, mainland Chainworks",
+      "contact": "Dromak",
+      "objective": "Authenticate the warning and obtain council permission for restricted comparison; no definitive judgment on the Vorrath exile.",
+      "type": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q064_DONE"
+      ],
+      "completionFlag": "HUMAN_Q065_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 66,
+      "title": "A Name for the Guardians",
+      "location": "Drom Kar, freight works, mainland Chainworks",
+      "contact": "Sera",
+      "objective": "Receive a private account of the order and its multiracial origins; accept associate status without compulsory membership.",
+      "type": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q065_DONE"
+      ],
+      "completionFlag": "HUMAN_Q066_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 67,
+      "title": "The Instruction Without Its Diagram",
+      "location": "Drom Kar, freight works, mainland Chainworks",
+      "contact": "Grey Surveyor",
+      "objective": "Compare the Regional Anchor plan with Halden's incomplete shutdown order; obtain the missing stability material.",
+      "type": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q066_DONE"
+      ],
+      "completionFlag": "HUMAN_Q067_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 68,
+      "title": "Reach Them Before the Charge",
+      "location": "Drom Kar, freight works, mainland Chainworks",
+      "contact": "Sera",
+      "objective": "Reach the freight works and interrupt Halden's premature destruction attempt in a retryable story scene.",
+      "type": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q067_DONE"
+      ],
+      "completionFlag": "HUMAN_Q068_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 69,
+      "title": "The Broken Measure",
+      "location": "Drom Kar, freight works, mainland Chainworks",
+      "contact": "Halden / Sera",
+      "objective": "Complete the solo dungeon, rescue the cell and isolate the Regional Anchor's supports before core shutdown.",
+      "type": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q068_DONE"
+      ],
+      "completionFlag": "HUMAN_Q069_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 70,
+      "title": "Copies for the People at Risk",
+      "location": "Drom Kar, freight works, mainland Chainworks",
+      "contact": "Grey Surveyor",
+      "objective": "Receive and distribute full safety instructions to the cleared team; lodge the measured evidence independently.",
+      "type": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q069_DONE"
+      ],
+      "completionFlag": "HUMAN_Q070_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 71,
+      "title": "Make the Measure Small",
+      "location": "Drom Kar, freight works, mainland Chainworks",
+      "contact": "Oth'varen / Brynja",
+      "objective": "Set up a fully isolated Minor Resonator trial with instruments, physical cutoff and reserve limits.",
+      "type": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q070_DONE"
+      ],
+      "completionFlag": "HUMAN_Q071_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 72,
+      "title": "A Brief Reversal",
+      "location": "Drom Kar, freight works, mainland Chainworks",
+      "contact": "Oth'varen",
+      "objective": "Conduct the controlled inversion trial; stop at its measured duration and record both result and uncertainty.",
+      "type": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q071_DONE"
+      ],
+      "completionFlag": "HUMAN_Q072_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 73,
+      "title": "The Safer Argument",
+      "location": "Drom Kar, freight works, mainland Chainworks",
+      "contact": "Halden / Sera",
+      "objective": "Review severance and bounded-inversion plans; select a provisional preference that may be changed at the final cutoff.",
+      "type": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q072_DONE"
+      ],
+      "completionFlag": "HUMAN_Q073_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 74,
+      "title": "The Pattern Beneath",
+      "location": "Drom Kar research chamber",
+      "contact": "Sera",
+      "objective": "Compare six measured disturbances and mark common timing.",
+      "type": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q073_DONE"
+      ],
+      "completionFlag": "HUMAN_Q074_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 75,
+      "title": "The Anchor's Defenses",
+      "location": "Chainworks exterior",
+      "contact": "Nessa",
+      "objective": "Scout guard routes and recover Harbinger orders.",
+      "type": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q074_DONE"
+      ],
+      "completionFlag": "HUMAN_Q075_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 76,
+      "title": "The Harbinger's Design",
+      "location": "Chainworks records vault",
+      "contact": "Sera",
+      "objective": "Secure signed instructions and destroyed-gate schematic.",
+      "type": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q075_DONE"
+      ],
+      "completionFlag": "HUMAN_Q076_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 77,
+      "title": "Against the Harbinger",
+      "location": "Chainworks solo dungeon",
+      "contact": "Sera / Nessa",
+      "objective": "Free captives, sever conditioning controls and kill Oma'vira.",
+      "type": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q076_DONE"
+      ],
+      "completionFlag": "HUMAN_Q077_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 78,
+      "title": "The First Major Reversal",
+      "location": "Drom Kar, freight works, mainland Chainworks",
+      "contact": "Brynja / Sera",
+      "objective": "Defend the cutoff while qualified specialists invert the captured Major Anchor; record bounded success and maintenance duties.",
+      "type": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q077_DONE"
+      ],
+      "completionFlag": "HUMAN_Q078_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 79,
+      "title": "The Harbinger's Secret",
+      "location": "Chainworks archive",
+      "contact": "Sera",
+      "objective": "Recover gate destination record and verify gate is unusable.",
+      "type": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q078_DONE"
+      ],
+      "completionFlag": "HUMAN_Q079_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 80,
+      "title": "Aftermath of Inversion",
+      "location": "Drom Kar laboratory",
+      "contact": "Sera",
+      "objective": "Show the captured Passage records and request explanation.",
+      "type": "main_story",
+      "minLevel": 35,
+      "prerequisites": [
+        "HUMAN_Q079_DONE"
+      ],
+      "completionFlag": "HUMAN_Q080_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 81,
+      "title": "The Gate They Kept",
+      "location": "Guardian sanctuary",
+      "contact": "Sera",
+      "objective": "Present proof of the destroyed gate and demand disclosure.",
+      "type": "main_story",
+      "minLevel": 35,
+      "prerequisites": [
+        "HUMAN_Q080_DONE"
+      ],
+      "completionFlag": "HUMAN_Q081_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 82,
+      "title": "The Price of Secrecy",
+      "location": "Restricted archive",
+      "contact": "Guardian archivist",
+      "objective": "Inspect gate maintenance and consent logs.",
+      "type": "main_story",
+      "minLevel": 35,
+      "prerequisites": [
+        "HUMAN_Q081_DONE"
+      ],
+      "completionFlag": "HUMAN_Q082_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 83,
+      "title": "The Route That Never Closed",
+      "location": "Drom Kar, hidden Guardian gate, Lantern Redoubt, Kel'vari homeland",
+      "contact": "Tarek / Dromak",
+      "objective": "Survey the separate low-capacity Passage, test a small-group return path and deliver an expedition proposal to Corven.",
+      "type": "main_story",
+      "minLevel": 35,
+      "prerequisites": [
+        "HUMAN_Q082_DONE"
+      ],
+      "completionFlag": "HUMAN_Q083_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 84,
+      "title": "Permission to Enter",
+      "location": "Guardian sanctuary",
+      "contact": "Sera / Kel'vari custodian",
+      "objective": "Obtain permission for a small supervised delegation.",
+      "type": "main_story",
+      "minLevel": 35,
+      "prerequisites": [
+        "HUMAN_Q083_DONE"
+      ],
+      "completionFlag": "HUMAN_Q084_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 85,
+      "title": "The Hidden Crossing",
+      "location": "Restricted Guardian Passage",
+      "contact": "Tarek",
+      "objective": "Cross with approved expedition and verify return capacity.",
+      "type": "main_story",
+      "minLevel": 35,
+      "prerequisites": [
+        "HUMAN_Q084_DONE"
+      ],
+      "completionFlag": "HUMAN_Q085_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 86,
+      "title": "Lantern Redoubt",
+      "location": "Drom Kar, hidden Guardian gate, Lantern Redoubt, Kel'vari homeland",
+      "contact": "Nessa / Aru'ven",
+      "objective": "Cross in a small surveyed group and agree access/maintenance terms for this outer site; no continent-wide gate restoration.",
+      "type": "main_story",
+      "minLevel": 35,
+      "prerequisites": [
+        "HUMAN_Q085_DONE"
+      ],
+      "completionFlag": "HUMAN_Q086_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 87,
+      "title": "Those Who Remained",
+      "location": "Kel'vari settlement",
+      "contact": "Aru'ven",
+      "objective": "Rescue work party and meet surviving Kel'vari.",
+      "type": "main_story",
+      "minLevel": 35,
+      "prerequisites": [
+        "HUMAN_Q086_DONE"
+      ],
+      "completionFlag": "HUMAN_Q087_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 88,
+      "title": "Permission to Remain",
+      "location": "Lantern Redoubt",
+      "contact": "Aru'ven",
+      "objective": "Agree boundaries, supplies and site access.",
+      "type": "main_story",
+      "minLevel": 35,
+      "prerequisites": [
+        "HUMAN_Q087_DONE"
+      ],
+      "completionFlag": "HUMAN_Q088_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 89,
+      "title": "The Broken Path",
+      "location": "Ancient Passage ruins",
+      "contact": "Tarek",
+      "objective": "Recover intrusion traces linked to Oma'vira.",
+      "type": "main_story",
+      "minLevel": 35,
+      "prerequisites": [
+        "HUMAN_Q088_DONE"
+      ],
+      "completionFlag": "HUMAN_Q089_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 90,
+      "title": "A Warning Preserved",
+      "location": "Kel'vari record store",
+      "contact": "Sel'ora",
+      "objective": "Stabilize damaged warning and preserve copy.",
+      "type": "main_story",
+      "minLevel": 35,
+      "prerequisites": [
+        "HUMAN_Q089_DONE"
+      ],
+      "completionFlag": "HUMAN_Q090_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 91,
+      "title": "Questions for the Sixth",
+      "location": "Lantern Redoubt",
+      "contact": "Sel'ora",
+      "objective": "Request supervised archive audience.",
+      "type": "main_story",
+      "minLevel": 35,
+      "prerequisites": [
+        "HUMAN_Q090_DONE"
+      ],
+      "completionFlag": "HUMAN_Q091_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 92,
+      "title": "The Custodian's Conditions",
+      "location": "Oth'irun and Kel'vari archive approaches",
+      "contact": "Sel'ora",
+      "objective": "Meet the archive party at a protected approach, accept access limits and recover its missing copyist.",
+      "type": "main_story",
+      "minLevel": 40,
+      "prerequisites": [
+        "HUMAN_Q091_DONE"
+      ],
+      "completionFlag": "HUMAN_Q092_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 93,
+      "title": "An Audience Earned",
+      "location": "Oth'irun archive",
+      "contact": "Sel'ora",
+      "objective": "Secure exposed records and access approval.",
+      "type": "main_story",
+      "minLevel": 40,
+      "prerequisites": [
+        "HUMAN_Q092_DONE"
+      ],
+      "completionFlag": "HUMAN_Q093_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 94,
+      "title": "Six Names in the Record",
+      "location": "Oth'irun and Kel'vari archive approaches",
+      "contact": "Sel'ora / Mara",
+      "objective": "Compare the project list, verifier image and distinctive stability sequence; request the Surveyor's explanation.",
+      "type": "main_story",
+      "minLevel": 40,
+      "prerequisites": [
+        "HUMAN_Q093_DONE"
+      ],
+      "completionFlag": "HUMAN_Q094_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 95,
+      "title": "The Scholar Who Remained",
+      "location": "Oth'irun archive",
+      "contact": "Leth'ari",
+      "objective": "Match verifier mark to ancient instruments.",
+      "type": "main_story",
+      "minLevel": 40,
+      "prerequisites": [
+        "HUMAN_Q094_DONE"
+      ],
+      "completionFlag": "HUMAN_Q095_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 96,
+      "title": "The Verifier's Mark",
+      "location": "Oth'irun and Kel'vari archive approaches",
+      "contact": "Leth'ari",
+      "objective": "Match a project signature with independently preserved instrument records.",
+      "type": "main_story",
+      "minLevel": 40,
+      "prerequisites": [
+        "HUMAN_Q095_DONE"
+      ],
+      "completionFlag": "HUMAN_Q096_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 97,
+      "title": "The Last Witness",
+      "location": "Oth'irun and Kel'vari archive approaches",
+      "contact": "Oth'varen",
+      "objective": "Hear his identity and firsthand account, then cross-check independent records; trust may be qualified rather than absolute.",
+      "type": "main_story",
+      "minLevel": 40,
+      "prerequisites": [
+        "HUMAN_Q096_DONE"
+      ],
+      "completionFlag": "HUMAN_Q097_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 98,
+      "title": "Echoes Before the Sundering",
+      "location": "Ancient archive",
+      "contact": "Sel'ora",
+      "objective": "Reconstruct early interference from original records.",
+      "type": "main_story",
+      "minLevel": 40,
+      "prerequisites": [
+        "HUMAN_Q097_DONE"
+      ],
+      "completionFlag": "HUMAN_Q098_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 99,
+      "title": "The Six Reunited",
+      "location": "Historical projection chamber",
+      "contact": "Sel'ora",
+      "objective": "Witness six scholars' recorded dispute.",
+      "type": "main_story",
+      "minLevel": 40,
+      "prerequisites": [
+        "HUMAN_Q098_DONE"
+      ],
+      "completionFlag": "HUMAN_Q099_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 100,
+      "title": "The Cost of Keeping Quiet",
+      "location": "Oth'irun and Kel'vari archive approaches",
+      "contact": "Sera",
+      "objective": "Rescue threatened custodians using an authorised route disclosure; preserve enclave security through restricted case access.",
+      "type": "main_story",
+      "minLevel": 40,
+      "prerequisites": [
+        "HUMAN_Q099_DONE"
+      ],
+      "completionFlag": "HUMAN_Q100_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 101,
+      "title": "Two Histories",
+      "location": "Oth'irun archive",
+      "contact": "Sel'ora",
+      "objective": "Compare conflicting historical copies.",
+      "type": "main_story",
+      "minLevel": 40,
+      "prerequisites": [
+        "HUMAN_Q100_DONE"
+      ],
+      "completionFlag": "HUMAN_Q101_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 102,
+      "title": "The Delegation's Shadow",
+      "location": "Oth'irun archive",
+      "contact": "Mara",
+      "objective": "Compare Delegation dates with archival entries.",
+      "type": "main_story",
+      "minLevel": 40,
+      "prerequisites": [
+        "HUMAN_Q101_DONE"
+      ],
+      "completionFlag": "HUMAN_Q102_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 103,
+      "title": "The Scholar's Request",
+      "location": "Oth'varen's study",
+      "contact": "Oth'varen",
+      "objective": "Accept bounded Shattered Delegation investigation.",
+      "type": "main_story",
+      "minLevel": 40,
+      "prerequisites": [
+        "HUMAN_Q102_DONE"
+      ],
+      "completionFlag": "HUMAN_Q103_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 104,
+      "title": "The Delegation That Failed",
+      "location": "Oth'irun archive",
+      "contact": "Mara",
+      "objective": "Collect surviving Delegation dispatches.",
+      "type": "main_story",
+      "minLevel": 45,
+      "prerequisites": [
+        "HUMAN_Q103_DONE"
+      ],
+      "completionFlag": "HUMAN_Q104_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 105,
+      "title": "Two Accounts of One Tragedy",
+      "location": "Oth'irun archive",
+      "contact": "Sel'ora",
+      "objective": "Compare separately sourced faction records.",
+      "type": "main_story",
+      "minLevel": 45,
+      "prerequisites": [
+        "HUMAN_Q104_DONE"
+      ],
+      "completionFlag": "HUMAN_Q105_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 106,
+      "title": "The King's Lost Adviser",
+      "location": "Valecrown archive",
+      "contact": "Mara",
+      "objective": "Recover Edric's correspondence and witness records.",
+      "type": "main_story",
+      "minLevel": 45,
+      "prerequisites": [
+        "HUMAN_Q105_DONE"
+      ],
+      "completionFlag": "HUMAN_Q106_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 107,
+      "title": "The Brother Who Came for Peace",
+      "location": "Covenant intelligence office",
+      "contact": "Mara",
+      "objective": "Reconstruct Great Clan chief's reluctant official attendance.",
+      "type": "main_story",
+      "minLevel": 45,
+      "prerequisites": [
+        "HUMAN_Q106_DONE"
+      ],
+      "completionFlag": "HUMAN_Q107_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 108,
+      "title": "The Records They Buried",
+      "location": "Hostile Dominion military archive",
+      "contact": "Mara's field agent",
+      "objective": "Infiltrate, copy suppressed security orders and escape.",
+      "type": "main_story",
+      "minLevel": 45,
+      "prerequisites": [
+        "HUMAN_Q107_DONE"
+      ],
+      "completionFlag": "HUMAN_Q108_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 109,
+      "title": "Road to the Meeting",
+      "location": "Historic delegation site",
+      "contact": "Mara",
+      "objective": "Survey arrival routes and guard positions.",
+      "type": "main_story",
+      "minLevel": 45,
+      "prerequisites": [
+        "HUMAN_Q108_DONE"
+      ],
+      "completionFlag": "HUMAN_Q109_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 110,
+      "title": "Evidence Planted Twice",
+      "location": "Ruined conference compound",
+      "contact": "Mara",
+      "objective": "Recover planted clues and compare provenance.",
+      "type": "main_story",
+      "minLevel": 45,
+      "prerequisites": [
+        "HUMAN_Q109_DONE"
+      ],
+      "completionFlag": "HUMAN_Q110_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 111,
+      "title": "The Witness Who Disappeared",
+      "location": "Neutral witness refuge",
+      "contact": "Darian",
+      "objective": "Find survivor and protect extraction.",
+      "type": "main_story",
+      "minLevel": 45,
+      "prerequisites": [
+        "HUMAN_Q110_DONE"
+      ],
+      "completionFlag": "HUMAN_Q111_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 112,
+      "title": "The Delegation's Second Ledger",
+      "location": "Oth'irun, Valecrown, contested delegation site, hostile Dominion military archive, Shroud",
+      "contact": "Mara",
+      "objective": "Compare human and hostile-coast contract records without relying on friendly Dominion contacts.",
+      "type": "main_story",
+      "minLevel": 45,
+      "prerequisites": [
+        "HUMAN_Q111_DONE"
+      ],
+      "completionFlag": "HUMAN_Q112_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 113,
+      "title": "The False Safe House",
+      "location": "Oth'irun, Valecrown, contested delegation site, hostile Dominion military archive, Shroud",
+      "contact": "Sera",
+      "objective": "Locate Su'vareth's headquarters using three independent trails and expose its decoy.",
+      "type": "main_story",
+      "minLevel": 45,
+      "prerequisites": [
+        "HUMAN_Q112_DONE"
+      ],
+      "completionFlag": "HUMAN_Q113_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 114,
+      "title": "The Veiled Hand",
+      "location": "Guardian sanctuary",
+      "contact": "Oth'varen",
+      "objective": "Present corroborated pattern identifying Su'vareth.",
+      "type": "main_story",
+      "minLevel": 45,
+      "prerequisites": [
+        "HUMAN_Q113_DONE"
+      ],
+      "completionFlag": "HUMAN_Q114_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 115,
+      "title": "The Witness Vault",
+      "location": "Oth'irun, Valecrown, contested delegation site, hostile Dominion military archive, Shroud",
+      "contact": "Oth'varen",
+      "objective": "Complete the solo dungeon; defeat Malrec, interrupt the prepared projection and secure the authenticated transaction archive.",
+      "type": "main_story",
+      "minLevel": 45,
+      "prerequisites": [
+        "HUMAN_Q114_DONE"
+      ],
+      "completionFlag": "HUMAN_Q115_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 116,
+      "title": "Orders That Outlive Her",
+      "location": "Oth'irun, Valecrown, contested delegation site, hostile Dominion military archive, Shroud",
+      "contact": "Mara",
+      "objective": "Authenticate standing contingency orders and alert affected sites; do not imply Su'vareth survived.",
+      "type": "main_story",
+      "minLevel": 45,
+      "prerequisites": [
+        "HUMAN_Q115_DONE"
+      ],
+      "completionFlag": "HUMAN_Q116_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 117,
+      "title": "A Truth Neither Side Wants",
+      "location": "Valecrown court",
+      "contact": "Aldren / Mara",
+      "objective": "Submit verified case and secure correction.",
+      "type": "main_story",
+      "minLevel": 45,
+      "prerequisites": [
+        "HUMAN_Q116_DONE"
+      ],
+      "completionFlag": "HUMAN_Q117_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 118,
+      "title": "The War That Remains",
+      "location": "Oth'varen sanctuary",
+      "contact": "Oth'varen",
+      "objective": "Translate Su'vareth orders and identify exact Anchor lead.",
+      "type": "main_story",
+      "minLevel": 45,
+      "prerequisites": [
+        "HUMAN_Q117_DONE"
+      ],
+      "completionFlag": "HUMAN_Q118_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 119,
+      "title": "The Warden's Orders",
+      "location": "Drom Kar",
+      "contact": "Sera",
+      "objective": "Authenticate translated delivery orders.",
+      "type": "main_story",
+      "minLevel": 50,
+      "prerequisites": [
+        "HUMAN_Q118_DONE"
+      ],
+      "completionFlag": "HUMAN_Q119_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 120,
+      "title": "Network Awakens",
+      "location": "Covenant Regional Anchor",
+      "contact": "Sera",
+      "objective": "Install sensors and compare abnormal readings.",
+      "type": "main_story",
+      "minLevel": 50,
+      "prerequisites": [
+        "HUMAN_Q119_DONE"
+      ],
+      "completionFlag": "HUMAN_Q120_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 121,
+      "title": "The First Breach",
+      "location": "Anchor perimeter",
+      "contact": "Nessa",
+      "objective": "Defeat Unmade installers and preserve equipment.",
+      "type": "main_story",
+      "minLevel": 50,
+      "prerequisites": [
+        "HUMAN_Q120_DONE"
+      ],
+      "completionFlag": "HUMAN_Q121_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 122,
+      "title": "A Signal Answered",
+      "location": "Signal station",
+      "contact": "Sera",
+      "objective": "Intercept Warden's relay traffic.",
+      "type": "main_story",
+      "minLevel": 50,
+      "prerequisites": [
+        "HUMAN_Q121_DONE"
+      ],
+      "completionFlag": "HUMAN_Q122_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 123,
+      "title": "The Warden's Approaches",
+      "location": "Contested mountain route",
+      "contact": "Nessa",
+      "objective": "Scout convoys and identify supply terminus.",
+      "type": "main_story",
+      "minLevel": 50,
+      "prerequisites": [
+        "HUMAN_Q122_DONE"
+      ],
+      "completionFlag": "HUMAN_Q123_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 124,
+      "title": "Lines of Defense",
+      "location": "Covenant frontier",
+      "contact": "Garrick",
+      "objective": "Defend outpost and evacuate civilians.",
+      "type": "main_story",
+      "minLevel": 50,
+      "prerequisites": [
+        "HUMAN_Q123_DONE"
+      ],
+      "completionFlag": "HUMAN_Q124_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 125,
+      "title": "The Anchor Beneath",
+      "location": "Buried installation",
+      "contact": "Tarek",
+      "objective": "Recover synchronization schematics.",
+      "type": "main_story",
+      "minLevel": 50,
+      "prerequisites": [
+        "HUMAN_Q124_DONE"
+      ],
+      "completionFlag": "HUMAN_Q125_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 126,
+      "title": "A Measure of Time",
+      "location": "Drom Kar research chamber",
+      "contact": "Sera / Oth'varen",
+      "objective": "Compare activation timing across sites.",
+      "type": "main_story",
+      "minLevel": 50,
+      "prerequisites": [
+        "HUMAN_Q125_DONE"
+      ],
+      "completionFlag": "HUMAN_Q126_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 127,
+      "title": "The Gathering Storm",
+      "location": "Valecrown court",
+      "contact": "Aldren",
+      "objective": "Present proof and obtain limited mandate.",
+      "type": "main_story",
+      "minLevel": 50,
+      "prerequisites": [
+        "HUMAN_Q126_DONE"
+      ],
+      "completionFlag": "HUMAN_Q127_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 128,
+      "title": "Before the Veil Breaks",
+      "location": "Guardian staging camp",
+      "contact": "Nessa",
+      "objective": "Verify extraction, supply and instrument teams.",
+      "type": "main_story",
+      "minLevel": 50,
+      "prerequisites": [
+        "HUMAN_Q127_DONE"
+      ],
+      "completionFlag": "HUMAN_Q128_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 129,
+      "title": "The Warden Unmasked",
+      "location": "Fortified relay",
+      "contact": "Nessa",
+      "objective": "Recover signed Khor'vun orders.",
+      "type": "main_story",
+      "minLevel": 55,
+      "prerequisites": [
+        "HUMAN_Q128_DONE"
+      ],
+      "completionFlag": "HUMAN_Q129_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 130,
+      "title": "Anchors in Concert",
+      "location": "Linked relay sites",
+      "contact": "Tarek",
+      "objective": "Measure synchronized signatures at three locations.",
+      "type": "main_story",
+      "minLevel": 55,
+      "prerequisites": [
+        "HUMAN_Q129_DONE"
+      ],
+      "completionFlag": "HUMAN_Q130_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 131,
+      "title": "Siege of Lantern Redoubt",
+      "location": "Lantern Redoubt",
+      "contact": "Aru'ven",
+      "objective": "Defend civilians and extraction gate.",
+      "type": "main_story",
+      "minLevel": 55,
+      "prerequisites": [
+        "HUMAN_Q130_DONE"
+      ],
+      "completionFlag": "HUMAN_Q131_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 132,
+      "title": "The Pattern Breaks",
+      "location": "Guardian station",
+      "contact": "Sera",
+      "objective": "Locate vulnerable control relay.",
+      "type": "main_story",
+      "minLevel": 55,
+      "prerequisites": [
+        "HUMAN_Q131_DONE"
+      ],
+      "completionFlag": "HUMAN_Q132_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 133,
+      "title": "Into the Warden's Forge",
+      "location": "Relay solo dungeon",
+      "contact": "Nessa",
+      "objective": "Fight defenders and reach relay controls.",
+      "type": "main_story",
+      "minLevel": 55,
+      "prerequisites": [
+        "HUMAN_Q132_DONE"
+      ],
+      "completionFlag": "HUMAN_Q133_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 134,
+      "title": "The Severed Signal",
+      "location": "Relay control chamber",
+      "contact": "Sera",
+      "objective": "Disable synchronization branch and preserve data.",
+      "type": "main_story",
+      "minLevel": 55,
+      "prerequisites": [
+        "HUMAN_Q133_DONE"
+      ],
+      "completionFlag": "HUMAN_Q134_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 135,
+      "title": "Aftermath of the Break",
+      "location": "Guardian staging camp",
+      "contact": "Sera",
+      "objective": "Compare surviving signals after branch shutdown.",
+      "type": "main_story",
+      "minLevel": 55,
+      "prerequisites": [
+        "HUMAN_Q134_DONE"
+      ],
+      "completionFlag": "HUMAN_Q135_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 136,
+      "title": "What the Warden Left Behind",
+      "location": "Relay archive",
+      "contact": "Mara",
+      "objective": "Recover First Voice instructions.",
+      "type": "main_story",
+      "minLevel": 55,
+      "prerequisites": [
+        "HUMAN_Q135_DONE"
+      ],
+      "completionFlag": "HUMAN_Q136_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 137,
+      "title": "Records of the First Voice",
+      "location": "Kel'vari archive",
+      "contact": "Sel'ora",
+      "objective": "Retrieve Vaer'uun's early research papers.",
+      "type": "main_story",
+      "minLevel": 60,
+      "prerequisites": [
+        "HUMAN_Q136_DONE"
+      ],
+      "completionFlag": "HUMAN_Q137_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 138,
+      "title": "The Forgotten Investigation",
+      "location": "Abandoned research facility",
+      "contact": "Oth'varen",
+      "objective": "Recover recorded scientific debate.",
+      "type": "main_story",
+      "minLevel": 60,
+      "prerequisites": [
+        "HUMAN_Q137_DONE"
+      ],
+      "completionFlag": "HUMAN_Q138_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 139,
+      "title": "The Missing Records",
+      "location": "Restricted archive",
+      "contact": "Sel'ora",
+      "objective": "Restore omitted research pages.",
+      "type": "main_story",
+      "minLevel": 60,
+      "prerequisites": [
+        "HUMAN_Q138_DONE"
+      ],
+      "completionFlag": "HUMAN_Q139_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 140,
+      "title": "The Voice That Answers",
+      "location": "Ancient communicator",
+      "contact": "Vaer'uun transmission",
+      "objective": "Receive invitation and verify destination.",
+      "type": "main_story",
+      "minLevel": 60,
+      "prerequisites": [
+        "HUMAN_Q139_DONE"
+      ],
+      "completionFlag": "HUMAN_Q140_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 141,
+      "title": "Beneath the Binding",
+      "location": "Ancient research site",
+      "contact": "Sera",
+      "objective": "Inspect Binding evidence and interrupt Unmade exploit.",
+      "type": "main_story",
+      "minLevel": 60,
+      "prerequisites": [
+        "HUMAN_Q140_DONE"
+      ],
+      "completionFlag": "HUMAN_Q141_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 142,
+      "title": "Truth Withheld",
+      "location": "Oth'varen sanctuary",
+      "contact": "Oth'varen",
+      "objective": "Confront Oth'varen with independently copied evidence.",
+      "type": "main_story",
+      "minLevel": 60,
+      "prerequisites": [
+        "HUMAN_Q141_DONE"
+      ],
+      "completionFlag": "HUMAN_Q142_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 143,
+      "title": "Name in the Records",
+      "location": "Kel'vari archive",
+      "contact": "Sel'ora",
+      "objective": "Authenticate original reference to Nhal.",
+      "type": "main_story",
+      "minLevel": 60,
+      "prerequisites": [
+        "HUMAN_Q142_DONE"
+      ],
+      "completionFlag": "HUMAN_Q143_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 144,
+      "title": "The First Voice's Design",
+      "location": "Unmade research site",
+      "contact": "Sera",
+      "objective": "Disable mechanism exploiting player's access.",
+      "type": "main_story",
+      "minLevel": 60,
+      "prerequisites": [
+        "HUMAN_Q143_DONE"
+      ],
+      "completionFlag": "HUMAN_Q144_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 145,
+      "title": "The First Voice",
+      "location": "First Voice solo dungeon",
+      "contact": "Sera",
+      "objective": "Defeat Vaer'uun and isolate apparatus.",
+      "type": "main_story",
+      "minLevel": 60,
+      "prerequisites": [
+        "HUMAN_Q144_DONE"
+      ],
+      "completionFlag": "HUMAN_Q145_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 146,
+      "title": "The Silence Beneath",
+      "location": "Sanctuary",
+      "contact": "Oth'varen",
+      "objective": "Compare Vaer'uun claims with historical testimony.",
+      "type": "main_story",
+      "minLevel": 60,
+      "prerequisites": [
+        "HUMAN_Q145_DONE"
+      ],
+      "completionFlag": "HUMAN_Q146_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 147,
+      "title": "The Weight of Silence",
+      "location": "Oth'varen sanctuary",
+      "contact": "Sera",
+      "objective": "Demand full account of Binding and Keeper.",
+      "type": "main_story",
+      "minLevel": 65,
+      "prerequisites": [
+        "HUMAN_Q146_DONE"
+      ],
+      "completionFlag": "HUMAN_Q147_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 148,
+      "title": "The Sealed Testimony",
+      "location": "Kel'vari restricted archive",
+      "contact": "Sel'ora",
+      "objective": "Recover independent Divine War testimonies.",
+      "type": "main_story",
+      "minLevel": 65,
+      "prerequisites": [
+        "HUMAN_Q147_DONE"
+      ],
+      "completionFlag": "HUMAN_Q148_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 149,
+      "title": "The Missing Account",
+      "location": "Ancient testimony vault",
+      "contact": "Sel'ora",
+      "objective": "Reconstruct omitted Keeper account.",
+      "type": "main_story",
+      "minLevel": 65,
+      "prerequisites": [
+        "HUMAN_Q148_DONE"
+      ],
+      "completionFlag": "HUMAN_Q149_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 150,
+      "title": "Guardian's Doubt",
+      "location": "Historical chamber",
+      "contact": "Guardian testimony archive",
+      "objective": "Examine Guardian's post-Binding discovery.",
+      "type": "main_story",
+      "minLevel": 65,
+      "prerequisites": [
+        "HUMAN_Q149_DONE"
+      ],
+      "completionFlag": "HUMAN_Q150_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 151,
+      "title": "The Seven Bound",
+      "location": "Sanctuary",
+      "contact": "Oth'varen",
+      "objective": "Assemble evidence and hear full Binding account.",
+      "type": "main_story",
+      "minLevel": 65,
+      "prerequisites": [
+        "HUMAN_Q150_DONE"
+      ],
+      "completionFlag": "HUMAN_Q151_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 152,
+      "title": "The Cost of Containment",
+      "location": "Guardian research chamber",
+      "contact": "Sera",
+      "objective": "Compare inversion readings with Binding history.",
+      "type": "main_story",
+      "minLevel": 65,
+      "prerequisites": [
+        "HUMAN_Q151_DONE"
+      ],
+      "completionFlag": "HUMAN_Q152_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 153,
+      "title": "The Warden's Final Pattern",
+      "location": "Anchor monitoring network",
+      "contact": "Tarek",
+      "objective": "Trace Khor'vun final convergence.",
+      "type": "main_story",
+      "minLevel": 65,
+      "prerequisites": [
+        "HUMAN_Q152_DONE"
+      ],
+      "completionFlag": "HUMAN_Q153_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 154,
+      "title": "Before the Veil Breaks",
+      "location": "Expedition staging ground",
+      "contact": "Nessa",
+      "objective": "Prepare evacuation and assault support.",
+      "type": "main_story",
+      "minLevel": 65,
+      "prerequisites": [
+        "HUMAN_Q153_DONE"
+      ],
+      "completionFlag": "HUMAN_Q154_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 155,
+      "title": "The Last Approach",
+      "location": "Veilbreaker complex",
+      "contact": "Nessa",
+      "objective": "Disable defenses and reach central apparatus.",
+      "type": "main_story",
+      "minLevel": 65,
+      "prerequisites": [
+        "HUMAN_Q154_DONE"
+      ],
+      "completionFlag": "HUMAN_Q155_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 156,
+      "title": "Veilbreaker",
+      "location": "Veilbreaker solo dungeon",
+      "contact": "Nessa / Sera",
+      "objective": "Kill Khor'vun and attempt cutoff after irreversible threshold.",
+      "type": "main_story",
+      "minLevel": 65,
+      "prerequisites": [
+        "HUMAN_Q155_DONE"
+      ],
+      "completionFlag": "HUMAN_Q156_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 157,
+      "title": "The Shroud Begins to Fall",
+      "location": "Kel'vari frontier",
+      "contact": "Aru'ven",
+      "objective": "Evacuate residents as Shroud starts dissipating.",
+      "type": "main_story",
+      "minLevel": 65,
+      "prerequisites": [
+        "HUMAN_Q156_DONE"
+      ],
+      "completionFlag": "HUMAN_Q157_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 158,
+      "title": "Essence Without Form",
+      "location": "Receding Shroud",
+      "contact": "Sera",
+      "objective": "Observe manifestations and collect readings.",
+      "type": "main_story",
+      "minLevel": 70,
+      "prerequisites": [
+        "HUMAN_Q157_DONE"
+      ],
+      "completionFlag": "HUMAN_Q158_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 159,
+      "title": "The Lands Revealed",
+      "location": "Exposed Kel'vari approaches",
+      "contact": "Aru'ven",
+      "objective": "Escort displaced residents to shelter.",
+      "type": "main_story",
+      "minLevel": 70,
+      "prerequisites": [
+        "HUMAN_Q158_DONE"
+      ],
+      "completionFlag": "HUMAN_Q159_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 160,
+      "title": "The Architect's Hand",
+      "location": "Unmade installation",
+      "contact": "Mara",
+      "objective": "Steal Thes'var stabilization orders.",
+      "type": "main_story",
+      "minLevel": 70,
+      "prerequisites": [
+        "HUMAN_Q159_DONE"
+      ],
+      "completionFlag": "HUMAN_Q160_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 161,
+      "title": "Fractured Manifestation",
+      "location": "Inverted Major Anchor",
+      "contact": "Sera / Oth'varen",
+      "objective": "Measure manifestation fracturing under inversion.",
+      "type": "main_story",
+      "minLevel": 70,
+      "prerequisites": [
+        "HUMAN_Q160_DONE"
+      ],
+      "completionFlag": "HUMAN_Q161_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 162,
+      "title": "What Cannot Be Destroyed",
+      "location": "Guardian laboratory",
+      "contact": "Oth'varen",
+      "objective": "Compare fragments with ancient essence evidence.",
+      "type": "main_story",
+      "minLevel": 70,
+      "prerequisites": [
+        "HUMAN_Q161_DONE"
+      ],
+      "completionFlag": "HUMAN_Q162_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 163,
+      "title": "The Architect Speaks",
+      "location": "Ancient communicator",
+      "contact": "Thes'var transmission",
+      "objective": "Receive Architect's invitation and challenge claims.",
+      "type": "main_story",
+      "minLevel": 70,
+      "prerequisites": [
+        "HUMAN_Q162_DONE"
+      ],
+      "completionFlag": "HUMAN_Q163_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 164,
+      "title": "Convergence Principle",
+      "location": "Distributed Anchor sites",
+      "contact": "Brynja / Sera",
+      "objective": "Test synchronized bounded readings.",
+      "type": "main_story",
+      "minLevel": 70,
+      "prerequisites": [
+        "HUMAN_Q163_DONE"
+      ],
+      "completionFlag": "HUMAN_Q164_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 165,
+      "title": "The Guardian's Decision",
+      "location": "Guardian council",
+      "contact": "Sera",
+      "objective": "Present risks and obtain conditional approval.",
+      "type": "main_story",
+      "minLevel": 70,
+      "prerequisites": [
+        "HUMAN_Q164_DONE"
+      ],
+      "completionFlag": "HUMAN_Q165_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 166,
+      "title": "The Architect's Invitation",
+      "location": "Architect facility approaches",
+      "contact": "Nessa",
+      "objective": "Map defenses and extraction route.",
+      "type": "main_story",
+      "minLevel": 70,
+      "prerequisites": [
+        "HUMAN_Q165_DONE"
+      ],
+      "completionFlag": "HUMAN_Q166_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 167,
+      "title": "Stone and Strain",
+      "location": "Distributed Anchors, Covenant and Kel'vari regions, Guardian camp",
+      "contact": "Brynja",
+      "objective": "Inspect one inverted installation's structural supports and repair a documented failure.",
+      "type": "main_story",
+      "minLevel": 75,
+      "prerequisites": [
+        "HUMAN_Q166_DONE"
+      ],
+      "completionFlag": "HUMAN_Q167_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 168,
+      "title": "Life at the Edges",
+      "location": "Distributed Anchors, Covenant and Kel'vari regions, Guardian camp",
+      "contact": "Caelith",
+      "objective": "Measure ecological effects near another installation and mitigate harm.",
+      "type": "main_story",
+      "minLevel": 75,
+      "prerequisites": [
+        "HUMAN_Q167_DONE"
+      ],
+      "completionFlag": "HUMAN_Q168_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 169,
+      "title": "The Route Between",
+      "location": "Distributed Anchors, Covenant and Kel'vari regions, Guardian camp",
+      "contact": "Tarek",
+      "objective": "Travel by ship, flight path and overland to check network connections; no unlimited teleportation.",
+      "type": "main_story",
+      "minLevel": 75,
+      "prerequisites": [
+        "HUMAN_Q168_DONE"
+      ],
+      "completionFlag": "HUMAN_Q169_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 170,
+      "title": "Instructions That Survive Us",
+      "location": "Distributed Anchors, Covenant and Kel'vari regions, Guardian camp",
+      "contact": "Oth'varen / Halden",
+      "objective": "Train independent teams and deposit redundant safety records for operation without the ancient scholar.",
+      "type": "main_story",
+      "minLevel": 75,
+      "prerequisites": [
+        "HUMAN_Q169_DONE"
+      ],
+      "completionFlag": "HUMAN_Q170_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 171,
+      "title": "The Consent of Neighbors",
+      "location": "Covenant and Kel'vari councils",
+      "contact": "Corven / Aru'ven",
+      "objective": "Obtain separate operational permissions.",
+      "type": "main_story",
+      "minLevel": 75,
+      "prerequisites": [
+        "HUMAN_Q170_DONE"
+      ],
+      "completionFlag": "HUMAN_Q171_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 172,
+      "title": "A Failure We Can See",
+      "location": "Distributed Anchors, Covenant and Kel'vari regions, Guardian camp",
+      "contact": "Tarek",
+      "objective": "Detect the weak junction and establish an emergency correction route before final activation.",
+      "type": "main_story",
+      "minLevel": 75,
+      "prerequisites": [
+        "HUMAN_Q171_DONE"
+      ],
+      "completionFlag": "HUMAN_Q172_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 173,
+      "title": "The Last Measure",
+      "location": "Guardian test chamber",
+      "contact": "Sera",
+      "objective": "Run bounded distributed alignment test.",
+      "type": "main_story",
+      "minLevel": 75,
+      "prerequisites": [
+        "HUMAN_Q172_DONE"
+      ],
+      "completionFlag": "HUMAN_Q173_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 174,
+      "title": "Before the Final Crossing",
+      "location": "Staging camp",
+      "contact": "Nessa",
+      "objective": "Verify teams and complete readiness.",
+      "type": "main_story",
+      "minLevel": 75,
+      "prerequisites": [
+        "HUMAN_Q173_DONE"
+      ],
+      "completionFlag": "HUMAN_Q174_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 175,
+      "title": "Inside the Architect's Design",
+      "location": "Architect central facility",
+      "contact": "Nessa",
+      "objective": "Infiltrate and disable defenses while preserving alignment mechanism.",
+      "type": "main_story",
+      "minLevel": 80,
+      "prerequisites": [
+        "HUMAN_Q174_DONE"
+      ],
+      "completionFlag": "HUMAN_Q175_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 176,
+      "title": "The Architect's Last Argument",
+      "location": "Solo boss chamber",
+      "contact": "Thes'var",
+      "objective": "Defeat and kill Thes'var.",
+      "type": "main_story",
+      "minLevel": 80,
+      "prerequisites": [
+        "HUMAN_Q175_DONE"
+      ],
+      "completionFlag": "HUMAN_Q176_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 177,
+      "title": "The Broken Alignment",
+      "location": "Control junction",
+      "contact": "Sera",
+      "objective": "Assess Thes'var's sabotage and misalignment.",
+      "type": "main_story",
+      "minLevel": 80,
+      "prerequisites": [
+        "HUMAN_Q176_DONE"
+      ],
+      "completionFlag": "HUMAN_Q177_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 178,
+      "title": "The Scholar's Correction",
+      "location": "Thes'var central facility, distributed network, Oth'irun, Valecrown, Millhaven",
+      "contact": "Oth'varen / Sera",
+      "objective": "Maintain evacuation and instrument stations as Oth'varen stabilises the alignment and dies after seeing it hold.",
+      "type": "main_story",
+      "minLevel": 80,
+      "prerequisites": [
+        "HUMAN_Q177_DONE"
+      ],
+      "completionFlag": "HUMAN_Q178_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 179,
+      "title": "The Sixth Scholar's Choice",
+      "location": "Convergence entrance",
+      "contact": "Oth'varen",
+      "objective": "Witness Oth'varen tell Sera and player his choice.",
+      "type": "main_story",
+      "minLevel": 80,
+      "prerequisites": [
+        "HUMAN_Q178_DONE"
+      ],
+      "completionFlag": "HUMAN_Q179_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 180,
+      "title": "The Seven Hold",
+      "location": "Thes'var central facility, distributed network, Oth'irun, Valecrown, Millhaven",
+      "contact": "Guardian teams",
+      "objective": "Coordinate distributed support of six fields with the Seven; solo-accessible objectives, no combined player ritual.",
+      "type": "main_story",
+      "minLevel": 80,
+      "prerequisites": [
+        "HUMAN_Q179_DONE"
+      ],
+      "completionFlag": "HUMAN_Q180_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 181,
+      "title": "The Shattering of Nhal",
+      "location": "Final convergence chamber",
+      "contact": "Sera / Oth'varen",
+      "objective": "Defend correction, complete inversion and confirm Nhal's unified identity shattered.",
+      "type": "main_story",
+      "minLevel": 80,
+      "prerequisites": [
+        "HUMAN_Q180_DONE"
+      ],
+      "completionFlag": "HUMAN_Q181_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 182,
+      "title": "Silence After",
+      "location": "Guardian sanctuary",
+      "contact": "Sera",
+      "objective": "Secure survivors and verify Seven's survival.",
+      "type": "main_story",
+      "minLevel": 80,
+      "prerequisites": [
+        "HUMAN_Q181_DONE"
+      ],
+      "completionFlag": "HUMAN_Q182_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 183,
+      "title": "A World Unbound",
+      "location": "Oth'irun, Tidehold, Valecrown",
+      "contact": "Mara / Corven",
+      "objective": "Deliver restricted final reports.",
+      "type": "main_story",
+      "minLevel": 80,
+      "prerequisites": [
+        "HUMAN_Q182_DONE"
+      ],
+      "completionFlag": "HUMAN_Q183_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    },
+    {
+      "id": 184,
+      "title": "The Road Home",
+      "location": "Thes'var central facility, distributed network, Oth'irun, Valecrown, Millhaven",
+      "contact": "Elara",
+      "objective": "Post-finale epilogue: revisit Millhaven, close local relationships and record the cost and consequence of victory.",
+      "type": "main_story",
+      "minLevel": 80,
+      "prerequisites": [
+        "HUMAN_Q183_DONE"
+      ],
+      "completionFlag": "HUMAN_Q184_DONE",
+      "rewardXP": null,
+      "mapId": null,
+      "npcId": null,
+      "encounterId": null
+    }
+  ]
+}
