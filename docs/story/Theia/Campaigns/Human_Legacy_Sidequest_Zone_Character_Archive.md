@@ -63,3 +63,40 @@ H5-03's early Nhal identification, H5-12's early Thes'var intervention, H5-14's 
 3. Review unique regional NPC, settlement, encounter and service details against existing lore before extracting anything else.
 4. Once original source provenance is represented and all links are migrated, remove redundant Obsidian copies and navigation; keep one readable Markdown archive.
 5. Keep Rust quest runtime and stable IDs unchanged until authoring approval.
+
+## Non-exact H-series ideas requiring individual disposition (28)
+
+These are **candidate remnants**, not newly approved quests. Current Q references are proposed comparisons only. Preserve specific details only if not already represented in the current manifest or lore.
+
+| Legacy ID | Original title | Proposed current comparison | Editorial assessment |
+|---|---|---|---|
+| H4-01 | An Expedition, Not an Army | Q084 | Approval and extraction overlap, but later canon requires Kel'vari consent. |
+| H4-03 | A Living Homeland | Q087 | Kel'vari worker rescue retained; historical location differs. |
+| H4-04 | The Frontier Beyond the Camp | Q089 | Frontier survey overlaps; mandatory WvW training is not part of the current canonical objective. |
+| H4-09 | What the Village Can Give | Q032 | Local relief theme overlaps; original royal levy detail not confirmed. |
+| H4-10 | A Third Shore | Q059 | Dominion coastal journey overlaps; original staging route differs. |
+| H4-11 | The Missing Survey Team | Q039 | Rescue of a supply/survey team overlaps but is in a different arc. |
+| H4-12 | Stolen Under Another Flag | Q041 | Hostile Dominion depot records overlap; original named witnesses not retained. |
+| H4-13 | The Inherited Contract | Q112 | Contract evidence overlaps; Shroud archive destination differs. |
+| H4-14 | A Way Out for the Bound | Q115 | Captive extraction overlaps; new Su'vareth dungeon changes location and sequence. |
+| H4-16 | More Than a Confession | Q114 | Corroboration of Unmade orchestration overlaps. |
+| H4-17 | The King's Correction | Q117 | Royal correction retained; specifics must be reviewed. |
+| H4-18 | The Answer Cassian Avoided | Q117 | Cassian custody follow-up not clearly represented as separate current quest. |
+| H5-01 | A Branch Still Growing | Q120 | Anchor network survey overlaps; Chainworks expansion is no longer the same story. |
+| H5-02 | The Covenant's Terms | Q127 | Limited mandate overlaps; Tidehold council details differ. |
+| H5-03 | A Name Beyond the Veil | Q143 | Original Nhal naming earlier than current Q143; do not migrate old timing. |
+| H5-04 | The Crossing Again | Q032 | Home relief theme overlaps, not necessarily same narrative beat. |
+| H5-05 | What Edric Asked | Q106 | Edric evidence overlaps; original independent-record warrant differs. |
+| H5-06 | The Coast Remembers | Q059 | Coastal return overlaps; old named military records not retained. |
+| H5-07 | The Team Behind the Line | Q039 | Rescue theme overlaps but original relay context differs. |
+| H5-08 | The Relay's Schedule | Q130 | Relay schedule evidence overlaps, no verified one-to-one match. |
+| H5-12 | The Architect's Objection | Q163 | Thes'var early intervention differs from current invitation and final death. |
+| H5-13 | Everyone's Route Home | Q154 | Extraction preparation overlaps, different chapter timing. |
+| H5-14 | Cut the Outer Links | Q155 | Old level-60 finale superseded by level-80 convergence. |
+| H5-15 | The Ledger and the Warden | Q156 | Keld/Voss outcome differs from Khor'vun and Veilbreaker. |
+| H5-16 | The Severed Chain | Q181 | Old local severance choice cannot replace canonical Nhal shattering. |
+| H5-17 | What the Instruments Prove | Q162 | Technical evidence overlaps; original branch-specific results differ. |
+| H5-18 | A Corrected Record | Q183 | Postwar report overlaps; Cassian sentence not confirmed in new canon. |
+| H5-19 | A Different Legacy | Q170 | Shared technical knowledge overlaps, but new finale differs. |
+
+**Review disposition:** 5 finale/reveal conflicts are historical-only; the other 23 entries are possible worldbuilding, quest-detail or regional follow-up material pending stage-by-stage comparison. No runtime IDs or canon changes are approved by this table.
