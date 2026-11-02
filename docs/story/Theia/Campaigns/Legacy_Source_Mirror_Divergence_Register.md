@@ -1,43 +1,17 @@
-# Historical Source Mirror Divergence Register
+# Historical Source Mirror Divergence — completed audit
 
-**Status: editorial review required; not a canon authority.** The remaining eight `THEIA_*.md` files under `docs/story/Theia/Sources/` are not byte-identical or equal after normalizing Obsidian wiki-links and whitespace against their root `docs/story/` originals. Do not delete these mirrors without confirming all meaningful differences have been preserved.
+**Status: CLOSED — historical record only (2 November 2026).** This document is not a canon authority or an active cleanup checklist. The imported story source mirrors reviewed here were reconciled against the root `docs/story/` documents and retired from `Theia/Sources/`. Their old versions remain recoverable from Git history.
 
-| Document | First observed substantive difference | Treatment |
-|---|---|---|
-| THEIA_CANON_RECONCILIATION_REPORT | "seventh creation" vs "Kel'vari creation" | Historical terminology; approved later canon takes precedence |
-| THEIA_DETAILED_LORE_ARCHIVE | "Seventh project" vs "Kel'vari project" | Historical terminology; check additional changes |
-| THEIA_DOCUMENTATION_GUIDE | "Seventh researchers" vs "Kel'vari researchers" | Historical terminology; check additional changes |
-| THEIA_INTERWOVEN_CHRONICLE | "Seventh project" vs "Kel'vari project" | Historical terminology; check additional changes |
-| THEIA_LINE_BY_LINE_VERIFICATION_STATUS | "seventh race's creation" vs "Kel'vari's creation" | Historical terminology; check additional changes |
-| THEIA_MODERN_STORY_REVELATION_TIMELINE | Root says royal character identities not yet approved; mirror names King Aldren Vaelmont, Lord Edric Halewyn, Lord Cassian Veyr, Mara Thorne and Garrick Ashford as creator-approved | **Potential substantive chronology/approval conflict.** Verify later creator locks and canonical campaign before merging either claim |
-| THEIA_SOURCE_DECISION_RECOVERY | "seventh race vanished" vs "Kel'vari vanished" | Historical terminology; check additional changes |
-| THEIA_WORLD_BIBLE | "seventh creation" vs "Kel'vari creation" | Historical terminology; check additional changes |
+## Reconciliation outcome
 
-These are **first-difference samples**, not an exhaustive semantic diff. Even a consistent terminology substitution cannot justify deleting a mirror until all remaining text is checked.
+- World Bible, Detailed Lore Archive and Canon Reconciliation Report: confirmed Kel'vari terminology and other later decisions were aligned into the root documents; normalized text equivalence checked before mirror retirement.
+- Interwoven Chronicle: root retains the later approved level-80 ending; the imported mirror's older 'ending open' editorial status was superseded.
+- Source Decision Recovery: root retains three historically meaningful earlier phrases while later locked decisions were aligned. The imported mirror added no unique approved decision.
+- DECISIONS: duplicate was normalized-text equivalent to the root.
+- Import manifest: byte-identical duplicate removed; root `docs/story/IMPORT_MANIFEST.json` preserved.
 
-## Preservation policy
+## Authority and provenance
 
-1. The canonical Human 1–80 campaign, current 184-quest manifest and later explicit creator decisions take precedence over either historical source variant.
-2. Preserve unique names, regional geography, NPC motivations, quest mechanics and side-story hooks in the [legacy ideas archive](Human_Legacy_Sidequest_Zone_Character_Archive.md) if compatible; mark conflicts explicitly.
-3. Retain both versions of the eight source files until the complete differences and inbound links are reconciled. Do not silently promote the royal-name assertion.
-4. Keep the old branch available until the preservation and reference audit is complete; its lack of ahead commits is necessary but not sufficient evidence of content equivalence.
+Use [Current Human Campaign](CURRENT_HUMAN_CAMPAIGN.md) for the authoritative source hierarchy, [Human 1–80 Canonical Campaign](Human_1_80_Canonical_Campaign.md) for the approved narrative, and [Legacy Idea Bank](Human_Legacy_Sidequest_Zone_Character_Archive.md) for non-canonical concepts.
 
-## Royal-court discrepancy follow-up
-
-A further check found that **both** root and mirrored `THEIA_MODERN_STORY_REVELATION_TIMELINE.md` contain the section `Approved human royal court characters (15 October 2026)`, explicitly identifying King Aldren Vaelmont, Lord Edric Halewyn, Lord Cassian Veyr and their roles. The root also retains an earlier statement that the royal names were not yet approved; the mirror replaces that older line with an approval summary. Therefore the first-difference sample is **stale text versus later approval within the root**, not evidence that the named royal cast is unapproved. The later dated approval section governs that historical conflict. Preserve both versions until other differences are checked; do not alter canonical quest data.
-
-## Remaining seven mirrors — terminology is not the whole difference
-
-A second normalization pass tested common historical substitutions (seventh race/creation/project/researchers → Kel'vari equivalents) across the seven remaining `THEIA_*.md` mirror pairs. **None became fully equivalent.** Do not mass-delete these files or apply global search-and-replace: the historical Seventh terminology can be relevant to original creator decision provenance, and additional differences remain. Continue document-by-document review, particularly the World Bible, Chronicle, and source decision records. The Revelation Timeline mirror was separately verified equivalent and retired.
-
-## Source Decision Recovery comparison — further evidence
-
-The original and mirror of `THEIA_SOURCE_DECISION_RECOVERY.md` have many localized historical name substitutions beyond the first difference, including Seventh/Kel'vari researchers, enclave residents, investigators, ancestry, city names and founding terminology. An attempted terminology-normalized comparison still encountered grammatical and editorial differences; **full equivalence is not established**. Preserve the root original and mirror. Historical references to the unnamed Seventh race should not be globally rewritten without distinguishing original creator statements from later canon. No source content was intentionally changed by this review.
-
-## Final protected source set (repository tree checked)
-
-Five historical `THEIA_` source mirrors remain: `THEIA_CANON_RECONCILIATION_REPORT`, `THEIA_DETAILED_LORE_ARCHIVE`, `THEIA_INTERWOVEN_CHRONICLE`, `THEIA_SOURCE_DECISION_RECOVERY`, and `THEIA_WORLD_BIBLE`. All five have non-identical normalized text against their root originals. The source directory also retains `DECISIONS.md`, `README.md`, and `IMPORT_MANIFEST.json` for historical import and decision provenance. The previously reviewed Timeline, Documentation Guide and Line-by-Line Verification mirrors have been retired after verified normalized equivalence. **Do not delete the remaining five mirrors by filename or first-difference comparison.** Preserve their provenance until a complete substantive diff and backlink audit is performed.
-
-## Final mirror retirement update — 2 November 2026
-
-**This register's earlier 'five mirrors remain' statements are historical snapshots, not current status.** World Bible, Detailed Lore Archive, Canon Reconciliation Report, Interwoven Chronicle, and Source Decision Recovery imported mirrors have now been reconciled and deleted from `Theia/Sources/`. The imported DECISIONS mirror was also deleted. The root source documents remain authoritative. The three early historical phrases in Source Decision Recovery were deliberately preserved in the root; the imported copy added no unique decisions. See the temporary `docs/story/STORY_CLEANUP_TRACKER.md` for ongoing tasks; delete that tracker only at final cleanup completion.
+Historical first-difference samples, original source snapshots and earlier audit wording remain available in Git history. This completed audit should not be mistaken for validation of all remaining Obsidian quest notes or all repository links.
