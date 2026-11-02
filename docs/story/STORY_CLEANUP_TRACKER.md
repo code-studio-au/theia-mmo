@@ -157,3 +157,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Resolved 11 Markdown file links across `Source Reading Maps.md`, Source Decision Recovery reading map and Human Quest Register reading map to existing `main` files.
 - [x] Replaced one unverified directory-target link with plain folder text (commit `ee49fad6`); this was a directory rather than a verified file target, not proof the directory was absent.
 - [ ] Continue auditing other reading maps and campaign files; these 12 checks are not a full-tree validation.
+
+## Additional reading-map link repairs — 2 November 2026
+
+- [x] Live-verified 12 links across Chronicle, Detailed Lore Archive, Canon Reconciliation Report and Source Decision Recovery reading maps; all resolve to existing files.
+- [x] Fixed four broken root links in historical Human Story Dungeons, Human Campaign Review, Human Cast and Places, and Human Connected Racial Stories reading maps (commits `3d7be1fa`, `24242a3e`, `31f5d2e9`, `94501e76`). Their old `../../../../` paths escaped `docs/story/`; corrected to `../../../`.
+- [ ] Continue remaining historical reading-map link validation and evaluate redundant redirect files for retirement.
