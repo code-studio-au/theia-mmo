@@ -1,0 +1,1466 @@
+{
+  "schemaVersion": 1,
+  "status": "implementation_data_draft",
+  "canonical": "Human_1_80_Canonical_Campaign.md",
+  "runtimeIntegrated": false,
+  "quests": [
+    {
+      "id": "HUMAN_Q035",
+      "editorialId": 35,
+      "title": "A Ledger Reaches the Sea",
+      "track": "main_story",
+      "minLevel": 20,
+      "prerequisites": [
+        "HUMAN_Q031_DONE"
+      ],
+      "contact": "Mara",
+      "region": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Mara",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_35",
+          "description": "Trace the passage ledger's shipping reference to Tidehold; register the case with alliance customs through the human warrant",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Mara",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q035_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q036",
+      "editorialId": 36,
+      "title": "Four Peoples, One Harbour",
+      "track": "main_story",
+      "minLevel": 20,
+      "prerequisites": [
+        "HUMAN_Q035_DONE"
+      ],
+      "contact": "Corven",
+      "region": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Corven",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_36",
+          "description": "Attend the alliance briefing and distinguish the human commission from alliance authority; obtain a bounded inspection permit",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Corven",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q036_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q037",
+      "editorialId": 37,
+      "title": "Short of the Manifest",
+      "track": "main_story",
+      "minLevel": 20,
+      "prerequisites": [
+        "HUMAN_Q036_DONE"
+      ],
+      "contact": "Ysra",
+      "region": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Ysra",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "interact",
+          "targetKey": "objective_37",
+          "description": "Audit the provision depot and secure exposed goods; separate ordinary loss from the false requisition chain",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Ysra",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q037_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q038",
+      "editorialId": 38,
+      "title": "Northwatch Bound",
+      "track": "main_story",
+      "minLevel": 20,
+      "prerequisites": [
+        "HUMAN_Q037_DONE"
+      ],
+      "contact": "Nessa",
+      "region": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Nessa",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "travel",
+          "targetKey": "objective_38",
+          "description": "Sail to Northwatch Landing, meet the garrison and Darian's support unit, and learn arrival/extraction procedures",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Nessa",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q038_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q039",
+      "editorialId": 39,
+      "title": "The Stranded Supply Party",
+      "track": "main_story",
+      "minLevel": 20,
+      "prerequisites": [
+        "HUMAN_Q038_DONE"
+      ],
+      "contact": "Darian",
+      "region": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Darian",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_39",
+          "description": "Rescue a Covenant supply party by a PvE coastal route; return its military route report. No hostile-player interaction required",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Darian",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q039_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q040",
+      "editorialId": 40,
+      "title": "The Defender's Coast",
+      "track": "main_story",
+      "minLevel": 20,
+      "prerequisites": [
+        "HUMAN_Q039_DONE"
+      ],
+      "contact": "Nessa",
+      "region": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Nessa",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "interact",
+          "targetKey": "objective_40",
+          "description": "Scout Rukhan's military posts and civilian boundaries; select a patrol-avoidance or guarded approach without entering civilian homes",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Nessa",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q040_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q041",
+      "editorialId": 41,
+      "title": "A Loss Before the Raid",
+      "track": "main_story",
+      "minLevel": 20,
+      "prerequisites": [
+        "HUMAN_Q040_DONE"
+      ],
+      "contact": "Mara's expedition clerk",
+      "region": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Mara's expedition clerk",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_41",
+          "description": "Recover depot accounting from a military store; compare Nemi's serial records with a private consignment removed before the reported attack",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Mara's expedition clerk",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q041_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q042",
+      "editorialId": 42,
+      "title": "The Surveyor at the Signal House",
+      "track": "main_story",
+      "minLevel": 20,
+      "prerequisites": [
+        "HUMAN_Q041_DONE"
+      ],
+      "contact": "Sera",
+      "region": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Sera",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_42",
+          "description": "Find Sera, secure an unstable observation position and compare the small device's housing with Brynja's report",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Sera",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q042_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q043",
+      "editorialId": 43,
+      "title": "Keep the Evidence Safe",
+      "track": "main_story",
+      "minLevel": 20,
+      "prerequisites": [
+        "HUMAN_Q042_DONE"
+      ],
+      "contact": "Sera / Grey Surveyor",
+      "region": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Sera / Grey Surveyor",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_43",
+          "description": "Choose sealed sample preservation or safe sample destruction after copying measurements; both retain the critical technical record",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Sera / Grey Surveyor",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q043_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q044",
+      "editorialId": 44,
+      "title": "Instructions With Limits",
+      "track": "main_story",
+      "minLevel": 20,
+      "prerequisites": [
+        "HUMAN_Q043_DONE"
+      ],
+      "contact": "Brynja",
+      "region": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Brynja",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_44",
+          "description": "Prepare separate mechanical isolators and a documented shutdown procedure; the Surveyor states its limits and emergency cutoff",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Brynja",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q044_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q045",
+      "editorialId": 45,
+      "title": "The Silent Signal",
+      "track": "main_story",
+      "minLevel": 20,
+      "prerequisites": [
+        "HUMAN_Q044_DONE"
+      ],
+      "contact": "Sera",
+      "region": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "travel",
+          "targetKey": "silent_signal_entry",
+          "description": "Enter the Signal House solo instance",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S02",
+          "kind": "combat",
+          "targetKey": "halvek",
+          "description": "Defeat Halvek",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "encounter_retry",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S03",
+          "kind": "interact",
+          "targetKey": "minor_resonator_cutoff",
+          "description": "Disable the Minor Resonator",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S04",
+          "kind": "interact",
+          "targetKey": "measurement_copy",
+          "description": "Preserve measurement record",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        }
+      ],
+      "completionFlag": "HUMAN_Q045_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q046",
+      "editorialId": 46,
+      "title": "A Landing Still at War",
+      "track": "regional_optional",
+      "minLevel": 20,
+      "prerequisites": [],
+      "contact": "Nessa / Garrick",
+      "region": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Nessa / Garrick",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_46",
+          "description": "Support an NPC defensive action or equivalent instanced task; report the hidden operation separately from the continuing Dominion attack",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Nessa / Garrick",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q046_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q047",
+      "editorialId": 47,
+      "title": "What the Measurements Say",
+      "track": "main_story",
+      "minLevel": 20,
+      "prerequisites": [
+        "HUMAN_Q045_DONE"
+      ],
+      "contact": "Mara",
+      "region": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Mara",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_47",
+          "description": "Authenticate the device report in Tidehold and connect its procurement to a restricted Aelari material reference",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Mara",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q047_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q048",
+      "editorialId": 48,
+      "title": "A Different Kind of Healing",
+      "track": "regional_optional",
+      "minLevel": 20,
+      "prerequisites": [],
+      "contact": "Anwen / Oren",
+      "region": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Anwen / Oren",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_48",
+          "description": "Return home, document a real healing benefit and make a local ward safe; distinguish the beneficial awakening from deliberate interference",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Anwen / Oren",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q048_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q049",
+      "editorialId": 49,
+      "title": "The Mountain Contract",
+      "track": "main_story",
+      "minLevel": 25,
+      "prerequisites": [
+        "HUMAN_Q047_DONE"
+      ],
+      "contact": "Garrick",
+      "region": "Kar Durn, Sylvaren, hostile Dominion coast, Tidehold",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Garrick",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "interact",
+          "targetKey": "objective_49",
+          "description": "Establish why the altered fitting and the expedition's legitimate repair needs require a Kar Durn visit",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Garrick",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q049_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q050",
+      "editorialId": 50,
+      "title": "No Fault in the Drawing",
+      "track": "main_story",
+      "minLevel": 25,
+      "prerequisites": [
+        "HUMAN_Q049_DONE"
+      ],
+      "contact": "Brynja",
+      "region": "Kar Durn, Sylvaren, hostile Dominion coast, Tidehold",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Brynja",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_50",
+          "description": "Inspect her original plans and a broker's substituted specification; secure hold permission to recover a measuring assembly",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Brynja",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q050_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q051",
+      "editorialId": 51,
+      "title": "The Feeder Gallery",
+      "track": "regional_optional",
+      "minLevel": 25,
+      "prerequisites": [],
+      "contact": "Rurik",
+      "region": "Kar Durn, Sylvaren, hostile Dominion coast, Tidehold",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Rurik",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_51",
+          "description": "Restore maintenance access by securing its existing route and returning equipment; document a mundane pressure fault and neglected maintenance",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Rurik",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q051_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q052",
+      "editorialId": 52,
+      "title": "Grain for Iron",
+      "track": "main_story",
+      "minLevel": 25,
+      "prerequisites": [
+        "HUMAN_Q050_DONE"
+      ],
+      "contact": "Brynja / hold authority",
+      "region": "Kar Durn, Sylvaren, hostile Dominion coast, Tidehold",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Brynja / hold authority",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_52",
+          "description": "Settle the contested shipment with verified records; secure a limited engineering commission and an inspection report",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Brynja / hold authority",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q052_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q053",
+      "editorialId": 53,
+      "title": "The King's Correspondence",
+      "track": "main_story",
+      "minLevel": 25,
+      "prerequisites": [
+        "HUMAN_Q052_DONE"
+      ],
+      "contact": "High King / Caelith",
+      "region": "Kar Durn royal court → Sylvaren",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "dwarven_high_king",
+          "description": "Obtain the High King's sealed letter",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S02",
+          "kind": "travel",
+          "targetKey": "sylvaren_road",
+          "description": "Travel to Sylvaren by established routes",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "caelith",
+          "description": "Present Brynja's findings and the introduction",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        }
+      ],
+      "completionFlag": "HUMAN_Q053_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q054",
+      "editorialId": 54,
+      "title": "Permission to Ask",
+      "track": "main_story",
+      "minLevel": 25,
+      "prerequisites": [
+        "HUMAN_Q053_DONE"
+      ],
+      "contact": "Caelith",
+      "region": "Kar Durn, Sylvaren, hostile Dominion coast, Tidehold",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Caelith",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "interact",
+          "targetKey": "objective_54",
+          "description": "Enter Sylvaren and request a limited material inquiry; hear the ward-tenders' concerns before visiting restricted sites",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Caelith",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q054_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q055",
+      "editorialId": 55,
+      "title": "The Nursery Route",
+      "track": "regional_optional",
+      "minLevel": 25,
+      "prerequisites": [],
+      "contact": "Caelith",
+      "region": "Kar Durn, Sylvaren, hostile Dominion coast, Tidehold",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Caelith",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "defend",
+          "targetKey": "objective_55",
+          "description": "Rescue workers and secure a woodland maintenance path threatened by local fauna and a neglected branch-ward",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "encounter_retry",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Caelith",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q055_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q056",
+      "editorialId": 56,
+      "title": "The Boundary Altered",
+      "track": "main_story",
+      "minLevel": 25,
+      "prerequisites": [
+        "HUMAN_Q054_DONE"
+      ],
+      "contact": "Caelith",
+      "region": "Kar Durn, Sylvaren, hostile Dominion coast, Tidehold",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Caelith",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_56",
+          "description": "Compare an abandoned research ward with its approved baseline; establish deliberate alteration without blaming every forest hazard",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Caelith",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q056_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q057",
+      "editorialId": 57,
+      "title": "A Price for Observation",
+      "track": "main_story",
+      "minLevel": 25,
+      "prerequisites": [
+        "HUMAN_Q056_DONE"
+      ],
+      "contact": "Mara / Veylan",
+      "region": "Kar Durn, Sylvaren, hostile Dominion coast, Tidehold",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Mara / Veylan",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "interact",
+          "targetKey": "objective_57",
+          "description": "Recover Veylan's sale correspondence and obtain an accountable statement under Aelari authority; separate his grievance from his concealment",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Mara / Veylan",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q057_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q058",
+      "editorialId": 58,
+      "title": "What the Queen Will Share",
+      "track": "main_story",
+      "minLevel": 25,
+      "prerequisites": [
+        "HUMAN_Q057_DONE"
+      ],
+      "contact": "Seralyth",
+      "region": "Kar Durn, Sylvaren, hostile Dominion coast, Tidehold",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Seralyth",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "interact",
+          "targetKey": "objective_58",
+          "description": "Present the local work and findings; receive permission for a limited sample, Caelith's assistance and the coastal lead",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Seralyth",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q058_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q059",
+      "editorialId": 59,
+      "title": "Back Across the Water",
+      "track": "main_story",
+      "minLevel": 25,
+      "prerequisites": [
+        "HUMAN_Q058_DONE"
+      ],
+      "contact": "Nessa",
+      "region": "Kar Durn, Sylvaren, hostile Dominion coast, Tidehold",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Nessa",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "travel",
+          "targetKey": "objective_59",
+          "description": "Depart Tidehold via Northwatch for the second Dominion operation; establish the coastal extraction route",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Nessa",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q059_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q060",
+      "editorialId": 60,
+      "title": "The Rejected Component",
+      "track": "main_story",
+      "minLevel": 25,
+      "prerequisites": [
+        "HUMAN_Q059_DONE"
+      ],
+      "contact": "Sera",
+      "region": "Kar Durn, Sylvaren, hostile Dominion coast, Tidehold",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Sera",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_60",
+          "description": "Retrieve Ilyss's inspection copy from a military observation post by guarded PvE assault or a stealth route; no friendly enemy dialogue",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Sera",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q060_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q061",
+      "editorialId": 61,
+      "title": "The Courier Who Burned Both Copies",
+      "track": "main_story",
+      "minLevel": 25,
+      "prerequisites": [
+        "HUMAN_Q060_DONE"
+      ],
+      "contact": "Mara's field agent",
+      "region": "Kar Durn, Sylvaren, hostile Dominion coast, Tidehold",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Mara's field agent",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_61",
+          "description": "Intercept an Unmade courier before the cached archive is destroyed; retain redundancy through an already lodged duplicate",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Mara's field agent",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q061_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q062",
+      "editorialId": 62,
+      "title": "A Common Hand",
+      "track": "main_story",
+      "minLevel": 25,
+      "prerequisites": [
+        "HUMAN_Q061_DONE"
+      ],
+      "contact": "Mara",
+      "region": "Kar Durn, Sylvaren, hostile Dominion coast, Tidehold",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Mara",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_62",
+          "description": "Compare Aelari and Vaelari records and authorise the Korrath inquiry; establish common suppression, not universal infiltration",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Mara",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q062_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    }
+  ]
+}
