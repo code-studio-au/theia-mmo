@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "status": "needs_manual_provenance_review",
+  "status": "all_original_h_series_triaged_not_approved",
   "source_register": "docs/story/THEIA_HUMAN_QUEST_REGISTER.md",
   "canonical": "Human_1_80_Canonical_Campaign.md",
   "warnings": [
@@ -8,7 +8,8 @@
     "Historical editorial IDs must not be reassigned based solely on titles.",
     "Current minLevel values are planning annotations, not approved runtime eligibility.",
     "Original optional quest identifiers outside the H-series table require separate reconciliation.",
-    "All 24 HS-series original optional quests are now preserved as structured provenance; none is silently equated with a current optional quest."
+    "All 24 HS-series original optional quests are now preserved as structured provenance; none is silently equated with a current optional quest.",
+    "28 unmatched H-series quests now have candidate dispositions; all remain unapproved and original source facts preserved."
   ],
   "legacy_quest_rows": [
     {
@@ -22,9 +23,14 @@
         "Q001"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q001"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H1-02",
@@ -37,9 +43,14 @@
         "Q002"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q002"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H1-03",
@@ -52,9 +63,14 @@
         "Q003"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q003"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H1-04",
@@ -67,9 +83,14 @@
         "Q004"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q004"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H1-05",
@@ -82,9 +103,14 @@
         "Q009"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q009"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H1-06",
@@ -97,9 +123,14 @@
         "Q010"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q010"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H1-07",
@@ -112,9 +143,14 @@
         "Q011"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q011"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H1-08",
@@ -127,9 +163,14 @@
         "Q012"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q012"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H1-09",
@@ -142,9 +183,14 @@
         "Q013"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q013"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H1-10",
@@ -157,9 +203,14 @@
         "Q018"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q018"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H1-11",
@@ -172,9 +223,14 @@
         "Q019"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q019"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H1-12",
@@ -187,9 +243,14 @@
         "Q020"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q020"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H1-13",
@@ -202,9 +263,14 @@
         "Q021"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q021"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H1-14",
@@ -217,9 +283,14 @@
         "Q022"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q022"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H1-15",
@@ -232,9 +303,14 @@
         "Q027"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q027"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H1-16",
@@ -247,9 +323,14 @@
         "Q028"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q028"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H1-17",
@@ -262,9 +343,14 @@
         "Q030"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q030"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H1-18",
@@ -277,9 +363,14 @@
         "Q031"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q031"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H2-01",
@@ -292,9 +383,14 @@
         "Q035"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q035"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H2-02",
@@ -307,9 +403,14 @@
         "Q036"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q036"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H2-03",
@@ -322,9 +423,14 @@
         "Q037"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q037"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H2-04",
@@ -337,9 +443,14 @@
         "Q049"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q049"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H2-05",
@@ -352,9 +463,14 @@
         "Q050"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q050"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H2-06",
@@ -367,9 +483,14 @@
         "Q051"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q051"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H2-07",
@@ -382,9 +503,14 @@
         "Q052"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q052"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H2-08",
@@ -397,9 +523,14 @@
         "Q038"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q038"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H2-09",
@@ -412,9 +543,14 @@
         "Q039"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q039"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H2-10",
@@ -427,9 +563,14 @@
         "Q040"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q040"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H2-11",
@@ -442,9 +583,14 @@
         "Q041"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q041"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H2-12",
@@ -457,9 +603,14 @@
         "Q042"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q042"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H2-13",
@@ -472,9 +623,14 @@
         "Q043"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q043"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H2-14",
@@ -487,9 +643,14 @@
         "Q044"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q044"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H2-15",
@@ -502,9 +663,14 @@
         "Q045"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q045"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H2-16",
@@ -517,9 +683,14 @@
         "Q046"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q046"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H2-17",
@@ -532,9 +703,14 @@
         "Q047"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q047"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H2-18",
@@ -547,9 +723,14 @@
         "Q048"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q048"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H3-01",
@@ -562,9 +743,14 @@
         "Q054"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q054"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H3-02",
@@ -577,9 +763,14 @@
         "Q055"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q055"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H3-03",
@@ -592,9 +783,14 @@
         "Q056"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q056"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H3-04",
@@ -607,9 +803,14 @@
         "Q057"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q057"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H3-05",
@@ -622,9 +823,14 @@
         "Q058"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q058"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H3-06",
@@ -637,9 +843,14 @@
         "Q059"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q059"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H3-07",
@@ -652,9 +863,14 @@
         "Q060"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q060"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H3-08",
@@ -667,9 +883,14 @@
         "Q061"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q061"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H3-09",
@@ -682,9 +903,14 @@
         "Q062"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q062"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H3-10",
@@ -697,9 +923,14 @@
         "Q063"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q063"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H3-11",
@@ -712,9 +943,14 @@
         "Q064"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q064"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H3-12",
@@ -727,9 +963,14 @@
         "Q065"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q065"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H3-13",
@@ -742,9 +983,14 @@
         "Q066"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q066"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H3-14",
@@ -757,9 +1003,14 @@
         "Q067"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q067"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H3-15",
@@ -772,9 +1023,14 @@
         "Q068"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q068"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H3-16",
@@ -787,9 +1043,14 @@
         "Q069"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q069"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H3-17",
@@ -802,9 +1063,14 @@
         "Q070"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q070"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H3-18",
@@ -817,9 +1083,14 @@
         "Q083"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q083"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H4-01",
@@ -830,9 +1101,14 @@
       "source_objective": "Approve the limited mission, resource commitments and extraction plan with each participating authority.",
       "candidate_campaign_refs": [],
       "relation": "unreviewed",
-      "status": "manual_review_required",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "possible_rewrite",
+      "proposed_campaign_refs": [
+        "Q084"
+      ],
+      "proposed_reason": "Approval and extraction overlap, but later canon requires Kel'vari consent."
     },
     {
       "editorial_id": "H4-02",
@@ -845,9 +1121,14 @@
         "Q086"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q086"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H4-03",
@@ -858,9 +1139,14 @@
       "source_objective": "Help Kel'vari workers recover a water run and escape an ancient defence hazard; distinguish residents, victims and willing attackers.",
       "candidate_campaign_refs": [],
       "relation": "unreviewed",
-      "status": "manual_review_required",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "possible_rewrite",
+      "proposed_campaign_refs": [
+        "Q087"
+      ],
+      "proposed_reason": "Kel'vari worker rescue retained; historical location differs."
     },
     {
       "editorial_id": "H4-04",
@@ -871,9 +1157,14 @@
       "source_objective": "Inspect supply, observation and evacuation stations; complete an NPC WvW training exercise or optional live-frontier equivalent.",
       "candidate_campaign_refs": [],
       "relation": "unreviewed",
-      "status": "manual_review_required",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "partial_only",
+      "proposed_campaign_refs": [
+        "Q089"
+      ],
+      "proposed_reason": "Frontier survey overlaps; mandatory WvW training is not part of the current canonical objective."
     },
     {
       "editorial_id": "H4-05",
@@ -886,9 +1177,14 @@
         "Q092"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q092"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H4-06",
@@ -901,9 +1197,14 @@
         "Q094"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q094"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H4-07",
@@ -916,9 +1217,14 @@
         "Q097"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q097"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H4-08",
@@ -931,9 +1237,14 @@
         "Q100"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q100"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H4-09",
@@ -944,9 +1255,14 @@
       "source_objective": "Return home, verify winter stores and wounded-person needs; secure Aldren's revised levy and limited relief commitment.",
       "candidate_campaign_refs": [],
       "relation": "unreviewed",
-      "status": "manual_review_required",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "partial_only",
+      "proposed_campaign_refs": [
+        "Q032"
+      ],
+      "proposed_reason": "Local relief theme overlaps; original royal levy detail not confirmed."
     },
     {
       "editorial_id": "H4-10",
@@ -957,9 +1273,14 @@
       "source_objective": "Sail from Tidehold to the storm-coast staging anchorage; establish an extraction boat and a noncivilian approach.",
       "candidate_campaign_refs": [],
       "relation": "unreviewed",
-      "status": "manual_review_required",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "partial_only",
+      "proposed_campaign_refs": [
+        "Q059"
+      ],
+      "proposed_reason": "Dominion coastal journey overlaps; original staging route differs."
     },
     {
       "editorial_id": "H4-11",
@@ -970,9 +1291,14 @@
       "source_objective": "Rescue the captured Covenant team; bypass occupied pilgrimage sites or confront military patrols on the controlled PvE route.",
       "candidate_campaign_refs": [],
       "relation": "unreviewed",
-      "status": "manual_review_required",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "partial_only",
+      "proposed_campaign_refs": [
+        "Q039"
+      ],
+      "proposed_reason": "Rescue of a supply/survey team overlaps but is in a different arc."
     },
     {
       "editorial_id": "H4-12",
@@ -983,9 +1309,14 @@
       "source_objective": "Recover Voss's receipt, a depot tally and Shorvek's cached objection; corroborate supply theft without a friendly Vorrath contact.",
       "candidate_campaign_refs": [],
       "relation": "unreviewed",
-      "status": "manual_review_required",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "partial_only",
+      "proposed_campaign_refs": [
+        "Q041"
+      ],
+      "proposed_reason": "Hostile Dominion depot records overlap; original named witnesses not retained."
     },
     {
       "editorial_id": "H4-13",
@@ -996,9 +1327,14 @@
       "source_objective": "Compare the dispatch's security subcontract with the Cassian case; locate the next archive at a Shroud research station.",
       "candidate_campaign_refs": [],
       "relation": "unreviewed",
-      "status": "manual_review_required",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "partial_only",
+      "proposed_campaign_refs": [
+        "Q112"
+      ],
+      "proposed_reason": "Contract evidence overlaps; Shroud archive destination differs."
     },
     {
       "editorial_id": "H4-14",
@@ -1009,9 +1345,14 @@
       "source_objective": "Survey separate captive exits and conditioning controls at that station; make the escape plan independent of faction cooperation.",
       "candidate_campaign_refs": [],
       "relation": "unreviewed",
-      "status": "manual_review_required",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "possible_rewrite",
+      "proposed_campaign_refs": [
+        "Q115"
+      ],
+      "proposed_reason": "Captive extraction overlaps; new Su'vareth dungeon changes location and sequence."
     },
     {
       "editorial_id": "H4-15",
@@ -1024,9 +1365,14 @@
         "Q115"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q115"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H4-16",
@@ -1037,9 +1383,14 @@
       "source_objective": "Cross-check payments, access, false-attribution instructions and ancient identity; establish Unmade orchestration through several sources.",
       "candidate_campaign_refs": [],
       "relation": "unreviewed",
-      "status": "manual_review_required",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "possible_rewrite",
+      "proposed_campaign_refs": [
+        "Q114"
+      ],
+      "proposed_reason": "Corroboration of Unmade orchestration overlaps."
     },
     {
       "editorial_id": "H4-17",
@@ -1050,9 +1401,14 @@
       "source_objective": "Present a redacted briefing; Aldren corrects his case record and orders review of related prosecutions, without ending the war.",
       "candidate_campaign_refs": [],
       "relation": "unreviewed",
-      "status": "manual_review_required",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "possible_rewrite",
+      "proposed_campaign_refs": [
+        "Q117"
+      ],
+      "proposed_reason": "Royal correction retained; specifics must be reviewed."
     },
     {
       "editorial_id": "H4-18",
@@ -1063,9 +1419,14 @@
       "source_objective": "Confront Cassian in lawful custody with the independent case; conclude his investigative role and submit the prosecution's evidence, without a pardon or player sentencing choice.",
       "candidate_campaign_refs": [],
       "relation": "unreviewed",
-      "status": "manual_review_required",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "partial_only",
+      "proposed_campaign_refs": [
+        "Q117"
+      ],
+      "proposed_reason": "Cassian custody follow-up not clearly represented as separate current quest."
     },
     {
       "editorial_id": "H5-01",
@@ -1076,9 +1437,14 @@
       "source_objective": "Combine recovered diagrams and regional measurements; locate the Chainworks' proposed Major Anchor expansion.",
       "candidate_campaign_refs": [],
       "relation": "unreviewed",
-      "status": "manual_review_required",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "partial_only",
+      "proposed_campaign_refs": [
+        "Q120"
+      ],
+      "proposed_reason": "Anchor network survey overlaps; Chainworks expansion is no longer the same story."
     },
     {
       "editorial_id": "H5-02",
@@ -1089,9 +1455,14 @@
       "source_objective": "Attend Tidehold's restricted council, provide the operational case and accept a limited expedition mandate.",
       "candidate_campaign_refs": [],
       "relation": "unreviewed",
-      "status": "manual_review_required",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "partial_only",
+      "proposed_campaign_refs": [
+        "Q127"
+      ],
+      "proposed_reason": "Limited mandate overlaps; Tidehold council details differ."
     },
     {
       "editorial_id": "H5-03",
@@ -1102,9 +1473,14 @@
       "source_objective": "Compare independent network records and firsthand testimony; learn Nhal's name and confinement without the full primordial cosmology.",
       "candidate_campaign_refs": [],
       "relation": "unreviewed",
-      "status": "manual_review_required",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "conflicts_with_reveal_gate",
+      "proposed_campaign_refs": [
+        "Q143"
+      ],
+      "proposed_reason": "Original Nhal naming earlier than current Q143; do not migrate old timing."
     },
     {
       "editorial_id": "H5-04",
@@ -1115,9 +1491,14 @@
       "source_objective": "Help the home relief circuit reach wounded and winter stores; observe the practical results of the opening road work.",
       "candidate_campaign_refs": [],
       "relation": "unreviewed",
-      "status": "manual_review_required",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "partial_only",
+      "proposed_campaign_refs": [
+        "Q032"
+      ],
+      "proposed_reason": "Home relief theme overlaps, not necessarily same narrative beat."
     },
     {
       "editorial_id": "H5-05",
@@ -1128,9 +1509,14 @@
       "source_objective": "Inspect Edric's earlier verification requests and obtain a protected independent-records warrant.",
       "candidate_campaign_refs": [],
       "relation": "unreviewed",
-      "status": "manual_review_required",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "partial_only",
+      "proposed_campaign_refs": [
+        "Q106"
+      ],
+      "proposed_reason": "Edric evidence overlaps; original independent-record warrant differs."
     },
     {
       "editorial_id": "H5-06",
@@ -1141,9 +1527,14 @@
       "source_objective": "Undertake the fourth Dominion voyage; assess Rukhan's revised defences and Nemi's corrected garrison accounts.",
       "candidate_campaign_refs": [],
       "relation": "unreviewed",
-      "status": "manual_review_required",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "partial_only",
+      "proposed_campaign_refs": [
+        "Q059"
+      ],
+      "proposed_reason": "Coastal return overlaps; old named military records not retained."
     },
     {
       "editorial_id": "H5-07",
@@ -1154,9 +1545,14 @@
       "source_objective": "Rescue his extraction unit from a relay approach and return it to a secure coastal route.",
       "candidate_campaign_refs": [],
       "relation": "unreviewed",
-      "status": "manual_review_required",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "partial_only",
+      "proposed_campaign_refs": [
+        "Q039"
+      ],
+      "proposed_reason": "Rescue theme overlaps but original relay context differs."
     },
     {
       "editorial_id": "H5-08",
@@ -1167,9 +1563,14 @@
       "source_objective": "Recover timing tables and the support assembly from the Unmade relay; fight its defenders or use a solo infiltration route.",
       "candidate_campaign_refs": [],
       "relation": "unreviewed",
-      "status": "manual_review_required",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "partial_only",
+      "proposed_campaign_refs": [
+        "Q130"
+      ],
+      "proposed_reason": "Relay schedule evidence overlaps, no verified one-to-one match."
     },
     {
       "editorial_id": "H5-09",
@@ -1182,9 +1583,14 @@
         "Q071"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q071"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H5-10",
@@ -1197,9 +1603,14 @@
         "Q072"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q072"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H5-11",
@@ -1212,9 +1623,14 @@
         "Q073"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q073"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     },
     {
       "editorial_id": "H5-12",
@@ -1225,9 +1641,14 @@
       "source_objective": "Preserve diagrams during Thes'var's observation-post intervention and withdraw the exposed team; do not kill a founder.",
       "candidate_campaign_refs": [],
       "relation": "unreviewed",
-      "status": "manual_review_required",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "conflicts_with_current_timing",
+      "proposed_campaign_refs": [
+        "Q163"
+      ],
+      "proposed_reason": "Thes'var early intervention differs from current invitation and final death."
     },
     {
       "editorial_id": "H5-13",
@@ -1238,9 +1659,14 @@
       "source_objective": "Stage NPC support crews, medical stores and enclave boundary protections; verify extraction before assault.",
       "candidate_campaign_refs": [],
       "relation": "unreviewed",
-      "status": "manual_review_required",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "possible_rewrite",
+      "proposed_campaign_refs": [
+        "Q154"
+      ],
+      "proposed_reason": "Extraction preparation overlaps, different chapter timing."
     },
     {
       "editorial_id": "H5-14",
@@ -1251,9 +1677,14 @@
       "source_objective": "Enter the solo finale, evacuate coerced workers and disable the courier link identified overseas.",
       "candidate_campaign_refs": [],
       "relation": "unreviewed",
-      "status": "manual_review_required",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "conflicts_with_finale",
+      "proposed_campaign_refs": [
+        "Q155"
+      ],
+      "proposed_reason": "Old level-60 finale superseded by level-80 convergence."
     },
     {
       "editorial_id": "H5-15",
@@ -1264,9 +1695,14 @@
       "source_objective": "Capture Voss and defeat Keld after isolating his three defence supports; essential records survive checkpoint resets.",
       "candidate_campaign_refs": [],
       "relation": "unreviewed",
-      "status": "manual_review_required",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "conflicts_with_finale",
+      "proposed_campaign_refs": [
+        "Q156"
+      ],
+      "proposed_reason": "Keld/Voss outcome differs from Khor'vun and Veilbreaker."
     },
     {
       "editorial_id": "H5-16",
@@ -1277,9 +1713,14 @@
       "source_objective": "Stop forced synchronisation and select safe severance or bounded inversion; isolate the installation and complete extraction on either route.",
       "candidate_campaign_refs": [],
       "relation": "unreviewed",
-      "status": "manual_review_required",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "conflicts_with_finale",
+      "proposed_campaign_refs": [
+        "Q181"
+      ],
+      "proposed_reason": "Old local severance choice cannot replace canonical Nhal shattering."
     },
     {
       "editorial_id": "H5-17",
@@ -1290,9 +1731,14 @@
       "source_objective": "Record the branch-specific result and remaining uncertainty; affirm that the First Anchor and wider network remain.",
       "candidate_campaign_refs": [],
       "relation": "unreviewed",
-      "status": "manual_review_required",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "partial_only",
+      "proposed_campaign_refs": [
+        "Q162"
+      ],
+      "proposed_reason": "Technical evidence overlaps; original branch-specific results differ."
     },
     {
       "editorial_id": "H5-18",
@@ -1303,9 +1749,14 @@
       "source_objective": "Lodge the restricted technical report, hear the court's conviction and permanent-imprisonment sentence for Cassian, and confirm the public correction, sovereignty, enclave limits and continuing war.",
       "candidate_campaign_refs": [],
       "relation": "unreviewed",
-      "status": "manual_review_required",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "partial_only",
+      "proposed_campaign_refs": [
+        "Q183"
+      ],
+      "proposed_reason": "Postwar report overlaps; Cassian sentence not confirmed in new canon."
     },
     {
       "editorial_id": "H5-19",
@@ -1316,9 +1767,14 @@
       "source_objective": "Distribute operational safety records under shared accountability; no cleansing, immortality grant or public Guardian institution.",
       "candidate_campaign_refs": [],
       "relation": "unreviewed",
-      "status": "manual_review_required",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "partial_only",
+      "proposed_campaign_refs": [
+        "Q170"
+      ],
+      "proposed_reason": "Shared technical knowledge overlaps, but new finale differs."
     },
     {
       "editorial_id": "H5-20",
@@ -1331,9 +1787,14 @@
         "Q184"
       ],
       "relation": "unreviewed",
-      "status": "exact_title_candidate_only",
+      "status": "editorial_review_required",
       "runtime_id": null,
-      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role.",
+      "proposed_relation": "exact_title_candidate",
+      "proposed_campaign_refs": [
+        "Q184"
+      ],
+      "proposed_reason": "Title matches; verify objectives, prerequisites, NPCs and continuity before confirming reuse."
     }
   ],
   "canonical_campaign_rows": [
