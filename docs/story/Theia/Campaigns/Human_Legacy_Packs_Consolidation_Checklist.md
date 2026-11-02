@@ -7,8 +7,8 @@
 | Band | Playable quest pack | Detailed implementation brief |
 |---|---|---|
 | 1–10 | **Retired** (content preserved in `Human_Q001_Q017_Gameplay_Detail_Migration.md`) | no matching chapter brief in this inventory |
-| 10–20 | `Human_10_20_Playable_Quest_Pack.md` | `Human_10_20_Implementation_Brief.md` |
-| 20–30 | `Human_20_30_Playable_Quest_Pack.md` | `Human_20_30_Implementation_Brief.md` |
+| 10–20 | **Retired** (Q018–Q034 migration retained) | **Retired** |
+| 20–30 | **Retired** (Q035–Q062 migration retained) | **Retired** |
 | 30–35 | `Human_30_35_Playable_Quest_Pack.md` | `Human_30_35_Implementation_Brief.md` |
 | 35–45 | `Human_35_45_Playable_Quest_Pack.md` | `Human_35_45_Implementation_Brief.md` |
 | 45–55 | `Human_45_55_Playable_Quest_Pack.md` | `Human_45_55_Implementation_Brief.md` |
@@ -75,3 +75,7 @@ All four remaining legacy files (`Human_70_80_Playable_Quest_Pack.md`, `Human_70
 ## Verified deletion — levels 1–10
 
 The Q001–Q017 legacy playable pack was removed from the active tree after its 17 sections and distinct gameplay/QA details were preserved in [Q001–Q017 Gameplay Detail Migration](Human_Q001_Q017_Gameplay_Detail_Migration.md). Direct links in the production specification, NPC dialogue and vertical-slice handoff were updated to the current migration document. The source remains recoverable through Git history. **16 legacy packs/briefs remain** for unique-detail and inbound-reference verification before deletion. This does not imply approval of all migrated mechanics as executable quest objectives.
+
+## Verified deletion — levels 10–30
+
+Four legacy sources were removed after both chapter pairs were compared, their 17 and 28 quest references confirmed, and current narrative/QA/recovery details preserved in [Q018–Q034 migration](Human_Q018_Q034_Legacy_Pack_Migration.md) and [Q035–Q062 migration](Human_Q035_Q062_Legacy_Pack_Migration.md). The current production specification links were already redirected to those documents. Git history retains originals. **5 of 17 legacy pack/brief files are now deleted; 12 remain.** This is an editorial cleanup, not a claim that the migrated quest data is executable or production ready.
