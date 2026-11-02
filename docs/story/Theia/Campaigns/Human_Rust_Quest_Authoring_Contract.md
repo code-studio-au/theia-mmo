@@ -39,7 +39,7 @@
 
 ## Level and progression policy
 
-Narrative bands (1–5, 5–10, etc.) describe pacing. **Do not** translate them to `minimum_level` prerequisites unless explicitly approved as a real gate. The previously generated `minLevel` in `Human_1_80_Quest_Dependencies.json` and all quest JSON drafts is a **provisional planning annotation** and must be reviewed or omitted from executable eligibility. Any explicit level-80 finale gate must be separately documented as intentional; the level-5 narrative transition is likewise not automatically approved as a runtime requirement.
+Narrative bands (1–5, 5–10, etc.) describe pacing. **Do not** translate them to `minimum_level` prerequisites unless explicitly approved as a real gate. The previously generated `minLevel` in `Human_1_80_Current_Quest_Authoring_Manifest.json` and all quest JSON drafts is a **provisional planning annotation** and must be reviewed or omitted from executable eligibility. Any explicit level-80 finale gate must be separately documented as intentional; the level-5 narrative transition is likewise not automatically approved as a runtime requirement.
 
 ## Migration and validation
 
