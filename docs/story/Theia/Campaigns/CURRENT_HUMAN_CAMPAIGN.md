@@ -30,6 +30,10 @@
 
 All 184 quests have completed first-pass Rust authoring review. Safe editorial corrections have been applied directly to the sole manifest: spoiler-safe Grey Surveyor contacts, Q157 ongoing Shroud fade, and an explicit Q181 Oth'varen death fact between alignment confirmation and final inversion. Proposed optional access conditions and the level-80 finale gate are recorded as **non-executable review metadata**, not silently activated. The new Q181 story-fact objective requires future Rust support. The 184-quest count is unchanged; the authored stage count is now 684.
 
+## Production register retirement
+
+The duplicate 184-entry `Human_1_80_Production_Quest_Specification.md` has been retired from the active tree. All 184 historical location bands, player-purpose descriptions and lore summaries are preserved as **unapproved editorial context** in [Location and Lore Reference](Human_1_80_Location_and_Lore_Editorial_Reference.md); its outdated hard-level and generic-stage claims were not migrated. The current manifest remains the sole structured working quest inventory. The 17 legacy playable packs/briefs have also been retired, with originals recoverable through Git history.
+
 ## Next reconciliation milestones
 
 1. Verify all 92 H-series and 24 HS-series original quest IDs against canonical Q001–Q184 and record reused/modified/split/merged/retired/new.
