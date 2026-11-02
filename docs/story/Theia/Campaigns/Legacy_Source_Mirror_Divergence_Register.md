@@ -29,3 +29,7 @@ A further check found that **both** root and mirrored `THEIA_MODERN_STORY_REVELA
 ## Remaining seven mirrors — terminology is not the whole difference
 
 A second normalization pass tested common historical substitutions (seventh race/creation/project/researchers → Kel'vari equivalents) across the seven remaining `THEIA_*.md` mirror pairs. **None became fully equivalent.** Do not mass-delete these files or apply global search-and-replace: the historical Seventh terminology can be relevant to original creator decision provenance, and additional differences remain. Continue document-by-document review, particularly the World Bible, Chronicle, and source decision records. The Revelation Timeline mirror was separately verified equivalent and retired.
+
+## Source Decision Recovery comparison — further evidence
+
+The original and mirror of `THEIA_SOURCE_DECISION_RECOVERY.md` have many localized historical name substitutions beyond the first difference, including Seventh/Kel'vari researchers, enclave residents, investigators, ancestry, city names and founding terminology. An attempted terminology-normalized comparison still encountered grammatical and editorial differences; **full equivalence is not established**. Preserve the root original and mirror. Historical references to the unnamed Seventh race should not be globally rewritten without distinguishing original creator statements from later canon. No source content was intentionally changed by this review.
