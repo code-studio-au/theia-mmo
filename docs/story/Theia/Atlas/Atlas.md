@@ -4,7 +4,7 @@
 ![[Campaigns/Story Browser.base#Locations]]
 
 ## Geography and travel
-[Read historical source section](../Sources/THEIA_HUMAN_CAST_AND_PLACES.md)
+[Read historical source section](../../THEIA_HUMAN_CAST_AND_PLACES.md)
 
 ## Reference shelves
 - [[Sources/THEIA_HUMAN_HEARTLANDS_SETTLEMENT_REGISTER|Heartlands Settlement Register]]
