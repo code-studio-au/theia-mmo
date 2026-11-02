@@ -75,3 +75,11 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Full root and imported World Bible text compared after normalizing Obsidian `[[wikilinks]]`; content matches.
 - [x] Deleted `docs/story/Theia/Sources/THEIA_WORLD_BIBLE.md` from `main` (commit `4ed71c05`). Canonical root `THEIA_WORLD_BIBLE.md` remains. Git history preserves the retired file.
 - [ ] Continue other imported source duplicates, obsolete Obsidian notes, campaign and lore audits; tracker itself must still be deleted only at final completion.
+
+## Second imported-source duplicate audit — 2 November 2026
+
+- [x] Compared full root/imported pairs for Interwoven Chronicle (826 lines each; five normalized differing lines), Detailed Lore Archive (600 each; 36 differing lines), Canon Reconciliation Report (135 each; 21 differing lines), and DECISIONS (normalized text identical).
+- [x] Updated four Chronicle creation references to named Kel'vari (commit `c97df5ca`). Updated Chronicle's stale claim that the ending remains open, pointing instead to the approved level-80 canonical campaign (commit `445d5451`).
+- [ ] Retire imported Chronicle only after checking remaining live incoming links and normalized equality (editorial ending intentionally newer than historical imported source).
+- [ ] Review and reconcile 36 Detailed Lore Archive differences and 21 Canon Reconciliation Report differences before deleting either imported copy.
+- [ ] Retire duplicate imported DECISIONS only after validating all incoming links; content matches root after wikilink normalization.
