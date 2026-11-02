@@ -135,3 +135,8 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Root `docs/story/IMPORT_MANIFEST.json` and `Theia/Sources/IMPORT_MANIFEST.json` were byte-identical; deleted duplicate source manifest (commit `5bde970f`). Root import provenance remains.
 - [x] Retired obsolete `Theia/Sources/README.md` after its source mirrors were removed (commit `ad728521`). Root story README and import manifest remain.
 - [ ] Verify no remaining live source mirrors or stale references, then continue Obsidian/campaign cleanup. This temporary tracker must be deleted at the very end.
+
+## Obsidian-era reading-map corrections — 2 November 2026
+
+- [x] Corrected stale 'both versions remain' statements in Chronicle, Detailed Lore Archive and Canon Reconciliation Report reading maps (commits `449894fd`, `cd66f46f`, `2f9964e1`). Removed duplicate root links while retaining authoritative root references.
+- [ ] Audit remaining Obsidian reading maps and legacy quest navigation for stale 1–60 claims and broken links; preserve original H/HS ID provenance until crosswalk is approved.
