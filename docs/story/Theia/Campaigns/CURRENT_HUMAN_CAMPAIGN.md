@@ -6,7 +6,7 @@
 
 1. **Narrative canon:** [Human 1–80 Canonical Campaign](Human_1_80_Canonical_Campaign.md) — locked plot, 184 editorial quest concepts and immutable story outcomes. Any contradiction in downstream files resolves here.
 2. **Quest authoring contract:** [Rust Quest Authoring Contract](Human_Rust_Quest_Authoring_Contract.md) — required IDs, evidence, giver/turn-in, choices, rewards, retries, credit scopes and planned versus implemented capabilities.
-3. **Provenance and migration:** [Editorial ID Crosswalk Draft](Human_Quest_Editorial_ID_Crosswalk_Draft.json) — original H-series identifiers and source objectives; mappings not yet approved. Do not allocate stable runtime IDs based solely on titles.
+3. **Provenance and migration:** [Editorial ID Crosswalk Draft](Human_Quest_Editorial_ID_Crosswalk_Draft.json) — all 92 original H-series identifiers and all 24 HS-series optional IDs with source objectives; mappings not yet approved. Do not allocate stable runtime IDs based solely on titles.
 4. **Working quest data:** [Quest Data Index](Human_1_80_Structured_Quest_Data_Index.md) — nine JSON drafts for Q001–Q184, currently **authoring drafts only**. Existing `minLevel` values are pacing annotations, not automatically hard runtime gates.
 5. **Dialogue:** [Dialogue Continuity Audit](Human_1_80_Dialogue_Continuity_Audit.md), [Branching Key Scenes](Human_1_80_Key_Scenes_Branching_Dialogue.md) and per-level NPC dialogue scripts. Dialogue is first pass and subject to reveal-gate review.
 6. **Encounters:** [Encounter Barks and Cinematic Timing](Human_1_80_Encounter_Barks_and_Cinematic_Timing.md) — authored design, not integrated encounter code.
@@ -28,7 +28,7 @@
 
 ## Next reconciliation milestones
 
-1. Verify each H-series ID and optional regional quest against canonical Q001–Q184 and record reused/modified/split/merged/retired/new.
+1. Verify all 92 H-series and 24 HS-series original quest IDs against canonical Q001–Q184 and record reused/modified/split/merged/retired/new.
 2. Allocate stable runtime IDs, preserving original editorial IDs and separate Q reference.
 3. Convert authored quest drafts into strongly typed Rust-compatible data, with planned capability flags and no invented hard level gates.
 4. Consolidate any unique dialogue, stage or encounter details from redundant drafts before removing them.
