@@ -1,6 +1,6 @@
 # Theia — Human Levels 10–20 NPC Dialogue Scripts, Pass 1
 
-**Status: Needs Review — original authored dialogue, not voice-recorded or engine-integrated.** Story authority: [Human 1–80 Canonical Campaign](Human_1_80_Canonical_Campaign.md). Companion to [Human 10–20 Quest Data](Human_10_20_Quest_Data_Draft.json). Every quest has offer, player response, NPC reply and completion dialogue. These are dialogue drafts, not final localization IDs.
+**Status: Needs Review — original authored dialogue, not voice-recorded or engine-integrated.** Story authority: [Human 1–80 Canonical Campaign](Human_1_80_Canonical_Campaign.md). Companion to [Human 10–20 Quest Data](Human_1_80_Current_Quest_Authoring_Manifest.json). Every quest has offer, player response, NPC reply and completion dialogue. These are dialogue drafts, not final localization IDs.
 
 ## Character and knowledge direction
 
