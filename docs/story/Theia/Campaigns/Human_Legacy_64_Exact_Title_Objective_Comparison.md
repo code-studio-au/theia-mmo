@@ -474,3 +474,15 @@
 | H1-11 → Q019 | H1-10 → Q018 | Authorized register access, dated copy, Delegation chronology and authentication match. Verify record custody and the post-Delegation reorganization interpretation. |
 
 **Status:** five additional strong structural candidates with matching prerequisite chains and contacts. Historical travel options and evidence custody are not automatically approved quest stages. No runtime IDs or quest data were changed.
+
+## Prerequisite and objective review — H1-12 to H1-16 (2 November 2026)
+
+| Legacy → current | Chain alignment | Evidence and remaining detail |
+|---|---|---|
+| H1-12 → Q020 | H1-11 → Q019 | Aldren audience, Edric account, Cassian's plausible military lead and continuing investigative warrant all match. |
+| H1-13 → Q021 | H1-12 → Q020 | Garrick's preserved deployment evidence and the distinction between opposing peace and involvement match; verify wording does not imply his guilt. |
+| H1-14 → Q022 | H1-13 → Q021 | Authorization timing, administrative format, witness testimony and no premature accusation explicitly match. |
+| H1-15 → Q027 | H1-14 → Q022 | Surviving intermediary, extraction, authenticated payment records and custody chain match; verify the original intended-killing link is conveyed in evidence/dialogue. |
+| H1-16 → Q028 | H1-15 → Q027 | Private corroborated case, Aldren's lawful detention order, Cassian's flight and no attack on neutral court NPC match. |
+
+**Status:** five further strong structural candidates with matching contact and prerequisite chains. No mapping approvals, runtime IDs, level gates or quest-stage edits are implied.
