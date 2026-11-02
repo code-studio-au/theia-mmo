@@ -1,7 +1,7 @@
 ---
 type: character
 canon_status: Needs Review
-source: "[[Sources/THEIA_HUMAN_CAST_AND_PLACES]]"
+source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
 up: "[[Characters]]"
 ---
 # Warden Shorvek Tal
@@ -18,7 +18,7 @@ Patrols, sacred-site boundaries and a cached objection to missing supplies
 ## Boundary and proposed resolution
 Enemy to an intrusion, not a caricature of Ascendant worship. Continues defending the coast; records do not settle the history of exile.
 
-Source: [[Sources/THEIA_HUMAN_CAST_AND_PLACES#Dominion characters required by this human route|Dominion characters required by this human route]].
+Source: [Dominion characters required by this human route](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
 [[Characters]] · [[Human Campaign]]
 
