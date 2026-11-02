@@ -1,51 +1,34 @@
-# Human quest editorial-ID reconciliation — first pass
+# Human Quest Editorial-ID Reconciliation — Current Review
 
-**Status: Needs Review; no runtime IDs allocated.** The [crosswalk JSON](Human_Quest_Editorial_ID_Crosswalk_Draft.json) preserves the original H-series IDs and source objectives separately from the canonical [Human 1–80 campaign](Human_1_80_Canonical_Campaign.md). It is a provenance tool, not a quest import file.
+**Status: all legacy entries triaged; mapping approval outstanding.** This is the active migration review companion to [Human Quest Editorial-ID Crosswalk](Human_Quest_Editorial_ID_Crosswalk_Draft.json) and [Current Human Campaign](CURRENT_HUMAN_CAMPAIGN.md). Canonical story remains [Human 1–80 Campaign](Human_1_80_Canonical_Campaign.md).
 
-## Findings
+## Coverage
 
-- **92 original H-series quest rows** inspected from the superseded Human register.
-- **64 exact normalized-title candidates** in the current 184-quest campaign. A matching title alone is not proof of a reused quest.
-- **28 original quests have no exact title candidate** and require manual split/merge/retirement review.
-- **184 canonical campaign entries** retain their Q001–Q184 references. None has yet been assigned a permanent runtime ID.
-- The original register also describes optional local quests; this pass parses only rows bearing an H-series ID. Those additional identifiers need separate review.
+- **92 original H-series quests:** 64 exact-title candidates, 28 other proposed dispositions. None automatically inherits a stable runtime ID.
+- **24 original HS-series optional quests:** thematic candidates identified, but not proven equivalent. Several distinct HS quests map to one new Q entry, so they may represent separate regional content worth retaining.
+- **184 current campaign entries:** editorial Q001–Q184 references; runtime identity and provenance approval remain open.
+- **No hard level gates approved by this review.** All prior level bands and `minLevel` data remain planning annotations until a specific runtime gate is intentionally adopted.
 
-## Unmatched legacy quests requiring review
+## Canon conflicts that must not be resurrected
 
-- **H4-01 — An Expedition, Not an Army** (original band 40–41)
-- **H4-03 — A Living Homeland** (original band 41–43)
-- **H4-04 — The Frontier Beyond the Camp** (original band 41–43)
-- **H4-09 — What the Village Can Give** (original band 45–47)
-- **H4-10 — A Third Shore** (original band 45–47)
-- **H4-11 — The Missing Survey Team** (original band 46–48)
-- **H4-12 — Stolen Under Another Flag** (original band 46–48)
-- **H4-13 — The Inherited Contract** (original band 47–49)
-- **H4-14 — A Way Out for the Bound** (original band 48–49)
-- **H4-16 — More Than a Confession** (original band 50)
-- **H4-17 — The King's Correction** (original band 50)
-- **H4-18 — The Answer Cassian Avoided** (original band 50)
-- **H5-01 — A Branch Still Growing** (original band 50–51)
-- **H5-02 — The Covenant's Terms** (original band 50–52)
-- **H5-03 — A Name Beyond the Veil** (original band 51–53)
-- **H5-04 — The Crossing Again** (original band 51–53)
-- **H5-05 — What Edric Asked** (original band 52–54)
-- **H5-06 — The Coast Remembers** (original band 52–54)
-- **H5-07 — The Team Behind the Line** (original band 53–55)
-- **H5-08 — The Relay's Schedule** (original band 54–56)
-- **H5-12 — The Architect's Objection** (original band 56–58)
-- **H5-13 — Everyone's Route Home** (original band 57–59)
-- **H5-14 — Cut the Outer Links** (original band 58–59)
-- **H5-15 — The Ledger and the Warden** (original band 59–60)
-- **H5-16 — The Severed Chain** (original band 60)
-- **H5-17 — What the Instruments Prove** (original band 60)
-- **H5-18 — A Corrected Record** (original band 60)
-- **H5-19 — A Different Legacy** (original band 60)
+- **H5-03 — A Name Beyond the Veil:** proposed Q143; Original Nhal naming earlier than current Q143; do not migrate old timing.
+- **H5-12 — The Architect's Objection:** proposed Q163; Thes'var early intervention differs from current invitation and final death.
+- **H5-14 — Cut the Outer Links:** proposed Q155; Old level-60 finale superseded by level-80 convergence.
+- **H5-15 — The Ledger and the Warden:** proposed Q156; Keld/Voss outcome differs from Khor'vun and Veilbreaker.
+- **H5-16 — The Severed Chain:** proposed Q181; Old local severance choice cannot replace canonical Nhal shattering.
 
-## Required next steps
+## Approval rules
 
-1. Compare source objective and new gameplay objective for each title candidate; explicitly approve `reused`, `modified`, `split`, `merged`, `retired`, or `new` with supporting rationale.
-2. Resolve optional local quest provenance and all unmatched H-series quests before assigning `theia.quest.human.h1-14`-style IDs.
-3. Allocate stable runtime IDs for new quests independently; preserve old H-series editorial identifiers and the current Q references as separate fields.
-4. Remove implicit hard level gates from executable eligibility. Preserve planning bands as editorial annotations; only add gates where separately approved.
-5. Populate giver/turn-in stable NPC IDs, evidence semantics, possession-versus-history, item consumption, credit scope, rewards, retry and required engine capability status.
-6. Do not migrate or rewrite the existing JSON quest definitions as executable Rust data until these mappings are approved.
+1. Compare each legacy source objective, contact, prerequisites and consequence with current quest-stage data. Classify `reused`, `modified`, `split`, `merged`, `retired`, or `new`; record rationale and reviewer approval.
+2. If several old quests suggest the same Q entry, **do not** merge editorial IDs. Either explicitly record a multi-source merge or preserve separate regional content.
+3. If an old optional quest has a unique standalone purpose, keep it as a candidate for a separate regional quest; do not erase it by mapping to a similar story beat.
+4. Allocate immutable runtime IDs only after provenance decisions. Existing `HUMAN_Q###_DONE` flags are temporary design aliases.
+5. Validate objective evidence, current inventory possession, consumption at turn-in, NPC IDs, credit scope, rewards and retry rules against the Rust authoring contract.
+6. Only then remove the old H/HS register from the active tree. Git history will preserve it, and the approved migration ledger will retain its original IDs and objectives.
+
+## Remaining repository cleanup
+
+- Superseded 1–60 drafts and the JavaScript prototype have already been removed.
+- The old H-series register and duplicated source copy remain **temporarily** until the mapping is approved.
+- Multiple playable quest packs and implementation briefs may duplicate the structured JSON; compare their unique mechanics and dialogue before deleting.
+- Unrelated engine and world lore documentation is outside this Human campaign cleanup.
