@@ -2,7 +2,7 @@
 type: event
 chronology_order: 13
 canon_status: source-specific
-source: "../../Sources/THEIA_INTERWOVEN_CHRONICLE.md"
+source: "../../../THEIA_INTERWOVEN_CHRONICLE.md"
 up: "[[Historical Timeline]]"
 ---
 # Network Threshold and Modern Awakening
@@ -27,6 +27,6 @@ By the opening of [[Human Campaign|Act I]], Minor Resonators, Regional Anchors a
 
 The Chronicle includes connective prose; its detailed narrative retains the source's approval boundaries.
 
-[Read historical source section](../../Sources/THEIA_INTERWOVEN_CHRONICLE.md)
+[Read historical source section](../../../THEIA_INTERWOVEN_CHRONICLE.md)
 
 [[Nhal]] · [[The Unmade]] · [[Anchors and the Shroud]] · [[Historical Timeline]]
