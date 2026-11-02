@@ -1,7 +1,7 @@
 ---
 type: people
 canon_status: confirmed-foundation; details-open
-source: "../../Sources/THEIA_WORLD_BIBLE.md"
+source: "../../../../THEIA_WORLD_BIBLE.md"
 up: "[[Peoples and Allegiances]]"
 ---
 # Vorrath
@@ -15,7 +15,7 @@ trolls co-created by Keeper + Ascendant; chiefly Ascendant-worshipping; exiled r
 - [[Warden Shorvek Tal]] — coastal military custodian; Needs Review.
 
 ## Broader context
-[Read historical source section](../../Sources/THEIA_WORLD_BIBLE.md)
+[Read historical source section](../../../../THEIA_WORLD_BIBLE.md)
 
 [[Magic]] · [[The Seven Gods]]
 
