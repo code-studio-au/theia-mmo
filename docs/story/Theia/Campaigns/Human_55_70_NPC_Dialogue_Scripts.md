@@ -1,6 +1,6 @@
 # Theia — Human Levels 55–70 NPC Dialogue Scripts, Pass 1
 
-**Status: Needs Review; original authored dialogue, not localized or implemented.** Authority: [Human 1–80 Canonical Campaign](Human_1_80_Canonical_Campaign.md). Structured objectives: [Human 55–70 Quest Data](Human_55_70_Quest_Data_Draft.json).
+**Status: Needs Review; original authored dialogue, not localized or implemented.** Authority: [Human 1–80 Canonical Campaign](Human_1_80_Canonical_Campaign.md). Structured objectives: [Human 55–70 Quest Data](Human_1_80_Current_Quest_Authoring_Manifest.json).
 
 ## Continuity and performance rules
 
