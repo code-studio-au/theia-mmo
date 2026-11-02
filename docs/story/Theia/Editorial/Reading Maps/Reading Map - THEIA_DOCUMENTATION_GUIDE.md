@@ -1,16 +1,8 @@
----
-type: source-map
-source: "[[Sources/THEIA_DOCUMENTATION_GUIDE]]"
----
-# Reading Map - THEIA_DOCUMENTATION_GUIDE
+# Historical Documentation Guide — Reading Map Redirect
 
-[[Sources/THEIA_DOCUMENTATION_GUIDE|Open the complete source]]. Section labels and later explicit decisions govern approval. This navigation map makes every source section discoverable without changing source wording.
+The Obsidian mirror was retired after verification against the preserved original.
 
-- [[Sources/THEIA_DOCUMENTATION_GUIDE#Theia documentation — source of truth and reading order|Theia documentation — source of truth and reading order]]
-  - [[Sources/THEIA_DOCUMENTATION_GUIDE#Current documents (after the original 403-page conversation export was supplied)|Current documents (after the original 403-page conversation export was supplied)]]
-  - [[Sources/THEIA_DOCUMENTATION_GUIDE#Original primary source|Original primary source]]
-  - [[Sources/THEIA_DOCUMENTATION_GUIDE#Editorial guardrails|Editorial guardrails]]
-  - [[Sources/THEIA_DOCUMENTATION_GUIDE#Remaining archival work|Remaining archival work]]
-  - [[Sources/THEIA_DOCUMENTATION_GUIDE#Human launch campaign — Needs Review (15 October 2026)|Human launch campaign — Needs Review (15 October 2026)]]
+- [Original Documentation Guide](../../../../THEIA_DOCUMENTATION_GUIDE.md)
+- [Current Human campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
-[[Source Reading Maps]] · [[Source Library]]
+This historical guide is not a substitute for later approved canonical decisions.
