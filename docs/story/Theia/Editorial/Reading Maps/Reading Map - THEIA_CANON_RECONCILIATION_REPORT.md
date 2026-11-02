@@ -1,8 +1,7 @@
 # Historical THEIA CANON RECONCILIATION REPORT — Reading Map Redirect
 
-The former Obsidian reading map is retired. Both versions remain because their contents have not yet been proven equivalent.
+The former Obsidian reading map is retired. The imported duplicate has been reconciled and retired; the root document is authoritative.
 
-- [Preserved original source](../../../../THEIA_CANON_RECONCILIATION_REPORT.md)
 - [Authoritative story document](../../../THEIA_CANON_RECONCILIATION_REPORT.md)
 - [Source divergence review](../../Campaigns/Legacy_Source_Mirror_Divergence_Register.md)
 - [Current Human campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
