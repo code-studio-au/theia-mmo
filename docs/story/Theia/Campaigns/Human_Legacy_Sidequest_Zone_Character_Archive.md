@@ -168,3 +168,40 @@ Compared the original HS descriptions with the **actual objective descriptions**
 | HS-24 | Q033 | Patrol route and road defense represented; recruit training/epilogue timing differs | Distinct training/epilogue candidate |
 
 **Important:** Even "strong overlap" does not authorize deletion of the original editorial ID or all unique NPC/zone details. No HS entry has been promoted to an approved playable quest. These findings justify archiving rather than blindly deleting potential regional stories.
+
+## Non-exact H-series stage-level triage — 2 November 2026
+
+Compared each of the 28 non-exact H-series source objectives with the authored stage descriptions of its proposed Q reference. **No canonical change or automatic mapping approval** follows. This table identifies what is clearly overlapping and what remains a possible separate encounter, side objective or lore detail.
+
+| Legacy | Current | Review finding |
+|---|---|---|
+| H4-01 | Q084 | Expedition mandate overlaps; preserve multi-authority resources and extraction-plan detail |
+| H4-03 | Q087 | Kel'vari worker rescue overlaps; preserve water-run and ancient-defence hazard as candidate setting detail |
+| H4-04 | Q089 | Current Passage investigation differs from old NPC WvW tutorial; preserve optional frontier training idea separately |
+| H4-09 | Q032 | Household relief overlaps; preserve royal levy revision/winter stores as potential civic follow-up |
+| H4-10 | Q059 | Dominion voyage overlaps; storm-coast anchorage and extraction boat may be separate location details |
+| H4-11 | Q039 | Personnel rescue overlaps; old pilgrimage-site and PvE-route context differs |
+| H4-12 | Q041 | Depot infiltration/records overlap; Voss receipt and Shorvek objection require character/provenance check |
+| H4-13 | Q112 | Contract evidence overlaps; old Shroud station archive route differs |
+| H4-14 | Q115 | Captive rescue overlaps; retain independent exit/conditioning-control idea without changing Su'vareth finale |
+| H4-16 | Q114 | Multi-source Unmade evidence substantially overlaps; preserve false-attribution specifics if not elsewhere recorded |
+| H4-17 | Q117 | Royal correction overlaps; review related prosecutions may be a distinct consequence |
+| H4-18 | Q117 | Cassian lawful-custody confrontation absent from stage wording; optional legal follow-up, no player sentencing |
+| H5-01 | Q120 | Anchor measurement overlaps; old Chainworks expansion not current canon; archive technical design only |
+| H5-02 | Q127 | Limited mandate overlaps; Tidehold council setting differs from royal audience |
+| H5-03 | Q143 | **Conflict:** do not restore earlier Nhal name/reveal timing |
+| H5-04 | Q032 | Relief overlaps; old homecoming/winter circuit could be optional local follow-up |
+| H5-05 | Q106 | Edric correspondence overlaps; protected independent-record warrant is a possible procedural detail |
+| H5-06 | Q059 | **Old voyage count conflicts** with current sequence; Rukhan/Nemi defence and garrison records are historical character hooks only |
+| H5-07 | Q039 | Extraction rescue overlaps; relay/coastal context differs |
+| H5-08 | Q130 | Relay measurement overlaps; timing tables/support assembly and solo infiltration are separate encounter ideas |
+| H5-12 | Q163 | **Conflict:** old Thes'var intervention and survival cannot override canonical timing/death |
+| H5-13 | Q154 | Extraction staging overlaps; medical stores and enclave boundary protections add possible operational detail |
+| H5-14 | Q155 | **Conflict:** old level-60 finale must not replace irreversible activation and level-80 convergence |
+| H5-15 | Q156 | **Conflict:** Voss/Keld fight must not replace Khor'vun and Veilbreaker outcomes |
+| H5-16 | Q181 | **Conflict:** old severance/bounded-inversion choice must not replace Oth'varen death and Nhal identity shattering |
+| H5-17 | Q162 | Technical residual-evidence theme overlaps; reject old branch-specific ending assumption |
+| H5-18 | Q183 | Reporting overlaps; Cassian sentencing is **unconfirmed** and must not be promoted as canon |
+| H5-19 | Q170 | Distributed technical records/training overlap; reject old ending-dependent interpretation |
+
+**Disposition:** All 28 have been compared at the objective-description level. The five explicitly conflicting finale/reveal rows remain historical-only. Additional timing/sequence contradictions (e.g. H5-06 voyage count) must also be excluded. The remaining useful details stay in this non-canonical archive until checked against dialogue, zones and NPC records. A comparison is not proof that the old source copies are safe to delete.
