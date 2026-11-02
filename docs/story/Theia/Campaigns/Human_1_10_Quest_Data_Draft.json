@@ -1,0 +1,967 @@
+{
+  "schemaVersion": 1,
+  "status": "implementation_data_draft",
+  "authority": "Human_1_80_Canonical_Campaign.md",
+  "runtimeIntegrated": false,
+  "quests": [
+    {
+      "id": "HUMAN_Q001",
+      "editorialId": 1,
+      "title": "Before the Next Caravan",
+      "track": "main_story",
+      "minLevel": 1,
+      "prerequisites": [],
+      "contact": "Elara",
+      "region": "Millhaven, farms and roads",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "darian",
+          "description": "Speak to Darian",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S02",
+          "kind": "talk",
+          "targetKey": "anwen",
+          "description": "Speak to Anwen",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "brenna",
+          "description": "Speak to Brenna",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S04",
+          "kind": "talk",
+          "targetKey": "elara",
+          "description": "Report to Elara",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        }
+      ],
+      "completionFlag": "HUMAN_Q001_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q002",
+      "editorialId": 2,
+      "title": "The Road Patrol",
+      "track": "main_story",
+      "minLevel": 1,
+      "prerequisites": [
+        "HUMAN_Q001_DONE"
+      ],
+      "contact": "Darian",
+      "region": "Millhaven, farms and roads",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "inspect",
+          "targetKey": "predator_sign_a",
+          "description": "Inspect first predator sign",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "predator_sign_b",
+          "description": "Inspect second predator sign",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S03",
+          "kind": "interact",
+          "targetKey": "delayed_worker",
+          "description": "Find delayed worker",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S04",
+          "kind": "defend",
+          "targetKey": "worker_rescue",
+          "description": "Protect worker from predator",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "encounter_retry"
+        },
+        {
+          "id": "S05",
+          "kind": "talk",
+          "targetKey": "darian",
+          "description": "Report route condition",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        }
+      ],
+      "completionFlag": "HUMAN_Q002_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q003",
+      "editorialId": 3,
+      "title": "What the Healing House Needs",
+      "track": "main_story",
+      "minLevel": 1,
+      "prerequisites": [
+        "HUMAN_Q002_DONE"
+      ],
+      "contact": "Anwen",
+      "region": "Millhaven, farms and roads",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "interact",
+          "targetKey": "medical_parcel",
+          "description": "Recover sealed parcel",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S02",
+          "kind": "talk",
+          "targetKey": "anwen",
+          "description": "Deliver parcel",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S03",
+          "kind": "observe",
+          "targetKey": "healing_scene",
+          "description": "Witness patient treatment",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        }
+      ],
+      "completionFlag": "HUMAN_Q003_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q004",
+      "editorialId": 4,
+      "title": "The Missing Wheels",
+      "track": "main_story",
+      "minLevel": 1,
+      "prerequisites": [
+        "HUMAN_Q003_DONE"
+      ],
+      "contact": "Brenna",
+      "region": "Millhaven, farms and roads",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "inspect",
+          "targetKey": "western_waymarker",
+          "description": "Inspect last caravan marker",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "abandoned_wagon",
+          "description": "Examine wagon",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "teamster",
+          "description": "Interview survivor",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S04",
+          "kind": "talk",
+          "targetKey": "brenna",
+          "description": "Report findings",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        }
+      ],
+      "completionFlag": "HUMAN_Q004_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q005",
+      "editorialId": 5,
+      "title": "The Fence at Dawn",
+      "track": "regional_optional",
+      "minLevel": 1,
+      "prerequisites": [],
+      "contact": "Elara",
+      "region": "Millhaven, farms and roads",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "inspect",
+          "targetKey": "broken_fence",
+          "description": "Inspect damaged fence",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S02",
+          "kind": "defend",
+          "targetKey": "farm_predators",
+          "description": "Protect livestock",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "encounter_retry"
+        },
+        {
+          "id": "S03",
+          "kind": "interact",
+          "targetKey": "repair_materials",
+          "description": "Gather repair materials",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S04",
+          "kind": "interact",
+          "targetKey": "repaired_fence",
+          "description": "Repair fence",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        }
+      ],
+      "completionFlag": "HUMAN_Q005_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q006",
+      "editorialId": 6,
+      "title": "Seed Before Winter",
+      "track": "regional_optional",
+      "minLevel": 1,
+      "prerequisites": [],
+      "contact": "Tomas",
+      "region": "Millhaven, farms and roads",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "inspect",
+          "targetKey": "seed_stock",
+          "description": "Count seed sacks",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "levy_ledger",
+          "description": "Check levy ledger",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "tomas",
+          "description": "Correct requisition",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        }
+      ],
+      "completionFlag": "HUMAN_Q006_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q007",
+      "editorialId": 7,
+      "title": "A Cart That Can Move",
+      "track": "regional_optional",
+      "minLevel": 1,
+      "prerequisites": [],
+      "contact": "Heddan",
+      "region": "Millhaven, farms and roads",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "inspect",
+          "targetKey": "cart_axle",
+          "description": "Inspect axle",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S02",
+          "kind": "interact",
+          "targetKey": "salvage_iron",
+          "description": "Collect iron",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S03",
+          "kind": "interact",
+          "targetKey": "repair_bench",
+          "description": "Repair cart",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        }
+      ],
+      "completionFlag": "HUMAN_Q007_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q008",
+      "editorialId": 8,
+      "title": "The Healer's Ledger",
+      "track": "regional_optional",
+      "minLevel": 1,
+      "prerequisites": [],
+      "contact": "Anwen",
+      "region": "Millhaven, farms and roads",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "patient_a",
+          "description": "Interview first patient",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S02",
+          "kind": "talk",
+          "targetKey": "patient_b",
+          "description": "Interview second patient",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S03",
+          "kind": "interact",
+          "targetKey": "herb_bundle",
+          "description": "Deliver herbs",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S04",
+          "kind": "inspect",
+          "targetKey": "healing_ledger",
+          "description": "File observations",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        }
+      ],
+      "completionFlag": "HUMAN_Q008_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q009",
+      "editorialId": 9,
+      "title": "An Unusual Buyer",
+      "track": "main_story",
+      "minLevel": 5,
+      "prerequisites": [
+        "HUMAN_Q004_DONE"
+      ],
+      "contact": "Elara",
+      "region": "Millhaven, Stoneford, Greyfall Quarry",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "discover",
+          "targetKey": "iven_camp",
+          "description": "Find Iven Rusk's camp",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S02",
+          "kind": "combat",
+          "targetKey": "camp_defenders",
+          "description": "Secure camp perimeter",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "encounter_retry"
+        },
+        {
+          "id": "S03",
+          "kind": "interact",
+          "targetKey": "targeted_cargo",
+          "description": "Recover selected cargo",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S04",
+          "kind": "inspect",
+          "targetKey": "buyer_order",
+          "description": "Copy instructions",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S05",
+          "kind": "inspect",
+          "targetKey": "damaged_seal",
+          "description": "Copy seal",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S06",
+          "kind": "talk",
+          "targetKey": "elara",
+          "description": "Submit evidence",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        }
+      ],
+      "completionFlag": "HUMAN_Q009_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q010",
+      "editorialId": 10,
+      "title": "A Seal Without a Name",
+      "track": "main_story",
+      "minLevel": 5,
+      "prerequisites": [
+        "HUMAN_Q009_DONE"
+      ],
+      "contact": "Elara / Heddan",
+      "region": "Millhaven, Stoneford, Greyfall Quarry",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "inspect",
+          "targetKey": "seal_fitting",
+          "description": "Inspect fitting",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "workshop_reference",
+          "description": "Compare workshop reference",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "heddan",
+          "description": "Record findings",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        }
+      ],
+      "completionFlag": "HUMAN_Q010_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q011",
+      "editorialId": 11,
+      "title": "At the River Crossing",
+      "track": "main_story",
+      "minLevel": 5,
+      "prerequisites": [
+        "HUMAN_Q010_DONE"
+      ],
+      "contact": "Brenna",
+      "region": "Millhaven, Stoneford, Greyfall Quarry",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "caravan_leader",
+          "description": "Join caravan",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S02",
+          "kind": "discover",
+          "targetKey": "stoneford_crossing",
+          "description": "Reach crossing",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S03",
+          "kind": "discover",
+          "targetKey": "stoneford_warehouse",
+          "description": "Reach warehouse",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S04",
+          "kind": "talk",
+          "targetKey": "warehouse_contact",
+          "description": "Report arrival",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        }
+      ],
+      "completionFlag": "HUMAN_Q011_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q012",
+      "editorialId": 12,
+      "title": "Three Books",
+      "track": "main_story",
+      "minLevel": 5,
+      "prerequisites": [
+        "HUMAN_Q011_DONE"
+      ],
+      "contact": "Mara's local correspondent",
+      "region": "Millhaven, Stoneford, Greyfall Quarry",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "inspect",
+          "targetKey": "stock_book",
+          "description": "Read stock book",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "courier_docket",
+          "description": "Read courier docket",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S03",
+          "kind": "inspect",
+          "targetKey": "warehouse_tally",
+          "description": "Read warehouse tally",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S04",
+          "kind": "choose",
+          "targetKey": "contradictory_shipment",
+          "description": "Identify discrepancy",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        }
+      ],
+      "completionFlag": "HUMAN_Q012_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q013",
+      "editorialId": 13,
+      "title": "The Office After Edric",
+      "track": "main_story",
+      "minLevel": 5,
+      "prerequisites": [
+        "HUMAN_Q012_DONE"
+      ],
+      "contact": "Elara",
+      "region": "Millhaven, Stoneford, Greyfall Quarry",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "inspect",
+          "targetKey": "payment_instruction",
+          "description": "Copy payment order",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S02",
+          "kind": "talk",
+          "targetKey": "perrin",
+          "description": "Interview Perrin",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "regional_official",
+          "description": "Obtain Mara introduction",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        }
+      ],
+      "completionFlag": "HUMAN_Q013_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q014",
+      "editorialId": 14,
+      "title": "The Quarry Bell",
+      "track": "regional_optional",
+      "minLevel": 5,
+      "prerequisites": [],
+      "contact": "Joss",
+      "region": "Millhaven, Stoneford, Greyfall Quarry",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "discover",
+          "targetKey": "quarry_workers",
+          "description": "Find missing crew",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S02",
+          "kind": "combat",
+          "targetKey": "quarry_predators",
+          "description": "Clear cave hazard",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "encounter_retry"
+        },
+        {
+          "id": "S03",
+          "kind": "interact",
+          "targetKey": "shift_tally",
+          "description": "Recover tally",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S04",
+          "kind": "talk",
+          "targetKey": "joss",
+          "description": "Return findings",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        }
+      ],
+      "completionFlag": "HUMAN_Q014_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q015",
+      "editorialId": 15,
+      "title": "One Bridge, Two Claims",
+      "track": "regional_optional",
+      "minLevel": 5,
+      "prerequisites": [],
+      "contact": "Stoneford reeve",
+      "region": "Millhaven, Stoneford, Greyfall Quarry",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "inspect",
+          "targetKey": "bridge_supports",
+          "description": "Inspect supports",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S02",
+          "kind": "talk",
+          "targetKey": "miller",
+          "description": "Hear miller",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "merchant",
+          "description": "Hear merchant",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S04",
+          "kind": "choose",
+          "targetKey": "repair_priority",
+          "description": "Choose repair priority",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S05",
+          "kind": "interact",
+          "targetKey": "bridge_repairs",
+          "description": "Reopen crossing",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        }
+      ],
+      "completionFlag": "HUMAN_Q015_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q016",
+      "editorialId": 16,
+      "title": "The Warehouse Night Watch",
+      "track": "regional_optional",
+      "minLevel": 5,
+      "prerequisites": [],
+      "contact": "Brenna",
+      "region": "Millhaven, Stoneford, Greyfall Quarry",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "inspect",
+          "targetKey": "warehouse_losses",
+          "description": "Review missing stock",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S02",
+          "kind": "patrol",
+          "targetKey": "warehouse_perimeter",
+          "description": "Patrol perimeter",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S03",
+          "kind": "combat",
+          "targetKey": "ordinary_thieves",
+          "description": "Stop thieves",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "encounter_retry"
+        },
+        {
+          "id": "S04",
+          "kind": "interact",
+          "targetKey": "stolen_tools",
+          "description": "Recover tools",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        }
+      ],
+      "completionFlag": "HUMAN_Q016_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q017",
+      "editorialId": 17,
+      "title": "The Long Way Home",
+      "track": "regional_optional",
+      "minLevel": 5,
+      "prerequisites": [],
+      "contact": "Elara",
+      "region": "Millhaven, Stoneford, Greyfall Quarry",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "caravan_leader",
+          "description": "Prepare returned supplies",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S02",
+          "kind": "travel",
+          "targetKey": "millhaven_road",
+          "description": "Travel with caravan",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S03",
+          "kind": "interact",
+          "targetKey": "road_obstruction",
+          "description": "Clear obstruction",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        },
+        {
+          "id": "S04",
+          "kind": "talk",
+          "targetKey": "elara",
+          "description": "Deliver supplies",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout"
+        }
+      ],
+      "completionFlag": "HUMAN_Q017_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    }
+  ]
+}
