@@ -135,3 +135,36 @@ The historical crosswalk proposes the following current quest references as **co
 | HS-22 | Q008 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
 | HS-23 | Q017 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
 | HS-24 | Q033 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
+
+## HS-series stage-level triage — 2 November 2026
+
+Compared the original HS descriptions with the **actual objective descriptions** in their proposed Q-series counterparts. These are editorial findings, not approval of runtime mappings. "Partial" means a similar action exists but the original standalone scenario is not demonstrably preserved.
+
+| Legacy | Proposed Q | Stage-level assessment | Disposition |
+|---|---|---|---|
+| HS-01 | Q006 | Seed inventory and levy correction represented; original village dispute not explicit | Partial — keep village mediation hook |
+| HS-02 | Q007 | Iron collection/repair represented, but public-tool priorities are different from cart repair | Distinct local craft candidate |
+| HS-03 | Q032 | Restitution/family aid represented, but inn lodging and returning worker are different | Distinct social sidequest candidate |
+| HS-04 | Q055 | Ward repair represented, but Oren's warning survey/scholarship absent from objective wording | Distinct scholarly survey candidate |
+| HS-05 | Q015 | Miller involved, but water allocation/grain weight agreement differs from bridge repair | Distinct civic dispute candidate |
+| HS-06 | Q014 | Quarry rescue and cave hazard represented; survey tools and optional elite variant not explicit | Partial — preserve details |
+| HS-07 | Q051 | Missing maintenance crew/equipment and rescue represented | Strong overlap — verify character/route detail |
+| HS-08 | Q052 | Trade dispute represented, but unpaid contractor and hold law differ | Distinct legal sidequest candidate |
+| HS-09 | Q007 | Materials/repair represented, but craft-service tutorial differs | Distinct service tutorial candidate |
+| HS-10 | Q055 | Nursery ward repair and hazard represented | Strong overlap — verify boundaries and nursery context |
+| HS-11 | Q055 | Injured predator/hunting ethics not present in current stage descriptions | Distinct ecology sidequest candidate |
+| HS-12 | Q101 | Comparison of conflicting historical accounts represented | Strong overlap — verify archival provenance |
+| HS-13 | Q063 | Civic memorial/family records not represented in waterway assignment | Distinct memorial candidate |
+| HS-14 | Q064 | Crew protection represented; highland route mapping and stranded survey differ | Distinct exploration candidate |
+| HS-15 | Q063 | Winter fuel/tools not represented in waterway assignment | Distinct preparedness candidate |
+| HS-16 | Q037 | Manifest comparison represented, but innocent scheduling error differs from forged requisition | Distinct harbour logistics candidate |
+| HS-17 | Q046 | Defense and supply represented; fort maintenance/contested-world alternative not explicit | Partial — preserve optional variant idea |
+| HS-18 | Q046 | Wartime losses represented, but return of personal belongings to families differs | Distinct aftermath candidate |
+| HS-19 | Q088 | Access agreement represented; repair material scarcity/allocation not explicit | Distinct enclave logistics candidate |
+| HS-20 | Q093 | Exposed archive recovery represented; civilian household-record emphasis worth retaining | Strong overlap — verify civilian framing |
+| HS-21 | Q087 | Worker rescue and equipment return represented; cultivation instruments/team context may differ | Partial — preserve cultivation specificity |
+| HS-22 | Q008 | Healer observations represented; consent-based trial and conservative reserve limits differ | Distinct healing research candidate |
+| HS-23 | Q017 | Caravan preparation/travel represented; expansion to allied trade route not explicit | Partial — preserve route-expansion hook |
+| HS-24 | Q033 | Patrol route and road defense represented; recruit training/epilogue timing differs | Distinct training/epilogue candidate |
+
+**Important:** Even "strong overlap" does not authorize deletion of the original editorial ID or all unique NPC/zone details. No HS entry has been promoted to an approved playable quest. These findings justify archiving rather than blindly deleting potential regional stories.
