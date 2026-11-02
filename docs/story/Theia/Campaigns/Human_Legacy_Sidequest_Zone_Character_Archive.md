@@ -100,3 +100,7 @@ These are **candidate remnants**, not newly approved quests. Current Q reference
 | H5-19 | A Different Legacy | Q170 | Shared technical knowledge overlaps, but new finale differs. |
 
 **Review disposition:** 5 finale/reveal conflicts are historical-only; the other 23 entries are possible worldbuilding, quest-detail or regional follow-up material pending stage-by-stage comparison. No runtime IDs or canon changes are approved by this table.
+
+## Potentially reusable quest implementation detail (from exact-title objective comparison)
+
+The [exact-title audit](Human_Legacy_Exact_Title_Mapping_Audit.md) records eight legacy details that may enrich existing quests or separate local content: H2-05 hold permission for measuring-assembly recovery; H2-07 limited engineering commission and inspection report; H2-12 Sera's unstable observation site and comparison with Brynja's report; H2-14 physical isolation and emergency cutoff documentation; H2-17 Aelari material/procurement reference; H4-02 surveyed group access and maintenance terms; H4-08 restricted route disclosure and enclave security; H2-08 Northwatch garrison and extraction procedure. **All are unapproved candidates**, not new stages, canon or production requirements. Do not assume these are absent from dialogue or lore simply because manifest objective wording differs.
