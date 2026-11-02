@@ -2,7 +2,7 @@
 type: event
 chronology_order: 11
 canon_status: source-specific
-source: "../../Sources/THEIA_INTERWOVEN_CHRONICLE.md"
+source: "../../../THEIA_INTERWOVEN_CHRONICLE.md"
 up: "[[Historical Timeline]]"
 ---
 # Age of Silence and Anchor Network Development
@@ -23,6 +23,6 @@ After [[The Binding]], [[Nhal]]'s reliable communication ceases. Corruption arou
 
 The Chronicle includes connective prose; its detailed narrative retains the source's approval boundaries.
 
-[Read historical source section](../../Sources/THEIA_INTERWOVEN_CHRONICLE.md)
+[Read historical source section](../../../THEIA_INTERWOVEN_CHRONICLE.md)
 
 [[The Unmade]] · [[Anchors and the Shroud]] · [[Historical Timeline]]
