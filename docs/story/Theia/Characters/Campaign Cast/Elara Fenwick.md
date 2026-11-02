@@ -1,7 +1,7 @@
 ---
 type: character
 canon_status: approved-role; proposed-development
-source: "[[Sources/THEIA_HUMAN_CAST_AND_PLACES]]"
+source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
 up: "[[Characters]]"
 ---
 # Elara Fenwick
@@ -18,7 +18,7 @@ Teaches accountable local service; recognises her warrant's limits; resists stri
 ## Proposed launch ending — Needs Review
 Still leads the district, recognises the player as a trusted adult colleague, continues teaching recruits
 
-Source: [[Sources/THEIA_HUMAN_CAST_AND_PLACES#Approved recurring humans: complete launch movements|Approved recurring humans: complete launch movements]].
+Source: [Approved recurring humans: complete launch movements](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
 [[Characters]] · [[Human Campaign]]
 
