@@ -241,3 +241,10 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Compared H2-01 through H2-05 against Q035/Q036/Q037/Q049/Q050 (commit `e9e8a3a2`).
 - [ ] H2-04's old direct prerequisite H2-03 differs from current Q049 prerequisite Q047; preserve intervening modern investigations.
 - [ ] Review exposed goods, customs registration and H2-05's historical hold permission before approving mappings. No runtime IDs assigned.
+
+## H2-series triage complete — 2 November 2026
+
+- [x] All 18 H2-series candidates now have objective/prerequisite triage recorded in `Human_Legacy_64_Exact_Title_Objective_Comparison.md` (commit `22f7bf12`).
+- [x] Flagged six changed prerequisite edges: H2-06, H2-07, H2-08, H2-16, H2-17, H2-18. Preserve the modern campaign ordering.
+- [ ] Dialogue, consequences, original optional access and evidence details still need review; no historical mappings approved.
+- [ ] Continue H3/H4/H5 and 24 HS optional quest provenance; do not delete original evidence prematurely.
