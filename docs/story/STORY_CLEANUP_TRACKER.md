@@ -181,3 +181,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Live-verified eight links in Human Act 2 historical redirect, World Directory historical redirect and legacy source mirror divergence register; all resolve.
 - [x] Replaced outdated divergence register with a short CLOSED historical audit summary, retaining reconciliation outcomes and Git provenance (commit `35c3f918`).
 - [ ] Remaining old Obsidian quest notes and campaign registers require preservation/retirement audit; final repository-wide validation outstanding. Delete this temporary tracker only after completion.
+
+## Obsidian legacy quest audit status correction — 2 November 2026
+
+- [x] Updated `Human_Obsidian_Legacy_Quest_Audit.md` with current status: five lore source mirrors previously listed as blockers have been reconciled and retired (commit `4e3e46e2`).
+- [ ] Historical H/HS editorial crosswalk remains unresolved; do not delete original objective evidence or claim 184-quest runtime mapping complete.
+- [ ] Continue legacy quest note inventory, preservation and link review before retiring the remaining Obsidian pages.
