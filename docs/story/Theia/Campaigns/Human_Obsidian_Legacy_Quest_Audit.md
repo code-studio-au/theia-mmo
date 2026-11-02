@@ -77,3 +77,7 @@ All 15 surviving `Editorial/Reading Maps/` Markdown files were inspected after r
 ## Campaign-cast source migration — 47 files processed
 
 All 47 `Characters/Campaign Cast/` cards were processed to replace their obsolete `Sources/THEIA_HUMAN_CAST_AND_PLACES` references with links to the preserved original `docs/story/THEIA_HUMAN_CAST_AND_PLACES.md`. Character descriptions and canon statuses were not intentionally changed. A subsequent search surfaced three recently updated cards; direct fresh-file checks confirmed those three no longer contain the old source reference. **A complete fresh scan of all 47 files has not yet been completed**, so do not assert repository-wide absence of every obsolete reference until that check passes.
+
+## Campaign-cast migration — final verification PASS
+
+A fresh complete fetch of all **47** `Characters/Campaign Cast/` Markdown files was completed in four batches (12+12+12+11). **Zero** contained the obsolete `Sources/THEIA_HUMAN_CAST_AND_PLACES` reference. The source-link migration for this directory is verified complete. This does not certify other Obsidian wiki-links elsewhere in the vault or the five protected lore-mirror differences.
