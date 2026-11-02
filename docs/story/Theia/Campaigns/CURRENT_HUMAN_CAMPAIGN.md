@@ -7,7 +7,7 @@
 1. **Narrative canon:** [Human 1–80 Canonical Campaign](Human_1_80_Canonical_Campaign.md) — locked plot, 184 editorial quest concepts and immutable story outcomes. Any contradiction in downstream files resolves here.
 2. **Quest authoring contract:** [Rust Quest Authoring Contract](Human_Rust_Quest_Authoring_Contract.md) — required IDs, evidence, giver/turn-in, choices, rewards, retries, credit scopes and planned versus implemented capabilities.
 3. **Provenance and migration:** [Editorial ID Crosswalk Draft](Human_Quest_Editorial_ID_Crosswalk_Draft.json) — all 92 original H-series identifiers and all 24 HS-series optional IDs with source objectives; mappings not yet approved. Do not allocate stable runtime IDs based solely on titles.
-4. **Working quest data:** [Current Quest Authoring Manifest](Human_1_80_Current_Quest_Authoring_Manifest.json) — **one consolidated 184-quest / 683-stage working inventory** with typed objectives, source editorial candidates, explicit blockers, and no inferred hard level gates. This is **not** executable Rust data. The nine older stage JSON files have been verified against the manifest and removed from the active tree; Git history preserves them. Edit only the consolidated manifest.
+4. **Working quest data:** [Current Quest Authoring Manifest](Human_1_80_Current_Quest_Authoring_Manifest.json) — **one consolidated 184-quest / 684-stage working inventory** with typed objectives, source editorial candidates, explicit blockers, and no inferred hard level gates. This is **not** executable Rust data. The nine older stage JSON files have been verified against the manifest and removed from the active tree; Git history preserves them. Edit only the consolidated manifest.
 5. **Dialogue:** [Dialogue Continuity Audit](Human_1_80_Dialogue_Continuity_Audit.md), [Branching Key Scenes](Human_1_80_Key_Scenes_Branching_Dialogue.md) and per-level NPC dialogue scripts. Dialogue is first pass and subject to reveal-gate review.
 6. **Encounters:** [Encounter Barks and Cinematic Timing](Human_1_80_Encounter_Barks_and_Cinematic_Timing.md) — authored design, not integrated encounter code.
 7. **Actual implementation authority:** existing Rust/Bevy code and [Quest Objectives Foundation](../../../QUEST_OBJECTIVES_FOUNDATION.md). Rust validates quest progress and authoritative events; Luau is optional for unusual scripted behavior and not confirmed integrated. [Rust–Luau Boundary](Human_Rust_Luau_Quest_Scripting_Boundary.md) is a proposal.
@@ -25,6 +25,10 @@
 - **Keep pending reconciliation:** stage-level quest packs, implementation briefs and numerical progression material if they contain unique details not yet merged into current quest data. Do not delete unique work merely to reduce file count.
 - **Future target:** one validated Rust-compatible quest definition set, one canonical narrative source, referenced dialogue and encounter assets, and no redundant stage packs. Delete redundant drafts only after the content is reconciled and links updated.
 - **Repository scope:** this cleanup covers Human story/quest design. It does not delete unrelated engineering research, world lore, gameplay source, or other race campaigns without separate audit.
+
+## Authoring review status
+
+All 184 quests have completed first-pass Rust authoring review. Safe editorial corrections have been applied directly to the sole manifest: spoiler-safe Grey Surveyor contacts, Q157 ongoing Shroud fade, and an explicit Q181 Oth'varen death fact between alignment confirmation and final inversion. Proposed optional access conditions and the level-80 finale gate are recorded as **non-executable review metadata**, not silently activated. The new Q181 story-fact objective requires future Rust support. The 184-quest count is unchanged; the authored stage count is now 684.
 
 ## Next reconciliation milestones
 
