@@ -51,3 +51,7 @@ Both legacy sources (`Human_10_20_Playable_Quest_Pack.md` and `Human_10_20_Imple
 ## Levels 20–30 reconciliation
 
 The 28 entries in both `Human_20_30_Playable_Quest_Pack.md` and `Human_20_30_Implementation_Brief.md` were compared by ID and purpose. Their chapter-specific gameplay context, region/permission rules, common retry and QA expectations and superseded level assumptions are captured in [Q035–Q062 Legacy Pack Migration](Human_Q035_Q062_Legacy_Pack_Migration.md). The original files are retained until reference and unique-detail verification; this comparison does **not** authorize deleting them yet.
+
+## Levels 30–35 reconciliation
+
+Both `Human_30_35_Playable_Quest_Pack.md` and `Human_30_35_Implementation_Brief.md` cover the same 17 Q063–Q079 quests. Chapter context, encounter/retry rules, player-purpose distinctions and superseded level assumptions are recorded in [Q063–Q079 Legacy Pack Migration](Human_Q063_Q079_Legacy_Pack_Migration.md). Special care preserves Grey Surveyor anonymity, the two separate inversion trials, Oma'vira's permanent death and the one-time destroyed-gate evidence. Original sources remain pending inbound-reference and unique-detail checks.
