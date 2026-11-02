@@ -1,22 +1,22 @@
 ---
 type: people
 canon_status: source-specific
-source: "../../Sources/THEIA_WORLD_BIBLE.md"
+source: "../../../../THEIA_WORLD_BIBLE.md"
 up: "[[Peoples and Allegiances]]"
 ---
 # Kel'vari
 
 This reading page includes the full relevant source section; shared material may describe several institutions. Approval remains scoped to the source statements.
 
-[Read historical source section](../../Sources/THEIA_WORLD_BIBLE.md)
+[Read historical source section](../../../../THEIA_WORLD_BIBLE.md)
 
 ## Ancestry and surviving enclaves
 
 Read these sections alongside later dated amendments in [[Sources/THEIA_WORLD_BIBLE|World Bible]].
 
-[Read historical source section](../../Sources/THEIA_WORLD_BIBLE.md)
+[Read historical source section](../../../../THEIA_WORLD_BIBLE.md)
 
-[Read historical source section](../../Sources/THEIA_WORLD_BIBLE.md)
+[Read historical source section](../../../../THEIA_WORLD_BIBLE.md)
 
 ## Notable characters
 
