@@ -105,7 +105,7 @@ Complete static navigation alongside the live browsing tables. Approval boundari
 - [The Binding](../History/Events/The%20Binding.md)
 
 ## index
-- [Quest Index](../Campaigns/Quest%20Index.md)
+- [Current Human campaign and quest inventory](../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
 ## institution
 - [Covenant](./Institutions/Covenant.md)
