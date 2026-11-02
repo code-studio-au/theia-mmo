@@ -57,7 +57,7 @@ Void means no conventional space, time, geography, matter, ordinary life or ambi
 
 Their scholars later built the **First Anchor**, believing it would establish lasting contact with Ascendant. Nhal-influenced researchers secretly redirected the construction toward the Veil. Its activation initiated the **Second Sundering catastrophe**, devastating their homeland and fracturing the ancient world. The Anchor became entangled with the breach and could not be safely destroyed. The Divine War then escalated the losses; **The Binding** finally contained the breach within the Shroud.
 
-**Seventh survival:** multiple small independent enclaves survive inside the Shroud; some inhabitants were transformed by Nhal's unrelenting influence, without all being conscious Unmade operatives. Some Seventh researchers were abroad or escaped before The Binding, and their descendants assimilated into the six races through unique interracial compatibility. Their proper species name remains open; **Aethren** was rejected for resembling Aethyr.
+**Kel'vari survival:** multiple small independent enclaves survive inside the Shroud; some inhabitants were transformed by Nhal's unrelenting influence, without all being conscious Unmade operatives. Some Kel'vari researchers were abroad or escaped before The Binding, and their descendants assimilated into the six races through unique interracial compatibility. Their confirmed species name is **Kel'vari**; **Aethren** was rejected for resembling Aethyr.
 
 ## 1.4a Nhal's observation and the accidental First Resonance [LOCKED · 2026-10-12]
 
