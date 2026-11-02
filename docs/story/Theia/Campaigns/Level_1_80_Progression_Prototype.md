@@ -1,3 +1,5 @@
+> **SUPERSEDED — historical reference only (2 November 2026).** The single source of truth for the Human level 1–80 quest order, locations, objectives and main-story outcomes is [Human 1–80 Canonical Campaign](Human_1_80_Canonical_Campaign.md). The older plot timings, finale and contradictory mechanics below are retired; retain this file solely for source quest IDs, legacy dialogue and migration traceability.
+
 # Theia level 1 to 80 progression prototype
 
 **Status: Needs Review — 31 October 2026.** This is a complete progression proposal for a Human character following the proposed five-act launch story. It includes minimum-level chapter unlocks, regional content, an illustrative XP curve, interval budgets and first-time playtime targets. It is not an implemented or measured levelling system.
