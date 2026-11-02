@@ -67,3 +67,7 @@ Both `Human_45_55_Playable_Quest_Pack.md` and `Human_45_55_Implementation_Brief.
 ## Levels 55–70 reconciliation
 
 Both `Human_55_70_Playable_Quest_Pack.md` and `Human_55_70_Implementation_Brief.md` cover the same 29 Q129–Q157 quests. Their still-current location, player-purpose, recovery and QA information is captured in [Q129–Q157 Legacy Pack Migration](Human_Q129_Q157_Legacy_Pack_Migration.md). Special continuity checks preserve the first Nhal name at Q143, Keeper/Guardian testimony, Khor'vun's death and the immediate Q156 Veil/Binding/Shroud transition. The old files remain pending incoming-reference and unique-detail verification.
+
+## Levels 70–80 and finale reconciliation
+
+All four remaining legacy files (`Human_70_80_Playable_Quest_Pack.md`, `Human_70_80_Implementation_Brief.md`, `Human_80_Finale_Playable_Quest_Pack.md`, `Human_80_Finale_Implementation_Brief.md`) have been compared for their 17 + 10 quest sections. Still-current gameplay, QA and ending chronology are captured in [Q158–Q184 Legacy Pack Migration](Human_Q158_Q184_Legacy_Pack_Migration.md). The manifest's explicit Q181 death stage takes precedence over old finale text. **All 17 old playable/brief files have now received an editorial reconciliation pass; no bulk deletion has yet occurred.** Next step is inbound-reference and unique-detail verification before removal.
