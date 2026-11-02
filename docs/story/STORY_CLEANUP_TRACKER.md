@@ -187,3 +187,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Updated `Human_Obsidian_Legacy_Quest_Audit.md` with current status: five lore source mirrors previously listed as blockers have been reconciled and retired (commit `4e3e46e2`).
 - [ ] Historical H/HS editorial crosswalk remains unresolved; do not delete original objective evidence or claim 184-quest runtime mapping complete.
 - [ ] Continue legacy quest note inventory, preservation and link review before retiring the remaining Obsidian pages.
+
+## Quest crosswalk status correction — 2 November 2026
+
+- [x] Verified `Theia/Sources/THEIA_HUMAN_QUEST_REGISTER.md` is absent and root `THEIA_HUMAN_QUEST_REGISTER.md` remains.
+- [x] Corrected outdated mirror and retired-pack statements in `Human_Quest_Editorial_ID_Crosswalk_Review.md` (commit `d0a0791a`).
+- [ ] Mapping approval for 92 H and 24 HS IDs remains outstanding; preserve original objectives and crosswalk. No stable runtime IDs allocated.
