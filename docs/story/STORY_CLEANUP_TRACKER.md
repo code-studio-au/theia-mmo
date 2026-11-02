@@ -204,3 +204,8 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Compared crosswalk source objectives to current manifest stages for H1-01/Q001, H4-07/Q097, H5-09/Q071, H5-10/Q072 and H5-20/Q184. Results and remaining details recorded in `Human_Legacy_Exact_Title_Mapping_Audit.md` (commit `393e739f`).
 - [ ] Review corresponding dialogue and outcome evidence before marking any mapping approved. Current Grey Surveyor spoiler-safe aliases remain unchanged; no runtime IDs assigned.
 - [ ] Continue remaining H/HS objective-level comparisons and preserve unique side hooks in non-canonical archive.
+
+## H4-07 / Q097 dialogue corroboration — 2 November 2026
+
+- [x] Verified canonical branching scene for Q097 includes independently verified signature evidence, Oth'varen's firsthand account, accusation/curiosity/trust responses, and Sel'ora's explicit scrutiny requirement. Dialogue Continuity Audit confirms Grey Surveyor spoiler gate in Q071–Q072 (commit `6f9d6c58`).
+- [ ] H4-07 editorial ID mapping still needs prerequisite/consequence review and approval; no runtime ID assignment.
