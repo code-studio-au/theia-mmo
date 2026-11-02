@@ -116,3 +116,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Updated root final naming statement to confirmed Kel'vari wording (commit `dcff6f81`).
 - [ ] Review remaining differences in source-decision context; preserve historical labels where they document the original question/answer rather than replacing them indiscriminately. Check incoming links before deleting mirror.
 - [ ] Review remaining `Sources/IMPORT_MANIFEST.json` and `Sources/README.md` as provenance rather than current canon; do not delete provenance until import record is preserved elsewhere or Git history is deemed sufficient.
+
+## Source Decision Recovery — historical distinctions preserved
+
+- [x] Reconciled 23 later locked-decision lines from imported mirror into root (commit `1e6dedca`).
+- [x] Remaining three normalized differences are early historical lines 19, 37 and 60: 'seventh race vanished', 'seventh god later renamed Ascendant', and 'seventh god THE ASCENDANT'. These are intentionally preserved as historical language, **not** unresolved current canon. The mirror's substitutions do not add unique decisions.
+- [ ] Validate all incoming references to `Sources/THEIA_SOURCE_DECISION_RECOVERY.md` before retiring the imported copy.
