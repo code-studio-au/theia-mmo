@@ -7,7 +7,8 @@
     "Exact title matches are candidates, not approved migrations.",
     "Historical editorial IDs must not be reassigned based solely on titles.",
     "Current minLevel values are planning annotations, not approved runtime eligibility.",
-    "Original optional quest identifiers outside the H-series table require separate reconciliation."
+    "Original optional quest identifiers outside the H-series table require separate reconciliation.",
+    "All 24 HS-series original optional quests are now preserved as structured provenance; none is silently equated with a current optional quest."
   ],
   "legacy_quest_rows": [
     {
@@ -3304,5 +3305,224 @@
       "provenance_reviewed": false,
       "proposed_classification": "main_story"
     }
-  ]
+  ],
+  "optional_local_rows": [
+    {
+      "editorial_id": "HS-01",
+      "area_contact": "Millhaven / Tomas",
+      "original_quest_and_outcome": "**Seed Before Tax:** count protected seed and household stores, correct a duplicate levy and resolve a village dispute. No cult explanation.",
+      "original_access_note": "Standalone",
+      "candidate_campaign_refs": [],
+      "status": "unmapped_requires_review",
+      "runtime_id": null
+    },
+    {
+      "editorial_id": "HS-02",
+      "area_contact": "Millhaven / Heddan",
+      "original_quest_and_outcome": "**Iron for Ordinary Hands:** obtain safely salvageable stock and choose which public tools to repair first; both needs are eventually met.",
+      "original_access_note": "Standalone",
+      "candidate_campaign_refs": [],
+      "status": "unmapped_requires_review",
+      "runtime_id": null
+    },
+    {
+      "editorial_id": "HS-03",
+      "area_contact": "Millhaven / Mera",
+      "original_quest_and_outcome": "**Room at the Reed:** help settle a displaced family and a returning worker without treating a missing fee as criminal hostility.",
+      "original_access_note": "Standalone",
+      "candidate_campaign_refs": [],
+      "status": "unmapped_requires_review",
+      "runtime_id": null
+    },
+    {
+      "editorial_id": "HS-04",
+      "area_contact": "Elderwood / Oren",
+      "original_quest_and_outcome": "**The Old Wardstone:** map a warning pattern, secure a hazardous approach and lodge a cautious scholarly interpretation. Oren remains an ordinary scholar.",
+      "original_access_note": "Standalone",
+      "candidate_campaign_refs": [],
+      "status": "unmapped_requires_review",
+      "runtime_id": null
+    },
+    {
+      "editorial_id": "HS-05",
+      "area_contact": "Stoneford / Nera",
+      "original_quest_and_outcome": "**The Mill's Due:** compare water-use allocations and grain weights; resolve a milling dispute through a witnessed agreement.",
+      "original_access_note": "Standalone",
+      "candidate_campaign_refs": [],
+      "status": "unmapped_requires_review",
+      "runtime_id": null
+    },
+    {
+      "editorial_id": "HS-06",
+      "area_contact": "Greyfall Quarry / Joss",
+      "original_quest_and_outcome": "**Below the Workface:** recover survey tools, rescue quarry workers and retreat from native cave threats. Optional elite mode adds loot only.",
+      "original_access_note": "Standalone",
+      "candidate_campaign_refs": [],
+      "status": "unmapped_requires_review",
+      "runtime_id": null
+    },
+    {
+      "editorial_id": "HS-07",
+      "area_contact": "Kar Durn / Brynja",
+      "original_quest_and_outcome": "**The Unmarked Shift:** find a missing maintenance team's last route and recover its equipment after rescuing survivors.",
+      "original_access_note": "Standalone",
+      "candidate_campaign_refs": [],
+      "status": "unmapped_requires_review",
+      "runtime_id": null
+    },
+    {
+      "editorial_id": "HS-08",
+      "area_contact": "Kar Durn / Rurik",
+      "original_quest_and_outcome": "**A Hold's Word:** document a contractor's unpaid work and broker an accountable settlement under hold law.",
+      "original_access_note": "Standalone",
+      "candidate_campaign_refs": [],
+      "status": "unmapped_requires_review",
+      "runtime_id": null
+    },
+    {
+      "editorial_id": "HS-09",
+      "area_contact": "Kar Durn / forge services",
+      "original_quest_and_outcome": "**Tools That Last:** gather ordinary materials and complete a repair demonstration; introduce craft services without locking recipes behind story.",
+      "original_access_note": "Standalone",
+      "candidate_campaign_refs": [],
+      "status": "unmapped_requires_review",
+      "runtime_id": null
+    },
+    {
+      "editorial_id": "HS-10",
+      "area_contact": "Sylvaren / Caelith",
+      "original_quest_and_outcome": "**A Space to Grow:** protect a nursery from mundane damage and repair its marked boundaries.",
+      "original_access_note": "Standalone",
+      "candidate_campaign_refs": [],
+      "status": "unmapped_requires_review",
+      "runtime_id": null
+    },
+    {
+      "editorial_id": "HS-11",
+      "area_contact": "Sylvaren / Irielle",
+      "original_quest_and_outcome": "**A Hunter's Error:** track an injured predator and correct an unsafe hunting practice; choose containment or necessary combat.",
+      "original_access_note": "Standalone",
+      "candidate_campaign_refs": [],
+      "status": "unmapped_requires_review",
+      "runtime_id": null
+    },
+    {
+      "editorial_id": "HS-12",
+      "area_contact": "Sylvaren / archive staff",
+      "original_quest_and_outcome": "**Two Accounts, One Copy:** annotate conflicting nondefinitive historical copies; preserve disagreement instead of selecting the elven schism's true cause.",
+      "original_access_note": "Standalone",
+      "candidate_campaign_refs": [],
+      "status": "unmapped_requires_review",
+      "runtime_id": null
+    },
+    {
+      "editorial_id": "HS-13",
+      "area_contact": "Drom Kar / Urodan",
+      "original_quest_and_outcome": "**A Name Kept Correctly:** restore a damaged civic memorial using family and archive records, with no hidden bloodline revelation.",
+      "original_access_note": "Standalone",
+      "candidate_campaign_refs": [],
+      "status": "unmapped_requires_review",
+      "runtime_id": null
+    },
+    {
+      "editorial_id": "HS-14",
+      "area_contact": "Drom Kar / Tarek",
+      "original_quest_and_outcome": "**A Safe Step:** map an exposed highland route and recover a stranded survey party.",
+      "original_access_note": "Standalone",
+      "candidate_campaign_refs": [],
+      "status": "unmapped_requires_review",
+      "runtime_id": null
+    },
+    {
+      "editorial_id": "HS-15",
+      "area_contact": "Drom Kar / local craft services",
+      "original_quest_and_outcome": "**Winter's Reserve:** protect existing fuel stores and repair tools before the weather changes.",
+      "original_access_note": "Standalone",
+      "candidate_campaign_refs": [],
+      "status": "unmapped_requires_review",
+      "runtime_id": null
+    },
+    {
+      "editorial_id": "HS-16",
+      "area_contact": "Tidehold / Ysra",
+      "original_quest_and_outcome": "**The Missing Berth:** resolve an honest arrival-schedule error and rescue stranded cargo; no additional infiltrator.",
+      "original_access_note": "Standalone",
+      "candidate_campaign_refs": [],
+      "status": "unmapped_requires_review",
+      "runtime_id": null
+    },
+    {
+      "editorial_id": "HS-17",
+      "area_contact": "Northwatch / Nessa",
+      "original_quest_and_outcome": "**A Defensible Line:** complete NPC fort-maintenance and supply tasks; optional contested-world equivalents offer parallel credit.",
+      "original_access_note": "Standalone",
+      "candidate_campaign_refs": [],
+      "status": "unmapped_requires_review",
+      "runtime_id": null
+    },
+    {
+      "editorial_id": "HS-18",
+      "area_contact": "Northwatch / Darian",
+      "original_quest_and_outcome": "**What We Bring Back:** recover identification and belongings from a military skirmish site, returning them to Covenant families through the garrison.",
+      "original_access_note": "After HS-17",
+      "candidate_campaign_refs": [],
+      "status": "unmapped_requires_review",
+      "runtime_id": null
+    },
+    {
+      "editorial_id": "HS-19",
+      "area_contact": "Shroud approach / Aru'ven",
+      "original_quest_and_outcome": "**The Gate's Share:** secure limited repair materials under the enclave agreement; no new throughput miracle.",
+      "original_access_note": "Story arrival or equivalent independent access",
+      "candidate_campaign_refs": [],
+      "status": "unmapped_requires_review",
+      "runtime_id": null
+    },
+    {
+      "editorial_id": "HS-20",
+      "area_contact": "Shroud archive approach / Sel'ora",
+      "original_quest_and_outcome": "**A Copyist's Work:** recover ordinary household records from an exposed store, showing Kel'vari civilian life.",
+      "original_access_note": "Story arrival or equivalent independent access",
+      "candidate_campaign_refs": [],
+      "status": "unmapped_requires_review",
+      "runtime_id": null
+    },
+    {
+      "editorial_id": "HS-21",
+      "area_contact": "Shroud frontier / Leth'ari",
+      "original_quest_and_outcome": "**Beyond the Wards:** recover cultivation instruments and protect a field team; no demand that the enclave surrender its knowledge.",
+      "original_access_note": "Story arrival or equivalent independent access",
+      "candidate_campaign_refs": [],
+      "status": "unmapped_requires_review",
+      "runtime_id": null
+    },
+    {
+      "editorial_id": "HS-22",
+      "area_contact": "Heartlands / Anwen",
+      "original_quest_and_outcome": "**A Better Limit:** test a newly effective healing technique with consent and conservative reserve limits; lodge the result without promising universal cures.",
+      "original_access_note": "After HS-03 or local healer introduction",
+      "candidate_campaign_refs": [],
+      "status": "unmapped_requires_review",
+      "runtime_id": null
+    },
+    {
+      "editorial_id": "HS-23",
+      "area_contact": "Heartlands / Brenna",
+      "original_quest_and_outcome": "**The Longer Road:** help a caravan prepare its first expanded allied route; service deputies stay available.",
+      "original_access_note": "After HS-05",
+      "candidate_campaign_refs": [],
+      "status": "unmapped_requires_review",
+      "runtime_id": null
+    },
+    {
+      "editorial_id": "HS-24",
+      "area_contact": "Millhaven / Darian",
+      "original_quest_and_outcome": "**A Recruit's First Lesson:** assist a new patrol's preparation and help it finish a safe local circuit. Darian's growth resolves in service.",
+      "original_access_note": "H5-20; optional epilogue",
+      "candidate_campaign_refs": [],
+      "status": "unmapped_requires_review",
+      "runtime_id": null
+    }
+  ],
+  "source_status": "original H/HS source preserved in this crosswalk; no superseded story decision is authoritative"
 }
