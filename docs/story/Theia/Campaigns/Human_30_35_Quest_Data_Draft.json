@@ -1,0 +1,922 @@
+{
+  "schemaVersion": 1,
+  "status": "implementation_data_draft",
+  "canonical": "Human_1_80_Canonical_Campaign.md",
+  "runtimeIntegrated": false,
+  "quests": [
+    {
+      "id": "HUMAN_Q063",
+      "editorialId": 63,
+      "title": "The City That Endured",
+      "track": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q062_DONE"
+      ],
+      "contact": "Urodan",
+      "region": "Drom Kar, freight works, mainland Chainworks",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Urodan",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_63",
+          "description": "Arrive at Drom Kar, hear its custodial limits and secure a water-route work assignment before archive access",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Urodan",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q063_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q064",
+      "editorialId": 64,
+      "title": "Water and Memory",
+      "track": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q063_DONE"
+      ],
+      "contact": "Urodan / Tarek",
+      "region": "Drom Kar, freight works, mainland Chainworks",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Urodan / Tarek",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_64",
+          "description": "Secure the existing maintenance route and retrieve records from the endangered store; obtain the omitted warning",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Urodan / Tarek",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q064_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q065",
+      "editorialId": 65,
+      "title": "The Missing Margin",
+      "track": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q064_DONE"
+      ],
+      "contact": "Dromak",
+      "region": "Drom Kar, freight works, mainland Chainworks",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Dromak",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_65",
+          "description": "Authenticate the warning and obtain council permission for restricted comparison; no definitive judgment on the Vorrath exile",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Dromak",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q065_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q066",
+      "editorialId": 66,
+      "title": "A Name for the Guardians",
+      "track": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q065_DONE"
+      ],
+      "contact": "Sera",
+      "region": "Drom Kar, freight works, mainland Chainworks",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Sera",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "travel",
+          "targetKey": "objective_66",
+          "description": "Receive a private account of the order and its multiracial origins; accept associate status without compulsory membership",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Sera",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q066_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q067",
+      "editorialId": 67,
+      "title": "The Instruction Without Its Diagram",
+      "track": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q066_DONE"
+      ],
+      "contact": "Grey Surveyor",
+      "region": "Drom Kar, freight works, mainland Chainworks",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Grey Surveyor",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_67",
+          "description": "Compare the Regional Anchor plan with Halden's incomplete shutdown order; obtain the missing stability material",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Grey Surveyor",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q067_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q068",
+      "editorialId": 68,
+      "title": "Reach Them Before the Charge",
+      "track": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q067_DONE"
+      ],
+      "contact": "Sera",
+      "region": "Drom Kar, freight works, mainland Chainworks",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Sera",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "travel",
+          "targetKey": "objective_68",
+          "description": "Reach the freight works and interrupt Halden's premature destruction attempt in a retryable story scene",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Sera",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q068_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q069",
+      "editorialId": 69,
+      "title": "The Broken Measure",
+      "track": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q068_DONE"
+      ],
+      "contact": "Halden / Sera",
+      "region": "Drom Kar, freight works, mainland Chainworks",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Halden / Sera",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_69",
+          "description": "Complete the solo dungeon, rescue the cell and isolate the Regional Anchor's supports before core shutdown",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Halden / Sera",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q069_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q070",
+      "editorialId": 70,
+      "title": "Copies for the People at Risk",
+      "track": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q069_DONE"
+      ],
+      "contact": "Grey Surveyor",
+      "region": "Drom Kar, freight works, mainland Chainworks",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Grey Surveyor",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_70",
+          "description": "Receive and distribute full safety instructions to the cleared team; lodge the measured evidence independently",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Grey Surveyor",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q070_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q071",
+      "editorialId": 71,
+      "title": "Make the Measure Small",
+      "track": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q070_DONE"
+      ],
+      "contact": "Oth'varen / Brynja",
+      "region": "Drom Kar, freight works, mainland Chainworks",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Oth'varen / Brynja",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_71",
+          "description": "Set up a fully isolated Minor Resonator trial with instruments, physical cutoff and reserve limits",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Oth'varen / Brynja",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q071_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q072",
+      "editorialId": 72,
+      "title": "A Brief Reversal",
+      "track": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q071_DONE"
+      ],
+      "contact": "Oth'varen",
+      "region": "Drom Kar, freight works, mainland Chainworks",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Oth'varen",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_72",
+          "description": "Conduct the controlled inversion trial; stop at its measured duration and record both result and uncertainty",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Oth'varen",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q072_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q073",
+      "editorialId": 73,
+      "title": "The Safer Argument",
+      "track": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q072_DONE"
+      ],
+      "contact": "Halden / Sera",
+      "region": "Drom Kar, freight works, mainland Chainworks",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Halden / Sera",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "interact",
+          "targetKey": "objective_73",
+          "description": "Review severance and bounded-inversion plans; select a provisional preference that may be changed at the final cutoff",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Halden / Sera",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q073_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q074",
+      "editorialId": 74,
+      "title": "The Pattern Beneath",
+      "track": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q073_DONE"
+      ],
+      "contact": "Sera",
+      "region": "Drom Kar research chamber",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Sera",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_74",
+          "description": "Compare six measured disturbances and mark common timing",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Sera",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q074_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q075",
+      "editorialId": 75,
+      "title": "The Anchor's Defenses",
+      "track": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q074_DONE"
+      ],
+      "contact": "Nessa",
+      "region": "Chainworks exterior",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Nessa",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "travel",
+          "targetKey": "objective_75",
+          "description": "Scout guard routes and recover Harbinger orders",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Nessa",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q075_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q076",
+      "editorialId": 76,
+      "title": "The Harbinger's Design",
+      "track": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q075_DONE"
+      ],
+      "contact": "Sera",
+      "region": "Chainworks records vault",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Sera",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_76",
+          "description": "Secure signed instructions and destroyed-gate schematic",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Sera",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q076_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q077",
+      "editorialId": 77,
+      "title": "Against the Harbinger",
+      "track": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q076_DONE"
+      ],
+      "contact": "Sera / Nessa",
+      "region": "Chainworks solo dungeon",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "travel",
+          "targetKey": "harbinger_facility",
+          "description": "Enter Oma'vira's conditioning facility",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S02",
+          "kind": "interact",
+          "targetKey": "captive_controls",
+          "description": "Disable conditioning relays",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S03",
+          "kind": "defend",
+          "targetKey": "captive_rescue",
+          "description": "Protect reachable captives",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "encounter_retry",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S04",
+          "kind": "combat",
+          "targetKey": "omavira",
+          "description": "Defeat Oma'vira permanently",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "encounter_retry",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S05",
+          "kind": "inspect",
+          "targetKey": "gate_records",
+          "description": "Secure Passage evidence",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        }
+      ],
+      "completionFlag": "HUMAN_Q077_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q078",
+      "editorialId": 78,
+      "title": "The First Major Reversal",
+      "track": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q077_DONE"
+      ],
+      "contact": "Brynja / Sera",
+      "region": "Drom Kar, freight works, mainland Chainworks",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "inspect",
+          "targetKey": "major_anchor_cutoff",
+          "description": "Verify cutoff and instrument stations",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S02",
+          "kind": "defend",
+          "targetKey": "inversion_specialists",
+          "description": "Protect specialists during inversion",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "encounter_retry",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S03",
+          "kind": "observe",
+          "targetKey": "bounded_inversion",
+          "description": "Record bounded polarity reversal",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S04",
+          "kind": "talk",
+          "targetKey": "sera",
+          "description": "Confirm maintenance responsibilities",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        }
+      ],
+      "completionFlag": "HUMAN_Q078_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q079",
+      "editorialId": 79,
+      "title": "The Harbinger's Secret",
+      "track": "main_story",
+      "minLevel": 30,
+      "prerequisites": [
+        "HUMAN_Q078_DONE"
+      ],
+      "contact": "Sera",
+      "region": "Chainworks archive",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Sera",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_79",
+          "description": "Recover gate destination record and verify gate is unusable",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Sera",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q079_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    }
+  ]
+}
