@@ -1,0 +1,528 @@
+{
+  "schemaVersion": 1,
+  "status": "implementation_data_draft",
+  "canonical": "Human_1_80_Canonical_Campaign.md",
+  "runtimeIntegrated": false,
+  "quests": [
+    {
+      "id": "HUMAN_Q175",
+      "editorialId": 175,
+      "title": "Inside the Architect's Design",
+      "track": "main_story",
+      "minLevel": 80,
+      "prerequisites": [
+        "HUMAN_Q174_DONE"
+      ],
+      "contact": "Nessa",
+      "region": "Architect central facility",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Nessa",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "combat",
+          "targetKey": "objective_175",
+          "description": "Infiltrate and disable defenses while preserving alignment mechanism",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "encounter_retry",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Nessa",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q175_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q176",
+      "editorialId": 176,
+      "title": "The Architect's Last Argument",
+      "track": "main_story",
+      "minLevel": 80,
+      "prerequisites": [
+        "HUMAN_Q175_DONE"
+      ],
+      "contact": "Thes'var",
+      "region": "Solo boss chamber",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "travel",
+          "targetKey": "architect_boss_chamber",
+          "description": "Enter Thes'var's control chamber",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S02",
+          "kind": "combat",
+          "targetKey": "thesvar",
+          "description": "Defeat and kill Thes'var",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "encounter_retry",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S03",
+          "kind": "inspect",
+          "targetKey": "sabotage_warning",
+          "description": "Discover the first indication of sabotage",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        }
+      ],
+      "completionFlag": "HUMAN_Q176_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q177",
+      "editorialId": 177,
+      "title": "The Broken Alignment",
+      "track": "main_story",
+      "minLevel": 80,
+      "prerequisites": [
+        "HUMAN_Q176_DONE"
+      ],
+      "contact": "Sera",
+      "region": "Control junction",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "inspect",
+          "targetKey": "alignment_junction",
+          "description": "Inspect deliberate misalignment",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S02",
+          "kind": "interact",
+          "targetKey": "safe_correction_attempt",
+          "description": "Test conventional correction and confirm failure",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "sera",
+          "description": "Report emergency",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        }
+      ],
+      "completionFlag": "HUMAN_Q177_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q178",
+      "editorialId": 178,
+      "title": "The Scholar's Correction",
+      "track": "main_story",
+      "minLevel": 80,
+      "prerequisites": [
+        "HUMAN_Q177_DONE"
+      ],
+      "contact": "Oth'varen / Sera",
+      "region": "Thes'var central facility, distributed network, Oth'irun, Valecrown, Millhaven",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "inspect",
+          "targetKey": "fatal_correction",
+          "description": "Verify the only remaining correction with Oth'varen",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S02",
+          "kind": "talk",
+          "targetKey": "othvaren_decision",
+          "description": "Hear his informed decision",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "sera",
+          "description": "Confirm extraction and station responsibilities",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        }
+      ],
+      "completionFlag": "HUMAN_Q178_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q179",
+      "editorialId": 179,
+      "title": "The Sixth Scholar's Choice",
+      "track": "main_story",
+      "minLevel": 80,
+      "prerequisites": [
+        "HUMAN_Q178_DONE"
+      ],
+      "contact": "Oth'varen",
+      "region": "Convergence entrance",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "observe",
+          "targetKey": "othvaren_farewell",
+          "description": "Witness Oth'varen tell Sera and the player his choice",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S02",
+          "kind": "interact",
+          "targetKey": "station_readiness",
+          "description": "Confirm safe stations and extraction",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "othvaren",
+          "description": "Receive his final instructions",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        }
+      ],
+      "completionFlag": "HUMAN_Q179_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q180",
+      "editorialId": 180,
+      "title": "The Seven Hold",
+      "track": "main_story",
+      "minLevel": 80,
+      "prerequisites": [
+        "HUMAN_Q179_DONE"
+      ],
+      "contact": "Guardian teams",
+      "region": "Thes'var central facility, distributed network, Oth'irun, Valecrown, Millhaven",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "defend",
+          "targetKey": "distributed_stations",
+          "description": "Defend the distributed mortal teams",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "encounter_retry",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S02",
+          "kind": "observe",
+          "targetKey": "seven_consent",
+          "description": "Witness the Seven cooperating freely",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S03",
+          "kind": "interact",
+          "targetKey": "field_alignment",
+          "description": "Maintain independent six-field support",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        }
+      ],
+      "completionFlag": "HUMAN_Q180_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q181",
+      "editorialId": 181,
+      "title": "The Shattering of Nhal",
+      "track": "main_story",
+      "minLevel": 80,
+      "prerequisites": [
+        "HUMAN_Q180_DONE"
+      ],
+      "contact": "Sera / Oth'varen",
+      "region": "Final convergence chamber",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "defend",
+          "targetKey": "othvaren_correction",
+          "description": "Defend Oth'varen during correction",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "encounter_retry",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S02",
+          "kind": "observe",
+          "targetKey": "alignment_holds",
+          "description": "Witness alignment hold and Oth'varen's physical death",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S03",
+          "kind": "interact",
+          "targetKey": "coordinated_inversion",
+          "description": "Complete synchronized inversion",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S04",
+          "kind": "observe",
+          "targetKey": "nhal_shattering",
+          "description": "Confirm Nhal's unified identity shattered while essence persists",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        }
+      ],
+      "completionFlag": "HUMAN_Q181_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q182",
+      "editorialId": 182,
+      "title": "Silence After",
+      "track": "main_story",
+      "minLevel": 80,
+      "prerequisites": [
+        "HUMAN_Q181_DONE"
+      ],
+      "contact": "Sera",
+      "region": "Guardian sanctuary",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "sera",
+          "description": "Confirm survivors and the Seven's survival",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S02",
+          "kind": "interact",
+          "targetKey": "othvaren_memorial",
+          "description": "Record Oth'varen's final act",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        }
+      ],
+      "completionFlag": "HUMAN_Q182_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q183",
+      "editorialId": 183,
+      "title": "A World Unbound",
+      "track": "main_story",
+      "minLevel": 80,
+      "prerequisites": [
+        "HUMAN_Q182_DONE"
+      ],
+      "contact": "Mara / Corven",
+      "region": "Oth'irun, Tidehold, Valecrown",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "kelvari_custodians",
+          "description": "Deliver restricted report to Kel'vari custodians",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S02",
+          "kind": "talk",
+          "targetKey": "covenant_authority",
+          "description": "Deliver Covenant report",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S03",
+          "kind": "observe",
+          "targetKey": "war_continues",
+          "description": "Confirm faction war remains unresolved",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        }
+      ],
+      "completionFlag": "HUMAN_Q183_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q184",
+      "editorialId": 184,
+      "title": "The Road Home",
+      "track": "main_story",
+      "minLevel": 80,
+      "prerequisites": [
+        "HUMAN_Q183_DONE"
+      ],
+      "contact": "Elara",
+      "region": "Thes'var central facility, distributed network, Oth'irun, Valecrown, Millhaven",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "travel",
+          "targetKey": "millhaven",
+          "description": "Return physically to Millhaven",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S02",
+          "kind": "talk",
+          "targetKey": "elara",
+          "description": "Revisit Elara",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "home_cast",
+          "description": "Close relationships with original cast",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        }
+      ],
+      "completionFlag": "HUMAN_Q184_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    }
+  ]
+}
