@@ -11,10 +11,10 @@
 | 20–30 | **Retired** (Q035–Q062 migration retained) | **Retired** |
 | 30–35 | **Retired** (Q063–Q079 migration retained) | **Retired** |
 | 35–45 | **Retired** (Q080–Q103 migration retained) | **Retired** |
-| 45–55 | `Human_45_55_Playable_Quest_Pack.md` | `Human_45_55_Implementation_Brief.md` |
-| 55–70 | `Human_55_70_Playable_Quest_Pack.md` | `Human_55_70_Implementation_Brief.md` |
-| 70–80 | `Human_70_80_Playable_Quest_Pack.md` | `Human_70_80_Implementation_Brief.md` |
-| 80 finale | `Human_80_Finale_Playable_Quest_Pack.md` | `Human_80_Finale_Implementation_Brief.md` |
+| 45–55 | **Retired** (Q104–Q128 migration retained) | **Retired** |
+| 55–70 | **Retired** (Q129–Q157 migration retained) | **Retired** |
+| 70–80 | **Retired** (Q158–Q184 migration retained) | **Retired** |
+| 80 finale | **Retired** (Q158–Q184 migration retained) | **Retired** |
 
 These **17 files** contain substantial authored prose. They are **not authoritative** over the canonical story or the single manifest. They cannot safely be deleted merely because the JSON stage data has been consolidated.
 
@@ -74,7 +74,7 @@ All four remaining legacy files (`Human_70_80_Playable_Quest_Pack.md`, `Human_70
 
 ## Verified deletion — levels 1–10
 
-The Q001–Q017 legacy playable pack was removed from the active tree after its 17 sections and distinct gameplay/QA details were preserved in [Q001–Q017 Gameplay Detail Migration](Human_Q001_Q017_Gameplay_Detail_Migration.md). Direct links in the production specification, NPC dialogue and vertical-slice handoff were updated to the current migration document. The source remains recoverable through Git history. **16 legacy packs/briefs remain** for unique-detail and inbound-reference verification before deletion. This does not imply approval of all migrated mechanics as executable quest objectives.
+The Q001–Q017 legacy playable pack was removed from the active tree after its 17 sections and distinct gameplay/QA details were preserved in [Q001–Q017 Gameplay Detail Migration](Human_Q001_Q017_Gameplay_Detail_Migration.md). Direct links in the production specification, NPC dialogue and vertical-slice handoff were updated to the current migration document. The source remains recoverable through Git history. **All 17 legacy packs/briefs have now been retired** for unique-detail and inbound-reference verification before deletion. This does not imply approval of all migrated mechanics as executable quest objectives.
 
 ## Verified deletion — levels 10–30
 
@@ -82,4 +82,8 @@ Four legacy sources were removed after both chapter pairs were compared, their 1
 
 ## Verified deletion — levels 30–45
 
-Four reconciled source files were deleted after confirming Q063–Q079 (17 quests) and Q080–Q103 (24 quests) coverage, redirecting their earlier active links and preserving relevant narrative, encounter and QA constraints in [Q063–Q079 migration](Human_Q063_Q079_Legacy_Pack_Migration.md) and [Q080–Q103 migration](Human_Q080_Q103_Legacy_Pack_Migration.md). Git history retains originals. **9 of 17** legacy pack/brief files removed; **8 remain**. Editorial migration does not certify executable Rust content.
+Four reconciled source files were deleted after confirming Q063–Q079 (17 quests) and Q080–Q103 (24 quests) coverage, redirecting their earlier active links and preserving relevant narrative, encounter and QA constraints in [Q063–Q079 migration](Human_Q063_Q079_Legacy_Pack_Migration.md) and [Q080–Q103 migration](Human_Q080_Q103_Legacy_Pack_Migration.md). Git history retains originals. **All 17** legacy pack/brief files are now deleted. Editorial migration does not certify executable Rust content.
+
+## Final legacy-pack retirement
+
+All **17 of 17** playable quest packs and implementation briefs have now been removed from the active repository. Their 184 editorial quest references, story outcomes, still-relevant gameplay intentions and general QA/recovery requirements are represented by the canonical campaign, sole structured quest manifest, Rust authoring reviews and eight reconciliation notes. Old versions remain in Git history. This completes **legacy pack retirement only**: the large production specification, H/HS provenance register, reconciliation notes and other redundant narrative planning documents still need a separate source-of-truth audit before deletion. No Rust quest engine files were changed.
