@@ -198,3 +198,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 
 - [x] Corrected `Human_Legacy_Exact_Title_Mapping_Audit.md` to acknowledge retired Obsidian source mirror while protecting the root historical H/HS register (commit `00e8e8ee`).
 - [ ] The 64 exact-title H candidates are title matches only; eight identified objective-specific details and four contact discrepancies still require semantic review. Do not approve runtime mappings from title matches.
+
+## H-series objective-level reconciliation started — 2 November 2026
+
+- [x] Compared crosswalk source objectives to current manifest stages for H1-01/Q001, H4-07/Q097, H5-09/Q071, H5-10/Q072 and H5-20/Q184. Results and remaining details recorded in `Human_Legacy_Exact_Title_Mapping_Audit.md` (commit `393e739f`).
+- [ ] Review corresponding dialogue and outcome evidence before marking any mapping approved. Current Grey Surveyor spoiler-safe aliases remain unchanged; no runtime IDs assigned.
+- [ ] Continue remaining H/HS objective-level comparisons and preserve unique side hooks in non-canonical archive.
