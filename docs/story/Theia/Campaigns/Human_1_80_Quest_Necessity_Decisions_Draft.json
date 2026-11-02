@@ -1,0 +1,301 @@
+{
+  "schema_version": 1,
+  "status": "editorial_proposals_not_locked",
+  "quest_count_before": 184,
+  "quest_count_after_proposed": 184,
+  "source": "Human_1_80_Quest_Dependencies.json",
+  "groups": [
+    {
+      "key": "hidden_passage",
+      "ids": [
+        29,
+        30
+      ],
+      "recommendation": "keep_distinct",
+      "reason": "Q029 records evacuation and independent evidence before the solo instance; Q030 owns combat, arrest and dungeon retry. A pre-instance checkpoint is a meaningful gameplay boundary.",
+      "risk": "Do not repeat dispatch collection in Q030 if Q029 already secures the same copy; use different evidence targets.",
+      "quests": [
+        {
+          "campaign_reference": "Q029",
+          "title": "Before the Hidden Passage",
+          "track": "main_story",
+          "objective": "Secure civilian exits and establish an independent evidence-copy checkpoint before Cassian's capture.",
+          "prerequisites": [
+            "HUMAN_Q028_DONE"
+          ]
+        },
+        {
+          "campaign_reference": "Q030",
+          "title": "The Hidden Passage",
+          "track": "main_story",
+          "objective": "Finish the solo story dungeon; stop Sorn, secure a dispatch copy and capture Cassian alive. Group play is optional.",
+          "prerequisites": [
+            "HUMAN_Q029_DONE"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "guardian_gate",
+      "ids": [
+        83,
+        84,
+        85,
+        86,
+        88
+      ],
+      "recommendation": "keep_with_boundary_rewrite",
+      "reason": "Survey optional, sovereign permission mandatory, crossing mandatory, first living Kel'vari reveal mandatory, ongoing access consent mandatory.",
+      "risk": "Q083's return-path verification is optional but Q085 must independently validate safe return. Q086 repeats crossing language from Q085; rewrite Q086 as arrival and first contact, not another crossing.",
+      "quests": [
+        {
+          "campaign_reference": "Q083",
+          "title": "The Route That Never Closed",
+          "track": "regional_optional",
+          "objective": "Survey the separate low-capacity Passage, test a small-group return path and deliver an expedition proposal to Corven.",
+          "prerequisites": []
+        },
+        {
+          "campaign_reference": "Q084",
+          "title": "Permission to Enter",
+          "track": "main_story",
+          "objective": "Obtain permission for a small supervised delegation.",
+          "prerequisites": [
+            "HUMAN_Q082_DONE"
+          ]
+        },
+        {
+          "campaign_reference": "Q085",
+          "title": "The Hidden Crossing",
+          "track": "main_story",
+          "objective": "Cross with approved expedition and verify return capacity.",
+          "prerequisites": [
+            "HUMAN_Q084_DONE"
+          ]
+        },
+        {
+          "campaign_reference": "Q086",
+          "title": "Lantern Redoubt",
+          "track": "main_story",
+          "objective": "Cross in a small surveyed group and agree access/maintenance terms for this outer site; no continent-wide gate restoration.",
+          "prerequisites": [
+            "HUMAN_Q085_DONE"
+          ]
+        },
+        {
+          "campaign_reference": "Q088",
+          "title": "Permission to Remain",
+          "track": "main_story",
+          "objective": "Agree boundaries, supplies and site access.",
+          "prerequisites": [
+            "HUMAN_Q086_DONE"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "archive_access",
+      "ids": [
+        91,
+        92,
+        93,
+        94
+      ],
+      "recommendation": "keep_with_optional_separation",
+      "reason": "Request, custodial terms, optional archive service, then authenticated research are distinct; Q093 cannot gate Q094.",
+      "risk": "Q092 already includes copyist rescue while Q093 includes archive service. Separate them by unique location and independent objectives.",
+      "quests": [
+        {
+          "campaign_reference": "Q091",
+          "title": "Questions for the Sixth",
+          "track": "main_story",
+          "objective": "Request supervised archive audience.",
+          "prerequisites": [
+            "HUMAN_Q089_DONE"
+          ]
+        },
+        {
+          "campaign_reference": "Q092",
+          "title": "The Custodian's Conditions",
+          "track": "main_story",
+          "objective": "Meet the archive party at a protected approach, accept access limits and recover its missing copyist.",
+          "prerequisites": [
+            "HUMAN_Q091_DONE"
+          ]
+        },
+        {
+          "campaign_reference": "Q093",
+          "title": "An Audience Earned",
+          "track": "regional_optional",
+          "objective": "Secure exposed records and access approval.",
+          "prerequisites": []
+        },
+        {
+          "campaign_reference": "Q094",
+          "title": "Six Names in the Record",
+          "track": "main_story",
+          "objective": "Compare the project list, verifier image and distinctive stability sequence; request the Surveyor's explanation.",
+          "prerequisites": [
+            "HUMAN_Q092_DONE"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "delegation_investigation",
+      "ids": [
+        109,
+        110,
+        111,
+        112,
+        113,
+        114
+      ],
+      "recommendation": "keep_for_now_review_pacing",
+      "reason": "Route reconstruction, planted evidence, living witness, payments, decoy discovery and independent founder attribution are different evidence classes.",
+      "risk": "Avoid six mandatory trips to the same quest giver. Group steps into field sequences and validate travel time; combining later may be justified.",
+      "quests": [
+        {
+          "campaign_reference": "Q109",
+          "title": "Road to the Meeting",
+          "track": "main_story",
+          "objective": "Survey arrival routes and guard positions.",
+          "prerequisites": [
+            "HUMAN_Q108_DONE"
+          ]
+        },
+        {
+          "campaign_reference": "Q110",
+          "title": "Evidence Planted Twice",
+          "track": "main_story",
+          "objective": "Recover planted clues and compare provenance.",
+          "prerequisites": [
+            "HUMAN_Q109_DONE"
+          ]
+        },
+        {
+          "campaign_reference": "Q111",
+          "title": "The Witness Who Disappeared",
+          "track": "main_story",
+          "objective": "Find survivor and protect extraction.",
+          "prerequisites": [
+            "HUMAN_Q110_DONE"
+          ]
+        },
+        {
+          "campaign_reference": "Q112",
+          "title": "The Delegation's Second Ledger",
+          "track": "main_story",
+          "objective": "Compare human and hostile-coast contract records without relying on friendly Dominion contacts.",
+          "prerequisites": [
+            "HUMAN_Q111_DONE"
+          ]
+        },
+        {
+          "campaign_reference": "Q113",
+          "title": "The False Safe House",
+          "track": "main_story",
+          "objective": "Locate Su'vareth's headquarters using three independent trails and expose its decoy.",
+          "prerequisites": [
+            "HUMAN_Q112_DONE"
+          ]
+        },
+        {
+          "campaign_reference": "Q114",
+          "title": "The Veiled Hand",
+          "track": "main_story",
+          "objective": "Present corroborated pattern identifying Su'vareth.",
+          "prerequisites": [
+            "HUMAN_Q113_DONE"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "warden_preparation",
+      "ids": [
+        128,
+        154
+      ],
+      "recommendation": "keep_rename_q128",
+      "reason": "Q128 stages early expedition logistics while Q154 stages final Veilbreaker assault after the Keeper revelation.",
+      "risk": "Identical titles confuse players and content lookup. Proposed Q128 title: The Expedition Musters. Q154 remains Before the Veil Breaks.",
+      "quests": [
+        {
+          "campaign_reference": "Q128",
+          "title": "Before the Veil Breaks",
+          "track": "main_story",
+          "objective": "Verify extraction, supply and instrument teams.",
+          "prerequisites": [
+            "HUMAN_Q127_DONE"
+          ]
+        },
+        {
+          "campaign_reference": "Q154",
+          "title": "Before the Veil Breaks",
+          "track": "main_story",
+          "objective": "Prepare evacuation and assault support.",
+          "prerequisites": [
+            "HUMAN_Q153_DONE"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "finale_preparation",
+      "ids": [
+        170,
+        172,
+        173,
+        174
+      ],
+      "recommendation": "keep_distinct_with_tighter_scopes",
+      "reason": "Q170 transfers knowledge, Q172 identifies structural risk, Q173 performs a bounded test, Q174 checks final operation readiness.",
+      "risk": "No Oth'varen foreknowledge of death in Q170; Q172 cannot reveal Thes'var's later sabotage or fatal correction. Avoid repetitive generic readiness interactions.",
+      "quests": [
+        {
+          "campaign_reference": "Q170",
+          "title": "Instructions That Survive Us",
+          "track": "main_story",
+          "objective": "Train independent teams and deposit redundant safety records for operation without the ancient scholar.",
+          "prerequisites": [
+            "HUMAN_Q167_DONE"
+          ]
+        },
+        {
+          "campaign_reference": "Q172",
+          "title": "A Failure We Can See",
+          "track": "main_story",
+          "objective": "Detect the weak junction and establish an emergency correction route before final activation.",
+          "prerequisites": [
+            "HUMAN_Q171_DONE"
+          ]
+        },
+        {
+          "campaign_reference": "Q173",
+          "title": "The Last Measure",
+          "track": "main_story",
+          "objective": "Run bounded distributed alignment test.",
+          "prerequisites": [
+            "HUMAN_Q172_DONE"
+          ]
+        },
+        {
+          "campaign_reference": "Q174",
+          "title": "Before the Final Crossing",
+          "track": "main_story",
+          "objective": "Verify teams and complete readiness.",
+          "prerequisites": [
+            "HUMAN_Q173_DONE"
+          ]
+        }
+      ]
+    }
+  ],
+  "rules": [
+    "No quest deletion or merging is approved by this file.",
+    "No new hard level eligibility gates are inferred from planning bands.",
+    "Story source of truth remains the canonical campaign.",
+    "All ID changes must preserve Q and original H/HS provenance and update references atomically."
+  ]
+}
