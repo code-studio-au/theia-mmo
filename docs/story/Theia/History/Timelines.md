@@ -6,13 +6,13 @@
 ## Player revelation
 [[Sources/THEIA_MODERN_STORY_REVELATION_TIMELINE|Modern Story and Revelation Timeline]] governs disclosure. Later dated approvals supersede older campaign-band proposals.
 
-![[Sources/THEIA_MODERN_STORY_REVELATION_TIMELINE#1. The core narrative principle]]
+[Read historical source section](../../THEIA_MODERN_STORY_REVELATION_TIMELINE.md)
 
 ## Approved campaign structure
-![[Sources/THEIA_MODERN_STORY_REVELATION_TIMELINE#Creator-approved five-act launch campaign (15 October 2026)]]
+[Read historical source section](../../THEIA_MODERN_STORY_REVELATION_TIMELINE.md)
 
 ## Reveal boundaries
-![[Sources/THEIA_MODERN_STORY_REVELATION_TIMELINE#4. Reveal gates: what must not be disclosed prematurely]]
+[Read historical source section](../../THEIA_MODERN_STORY_REVELATION_TIMELINE.md)
 
 [[Human Campaign]] · [[Chronicles and History]] · [[Welcome|Home]]
 

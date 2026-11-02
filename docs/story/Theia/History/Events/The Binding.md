@@ -2,14 +2,14 @@
 type: event
 chronology_order: 9
 canon_status: source-specific
-source: "[[Sources/THEIA_DETAILED_LORE_ARCHIVE]]"
+source: "../../Sources/THEIA_DETAILED_LORE_ARCHIVE.md"
 up: "[[Historical Timeline]]"
 ---
 # The Binding
 
 Historical sequence and causes are distinct from [[Timelines|player revelation]]. Dates and durations are not supplied by this import. The following source section may cover more than one event; its status labels and later creator decisions govern.
 
-![[Sources/THEIA_DETAILED_LORE_ARCHIVE#1.6 The Second Sundering and The Binding [NEWLY CONFIRMED CORE · 2026-10-12]]]
+[Read historical source section](../../Sources/THEIA_DETAILED_LORE_ARCHIVE.md)
 
 [[Historical Timeline]] · [[Welcome|Home]]
 

@@ -1,7 +1,7 @@
 ---
 type: memory-scene
 canon_status: approved-scene
-source: "[[Sources/THEIA_MEMORY_SCENES]]"
+source: "../../THEIA_MEMORY_SCENES.md"
 up: "[[Memory Scenes]]"
 ---
 # The Six Reunited
@@ -9,7 +9,7 @@ up: "[[Memory Scenes]]"
 > [!note] Approval scope
 > The source identifies this as an approved dramatic scene. Discovery mechanism remains open; dialogue and dramatic detail remain subordinate to locked canon.
 
-![[Sources/THEIA_MEMORY_SCENES#Memory I — The Six Reunited]]
+[Read historical source section](../../THEIA_MEMORY_SCENES.md)
 
 [[Memory Scenes]] · [[Welcome|Home]]
 
