@@ -1,7 +1,7 @@
 ---
 type: location
 canon_status: Needs Review
-source: "[[Sources/THEIA_HUMAN_CAST_AND_PLACES]]"
+source: "../../Sources/THEIA_HUMAN_CAST_AND_PLACES.md"
 up: "[[Atlas]]"
 ---
 # Elderwood
