@@ -65,3 +65,7 @@ Two further Obsidian source mirrors, `THEIA_HUMAN_QUEST_REGISTER.md` and `THEIA_
 ## Source mirror divergence — World Bible
 
 The root `THEIA_WORLD_BIBLE.md` and Obsidian mirror differ in actual wording, not just wiki-link syntax: the root refers to the historical 'seventh creation' wording while the mirror says 'Kel'vari creation' in the Q40 decision summary. This is a historical editorial wording change, **not** approval to alter the locked sequence (uncorrupted Kel'vari creation, accidental First Resonance, later Nhal influence). Keep both documents until remaining differences are classified; never select a canonical variant merely because one mirror is newer or has cleaner links.
+
+## Historical World Directory — full file-target verification
+
+Verified all **281 Markdown link targets** in `Lore/World_Directory_Legacy_Reference.md` against the current recursive `main` repository tree. One remaining missing target (`Campaigns/Quest Index.md`) was redirected to `Campaigns/CURRENT_HUMAN_CAMPAIGN.md`; the subsequent check returned **281/281 existing file targets, zero missing**. This validates file paths only, not heading anchors or semantic correctness. The broader character/reading-map backlink audit and five protected source-mirror differences remain open.
