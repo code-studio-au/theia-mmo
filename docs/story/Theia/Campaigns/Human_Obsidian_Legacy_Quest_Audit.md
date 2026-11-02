@@ -85,3 +85,7 @@ A fresh complete fetch of all **47** `Characters/Campaign Cast/` Markdown files 
 ## Atlas source-link verification — PASS
 
 The 24 Atlas Markdown files were rechecked in three fresh batches (8+8+8) against the current recursive repository tree. **30/30 relative Markdown source links resolved to existing files; zero missing targets.** This verifies the converted source-link paths, not every surviving Obsidian wiki-link, heading anchor, or the editorial accuracy of location content. The Atlas files retain their established canon-status boundaries.
+
+## History source-link verification — PASS
+
+All **19** `History/` Markdown files were processed for Obsidian source-embed conversion, then verified in two fresh batches (10+9) against the repository tree. **32/32 relative Markdown source links resolved to existing files, with zero missing targets.** This check does not validate heading anchors, unrelated Obsidian wiki-links, or historical canon claims. The original history descriptions and approval labels were preserved.
