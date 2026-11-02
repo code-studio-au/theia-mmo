@@ -118,7 +118,7 @@ Khor'vun operates a distributed Anchor network that amplifies the original tear.
 
 **Offer / opening:** “We were trying to understand a disturbance that did not fit our instruments. Vaer'uun heard an answer where I saw a warning.”
 
-**Player:** “Did you know it was Nhal?”
+**Player:** “Did you know what was reaching you?”
 
 **Response:** “Not then. We didn't have the knowledge to name what was reaching us.”
 
