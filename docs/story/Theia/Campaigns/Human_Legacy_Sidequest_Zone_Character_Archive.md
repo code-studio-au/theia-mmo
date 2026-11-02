@@ -104,3 +104,34 @@ These are **candidate remnants**, not newly approved quests. Current Q reference
 ## Potentially reusable quest implementation detail (from exact-title objective comparison)
 
 The [exact-title audit](Human_Legacy_Exact_Title_Mapping_Audit.md) records eight legacy details that may enrich existing quests or separate local content: H2-05 hold permission for measuring-assembly recovery; H2-07 limited engineering commission and inspection report; H2-12 Sera's unstable observation site and comparison with Brynja's report; H2-14 physical isolation and emergency cutoff documentation; H2-17 Aelari material/procurement reference; H4-02 surveyed group access and maintenance terms; H4-08 restricted route disclosure and enclave security; H2-08 Northwatch garrison and extraction procedure. **All are unapproved candidates**, not new stages, canon or production requirements. Do not assume these are absent from dialogue or lore simply because manifest objective wording differs.
+
+## Optional-quest thematic crosswalk (not equivalence)
+
+The historical crosswalk proposes the following current quest references as **comparison targets only**. Shared setting or theme does not prove the original side quest is implemented or redundant.
+
+| Original optional ID | Compare with current campaign | Disposition |
+|---|---|---|
+| HS-01 | Q006 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
+| HS-02 | Q007 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
+| HS-03 | Q032 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
+| HS-04 | Q055 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
+| HS-05 | Q015 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
+| HS-06 | Q014 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
+| HS-07 | Q051 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
+| HS-08 | Q052 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
+| HS-09 | Q007 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
+| HS-10 | Q055 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
+| HS-11 | Q055 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
+| HS-12 | Q101 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
+| HS-13 | Q063 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
+| HS-14 | Q064 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
+| HS-15 | Q063 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
+| HS-16 | Q037 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
+| HS-17 | Q046 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
+| HS-18 | Q046 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
+| HS-19 | Q088 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
+| HS-20 | Q093 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
+| HS-21 | Q087 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
+| HS-22 | Q008 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
+| HS-23 | Q017 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
+| HS-24 | Q033 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
