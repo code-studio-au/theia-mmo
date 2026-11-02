@@ -81,3 +81,7 @@ All 47 `Characters/Campaign Cast/` cards were processed to replace their obsolet
 ## Campaign-cast migration — final verification PASS
 
 A fresh complete fetch of all **47** `Characters/Campaign Cast/` Markdown files was completed in four batches (12+12+12+11). **Zero** contained the obsolete `Sources/THEIA_HUMAN_CAST_AND_PLACES` reference. The source-link migration for this directory is verified complete. This does not certify other Obsidian wiki-links elsewhere in the vault or the five protected lore-mirror differences.
+
+## Atlas source-link verification — PASS
+
+The 24 Atlas Markdown files were rechecked in three fresh batches (8+8+8) against the current recursive repository tree. **30/30 relative Markdown source links resolved to existing files; zero missing targets.** This verifies the converted source-link paths, not every surviving Obsidian wiki-link, heading anchor, or the editorial accuracy of location content. The Atlas files retain their established canon-status boundaries.
