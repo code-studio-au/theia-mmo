@@ -1,7 +1,7 @@
 ---
 type: people
 canon_status: confirmed-foundation; details-open
-source: "[[Sources/THEIA_WORLD_BIBLE]]"
+source: "../../Sources/THEIA_WORLD_BIBLE.md"
 up: "[[Peoples and Allegiances]]"
 ---
 # Humans
@@ -38,7 +38,7 @@ These starting roles are approved; proposed campaign developments and endings re
 Further campaign cast: [[Characters]] · [[Human Campaign]].
 
 ## Broader context
-![[Sources/THEIA_WORLD_BIBLE#6. Playable races, allegiances and governments [CONFIRMED]]]
+[Read historical source section](../../Sources/THEIA_WORLD_BIBLE.md)
 
 [[Magic]] · [[The Seven Gods]]
 
