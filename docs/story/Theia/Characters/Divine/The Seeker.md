@@ -1,7 +1,7 @@
 ---
 type: divine
 canon_status: confirmed-foundation; details-open
-source: "[[Sources/THEIA_WORLD_BIBLE]]"
+source: "../../Sources/THEIA_WORLD_BIBLE.md"
 up: "[[The Seven Gods]]"
 ---
 # The Seeker
