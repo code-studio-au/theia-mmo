@@ -1,0 +1,39 @@
+# Human 1–80 — Legacy Pack Consolidation Checklist
+
+**Status: In progress — no deletion authorization.** This document inventories old quest packs and implementation briefs to prevent loss of unique design details. [Current Human Campaign](CURRENT_HUMAN_CAMPAIGN.md) is the entry point; [Current Quest Authoring Manifest](Human_1_80_Current_Quest_Authoring_Manifest.json) is the sole structured working quest inventory. [Quest Engine](../../../QUEST_ENGINE.md) is Codex's runtime agreement.
+
+## Sources awaiting reconciliation
+
+| Band | Playable quest pack | Detailed implementation brief |
+|---|---|---|
+| 1–10 | `Human_Levels_1_10_Playable_Quest_Pack.md` | no matching chapter brief in this inventory |
+| 10–20 | `Human_10_20_Playable_Quest_Pack.md` | `Human_10_20_Implementation_Brief.md` |
+| 20–30 | `Human_20_30_Playable_Quest_Pack.md` | `Human_20_30_Implementation_Brief.md` |
+| 30–35 | `Human_30_35_Playable_Quest_Pack.md` | `Human_30_35_Implementation_Brief.md` |
+| 35–45 | `Human_35_45_Playable_Quest_Pack.md` | `Human_35_45_Implementation_Brief.md` |
+| 45–55 | `Human_45_55_Playable_Quest_Pack.md` | `Human_45_55_Implementation_Brief.md` |
+| 55–70 | `Human_55_70_Playable_Quest_Pack.md` | `Human_55_70_Implementation_Brief.md` |
+| 70–80 | `Human_70_80_Playable_Quest_Pack.md` | `Human_70_80_Implementation_Brief.md` |
+| 80 finale | `Human_80_Finale_Playable_Quest_Pack.md` | `Human_80_Finale_Implementation_Brief.md` |
+
+These **17 files** contain substantial authored prose. They are **not authoritative** over the canonical story or the single manifest. They cannot safely be deleted merely because the JSON stage data has been consolidated.
+
+## Required migration checks per quest
+
+1. Confirm Q reference and historical H/HS provenance; preserve source distinctions for reused, split, merged and retired entries.
+2. Compare objective ordering, interaction wording, named NPC roles, exact locations, failure/retry and evidence against the current manifest.
+3. Transfer unique, still-canonical gameplay details to the manifest or referenced encounter/dialogue specifications. Do not copy superseded narrative decisions.
+4. Resolve planned capabilities explicitly (inventory possession versus historical acquisition, consumption, exploration, branching, party sharing, phasing). Do not misrepresent them as currently executable.
+5. Validate dialogue/reveal gates, solo story dungeons and atomic world transitions; preserve Q156/Q181 causal sequencing.
+6. Check all incoming links and replace references before removing a source file.
+7. Record reviewed source and migration disposition in a final provenance ledger. Only then delete the redundant source from the active tree; Git history retains it.
+
+## Current progress and blocker
+
+- **184 quests / 684 stages** are consolidated in one manifest; first-pass Rust authoring reviews cover the whole campaign.
+- The chapter JSON duplicates have been removed after count/stage/target verification.
+- These 17 prose sources have been located and inventoried, **not yet line-by-line reconciled**. Their unique details are not guaranteed to be represented in the manifest.
+- The older H/HS register remains until editorial mapping is approved.
+- Codex's quest catalogue registry, migration and live adoption are separate engineering tasks; do not edit or delete Codex's Rust files during story cleanup.
+
+**Next:** reconcile the 1–10 playable pack against Q001–Q017 and dialogue, then proceed chapter by chapter. Delete only after verified migration, not as a bulk cleanup.
