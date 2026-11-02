@@ -57,3 +57,7 @@ The repository tree was checked after commits `30c0cfe`, `3f93c16` and `6746658`
 ## Source mirror normalization comparison — 2 November 2026
 
 All 19 `THEIA_*.md` source mirrors were compared to the same-named `docs/story/` originals using a conservative normalization that removes Obsidian wiki-link presentation and collapses whitespace. Nine pairs matched under that normalization and the **nine mirrored copies only** were deleted on `main` (commit `9179951`): CHARACTER_ARCS, HUMAN_ACT_I_STORY, HUMAN_CAMPAIGN_REVIEW, HUMAN_CAST_AND_PLACES, HUMAN_CONNECTED_RACIAL_STORIES, HUMAN_HEARTLANDS_SETTLEMENT_REGISTER, HUMAN_STORY_DUNGEONS, MEMORY_SCENES, ZONE_POPULATION_FRAMEWORK. Original root documents remain. **Ten other mirrors did not match**, so they remain untouched. This normalization is a useful duplication check, not a semantic proof; some archived reading maps still point to the removed mirror paths and require link migration.
+
+## Additional mirror reconciliation
+
+Two further Obsidian source mirrors, `THEIA_HUMAN_QUEST_REGISTER.md` and `THEIA_HUMAN_CAMPAIGN.md`, matched their root historical originals after removing only the root's newer **SUPERSEDED** notice and normalizing wiki-link/whitespace formatting. Their mirror copies were removed on `main` (commit `5af9651`); the original root documents and editorial crosswalk remain. Other mirrors, including World Bible and Interwoven Chronicle, show substantive wording differences and remain protected. References to the deleted mirrors in source reading maps still need migration.
