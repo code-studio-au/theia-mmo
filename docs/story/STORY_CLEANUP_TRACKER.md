@@ -214,3 +214,8 @@ Do not tick work merely because it is planned or described in older reports. Rec
 
 - [x] Linked focused exact-title audit to existing full 64-entry objective comparison, avoiding duplicate comparison registers (commit `190d3e65`).
 - [ ] Continue reviewing unique dialogue and outcomes against the full comparison and draft crosswalk. No mappings or runtime IDs are approved by this documentation change.
+
+## Additional early H-series prerequisite review — 2 November 2026
+
+- [x] Compared H1-02 through H1-06 against Q002, Q003, Q004, Q009 and Q010 in the existing 64-entry objective comparison (commit `7dc61235`). All five candidate prerequisite chains align; stage/objective structure strongly corresponds.
+- [ ] Verify historical location, surviving teamster, original damaged document and authentication-dialogue details before any mapping approval. No runtime IDs or canon stages changed.
