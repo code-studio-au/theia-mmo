@@ -1,7 +1,7 @@
 ---
 type: people
 canon_status: confirmed-foundation; details-open
-source: "[[Sources/THEIA_WORLD_BIBLE]]"
+source: "../../Sources/THEIA_WORLD_BIBLE.md"
 up: "[[Peoples and Allegiances]]"
 ---
 # Korrath
@@ -16,7 +16,7 @@ trolls co-created by Keeper + Ascendant; chiefly Keeper-worshipping; elders' cou
 - [[Urodan]] · [[Tarek Oss]] — additional campaign cast; see their notes for approval scope.
 
 ## Broader context
-![[Sources/THEIA_WORLD_BIBLE#6. Playable races, allegiances and governments [CONFIRMED]]]
+[Read historical source section](../../Sources/THEIA_WORLD_BIBLE.md)
 
 [[Magic]] · [[The Seven Gods]]
 
