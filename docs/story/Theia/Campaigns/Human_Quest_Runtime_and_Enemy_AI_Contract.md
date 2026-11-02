@@ -1,5 +1,7 @@
 # Theia — Engine-independent Quest Runtime and Enemy AI Contract v0.1
 
+> **Architecture correction — 2 November 2026:** Theia's implementation is Rust/Bevy. Rust owns authoritative quest lifecycle, objective validation, persistence, rewards and event delivery; Luau is the intended sandboxed authoring layer for quest-specific dialogue, scripted reactions and encounters, pending integration design and approval. The JavaScript companion prototype is a disposable illustrative simulator **not** the implementation target. Preserve and extend the existing Rust P3-11 objective foundation; do not build a competing quest runtime. See [Rust–Luau Quest Scripting Boundary](Human_Rust_Luau_Quest_Scripting_Boundary.md).
+
 **Status:** technical prototype proposal, not approved combat tuning or MMO engine integration. Story authority: [Human 1–80 Canonical Campaign](Human_1_80_Canonical_Campaign.md). Structured quest data: [Human 1–80 Index](Human_1_80_Structured_Quest_Data_Index.md).
 
 ## Quest runtime
