@@ -1,3 +1,5 @@
+> **SUPERSEDED — historical reference only (2 November 2026).** The single source of truth for the Human level 1–80 quest order, locations, objectives and main-story outcomes is [Human 1–80 Canonical Campaign](Human_1_80_Canonical_Campaign.md). The older plot timings, finale and contradictory mechanics below are retired; retain this file solely for source quest IDs, legacy dialogue and migration traceability.
+
 # Human 1–80 — Quest Migration Register
 
 **Needs Review — 2 November 2026.** Editorial migration proposal, not approved canon, implemented gameplay or tested XP. Based on the [original 92-quest register](../../THEIA_HUMAN_QUEST_REGISTER.md) and [level 1–80 prototype](Level_1_80_Progression_Prototype.md). The original files remain untouched.
