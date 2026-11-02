@@ -39,3 +39,17 @@ A comparison of historical source-objective prose against the current manifest's
 | H2-08 | Q038 | Northwatch garrison, Darian's support unit and extraction procedures |
 
 These may be useful **dialogue, encounter, location or side-objective notes**; do not silently insert them into the 184-quest manifest. The current stages remain authoritative. A literal word-overlap comparison cannot reliably establish semantic equivalence; each candidate needs narrative and gameplay review before being marked accounted-for.
+
+## Five candidate source-objective comparisons — 2 November 2026
+
+Compared the current crosswalk's source objectives directly with the 184-quest manifest's current stage descriptions. **These are evidence checks, not approved mappings or runtime IDs.**
+
+| Legacy → current | Evidence and remaining distinction | Editorial disposition |
+|---|---|---|
+| H1-01 → Q001 | Original calls for militia/healer/merchant meetings and local service assignment; current stages explicitly meet Darian, Anwen, Brenna and report to Elara. The exact final assignment wording is not a stage objective. | Strong structural candidate; verify dialogue/assignment consequence before approval |
+| H4-07 → Q097 | Original requires identity testimony and independent record cross-check; current stages present independent signature proof, respectful confrontation and the Oth'varen identity reveal. | Keep Grey Surveyor alias before reveal; verify the firsthand account and trust nuance in dialogue |
+| H5-09 → Q071 | Original specifies isolated Minor Resonator trial with instruments, physical cutoff and reserve limits; current stages inspect isolation, fit cutoff, verify limits and authorize trial. | Strong structural candidate; verify trial instruments and reserve limits in implementation details |
+| H5-10 → Q072 | Original requires bounded inversion with measured duration, stopping threshold and uncertainty record; current stages start bounded inversion, measure polarity, stop on threshold and archive result. | Strong structural candidate; verify measured duration and uncertainty in dialogue/reward evidence |
+| H5-20 → Q184 | Original homecoming visits recurring cast and receives service commendation; current stages return to Millhaven, revisit Elara/companions and close personal journey. | Preserve current level-80 ending; check whether commendation is present in dialogue or reward plan |
+
+Do not change canonical quest stages or treat matching titles as sufficient evidence. The remaining 59 exact-title candidates and 28 other H-series dispositions, plus 24 HS optional hooks, still require review.
