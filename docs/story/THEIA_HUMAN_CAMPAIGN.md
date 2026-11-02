@@ -1,3 +1,5 @@
+> **SUPERSEDED — historical reference only (2 November 2026).** The single source of truth for the Human level 1–80 quest order, locations, objectives and main-story outcomes is [Human 1–80 Canonical Campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md). The older plot timings, finale and contradictory mechanics below are retired; retain this file solely for source quest IDs, legacy dialogue and migration traceability.
+
 # THEIA — THE HUMAN CAMPAIGN: OATHS AND EVIDENCE
 
 **Status: Needs Review.** Complete proposed human launch story, Acts I–V, levels 1–60. Prepared 15 October 2026 from repository main at `d2dd4108c1c21fc83cb122a6f226f80d2dcdaad2`. The creator authorised autonomous completion and commits with this status. That authorisation does not ratify new lore.
