@@ -1,10 +1,9 @@
-# Historical THEIA SOURCE DECISION RECOVERY — Reading Map Redirect
+# Source Decision Recovery — historical reading map
 
-The former Obsidian reading map is retired. Both versions remain because their contents have not yet been proven equivalent.
+The imported Obsidian mirror has been reconciled with the root decision recovery document. The only remaining textual differences were three historical phrases that do not add distinct decisions; the root intentionally preserves their original wording.
 
-- [Preserved original source](../../../../THEIA_SOURCE_DECISION_RECOVERY.md)
-- [Historical source mirror](../../Sources/THEIA_SOURCE_DECISION_RECOVERY.md)
-- [Source divergence review](../../Campaigns/Legacy_Source_Mirror_Divergence_Register.md)
+- [Authoritative decision recovery](../../../THEIA_SOURCE_DECISION_RECOVERY.md)
 - [Current Human campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
+- [Historical divergence audit](../../Campaigns/Legacy_Source_Mirror_Divergence_Register.md)
 
-**Historical reference only.** Later creator decisions and the canonical campaign take precedence. Do not interpret this as approval of conflicting historical text.
+**Historical evidence only.** Later creator decisions and the approved level-80 campaign take precedence.
