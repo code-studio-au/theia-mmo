@@ -69,3 +69,7 @@ The root `THEIA_WORLD_BIBLE.md` and Obsidian mirror differ in actual wording, no
 ## Historical World Directory — full file-target verification
 
 Verified all **281 Markdown link targets** in `Lore/World_Directory_Legacy_Reference.md` against the current recursive `main` repository tree. One remaining missing target (`Campaigns/Quest Index.md`) was redirected to `Campaigns/CURRENT_HUMAN_CAMPAIGN.md`; the subsequent check returned **281/281 existing file targets, zero missing**. This validates file paths only, not heading anchors or semantic correctness. The broader character/reading-map backlink audit and five protected source-mirror differences remain open.
+
+## Reading-map navigation verification
+
+All 15 surviving `Editorial/Reading Maps/` Markdown files were inspected after replacing four divergent-source maps with explicit links to both preserved versions. **Zero of the 15 files now contain Obsidian `[[...]]` wiki-link syntax.** This is a syntax audit of the reading-map directory only; other character, lore, atlas and source notes may still contain wiki-links and require separate migration. The five protected lore mirrors remain untouched.
