@@ -1,0 +1,3308 @@
+{
+  "schema_version": 1,
+  "status": "needs_manual_provenance_review",
+  "source_register": "docs/story/THEIA_HUMAN_QUEST_REGISTER.md",
+  "canonical": "Human_1_80_Canonical_Campaign.md",
+  "warnings": [
+    "Exact title matches are candidates, not approved migrations.",
+    "Historical editorial IDs must not be reassigned based solely on titles.",
+    "Current minLevel values are planning annotations, not approved runtime eligibility.",
+    "Original optional quest identifiers outside the H-series table require separate reconciliation."
+  ],
+  "legacy_quest_rows": [
+    {
+      "editorial_id": "H1-01",
+      "planning_band": "1–3",
+      "title": "Before the Next Caravan",
+      "source_contact": "Elara",
+      "source_prerequisite": "Start",
+      "source_objective": "Meet the militia, healer and merchant; identify the immediate road and supply problems. Elara issues a local service assignment.",
+      "candidate_campaign_refs": [
+        "Q001"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H1-02",
+      "planning_band": "1–3",
+      "title": "The Road Patrol",
+      "source_contact": "Darian",
+      "source_prerequisite": "H1-01",
+      "source_objective": "Scout predator signs and protect a delayed worker on the road; report conditions rather than an arbitrary kill count.",
+      "candidate_campaign_refs": [
+        "Q002"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H1-03",
+      "planning_band": "2–4",
+      "title": "What the Healing House Needs",
+      "source_contact": "Anwen",
+      "source_prerequisite": "H1-02",
+      "source_objective": "Recover the delayed medical parcel from a safe roadside store and deliver it; establish why the caravan matters.",
+      "candidate_campaign_refs": [
+        "Q003"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H1-04",
+      "planning_band": "3–5",
+      "title": "The Missing Wheels",
+      "source_contact": "Brenna",
+      "source_prerequisite": "H1-03",
+      "source_objective": "Trace the caravan's last confirmed stop, search its abandoned wagon and locate a surviving teamster.",
+      "candidate_campaign_refs": [
+        "Q004"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H1-05",
+      "planning_band": "4–6",
+      "title": "An Unusual Buyer",
+      "source_contact": "Elara",
+      "source_prerequisite": "H1-04",
+      "source_objective": "Disrupt Iven Rusk's camp, recover selected cargo and a damaged royal-sealed document; record the buyer's instructions.",
+      "candidate_campaign_refs": [
+        "Q009"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H1-06",
+      "planning_band": "5–7",
+      "title": "A Seal Without a Name",
+      "source_contact": "Elara / Heddan",
+      "source_prerequisite": "H1-05",
+      "source_objective": "Secure the document; compare a fitting with legitimate workshop stock; establish that authentication requires other authority.",
+      "candidate_campaign_refs": [
+        "Q010"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H1-07",
+      "planning_band": "6–8",
+      "title": "At the River Crossing",
+      "source_contact": "Brenna",
+      "source_prerequisite": "H1-06",
+      "source_objective": "Accompany a caravan's arrival in Stoneford and check the regional warehouse; complete travel through a protected PvE route if desired.",
+      "candidate_campaign_refs": [
+        "Q011"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H1-08",
+      "planning_band": "7–9",
+      "title": "Three Books",
+      "source_contact": "Mara's local correspondent",
+      "source_prerequisite": "H1-07",
+      "source_objective": "Compare Perrin's stock book, courier docket and warehouse tally; identify one shipment that cannot match all three.",
+      "candidate_campaign_refs": [
+        "Q012"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H1-09",
+      "planning_band": "8–10",
+      "title": "The Office After Edric",
+      "source_contact": "Elara",
+      "source_prerequisite": "H1-08",
+      "source_objective": "Recover a payment instruction from Perrin's transfer cache and interview him under regional authority; obtain Elara's introduction to Mara.",
+      "candidate_campaign_refs": [
+        "Q013"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H1-10",
+      "planning_band": "10–12",
+      "title": "An Investigator's Standard",
+      "source_contact": "Mara",
+      "source_prerequisite": "H1-09",
+      "source_objective": "Present the sealed case in Valecrown; verify courier and warehouse testimony independently before receiving court access.",
+      "candidate_campaign_refs": [
+        "Q018"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H1-11",
+      "planning_band": "11–13",
+      "title": "Dates in the Register",
+      "source_contact": "Lysa",
+      "source_prerequisite": "H1-10",
+      "source_objective": "Check authorised office records; make an authenticated copy of the post-delegation reorganisation dates.",
+      "candidate_campaign_refs": [
+        "Q019"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H1-12",
+      "planning_band": "12–14",
+      "title": "The King's Confidence",
+      "source_contact": "Aldren / Cassian",
+      "source_prerequisite": "H1-11",
+      "source_objective": "Attend the audience, hear Aldren's account and accept a continuing warrant; Cassian supplies a plausible military lead.",
+      "candidate_campaign_refs": [
+        "Q020"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H1-13",
+      "planning_band": "13–15",
+      "title": "A Convenient Suspect",
+      "source_contact": "Garrick",
+      "source_prerequisite": "H1-12",
+      "source_objective": "Check the alleged military source against Garrick's preserved logs; establish his opposition to peace is not proof of involvement.",
+      "candidate_campaign_refs": [
+        "Q021"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H1-14",
+      "planning_band": "14–16",
+      "title": "Before the Request",
+      "source_contact": "Mara",
+      "source_prerequisite": "H1-13",
+      "source_objective": "Compare the authorisation time, office format and independently interviewed witness; record the contradictions without an accusation.",
+      "candidate_campaign_refs": [
+        "Q022"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H1-15",
+      "planning_band": "15–17",
+      "title": "The Price of an Office",
+      "source_contact": "Mara",
+      "source_prerequisite": "H1-14",
+      "source_objective": "Secure the surviving intermediary and independently stored payments linking Cassian to the security compromise and intended killing.",
+      "candidate_campaign_refs": [
+        "Q027"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H1-16",
+      "planning_band": "17–19",
+      "title": "A Warrant, Not a Challenge",
+      "source_contact": "Aldren",
+      "source_prerequisite": "H1-15",
+      "source_objective": "Present the corroborated case in private; witness lawful detention ordered and Cassian's flight. No attack on a neutral court NPC.",
+      "candidate_campaign_refs": [
+        "Q028"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H1-17",
+      "planning_band": "19–20",
+      "title": "The Hidden Passage",
+      "source_contact": "Mara",
+      "source_prerequisite": "H1-16",
+      "source_objective": "Finish the solo story dungeon; stop Sorn, secure a dispatch copy and capture Cassian alive. Group play is optional.",
+      "candidate_campaign_refs": [
+        "Q030"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H1-18",
+      "planning_band": "20",
+      "title": "The Commission",
+      "source_contact": "Aldren / Elara",
+      "source_prerequisite": "H1-17",
+      "source_objective": "Confirm removal from office and lawful custody; receive the follow-up warrant and report home. Close the betrayal arc without absolving Dominion.",
+      "candidate_campaign_refs": [
+        "Q031"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H2-01",
+      "planning_band": "20–21",
+      "title": "A Ledger Reaches the Sea",
+      "source_contact": "Mara",
+      "source_prerequisite": "H1-18",
+      "source_objective": "Trace the passage ledger's shipping reference to Tidehold; register the case with alliance customs through the human warrant.",
+      "candidate_campaign_refs": [
+        "Q035"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H2-02",
+      "planning_band": "20–22",
+      "title": "Four Peoples, One Harbour",
+      "source_contact": "Corven",
+      "source_prerequisite": "H2-01",
+      "source_objective": "Attend the alliance briefing and distinguish the human commission from alliance authority; obtain a bounded inspection permit.",
+      "candidate_campaign_refs": [
+        "Q036"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H2-03",
+      "planning_band": "21–22",
+      "title": "Short of the Manifest",
+      "source_contact": "Ysra",
+      "source_prerequisite": "H2-02",
+      "source_objective": "Audit the provision depot and secure exposed goods; separate ordinary loss from the false requisition chain.",
+      "candidate_campaign_refs": [
+        "Q037"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H2-04",
+      "planning_band": "21–23",
+      "title": "The Mountain Contract",
+      "source_contact": "Garrick",
+      "source_prerequisite": "H2-03",
+      "source_objective": "Establish why the altered fitting and the expedition's legitimate repair needs require a Kar Durn visit.",
+      "candidate_campaign_refs": [
+        "Q049"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H2-05",
+      "planning_band": "22–24",
+      "title": "No Fault in the Drawing",
+      "source_contact": "Brynja",
+      "source_prerequisite": "H2-04",
+      "source_objective": "Inspect her original plans and a broker's substituted specification; secure hold permission to recover a measuring assembly.",
+      "candidate_campaign_refs": [
+        "Q050"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H2-06",
+      "planning_band": "22–24",
+      "title": "The Feeder Gallery",
+      "source_contact": "Rurik",
+      "source_prerequisite": "H2-05",
+      "source_objective": "Restore maintenance access by securing its existing route and returning equipment; document a mundane pressure fault and neglected maintenance.",
+      "candidate_campaign_refs": [
+        "Q051"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H2-07",
+      "planning_band": "23–25",
+      "title": "Grain for Iron",
+      "source_contact": "Brynja / hold authority",
+      "source_prerequisite": "H2-06",
+      "source_objective": "Settle the contested shipment with verified records; secure a limited engineering commission and an inspection report.",
+      "candidate_campaign_refs": [
+        "Q052"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H2-08",
+      "planning_band": "24–25",
+      "title": "Northwatch Bound",
+      "source_contact": "Nessa",
+      "source_prerequisite": "H2-07",
+      "source_objective": "Sail to Northwatch Landing, meet the garrison and Darian's support unit, and learn arrival/extraction procedures.",
+      "candidate_campaign_refs": [
+        "Q038"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H2-09",
+      "planning_band": "24–26",
+      "title": "The Stranded Supply Party",
+      "source_contact": "Darian",
+      "source_prerequisite": "H2-08",
+      "source_objective": "Rescue a Covenant supply party by a PvE coastal route; return its military route report. No hostile-player interaction required.",
+      "candidate_campaign_refs": [
+        "Q039"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H2-10",
+      "planning_band": "25–27",
+      "title": "The Defender's Coast",
+      "source_contact": "Nessa",
+      "source_prerequisite": "H2-09",
+      "source_objective": "Scout Rukhan's military posts and civilian boundaries; select a patrol-avoidance or guarded approach without entering civilian homes.",
+      "candidate_campaign_refs": [
+        "Q040"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H2-11",
+      "planning_band": "26–28",
+      "title": "A Loss Before the Raid",
+      "source_contact": "Mara's expedition clerk",
+      "source_prerequisite": "H2-10",
+      "source_objective": "Recover depot accounting from a military store; compare Nemi's serial records with a private consignment removed before the reported attack.",
+      "candidate_campaign_refs": [
+        "Q041"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H2-12",
+      "planning_band": "27–28",
+      "title": "The Surveyor at the Signal House",
+      "source_contact": "Sera",
+      "source_prerequisite": "H2-11",
+      "source_objective": "Find Sera, secure an unstable observation position and compare the small device's housing with Brynja's report.",
+      "candidate_campaign_refs": [
+        "Q042"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H2-13",
+      "planning_band": "27–29",
+      "title": "Keep the Evidence Safe",
+      "source_contact": "Sera / Grey Surveyor",
+      "source_prerequisite": "H2-12",
+      "source_objective": "Choose sealed sample preservation or safe sample destruction after copying measurements; both retain the critical technical record.",
+      "candidate_campaign_refs": [
+        "Q043"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H2-14",
+      "planning_band": "28–29",
+      "title": "Instructions With Limits",
+      "source_contact": "Brynja",
+      "source_prerequisite": "H2-13",
+      "source_objective": "Prepare separate mechanical isolators and a documented shutdown procedure; the Surveyor states its limits and emergency cutoff.",
+      "candidate_campaign_refs": [
+        "Q044"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H2-15",
+      "planning_band": "29–30",
+      "title": "The Silent Signal",
+      "source_contact": "Sera",
+      "source_prerequisite": "H2-14",
+      "source_objective": "Complete the solo dungeon; defeat Halvek and disable the Minor Resonator while protecting essential observations and available captives.",
+      "candidate_campaign_refs": [
+        "Q045"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H2-16",
+      "planning_band": "30",
+      "title": "A Landing Still at War",
+      "source_contact": "Nessa / Garrick",
+      "source_prerequisite": "H2-15",
+      "source_objective": "Support an NPC defensive action or equivalent instanced task; report the hidden operation separately from the continuing Dominion attack.",
+      "candidate_campaign_refs": [
+        "Q046"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H2-17",
+      "planning_band": "30",
+      "title": "What the Measurements Say",
+      "source_contact": "Mara",
+      "source_prerequisite": "H2-16",
+      "source_objective": "Authenticate the device report in Tidehold and connect its procurement to a restricted Aelari material reference.",
+      "candidate_campaign_refs": [
+        "Q047"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H2-18",
+      "planning_band": "30",
+      "title": "A Different Kind of Healing",
+      "source_contact": "Anwen / Oren",
+      "source_prerequisite": "H2-17",
+      "source_objective": "Return home, document a real healing benefit and make a local ward safe; distinguish the beneficial awakening from deliberate interference.",
+      "candidate_campaign_refs": [
+        "Q048"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H3-01",
+      "planning_band": "30–31",
+      "title": "Permission to Ask",
+      "source_contact": "Caelith",
+      "source_prerequisite": "H2-18",
+      "source_objective": "Enter Sylvaren and request a limited material inquiry; hear the ward-tenders' concerns before visiting restricted sites.",
+      "candidate_campaign_refs": [
+        "Q054"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H3-02",
+      "planning_band": "30–32",
+      "title": "The Nursery Route",
+      "source_contact": "Caelith",
+      "source_prerequisite": "H3-01",
+      "source_objective": "Rescue workers and secure a woodland maintenance path threatened by local fauna and a neglected branch-ward.",
+      "candidate_campaign_refs": [
+        "Q055"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H3-03",
+      "planning_band": "31–33",
+      "title": "The Boundary Altered",
+      "source_contact": "Caelith",
+      "source_prerequisite": "H3-02",
+      "source_objective": "Compare an abandoned research ward with its approved baseline; establish deliberate alteration without blaming every forest hazard.",
+      "candidate_campaign_refs": [
+        "Q056"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H3-04",
+      "planning_band": "32–34",
+      "title": "A Price for Observation",
+      "source_contact": "Mara / Veylan",
+      "source_prerequisite": "H3-03",
+      "source_objective": "Recover Veylan's sale correspondence and obtain an accountable statement under Aelari authority; separate his grievance from his concealment.",
+      "candidate_campaign_refs": [
+        "Q057"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H3-05",
+      "planning_band": "33–34",
+      "title": "What the Queen Will Share",
+      "source_contact": "Seralyth",
+      "source_prerequisite": "H3-04",
+      "source_objective": "Present the local work and findings; receive permission for a limited sample, Caelith's assistance and the coastal lead.",
+      "candidate_campaign_refs": [
+        "Q058"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H3-06",
+      "planning_band": "33–35",
+      "title": "Back Across the Water",
+      "source_contact": "Nessa",
+      "source_prerequisite": "H3-05",
+      "source_objective": "Depart Tidehold via Northwatch for the second Dominion operation; establish the coastal extraction route.",
+      "candidate_campaign_refs": [
+        "Q059"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H3-07",
+      "planning_band": "34–36",
+      "title": "The Rejected Component",
+      "source_contact": "Sera",
+      "source_prerequisite": "H3-06",
+      "source_objective": "Retrieve Ilyss's inspection copy from a military observation post by guarded PvE assault or a stealth route; no friendly enemy dialogue.",
+      "candidate_campaign_refs": [
+        "Q060"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H3-08",
+      "planning_band": "35–37",
+      "title": "The Courier Who Burned Both Copies",
+      "source_contact": "Mara's field agent",
+      "source_prerequisite": "H3-07",
+      "source_objective": "Intercept an Unmade courier before the cached archive is destroyed; retain redundancy through an already lodged duplicate.",
+      "candidate_campaign_refs": [
+        "Q061"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H3-09",
+      "planning_band": "36–37",
+      "title": "A Common Hand",
+      "source_contact": "Mara",
+      "source_prerequisite": "H3-08",
+      "source_objective": "Compare Aelari and Vaelari records and authorise the Korrath inquiry; establish common suppression, not universal infiltration.",
+      "candidate_campaign_refs": [
+        "Q062"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H3-10",
+      "planning_band": "36–38",
+      "title": "The City That Endured",
+      "source_contact": "Urodan",
+      "source_prerequisite": "H3-09",
+      "source_objective": "Arrive at Drom Kar, hear its custodial limits and secure a water-route work assignment before archive access.",
+      "candidate_campaign_refs": [
+        "Q063"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H3-11",
+      "planning_band": "37–38",
+      "title": "Water and Memory",
+      "source_contact": "Urodan / Tarek",
+      "source_prerequisite": "H3-10",
+      "source_objective": "Secure the existing maintenance route and retrieve records from the endangered store; obtain the omitted warning.",
+      "candidate_campaign_refs": [
+        "Q064"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H3-12",
+      "planning_band": "37–39",
+      "title": "The Missing Margin",
+      "source_contact": "Dromak",
+      "source_prerequisite": "H3-11",
+      "source_objective": "Authenticate the warning and obtain council permission for restricted comparison; no definitive judgment on the Vorrath exile.",
+      "candidate_campaign_refs": [
+        "Q065"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H3-13",
+      "planning_band": "38–39",
+      "title": "A Name for the Guardians",
+      "source_contact": "Sera",
+      "source_prerequisite": "H3-12",
+      "source_objective": "Receive a private account of the order and its multiracial origins; accept associate status without compulsory membership.",
+      "candidate_campaign_refs": [
+        "Q066"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H3-14",
+      "planning_band": "38–39",
+      "title": "The Instruction Without Its Diagram",
+      "source_contact": "Grey Surveyor",
+      "source_prerequisite": "H3-13",
+      "source_objective": "Compare the Regional Anchor plan with Halden's incomplete shutdown order; obtain the missing stability material.",
+      "candidate_campaign_refs": [
+        "Q067"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H3-15",
+      "planning_band": "39–40",
+      "title": "Reach Them Before the Charge",
+      "source_contact": "Sera",
+      "source_prerequisite": "H3-14",
+      "source_objective": "Reach the freight works and interrupt Halden's premature destruction attempt in a retryable story scene.",
+      "candidate_campaign_refs": [
+        "Q068"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H3-16",
+      "planning_band": "39–40",
+      "title": "The Broken Measure",
+      "source_contact": "Halden / Sera",
+      "source_prerequisite": "H3-15",
+      "source_objective": "Complete the solo dungeon, rescue the cell and isolate the Regional Anchor's supports before core shutdown.",
+      "candidate_campaign_refs": [
+        "Q069"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H3-17",
+      "planning_band": "40",
+      "title": "Copies for the People at Risk",
+      "source_contact": "Grey Surveyor",
+      "source_prerequisite": "H3-16",
+      "source_objective": "Receive and distribute full safety instructions to the cleared team; lodge the measured evidence independently.",
+      "candidate_campaign_refs": [
+        "Q070"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H3-18",
+      "planning_band": "40",
+      "title": "The Route That Never Closed",
+      "source_contact": "Tarek / Dromak",
+      "source_prerequisite": "H3-17",
+      "source_objective": "Survey the separate low-capacity Passage, test a small-group return path and deliver an expedition proposal to Corven.",
+      "candidate_campaign_refs": [
+        "Q083"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H4-01",
+      "planning_band": "40–41",
+      "title": "An Expedition, Not an Army",
+      "source_contact": "Corven",
+      "source_prerequisite": "H3-18",
+      "source_objective": "Approve the limited mission, resource commitments and extraction plan with each participating authority.",
+      "candidate_campaign_refs": [],
+      "relation": "unreviewed",
+      "status": "manual_review_required",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H4-02",
+      "planning_band": "40–42",
+      "title": "Lantern Redoubt",
+      "source_contact": "Nessa / Aru'ven",
+      "source_prerequisite": "H4-01",
+      "source_objective": "Cross in a small surveyed group and agree access/maintenance terms for this outer site; no continent-wide gate restoration.",
+      "candidate_campaign_refs": [
+        "Q086"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H4-03",
+      "planning_band": "41–43",
+      "title": "A Living Homeland",
+      "source_contact": "Aru'ven",
+      "source_prerequisite": "H4-02",
+      "source_objective": "Help Kel'vari workers recover a water run and escape an ancient defence hazard; distinguish residents, victims and willing attackers.",
+      "candidate_campaign_refs": [],
+      "relation": "unreviewed",
+      "status": "manual_review_required",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H4-04",
+      "planning_band": "41–43",
+      "title": "The Frontier Beyond the Camp",
+      "source_contact": "Nessa",
+      "source_prerequisite": "H4-03",
+      "source_objective": "Inspect supply, observation and evacuation stations; complete an NPC WvW training exercise or optional live-frontier equivalent.",
+      "candidate_campaign_refs": [],
+      "relation": "unreviewed",
+      "status": "manual_review_required",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H4-05",
+      "planning_band": "42–44",
+      "title": "The Custodian's Conditions",
+      "source_contact": "Sel'ora",
+      "source_prerequisite": "H4-04",
+      "source_objective": "Meet the archive party at a protected approach, accept access limits and recover its missing copyist.",
+      "candidate_campaign_refs": [
+        "Q092"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H4-06",
+      "planning_band": "43–45",
+      "title": "Six Names in the Record",
+      "source_contact": "Sel'ora / Mara",
+      "source_prerequisite": "H4-05",
+      "source_objective": "Compare the project list, verifier image and distinctive stability sequence; request the Surveyor's explanation.",
+      "candidate_campaign_refs": [
+        "Q094"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H4-07",
+      "planning_band": "44–46",
+      "title": "The Last Witness",
+      "source_contact": "Oth'varen",
+      "source_prerequisite": "H4-06",
+      "source_objective": "Hear his identity and firsthand account, then cross-check independent records; trust may be qualified rather than absolute.",
+      "candidate_campaign_refs": [
+        "Q097"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H4-08",
+      "planning_band": "44–46",
+      "title": "The Cost of Keeping Quiet",
+      "source_contact": "Sera",
+      "source_prerequisite": "H4-07",
+      "source_objective": "Rescue threatened custodians using an authorised route disclosure; preserve enclave security through restricted case access.",
+      "candidate_campaign_refs": [
+        "Q100"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H4-09",
+      "planning_band": "45–47",
+      "title": "What the Village Can Give",
+      "source_contact": "Elara / Tomas",
+      "source_prerequisite": "H4-08",
+      "source_objective": "Return home, verify winter stores and wounded-person needs; secure Aldren's revised levy and limited relief commitment.",
+      "candidate_campaign_refs": [],
+      "relation": "unreviewed",
+      "status": "manual_review_required",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H4-10",
+      "planning_band": "45–47",
+      "title": "A Third Shore",
+      "source_contact": "Garrick / Nessa",
+      "source_prerequisite": "H4-09",
+      "source_objective": "Sail from Tidehold to the storm-coast staging anchorage; establish an extraction boat and a noncivilian approach.",
+      "candidate_campaign_refs": [],
+      "relation": "unreviewed",
+      "status": "manual_review_required",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H4-11",
+      "planning_band": "46–48",
+      "title": "The Missing Survey Team",
+      "source_contact": "Darian",
+      "source_prerequisite": "H4-10",
+      "source_objective": "Rescue the captured Covenant team; bypass occupied pilgrimage sites or confront military patrols on the controlled PvE route.",
+      "candidate_campaign_refs": [],
+      "relation": "unreviewed",
+      "status": "manual_review_required",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H4-12",
+      "planning_band": "46–48",
+      "title": "Stolen Under Another Flag",
+      "source_contact": "Mara's field agent",
+      "source_prerequisite": "H4-11",
+      "source_objective": "Recover Voss's receipt, a depot tally and Shorvek's cached objection; corroborate supply theft without a friendly Vorrath contact.",
+      "candidate_campaign_refs": [],
+      "relation": "unreviewed",
+      "status": "manual_review_required",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H4-13",
+      "planning_band": "47–49",
+      "title": "The Inherited Contract",
+      "source_contact": "Mara",
+      "source_prerequisite": "H4-12",
+      "source_objective": "Compare the dispatch's security subcontract with the Cassian case; locate the next archive at a Shroud research station.",
+      "candidate_campaign_refs": [],
+      "relation": "unreviewed",
+      "status": "manual_review_required",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H4-14",
+      "planning_band": "48–49",
+      "title": "A Way Out for the Bound",
+      "source_contact": "Sera / Aru'ven",
+      "source_prerequisite": "H4-13",
+      "source_objective": "Survey separate captive exits and conditioning controls at that station; make the escape plan independent of faction cooperation.",
+      "candidate_campaign_refs": [],
+      "relation": "unreviewed",
+      "status": "manual_review_required",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H4-15",
+      "planning_band": "49–50",
+      "title": "The Witness Vault",
+      "source_contact": "Oth'varen",
+      "source_prerequisite": "H4-14",
+      "source_objective": "Complete the solo dungeon; defeat Malrec, interrupt the prepared projection and secure the authenticated transaction archive.",
+      "candidate_campaign_refs": [
+        "Q115"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H4-16",
+      "planning_band": "50",
+      "title": "More Than a Confession",
+      "source_contact": "Mara",
+      "source_prerequisite": "H4-15",
+      "source_objective": "Cross-check payments, access, false-attribution instructions and ancient identity; establish Unmade orchestration through several sources.",
+      "candidate_campaign_refs": [],
+      "relation": "unreviewed",
+      "status": "manual_review_required",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H4-17",
+      "planning_band": "50",
+      "title": "The King's Correction",
+      "source_contact": "Aldren / Corven",
+      "source_prerequisite": "H4-16",
+      "source_objective": "Present a redacted briefing; Aldren corrects his case record and orders review of related prosecutions, without ending the war.",
+      "candidate_campaign_refs": [],
+      "relation": "unreviewed",
+      "status": "manual_review_required",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H4-18",
+      "planning_band": "50",
+      "title": "The Answer Cassian Avoided",
+      "source_contact": "Mara",
+      "source_prerequisite": "H4-17",
+      "source_objective": "Confront Cassian in lawful custody with the independent case; conclude his investigative role and submit the prosecution's evidence, without a pardon or player sentencing choice.",
+      "candidate_campaign_refs": [],
+      "relation": "unreviewed",
+      "status": "manual_review_required",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H5-01",
+      "planning_band": "50–51",
+      "title": "A Branch Still Growing",
+      "source_contact": "Sera",
+      "source_prerequisite": "H4-18",
+      "source_objective": "Combine recovered diagrams and regional measurements; locate the Chainworks' proposed Major Anchor expansion.",
+      "candidate_campaign_refs": [],
+      "relation": "unreviewed",
+      "status": "manual_review_required",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H5-02",
+      "planning_band": "50–52",
+      "title": "The Covenant's Terms",
+      "source_contact": "Corven / racial delegates",
+      "source_prerequisite": "H5-01",
+      "source_objective": "Attend Tidehold's restricted council, provide the operational case and accept a limited expedition mandate.",
+      "candidate_campaign_refs": [],
+      "relation": "unreviewed",
+      "status": "manual_review_required",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H5-03",
+      "planning_band": "51–53",
+      "title": "A Name Beyond the Veil",
+      "source_contact": "Oth'varen",
+      "source_prerequisite": "H5-02",
+      "source_objective": "Compare independent network records and firsthand testimony; learn Nhal's name and confinement without the full primordial cosmology.",
+      "candidate_campaign_refs": [],
+      "relation": "unreviewed",
+      "status": "manual_review_required",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H5-04",
+      "planning_band": "51–53",
+      "title": "The Crossing Again",
+      "source_contact": "Elara / Brenna",
+      "source_prerequisite": "H5-03",
+      "source_objective": "Help the home relief circuit reach wounded and winter stores; observe the practical results of the opening road work.",
+      "candidate_campaign_refs": [],
+      "relation": "unreviewed",
+      "status": "manual_review_required",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H5-05",
+      "planning_band": "52–54",
+      "title": "What Edric Asked",
+      "source_contact": "Aldren / Mara",
+      "source_prerequisite": "H5-04",
+      "source_objective": "Inspect Edric's earlier verification requests and obtain a protected independent-records warrant.",
+      "candidate_campaign_refs": [],
+      "relation": "unreviewed",
+      "status": "manual_review_required",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H5-06",
+      "planning_band": "52–54",
+      "title": "The Coast Remembers",
+      "source_contact": "Nessa",
+      "source_prerequisite": "H5-05",
+      "source_objective": "Undertake the fourth Dominion voyage; assess Rukhan's revised defences and Nemi's corrected garrison accounts.",
+      "candidate_campaign_refs": [],
+      "relation": "unreviewed",
+      "status": "manual_review_required",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H5-07",
+      "planning_band": "53–55",
+      "title": "The Team Behind the Line",
+      "source_contact": "Darian",
+      "source_prerequisite": "H5-06",
+      "source_objective": "Rescue his extraction unit from a relay approach and return it to a secure coastal route.",
+      "candidate_campaign_refs": [],
+      "relation": "unreviewed",
+      "status": "manual_review_required",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H5-08",
+      "planning_band": "54–56",
+      "title": "The Relay's Schedule",
+      "source_contact": "Sera",
+      "source_prerequisite": "H5-07",
+      "source_objective": "Recover timing tables and the support assembly from the Unmade relay; fight its defenders or use a solo infiltration route.",
+      "candidate_campaign_refs": [],
+      "relation": "unreviewed",
+      "status": "manual_review_required",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H5-09",
+      "planning_band": "55–56",
+      "title": "Make the Measure Small",
+      "source_contact": "Oth'varen / Brynja",
+      "source_prerequisite": "H5-08",
+      "source_objective": "Set up a fully isolated Minor Resonator trial with instruments, physical cutoff and reserve limits.",
+      "candidate_campaign_refs": [
+        "Q071"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H5-10",
+      "planning_band": "55–57",
+      "title": "A Brief Reversal",
+      "source_contact": "Oth'varen",
+      "source_prerequisite": "H5-09",
+      "source_objective": "Conduct the controlled inversion trial; stop at its measured duration and record both result and uncertainty.",
+      "candidate_campaign_refs": [
+        "Q072"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H5-11",
+      "planning_band": "56–57",
+      "title": "The Safer Argument",
+      "source_contact": "Halden / Sera",
+      "source_prerequisite": "H5-10",
+      "source_objective": "Review severance and bounded-inversion plans; select a provisional preference that may be changed at the final cutoff.",
+      "candidate_campaign_refs": [
+        "Q073"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H5-12",
+      "planning_band": "56–58",
+      "title": "The Architect's Objection",
+      "source_contact": "Oth'varen",
+      "source_prerequisite": "H5-11",
+      "source_objective": "Preserve diagrams during Thes'var's observation-post intervention and withdraw the exposed team; do not kill a founder.",
+      "candidate_campaign_refs": [],
+      "relation": "unreviewed",
+      "status": "manual_review_required",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H5-13",
+      "planning_band": "57–59",
+      "title": "Everyone's Route Home",
+      "source_contact": "Nessa / Aru'ven",
+      "source_prerequisite": "H5-12",
+      "source_objective": "Stage NPC support crews, medical stores and enclave boundary protections; verify extraction before assault.",
+      "candidate_campaign_refs": [],
+      "relation": "unreviewed",
+      "status": "manual_review_required",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H5-14",
+      "planning_band": "58–59",
+      "title": "Cut the Outer Links",
+      "source_contact": "Garrick / player-led team",
+      "source_prerequisite": "H5-13",
+      "source_objective": "Enter the solo finale, evacuate coerced workers and disable the courier link identified overseas.",
+      "candidate_campaign_refs": [],
+      "relation": "unreviewed",
+      "status": "manual_review_required",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H5-15",
+      "planning_band": "59–60",
+      "title": "The Ledger and the Warden",
+      "source_contact": "Mara / Nessa",
+      "source_prerequisite": "H5-14",
+      "source_objective": "Capture Voss and defeat Keld after isolating his three defence supports; essential records survive checkpoint resets.",
+      "candidate_campaign_refs": [],
+      "relation": "unreviewed",
+      "status": "manual_review_required",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H5-16",
+      "planning_band": "60",
+      "title": "The Severed Chain",
+      "source_contact": "Oth'varen / player",
+      "source_prerequisite": "H5-15",
+      "source_objective": "Stop forced synchronisation and select safe severance or bounded inversion; isolate the installation and complete extraction on either route.",
+      "candidate_campaign_refs": [],
+      "relation": "unreviewed",
+      "status": "manual_review_required",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H5-17",
+      "planning_band": "60",
+      "title": "What the Instruments Prove",
+      "source_contact": "Brynja / Caelith / Tarek",
+      "source_prerequisite": "H5-16",
+      "source_objective": "Record the branch-specific result and remaining uncertainty; affirm that the First Anchor and wider network remain.",
+      "candidate_campaign_refs": [],
+      "relation": "unreviewed",
+      "status": "manual_review_required",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H5-18",
+      "planning_band": "60",
+      "title": "A Corrected Record",
+      "source_contact": "Corven / Aldren",
+      "source_prerequisite": "H5-17",
+      "source_objective": "Lodge the restricted technical report, hear the court's conviction and permanent-imprisonment sentence for Cassian, and confirm the public correction, sovereignty, enclave limits and continuing war.",
+      "candidate_campaign_refs": [],
+      "relation": "unreviewed",
+      "status": "manual_review_required",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H5-19",
+      "planning_band": "60",
+      "title": "A Different Legacy",
+      "source_contact": "Oth'varen / Sera / Halden",
+      "source_prerequisite": "H5-18",
+      "source_objective": "Distribute operational safety records under shared accountability; no cleansing, immortality grant or public Guardian institution.",
+      "candidate_campaign_refs": [],
+      "relation": "unreviewed",
+      "status": "manual_review_required",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    },
+    {
+      "editorial_id": "H5-20",
+      "planning_band": "60",
+      "title": "The Road Home",
+      "source_contact": "Elara / home cast",
+      "source_prerequisite": "H5-19",
+      "source_objective": "Return to Millhaven, witness each recurring local's changed role, receive the service commendation and close the human launch story.",
+      "candidate_campaign_refs": [
+        "Q184"
+      ],
+      "relation": "unreviewed",
+      "status": "exact_title_candidate_only",
+      "runtime_id": null,
+      "notes": "A title match does not confirm equivalent objectives, prerequisites or narrative role."
+    }
+  ],
+  "canonical_campaign_rows": [
+    {
+      "campaign_reference": "Q001",
+      "title": "Before the Next Caravan",
+      "planning_level_band": 1,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H1-01"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q002",
+      "title": "The Road Patrol",
+      "planning_level_band": 1,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H1-02"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q003",
+      "title": "What the Healing House Needs",
+      "planning_level_band": 1,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H1-03"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q004",
+      "title": "The Missing Wheels",
+      "planning_level_band": 1,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H1-04"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q005",
+      "title": "The Fence at Dawn",
+      "planning_level_band": 1,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "regional_optional"
+    },
+    {
+      "campaign_reference": "Q006",
+      "title": "Seed Before Winter",
+      "planning_level_band": 1,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "regional_optional"
+    },
+    {
+      "campaign_reference": "Q007",
+      "title": "A Cart That Can Move",
+      "planning_level_band": 1,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "regional_optional"
+    },
+    {
+      "campaign_reference": "Q008",
+      "title": "The Healer's Ledger",
+      "planning_level_band": 1,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "regional_optional"
+    },
+    {
+      "campaign_reference": "Q009",
+      "title": "An Unusual Buyer",
+      "planning_level_band": 5,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H1-05"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q010",
+      "title": "A Seal Without a Name",
+      "planning_level_band": 5,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H1-06"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q011",
+      "title": "At the River Crossing",
+      "planning_level_band": 5,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H1-07"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q012",
+      "title": "Three Books",
+      "planning_level_band": 5,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H1-08"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q013",
+      "title": "The Office After Edric",
+      "planning_level_band": 5,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H1-09"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q014",
+      "title": "The Quarry Bell",
+      "planning_level_band": 5,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "regional_optional"
+    },
+    {
+      "campaign_reference": "Q015",
+      "title": "One Bridge, Two Claims",
+      "planning_level_band": 5,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "regional_optional"
+    },
+    {
+      "campaign_reference": "Q016",
+      "title": "The Warehouse Night Watch",
+      "planning_level_band": 5,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "regional_optional"
+    },
+    {
+      "campaign_reference": "Q017",
+      "title": "The Long Way Home",
+      "planning_level_band": 5,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "regional_optional"
+    },
+    {
+      "campaign_reference": "Q018",
+      "title": "An Investigator's Standard",
+      "planning_level_band": 10,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H1-10"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q019",
+      "title": "Dates in the Register",
+      "planning_level_band": 10,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H1-11"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q020",
+      "title": "The King's Confidence",
+      "planning_level_band": 10,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H1-12"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q021",
+      "title": "A Convenient Suspect",
+      "planning_level_band": 10,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H1-13"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q022",
+      "title": "Before the Request",
+      "planning_level_band": 10,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H1-14"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q023",
+      "title": "The Clerk's Queue",
+      "planning_level_band": 10,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "regional_optional"
+    },
+    {
+      "campaign_reference": "Q024",
+      "title": "Bread and Barracks",
+      "planning_level_band": 10,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "regional_optional"
+    },
+    {
+      "campaign_reference": "Q025",
+      "title": "A Witness's Own Words",
+      "planning_level_band": 10,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "regional_optional"
+    },
+    {
+      "campaign_reference": "Q026",
+      "title": "The Walls Outside Court",
+      "planning_level_band": 10,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "regional_optional"
+    },
+    {
+      "campaign_reference": "Q027",
+      "title": "The Price of an Office",
+      "planning_level_band": 15,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H1-15"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q028",
+      "title": "A Warrant, Not a Challenge",
+      "planning_level_band": 15,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H1-16"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q029",
+      "title": "Before the Hidden Passage",
+      "planning_level_band": 15,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q030",
+      "title": "The Hidden Passage",
+      "planning_level_band": 15,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H1-17"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q031",
+      "title": "The Commission",
+      "planning_level_band": 15,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H1-18"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q032",
+      "title": "After the Arrest",
+      "planning_level_band": 15,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "regional_optional"
+    },
+    {
+      "campaign_reference": "Q033",
+      "title": "The Watch Restored",
+      "planning_level_band": 15,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "regional_optional"
+    },
+    {
+      "campaign_reference": "Q034",
+      "title": "A Village Still Working",
+      "planning_level_band": 15,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "regional_optional"
+    },
+    {
+      "campaign_reference": "Q035",
+      "title": "A Ledger Reaches the Sea",
+      "planning_level_band": 20,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H2-01"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q036",
+      "title": "Four Peoples, One Harbour",
+      "planning_level_band": 20,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H2-02"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q037",
+      "title": "Short of the Manifest",
+      "planning_level_band": 20,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H2-03"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q038",
+      "title": "Northwatch Bound",
+      "planning_level_band": 20,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H2-08"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q039",
+      "title": "The Stranded Supply Party",
+      "planning_level_band": 20,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H2-09"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q040",
+      "title": "The Defender's Coast",
+      "planning_level_band": 20,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H2-10"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q041",
+      "title": "A Loss Before the Raid",
+      "planning_level_band": 20,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H2-11"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q042",
+      "title": "The Surveyor at the Signal House",
+      "planning_level_band": 20,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H2-12"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q043",
+      "title": "Keep the Evidence Safe",
+      "planning_level_band": 20,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H2-13"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q044",
+      "title": "Instructions With Limits",
+      "planning_level_band": 20,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H2-14"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q045",
+      "title": "The Silent Signal",
+      "planning_level_band": 20,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H2-15"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q046",
+      "title": "A Landing Still at War",
+      "planning_level_band": 20,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H2-16"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "regional_optional"
+    },
+    {
+      "campaign_reference": "Q047",
+      "title": "What the Measurements Say",
+      "planning_level_band": 20,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H2-17"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q048",
+      "title": "A Different Kind of Healing",
+      "planning_level_band": 20,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H2-18"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "regional_optional"
+    },
+    {
+      "campaign_reference": "Q049",
+      "title": "The Mountain Contract",
+      "planning_level_band": 25,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H2-04"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q050",
+      "title": "No Fault in the Drawing",
+      "planning_level_band": 25,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H2-05"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q051",
+      "title": "The Feeder Gallery",
+      "planning_level_band": 25,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H2-06"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "regional_optional"
+    },
+    {
+      "campaign_reference": "Q052",
+      "title": "Grain for Iron",
+      "planning_level_band": 25,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H2-07"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q053",
+      "title": "The King's Correspondence",
+      "planning_level_band": 25,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q054",
+      "title": "Permission to Ask",
+      "planning_level_band": 25,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H3-01"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q055",
+      "title": "The Nursery Route",
+      "planning_level_band": 25,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H3-02"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "regional_optional"
+    },
+    {
+      "campaign_reference": "Q056",
+      "title": "The Boundary Altered",
+      "planning_level_band": 25,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H3-03"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q057",
+      "title": "A Price for Observation",
+      "planning_level_band": 25,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H3-04"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q058",
+      "title": "What the Queen Will Share",
+      "planning_level_band": 25,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H3-05"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q059",
+      "title": "Back Across the Water",
+      "planning_level_band": 25,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H3-06"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q060",
+      "title": "The Rejected Component",
+      "planning_level_band": 25,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H3-07"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q061",
+      "title": "The Courier Who Burned Both Copies",
+      "planning_level_band": 25,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H3-08"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q062",
+      "title": "A Common Hand",
+      "planning_level_band": 25,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H3-09"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q063",
+      "title": "The City That Endured",
+      "planning_level_band": 30,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H3-10"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q064",
+      "title": "Water and Memory",
+      "planning_level_band": 30,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H3-11"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q065",
+      "title": "The Missing Margin",
+      "planning_level_band": 30,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H3-12"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q066",
+      "title": "A Name for the Guardians",
+      "planning_level_band": 30,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H3-13"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q067",
+      "title": "The Instruction Without Its Diagram",
+      "planning_level_band": 30,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H3-14"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q068",
+      "title": "Reach Them Before the Charge",
+      "planning_level_band": 30,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H3-15"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q069",
+      "title": "The Broken Measure",
+      "planning_level_band": 30,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H3-16"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q070",
+      "title": "Copies for the People at Risk",
+      "planning_level_band": 30,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H3-17"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q071",
+      "title": "Make the Measure Small",
+      "planning_level_band": 30,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H5-09"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q072",
+      "title": "A Brief Reversal",
+      "planning_level_band": 30,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H5-10"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q073",
+      "title": "The Safer Argument",
+      "planning_level_band": 30,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H5-11"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q074",
+      "title": "The Pattern Beneath",
+      "planning_level_band": 30,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q075",
+      "title": "The Anchor's Defenses",
+      "planning_level_band": 30,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q076",
+      "title": "The Harbinger's Design",
+      "planning_level_band": 30,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q077",
+      "title": "Against the Harbinger",
+      "planning_level_band": 30,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q078",
+      "title": "The First Major Reversal",
+      "planning_level_band": 30,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q079",
+      "title": "The Harbinger's Secret",
+      "planning_level_band": 30,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q080",
+      "title": "Aftermath of Inversion",
+      "planning_level_band": 35,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q081",
+      "title": "The Gate They Kept",
+      "planning_level_band": 35,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q082",
+      "title": "The Price of Secrecy",
+      "planning_level_band": 35,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q083",
+      "title": "The Route That Never Closed",
+      "planning_level_band": 35,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H3-18"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "regional_optional"
+    },
+    {
+      "campaign_reference": "Q084",
+      "title": "Permission to Enter",
+      "planning_level_band": 35,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q085",
+      "title": "The Hidden Crossing",
+      "planning_level_band": 35,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q086",
+      "title": "Lantern Redoubt",
+      "planning_level_band": 35,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H4-02"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q087",
+      "title": "Those Who Remained",
+      "planning_level_band": 35,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "regional_optional"
+    },
+    {
+      "campaign_reference": "Q088",
+      "title": "Permission to Remain",
+      "planning_level_band": 35,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q089",
+      "title": "The Broken Path",
+      "planning_level_band": 35,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q090",
+      "title": "A Warning Preserved",
+      "planning_level_band": 35,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "regional_optional"
+    },
+    {
+      "campaign_reference": "Q091",
+      "title": "Questions for the Sixth",
+      "planning_level_band": 35,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q092",
+      "title": "The Custodian's Conditions",
+      "planning_level_band": 40,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H4-05"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q093",
+      "title": "An Audience Earned",
+      "planning_level_band": 40,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "regional_optional"
+    },
+    {
+      "campaign_reference": "Q094",
+      "title": "Six Names in the Record",
+      "planning_level_band": 40,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H4-06"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q095",
+      "title": "The Scholar Who Remained",
+      "planning_level_band": 40,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q096",
+      "title": "The Verifier's Mark",
+      "planning_level_band": 40,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q097",
+      "title": "The Last Witness",
+      "planning_level_band": 40,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H4-07"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q098",
+      "title": "Echoes Before the Sundering",
+      "planning_level_band": 40,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q099",
+      "title": "The Six Reunited",
+      "planning_level_band": 40,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q100",
+      "title": "The Cost of Keeping Quiet",
+      "planning_level_band": 40,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H4-08"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "regional_optional"
+    },
+    {
+      "campaign_reference": "Q101",
+      "title": "Two Histories",
+      "planning_level_band": 40,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "regional_optional"
+    },
+    {
+      "campaign_reference": "Q102",
+      "title": "The Delegation's Shadow",
+      "planning_level_band": 40,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q103",
+      "title": "The Scholar's Request",
+      "planning_level_band": 40,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q104",
+      "title": "The Delegation That Failed",
+      "planning_level_band": 45,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q105",
+      "title": "Two Accounts of One Tragedy",
+      "planning_level_band": 45,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q106",
+      "title": "The King's Lost Adviser",
+      "planning_level_band": 45,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q107",
+      "title": "The Brother Who Came for Peace",
+      "planning_level_band": 45,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q108",
+      "title": "The Records They Buried",
+      "planning_level_band": 45,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q109",
+      "title": "Road to the Meeting",
+      "planning_level_band": 45,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q110",
+      "title": "Evidence Planted Twice",
+      "planning_level_band": 45,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q111",
+      "title": "The Witness Who Disappeared",
+      "planning_level_band": 45,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q112",
+      "title": "The Delegation's Second Ledger",
+      "planning_level_band": 45,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q113",
+      "title": "The False Safe House",
+      "planning_level_band": 45,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q114",
+      "title": "The Veiled Hand",
+      "planning_level_band": 45,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q115",
+      "title": "The Witness Vault",
+      "planning_level_band": 45,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H4-15"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q116",
+      "title": "Orders That Outlive Her",
+      "planning_level_band": 45,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q117",
+      "title": "A Truth Neither Side Wants",
+      "planning_level_band": 45,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q118",
+      "title": "The War That Remains",
+      "planning_level_band": 45,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q119",
+      "title": "The Warden's Orders",
+      "planning_level_band": 50,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q120",
+      "title": "Network Awakens",
+      "planning_level_band": 50,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q121",
+      "title": "The First Breach",
+      "planning_level_band": 50,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q122",
+      "title": "A Signal Answered",
+      "planning_level_band": 50,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q123",
+      "title": "The Warden's Approaches",
+      "planning_level_band": 50,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q124",
+      "title": "Lines of Defense",
+      "planning_level_band": 50,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q125",
+      "title": "The Anchor Beneath",
+      "planning_level_band": 50,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q126",
+      "title": "A Measure of Time",
+      "planning_level_band": 50,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q127",
+      "title": "The Gathering Storm",
+      "planning_level_band": 50,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q128",
+      "title": "Before the Veil Breaks",
+      "planning_level_band": 50,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q129",
+      "title": "The Warden Unmasked",
+      "planning_level_band": 55,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q130",
+      "title": "Anchors in Concert",
+      "planning_level_band": 55,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q131",
+      "title": "Siege of Lantern Redoubt",
+      "planning_level_band": 55,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q132",
+      "title": "The Pattern Breaks",
+      "planning_level_band": 55,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q133",
+      "title": "Into the Warden's Forge",
+      "planning_level_band": 55,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q134",
+      "title": "The Severed Signal",
+      "planning_level_band": 55,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q135",
+      "title": "Aftermath of the Break",
+      "planning_level_band": 55,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q136",
+      "title": "What the Warden Left Behind",
+      "planning_level_band": 55,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q137",
+      "title": "Records of the First Voice",
+      "planning_level_band": 60,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q138",
+      "title": "The Forgotten Investigation",
+      "planning_level_band": 60,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q139",
+      "title": "The Missing Records",
+      "planning_level_band": 60,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q140",
+      "title": "The Voice That Answers",
+      "planning_level_band": 60,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q141",
+      "title": "Beneath the Binding",
+      "planning_level_band": 60,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q142",
+      "title": "Truth Withheld",
+      "planning_level_band": 60,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q143",
+      "title": "Name in the Records",
+      "planning_level_band": 60,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q144",
+      "title": "The First Voice's Design",
+      "planning_level_band": 60,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q145",
+      "title": "The First Voice",
+      "planning_level_band": 60,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q146",
+      "title": "The Silence Beneath",
+      "planning_level_band": 60,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q147",
+      "title": "The Weight of Silence",
+      "planning_level_band": 65,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q148",
+      "title": "The Sealed Testimony",
+      "planning_level_band": 65,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q149",
+      "title": "The Missing Account",
+      "planning_level_band": 65,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q150",
+      "title": "Guardian's Doubt",
+      "planning_level_band": 65,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q151",
+      "title": "The Seven Bound",
+      "planning_level_band": 65,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q152",
+      "title": "The Cost of Containment",
+      "planning_level_band": 65,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q153",
+      "title": "The Warden's Final Pattern",
+      "planning_level_band": 65,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q154",
+      "title": "Before the Veil Breaks",
+      "planning_level_band": 65,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q155",
+      "title": "The Last Approach",
+      "planning_level_band": 65,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q156",
+      "title": "Veilbreaker",
+      "planning_level_band": 65,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q157",
+      "title": "The Shroud Begins to Fall",
+      "planning_level_band": 65,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q158",
+      "title": "Essence Without Form",
+      "planning_level_band": 70,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q159",
+      "title": "The Lands Revealed",
+      "planning_level_band": 70,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "regional_optional"
+    },
+    {
+      "campaign_reference": "Q160",
+      "title": "The Architect's Hand",
+      "planning_level_band": 70,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q161",
+      "title": "Fractured Manifestation",
+      "planning_level_band": 70,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q162",
+      "title": "What Cannot Be Destroyed",
+      "planning_level_band": 70,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q163",
+      "title": "The Architect Speaks",
+      "planning_level_band": 70,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q164",
+      "title": "Convergence Principle",
+      "planning_level_band": 70,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q165",
+      "title": "The Guardian's Decision",
+      "planning_level_band": 70,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q166",
+      "title": "The Architect's Invitation",
+      "planning_level_band": 70,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q167",
+      "title": "Stone and Strain",
+      "planning_level_band": 75,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q168",
+      "title": "Life at the Edges",
+      "planning_level_band": 75,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "regional_optional"
+    },
+    {
+      "campaign_reference": "Q169",
+      "title": "The Route Between",
+      "planning_level_band": 75,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "regional_optional"
+    },
+    {
+      "campaign_reference": "Q170",
+      "title": "Instructions That Survive Us",
+      "planning_level_band": 75,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q171",
+      "title": "The Consent of Neighbors",
+      "planning_level_band": 75,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q172",
+      "title": "A Failure We Can See",
+      "planning_level_band": 75,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q173",
+      "title": "The Last Measure",
+      "planning_level_band": 75,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q174",
+      "title": "Before the Final Crossing",
+      "planning_level_band": 75,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q175",
+      "title": "Inside the Architect's Design",
+      "planning_level_band": 80,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q176",
+      "title": "The Architect's Last Argument",
+      "planning_level_band": 80,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q177",
+      "title": "The Broken Alignment",
+      "planning_level_band": 80,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q178",
+      "title": "The Scholar's Correction",
+      "planning_level_band": 80,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q179",
+      "title": "The Sixth Scholar's Choice",
+      "planning_level_band": 80,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q180",
+      "title": "The Seven Hold",
+      "planning_level_band": 80,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q181",
+      "title": "The Shattering of Nhal",
+      "planning_level_band": 80,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q182",
+      "title": "Silence After",
+      "planning_level_band": 80,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q183",
+      "title": "A World Unbound",
+      "planning_level_band": 80,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    },
+    {
+      "campaign_reference": "Q184",
+      "title": "The Road Home",
+      "planning_level_band": 80,
+      "planning_band_is_runtime_gate": false,
+      "legacy_title_candidates": [
+        "H5-20"
+      ],
+      "stable_runtime_id": null,
+      "provenance_reviewed": false,
+      "proposed_classification": "main_story"
+    }
+  ]
+}
