@@ -73,3 +73,7 @@ Verified all **281 Markdown link targets** in `Lore/World_Directory_Legacy_Refer
 ## Reading-map navigation verification
 
 All 15 surviving `Editorial/Reading Maps/` Markdown files were inspected after replacing four divergent-source maps with explicit links to both preserved versions. **Zero of the 15 files now contain Obsidian `[[...]]` wiki-link syntax.** This is a syntax audit of the reading-map directory only; other character, lore, atlas and source notes may still contain wiki-links and require separate migration. The five protected lore mirrors remain untouched.
+
+## Campaign-cast source migration — 47 files processed
+
+All 47 `Characters/Campaign Cast/` cards were processed to replace their obsolete `Sources/THEIA_HUMAN_CAST_AND_PLACES` references with links to the preserved original `docs/story/THEIA_HUMAN_CAST_AND_PLACES.md`. Character descriptions and canon statuses were not intentionally changed. A subsequent search surfaced three recently updated cards; direct fresh-file checks confirmed those three no longer contain the old source reference. **A complete fresh scan of all 47 files has not yet been completed**, so do not assert repository-wide absence of every obsolete reference until that check passes.
