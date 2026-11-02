@@ -43,3 +43,7 @@ These **17 files** contain substantial authored prose. They are **not authoritat
 ## Levels 1–10 migration update
 
 The 17 quest sections and their distinctive mechanics, NPC/location context, failure behavior and QA notes have been transferred into [Q001–Q017 Gameplay Detail Migration](Human_Q001_Q017_Gameplay_Detail_Migration.md). These details remain editorial proposals rather than executable quest definitions. The original playable pack is retained until the proposed extra objectives and inbound references are reviewed; the manifest is still the sole structured inventory.
+
+## Levels 10–20 reconciliation
+
+Both legacy sources (`Human_10_20_Playable_Quest_Pack.md` and `Human_10_20_Implementation_Brief.md`) have been compared at quest-section and shared-rules level. Their current narrative purposes, location bands, recovery expectations and QA checks are captured in [Q018–Q034 Legacy Pack Migration](Human_Q018_Q034_Legacy_Pack_Migration.md). The older brief's generic stage templates and minimum-level assumptions are not authoritative. **Original files remain until inbound links and unique details are verified; no deletion is claimed.**
