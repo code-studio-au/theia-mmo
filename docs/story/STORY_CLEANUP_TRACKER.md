@@ -109,3 +109,10 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Normalized content identical for Detailed Lore Archive, Canon Reconciliation Report and DECISIONS; Chronicle differs only at editorial-status line 784, where canonical root correctly supersedes old 'ending open' wording.
 - [x] Deleted imported duplicates from `Theia/Sources/`: Detailed Lore Archive (`4550b1e4`), Canon Reconciliation Report (`e33bf37d`), Interwoven Chronicle (`63a58cb7`), DECISIONS (`54e81ff8`). Root documents retained.
 - [ ] Continue remaining source duplicates and vault cleanup; perform full repository-wide link validation before declaring all cleanup finished. **Delete this tracker itself only at final completion.**
+
+## Source Decision Recovery audit — 2 November 2026
+
+- [x] Compared root and imported `THEIA_SOURCE_DECISION_RECOVERY.md`: 232 lines each, 27 normalized differing line positions before correction. Mostly historical 'Seventh' versus confirmed 'Kel'vari' language.
+- [x] Updated root final naming statement to confirmed Kel'vari wording (commit `dcff6f81`).
+- [ ] Review remaining differences in source-decision context; preserve historical labels where they document the original question/answer rather than replacing them indiscriminately. Check incoming links before deleting mirror.
+- [ ] Review remaining `Sources/IMPORT_MANIFEST.json` and `Sources/README.md` as provenance rather than current canon; do not delete provenance until import record is preserved elsewhere or Git history is deemed sufficient.
