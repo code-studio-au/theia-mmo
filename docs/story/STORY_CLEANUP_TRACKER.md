@@ -163,3 +163,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Live-verified 12 links across Chronicle, Detailed Lore Archive, Canon Reconciliation Report and Source Decision Recovery reading maps; all resolve to existing files.
 - [x] Fixed four broken root links in historical Human Story Dungeons, Human Campaign Review, Human Cast and Places, and Human Connected Racial Stories reading maps (commits `3d7be1fa`, `24242a3e`, `31f5d2e9`, `94501e76`). Their old `../../../../` paths escaped `docs/story/`; corrected to `../../../`.
 - [ ] Continue remaining historical reading-map link validation and evaluate redundant redirect files for retirement.
+
+## Six more reading maps repaired and verified — 2 November 2026
+
+- [x] Fixed source links in historical reading maps for Human Heartlands Settlement Register (`24e3a1b0`), Zone Population Framework (`15fb2791`), Modern Story Revelation Timeline (`4dff2c9a`), Line-by-Line Verification Status (`aace11dd`), Memory Scenes (`fadb8678`), and Documentation Guide (`0b36df3c`).
+- [x] Live-resolved all 13 Markdown file links in those six reading maps against current `main`; all targets exist.
+- [ ] Continue remaining reading maps and redundant redirect retirement; final full-tree validation still pending.
