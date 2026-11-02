@@ -219,3 +219,8 @@ Do not tick work merely because it is planned or described in older reports. Rec
 
 - [x] Compared H1-02 through H1-06 against Q002, Q003, Q004, Q009 and Q010 in the existing 64-entry objective comparison (commit `7dc61235`). All five candidate prerequisite chains align; stage/objective structure strongly corresponds.
 - [ ] Verify historical location, surviving teamster, original damaged document and authentication-dialogue details before any mapping approval. No runtime IDs or canon stages changed.
+
+## H1-07 through H1-11 comparison — 2 November 2026
+
+- [x] Compared five additional historical quests to Q011/Q012/Q013/Q018/Q019 in existing 64-entry comparison; objectives, contacts and prerequisite chains align (commit `baebd2d9`).
+- [ ] Verify historical protected travel route, interview authority, court-access framing and evidence custody before mapping approval. Do not change canonical quest stages or assign runtime IDs based on this review.
