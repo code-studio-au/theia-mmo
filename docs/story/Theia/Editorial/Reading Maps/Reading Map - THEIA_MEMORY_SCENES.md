@@ -1,12 +1,8 @@
----
-type: source-map
-source: "[[Sources/THEIA_MEMORY_SCENES]]"
----
-# Reading Map - THEIA_MEMORY_SCENES
+# Historical Reading Map — THEIA_MEMORY_SCENES
 
-[[Sources/THEIA_MEMORY_SCENES|Open the complete source]]. Section labels and later explicit decisions govern approval. This navigation map makes every source section discoverable without changing source wording.
+The former Obsidian reading map has been retired because its mirrored source was content-equivalent to the preserved original (after wiki-link and whitespace normalization).
 
-- [[Sources/THEIA_MEMORY_SCENES#Theia — Memory Scenes|Theia — Memory Scenes]]
-  - [[Sources/THEIA_MEMORY_SCENES#Memory I — The Six Reunited|Memory I — The Six Reunited]]
+- [Read the original source](../../../../THEIA_MEMORY_SCENES.md)
+- [Current Human campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
-[[Source Reading Maps]] · [[Source Library]]
+This is a historical reference only. The original source's canon status and later approved decisions govern its use.

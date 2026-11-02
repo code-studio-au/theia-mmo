@@ -1,18 +1,8 @@
----
-type: source-map
-source: "[[Sources/THEIA_HUMAN_STORY_DUNGEONS]]"
----
-# Reading Map - THEIA_HUMAN_STORY_DUNGEONS
+# Historical Reading Map — THEIA_HUMAN_STORY_DUNGEONS
 
-[[Sources/THEIA_HUMAN_STORY_DUNGEONS|Open the complete source]]. Section labels and later explicit decisions govern approval. This navigation map makes every source section discoverable without changing source wording.
+The former Obsidian reading map has been retired because its mirrored source was content-equivalent to the preserved original (after wiki-link and whitespace normalization).
 
-- [[Sources/THEIA_HUMAN_STORY_DUNGEONS#THEIA — HUMAN SOLO STORY CLIMAXES|THEIA — HUMAN SOLO STORY CLIMAXES]]
-  - [[Sources/THEIA_HUMAN_STORY_DUNGEONS#Common encounter contract|Common encounter contract]]
-  - [[Sources/THEIA_HUMAN_STORY_DUNGEONS#Act I — The Hidden Passage|Act I — The Hidden Passage]]
-  - [[Sources/THEIA_HUMAN_STORY_DUNGEONS#Act II — The Silent Signal|Act II — The Silent Signal]]
-  - [[Sources/THEIA_HUMAN_STORY_DUNGEONS#Act III — The Broken Measure|Act III — The Broken Measure]]
-  - [[Sources/THEIA_HUMAN_STORY_DUNGEONS#Act IV — The Witness Vault|Act IV — The Witness Vault]]
-  - [[Sources/THEIA_HUMAN_STORY_DUNGEONS#Act V — The Severed Chain|Act V — The Severed Chain]]
-  - [[Sources/THEIA_HUMAN_STORY_DUNGEONS#Optional group variants|Optional group variants]]
+- [Read the original source](../../../../THEIA_HUMAN_STORY_DUNGEONS.md)
+- [Current Human campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
-[[Source Reading Maps]] · [[Source Library]]
+This is a historical reference only. The original source's canon status and later approved decisions govern its use.

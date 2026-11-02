@@ -1,18 +1,8 @@
----
-type: source-map
-source: "[[Sources/THEIA_HUMAN_HEARTLANDS_SETTLEMENT_REGISTER]]"
----
-# Reading Map - THEIA_HUMAN_HEARTLANDS_SETTLEMENT_REGISTER
+# Historical Reading Map — THEIA_HUMAN_HEARTLANDS_SETTLEMENT_REGISTER
 
-[[Sources/THEIA_HUMAN_HEARTLANDS_SETTLEMENT_REGISTER|Open the complete source]]. Section labels and later explicit decisions govern approval. This navigation map makes every source section discoverable without changing source wording.
+The former Obsidian reading map has been retired because its mirrored source was content-equivalent to the preserved original (after wiki-link and whitespace normalization).
 
-- [[Sources/THEIA_HUMAN_HEARTLANDS_SETTLEMENT_REGISTER#THEIA — HUMAN HEARTLANDS: SETTLEMENT AND NPC REGISTER|THEIA — HUMAN HEARTLANDS: SETTLEMENT AND NPC REGISTER]]
-  - [[Sources/THEIA_HUMAN_HEARTLANDS_SETTLEMENT_REGISTER#Approved design principles|Approved design principles]]
-  - [[Sources/THEIA_HUMAN_HEARTLANDS_SETTLEMENT_REGISTER#Settlement A — Lower Heartlands starting village|Settlement A — Lower Heartlands starting village]]
-  - [[Sources/THEIA_HUMAN_HEARTLANDS_SETTLEMENT_REGISTER#Settlement B — Upper Heartlands market town|Settlement B — Upper Heartlands market town]]
-  - [[Sources/THEIA_HUMAN_HEARTLANDS_SETTLEMENT_REGISTER#Settlement C — Human inland racial capital|Settlement C — Human inland racial capital]]
-  - [[Sources/THEIA_HUMAN_HEARTLANDS_SETTLEMENT_REGISTER#Service coverage by scale|Service coverage by scale]]
-  - [[Sources/THEIA_HUMAN_HEARTLANDS_SETTLEMENT_REGISTER#Recurring characters and later acts|Recurring characters and later acts]]
-  - [[Sources/THEIA_HUMAN_HEARTLANDS_SETTLEMENT_REGISTER#Design questions still open|Design questions still open]]
+- [Read the original source](../../../../THEIA_HUMAN_HEARTLANDS_SETTLEMENT_REGISTER.md)
+- [Current Human campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
-[[Source Reading Maps]] · [[Source Library]]
+This is a historical reference only. The original source's canon status and later approved decisions govern its use.
