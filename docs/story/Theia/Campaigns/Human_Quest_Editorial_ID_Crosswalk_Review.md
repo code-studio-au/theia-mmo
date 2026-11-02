@@ -29,6 +29,6 @@
 ## Remaining repository cleanup
 
 - Superseded 1–60 drafts and the JavaScript prototype have already been removed.
-- The old H-series register and duplicated source copy remain **temporarily** until the mapping is approved.
-- Multiple playable quest packs and implementation briefs may duplicate the structured JSON; compare their unique mechanics and dialogue before deleting.
+- The root H-series register remains **temporarily** until mapping approval. The duplicated Obsidian source copy has already been retired; do not recreate it.
+- Earlier playable packs and implementation briefs were retired after consolidation; continue checking any surviving notes for unique mechanics and dialogue before deletion.
 - Unrelated engine and world lore documentation is outside this Human campaign cleanup.
