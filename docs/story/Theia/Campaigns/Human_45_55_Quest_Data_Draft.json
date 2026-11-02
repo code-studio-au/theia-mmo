@@ -1,0 +1,1328 @@
+{
+  "schemaVersion": 1,
+  "status": "implementation_data_draft",
+  "canonical": "Human_1_80_Canonical_Campaign.md",
+  "runtimeIntegrated": false,
+  "quests": [
+    {
+      "id": "HUMAN_Q104",
+      "editorialId": 104,
+      "title": "The Delegation That Failed",
+      "track": "main_story",
+      "minLevel": 45,
+      "prerequisites": [
+        "HUMAN_Q103_DONE"
+      ],
+      "contact": "Mara",
+      "region": "Oth'irun archive",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Mara",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "interact",
+          "targetKey": "objective_104",
+          "description": "Collect surviving Delegation dispatches",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Mara",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q104_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q105",
+      "editorialId": 105,
+      "title": "Two Accounts of One Tragedy",
+      "track": "main_story",
+      "minLevel": 45,
+      "prerequisites": [
+        "HUMAN_Q104_DONE"
+      ],
+      "contact": "Sel'ora",
+      "region": "Oth'irun archive",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Sel'ora",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_105",
+          "description": "Compare separately sourced faction records",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Sel'ora",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q105_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q106",
+      "editorialId": 106,
+      "title": "The King's Lost Adviser",
+      "track": "main_story",
+      "minLevel": 45,
+      "prerequisites": [
+        "HUMAN_Q105_DONE"
+      ],
+      "contact": "Mara",
+      "region": "Valecrown archive",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Mara",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_106",
+          "description": "Recover Edric's correspondence and witness records",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Mara",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q106_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q107",
+      "editorialId": 107,
+      "title": "The Brother Who Came for Peace",
+      "track": "main_story",
+      "minLevel": 45,
+      "prerequisites": [
+        "HUMAN_Q106_DONE"
+      ],
+      "contact": "Mara",
+      "region": "Covenant intelligence office",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Mara",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "interact",
+          "targetKey": "objective_107",
+          "description": "Reconstruct Great Clan chief's reluctant official attendance",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Mara",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q107_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q108",
+      "editorialId": 108,
+      "title": "The Records They Buried",
+      "track": "main_story",
+      "minLevel": 45,
+      "prerequisites": [
+        "HUMAN_Q107_DONE"
+      ],
+      "contact": "Mara's field agent",
+      "region": "Hostile Dominion military archive",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "travel",
+          "targetKey": "hostile_archive",
+          "description": "Enter Dominion military archive covertly",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "suppressed_orders",
+          "description": "Copy suppressed security orders",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S03",
+          "kind": "combat",
+          "targetKey": "archive_escape",
+          "description": "Escape hostile defenders",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "encounter_retry",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S04",
+          "kind": "talk",
+          "targetKey": "mara",
+          "description": "Submit evidence without friendly Dominion contact",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        }
+      ],
+      "completionFlag": "HUMAN_Q108_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q109",
+      "editorialId": 109,
+      "title": "Road to the Meeting",
+      "track": "main_story",
+      "minLevel": 45,
+      "prerequisites": [
+        "HUMAN_Q108_DONE"
+      ],
+      "contact": "Mara",
+      "region": "Historic delegation site",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Mara",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "travel",
+          "targetKey": "objective_109",
+          "description": "Survey arrival routes and guard positions",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Mara",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q109_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q110",
+      "editorialId": 110,
+      "title": "Evidence Planted Twice",
+      "track": "main_story",
+      "minLevel": 45,
+      "prerequisites": [
+        "HUMAN_Q109_DONE"
+      ],
+      "contact": "Mara",
+      "region": "Ruined conference compound",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Mara",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_110",
+          "description": "Recover planted clues and compare provenance",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Mara",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q110_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q111",
+      "editorialId": 111,
+      "title": "The Witness Who Disappeared",
+      "track": "main_story",
+      "minLevel": 45,
+      "prerequisites": [
+        "HUMAN_Q110_DONE"
+      ],
+      "contact": "Darian",
+      "region": "Neutral witness refuge",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Darian",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "defend",
+          "targetKey": "objective_111",
+          "description": "Find survivor and protect extraction",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "encounter_retry",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Darian",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q111_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q112",
+      "editorialId": 112,
+      "title": "The Delegation's Second Ledger",
+      "track": "main_story",
+      "minLevel": 45,
+      "prerequisites": [
+        "HUMAN_Q111_DONE"
+      ],
+      "contact": "Mara",
+      "region": "Oth'irun, Valecrown, contested delegation site, hostile Dominion military archive, Shroud",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Mara",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_112",
+          "description": "Compare human and hostile-coast contract records without relying on friendly Dominion contacts",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Mara",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q112_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q113",
+      "editorialId": 113,
+      "title": "The False Safe House",
+      "track": "main_story",
+      "minLevel": 45,
+      "prerequisites": [
+        "HUMAN_Q112_DONE"
+      ],
+      "contact": "Sera",
+      "region": "Oth'irun, Valecrown, contested delegation site, hostile Dominion military archive, Shroud",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Sera",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "interact",
+          "targetKey": "objective_113",
+          "description": "Locate Su'vareth's headquarters using three independent trails and expose its decoy",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Sera",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q113_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q114",
+      "editorialId": 114,
+      "title": "The Veiled Hand",
+      "track": "main_story",
+      "minLevel": 45,
+      "prerequisites": [
+        "HUMAN_Q113_DONE"
+      ],
+      "contact": "Oth'varen",
+      "region": "Guardian sanctuary",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Oth'varen",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "interact",
+          "targetKey": "objective_114",
+          "description": "Present corroborated pattern identifying Su'vareth",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Oth'varen",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q114_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q115",
+      "editorialId": 115,
+      "title": "The Witness Vault",
+      "track": "main_story",
+      "minLevel": 45,
+      "prerequisites": [
+        "HUMAN_Q114_DONE"
+      ],
+      "contact": "Oth'varen",
+      "region": "Oth'irun, Valecrown, contested delegation site, hostile Dominion military archive, Shroud",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "travel",
+          "targetKey": "witness_vault",
+          "description": "Enter the true Witness Vault",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S02",
+          "kind": "defend",
+          "targetKey": "witness_extraction",
+          "description": "Protect witnesses and captives",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "encounter_retry",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S03",
+          "kind": "combat",
+          "targetKey": "su_vareth",
+          "description": "Defeat Su'vareth permanently",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "encounter_retry",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S04",
+          "kind": "inspect",
+          "targetKey": "contingency_orders",
+          "description": "Copy surviving orders",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        }
+      ],
+      "completionFlag": "HUMAN_Q115_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q116",
+      "editorialId": 116,
+      "title": "Orders That Outlive Her",
+      "track": "main_story",
+      "minLevel": 45,
+      "prerequisites": [
+        "HUMAN_Q115_DONE"
+      ],
+      "contact": "Mara",
+      "region": "Oth'irun, Valecrown, contested delegation site, hostile Dominion military archive, Shroud",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Mara",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_116",
+          "description": "Authenticate standing contingency orders and alert affected sites; do not imply Su'vareth survived",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Mara",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q116_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q117",
+      "editorialId": 117,
+      "title": "A Truth Neither Side Wants",
+      "track": "main_story",
+      "minLevel": 45,
+      "prerequisites": [
+        "HUMAN_Q116_DONE"
+      ],
+      "contact": "Aldren / Mara",
+      "region": "Valecrown court",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Aldren / Mara",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "interact",
+          "targetKey": "objective_117",
+          "description": "Submit verified case and secure correction",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Aldren / Mara",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q117_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q118",
+      "editorialId": 118,
+      "title": "The War That Remains",
+      "track": "main_story",
+      "minLevel": 45,
+      "prerequisites": [
+        "HUMAN_Q117_DONE"
+      ],
+      "contact": "Oth'varen",
+      "region": "Oth'varen sanctuary",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Oth'varen",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "interact",
+          "targetKey": "objective_118",
+          "description": "Translate Su'vareth orders and identify exact Anchor lead",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Oth'varen",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q118_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q119",
+      "editorialId": 119,
+      "title": "The Warden's Orders",
+      "track": "main_story",
+      "minLevel": 50,
+      "prerequisites": [
+        "HUMAN_Q118_DONE"
+      ],
+      "contact": "Sera",
+      "region": "Drom Kar",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Sera",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_119",
+          "description": "Authenticate translated delivery orders",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Sera",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q119_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q120",
+      "editorialId": 120,
+      "title": "Network Awakens",
+      "track": "main_story",
+      "minLevel": 50,
+      "prerequisites": [
+        "HUMAN_Q119_DONE"
+      ],
+      "contact": "Sera",
+      "region": "Covenant Regional Anchor",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Sera",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_120",
+          "description": "Install sensors and compare abnormal readings",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Sera",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q120_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q121",
+      "editorialId": 121,
+      "title": "The First Breach",
+      "track": "main_story",
+      "minLevel": 50,
+      "prerequisites": [
+        "HUMAN_Q120_DONE"
+      ],
+      "contact": "Nessa",
+      "region": "Anchor perimeter",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Nessa",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "combat",
+          "targetKey": "objective_121",
+          "description": "Defeat Unmade installers and preserve equipment",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "encounter_retry",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Nessa",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q121_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q122",
+      "editorialId": 122,
+      "title": "A Signal Answered",
+      "track": "main_story",
+      "minLevel": 50,
+      "prerequisites": [
+        "HUMAN_Q121_DONE"
+      ],
+      "contact": "Sera",
+      "region": "Signal station",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Sera",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "interact",
+          "targetKey": "objective_122",
+          "description": "Intercept Warden's relay traffic",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Sera",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q122_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q123",
+      "editorialId": 123,
+      "title": "The Warden's Approaches",
+      "track": "main_story",
+      "minLevel": 50,
+      "prerequisites": [
+        "HUMAN_Q122_DONE"
+      ],
+      "contact": "Nessa",
+      "region": "Contested mountain route",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Nessa",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "interact",
+          "targetKey": "objective_123",
+          "description": "Scout convoys and identify supply terminus",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Nessa",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q123_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q124",
+      "editorialId": 124,
+      "title": "Lines of Defense",
+      "track": "main_story",
+      "minLevel": 50,
+      "prerequisites": [
+        "HUMAN_Q123_DONE"
+      ],
+      "contact": "Garrick",
+      "region": "Covenant frontier",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Garrick",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "defend",
+          "targetKey": "objective_124",
+          "description": "Defend outpost and evacuate civilians",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "encounter_retry",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Garrick",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q124_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q125",
+      "editorialId": 125,
+      "title": "The Anchor Beneath",
+      "track": "main_story",
+      "minLevel": 50,
+      "prerequisites": [
+        "HUMAN_Q124_DONE"
+      ],
+      "contact": "Tarek",
+      "region": "Buried installation",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Tarek",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_125",
+          "description": "Recover synchronization schematics",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Tarek",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q125_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q126",
+      "editorialId": 126,
+      "title": "A Measure of Time",
+      "track": "main_story",
+      "minLevel": 50,
+      "prerequisites": [
+        "HUMAN_Q125_DONE"
+      ],
+      "contact": "Sera / Oth'varen",
+      "region": "Drom Kar research chamber",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Sera / Oth'varen",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_126",
+          "description": "Compare activation timing across sites",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Sera / Oth'varen",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q126_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q127",
+      "editorialId": 127,
+      "title": "The Gathering Storm",
+      "track": "main_story",
+      "minLevel": 50,
+      "prerequisites": [
+        "HUMAN_Q126_DONE"
+      ],
+      "contact": "Aldren",
+      "region": "Valecrown court",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Aldren",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "interact",
+          "targetKey": "objective_127",
+          "description": "Present proof and obtain limited mandate",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Aldren",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q127_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q128",
+      "editorialId": 128,
+      "title": "Before the Veil Breaks",
+      "track": "main_story",
+      "minLevel": 50,
+      "prerequisites": [
+        "HUMAN_Q127_DONE"
+      ],
+      "contact": "Nessa",
+      "region": "Guardian staging camp",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Nessa",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "interact",
+          "targetKey": "objective_128",
+          "description": "Verify extraction, supply and instrument teams",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Nessa",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q128_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    }
+  ]
+}
