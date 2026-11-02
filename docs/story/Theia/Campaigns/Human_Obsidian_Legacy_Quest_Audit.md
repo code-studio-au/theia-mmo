@@ -41,3 +41,7 @@ The [64 exact-title objective comparison](Human_Legacy_64_Exact_Title_Objective_
 ## World Directory navigation retirement
 
 The former Obsidian-generated `Lore/World Directory.md` (281 wiki-link entries) is now a Markdown redirect to [World Directory Legacy Reference](../Lore/World_Directory_Legacy_Reference.md). The archived list is historical and may contain targets already removed in prior cleanup. **Do not treat conversion of link syntax as validation that all targets resolve.** Keep the redirect until remaining inbound links are migrated; the source register and lore material remain protected pending unique-detail reconciliation.
+
+## Archive link correction
+
+Corrected 25 relative Lore-directory paths in `Lore/World_Directory_Legacy_Reference.md` after the initial wiki-link conversion. Other converted links remain unverified for target existence, including links to historically deleted quest notes. The legacy index is a provenance aid, not a guarantee of valid live navigation.
