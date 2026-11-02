@@ -43,6 +43,9 @@ impl Session {
     }
 }
 impl Authority {
+    pub(super) fn available(&self) -> bool {
+        self.available
+    }
     pub(super) fn leave(&mut self, actor: u64) {
         self.actors.remove(&actor);
     }

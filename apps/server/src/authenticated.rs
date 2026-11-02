@@ -180,6 +180,7 @@ pub async fn run_with_profiles(
     let gate = service.enable_game_with_profiles(
         issuer,
         crate::accounts::GameProfiles {
+            quest_journal: None,
             inventory,
             rewards,
             progression,

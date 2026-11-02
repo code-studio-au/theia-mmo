@@ -35,12 +35,13 @@ impl Store {
         if row.get::<_, Vec<u8>>(1) != world {
             return Err(Error::WorldMismatch);
         }
-        // Fixed tables/roles, at most four rows, no dynamic SQL or client hashes.
+        // Fixed tables/roles, at most five rows, no dynamic SQL or client hashes.
         let rows = bounded(tx.query(
             "SELECT 0::int AS role,catalog_hash AS hash,NULL::bytea AS world FROM theia.backpacks WHERE realm_id=$1 AND character_id=$2
              UNION ALL SELECT 1,profile_hash,world_id FROM theia.progression WHERE realm_id=$1 AND character_id=$2
              UNION ALL SELECT 2,profile_hash,world_id FROM theia.quest_objectives WHERE realm_id=$1 AND character_id=$2
-             UNION ALL SELECT 3,profile_hash,world_id FROM theia.quest_lifecycles WHERE realm_id=$1 AND character_id=$2",
+             UNION ALL SELECT 3,profile_hash,world_id FROM theia.quest_lifecycles WHERE realm_id=$1 AND character_id=$2
+             UNION ALL SELECT 4,catalog_hash,world_id FROM theia.quest_journal_heads WHERE realm_id=$1 AND character_id=$2",
             &[&self.realm.value(), &binding.character.value()],
         )).await?;
         let mut result = ProfileCompatibility::Compatible;

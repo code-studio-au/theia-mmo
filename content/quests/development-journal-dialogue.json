@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "id": "theia.dev.quest-guide-dialogue",
+  "npc": "theia.dev.guide",
+  "name": "Development guide",
+  "start": "theia.dev.quest-guide.welcome",
+  "nodes": [
+    {
+      "id": "theia.dev.quest-guide.welcome",
+      "text": "Which part of the development exercise shall we discuss?",
+      "choices": [
+        {
+          "id": "theia.dev.interaction.road",
+          "label": "Tell me about the road.",
+          "next": "theia.dev.quest-guide.goodbye"
+        },
+        {
+          "id": "theia.dev.interaction.supplies",
+          "label": "Review the supplies with me.",
+          "next": "theia.dev.quest-guide.goodbye"
+        },
+        {
+          "id": "theia.dev.interaction.report",
+          "label": "Here is my report.",
+          "next": "theia.dev.quest-guide.goodbye"
+        },
+        {
+          "id": "theia.dev.interaction.training",
+          "label": "Explain the training exercise.",
+          "next": "theia.dev.quest-guide.goodbye"
+        }
+      ]
+    },
+    {
+      "id": "theia.dev.quest-guide.goodbye",
+      "text": "Speak with me again when you are ready.",
+      "choices": []
+    }
+  ]
+}

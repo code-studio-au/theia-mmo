@@ -4,6 +4,7 @@
 mod accounts;
 mod inventory;
 mod progression;
+mod quest_journal;
 mod quest_lifecycle;
 mod quests;
 mod rewards;
@@ -117,6 +118,13 @@ pub struct WorkerStatus {
     pub quest_replayed: u64,
     pub quest_noops: u64,
     pub quest_rejected: u64,
+    pub journal_ensures: u64,
+    pub journal_loads: u64,
+    pub journal_commands: u64,
+    pub journal_events: u64,
+    pub journal_replayed: u64,
+    pub journal_rejected: u64,
+    pub journal_experience_units: u64,
     pub lifecycle_ensures: u64,
     pub lifecycle_loads: u64,
     pub lifecycle_actions: u64,
@@ -283,6 +291,14 @@ async fn run(
         if ending {
             break;
         }
+    }
+    // Stop accepting before draining: accepted critical work is retained even
+    // when its response receiver or the originating session has gone away.
+    inventory_requests.close();
+    while let Some(request) = inventory_requests.recv().await {
+        let result = request.run(&mut store, &mut status).await;
+        report.send_replace(status.clone());
+        result?;
     }
     if let Err(error) = store.close().await {
         status.failed = true;

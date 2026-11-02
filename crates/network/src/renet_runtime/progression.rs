@@ -10,6 +10,41 @@ pub const CAPACITY: usize = crate::simulation::progression::FACT_CAPACITY;
 pub enum Input {
     Kill(KillEvent),
     QuestAction(crate::quest_lifecycle_wire::Request),
+    Journal(JournalInput),
+}
+/// Trusted authority-only interface; no network decoder admits these directly.
+#[derive(Clone, Debug)]
+pub struct JournalInput {
+    pub actor: theia_core::identity::EntityKey,
+    pub catalog: [u8; 32],
+    pub sequence: u64,
+    pub operation: JournalOperation,
+}
+#[derive(Clone, Debug)]
+pub enum JournalOperation {
+    Command(theia_core::quests::journal::Command),
+    Event {
+        id: std::num::NonZeroU128,
+        event: theia_core::quests::catalog::EventKey,
+    },
+}
+#[derive(Clone, Debug)]
+pub struct JournalObservation {
+    pub catalog: [u8; 32],
+    pub revision: u64,
+    pub journal: theia_core::quests::journal::Journal,
+    pub reply: Option<JournalReply>,
+}
+#[derive(Clone, Debug)]
+pub struct JournalReply {
+    pub sequence: u64,
+    pub rejection: Option<JournalRejection>,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum JournalRejection {
+    Rule(theia_core::quests::journal::Error),
+    Conflict,
+    Busy,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ActionReply {
@@ -19,6 +54,7 @@ pub struct ActionReply {
 }
 #[derive(Clone, Debug, Default)]
 pub struct Observation {
+    pub journal: Option<JournalObservation>,
     pub lifecycle: Option<theia_core::quests::lifecycle::State>,
     pub lifecycle_reply: Option<ActionReply>,
     pub quest: Option<theia_core::quests::State>,

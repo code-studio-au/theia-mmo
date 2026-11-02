@@ -347,3 +347,152 @@ fn player_death_alone_keeps_session_claim_and_stale_life_cannot_contribute() {
     resolve(&mut w, h).unwrap();
     assert_eq!(w.creature_tag_owner(), Some(owner));
 }
+
+#[test]
+fn expanded_quest_kill_credit_is_independent_of_xp_and_retains_solo_tag_owner_at_all_rates() {
+    use theia_core::quests::catalog::{Catalog, EventKey};
+    for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+        let (mut w, npc) = credit_world_profile(
+            rate,
+            false,
+            32,
+            include_bytes!(
+                "../../../../../../../../content/gameplay/development-creature-credit-solo.json"
+            ),
+        );
+        assert!(w.progression.is_none());
+        w.spawn_development_guide(
+            Arc::new(
+                crate::dialogue::Profile::from_json(include_bytes!(
+                    "../../../../../../../../content/quests/development-journal-dialogue.json"
+                ))
+                .unwrap(),
+            ),
+            [8000., 8000.],
+        )
+        .unwrap();
+        let prepared = w
+            .prepare_quest_journal(Arc::new(
+                Catalog::from_json(include_bytes!(
+                    "../../../../../../../../content/quests/development-journal.json"
+                ))
+                .unwrap(),
+            ))
+            .unwrap();
+        let xp = Arc::new(
+            crate::progression_wire::Profile::from_json(include_bytes!(
+                "../../../../../../../../content/gameplay/development-progression.json"
+            ))
+            .unwrap(),
+        );
+        let profile = Arc::new(
+            crate::quest_journal::Profile::from_json(
+                include_bytes!("../../../../../../../../content/quests/development-journal.json"),
+                &xp,
+            )
+            .unwrap(),
+        );
+        let prepared_router = profile.prepare(&w).unwrap();
+        let first = join(&mut w);
+        let second = join(&mut w);
+        let owner = w.entity_key(first).unwrap();
+        cast(&mut w, first, npc, 1, "theia.dev.sword-slash");
+        w.step();
+        assert!(
+            w.quest_kill_occurrences(&prepared, w.combat_events())
+                .unwrap()
+                .is_empty()
+        );
+        w.combat.as_mut().unwrap().creatures[0].current = 1;
+        cast(&mut w, second, npc, 1, "theia.dev.sword-slash");
+        w.step();
+        let facts = w
+            .quest_kill_occurrences(&prepared, w.combat_events())
+            .unwrap();
+        assert_eq!(facts.len(), 1);
+        assert_eq!(
+            facts[0].actor, owner,
+            "Final hitter must not steal quest credit"
+        );
+        assert_eq!(
+            facts[0].event,
+            EventKey::Kill(
+                theia_core::content::ContentId::new("theia.dev.training-creature").unwrap()
+            )
+        );
+        let mut duplicate = w.combat_events().to_vec();
+        duplicate.extend_from_slice(w.combat_events());
+        assert_eq!(
+            w.quest_kill_occurrences(&prepared, &duplicate).unwrap(),
+            facts
+        );
+        assert!(
+            w.quest_kill_occurrences(
+                &prepared,
+                &vec![
+                    duplicate[0].clone();
+                    super::super::super::super::MAX_PROJECTILE_STEP_EVENTS + 1
+                ]
+            )
+            .is_err()
+        );
+        // Bounded synthetic owner receiver: actual World recipient routing,
+        // no SQL/transport or durable acknowledgement claimed by this fixture.
+        use crate::renet_runtime::progression::{
+            self, Input, JournalObservation, JournalOperation, Observation, Port,
+        };
+        let (input, mut receiver) = tokio::sync::mpsc::channel(progression::CAPACITY);
+        let (_publish, state) = tokio::sync::watch::channel(Observation {
+            journal: Some(JournalObservation {
+                catalog: profile.hash(),
+                revision: 0,
+                journal: theia_core::quests::journal::Journal::default(),
+                reply: None,
+            }),
+            ..Observation::default()
+        });
+        let port = Port {
+            profile: xp,
+            input,
+            state,
+            quest: None,
+            lifecycle: None,
+        };
+        let mut router = prepared_router.bind(owner);
+        let filler = theia_core::progression::KillEvent {
+            id: theia_core::progression::KillId::from_victim(npc),
+            creature: theia_core::content::ContentId::new("theia.dev.training-creature").unwrap(),
+        };
+        for _ in 0..progression::CAPACITY {
+            port.input.try_send(Input::Kill(filler.clone())).unwrap();
+        }
+        assert!(router.forward_kills(&w, w.combat_events(), &port).is_err());
+        assert_eq!(receiver.len(), progression::CAPACITY);
+        for _ in 0..progression::CAPACITY {
+            receiver.try_recv().unwrap();
+        }
+        assert_eq!(
+            router.forward_kills(&w, w.combat_events(), &port).unwrap(),
+            1
+        );
+        let Input::Journal(queued) = receiver.try_recv().unwrap() else {
+            panic!("Wrong routed input")
+        };
+        assert_eq!(
+            queued.sequence, 1,
+            "Refused reservation cannot consume owner sequence"
+        );
+        assert_eq!(queued.actor, owner);
+        let JournalOperation::Event { id, event } = queued.operation else {
+            panic!("Wrong routed operation")
+        };
+        assert_eq!(id, facts[0].id);
+        assert_eq!(event, facts[0].event);
+        w.leave(first);
+        assert!(
+            w.quest_kill_occurrences(&prepared, w.combat_events())
+                .unwrap()
+                .is_empty()
+        );
+    }
+}

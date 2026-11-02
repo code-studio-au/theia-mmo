@@ -197,6 +197,212 @@ async fn main() -> theia_network::Result<()> {
     } else {
         admissions::GameAdmissions::new(sessions.clone(), issuer, world)
     };
+    if std::env::var("THEIA_TEST_QUEST_JOURNAL").is_ok_and(|v| v == "1") {
+        use net::progression::{Input, JournalInput, JournalOperation};
+        use std::num::NonZeroU128;
+        use theia_core::{
+            content::ContentId,
+            quests::{
+                catalog::EventKey,
+                journal::{Action, Command, Status},
+            },
+        };
+        let xp_bytes = include_bytes!("../../../content/gameplay/development-progression.json");
+        let xp = theia_persistence::ProgressionCatalog::from_json(xp_bytes)?;
+        let q = theia_persistence::QuestJournalCatalog::from_json(
+            include_bytes!("../../../content/quests/development-journal.json"),
+            &xp,
+        )?;
+        admissions::GameAdmissions::with_progression(
+            &mut gate,
+            xp.clone(),
+            Arc::new(theia_network::progression_wire::Profile::from_json(
+                xp_bytes,
+            )?),
+            publisher.clone(),
+        )?;
+        let network_xp = theia_network::progression_wire::Profile::from_json(xp_bytes)?;
+        assert_eq!(
+            q.hash(),
+            theia_network::quest_journal::Profile::from_json(
+                include_bytes!("../../../content/quests/development-journal.json"),
+                &network_xp
+            )?
+            .hash()
+        );
+        admissions::GameAdmissions::with_quest_journal(&mut gate, q.clone())?;
+        let id = |s: &str| ContentId::new(s).unwrap();
+        let first = id("theia.dev.quest-introduction");
+        let second = id("theia.dev.quest-follow-up");
+        let cmd = |n, quest, action, rev| Command {
+            request_id: NonZeroU128::new(n).unwrap(),
+            quest,
+            npc: id("theia.dev.guide"),
+            action,
+            expected_revision: rev,
+        };
+        let actor = EntityKey {
+            epoch: WorldEpoch::new(174).unwrap(),
+            entity: EntityId::new(1).unwrap(),
+        };
+        let input = |sequence, operation| {
+            Input::Journal(JournalInput {
+                actor,
+                catalog: q.hash(),
+                sequence,
+                operation,
+            })
+        };
+        let event = |n, name| JournalOperation::Event {
+            id: NonZeroU128::new(n).unwrap(),
+            event: EventKey::NpcInteraction {
+                npc: id("theia.dev.guide"),
+                interaction: id(&format!("theia.dev.interaction.{name}")),
+            },
+        };
+        let reservation = gate.reserve(context.clone(), binding)?;
+        assert_eq!(
+            reservation.check_gameplay_profiles(&publisher).await?,
+            theia_persistence::ProfileCompatibility::Compatible
+        );
+        let ticket = reservation.issue(character.saved)?;
+        let data = connected_data(&mut transport, ticket.bytes()).await;
+        let lease = gate.clone().consume(1, &data)?.unwrap().lease;
+        lease.record(actor, position, 1)?;
+        let mut port = lease.progression()?.unwrap();
+        progression_until(&mut port, |s| s.journal.is_some()).await;
+        let guard = admin.transaction().await?;
+        guard.query_one("SELECT revision FROM theia.quest_journal_heads WHERE realm_id=$1 AND character_id=$2 FOR UPDATE", &[&realm.value(), &binding.character.value()]).await?;
+        port.input.try_send(input(
+            1,
+            JournalOperation::Command(cmd(1, first.clone(), Action::Accept, 0)),
+        ))?;
+        tokio::time::timeout(Duration::from_secs(2), async { loop {
+            guard.query_one("SELECT pg_stat_clear_snapshot()", &[]).await.unwrap();
+            let waiting: bool = guard.query_one("SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE wait_event_type='Lock' AND query LIKE '%quest_journal_heads%' AND pid<>pg_backend_pid())", &[]).await.unwrap().get(0);
+            if waiting {break;} tokio::time::sleep(Duration::from_millis(2)).await;
+        }}).await?;
+        for (sequence, n, name) in [
+            (2, 1, "road"),
+            (3, 2, "supplies"),
+            (4, 3, "report"),
+            (5, 1, "road"),
+        ] {
+            port.input.try_send(input(sequence, event(n, name)))?;
+        }
+        port.input.try_send(input(
+            6,
+            JournalOperation::Command(cmd(2, first.clone(), Action::TurnIn, 4)),
+        ))?;
+        port.input.try_send(input(
+            7,
+            JournalOperation::Command(cmd(3, second.clone(), Action::Accept, 0)),
+        ))?;
+        // A later event must not overwrite the pending command's acknowledgement.
+        port.input.try_send(input(8, event(4, "training")))?;
+        sessions.lock().unwrap().revoke(secret.expose_secret());
+        drop(lease);
+        assert_eq!(gate.flush(&publisher, &worker.status())?, 1);
+        assert_eq!(port.state.borrow().journal.as_ref().unwrap().revision, 0);
+        assert_eq!(port.state.borrow().progress.as_ref().unwrap().total(), 0);
+        let secret2 = sessions.lock().unwrap().issue(&identity, owner)?;
+        let context2 = sessions
+            .lock()
+            .unwrap()
+            .authorize(secret2.expose_secret())?;
+        assert!(
+            gate.reserve(context2.clone(), binding).is_err(),
+            "Reconnection overtook accepted journal work"
+        );
+        guard.commit().await?;
+        tokio::time::timeout(Duration::from_secs(5), async {
+            loop {
+                if gate.flush(&publisher, &worker.status()).unwrap() == 0 {
+                    break;
+                }
+                tokio::time::sleep(Duration::from_millis(2)).await;
+            }
+        })
+        .await?;
+        let saved = port.state.borrow().clone();
+        assert!(saved.closed && !saved.failed);
+        let journal = saved.journal.as_ref().unwrap();
+        assert_eq!(journal.revision, 7);
+        assert_eq!(
+            journal.journal.progress(&first).unwrap().status(),
+            Status::Completed
+        );
+        assert_eq!(
+            journal.journal.progress(&second).unwrap().status(),
+            Status::Active
+        );
+        assert_eq!(saved.progress.as_ref().unwrap().total(), 25);
+        assert_eq!(journal.reply.as_ref().unwrap().sequence, 7);
+        assert!(journal.reply.as_ref().unwrap().rejection.is_none());
+        assert!(port.input.try_send(input(9, event(5, "road"))).is_err());
+        let selected = publisher.select_character(binding, world).await?.saved;
+        let reservation = gate.reserve(context2.clone(), binding)?;
+        assert_eq!(
+            reservation.check_gameplay_profiles(&publisher).await?,
+            theia_persistence::ProfileCompatibility::Compatible
+        );
+        let ticket = reservation.issue(selected)?;
+        let data = connected_data(&mut transport, ticket.bytes()).await;
+        let lease = gate.clone().consume(1, &data)?.unwrap().lease;
+        let actor2 = EntityKey {
+            epoch: actor.epoch,
+            entity: EntityId::new(2).unwrap(),
+        };
+        lease.record(actor2, position, 2)?;
+        let mut reloaded = lease.progression()?.unwrap();
+        let loaded = progression_until(&mut reloaded, |s| s.journal.is_some()).await;
+        assert_eq!(loaded.journal.as_ref().unwrap().journal, journal.journal);
+        assert_eq!(loaded.progress.as_ref().unwrap().total(), 25);
+        reloaded.input.try_send(Input::Journal(JournalInput {
+            actor: actor2,
+            catalog: q.hash(),
+            sequence: 1,
+            operation: JournalOperation::Command(cmd(2, first.clone(), Action::TurnIn, 4)),
+        }))?;
+        progression_until(&mut reloaded, |s| {
+            s.journal
+                .as_ref()
+                .is_some_and(|j| j.reply.as_ref().is_some_and(|r| r.sequence == 1))
+        })
+        .await;
+        assert_eq!(
+            reloaded.state.borrow().progress.as_ref().unwrap().total(),
+            25
+        );
+        sessions.lock().unwrap().revoke(secret2.expose_secret());
+        drop(lease);
+        tokio::time::timeout(Duration::from_secs(5), async {
+            loop {
+                if gate.flush(&publisher, &worker.status()).unwrap() == 0 {
+                    break;
+                }
+                tokio::time::sleep(Duration::from_millis(2)).await;
+            }
+        })
+        .await?;
+        let status = worker.shutdown().await?;
+        assert_eq!(status.journal_experience_units, 25);
+        assert_eq!(status.journal_replayed, 2);
+        assert!(!status.failed);
+        emit(
+            serde_json::json!({"passed":true, "expanded_journal_enabled":true,
+            "accepted_executing_and_queued_journal_work_survives_logout":true,
+            "reconnect_blocked_until_retirement":true, "completion_xp_awarded":25,
+            "replayed_event_and_completion_award_no_extra":true,
+            "scope":"Actual OIDC/encrypted ticket/SQL retained owner; NPC and semantic events are trusted synthetic inputs, no live World or new client UI"}),
+        );
+        drop(transport);
+        drop(gate);
+        drop(publisher);
+        drop(admin);
+        driver.await??;
+        return Ok(());
+    }
     let vendor_bytes = include_bytes!("../../../content/gameplay/development-vendor.json");
     let vendor_profile = if vendors {
         Some(theia_persistence::VendorCatalog::from_json(

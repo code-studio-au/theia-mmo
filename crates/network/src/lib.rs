@@ -46,6 +46,8 @@ pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + S
 
 pub mod progression_wire;
 
+pub mod quest_journal;
+pub mod quest_journal_wire;
 pub mod quest_lifecycle_wire;
 pub mod quest_wire;
 

@@ -1,3 +1,14 @@
+## 2026-11-02 — quest catalogue scale direction
+
+Keep narrative planning manifests separate from executable content. Under the
+user's authorization to follow recommendations, plan manageable files/packs plus
+a globally validated stable-ID registry and cross-pack prerequisites, rather than
+a permanent 32-quest campaign cap. Bound active progress separately from retained
+completion history; choose production budgets from measurements. Define explicit
+saved-version/catalogue compatibility and migrations before adopting production
+content updates. These are plans; current exact-byte single-catalogue validation
+and development limits remain implemented. [Scope](QUEST_ENGINE.md).
+
 ## 2026-11-02 — quest-engine expansion and authoring agreement
 
 P3-11 / P3-12 / P3-15 / initial P3-16: follow the reviewed Rust quest design by

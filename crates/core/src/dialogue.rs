@@ -159,6 +159,9 @@ impl Profile {
     pub fn start(&self) -> &Node {
         self.nodes.get(&self.start).unwrap()
     }
+    pub fn nodes(&self) -> impl Iterator<Item = &Node> {
+        self.nodes.values()
+    }
     pub fn node(&self, id: &ContentId) -> Option<&Node> {
         self.nodes.get(id)
     }

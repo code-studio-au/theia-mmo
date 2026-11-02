@@ -180,6 +180,17 @@ impl GameAdmissions {
             .ok_or("Objectives require progression owner")?
             .set_quest(profile, wire)
     }
+    pub(crate) fn with_quest_journal(
+        gate: &mut Arc<Self>,
+        profile: theia_persistence::QuestJournalCatalog,
+    ) -> Result<()> {
+        Arc::get_mut(gate)
+            .ok_or("Journal configuration requires unshared gate")?
+            .progression
+            .as_mut()
+            .ok_or("Journal requires progression owner")?
+            .set_journal(profile)
+    }
     pub(crate) fn with_quest_lifecycle(
         gate: &mut Arc<Self>,
         profile: theia_persistence::QuestLifecycleCatalog,
@@ -402,7 +413,7 @@ impl Reservation {
                 (Some(xp), objective, lifecycle)
             })
             .unwrap_or((None, None, None));
-        let profiles = theia_persistence::GameplayProfiles::new(
+        let mut profiles = theia_persistence::GameplayProfiles::new(
             self.gate
                 .inventory
                 .as_ref()
@@ -412,6 +423,16 @@ impl Reservation {
             lifecycle,
         )
         .map_err(|_| Error::Unavailable)?;
+        if let Some(hash) = self
+            .gate
+            .progression
+            .as_ref()
+            .and_then(|p| p.journal_hash())
+        {
+            profiles = profiles
+                .with_quest_journal(hash)
+                .map_err(|_| Error::Unavailable)?;
+        }
         let result = publisher
             .check_gameplay_profiles(binding, self.gate.world, profiles)
             .await

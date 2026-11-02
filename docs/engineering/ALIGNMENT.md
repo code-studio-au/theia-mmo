@@ -1,3 +1,59 @@
+Compact quest observation prerequisite qualified, 2 November 2026:
+P1-08 / P3-11 / P3-15: [QJ01 journal snapshots](../QUEST_ENGINE.md) encode the
+current full development maximum in 925 bytes, retaining the existing 8-KiB
+reliable channel budget. Five codec checks, all 290 core tests, formatting and
+workspace/all-target denied-warning Clippy pass. Typed reconstruction validates
+logical state; successor checks preserve completion/history and reject rollback.
+Actual OIDC/ticket/SQL owner tests also confirm later events preserve the latest
+command reply through logout. This is an unadopted snapshot codec, not new client
+journal UI or live request support. Next: action codec and runtime/client adoption.
+
+Explicit quest routing adapter qualified, 2 November 2026:
+P3-02 / P3-11 / P3-12: [World-to-owner reservation](../QUEST_ENGINE.md) refuses
+full/closed/uninitialized owners before a semantic choice changes dialogue.
+Kill routing reserves the whole recipient batch before sending and preserves
+original IDs/sequence on refusal. Eight focused World/channel checks, all 290
+core tests, formatting and workspace/all-target denied-warning Clippy pass.
+Actual OIDC/ticket/SQL retirement is repeated and verifies Store/network exact
+catalogue identity agreement. World routing tests use explicit synthetic owner
+views, separate from the actual durable-owner proof. Normal runtime request
+adoption, private journal codec/UI and combined native acceptance remain open.
+
+Expanded quest World adapters qualified, 2 November 2026:
+P3-11 / P3-12 / P3-15: [installed references and trusted occurrences](../QUEST_ENGINE.md)
+pass seven new focused checks, including 20/30/60-Hz semantic choices and actual
+competing-player kill credit without XP configuration. Missing contacts/actions/
+creatures refuse; stale/out-of-range/foreign-World input yields no occurrence.
+6 existing core dialogue and 7 existing World dialogue checks also pass;
+formatting and workspace/all-target denied-warning Clippy pass. This explicit API
+is not routed through the normal runtime yet. Retain the qualified owner and
+schema-11 playable. Next: bounded World-to-owner routing and private journal
+transport/UI, with separate durable/encrypted/native acceptance.
+
+Multi-quest retained owner qualified, 2 November 2026:
+P3-02 / P3-11 / P3-12 / initial P3-16: [expanded journal ownership](../QUEST_ENGINE.md)
+now shares the existing character-bound progression FIFO and retirement gate.
+Actual OIDC, encrypted tickets and owned SQL prove logout retains accepted
+acceptance/events/turn-in/prerequisite work, reconnect waits, and retries add no
+XP. Read-only admission checks exact journal identity. All 1,072 workspace tests
+pass (46 skipped; 36 SQL contracts then executed explicitly); formatting and
+workspace/all-target denied-warning Clippy pass. Normal World semantic events,
+combat credit routing, journal transport/client and native adoption remain open.
+Legacy schema-11 playable is preserved. Production catalogue/registry and saved
+completion-history scaling remain planned, not a permanent 32-quest limit.
+
+Journal worker prerequisite qualified, 2 November 2026:
+P3-02 / P3-11 / P3-12 / initial P3-16: [bounded journal jobs](../QUEST_ENGINE.md)
+use the shared 16-slot critical FIFO, retain accepted journal mutations after
+response cancellation, and drain accepted work on graceful worker shutdown.
+Five journal / 35 total owned SQL contracts pass, including lock-delayed
+acknowledgement, saturation, cancelled answers, completion XP and prior process
+restart checks. Formatting and workspace/all-target denied-warning Clippy pass.
+World/character retirement, transport/UI and native adoption remain separate.
+Production catalogue scale is planned as validated content packs/registry with
+cross-pack prerequisites, version compatibility and completed-quest history;
+current development bounds remain. Legacy playable is preserved.
+
 Multi-quest persistence prerequisite qualified, 2 November 2026:
 P3-02 / P3-11 / P3-12 / P3-15 / initial P3-16: [per-quest durable journals](../QUEST_ENGINE.md)
 pass four new and thirty legacy owned PostgreSQL contracts (34 total), exact

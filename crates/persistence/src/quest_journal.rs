@@ -2,7 +2,7 @@
 //! proposals until the authorized Store transaction and receipt commit.
 use crate::{Error, ProgressionCatalog, Result};
 use ring::digest::{SHA256, digest};
-use std::{num::NonZeroU128, sync::Arc};
+use std::sync::Arc;
 use theia_core::{
     content::ContentId,
     quests::{
@@ -19,7 +19,7 @@ pub struct QuestJournalCatalog {
 impl QuestJournalCatalog {
     pub fn from_json(bytes: &[u8], xp: &ProgressionCatalog) -> Result<Self> {
         let catalog = Arc::new(Catalog::from_json(bytes).map_err(Error::Invalid)?);
-        let mut bound = b"theia-quest-journal-catalog-v1\0".to_vec();
+        let mut bound = theia_core::quests::journal::PROFILE_DOMAIN.to_vec();
         bound.extend(bytes);
         bound.extend(xp.hash());
         Ok(Self {
@@ -34,7 +34,7 @@ impl QuestJournalCatalog {
     pub fn hash(&self) -> [u8; 32] {
         self.hash
     }
-    pub(crate) fn check_progression(&self, xp: &ProgressionCatalog) -> Result<()> {
+    pub fn check_progression(&self, xp: &ProgressionCatalog) -> Result<()> {
         if self.progression != xp.hash() {
             return Err(Error::ProgressionCatalogMismatch);
         }
@@ -83,27 +83,9 @@ fn push(bytes: &mut Vec<u8>, id: &ContentId) {
     bytes.extend((id.as_str().len() as u16).to_le_bytes());
     bytes.extend(id.as_str().as_bytes());
 }
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum QuestJournalAction {
-    Accept,
-    TurnIn,
-}
-impl QuestJournalAction {
-    pub(crate) fn code(self) -> i16 {
-        match self {
-            Self::Accept => 1,
-            Self::TurnIn => 2,
-        }
-    }
-}
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct QuestJournalCommand {
-    pub request_id: NonZeroU128,
-    pub quest: ContentId,
-    pub npc: ContentId,
-    pub expected_revision: u64,
-    pub action: QuestJournalAction,
-}
+pub use theia_core::quests::journal::{
+    Action as QuestJournalAction, Command as QuestJournalCommand,
+};
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct QuestJournalApplied {
     pub journal: Journal,

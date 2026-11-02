@@ -82,6 +82,9 @@ fn synthetic_owner(
         });
         while let Some(input) = inputs.recv().await {
             match input {
+                Input::Journal(_) => {
+                    panic!("Legacy fixture cannot receive expanded journal inputs")
+                }
                 Input::Kill(event) => {
                     if !seen.insert(event.id.bytes()) {
                         continue;

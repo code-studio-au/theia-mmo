@@ -4,8 +4,31 @@ use super::catalog::{Catalog, Completion, Definition, EventKey, MAX_QUESTS, Stag
 use crate::content::ContentId;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+pub const PROFILE_DOMAIN: &[u8] = b"theia-quest-journal-catalog-v1\0";
 pub const MAX_ACTIVE_QUESTS: usize = 16;
 pub const MAX_JOURNAL_BYTES: usize = 65536;
+/// An authoritative action proposal; construction grants no NPC entitlement.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Action {
+    Accept,
+    TurnIn,
+}
+impl Action {
+    pub fn code(self) -> i16 {
+        match self {
+            Self::Accept => 1,
+            Self::TurnIn => 2,
+        }
+    }
+}
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Command {
+    pub request_id: std::num::NonZeroU128,
+    pub quest: ContentId,
+    pub npc: ContentId,
+    pub expected_revision: u64,
+    pub action: Action,
+}
 #[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum Status {
@@ -22,6 +45,34 @@ pub struct Progress {
     counts: BTreeMap<ContentId, u32>,
 }
 impl Progress {
+    /// Logical adapter reconstruction only; the outer owner still establishes
+    /// exact content identity, actor ownership and durable acknowledgement.
+    pub fn from_parts(
+        definition: &Definition,
+        revision: u64,
+        status: Status,
+        stage: ContentId,
+        counts: Vec<(ContentId, u32)>,
+    ) -> Result<Self, Error> {
+        if counts.len() > super::catalog::MAX_STAGES * super::catalog::MAX_OBJECTIVES {
+            return Err(Error::Capacity);
+        }
+        let mut unique = BTreeMap::new();
+        for (id, count) in counts {
+            if unique.insert(id, count).is_some() {
+                return Err(Error::InvalidSnapshot);
+            }
+        }
+        let progress = Self {
+            version: definition.version(),
+            revision,
+            status,
+            stage,
+            counts: unique,
+        };
+        validate_progress(definition, &progress)?;
+        Ok(progress)
+    }
     pub fn version(&self) -> u32 {
         self.version
     }
@@ -164,6 +215,25 @@ fn validate_progress(definition: &Definition, state: &Progress) -> Result<(), Er
     Ok(())
 }
 impl Journal {
+    /// Typed logical reconstruction for bounded adapters. No permission or
+    /// receipt identity is inferred from these entries.
+    pub fn from_progress(
+        catalog: &Catalog,
+        entries: Vec<(ContentId, Progress)>,
+    ) -> Result<Self, Error> {
+        if entries.len() > MAX_QUESTS {
+            return Err(Error::Capacity);
+        }
+        let mut quests = BTreeMap::new();
+        for (id, progress) in entries {
+            if quests.insert(id, progress).is_some() {
+                return Err(Error::InvalidSnapshot);
+            }
+        }
+        let journal = Self { quests };
+        journal.validate(catalog)?;
+        Ok(journal)
+    }
     pub fn quest_snapshots(&self, catalog: &Catalog) -> Result<Vec<QuestSnapshot>, Error> {
         self.validate(catalog)?;
         self.quests

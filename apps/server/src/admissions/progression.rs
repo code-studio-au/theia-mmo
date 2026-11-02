@@ -15,6 +15,7 @@ use theia_persistence::{Binding, Error, ProgressionCatalog, Publisher};
 use tokio::sync::{mpsc, watch};
 
 pub(super) struct Config {
+    journal: Option<theia_persistence::QuestJournalCatalog>,
     lifecycle: Option<(theia_persistence::QuestLifecycleCatalog, Arc<life::Profile>)>,
     quest: Option<(
         theia_persistence::QuestCatalog,
@@ -42,6 +43,7 @@ impl Config {
             return Err("XP store/wire profile mismatch".into());
         }
         Ok(Self {
+            journal: None,
             lifecycle: None,
             quest: None,
             profile,
@@ -55,6 +57,7 @@ impl Config {
         wire: Arc<theia_network::quest_wire::Profile>,
     ) -> Result<()> {
         if self.quest.is_some()
+            || self.journal.is_some()
             || self.lifecycle.is_some()
             || quest.hash() != wire.hash()
             || self
@@ -74,6 +77,7 @@ impl Config {
         wire: Arc<life::Profile>,
     ) -> Result<()> {
         if self.quest.is_some()
+            || self.journal.is_some()
             || self.lifecycle.is_some()
             || quest.hash() != wire.hash()
             || self
@@ -87,6 +91,20 @@ impl Config {
         wire.check_progression(&self.wire)?;
         self.lifecycle = Some((quest, wire));
         Ok(())
+    }
+    pub(super) fn set_journal(
+        &mut self,
+        journal: theia_persistence::QuestJournalCatalog,
+    ) -> Result<()> {
+        if self.quest.is_some() || self.lifecycle.is_some() || self.journal.is_some() {
+            return Err("Expanded journals require exclusive quest mode".into());
+        }
+        journal.check_progression(&self.profile)?;
+        self.journal = Some(journal);
+        Ok(())
+    }
+    pub(super) fn journal_hash(&self) -> Option<[u8; 32]> {
+        self.journal.as_ref().map(|j| j.hash())
     }
     pub(super) fn start(
         &self,
@@ -112,6 +130,7 @@ impl Config {
             binding,
             world,
             profile: self.profile.clone(),
+            journal: self.journal.clone(),
             quest: self.quest.as_ref().map(|q| q.0.clone()),
             lifecycle: self.lifecycle.as_ref().map(|q| q.0.clone()),
             publisher: self.publisher.clone(),
@@ -151,6 +170,7 @@ struct Owner {
     binding: Binding,
     world: [u8; 32],
     profile: ProgressionCatalog,
+    journal: Option<theia_persistence::QuestJournalCatalog>,
     quest: Option<theia_persistence::QuestCatalog>,
     lifecycle: Option<theia_persistence::QuestLifecycleCatalog>,
     publisher: Publisher,
@@ -203,7 +223,24 @@ impl Owner {
         } else {
             None
         };
+        let journal = if let Some(catalog) = &self.journal {
+            let saved = self
+                .publisher
+                .ensure_quest_journal(self.binding, self.world, catalog)
+                .await?;
+            Some(
+                theia_network::renet_runtime::progression::JournalObservation {
+                    catalog: catalog.hash(),
+                    revision: saved.revision,
+                    journal: saved.journal,
+                    reply: None,
+                },
+            )
+        } else {
+            None
+        };
         publish.send_modify(|s| {
+            s.journal = journal;
             s.progress = Some(initial);
             s.quest = objective;
             s.lifecycle = lifecycle;
@@ -227,8 +264,87 @@ impl Owner {
                 return Err("Accepted progression input lost ownership".into());
             }
             match input {
+                Input::Journal(request) => self.journal(request, publish).await?,
                 Input::Kill(event) => self.award(event, publish).await?,
                 Input::QuestAction(request) => self.command(request, publish).await?,
+            }
+        }
+        Ok(())
+    }
+    async fn journal(
+        &mut self,
+        request: theia_network::renet_runtime::progression::JournalInput,
+        publish: &watch::Sender<Observation>,
+    ) -> Result<()> {
+        use theia_network::renet_runtime::progression::{
+            JournalOperation, JournalRejection, JournalReply,
+        };
+        let catalog = self
+            .journal
+            .as_ref()
+            .ok_or("Expanded journal owner is not configured")?;
+        if request.catalog != catalog.hash()
+            || !self.authorized(Some(request.actor))?
+            || request.sequence <= self.sequence
+            || request.sequence.saturating_sub(self.sequence) > 128
+        {
+            return Err("Accepted journal input lost actor/catalogue/sequence binding".into());
+        }
+        self.sequence = request.sequence;
+        let command = matches!(&request.operation, JournalOperation::Command(_));
+        // The bounded character owner retains this original intent while it
+        // waits for SQL queue space and COMMIT. Simulation never awaits it.
+        let result = match request.operation {
+            JournalOperation::Command(command) => {
+                self.publisher
+                    .command_quest_journal(
+                        self.binding,
+                        self.world,
+                        catalog,
+                        &self.profile,
+                        command,
+                    )
+                    .await
+            }
+            JournalOperation::Event { id, event } => {
+                self.publisher
+                    .record_quest_event(self.binding, self.world, catalog, id, event)
+                    .await
+            }
+        };
+        match result {
+            Ok(applied) => publish.send_modify(|s| {
+                if let Some(xp) = applied.experience {
+                    s.progress = Some(xp);
+                }
+                let observation = s.journal.as_mut().expect("Initialized journal owner");
+                observation.revision = applied.revision;
+                observation.journal = applied.journal;
+                if command {
+                    observation.reply = Some(JournalReply {
+                        sequence: request.sequence,
+                        rejection: None,
+                    });
+                }
+            }),
+            Err(error) => {
+                // Trusted occurrence conflicts/rule failures are authority errors,
+                // not replies to a player command. Preserve command acknowledgements.
+                if !command {
+                    return Err(error.into());
+                }
+                let rejection = match error {
+                    Error::QuestJournalCommand(rule) => JournalRejection::Rule(rule),
+                    Error::QuestJournalConflict => JournalRejection::Conflict,
+                    other => return Err(other.into()),
+                };
+                publish.send_modify(|s| {
+                    s.journal.as_mut().expect("Initialized journal owner").reply =
+                        Some(JournalReply {
+                            sequence: request.sequence,
+                            rejection: Some(rejection),
+                        })
+                });
             }
         }
         Ok(())

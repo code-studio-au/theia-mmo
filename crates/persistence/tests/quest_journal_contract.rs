@@ -470,3 +470,211 @@ async fn zero_reward_and_capped_xp_still_complete_with_idempotent_receipts() {
     drop(admin);
     driver.await.unwrap().unwrap();
 }
+
+#[tokio::test]
+#[ignore = "requires owned PostgreSQL; run tools/qualify_persistence.py"]
+async fn journal_worker_retains_cancelled_jobs_bounds_queue_and_drains_before_shutdown() {
+    let (url, mut admin, driver) = support::owned().await;
+    let realm = RealmId::random();
+    let mut store = Store::connect_loopback(&url, realm).await.unwrap();
+    let b = character(&mut store, "Queuejournal").await;
+    let (xp, q) = profiles();
+    initialize(&mut store, b, &xp, &q).await;
+    let (publisher, worker) = theia_persistence::Worker::start(store);
+    assert_eq!(
+        publisher
+            .load_quest_journal(b, WORLD, &q)
+            .await
+            .unwrap()
+            .revision,
+        0
+    );
+
+    let tx = admin.transaction().await.unwrap();
+    tx.query_one("SELECT revision FROM theia.quest_journal_heads WHERE realm_id=$1 AND character_id=$2 FOR UPDATE", &[&realm.value(), &b.character.value()]).await.unwrap();
+    let mut accepted = publisher
+        .enqueue_quest_journal_command(b, WORLD, &q, &xp, command(200, first(), Action::Accept, 0))
+        .unwrap();
+    // Establish that the job has left the queue and is waiting for our lock.
+    let (observer, connection) = tokio_postgres::connect(&url, tokio_postgres::NoTls)
+        .await
+        .unwrap();
+    let observer_driver = tokio::spawn(connection);
+    tokio::time::timeout(Duration::from_secs(2), async {
+        loop {
+            let waiting: bool = observer.query_one("SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE wait_event_type='Lock' AND query LIKE '%quest_journal_heads%' AND pid<>pg_backend_pid())", &[]).await.unwrap().get(0);
+            if waiting { break; }
+            tokio::task::yield_now().await;
+        }
+    }).await.unwrap();
+    assert!(
+        tokio::time::timeout(Duration::from_millis(30), &mut accepted)
+            .await
+            .is_err()
+    );
+    // Dropped answers cannot erase accepted mutations, including queued jobs.
+    drop(accepted);
+    for n in 1..=16 {
+        drop(
+            publisher
+                .enqueue_quest_event(b, WORLD, &q, nz(200 + n), event("road"))
+                .unwrap(),
+        );
+    }
+    assert!(matches!(
+        publisher.enqueue_quest_event(b, WORLD, &q, nz(999), event("road")),
+        Err(Error::InventoryBusy)
+    ));
+    let mut ending = tokio::spawn(worker.shutdown());
+    assert!(
+        tokio::time::timeout(Duration::from_millis(30), &mut ending)
+            .await
+            .is_err()
+    );
+    tx.commit().await.unwrap();
+    let status = ending.await.unwrap().unwrap();
+    assert_eq!(status.journal_commands, 1);
+    assert_eq!(status.journal_events, 16);
+    assert!(!status.failed);
+    assert!(
+        publisher
+            .enqueue_quest_event(b, WORLD, &q, nz(999), event("road"))
+            .is_err()
+    );
+
+    let mut reopened = Store::connect_loopback(&url, realm).await.unwrap();
+    let saved = reopened.load_quest_journal(b, WORLD, &q).await.unwrap();
+    assert_eq!(saved.revision, 17);
+    assert_eq!(saved.journal.progress(&first()).unwrap().revision(), 2);
+    let (publisher, worker) = theia_persistence::Worker::start(reopened);
+    // Refusals and receipt conflicts must not kill the shared SQL worker.
+    let refused = publisher
+        .enqueue_quest_journal_command(b, WORLD, &q, &xp, command(201, first(), Action::TurnIn, 1))
+        .unwrap()
+        .await
+        .unwrap();
+    assert!(matches!(refused, Err(Error::QuestJournalCommand(_))));
+    let conflict = publisher
+        .enqueue_quest_event(b, WORLD, &q, nz(201), event("supplies"))
+        .unwrap()
+        .await
+        .unwrap();
+    assert!(matches!(conflict, Err(Error::QuestJournalConflict)));
+    for (n, action) in [(301, "supplies"), (302, "report")] {
+        drop(
+            publisher
+                .enqueue_quest_event(b, WORLD, &q, nz(n), event(action))
+                .unwrap(),
+        );
+    }
+    drop(
+        publisher
+            .enqueue_quest_journal_command(
+                b,
+                WORLD,
+                &q,
+                &xp,
+                command(202, first(), Action::TurnIn, 4),
+            )
+            .unwrap(),
+    );
+    let status = worker.shutdown().await.unwrap();
+    assert_eq!(status.journal_rejected, 2);
+    assert_eq!(status.journal_experience_units, 25);
+    let mut reopened = Store::connect_loopback(&url, realm).await.unwrap();
+    let saved = reopened.load_quest_journal(b, WORLD, &q).await.unwrap();
+    assert_eq!(
+        saved.journal.progress(&first()).unwrap().status(),
+        Status::Completed
+    );
+    assert_eq!(
+        reopened
+            .load_progression(b, WORLD, &xp)
+            .await
+            .unwrap()
+            .total(),
+        25
+    );
+    reopened.close().await.unwrap();
+    drop(observer);
+    observer_driver.await.unwrap().unwrap();
+    drop(admin);
+    driver.await.unwrap().unwrap();
+}
+
+#[tokio::test]
+#[ignore = "requires owned PostgreSQL; run tools/qualify_persistence.py"]
+async fn journal_admission_profile_preflight_is_read_only_and_checks_exact_binding() {
+    use theia_persistence::{GameplayProfiles, ProfileCompatibility as Compatibility};
+    let (url, admin, driver) = support::owned().await;
+    let realm = RealmId::random();
+    let mut store = Store::connect_loopback(&url, realm).await.unwrap();
+    let b = character(&mut store, "Preflightjournal").await;
+    let (xp, q) = profiles();
+    let profiles = GameplayProfiles::new(None, Some(xp.hash()), None, None)
+        .unwrap()
+        .with_quest_journal(q.hash())
+        .unwrap();
+    assert!(
+        GameplayProfiles::default()
+            .with_quest_journal(q.hash())
+            .is_err()
+    );
+    assert!(
+        GameplayProfiles::new(None, Some(xp.hash()), Some([1; 32]), None)
+            .unwrap()
+            .with_quest_journal(q.hash())
+            .is_err()
+    );
+    assert!(profiles.with_quest_journal(q.hash()).is_err());
+    assert_eq!(
+        store
+            .check_gameplay_profiles(b, WORLD, profiles)
+            .await
+            .unwrap(),
+        Compatibility::Compatible
+    );
+    // Preflight must not initialize any saved journal or progression rows.
+    let count: i64 = admin
+        .query_one(
+            "SELECT count(*) FROM theia.quest_journal_heads WHERE realm_id=$1",
+            &[&realm.value()],
+        )
+        .await
+        .unwrap()
+        .get(0);
+    assert_eq!(count, 0);
+    initialize(&mut store, b, &xp, &q).await;
+    let (publisher, worker) = theia_persistence::Worker::start(store);
+    assert_eq!(
+        publisher
+            .check_gameplay_profiles(b, WORLD, profiles)
+            .await
+            .unwrap(),
+        Compatibility::Compatible
+    );
+    let changed = GameplayProfiles::new(None, Some(xp.hash()), None, None)
+        .unwrap()
+        .with_quest_journal([19; 32])
+        .unwrap();
+    assert_eq!(
+        publisher
+            .check_gameplay_profiles(b, WORLD, changed)
+            .await
+            .unwrap(),
+        Compatibility::Incompatible
+    );
+    assert_eq!(
+        publisher
+            .load_quest_journal(b, WORLD, &q)
+            .await
+            .unwrap()
+            .revision,
+        0
+    );
+    let status = worker.shutdown().await.unwrap();
+    assert_eq!(status.incompatible_gameplay_profiles, 1);
+    assert!(!status.failed);
+    drop(admin);
+    driver.await.unwrap().unwrap();
+}

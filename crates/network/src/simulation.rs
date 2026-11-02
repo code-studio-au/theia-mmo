@@ -5,6 +5,7 @@ pub mod creatures;
 pub mod dialogue;
 mod dodging;
 pub mod progression;
+pub mod quest_journal;
 pub mod quests;
 pub mod rewards;
 use crate::wire::{Input, Intent, MAX_PLAYERS, Player, Snapshot, TICK_HZ, VERSION};

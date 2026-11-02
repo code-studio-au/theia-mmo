@@ -266,6 +266,7 @@ fn random(bytes: usize) -> Result<String> {
 /// Store/wire pairs validated before the account service starts accepting entry.
 #[derive(Default)]
 pub struct GameProfiles {
+    pub quest_journal: Option<theia_persistence::QuestJournalCatalog>,
     pub inventory: Option<theia_persistence::InventoryCatalog>,
     pub rewards: Option<(
         theia_persistence::RewardCatalog,
@@ -443,6 +444,7 @@ impl AccountService {
         self.enable_game_with_profiles(
             issuer,
             GameProfiles {
+                quest_journal: None,
                 inventory,
                 rewards,
                 progression,
@@ -458,6 +460,7 @@ impl AccountService {
         profiles: GameProfiles,
     ) -> Result<Arc<crate::admissions::GameAdmissions>> {
         let GameProfiles {
+            quest_journal,
             inventory,
             rewards,
             progression,
@@ -465,7 +468,11 @@ impl AccountService {
             vendor,
             quest_lifecycle,
         } = profiles;
-        if quest.is_some() && quest_lifecycle.is_some() {
+        if usize::from(quest.is_some())
+            + usize::from(quest_lifecycle.is_some())
+            + usize::from(quest_journal.is_some())
+            > 1
+        {
             return Err(ApiError::internal());
         }
         let mut slot = self.state.game.lock().map_err(|_| ApiError::internal())?;
@@ -519,6 +526,10 @@ impl AccountService {
         }
         if let Some((profile, wire)) = quest_lifecycle {
             crate::admissions::GameAdmissions::with_quest_lifecycle(&mut gate, profile, wire)
+                .map_err(|_| ApiError::internal())?;
+        }
+        if let Some(profile) = quest_journal {
+            crate::admissions::GameAdmissions::with_quest_journal(&mut gate, profile)
                 .map_err(|_| ApiError::internal())?;
         }
         if let Some((profile, wire)) = vendor {
