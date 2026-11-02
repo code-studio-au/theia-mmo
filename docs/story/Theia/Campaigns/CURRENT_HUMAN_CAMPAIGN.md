@@ -7,7 +7,7 @@
 1. **Narrative canon:** [Human 1–80 Canonical Campaign](Human_1_80_Canonical_Campaign.md) — locked plot, 184 editorial quest concepts and immutable story outcomes. Any contradiction in downstream files resolves here.
 2. **Quest authoring contract:** [Rust Quest Authoring Contract](Human_Rust_Quest_Authoring_Contract.md) — required IDs, evidence, giver/turn-in, choices, rewards, retries, credit scopes and planned versus implemented capabilities.
 3. **Provenance and migration:** [Editorial ID Crosswalk Draft](Human_Quest_Editorial_ID_Crosswalk_Draft.json) — all 92 original H-series identifiers and all 24 HS-series optional IDs with source objectives; mappings not yet approved. Do not allocate stable runtime IDs based solely on titles.
-4. **Working quest data:** [Current Quest Authoring Manifest](Human_1_80_Current_Quest_Authoring_Manifest.json) — **one consolidated 184-quest / 683-stage working inventory** with typed objectives, source editorial candidates, explicit blockers, and no inferred hard level gates. This is **not** executable Rust data. The nine older stage JSON files remain only as migration inputs pending reference cleanup; do not edit them as competing authorities.
+4. **Working quest data:** [Current Quest Authoring Manifest](Human_1_80_Current_Quest_Authoring_Manifest.json) — **one consolidated 184-quest / 683-stage working inventory** with typed objectives, source editorial candidates, explicit blockers, and no inferred hard level gates. This is **not** executable Rust data. The nine older stage JSON files have been verified against the manifest and removed from the active tree; Git history preserves them. Edit only the consolidated manifest.
 5. **Dialogue:** [Dialogue Continuity Audit](Human_1_80_Dialogue_Continuity_Audit.md), [Branching Key Scenes](Human_1_80_Key_Scenes_Branching_Dialogue.md) and per-level NPC dialogue scripts. Dialogue is first pass and subject to reveal-gate review.
 6. **Encounters:** [Encounter Barks and Cinematic Timing](Human_1_80_Encounter_Barks_and_Cinematic_Timing.md) — authored design, not integrated encounter code.
 7. **Actual implementation authority:** existing Rust/Bevy code and [Quest Objectives Foundation](../../../QUEST_OBJECTIVES_FOUNDATION.md). Rust validates quest progress and authoritative events; Luau is optional for unusual scripted behavior and not confirmed integrated. [Rust–Luau Boundary](Human_Rust_Luau_Quest_Scripting_Boundary.md) is a proposal.
@@ -30,7 +30,7 @@
 
 1. Verify all 92 H-series and 24 HS-series original quest IDs against canonical Q001–Q184 and record reused/modified/split/merged/retired/new.
 2. Allocate stable runtime IDs, preserving original editorial IDs and separate Q reference.
-3. Review and complete the single current authoring manifest, allocate approved IDs, and generate validated Rust-compatible content from it. The nine old stage JSONs are migration inputs only.
+3. Review and complete the single current authoring manifest, allocate approved IDs, and generate validated Rust-compatible content from it. The nine old stage JSONs have been deleted after validation; do not recreate them.
 4. Consolidate any unique dialogue, stage or encounter details from redundant drafts before removing them.
 5. Validate all references and implement/test against the existing Rust quest foundation.
 
