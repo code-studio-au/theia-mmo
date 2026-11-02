@@ -7,29 +7,29 @@
 
 The following packs collectively cover all Q001–Q184, providing staged gameplay proposals, narrative intent, completion conditions and recovery behavior. They are **not** final implementation data; exact coordinates, dialogue, encounters, XP and item rewards still require development.
 
-- [Levels 1–10](Human_Levels_1_10_Playable_Quest_Pack.md)
-- [Levels 10–20](Human_10_20_Playable_Quest_Pack.md)
-- [Levels 20–30](Human_20_30_Playable_Quest_Pack.md)
-- [Levels 30–35](Human_30_35_Playable_Quest_Pack.md)
-- [Levels 35–45](Human_35_45_Playable_Quest_Pack.md)
-- [Levels 45–55](Human_45_55_Playable_Quest_Pack.md)
-- [Levels 55–70](Human_55_70_Playable_Quest_Pack.md)
-- [Levels 70–80](Human_70_80_Playable_Quest_Pack.md)
-- [Levels 80 finale](Human_80_Finale_Playable_Quest_Pack.md)
+- [Levels 1–10](Human_Q001_Q017_Gameplay_Detail_Migration.md)
+- [Levels 10–20](Human_Q018_Q034_Legacy_Pack_Migration.md)
+- [Levels 20–30](Human_Q035_Q062_Legacy_Pack_Migration.md)
+- [Levels 30–35](Human_Q063_Q079_Legacy_Pack_Migration.md)
+- [Levels 35–45](Human_Q080_Q103_Legacy_Pack_Migration.md)
+- [Levels 45–55](Human_Q104_Q128_Legacy_Pack_Migration.md)
+- [Levels 55–70](Human_Q129_Q157_Legacy_Pack_Migration.md)
+- [Levels 70–80](Human_Q158_Q184_Legacy_Pack_Migration.md)
+- [Levels 80 finale](Human_Q158_Q184_Legacy_Pack_Migration.md)
 
 
 ## Quest implementation briefs through level 80
 
 The [levels 1–10 vertical slice](Human_1_10_Vertical_Slice_Implementation.md) and the following implementation briefs provide per-quest proposed stages, narrative intent, prerequisites and recovery requirements. These are **authoring drafts**, not runtime quest data or playtested content.
 
-- [Levels 10–20 implementation brief](Human_10_20_Implementation_Brief.md)
-- [Levels 20–30 implementation brief](Human_20_30_Implementation_Brief.md)
-- [Levels 30–35 implementation brief](Human_30_35_Implementation_Brief.md)
-- [Levels 35–45 implementation brief](Human_35_45_Implementation_Brief.md)
-- [Levels 45–55 implementation brief](Human_45_55_Implementation_Brief.md)
-- [Levels 55–70 implementation brief](Human_55_70_Implementation_Brief.md)
-- [Levels 70–80 implementation brief](Human_70_80_Implementation_Brief.md)
-- [Levels 80 finale implementation brief](Human_80_Finale_Implementation_Brief.md)
+- [Levels 10–20 implementation brief](Human_Q018_Q034_Legacy_Pack_Migration.md)
+- [Levels 20–30 implementation brief](Human_Q035_Q062_Legacy_Pack_Migration.md)
+- [Levels 30–35 implementation brief](Human_Q063_Q079_Legacy_Pack_Migration.md)
+- [Levels 35–45 implementation brief](Human_Q080_Q103_Legacy_Pack_Migration.md)
+- [Levels 45–55 implementation brief](Human_Q104_Q128_Legacy_Pack_Migration.md)
+- [Levels 55–70 implementation brief](Human_Q129_Q157_Legacy_Pack_Migration.md)
+- [Levels 70–80 implementation brief](Human_Q158_Q184_Legacy_Pack_Migration.md)
+- [Levels 80 finale implementation brief](Human_Q158_Q184_Legacy_Pack_Migration.md)
 
 ## Runtime contract and content acceptance criteria
 
