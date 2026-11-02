@@ -168,7 +168,7 @@ The First Anchor's breach initiated the Second Sundering as a literal geographic
 
 ## 2026-10-13 creator LOCK — Kel'vari race and Oth'vaeri language
 
-The formerly unnamed seventh mortal race is officially **Kel'vari** (both singular and plural: one Kel'vari scholar; the Kel'vari people). Their ancestral language is **Oth'vaeri**. The ancient homeland may be called the Kel'vari homeland; its devastated territory was later enclosed within the Shrouded Lands. Oth'vaeri naming convention uses **apostrophes**, not hyphens, for meaningful sound boundaries in joined names; the intended sound is melodic, elegant and subtly unfamiliar, distinct from elven naming. These names supersede any earlier statement that the Seventh's race name remains undecided. Individual enclave names, Conclave founders' personal names, and a complete language grammar remain **proposed, not locked**.
+The people's official name is **Kel'vari** (both singular and plural: one Kel'vari scholar; the Kel'vari people). Their ancestral language is **Oth'vaeri**. The ancient homeland may be called the Kel'vari homeland; its devastated territory was later enclosed within the Shrouded Lands. Oth'vaeri naming convention uses **apostrophes**, not hyphens, for meaningful sound boundaries in joined names; the intended sound is melodic, elegant and subtly unfamiliar, distinct from elven naming. The Kel'vari and Oth'vaeri names are **locked**. The five Conclave founders' personal names, Oth'varen's name and the five significant enclave names are also **locked** by the creator decisions below. A complete language grammar remains open.
 
 ## 2026-10-13 creator LOCK — Kel'vari names and original scholarly status
 
