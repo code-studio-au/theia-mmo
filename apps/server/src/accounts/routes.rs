@@ -373,6 +373,17 @@ pub(super) async fn enter(
         .select_character(binding, state.world)
         .await
         .map_err(database)?;
+    if reservation
+        .check_gameplay_profiles(&state.publisher)
+        .await
+        .map_err(admission_error)?
+        == theia_persistence::ProfileCompatibility::Incompatible
+    {
+        return Err(ApiError(
+            StatusCode::CONFLICT,
+            "Character uses incompatible gameplay content; select a compatible character",
+        ));
+    }
     let ticket = reservation.issue(selected.saved).map_err(admission_error)?;
     // Deliberate private bearer response; never write ticket bytes to diagnostics.
     Ok(Json(

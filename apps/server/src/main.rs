@@ -20,9 +20,25 @@ async fn main() -> Result<()> {
     let mut graybox = false;
     let mut terrain_source = theia_network::procedural::Source::Procedural;
     let mut predicted = false;
+    let mut classic = false;
+    let mut dodge_profile = None;
+    let mut melee_weapons = None;
+    let mut physical_definitions = None;
+    let mut physical_stats = None;
+    let mut white_melee = None;
+    let mut ability_starting = None;
+    let mut ability_damage = None;
+    let mut combat_membership = None;
+    let mut creature_credit = None;
+    let mut creature_reset = None;
+    let mut combat_bytes = None;
     let mut targeted = false;
     let mut combat_catalog = None;
     let mut character_stats = None;
+    let mut creature_retaliation = None;
+    let mut player_respawn = None;
+    let mut player_stats_bytes = None;
+    let mut patrol_bytes = None;
     let mut status_catalog = None;
     let mut patrol_profile = None;
     let mut navigation = None;
@@ -30,6 +46,8 @@ async fn main() -> Result<()> {
     let mut reward_catalog = None;
     let mut progression_catalog = None;
     let mut quest_catalog = None;
+    let mut explicit_quest = false;
+    let mut quest_turn_in_xp = None;
     let mut dialogue_catalog = None;
     let mut vendor_catalog = None;
     let mut guide_position: Option<[f64; 2]> = None;
@@ -45,6 +63,58 @@ async fn main() -> Result<()> {
         match option.as_str() {
             "--dev-relays" => dev_relays=Some(args.next().ok_or("Missing relay endpoints")?.split(',').map(str::parse).collect::<std::result::Result<_,_>>()?),
             "--prediction" => predicted=true,
+            "--classic" => classic=true,
+            "--ability-starting" => {
+                if ability_starting.is_some(){return Err("Choose one ability starting profile".into());}
+                ability_starting=Some(PathBuf::from(args.next().ok_or("Missing ability starting profile")?));
+            }
+            "--creature-reset" => {
+                if creature_reset.is_some(){return Err("Choose one creature reset policy".into());}
+                creature_reset=Some(PathBuf::from(args.next().ok_or("Missing creature reset policy")?));
+            }
+            "--creature-credit" => {
+                if creature_credit.is_some(){return Err("Choose one creature credit policy".into());}
+                creature_credit=Some(PathBuf::from(args.next().ok_or("Missing creature credit policy")?));
+            }
+            "--combat-membership" => {
+                if combat_membership.is_some(){return Err("Choose one combat membership policy".into());}
+                combat_membership=Some(PathBuf::from(args.next().ok_or("Missing combat membership policy")?));
+            }
+            "--ability-damage" => {
+                if ability_damage.is_some(){return Err("Choose one ability damage profile".into());}
+                ability_damage=Some(PathBuf::from(args.next().ok_or("Missing ability damage profile")?));
+            }
+            "--white-melee" => {
+                if white_melee.is_some() {return Err("Choose one ordinary-melee profile".into());}
+                white_melee=Some(PathBuf::from(args.next().ok_or("Missing ordinary-melee profile")?));
+            }
+            "--physical-definitions" => {
+                if physical_definitions.is_some() {return Err("Choose one physical definition profile".into());}
+                physical_definitions=Some(PathBuf::from(args.next().ok_or("Missing physical definitions")?));
+            }
+            "--physical-stats" => {
+                if physical_stats.is_some() {return Err("Choose one physical stats profile".into());}
+                physical_stats=Some(PathBuf::from(args.next().ok_or("Missing physical stats")?));
+            }
+            "--melee-weapons" => {
+                if melee_weapons.is_some() {return Err("Choose one melee weapon profile".into());}
+                melee_weapons=Some(PathBuf::from(args.next().ok_or("Missing melee weapon profile")?));
+            }
+            "--dodge-profile" => {
+                use std::io::Read;
+                if dodge_profile.is_some() { return Err("Choose one dodge profile".into()); }
+                let mut bytes=Vec::new();
+                std::fs::File::open(args.next().ok_or("Missing dodge profile")?)?.take(theia_core::dodge::MAX_PROFILE_BYTES as u64+1).read_to_end(&mut bytes)?;
+                dodge_profile=Some(std::sync::Arc::new(theia_network::dodging::Profile::from_json(&bytes)?));
+            }
+            "--creature-retaliation" => {
+                if creature_retaliation.is_some() { return Err("Choose one retaliation profile".into()); }
+                creature_retaliation=Some(PathBuf::from(args.next().ok_or("Missing retaliation profile")?));
+            }
+            "--player-respawn" => {
+                if player_respawn.is_some() { return Err("Choose one player respawn profile".into()); }
+                player_respawn=Some(PathBuf::from(args.next().ok_or("Missing player respawn profile")?));
+            }
             "--dev-persistence" => dev_persistence=true,
             "--account-login" => account_login=true,
             "--vendor-catalog" => {
@@ -59,6 +129,11 @@ async fn main() -> Result<()> {
                 if guide_position.is_some() {return Err("Choose one guide position".into());}
                 let values:Vec<f64>=args.next().ok_or("Missing guide position")?.split(',').map(str::parse).collect::<std::result::Result<_,_>>()?;
                 guide_position=Some(values.try_into().map_err(|_|"Expected guide x,z")?);
+            }
+            "--quest-lifecycle" => explicit_quest=true,
+            "--quest-turn-in-xp" => {
+                if quest_turn_in_xp.is_some() {return Err("Choose one completion XP recipe".into());}
+                quest_turn_in_xp=Some(PathBuf::from(args.next().ok_or("Missing completion XP recipe")?));
             }
             "--quest-catalog" => {
                 if quest_catalog.is_some() {return Err("Choose one quest catalog".into());}
@@ -152,6 +227,17 @@ async fn main() -> Result<()> {
     if status_catalog.is_some() && (character_stats.is_none() || combat_catalog.is_none()) {
         return Err("Statuses require combat and character stats".into());
     }
+    if creature_retaliation.is_some() != player_respawn.is_some() {
+        return Err("Retaliation and player respawn profiles must be selected together".into());
+    }
+    if creature_retaliation.is_some()
+        && (!predicted
+            || patrol_profile.is_none()
+            || character_stats.is_none()
+            || combat_catalog.is_none())
+    {
+        return Err("Player life requires predicted creature combat and character stats".into());
+    }
     if patrol_profile.is_some() != navigation.is_some() {
         return Err("Creature profile and navigation package must be selected together".into());
     }
@@ -179,6 +265,15 @@ async fn main() -> Result<()> {
     if predicted {
         world.enable_prediction()?;
     }
+    if let Some(profile) = dodge_profile {
+        world.enable_dodge(profile)?;
+    }
+    if classic {
+        if tickets.is_none() && !account_login {
+            return Err("Classic controls require secure Renet admission".into());
+        }
+        world.enable_classic()?;
+    }
     if targeted {
         if !graybox || (tickets.is_none() && !account_login) {
             return Err("Targeting requires a graybox world and secure Renet".into());
@@ -191,6 +286,11 @@ async fn main() -> Result<()> {
                 .take(creatures::MAX_PROFILE_BYTES as u64 + 1)
                 .read_to_end(&mut bytes)?;
             let profile = creatures::Profile::from_json(&bytes)?;
+            if profile.aggro().is_some() && creature_retaliation.is_none() {
+                return Err(
+                    "Creature pursuit requires player life and retaliation profiles".into(),
+                );
+            }
             let source = world
                 .procedural()
                 .ok_or("Creature patrol requires terrain")?
@@ -199,7 +299,10 @@ async fn main() -> Result<()> {
             let navigation =
                 theia_network::navigation::Store::open(&navigation.unwrap(), source.identity())?;
             println!("development_creature profile={}", profile.id().as_str());
-            world.enable_patrol(creatures::Prepared::load(profile, &navigation, &source)?)?
+            let target =
+                world.enable_patrol(creatures::Prepared::load(profile, &navigation, &source)?)?;
+            patrol_bytes = Some(bytes);
+            target
         } else {
             let x = if dev_spawn[0] + 8. <= 15999. {
                 dev_spawn[0] + 8.
@@ -217,6 +320,7 @@ async fn main() -> Result<()> {
         std::fs::File::open(path)?
             .take(theia_core::abilities::MAX_CATALOG_BYTES as u64 + 1)
             .read_to_end(&mut bytes)?;
+        combat_bytes = Some(bytes.clone());
         if let Some(path) = character_stats {
             let mut stats = Vec::new();
             std::fs::File::open(path)?
@@ -242,6 +346,7 @@ async fn main() -> Result<()> {
                     &stats,
                 )?;
             }
+            player_stats_bytes = Some(stats);
         } else {
             world.enable_combat(&bytes, DEVELOPMENT_HEALTH, DEVELOPMENT_RESPAWN_MS)?;
         }
@@ -249,6 +354,136 @@ async fn main() -> Result<()> {
             "development_combat abilities={}",
             world.combat_catalog().unwrap().abilities().len()
         );
+    }
+    if let (Some(policy_path), Some(respawn_path)) = (creature_retaliation, player_respawn) {
+        use std::io::Read;
+        let mut policy = Vec::new();
+        std::fs::File::open(policy_path)?
+            .take(theia_core::retaliation::MAX_PROFILE_BYTES as u64 + 1)
+            .read_to_end(&mut policy)?;
+        let mut respawn = Vec::new();
+        std::fs::File::open(respawn_path)?
+            .take(theia_core::player_life::MAX_PROFILE_BYTES as u64 + 1)
+            .read_to_end(&mut respawn)?;
+        let profile = std::sync::Arc::new(theia_network::player_life_wire::Profile::from_json(
+            player_stats_bytes
+                .as_deref()
+                .ok_or("Missing player life stats")?,
+            patrol_bytes
+                .as_deref()
+                .ok_or("Missing player life creature")?,
+            &policy,
+            &respawn,
+        )?);
+        world.enable_player_life(profile)?;
+        println!("development_player_life enabled=true transient=true");
+    }
+    if let Some(path) = melee_weapons {
+        use std::io::Read;
+        if !classic || !account_login {
+            return Err("Melee requires classic account-backed combat".into());
+        }
+        let mut weapons = Vec::new();
+        std::fs::File::open(path)?
+            .take(theia_core::melee::MAX_PROFILE_BYTES as u64 + 1)
+            .read_to_end(&mut weapons)?;
+        let mut items = Vec::new();
+        std::fs::File::open(item_catalog.as_ref().ok_or("Melee requires items")?)?
+            .take(theia_core::inventory::MAX_CATALOG_BYTES as u64 + 1)
+            .read_to_end(&mut items)?;
+        world.enable_autoattack(&weapons, &items)?;
+        println!("development_melee enabled=true");
+    }
+    if physical_definitions.is_some() != physical_stats.is_some() {
+        return Err("Physical definitions and stats must be selected together".into());
+    }
+    if let (Some(definitions_path), Some(stats_path)) = (physical_definitions, physical_stats) {
+        use std::io::Read;
+        if !classic || !account_login {
+            return Err("Physical damage requires classic account-backed combat".into());
+        }
+        let mut definitions = Vec::new();
+        std::fs::File::open(definitions_path)?
+            .take(theia_core::damage::catalog::MAX_PROFILE_BYTES as u64 + 1)
+            .read_to_end(&mut definitions)?;
+        let mut stats = Vec::new();
+        std::fs::File::open(stats_path)?
+            .take(theia_core::damage::stats::MAX_PROFILE_BYTES as u64 + 1)
+            .read_to_end(&mut stats)?;
+        let mut items = Vec::new();
+        std::fs::File::open(
+            item_catalog
+                .as_ref()
+                .ok_or("Physical damage requires items")?,
+        )?
+        .take(theia_core::inventory::MAX_CATALOG_BYTES as u64 + 1)
+        .read_to_end(&mut items)?;
+        world.enable_physical_damage(&definitions, &stats, &items)?;
+        println!("development_physical_damage enabled=true policy=normal_reference_v1");
+    }
+    if let Some(path) = white_melee {
+        use std::io::Read;
+        let mut bytes = Vec::new();
+        std::fs::File::open(path)?
+            .take(theia_network::simulation::combat::white_melee::MAX_PROFILE_BYTES as u64 + 1)
+            .read_to_end(&mut bytes)?;
+        world.enable_white_melee(&bytes)?;
+        println!("development_white_melee enabled=true policy=white_physical_reference_v1");
+    }
+    if ability_starting.is_some() != ability_damage.is_some() {
+        return Err("Ability starting and damage policy must be selected together".into());
+    }
+    if let (Some(starting), Some(policy)) = (ability_starting, ability_damage) {
+        use std::io::Read;
+        let mut starting_bytes = Vec::new();
+        let mut policy_bytes = Vec::new();
+        std::fs::File::open(starting)?
+            .take(theia_core::damage::ability_starting::catalog::MAX_PROFILE_BYTES as u64 + 1)
+            .read_to_end(&mut starting_bytes)?;
+        std::fs::File::open(policy)?
+            .take(theia_network::simulation::combat::ability_damage::MAX_PROFILE_BYTES as u64 + 1)
+            .read_to_end(&mut policy_bytes)?;
+        world.enable_ability_damage(
+            &starting_bytes,
+            &policy_bytes,
+            combat_bytes
+                .as_deref()
+                .ok_or("Ability damage requires active abilities")?,
+        )?;
+        println!(
+            "development_ability_damage enabled=true policy=ability_damage_reference_fixture_v1"
+        );
+    }
+    if let Some(path) = combat_membership {
+        use std::io::Read;
+        let mut bytes = Vec::new();
+        std::fs::File::open(path)?
+            .take(theia_core::combat_membership::MAX_PROFILE_BYTES as u64 + 1)
+            .read_to_end(&mut bytes)?;
+        world.enable_combat_membership(&bytes)?;
+        println!("development_combat_membership enabled=true policy=combat_membership_fixture_v1");
+    }
+    if let Some(path) = creature_credit {
+        use std::io::Read;
+        let mut bytes = Vec::new();
+        std::fs::File::open(path)?
+            .take(theia_core::creature_credit::MAX_PROFILE_BYTES as u64 + 1)
+            .read_to_end(&mut bytes)?;
+        let profile = theia_core::creature_credit::Profile::from_json(&bytes)?;
+        if profile.recipient() != Some(theia_core::creature_credit::RecipientPolicy::SoloTagOwner) {
+            return Err("Normal credit requires explicit solo tag-owner recipient policy".into());
+        }
+        world.enable_creature_credit(&bytes)?;
+        println!("development_creature_credit enabled=true policy=solo_tag_credit_fixture_v1");
+    }
+    if let Some(path) = creature_reset {
+        use std::io::Read;
+        let mut bytes = Vec::new();
+        std::fs::File::open(path)?
+            .take(theia_network::simulation::combat::reset::MAX_PROFILE_BYTES as u64 + 1)
+            .read_to_end(&mut bytes)?;
+        world.enable_creature_reset(&bytes)?;
+        println!("development_creature_reset enabled=true policy=creature_return_reset_fixture_v1");
     }
     if let Some(origin) = origin
         && !world.set_origin(origin)
@@ -276,6 +511,17 @@ async fn main() -> Result<()> {
     }
     if quest_catalog.is_some() && progression_catalog.is_none() {
         return Err("Quest objectives require progression".into());
+    }
+    if quest_turn_in_xp.is_some() && !explicit_quest {
+        return Err("Completion XP requires explicit quest mode".into());
+    }
+    if explicit_quest
+        && (quest_catalog.is_none() || dialogue_catalog.is_none() || !account_login || !predicted)
+    {
+        return Err(
+            "Explicit quests require quest catalog, guide dialogue and predicted account login"
+                .into(),
+        );
     }
     // Validate world options before opening an endpoint.
     match (dialogue_catalog, guide_position) {
@@ -317,6 +563,9 @@ async fn main() -> Result<()> {
     if item_catalog.is_some() && !account_login {
         return Err("Persistent inventory requires account login".into());
     }
+    if !account_login && let Some(catalog) = world.combat_catalog() {
+        catalog.validate_equipment(None)?;
+    }
     if account_login {
         let mut wire_items = None;
         let inventory = if let Some(path) = item_catalog {
@@ -332,6 +581,9 @@ async fn main() -> Result<()> {
         } else {
             None
         };
+        if let Some(catalog) = world.combat_catalog() {
+            catalog.validate_equipment(wire_items.as_ref().map(|p| p.catalog()))?;
+        }
         let vendor = if let Some(path) = vendor_catalog.take() {
             use std::io::Read;
             let mut bytes = Vec::new();
@@ -382,19 +634,56 @@ async fn main() -> Result<()> {
         } else {
             None
         };
-        let quest = if let Some(path) = quest_catalog {
+        let (quest, quest_lifecycle) = if let Some(path) = quest_catalog {
             use std::io::Read;
             let mut bytes = Vec::new();
             std::fs::File::open(path)?
                 .take(theia_core::quests::MAX_PROFILE_BYTES as u64 + 1)
                 .read_to_end(&mut bytes)?;
-            let profile = theia_persistence::QuestCatalog::from_json(&bytes)?;
-            world.enable_quest(std::sync::Arc::new(
-                theia_network::quest_wire::Profile::from_json(&bytes)?,
-            ))?;
-            Some(profile)
+            if explicit_quest {
+                let recipe = if let Some(path) = &quest_turn_in_xp {
+                    let mut recipe = Vec::new();
+                    std::fs::File::open(path)?
+                        .take(theia_core::quests::turn_in_xp::MAX_PROFILE_BYTES as u64 + 1)
+                        .read_to_end(&mut recipe)?;
+                    Some(recipe)
+                } else {
+                    None
+                };
+                let (profile, wire) = if let Some(recipe) = recipe {
+                    (
+                        theia_persistence::QuestLifecycleCatalog::from_json_with_turn_in_xp(
+                            &bytes,
+                            &recipe,
+                            progression
+                                .as_ref()
+                                .ok_or("Completion XP requires progression")?,
+                        )?,
+                        theia_network::quest_lifecycle_wire::Profile::from_json_with_turn_in_xp(
+                            &bytes,
+                            &recipe,
+                            world
+                                .progression_profile()
+                                .ok_or("Completion XP requires world progression")?,
+                        )?,
+                    )
+                } else {
+                    (
+                        theia_persistence::QuestLifecycleCatalog::from_json(&bytes)?,
+                        theia_network::quest_lifecycle_wire::Profile::from_json(&bytes)?,
+                    )
+                };
+                world.enable_quest_lifecycle(std::sync::Arc::new(wire))?;
+                (None, Some(profile))
+            } else {
+                let profile = theia_persistence::QuestCatalog::from_json(&bytes)?;
+                world.enable_quest(std::sync::Arc::new(
+                    theia_network::quest_wire::Profile::from_json(&bytes)?,
+                ))?;
+                (Some(profile), None)
+            }
         } else {
-            None
+            (None, None)
         };
         if tickets.is_some() || dev_persistence || chunk_stream || !graybox || !predicted {
             return Err("Account login requires saved predicted terrain and excludes development ticket/persistence overrides".into());
@@ -431,6 +720,7 @@ async fn main() -> Result<()> {
             config,
             shutdown,
             theia_server::authenticated::GameplayProfiles {
+                quest_lifecycle,
                 inventory,
                 rewards,
                 progression,

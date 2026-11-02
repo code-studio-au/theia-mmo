@@ -1,0 +1,6 @@
+{
+  "schema": 1,
+  "id": "theia.dev.creature-return-reset",
+  "ruleset": "creature_return_reset_fixture_v1",
+  "creature": "theia.dev.training-creature"
+}

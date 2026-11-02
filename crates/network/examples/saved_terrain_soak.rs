@@ -77,9 +77,11 @@ fn route(index: usize, elapsed: f64) -> Intent {
         -1
     };
     Intent {
+        facing: None,
         axes: directions[index].map(|v| v * sign),
         sprint: true,
         jump: (elapsed + index as f64 * 0.25) % 7. < 0.25,
+        dodge: None,
     }
 }
 #[cfg(target_os = "linux")]

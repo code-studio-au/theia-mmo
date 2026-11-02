@@ -558,6 +558,8 @@ async fn actual_saved_target_profile_preserves_prediction_and_nonblocking_traver
             "Movement snapshot lost target state"
         );
         let intent = Intent {
+            facing: None,
+            dodge: None,
             axes: if started.elapsed() < Duration::from_millis(1300) {
                 [1000, 0]
             } else {

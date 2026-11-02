@@ -32,7 +32,7 @@ class _NoRedirect(urllib.request.HTTPRedirectHandler):
 
 
 class Identity:
-    def __init__(self, output, sdk, *, users=1):
+    def __init__(self, output, sdk, *, users=1, token_seconds=60):
         self.output = Path(output).resolve()
         self.sdk = Path(sdk).resolve()
         self.server = None
@@ -40,6 +40,9 @@ class Identity:
         self.password = secrets.token_urlsafe(32)
         if not 1 <= users <= 4:
             raise ValueError('Owned identity fixture supports 1..4 synthetic users')
+        if type(token_seconds) is not int or not 60 <= token_seconds <= 300:
+            raise ValueError('Owned identity token lifetime must be 60..300 seconds')
+        self.token_seconds = token_seconds
         self.username = 'theia-synthetic-user'
         self.users = [(self.username, self.password)]+[(f'theia-synthetic-user-{i+1}', secrets.token_urlsafe(32)) for i in range(1, users)]
         self.client_id = 'theia-native-development'
@@ -65,7 +68,7 @@ class Identity:
             self.realm_file = imports/'theia-test-realm.json'
             realm = dict(realm='theia-test', enabled=True, sslRequired='none',
                          registrationAllowed=False, resetPasswordAllowed=False,
-                         accessTokenLifespan=60,
+                         accessTokenLifespan=self.token_seconds,
                          clients=[dict(clientId=self.client_id, publicClient=True,
                                        standardFlowEnabled=True, directAccessGrantsEnabled=False,
                                        serviceAccountsEnabled=False, fullScopeAllowed=False,

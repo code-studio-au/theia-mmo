@@ -58,6 +58,10 @@ struct Run {
     written: Instant,
     layout_samples: u64,
     invalid_layouts: u64,
+    layout_open_frames: u32,
+    layout_viewport: Option<Vec2>,
+    layout_settling_frames: u64,
+    first_layouts: Vec<serde_json::Value>,
 }
 pub(super) fn install(app: &mut App) {
     let equipment = std::env::var("THEIA_EQUIPMENT_QUALIFY").ok();
@@ -201,6 +205,10 @@ pub(super) fn install(app: &mut App) {
         written: Instant::now(),
         layout_samples: 0,
         invalid_layouts: 0,
+        layout_open_frames: 0,
+        layout_viewport: None,
+        layout_settling_frames: 0,
+        first_layouts: Vec::new(),
     })
     .add_systems(
         First,
@@ -268,6 +276,10 @@ fn location(world: &mut World, target: Target) -> Option<(Vec2, Vec2)> {
 fn pointer(world: &mut World) {
     use bevy::picking::pointer::{Location, PointerAction, PointerButton, PointerId, PointerInput};
     let mut run = world.remove_resource::<Run>().unwrap();
+    if run.layout_open_frames < 2 {
+        world.insert_resource(run);
+        return;
+    }
     if let Some(target) = run.pointer_release.or(run.pointer_pending)
         && let Some((size, position)) = location(world, target)
         && size.min_element() > 0.
@@ -408,6 +420,11 @@ fn drive(
             };
             movement.sprint = false;
             movement.jump = false;
+        } else if seconds < 10. {
+            // Exercise a genuine equipped walk before the existing run/jump tour.
+            movement.direction = Vec2::X;
+            movement.sprint = false;
+            movement.jump = false;
         }
         // Preserve the existing first-pose observation before 3s, then separate
         // the nonblocking players through actual intents for readable captures.
@@ -420,7 +437,7 @@ fn drive(
         run.opened = true;
         return;
     }
-    if !ui.open || Instant::now() < run.next {
+    if !ui.open || run.layout_open_frames < 2 || Instant::now() < run.next {
         return;
     }
     if run.awaiting_click {
@@ -518,6 +535,22 @@ fn equipment_observation(world: &mut World, hand: Option<&str>) -> Option<serde_
     } else if !attachments.is_empty() {
         return None;
     }
+    let pose = world
+        .query::<&crate::reference_scene::Visual>()
+        .iter(world)
+        .find(|v| world.get::<crate::movement::LocalPawn>(v.owner).is_some())
+        .map(|v| {
+            (
+                v.gait == Some(crate::movement::Gait::Stand),
+                v.sword_stance_active(),
+            )
+        })?;
+    let stance_available = world
+        .get_resource::<crate::reference_scene::LifeAnimationMetrics>()
+        .is_some_and(|metrics| metrics.sword_stance_available);
+    if stance_available && pose.0 && pose.1 != (hand == Some("theia.dev.simple-sword")) {
+        return None;
+    }
     let metrics = world.get_resource::<crate::equipment::Metrics>()?;
     if metrics.local_samples < 10 || metrics.last_error.is_some() {
         return None;
@@ -530,7 +563,7 @@ fn equipment_observation(world: &mut World, hand: Option<&str>) -> Option<serde_
         serde_json::to_string(metrics).unwrap()
     );
     Some(
-        serde_json::json!({"actor":actor,"hand":hand,"visible_meshes":visible,"attachments":attachments.len(),"metrics":metrics}),
+        serde_json::json!({"actor":actor,"hand":hand,"standing":pose.0,"sword_stance":pose.1,"stance_available":stance_available,"visible_meshes":visible,"attachments":attachments.len(),"metrics":metrics}),
     )
 }
 fn observe(world: &mut World) {
@@ -544,8 +577,40 @@ fn observe(world: &mut World) {
         .iter(world)
         .next()
         .map(|window| Vec2::new(window.width(), window.height()));
+    // A newly shown panel or resized window needs completed layout passes before
+    // its hit boxes and screen bounds are evidence. Ordinary play is unaffected.
+    if open && bag.is_some() && viewport.is_some() {
+        if run.layout_viewport == viewport {
+            run.layout_open_frames = run.layout_open_frames.saturating_add(1);
+        } else {
+            run.layout_viewport = viewport;
+            run.layout_open_frames = 0;
+        }
+    } else {
+        run.layout_open_frames = 0;
+        run.layout_viewport = None;
+    }
+    if open && bag.is_some() && run.layout_open_frames < 2 {
+        run.layout_settling_frames += 1;
+    }
     if open
         && bag.is_some()
+        && let Some(viewport) = viewport
+    {
+        for (node, transform) in world
+            .query_filtered::<(&ComputedNode, &bevy::ui::UiGlobalTransform), With<super::Pane>>()
+            .iter(world)
+        {
+            if run.first_layouts.len() < 4 {
+                let size = node.size() * node.inverse_scale_factor();
+                let center = transform.affine().translation * node.inverse_scale_factor();
+                run.first_layouts.push(serde_json::json!({"viewport":viewport.to_array(),"low":(center-size*0.5).to_array(),"high":(center+size*0.5).to_array(),"settling":run.layout_open_frames<2}));
+            }
+        }
+    }
+    if open
+        && bag.is_some()
+        && run.layout_open_frames >= 2
         && let Some(viewport) = viewport
     {
         for (node, transform) in world
@@ -699,7 +764,20 @@ fn observe(world: &mut World) {
         let snapshot = bag
             .as_ref()
             .map(|b| serde_json::from_slice::<serde_json::Value>(&b.to_json()).unwrap());
-        let report = serde_json::json!({"rewards":run.rewards,"earned":run.earned,"reward_casts":run.casts,"passed":complete&&run.shot&&run.invalid_layouts==0&&(!run.equipment||equipment.is_some()),"equipment":equipment,"equipment_phases":run.observations,"equipment_metrics":world.get_resource::<crate::equipment::Metrics>(),"variant":run.variant,"resumed":run.resumed,"step":run.step,"steps":run.actions.len(),"pointer_inputs":run.pointer_inputs,"layout_samples":run.layout_samples,"invalid_layouts":run.invalid_layouts,"snapshot":snapshot,"ui":world.resource::<Ui>(),"scope":"Native Bevy picking/widgets and authoritative observations; not operating-system mouse delivery"});
+        let moving_grip_ready = !run.equipment
+            || run.rewards
+            || run.resumed
+            || world
+                .get_resource::<crate::reference_scene::grip::Metrics>()
+                .is_none_or(|grip| {
+                    let frames = if run.variant == "B" {
+                        grip.remote_frames
+                    } else {
+                        grip.local_frames
+                    };
+                    !grip.available || (frames[1] > 10 && frames[2] > 10)
+                });
+        let report = serde_json::json!({"moving_grip_ready":moving_grip_ready,"grip":world.get_resource::<crate::reference_scene::grip::Metrics>(),"player_animation":world.get_resource::<crate::reference_scene::LifeAnimationMetrics>(),"rewards":run.rewards,"earned":run.earned,"reward_casts":run.casts,"passed":complete&&run.shot&&moving_grip_ready&&run.invalid_layouts==0&&(!run.equipment||equipment.is_some()),"equipment":equipment,"equipment_phases":run.observations,"equipment_metrics":world.get_resource::<crate::equipment::Metrics>(),"variant":run.variant,"resumed":run.resumed,"step":run.step,"steps":run.actions.len(),"pointer_inputs":run.pointer_inputs,"layout_samples":run.layout_samples,"invalid_layouts":run.invalid_layouts,"layout_settling_frames":run.layout_settling_frames,"first_layouts":run.first_layouts,"snapshot":snapshot,"ui":world.resource::<Ui>(),"scope":"Native Bevy picking/widgets and authoritative observations; not operating-system mouse delivery"});
         std::fs::write(
             run.output.join("inventory.json"),
             serde_json::to_vec_pretty(&report).unwrap(),

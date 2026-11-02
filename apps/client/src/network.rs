@@ -14,6 +14,15 @@ use tokio::sync::watch;
 
 #[derive(Resource)]
 pub struct Network {
+    physical_profile: Option<std::sync::Arc<theia_network::simulation::combat::physical::Profile>>,
+    white_profile: Option<std::sync::Arc<theia_network::simulation::combat::white_melee::Profile>>,
+    pub(crate) dodge_input: Option<theia_network::dodge_input::Input>,
+    pub(crate) dodge_request: Option<theia_network::dodging::Request>,
+    life_events: Option<
+        tokio::sync::mpsc::Receiver<theia_network::simulation::combat::player_life::Observation>,
+    >,
+    quest_actions:
+        Option<tokio::sync::mpsc::Sender<theia_network::renet_runtime::quest_lifecycle::Intent>>,
     dialogue: Option<tokio::sync::mpsc::Sender<theia_network::renet_runtime::dialogue::Intent>>,
     items: Option<tokio::sync::mpsc::Sender<theia_core::inventory::ItemCommand>>,
     input: watch::Sender<Intent>,
@@ -35,6 +44,7 @@ pub struct Network {
     predicted_tick: u64,
     target_choice: Option<watch::Sender<Option<theia_network::targeting::Choice>>>,
     casts: Option<tokio::sync::mpsc::Sender<theia_network::renet_runtime::CastChoice>>,
+    melee: Option<watch::Sender<Option<theia_network::renet_runtime::MeleeChoice>>>,
     combat_events: Option<tokio::sync::mpsc::Receiver<theia_network::combat_wire::Batch>>,
 }
 pub struct Smoke {
@@ -72,11 +82,46 @@ pub struct Smoke {
     capture_requested: bool,
 }
 impl Network {
+    pub(crate) fn can_act(&self) -> bool {
+        let state = self.state.borrow();
+        state.error.is_none()
+            && (self.life_events.is_none()
+                || state.player_life.as_ref().is_some_and(|life| {
+                    state
+                        .correction
+                        .is_some_and(|correction| life.movement_allowed(&correction.state))
+                }))
+    }
+    pub(crate) fn next_life_event(
+        &mut self,
+    ) -> Option<theia_network::simulation::combat::player_life::Observation> {
+        self.life_events.as_mut()?.try_recv().ok()
+    }
+    pub(crate) fn request_quest(
+        &self,
+        intent: theia_network::renet_runtime::quest_lifecycle::Intent,
+    ) -> bool {
+        if !self.can_act() {
+            return false;
+        }
+        let state = self.state.borrow();
+        if state.error.is_some() || state.quest_lifecycle_pending || state.quest_lifecycle.is_none()
+        {
+            return false;
+        }
+        self.quest_actions
+            .as_ref()
+            .is_some_and(|queue| queue.try_send(intent).is_ok())
+    }
+
     pub(crate) fn request_dialogue(
         &self,
         revision: u64,
         action: theia_network::dialogue::Action,
     ) -> bool {
+        if !self.can_act() {
+            return false;
+        }
         let state = self.state.borrow();
         if state.error.is_some() || state.dialogue_pending {
             return false;
@@ -171,11 +216,50 @@ impl Network {
             .as_ref()
             .is_some_and(|sender| sender.try_send(command(view.bag.revision())).is_ok())
     }
+    pub(crate) fn white_profile(
+        &self,
+    ) -> Option<&theia_network::simulation::combat::white_melee::Profile> {
+        self.white_profile.as_deref()
+    }
+    pub(crate) fn physical_profile(
+        &self,
+    ) -> Option<&theia_network::simulation::combat::physical::Profile> {
+        self.physical_profile.as_deref()
+    }
+    pub(crate) fn autoattack_enabled(&self) -> bool {
+        self.melee.is_some()
+    }
+    pub(crate) fn request_autoattack(
+        &self,
+        target: Option<theia_core::identity::EntityKey>,
+    ) -> bool {
+        if !self.can_act() {
+            return false;
+        }
+        let state = self.state.borrow();
+        let Some(correction) = state.correction else {
+            return false;
+        };
+        if target.is_some_and(|t| t.epoch != correction.state.actor.epoch) {
+            return false;
+        }
+        self.melee.as_ref().is_some_and(|sender| {
+            sender
+                .send(Some(theia_network::renet_runtime::MeleeChoice {
+                    stream_epoch: correction.state.input.stream_epoch,
+                    target,
+                }))
+                .is_ok()
+        })
+    }
     pub(crate) fn request_cast(
         &self,
         ability: theia_core::content::ContentId,
         target: theia_core::identity::EntityId,
     ) -> bool {
+        if !self.can_act() {
+            return false;
+        }
         self.casts.as_ref().is_some_and(|s| {
             s.try_send(theia_network::renet_runtime::CastChoice { ability, target })
                 .is_ok()
@@ -245,13 +329,45 @@ impl Network {
         prediction: bool,
         expected_world: [u8; 32],
         targeted: bool,
+        player_life_profile: Option<std::sync::Arc<theia_network::player_life_wire::Profile>>,
         combat_catalog: Option<std::sync::Arc<theia_core::abilities::Catalog>>,
         inventory_profile: Option<theia_network::renet_runtime::inventory::Profile>,
         status_catalog: Option<std::sync::Arc<theia_core::statuses::Catalog>>,
         progression_profile: Option<std::sync::Arc<theia_network::progression_wire::Profile>>,
         quest_profile: Option<std::sync::Arc<theia_network::quest_wire::Profile>>,
+        lifecycle_profile: Option<std::sync::Arc<theia_network::quest_lifecycle_wire::Profile>>,
         dialogue_profile: Option<std::sync::Arc<theia_network::dialogue::Profile>>,
+        dodge_profile: Option<std::sync::Arc<theia_network::dodging::Profile>>,
+        classic: bool,
+        melee_catalog: Option<std::sync::Arc<theia_core::melee::Catalog>>,
+        physical_profile: Option<
+            std::sync::Arc<theia_network::simulation::combat::physical::Profile>,
+        >,
+        white_profile: Option<
+            std::sync::Arc<theia_network::simulation::combat::white_melee::Profile>,
+        >,
+        ability_profile: Option<
+            std::sync::Arc<theia_network::simulation::combat::ability_damage::Profile>,
+        >,
+        membership_profile: Option<std::sync::Arc<theia_network::combat_membership_wire::Profile>>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
+        if membership_profile.is_some()
+            && (ability_profile.is_none() || player_life_profile.is_none())
+        {
+            return Err("Combat membership requires ability damage and player life".into());
+        }
+        if player_life_profile.is_some() && (!prediction || combat_catalog.is_none()) {
+            return Err("Player life requires predicted combat".into());
+        }
+        if lifecycle_profile.is_some()
+            && (quest_profile.is_some()
+                || progression_profile.is_none()
+                || dialogue_profile.is_none())
+        {
+            return Err(
+                "Explicit quests require exclusive objective mode, progression and dialogue".into(),
+            );
+        }
         let renet = args.first().is_some_and(|arg| arg.starts_with("--renet-"));
         if (inventory_profile.is_some()
             || progression_profile.is_some()
@@ -266,6 +382,32 @@ impl Network {
         if combat_catalog.is_some() && !targeted {
             return Err("Combat requires targeting".into());
         }
+        if dodge_profile.is_some() && (!renet || !prediction) {
+            return Err("Dodge requires predicted secure Renet".into());
+        }
+        let source_world = expected_world;
+        if classic && (!renet || !prediction || dodge_profile.is_some()) {
+            return Err(
+                "Classic controls require exclusive predicted secure Renet movement".into(),
+            );
+        }
+        let expected_world = if classic {
+            theia_network::classic::profile_identity(source_world)
+        } else {
+            dodge_profile.as_ref().map_or(source_world, |p| {
+                theia_network::dodging::profile_identity(source_world, p)
+            })
+        };
+        let dodge_input = dodge_profile
+            .as_ref()
+            .map(|p| theia_network::dodge_input::Input::new(source_world, p.clone()));
+        let dodge_mode =
+            dodge_profile
+                .as_ref()
+                .map(|p| theia_network::renet_runtime::DodgeClient {
+                    source_world,
+                    profile: p.clone(),
+                });
         let smoke = args
             .first()
             .is_some_and(|arg| matches!(arg.as_str(), "--network-smoke" | "--renet-smoke"));
@@ -349,11 +491,19 @@ impl Network {
         let (chunk_ready, ready) = watch::channel(None);
         let (prediction_commands, command_queue) = tokio::sync::mpsc::channel(8);
         let (target_choice, target_choices) = watch::channel(None);
+        let melee_enabled = melee_catalog.is_some();
+        let (melee, melee_choices) = watch::channel(None);
         let (casts, cast_queue) = tokio::sync::mpsc::channel(8);
         let (events, combat_events) = tokio::sync::mpsc::channel(16);
+        let (life_events, life_queue) = tokio::sync::mpsc::channel(
+            theia_network::renet_runtime::player_life::PRESENTATION_CAPACITY,
+        );
+        let life_enabled = player_life_profile.is_some();
         let combat_enabled = combat_catalog.is_some();
         let inventory_enabled = inventory_profile.is_some();
         let dialogue_enabled = dialogue_profile.is_some();
+        let lifecycle_enabled = lifecycle_profile.is_some();
+        let (quest_actions, quest_queue) = tokio::sync::mpsc::channel(4);
         let (dialogue_actions, dialogue_queue) = tokio::sync::mpsc::channel(4);
         let (items, item_queue) = tokio::sync::mpsc::channel(1);
         let (states, state) = watch::channel(State::default());
@@ -361,11 +511,16 @@ impl Network {
         let runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()?;
+        let physical_presentation = physical_profile.clone();
+        let white_presentation = white_profile.clone();
         let worker = std::thread::Builder::new()
             .name("theia-network".into())
             .spawn(move || {
                 let result = runtime.block_on(async {
-                    if inventory_profile.is_some()
+                    if classic
+                        || dodge_mode.is_some()
+                        || inventory_profile.is_some()
+                        || player_life_profile.is_some()
                         || dialogue_profile.is_some()
                         || status_catalog.is_some()
                         || progression_profile.is_some()
@@ -378,6 +533,21 @@ impl Network {
                             shutdown,
                             expected_world,
                             theia_network::renet_runtime::GameplayClient {
+                                classic_source: classic.then_some(source_world),
+                                dodge: dodge_mode,
+                                player_life: player_life_profile.map(|profile| {
+                                    theia_network::renet_runtime::player_life::Client {
+                                        membership: membership_profile,
+                                        profile,
+                                        events: life_events,
+                                    }
+                                }),
+                                lifecycle: lifecycle_profile.map(|profile| {
+                                    theia_network::renet_runtime::quest_lifecycle::Client {
+                                        profile,
+                                        actions: quest_queue,
+                                    }
+                                }),
                                 dialogue: dialogue_profile.map(|profile| {
                                     theia_network::renet_runtime::dialogue::Client {
                                         profile,
@@ -391,6 +561,15 @@ impl Network {
                                 choices: targeted.then_some(target_choices),
                                 combat: combat_catalog.map(|catalog| {
                                     theia_network::renet_runtime::CombatActions {
+                                        melee: melee_catalog.map(|catalog| {
+                                            theia_network::renet_runtime::MeleeActions {
+                                                catalog,
+                                                physical: physical_profile,
+                                                white: white_profile,
+                                                ability: ability_profile,
+                                                choices: melee_choices,
+                                            }
+                                        }),
                                         catalog,
                                         casts: cast_queue,
                                         events,
@@ -484,6 +663,11 @@ impl Network {
                 }
             })?;
         Ok(Self {
+            physical_profile: physical_presentation,
+            white_profile: white_presentation,
+            dodge_input,
+            dodge_request: None,
+            quest_actions: lifecycle_enabled.then_some(quest_actions),
             dialogue: dialogue_enabled.then_some(dialogue_actions),
             items: inventory_enabled.then_some(items),
             input,
@@ -499,12 +683,31 @@ impl Network {
             render_origin: None,
             local_global: None,
             local_track: None,
-            prediction: prediction.then(theia_network::prediction_driver::Driver::default),
+            prediction: prediction.then(|| {
+                if classic {
+                    theia_network::prediction_driver::Driver::with_classic(
+                        source_world,
+                        life_enabled,
+                    )
+                } else if let Some(profile) = dodge_profile {
+                    theia_network::prediction_driver::Driver::with_dodge(
+                        source_world,
+                        profile,
+                        life_enabled,
+                    )
+                } else if life_enabled {
+                    theia_network::prediction_driver::Driver::with_player_life()
+                } else {
+                    theia_network::prediction_driver::Driver::default()
+                }
+            }),
             prediction_commands: prediction.then_some(prediction_commands),
             predicted_tick: 0,
             target_choice: targeted.then_some(target_choice),
             casts: combat_enabled.then_some(casts),
+            melee: melee_enabled.then_some(melee),
             combat_events: combat_enabled.then_some(combat_events),
+            life_events: life_enabled.then_some(life_queue),
         })
     }
     pub fn configure_map_access(
@@ -540,6 +743,7 @@ impl Drop for Network {
 
 #[derive(Component)]
 pub struct RemotePawn {
+    heading: Option<[f64; 2]>,
     id: u64,
     from: GlobalPosition,
     to: GlobalPosition,
@@ -550,6 +754,7 @@ pub struct RemotePawn {
 impl RemotePawn {
     pub(crate) fn stationary(id: u64, position: GlobalPosition) -> Self {
         Self {
+            heading: None,
             id,
             from: position,
             to: position,
@@ -559,6 +764,21 @@ impl RemotePawn {
     }
     pub(crate) fn advance_presentation(&mut self, seconds: f32) {
         self.elapsed += seconds.clamp(0., 0.25);
+    }
+    fn heading_sample(&self) -> Option<f64> {
+        self.heading.map(|[from, to]| {
+            from + (to - from)
+                * f64::from((self.elapsed / self.duration.max(1. / 120.)).clamp(0., 1.))
+        })
+    }
+    fn retarget_heading(&mut self, heading: Option<theia_core::facing::Facing>) {
+        self.heading = heading.map(|f| {
+            let to = f.radians();
+            let from = self.heading_sample().unwrap_or(to);
+            let delta = (to - from + std::f64::consts::PI).rem_euclid(std::f64::consts::TAU)
+                - std::f64::consts::PI;
+            [from, from + delta]
+        });
     }
     pub(crate) fn actor_id(&self) -> u64 {
         self.id
@@ -616,19 +836,26 @@ impl RemotePawn {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn send_input(
     intent: Res<MoveIntent>,
     mut network: ResMut<Network>,
     terrain: Option<Res<crate::terrain_scene::Config>>,
     visuals: Query<&crate::reference_scene::Visual>,
+    mut pursuit: Option<ResMut<crate::pursuit_qualification::Run>>,
+    melee: Option<Res<crate::melee_qualification::Run>>,
+    projectile: Option<Res<crate::projectile_qualification::Run>>,
+    classic: Option<Res<crate::classic_controls::Controller>>,
 ) {
     let mut value = Intent {
+        facing: classic.as_ref().map(|c| c.facing()),
         jump: intent.jump,
         axes: [
             (intent.direction.x.clamp(-1., 1.) * 1000.) as i16,
             (intent.direction.y.clamp(-1., 1.) * 1000.) as i16,
         ],
         sprint: intent.sprint,
+        dodge: network.dodge_request,
     };
     let state = network
         .state
@@ -723,6 +950,15 @@ pub fn send_input(
             value.axes = [0, 0];
         }
     }
+    if let Some(run) = pursuit.as_mut() {
+        value = run.intent(&state);
+    }
+    if let Some(run) = melee {
+        value = run.intent();
+    }
+    if let Some(run) = projectile {
+        value = run.intent();
+    }
     network.input.send_replace(value);
 }
 
@@ -816,6 +1052,10 @@ impl Smoke {
 
 #[derive(bevy::ecs::system::SystemParam)]
 pub struct SceneState<'w> {
+    classic: Option<Res<'w, crate::classic_controls::Controller>>,
+    camera_mode: Option<Res<'w, crate::camera::mode::Mode>>,
+    inventory: Option<Res<'w, crate::inventory::Ui>>,
+    dialogue: Option<Res<'w, crate::dialogue::Ui>>,
     graybox: Option<Res<'w, crate::graybox::Graybox>>,
     frame: Res<'w, crate::floating_origin::Frame>,
     pipelines: Res<'w, crate::capture_ready::CaptureReady>,
@@ -838,6 +1078,10 @@ pub fn present(
     scene: SceneState,
 ) {
     let SceneState {
+        classic,
+        camera_mode,
+        inventory,
+        dialogue,
         graybox,
         frame,
         pipelines,
@@ -895,8 +1139,46 @@ pub fn present(
                     "THEIA\nPlayer {id} | connected\nLoading world and characters...\nEsc: quit"
                 )
             } else {
+                let controls = if let Some(classic) = classic.as_ref() {
+                    classic.hint()
+                } else if let Some(mode) = camera_mode.as_ref() {
+                    let panel = inventory.as_ref().is_some_and(|ui| ui.open)
+                        || dialogue
+                            .as_ref()
+                            .is_some_and(|ui| ui.open || ui.pending || ui.close_when_open);
+                    let mouse = if mode.active {
+                        "Mouse: look | LMB: basic | RMB: select | Wheel: zoom"
+                    } else {
+                        "LMB: look | RMB: steer | Wheel: zoom | Home: reset"
+                    };
+                    let dodge = if network.dodge_input.is_some() {
+                        raw.correction.map_or_else(String::new, |c| {
+                            c.state.pose.dodge.map_or_else(String::new, |d| {
+                                if d.policy.active.is_some() {
+                                    " | V: dodging".into()
+                                } else if c.state.input.tick >= d.policy.ready_at {
+                                    " | V: dodge ready".into()
+                                } else {
+                                    format!(
+                                        " | V: {:.1}s",
+                                        d.policy.ready_at.saturating_sub(c.state.input.tick) as f64
+                                            / f64::from(c.state.rate.hz())
+                                    )
+                                }
+                            })
+                        })
+                    } else {
+                        String::new()
+                    };
+                    format!(
+                        "WASD: move | Shift: run | Space: jump{dodge}\n{mouse}\n{}",
+                        mode.hint(panel)
+                    )
+                } else {
+                    "WASD / arrows: move | Shift: run | Space: jump | Esc: quit\nHold RMB: orbit | Wheel: zoom | Home: camera reset".into()
+                };
                 format!(
-                    "THEIA | server authority\nPlayer {id} | {} connected | tick {}\nWASD / arrows: move | Shift: run | Space: jump | Esc: quit\nHold RMB: orbit | Wheel: zoom | Home: camera reset",
+                    "THEIA | server authority\nPlayer {id} | {} connected | tick {}\n{controls}",
                     snapshot.players.len(),
                     snapshot.tick
                 )
@@ -953,6 +1235,7 @@ pub fn present(
                         track.retarget(global, interval)
                     } else {
                         network.local_track = Some(RemotePawn {
+                            heading: None,
                             id,
                             from: global,
                             to: global,
@@ -969,10 +1252,12 @@ pub fn present(
                     .iter_mut()
                     .find(|(_, remote, _, _)| remote.id == player.id)
                 {
+                    remote.retarget_heading(player.facing);
                     motion.0 = remote.retarget(global, interval);
                 } else {
                     commands.spawn((
                         RemotePawn {
+                            heading: player.facing.map(|f| [f.radians(); 2]),
                             id: player.id,
                             from: global,
                             to: global,
@@ -1029,6 +1314,7 @@ pub fn present(
                 track.retarget(global, interval)
             } else {
                 network.local_track = Some(RemotePawn {
+                    heading: None,
                     id: state.id.unwrap_or(0),
                     from: global,
                     to: global,
@@ -1046,7 +1332,12 @@ pub fn present(
         track.elapsed += time.delta_secs();
         if let Some(global) = track.global_in_frame(&frame, state.authority_focus()) {
             if let Ok((mut transform, _, _)) = local.single_mut() {
-                face_and_move(&mut transform, frame.project(global));
+                if let Some(classic) = classic.as_ref() {
+                    transform.translation = frame.project(global);
+                    transform.rotation = Quat::from_rotation_y(classic.yaw());
+                } else {
+                    face_and_move(&mut transform, frame.project(global));
+                }
             }
             network.local_global = Some(global);
         }
@@ -1054,7 +1345,12 @@ pub fn present(
     for (_, mut remote, mut transform, _) in &mut remotes {
         remote.elapsed += time.delta_secs();
         let position = remote.sample(&frame);
-        face_and_move(&mut transform, position);
+        if let Some(yaw) = remote.heading_sample() {
+            transform.translation = position;
+            transform.rotation = Quat::from_rotation_y(yaw as f32);
+        } else {
+            face_and_move(&mut transform, position);
+        }
     }
     assert!(
         network.smoke.is_none() || network.started.elapsed().as_secs() < 180,
@@ -1345,6 +1641,7 @@ mod rebase_tests {
             .to_global(LocalPosition::new([3.5, 0.9, -4.25]).unwrap())
             .unwrap();
         let remote = RemotePawn {
+            heading: None,
             id: 2,
             from,
             to,
@@ -1378,6 +1675,26 @@ mod rebase_tests {
 
 #[cfg(test)]
 mod smoothing_tests {
+    #[test]
+    fn independent_remote_turn_takes_shortest_arc_without_moving_the_actor() {
+        use super::*;
+        use theia_core::facing::Facing;
+        let position = GlobalPosition::new([8000., 3., 8000.]).unwrap();
+        let mut track = RemotePawn::stationary(1, position);
+        track.retarget_heading(Some(Facing::from_units(65500)));
+        track.retarget(position, 1. / 30.);
+        track.elapsed = 1. / 60.;
+        track.retarget_heading(Some(Facing::from_units(36)));
+        track.retarget(position, 1. / 30.);
+        let [from, to] = track.heading.unwrap();
+        assert!(to > from && to - from < 0.01);
+        track.elapsed = 1. / 60.;
+        let middle = track.heading_sample().unwrap();
+        assert!((middle - std::f64::consts::TAU).abs() < 0.0001);
+        assert_eq!(track.global_sample(), position);
+        track.retarget_heading(None);
+        assert!(track.heading_sample().is_none());
+    }
     use super::*;
     fn p(x: f64) -> GlobalPosition {
         GlobalPosition::new([x, 1., 8000.]).unwrap()
@@ -1385,6 +1702,7 @@ mod smoothing_tests {
     #[test]
     fn thirty_hz_authority_is_presented_at_every_120_hz_render_frame() {
         let mut track = RemotePawn {
+            heading: None,
             id: 1,
             from: p(8000.),
             to: p(8000.),
@@ -1408,6 +1726,7 @@ mod smoothing_tests {
     #[test]
     fn skipped_snapshot_intervals_and_teleports_use_explicit_durations_and_snap() {
         let mut track = RemotePawn {
+            heading: None,
             id: 1,
             from: p(8000.),
             to: p(8000.),
@@ -1435,6 +1754,7 @@ mod smoothing_tests {
         let mut frame = crate::floating_origin::Frame::default();
         frame.focus_large(new);
         let mut track = RemotePawn {
+            heading: None,
             id: 1,
             from: old,
             to: old,

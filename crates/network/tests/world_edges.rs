@@ -103,9 +103,11 @@ fn real_avian_motion_stops_at_all_edges_and_corners_with_jump_gravity_and_retrea
                             &mut body,
                             feet,
                             Intent {
+                                facing: None,
                                 axes: [dx * 1000, dz * 1000],
                                 jump: (1..10).contains(&tick),
                                 sprint: false,
+                                dodge: None,
                             },
                             TickRate::from_hz(hz).unwrap(),
                         )
@@ -127,9 +129,11 @@ fn real_avian_motion_stops_at_all_edges_and_corners_with_jump_gravity_and_retrea
                             &mut body,
                             feet,
                             Intent {
+                                facing: None,
                                 axes: [-dx * 1000, -dz * 1000],
                                 jump: false,
                                 sprint: false,
+                                dodge: None,
                             },
                             TickRate::from_hz(hz).unwrap(),
                         )
@@ -195,9 +199,11 @@ fn metadata_binds_finite_bounds_and_retains_legacy_identity_and_open_internal_se
                 &mut body,
                 feet,
                 Intent {
+                    facing: None,
                     axes: [1000, 0],
                     jump: false,
                     sprint: false,
+                    dodge: None,
                 },
                 TickRate::from_hz(30).unwrap(),
             )
@@ -215,9 +221,11 @@ fn metadata_binds_finite_bounds_and_retains_legacy_identity_and_open_internal_se
         .demand(&[(
             edge,
             Intent {
+                facing: None,
                 axes: [1000, 0],
                 jump: false,
                 sprint: false,
+                dodge: None,
             },
             true,
         )])
@@ -293,9 +301,11 @@ fn unsupported_fall_recovers_inside_finite_world_without_retriggering_held_jump(
                     epoch: world.epoch(),
                     sequence,
                     intent: Intent {
+                        facing: None,
                         axes: [1000, 0],
                         jump: true,
-                        sprint: false
+                        sprint: false,
+                        dodge: None,
                     }
                 }
             ));
@@ -321,9 +331,11 @@ fn unsupported_fall_recovers_inside_finite_world_without_retriggering_held_jump(
                     epoch: world.epoch(),
                     sequence,
                     intent: Intent {
+                        facing: None,
                         axes: [0, 0],
                         jump: true,
-                        sprint: false
+                        sprint: false,
+                        dodge: None,
                     }
                 }
             ));

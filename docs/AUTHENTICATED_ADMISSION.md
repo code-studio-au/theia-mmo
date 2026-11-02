@@ -1,3 +1,25 @@
+# Read-only admission profile check — qualified 2026-10-31
+
+The selecting reservation now covers a bounded read-only exact-profile check
+before ticket issuance. Expected incompatibility refuses only that owned character,
+without rewriting saves or failing the SQL worker. Actual OIDC/native refusal,
+fresh rewarded gameplay and restart pass at 1920×1200. The complete SQL regression
+passes 30 contracts / 33 commands. [Contract and exact proof](CHARACTER_PROFILE_PREFLIGHT.md).
+Prior checkpoint descriptions below retain their historical scope.
+
+Current explicit quest adoption, 2026-10-31: actual two-account native acceptance,
+turn-in, reconnect/database restart and all three normal-launcher cleanup modes
+pass with verified local OIDC and encrypted tickets. The progression owner retains
+accepted actions and kills in one FIFO across retirement. [Scope and proof](QUEST_LIFECYCLE.md).
+Earlier account and launcher checkpoints below retain their own scope.
+
+Current launcher hardening, 2026-10-31: native clients and the gameplay validator
+exclude local database/account/OIDC/test configuration, including libpq password
+and service files. The parent/server/browser environment remains intact. Nineteen
+focused tests and actual three-mode authenticated native cleanup pass.
+[Exact behavior and evidence](GAMEPLAY_MANIFEST_LAUNCH.md). Earlier environment
+claims below that tested only SQL URL removal have the narrower URL-only scope.
+
 # Authenticated native admission — P3-01/P3-03, 2026-10-29
 
 The initial account-to-game path is implemented and passes live checks against

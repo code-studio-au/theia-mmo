@@ -1,16 +1,24 @@
 //! Async PostgreSQL boundary. No renderer, transport or simulation dependencies.
 //! Queries and commit acknowledgements belong to an owner worker, never World::step.
 mod characters;
+mod gameplay_profiles;
 mod inventory;
 mod progression;
+mod quest_journal;
+mod quest_lifecycle;
 mod quests;
 mod rewards;
 mod store;
 mod vendors;
 mod worker;
 pub use characters::{Character, CharacterName, CharacterSummary, MAX_CHARACTERS_PER_OWNER};
+pub use gameplay_profiles::{GameplayProfiles, ProfileCompatibility};
 pub use inventory::{InventoryApplied, InventoryCatalog};
 pub use progression::{ProgressionApplied, ProgressionCatalog};
+pub use quest_journal::{
+    QuestJournalAction, QuestJournalApplied, QuestJournalCatalog, QuestJournalCommand,
+};
+pub use quest_lifecycle::{EarnedQuestLifecycle, QuestLifecycleApplied, QuestLifecycleCatalog};
 pub use quests::{EarnedProgression, QuestApplied, QuestCatalog};
 pub use rewards::{RewardCatalog, RewardClaim};
 use std::fmt;
@@ -53,6 +61,12 @@ pub enum Error {
     QuestData,
     QuestConflict,
     QuestCommand(theia_core::quests::Error),
+    QuestLifecycleCommand(theia_core::quests::lifecycle::Error),
+    QuestJournalMissing,
+    QuestJournalCatalogMismatch,
+    QuestJournalData,
+    QuestJournalConflict,
+    QuestJournalCommand(theia_core::quests::journal::Error),
     ProgressionMissing,
     ProgressionCatalogMismatch,
     ProgressionData,
@@ -93,6 +107,12 @@ impl fmt::Display for Error {
             Self::QuestData => "Invalid persistent objective state",
             Self::QuestConflict => "Victim life belongs to a different objective award",
             Self::QuestCommand(_) => "Objective progress rejected",
+            Self::QuestLifecycleCommand(_) => "Quest lifecycle action rejected",
+            Self::QuestJournalMissing => "Persistent quest journal unavailable",
+            Self::QuestJournalCatalogMismatch => "Persistent quest journal catalogue mismatch",
+            Self::QuestJournalData => "Invalid persistent quest journal",
+            Self::QuestJournalConflict => "Quest journal receipt conflicts with original input",
+            Self::QuestJournalCommand(_) => "Quest journal operation rejected",
             Self::ProgressionMissing => "Persistent progression unavailable",
             Self::ProgressionCatalogMismatch => "Persistent progression profile mismatch",
             Self::ProgressionData => "Invalid persistent progression state",

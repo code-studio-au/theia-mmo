@@ -140,9 +140,11 @@ impl Load {
                                 peer.sequence
                             },
                             intent: Intent {
+                                facing: None,
                                 jump: false,
                                 axes,
                                 sprint: false,
+                                dodge: None,
                             },
                         };
                         peer.client

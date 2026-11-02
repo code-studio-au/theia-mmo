@@ -1,3 +1,12 @@
+Current continuation, 2026-10-31: explicit quest storage, encrypted owner and
+standard Bevy acceptance/turn-in are adopted in opt-in mode. Actual two-account
+native and normal-launcher checks pass; [exact scope and evidence](QUEST_LIFECYCLE.md).
+The underlying 23-contract SQL source is unchanged from its separately qualified
+448-pass/33-skip checkpoint. The final current workspace passes 464 tests /
+33 skips; formatting and denied-warning Clippy pass. Exact source/binaries/proof:
+`build/quest-lifecycle-qualified-v1-20261031`.
+The retained automatic objective and earlier records below remain available.
+
 # Quest objectives — proposed P3-11 first slice
 
 Status, 2026-10-30: the initial live three-kill objective slice is qualified.

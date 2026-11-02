@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "id": "theia.dev.damage-numerical-fixture-v1",
+  "attacks": [
+    {
+      "kind": "weapon",
+      "id": "theia.dev.training-sword-swing",
+      "item": "theia.dev.training-sword",
+      "minimum": 80,
+      "maximum": 100,
+      "base_speed_ms": 2800
+    },
+    {
+      "kind": "spell",
+      "id": "theia.dev.arcane-bolt-damage",
+      "ability": "theia.dev.arcane-bolt",
+      "minimum": 200,
+      "maximum": 200,
+      "coefficient_bp": 6000
+    },
+    {
+      "kind": "creature",
+      "id": "theia.dev.wolf-bite",
+      "creature": "theia.dev.training-creature",
+      "minimum": 4,
+      "maximum": 6
+    }
+  ]
+}

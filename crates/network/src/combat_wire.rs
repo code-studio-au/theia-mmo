@@ -1,7 +1,13 @@
 //! Combat profile 2: catalog-bound ordinals, bounded reliable state and events.
+pub mod ability_damage;
+pub mod melee;
+pub mod physical;
+pub mod white_melee;
 use crate::{
     Result,
-    simulation::combat::{self, Cast, Event, Outcome, Queued, Reason, Reply},
+    simulation::combat::{
+        self, Avoidance, Cast, Event, Outcome, ProjectileEnd, Queued, Reason, Reply,
+    },
 };
 use theia_core::{
     abilities::Catalog,
@@ -14,9 +20,28 @@ pub const REQUEST_TAG: &[u8; 4] = b"CA01";
 pub const STATE_TAG: &[u8; 4] = b"CS01";
 pub const RESOURCE_STATE_TAG: &[u8; 4] = b"CS02";
 pub const EVENTS_TAG: &[u8; 4] = b"CE02";
+pub const OUTCOME_EVENTS_TAG: &[u8; 4] = b"CE03";
+pub const PROJECTILE_EVENTS_TAG: &[u8; 4] = b"CE04";
+fn events_tag(catalog: &Catalog) -> &'static [u8; 4] {
+    if catalog.schema() >= 6 {
+        PROJECTILE_EVENTS_TAG
+    } else if catalog.schema() >= 5 {
+        OUTCOME_EVENTS_TAG
+    } else {
+        EVENTS_TAG
+    }
+}
 pub const REQUEST_BYTES: usize = 29;
 pub const MAX_BYTES: usize = 1200;
 pub const MAX_BATCH_EVENTS: usize = 16;
+pub const MAX_PROJECTILE_BATCH_EVENTS: usize = 12;
+pub fn max_batch_events(catalog: &Catalog) -> usize {
+    if catalog.schema() >= 6 {
+        MAX_PROJECTILE_BATCH_EVENTS
+    } else {
+        MAX_BATCH_EVENTS
+    }
+}
 const MAX_DEADLINE: u64 = 3600;
 fn index(catalog: &Catalog, id: &ContentId) -> Result<u8> {
     catalog
@@ -57,6 +82,9 @@ fn reason(value: u8) -> Result<Reason> {
         10 => Reason::TimeExhausted,
         11 => Reason::InsufficientMana,
         12 => Reason::StatusCapacity,
+        13 => Reason::EquipmentRequired,
+        14 => Reason::NotFacing,
+        15 => Reason::TooClose,
         _ => return Err("Unknown combat rejection reason".into()),
     })
 }
@@ -75,6 +103,31 @@ fn reason_id(value: Reason) -> u8 {
         Reason::TimeExhausted => 10,
         Reason::InsufficientMana => 11,
         Reason::StatusCapacity => 12,
+        Reason::EquipmentRequired => 13,
+        Reason::NotFacing => 14,
+        Reason::TooClose => 15,
+    }
+}
+fn valid_reason(reason: Reason, catalog: &Catalog) -> bool {
+    catalog.schema() >= 7 || !matches!(reason, Reason::NotFacing | Reason::TooClose)
+}
+fn projectile_end(value: u8) -> Result<ProjectileEnd> {
+    Ok(match value {
+        0 => ProjectileEnd::Expired,
+        1 => ProjectileEnd::Obstructed,
+        2 => ProjectileEnd::Unavailable,
+        3 => ProjectileEnd::SourceGone,
+        4 => ProjectileEnd::TargetGone,
+        _ => return Err("Unknown projectile termination".into()),
+    })
+}
+fn projectile_end_id(value: ProjectileEnd) -> u8 {
+    match value {
+        ProjectileEnd::Expired => 0,
+        ProjectileEnd::Obstructed => 1,
+        ProjectileEnd::Unavailable => 2,
+        ProjectileEnd::SourceGone => 3,
+        ProjectileEnd::TargetGone => 4,
     }
 }
 struct Read<'a> {
@@ -340,7 +393,10 @@ impl State {
             return Err("Invalid combat state budget/epoch/deadline".into());
         }
         if let Some(reply) = self.reply {
-            if reply.sequence == 0 || matches!(reply.outcome, Outcome::Ignored) {
+            if reply.sequence == 0
+                || matches!(reply.outcome, Outcome::Ignored)
+                || matches!(reply.outcome,Outcome::Rejected(reason) if !valid_reason(reason,catalog))
+            {
                 return Err("Invalid combat state reply".into());
             }
             let deadline = match reply.outcome {
@@ -547,17 +603,145 @@ pub struct Batch {
     pub events: Vec<Event>,
 }
 impl Batch {
-    fn validate(&self, catalog: &Catalog) -> Result<()> {
+    fn validate_profile(
+        &self,
+        catalog: &Catalog,
+        weapons: Option<&theia_core::melee::Catalog>,
+        physical: Option<&crate::simulation::combat::physical::Profile>,
+        white: Option<&crate::simulation::combat::white_melee::Profile>,
+        ability_profile: Option<&crate::simulation::combat::ability_damage::Profile>,
+    ) -> Result<()> {
         if WorldEpoch::new(self.epoch).is_none()
             || self.sequence == 0
             || self.events.is_empty()
-            || self.events.len() > MAX_BATCH_EVENTS
+            || self.events.len() > max_batch_events(catalog)
         {
             return Err("Invalid combat event batch".into());
         }
+        if physical.is_some() && (weapons.is_none() || catalog.schema() != 7) {
+            return Err("Physical events require explicit melee and ability rules".into());
+        }
+        if white.is_some_and(|w| {
+            physical.is_none_or(|p| p.context_hash() != w.physical().context_hash())
+        }) {
+            return Err("Ordinary events require their complete physical context".into());
+        }
+        if ability_profile
+            .is_some_and(|a| white.is_none_or(|w| w.context_hash() != a.ordinary().context_hash()))
+        {
+            return Err("Ability results require their complete ordinary context".into());
+        }
+        let mut ability_sequences = std::collections::BTreeSet::new();
+        let allow_legacy_ability = ability_profile.is_none();
+        let mut physical_sequences = std::collections::BTreeSet::new();
         let valid_key = |key: EntityKey| key.epoch.value() == self.epoch;
         for event in &self.events {
             let valid = match event {
+                Event::AbilityDamage(fact) => {
+                    ability_profile
+                        .is_some_and(|p| ability_damage::validate(fact, self.epoch, p).is_ok())
+                        && ability_sequences.insert((
+                            fact.actor.entity.value(),
+                            fact.actor_generation.get(),
+                            fact.sequence,
+                        ))
+                }
+                Event::WhiteMelee(fact) => {
+                    white.is_some_and(|p| white_melee::validate(fact, self.epoch, p).is_ok())
+                        && physical_sequences.insert((
+                            fact.actor.entity.value(),
+                            fact.actor_generation.map_or(0, |g| g.get()),
+                            fact.sequence,
+                        ))
+                }
+                Event::PhysicalDamage(fact) => {
+                    white.is_none()
+                        && physical.is_some_and(|p| physical::validate(fact, self.epoch, p).is_ok())
+                        && physical_sequences.insert((
+                            fact.actor.entity.value(),
+                            fact.actor_generation.map_or(0, |g| g.get()),
+                            fact.sequence,
+                        ))
+                }
+                Event::MeleeDamage {
+                    weapon,
+                    actor,
+                    sequence,
+                    target,
+                    amount,
+                    remaining,
+                    ..
+                } => {
+                    physical.is_none()
+                        && weapons.is_some_and(|c| {
+                            c.weapon(weapon)
+                                .is_some_and(|w| *amount > 0 && *amount <= w.damage())
+                        })
+                        && valid_key(*actor)
+                        && valid_key(*target)
+                        && actor != target
+                        && *sequence > 0
+                        && *remaining <= 1_000_000
+                }
+                Event::ProjectileLaunched {
+                    actor,
+                    sequence,
+                    target,
+                    ability,
+                    position,
+                    target_position,
+                } => {
+                    let distance_squared: f64 = position
+                        .metres()
+                        .into_iter()
+                        .zip(target_position.metres())
+                        .map(|(a, b)| (a - b).powi(2))
+                        .sum();
+                    catalog.schema() >= 6
+                        && valid_key(*actor)
+                        && valid_key(*target)
+                        && *sequence > 0
+                        && catalog.ability(ability.as_str()).is_some_and(|a| {
+                            a.projectile().is_some()
+                                && distance_squared <= (a.range_metres() + 1e-8).powi(2)
+                        })
+                }
+                Event::ProjectileEnded {
+                    actor,
+                    sequence,
+                    target,
+                    ability,
+                    ..
+                } => {
+                    catalog.schema() >= 6
+                        && valid_key(*actor)
+                        && valid_key(*target)
+                        && *sequence > 0
+                        && catalog
+                            .ability(ability.as_str())
+                            .is_some_and(|a| a.projectile().is_some())
+                }
+                Event::Avoided {
+                    actor,
+                    sequence,
+                    target,
+                    ability,
+                    kind,
+                    ..
+                } => {
+                    allow_legacy_ability
+                        && catalog.schema() >= 5
+                        && valid_key(*actor)
+                        && valid_key(*target)
+                        && *sequence > 0
+                        && catalog
+                            .ability(ability.as_str())
+                            .and_then(|a| a.hit_table())
+                            .is_some_and(|table| match kind {
+                                Avoidance::Miss => table.miss_bp() > 0,
+                                Avoidance::Deflect => table.deflect_bp() > 0,
+                            })
+                }
                 Event::Started { actor, cast, .. } => {
                     valid_key(*actor) && valid_cast(cast, self.epoch, self.tick, catalog)
                 }
@@ -565,8 +749,10 @@ impl Batch {
                     valid_key(*actor) && valid_queue(queued, self.epoch, self.tick, catalog)
                 }
                 Event::Cancelled {
-                    actor, sequence, ..
-                } => valid_key(*actor) && *sequence > 0,
+                    actor,
+                    sequence,
+                    reason,
+                } => valid_key(*actor) && *sequence > 0 && valid_reason(*reason, catalog),
                 Event::Damage {
                     actor,
                     sequence,
@@ -576,12 +762,17 @@ impl Batch {
                     ability,
                     ..
                 } => {
-                    valid_key(*actor)
+                    allow_legacy_ability
+                        && valid_key(*actor)
                         && valid_key(*target)
                         && *sequence > 0
                         && (1..=1_000_000).contains(amount)
                         && *remaining <= 1_000_000
                         && index(catalog, ability).is_ok()
+                        && catalog.ability(ability.as_str()).is_some_and(|a| {
+                            a.hit_table()
+                                .is_none_or(|t| t.hit_bp() > 0 || t.deflect_bp() > 0)
+                        })
                 }
                 Event::Died {
                     target, respawn_at, ..
@@ -597,14 +788,172 @@ impl Batch {
         Ok(())
     }
     pub fn encode(&self, catalog: &Catalog) -> Result<Vec<u8>> {
-        self.validate(catalog)?;
-        let mut bytes = EVENTS_TAG.to_vec();
+        self.encode_profile(catalog, None, None, None, None)
+    }
+    /// Explicit mixed ability/basic-melee profile; legacy codecs reject this tag.
+    pub fn encode_melee(
+        &self,
+        catalog: &Catalog,
+        weapons: &theia_core::melee::Catalog,
+    ) -> Result<Vec<u8>> {
+        self.encode_profile(catalog, Some(weapons), None, None, None)
+    }
+    pub fn encode_physical(
+        &self,
+        catalog: &Catalog,
+        weapons: &theia_core::melee::Catalog,
+        profile: &crate::simulation::combat::physical::Profile,
+    ) -> Result<Vec<u8>> {
+        self.encode_profile(catalog, Some(weapons), Some(profile), None, None)
+    }
+    pub fn encode_white(
+        &self,
+        catalog: &Catalog,
+        weapons: &theia_core::melee::Catalog,
+        profile: &crate::simulation::combat::white_melee::Profile,
+    ) -> Result<Vec<u8>> {
+        self.encode_profile(
+            catalog,
+            Some(weapons),
+            Some(profile.physical()),
+            Some(profile),
+            None,
+        )
+    }
+    pub fn encode_abilities(
+        &self,
+        weapons: &theia_core::melee::Catalog,
+        profile: &crate::simulation::combat::ability_damage::Profile,
+    ) -> Result<Vec<u8>> {
+        self.encode_profile(
+            profile.catalog(),
+            Some(weapons),
+            Some(profile.physical()),
+            Some(profile.ordinary()),
+            Some(profile),
+        )
+    }
+    fn encode_profile(
+        &self,
+        catalog: &Catalog,
+        weapons: Option<&theia_core::melee::Catalog>,
+        physical: Option<&crate::simulation::combat::physical::Profile>,
+        white: Option<&crate::simulation::combat::white_melee::Profile>,
+        ability_profile: Option<&crate::simulation::combat::ability_damage::Profile>,
+    ) -> Result<Vec<u8>> {
+        self.validate_profile(catalog, weapons, physical, white, ability_profile)?;
+        let mut bytes = if ability_profile.is_some() {
+            ability_damage::EVENTS_TAG
+        } else if white.is_some() {
+            white_melee::EVENTS_TAG
+        } else if physical.is_some() {
+            physical::EVENTS_TAG
+        } else if weapons.is_some() {
+            melee::EVENTS_TAG
+        } else {
+            events_tag(catalog)
+        }
+        .to_vec();
+        if let Some(profile) = ability_profile {
+            bytes.extend(profile.context_hash());
+        } else if let Some(profile) = white {
+            bytes.extend(profile.context_hash());
+        } else if let Some(profile) = physical {
+            bytes.extend(profile.context_hash());
+        }
         word(&mut bytes, self.epoch);
         word(&mut bytes, self.sequence);
         word(&mut bytes, self.tick);
         bytes.push(self.events.len() as u8);
         for event in &self.events {
             match event {
+                Event::AbilityDamage(fact) => ability_damage::put(
+                    &mut bytes,
+                    fact,
+                    ability_profile.ok_or("Missing ability result profile")?,
+                )?,
+                Event::WhiteMelee(fact) => white_melee::put(
+                    &mut bytes,
+                    fact,
+                    white.ok_or("Missing ordinary event profile")?,
+                )?,
+                Event::PhysicalDamage(fact) => physical::put(
+                    &mut bytes,
+                    fact,
+                    physical.ok_or("Missing physical event profile")?,
+                )?,
+                Event::MeleeDamage {
+                    weapon,
+                    actor,
+                    sequence,
+                    target,
+                    position,
+                    amount,
+                    remaining,
+                } => {
+                    bytes.push(9);
+                    word(&mut bytes, actor.entity.value());
+                    word(&mut bytes, *sequence);
+                    word(&mut bytes, target.entity.value());
+                    bytes.push(melee::weapon_index(
+                        weapons.ok_or("Missing melee profile")?,
+                        weapon,
+                    )?);
+                    number(&mut bytes, *amount);
+                    number(&mut bytes, *remaining);
+                    put_point(&mut bytes, *position);
+                }
+                Event::ProjectileLaunched {
+                    actor,
+                    sequence,
+                    target,
+                    ability,
+                    position,
+                    target_position,
+                } => {
+                    bytes.push(7);
+                    word(&mut bytes, actor.entity.value());
+                    word(&mut bytes, *sequence);
+                    word(&mut bytes, target.entity.value());
+                    bytes.push(index(catalog, ability)?);
+                    put_point(&mut bytes, *position);
+                    put_point(&mut bytes, *target_position);
+                }
+                Event::ProjectileEnded {
+                    actor,
+                    sequence,
+                    target,
+                    ability,
+                    position,
+                    reason,
+                } => {
+                    bytes.push(8);
+                    word(&mut bytes, actor.entity.value());
+                    word(&mut bytes, *sequence);
+                    word(&mut bytes, target.entity.value());
+                    bytes.push(index(catalog, ability)?);
+                    put_point(&mut bytes, *position);
+                    bytes.push(projectile_end_id(*reason));
+                }
+                Event::Avoided {
+                    actor,
+                    sequence,
+                    target,
+                    ability,
+                    kind,
+                    position,
+                } => {
+                    bytes.push(6);
+                    word(&mut bytes, actor.entity.value());
+                    word(&mut bytes, *sequence);
+                    word(&mut bytes, target.entity.value());
+                    bytes.push(index(catalog, ability)?);
+                    bytes.push(match kind {
+                        Avoidance::Miss => 0,
+                        Avoidance::Deflect => 1,
+                    });
+                    put_point(&mut bytes, *position);
+                }
                 Event::Started {
                     actor,
                     cast,
@@ -676,18 +1025,147 @@ impl Batch {
         Ok(bytes)
     }
     pub fn decode(bytes: &[u8], catalog: &Catalog) -> Result<Self> {
-        let mut read = Read::new(bytes, EVENTS_TAG)?;
+        Self::decode_profile(bytes, catalog, None, None, None, None)
+    }
+    pub fn decode_melee(
+        bytes: &[u8],
+        catalog: &Catalog,
+        weapons: &theia_core::melee::Catalog,
+    ) -> Result<Self> {
+        Self::decode_profile(bytes, catalog, Some(weapons), None, None, None)
+    }
+    pub fn decode_physical(
+        bytes: &[u8],
+        catalog: &Catalog,
+        weapons: &theia_core::melee::Catalog,
+        profile: &crate::simulation::combat::physical::Profile,
+    ) -> Result<Self> {
+        Self::decode_profile(bytes, catalog, Some(weapons), Some(profile), None, None)
+    }
+    pub fn decode_white(
+        bytes: &[u8],
+        catalog: &Catalog,
+        weapons: &theia_core::melee::Catalog,
+        profile: &crate::simulation::combat::white_melee::Profile,
+    ) -> Result<Self> {
+        Self::decode_profile(
+            bytes,
+            catalog,
+            Some(weapons),
+            Some(profile.physical()),
+            Some(profile),
+            None,
+        )
+    }
+    pub fn decode_abilities(
+        bytes: &[u8],
+        weapons: &theia_core::melee::Catalog,
+        profile: &crate::simulation::combat::ability_damage::Profile,
+    ) -> Result<Self> {
+        Self::decode_profile(
+            bytes,
+            profile.catalog(),
+            Some(weapons),
+            Some(profile.physical()),
+            Some(profile.ordinary()),
+            Some(profile),
+        )
+    }
+    fn decode_profile(
+        bytes: &[u8],
+        catalog: &Catalog,
+        weapons: Option<&theia_core::melee::Catalog>,
+        physical: Option<&crate::simulation::combat::physical::Profile>,
+        white: Option<&crate::simulation::combat::white_melee::Profile>,
+        ability_profile: Option<&crate::simulation::combat::ability_damage::Profile>,
+    ) -> Result<Self> {
+        let mut read = Read::new(
+            bytes,
+            if ability_profile.is_some() {
+                ability_damage::EVENTS_TAG
+            } else if white.is_some() {
+                white_melee::EVENTS_TAG
+            } else if physical.is_some() {
+                physical::EVENTS_TAG
+            } else if weapons.is_some() {
+                melee::EVENTS_TAG
+            } else {
+                events_tag(catalog)
+            },
+        )?;
+        let expected_hash = ability_profile.map(|p| p.context_hash()).or_else(|| {
+            white
+                .map(|p| p.context_hash())
+                .or_else(|| physical.map(|p| p.context_hash()))
+        });
+        if let Some(hash) = expected_hash
+            && read.take::<32>()? != hash
+        {
+            return Err("Combat result profile hash mismatch".into());
+        }
         let epoch = read.word()?;
         let sequence = read.word()?;
         let tick = read.word()?;
         let count = usize::from(read.byte()?);
-        if count == 0 || count > MAX_BATCH_EVENTS {
+        if count == 0 || count > max_batch_events(catalog) {
             return Err("Event count exceeds budget".into());
         }
         let mut events = Vec::with_capacity(count);
         for _ in 0..count {
             let tag = read.byte()?;
             let event = match tag {
+                ability_damage::FACT_TAG => Event::AbilityDamage(ability_damage::get(
+                    &mut read,
+                    epoch,
+                    ability_profile.ok_or("Missing ability result profile")?,
+                )?),
+                white_melee::FACT_TAG => Event::WhiteMelee(white_melee::get(
+                    &mut read,
+                    epoch,
+                    white.ok_or("Missing ordinary event profile")?,
+                )?),
+                physical::FACT_TAG if white.is_none() => Event::PhysicalDamage(physical::get(
+                    &mut read,
+                    epoch,
+                    physical.ok_or("Missing physical event profile")?,
+                )?),
+                9 => Event::MeleeDamage {
+                    actor: key(epoch, read.word()?)?,
+                    sequence: read.word()?,
+                    target: key(epoch, read.word()?)?,
+                    weapon: melee::weapon(weapons.ok_or("Missing melee profile")?, read.byte()?)?,
+                    amount: read.number()?,
+                    remaining: read.number()?,
+                    position: get_point(&mut read)?,
+                },
+                7 => Event::ProjectileLaunched {
+                    actor: key(epoch, read.word()?)?,
+                    sequence: read.word()?,
+                    target: key(epoch, read.word()?)?,
+                    ability: ability(catalog, read.byte()?)?,
+                    position: get_point(&mut read)?,
+                    target_position: get_point(&mut read)?,
+                },
+                8 => Event::ProjectileEnded {
+                    actor: key(epoch, read.word()?)?,
+                    sequence: read.word()?,
+                    target: key(epoch, read.word()?)?,
+                    ability: ability(catalog, read.byte()?)?,
+                    position: get_point(&mut read)?,
+                    reason: projectile_end(read.byte()?)?,
+                },
+                6 => Event::Avoided {
+                    actor: key(epoch, read.word()?)?,
+                    sequence: read.word()?,
+                    target: key(epoch, read.word()?)?,
+                    ability: ability(catalog, read.byte()?)?,
+                    kind: match read.byte()? {
+                        0 => Avoidance::Miss,
+                        1 => Avoidance::Deflect,
+                        _ => return Err("Unknown avoidance result".into()),
+                    },
+                    position: get_point(&mut read)?,
+                },
                 0 => Event::Started {
                     actor: key(epoch, read.word()?)?,
                     cast: get_cast(&mut read, epoch, catalog)?,
@@ -732,7 +1210,7 @@ impl Batch {
             tick,
             events,
         };
-        value.validate(catalog)?;
+        value.validate_profile(catalog, weapons, physical, white, ability_profile)?;
         Ok(value)
     }
 }

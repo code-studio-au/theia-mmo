@@ -624,9 +624,11 @@ mod tests {
             assert!((terrain.height(p).unwrap() - brute).abs() < 1e-5);
         }
         let go = Intent {
+            facing: None,
             jump: false,
             axes: [1000, 0],
             sprint: true,
+            dodge: None,
         };
         let mut p = [0., 0.];
         for _ in 0..450 {
@@ -682,9 +684,11 @@ mod tests {
         let t = Terrain::decode(&plane(0.3)).unwrap();
         assert!((t.height([3., 4.]).unwrap() - 0.9).abs() < 1e-5);
         let intent = Intent {
+            facing: None,
             jump: false,
             axes: [1000, 0],
             sprint: false,
+            dodge: None,
         };
         let mut p = [0., 0.];
         for _ in 0..30 {
@@ -726,9 +730,11 @@ mod tests {
                 p = t.move_player(
                     p,
                     Intent {
+                        facing: None,
                         jump: false,
                         axes: [1000, 0],
                         sprint: true,
+                        dodge: None,
                     },
                     1. / 30.,
                 );
@@ -738,9 +744,11 @@ mod tests {
             p = t.move_player(
                 p,
                 Intent {
+                    facing: None,
                     jump: false,
                     axes: [1000, 1000],
                     sprint: false,
+                    dodge: None,
                 },
                 1. / 30.,
             );
@@ -749,9 +757,11 @@ mod tests {
             p = t.move_player(
                 p,
                 Intent {
+                    facing: None,
                     jump: false,
                     axes: [-1000, 0],
                     sprint: false,
+                    dodge: None,
                 },
                 1. / 30.,
             );
@@ -768,9 +778,11 @@ mod tests {
             p = t.move_player(
                 p,
                 Intent {
+                    facing: None,
                     jump: false,
                     axes: [0, -1000],
                     sprint: true,
+                    dodge: None,
                 },
                 1. / 30.,
             );
@@ -779,9 +791,11 @@ mod tests {
         let slid = t.move_player(
             p,
             Intent {
+                facing: None,
                 jump: false,
                 axes: [1000, -1000],
                 sprint: true,
+                dodge: None,
             },
             1. / 30.,
         );
@@ -792,9 +806,11 @@ mod tests {
             t.move_player(
                 p,
                 Intent {
+                    facing: None,
                     jump: false,
                     axes: [0, 1000],
-                    sprint: false
+                    sprint: false,
+                    dodge: None,
                 },
                 1. / 30.
             )[1] > p[1]
@@ -840,9 +856,11 @@ mod tests {
             p = t.move_player(
                 p,
                 Intent {
+                    facing: None,
                     jump: false,
                     axes: [0, -1000],
                     sprint: false,
+                    dodge: None,
                 },
                 1. / 30.,
             );
@@ -854,9 +872,11 @@ mod tests {
             p = t.move_player(
                 p,
                 Intent {
+                    facing: None,
                     jump: false,
                     axes: [1000, 0],
                     sprint: true,
+                    dodge: None,
                 },
                 1. / 30.,
             );
@@ -866,9 +886,11 @@ mod tests {
             p = t.move_player(
                 p,
                 Intent {
+                    facing: None,
                     jump: false,
                     axes: [-1000, 0],
                     sprint: false,
+                    dodge: None,
                 },
                 1. / 30.,
             );
@@ -878,9 +900,11 @@ mod tests {
             p = t.move_player(
                 p,
                 Intent {
+                    facing: None,
                     jump: false,
                     axes: [0, 1000],
                     sprint: false,
+                    dodge: None,
                 },
                 1. / 30.,
             );

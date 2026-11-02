@@ -110,6 +110,14 @@ impl Pending {
                 *position,
                 Some(*actor),
             ),
+            Event::AbilityDamage(fact)
+                if matches!(
+                    fact.result.outcome,
+                    theia_network::simulation::combat::ability_damage::Outcome::Arcane(_)
+                ) && fact.result.damage.health_lost > 0 =>
+            {
+                (Trigger::Damage, Some(&fact.ability), fact.position, None)
+            }
             Event::Damage {
                 ability, position, ..
             } => (Trigger::Damage, Some(ability), *position, None),
@@ -819,5 +827,43 @@ mod tests {
             assert!(Definition::from_json(&serde_json::to_vec(&bad).unwrap(), &catalog).is_err());
         }
         assert!(Definition::from_json(&vec![b' '; data::MAX_BYTES + 1], &catalog).is_err());
+    }
+    #[test]
+    fn typed_arcane_impact_feedback_requires_actual_damage_and_ignores_physical_specials() {
+        use theia_network::simulation::combat::ability_damage::Outcome;
+        let (_, definition) = fixture();
+        let mut pending = Pending {
+            definition: Arc::new(definition),
+            queue: VecDeque::new(),
+            serial: 0,
+        };
+        let mut metrics = Metrics::default();
+        pending.offer(
+            &Event::AbilityDamage(crate::combat::test_facts::ability_fact(
+                Outcome::Arcane(theia_core::damage::spell::Outcome::Miss),
+                100,
+            )),
+            10,
+            &mut metrics,
+        );
+        pending.offer(
+            &Event::AbilityDamage(crate::combat::test_facts::ability_fact(
+                Outcome::MeleeSpecial(theia_core::damage::melee_special::Outcome::Critical),
+                100,
+            )),
+            10,
+            &mut metrics,
+        );
+        assert_eq!(metrics.offered, 0);
+        pending.offer(
+            &Event::AbilityDamage(crate::combat::test_facts::ability_fact(
+                Outcome::Arcane(theia_core::damage::spell::Outcome::Critical),
+                100,
+            )),
+            10,
+            &mut metrics,
+        );
+        assert_eq!(metrics.offered, 1);
+        assert_eq!(pending.queue.len(), 1);
     }
 }

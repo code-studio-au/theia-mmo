@@ -82,9 +82,11 @@ fn mobile_cast_damage_and_cooldowns_use_exact_simulation_ticks_at_every_rate() {
                     epoch: world.epoch(),
                     sequence,
                     intent: Intent {
+                        facing: None,
                         axes: [1000, 0],
                         sprint: false,
-                        jump: false
+                        jump: false,
+                        dodge: None,
                     }
                 }
             ));

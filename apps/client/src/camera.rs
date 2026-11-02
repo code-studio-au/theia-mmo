@@ -1,4 +1,5 @@
 use crate::movement::LocalPawn;
+pub(crate) mod mode;
 use bevy::{
     input::mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll, MouseScrollUnit},
     picking::mesh_picking::ray_cast::{MeshRayCast, MeshRayCastSettings, RayCastVisibility},
@@ -94,6 +95,7 @@ type SceneryMaterials<'w, 's> = Query<
 
 /// Refine the existing conservative camera path against actual static scenery.
 /// This presentation query never supplies movement or gameplay collision.
+#[allow(clippy::too_many_arguments)]
 pub fn scenery_clearance(
     mut ray_cast: MeshRayCast,
     mut stats: ResMut<SceneryCameraStats>,
@@ -105,6 +107,7 @@ pub fn scenery_clearance(
     ),
     mut pawn: Query<(&Transform, &mut Visibility), With<LocalPawn>>,
     mut camera: Query<&mut Transform, (With<Camera3d>, Without<LocalPawn>)>,
+    camera_mode: Option<Res<mode::Mode>>,
 ) {
     if scenery.is_empty() {
         return;
@@ -118,7 +121,10 @@ pub fn scenery_clearance(
     let (Ok((pawn, mut visible)), Ok(mut camera)) = (pawn.single_mut(), camera.single_mut()) else {
         return;
     };
-    let target = pawn.translation;
+    let target = camera_mode
+        .as_ref()
+        .and_then(|mode| mode.focus)
+        .unwrap_or(pawn.translation);
     let delta = camera.translation - target;
     let Ok(direction) = Dir3::new(delta) else {
         return;
@@ -169,6 +175,7 @@ pub fn scenery_clearance(
 #[derive(Resource)]
 pub struct Orbit {
     pub yaw: f32,
+    direction_yaw: f32,
     pitch: f32,
     distance: f32,
     max_distance: f32,
@@ -178,6 +185,7 @@ impl Default for Orbit {
     fn default() -> Self {
         Self {
             yaw: 0.,
+            direction_yaw: 0.,
             pitch: 7.0f32.atan2(12.),
             distance: 7.0f32.hypot(12.),
             max_distance: 22.,
@@ -190,14 +198,15 @@ impl Orbit {
         // Normalize before rotating: per-axis wire clamping would otherwise
         // distort diagonals whose rotated component exceeds one.
         let direction = direction.clamp_length_max(1.);
-        let rotated = Quat::from_rotation_y(self.yaw) * Vec3::new(direction.x, 0., direction.y);
+        let rotated =
+            Quat::from_rotation_y(self.direction_yaw) * Vec3::new(direction.x, 0., direction.y);
         Vec2::new(rotated.x, rotated.z)
     }
     fn adjust(&mut self, motion: Vec2, scroll: f32) {
         self.yaw = (self.yaw - motion.x * 0.004 + std::f32::consts::PI)
             .rem_euclid(std::f32::consts::TAU)
             - std::f32::consts::PI;
-        self.pitch = (self.pitch + motion.y * 0.003).clamp(0.12, 1.35);
+        self.pitch = (self.pitch + motion.y * 0.003).clamp(-1.2, 1.35);
         self.distance = (self.distance - scroll * self.zoom_step).clamp(2.5, self.max_distance);
     }
     pub fn frame_asset(&mut self, radius: f32) {
@@ -207,11 +216,13 @@ impl Orbit {
         self.max_distance = (self.distance * 3.).max(22.);
         self.zoom_step = (radius * 0.1).max(1.);
         self.yaw = 0.5;
+        self.direction_yaw = self.yaw;
     }
     pub fn set_angles(&mut self, yaw: f32, pitch: f32) {
         self.yaw =
             (yaw + std::f32::consts::PI).rem_euclid(std::f32::consts::TAU) - std::f32::consts::PI;
-        self.pitch = pitch.clamp(0.12, 1.35);
+        self.direction_yaw = self.yaw;
+        self.pitch = pitch.clamp(-1.2, 1.35);
     }
     pub fn angles(&self) -> Vec2 {
         Vec2::new(self.yaw, self.pitch)
@@ -227,6 +238,7 @@ impl Orbit {
     pub fn asset_far_plane(&self, radius: f32) -> f32 {
         (self.distance + radius * 4.).max(1000.)
     }
+    #[cfg(test)]
     pub fn eye(&self, target: Vec3) -> Vec3 {
         let offset = self.unobstructed_eye(target) - target;
         let desired = target + offset;
@@ -244,8 +256,10 @@ pub fn controls(
     mut window: Query<(&Window, &mut CursorOptions)>,
     smoke: Option<Res<crate::smoke::Run>>,
     keys: Res<ButtonInput<KeyCode>>,
-    dialogue: Option<Res<crate::dialogue::Ui>>,
-    inventory: Option<Res<crate::inventory::Ui>>,
+    gesture: Option<Res<crate::world_input::Gesture>>,
+    mode: Option<Res<mode::Mode>>,
+    hover: Option<Res<bevy::picking::hover::HoverMap>>,
+    ui_nodes: Query<(), With<Node>>,
 ) {
     if let Some(smoke) = smoke {
         if smoke.world() {
@@ -264,7 +278,11 @@ pub fn controls(
     let Ok((window, mut cursor)) = window.single_mut() else {
         return;
     };
-    let rotating = window.focused && buttons.pressed(MouseButton::Right);
+    let action = mode.as_ref().is_some_and(|m| m.active);
+    let rotating = action
+        || (window.focused
+            && (buttons.pressed(MouseButton::Right) || buttons.pressed(MouseButton::Left))
+            && gesture.as_ref().is_none_or(|g| g.camera_dragging()));
     cursor.visible = !rotating;
     cursor.grab_mode = if rotating {
         CursorGrabMode::Locked
@@ -277,9 +295,12 @@ pub fn controls(
     if keys.just_pressed(KeyCode::Home) {
         *orbit = Orbit::default();
     }
-    let lines = if dialogue.as_ref().is_some_and(|ui| ui.open)
-        || inventory.as_ref().is_some_and(|ui| ui.open)
-    {
+    let over_ui = hover.as_ref().is_some_and(|hover| {
+        hover
+            .get(&bevy::picking::pointer::PointerId::Mouse)
+            .is_some_and(|hits| hits.keys().any(|entity| ui_nodes.contains(*entity)))
+    });
+    let lines = if !action && over_ui {
         0.
     } else {
         scroll.delta.y
@@ -289,9 +310,39 @@ pub fn controls(
                 1.
             }
     };
-    orbit.adjust(if rotating { motion.delta } else { Vec2::ZERO }, lines);
+    // Capturing/releasing the cursor can produce platform warp motion. Do not
+    // interpret that transition frame as a player's look command.
+    orbit.adjust(
+        if rotating && !mode.as_ref().is_some_and(|mode| mode.transitioned) {
+            motion.delta
+        } else {
+            Vec2::ZERO
+        },
+        lines,
+    );
+    let movement = [
+        KeyCode::KeyW,
+        KeyCode::KeyA,
+        KeyCode::KeyS,
+        KeyCode::KeyD,
+        KeyCode::ArrowUp,
+        KeyCode::ArrowDown,
+        KeyCode::ArrowLeft,
+        KeyCode::ArrowRight,
+    ];
+    // Looking around with LMB must not redirect held movement. RMB/action mode
+    // steers immediately; a fresh movement press adopts the current view.
+    if action
+        || (rotating && buttons.pressed(MouseButton::Right))
+        || (!buttons.pressed(MouseButton::Left)
+            && (movement.iter().any(|key| keys.just_pressed(*key))
+                || !movement.iter().any(|key| keys.pressed(*key))))
+    {
+        orbit.direction_yaw = orbit.yaw;
+    }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn follow(
     orbit: Res<Orbit>,
     mut pawn: Query<(&Transform, &mut Visibility), With<LocalPawn>>,
@@ -306,13 +357,9 @@ pub fn follow(
         Option<Res<crate::floating_origin::Frame>>,
         Option<Res<crate::graybox::Graybox>>,
     ),
+    mut mode: Option<ResMut<mode::Mode>>,
 ) {
     if let (Ok((pawn, mut visible)), Ok(mut camera)) = (pawn.single_mut(), camera.single_mut()) {
-        let desired = if network.as_ref().is_some_and(|n| n.camera_test_blocked()) {
-            pawn.translation + Vec3::new(0., 7., -12.)
-        } else {
-            orbit.unobstructed_eye(pawn.translation)
-        };
         let content = |p| {
             if graybox.is_some() {
                 p
@@ -320,27 +367,43 @@ pub fn follow(
                 frame.as_ref().map_or(p, |f| f.content_point(p))
             }
         };
-        let target = content(pawn.translation);
-        let desired_content = content(desired);
-        let eye = if let (Some(gray), Some(frame)) = (&graybox, &frame) {
-            pawn.translation
-                + (desired - pawn.translation)
-                    * gray.camera_fraction(frame, pawn.translation, desired)
-        } else if let Some(chunks) = &chunks {
-            pawn.translation
-                + (desired - pawn.translation)
-                    * chunks
-                        .scene()
-                        .camera_fraction(target.to_array(), desired_content.to_array())
-        } else if let Some(terrain) = terrain {
-            let fraction = terrain
-                .terrain
-                .camera_fraction(target.to_array(), desired_content.to_array());
-            pawn.translation + (desired - pawn.translation) * fraction
-        } else {
-            pawn.translation + (orbit.eye(target) - target)
+        let clearance = |from: Vec3, to: Vec3| {
+            if let (Some(gray), Some(frame)) = (&graybox, &frame) {
+                gray.camera_fraction(frame, from, to)
+            } else if let Some(chunks) = &chunks {
+                chunks
+                    .scene()
+                    .camera_fraction(content(from).to_array(), content(to).to_array())
+            } else if let Some(terrain) = &terrain {
+                terrain
+                    .terrain
+                    .camera_fraction(content(from).to_array(), content(to).to_array())
+            } else {
+                theia_network::world::camera_fraction(
+                    content(from).to_array(),
+                    content(to).to_array(),
+                )
+            }
         };
-        *camera = Transform::from_translation(eye).looking_at(pawn.translation, Vec3::Y);
+        let offset = Vec3::Y * mode.as_ref().map_or(0., |mode| mode.pivot_offset);
+        // Bound the raised aiming pivot below actual static ceilings too.
+        let focus = pawn.translation
+            + offset
+                * if offset.y > 0. {
+                    clearance(pawn.translation, pawn.translation + offset)
+                } else {
+                    1.
+                };
+        if let Some(mode) = &mut mode {
+            mode.focus = Some(focus);
+        }
+        let desired = if network.as_ref().is_some_and(|n| n.camera_test_blocked()) {
+            focus + Vec3::new(0., 7., -12.)
+        } else {
+            orbit.unobstructed_eye(focus)
+        };
+        let eye = focus + (desired - focus) * clearance(focus, desired);
+        *camera = Transform::from_translation(eye).looking_at(focus, Vec3::Y);
         // Avoid filling the view with the local body when a wall forces the eye in.
         *visible = if eye.distance(pawn.translation) < 1.
             || network.is_some_and(|n| !n.connected())
@@ -365,6 +428,138 @@ pub fn sync_camera_global(mut cameras: Query<(&Transform, &mut GlobalTransform),
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn wheel_over_ui_is_consumed_but_world_zoom_works_with_backpack_open() {
+        use bevy::picking::{backend::HitData, hover::HoverMap, pointer::PointerId};
+        let mut app = App::new();
+        app.init_resource::<Orbit>()
+            .init_resource::<ButtonInput<MouseButton>>()
+            .init_resource::<ButtonInput<KeyCode>>()
+            .init_resource::<AccumulatedMouseMotion>()
+            .init_resource::<AccumulatedMouseScroll>()
+            .init_resource::<HoverMap>()
+            .init_resource::<crate::inventory::Ui>()
+            .add_systems(Update, controls);
+        app.world_mut().resource_mut::<crate::inventory::Ui>().open = true;
+        let window = app
+            .world_mut()
+            .spawn((
+                Window {
+                    focused: true,
+                    ..default()
+                },
+                CursorOptions::default(),
+            ))
+            .id();
+        let ui = app.world_mut().spawn(Node::default()).id();
+        app.world_mut()
+            .resource_mut::<HoverMap>()
+            .entry(PointerId::Mouse)
+            .or_default()
+            .insert(ui, HitData::new(window, 0., None, None));
+        app.world_mut()
+            .resource_mut::<AccumulatedMouseScroll>()
+            .delta = Vec2::new(0., 2.);
+        let distance = app.world().resource::<Orbit>().distance;
+        app.update();
+        assert_eq!(app.world().resource::<Orbit>().distance, distance);
+        app.world_mut().resource_mut::<HoverMap>().clear();
+        app.update();
+        assert_eq!(app.world().resource::<Orbit>().distance, distance - 2.);
+    }
+    #[test]
+    fn action_camera_aims_above_player_without_changing_angles_or_zoom() {
+        let mut app = App::new();
+        app.init_resource::<Orbit>()
+            .insert_resource(mode::Mode {
+                requested: true,
+                active: true,
+                pivot_offset: 1.2,
+                ..default()
+            })
+            .add_systems(Update, follow);
+        let position = Vec3::new(0., 0.9, 0.);
+        app.world_mut().spawn((
+            LocalPawn,
+            Transform::from_translation(position),
+            Visibility::Inherited,
+        ));
+        let camera = app
+            .world_mut()
+            .spawn((Camera3d::default(), Transform::default()))
+            .id();
+        let angles = app.world().resource::<Orbit>().angles();
+        let distance = app.world().resource::<Orbit>().distance;
+        app.update();
+        let camera = app.world().get::<Transform>(camera).unwrap();
+        let focus = app.world().resource::<mode::Mode>().focus.unwrap();
+        assert!(focus.distance(position + Vec3::Y * 1.2) < 1e-5);
+        assert!((camera.translation.distance(focus) - distance).abs() < 1e-5);
+        assert_eq!(app.world().resource::<Orbit>().angles(), angles);
+        let player_head = position + Vec3::Y * 0.9;
+        assert!(
+            camera.up().dot(player_head - camera.translation) < -0.2,
+            "The head must project below the centre aiming reticle"
+        );
+    }
+    #[test]
+    fn left_orbit_preserves_held_travel_then_right_drag_steers() {
+        let mut app = App::new();
+        app.init_resource::<Orbit>()
+            .init_resource::<ButtonInput<MouseButton>>()
+            .init_resource::<ButtonInput<KeyCode>>()
+            .init_resource::<AccumulatedMouseMotion>()
+            .init_resource::<AccumulatedMouseScroll>()
+            .add_systems(Update, controls);
+        app.world_mut().spawn((
+            Window {
+                focused: true,
+                ..default()
+            },
+            CursorOptions::default(),
+        ));
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .press(KeyCode::KeyW);
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .clear();
+        app.world_mut()
+            .resource_mut::<ButtonInput<MouseButton>>()
+            .press(MouseButton::Left);
+        app.world_mut()
+            .resource_mut::<AccumulatedMouseMotion>()
+            .delta = Vec2::new(80., 0.);
+        app.update();
+        let orbit = app.world().resource::<Orbit>();
+        assert!(orbit.yaw < -0.3);
+        assert!(orbit.world_direction(Vec2::NEG_Y).distance(Vec2::NEG_Y) < 1e-6);
+        app.world_mut()
+            .resource_mut::<ButtonInput<MouseButton>>()
+            .release(MouseButton::Left);
+        app.world_mut()
+            .resource_mut::<AccumulatedMouseMotion>()
+            .delta = Vec2::ZERO;
+        app.update();
+        assert!(
+            app.world()
+                .resource::<Orbit>()
+                .world_direction(Vec2::NEG_Y)
+                .distance(Vec2::NEG_Y)
+                < 1e-6
+        );
+        app.world_mut()
+            .resource_mut::<ButtonInput<MouseButton>>()
+            .press(MouseButton::Right);
+        app.update();
+        assert!(
+            app.world()
+                .resource::<Orbit>()
+                .world_direction(Vec2::NEG_Y)
+                .distance(Vec2::NEG_Y)
+                > 0.3
+        );
+    }
     #[test]
     fn world_camera_keeps_accelerated_wall_clearance_without_visual_mesh_scans() {
         let mut app = App::new();
@@ -526,7 +721,7 @@ mod tests {
         assert_eq!(orbit.angles().y, 0.9);
         orbit.set_angles(20., -10.);
         assert!(orbit.angles().x.abs() <= std::f32::consts::PI);
-        assert_eq!(orbit.angles().y, 0.12);
+        assert_eq!(orbit.angles().y, -1.2);
     }
     #[test]
     fn asset_framing_keeps_large_models_inside_the_zoom_range() {
@@ -565,11 +760,11 @@ mod tests {
         assert_eq!(orbit.distance, 2.5);
         assert!(orbit.yaw.abs() <= std::f32::consts::PI);
         orbit.adjust(Vec2::new(0., -1e6), -1e6);
-        assert_eq!(orbit.pitch, 0.12);
+        assert_eq!(orbit.pitch, -1.2);
         assert_eq!(orbit.distance, 22.);
-        orbit.yaw = std::f32::consts::FRAC_PI_2;
+        orbit.set_angles(std::f32::consts::FRAC_PI_2, orbit.pitch);
         assert!(orbit.world_direction(Vec2::NEG_Y).distance(Vec2::NEG_X) < 0.00001);
-        orbit.yaw = 0.3;
+        orbit.set_angles(0.3, orbit.pitch);
         let diagonal = orbit.world_direction(Vec2::new(1., -1.));
         let expected = Quat::from_rotation_y(0.3) * Vec3::new(1., 0., -1.).normalize();
         assert!(diagonal.distance(Vec2::new(expected.x, expected.z)) < 0.00001);

@@ -136,9 +136,11 @@ fn actual_controller_slides_around_missing_corner_without_leaving_full_footprint
                     &mut body,
                     feet,
                     Intent {
+                        facing: None,
                         axes: [-1000, -1000],
                         jump: false,
                         sprint: false,
+                        dodge: None,
                     },
                     TickRate::from_hz(hz).unwrap(),
                     Some(&coverage),

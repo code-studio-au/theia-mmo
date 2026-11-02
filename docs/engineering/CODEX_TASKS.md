@@ -1,4 +1,307 @@
+Multi-quest persistence prerequisite qualified, 2 November 2026:
+P3-02 / P3-11 / P3-12 / P3-15 / initial P3-16: [per-quest durable journals](../QUEST_ENGINE.md)
+pass four new and thirty legacy owned PostgreSQL contracts (34 total), exact
+snapshot/receipt/XP restart checks, atomic completion rollback and a lock barrier.
+Events are independent of XP kill recipes and deduplicate per character across
+all affected quests. Legacy data is preserved. All 290 core / 641 network (ten
+skips) / 123 client / five persistence unit tests, formatting and workspace/
+all-target denied-warning Clippy pass. Ordinary Cargo's 34 ignored SQL tests were
+executed explicitly in the owned runner. Preserve
+`build/quest-journal-store-qualified-v1-20261102` (759 source files). Live World,
+owner queues, transport/UI and native adoption remain separate; current playable
+is still the schema-11 reset checkpoint. Next: bounded retained owner integration,
+then World-authorized semantic events. Concurrent story documents remain planning
+material with unresolved production IDs. Commit/push authorized by the user.
+
+Multi-quest journal pure prerequisite qualified, 2 November 2026:
+P3-11 / P3-12 / P3-15 / initial P3-16: [bounded multi-quest proposals](../QUEST_ENGINE.md)
+pass seven journal checks and all 289 core tests, formatting and workspace/
+all-target denied-warning Clippy. Prerequisites unlock on completed turn-in;
+indexed kill/semantic interaction events respect stages, versions and independent
+quest revisions. One occurrence never cascades to a later stage. Snapshot checks
+refuse inconsistent progress. Completion returns a proposal only; durable event
+receipts, rewards, World and native adoption remain separate. Preserve
+`build/quest-journal-core-qualified-v1-20261102` (755 source files). Next: new
+multi-quest SQL ownership/receipt tables, preserving the live legacy quest.
+Changes remain local; the threat draft stays archived.
+
+Quest catalogue prerequisite qualified, 2 November 2026:
+P3-11 / P3-12 / P3-15 / initial P3-16: resumed with the user's authorization to
+expand quests. The [versioned multi-quest catalogue](../QUEST_ENGINE.md) and offline validator
+pass seven focused checks, all 282 core tests, formatting and workspace/all-target
+denied-warning Clippy. Two development quests cover prerequisite links, ordered
+stages and distinct NPC/kill selectors. This is pure offline code, not a new live
+journal or persistence migration. Preserve `build/quest-catalog-qualified-v1-20261102`
+(753 source files). The schema-11 playable remains preserved; the threat World
+draft stays archived. Next: bounded multi-quest progress proposals, then separate
+authority/SQL/transport/native acceptance. Changes remain local.
+
+Creature victim-transfer prerequisites qualified, 2 November 2026:
+P3-07 / P4-08: [authority-only transfer hooks](../CREATURE_THREAT.md) pass six new
+checks and all 275 core tests, formatting and workspace/all-target denied-warning
+Clippy. Preserve leash anchor/deadline, cancel an old windup, retain recovery and
+refuse invalid/late transfers atomically. These Theia hooks remain inactive in
+normal World code. Preserve `build/creature-transfer-core-qualified-v1-20261102`
+(748 source files). Next: prepare atomic World threat/pursuit/retaliation and
+path-revision updates together. The schema-11 playable below remains qualified.
+Changes stay local; no new live switching or network/native claim.
+
+Creature threat arithmetic prerequisite qualified, 2 November 2026:
+P3-07 / P4-08: [bounded damage-threat calculation](../CREATURE_THREAT.md) passes ten
+focused checks and all 269 core tests, formatting and workspace/all-target
+denied-warning Clippy. Empirical 110%/130% thresholds retain explicit Theia
+equality/tie/lifetime policies. This module is inactive in the live World; no
+new victim-switching/native claim. Preserve
+`build/creature-threat-core-qualified-v1-20261102`. The normal schema-11 reset
+playable below remains qualified. Next: atomic opt-in World integration with
+competing-player and encounter-lifecycle checks. Changes remain local.
+
+Creature return-reset playable qualified, 2 November 2026:
+P2-14 / P3-07 / P3-06 / P4-08: [normal schema-11 reset adoption](../CREATURE_RETURN_RESET.md)
+binds twenty-two exact-byte roles. 259 core / 641 network (ten skips) / 123 client /
+49 Python tests, formatting, workspace/all-target denied-warning Clippy and release
+pass. Seven normal OIDC/PostgreSQL native runs pass: passive 35-second melee,
+controls/casting at three sizes and return/reacquire/kill at three sizes. Each
+return run restores the same NPC from 89 to 100 HP, clears combat, reacquires and
+later yields one durable XP grant and one training offer. Exactly one reset and
+two acquisitions; no player death/life change. Passive contact has zero returns
+and resets. GPU diagnostics and combat-event gaps are zero. Actual 1920x1200,
+3440x1440 fullscreen and 1280x720 on Linux RX 7900 XTX / RADV Vulkan / Mesa 26.2.6,
+connected display. Preserve `build/creature-reset-client-qualified-v1-20261102`
+(744 source files) and earlier checkpoints. Injected status cleanup and two-peer
+impaired UDP have separate headless evidence. No native DoT, loot consumption,
+party, Windows or MMO-capacity claim. Next: bounded threat/target transfer before
+population expansion. Changes are local; entries below are historical.
+
+Creature return-reset transport qualified, 2 November 2026:
+P3-07 / P3-06 / P4-08: [encrypted movement/reset observations](../CREATURE_RETURN_RESET.md) pass
+at 20/30/60 Hz with two real peers under delay, jitter, loss, duplication and
+reordering. Moving away causes return and restores the same NPC to maximum
+health, releases combat and preserves the player's life/movement stream. No
+false death, respawn or award occurs. Explicit synthetic inventory and low-HP,
+zero-avoidance fixtures apply; no OIDC/native/persistence claim is made here.
+259 core / 639 network (ten skips) / 123 client tests, formatting and workspace/
+all-target denied-warning Clippy pass. Preserve
+`build/creature-reset-transport-qualified-v1-20261102` (743 source files).
+Next: schema-11 normal bundle and native return/heal acceptance. The schema-10
+playable checkpoint remains preserved. Changes are local.
+
+Creature return-reset World qualified, 2 November 2026:
+P3-07 / P3-06 / P4-08: [opt-in health/effect reset](../CREATURE_RETURN_RESET.md) passes seven focused
+World checks and 259 core / 638 network (ten skips) / 123 client tests, formatting
+and workspace/all-target denied-warning Clippy. Living NPC health restores once
+on Return/Blocked; target effects clear, membership/tag release and old projectile
+contexts remain invalid. Death/respawn is separate. Multi-rate cases use
+20/30/60 Hz; status cleanup uses an explicit trusted Registry injection because
+the current typed catalogue has no DoT ability. Preserve
+`build/creature-reset-world-qualified-v1-20261102`. New-profile encrypted
+observation checks come next; no normal reset manifest/client adoption yet.
+The schema-10 playable checkpoint below remains preserved. Changes are local.
+
+Solo tag-owner playable checkpoint, 2 November 2026:
+P2-14 / P3-04 / P3-09 / P3-10 / P3-11 / P4-08: [normal schema-10 adoption](../CREATURE_CREDIT.md)
+binds twenty-one exact-byte roles and authoritative solo tag-owner XP, accepted-
+quest and training-offer recipients. 259 core / 631 network (ten skips) / 123
+client / 47 Python tests, formatting, workspace/all-target denied-warning Clippy
+and release pass. Seven normal OIDC/PostgreSQL native runs pass: controls/casting
+and full fights at actual 1920x1200, 3440x1440 fullscreen and 1280x720, plus a
+35-second passive check. Full fights have zero returns, one combat entry/exit,
+one durable XP commit and one training offer. Passive contact has zero returns
+and no outgoing attacks. GPU diagnostics and combat-event gaps are zero.
+Linux AMD RX 7900 XTX / RADV Vulkan / Mesa 26.2.6, connected display.
+Preserve `build/creature-credit-client-qualified-v1-20261102` and earlier builds.
+Two-peer recipient routing and owned PostgreSQL restart/replay are separately
+qualified below. Native cases are single-player; loot consumption, parties,
+shared eligibility, native Windows and MMO capacity remain unqualified.
+Next: bounded encounter threat/reset before population expansion. Changes are
+local. Entries below record historical checkpoints and their stated limits.
+
+Solo credit durability qualified, 2 November 2026:
+P3-09 / P3-10 / P3-11 / P4-08: [public World plus owned PostgreSQL](../CREATURE_CREDIT.md)
+confirms first tag-owner XP 25 / accepted-quest count 1 / one training claim;
+the final hitter receives 0 / 0 / 0. SQL locking prevents acknowledgement while
+fixed simulation steps advance. Replays do not duplicate; wrong-character replay
+refuses. Recipient state and receipts survive PostgreSQL process restart with
+fsync/synchronous_commit/full_page_writes on. Explicit synthetic account,
+unequipped/no-cost Arcane and trusted quest-acceptance fixtures are used.
+Formatting, workspace/all-target denied-warning Clippy, one server test, build
+and Python compile pass; 259 core / 628 network (ten skips) / 123 client results
+are inherited unchanged. Preserve
+`build/creature-credit-durable-qualified-v1-20261102`. No combined OIDC/native or
+loot-consumption claim. Next: versioned normal manifest/launcher/client adoption.
+Normal manifests still retain last-hit credit. Changes remain local.
+
+Solo-recipient adapters qualified, 2 November 2026:
+P3-09 / P3-10 / P3-11 / P4-08: [explicit schema-2 solo tag-owner credit](../CREATURE_CREDIT.md)
+passes six focused recipient checks and actual two-peer impaired encrypted UDP
+at 20/30/60 Hz. All 259 core / 628 network (ten skips) / 123 client tests,
+formatting and workspace/all-target denied-warning Clippy pass. Only the first
+effective hitter receives XP/training-offer work; final hitters receive neither.
+Queue routing is not COMMIT. Preserve
+`build/creature-credit-recipient-qualified-v1-20261102`. Owned PostgreSQL/public
+World acceptance follows. Normal manifests retain last-hit credit; party/shared
+eligibility and general corpse loot remain separate. Changes are local.
+
+Creature-credit World qualified, 2 November 2026:
+P3-09 / P3-10 / P3-11 / P4-08: [opt-in first-effective-hit ownership](../CREATURE_CREDIT.md)
+passes twelve focused World checks and 258 core / 621 network (ten skips) /
+123 client tests, formatting and workspace/all-target denied-warning Clippy.
+Atomic ordinary/typed ability contributions, competing hitters, delayed spell
+reset boundaries, disconnect and NPC/player life cases pass. These use explicit
+fixtures at 20/30/60 Hz; no new-profile encrypted/durable or native claim.
+Preserve `build/creature-credit-world-qualified-v1-20261102`. Normal rewards still
+use last-hit credit. Next: versioned solo-recipient adapters and competing-player
+durability; party/shared credit and per-corpse loot remain future work.
+The normal playable checkpoint below remains preserved. Changes are local.
+
+Creature-credit core prerequisite qualified, 2 November 2026:
+P3-09 / P3-10 / P3-11 / P4-08: [bounded first-effective-hit ledger](../CREATURE_CREDIT.md)
+passes eight focused checks, all 258 core tests, formatting and workspace/all-target
+denied-warning Clippy. Ownership and contribution facts are separate from future
+XP/quest/loot eligibility and durability. Exact source/proof:
+`build/creature-credit-core-qualified-v1-20261102`. This is inactive pure core;
+normal rewards retain last-hit credit. Next: opt-in atomic World integration and
+competing-player/reset tests. The playable checkpoint below remains preserved.
+
+Normal combat-membership playable checkpoint, 2 November 2026:
+P2-14 / P3-04 / P3-06 / P3-07: [normal PL02 adoption](../COMBAT_MEMBERSHIP.md) adds a
+schema-9 twenty-role bundle and an authoritative “In combat” / “Out of combat”
+health-panel indicator. 250 core / 609 network (ten skips) / 123 client / 45 Python
+checks, formatting, workspace/all-target denied-warning Clippy and release pass.
+Seven normal OIDC/PostgreSQL native runs pass: controls/casting and full fights
+at actual 1920x1200, 3440x1440 fullscreen and 1280x720, plus 35 seconds of passive
+melee. Each fight enters and exits combat, has zero returns, one durable XP commit
+and one loot offer. Passive melee has one entry, zero exits and zero returns.
+Combat/peace glyphs render; GPU diagnostics and combat-event gaps are zero.
+Linux AMD RX 7900 XTX / RADV Vulkan / Mesa 26.2.6, connected display.
+Preserve `build/combat-membership-client-qualified-v1-20261102` and earlier builds.
+No gameplay permission consumer is gated yet; loot claim, native Windows and MMO
+capacity are not qualified. Next: first-effective-hit tag and credit interfaces.
+Changes remain local. Entries below are historical checkpoints.
+
+Combat-membership transport qualified, 2 November 2026:
+P1-08 / P3-04 / P3-06 / P3-07: [PL02 owner-private life/combat observations](../COMBAT_MEMBERSHIP.md)
+pass 250 core / 606 network (ten skips) / 123 client tests, formatting and
+workspace/all-target denied-warning Clippy. Six codec tests, two actual encrypted
+UDP tests and a critical-queue check cover exact policy/life binding, prediction
+barriers, owner isolation, kill release, version mismatch and full/closed queues.
+New-mode 20/30/60 Hz impaired two-peer evidence uses explicit low-health and
+zero-avoidance special fixtures with synthetic admitted inventory. Preserve
+`build/combat-membership-transport-qualified-v1-20261102` and earlier checkpoints.
+Normal manifest/launcher/client HUD and OIDC/PostgreSQL/native adoption are next;
+no gameplay consumer is gated yet. The normal playable checkpoint below remains.
+
+## P2-12 / P3-06 / P3-07 / P3-09 — qualified ability and engagement slice
+
+Ability damage and melee engagement checkpoint, 2 November 2026:
+[Normal ability-damage adoption](../CLASSIC_ABILITY_DAMAGE.md) uses the nineteen-role schema-8 bundle,
+CE08, separately resolved Sword Slash and Arcane Bolt, and bounded typed combat
+labels/effects. The wolf's 30-second allowance now refreshes on valid visible
+melee contact; its captured 35 m hard leash, LOS grace and blocked-path resets
+remain. This refresh rule and current coefficients are explicit Theia policies.
+243 core / 588 network (ten skips) / 123 client / 43 Python checks, formatting,
+workspace/all-target denied-warning Clippy and release pass. Seven normal
+OIDC/PostgreSQL native runs pass: controls/casting and complete fights at actual
+1920x1200, 3440x1440 fullscreen and 1280x720, plus a 35-second passive melee check.
+All fights have zero returns, one typed ability killing hit, one durable XP commit
+and one loot offer; the passive check has one acquisition and zero returns.
+Zero GPU diagnostics and combat event gaps. Linux AMD RX 7900 XTX / RADV Vulkan,
+connected display; no native Windows, loot-claim or MMO-capacity claim.
+Preserve `build/classic-ability-client-qualified-v1-20261102` and earlier builds.
+Derived gear/class stats, resistance/absorption, ranged leash refresh and full
+threat/evade/reset remain. Next: central combat membership and credit interfaces.
+Changes remain local. Dated entries below describe earlier checkpoints.
+
+## Ordinary melee playable checkpoint — 1 November 2026
+
+P2-11 / P2-12 / P3-06 / P3-08 / P3-09: normal schema-7 manifest, launcher,
+server/client loading, CE07 identity and bounded ordinary combat presentation
+are adopted. 224 core / 556 network (ten skips) / 118 client / 41 Python checks,
+workspace Clippy, formatting, release and six normal OIDC/PostgreSQL native runs
+pass. Preserve `build/classic-white-client-qualified-v1-20261101`.
+[Exact behavior and native limits](../CLASSIC_ATTACK_TABLES.md).
+Next: ability/spell starting damage and category-specific outcomes, followed by
+actual gear/class/level stat derivation. Keep physical/ordinary reference rules
+separate from generic ability Hit/Miss/Deflect fixtures. P3-17/18 stay unspecified.
+Inactive ability starting recipes now pass 231 core / 556 network (ten skips) /
+118 client tests and workspace Clippy. Preserve
+`build/classic-ability-starting-qualified-v1-20261101`;
+[scope and next acceptance](../CLASSIC_ABILITY_DAMAGE.md). Implement separate spell
+landing/conditional critical and main-hand-special policies before live adoption.
+[Spell landing/conditional critical](../CLASSIC_SPELL_DAMAGE.md) now passes
+235 core tests and workspace Clippy as an inactive numerical prerequisite.
+Older sections below record historical prerequisite acceptance.
+
+## Ordinary melee outcomes — World qualified, transport next
+
+P2-11 / P2-12 / P3-06 / P3-09: [ordinary table, rates, amounts and World](../CLASSIC_ATTACK_TABLES.md)
+now pass 224 core / 539 network (ten skips) / 115 client tests, formatting and
+workspace Clippy. Exact source/proof: `build/classic-white-world-qualified-v1-20261101`.
+Keep the normal-physical playable checkpoint below. CE07 and Renet now also pass
+224 core / 551 network / 115 client full regression (ten skips), including actual
+impaired two-peer UDP, owner privacy/continuity and backpressure. Preserve
+`build/classic-white-transport-qualified-v1-20261101`. Implement normal
+manifest/launcher/client and native acceptance next. Do not equate the
+candidate template/rate policies with full class/gear statistics or every Classic
+formula; lower-level critical targets, special/spell tables, control/disarm state,
+absorption/resistance and aura modifiers remain explicit gaps. P3-17/18 stay open.
+
+## Shared physical damage checkpoint — 1 November 2026
+
+P2-11 / P2-12 / P3-06 / P3-08 / P3-09 now have normal application and native
+physical-result adoption: schema-6 exact-byte manifest, matching server/client
+profiles and identity, white outgoing/red incoming damage labels, sword cues and
+creature reactions. Preserve `build/classic-damage-client-qualified-v1-20261101`.
+189 core / 514 network (ten skips) / 115 client / 39 Python checks, workspace
+Clippy, formatting and release pass. Six logged-in native runs at three actual
+sizes pass with zero GPU diagnostics; normal wolf fights prove durable XP and
+loot offers. The physical template is level 1 and normal-contact-only; abilities
+still use their existing damage fixture. Next: category-specific outcome tables
+and eligibility, before full stat derivation and spell coefficient adoption.
+P3-17/18 remain unspecified. Earlier entries below are historical.
+
+## Classic ability rules checkpoint — 1 November 2026
+
+P2-11 / P2-12 / P3-06 / P3-08 [ability rules](../CLASSIC_ABILITY_RULES.md) now
+pass authority, encrypted impaired UDP and normal logged-in native acceptance.
+Preserve `build/classic-ability-qualified-v1-20261101`. The initial checked
+[damage arithmetic](../CLASSIC_DAMAGE_RESOLUTION.md) passes six new numerical
+fixtures and seven prevention/result checks (169 core tests total). Continue
+category eligibility and actor-stat binding; the bounded candidate definition
+loader now passes seven further tests (176 core total). Continue [shared physical damage authority](../CLASSIC_DAMAGE_AUTHORITY.md):
+reference armour/stats now pass thirteen further checks (189 core total). Next
+the candidate backend configuration passes nine new profile checks (163 network
+library tests). Active World identity and both physical damage directions now
+pass twelve World checks at 20/30/60 Hz and full regression (501 network passes).
+The explicit CE06 result codec now passes seven checks (183 network-library
+tests), strict profile/life/math validation and a 1189-byte maximum batch. Next
+Renet selection, per-recipient privacy/continuity and actual impaired UDP now
+pass at 20/30/60 Hz, including backpressure and existing kill-fact boundaries
+(511 network passes in the full regression). Implement manifest/launcher/server/
+client loading and presentation, then logged-in native acceptance before
+replacing the playable checkpoint. Keep full attack tables and spell
+coefficient adoption as explicit following slices. The strict development prototype demonstrates
+thirteen checks; full damage formulas remain pending. P3-17/18 stay unspecified.
+
+## World-system scope refinement — 1 November 2026
+
+Use [the current world-system assessment](../CLASSIC_WORLD_SYSTEMS_REFERENCE.md)
+for priority, working policies, actual gaps and acceptance. Complete strict
+combat transport/client adoption first. Refine P3-04/06/07/09/10/11/15/16 and
+P4-03/07/08/09/10/11 for combat membership, attack tables, first-tag/shared quest
+credit, bounded spawns/encounters, resource/control rules and corpse recovery.
+Preserve existing development credit/respawn fixtures until replacements pass.
+Use competing-player, life/reset, persistence and actual terrain/navigation
+checks. Recommendations and research claims are not completed task evidence.
+P3-17/P3-18 stay unspecified; actual prerequisites govern overlapping slices.
+
 # Theia MMO — Codex Dependency and Acceptance Register
+
+**Current acceptance amendment, 1 November 2026:** follow
+[THEIA-COMBAT-001](../COMBAT_TARGETING_MOVEMENT_SPEC.md) and its
+[repository migration slices](../MOVEMENT_CAMERA_TARGET.md) for initial controls
+and combat. Earlier hybrid/dodge requirements are deferred. Prior experiment
+results do not complete the new strict-WoW milestone. P3-17/18 remain unspecified.
 
 **Status:** proposed engineering task decomposition. All entries default **NOT STARTED / NOT VERIFIED** until repository audit. The voice session approved the phase/wave structure and decisions but did not verify 112 individual implementation tasks. Dependency chains below are conservative initial proposals; Codex must refine per repository and identify safe parallelism. Missing P3-17/18 are intentionally blocked.
 
@@ -819,3 +1122,13 @@ For each task: inspect existing code first; write a short design and tests; impl
 - Earlier shorthand mapped Phase 3 inventory to stage 9, but detailed enumeration puts inventory at P3-05 and loot at P3-09. Detailed enumeration takes precedence pending review.
 - A spoken total of 88 for phases 1–5 conflicts with 12+14+18+20+24=88 (correct), plus 24 =112.
 - Original 'M1-04' scheduler task ID differs from this document's P1-05 due to differing milestone schemes. Resolve before creating issue IDs.
+
+## User-requested follow-on refinements — 2026-10-31
+
+The user requested perception/chase/leash, range-constrained player/enemy melee
+and magic, travelling magic/arrow projectiles, hit/miss/deflect outcomes, floating
+quest markers, a minimap and an improved HUD using the local Synty HUD sources
+where useful. [Concrete existing-task slices and acceptance](../COMBAT_WORLD_FOLLOWUPS.md)
+refine P2-12/14, P3-06/07/11/12/13/14, P4-03/08 and P5-13/15/19. Continue the
+current grip slice first; imported list order is not a rigid dependency gate.
+These requests do not assign guessed scopes to P3-17/P3-18.

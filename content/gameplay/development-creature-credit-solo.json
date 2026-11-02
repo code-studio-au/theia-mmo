@@ -1,0 +1,7 @@
+{
+  "schema": 2,
+  "id": "theia.dev.creature-credit-solo",
+  "ruleset": "solo_tag_credit_fixture_v1",
+  "maximum_contributors": 32,
+  "recipient": "solo_tag_owner"
+}

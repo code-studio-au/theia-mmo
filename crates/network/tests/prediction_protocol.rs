@@ -23,8 +23,10 @@ fn fixed_size_corrections_round_trip_and_reject_truncation_trailing_flags_and_no
             rate: TickRate::Hz60,
             input: Timeline::new(3, TickRate::Hz60, 90).unwrap().state(),
             pose: Pose {
+                facing: None,
                 feet: GlobalPosition::new([15800.5, 19.125, 8000.25]).unwrap(),
                 motion: Motion::default().snapshot(),
+                dodge: None,
             },
             ready_sequence: 4,
         },

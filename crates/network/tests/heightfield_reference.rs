@@ -113,8 +113,10 @@ fn motion(scene: &StaticScene) -> Vec<serde_json::Value> {
                         &mut body,
                         feet,
                         Intent {
+                            facing: None,
                             axes: if distance < 4. { axes } else { [0, 0] },
                             jump: jump && tick < hz / 4,
+                            dodge: None,
                             sprint: false,
                         },
                         rate,

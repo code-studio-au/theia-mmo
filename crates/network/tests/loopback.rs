@@ -64,9 +64,11 @@ async fn configured_server_rates_replicate_and_move_over_real_connections() {
         })
         .await;
         client.input.send_replace(Intent {
+            facing: None,
             jump: false,
             axes: [1000, 0],
             sprint: false,
+            dodge: None,
         });
         let moved = until(&mut client.state, |s| s.players[0].xz[0] > 1.).await;
         assert_eq!(moved.tick_hz, hz);
@@ -92,14 +94,18 @@ async fn two_clients_authority_disconnect_and_reconnect() {
     let b_id = b.state.borrow().id.unwrap();
     assert_ne!(a_id, b_id);
     a.input.send_replace(Intent {
+        facing: None,
         jump: false,
         axes: [0, -1000],
         sprint: false,
+        dodge: None,
     });
     b.input.send_replace(Intent {
+        facing: None,
         jump: false,
         axes: [1000, 0],
         sprint: false,
+        dodge: None,
     });
     let snapshot = until(&mut a.state, |s| {
         s.players
@@ -212,9 +218,11 @@ async fn reordered_inputs_do_not_reverse_or_refresh_a_stale_intent() {
                 epoch: epoch.wrapping_add(1).max(1),
                 sequence: u64::MAX,
                 intent: Intent {
+                    facing: None,
                     jump: false,
                     axes: [1000, 0],
                     sprint: true,
+                    dodge: None,
                 },
             })
             .unwrap()
@@ -228,9 +236,11 @@ async fn reordered_inputs_do_not_reverse_or_refresh_a_stale_intent() {
                 epoch: u64::from_le_bytes(welcome[12..20].try_into().unwrap()),
                 sequence: 50,
                 intent: Intent {
+                    facing: None,
                     jump: false,
                     axes: [0, 1000],
                     sprint: false,
+                    dodge: None,
                 },
             })
             .unwrap()
@@ -251,9 +261,11 @@ async fn reordered_inputs_do_not_reverse_or_refresh_a_stale_intent() {
                     epoch: u64::from_le_bytes(welcome[12..20].try_into().unwrap()),
                     sequence,
                     intent: Intent {
+                        facing: None,
                         jump: false,
                         axes: [0, -1000],
                         sprint: true,
+                        dodge: None,
                     },
                 })
                 .unwrap()
@@ -291,15 +303,19 @@ async fn authoritative_world_stops_network_movement_at_the_fixed_door() {
     let mut client = connect(address, cert);
     until(&mut client.state, |s| s.players.len() == 1).await;
     client.input.send_replace(Intent {
+        facing: None,
         jump: false,
         axes: [-1000, 0],
         sprint: false,
+        dodge: None,
     });
     until(&mut client.state, |s| s.players[0].xz[0] <= -6.6).await;
     client.input.send_replace(Intent {
+        facing: None,
         jump: false,
         axes: [0, -1000],
         sprint: false,
+        dodge: None,
     });
     let contact = until(&mut client.state, |s| s.players[0].xz[1] <= -2.53).await;
     let door = theia_network::world::PROPS[4];
@@ -353,9 +369,11 @@ async fn terrain_height_is_authoritative_and_mismatched_world_is_rejected() {
     let id = state.borrow().id.unwrap();
     let initial = state.borrow().snapshot.as_ref().unwrap().players[0].clone();
     input.send_replace(Intent {
+        facing: None,
         jump: false,
         axes: [1000, 0],
         sprint: false,
+        dodge: None,
     });
     let later = until(&mut state, |s| {
         s.players
@@ -401,15 +419,19 @@ async fn terrain_solid_stops_persistent_network_input_on_uneven_ground() {
     let mut client = connect_world(address, cert, identity);
     until(&mut client.state, |s| s.players.len() == 1).await;
     client.input.send_replace(Intent {
+        facing: None,
         jump: false,
         axes: [-1000, 0],
         sprint: false,
+        dodge: None,
     });
     until(&mut client.state, |s| s.players[0].xz[0] < -7.6).await;
     client.input.send_replace(Intent {
+        facing: None,
         jump: false,
         axes: [0, -1000],
         sprint: false,
+        dodge: None,
     });
     let contact = until(&mut client.state, |s| s.players[0].xz[1] < -3.34).await;
     assert!((contact.players[0].xz[1] + 3.3445).abs() < 0.001);
@@ -449,9 +471,11 @@ async fn full_tile_coordinates_replicate_beyond_the_old_patch_boundary() {
     until(&mut a.state, |s| s.players.len() == 2).await;
     let id = a.state.borrow().id.unwrap();
     a.input.send_replace(Intent {
+        facing: None,
         jump: false,
         axes: [1000, 0],
         sprint: true,
+        dodge: None,
     });
     let snapshot = until(&mut b.state, |s| {
         s.players.iter().any(|p| p.id == id && p.xz[0] > 22.)

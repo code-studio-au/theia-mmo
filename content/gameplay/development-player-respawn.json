@@ -1,0 +1,6 @@
+{
+  "schema": 1,
+  "id": "theia.dev.player-respawn",
+  "stats": "theia.dev.player-vitals",
+  "delay_ms": 3000
+}

@@ -17,6 +17,11 @@ quinn.workspace = true
 rcgen.workspace = true
 tokio.workspace = true
 ring = "=0.17.14"
+# Already locked versions; seeded once at startup, no OS draws in fixed combat.
+rand = { version = "=0.9.5", default-features = false }
+rand_chacha = "=0.9.0"
+# Engine-independent static navigation, queried only on the dedicated worker.
+landmass = "=0.9.3"
 
 [dev-dependencies]
 # Match the client's shared task pool when testing nested query initialization.

@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "id": "theia.dev.dodge",
+  "distance_metres": 3.0,
+  "duration_ms": 250,
+  "cooldown_ms": 3000
+}

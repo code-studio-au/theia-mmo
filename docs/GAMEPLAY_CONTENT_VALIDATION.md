@@ -1,3 +1,30 @@
+Schema-11 reset adoption qualified, 2 November 2026: the explicit
+`development-gameplay-classic-reset.json` bundle adds the bounded `creature_reset`
+role (twenty-two exact-byte profiles). It requires matching pursuit, solo credit,
+membership and typed combat; older bundles remain unchanged. All 49 Python / 39 validator checks and seven normal native cases pass; [behavior and evidence](CREATURE_RETURN_RESET.md).
+
+# Current solo-credit bundle — 2 November 2026
+
+`content/gameplay/development-gameplay-classic-credit.json` uses schema 10 and
+21 exact-byte roles, adding `creature_credit` to schema 9's membership bundle.
+It requires the explicit schema-2 solo tag-owner recipient policy; ownership-only
+schema 1 is rejected in normal application mode. All role/context, portable
+path, alias, policy version and byte bounds are checked before launch. The
+launcher seals every role and forwards the same staged `--creature-credit` to
+both processes. Identity binds it after membership and before economy wrappers.
+
+37 validator tests and 47 launcher/account/environment Python checks pass.
+The normal schema-10 OIDC/PostgreSQL/native checkpoint is
+`build/creature-credit-client-qualified-v1-20261102`.
+[Behavior, competing-player, durability and native evidence](CREATURE_CREDIT.md).
+Earlier schemas and their snapshots remain available; dated notes below describe
+historical scopes, rather than the current maximum schema/role count.
+
+Current continuation, 2026-10-31: the validator now also supports the opt-in
+[launch-time snapshot handoff](GAMEPLAY_MANIFEST_LAUNCH.md) through `tools/play.py`.
+The original offline tool remains unchanged; the manifest is still not itself an
+authoritative world identity. Notes below describe the initial offline checkpoint.
+
 # Offline gameplay content validation — initial P3-15 slice
 
 Status, 2026-10-30: initial offline validator qualified. Final unchanged-source

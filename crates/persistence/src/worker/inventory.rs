@@ -6,6 +6,7 @@ use theia_core::inventory::{
 };
 use tokio::sync::oneshot;
 pub(super) enum Request {
+    QuestLifecycle(super::quest_lifecycle::Request),
     Vendor(super::vendors::Request),
     Progression(super::progression::Request),
     Quest(super::quests::Request),
@@ -150,6 +151,7 @@ pub(super) fn valid_world(world: [u8; 32]) -> Result<()> {
 impl Request {
     pub(super) async fn run(self, store: &mut Store, status: &mut WorkerStatus) -> Result<()> {
         match self {
+            Self::QuestLifecycle(request) => request.run(store, status).await,
             Self::Vendor(request) => request.run(store, status).await,
             Self::Progression(request) => request.run(store, status).await,
             Self::Quest(request) => request.run(store, status).await,
@@ -248,7 +250,8 @@ pub(super) fn respond<T>(
             | Error::ProgressionCommand(_)
             | Error::QuestMissing
             | Error::QuestConflict
-            | Error::QuestCommand(_),
+            | Error::QuestCommand(_)
+            | Error::QuestLifecycleCommand(_),
         ) => {
             status.inventory_rejected = status.inventory_rejected.saturating_add(1);
             false

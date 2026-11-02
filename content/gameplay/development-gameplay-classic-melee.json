@@ -1,0 +1,19 @@
+{
+  "schema": 5,
+  "id": "theia.dev.gameplay-classic-melee",
+  "revision": 2,
+  "items": "development-equipment-items.json",
+  "abilities": "development-classic-abilities.json",
+  "stats": "development-character-stats.json",
+  "statuses": "development-statuses.json",
+  "creature": "development-creature-deflect-pursuit.json",
+  "dialogue": "development-dialogue.json",
+  "vendor": "development-vendor.json",
+  "rewards": "development-rewards.json",
+  "progression": "development-progression.json",
+  "quest": "development-quest.json",
+  "quest_turn_in_xp": "development-quest-turn-in-xp.json",
+  "creature_retaliation": "development-creature-retaliation.json",
+  "player_respawn": "development-player-respawn.json",
+  "melee_weapons": "development-melee-weapons.json"
+}

@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "theia.dev.damage-numerical-stats-v1",
+  "ruleset": "physical_reference_v1",
+  "player": {
+    "physical": { "level": 60, "armour": 5500, "armour_penetration": 0 },
+    "attack_power": 140,
+    "spell_bonus_damage": 100
+  },
+  "creatures": [
+    {
+      "creature": "theia.dev.training-creature",
+      "physical": { "level": 60, "armour": 5500, "armour_penetration": 0 }
+    }
+  ]
+}

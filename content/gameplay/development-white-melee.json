@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "id": "theia.dev.white-melee-v1",
+  "ruleset": "white_physical_reference_v1",
+  "definitions": "theia.dev.physical-damage-v1",
+  "stats": "theia.dev.physical-damage-stats-v1",
+  "player": {
+    "defense_skill": 5,
+    "critical_bp": 500,
+    "glancing_policy": "melee_reference_v1",
+    "defences": { "dodge_bp": 500, "parry_bp": 0, "block_bp": 0, "block_value": 0 },
+    "weapons": [
+      { "item": "theia.dev.training-sword", "skill": 5, "hit_bonus_bp": 0 }
+    ]
+  },
+  "creature": {
+    "id": "theia.dev.training-creature",
+    "critical_bp": 500,
+    "can_crush": true,
+    "defences": { "dodge_bp": 500, "parry_bp": 0, "block_bp": 0, "block_value": 0 }
+  }
+}

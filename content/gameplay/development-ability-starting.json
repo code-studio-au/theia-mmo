@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "id": "theia.dev.ability-starting-fixture-v1",
+  "ruleset": "ability_starting_fixture_v1",
+  "weapon_definitions": "theia.dev.physical-damage-v1",
+  "recipes": [
+    {
+      "kind": "weapon_special",
+      "ability": "theia.dev.sword-slash",
+      "weapon_attack": "theia.dev.training-sword-swing",
+      "ap_speed": { "kind": "weapon_base" },
+      "weapon_percent_bp": 10000,
+      "flat_bonus": 5
+    },
+    {
+      "kind": "spell",
+      "ability": "theia.dev.arcane-bolt",
+      "minimum": 18,
+      "maximum": 22,
+      "coefficient_bp": 6000
+    }
+  ]
+}

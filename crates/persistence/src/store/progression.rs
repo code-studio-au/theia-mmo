@@ -65,6 +65,30 @@ impl Store {
         Ok(result)
     }
 }
+/// All combined progression transactions take this lock before quest state.
+pub(super) async fn lock_state(
+    transaction: &tokio_postgres::Transaction<'_>,
+    realm: crate::RealmId,
+    binding: Binding,
+    world: [u8; 32],
+    catalog: &ProgressionCatalog,
+) -> Result<State> {
+    let row=bounded(transaction.query_opt("SELECT world_id,profile_hash,revision,experience FROM theia.progression WHERE realm_id=$1 AND character_id=$2 FOR UPDATE",&[&realm.value(),&binding.character.value()])).await?.ok_or(Error::ProgressionMissing)?;
+    checked(&row, world, catalog)
+}
+pub(super) async fn update_state(
+    transaction: &tokio_postgres::Transaction<'_>,
+    realm: crate::RealmId,
+    binding: Binding,
+    before: &State,
+    next: &State,
+) -> Result<()> {
+    let changed=bounded(transaction.execute("UPDATE theia.progression SET revision=$1,experience=$2,updated_at=clock_timestamp() WHERE realm_id=$3 AND character_id=$4 AND revision=$5",&[&(next.revision()as i64),&(next.total()as i32),&realm.value(),&binding.character.value(),&(before.revision()as i64)])).await?;
+    if changed != 1 {
+        return Err(Error::ProgressionData);
+    }
+    Ok(())
+}
 /// Caller owns authorization and COMMIT, and always locks XP before objectives.
 pub(super) async fn apply_experience(
     transaction: &tokio_postgres::Transaction<'_>,
@@ -79,8 +103,7 @@ pub(super) async fn apply_experience(
             theia_core::progression::Error::UnknownCreature,
         ));
     }
-    let row=bounded(transaction.query_opt("SELECT world_id,profile_hash,revision,experience FROM theia.progression WHERE realm_id=$1 AND character_id=$2 FOR UPDATE",&[&realm.value(),&binding.character.value()])).await?.ok_or(Error::ProgressionMissing)?;
-    let state = checked(&row, world, catalog)?;
+    let state = lock_state(transaction, realm, binding, world, catalog).await?;
     let id = event.id.bytes();
     if let Some(receipt)=bounded(transaction.query_opt("SELECT character_id,profile_hash,creature_id,granted,revision,experience FROM theia.experience_receipts WHERE realm_id=$1 AND world_id=$2 AND event_id=$3 FOR SHARE",&[&realm.value(),&world.as_slice(),&id.as_slice()])).await? {
             if receipt.get::<_,uuid::Uuid>(0)!=binding.character.value() || receipt.get::<_,String>(2)!=event.creature.as_str() {return Err(Error::ProgressionConflict);}
@@ -104,10 +127,7 @@ pub(super) async fn apply_experience(
     if changed != 1 {
         return Err(Error::ProgressionConflict);
     }
-    let changed=bounded(transaction.execute("UPDATE theia.progression SET revision=$1,experience=$2,updated_at=clock_timestamp() WHERE realm_id=$3 AND character_id=$4 AND revision=$5",&[&(proposal.state.revision()as i64),&(proposal.state.total()as i32),&realm.value(),&binding.character.value(),&(state.revision()as i64)])).await?;
-    if changed != 1 {
-        return Err(Error::ProgressionData);
-    }
+    update_state(transaction, realm, binding, &state, &proposal.state).await?;
     Ok(ProgressionApplied {
         state: proposal.state,
         granted: proposal.granted,

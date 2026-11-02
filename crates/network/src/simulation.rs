@@ -1,7 +1,9 @@
 //! Server-only fixed-step authority. Inputs never choose timestep, speed or position.
+mod classic;
 pub mod combat;
 pub mod creatures;
 pub mod dialogue;
+mod dodging;
 pub mod progression;
 pub mod quests;
 pub mod rewards;
@@ -33,6 +35,7 @@ pub struct World {
     patrol: Option<creatures::Patrol>,
     patrol_identity: Option<[u8; 32]>,
     quest: Option<std::sync::Arc<crate::quest_wire::Profile>>,
+    quest_lifecycle: Option<std::sync::Arc<crate::quest_lifecycle_wire::Profile>>,
     progression: Option<std::sync::Arc<crate::progression_wire::Profile>>,
     rewards: Option<std::sync::Arc<crate::reward_wire::Profile>>,
     terrain: Option<crate::terrain::Terrain>,
@@ -44,6 +47,8 @@ pub struct World {
     tour_stage: usize,
     tour_started: Option<std::time::Instant>,
     predicted: bool,
+    classic: bool,
+    dodge: Option<std::sync::Arc<crate::dodging::Profile>>,
 }
 struct Actor {
     id: EntityId,
@@ -57,6 +62,8 @@ struct Actor {
     ready_sequence: u64,
     commands: Option<crate::commands::Timeline>,
     selected_target: Option<EntityKey>,
+    facing: Option<theia_core::facing::Facing>,
+    dodge: Option<crate::dodging::Controller>,
 }
 impl Default for World {
     fn default() -> Self {
@@ -89,6 +96,7 @@ impl Default for World {
             patrol: None,
             patrol_identity: None,
             quest: None,
+            quest_lifecycle: None,
             progression: None,
             rewards: None,
             terrain: None,
@@ -100,6 +108,8 @@ impl Default for World {
             tour_stage: 0,
             tour_started: None,
             predicted: false,
+            classic: false,
+            dodge: None,
         }
     }
 }
@@ -115,7 +125,14 @@ impl World {
         self.predicted
     }
     pub fn command(&mut self, id: u64, packet: &crate::prediction_wire::Commands) -> usize {
-        if packet.epoch != self.epoch() {
+        if packet.epoch != self.epoch()
+            || !self.player_alive(id)
+            || (self.dodge.is_none() && packet.commands.iter().any(|c| c.intent.dodge.is_some()))
+            || packet
+                .commands
+                .iter()
+                .any(|c| c.intent.facing.is_some() != self.classic)
+        {
             return 0;
         }
         let Some(actor) = self.players.get_mut(&id) else {
@@ -150,8 +167,10 @@ impl World {
                 rate: self.rate,
                 input: actor.commands.as_ref()?.state(),
                 pose: crate::prediction::Pose {
+                    facing: actor.facing,
                     feet: GlobalPosition::new(feet)?,
                     motion: actor.body.snapshot(),
+                    dodge: actor.dodge.map(|d| d.snapshot()),
                 },
                 ready_sequence: actor.ready_sequence,
             },
@@ -219,6 +238,9 @@ impl World {
         Ok(())
     }
     fn poll_terrain_inner(&mut self, additional: &[GlobalPosition]) {
+        if let Some(combat) = &mut self.combat {
+            combat.poll_pursuit();
+        }
         if self.dev_tour
             && let Some(&id) = self.players.keys().next()
         {
@@ -241,12 +263,17 @@ impl World {
                 self.teleport_development(id, xz);
             }
         }
+        let respawns = self
+            .combat
+            .as_ref()
+            .map_or_else(Vec::new, |c| c.respawn_demands());
         if let Some(runtime) = &mut self.procedural {
             let mut positions: Vec<_> = self.players.values().map(|a| a.position).collect();
             if let Some((_, [x, z])) = self.terrain_teleport {
                 positions.push(GlobalPosition::new([x, 0., z]).unwrap());
             }
             positions.extend_from_slice(additional);
+            positions.extend(respawns);
             if let Some(patrol) = &self.patrol {
                 positions.push(patrol.home());
             }
@@ -264,6 +291,9 @@ impl World {
                         p[1] += f64::from(crate::world::PAWN_Y);
                         actor.position = GlobalPosition::new(p).unwrap();
                         actor.body.reset(actor.intent.jump);
+                        if let Some(dodge) = &mut actor.dodge {
+                            dodge.cancel();
+                        }
                         actor.ready = Some(Default::default());
                         if let Some(commands) = &actor.commands {
                             let stream = commands
@@ -312,6 +342,7 @@ impl World {
                     }
                     let p = frame.to_local(a.position)?.metres();
                     Some(Player {
+                        facing: a.facing,
                         id: a.id.value(),
                         xz: [p[0], p[2]],
                         y: p[1],
@@ -331,10 +362,36 @@ impl World {
                 actor.input_tick = applied.fresh_tick;
                 actor.applied_sequence = applied.applied_sequence;
             }
+            let request = actor.intent.dodge;
+            let alive = self
+                .combat
+                .as_ref()
+                .is_none_or(|c| c.player_alive(actor.id.value()));
+            if !alive {
+                actor.intent = Intent::default();
+            }
+            if alive && let Some(facing) = actor.intent.facing {
+                actor.facing = Some(facing);
+            }
             if actor.commands.is_none() && self.tick - actor.input_tick > timeout {
                 actor.intent = Intent::default();
             }
             let Some(patch) = terrain.patch(actor.position) else {
+                if let Some(dodge) = &mut actor.dodge {
+                    dodge
+                        .advance(
+                            self.dodge.as_ref().unwrap(),
+                            self.rate,
+                            self.tick,
+                            request,
+                            theia_core::dodge::Gate {
+                                alive,
+                                grounded: actor.body.grounded(),
+                                terrain_ready: false,
+                            },
+                        )
+                        .expect("Bound fixed-step dodge authority");
+                }
                 continue;
             };
             let centre = patch.frame.to_local(actor.position).unwrap().metres();
@@ -352,16 +409,53 @@ impl World {
                     .filter(|id| actor.ready.as_ref().is_none_or(|ready| ready.contains(id))),
             )
             .expect("Bounded procedural patch coverage");
+            let movement =
+                actor
+                    .dodge
+                    .as_mut()
+                    .map_or(crate::dodging::Movement::Ordinary, |dodge| {
+                        dodge
+                            .advance(
+                                self.dodge.as_ref().unwrap(),
+                                self.rate,
+                                self.tick,
+                                request,
+                                theia_core::dodge::Gate {
+                                    alive,
+                                    grounded: actor.body.grounded(),
+                                    terrain_ready: coverage
+                                        .contains(patch.frame.to_global(start).unwrap()),
+                                },
+                            )
+                            .expect("Bound fixed-step dodge authority")
+                            .movement
+                    });
             let before = actor.body;
-            match crate::kinematic::advance_development(
-                &patch.scene,
-                &mut actor.body,
-                start,
-                actor.intent,
-                self.rate,
-                Some(&coverage),
-                terrain.speed,
-            ) {
+            let mut intent = actor.intent;
+            intent.dodge = None;
+            intent.facing = None;
+            let result = match movement {
+                crate::dodging::Movement::None => continue,
+                crate::dodging::Movement::Ordinary => crate::kinematic::advance_development(
+                    &patch.scene,
+                    &mut actor.body,
+                    start,
+                    intent,
+                    self.rate,
+                    Some(&coverage),
+                    terrain.speed,
+                ),
+                crate::dodging::Movement::Dodge(step) => crate::kinematic::advance_dodge(
+                    &patch.scene,
+                    &mut actor.body,
+                    start,
+                    intent,
+                    self.rate,
+                    Some(&coverage),
+                    step,
+                ),
+            };
+            match result {
                 Ok(feet) => {
                     let p = feet.metres();
                     let feet_global = patch.frame.to_global(feet).unwrap();
@@ -375,10 +469,16 @@ impl World {
                             .unwrap();
                     } else {
                         actor.body = before;
+                        if let Some(dodge) = &mut actor.dodge {
+                            dodge.cancel();
+                        }
                     }
                 }
                 Err(_) => {
                     actor.body = before;
+                    if let Some(dodge) = &mut actor.dodge {
+                        dodge.cancel();
+                    }
                     self.movement_recoveries += 1;
                     if let Some(commands) = &actor.commands {
                         let stream = commands
@@ -607,12 +707,24 @@ impl World {
             let identity = self.quest.as_ref().map_or(identity, |p| {
                 crate::quest_wire::profile_identity(identity, p.hash())
             });
+            let identity = self.quest_lifecycle.as_ref().map_or(identity, |p| {
+                crate::quest_lifecycle_wire::profile_identity(identity, p.hash())
+            });
             let identity = self.dialogue.as_ref().map_or(identity, |d| {
                 crate::dialogue::profile_identity(identity, d.profile.hash(), d.placement)
             });
-            return self.vendor.as_ref().map_or(identity, |v| {
+            let identity = self.vendor.as_ref().map_or(identity, |v| {
                 crate::vendor_wire::profile_identity(identity, v.hash())
             });
+            let identity = self
+                .dodge
+                .as_ref()
+                .map_or(identity, |d| crate::dodging::profile_identity(identity, d));
+            return if self.classic {
+                crate::classic::profile_identity(identity)
+            } else {
+                identity
+            };
         }
         self.chunks.as_ref().map_or_else(
             || {
@@ -722,6 +834,11 @@ impl World {
                     .expect("Validated world anchor"),
                 applied_sequence: 0,
                 selected_target: None,
+                facing: self.classic.then(theia_core::facing::Facing::default),
+                dodge: self
+                    .dodge
+                    .as_ref()
+                    .map(|profile| crate::dodging::Controller::new(profile, self.rate, self.tick)),
                 commands: self
                     .predicted
                     .then(|| crate::commands::Timeline::new(1, self.rate, self.tick).unwrap()),
@@ -747,6 +864,10 @@ impl World {
                 .metres();
             p[1] += f64::from(crate::world::PAWN_Y);
             self.players.get_mut(&id).unwrap().position = GlobalPosition::new(p)?;
+        }
+        if !self.initialize_player_life(id) {
+            self.players.remove(&id);
+            return None;
         }
         Some(id)
     }
@@ -809,7 +930,11 @@ impl World {
                 return false;
             }
         }
+        let changed = actor.selected_target != target;
         actor.selected_target = target;
+        if changed && let Some(combat) = &mut self.combat {
+            combat.stop_autoattack(actor_id, self.tick);
+        }
         true
     }
     pub fn remove_development_target(&mut self, key: EntityKey) -> bool {
@@ -818,7 +943,10 @@ impl World {
             self.patrol = None;
         }
         let removed = self.retire_target(key);
-        let forgotten = self.combat.as_mut().is_some_and(|c| c.forget(key));
+        let forgotten = self
+            .combat
+            .as_mut()
+            .is_some_and(|c| c.forget(key, self.tick));
         removed || forgotten || patrol
     }
     fn retire_target(&mut self, key: EntityKey) -> bool {
@@ -845,7 +973,10 @@ impl World {
             targets: self
                 .targets
                 .values()
-                .filter(|target| crate::targeting::relevant(actor.position, target.position))
+                .filter(|target| {
+                    (self.classic && actor.selected_target == Some(target.key))
+                        || crate::targeting::relevant(actor.position, target.position)
+                })
                 .copied()
                 .collect(),
         })
@@ -856,10 +987,13 @@ impl World {
             dialogue.leave(id);
         }
         if let Some(combat) = &mut self.combat {
-            combat.leave(id);
+            combat.leave(id, self.rate);
         }
     }
     pub fn input(&mut self, id: u64, input: Input) -> bool {
+        if !self.player_alive(id) {
+            return false;
+        }
         if self.predicted {
             return false;
         }
@@ -869,6 +1003,8 @@ impl World {
         if input.version != VERSION
             || input.epoch != self.epoch.value()
             || !input.intent.valid()
+            || input.intent.dodge.is_some()
+            || input.intent.facing.is_some()
             || input.sequence <= actor.applied_sequence
         {
             return false;
@@ -879,6 +1015,7 @@ impl World {
         true
     }
     pub fn step(&mut self) -> Snapshot {
+        self.advance_player_lives(self.tick.checked_add(1).expect("Simulation tick exhausted"));
         let before = self.combat.as_ref().map(|_| {
             self.players
                 .iter()
@@ -887,17 +1024,22 @@ impl World {
         });
         let snapshot = self.step_movement();
         self.advance_patrol();
+        self.advance_creature_credit();
+        self.advance_creature_reset();
         if let Some(before) = before {
             self.advance_combat(before);
         }
         self.sync_patrol_life();
+        self.advance_combat_membership();
+        self.advance_creature_credit();
         self.advance_dialogue();
         if !self.targets.is_empty() {
             for actor in self.players.values_mut() {
                 if actor.selected_target.is_some_and(|key| {
                     self.targets.get(&key.entity.value()).is_none_or(|target| {
                         target.key != key
-                            || !crate::targeting::relevant(actor.position, target.position)
+                            || (!self.classic
+                                && !crate::targeting::relevant(actor.position, target.position))
                     })
                 }) {
                     actor.selected_target = None;
@@ -1047,6 +1189,7 @@ impl World {
                         .expect("Bounded snapshot frame")
                         .metres();
                     Player {
+                        facing: actor.facing,
                         id: actor.id.value(),
                         xz: [p[0], p[2]],
                         y: p[1],
@@ -1093,9 +1236,11 @@ mod tests {
             epoch: world.epoch(),
             sequence,
             intent: Intent {
+                facing: None,
                 jump: false,
                 axes,
                 sprint: false,
+                dodge: None,
             },
         }
     }

@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "id": "theia.dev.creature-threat",
+  "ruleset": "classic_damage_threat_empirical_v1",
+  "maximum_participants": 32,
+  "melee_transfer_basis_points": 11000,
+  "ranged_transfer_basis_points": 13000
+}

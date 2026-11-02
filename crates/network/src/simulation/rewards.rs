@@ -41,8 +41,9 @@ impl World {
     pub fn reward_profile(&self) -> Option<&Arc<Profile>> {
         self.rewards.as_ref()
     }
-    /// Last-hit credit is an explicit development policy. The source must still
-    /// be a live admitted player; static targets and stale creature lives reject.
+    /// Older modes retain last-hit development credit. Explicit solo credit
+    /// resolves the retained tag owner; static/stale creature lives refuse.
+    /// These remain nonrepeatable training offers, not general corpse loot.
     pub fn reward_opportunities(&self, events: &[Event]) -> Result<Vec<Opportunity>> {
         let Some(profile) = &self.rewards else {
             return Ok(Vec::new());
@@ -52,16 +53,10 @@ impl World {
         };
         let mut result = Vec::new();
         for event in events {
-            let Event::Damage {
-                actor,
-                target,
-                remaining: 0,
-                ..
-            } = event
-            else {
+            let Some((actor, target)) = self.kill_recipient(event)? else {
                 continue;
             };
-            if *target != patrol.key || self.entity_key(actor.entity.value()) != Some(*actor) {
+            if target != patrol.key || self.entity_key(actor.entity.value()) != Some(actor) {
                 continue;
             }
             for definition in profile
@@ -70,7 +65,7 @@ impl World {
                 .filter(|d| d.creature() == patrol.definition())
             {
                 let opportunity = Opportunity {
-                    actor: *actor,
+                    actor,
                     reward: definition.id().clone(),
                 };
                 if result.contains(&opportunity) {

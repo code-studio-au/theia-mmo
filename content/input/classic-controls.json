@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "turn_degrees_per_second": 180.0,
+  "targeting": {"prefer_front": true, "maximum_distance_metres": null},
+  "bindings": {
+    "forward": "KeyW",
+    "backward": "KeyS",
+    "turn_left": "KeyA",
+    "turn_right": "KeyD",
+    "strafe_left": "KeyQ",
+    "strafe_right": "KeyE",
+    "jump": "Space",
+    "run_modifier": "ShiftLeft"
+  }
+}

@@ -53,9 +53,11 @@ impl Reader<'_> {
         ];
         let flags = self.take::<1>()?[0];
         let value = Intent {
+            facing: None,
             axes,
             sprint: flags & 1 != 0,
             jump: flags & 2 != 0,
+            dodge: None,
         };
         if flags > 3 || !value.valid() {
             return Err("Invalid prediction intent");
@@ -69,10 +71,12 @@ impl Commands {
             || self.stream_epoch == 0
             || self.commands.is_empty()
             || self.commands.len() > MAX_COMMANDS
-            || self
-                .commands
-                .iter()
-                .any(|c| c.sequence == 0 || !c.intent.valid())
+            || self.commands.iter().any(|c| {
+                c.sequence == 0
+                    || !c.intent.valid()
+                    || c.intent.dodge.is_some()
+                    || c.intent.facing.is_some()
+            })
             || self
                 .commands
                 .windows(2)
@@ -129,7 +133,13 @@ impl Commands {
 impl Corrected {
     pub fn encode(self) -> Result<Vec<u8>, &'static str> {
         let c = self.state;
-        if !c.valid() || !matches!(self.speed, 1 | 8 | 32) {
+        if !c.valid()
+            || !matches!(self.speed, 1 | 8 | 32)
+            || c.pose.dodge.is_some()
+            || c.input.intent.dodge.is_some()
+            || c.pose.facing.is_some()
+            || c.input.intent.facing.is_some()
+        {
             return Err("Invalid prediction correction");
         }
         let mut out = CORRECTION_TAG.to_vec();
@@ -202,7 +212,12 @@ impl Corrected {
                 actor,
                 rate,
                 input,
-                pose: Pose { feet, motion },
+                pose: Pose {
+                    facing: None,
+                    feet,
+                    motion,
+                    dodge: None,
+                },
                 ready_sequence,
             },
             speed,

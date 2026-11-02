@@ -31,9 +31,11 @@ fn step(world: &mut World, id: u64, seq: u64, axes: [i16; 2], jump: bool) -> Pla
             epoch: world.epoch(),
             sequence: seq,
             intent: Intent {
+                facing: None,
                 axes,
                 sprint: false,
-                jump
+                jump,
+                dodge: None,
             }
         }
     ));

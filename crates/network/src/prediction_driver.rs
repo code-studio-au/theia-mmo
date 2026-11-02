@@ -14,6 +14,8 @@ use std::{
 };
 #[derive(Default, Clone, Debug, serde::Serialize)]
 pub struct Stats {
+    /// Frames held by an initial, dead or unmatched life observation.
+    pub life_waiting_frames: u64,
     pub predicted_steps: u64,
     pub corrections: u64,
     pub replayed_steps: u64,
@@ -32,6 +34,8 @@ pub struct Stats {
     pub max_same_tick_vertical_speed_mps: f64,
     pub same_tick_grounded_mismatches: u64,
     pub same_tick_jump_held_mismatches: u64,
+    pub same_tick_dodge_mismatches: u64,
+    pub same_tick_facing_mismatches: u64,
     /// Inclusive upper bounds below, then one overflow bucket. No sample log.
     pub same_tick_error_buckets: [u64; 8],
     pub pending_readiness_samples: u64,
@@ -81,6 +85,8 @@ impl Stats {
         self.applied_sequence_mismatches += u64::from(error.applied_sequence_mismatch);
         self.input_freshness_mismatches += u64::from(error.freshness_mismatch);
         self.same_tick_samples += 1;
+        self.same_tick_dodge_mismatches += u64::from(error.dodge_mismatch);
+        self.same_tick_facing_mismatches += u64::from(error.facing_mismatch);
         self.max_same_tick_error_metres = self.max_same_tick_error_metres.max(error.metres);
         self.max_same_tick_horizontal_metres = self
             .max_same_tick_horizontal_metres
@@ -98,6 +104,10 @@ impl Stats {
 }
 #[derive(Default)]
 pub struct Driver {
+    classic_source: Option<[u8; 32]>,
+    dodge: Option<([u8; 32], std::sync::Arc<crate::dodging::Profile>)>,
+    life_required: bool,
+    life_held: bool,
     history: Option<History>,
     accepted: Option<(u64, u64, u64)>,
     recent: VecDeque<Command>,
@@ -113,6 +123,39 @@ pub struct Driven {
     pub reset: bool,
 }
 impl Driver {
+    pub fn with_classic(source_world: [u8; 32], player_life: bool) -> Self {
+        Self {
+            classic_source: Some(source_world),
+            life_required: player_life,
+            ..Self::default()
+        }
+    }
+    /// Fixed movement-profile-2 binding, configured before observing corrections.
+    pub fn with_dodge(
+        source_world: [u8; 32],
+        profile: std::sync::Arc<crate::dodging::Profile>,
+        player_life: bool,
+    ) -> Self {
+        Self {
+            dodge: Some((source_world, profile)),
+            life_required: player_life,
+            life_held: player_life,
+            ..Self::default()
+        }
+    }
+    /// Opt in before the first correction so movement cannot race the initial
+    /// reliable life observation. Legacy clients retain the default driver.
+    pub fn with_player_life() -> Self {
+        Self {
+            life_required: true,
+            life_held: true,
+            ..Self::default()
+        }
+    }
+    pub fn life_held(&self) -> bool {
+        self.life_held
+    }
+
     pub fn pose(&self) -> Option<Pose> {
         self.history.as_ref().map(History::pose)
     }
@@ -128,6 +171,66 @@ impl Driver {
             return Ok(None);
         };
         let c = corrected.state;
+        let classic = if let Some(source) = self.classic_source {
+            if !c.valid()
+                || corrected.speed != 1
+                || self.dodge.is_some()
+                || c.world != crate::classic::profile_identity(source)
+                || c.pose.facing.is_none()
+                || intent.facing.is_none()
+            {
+                return Err("Unbound classic prediction correction or intent");
+            }
+            true
+        } else {
+            if c.pose.facing.is_some() || intent.facing.is_some() {
+                return Err("Classic prediction requires an immutable binding");
+            }
+            false
+        };
+        let dodge = match &self.dodge {
+            Some((source, profile)) => {
+                if corrected.speed != 1 {
+                    return Err("Dodge prediction requires normal movement speed");
+                }
+                Some(crate::dodge_prediction::Binding::from_correction(
+                    *source,
+                    c,
+                    profile.clone(),
+                )?)
+            }
+            None => {
+                if c.pose.dodge.is_some() || intent.dodge.is_some() {
+                    return Err("Dodge prediction requires an immutable binding");
+                }
+                None
+            }
+        };
+        if (self.life_required || state.player_life.is_some())
+            && state
+                .player_life
+                .as_ref()
+                .is_none_or(|life| !life.movement_allowed(&c))
+        {
+            // Keep displaying completed authority corrections, including corpse
+            // gravity, while discarding all pre-death command and clock debt.
+            let reset = !self.life_held;
+            self.life_held = true;
+            self.history = None;
+            self.accepted = None;
+            self.recent.clear();
+            self.clock = None;
+            self.clock_rate = 1.;
+            self.clock_ready = false;
+            self.stats.life_waiting_frames += 1;
+            return Ok(Some(Driven {
+                pose: c.pose,
+                tick: c.input.tick,
+                packet: None,
+                reset,
+            }));
+        }
+        self.life_held = false;
         let ready: BTreeSet<_> = state
             .correction_ready
             .as_ref()
@@ -145,8 +248,14 @@ impl Driver {
                     .collect()
             })
             .unwrap_or_default();
-        let solve = |pose, intent, rate| match patch {
-            Some(patch) => crate::prediction::terrain_step(
+        let solve = |pose, intent, rate, tick| match (patch, &dodge) {
+            (Some(patch), Some(binding)) => {
+                binding.terrain_step_at(patch, &ready, pose, intent, rate, tick, true)
+            }
+            (Some(patch), None) if classic => {
+                crate::classic::terrain_step(patch, &ready, pose, intent, rate)
+            }
+            (Some(patch), None) => crate::prediction::terrain_step(
                 patch,
                 &ready,
                 pose,
@@ -154,7 +263,7 @@ impl Driver {
                 rate,
                 f32::from(corrected.speed),
             ),
-            None => Ok(None),
+            (None, _) => Ok(None),
         };
         let readiness_pending = state
             .chunk_report
@@ -180,7 +289,7 @@ impl Driver {
             });
             self.accepted = Some(key);
             if let Some(history) = &mut self.history {
-                match history.reconcile(c, solve)? {
+                match history.reconcile_at(c, solve)? {
                     Reconciled::Applied {
                         replayed,
                         correction_metres,
@@ -283,7 +392,7 @@ impl Driver {
             reset = true;
             for _ in c.input.tick..target {
                 if matches!(
-                    history.predict(None, c.ready_sequence, solve)?,
+                    history.predict_at(None, c.ready_sequence, solve)?,
                     Predicted::Suspended(_)
                 ) {
                     break;
@@ -293,7 +402,7 @@ impl Driver {
         let report_sequence = c.ready_sequence;
         let mut produced = false;
         for _ in history.input().tick..target {
-            match history.predict(Some(intent), report_sequence, solve)? {
+            match history.predict_at(Some(intent), report_sequence, solve)? {
                 Predicted::Advanced(Some(command)) => {
                     self.stats.predicted_steps += 1;
                     produced = true;

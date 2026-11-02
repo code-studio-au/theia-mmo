@@ -5,9 +5,11 @@ import hashlib
 from http.cookiejar import CookieJar, DefaultCookiePolicy
 import json
 import os
+import re
 from pathlib import Path
 import signal
 import subprocess
+import struct
 import sys
 import time
 import urllib.error
@@ -15,6 +17,7 @@ import urllib.parse
 import urllib.request
 from private_identity import Identity, _LoginForm, _NoRedirect
 from private_postgres import Cluster
+from gpu_validation import check_gpu_diagnostics
 
 
 def browser(url):
@@ -44,7 +47,23 @@ def browser(url):
     with opener.open(callback,timeout=7) as response:assert response.code==200
 
 
-def run(output,identity_sdk,postgres_sdk,client,server_binary=None,modes=None,inventory=False,resources=False,feedback=False,status_effects=False,creatures=False,equipment=False,rewards=False,progression=False,quests=False,dialogue=False,vendors=False):
+def run(output,identity_sdk,postgres_sdk,client,server_binary=None,modes=None,inventory=False,resources=False,feedback=False,status_effects=False,creatures=False,equipment=False,rewards=False,progression=False,quests=False,dialogue=False,vendors=False,gameplay_manifest=None,gameplay_validator=None,lifecycle=False,completion_xp=False,player_life=False,steady_seconds=0,window_size="1280x720",creature_asset=None,fullscreen=False,players=None):
+    if type(steady_seconds) is not int or not 0 <= steady_seconds <= 30:
+        raise ValueError('Steady measurement hold must be 0..30 seconds')
+    if steady_seconds:
+        modes = modes or ['interrupt']
+        if modes != ['interrupt']:
+            raise ValueError('Steady measurement requires only interrupt cleanup')
+    resolution = re.fullmatch(r'(\d+)x(\d+)', window_size)
+    if not resolution or not (640 <= int(resolution[1]) <= 7680 and 480 <= int(resolution[2]) <= 4320):
+        raise ValueError('Invalid qualification window size')
+    completion_xp = completion_xp or player_life
+    lifecycle = lifecycle or completion_xp
+    if completion_xp and not gameplay_manifest:raise ValueError('Completion XP launcher proof requires a rewarded manifest')
+    if gameplay_manifest:
+        inventory=resources=status_effects=creatures=equipment=rewards=progression=quests=dialogue=vendors=True
+        if gameplay_validator is None:raise ValueError('Manifest qualification requires explicit Rust validator')
+    if lifecycle:quests=dialogue=True
     dialogue = dialogue or vendors
     equipment = equipment or vendors
     progression = progression or quests
@@ -72,18 +91,21 @@ def run(output,identity_sdk,postgres_sdk,client,server_binary=None,modes=None,in
                  THEIA_TEST_BROWSER_ISSUER=identity.issuer,THEIA_TEST_BROWSER_REDIRECT=identity.redirect,
                  THEIA_TEST_BROWSER_USER=identity.users[0][0],THEIA_TEST_BROWSER_PASSWORD=identity.users[0][1],
                  BROWSER=f'{sys.executable} {Path(__file__).resolve()} --owned-browser %s',
-                 DISPLAY=':0',XDG_RUNTIME_DIR='/run/user/1000',THEIA_WINDOW_SIZE='1280x720',THEIA_GRAYBOX_AUTOPLAY='1',THEIA_PERFORMANCE_UNCAPPED='1')
+                 DISPLAY=':0',XDG_RUNTIME_DIR='/run/user/1000',THEIA_WINDOW_SIZE=window_size,THEIA_GRAYBOX_AUTOPLAY='1',THEIA_PERFORMANCE_UNCAPPED='1')
+        if steady_seconds:
+            for key in ['VK_INSTANCE_LAYERS','VK_LOADER_DEBUG','WGPU_VALIDATION','WGPU_DEBUG']:env.pop(key,None)
         for mode in modes or ['interrupt','child_failure','pending_login_interrupt']:
             session=Path('build/development-session');before=set(session.glob('renet-*'));owned=[]
+            snapshots_before=set(session.glob('gameplay-*'));snapshots=set();snapshot_hashes={}
             with (output/(mode+'.log')).open('w') as log:
                 native_env={}
                 if inventory:
                     native_env=dict(THEIA_GRAYBOX_QUALIFY=str((output/(mode+'-client')).resolve()),THEIA_GRAYBOX_QUALIFY_SECONDS='120')
                     if rewards:native_env['THEIA_REWARDS_QUALIFY']='1'
                     native_env['THEIA_EQUIPMENT_QUALIFY' if equipment else 'THEIA_INVENTORY_QUALIFY']='A'
-                launcher=subprocess.Popen([sys.executable,'tools/play.py','--account-login',*(['--inventory'] if inventory else []),*(['--equipment'] if equipment else []),*(['--rewards'] if rewards else []),*(['--progression'] if progression else []),*(['--quests'] if quests else []),*(['--dialogue'] if dialogue else []),*(['--vendors'] if vendors else []),*(['--resources'] if resources else []),*(['--status-effects'] if status_effects else []),*(['--creatures'] if creatures else []),*(['--spell-feedback'] if feedback else []),'--binaries',str(binaries.resolve())],
+                launcher=subprocess.Popen([sys.executable,'tools/play.py',*(['--players',str(players)] if players else []),*(['--fullscreen'] if fullscreen else []),*(['--creature-asset',str(creature_asset)] if creature_asset else []),*(['--gameplay-manifest',str(gameplay_manifest),'--gameplay-validator',str(gameplay_validator)] if gameplay_manifest else []),'--account-login',*(['--quest-lifecycle'] if lifecycle else []),*(['--inventory'] if inventory else []),*(['--equipment'] if equipment else []),*(['--rewards'] if rewards else []),*(['--progression'] if progression else []),*(['--quests'] if quests else []),*(['--dialogue'] if dialogue else []),*(['--vendors'] if vendors else []),*(['--resources'] if resources else []),*(['--status-effects'] if status_effects else []),*(['--creatures'] if creatures else []),*(['--spell-feedback'] if feedback else []),'--binaries',str(binaries.resolve())],
                                           env=dict(env,**native_env,THEIA_TEST_BROWSER_DEFER='1' if mode=='pending_login_interrupt' else '0'),stdin=subprocess.PIPE,stdout=log,stderr=subprocess.STDOUT,text=True)
-                launcher.stdin.write('Arden\n');launcher.stdin.flush()
+                launcher.stdin.write('Arden\n' if mode=='interrupt' else '1\n');launcher.stdin.flush()
                 try:
                     deadline=time.monotonic()+40
                     while time.monotonic()<deadline:
@@ -106,26 +128,58 @@ def run(output,identity_sdk,postgres_sdk,client,server_binary=None,modes=None,in
                                     time.sleep(.05);continue
                                 if not report['passed'] or not (report_path.parent/'inventory.png').is_file():
                                     time.sleep(.05);continue
+                                header=(report_path.parent/'inventory.png').read_bytes()[:24]
+                                if len(header)<24:
+                                    time.sleep(.05);continue
+                                assert header[:8]==b'\x89PNG\r\n\x1a\n'
+                                assert struct.unpack_from('>II',header,16)==(int(resolution[1]),int(resolution[2])), 'Actual captured client size differs from requested qualification size'
                             break
                         time.sleep(.05)
                     else:raise TimeoutError('Account launcher admission timeout')
-                    time.sleep(1.5)
+                    time.sleep(1.5 + steady_seconds)
                     ticket_dirs=set(session.glob('renet-*'))-before;assert len(ticket_dirs)==1
                     for directory in ticket_dirs:
                         files=list(directory.iterdir())
                         assert len(files)==(0 if mode=='pending_login_interrupt' else 1)
                         if files:assert files[0].stat().st_mode&0o777==0o600
                     clients=[pid for pid in owned if Path(f'/proc/{pid}/comm').read_text().strip()=='theia-client'];assert len(clients)==(0 if mode=='pending_login_interrupt' else 1)
+                    if gameplay_manifest:
+                        snapshots=set(session.glob('gameplay-*'))-snapshots_before
+                        assert len(snapshots)==1
+                        snapshot=next(iter(snapshots)).resolve()
+                        flags={'--item-catalog','--combat-catalog','--character-stats','--status-catalog','--creature-profile','--dialogue-catalog','--vendor-catalog','--reward-catalog','--progression-catalog','--quest-catalog'}
+                        if completion_xp:flags.add('--quest-turn-in-xp')
+                        if player_life:flags.update(['--creature-retaliation','--player-respawn'])
+                        selected=[]
+                        for pid in owned:
+                            argv=Path(f'/proc/{pid}/cmdline').read_bytes().decode().strip('\0').split('\0')
+                            if lifecycle:assert '--quest-lifecycle' in argv
+                            if players:
+                                if pid in clients:assert Path(argv[argv.index('--player-assets')+1]) == players
+                                else:assert '--player-assets' not in argv
+                            if creature_asset:
+                                if pid in clients:assert Path(argv[argv.index('--creature-asset')+1]) == creature_asset
+                                else:assert '--creature-asset' not in argv
+                            profiles={flag:Path(argv[argv.index(flag)+1]) for flag in flags}
+                            assert all(path.is_relative_to(snapshot) and path.is_file() for path in profiles.values())
+                            hashes={flag:hashlib.sha256(path.read_bytes()).hexdigest() for flag,path in profiles.items()}
+                            selected.append(hashes)
+                        assert all(hashes==selected[0] for hashes in selected)
+                        snapshot_hashes=selected[0]
                     # The native client needs only its private ticket, not SQL credentials.
                     if clients:
                         environment=Path(f'/proc/{clients[0]}/environ').read_bytes()
                         assert b'THEIA_DATABASE_URL=' not in environment
+                        names=[entry.split(b'=',1)[0].upper() for entry in environment.split(b'\0') if entry]
+                        assert not any(name == b'DATABASE_URL' or name.startswith((b'PG',b'THEIA_DATABASE_',b'THEIA_OIDC_',b'THEIA_ACCOUNT_',b'THEIA_TEST_')) for name in names)
+                        assert env['PGPASSFILE'], 'Owned fixture must actually exercise libpq password-file removal'
                     if mode!='child_failure':launcher.send_signal(signal.SIGINT)
                     else:os.kill(clients[0],signal.SIGTERM)
                     code=launcher.wait(timeout=20)
                     assert (code!=0) if mode=='child_failure' else (code==0)
                     assert all(not Path(f'/proc/{pid}').exists() for pid in owned)
                     assert all(not directory.exists() for directory in ticket_dirs)
+                    assert all(not directory.exists() for directory in snapshots)
                     text=server_log.read_text()
                     summary=next(json.loads(line.removeprefix('account_persistence_summary ')) for line in text.splitlines() if line.startswith('account_persistence_summary '))
                     assert not summary['failed'] and summary['worker']['stale_records']==0
@@ -141,7 +195,13 @@ def run(output,identity_sdk,postgres_sdk,client,server_binary=None,modes=None,in
                         assert summary['worker']['inventory_ensures']>=1
                         check=cluster.query(f'SELECT count(*) FROM theia.backpacks WHERE revision={5 if rewards else 4 if equipment else 6};')
                         assert check.returncode==0 and check.stdout.strip()=='1'
-                    if quests and mode!='pending_login_interrupt':
+                    if lifecycle and mode!='pending_login_interrupt':
+                        assert summary['worker']['lifecycle_ensures']>=1
+                        check=cluster.query('SELECT count(*) FROM theia.quest_lifecycles WHERE status=0 AND kill_count=0 AND revision=0;')
+                        assert check.returncode==0 and check.stdout.strip()=='1'
+                        check=cluster.query('SELECT count(*) FROM theia.quest_action_receipts;')
+                        assert check.returncode==0 and check.stdout.strip()=='0'
+                    if quests and not lifecycle and mode!='pending_login_interrupt':
                         assert summary['worker']['quest_ensures']>=1
                         check=cluster.query('SELECT count(*) FROM theia.quest_objectives WHERE kill_count=1 AND revision=1;')
                         assert check.returncode==0 and check.stdout.strip()=='1'
@@ -160,9 +220,10 @@ def run(output,identity_sdk,postgres_sdk,client,server_binary=None,modes=None,in
                     (output/(mode+'-server.log')).write_text(text)
                     assert identity.password not in text and cluster.password not in text
                     logtext=(output/(mode+'.log')).read_text()
+                    gpu_diagnostics=check_gpu_diagnostics(logtext,allow_surface_resize=fullscreen) if clients else 0
                     assert identity.password not in logtext and cluster.password not in logtext
                     if clients:earned_before=True
-                    results.append({'mode':mode,'owned_children':len(owned),'native_clients':len(clients),'tickets_removed':True,'final_commit_before_database_close':bool(clients),'pending_login_cancelled':mode=='pending_login_interrupt','database_owner_closed':True,'client_database_environment_removed':True})
+                    results.append({'mode':mode,'known_surface_resize_diagnostics':gpu_diagnostics,'actual_capture_size':[int(resolution[1]),int(resolution[2])] if inventory and clients else None,'owned_children':len(owned),'native_clients':len(clients),'tickets_removed':True,'final_commit_before_database_close':bool(clients),'pending_login_cancelled':mode=='pending_login_interrupt','database_owner_closed':True,'client_database_environment_removed':True,'native_client_service_environment_checked':bool(clients),'gameplay_snapshot_profiles':snapshot_hashes,'gameplay_snapshots_removed':all(not p.exists() for p in snapshots)})
                 finally:
                     if launcher.poll() is None:
                         launcher.send_signal(signal.SIGINT)
@@ -172,7 +233,7 @@ def run(output,identity_sdk,postgres_sdk,client,server_binary=None,modes=None,in
                     for pid in owned:
                         if Path(f'/proc/{pid}').exists():os.kill(pid,signal.SIGTERM)
     result={'passed':True,'platform':'linux','actual_oidc_and_postgres':True,'browser_command_intercepted':True,'physical_browser_tested':False,
-            'vendors':vendors,'dialogue':dialogue,'quests':quests,'progression':progression,'rewards':rewards,'equipment':equipment,'creatures':creatures,'status_effects':status_effects,'inventory':inventory,'resources':resources,'spell_feedback':feedback,'results':results,**binary_hashes,'owned_services_stopped':identity.server is None and cluster.server is None}
+            'fullscreen':fullscreen,'creature_asset':str(creature_asset) if creature_asset else None,'steady_seconds':steady_seconds,'window_size':window_size,'player_life':player_life,'completion_xp':completion_xp,'quest_lifecycle':lifecycle,'gameplay_manifest':bool(gameplay_manifest),'gameplay_validator_sha256':hashlib.sha256(gameplay_validator.read_bytes()).hexdigest() if gameplay_manifest else None,'vendors':vendors,'dialogue':dialogue,'quests':quests,'progression':progression,'rewards':rewards,'equipment':equipment,'creatures':creatures,'status_effects':status_effects,'inventory':inventory,'resources':resources,'spell_feedback':feedback,'results':results,**binary_hashes,'owned_services_stopped':identity.server is None and cluster.server is None}
     (output/'verification.json').write_text(json.dumps(result,indent=2)+'\n');return result
 
 
@@ -188,10 +249,20 @@ if __name__=='__main__':
     parser.add_argument('--postgres-sdk',type=Path,default=Path('build/postgres-sdk'))
     parser.add_argument('--client',type=Path,default=Path('build/persistence-qualified-v1-20261029/theia-client'))
     parser.add_argument('--server',type=Path,help='Use an already built exact server executable')
+    parser.add_argument('--gameplay-manifest',type=Path)
+    parser.add_argument('--gameplay-validator',type=Path)
     parser.add_argument('--inventory',action='store_true')
     parser.add_argument('--equipment',action='store_true')
     parser.add_argument('--vendors',action='store_true')
     parser.add_argument('--dialogue',action='store_true')
+    parser.add_argument('--steady-seconds',type=int,default=0,help='Hold one normal client for 0..30 extra seconds, uncapped with external validation off; interrupt mode only')
+    parser.add_argument('--fullscreen',action='store_true')
+    parser.add_argument('--creature-asset',type=Path)
+    parser.add_argument('--players',type=Path,help='Explicit development player GLB directory, forwarded only to the client')
+    parser.add_argument('--window-size',default='1280x720')
+    parser.add_argument('--player-life',action='store_true',help='Check all thirteen schema-3 profiles and normal executable startup/cleanup')
+    parser.add_argument('--completion-xp',action='store_true',help='Check schema-2 rewarded bundle startup/cleanup and pre-accept isolation')
+    parser.add_argument('--lifecycle',action='store_true',help='Check explicit mode startup/cleanup; native equipment fixture leaves the quest unaccepted')
     parser.add_argument('--quests',action='store_true')
     parser.add_argument('--progression',action='store_true')
     parser.add_argument('--rewards',action='store_true')
@@ -201,4 +272,4 @@ if __name__=='__main__':
     parser.add_argument('--spell-feedback',action='store_true')
     parser.add_argument('--mode',action='append',choices=['interrupt','child_failure','pending_login_interrupt'])
     args=parser.parse_args()
-    print(json.dumps(run(args.output,args.identity_sdk.resolve(),args.postgres_sdk.resolve(),args.client.resolve(),args.server.resolve() if args.server else None,args.mode,inventory=args.inventory,resources=args.resources,feedback=args.spell_feedback,status_effects=args.status_effects,creatures=args.creatures,equipment=args.equipment,rewards=args.rewards,progression=args.progression,quests=args.quests,dialogue=args.dialogue,vendors=args.vendors),indent=2))
+    print(json.dumps(run(args.output,args.identity_sdk.resolve(),args.postgres_sdk.resolve(),args.client.resolve(),args.server.resolve() if args.server else None,args.mode,inventory=args.inventory,resources=args.resources,feedback=args.spell_feedback,status_effects=args.status_effects,creatures=args.creatures,equipment=args.equipment,rewards=args.rewards,progression=args.progression,quests=args.quests,dialogue=args.dialogue,vendors=args.vendors,gameplay_manifest=args.gameplay_manifest.resolve() if args.gameplay_manifest else None,gameplay_validator=args.gameplay_validator.resolve() if args.gameplay_validator else None,lifecycle=args.lifecycle,completion_xp=args.completion_xp,player_life=args.player_life,steady_seconds=args.steady_seconds,window_size=args.window_size,creature_asset=args.creature_asset.resolve() if args.creature_asset else None,fullscreen=args.fullscreen,players=args.players.resolve() if args.players else None),indent=2))

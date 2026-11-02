@@ -1,5 +1,12 @@
 # Theia MMO — Integrated Engineering Implementation Plan
 
+**Current initial control/combat scope, 1 November 2026:**
+[THEIA-COMBAT-001](../COMBAT_TARGETING_MOVEMENT_SPEC.md) and the
+[migration slices](../MOVEMENT_CAMERA_TARGET.md) supersede earlier hybrid/dodge
+priorities. Reuse existing task IDs and actual prerequisites. Defer dodge/action
+camera; establish classic controls, authoritative manual facing, persistent
+selection and weapon-timed autoattack for the one-hostile milestone.
+
 Approved six phases, **112 planned stages**, ten overlapping waves and twelve continuous workstreams. This is a reconstructed actionable plan from the voice discussion, **not a verified repository audit**. Phase 3 originally listed 18 stages but only 16 were individually named; placeholders are explicitly marked. Phase 4–6 numbering below is a proposed normalization of the approved scope, not a verbatim previously approved numbered list.
 
 ## Phase 1 — 12 stages

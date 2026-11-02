@@ -94,6 +94,16 @@ impl StaticScene {
 
     /// Bounded gameplay sight segment against static world geometry only.
     pub fn line_clear(&self, origin: Vec3, end: Vec3) -> bool {
+        self.segment_clear(origin, end, SOLID)
+    }
+
+    /// Projectile sweeps also stop on terrain; ordinary gameplay sight retains
+    /// its existing solid-only policy. Characters remain nonblocking.
+    pub fn projectile_clear(&self, origin: Vec3, end: Vec3) -> bool {
+        self.segment_clear(origin, end, SOLID | GROUND)
+    }
+
+    fn segment_clear(&self, origin: Vec3, end: Vec3, mask: u32) -> bool {
         if !origin.is_finite() || !end.is_finite() {
             return false;
         }
@@ -115,7 +125,7 @@ impl StaticScene {
                 direction,
                 length,
                 true,
-                &SpatialQueryFilter::from_mask(SOLID),
+                &SpatialQueryFilter::from_mask(mask),
             )
             .is_none()
     }
@@ -378,6 +388,32 @@ mod tests {
         assert!(scene.line_clear(Vec3::X, Vec3::X));
         assert!(!scene.line_clear(Vec3::splat(f32::NAN), Vec3::ZERO));
         assert!(!scene.line_clear(Vec3::X, Vec3::X * 300.));
+    }
+    #[test]
+    fn projectile_segments_stop_on_ground_and_solids_without_changing_sight_or_camera_filters() {
+        let scene = StaticScene::new(vec![
+            PlacedCollider {
+                shape: Collider::cuboid(0.02, 4., 4.),
+                center: Vec3::ZERO,
+                layer: GROUND,
+            },
+            PlacedCollider {
+                shape: Collider::cuboid(0.02, 4., 4.),
+                center: Vec3::X * 4.,
+                layer: SOLID,
+            },
+            PlacedCollider {
+                shape: Collider::cuboid(0.02, 4., 4.),
+                center: Vec3::X * 8.,
+                layer: CAMERA,
+            },
+        ]);
+        assert!(scene.line_clear(Vec3::NEG_X, Vec3::X));
+        assert!(!scene.projectile_clear(Vec3::NEG_X, Vec3::X));
+        assert!(!scene.projectile_clear(Vec3::X * 3., Vec3::X * 5.));
+        assert!(scene.projectile_clear(Vec3::X * 7., Vec3::X * 9.));
+        assert!(!scene.projectile_clear(Vec3::splat(f32::NAN), Vec3::ZERO));
+        assert!(!scene.projectile_clear(Vec3::ZERO, Vec3::X * 300.));
     }
     #[test]
     fn avian_casts_stop_at_thin_walls_allow_retreat_and_filter_layers() {

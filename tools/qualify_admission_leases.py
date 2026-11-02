@@ -11,15 +11,17 @@ from private_identity import Identity
 from private_postgres import Cluster
 
 
-def run(output,identity_sdk,postgres_sdk,inventory=False,rewards=False,progression=False,quests=False,vendors=False):
-    progression = progression or quests
+def run(output,identity_sdk,postgres_sdk,inventory=False,rewards=False,progression=False,quests=False,vendors=False,lifecycle=False,completion_xp=False):
+    lifecycle = lifecycle or completion_xp
+    if lifecycle and quests:raise ValueError('Choose explicit lifecycle or automatic objective')
+    progression = progression or quests or lifecycle
     output.mkdir(mode=0o700,parents=True,exist_ok=False)
     with (output/'build.log').open('w') as log:
         subprocess.run(['cargo','build','--locked','-p','theia-server','--example','admission_lease_qualification','-j2'],stdout=log,stderr=subprocess.STDOUT,check=True,timeout=600)
     binary=Path('target/debug/examples/admission_lease_qualification').resolve()
     child=None
     with Identity(output/'provider',identity_sdk) as identity, Cluster(output/'cluster',postgres_sdk) as cluster:
-        env=dict(cluster.test_environment(),THEIA_TEST_OIDC_ISSUER=identity.issuer,THEIA_TEST_OIDC_CLIENT=identity.client_id,THEIA_TEST_OIDC_REDIRECT=identity.redirect,THEIA_TEST_VENDORS="1" if vendors else "0",THEIA_TEST_INVENTORY="1" if inventory else "0",THEIA_TEST_REWARDS="1" if rewards else "0",THEIA_TEST_PROGRESSION="1" if progression else "0",THEIA_TEST_QUESTS="1" if quests else "0")
+        env=dict(cluster.test_environment(),THEIA_TEST_OIDC_ISSUER=identity.issuer,THEIA_TEST_OIDC_CLIENT=identity.client_id,THEIA_TEST_OIDC_REDIRECT=identity.redirect,THEIA_TEST_VENDORS="1" if vendors else "0",THEIA_TEST_INVENTORY="1" if inventory else "0",THEIA_TEST_REWARDS="1" if rewards else "0",THEIA_TEST_PROGRESSION="1" if progression else "0",THEIA_TEST_QUESTS="1" if quests else "0",THEIA_TEST_QUEST_LIFECYCLE="1" if lifecycle else "0",THEIA_TEST_QUEST_TURN_IN_XP="1" if completion_xp else "0")
         with (output/'rust-errors.log').open('w') as log:
             try:
                 child=subprocess.Popen([str(binary)],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=log,env=env,bufsize=0)
@@ -39,6 +41,8 @@ def run(output,identity_sdk,postgres_sdk,inventory=False,rewards=False,progressi
                         else:
                             assert message['passed']
                             if vendors:assert message['vendor_enabled'] and message['accepted_executing_and_queued_purchases_survive_logout']
+                            if lifecycle:assert message['explicit_lifecycle_enabled'] and message['accepted_executing_and_queued_lifecycle_work_survives_logout']
+                            if completion_xp:assert message['positive_completion_xp_enabled'] and message['completion_xp_awarded']==25
                             if quests:assert message['objective_enabled'] and message['accepted_objective_facts_survive_retirement']
                             result=message
                 assert child.wait(timeout=10)==0
@@ -59,6 +63,8 @@ def run(output,identity_sdk,postgres_sdk,inventory=False,rewards=False,progressi
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('output',type=Path)
+    parser.add_argument('--completion-xp',action='store_true',help='Exercise positive completion XP and atomic owner observation across retirement')
+    parser.add_argument('--lifecycle',action='store_true',help='Exercise explicit quest action/kill ordering and retirement')
     parser.add_argument('--vendors',action='store_true',help='Exercise accepted queued and executing barter retirement')
     parser.add_argument('--quests',action='store_true',help='Exercise coupled XP/objective retirement')
     parser.add_argument('--progression',action='store_true',help='Exercise accepted XP facts and retirement')
@@ -67,4 +73,4 @@ if __name__=='__main__':
     parser.add_argument('--identity-sdk',type=Path,default=Path('build/identity-sdk'))
     parser.add_argument('--postgres-sdk',type=Path,default=Path('build/postgres-sdk'))
     args=parser.parse_args()
-    print(json.dumps(run(args.output,args.identity_sdk.resolve(),args.postgres_sdk.resolve(),inventory=args.inventory,rewards=args.rewards,progression=args.progression,quests=args.quests,vendors=args.vendors),indent=2))
+    print(json.dumps(run(args.output,args.identity_sdk.resolve(),args.postgres_sdk.resolve(),inventory=args.inventory,rewards=args.rewards,progression=args.progression,quests=args.quests,vendors=args.vendors,lifecycle=args.lifecycle,completion_xp=args.completion_xp),indent=2))

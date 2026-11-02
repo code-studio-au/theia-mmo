@@ -45,17 +45,11 @@ impl World {
         let patrol = self.patrol.as_ref().ok_or("Progression creature missing")?;
         let mut facts = Vec::new();
         for event in events {
-            let Event::Damage {
-                actor,
-                target,
-                remaining: 0,
-                ..
-            } = event
-            else {
+            let Some((actor, target)) = self.kill_recipient(event)? else {
                 continue;
             };
-            if *target != patrol.key
-                || self.entity_key(actor.entity.value()) != Some(*actor)
+            if target != patrol.key
+                || self.entity_key(actor.entity.value()) != Some(actor)
                 || profile
                     .profile()
                     .kill_experience(patrol.definition())
@@ -64,9 +58,9 @@ impl World {
                 continue;
             }
             let fact = Opportunity {
-                actor: *actor,
+                actor,
                 event: KillEvent {
-                    id: KillId::from_victim(*target),
+                    id: KillId::from_victim(target),
                     creature: patrol.definition().clone(),
                 },
             };

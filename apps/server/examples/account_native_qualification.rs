@@ -63,9 +63,13 @@ async fn main() -> theia_network::Result<()> {
         None
     };
     let rewards = if std::env::var("THEIA_TEST_REWARDS").is_ok_and(|v| v == "1") {
-        let profile = theia_network::simulation::creatures::Profile::from_json(include_bytes!(
-            "../../../content/gameplay/development-creature-patrol.json"
-        ))?;
+        let player_life = std::env::var("THEIA_TEST_PLAYER_LIFE").as_deref() == Ok("1");
+        let creature = if player_life {
+            std::fs::read(std::env::var("THEIA_TEST_CREATURE_PROFILE")?)?
+        } else {
+            include_bytes!("../../../content/gameplay/development-creature-patrol.json").to_vec()
+        };
+        let profile = theia_network::simulation::creatures::Profile::from_json(&creature)?;
         let navigation = theia_network::navigation::Store::open(
             &PathBuf::from(std::env::var("THEIA_TEST_NAVIGATION")?),
             source.identity(),
@@ -75,16 +79,49 @@ async fn main() -> theia_network::Result<()> {
             &navigation,
             &source,
         )?)?;
-        let abilities = if std::env::var("THEIA_TEST_QUESTS").is_ok_and(|v| v == "1") {
+        let abilities = if std::env::var_os("THEIA_TEST_COMBAT_PROFILE").is_some()
+            || ["THEIA_TEST_QUESTS", "THEIA_TEST_QUEST_LIFECYCLE"]
+                .iter()
+                .any(|key| std::env::var(key).is_ok_and(|v| v == "1"))
+        {
             std::fs::read(std::env::var("THEIA_TEST_COMBAT_PROFILE")?)?
         } else {
             include_bytes!("../../../content/gameplay/development-abilities.json").to_vec()
         };
-        world.enable_combat(
-            &abilities,
-            theia_network::simulation::combat::DEVELOPMENT_HEALTH,
-            theia_network::simulation::combat::DEVELOPMENT_RESPAWN_MS,
-        )?;
+        if player_life {
+            let stats =
+                include_bytes!("../../../content/gameplay/development-character-stats.json");
+            if theia_core::abilities::Catalog::from_json(&abilities)?.schema() >= 3 {
+                world.enable_status_combat(
+                    &abilities,
+                    theia_network::simulation::combat::DEVELOPMENT_HEALTH,
+                    theia_network::simulation::combat::DEVELOPMENT_RESPAWN_MS,
+                    stats,
+                    include_bytes!("../../../content/gameplay/development-statuses.json"),
+                )?;
+            } else {
+                world.enable_resource_combat(
+                    &abilities,
+                    theia_network::simulation::combat::DEVELOPMENT_HEALTH,
+                    theia_network::simulation::combat::DEVELOPMENT_RESPAWN_MS,
+                    stats,
+                )?;
+            }
+            world.enable_player_life(Arc::new(
+                theia_network::player_life_wire::Profile::from_json(
+                    stats,
+                    &creature,
+                    &std::fs::read(std::env::var("THEIA_TEST_RETALIATION_PROFILE")?)?,
+                    &std::fs::read(std::env::var("THEIA_TEST_RESPAWN_PROFILE")?)?,
+                )?,
+            ))?;
+        } else {
+            world.enable_combat(
+                &abilities,
+                theia_network::simulation::combat::DEVELOPMENT_HEALTH,
+                theia_network::simulation::combat::DEVELOPMENT_RESPAWN_MS,
+            )?;
+        }
         let bytes = include_bytes!("../../../content/gameplay/development-rewards.json");
         let profile = theia_persistence::RewardCatalog::from_json(
             bytes,
@@ -106,6 +143,43 @@ async fn main() -> theia_network::Result<()> {
         world.enable_progression(Arc::new(
             theia_network::progression_wire::Profile::from_json(&bytes)?,
         ))?;
+        Some(profile)
+    } else {
+        None
+    };
+    let explicit_quest = std::env::var("THEIA_TEST_QUEST_LIFECYCLE").is_ok_and(|v| v == "1");
+    if explicit_quest && std::env::var("THEIA_TEST_QUESTS").is_ok_and(|v| v == "1") {
+        return Err("Choose one native quest mode".into());
+    }
+    let quest_lifecycle = if explicit_quest {
+        let bytes = include_bytes!("../../../content/gameplay/development-quest.json");
+        let (profile, wire) =
+            if std::env::var("THEIA_TEST_QUEST_TURN_IN_XP").is_ok_and(|v| v == "1") {
+                let recipe =
+                    include_bytes!("../../../content/gameplay/development-quest-turn-in-xp.json");
+                (
+                    theia_persistence::QuestLifecycleCatalog::from_json_with_turn_in_xp(
+                        bytes,
+                        recipe,
+                        progression
+                            .as_ref()
+                            .ok_or("Completion fixture requires progression")?,
+                    )?,
+                    theia_network::quest_lifecycle_wire::Profile::from_json_with_turn_in_xp(
+                        bytes,
+                        recipe,
+                        world
+                            .progression_profile()
+                            .ok_or("Completion fixture requires wire progression")?,
+                    )?,
+                )
+            } else {
+                (
+                    theia_persistence::QuestLifecycleCatalog::from_json(bytes)?,
+                    theia_network::quest_lifecycle_wire::Profile::from_json(bytes)?,
+                )
+            };
+        world.enable_quest_lifecycle(Arc::new(wire))?;
         Some(profile)
     } else {
         None
@@ -144,6 +218,7 @@ async fn main() -> theia_network::Result<()> {
         config,
         shutdown,
         authenticated::GameplayProfiles {
+            quest_lifecycle,
             vendor,
             inventory,
             rewards,

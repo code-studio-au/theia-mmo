@@ -60,6 +60,37 @@ fn generated_route_detours_static_solid_and_rejects_invalid_geometry_before_back
         !(31.7..=96.3).contains(&z)
     }));
     assert!(query.sample(point(id, 60., 0., 64.)).is_err());
+    // The same reviewed adapter must retain its obstacle detour when called on
+    // the dedicated worker, rather than returning a straight-line fallback.
+    use theia_core::identity::{EntityId, EntityKey, WorldEpoch};
+    use theia_network::navigation::worker::{Request, Tag, Worker};
+    let mut worker = Worker::spawn(query, [7; 32]).unwrap();
+    let tag = Tag {
+        creature: EntityKey {
+            epoch: WorldEpoch::new(1).unwrap(),
+            entity: EntityId::new(1).unwrap(),
+        },
+        target: None,
+        revision: 1,
+    };
+    worker
+        .submit(Request {
+            tag,
+            start: point(id, 16., 0., 64.),
+            end: point(id, 112., 0., 64.),
+            submitted: 1,
+            expires: 61,
+        })
+        .unwrap();
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+    let reply = loop {
+        if let Some(reply) = worker.poll().unwrap() {
+            break reply;
+        }
+        assert!(std::time::Instant::now() < deadline);
+        std::thread::sleep(std::time::Duration::from_millis(1));
+    };
+    assert_eq!(reply.current([7; 32], tag, 2).unwrap(), route);
     let mut invalid = floor(128.);
     invalid.positions[0][0] = f32::NAN;
     assert!(bake(id, [7; 32], agent, invalid).is_err());

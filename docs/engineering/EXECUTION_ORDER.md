@@ -1,3 +1,346 @@
+# Current playable checkpoint — 2026-11-01: mouse controls and quest markers
+
+P2-05 / P2-11 / P2-12 / P3-06 / P3-11 / P3-12 / initial P3-14:
+mouse enemy/friendly selection, right-click basic sword/NPC interaction, F and
+five ability slots now accompany committed floating quest markers. Standard Bevy
+picking/UI, bounded hierarchy/intent handling and static occlusion preserve server
+validation. Camera dragging waits for the click threshold and respects UI ownership.
+**91 client tests**, formatting, denied-warning workspace/all-target Clippy and
+**41 Python tests** pass. **14 final native starts have zero GPU diagnostics**,
+including synthetic X11 OS input at 1280×720, 1920×1200 and 3440×1440 fullscreen,
+actual OIDC/PostgreSQL/rejoin/restart, mouse melee and travelling-magic regressions.
+[Behavior, exact evidence and limits](../PLAYER_CONTROLS.md). Matched source/binaries/art/proof:
+`build/world-input-qualified-v1-20261101`. The previous whole-workspace result
+remains 608 passes / 40 explicit skips; it is not a new whole-workspace run.
+Earlier checkpoints remain preserved. No new FPS/capacity or Windows claim.
+Dodge is the next separate authoritative movement slice. Changes remain local;
+no commit or push was made.
+
+# Current playable checkpoint — 2026-10-31: travelling magic
+
+P3-06 / initial P5-15: wand-gated homing magic has finite speed/range/lifetime,
+static collision and server damage/hit outcomes only at impact. Standard Bevy
+shows the travelling bolt. **608 workspace passes / 40 explicit fixture skips in
+115 groups**, formatting, denied-warning workspace/all-target Clippy and
+**41 Python tests** pass. Real OIDC/PostgreSQL/two-client hit/miss/deflect travel,
+legacy melee/miss-feedback and 3440×1440 fullscreen launcher fixture cleanup pass.
+All **12 final native starts have zero GPU diagnostics**.
+[Behavior, exact evidence, launch and limits](../PROJECTILE_TRAVEL.md).
+Matched source/binaries/art/proof: `build/projectile-qualified-v1-20261031`.
+No new FPS, Windows, crowd or streaming-capacity claim. Earlier checkpoints remain.
+Work stopped at the user's request after this slice; all changes remain local,
+uncommitted and unpushed. Remaining requested features stay on the working list.
+
+# Qualified playable checkpoint — 2026-10-31: hit/miss/deflect
+
+P3-06 / initial P4-08: checked server-owned hit/miss/deflect now drives player
+direct damage, versioned encrypted outcomes and actual visible Bevy labels.
+**589 workspace passes / 40 fixture skips in 114 groups**, formatting,
+denied-warning workspace/all-target Clippy and **41 Python tests** pass.
+Real OIDC/PostgreSQL/two-client outcome cases, old melee/grip/life/legacy regressions
+and 3440×1440 fullscreen launcher cleanup pass; all **31 final native starts have
+zero GPU diagnostics**. [Behavior, evidence, launch and limits](../HIT_OUTCOMES.md).
+Matched source/binaries/art/proof: `build/outcomes-qualified-v1-20261031`.
+No new FPS, Windows, crowd or streaming-capacity claim. Earlier checkpoints remain.
+
+# Current playable checkpoint — 2026-10-31: player sword melee
+
+P2-12 / P3-06 / P3-08 / initial P3-14: committed sword equipment now gates a 3 m
+mobile melee action with authoritative windup, range/life/LOS and queue checks.
+Standard Bevy upper-body attacks preserve standing/walking/running locomotion
+locally and remotely. Terrain readiness follows actual terrain pipelines rather
+than cosmetic compilation. [Behavior, proof, launch command and limits](../PLAYER_MELEE.md).
+
+Final unchanged source: **571 workspace passes / 40 explicit fixture skips in
+113 groups**, formatting, denied-warning workspace/all-target Clippy and
+**41 Python tests**. Real two-account OIDC/PostgreSQL/native melee, moving grip,
+rewarded life/restart/backend-loss and legacy regressions pass; normal launcher
+cleanup passes at captured 3440×1440 fullscreen. All 25 final starts record zero
+GPU diagnostics. Quiet one-client near-spawn cadence is **711/713 FPS** at
+1920×1200/3440×1440: [measurement and limits](../PLAYER_MELEE_PERFORMANCE.md).
+Matched source/binaries/art/proof: `build/melee-qualified-v1-20261031`.
+Earlier checkpoints remain preserved. No crowd/streaming or Windows claim.
+Changes remain local. Hit/miss/deflect resolution is the next small slice.
+
+# Performance follow-up — 2026-10-31
+
+Unchanged pursuit checkpoint: one native client with the combat rig and active
+wolf/pursuit records **713 FPS at 1920×1200** and **712 FPS at 3440×1440 fullscreen**
+near spawn. Each uses 15 steady one-second windows, 81 resident chunks and no
+unloads; external validation is off. [Exact evidence and limits](../CREATURE_PURSUIT_PERFORMANCE.md).
+This is not population/streaming capacity. Player sword melee is the next slice.
+
+# Current playable checkpoint — 2026-10-31: enemy perception, pursuit and return
+
+P3-07 / P4-03 / initial P3-08 and P3-14: the opt-in wolf perceives a live player,
+runs on checked navigation, attacks within reach, breaks off at its leash,
+returns to its captured patrol position and resumes the saved route.
+[Behavior, exact native evidence, launch command and limits](../CREATURE_PURSUIT_NATIVE.md).
+
+Final unchanged source: **557 workspace passes / 40 explicit fixture skips in
+113 groups**, formatting, denied-warning workspace/all-target Clippy and
+**41 Python tests**. Actual two-account OIDC/PostgreSQL/native pursuit passes at
+1920×1200; moving sword grip, rewarded life/rejoin/restart/backend-loss and legacy
+1280×720 regressions pass. Normal new-bundle launcher cleanup passes all three
+modes at captured 3440×1440 fullscreen. All final starts have zero GPU diagnostics.
+Matched source/binaries/art/proof: `build/pursuit-qualified-v1-20261031`.
+Earlier checkpoints remain preserved. This is one NPC in an eight-player prototype,
+not population/streamed-navigation capacity. Public NPC attack timing, player
+melee/ranged enemy expansion and native Windows remain open. No standalone FPS
+claim is made in this checkpoint. Changes remain local.
+
+# Headless slice qualified — 2026-10-31: perception, chase, melee and return
+
+P3-07 / P4-03: opt-in NPC perception/chase/attack/leash/return now drives real
+collision/grounding and resumes saved patrol progress. 89 network unit tests,
+workspace denied-warning Clippy, formatting and both content bundles pass.
+Actual encrypted two-peer pursuit passes at 30 Hz; controller/lifecycle tests run
+at 20/30/60 Hz. [Implemented behavior, exact proof and limits](../CREATURE_PURSUIT.md).
+Matched headless source/proof: `build/pursuit-authority-qualified-v1-20261031`.
+Native OIDC/PostgreSQL/wolf qualification is in progress. The runnable grip
+checkpoint stays preserved. No new whole-workspace, FPS/capacity or Windows claim.
+
+# Active slice — 2026-10-31: pursuit policy qualified, server integration next
+
+P3-07 / P4-03: pure perception/chase/attack/leash/return policy passes 108 core
+all-target tests, denied-warning core Clippy and formatting. No gameplay profile
+or server creature consumes it yet. [Contract, exact evidence and next gates](../CREATURE_PURSUIT.md).
+Matched source/proof: `build/pursuit-policy-qualified-v1-20261031`.
+The checked navigation prerequisite and runnable grip checkpoint remain preserved.
+
+# Checked prerequisite — 2026-10-31: bounded creature path worker
+
+P3-07 / P4-03: the reviewed static Landmass query is shared with a dedicated
+background worker. One outstanding request, bounded package/routes, exact actor /
+target-life / destination-revision matching and stale-result expiry pass.
+[Implemented contract, proof and limits](../CREATURE_PATH_WORKER.md).
+
+Final workspace: **539 passes / 40 explicit fixture skips in 112 groups**,
+formatting and denied-warning workspace/all-target Clippy. The server's normal
+dependency graph remains headless; library/engine versions are unchanged.
+Matched source/proof: `build/navigation-worker-qualified-v1-20261031`.
+No creature consumes dynamic paths yet; perception/chase/leash is next.
+The runnable `build/grip-qualified-v1-20261031` remains preserved. No new native,
+FPS, population-capacity or Windows claim is made. Changes remain local.
+
+# Current playable checkpoint — 2026-10-31: equipped sword stance and moving grip
+
+P2-09 / P3-08 / initial P3-14: server-owned public appearance now selects standing
+SwordIdle on local and remote players. While moving, standard Bevy masks retain
+the authored closed grip on eleven right-hand digit joints; the original gait
+keeps the wrist, prop socket, arm, torso and legs. Wand replacement and unequip
+remove the layer; death retains precedence. [Behavior, proof and limits](../EQUIPPED_PLAYER_STANCE.md).
+
+Final workspace: **537 passes / 40 explicit fixture skips in 111 groups**,
+formatting, denied-warning workspace/all-target Clippy and **41 Python tests**.
+Actual native local and remote Walk/Run poses match the source closed fingers and
+original locomotion on every other sampled target. Two-account OIDC/PostgreSQL
+rewarded life/rejoin/restart/backend-loss passes at 1920×1200; legacy rig at
+1280×720; focused replacement, unequip and equipped movement at 1920×1200.
+Normal launcher cleanup passes all three modes at captured 3440×1440 fullscreen.
+All final starts have zero GPU diagnostics. Matched source/binaries/art/proof:
+`build/grip-qualified-v1-20261031`. The socket checkpoint remains preserved.
+Source art and the failed 5 mm production skin gate are unchanged. Upper-body
+combat layers, authored equipped locomotion, public remote-player death and native
+Windows remain open. No new FPS/capacity claim is made. Changes remain local.
+
+# User-requested combat/world/HUD follow-ons — 2026-10-31
+
+Continue the current animation/grip qualification, then prioritize perception,
+chase/attack/leash and finite-range combat. Projectiles, hit/miss/deflect outcomes,
+quest markers, minimap and a reviewed local HUD asset redesign are also recorded.
+[Existing behavior, task mappings, prerequisites and acceptance](../COMBAT_WORLD_FOLLOWUPS.md).
+P3-17/P3-18 remain unspecified.
+
+# Current playable checkpoint — 2026-10-31: authored prop sockets and player death
+
+P1-10 / P2-09 / P3-08 / initial P3-14: the opt-in POLYGON combat conversion
+preserves `Prop_L` / `Prop_R`, attaches development equipment to the authored
+right-hand socket, and plays the local player's authoritative death once before
+restarting animation for a fresh life. Actual two-account OIDC/PostgreSQL/native
+gameplay passes at 1920×1200, the legacy rig passes at 1280×720, and normal
+launcher cleanup passes all three modes at captured 3440×1440 fullscreen.
+[Behavior, exact evidence and limits](../PLAYER_ANIMATION_SOCKETS.md).
+
+Final workspace: **532 passes / 40 explicit fixture skips in 111 groups**,
+formatting, denied-warning workspace/all-target Clippy and **41 Python tests**.
+All final native starts have zero GPU diagnostics. Exact matched source,
+executables, art and proof: `build/sword-qualified-v1-20261031`. The wolf checkpoint
+remains preserved. Remote-player death replication, equipped combat stance /
+layering, actual sword mesh adoption, the failed 5 mm production skin-fidelity
+gate and native Windows remain open. No new FPS or MMO-capacity claim is made.
+Changes remain local.
+
+# Current playable checkpoint — 2026-10-31: animated development wolf
+
+P1-10 / P2-08 / P2-09 / initial P3-14: the opt-in MeshTint wolf now follows
+existing authority patrol, incoming windup, hit, death and fresh respawn states
+through standard Bevy animation. Actual two-account OIDC/PostgreSQL/native gameplay
+passes with current and legacy bundles; normal launching passes all three cleanup
+modes at captured 3440×1440 fullscreen. [Behavior, qualification and limits](../WOLF_CREATURE.md).
+
+Final workspace: **529 passes / 40 explicit fixture skips in 111 groups**, formatting,
+denied-warning workspace/all-target Clippy and 28 Python tests. Quiet single-client
+near-spawn baselines are **719 FPS at 1920×1200** and **720 FPS at 3440×1440
+fullscreen**; these are not crowd/streaming-capacity results. Exact source,
+executables, art and proof: `build/wolf-qualified-v1-20261031`. Prior checkpoints
+remain preserved. Public NPC attack timing, general models, player death animation,
+production skin fidelity and native Windows remain open. Changes remain local.
+
+# Current playable checkpoint — 2026-10-31: transient player life and retaliation
+
+P3-04 / P3-07: the opt-in thirteen-profile bundle now has authoritative player
+health, first-attacker melee retaliation, dead-input suppression and supported
+respawn with fresh life/movement streams. Standard Bevy health and incoming /
+death / respawn text pass two-account OIDC/PostgreSQL/native gameplay, rewarded
+quests, rejoin, server/database restart and backend-loss checks at 1280×720,
+1920×1200 and 3440×1440 fullscreen. Normal launcher cleanup passes all three modes.
+[Implemented behavior, exact GPU diagnostics and limits](../PLAYER_LIFE_NATIVE.md).
+
+Final unchanged-source checks: **525 workspace passes / 40 explicit fixture skips
+in 111 groups**, formatting, denied-warning workspace/all-target Clippy and
+28 Python tests. Exact matched binaries / source / proof:
+`build/player-life-qualified-v1-20261031`. Health remains transient; production
+combat logout policy, chasing/general threat, death animation and native Windows
+remain open. Native validation ran with concurrent compilation; no standalone FPS
+or MMO-capacity claim is made. Prior playable checkpoints remain preserved.
+Changes stay local; no commits or pushes were made.
+
+# Active development — 2026-10-31: shared life-aware prediction qualified
+
+P3-04 / P3-07: initial/dead/unmatched life states now hold the opt-in shared driver,
+clear old input/clock debt and keep completed authority corrections visible.
+Actual impaired encrypted UDP resumes authoritative movement after respawn at
+20/30/60 Hz. **108 relevant network tests**, formatting and denied-warning
+workspace/all-target Clippy pass on unchanged final source. [Behavior and limits](../PLAYER_LIFE_PREDICTION.md).
+Exact source/proof: `build/player-life-prediction-qualified-v1-20261031`.
+Prior full workspace evidence remains 519 passes / 40 skips, not rerun here.
+Normal executable/bundle and Bevy/native adoption remain open. Changes stay local.
+
+# Active development — 2026-10-31: encrypted player-life runtime qualified
+
+P3-04 / P3-07 owner-only health, incoming windup, death and respawn now pass actual
+two-peer encrypted UDP at 20/30/60 Hz under delay/loss/reordering. Full workspace:
+**519 passed / 40 explicit skips in 111 groups**, formatting and denied-warning
+workspace/all-target Clippy on unchanged final source. Five new runtime checks
+include one specifically identified server-queue unit test. [Contract, evidence scope and next acceptance](../PLAYER_LIFE_RUNTIME.md).
+Exact source/proof: `build/player-life-runtime-qualified-v1-20261031`. Normal
+executable/bundle and Bevy/native adoption remain open; new-mode OIDC, SQL health
+durability and native rendering are not claimed. The preserved playable checkpoint
+remains `build/character-menu-qualified-v1-20261031`. Changes stay local.
+
+# Active development — 2026-10-31: life codec/receive barrier qualified
+
+P3-04 / P3-07: bounded owner-only PL01 frames and life/movement correction gating
+pass eight wire tests, 100 core / 76 network-library tests, formatting and denied-
+warning workspace/all-target Clippy on unchanged final source. Real completed
+World health/death/respawn states round-trip through this codec. [Contract and
+remaining adoption gates](../PLAYER_LIFE_PROTOCOL.md). Exact source/proof:
+`build/player-life-wire-qualified-v1-20261031`. New-mode Renet publication/client
+bridge, executable/bundle and Bevy/native adoption remain open. No new-mode
+multiplayer/native result is claimed; prior playable checkpoints stay preserved.
+Changes remain local.
+
+# Active development — 2026-10-31: player life/retaliation headless authority qualified
+
+P3-04 / P3-07: the new opt-in World mode now runs checked retaliation, transient
+health/death and supported streamed respawn with fresh life/movement streams.
+Thirteen new World tests, all 100 core / 75 network-library tests, formatting and
+denied-warning workspace/all-target Clippy pass on unchanged final source.
+[Implemented behavior, ordering and remaining gates](../PLAYER_LIFE_AUTHORITY.md). Source/proof:
+`build/player-life-authority-qualified-v1-20261031`. Private wire/client/Bevy and
+normal executable/bundle adoption remain open. Normal launching still uses the
+preserved playable behavior; no new-mode multiplayer/native claim is made. Prior
+checkpoints remain preserved; changes stay local.
+
+# Active development — 2026-10-31: player health/life prerequisite qualified
+
+P3-04 / P3-07: checked transient health, one scheduled respawn and nonzero per-actor
+life generation pass eight new tests / 100 total core passes, formatting and denied-
+warning workspace/all-target Clippy. Retaliation and damage application both refuse
+old lives. [Contract and runtime acceptance](../PLAYER_LIFE.md). Source/proof:
+`build/player-life-core-qualified-v1-20261031`. World/transport/Bevy adoption remains
+open; the current server still reports configured maximum player health. No new
+full-workspace/native result is claimed. Prior playable checkpoints are preserved;
+all changes remain local.
+
+# Active development — 2026-10-31: creature retaliation policy prerequisite
+
+P3-07 / P3-04: a bounded immutable recipe and fixed-tick retaliation state machine
+now pass eight new tests / 92 total core passes, formatting and denied-warning
+workspace/all-target Clippy. [Contract, acceptance and limits](../CREATURE_RETALIATION.md). Source/proof:
+`build/retaliation-core-qualified-v1-20261031`. This emits intents only; player
+health/death/respawn and runtime/Bevy adoption are next. No new full-workspace or
+native result is claimed. Prior playable checkpoints below stay preserved; all
+changes remain local.
+
+# Current checkpoint — 2026-10-31: existing-account character menu qualified
+
+P3-03: the console launcher lists existing characters and offers N to create
+another below the eight-character cap. A known incompatible-profile refusal returns
+to selection without rewriting saves; temporary retirement conflicts keep their
+bounded retry. Actual OIDC creation on an existing account, incompatible-to-compatible
+menu recovery, two native players, rewarded gameplay and database/server restart
+pass at 1920×1200 windowed with zero Vulkan diagnostics. Normal eleven-profile
+launcher startup/cleanup passes all three modes. [Contract and proof](../CHARACTER_LAUNCHER_MENU.md).
+
+Thirty focused Python checks, formatting and denied-warning workspace/all-target
+Clippy pass. Rust/content/binaries are byte-for-byte unchanged from the previous
+476-pass / 40-skip workspace and 30-contract SQL checkpoint; those suites were not
+rerun for the five Python-file changes. Matched binaries/source/evidence:
+`build/character-menu-qualified-v1-20261031`. This is console workflow; physical
+terminal/browser input, a complete Bevy login UI and native Windows remain open.
+Changes remain local. Prior checkpoints stay preserved.
+
+# Prior checkpoint — 2026-10-31: character gameplay-profile preflight qualified
+
+P3-03 / P3-02: enabled saved inventory/XP/quest profiles are checked in a read-only
+transaction while the Selecting reservation is held, before issuing a game ticket.
+Expected content incompatibility returns a clear nonretryable HTTP 409 and leaves
+the SQL worker available. Missing optional state remains compatible. No saved data
+is initialized, migrated or reseeded by this operation; active-owner checks remain.
+
+Actual OIDC/native/SQL at 1920×1200 windowed passes refusal with no ticket, unchanged
+legacy journal data through database/server restart, then fresh rewarded training,
+loot/barter/equipment and rejoin. Zero Vulkan diagnostics on Linux RX 7900 XTX/RADV.
+The client/core/network/content source is unchanged from the prior three-size
+reward checkpoint; a new three-size server test is not claimed.
+Final unchanged-source workspace: **476 tests / 40 explicit skips**
+in 108 groups. Formatting, denied-warning Clippy, 24 focused Python checks
+and 30 actual SQL contracts / 33 commands pass, including cancelled-answer and
+bounded-queue preflight tests. [Contract and proof](../CHARACTER_PROFILE_PREFLIGHT.md). Matched binaries,
+source, validator and evidence: `build/gameplay-profiles-qualified-v1-20261031`.
+All changes remain local. General migrations, complete saved-value validation,
+physical OS input and native Windows remain open. Prior checkpoints are preserved.
+
+# Prior checkpoint — 2026-10-31: optional quest completion XP qualified
+
+P3-10 / P3-11 / initial P3-16: the opt-in rewarded training quest now accepts at
+the guide, counts three authoritative kills, then commits quest completion,
+25 XP and its action receipt atomically. Ready at 75 XP becomes 100 XP / level 2
+on the default XP curve. Recovered commands and rejoin/restart never award twice.
+Standard Bevy guide controls display the configured reward. Item turn-in grants,
+abandonment/repeatables, groups and a complete authored production zone remain open.
+
+Actual two-account OIDC/encrypted/SQL native flows pass at 1280×720 and 1920×1200
+windowed (zero Vulkan diagnostics), plus 3440×1440 borderless fullscreen (one
+previously documented upstream surface-resize diagnostic per startup). Private
+progress, personal loot, barter, equipment, reconnect, database/server restart and
+backend-loss checks pass. Current binaries also pass the retained journal-only
+native flow. The normal eleven-profile schema-2 launcher passes all three cleanup
+modes; schema-1 ten-profile validation identity is preserved. Fresh compatible
+characters are required; saved content profiles are never silently migrated.
+
+Final unchanged-source workspace passes **475 tests / 37 explicit skips**
+in 107 groups. Formatting, denied-warning workspace/all-target Clippy and
+23 focused Python checks pass. Separately retained prerequisites cover 27 actual
+SQL contracts / 32 commands and three actual OIDC/ticket/SQL retirement modes.
+[Exact scope, prerequisites and proof](../QUEST_TURN_IN_XP.md). Immutable source, matched optimized
+binaries, validator and public evidence: `build/quest-turn-in-xp-qualified-v1-20261031`.
+Native Windows, physical 4K, physical OS input and MMO population/performance
+capacity are not qualified. All changes remain local; no commit/push this session.
+Earlier journal-only and automatic checkpoints remain preserved.
+
 # Stopped safely — 2026-10-30: initial persistent training-zone integration qualified
 
 The combined two-account OIDC/encrypted/PostgreSQL native run passes at

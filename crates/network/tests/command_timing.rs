@@ -11,6 +11,8 @@ fn command(sequence: u64, tick: u64) -> Command {
         sequence,
         tick,
         intent: Intent {
+            facing: None,
+            dodge: None,
             axes: [100, 0],
             sprint: true,
             jump: (6..=30).contains(&tick),

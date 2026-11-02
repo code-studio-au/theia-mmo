@@ -240,9 +240,11 @@ async fn real_udp_loss_delay_duplicate_reorder_and_bandwidth_profiles() {
         let id = initial.id.unwrap();
         let start = actor(&initial, id).unwrap().xz;
         a.input.send_replace(Intent {
+            facing: None,
             jump: false,
             axes: [0, -1000],
             sprint: false,
+            dodge: None,
         });
         let command = Instant::now();
         a.until(|s| actor(s, id).is_some_and(|p| p.xz[1] < start[1] - 0.1))
@@ -316,9 +318,11 @@ async fn outages_expire_inputs_disconnect_and_old_packets_cannot_move_replacemen
         .await;
     let id = initial.id.unwrap();
     a.input.send_replace(Intent {
+        facing: None,
         jump: false,
         axes: [0, -1000],
         sprint: false,
+        dodge: None,
     });
     observer
         .until(|s| actor(s, id).is_some_and(|p| p.xz[1] < -1.))
@@ -341,9 +345,11 @@ async fn outages_expire_inputs_disconnect_and_old_packets_cannot_move_replacemen
         .await;
     // Short interruption retained the session. Now force a transport timeout.
     a.input.send_replace(Intent {
+        facing: None,
         jump: false,
         axes: [0, -1000],
         sprint: false,
+        dodge: None,
     });
     observer
         .until(|s| actor(s, id).is_some_and(|p| p.xz[1] < stopped[1] - 0.5))
@@ -450,9 +456,11 @@ async fn procedural_seams_and_readiness_withdrawal_survive_delayed_lost_reordere
     };
     let start = global(&initial, id);
     a.input.send_replace(Intent {
+        facing: None,
         axes: [1000, 0],
         sprint: true,
         jump: false,
+        dodge: None,
     });
     sleep(Duration::from_millis(700)).await;
     assert_eq!(
@@ -607,9 +615,11 @@ async fn prediction_profile(
                     .tick(
                         &state,
                         Intent {
+                            facing: None,
                             axes: [1000, 0],
                             sprint: true,
                             jump: true,
+                            dodge: None,
                         },
                         Some(&patch),
                         std::time::Instant::now(),
@@ -661,6 +671,7 @@ async fn prediction_profile(
             let state = peer.state.borrow().clone();
             assert!(state.error.is_none(), "{:?}", state.error);
             let intent = Intent {
+                facing: None,
                 axes: if (0.5..7.).contains(&elapsed) {
                     [1000, 0]
                 } else {
@@ -668,6 +679,7 @@ async fn prediction_profile(
                 },
                 sprint: true,
                 jump: (1.2..2.2).contains(&elapsed),
+                dodge: None,
             };
             if let Some(driven) = driver
                 .tick(&state, intent, Some(&patch), std::time::Instant::now())

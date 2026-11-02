@@ -48,6 +48,7 @@ impl Authority {
     }
     fn eligible(&self, world: &World, actor: u64) -> bool {
         self.available
+            && world.player_alive(actor)
             && world
                 .global_position(actor)
                 .is_some_and(|p| in_range(p, self.guide.position))
@@ -60,7 +61,7 @@ impl Authority {
             let Some(position) = world.global_position(id) else {
                 return false;
             };
-            if !available || !in_range(position, guide.position) {
+            if !available || !world.player_alive(id) || !in_range(position, guide.position) {
                 state.close();
             }
             true
@@ -142,12 +143,20 @@ impl World {
         self.vendor
             .as_ref()
             .is_some_and(|p| p.purchase(command).is_ok())
-            && self
-                .nearby_guide(actor)
-                .is_some_and(|g| g.key == command.npc)
+            && self.guide_interaction_eligible(actor, command.dialogue_revision, command.npc)
+    }
+
+    /// Shared current own-session/incarnation/3D-range entitlement. This does not
+    /// commit an item or quest operation and is not rechecked after acceptance.
+    pub fn guide_interaction_eligible(
+        &self,
+        actor: u64,
+        dialogue_revision: u64,
+        npc: EntityKey,
+    ) -> bool {
+        self.nearby_guide(actor).is_some_and(|g| g.key == npc)
             && self.dialogue_view(actor).is_some_and(|v| {
-                v.revision == command.dialogue_revision
-                    && v.open.is_some_and(|o| o.guide == command.npc)
+                v.revision == dialogue_revision && v.open.is_some_and(|o| o.guide == npc)
             })
     }
 
@@ -198,6 +207,9 @@ impl World {
         Some(&self.dialogue.as_ref()?.profile)
     }
     pub fn nearby_guide(&self, actor: u64) -> Option<Guide> {
+        if !self.player_alive(actor) {
+            return None;
+        }
         let authority = self.dialogue.as_ref()?;
         authority.eligible(self, actor).then_some(authority.guide)
     }
@@ -700,9 +712,11 @@ mod tests {
                         epoch: world.epoch(),
                         sequence,
                         intent: crate::wire::Intent {
+                            facing: None,
                             axes: [1000, 0],
                             sprint: true,
-                            jump: false
+                            jump: false,
+                            dodge: None,
                         }
                     }
                 ));

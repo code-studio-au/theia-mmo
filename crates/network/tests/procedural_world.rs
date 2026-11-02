@@ -49,9 +49,11 @@ fn drive(world: &mut World, id: u64, sequence: u64, axes: [i16; 2], jump: bool) 
             epoch: world.epoch(),
             sequence,
             intent: Intent {
+                facing: None,
                 axes,
                 sprint: true,
-                jump
+                jump,
+                dodge: None,
             }
         }
     ));
@@ -111,9 +113,11 @@ fn readiness_freezes_unloaded_travel_and_rejects_stale_or_foreign_reports() {
                 epoch: world.epoch(),
                 sequence,
                 intent: Intent {
+                    facing: None,
                     axes: [1000, 0],
                     sprint: true,
-                    jump: false
+                    jump: false,
+                    dodge: None,
                 }
             }
         ));
@@ -274,9 +278,11 @@ fn readiness_withdrawal_holds_horizontal_motion_but_keeps_airborne_gravity_and_l
                 epoch: world.epoch(),
                 sequence,
                 intent: Intent {
+                    facing: None,
                     axes: [1000, 0],
                     sprint: true,
-                    jump: false
+                    jump: false,
+                    dodge: None,
                 }
             }
         ));

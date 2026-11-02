@@ -57,9 +57,11 @@ fn real_authority_traverses_a_selected_target_without_actor_collision_at_every_r
                     epoch: world.epoch(),
                     sequence,
                     intent: Intent {
+                        facing: None,
                         axes: [1000, 0],
                         sprint: true,
-                        jump: false
+                        jump: false,
+                        dodge: None,
                     }
                 }
             ));
@@ -172,4 +174,39 @@ fn authoritative_distant_teleport_prunes_interest_and_rejects_invisible_selectio
     assert_eq!(snapshot.selected, None);
     assert!(!world.select_target(actor, Some(target)));
     assert_eq!(world.movement_recoveries(), 0);
+}
+
+#[test]
+fn classic_retains_one_selected_metadata_outside_interest_until_explicit_clear_or_removal() {
+    let mut world = world();
+    world.enable_prediction().unwrap();
+    world.enable_classic().unwrap();
+    let selected = world.spawn_development_target([8064., 8000.]).unwrap();
+    let other = world.spawn_development_target([8070., 8000.]).unwrap();
+    let actor = world.join().unwrap();
+    assert!(world.select_target(actor, Some(selected)));
+    assert!(world.teleport_development(actor, [12000., 8000.]));
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while world.global_position(actor).unwrap().metres()[0] < 11000. {
+        assert!(Instant::now() < deadline);
+        world.poll_terrain();
+        std::thread::sleep(Duration::from_millis(1));
+    }
+    for _ in 0..3 {
+        world.step();
+    }
+    let snapshot = world.targeting_snapshot(actor).unwrap();
+    assert_eq!(snapshot.selected, Some(selected));
+    assert_eq!(snapshot.targets.len(), 1);
+    assert_eq!(snapshot.targets[0].key, selected);
+    // Retention grants neither discovery of other distant entities nor a fresh selection.
+    assert!(!world.select_target(actor, Some(other)));
+    assert_eq!(
+        world.targeting_snapshot(actor).unwrap().selected,
+        Some(selected)
+    );
+    assert!(world.remove_development_target(selected));
+    assert!(world.targeting_snapshot(actor).unwrap().selected.is_none());
+    assert!(world.targeting_snapshot(actor).unwrap().targets.is_empty());
+    assert!(world.select_target(actor, None));
 }

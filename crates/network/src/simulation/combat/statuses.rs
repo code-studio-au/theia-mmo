@@ -103,8 +103,10 @@ impl Registry {
     pub(super) fn remove_source(&mut self, id: u64) {
         self.active.retain(|_, s| s.source.entity.value() != id);
     }
-    pub(super) fn remove_target(&mut self, key: EntityKey) {
+    pub(super) fn remove_target(&mut self, key: EntityKey) -> usize {
+        let before = self.active.len();
         self.active.retain(|_, s| s.target != key);
+        before - self.active.len()
     }
     pub(super) fn views(&self, focus: GlobalPosition, creatures: &[Health]) -> Vec<Status> {
         self.active
@@ -157,6 +159,7 @@ impl Authority {
                 self.damage(
                     world,
                     Hit {
+                        credit_encounter: None,
                         ability: instance.ability.clone(),
                         actor: instance.source,
                         sequence: instance.sequence,

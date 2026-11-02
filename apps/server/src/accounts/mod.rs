@@ -263,6 +263,31 @@ fn random(bytes: usize) -> Result<String> {
         .map_err(|_| ApiError::internal())?;
     Ok(data[..bytes].iter().map(|b| format!("{b:02x}")).collect())
 }
+/// Store/wire pairs validated before the account service starts accepting entry.
+#[derive(Default)]
+pub struct GameProfiles {
+    pub inventory: Option<theia_persistence::InventoryCatalog>,
+    pub rewards: Option<(
+        theia_persistence::RewardCatalog,
+        Arc<theia_network::reward_wire::Profile>,
+    )>,
+    pub progression: Option<(
+        theia_persistence::ProgressionCatalog,
+        Arc<theia_network::progression_wire::Profile>,
+    )>,
+    pub quest: Option<(
+        theia_persistence::QuestCatalog,
+        Arc<theia_network::quest_wire::Profile>,
+    )>,
+    pub quest_lifecycle: Option<(
+        theia_persistence::QuestLifecycleCatalog,
+        Arc<theia_network::quest_lifecycle_wire::Profile>,
+    )>,
+    pub vendor: Option<(
+        theia_persistence::VendorCatalog,
+        Arc<theia_network::vendor_wire::Profile>,
+    )>,
+}
 pub struct AccountService {
     listener: TcpListener,
     router: Router,
@@ -415,6 +440,34 @@ impl AccountService {
             Arc<theia_network::vendor_wire::Profile>,
         )>,
     ) -> Result<Arc<crate::admissions::GameAdmissions>> {
+        self.enable_game_with_profiles(
+            issuer,
+            GameProfiles {
+                inventory,
+                rewards,
+                progression,
+                quest,
+                vendor,
+                quest_lifecycle: None,
+            },
+        )
+    }
+    pub fn enable_game_with_profiles(
+        &mut self,
+        issuer: theia_network::renet_runtime::TicketIssuer,
+        profiles: GameProfiles,
+    ) -> Result<Arc<crate::admissions::GameAdmissions>> {
+        let GameProfiles {
+            inventory,
+            rewards,
+            progression,
+            quest,
+            vendor,
+            quest_lifecycle,
+        } = profiles;
+        if quest.is_some() && quest_lifecycle.is_some() {
+            return Err(ApiError::internal());
+        }
         let mut slot = self.state.game.lock().map_err(|_| ApiError::internal())?;
         if slot.is_some() {
             return Err(ApiError::internal());
@@ -462,6 +515,10 @@ impl AccountService {
         }
         if let Some((profile, wire)) = quest {
             crate::admissions::GameAdmissions::with_quest(&mut gate, profile, wire)
+                .map_err(|_| ApiError::internal())?;
+        }
+        if let Some((profile, wire)) = quest_lifecycle {
+            crate::admissions::GameAdmissions::with_quest_lifecycle(&mut gate, profile, wire)
                 .map_err(|_| ApiError::internal())?;
         }
         if let Some((profile, wire)) = vendor {

@@ -126,9 +126,11 @@ fn secure_renet_two_clients_authority_and_disconnect() {
                 epoch: authority.world.epoch(),
                 sequence,
                 intent: Intent {
+                    facing: None,
                     jump: false,
                     axes: [0, -1000],
                     sprint: false,
+                    dodge: None,
                 },
             })
             .unwrap(),

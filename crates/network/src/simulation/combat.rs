@@ -1,6 +1,18 @@
 //! Optional bounded server combat. No transport, renderer, file I/O or wall clock.
+pub mod ability_damage;
+pub mod autoattack;
+pub mod credit;
+pub mod membership;
+mod outcomes;
+pub mod physical;
+pub mod player_life;
+mod projectiles;
+pub mod reset;
 mod statuses;
+pub mod white_melee;
 use super::World;
+pub use outcomes::Metrics as OutcomeMetrics;
+pub use projectiles::Metrics as ProjectileMetrics;
 pub use statuses::{MAX_ACTIVE_STATUSES, MAX_TARGET_STATUSES, Status};
 use std::{collections::BTreeMap, time::Duration};
 use theia_core::{
@@ -12,9 +24,11 @@ use theia_core::{
 };
 
 pub const MAX_STEP_EVENTS: usize = 64;
+pub const MAX_PROJECTILE_STEP_EVENTS: usize = 128;
 pub const DEVELOPMENT_HEALTH: u32 = 100;
 pub const DEVELOPMENT_RESPAWN_MS: u32 = 5000;
 struct Configuration {
+    resources_hash: Option<[u8; 32]>,
     catalog: Catalog,
     digest: [u8; 32],
     resources: Option<Profile>,
@@ -38,7 +52,7 @@ fn configuration(
     if catalog.schema() != 1 && profile.is_none() {
         return Err("Resource-cost catalogs require an explicit stats profile".into());
     }
-    if (catalog.schema() == 3 && status_catalog.is_none())
+    if (catalog.schema() >= 3 && status_catalog.is_none())
         || (status_catalog.is_some() && profile.is_none())
     {
         return Err("Status abilities require explicit status and resource profiles".into());
@@ -74,6 +88,7 @@ fn configuration(
         identity.extend(crate::terrain::sha256(bytes));
     }
     Ok(Configuration {
+        resources_hash: resources.map(crate::terrain::sha256),
         catalog,
         digest: crate::terrain::sha256(&identity),
         resources: profile,
@@ -142,6 +157,9 @@ pub enum Reason {
     TimeExhausted,
     InsufficientMana,
     StatusCapacity,
+    EquipmentRequired,
+    NotFacing,
+    TooClose,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Outcome {
@@ -170,6 +188,30 @@ pub struct Queued {
 }
 #[derive(Clone, Debug, PartialEq)]
 pub enum Event {
+    ProjectileLaunched {
+        ability: ContentId,
+        actor: EntityKey,
+        sequence: u64,
+        target: EntityKey,
+        position: GlobalPosition,
+        target_position: GlobalPosition,
+    },
+    ProjectileEnded {
+        ability: ContentId,
+        actor: EntityKey,
+        sequence: u64,
+        target: EntityKey,
+        position: GlobalPosition,
+        reason: ProjectileEnd,
+    },
+    Avoided {
+        ability: ContentId,
+        actor: EntityKey,
+        sequence: u64,
+        target: EntityKey,
+        position: GlobalPosition,
+        kind: Avoidance,
+    },
     Started {
         actor: EntityKey,
         cast: Cast,
@@ -183,6 +225,20 @@ pub enum Event {
         actor: EntityKey,
         sequence: u64,
         reason: Reason,
+    },
+    /// Explicit physical-profile facts; legacy event codecs reject this variant.
+    PhysicalDamage(physical::Fact),
+    WhiteMelee(white_melee::Fact),
+    AbilityDamage(ability_damage::Fact),
+    /// One authoritative basic-weapon hit, independent of ability cast events.
+    MeleeDamage {
+        weapon: ContentId,
+        actor: EntityKey,
+        sequence: u64,
+        target: EntityKey,
+        position: GlobalPosition,
+        amount: u32,
+        remaining: u32,
     },
     Damage {
         ability: ContentId,
@@ -203,6 +259,68 @@ pub enum Event {
         target: EntityKey,
         position: GlobalPosition,
     },
+}
+impl Event {
+    pub(crate) fn private_player_victim(&self) -> Option<EntityKey> {
+        match self {
+            Self::PhysicalDamage(fact) if fact.target_generation.is_some() => Some(fact.target),
+            Self::WhiteMelee(fact) if fact.target_generation.is_some() => Some(fact.target),
+            _ => None,
+        }
+    }
+    /// Existing development last-hit policy. Incoming player damage is never
+    /// a creature kill opportunity; durable idempotency remains with the owner.
+    pub(super) fn fatal_player_hit(&self) -> Option<(EntityKey, EntityKey)> {
+        match self {
+            Self::AbilityDamage(fact)
+                if fact.remaining == 0 && fact.result.damage.health_lost > 0 =>
+            {
+                Some((fact.actor, fact.target))
+            }
+            Self::Damage {
+                actor,
+                target,
+                remaining: 0,
+                ..
+            }
+            | Self::MeleeDamage {
+                actor,
+                target,
+                remaining: 0,
+                ..
+            } => Some((*actor, *target)),
+            Self::WhiteMelee(fact)
+                if fact.remaining == 0
+                    && fact.result.health_lost > 0
+                    && fact.actor_generation.is_some()
+                    && fact.target_generation.is_none() =>
+            {
+                Some((fact.actor, fact.target))
+            }
+            Self::PhysicalDamage(fact)
+                if fact.remaining == 0
+                    && fact.result.health_lost > 0
+                    && fact.actor_generation.is_some()
+                    && fact.target_generation.is_none() =>
+            {
+                Some((fact.actor, fact.target))
+            }
+            _ => None,
+        }
+    }
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ProjectileEnd {
+    Expired,
+    Obstructed,
+    Unavailable,
+    SourceGone,
+    TargetGone,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Avoidance {
+    Miss,
+    Deflect,
 }
 #[derive(Clone, Debug)]
 pub struct CastResult {
@@ -231,16 +349,57 @@ pub struct Snapshot {
 }
 #[derive(Default)]
 struct Actor {
+    autoattack: autoattack::Player,
+    equipment: Equipment,
+    life: Option<player_life::Player>,
     mana: Option<Pool>,
     sequence: u64,
     reply: Option<Reply>,
     cast: Option<Cast>,
+    cast_credit_encounter: Option<theia_core::creature_credit::EncounterKey>,
     queued: Option<Queued>,
     gcd_until: u64,
     cooldowns: BTreeMap<ContentId, u64>,
     interrupted: bool,
 }
+/// A trusted committed inventory observation. This has no client wire setter.
+#[derive(Default)]
+struct Equipment {
+    committed: Option<([u8; 32], u64, Option<ContentId>)>,
+    ready: bool,
+}
+impl Equipment {
+    fn observe(&mut self, value: Option<([u8; 32], u64, Option<ContentId>)>) {
+        self.ready = false;
+        let Some((hash, revision, hand)) = value else {
+            return;
+        };
+        if hash == [0; 32] {
+            return;
+        }
+        if let Some((previous_hash, previous_revision, previous_hand)) = &self.committed
+            && (hash != *previous_hash
+                || revision < *previous_revision
+                || (revision == *previous_revision && &hand != previous_hand))
+        {
+            return;
+        }
+        self.committed = Some((hash, revision, hand));
+        self.ready = true;
+    }
+    fn permits(&self, ability: &Ability) -> bool {
+        ability.requires_main_hand().is_none_or(|required| {
+            self.ready
+                && self
+                    .committed
+                    .as_ref()
+                    .and_then(|(_, _, hand)| hand.as_ref())
+                    == Some(required)
+        })
+    }
+}
 struct Hit {
+    credit_encounter: Option<theia_core::creature_credit::EncounterKey>,
     ability: ContentId,
     actor: EntityKey,
     sequence: u64,
@@ -248,6 +407,20 @@ struct Hit {
     amount: u32,
 }
 pub(super) struct Authority {
+    autoattack: Option<autoattack::Profile>,
+    physical: Option<physical::Runtime>,
+    white_melee: Option<white_melee::Runtime>,
+    ability_damage: Option<ability_damage::Runtime>,
+    membership: Option<membership::Runtime>,
+    credit: Option<credit::Runtime>,
+    reset: Option<reset::Runtime>,
+    catalog_digest: [u8; 32],
+    projectiles: Vec<projectiles::Active>,
+    projectile_metrics: ProjectileMetrics,
+    random: Option<outcomes::Random>,
+    outcome_metrics: OutcomeMetrics,
+    pve: Option<player_life::Authority>,
+    resources_hash: Option<[u8; 32]>,
     statuses: Option<statuses::Registry>,
     resources: Option<Profile>,
     catalog: Catalog,
@@ -258,38 +431,114 @@ pub(super) struct Authority {
     events: Vec<Event>,
 }
 impl Authority {
+    fn resolve_damage(
+        &mut self,
+        world: &mut World,
+        hit: Hit,
+        table: Option<theia_core::hit_outcomes::Table>,
+    ) {
+        if self.ability_damage.is_some() {
+            self.resolve_ability_damage(world, hit);
+            return;
+        }
+        use theia_core::hit_outcomes::{Eligibility, Outcome};
+        let result = if let Some(table) = table {
+            let Some(random) = &mut self.random else {
+                self.cancel(hit.actor, hit.sequence, Reason::Unavailable);
+                return;
+            };
+            let deflect = world.creature_can_deflect(hit.target);
+            let result = random.resolve(table, Eligibility { deflect });
+            self.outcome_metrics.random_draws = random.draws();
+            result
+        } else {
+            Outcome::Hit
+        };
+        self.outcome_metrics.resolved = self.outcome_metrics.resolved.saturating_add(1);
+        match result {
+            Outcome::Hit => {
+                self.outcome_metrics.hits = self.outcome_metrics.hits.saturating_add(1);
+                self.damage(world, hit);
+            }
+            Outcome::Miss | Outcome::Deflect => {
+                let kind = if result == Outcome::Miss {
+                    self.outcome_metrics.misses = self.outcome_metrics.misses.saturating_add(1);
+                    Avoidance::Miss
+                } else {
+                    self.outcome_metrics.deflects = self.outcome_metrics.deflects.saturating_add(1);
+                    Avoidance::Deflect
+                };
+                if let Some(creature) = self
+                    .creatures
+                    .iter()
+                    .find(|c| c.key == hit.target && c.current > 0)
+                {
+                    self.events.push(Event::Avoided {
+                        ability: hit.ability,
+                        actor: hit.actor,
+                        sequence: hit.sequence,
+                        target: hit.target,
+                        position: creature.position,
+                        kind,
+                    });
+                }
+            }
+        }
+    }
     fn damage(&mut self, world: &mut World, hit: Hit) {
+        if self.reset.is_some() && !self.ordinary_target_ready() {
+            return;
+        }
+        self.apply_damage(
+            world,
+            hit.actor,
+            hit.target,
+            hit.amount,
+            |amount, remaining, position| Event::Damage {
+                ability: hit.ability,
+                actor: hit.actor,
+                sequence: hit.sequence,
+                target: hit.target,
+                position,
+                amount,
+                remaining,
+            },
+        );
+    }
+    fn apply_damage(
+        &mut self,
+        world: &mut World,
+        actor: EntityKey,
+        target: EntityKey,
+        amount: u32,
+        event: impl FnOnce(u32, u32, GlobalPosition) -> Event,
+    ) {
         let Some(creature) = self
             .creatures
             .iter_mut()
-            .find(|c| c.key == hit.target && c.current > 0)
+            .find(|c| c.key == target && c.current > 0)
         else {
             return;
         };
-        let applied = hit.amount.min(creature.current);
+        let applied = amount.min(creature.current);
         creature.current -= applied;
-        self.events.push(Event::Damage {
-            ability: hit.ability,
-            actor: hit.actor,
-            sequence: hit.sequence,
-            target: hit.target,
-            position: creature.position,
-            amount: applied,
-            remaining: creature.current,
-        });
+        self.events
+            .push(event(applied, creature.current, creature.position));
+        let remaining = creature.current;
         if creature.current == 0 {
             let at = world.tick.saturating_add(self.respawn_ticks);
             creature.respawn_at = Some(at);
-            world.retire_target(hit.target);
+            world.retire_target(target);
             self.events.push(Event::Died {
-                target: hit.target,
+                target,
                 position: creature.position,
                 respawn_at: at,
             });
             if let Some(statuses) = &mut self.statuses {
-                statuses.remove_target(hit.target);
+                statuses.remove_target(target);
             }
         }
+        self.note_retaliation_hit(world, actor, target, applied, remaining);
     }
     fn create(
         world: &World,
@@ -300,12 +549,38 @@ impl Authority {
         status_data: Option<&[u8]>,
     ) -> crate::Result<Self> {
         let Configuration {
+            resources_hash,
             catalog,
             digest,
             resources,
             statuses,
         } = configuration(bytes, health, respawn_ms, stats, status_data)?;
+        let random = catalog
+            .abilities()
+            .iter()
+            .any(|a| a.hit_table().is_some())
+            .then(outcomes::Random::new)
+            .transpose()?;
+        let event_capacity = if catalog.schema() >= 6 {
+            MAX_PROJECTILE_STEP_EVENTS
+        } else {
+            MAX_STEP_EVENTS
+        };
         Ok(Self {
+            autoattack: None,
+            physical: None,
+            white_melee: None,
+            ability_damage: None,
+            membership: None,
+            credit: None,
+            reset: None,
+            catalog_digest: crate::terrain::sha256(bytes),
+            projectiles: Vec::with_capacity(projectiles::MAX_ACTIVE),
+            projectile_metrics: ProjectileMetrics::default(),
+            random,
+            outcome_metrics: OutcomeMetrics::default(),
+            pve: None,
+            resources_hash,
             statuses: statuses.map(statuses::Registry::new),
             resources,
             catalog,
@@ -326,7 +601,7 @@ impl Authority {
                 })
                 .collect(),
             actors: BTreeMap::new(),
-            events: Vec::with_capacity(MAX_STEP_EVENTS),
+            events: Vec::with_capacity(event_capacity),
         })
     }
     fn actor(&mut self, id: u64) -> &mut Actor {
@@ -340,9 +615,37 @@ impl Authority {
         })
     }
     pub(super) fn identity(&self, base: [u8; 32]) -> [u8; 32] {
-        world_digest(base, self.digest)
+        let base = world_digest(base, self.digest);
+        let base = self.pve.as_ref().map_or(base, |p| {
+            crate::player_life_wire::profile_identity(base, &p.profile)
+        });
+        let base = self.autoattack.as_ref().map_or(base, |p| p.identity(base));
+        let base = self
+            .physical
+            .as_ref()
+            .map_or(base, |p| p.profile.identity(base));
+        let base = self
+            .white_melee
+            .as_ref()
+            .map_or(base, |p| p.profile.identity(base));
+        let base = self
+            .ability_damage
+            .as_ref()
+            .map_or(base, |p| p.profile.identity(base));
+        let base = self.membership.as_ref().map_or(base, |p| p.identity(base));
+        let base = self.credit.as_ref().map_or(base, |p| p.identity(base));
+        self.reset.as_ref().map_or(base, |p| p.identity(base))
     }
-    pub(super) fn leave(&mut self, id: u64) {
+    pub(super) fn leave(&mut self, id: u64, rate: theia_core::time::TickRate) {
+        if let Some(credit) = &mut self.credit {
+            credit.leave(id);
+        }
+        if let Some(membership) = &mut self.membership {
+            membership.leave(id);
+        }
+        if let Some(pve) = &mut self.pve {
+            pve.retired_player(id, rate);
+        }
         self.actors.remove(&id);
         if let Some(statuses) = &mut self.statuses {
             statuses.remove_source(id);
@@ -364,7 +667,8 @@ impl Authority {
         target.position = position;
         true
     }
-    pub(super) fn forget(&mut self, key: EntityKey) -> bool {
+    pub(super) fn forget(&mut self, key: EntityKey, now: u64) -> bool {
+        self.invalidate_autoattack(key, now);
         if let Some(statuses) = &mut self.statuses {
             statuses.remove_target(key);
         }
@@ -391,6 +695,17 @@ impl Authority {
         moved: bool,
     ) -> std::result::Result<(), Reason> {
         let actor = world.players.get(&id).ok_or(Reason::Interrupted)?;
+        if !self.player_alive(id) {
+            return Err(Reason::Interrupted);
+        }
+        if ability.requires_main_hand().is_some()
+            && !self
+                .actors
+                .get(&id)
+                .is_some_and(|a| a.equipment.permits(ability))
+        {
+            return Err(Reason::EquipmentRequired);
+        }
         let health = self
             .creatures
             .iter()
@@ -403,13 +718,30 @@ impl Authority {
             return Err(Reason::NotReady);
         }
         if !ability.cast_while_moving()
-            && (moved || actor.intent.axes != [0, 0] || actor.body.vertical_speed().abs() > 0.001)
+            && (moved
+                || actor.intent.axes != [0, 0]
+                || actor.body.vertical_speed().abs() > 0.001
+                || actor
+                    .dodge
+                    .is_some_and(|d| d.snapshot().policy.active.is_some()))
         {
             return Err(Reason::Moving);
         }
         let a = actor.position.metres();
         let b = health.position.metres();
         let distance2: f64 = a.into_iter().zip(b).map(|(a, b)| (a - b) * (a - b)).sum();
+        if let Some(rules) = ability.combat_rules() {
+            if distance2 < rules.minimum_range_metres().powi(2) {
+                return Err(Reason::TooClose);
+            }
+            if let Some(arc) = rules.arc()
+                && !actor
+                    .facing
+                    .is_some_and(|f| arc.contains(f, actor.position, health.position))
+            {
+                return Err(Reason::NotFacing);
+            }
+        }
         if distance2 > ability.range_metres().powi(2) {
             return Err(Reason::OutOfRange);
         }
@@ -459,6 +791,17 @@ impl Authority {
             .ability(request.ability.as_str())
             .unwrap()
             .mana_cost();
+        if self
+            .catalog
+            .ability(request.ability.as_str())
+            .unwrap()
+            .projectile()
+            .is_some()
+            && !self.projectile_capacity(id)
+        {
+            self.projectile_metrics.capacity_refusals += 1;
+            return Err(Reason::Unavailable);
+        }
         let timing = self
             .catalog
             .timing(request.ability.as_str(), world.rate)
@@ -499,13 +842,22 @@ impl Authority {
             started: world.tick,
             completes,
         };
+        let swing_plan = self.plan_ability_swing(
+            world,
+            id,
+            self.catalog.ability(cast.ability.as_str()).unwrap(),
+        )?;
         let actor = self.actor(id);
         if let Some(mana) = &mut actor.mana
             && !mana.spend(mana_cost)
         {
             return Err(Reason::InsufficientMana);
         }
+        self.commit_ability_swing(id, swing_plan);
+        let credit_encounter = self.capture_credit();
+        let actor = self.actor(id);
         actor.cast = Some(cast.clone());
+        actor.cast_credit_encounter = credit_encounter;
         if timing.global_cooldown_ticks > 0 {
             actor.gcd_until = gcd;
         }
@@ -600,6 +952,9 @@ impl Authority {
         self.events.clear();
         if let Some(profile) = &self.resources {
             for actor in self.actors.values_mut() {
+                if actor.life.as_ref().is_some_and(|p| !p.state.alive()) {
+                    continue;
+                }
                 if let Some(mana) = &mut actor.mana {
                     mana.regenerate(world.rate, profile.mana_regeneration_per_second());
                 }
@@ -614,6 +969,9 @@ impl Authority {
                 creature.key.entity = theia_core::identity::EntityId::new(next).unwrap();
                 if let Some(home) = world.patrol_respawn(previous, creature.key) {
                     creature.position = home;
+                }
+                if let Some(pve) = &mut self.pve {
+                    pve.respawned_creature(previous, creature.key, world.rate);
                 }
                 creature.current = creature.maximum;
                 creature.respawn_at = None;
@@ -632,12 +990,16 @@ impl Authority {
                 });
             }
         }
+        self.advance_projectiles(world);
         let ids: Vec<_> = self.actors.keys().copied().collect();
         for id in ids {
             let Some(key) = world.entity_key(id) else {
                 self.actors.remove(&id);
                 continue;
             };
+            if !self.player_alive(id) {
+                continue;
+            }
             let moved = before.get(&id).is_some_and(|old| {
                 let a = old.metres();
                 let b = world.players[&id].position.metres();
@@ -664,6 +1026,8 @@ impl Authority {
                 let ability = self.catalog.ability(cast.ability.as_str()).unwrap();
                 let failure = if !Self::ready(world, id) {
                     Some(Reason::NotReady)
+                } else if !self.actors[&id].equipment.permits(ability) {
+                    Some(Reason::EquipmentRequired)
                 } else if !self
                     .creatures
                     .iter()
@@ -673,7 +1037,10 @@ impl Authority {
                 } else if !ability.cast_while_moving()
                     && (moved
                         || world.players[&id].intent.axes != [0, 0]
-                        || world.players[&id].body.vertical_speed().abs() > 0.001)
+                        || world.players[&id].body.vertical_speed().abs() > 0.001
+                        || world.players[&id]
+                            .dodge
+                            .is_some_and(|d| d.snapshot().policy.active.is_some()))
                 {
                     Some(Reason::Moving)
                 } else if world.tick >= cast.completes {
@@ -685,17 +1052,24 @@ impl Authority {
                     self.actors.get_mut(&id).unwrap().cast = None;
                     self.cancel(key, cast.sequence, reason);
                 } else if world.tick >= cast.completes {
+                    let hit_table = ability.hit_table();
+                    let projectile = ability.projectile();
                     match ability.effect() {
-                        Effect::Damage { amount } => self.damage(
-                            world,
-                            Hit {
+                        Effect::Damage { amount } => {
+                            let hit = Hit {
+                                credit_encounter: self.actors[&id].cast_credit_encounter,
                                 ability: cast.ability.clone(),
                                 actor: key,
                                 sequence: cast.sequence,
                                 target: cast.target,
                                 amount,
-                            },
-                        ),
+                            };
+                            if let Some(profile) = projectile {
+                                self.launch_projectile(world, hit, profile);
+                            } else {
+                                self.resolve_damage(world, hit, hit_table);
+                            }
+                        }
                         Effect::ApplyStatus { status } => {
                             let applied = self
                                 .statuses
@@ -750,6 +1124,9 @@ impl Authority {
                 .retain(|_, at| *at > world.tick);
         }
         self.advance_statuses(world);
+        self.advance_autoattack(world);
+        self.advance_retaliation(world);
+        self.retire_invalid_autoattacks(world);
         // A later actor may kill a target after an earlier actor was already
         // visited. Publish one coherent completed-step state, with every cast
         // on that retired life cancelled in this same step.
@@ -781,7 +1158,7 @@ impl Authority {
                 self.cancel(key, queued.request.sequence, Reason::Dead);
             }
         }
-        debug_assert!(self.events.len() <= MAX_STEP_EVENTS);
+        debug_assert!(self.events.len() <= self.step_event_budget());
     }
 }
 impl World {
@@ -838,9 +1215,11 @@ impl World {
                 "Combat requires inactive graybox world with prepared development targets".into(),
             );
         }
-        self.combat = Some(Authority::create(
-            self, catalog, health, respawn_ms, stats, statuses,
-        )?);
+        let authority = Authority::create(self, catalog, health, respawn_ms, stats, statuses)?;
+        if authority.catalog.schema() >= 7 && !self.classic {
+            return Err("Explicit ability rules require classic independent facing".into());
+        }
+        self.combat = Some(authority);
         Ok(())
     }
     pub fn combat_enabled(&self) -> bool {
@@ -848,6 +1227,26 @@ impl World {
     }
     pub fn combat_catalog(&self) -> Option<&Catalog> {
         self.combat.as_ref().map(|c| &c.catalog)
+    }
+    pub fn combat_outcome_metrics(&self) -> Option<OutcomeMetrics> {
+        self.combat
+            .as_ref()
+            .filter(|c| c.catalog.schema() >= 5)
+            .map(|c| c.outcome_metrics.clone())
+    }
+    /// Server-side bridge only: committed character inventory, never appearance
+    /// or pending item commands. Exact session identity prevents reuse on rejoin.
+    pub(crate) fn observe_combat_equipment(
+        &mut self,
+        actor: EntityKey,
+        committed: Option<([u8; 32], u64, Option<ContentId>)>,
+    ) {
+        if self.entity_key(actor.entity.value()) != Some(actor) {
+            return;
+        }
+        if let Some(authority) = self.combat.as_mut() {
+            authority.observe_gear(actor.entity.value(), committed, self.tick, self.rate);
+        }
     }
     pub fn cast(&mut self, actor: u64, request: Request) -> CastResult {
         let Some(mut authority) = self.combat.take() else {
@@ -882,7 +1281,13 @@ impl World {
         Some(Snapshot {
             vitals: authority.resources.as_ref().map(|p| {
                 Vitals::new(
-                    p.maximum_health(),
+                    if authority.pve.is_some() {
+                        state
+                            .and_then(|a| a.life.as_ref())
+                            .map_or(0, |p| p.state.health())
+                    } else {
+                        p.maximum_health()
+                    },
                     p.maximum_health(),
                     state
                         .and_then(|a| a.mana)
@@ -1015,3 +1420,10 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+mod melee_tests;
+#[cfg(test)]
+mod outcome_tests;
+#[cfg(test)]
+mod projectile_tests;

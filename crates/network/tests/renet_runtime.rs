@@ -135,9 +135,11 @@ async fn bridge_two_clients_acknowledgements_leave_and_fresh_ticket_reconnect() 
         .unwrap()
         .xz;
     a.input.send_replace(Intent {
+        facing: None,
         jump: false,
         axes: [0, -1000],
         sprint: false,
+        dodge: None,
     });
     let moved = b
         .until(|s| {
@@ -191,9 +193,11 @@ async fn world_mismatch_and_invalid_intent_fail_closed() {
     let mut peer = server.peer(2, GRAYBOX_ID);
     peer.until(|s| s.id.is_some()).await;
     peer.input.send_replace(Intent {
+        facing: None,
         jump: false,
         axes: [1001, 0],
         sprint: false,
+        dodge: None,
     });
     assert!(
         peer.worker
@@ -252,9 +256,11 @@ async fn distant_worlds_rebase_live_replication_and_project_continuous_local_mot
             .await;
         assert_eq!(initial.welcome.as_ref().unwrap().origin, origin);
         a.input.send_replace(Intent {
+            facing: None,
             jump: false,
             axes: [0, -1000],
             sprint: false,
+            dodge: None,
         });
         let state = a.until(|s| s.wire_rebases >= 2).await;
         let local = state.local_view().unwrap();
@@ -457,9 +463,11 @@ async fn real_chunk_authority_loads_off_tick_and_publishes_against_two_live_peer
             .map(|p| p.metres())
     };
     a.input.send_replace(Intent {
+        facing: None,
         axes: [1000, 0],
         jump: false,
         sprint: false,
+        dodge: None,
     });
     a.until(|s| position(s).is_some_and(|p| p[0] > 127.4)).await;
     let at_edge = a
@@ -481,9 +489,11 @@ async fn real_chunk_authority_loads_off_tick_and_publishes_against_two_live_peer
         .applied_sequence;
     let tick = at_edge.snapshot.as_ref().unwrap().tick;
     a.input.send_replace(Intent {
+        facing: None,
         axes: [1000, 0],
         jump: true,
         sprint: false,
+        dodge: None,
     });
     a.until(|s| position(s).is_some_and(|p| p[1] > 1.3)).await;
     // The actual runtime requests a plan, loads on spawn_blocking and validates
@@ -509,9 +519,11 @@ async fn real_chunk_authority_loads_off_tick_and_publishes_against_two_live_peer
     // Server collision is loaded, but this client's renderer has not reported
     // the new neighbor yet. Simulation/acks and gravity must keep advancing.
     b.input.send_replace(Intent {
+        facing: None,
         axes: [1000, 0],
         jump: false,
         sprint: false,
+        dodge: None,
     });
     let held_tick = a.state.borrow().snapshot.as_ref().unwrap().tick;
     let held = a
@@ -615,9 +627,11 @@ async fn acknowledged_chunk_withdrawal_holds_only_its_actor_and_regrant_needs_a_
     };
     for peer in [&a, &b] {
         peer.input.send_replace(Intent {
+            facing: None,
             axes: [1000, 0],
             jump: false,
             sprint: false,
+            dodge: None,
         });
     }
     a.until(|s| s.snapshot.is_some() && position(s, id)[0] > 17.)
@@ -705,9 +719,11 @@ async fn automatic_chunk_lookahead_offers_real_publication_but_waits_for_each_pe
     );
     b.input.send_replace(Intent::default());
     a.input.send_replace(Intent {
+        facing: None,
         axes: [1000, 0],
         jump: false,
         sprint: false,
+        dodge: None,
     });
     let offered = a
         .until(|s| s.chunk_offer.as_ref().is_some_and(|o| o.generation == 2))
@@ -839,9 +855,11 @@ async fn readiness_replay_unknown_ids_and_malformed_actor_addressing_are_rejecte
             epoch: welcome.epoch,
             sequence: 1,
             intent: Intent {
+                facing: None,
                 axes: [1000, 0],
                 jump: false,
                 sprint: false,
+                dodge: None,
             },
         })
         .unwrap(),
@@ -962,9 +980,11 @@ async fn full_capacity_offer_ready_ack_and_withdrawal_use_real_encrypted_transpo
     );
     let actor = admitted.id.unwrap();
     peer.input.send_replace(Intent {
+        facing: None,
         axes: [1000, 0],
         jump: false,
         sprint: false,
+        dodge: None,
     });
     peer.until(|state| {
         state.snapshot.as_ref().is_some_and(|s| {

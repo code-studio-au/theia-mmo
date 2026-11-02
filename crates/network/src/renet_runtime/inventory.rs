@@ -293,6 +293,27 @@ pub(super) enum View {
     State(Box<crate::inventory_wire::State>),
 }
 impl Peer {
+    /// Read only the owner's committed observation. A pending request has no
+    /// effect until the asynchronous owner publishes its committed bag.
+    pub(super) fn combat_equipment(
+        &self,
+    ) -> Option<([u8; 32], u64, Option<theia_core::content::ContentId>)> {
+        let state = self.port.state.borrow();
+        if state.failed || state.closed || !self.port.catalog.equipment_enabled() {
+            return None;
+        }
+        state
+            .bag
+            .as_ref()
+            .filter(|bag| bag.catalog() == self.port.catalog.id() && bag.equipment_enabled())
+            .map(|bag| {
+                (
+                    self.port.hash,
+                    bag.revision(),
+                    bag.main_hand().map(|stack| stack.item().clone()),
+                )
+            })
+    }
     pub(super) fn new(port: Port) -> crate::Result<Self> {
         if port.hash == [0; 32] || port.requests.max_capacity() != 1 {
             return Err("Invalid inventory owner port capacity/profile".into());
@@ -514,6 +535,88 @@ mod tests {
         inventory::{Command, Operation, Stack},
     };
     const DATA: &[u8] = include_bytes!("../../../../content/gameplay/development-items.json");
+    #[tokio::test]
+    async fn combat_gear_reads_committed_bag_only_and_fails_closed_on_owner_loss() {
+        use theia_core::inventory::{EquipmentCommand, EquipmentOperation};
+        let profile = Profile::from_json(include_bytes!(
+            "../../../../content/gameplay/development-equipment-items.json"
+        ))
+        .unwrap();
+        let mut slots = std::array::from_fn(|_| None);
+        slots[0] = Stack::new(
+            profile.catalog(),
+            ContentId::new("theia.dev.training-sword").unwrap(),
+            1,
+        );
+        let bag = Bag::from_slots(profile.catalog(), 0, slots).unwrap();
+        let (requests, mut receiver) = mpsc::channel(1);
+        let (publish, state) = watch::channel(Observation {
+            bag: Some(bag.clone()),
+            ..Default::default()
+        });
+        let mut peer = Peer::new(Port {
+            vendor: None,
+            rewards: None,
+            opportunities: None,
+            catalog: profile.catalog.clone(),
+            hash: profile.hash(),
+            requests,
+            state,
+        })
+        .unwrap();
+        assert_eq!(peer.combat_equipment(), Some((profile.hash(), 0, None)));
+        let command: ItemCommand = EquipmentCommand {
+            expected_revision: 0,
+            operation: EquipmentOperation::Equip { from: 0 },
+        }
+        .into();
+        let bytes = crate::inventory_wire::ItemRequest {
+            actor: actor(),
+            sequence: 1,
+            command,
+        }
+        .encode()
+        .unwrap();
+        assert!(peer.request(actor(), &bytes).unwrap());
+        assert_eq!(receiver.try_recv().unwrap().command, command);
+        assert_eq!(
+            peer.combat_equipment(),
+            Some((profile.hash(), 0, None)),
+            "Queued equip is not committed gear"
+        );
+        let committed = command.propose(&bag, profile.catalog()).unwrap();
+        publish
+            .send(Observation {
+                bag: Some(committed.clone()),
+                reply: Some(Reply {
+                    sequence: 1,
+                    outcome: Outcome::Applied,
+                }),
+                ..Default::default()
+            })
+            .unwrap();
+        assert_eq!(
+            peer.combat_equipment(),
+            Some((
+                profile.hash(),
+                1,
+                Some(ContentId::new("theia.dev.training-sword").unwrap())
+            ))
+        );
+        for (failed, closed) in [(true, false), (false, true)] {
+            publish
+                .send(Observation {
+                    bag: Some(committed.clone()),
+                    failed,
+                    closed,
+                    ..Default::default()
+                })
+                .unwrap();
+            assert!(peer.combat_equipment().is_none());
+        }
+        publish.send(Observation::default()).unwrap();
+        assert!(peer.combat_equipment().is_none());
+    }
     #[tokio::test]
     async fn vendor_refusals_and_commits_share_the_item_sequence_without_early_success() {
         use crate::{

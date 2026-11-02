@@ -29,6 +29,10 @@ pub(super) struct Config {
     publisher: Publisher,
 }
 impl Config {
+    pub(super) fn profile_hash(&self) -> [u8; 32] {
+        self.profile.hash()
+    }
+
     pub(super) fn new(profile: InventoryCatalog, publisher: Publisher) -> Result<Self> {
         // Explicit opt-in development fixture, applied only to a missing bag.
         // This is not a client grant command or a production reward rule.

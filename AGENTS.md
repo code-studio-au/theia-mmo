@@ -4,6 +4,13 @@ Read `docs/STATUS.md`, `docs/DECISIONS.md` and `docs/ROADMAP.md` before editing.
 For feature work, read `docs/engineering/README.md`, `ARCHITECTURE.md`,
 `IMPLEMENTATION_PLAN.md` and `CODEX_TASKS.md` under `docs/engineering/`, plus the
 current alignment record. The user adopted this architecture on 2026-10-19.
+For controls/combat, read `docs/COMBAT_TARGETING_MOVEMENT_SPEC.md`
+(THEIA-COMBAT-001 v1.0, adopted 2026-11-01) and
+`docs/MOVEMENT_CAMERA_TARGET.md`. This supersedes earlier hybrid WoW/GW2
+camera, movement and facing guidance for the initial playable version.
+Read `docs/CLASSIC_FORMULAS.md` for formula adoption: follow evidenced Classic
+rules wherever possible, retain metric units and record source versions, unit
+mapping, uncertainty and explicit Theia extensions.
 The imported `AGENTS.reference.md` remains provenance; these are the active rules.
 
 - Build a playable MMO using Bevy. Prefer its standard renderer, assets, UI and
@@ -32,8 +39,12 @@ The imported `AGENTS.reference.md` remains provenance; these are the active rule
   simulation, bounded input/network queues, independent rendering and no database
   or awaited transport I/O in the simulation step. PostgreSQL persistence is async;
   critical economy transactions must be durable before success acknowledgement.
-- Build data-driven tab-target combat with mobile casting and standard Bevy
-  presentation. Protect critical telegraphs/audio under cosmetic load. Follow the
+- Build data-driven WoW Classic-style combat: persistent explicit targets,
+  manual authoritative facing, character-relative movement and weapon-timed
+  autoattack separate from abilities. Casting movement/interrupt restrictions
+  belong to ability data. Defer dodge, action camera, reticle targeting and
+  automatic facing/tracking; preserve earlier experiments as historical evidence.
+  Use standard Bevy presentation. Protect critical telegraphs/audio under cosmetic load. Follow the
   architecture for terrain chunks, navigation and eventual region ownership;
   completed experiments do not establish streaming or MMO-scale capacity.
 - Keep this repository independent of `theia-engine`. Adapt reviewed components

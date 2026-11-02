@@ -65,6 +65,30 @@ async fn wait_inventory_lock(transaction: &tokio_postgres::Transaction<'_>) -> i
         }
     }).await.expect("Inventory SQL did not wait on owned fixture row")
 }
+async fn progression_until(
+    port: &mut net::progression::Port,
+    predicate: impl Fn(&net::progression::Observation) -> bool,
+) -> net::progression::Observation {
+    tokio::time::timeout(Duration::from_secs(5), async {
+        loop {
+            let state = port.state.borrow().clone();
+            assert!(!state.failed, "Progression owner failed");
+            if predicate(&state) {
+                return state;
+            }
+            port.state.changed().await.unwrap();
+        }
+    })
+    .await
+    .expect("Progression owner observation timed out")
+}
+async fn wait_lifecycle_lock(tx: &tokio_postgres::Transaction<'_>) {
+    tokio::time::timeout(Duration::from_millis(300),async { loop {
+        tx.query_one("SELECT pg_stat_clear_snapshot()",&[]).await.unwrap();
+        if tx.query_opt("SELECT pid FROM pg_stat_activity WHERE datname=current_database() AND application_name='theia-development-persistence' AND wait_event_type='Lock' AND query LIKE '%theia.quest_lifecycles%'",&[]).await.unwrap().is_some(){break;}
+        tokio::time::sleep(Duration::from_millis(2)).await;
+    }}).await.expect("Quest SQL never reached its owned lock");
+}
 async fn connected_data(
     transport: &mut renet_netcode::NetcodeServerTransport,
     ticket: &[u8],
@@ -193,6 +217,300 @@ async fn main() -> theia_network::Result<()> {
             )?),
         )?;
     }
+    if std::env::var("THEIA_TEST_QUEST_LIFECYCLE").is_ok_and(|v| v == "1") {
+        use theia_core::{
+            progression::{KillEvent, KillId},
+            quests::lifecycle::{Action, Command, Phase},
+        };
+        use theia_network::{
+            quest_lifecycle_wire::{Rejection, Request},
+            renet_runtime::progression::Input,
+        };
+        let mut raw: serde_json::Value = serde_json::from_slice(include_bytes!(
+            "../../../content/gameplay/development-progression.json"
+        ))?;
+        let completion_xp = std::env::var("THEIA_TEST_QUEST_TURN_IN_XP").is_ok_and(|v| v == "1");
+        if !completion_xp {
+            raw["level_thresholds"] = serde_json::json!([0, 25]);
+        }
+        let bytes = serde_json::to_vec(&raw)?;
+        let xp = theia_persistence::ProgressionCatalog::from_json(&bytes)?;
+        let xp_wire = Arc::new(theia_network::progression_wire::Profile::from_json(&bytes)?);
+        admissions::GameAdmissions::with_progression(
+            &mut gate,
+            xp.clone(),
+            xp_wire.clone(),
+            publisher.clone(),
+        )?;
+        let bytes = include_bytes!("../../../content/gameplay/development-quest.json");
+        let (quest, wire) = if completion_xp {
+            let recipe =
+                include_bytes!("../../../content/gameplay/development-quest-turn-in-xp.json");
+            (
+                theia_persistence::QuestLifecycleCatalog::from_json_with_turn_in_xp(
+                    bytes, recipe, &xp,
+                )?,
+                Arc::new(
+                    theia_network::quest_lifecycle_wire::Profile::from_json_with_turn_in_xp(
+                        bytes, recipe, &xp_wire,
+                    )?,
+                ),
+            )
+        } else {
+            (
+                theia_persistence::QuestLifecycleCatalog::from_json(bytes)?,
+                Arc::new(theia_network::quest_lifecycle_wire::Profile::from_json(
+                    bytes,
+                )?),
+            )
+        };
+        admissions::GameAdmissions::with_quest_lifecycle(&mut gate, quest.clone(), wire)?;
+        let event = |id| KillEvent {
+            id: KillId::from_victim(EntityKey {
+                epoch: WorldEpoch::new(123).unwrap(),
+                entity: EntityId::new(id).unwrap(),
+            }),
+            creature: theia_core::content::ContentId::new("theia.dev.training-creature").unwrap(),
+        };
+        let action = |actor, sequence, expected_revision, action| Request {
+            actor,
+            sequence,
+            command: Command {
+                expected_revision,
+                action,
+            },
+            dialogue_revision: 1,
+            npc: EntityKey {
+                epoch: WorldEpoch::new(123).unwrap(),
+                entity: EntityId::new(2).unwrap(),
+            },
+        };
+        let reservation = gate.reserve(context.clone(), binding)?;
+        assert_eq!(
+            reservation.check_gameplay_profiles(&publisher).await?,
+            theia_persistence::ProfileCompatibility::Compatible
+        );
+        let ticket = reservation.issue(character.saved)?;
+        let data = connected_data(&mut transport, ticket.bytes()).await;
+        let lease = gate.clone().consume(1, &data)?.unwrap().lease;
+        let mut port = lease.progression()?.unwrap();
+        progression_until(&mut port, |s| s.lifecycle.is_some()).await;
+        let actor = EntityKey {
+            epoch: WorldEpoch::new(123).unwrap(),
+            entity: EntityId::new(1).unwrap(),
+        };
+        lease.record(actor, position, 1)?;
+        port.input
+            .try_send(Input::QuestAction(action(actor, 1, 0, Action::TurnIn)))?;
+        let denied = progression_until(&mut port, |s| {
+            s.lifecycle_reply.is_some_and(|r| r.sequence == 1)
+        })
+        .await;
+        assert_eq!(
+            denied.lifecycle_reply.unwrap().rejection,
+            Some(Rejection::NotAvailable)
+        );
+        assert_eq!(denied.lifecycle.as_ref().unwrap().revision(), 0);
+        assert!(!worker.status().failed);
+        port.input.try_send(Input::Kill(event(100)))?;
+        port.input.try_send(Input::Kill(event(101)))?;
+        tokio::time::timeout(Duration::from_secs(3),async{loop{
+            let n:i64=admin.query_one("SELECT count(*) FROM theia.quest_lifecycle_kills WHERE realm_id=$1 AND character_id=$2",&[&realm.value(),&binding.character.value()]).await.unwrap().get(0);
+            if n==2{break;}tokio::time::sleep(Duration::from_millis(2)).await;
+        }}).await?;
+        let expected_preaccept = if completion_xp { 50 } else { 25 };
+        progression_until(&mut port, |s| {
+            s.progress
+                .as_ref()
+                .is_some_and(|p| p.total() == expected_preaccept)
+        })
+        .await;
+        assert_eq!(
+            port.state.borrow().progress.as_ref().unwrap().total(),
+            expected_preaccept
+        );
+        assert_eq!(
+            port.state.borrow().lifecycle.as_ref().unwrap().revision(),
+            0
+        );
+        gate.flush(&publisher, &worker.status())?;
+        tokio::time::timeout(Duration::from_secs(5), async {
+            while worker.status().completed_generation < publisher.submissions() {
+                tokio::time::sleep(Duration::from_millis(2)).await;
+            }
+        })
+        .await?;
+        let before = worker.status();
+        let guard = admin.transaction().await?;
+        guard.query_one("SELECT revision FROM theia.quest_lifecycles WHERE realm_id=$1 AND character_id=$2 FOR UPDATE",&[&realm.value(),&binding.character.value()]).await?;
+        port.input
+            .try_send(Input::QuestAction(action(actor, 2, 0, Action::Accept)))?;
+        wait_lifecycle_lock(&guard).await;
+        for id in 102..=104 {
+            port.input.try_send(Input::Kill(event(id)))?;
+        }
+        sessions.lock().unwrap().revoke(secret.expose_secret());
+        drop(lease);
+        assert_eq!(gate.flush(&publisher, &before)?, 1);
+        assert_eq!(
+            port.state.borrow().lifecycle.as_ref().unwrap().revision(),
+            0,
+            "Accepted but uncommitted acceptance cannot be advertised"
+        );
+        let secret2 = sessions.lock().unwrap().issue(&identity, owner)?;
+        let context2 = sessions
+            .lock()
+            .unwrap()
+            .authorize(secret2.expose_secret())?;
+        assert!(
+            gate.reserve(context2.clone(), binding).is_err(),
+            "Fresh authorization must not bypass retiring accepted quest work"
+        );
+        guard.commit().await?;
+        tokio::time::timeout(Duration::from_secs(5), async {
+            while gate.flush(&publisher, &worker.status()).unwrap() != 0 {
+                tokio::time::sleep(Duration::from_millis(2)).await;
+            }
+        })
+        .await?;
+        let ready = port.state.borrow().lifecycle.clone().unwrap();
+        assert_eq!(ready.progress(quest.profile()).unwrap().phase, Phase::Ready);
+        assert_eq!(ready.revision(), 4);
+        assert_eq!(
+            port.state.borrow().progress.as_ref().unwrap().total(),
+            if completion_xp { 125 } else { 25 }
+        );
+        assert!(port.input.try_send(Input::Kill(event(100))).is_err());
+        let saved = publisher.select_character(binding, world).await?.saved;
+        let ticket = gate.reserve(context2.clone(), binding)?.issue(saved)?;
+        let data = connected_data(&mut transport, ticket.bytes()).await;
+        let lease = gate.clone().consume(1, &data)?.unwrap().lease;
+        let mut loaded = lease.progression()?.unwrap();
+        progression_until(&mut loaded, |s| s.lifecycle.is_some()).await;
+        assert_eq!(loaded.state.borrow().lifecycle.as_ref(), Some(&ready));
+        let actor2 = EntityKey {
+            entity: EntityId::new(3).unwrap(),
+            ..actor
+        };
+        lease.record(actor2, position, 2)?;
+        gate.flush(&publisher, &worker.status())?;
+        tokio::time::timeout(Duration::from_secs(5), async {
+            while worker.status().completed_generation < publisher.submissions() {
+                tokio::time::sleep(Duration::from_millis(2)).await;
+            }
+        })
+        .await?;
+        let before = worker.status();
+        let guard = admin.transaction().await?;
+        guard.query_one("SELECT revision FROM theia.quest_lifecycles WHERE realm_id=$1 AND character_id=$2 FOR UPDATE",&[&realm.value(),&binding.character.value()]).await?;
+        loaded
+            .input
+            .try_send(Input::QuestAction(action(actor2, 1, 4, Action::TurnIn)))?;
+        wait_lifecycle_lock(&guard).await;
+        loaded.input.try_send(Input::Kill(event(100)))?;
+        loaded.input.try_send(Input::Kill(event(105)))?;
+        sessions.lock().unwrap().revoke(secret2.expose_secret());
+        drop(lease);
+        assert_eq!(gate.flush(&publisher, &before)?, 1);
+        assert_eq!(
+            loaded.state.borrow().lifecycle.as_ref(),
+            Some(&ready),
+            "Uncommitted turn-in cannot be advertised"
+        );
+        assert_eq!(
+            loaded.state.borrow().progress.as_ref().unwrap().total(),
+            if completion_xp { 125 } else { 25 },
+            "Uncommitted completion XP cannot be advertised"
+        );
+        let secret3 = sessions.lock().unwrap().issue(&identity, owner)?;
+        let context3 = sessions
+            .lock()
+            .unwrap()
+            .authorize(secret3.expose_secret())?;
+        assert!(gate.reserve(context3.clone(), binding).is_err());
+        guard.commit().await?;
+        tokio::time::timeout(Duration::from_secs(5), async {
+            while gate.flush(&publisher, &worker.status()).unwrap() != 0 {
+                tokio::time::sleep(Duration::from_millis(2)).await;
+            }
+        })
+        .await?;
+        let completed = loaded.state.borrow().lifecycle.clone().unwrap();
+        let completed_xp = if completion_xp { 175 } else { 25 };
+        assert_eq!(
+            loaded.state.borrow().progress.as_ref().unwrap().total(),
+            completed_xp
+        );
+        assert_eq!(completed.revision(), 5);
+        assert_eq!(
+            completed.progress(quest.profile()).unwrap().phase,
+            Phase::TurnedIn
+        );
+        let saved = publisher.select_character(binding, world).await?.saved;
+        let ticket = gate.reserve(context3, binding)?.issue(saved)?;
+        let data = connected_data(&mut transport, ticket.bytes()).await;
+        let lease = gate.clone().consume(1, &data)?.unwrap().lease;
+        let mut restored = lease.progression()?.unwrap();
+        progression_until(&mut restored, |s| s.lifecycle.is_some()).await;
+        assert_eq!(restored.state.borrow().lifecycle.as_ref(), Some(&completed));
+        let actor3 = EntityKey {
+            entity: EntityId::new(5).unwrap(),
+            ..actor
+        };
+        lease.record(actor3, position, 3)?;
+        for (sequence, revision, kind) in [(1, 4, Action::TurnIn), (2, 0, Action::Accept)] {
+            restored
+                .input
+                .try_send(Input::QuestAction(action(actor3, sequence, revision, kind)))?;
+            let result = progression_until(&mut restored, |s| {
+                s.lifecycle_reply.is_some_and(|r| r.sequence == sequence)
+            })
+            .await;
+            assert_eq!(result.lifecycle_reply.unwrap().rejection, None);
+            assert_eq!(result.lifecycle.as_ref(), Some(&completed));
+            assert_eq!(result.progress.as_ref().unwrap().total(), completed_xp);
+        }
+        drop(lease);
+        tokio::time::timeout(Duration::from_secs(5), async {
+            while gate.flush(&publisher, &worker.status()).unwrap() != 0 {
+                tokio::time::sleep(Duration::from_millis(2)).await;
+            }
+        })
+        .await?;
+        let status = worker.shutdown().await?;
+        assert_eq!(status.lifecycle_actions, 2);
+        assert_eq!(status.lifecycle_turn_ins, 1);
+        assert_eq!(status.lifecycle_advances, 3);
+        assert_eq!(
+            status.experience_committed,
+            if completion_xp { 7 } else { 1 }
+        );
+        if completion_xp {
+            assert_eq!(status.lifecycle_xp_awards, 1);
+            assert_eq!(status.lifecycle_xp_units, 25);
+            let r=admin.query_one("SELECT xp_granted,xp_revision,xp_total FROM theia.quest_action_receipts WHERE realm_id=$1 AND character_id=$2 AND action=2",&[&realm.value(),&binding.character.value()]).await?;
+            assert_eq!(
+                (r.get::<_, i32>(0), r.get::<_, i64>(1), r.get::<_, i32>(2)),
+                (25, 6, 150),
+                "Completion must commit before the later queued kill"
+            );
+        }
+        let row=admin.query_one("SELECT (SELECT count(*) FROM theia.quest_action_receipts WHERE realm_id=$1 AND character_id=$2),(SELECT count(*) FROM theia.quest_lifecycle_kills WHERE realm_id=$1 AND character_id=$2),(SELECT count(*) FROM theia.quest_lifecycle_kills WHERE realm_id=$1 AND character_id=$2 AND counted)",&[&realm.value(),&binding.character.value()]).await?;
+        assert_eq!(
+            (
+                row.get::<_, i64>(0),
+                row.get::<_, i64>(1),
+                row.get::<_, i64>(2)
+            ),
+            (2, 6, 3)
+        );
+        drop(admin);
+        driver.await??;
+        emit(
+            serde_json::json!({"passed":true,"actual_oidc_and_postgres":true,"encrypted_ticket_binding":true,"explicit_lifecycle_enabled":true,"accepted_executing_and_queued_lifecycle_work_survives_logout":true,"fresh_authorization_cannot_bypass_retiring_owner":true,"no_acceptance_or_turn_in_before_commit":true,"single_fifo_acceptance_then_kills":true,"preaccept_xp_cap_and_old_receipts_preserved":!completion_xp,"preaccept_kills_remain_uncounted":true,"positive_completion_xp_enabled":completion_xp,"completion_xp_awarded":if completion_xp {25}else{0},"normal_quest_refusal_keeps_owner_live":true,"fresh_lease_restores_ready_and_turned_in":true,"old_action_receipts_do_not_retake_or_repeat_turn_in":true,"direct_lease_contract_not_native_game":true,"live_npc_entitlement_qualified":false,"turn_in_item_or_xp_grants_enabled":completion_xp}),
+        );
+        return Ok(());
+    }
     if std::env::var("THEIA_TEST_PROGRESSION").is_ok_and(|v| v == "1") {
         use theia_core::progression::{KillEvent, KillId};
         let bytes = include_bytes!("../../../content/gameplay/development-progression.json");
@@ -256,14 +574,16 @@ async fn main() -> theia_network::Result<()> {
             }),
             ..first.clone()
         };
-        port.earned.try_send(first.clone())?;
+        port.input
+            .try_send(net::progression::Input::Kill(first.clone()))?;
         tokio::time::timeout(Duration::from_secs(3),async {loop {
             guard.query_one("SELECT pg_stat_clear_snapshot()",&[]).await.unwrap();
             if guard.query_opt("SELECT pid FROM pg_stat_activity WHERE application_name='theia-development-persistence' AND wait_event_type='Lock' AND query LIKE '%theia.progression%'",&[]).await.unwrap().is_some() {break;}
             tokio::time::sleep(Duration::from_millis(2)).await;
         }}).await?;
-        port.earned.try_send(second)?;
-        port.earned.try_send(first.clone())?;
+        port.input.try_send(net::progression::Input::Kill(second))?;
+        port.input
+            .try_send(net::progression::Input::Kill(first.clone()))?;
         sessions.lock().unwrap().revoke(secret.expose_secret());
         drop(lease);
         assert_eq!(gate.flush(&publisher, &before)?, 1);
@@ -295,7 +615,11 @@ async fn main() -> theia_network::Result<()> {
         }
         assert_eq!(worker.status().experience_committed, 2);
         assert_eq!(worker.status().experience_replayed, 1);
-        assert!(port.earned.try_send(first.clone()).is_err());
+        assert!(
+            port.input
+                .try_send(net::progression::Input::Kill(first.clone()))
+                .is_err()
+        );
         let secret = sessions.lock().unwrap().issue(&identity, owner)?;
         let context = sessions.lock().unwrap().authorize(secret.expose_secret())?;
         let saved = publisher.select_character(binding, world).await?.saved;
@@ -313,7 +637,9 @@ async fn main() -> theia_network::Result<()> {
         if quest_enabled {
             assert_eq!(loaded.state.borrow().quest.as_ref().unwrap().count(), 2);
         }
-        loaded.earned.try_send(first)?;
+        loaded
+            .input
+            .try_send(net::progression::Input::Kill(first))?;
         tokio::time::timeout(Duration::from_secs(5), async {
             while worker.status().experience_replayed < 2 {
                 tokio::time::sleep(Duration::from_millis(2)).await;

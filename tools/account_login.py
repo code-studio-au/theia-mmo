@@ -12,9 +12,10 @@ import webbrowser
 
 
 class AccountError(RuntimeError):
-    def __init__(self, message, status=None):
+    def __init__(self, message, status=None, *, retryable=None):
         super().__init__(message)
         self.status = status
+        self.retryable = status == 409 if retryable is None else retryable
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -69,10 +70,18 @@ class AccountClient:
             with response:
                 status = response.code
                 raw = response.read(65537)
-            if status not in (200, 202, 204):
-                raise AccountError('Account operation was refused; sign in again or wait for your previous character to leave', status)
             if len(raw) > 65536:
                 raise AccountError('Account response is too large')
+            incompatible = 'Character uses incompatible gameplay content; select a compatible character'
+            if path == '/characters/enter' and status == 409:
+                try:
+                    detail = json.loads(raw)
+                except (ValueError, UnicodeDecodeError):
+                    detail = None
+                if detail == {'error': incompatible}:
+                    raise AccountError(incompatible, status, retryable=False)
+            if status not in (200, 202, 204):
+                raise AccountError('Account operation was refused; sign in again or wait for your previous character to leave', status)
             return (json.loads(raw) if raw else None), status
         except AccountError:
             raise
@@ -123,25 +132,45 @@ class AccountClient:
         if not characters:
             name = read('Name your first character (3–20 letters): ').strip()
             character, _ = self.request('/characters', {'name': name})
-        elif len(characters) == 1:
-            character = characters[0]
         else:
             for index, character in enumerate(characters, 1):
-                write(f"{index}. {character.get('name', '')}")
-            try:
-                index = int(read('Choose a character number: ')) - 1
-                if not 0 <= index < len(characters):
-                    raise ValueError()
-                character = characters[index]
-            except ValueError:
-                raise AccountError('Choose one of the listed character numbers') from None
+                if not isinstance(character, dict) or not isinstance(character.get('name'), str) or not 1 <= len(character['name']) <= 80 or not character['name'].isprintable():
+                    raise AccountError('Invalid character list')
+                write(f"{index}. {character['name']}")
+            can_create = len(characters) < 8
+            if can_create:
+                write('N. Create a character')
+            choice = read('Choose a character number or N to create [1]: ' if can_create else 'Choose a character number [1]: ').strip()
+            if choice.lower() == 'n':
+                if not can_create:
+                    raise AccountError('Character limit reached; choose an existing character')
+                name = read('Name your new character (3–20 letters): ').strip()
+                character, _ = self.request('/characters', {'name': name})
+            else:
+                try:
+                    index = int(choice or '1') - 1
+                    if not 0 <= index < len(characters):
+                        raise ValueError()
+                    character = characters[index]
+                except ValueError:
+                    raise AccountError('Choose one of the listed character numbers or N') from None
         try:
             identifier = str(uuid.UUID(character['id']))
             if identifier == str(uuid.UUID(int=0)):
                 raise ValueError()
-        except (KeyError, TypeError, ValueError):
+        except (KeyError, TypeError, ValueError, AttributeError):
             raise AccountError('Invalid selected character') from None
         return identifier
+
+    def choose_and_enter(self, path, read=input, write=print):
+        while True:
+            character = self.choose_character(read=read, write=write)
+            try:
+                return self.enter(character, path)
+            except AccountError as error:
+                if error.status != 409 or error.retryable:
+                    raise
+                write(str(error))
 
     def enter(self, character, path):
         deadline = time.monotonic() + 10
@@ -150,7 +179,7 @@ class AccountClient:
                 result, _ = self.request('/characters/enter', {'character_id': character})
                 break
             except AccountError as error:
-                if error.status != 409 or time.monotonic() >= deadline:
+                if not error.retryable or time.monotonic() >= deadline:
                     raise
                 time.sleep(.2)
         try:

@@ -2,6 +2,10 @@
 //! credit, receipt deduplication, character ownership nor durable completion.
 use crate::content::ContentId;
 use serde::{Deserialize, Serialize};
+pub mod catalog;
+pub mod journal;
+pub mod lifecycle;
+pub mod turn_in_xp;
 pub const MAX_PROFILE_BYTES: usize = 4096;
 pub const MAX_REQUIRED_KILLS: u32 = 100;
 pub const MAX_REVISION: u64 = i64::MAX as u64;

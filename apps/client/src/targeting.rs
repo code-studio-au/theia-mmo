@@ -2,7 +2,7 @@
 use crate::{network::Network, scene::PawnAssets};
 use bevy::{prelude::*, text::FontSize};
 use theia_core::identity::{EntityId, EntityKey};
-mod motion;
+pub(crate) mod motion;
 mod qualification;
 #[derive(Component)]
 pub(crate) struct TargetVisual {
@@ -10,6 +10,8 @@ pub(crate) struct TargetVisual {
 }
 #[derive(Component)]
 struct TargetHud;
+#[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub(crate) struct Presentation;
 #[derive(Resource)]
 struct Assets {
     mesh: Handle<Mesh>,
@@ -18,10 +20,13 @@ struct Assets {
 }
 pub fn install(app: &mut App, moving_speed: Option<f32>) {
     motion::install(app, moving_speed);
+    crate::world_input::install(app);
     app.add_systems(Startup, setup.after(crate::scene::setup))
         .add_systems(
             Update,
-            (controls, present).chain().after(crate::network::present),
+            (controls, present.in_set(Presentation))
+                .chain()
+                .after(crate::network::present),
         );
     qualification::install(app);
 }
@@ -65,17 +70,84 @@ fn next_target(selected: Option<EntityId>, ids: &[EntityId]) -> Option<EntityId>
         .map_or(0, |i| (i + 1) % ids.len());
     Some(ids[next])
 }
-fn controls(keys: Res<ButtonInput<KeyCode>>, network: Res<Network>) {
-    if !network.connected() {
+pub(crate) fn controls(
+    keys: Res<ButtonInput<KeyCode>>,
+    network: Res<Network>,
+    classic: Option<Res<crate::classic_controls::Controller>>,
+    inventory: Option<Res<crate::inventory::Ui>>,
+    dialogue: Option<Res<crate::dialogue::Ui>>,
+    mut selection: ResMut<crate::world_input::Selection>,
+    windows: Query<&Window>,
+) {
+    if !network.connected() || windows.single().is_ok_and(|w| !w.focused) {
         return;
     }
     let state = network.state();
     let Some(targeting) = &state.targeting else {
         return;
     };
-    if keys.just_pressed(KeyCode::Backspace) {
+    let panel = classic.as_ref().is_some_and(|c| c.escape_owned_by_panel)
+        || inventory.as_ref().is_some_and(|u| u.open)
+        || dialogue
+            .as_ref()
+            .is_some_and(|u| u.open || u.pending || u.close_when_open);
+    if classic.is_some() && panel {
+        return;
+    }
+    if keys.just_pressed(KeyCode::Backspace)
+        || (classic.is_some() && !panel && keys.just_pressed(KeyCode::Escape))
+    {
         network.request_target(None);
     } else if keys.just_pressed(KeyCode::Tab) {
+        if let Some(classic) = classic {
+            use theia_core::target_search::{self, Candidate, Direction, Observer};
+            let Some(correction) = state.correction else {
+                return;
+            };
+            let owner = correction.state;
+            let candidates: Vec<_> = targeting
+                .targets
+                .iter()
+                .map(|target| Candidate {
+                    key: target.key,
+                    position: target.position,
+                    eligible: target.position.chunk(128).is_some_and(|id| {
+                        state
+                            .chunk_report
+                            .as_ref()
+                            .is_some_and(|r| r.chunks.contains(&[id.x, id.z]))
+                    }) && !state.combat.as_ref().is_some_and(|c| {
+                        c.targets
+                            .iter()
+                            .any(|h| h.entity == target.key.entity && h.current == 0)
+                    }),
+                })
+                .collect();
+            let selected = targeting.selected.map(|entity| EntityKey {
+                epoch: owner.actor.epoch,
+                entity,
+            });
+            let direction = if keys.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]) {
+                Direction::Reverse
+            } else {
+                Direction::Forward
+            };
+            if let Ok(Some(key)) = target_search::cycle(
+                classic.targeting(),
+                Observer {
+                    epoch: owner.actor.epoch,
+                    position: owner.pose.feet,
+                    facing: classic.facing(),
+                },
+                selected,
+                &candidates,
+                direction,
+            ) {
+                network.request_target(Some(key.entity));
+                selection.friendly = None;
+            }
+            return;
+        }
         let ids: Vec<_> = targeting
             .targets
             .iter()
@@ -107,6 +179,8 @@ fn present(
     scene: motion::Presentation,
     mut visuals: Query<VisualComponents<'_>>,
     mut hud: Query<&mut Text, With<TargetHud>>,
+    selection: Res<crate::world_input::Selection>,
+    classic: Option<Res<crate::classic_controls::Controller>>,
 ) {
     let motion::Presentation {
         network,
@@ -114,6 +188,7 @@ fn present(
         assets,
         time,
         mut metrics,
+        creatures,
     } = scene;
     let state = network.state();
     let view = state.targeting.as_ref().filter(|_| state.error.is_none());
@@ -121,6 +196,25 @@ fn present(
     for (entity, visual, motion, mut transform, mut material, mut visibility) in &mut visuals {
         let target = view.and_then(|v| v.targets.iter().find(|t| t.key == visual.key));
         let Some(target) = target else {
+            if let Some(position) = creatures.as_ref().and_then(|c| c.corpse(visual.key)) {
+                let shown = position.chunk(128).is_some_and(|id| {
+                    state
+                        .chunk_report
+                        .as_ref()
+                        .is_some_and(|r| r.chunks.contains(&[id.x, id.z]))
+                });
+                if let Some(local) = frame.render.to_local(position) {
+                    transform.translation = Vec3::from_array(local.metres());
+                    *visibility = if shown {
+                        Visibility::Inherited
+                    } else {
+                        Visibility::Hidden
+                    };
+                } else {
+                    *visibility = Visibility::Hidden;
+                }
+                continue;
+            }
             commands.entity(entity).despawn();
             continue;
         };
@@ -203,13 +297,26 @@ fn present(
             }
         }
     }
+    let cycle_hint = if classic.is_some() {
+        "Tab / Shift+Tab"
+    } else {
+        "Tab"
+    };
     if let Ok(mut text) = hud.single_mut() {
+        if selection.friendly.is_some() && state.error.is_none() {
+            **text = "Target: Guide\nF / right-click: interact".into();
+            return;
+        }
         **text = match view {
             Some(v) if v.selected.is_some() => {
-                "Target: Training target\nTab: cycle | Backspace: clear".into()
+                if creatures.is_some() {
+                    format!("Target: Wolf\n{cycle_hint} | Backspace: clear")
+                } else {
+                    format!("Target: Training target\n{cycle_hint} | Backspace: clear")
+                }
             }
             Some(v) => format!(
-                "No target | {} nearby\nTab: select | Backspace: clear",
+                "No target | {} known\n{cycle_hint} | Backspace: clear",
                 v.targets.len()
             ),
             None if state.error.is_some() => "Disconnected".into(),

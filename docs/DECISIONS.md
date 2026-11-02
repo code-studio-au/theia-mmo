@@ -1,3 +1,283 @@
+## 2026-11-02 — quest-engine expansion and authoring agreement
+
+P3-11 / P3-12 / P3-15 / initial P3-16: follow the reviewed Rust quest design by
+extending the existing pure core and authoritative World/async persistence
+boundaries. Use immutable versioned JSON definitions with stable IDs, a bounded
+multi-quest journal and normalized trusted events. Begin with prerequisites,
+ordered stages, kill and semantic NPC-interaction objectives. Retain atomic,
+idempotent XP completion; preserve legacy rows until replacement acceptance.
+Keep narrative Markdown separate from runtime definitions; do not silently turn
+story drafts into approved gameplay. Defer scripting, conditional branches,
+party/world scopes and general rewards until their own slices need them.
+[Implemented scope and acceptance](QUEST_ENGINE.md). No new crate/service split.
+
+## 2026-11-02 — explicit living-creature return reset
+
+P3-07 / P3-06 / P4-08: schema-11 adds a bounded exact-byte policy restoring
+maximum living NPC health and clearing target effects once on Return/Blocked.
+It preserves entity life and existing navigation/leash rules; death/respawn stays
+separate. No kill or award comes from reset. This is an explicit Theia policy,
+not an exact Classic regeneration claim. [Qualified behavior and limits](CREATURE_RETURN_RESET.md).
+
+## 2026-11-02 — opt-in creature-credit reset boundary
+
+P3-09 / P3-10 / P3-11 / P4-08: the ownership-only development profile clears its
+claim on authoritative Return/Blocked or tag-owner departure, advances an
+encounter generation and refuses outgoing damage through Return/Blocked. Casts
+capture that generation so delayed old spells cannot retag. Death alone retains
+a connected session claim; pursuit reset independently abandons it. These are
+explicit initial Theia policies. Full evade/healing/immunity, party eligibility,
+shared credit and rewards are separate. Normal manifests retain their older
+behavior. [Implemented scope and proof](CREATURE_CREDIT.md).
+
+## 2026-11-02 — temporary melee-contact leash refresh
+
+P3-07 / P3-06: replace the unconditional 30-second acquisition cutoff with a
+soft allowance refreshed by authoritative visible melee reach. Retain the
+captured 35 m hard boundary, blocked-route and target-life checks, two-second
+LOS grace and bounded return travel. This is a Theia contact policy, not a claim
+of Classic's exact damage/threat refresh algorithm. Ranged refresh and full
+threat/evade/reset remain separate slices. [Behavior and acceptance](ENEMY_AI_REFERENCE.md).
+
+## 2026-11-01 — explicit ability eligibility and swing rules
+
+Ability schema 7 requires declared minimum range, manual facing and an explicit
+continue/suspend/delay/reset interaction. Legacy profiles retain their behavior.
+The initial stationary 500ms Arcane Bolt suspends swings; instant Sword Slash
+continues them. These are versioned Theia fixtures, not verified Classic balance.
+[Qualified behavior and limits](CLASSIC_ABILITY_RULES.md) includes atomic costs,
+queued/completion revalidation and committed weapon swaps. No automatic facing,
+action camera or dodge is introduced. Follow with checked damage resolution.
+
+# World-system principles and working policies — 1 November 2026
+
+Adopt the supplied broader Classic-system notes as design direction, reconciled
+in [world systems / repo assessment](CLASSIC_WORLD_SYSTEMS_REFERENCE.md).
+Preserve the strict initial controls, metric scale and Classic evidence policy.
+Prioritize interacting combat, credit, population and recovery systems before
+building complete zones. Implement them within the authoritative modular World;
+no distributed combat service or new AI engine is implied.
+
+Under the user's standing authorization to use recommended decisions, select:
+
+- A versioned Classic-oriented combat/progression model with explicit level-80
+  extensions, attack categories and positional eligibility. Validate formulas
+  and rounding before adopting coefficients; prototype numbers remain fixtures.
+- Ordinary creature ownership from the first qualifying effective damaging
+  contribution, with separate tag/contribution/XP/quest/loot policies. Explicit
+  shared quest/story targets can grant wider quest credit. Party eligibility and
+  distribution rules are further work. Existing last-hit development credit is
+  preserved until a versioned replacement passes competing-player tests.
+- Corpse recovery and authored safe graveyards as intended overworld recovery,
+  with explicit solo-story checkpoint rules. Exact penalties and repair economy
+  remain balancing work; the current three-second home respawn remains a fixture.
+
+These decisions describe direction, not completed gameplay. Complete the current
+strict one-hostile combat slice, then add central combat membership, credit/tag
+interfaces, a bounded encounter/spawn group and recovery. Exact historical claims
+in the supplied notes require source/build verification before code adoption.
+P3-17/P3-18 remain unspecified.
+
+# Formula fidelity and metric units — 1 November 2026
+
+Follow WoW Classic formulas as closely as evidence permits. Preserve 1 world
+unit = 1 metre, m/km and m/s, checked f64 global positions and bounded f32 local
+frames. Record source ruleset, unit mapping, uncertainty and Theia extensions;
+do not mix expansion formulas or label fixtures as Classic balance. The level-80
+direction remains. [Evidence policy and sources](CLASSIC_FORMULAS.md).
+
+# Locked decision — 1 November 2026: strict WoW Classic foundation
+
+Adopt [THEIA-COMBAT-001 v1.0](COMBAT_TARGETING_MOVEMENT_SPEC.md): traditional
+character-relative movement, independent LMB orbit, RMB steering, both-button
+forward, configurable bindings, persistent explicit targets, manual facing and
+weapon-timed persistent melee autoattack separate from abilities. The server
+validates position/facing, range/LOS, swing timing, resources and outcomes.
+Selection and camera movement never turn the character toward an enemy.
+Movement and interruption restrictions belong to ability data.
+
+This supersedes the earlier WoW/GW2 hybrid for initial play. Defer all active
+dodge work, action camera/permanent mouse-look, reticle targeting, automatic
+facing/tracking and repeating weapon skills as basic attacks. Preserve existing
+experiments and evidence without treating them as the new accepted controls.
+[Migration, gaps and slice acceptance](MOVEMENT_CAMERA_TARGET.md) are recorded;
+the runtime migration has not been implemented by this decision. Next define the
+fundamental combat loop, then prove the thirteen one-hostile milestone checks.
+No engine, network, coordinate or persistence architecture change is implied.
+
+Earlier entries below are chronological records and yield to this decision where
+they conflict.
+
+# Superseded initial-scope decision — dodge key, 2026-11-01
+
+Use V for the initial normal dodge binding in either camera mode. Cinnamon's
+current `org.cinnamon.desktop.wm.preferences mouse-button-modifier` is `<Alt>`;
+the earlier Left Alt plan would conflict with window mouse controls. Rebinding
+remains a later settings task. V is a bounded one-shot request, not auto-repeat.
+Stationary dodge goes backward relative to the camera view; moving dodge follows
+world travel. Existing server-owned grounded/collision/cooldown and casting
+rules apply. Native acceptance now passes at all three supported desktop sizes;
+[implementation and evidence](DODGE_MOVEMENT.md).
+
+# Superseded direction — 2026-11-01: WoW/GW2 player feel
+
+Adopt GW2-oriented responsive movement and third-person camera with optional
+action camera, retaining WoW-style tab targeting, action bars and interaction.
+Classic cursor mode remains the default. Preserve authoritative collision,
+prediction and mobile combat; UI/focus owns cursor release.
+[Concrete behavior, slice order and acceptance](MOVEMENT_CAMERA_TARGET.md).
+The first optional action-camera slice is now [qualified](PLAYER_CONTROLS.md);
+full movement/facing tuning and live dodge remain open.
+
+# Current decisions — 2026-11-01: quest markers and player controls
+
+Use standard Bevy text/picking/UI and current authoritative observations for
+initial one-guide quest markers. Markers have bounded visibility and static
+occlusion; they never grant interactions or quest progress. [Current validation](QUEST_MARKERS.md).
+The user adopted mouse enemy/friendly selection, right-click basic attack or NPC
+interaction, Tab enemy cycling, 1–5 action slots, F context interaction and active
+dodge. Use Left Alt as the recommended default dodge binding. Distinguish camera
+dragging from clicks and let UI consume pointer events. Selection presentation
+cannot authorize damage or dialogue. Implement dodge with checked authoritative
+movement/prediction in its own slice; no implicit invulnerability is adopted.
+[Concrete requested scope](COMBAT_WORLD_FOLLOWUPS.md). These controls are planned,
+not yet qualified. No engine/plugin or network choice changes.
+
+# Current decisions — 2026-10-31: finite authoritative magic travel
+
+Adopt the opt-in schema-6 magic slice while retaining old instant catalogues and
+CE02/CE03 paths. Server launch/impact, exact life identity, static solid/ground
+sweeps and finite accumulated distance/lifetime own outcomes. Reserve capacity
+before spending, retain started costs on cancelled travel and permit post-launch
+equipment changes. CE04 carries launch/terminal presentation. Use standard Bevy
+placeholder sphere travel with independent bounded cosmetic budgets.
+[Qualified contract, evidence and limits](PROJECTILE_TRAVEL.md). Ballistic arrows,
+bow equipment, ranged enemy casting and general projectile volumes remain open.
+No engine/plugin pins change. Stop after this slice as requested by the user.
+
+# Current decisions — 2026-10-31: server-owned hit outcomes
+
+Adopt the opt-in schema-5 direct-damage hit/miss/deflect slice. Use checked integer
+weights, pre-admission seeded ChaCha20, one draw only at valid resolution and
+explicit current defender eligibility. Preserve old guaranteed-damage catalogues
+and CE02 bytes; CE03 carries new outcomes. Cosmetic labels cannot alter results.
+[Qualified behavior, evidence and limits](HIT_OUTCOMES.md). Initial prototype
+weights are 85/10/5, with no inferred shield/class stats. NPC outcomes and travelling
+projectiles remain separate work; engine/plugin pins are unchanged.
+
+# Current decisions — 2026-10-31: committed melee and separate terrain/capture readiness
+
+Adopt the opt-in schema-4 sword slice and preserve older bundles/checkpoints.
+Exact committed main-hand item requirements are server facts; pending equipment
+or cosmetic appearance never grants damage. Standard Bevy masks split upper-body
+strike presentation from locomotion. Greybox movement readiness checks actual
+terrain PBR specializations and GPU meshes, independently of whole-renderer
+screenshot readiness. Native evidence demonstrates cosmetic pipeline compilation
+without readiness withdrawal. [Contract and qualified evidence](PLAYER_MELEE.md).
+General weapon classes, hit outcomes, ranged enemy abilities and public remote
+player death remain later slices; no engine/plugin pins change.
+
+# Current checkpoint — 2026-10-31: opt-in transient life/retaliation qualified
+
+Adopt the thirteen-profile development bundle for checked first-attacker melee
+retaliation, private health, dead-input suppression and supported fresh-stream
+respawn. Keep the existing manifests and playable checkpoints. Health resets on
+fresh admission in this development mode; durable vitals and production combat
+logout policy remain explicit future decisions. Death animation, chasing and
+general threat are not part of this slice. [Exact implementation and evidence](PLAYER_LIFE_NATIVE.md).
+
+Two-account OIDC/native/SQL gameplay passes at three resolutions, along with
+normal launcher cleanup. Final unchanged-source workspace: 525 passes / 40 skips;
+Clippy, formatting and 28 Python tests pass. Exact matched set:
+`build/player-life-qualified-v1-20261031`. Native Windows and standalone FPS / MMO
+capacity remain unqualified. All changes remain local.
+
+# Current decision — 2026-10-31: critical life transitions use bounded reliable delivery
+
+P3-04 / P3-07 life state uses the existing owner-only reliable ordered Renet event
+channel plus a 16-event client presentation queue. Queue exhaustion disconnects
+or retires the affected peer; windup, death and respawn transitions are never
+silently dropped to preserve cosmetic throughput. The watch bridge remains the
+latest immutable state, while the bounded event queue preserves transitions for
+presentation. Client health setters are forbidden. [Runtime contract and next
+playable acceptance](PLAYER_LIFE_RUNTIME.md).
+
+# Current decision — 2026-10-31: bounded opt-in melee retaliation
+
+The next P3-07 / P3-04 extension holds the first exact attacker for bounded memory,
+with one checked windup/recovery and life/reach/LOS checks at both boundaries.
+No chase or general threat service is introduced. First qualify pure policy and
+transient development health/respawn, then fixed-step/private-wire/standard Bevy
+adoption. [Contract and gates](CREATURE_RETALIATION.md). Existing patrol/training
+continues unchanged; durable vitals and production balance remain open.
+
+# Current checkpoint — 2026-10-31: existing-account character menu qualified
+
+P3-03: the console launcher lists existing characters and offers N to create
+another below the eight-character cap. A known incompatible-profile refusal returns
+to selection without rewriting saves; temporary retirement conflicts keep their
+bounded retry. Actual OIDC creation on an existing account, incompatible-to-compatible
+menu recovery, two native players, rewarded gameplay and database/server restart
+pass at 1920×1200 windowed with zero Vulkan diagnostics. Normal eleven-profile
+launcher startup/cleanup passes all three modes. [Contract and proof](CHARACTER_LAUNCHER_MENU.md).
+
+Thirty focused Python checks, formatting and denied-warning workspace/all-target
+Clippy pass. Rust/content/binaries are byte-for-byte unchanged from the previous
+476-pass / 40-skip workspace and 30-contract SQL checkpoint; those suites were not
+rerun for the five Python-file changes. Matched binaries/source/evidence:
+`build/character-menu-qualified-v1-20261031`. This is console workflow; physical
+terminal/browser input, a complete Bevy login UI and native Windows remain open.
+Changes remain local. Prior checkpoints stay preserved.
+
+# Prior checkpoint — 2026-10-31: character gameplay-profile preflight qualified
+
+P3-03 / P3-02: enabled saved inventory/XP/quest profiles are checked in a read-only
+transaction while the Selecting reservation is held, before issuing a game ticket.
+Expected content incompatibility returns a clear nonretryable HTTP 409 and leaves
+the SQL worker available. Missing optional state remains compatible. No saved data
+is initialized, migrated or reseeded by this operation; active-owner checks remain.
+
+Actual OIDC/native/SQL at 1920×1200 windowed passes refusal with no ticket, unchanged
+legacy journal data through database/server restart, then fresh rewarded training,
+loot/barter/equipment and rejoin. Zero Vulkan diagnostics on Linux RX 7900 XTX/RADV.
+The client/core/network/content source is unchanged from the prior three-size
+reward checkpoint; a new three-size server test is not claimed.
+Final unchanged-source workspace: **476 tests / 40 explicit skips**
+in 108 groups. Formatting, denied-warning Clippy, 24 focused Python checks
+and 30 actual SQL contracts / 33 commands pass, including cancelled-answer and
+bounded-queue preflight tests. [Contract and proof](CHARACTER_PROFILE_PREFLIGHT.md). Matched binaries,
+source, validator and evidence: `build/gameplay-profiles-qualified-v1-20261031`.
+All changes remain local. General migrations, complete saved-value validation,
+physical OS input and native Windows remain open. Prior checkpoints are preserved.
+
+# Prior checkpoint — 2026-10-31: optional quest completion XP qualified
+
+P3-10 / P3-11 / initial P3-16: the opt-in rewarded training quest now accepts at
+the guide, counts three authoritative kills, then commits quest completion,
+25 XP and its action receipt atomically. Ready at 75 XP becomes 100 XP / level 2
+on the default XP curve. Recovered commands and rejoin/restart never award twice.
+Standard Bevy guide controls display the configured reward. Item turn-in grants,
+abandonment/repeatables, groups and a complete authored production zone remain open.
+
+Actual two-account OIDC/encrypted/SQL native flows pass at 1280×720 and 1920×1200
+windowed (zero Vulkan diagnostics), plus 3440×1440 borderless fullscreen (one
+previously documented upstream surface-resize diagnostic per startup). Private
+progress, personal loot, barter, equipment, reconnect, database/server restart and
+backend-loss checks pass. Current binaries also pass the retained journal-only
+native flow. The normal eleven-profile schema-2 launcher passes all three cleanup
+modes; schema-1 ten-profile validation identity is preserved. Fresh compatible
+characters are required; saved content profiles are never silently migrated.
+
+Final unchanged-source workspace passes **475 tests / 37 explicit skips**
+in 107 groups. Formatting, denied-warning workspace/all-target Clippy and
+23 focused Python checks pass. Separately retained prerequisites cover 27 actual
+SQL contracts / 32 commands and three actual OIDC/ticket/SQL retirement modes.
+[Exact scope, prerequisites and proof](QUEST_TURN_IN_XP.md). Immutable source, matched optimized
+binaries, validator and public evidence: `build/quest-turn-in-xp-qualified-v1-20261031`.
+Native Windows, physical 4K, physical OS input and MMO population/performance
+capacity are not qualified. All changes remain local; no commit/push this session.
+Earlier journal-only and automatic checkpoints remain preserved.
+
 # Stopped safely — 2026-10-30: initial persistent training-zone integration qualified
 
 The combined two-account OIDC/encrypted/PostgreSQL native run passes at
@@ -1112,3 +1392,58 @@ the inspected POLYGON Hand_R skin joint; source scale/joint mismatches are expli
 errors, and no cosmetic prop becomes a collider or movement authority. Empty HUD
 layout containers pass pointer input through while child controls remain pickable.
 [Qualified behavior, driver/source/binary evidence and limits](EQUIPMENT_FOUNDATION.md).
+
+
+## 2026-10-31 — Initial animated creature presentation (P3-14)
+
+Use the supplied MeshTint wolf's own 41-bone rig and six clips with standard Bevy
+assets/animation; the player retains its existing POLYGON rig. Bind this opt-in art
+to existing authority observations, with no art-driven collision or damage. Keep
+sixteen bounded presentation cues, visual corpses for at most fifteen seconds,
+fresh visual state per respawn key, and a 200 ms gait hold for short replication
+gaps. Owner-only windup remains owner-only; public NPC attack timing is separate
+future work. Read captured dimensions when qualifying ultrawide windows, and wait
+for opened/resized UI layout to settle before scripted clicks/bounds audits.
+[Qualified behavior, evidence and limits](WOLF_CREATURE.md).
+
+## 2026-10-31 — Preserve authored prop sockets independently of body deformation
+
+The POLYGON combat development conversion retains both prop leaf bones even
+though neither carries body skin weights. Equipment uses the authored `Prop_R`
+origin/axes; the existing 50-bone rig keeps its explicit legacy wrist fixture.
+Do not treat zero deform weights as evidence that an attachment bone can be
+removed. Standard Bevy animation presents the owner's authoritative death and
+fresh life without adding gameplay movement or exposing private remote health.
+This remains an opt-in development conversion with a failed production 5 mm
+four-weight fidelity gate. [Behavior and actual qualification](PLAYER_ANIMATION_SOCKETS.md).
+
+## 2026-10-31 — Public equipped stance and masked moving finger grip
+
+For the development POLYGON rig, select standing SwordIdle from the exact
+server-owned public actor/epoch/sword appearance. While moving, use standard Bevy
+masks for the eleven authored right-hand digit poses, preserving the original
+wrist/socket/body gait. Pending/private UI selections are not equipment authority.
+Wand replacement/unequip removes the layer; death overrides it. Keep independent
+optional clip slots and the original rig fallback. Full upper-body mobile combat
+and authored equipped locomotion remain separate work. [Qualification](EQUIPPED_PLAYER_STANCE.md).
+
+## 2026-10-31 — Reuse reviewed static query behind one bounded path worker
+
+For the P3-07/P4-03 pursuit prerequisite, share the existing Landmass 0.9.3 query
+adapter between the offline baker and the network crate. Keep the search outside
+the simulation, with one outstanding request/reply and bounded local package,
+route, lifetime and exact identity/revision checks. No package or engine version
+changes. Landmass has no hard CPU deadline; expired results do not publish, but
+expiry does not cancel searches. No NPC dynamic-path consumer or streamed-world
+navigation is implied. [Implemented contract and qualification](CREATURE_PATH_WORKER.md).
+
+## 2026-10-31 — Adopt initial pursuit in an opt-in development bundle
+
+Use server-owned perception/LOS and exact target life, a fixed captured patrol
+anchor for leash/return, and saved route/wait progress. Run checked local paths
+on the bounded worker and retain collision/grounding authority. Return cancels
+attacks; production threat/evade balance and streamed navigation remain open.
+Keep old profile bytes/checkpoints and reject incomplete life/retaliation setup.
+[Final playable qualification](CREATURE_PURSUIT_NATIVE.md). New player melee,
+projectiles, outcomes, quest markers, minimap and HUD work remains in the follow-on
+register; P3-17/P3-18 remain unspecified.

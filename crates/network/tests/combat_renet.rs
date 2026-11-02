@@ -103,6 +103,10 @@ impl Peer {
                 shutdown,
                 identity,
                 net::GameplayClient {
+                    classic_source: None,
+                    dodge: None,
+                    player_life: None,
+                    lifecycle: None,
                     dialogue: None,
                     quest: None,
                     progression: None,
@@ -110,6 +114,7 @@ impl Peer {
                     commands: None,
                     choices: Some(choices),
                     combat: Some(net::CombatActions {
+                        melee: None,
                         catalog: data,
                         casts: requests,
                         events,
@@ -1014,7 +1019,15 @@ async fn two_impaired_encrypted_clients_get_independent_authoritative_mana_rejec
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn encrypted_impaired_clients_share_status_refresh_source_leave_and_expiration() {
     let data = include_bytes!("../../../content/gameplay/development-status-abilities.json");
-    let definitions = include_bytes!("../../../content/gameplay/development-statuses.json");
+    // Leave enough authoritative lifetime to observe source retirement separately
+    // from natural expiry even if the lossy disconnect needs transport timeout.
+    let mut definitions: serde_json::Value = serde_json::from_slice(include_bytes!(
+        "../../../content/gameplay/development-statuses.json"
+    ))
+    .unwrap();
+    definitions["statuses"][0]["duration_ms"] = serde_json::json!(9000);
+    let definitions = serde_json::to_vec(&definitions).unwrap();
+    let definitions = definitions.as_slice();
     let resources = include_bytes!("../../../content/gameplay/development-character-stats.json");
     let catalog = Arc::new(Catalog::from_json(data).unwrap());
     let statuses = Arc::new(theia_core::statuses::Catalog::from_json(definitions).unwrap());
@@ -1098,6 +1111,36 @@ async fn encrypted_impaired_clients_share_status_refresh_source_leave_and_expira
                 .iter()
                 .any(|v| v.source.entity.value() == a_id && v.expires_at > first_expiry)
         }) && events.iter().any(|e| matches!(e, Event::Damage { .. }))
+    })
+    .await;
+    // Refresh the remaining source just before retiring A. The assertion below
+    // must prove source removal while B is still active, rather than race B's
+    // earlier deadline under concurrent test execution and UDP retransmission.
+    let b_expiry = b
+        .state
+        .borrow()
+        .statuses
+        .as_ref()
+        .unwrap()
+        .statuses
+        .iter()
+        .find(|status| status.source.entity.value() == b_id)
+        .unwrap()
+        .expires_at;
+    b.until(|s, _| {
+        s.combat
+            .as_ref()
+            .is_some_and(|c| c.cooldowns.iter().all(|v| v.1 <= c.tick))
+    })
+    .await;
+    b.cast(target).await;
+    b.until(|s, _| {
+        s.statuses.as_ref().is_some_and(|state| {
+            state
+                .statuses
+                .iter()
+                .any(|status| status.source.entity.value() == b_id && status.expires_at > b_expiry)
+        })
     })
     .await;
     a.finish().await.unwrap();

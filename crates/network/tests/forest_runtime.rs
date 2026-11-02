@@ -46,9 +46,11 @@ fn full_scene_capsule_route_survey() {
                         &mut motion,
                         feet,
                         Intent {
+                            facing: None,
                             axes,
                             jump: false,
                             sprint: false,
+                            dodge: None,
                         },
                         TickRate::from_hz(30).unwrap(),
                     );
@@ -126,9 +128,11 @@ fn recorded_full_scene_routes_return_valid_poses_at_all_fixed_rates() {
                         &mut motion,
                         feet,
                         Intent {
+                            facing: None,
                             axes: seed.axes,
                             jump: jump && tick < hz / 4,
                             sprint: false,
+                            dodge: None,
                         },
                         TickRate::from_hz(hz).unwrap(),
                     )

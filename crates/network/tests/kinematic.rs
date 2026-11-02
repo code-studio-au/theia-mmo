@@ -19,9 +19,11 @@ fn floor() -> PlacedCollider {
 }
 fn walk(axes: [i16; 2]) -> Intent {
     Intent {
+        facing: None,
         jump: false,
         axes,
         sprint: false,
+        dodge: None,
     }
 }
 fn tick(
@@ -243,9 +245,11 @@ fn sprinting_uphill_jump_keeps_its_upward_launch() {
         let mut motion = Motion::default();
         let start = kinematic::spawn(&scene, LocalPosition::new([-4., -3., 0.]).unwrap()).unwrap();
         let intent = Intent {
+            facing: None,
             axes: [1000, 0],
             sprint: true,
             jump: true,
+            dodge: None,
         };
         let feet = kinematic::advance(
             &scene,
@@ -420,9 +424,11 @@ fn exact_initial_wall_contact_blocks_input_and_permits_retreat() {
         &mut body,
         feet,
         Intent {
+            facing: None,
             axes: [-1000, 0],
             sprint: true,
             jump: false,
+            dodge: None,
         },
         false,
         TickRate::Hz60,

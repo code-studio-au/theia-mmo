@@ -40,9 +40,11 @@ fn queued_commands_acknowledge_completed_steps_and_teleports_invalidate_pending_
             sequence: 1,
             tick: 2,
             intent: Intent {
+                facing: None,
                 axes: [1000, 0],
                 jump: true,
                 sprint: true,
+                dodge: None,
             },
         }],
     };

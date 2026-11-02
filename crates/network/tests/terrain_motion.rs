@@ -28,9 +28,11 @@ fn tick(world: &mut World, id: u64, sequence: u64, axes: [i16; 2], jump: bool) -
             epoch: world.epoch(),
             sequence,
             intent: Intent {
+                facing: None,
                 axes,
                 sprint: false,
-                jump
+                jump,
+                dodge: None,
             }
         }
     ));

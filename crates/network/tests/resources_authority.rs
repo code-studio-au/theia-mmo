@@ -217,9 +217,11 @@ fn interruption_keeps_the_started_cost_and_fresh_actor_resources_are_explicitly_
             epoch: world.epoch(),
             sequence: 1,
             intent: Intent {
+                facing: None,
                 axes: [1000, 0],
                 sprint: false,
-                jump: false
+                jump: false,
+                dodge: None,
             }
         }
     ));

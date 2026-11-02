@@ -1,3 +1,138 @@
+# Current development bundle — 2026-10-31: player melee and terrain-specific readiness
+
+The [qualified sword bundle](PLAYER_MELEE.md) combines the existing world/pursuit
+with a committed-equipment melee action and standard upper-body animation layers.
+Greybox readiness now checks its actual Bevy PBR pipeline specializations and GPU
+meshes; unrelated UI/screenshot/character pipeline compilation cannot withdraw a
+ready terrain footprint. Terrain startup/replacement, full-detail meshes and
+collision still gate movement. [Quiet frame baseline](PLAYER_MELEE_PERFORMANCE.md).
+
+# Pursuing enemy checkpoint — 2026-10-31
+
+Use [the qualified pursuit launch command](CREATURE_PURSUIT_NATIVE.md) to develop
+with a wolf that perceives, runs in, attacks within reach, leashes and returns to
+patrol. Select the new pursuit gameplay manifest and explicit combat-rig/wolf art.
+Existing bundles, saved data and earlier checkpoints stay preserved.
+
+# Equipped sword grip checkpoint — 2026-10-31
+
+Use [the qualified equipped-stance/grip command](EQUIPPED_PLAYER_STANCE.md) for
+standing sword poses and closed right-hand fingers while walking/running, on both
+local and remote players. Authored sockets, owner death/fresh-life animation and
+the animated wolf remain in use. Earlier checkpoints and gameplay profiles stay
+preserved; no saved characters are migrated.
+
+# Authored sockets and player death checkpoint — 2026-10-31
+
+Use [the qualified player/socket launcher command](PLAYER_ANIMATION_SOCKETS.md)
+for the 52-bone POLYGON development player, authored main-hand equipment socket,
+local death/fresh-life animation and animated wolf. Previous commands and
+checkpoints remain preserved; no saved gameplay profiles are migrated.
+
+# Animated wolf development checkpoint — 2026-10-31
+
+Use [the qualified wolf launcher command](WOLF_CREATURE.md) to retain the existing
+POLYGON player and replace the primitive training enemy with animated wolf art.
+The normal thirteen-profile account flow is unchanged; no gameplay data or saved
+characters are migrated. Use fullscreen for actual 3440×1440 client pixels.
+Previous commands/checkpoints below remain available.
+
+# Current opt-in life/retaliation development — 2026-10-31
+
+With the existing local OIDC/PostgreSQL setup, use the matched qualified binaries
+and validator for the new thirteen-profile bundle:
+
+```sh
+python3 tools/play.py \
+  --binaries build/player-life-qualified-v1-20261031 \
+  --gameplay-validator build/player-life-qualified-v1-20261031/validate_gameplay \
+  --gameplay-manifest content/gameplay/development-gameplay-player-life.json \
+  --window-size 1920x1200
+```
+
+For the qualified ultrawide mode, use `--window-size 3440x1440 --fullscreen`.
+The world, terrain streaming, POLYGON development player, account character menu
+and rewarded quest remain in use. Attack the training creature within its 3 m
+melee reach to exercise retaliation; it holds the first attacker without chasing.
+Health is transient: death respawns at supported admission home; a fresh admission
+starts a fresh full-health life. Production logout policy and death animation are
+separate work. [Behavior, native proof and limitations](PLAYER_LIFE_NATIVE.md).
+
+The older ten/eleven-profile manifests and all earlier qualified binary sets below
+remain preserved. The newest binary set also accepts those manifest schemas;
+the new life mode requires both extra profiles. The launcher validates and seals
+all selected content before starting either executable.
+
+# Current character selection — 2026-10-31
+
+The normal launcher offers N to create another character on an existing account.
+If saved gameplay profiles are incompatible, it returns to selection so you can
+choose a compatible character or create one. Existing saves are preserved.
+The current matched binary/validator set is
+`build/character-menu-qualified-v1-20261031`; use it for `--binaries` and its
+`validate_gameplay` for `--gameplay-validator` with the rewarded command below.
+[Menu contract and proof](CHARACTER_LAUNCHER_MENU.md). The earlier binary sets below
+remain preserved; all four binaries are unchanged in this menu-only continuation.
+
+# Current entry checks — 2026-10-31
+
+Use `--binaries build/gameplay-profiles-qualified-v1-20261031` and
+`--gameplay-validator build/gameplay-profiles-qualified-v1-20261031/validate_gameplay`
+with the rewarded manifest command below for the latest matched server/client set.
+An owned character saved with incompatible enabled gameplay profiles is refused
+before a game ticket, with a clear launcher message. Select a compatible/fresh
+character; existing saves are never automatically rewritten. [Exact entry contract](CHARACTER_PROFILE_PREFLIGHT.md).
+The previous complete rewarded binaries below remain preserved and usable with
+compatible characters.
+
+# Optional rewarded training quest — 2026-10-31
+
+With the existing local OIDC/PostgreSQL setup, use the matched qualified binaries
+and validator with the new eleven-profile manifest:
+
+```sh
+python3 tools/play.py \
+  --binaries build/quest-turn-in-xp-qualified-v1-20261031 \
+  --gameplay-manifest content/gameplay/development-gameplay-turn-in-xp.json \
+  --gameplay-validator build/quest-turn-in-xp-qualified-v1-20261031/validate_gameplay \
+  --window-size 1920x1200
+```
+
+Use a fresh compatible development character/realm. E opens the guide; accept
+training, defeat three targets, then return to turn in for 25 XP. The default curve
+reaches level 2 at 100 total XP. Personal loot, barter and equipment remain
+independent. `--window-size 3440x1440 --fullscreen` uses the current monitor's full
+native size. [Exact proof and limits](QUEST_TURN_IN_XP.md). Existing journal-only
+saved rows retain their exact content binding; automatic migration/retroactive
+rewards are not implemented. The previous journal-only command below remains valid.
+
+# Opt-in accepted training quest — 2026-10-31
+
+With the local OIDC/PostgreSQL configuration already set up, the current optimized
+client/server support this normal launcher path (the validator path is the preserved
+qualified offline validator). For the preserved complete binary set, add
+`--binaries build/quest-lifecycle-qualified-v1-20261031` to this command:
+
+```sh
+python3 tools/play.py --quest-lifecycle \
+  --gameplay-manifest content/gameplay/development-gameplay.json \
+  --gameplay-validator build/gameplay-content-qualified-v1-20261030/validate_gameplay \
+  --window-size 1920x1200
+```
+
+Talk to the guide with E, click **Accept training**, defeat three creatures, return
+and click **Turn in training**. The journal waits for committed authority state.
+Kill XP and personal loot remain independent; turn-in has no extra item/XP grant.
+The launcher still requires prepared player/terrain/navigation assets and matching
+profiles. Existing characters retain their saved position; the guide is at the
+configured placement. [Behavior and qualification](QUEST_LIFECYCLE.md).
+Earlier launch examples below describe their own optional modes.
+
+Current gameplay launcher, 2026-10-31: pass
+`--gameplay-manifest content/gameplay/development-gameplay.json` and the built
+Rust `--gameplay-validator` to select the checked ten-profile training bundle with
+account login. [Setup, snapshot behavior and qualification](GAMEPLAY_MANIFEST_LAUNCH.md).
+
 # Development window — 2026-10-30
 
 The normal client/launcher defaults to **1920×1200**, as requested for more UI

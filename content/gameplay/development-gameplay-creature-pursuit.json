@@ -1,0 +1,18 @@
+{
+  "schema": 3,
+  "id": "theia.dev.gameplay-creature-pursuit",
+  "revision": 1,
+  "items": "development-equipment-items.json",
+  "abilities": "development-status-abilities.json",
+  "stats": "development-character-stats.json",
+  "statuses": "development-statuses.json",
+  "creature": "development-creature-pursuit.json",
+  "dialogue": "development-dialogue.json",
+  "vendor": "development-vendor.json",
+  "rewards": "development-rewards.json",
+  "progression": "development-progression.json",
+  "quest": "development-quest.json",
+  "quest_turn_in_xp": "development-quest-turn-in-xp.json",
+  "creature_retaliation": "development-creature-retaliation.json",
+  "player_respawn": "development-player-respawn.json"
+}

@@ -22,17 +22,21 @@ fn anchor(patch: &Patch, rate: TickRate) -> Correction {
         rate,
         input: Timeline::new(1, rate, 0).unwrap().state(),
         pose: Pose {
+            facing: None,
             feet: patch.spawn(8062., 8000.),
             motion: Motion::default().snapshot(),
+            dodge: None,
         },
         ready_sequence: 1,
     }
 }
 fn moving(tick: u64) -> Intent {
     Intent {
+        facing: None,
         axes: if tick <= 140 { [1000, 0] } else { [0, 0] },
         sprint: true,
         jump: (20..=60).contains(&tick) || (100..=105).contains(&tick),
+        dodge: None,
     }
 }
 fn unchanged(pose: Pose, _: Intent, _: TickRate) -> Result<Option<Pose>, &'static str> {
@@ -506,9 +510,11 @@ fn readiness_withdrawal_discards_old_replay_but_still_allows_airborne_gravity_an
         |pose, intent, rate| prediction::terrain_step(&patch, &patch.ids, pose, intent, rate, 1.);
     let mut client = History::new(initial).unwrap();
     let jump = Intent {
+        facing: None,
         axes: [1000, 0],
         jump: true,
         sprint: false,
+        dodge: None,
     };
     for _ in 0..6 {
         client.predict(Some(jump), 1, solve).unwrap();

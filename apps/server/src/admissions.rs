@@ -180,6 +180,18 @@ impl GameAdmissions {
             .ok_or("Objectives require progression owner")?
             .set_quest(profile, wire)
     }
+    pub(crate) fn with_quest_lifecycle(
+        gate: &mut Arc<Self>,
+        profile: theia_persistence::QuestLifecycleCatalog,
+        wire: Arc<theia_network::quest_lifecycle_wire::Profile>,
+    ) -> Result<()> {
+        Arc::get_mut(gate)
+            .ok_or("Explicit quest configuration requires unshared admission gate")?
+            .progression
+            .as_mut()
+            .ok_or("Explicit quests require progression owner")?
+            .set_lifecycle(profile, wire)
+    }
     fn lock(&self) -> GateResult<MutexGuard<'_, State>> {
         let state = self.state.lock().map_err(|_| Error::Unavailable)?;
         if state.failed {
@@ -363,6 +375,51 @@ impl GameAdmissions {
     }
 }
 impl Reservation {
+    fn selecting_binding(&self) -> GateResult<Binding> {
+        let state = self.gate.lock()?;
+        let entry = state.slots[self.slot]
+            .as_ref()
+            .filter(|e| e.generation == self.generation && e.phase == Phase::Selecting)
+            .ok_or(Error::Unavailable)?;
+        if !self.gate.authorized(entry)? || Instant::now() >= entry.deadline {
+            return Err(Error::Unauthorized);
+        }
+        Ok(entry.binding)
+    }
+    /// Retain the selecting reservation across read-only SQL, before any ticket.
+    /// Content incompatibility is expected; SQL failure remains unavailable.
+    pub async fn check_gameplay_profiles(
+        &self,
+        publisher: &Publisher,
+    ) -> GateResult<theia_persistence::ProfileCompatibility> {
+        let binding = self.selecting_binding()?;
+        let (xp, objective, lifecycle) = self
+            .gate
+            .progression
+            .as_ref()
+            .map(|config| {
+                let (xp, objective, lifecycle) = config.admission_profiles();
+                (Some(xp), objective, lifecycle)
+            })
+            .unwrap_or((None, None, None));
+        let profiles = theia_persistence::GameplayProfiles::new(
+            self.gate
+                .inventory
+                .as_ref()
+                .map(|config| config.profile_hash()),
+            xp,
+            objective,
+            lifecycle,
+        )
+        .map_err(|_| Error::Unavailable)?;
+        let result = publisher
+            .check_gameplay_profiles(binding, self.gate.world, profiles)
+            .await
+            .map_err(|_| Error::Unavailable)?;
+        self.selecting_binding()?;
+        Ok(result)
+    }
+
     pub fn issue(mut self, saved: SavedCharacter) -> GateResult<IssuedTicket> {
         let mut state = self.gate.lock()?;
         let entry = state.slots[self.slot]

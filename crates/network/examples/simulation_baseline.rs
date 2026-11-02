@@ -28,9 +28,11 @@ fn main() -> theia_network::Result<()> {
                         epoch: world.epoch(),
                         sequence,
                         intent: Intent {
+                            facing: None,
                             jump: false,
                             axes,
                             sprint: false,
+                            dodge: None,
                         },
                     },
                 );

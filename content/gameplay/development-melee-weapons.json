@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "id": "theia.dev.classic-melee-fixture",
+  "weapons": [
+    {
+      "item": "theia.dev.training-sword",
+      "period_ms": 2400,
+      "damage": 15,
+      "reach_metres": 3.0,
+      "frontal_arc_degrees": 180.0
+    }
+  ]
+}

@@ -1,5 +1,12 @@
 # Theia MMO — Approved Architecture
 
+**Initial controls/combat amendment, 1 November 2026:**
+[THEIA-COMBAT-001 v1.0](../COMBAT_TARGETING_MOVEMENT_SPEC.md) supersedes the
+GW2/hybrid control and facing direction in this reconstructed baseline. Use
+strict WoW Classic-style movement/camera, persistent targets, manual facing and
+weapon-timed autoattack; movement restrictions are ability-specific. Dodge and
+action camera are deferred. Engine/network/world architecture remains adopted.
+
 Reconstructed from the October 19, 2026 planning session. **Approved in conversation does not mean implemented in GitHub.** Project: https://github.com/code-studio-au/theia-engine. Rust + Bevy client, headless authoritative Rust server, modular monolith initially. Modern WoW-style MMO with Guild Wars 2-inspired fluid mobile combat. Production assets must be original or appropriately licensed; converting WoW assets to glTF does not grant distribution rights.
 
 ## NET-001

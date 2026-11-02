@@ -1,0 +1,16 @@
+{
+  "schema": 2,
+  "id": "theia.dev.gameplay.turn-in-xp",
+  "revision": 1,
+  "items": "development-equipment-items.json",
+  "abilities": "development-status-abilities.json",
+  "stats": "development-character-stats.json",
+  "statuses": "development-statuses.json",
+  "creature": "development-creature-patrol.json",
+  "dialogue": "development-dialogue.json",
+  "vendor": "development-vendor.json",
+  "rewards": "development-rewards.json",
+  "progression": "development-progression.json",
+  "quest": "development-quest.json",
+  "quest_turn_in_xp": "development-quest-turn-in-xp.json"
+}

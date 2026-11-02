@@ -74,8 +74,8 @@ def world(document, curves=(), moment=0.):
     return matrices
 
 
-def skin(document,binary):
-    assert len(document['skins'])==1 and len(document['skins'][0]['joints'])==50
+def skin(document,binary, expected_bones=50):
+    assert len(document['skins'])==1 and len(document['skins'][0]['joints'])==expected_bones
     node=next(n for n in document['nodes'] if 'skin' in n)
     primitive=document['meshes'][node['mesh']]['primitives'][0]
     attributes=primitive['attributes']
@@ -86,7 +86,7 @@ def skin(document,binary):
             joints.append(accessor(document,binary,attributes[f'JOINTS_{index}']))
             weights.append(accessor(document,binary,attributes[f'WEIGHTS_{index}']))
     joints=np.concatenate(joints,axis=1).astype(int);weights=np.concatenate(weights,axis=1)
-    assert joints.max()<50 and np.all(weights>=0) and np.allclose(weights.sum(axis=1),1.,atol=1e-5)
+    assert joints.max()<expected_bones and np.all(weights>=0) and np.allclose(weights.sum(axis=1),1.,atol=1e-5)
     matrices=accessor(document,binary,document['skins'][0]['inverseBindMatrices'])
     return np.column_stack([points,np.ones(len(points))]),joints,weights,matrices
 
@@ -98,17 +98,26 @@ def deformed(document, data, matrices):
     return np.einsum('nk,nki->ni',weights,positions)[:,:3]
 
 
-def verify(directory):
+def verify(directory, combat=False, dodge=False, include_dodge_rolls=False):
+    if dodge and not combat:raise ValueError("Dodge verification requires the combat socket contract")
+    if include_dodge_rolls and not dodge:raise ValueError("Dodge roll verification requires dodge clips")
     proof=directory/'character-verification.json';proof.unlink(missing_ok=True)
     master,master_binary=read(directory/'character-source-skin.glb')
     preview,preview_binary=read(directory/'character.glb')
     reference=json.loads((directory/'source-pose-reference.json').read_bytes())
-    full=skin(master,master_binary);four=skin(preview,preview_binary)
+    bone_count=52 if combat else 50
+    full=skin(master,master_binary,bone_count);four=skin(preview,preview_binary,bone_count)
     assert full[1].shape[1]>4 and four[1].shape[1]==4
     np.testing.assert_array_equal(full[0],four[0])
     assert master['nodes']==preview['nodes']
     by_name={node['name']:index for index,node in enumerate(master['nodes'])}
     assert len(by_name)==len(master['nodes'])
+    if combat:
+        for side in ['L','R']:
+            socket=by_name['Prop_'+side];hand=by_name['Hand_'+side]
+            assert socket in master['nodes'][hand].get('children',[]) and not master['nodes'][socket].get('children')
+            joint=master['skins'][0]['joints'].index(socket)
+            assert not np.any((full[1]==joint)&(full[2]>0)), 'Socket unexpectedly deforms body'
     # Bone local basis may differ after export. Joint positions and world-space
     # deformation deltas are independent of that fixed basis choice.
     conversion=np.array([[1,0,0,0],[0,0,1,0],[0,-1,0,0],[0,0,0,1]],dtype=float)
@@ -119,12 +128,14 @@ def verify(directory):
         preview_curves=tracks(preview,preview_binary,preview_animation)
         first=world(master,curves,0.)
         baseline={bone:np.array(value) for bone,value in reference[name][0]['bones_blender_world'].items()}
-        position_error=delta_error=skin_error=0.
+        position_error=delta_error=skin_error=socket_error=0.
         low=np.full(3,np.inf);high=np.full(3,-np.inf)
         for frame in reference[name]:
             actual=world(master,curves,frame['time'])
             for bone,expected in frame['bones_blender_world'].items():
                 expected=np.array(expected);matrix=actual[by_name[bone]]
+                if bone.startswith("Prop_"):
+                    socket_error=max(socket_error,float(np.max(abs(matrix-conversion@expected))))
                 position_error=max(position_error,float(np.linalg.norm(matrix[:3,3]-(conversion@expected)[:3,3])))
                 source_delta=conversion@expected@np.linalg.inv(baseline[bone])@conversion.T
                 exported_delta=matrix@np.linalg.inv(first[by_name[bone]])
@@ -135,12 +146,17 @@ def verify(directory):
             skin_error=max(skin_error,float(np.linalg.norm(source_vertices-deformed(preview,four,preview_world),axis=1).max()))
         assert position_error<.0001,(name,position_error)
         assert delta_error<.0005,(name,delta_error)
-        results[name]={'source_joint_position_error_metres':position_error,'source_world_deformation_delta_error':delta_error,
+        assert socket_error<.0001,(name,socket_error)
+        results[name]={'source_joint_position_error_metres':position_error,'source_world_deformation_delta_error':delta_error,'source_socket_matrix_error':socket_error,
                        'full_to_four_weight_skin_error_metres':skin_error,'frames':len(reference[name]),
                        'four_weight_skin_within_5mm':skin_error<=.005,
                        'animated_bounds_metres':[low.tolist(),high.tolist()]}
-    assert set(results)=={'Idle','Walk','Run','Jump'}
-    result={'passed_source_pose_comparison':True,'clips':results,'preview_vertices':len(four[0]),'bones':50,
+    expected={'Idle','Walk','Run','Jump'}
+    if combat:expected.update({'SwordIdle','SwordAttack','SwordHit','Death'})
+    if dodge:expected.update({'Dodge'+direction for direction in ['Forward','Back','Left','Right']})
+    if include_dodge_rolls:expected.update({'DodgeRoll'+direction for direction in ['Forward','Back','Left','Right']})
+    assert set(results)==expected
+    result={'passed_source_pose_comparison':True,'clips':results,'preview_vertices':len(four[0]),'bones':bone_count,
             'preview_sha256':hashlib.sha256((directory/'character.glb').read_bytes()).hexdigest(),
             'master_sha256':hashlib.sha256((directory/'character-source-skin.glb').read_bytes()).hexdigest(),
             'scope':'independent source joint/animation and standard four-weight approximation comparison; not game adoption'}
@@ -148,5 +164,8 @@ def verify(directory):
 
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('directory',type=Path)
-    print(json.dumps(verify(parser.parse_args().directory),indent=2))
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('directory',type=Path);parser.add_argument('--combat',action='store_true')
+    parser.add_argument('--dodge',action='store_true')
+    parser.add_argument('--include-dodge-rolls',action='store_true')
+    args=parser.parse_args()
+    print(json.dumps(verify(args.directory,args.combat,args.dodge,args.include_dodge_rolls),indent=2))

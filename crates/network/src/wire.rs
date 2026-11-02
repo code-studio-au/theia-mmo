@@ -15,14 +15,22 @@ pub const COORDINATE_LIMIT: f32 = 1023.;
 #[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Intent {
+    /// Independent character orientation; only the explicit classic profile
+    /// accepts it. Axes retain their bounded world-XZ movement meaning.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub facing: Option<theia_core::facing::Facing>,
     #[serde(default)]
     pub jump: bool,
     pub axes: [i16; 2],
     pub sprint: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dodge: Option<crate::dodging::Request>,
 }
 impl Intent {
     pub fn valid(self) -> bool {
         self.axes.iter().all(|v| (-1000..=1000).contains(v))
+            && self.dodge.is_none_or(crate::dodging::Request::valid)
+            && !(self.dodge.is_some() && self.facing.is_some())
     }
 }
 
@@ -174,6 +182,8 @@ impl ChunkReady {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Player {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub facing: Option<theia_core::facing::Facing>,
     pub id: u64,
     pub xz: [f32; 2],
     pub y: f32,
@@ -481,6 +491,7 @@ mod tests {
             tick_hz: TICK_HZ,
             players: (1..=MAX_PLAYERS as u64)
                 .map(|id| Player {
+                    facing: None,
                     id: u64::MAX - MAX_PLAYERS as u64 + id,
                     xz: [4095.1235, -4095.1235],
                     y: 4095.1235,
@@ -544,6 +555,7 @@ mod tests {
             tick: 1,
             tick_hz: 30,
             players: vec![Player {
+                facing: None,
                 id: 1,
                 xz: [0., 0.],
                 y: 0.9,

@@ -7203,7 +7203,6 @@ name = "theia-nav-bake"
 version = "0.1.0"
 dependencies = [
  "glam 0.33.12",
- "landmass",
  "rerecast",
  "serde_json",
  "theia-core",
@@ -7216,7 +7215,10 @@ version = "0.1.0"
 dependencies = [
  "avian3d",
  "bevy",
+ "landmass",
  "quinn",
+ "rand 0.9.5",
+ "rand_chacha 0.9.0",
  "rcgen",
  "renet",
  "renet_netcode",

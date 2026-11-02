@@ -297,8 +297,68 @@ pub fn advance_development(
     boundary: Option<&dyn Boundary>,
     speed: f32,
 ) -> Result<LocalPosition, &'static str> {
-    if !matches!(speed, 1. | 8. | 32.) {
+    if intent.dodge.is_some() || intent.facing.is_some() {
+        return Err("Dodge requires its bound movement profile");
+    }
+    advance_kind(
+        scene,
+        state,
+        start,
+        intent,
+        rate,
+        boundary,
+        Horizontal::Walk(speed),
+    )
+}
+
+/// Apply one accepted dodge proposal through the ordinary static-world capsule
+/// solver. This replaces walking/sprint, preserves one gravity step and latches
+/// held jump without allowing a new jump. None is the accepted start tick hold.
+/// Current life, grounded start, cooldown and readiness authorization belong to
+/// the caller; this function is not a new client-authority movement protocol.
+pub fn advance_dodge(
+    scene: &StaticScene,
+    state: &mut Motion,
+    start: LocalPosition,
+    intent: Intent,
+    rate: TickRate,
+    boundary: Option<&dyn Boundary>,
+    step: Option<theia_core::dodge::Step>,
+) -> Result<LocalPosition, &'static str> {
+    advance_kind(
+        scene,
+        state,
+        start,
+        intent,
+        rate,
+        boundary,
+        Horizontal::Dodge(step),
+    )
+}
+#[derive(Clone, Copy)]
+enum Horizontal {
+    Walk(f32),
+    Dodge(Option<theia_core::dodge::Step>),
+}
+fn advance_kind(
+    scene: &StaticScene,
+    state: &mut Motion,
+    start: LocalPosition,
+    intent: Intent,
+    rate: TickRate,
+    boundary: Option<&dyn Boundary>,
+    horizontal: Horizontal,
+) -> Result<LocalPosition, &'static str> {
+    if let Horizontal::Walk(speed) = horizontal
+        && !matches!(speed, 1. | 8. | 32.)
+    {
         return Err("Invalid developer travel speed");
+    }
+    if let Horizontal::Dodge(Some(step)) = horizontal {
+        let [x, z] = step.horizontal_metres;
+        if !x.is_finite() || !z.is_finite() || x.hypot(z) > 20. / f64::from(rate.hz()) + 1e-9 {
+            return Err("Dodge step exceeds checked controller budget");
+        }
     }
     if !intent.valid() {
         return Err("Invalid movement axes");
@@ -320,7 +380,7 @@ pub fn advance_development(
             next.grounded = false;
         }
     }
-    if jump && !next.jump_held && next.grounded {
+    if jump && !next.jump_held && next.grounded && matches!(horizontal, Horizontal::Walk(_)) {
         next.vertical_speed = JUMP_SPEED;
         next.grounded = false;
     }
@@ -330,8 +390,17 @@ pub fn advance_development(
         0.,
         f32::from(intent.axes[1]) / 1000.,
     );
-    let delta =
-        axes.clamp_length_max(1.) * if intent.sprint { 8. } else { 5. } * rate.seconds() * speed;
+    let delta = match horizontal {
+        Horizontal::Walk(speed) => {
+            axes.clamp_length_max(1.) * if intent.sprint { 8. } else { 5. } * rate.seconds() * speed
+        }
+        Horizontal::Dodge(Some(step)) => Vec3::new(
+            step.horizontal_metres[0] as f32,
+            0.,
+            step.horizontal_metres[1] as f32,
+        ),
+        Horizontal::Dodge(None) => Vec3::ZERO,
+    };
     let moved = slide(scene, feet, delta, true, boundary);
     let progress = (moved - feet).xz().length();
     feet = if next.grounded && progress + 0.0001 < delta.length() {
@@ -420,3 +489,7 @@ mod tests {
         validate_pose(&scene, feet, false).unwrap();
     }
 }
+
+#[cfg(test)]
+#[path = "kinematic/dodge_tests.rs"]
+mod dodge_tests;

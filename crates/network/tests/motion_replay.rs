@@ -15,6 +15,8 @@ fn corrections_replay_identically_midair_and_while_jump_is_held_after_landing() 
             kinematic::spawn(scene, LocalPosition::new([0., 0., 0.]).unwrap()).unwrap();
         let mut samples = Vec::new();
         let intent = |tick| Intent {
+            facing: None,
+            dodge: None,
             axes: [100, 0],
             sprint: true,
             jump: (6..=80).contains(&tick) || (91..=105).contains(&tick),

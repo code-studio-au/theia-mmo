@@ -86,6 +86,7 @@ pub async fn run_with_progression(
             rewards: items.1,
             progression,
             quest: None,
+            quest_lifecycle: None,
             vendor: None,
         },
     )
@@ -93,6 +94,7 @@ pub async fn run_with_progression(
 }
 #[derive(Default)]
 pub struct GameplayProfiles {
+    pub quest_lifecycle: Option<theia_persistence::QuestLifecycleCatalog>,
     pub vendor: Option<theia_persistence::VendorCatalog>,
     pub inventory: Option<theia_persistence::InventoryCatalog>,
     pub rewards: Option<theia_persistence::RewardCatalog>,
@@ -113,6 +115,7 @@ pub async fn run_with_profiles(
         rewards,
         progression,
         quest,
+        quest_lifecycle,
         vendor,
     } = profiles;
     let vendor = match (world.vendor_profile(), vendor) {
@@ -128,6 +131,13 @@ pub async fn run_with_profiles(
             Some((profile, wire.clone()))
         }
         _ => return Err("Objective authority/admission profile mismatch".into()),
+    };
+    let quest_lifecycle = match (world.quest_lifecycle_profile(), quest_lifecycle) {
+        (None, None) => None,
+        (Some(wire), Some(profile)) if wire.hash() == profile.hash() => {
+            Some((profile, wire.clone()))
+        }
+        _ => return Err("Explicit quest authority/admission profile mismatch".into()),
     };
     let progression = match (world.progression_profile(), progression) {
         (None, None) => None,
@@ -167,8 +177,17 @@ pub async fn run_with_profiles(
     let (publisher, worker) = Worker::start(store);
     let status = worker.subscribe_status();
     let mut service = AccountService::prepare(config, publisher.clone(), identity, spawn).await?;
-    let gate =
-        service.enable_game_with_vendors(issuer, inventory, rewards, progression, quest, vendor)?;
+    let gate = service.enable_game_with_profiles(
+        issuer,
+        crate::accounts::GameProfiles {
+            inventory,
+            rewards,
+            progression,
+            quest,
+            vendor,
+            quest_lifecycle,
+        },
+    )?;
     println!(
         "account_game_ready {}",
         serde_json::json!({"account_address":service.address(),"world":world.identity()})

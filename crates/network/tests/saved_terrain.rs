@@ -156,9 +156,11 @@ fn saved_authority_crosses_chunk_and_reloads_distant_collision_with_bounded_resi
                         sequence: tick,
                         tick: correction.input.tick + 1,
                         intent: Intent {
+                            facing: None,
                             axes: [1000, 0],
                             sprint: true,
-                            jump: tick <= 4
+                            jump: tick <= 4,
+                            dodge: None,
                         }
                     }]
                 }

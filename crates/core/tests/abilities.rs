@@ -6,6 +6,71 @@ use theia_core::{
 const DATA: &[u8] = include_bytes!("../../../content/gameplay/development-abilities.json");
 const ID: &str = "theia.dev.arcane-bolt";
 #[test]
+fn schema_four_requires_explicit_valid_equipment_for_sword_animation() {
+    use theia_core::abilities::AnimationCue;
+    let mut value = data();
+    value["schema"] = json!(4);
+    value["abilities"][0]["mana_cost"] = json!(0);
+    value["abilities"][0]["requires_main_hand"] = json!("theia.dev.training-sword");
+    value["abilities"][0]["animation"] = json!("sword_attack");
+    let catalog = parse(&value).unwrap();
+    let ability = catalog.ability(ID).unwrap();
+    assert_eq!(
+        ability.requires_main_hand().unwrap().as_str(),
+        "theia.dev.training-sword"
+    );
+    assert_eq!(ability.animation(), Some(AnimationCue::SwordAttack));
+    let items = theia_core::inventory::Catalog::from_json(include_bytes!(
+        "../../../content/gameplay/development-equipment-items.json"
+    ))
+    .unwrap();
+    assert!(catalog.validate_equipment(Some(&items)).is_ok());
+    assert!(catalog.validate_equipment(None).is_err());
+    for item in ["theia.dev.missing", "theia.dev.training-stone"] {
+        let mut bad = value.clone();
+        bad["abilities"][0]["requires_main_hand"] = json!(item);
+        assert!(
+            parse(&bad)
+                .unwrap()
+                .validate_equipment(Some(&items))
+                .is_err()
+        );
+    }
+    for schema in [1, 2, 3, 7] {
+        let mut bad = value.clone();
+        bad["schema"] = json!(schema);
+        assert!(parse(&bad).is_err());
+    }
+    for bad in [json!("../sword"), json!(""), json!(true), Value::Null] {
+        let mut bad_value = value.clone();
+        bad_value["abilities"][0]["requires_main_hand"] = bad;
+        assert!(parse(&bad_value).is_err());
+    }
+    value["abilities"][0]
+        .as_object_mut()
+        .unwrap()
+        .remove("requires_main_hand");
+    assert!(parse(&value).is_err());
+    value["abilities"][0]
+        .as_object_mut()
+        .unwrap()
+        .remove("animation");
+    assert!(parse(&value).is_ok());
+    for bytes in [
+        DATA,
+        include_bytes!("../../../content/gameplay/development-resource-abilities.json"),
+        include_bytes!("../../../content/gameplay/development-status-abilities.json"),
+    ] {
+        assert!(
+            Catalog::from_json(bytes)
+                .unwrap()
+                .abilities()
+                .iter()
+                .all(|a| a.requires_main_hand().is_none() && a.animation().is_none())
+        );
+    }
+}
+#[test]
 fn status_references_require_explicit_schema_three_and_checked_ids() {
     let bytes = include_bytes!("../../../content/gameplay/development-status-abilities.json");
     let catalog = Catalog::from_json(bytes).unwrap();
@@ -242,4 +307,89 @@ fn explicit_schema_two_costs_preserve_schema_one_and_reject_ambiguous_or_invalid
     let mut ambiguous = baseline;
     ambiguous["schema"] = serde_json::json!(1);
     assert!(Catalog::from_json(&serde_json::to_vec(&ambiguous).unwrap()).is_err());
+}
+
+#[test]
+fn schema_five_checked_hit_tables_apply_only_to_direct_damage_and_preserve_older_catalogues() {
+    let bytes = include_bytes!("../../../content/gameplay/development-melee-abilities.json");
+    let old = Catalog::from_json(bytes).unwrap();
+    assert_eq!(old.schema(), 4);
+    assert!(old.abilities().iter().all(|a| a.hit_table().is_none()));
+    let mut value: Value = serde_json::from_slice(bytes).unwrap();
+    value["schema"] = json!(5);
+    value["abilities"][1]["hit_table"] = json!({"hit_bp":8500,"miss_bp":1000,"deflect_bp":500});
+    let catalog = parse(&value).unwrap();
+    let table = catalog.abilities()[1].hit_table().unwrap();
+    assert_eq!(
+        (table.hit_bp(), table.miss_bp(), table.deflect_bp()),
+        (8500, 1000, 500)
+    );
+    assert!(catalog.abilities()[0].hit_table().is_none());
+    let mut legacy = value.clone();
+    legacy["schema"] = json!(4);
+    assert!(parse(&legacy).is_err());
+    let mut status = value.clone();
+    status["abilities"][0]["hit_table"] = value["abilities"][1]["hit_table"].clone();
+    assert!(parse(&status).is_err());
+    for bad in [
+        Value::Null,
+        json!([]),
+        json!({"hit_bp":8500,"miss_bp":1000,"deflect_bp":501}),
+    ] {
+        let mut invalid = value.clone();
+        invalid["abilities"][1]["hit_table"] = bad;
+        assert!(parse(&invalid).is_err());
+    }
+}
+
+#[test]
+fn schema_six_travel_requires_direct_damage_and_can_cover_declared_launch_range() {
+    let bytes = include_bytes!("../../../content/gameplay/development-hit-abilities.json");
+    let mut value: Value = serde_json::from_slice(bytes).unwrap();
+    value["schema"] = json!(6);
+    let travel = json!({"speed_metres_per_second":20.,"maximum_distance_metres":45.,"lifetime_ms":3000,"target_radius_metres":0.2});
+    value["abilities"][1]["projectile"] = travel.clone();
+    let parsed = parse(&value).unwrap();
+    assert_eq!(parsed.schema(), 6);
+    assert_eq!(
+        parsed.abilities()[1]
+            .projectile()
+            .unwrap()
+            .maximum_distance_metres(),
+        45.
+    );
+    assert!(parsed.abilities()[0].projectile().is_none());
+    for schema in 1..=5 {
+        let mut old = value.clone();
+        old["schema"] = json!(schema);
+        assert!(parse(&old).is_err());
+    }
+    let mut status = value.clone();
+    status["abilities"][0]["projectile"] = travel;
+    assert!(parse(&status).is_err());
+    for invalid in [Value::Null, json!({}), json!([])] {
+        let mut bad = value.clone();
+        bad["abilities"][1]["projectile"] = invalid;
+        assert!(parse(&bad).is_err());
+    }
+    for field in ["maximum_distance_metres", "speed_metres_per_second"] {
+        let mut bad = value.clone();
+        bad["abilities"][1]["projectile"][field] = json!(0.5);
+        assert!(parse(&bad).is_err());
+    }
+    for bytes in [
+        DATA,
+        include_bytes!("../../../content/gameplay/development-resource-abilities.json"),
+        include_bytes!("../../../content/gameplay/development-status-abilities.json"),
+        include_bytes!("../../../content/gameplay/development-melee-abilities.json"),
+        include_bytes!("../../../content/gameplay/development-hit-abilities.json"),
+    ] {
+        assert!(
+            Catalog::from_json(bytes)
+                .unwrap()
+                .abilities()
+                .iter()
+                .all(|a| a.projectile().is_none())
+        );
+    }
 }

@@ -1,5 +1,7 @@
 //! Bounded offline navigation artifacts. File I/O is for loading/bake workers,
-//! never the fixed step. This module does not perform pathfinding or move actors.
+//! never the fixed step. Query/worker adapters do not move actors.
+pub mod query;
+pub mod worker;
 use crate::Result;
 use serde::{Deserialize, Serialize};
 use std::{

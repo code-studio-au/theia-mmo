@@ -1,0 +1,54 @@
+{
+  "schema": 6,
+  "global_cooldown_ms": 1500,
+  "queue_window_ms": 300,
+  "abilities": [
+    {
+      "id": "theia.dev.arcane-bolt",
+      "target": "hostile_alive",
+      "range_metres": 30.0,
+      "cast_ms": 500,
+      "cooldown_ms": 2000,
+      "cast_while_moving": true,
+      "uses_global_cooldown": true,
+      "mana_cost": 25,
+      "requires_main_hand": "theia.dev.training-wand",
+      "effect": {
+        "kind": "damage",
+        "amount": 20
+      },
+      "projectile": {
+        "speed_metres_per_second": 20.0,
+        "maximum_distance_metres": 45.0,
+        "lifetime_ms": 3000,
+        "target_radius_metres": 0.2
+      },
+      "hit_table": {
+        "hit_bp": 10000,
+        "miss_bp": 0,
+        "deflect_bp": 0
+      }
+    },
+    {
+      "id": "theia.dev.sword-slash",
+      "target": "hostile_alive",
+      "range_metres": 3.0,
+      "cast_ms": 500,
+      "cooldown_ms": 1500,
+      "cast_while_moving": true,
+      "uses_global_cooldown": true,
+      "mana_cost": 0,
+      "requires_main_hand": "theia.dev.training-sword",
+      "animation": "sword_attack",
+      "effect": {
+        "kind": "damage",
+        "amount": 20
+      },
+      "hit_table": {
+        "hit_bp": 8500,
+        "miss_bp": 1000,
+        "deflect_bp": 500
+      }
+    }
+  ]
+}

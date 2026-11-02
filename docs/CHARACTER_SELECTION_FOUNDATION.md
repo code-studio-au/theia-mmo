@@ -1,3 +1,13 @@
+# Console selection/create continuation — qualified 2026-10-31
+
+The normal launcher now offers creation on accounts with existing characters and
+returns to selection after a known incompatible-profile refusal. Server authority
+still owns names/cap/ownership/spawn; no saved row is migrated or deleted. Actual
+OIDC/native menu recovery, restart and normal launcher cleanup pass; thirty Python
+checks pass. [Exact current behavior and limitations](CHARACTER_LAUNCHER_MENU.md).
+The preceding [preflight contract](CHARACTER_PROFILE_PREFLIGHT.md) and historical
+database/HTTP checkpoints below retain their narrower scopes.
+
 # Character creation/selection — P3-03 next-slice contract, 2026-10-29
 
 Status: the bounded account-owned create/list/select database boundary is

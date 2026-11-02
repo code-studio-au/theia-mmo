@@ -15,9 +15,11 @@ pub const MAX_HISTORY: usize = 64;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Pose {
+    pub facing: Option<theia_core::facing::Facing>,
     /// Capsule feet, not the presentation model's centre.
     pub feet: GlobalPosition,
     pub motion: MotionState,
+    pub dodge: Option<crate::dodging::Snapshot>,
 }
 /// Shared-controller adapter for an already-prepared graybox query patch.
 /// Permission limits XZ sweeps; unavailable permission still allows gravity.
@@ -30,6 +32,13 @@ pub fn terrain_step(
     rate: TickRate,
     speed: f32,
 ) -> Result<Option<Pose>, &'static str> {
+    if pose.dodge.is_some()
+        || intent.dodge.is_some()
+        || pose.facing.is_some()
+        || intent.facing.is_some()
+    {
+        return Err("Dodge requires its bound movement profile");
+    }
     if !patch.covers(pose.feet, None) {
         return Ok(None);
     }
@@ -59,8 +68,10 @@ pub fn terrain_step(
         return Ok(None);
     }
     Ok(Some(Pose {
+        facing: None,
         feet,
         motion: motion.snapshot(),
+        dodge: None,
     }))
 }
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -76,7 +87,14 @@ pub struct Correction {
 }
 impl Correction {
     pub fn valid(self) -> bool {
-        self.pose.motion.valid() && Timeline::restore(self.rate, self.input).is_ok()
+        self.pose.motion.valid()
+            && !(self.pose.facing.is_some() && self.pose.dodge.is_some())
+            && (self.input.intent.facing.is_none() || self.pose.facing.is_some())
+            && Timeline::restore(self.rate, self.input).is_ok()
+            && self
+                .pose
+                .dodge
+                .is_none_or(|d| d.policy.tick == self.input.tick)
     }
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -123,6 +141,8 @@ pub struct PoseError {
     pub vertical_speed_mps: f64,
     pub grounded_mismatch: bool,
     pub jump_held_mismatch: bool,
+    pub dodge_mismatch: bool,
+    pub facing_mismatch: bool,
     pub readiness_pending: bool,
     /// Completed-tick comparisons, not proof that preceding input histories match.
     pub held_intent_mismatch: bool,
@@ -145,6 +165,8 @@ impl PoseError {
             .abs(),
             grounded_mismatch: predicted.motion.grounded != truth.motion.grounded,
             jump_held_mismatch: predicted.motion.jump_held != truth.motion.jump_held,
+            dodge_mismatch: predicted.dodge != truth.dodge,
+            facing_mismatch: predicted.facing != truth.facing,
             readiness_pending,
             held_intent_mismatch: step.input.intent != correction.input.intent,
             applied_sequence_mismatch: step.input.applied_sequence
@@ -220,6 +242,18 @@ impl History {
         ready_sequence: u64,
         mut solve: impl FnMut(Pose, Intent, TickRate) -> Result<Option<Pose>, &'static str>,
     ) -> Result<Predicted, &'static str> {
+        self.predict_at(intent, ready_sequence, |pose, intent, rate, _tick| {
+            solve(pose, intent, rate)
+        })
+    }
+    /// Solver receives the completed tick even for held/expired input. Timed
+    /// movement policies must use this clock, never count received commands.
+    pub fn predict_at(
+        &mut self,
+        intent: Option<Intent>,
+        ready_sequence: u64,
+        mut solve: impl FnMut(Pose, Intent, TickRate, u64) -> Result<Option<Pose>, &'static str>,
+    ) -> Result<Predicted, &'static str> {
         if intent.is_some_and(|intent| !intent.valid()) {
             return Err("Invalid speculative input");
         }
@@ -262,8 +296,16 @@ impl History {
             self.pose,
             applied.effective_intent(self.pose.motion),
             self.anchor.rate,
+            applied.tick,
         ) {
-            Ok(Some(pose)) if pose.motion.valid() => pose,
+            Ok(Some(pose))
+                if pose.motion.valid()
+                    && pose.dodge.is_some() == self.anchor.pose.dodge.is_some()
+                    && pose.facing.is_some() == self.anchor.pose.facing.is_some()
+                    && pose.dodge.is_none_or(|d| d.policy.tick == applied.tick) =>
+            {
+                pose
+            }
             Ok(None) => {
                 self.reset(Reset::CollisionUnavailable);
                 return Ok(Predicted::Suspended(Reset::CollisionUnavailable));
@@ -294,7 +336,20 @@ impl History {
         correction: Correction,
         mut solve: impl FnMut(Pose, Intent, TickRate) -> Result<Option<Pose>, &'static str>,
     ) -> Result<Reconciled, &'static str> {
+        self.reconcile_at(correction, |pose, intent, rate, _tick| {
+            solve(pose, intent, rate)
+        })
+    }
+    /// Replay uses each original completed tick, preserving timed state across
+    /// authority correction rather than restarting a local motion clock.
+    pub fn reconcile_at(
+        &mut self,
+        correction: Correction,
+        mut solve: impl FnMut(Pose, Intent, TickRate, u64) -> Result<Option<Pose>, &'static str>,
+    ) -> Result<Reconciled, &'static str> {
         if !correction.valid()
+            || correction.pose.dodge.is_some() != self.anchor.pose.dodge.is_some()
+            || correction.pose.facing.is_some() != self.anchor.pose.facing.is_some()
             || correction.actor != self.anchor.actor
             || correction.world != self.anchor.world
             || correction.rate != self.anchor.rate
@@ -377,8 +432,16 @@ impl History {
                 self.pose,
                 applied.effective_intent(self.pose.motion),
                 correction.rate,
+                applied.tick,
             ) {
-                Ok(Some(pose)) if pose.motion.valid() => pose,
+                Ok(Some(pose))
+                    if pose.motion.valid()
+                        && pose.dodge.is_some() == correction.pose.dodge.is_some()
+                        && pose.facing.is_some() == correction.pose.facing.is_some()
+                        && pose.dodge.is_none_or(|d| d.policy.tick == applied.tick) =>
+                {
+                    pose
+                }
                 Ok(None) => {
                     self.reset(Reset::CollisionUnavailable);
                     return Ok(Reconciled::Reset(Reset::CollisionUnavailable));

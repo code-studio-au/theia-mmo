@@ -1,3 +1,353 @@
+Ability-damage prerequisites, 2 November 2026:
+[Special outcomes, impact and exact profile binding](../CLASSIC_ABILITY_DAMAGE.md)
+pass 241 core and 231 network library tests, formatting and workspace Clippy.
+These remain inactive; normal Sword Slash and Arcane Bolt still use fixed effects.
+Opt-in World/RNG/life/projectile adoption now passes 241 core / 572 network
+(ten skips) / 118 client tests and workspace Clippy. Preserve
+`build/classic-ability-world-qualified-v1-20261102`. Next: CE08, UDP and normal/native
+adoption; typed ability facts are currently refused by all older codecs.
+CE08 now passes 241 core / 580 network (ten skips) / 118 client tests and workspace
+Clippy; `build/classic-ability-codec-qualified-v1-20261102`. Actual CE08 UDP and
+normal application/native adoption remain next.
+Actual CE08 encrypted two-peer impaired UDP now passes at 20/30/60 Hz, with
+241 core / 583 network (ten skips) / 118 client full regression and workspace
+Clippy; `build/classic-ability-transport-qualified-v1-20261102`. Fixture inventory
+is synthetic; normal OIDC/PostgreSQL/native replacement acceptance is next.
+The ordinary-melee playable checkpoint below remains preserved. Changes are local.
+
+Ordinary melee playable checkpoint, 1 November 2026:
+[Ordinary attack tables and normal client adoption](../CLASSIC_ATTACK_TABLES.md)
+pass 224 core / 556 network (ten skips) / 118 client / 41 Python checks,
+workspace denied-warning Clippy, formatting and release. Six normal OIDC/PostgreSQL
+native runs pass at actual 1920x1200, 3440x1440 and 1280x720, including controls,
+casting, unmodified wolf perception/chase/attacks, kill and durable XP/loot offers.
+Zero GPU diagnostics and combat event gaps. Linux AMD RX 7900 XTX / RADV Vulkan;
+connected-display ultrawide fullscreen passed, other sizes windowed.
+Preserve `build/classic-white-client-qualified-v1-20261101` and earlier checkpoints.
+Native runs show normal hits, misses, dodges and criticals; level-1 wolf data does
+not exercise block, parry, glancing or crushing. Those have numerical/World/codec
+coverage. Static templates remain: derived gear/class stats, ability/spell starting
+damage, special/spell tables and absorption/resistance are future work.
+No loot-claim, Windows execution or MMO-capacity claim. Changes remain local.
+Older dated entries below record previous checkpoints, not current pending work.
+
+Inactive [ability starting-damage prerequisite](../CLASSIC_ABILITY_DAMAGE.md):
+231 core / 556 network (ten skips) / 118 client tests and workspace Clippy pass.
+Explicit AP-only normalization, scale/flat ordering and bounded candidate recipes
+are qualified; normal abilities still use fixed effects. Separate [spell landing and conditional critical](../CLASSIC_SPELL_DAMAGE.md)
+now pass 235 core tests and workspace Clippy; network/client baselines are inherited.
+Main-hand-special outcomes and explicit mitigation remain before authority adoption.
+
+Shared physical damage playable checkpoint, 1 November 2026:
+[Normal physical damage authority and client adoption](../CLASSIC_DAMAGE_AUTHORITY.md)
+pass 189 core / 514 network (ten skips) / 115 client / 39 Python checks,
+workspace Clippy, formatting, release and six normal OIDC/PostgreSQL native runs.
+All three actual sizes (1920x1200, 3440x1440, 1280x720) pass controls/casting and
+unmodified wolf fights with zero GPU diagnostics. Native server summaries confirm
+physical hits both ways, one durable XP award and one loot offer per kill; claiming
+loot was not tested in this slice. Exact source/art/binaries/proof:
+`build/classic-damage-client-qualified-v1-20261101`. Earlier checkpoints remain.
+Static templates and normal-contact physical reference arithmetic are implemented;
+full attack tables, derived gear/class stats and spell coefficients remain next.
+Linux AMD RX 7900 XTX / RADV Vulkan, disconnected-display uncapped/windowed checks;
+no connected-monitor fullscreen, native Windows or MMO-capacity claim.
+Changes remain local and unpushed. Older dated entries below are historical.
+
+Attack-table prerequisites: [ordinary melee table and eligibility](../CLASSIC_ATTACK_TABLES.md)
+and authoritative creature facing pass 202 core / 516 network / 115 client tests
+and workspace Clippy. Explicit outcome-aware World activation now also passes
+224 core / 539 network (ten skips) / 115 client tests and workspace Clippy;
+`build/classic-white-world-qualified-v1-20261101`. New-profile codec, UDP and
+normal/native adoption remain pending. Actual CE07 encrypted two-peer UDP now
+passes full regression: 224 core / 551 network (ten skips) / 115 client tests and
+workspace Clippy; `build/classic-white-transport-qualified-v1-20261101`. The playable checkpoint above
+remains unchanged.
+
+Classic ability rules, 1 November 2026:
+[Manual facing, cast interruption and weapon-timer rules](../CLASSIC_ABILITY_RULES.md)
+pass 156 core / 479 network (ten skips) / 114 client / 37 Python checks,
+workspace Clippy and six normal OIDC/PostgreSQL native runs at actual three sizes.
+All have zero GPU diagnostics; disconnected-display uncapped/windowed conditions
+are explicit. The strict development profile now demonstrates thirteen checks;
+full Classic damage formulas remain pending. Current source/art/binaries/proof:
+`build/classic-ability-qualified-v1-20261101`. Next: [damage resolution](../CLASSIC_DAMAGE_RESOLUTION.md).
+Changes remain local and unpushed.
+
+Damage arithmetic follow-on: [starting damage and provisional prevention](../CLASSIC_DAMAGE_RESOLUTION.md)
+and candidate definition loading pass 176 core tests and workspace Clippy.
+Candidate source/data/proof: `build/classic-damage-catalog-qualified-v1-20261101`.
+Physical reference arithmetic and static stat-template prerequisites now also
+pass (189 core tests); source/data/proof:
+`build/classic-damage-physical-stats-qualified-v1-20261101`.
+Explicit physical World and encrypted Renet now pass 189 core / 511 network passes
+(ten skips) / 114 client tests and workspace Clippy. New-profile impaired two-peer
+UDP verifies both damage directions, owner privacy and reliable continuity at
+20/30/60 Hz; backpressure and kill-fact boundaries pass. Source/proof:
+`build/classic-damage-transport-qualified-v1-20261101`. The normal playable
+checkpoint above remains unchanged. Manifest/launcher/client/presentation/native
+adoption is next; full attack tables, derived stats and spell coefficients follow.
+
+Basic-melee transport, 1 November 2026:
+[Explicit Renet engagement/state/events](../CLASSIC_MELEE_TRANSPORT.md) now
+pass focused encrypted UDP checks at 20/30/60 Hz under loss, jitter and
+duplication, plus presentation-queue backpressure. Formatting, workspace Clippy,
+153 core / 464 network passes (ten skips) / 113 client tests pass. Exact source
+and proof: `build/classic-melee-transport-qualified-v1-20261101`.
+Normal application right-click/animation adoption remains pending;
+playable checkpoint and strict milestone remain unchanged. Local and unpushed.
+
+Broader world-system direction, 1 November 2026:
+[Classic systems, repo assessment and working defaults](../CLASSIC_WORLD_SYSTEMS_REFERENCE.md)
+now cover combat state/resolution, tagging/credit, spawns, linked encounters,
+resources, control effects, navigation and corpse recovery. These are scoped
+plans and policy choices; the assessment separates them from implemented code.
+Finish the current strict combat slice before expanding full-zone content.
+Current [headless melee authority](../CLASSIC_AUTOATTACK_AUTHORITY.md) passes
+153 core / 458 network / 113 client tests; secure transport/client adoption is
+next. The playable targeting checkpoint and five-of-thirteen milestone remain.
+Changes stay local and unpushed.
+
+Headless basic-melee authority, 1 November 2026:
+[World weapon-timed combat](../CLASSIC_AUTOATTACK_AUTHORITY.md) passes
+153 core tests, 458 network passes / ten skips, 113 client tests and workspace
+Clippy. Thirteen new checks prove committed gear, range/facing/LOS/readiness
+pause/resume, casts/GCD, removal, retaliation/death/respawn, stale request streams,
+reward/XP facts and work/counter limits. Normal transport explicitly refuses this
+unadopted profile; next is secure engage/cancel/state and client right-click
+adoption. Playable checkpoint: `build/classic-targeting-qualified-v2-20261101`.
+Full strict combat acceptance remains five of thirteen. Headless source/proof:
+`build/classic-autoattack-authority-qualified-v1-20261101`.
+Changes remain local and unpushed.
+
+Headless combat prerequisite, 1 November 2026:
+[weapon data and independent swing timing](../CLASSIC_MELEE_CLOCK.md) pass
+153 core tests and workspace Clippy. Seven new checks cover timing, pause/resume,
+retarget/re-engage abuse and overflow. These primitives are not enabled by the
+normal executables yet. The playable build remains
+`build/classic-targeting-qualified-v2-20261101`, with five of thirteen strict
+combat checks. Next: authoritative World integration, then engage/cancel
+transport and right-click autoattack. Metric units and deferred dodge remain.
+All changes stay local and unpushed.
+
+Targeting HUD follow-up, 1 November 2026: shortened the cycle hint to prevent
+an overlap with the action bar at 1280×720. The final binary passes 113 client
+tests, workspace Clippy, formatting and a fresh normal native 720p controls/
+targeting run with zero GPU diagnostics; its capture is visually inspected.
+Shared core/network sources are byte-identical to the qualified 146/445 result.
+The preceding checkpoint retains the three-size feature checks. Current source,
+binaries and proof: `build/classic-targeting-qualified-v2-20261101`.
+Weapon-timed autoattack is next. Changes remain local and unpushed.
+
+Current classic targeting checkpoint, 1 November 2026:
+[persistent selection and forward/reverse Tab](../CLASSIC_TARGETING.md) pass
+146 core tests, 445 network passes / ten skips, 113 client tests, 36 Python checks,
+workspace Clippy and three final normal native starts with zero GPU diagnostics.
+Selection survives interest/terrain unloading and turning; explicit removal and
+clear remain authoritative. The classic profile identity advances to v2.
+The strict combat milestone is five of thirteen checks; next is
+[weapon-timed melee autoattack](../CLASSIC_AUTOATTACK_PLAN.md), then ability
+facing/interaction rules. Metric scale remains unchanged. Dodge stays deferred.
+Qualified source/binaries/proof: `build/classic-targeting-qualified-v1-20261101`.
+Changes remain local, uncommitted and unpushed. Earlier entries retain their
+historical scope; they do not supersede this checkpoint.
+
+Current classic development checkpoint, 1 November 2026:
+[classic controls/manual facing](../CLASSIC_MOVEMENT.md) pass 111 client and
+45 Python checks, workspace Clippy and seven final native starts with zero GPU
+diagnostics. The unchanged shared sources retain 142 core / 444 network passes.
+Use `--classic`; dodge/action camera are disabled there. Movement/UI checks pass
+at all three sizes, including an A/D-strafe settings file at 720p. Next: persistent
+targeting and forward/reverse Tab, then weapon-timed autoattack and combat-facing
+validation. [Enemy AI reference](../ENEMY_AI_REFERENCE.md) is recorded for
+subsequent threat/evade work. The full combat milestone remains incomplete.
+Changes remain local, uncommitted and unpushed.
+
+# Current direction — strict WoW Classic foundation, 1 November 2026
+
+The user adopted [THEIA-COMBAT-001 v1.0](../COMBAT_TARGETING_MOVEMENT_SPEC.md),
+superseding the hybrid camera/movement plan. Initial controls require
+character-relative movement, manual authoritative facing, persistent explicit
+targeting and weapon-timed autoattack independent of abilities. Dodge, action
+camera and reticle targeting are deferred. Dodge implementation remains stopped.
+
+The [repository gap assessment and migration order](../MOVEMENT_CAMERA_TARGET.md)
+start with the combat-loop contract, then classic controls/facing, persistent
+selection, melee autoattack and the thirteen-check one-hostile milestone.
+The `--classic` profile now supplies qualified manual movement/camera controls;
+persistent selection and weapon-timed combat remain before strict-prototype acceptance. Existing movement/network/terrain, NPC, abilities,
+equipment and UI foundations are retained. Earlier checkpoints below record
+experimental behavior and evidence; their old “next” steps are superseded.
+The local dodge animation candidate is preserved with incomplete native checks.
+Changes remain local, uncommitted and unpushed.
+
+# Retained experimental checkpoint — 2026-11-01: predicted dodge
+
+P2-04 / P2-05 / P2-07 / P3-06 / initial P3-14: V requests one server-owned,
+collision-swept dodge in either camera mode, with bounded expiring input,
+profile-bound correction replay and HUD cooldown feedback. The sealed schema-4
+bundle enables the opt-in normal client/server path. **100 client tests**,
+**436 network passes / 10 explicit skips / 66 groups**, **43 Python checks**,
+formatting and workspace/all-target denied-warning Clippy pass.
+All **seven final native starts have zero GPU diagnostics**, including actual
+OIDC/PostgreSQL OS input at 1280×720, 1920×1200 and 3440×1440 fullscreen, plus
+two-client melee/projectile regressions. Stationary dodge measures 3 m in both
+camera modes at each size; panels and held-key/cooldown checks pass.
+[Controls, proof and limits](../DODGE_MOVEMENT.md).
+Exact source/binaries/art/proof: `build/dodge-qualified-v1-20261101`.
+Earlier checkpoints remain. No authored roll, invulnerability/endurance system,
+new FPS/capacity, full-workspace or Windows claim. Next: authored movement
+presentation and facing/tuning. Changes remain local and unpushed.
+
+# Headless checkpoint — 2026-11-01: dodge driver and expiring input
+
+P2-04 / P2-05 / P2-07: the shared prediction driver selects profile-bound
+completed-tick dodge replay, with an input edge that expires after 200 ms or
+acknowledgement and clears on focus/panel/readiness loss, disconnect or changed
+actor/stream. **41 targeted checks / six groups**, formatting and workspace/
+all-target denied-warning Clippy pass. Actual encrypted impaired-UDP tests carry
+one expiring tap through the driver and authority at 20/30/60 Hz.
+[Evidence and remaining normal-client gates](../DODGE_MOVEMENT.md).
+Exact headless source/proof: `build/dodge-driver-qualified-v1-20261101`.
+The prior full-network result remains 427 passes / 10 explicit skips / 65 groups;
+this is a targeted rerun. Normal gameplay bundles and client controls still do
+not enable dodge. Playable camera: `build/camera-panels-qualified-v1-20261101`.
+Next: normal client/server configuration, gameplay bundle and native controls.
+Changes remain local and unpushed; no new GPU/FPS/capacity or Windows claim.
+
+# Headless checkpoint — 2026-11-01: dodge authority and encrypted UDP
+
+P2-04 / P2-07 / P3-06: opt-in World dodge authority and matching TC02/TP02
+Renet selection pass **427 network tests / 10 explicit skips / 65 groups**,
+formatting and workspace/all-target denied-warning Clippy. Eleven new checks
+cover actual authority/prediction agreement at 20/30/60 Hz, readiness/collision
+loss, teleport, death/respawn, stationary casts, and real encrypted impaired UDP.
+[Behavior, evidence and remaining gates](../DODGE_MOVEMENT.md).
+Exact headless source/proof: `build/dodge-authority-qualified-v1-20261101`.
+The normal gameplay client/launcher still does not enable dodge; the playable
+camera checkpoint remains `build/camera-panels-qualified-v1-20261101`.
+Next: bind the live prediction driver and bounded client input edges, then
+normal gameplay adoption and native checks. No new GPU/FPS/capacity, Windows
+or whole-workspace test claim. Changes remain local and unpushed.
+
+# Current playable checkpoint — 2026-11-01: camera panels and HUD
+
+P2-05 / P2-14: Escape closes dialogue, then backpack, before quitting;
+classic world dragging works around open panels and HUD hints reflect the mode.
+**99 client tests**, **416 network passes / 10 explicit skips / 64 groups**,
+**41 Python checks**, formatting and workspace/all-target denied-warning Clippy
+pass. All **three final native OS-input starts** at 1280×720, 1920×1200 and
+3440×1440 fullscreen have **zero GPU diagnostics** on Linux RX 7900 XTX / RADV
+NAVI31, Vulkan, Mesa 26.2.6 kisak. Exact source/binaries/art/proof:
+`build/camera-panels-qualified-v1-20261101`.
+[Controls, evidence and limits](../PLAYER_CONTROLS.md).
+The previous camera checkpoint separately retains actual two-client melee and
+projectile proof; those starts were not rerun against this panel revision.
+Shared dodge replay is headless-qualified; live dodge remains uninstalled.
+No new full-workspace, sustained FPS/capacity, Windows or physical-input claim.
+Changes stay local and unpushed. Historical entries below retain their dates.
+
+# Current playable checkpoint — 2026-11-01: optional action camera
+
+P2-04 / P2-05 / P2-07 / P2-11, P3-06 / P3-14: F8 toggles action camera,
+Left Ctrl temporarily releases the cursor, panels/focus suspend mouse-look,
+and a raised collision-bounded aiming pivot keeps the player below the reticle.
+Classic left-orbit preserves held travel; reticle clicks reuse checked targeting.
+**97 client tests**, **407 network passes / 10 explicit skips / 63 groups**,
+formatting, denied-warning workspace/all-target Clippy and **41 Python checks**
+pass. All **seven final native starts have zero GPU diagnostics**, including
+OS-synthetic input at 1280×720, 1920×1200, 3440×1440 fullscreen and actual
+OIDC/PostgreSQL two-client melee/projectile regressions.
+[Behavior, exact evidence and limits](../PLAYER_CONTROLS.md).
+Matched source/binaries/art/proof: `build/camera-mode-qualified-v1-20261101`.
+Earlier checkpoints remain. No new full-workspace, FPS/capacity, Windows or
+physical-hardware claim. Live dodge remains uninstalled. Next: panel/input
+refinements and shared dodge prediction. Changes are local and unpushed.
+
+# Current playable checkpoint — 2026-11-01: mouse controls and quest markers
+
+P2-05 / P2-11 / P2-12 / P3-06 / P3-11 / P3-12 / initial P3-14:
+mouse enemy/friendly selection, right-click basic sword/NPC interaction, F and
+five ability slots now accompany committed floating quest markers. Standard Bevy
+picking/UI, bounded hierarchy/intent handling and static occlusion preserve server
+validation. Camera dragging waits for the click threshold and respects UI ownership.
+**91 client tests**, formatting, denied-warning workspace/all-target Clippy and
+**41 Python tests** pass. **14 final native starts have zero GPU diagnostics**,
+including synthetic X11 OS input at 1280×720, 1920×1200 and 3440×1440 fullscreen,
+actual OIDC/PostgreSQL/rejoin/restart, mouse melee and travelling-magic regressions.
+[Behavior, exact evidence and limits](../PLAYER_CONTROLS.md). Matched source/binaries/art/proof:
+`build/world-input-qualified-v1-20261101`. The previous whole-workspace result
+remains 608 passes / 40 explicit skips; it is not a new whole-workspace run.
+Earlier checkpoints remain preserved. No new FPS/capacity or Windows claim.
+Dodge is the next separate authoritative movement slice. Changes remain local;
+no commit or push was made.
+
+# Current checkpoint — 2026-10-31: existing-account character menu qualified
+
+P3-03: the console launcher lists existing characters and offers N to create
+another below the eight-character cap. A known incompatible-profile refusal returns
+to selection without rewriting saves; temporary retirement conflicts keep their
+bounded retry. Actual OIDC creation on an existing account, incompatible-to-compatible
+menu recovery, two native players, rewarded gameplay and database/server restart
+pass at 1920×1200 windowed with zero Vulkan diagnostics. Normal eleven-profile
+launcher startup/cleanup passes all three modes. [Contract and proof](../CHARACTER_LAUNCHER_MENU.md).
+
+Thirty focused Python checks, formatting and denied-warning workspace/all-target
+Clippy pass. Rust/content/binaries are byte-for-byte unchanged from the previous
+476-pass / 40-skip workspace and 30-contract SQL checkpoint; those suites were not
+rerun for the five Python-file changes. Matched binaries/source/evidence:
+`build/character-menu-qualified-v1-20261031`. This is console workflow; physical
+terminal/browser input, a complete Bevy login UI and native Windows remain open.
+Changes remain local. Prior checkpoints stay preserved.
+
+# Prior checkpoint — 2026-10-31: character gameplay-profile preflight qualified
+
+P3-03 / P3-02: enabled saved inventory/XP/quest profiles are checked in a read-only
+transaction while the Selecting reservation is held, before issuing a game ticket.
+Expected content incompatibility returns a clear nonretryable HTTP 409 and leaves
+the SQL worker available. Missing optional state remains compatible. No saved data
+is initialized, migrated or reseeded by this operation; active-owner checks remain.
+
+Actual OIDC/native/SQL at 1920×1200 windowed passes refusal with no ticket, unchanged
+legacy journal data through database/server restart, then fresh rewarded training,
+loot/barter/equipment and rejoin. Zero Vulkan diagnostics on Linux RX 7900 XTX/RADV.
+The client/core/network/content source is unchanged from the prior three-size
+reward checkpoint; a new three-size server test is not claimed.
+Final unchanged-source workspace: **476 tests / 40 explicit skips**
+in 108 groups. Formatting, denied-warning Clippy, 24 focused Python checks
+and 30 actual SQL contracts / 33 commands pass, including cancelled-answer and
+bounded-queue preflight tests. [Contract and proof](../CHARACTER_PROFILE_PREFLIGHT.md). Matched binaries,
+source, validator and evidence: `build/gameplay-profiles-qualified-v1-20261031`.
+All changes remain local. General migrations, complete saved-value validation,
+physical OS input and native Windows remain open. Prior checkpoints are preserved.
+
+# Prior checkpoint — 2026-10-31: optional quest completion XP qualified
+
+P3-10 / P3-11 / initial P3-16: the opt-in rewarded training quest now accepts at
+the guide, counts three authoritative kills, then commits quest completion,
+25 XP and its action receipt atomically. Ready at 75 XP becomes 100 XP / level 2
+on the default XP curve. Recovered commands and rejoin/restart never award twice.
+Standard Bevy guide controls display the configured reward. Item turn-in grants,
+abandonment/repeatables, groups and a complete authored production zone remain open.
+
+Actual two-account OIDC/encrypted/SQL native flows pass at 1280×720 and 1920×1200
+windowed (zero Vulkan diagnostics), plus 3440×1440 borderless fullscreen (one
+previously documented upstream surface-resize diagnostic per startup). Private
+progress, personal loot, barter, equipment, reconnect, database/server restart and
+backend-loss checks pass. Current binaries also pass the retained journal-only
+native flow. The normal eleven-profile schema-2 launcher passes all three cleanup
+modes; schema-1 ten-profile validation identity is preserved. Fresh compatible
+characters are required; saved content profiles are never silently migrated.
+
+Final unchanged-source workspace passes **475 tests / 37 explicit skips**
+in 107 groups. Formatting, denied-warning workspace/all-target Clippy and
+23 focused Python checks pass. Separately retained prerequisites cover 27 actual
+SQL contracts / 32 commands and three actual OIDC/ticket/SQL retirement modes.
+[Exact scope, prerequisites and proof](../QUEST_TURN_IN_XP.md). Immutable source, matched optimized
+binaries, validator and public evidence: `build/quest-turn-in-xp-qualified-v1-20261031`.
+Native Windows, physical 4K, physical OS input and MMO population/performance
+capacity are not qualified. All changes remain local; no commit/push this session.
+Earlier journal-only and automatic checkpoints remain preserved.
+
 # Stopped safely — 2026-10-30: initial persistent training-zone integration qualified
 
 The combined two-account OIDC/encrypted/PostgreSQL native run passes at
@@ -530,7 +880,7 @@ and loot P3-09. Do not invent scope for P3-17/18.
 | P2-06 | Terrain chunk loading | Partial | Saved continental height files stream through bounded workers with 81 visual roots maximum, actual mesh retirement and 3 × 3 collision patches; full native crossing, teleports and impaired prediction pass. [Saved terrain](../SAVED_TERRAIN.md). Normal opt-in publication protects readiness, actors/recovery and complete geometry contributors. Compatible PNG variants now share actual Bevy image handles; invalid dependencies retain old scenes. Lookahead retains spare packages until new providers require the budget, avoiding unload-only offer churn. Actual graph/terrain/collision partitioning, wider lifecycle checks and measured production budgets remain; town launcher stays monolithic. [Shared images](../SHARED_IMAGES.md). [Handover](../CHUNK_HANDOVER.md). |
 | P2-07 | Collision integration | Partial | Shared controller drives normal maps and graybox/offline motion. Paired publication replaces actual Avian bodies, with readiness withheld until live generation/column checks pass. Schema-2 collider envelopes and contributor-complete coverage protect nonlocal walls, actors, recovery and presentation. Source-mesh fidelity and measured production collision/streaming budgets remain. [Contributors](../CHUNK_CONTRIBUTORS.md). [Boundaries](../CHUNK_BOUNDARIES.md). |
 | P2-08 | GLB and asset loading | Partial | Standard Bevy GLB/PBR/image loading follows immutable manifest and dependency verification. Actual nested extents gate initial/replacement readiness; shared PNG variants preserve compatible handle reuse and distinct colour/sampler settings. New packages extract original images and geometry without changing the active map. Imported graph pruning/partitioning, skeleton/character contracts and measured asset budgets remain. [Shared images](../SHARED_IMAGES.md). [Contributors](../CHUNK_CONTRIBUTORS.md). |
-| P2-09 | Character skeletal animation | Partial | POLYGON Idle/Walk/Run/Jump are qualified development animations. Production skin fidelity, blending, layered mobile casting and skeleton contracts remain. |
+| P2-09 | Character skeletal animation | Partial | POLYGON Idle/Walk/Run/Jump, authored prop sockets, own-player death/fresh-life restart, public local/remote sword stance and masked moving finger grip, and the independent six-clip wolf are qualified development animations. Production skin fidelity, public remote-player death, full equipped locomotion/attack, blending, layered mobile casting and general skeleton contracts remain. |
 | P2-10 | Lighting/materials/atmosphere | Partial | Existing PBR light/shadows and water preview; atmosphere/quality requirements remain. |
 | P2-11 | Targeting and interactions | Partial | Optional static training target and authoritative selection/clear now run through real encrypted Renet and standard Bevy presentation. The 253-test regression, impaired two-client native GPU selection/rebase/relevance retirement/return and launcher cleanup pass. Owner removal and malicious traffic pass actual UDP tests; general interactions remain open. [Runtime](../TARGETING_RUNTIME.md). |
 | P2-12 | One authoritative ability, damage, death and respawn | Partial | The bounded NPC ability loop passes 272 full workspace tests, real encrypted adverse UDP, two native Linux Vulkan clients and launcher cleanup: mobile casting, range/LOS, queue/cooldowns, shared health, same-step death and fresh-ID respawn. Broader combat/player lifecycle and native Windows remain open. [Authority](../COMBAT_AUTHORITY.md). |
@@ -543,20 +893,20 @@ and loot P3-09. Do not invent scope for P3-17/18.
 |---|---|---|---|
 | P3-01 | Authentication and sessions | Initial account/native slice qualified | Actual two-user HTTP/OIDC/PostgreSQL, proof-bound session collection/cancellation, ownership, revocation/supersession, bounds/deadlines, fail-closed/graceful shutdown and restart pass. 294 workspace tests and final Clippy pass; exact source/executable frozen. Native encrypted ticket/session/character binding, real restart/revocation/outage and browser-command fixture launcher cleanup now pass; 297 workspace tests pass; exact checkpoint evidence is retained. Physical browser, renewal/production transport and native Windows remain open. [HTTP evidence](../ACCOUNT_HTTP_FOUNDATION.md), [native admission](../AUTHENTICATED_ADMISSION.md). |
 | P3-02 | PostgreSQL persistence/migrations | Initial slice qualified | Real migrations/upgrade, ownership/world checks, monotonic atomic checkpoints, bounded worker and actual two-native-client server/database restart restore pass. Wrong-world and live backend-loss fail closed; integrated combat/UI/feedback and cleanup pass. 284 workspace tests; exact artifacts/limits in [contract](../PERSISTENCE_FOUNDATION.md). External accounts/economy/Windows remain open. |
-| P3-03 | Character creation/selection | Initial database/native/launcher slice qualified | Real PostgreSQL atomic create/name uniqueness, cap, owner/realm/world selection, restart and worker regressions pass. Actual OIDC/session owner selects its own persistent character. Eleven focused tests and workspace Clippy pass; legacy two-client native persistence regression passes. Source/binaries frozen. HTTP and native owned-character entry/rejoin now pass with the launcher helper; 297 workspace tests pass. Complete in-game creation/login UI, production provider/renewal and native Windows remain open. [Database evidence](../CHARACTER_SELECTION_FOUNDATION.md), [native admission](../AUTHENTICATED_ADMISSION.md). |
-| P3-04 | Stats and resources | Initial opt-in slice qualified; broader scope open | Checked health/mana, authoritative cast costs/regen, resource replication and native Bevy bars pass. [Evidence and limits](../STATS_RESOURCES.md). Persistent vitals, player damage/death and class/gear attributes remain separate. |
+| P3-03 | Character creation/selection | Initial database/native/launcher, preflight and console menu qualified | Owned selection now holds its reservation across read-only enabled-profile checks before encrypted ticket issuance. Incompatibility returns a clear nonretryable refusal without failing the worker or rewriting saves. Actual OIDC/native/SQL refusal, fresh entry, rewarded gameplay and restart pass at 1920×1200; 476 workspace tests/40 skips. [Contract and evidence](../CHARACTER_PROFILE_PREFLIGHT.md). Console creation on existing accounts and return-to-selection after incompatibility also pass actual OIDC/native/launcher checks; [menu evidence](../CHARACTER_LAUNCHER_MENU.md). Complete in-game creation/login UI, production provider/renewal and native Windows remain open. |
+| P3-04 | Stats and resources | Initial resources and opt-in transient player life qualified; broader scope open | [Resource foundation](../STATS_RESOURCES.md) plus [private player life](../PLAYER_LIFE_NATIVE.md): checked health/mana, cast costs/regen, player damage/death, prepared streamed home respawn and fresh movement streams with standard Bevy UI. Two-account native gameplay/rejoin/restart/backend-loss passes at three sizes; full workspace 525 passes / 40 explicit skips. Persistent vitals, production combat logout policy and class/gear attributes remain open. |
 | P3-05 | Inventory and items | Initial durable/native backpack qualified; broader scope open | [Actual SQL/verified-admission/native restart/widget proof](../INVENTORY_FOUNDATION.md). Equipment, instances, use/destruction, currency, trade and reward systems remain separate. |
-| P3-06 | Abilities and status effects | Initial transient periodic-damage slice qualified | [Authority, encrypted replication, native indicators/feedback and limits](../STATUS_EFFECTS_FOUNDATION.md). Healing/dispels/CC/class scaling/durable combat remain open. |
-| P3-07 | Creature AI | Initial patrol slice qualified | [Exact source/evidence](../CREATURE_AI_FOUNDATION.md): offline baked route, fixed-tick static collision, encrypted/native moving-target combat, home respawn, full loop and ordinary/mixed backpack launcher cleanup. 351 workspace tests pass/15 explicit skips. Aggro, player attacks, threat, bosses, dynamic paths and streamed navigation remain open. |
-| P3-08 | Equipment and appearance | Initial main-hand slice qualified | [Exact behavior/source/evidence](../EQUIPMENT_FOUNDATION.md): shared durable item revision, conserved transfers, encrypted private/public state, standard Bevy props/widgets and actual two-account native rejoin/restart. 367 workspace tests/18 skips; eight SQL contracts separately pass. Mixed/legacy launchers and combat-widget regression pass. General slots/stats/instances/art/Windows remain open. |
+| P3-06 | Abilities and status effects | Initial status, equipment-gated melee and player hit outcomes qualified | [Sword Slash, schema-4 requirements and native proof](../PLAYER_MELEE.md). [Server-owned hit/miss/deflect and actual native labels](../HIT_OUTCOMES.md). [Authority, encrypted replication, native indicators/feedback and limits](../STATUS_EFFECTS_FOUNDATION.md). Healing/dispels/CC/class scaling/durable combat remain open. |
+| P3-07 | Creature AI | Initial patrol/perception/chase/melee/leash/return qualified; broader scope open | [Playable evidence](../CREATURE_PURSUIT_NATIVE.md): one NPC, bounded navigation worker, exact target life, finite reach/LOS, return to captured patrol anchor and restored route/wait. Actual encrypted peers, OIDC/PostgreSQL/native wolf, legacy/restart/backend-loss and 3440 fullscreen cleanup pass; final workspace 557 passes / 40 explicit skips. General threat/bosses, public NPC attack timing, streamed navigation and population capacity remain open. |
+| P3-08 | Equipment and appearance | Initial main-hand slice qualified | [Exact behavior/source/evidence](../EQUIPMENT_FOUNDATION.md): shared durable item revision, conserved transfers, encrypted private/public state, standard Bevy props/widgets and actual two-account native rejoin/restart. 367 workspace tests/18 skips; eight SQL contracts separately pass. Mixed/legacy launchers and combat-widget regression pass. Authored sockets, public sword stance and closed local/remote moving grip also pass [current native checks](../EQUIPPED_PLAYER_STANCE.md). General slots/stats/instances/art/Windows remain open. |
 | P3-09 | Loot and rewards | Initial personal claim slice qualified | [Exact source/evidence/limits](../LOOT_REWARDS_FOUNDATION.md): authoritative kill/Scorch credit, durable offer and atomic ordered pickup, real two-account Bevy widget/rejoin/database restart, accepted-work retirement and CLI cleanup pass. 379 workspace tests/21 skips; all eleven SQL contracts separately execute. Full-bag retry, rollback, replay and backend loss pass. General/repeatable/group/corpse loot and instances remain open. |
-| P3-10 | Experience and leveling | Initial earned XP slice qualified; broader leveling open | [Exact source/evidence](../EXPERIENCE_LEVELING_FOUNDATION.md): current-life direct/periodic credit, atomic XP receipts, bounded worker/retirement, private observations and standard Bevy display. 388 workspace tests/24 skips; fourteen SQL contracts separately pass. Actual two-account native level/rejoin/restart at 1920×1200 and 3440×1440; 1280×720 mixed launcher passes. Class/stat scaling, groups, quest XP and production balance remain open. |
-| P3-11 | Quest objectives | Initial live objective slice qualified; broader lifecycle open | [Exact source/evidence](../QUEST_OBJECTIVES_FOUNDATION.md): three-kill fixture, atomic XP/objective receipts, retirement, private observations and Bevy journal. 396 workspace tests pass/27 skips; seventeen SQL contracts separately pass. Actual two-account native distinct journals, XP cap, rejoin/restart at 1920×1200 and 3440×1440; 1280×720 mixed launcher passes. Acceptance, abandonment, groups and turn-in rewards remain open. |
+| P3-10 | Experience and leveling | Initial earned and optional completion XP qualified; broader leveling open | [Completion XP](../QUEST_TURN_IN_XP.md): three normal kills reach 75 XP, atomic once-only turn-in reaches 100 / level 2; retained earned-XP behavior remains. Actual two-account native completion/rejoin/restart passes at 1280×720, 1920×1200 and 3440×1440 fullscreen. Class/stat scaling, groups and production balance remain open. |
+| P3-11 | Quest objectives | Initial explicit journal with optional XP reward qualified; broader quests open | [Explicit lifecycle](../QUEST_LIFECYCLE.md), [optional completion XP](../QUEST_TURN_IN_XP.md): guide acceptance, three counted kills, durable turn-in and 25 XP through one retained FIFO and atomic SQL receipt. Actual two-account native checks at three sizes, current journal-only regression and eleven-profile launcher cleanup pass. Final workspace 475/37; 27 SQL contracts separately pass. Source/binaries/proof: `build/quest-turn-in-xp-qualified-v1-20261031`. Item grants, abandonment/repeatables and groups remain open. |
 | P3-12 | NPC dialogue and vendors | Initial live dialogue and fixed barter qualified | [Dialogue](../NPC_DIALOGUE_FOUNDATION.md): actual OIDC/native branches/closure/restart at 1280×720, 1920×1200 and 3440×1440; 418 prior workspace passes/27 skips. [Barter](../VENDOR_BARTER_FOUNDATION.md): eight pure tests/36 core regressions and twenty actual SQL contracts/twenty-six commands pass; atomic cost/output/latest receipt and critical-worker failure paths qualified. Current vendor/guide/range checks, retained queued/executing work, encrypted item stream and Bevy shop pass actual native/SQL checks at three sizes; final unchanged-source workspace passes 433 tests/30 skips. Exact checkpoint: build/vendor-qualified-v1-20261030. Production currency/selling/stock/buyback and broader NPC/player lifecycle remain open. |
 | P3-13 | Terrain streaming and initial LOD | Partial | Generated and saved 16 km graybox terrain have bounded streaming, distance LOD, geometric seam validation, independent physics/render origins and actual retirement. Full native saved crossing and two-client impaired-network checks pass. Hierarchical screen-error LOD, long vistas/flying, objects/materials and production budgets remain. [Evidence](../SAVED_TERRAIN.md). |
-| P3-14 | Animation, VFX and audio expansion | Precursor only | Existing locomotion is reusable; animation/VFX/audio expansion is unimplemented. |
-| P3-15 | Content authoring and validation | Initial offline gameplay validation qualified | [Tool and proof](../GAMEPLAY_CONTENT_VALIDATION.md): ten-profile bundle, actual schema/reference checks, bounded paths/reads and exact hashes. Eight focused tests/eight CLI refusal cases and 441 final workspace passes/30 skips. Source/tool/proof frozen; playable vendor source remains unchanged. Runtime bundle adoption, nav/terrain/assets and general authoring UI remain open. |
-| P3-16 | One complete persistent zone and login/logout proof | Initial persistent training integration qualified; authored zone open | Two actual OIDC accounts/native clients at 1920×1200 complete private objective/XP/reward/barter/equipment flows, reconnect and SQL/server restart with exact receipts. `build/zone-qualified-v1-20261030`; see `docs/PERSISTENT_ZONE_INTEGRATION.md`. General quests and authored production zone remain open. |
+| P3-14 | Animation, VFX and audio expansion | Partial | Opt-in wolf and authored-socket player death/fresh-life presentation pass actual two-account gameplay and fullscreen launching; public sword stance and closed moving grip also pass; see [latest evidence](../EQUIPPED_PLAYER_STANCE.md). Standard upper-body SwordAttack now passes local/remote standing, walking and running [native/source-curve checks](../PLAYER_MELEE.md). Public remote-player death, full equipped locomotion/blending, public NPC attack timing and broader VFX/audio remain. |
+| P3-15 | Content authoring and validation | Initial offline validation and launch-time bundle adoption qualified | [Offline validator](../GAMEPLAY_CONTENT_VALIDATION.md): ten-profile schema/reference checks, bounded paths/reads and exact hashes. [Launch-time adoption](../GAMEPLAY_MANIFEST_LAUNCH.md) passes actual authenticated native cleanup and exact ten-profile handoff in automatic and explicit quest modes, including credential-setting isolation and snapshot cleanup. Direct runtime manifest parsing, nav/terrain/assets and general authoring UI remain open. |
+| P3-16 | One complete persistent zone and login/logout proof | Initial rewarded persistent training integration qualified; authored zone open | Two actual OIDC accounts/native clients complete private accept/three-kill/25-XP-turn-in, loot, barter and equipment flows at three sizes. Reconnect and SQL/server restart preserve exact state/receipts; normal eleven-profile launch cleanup and legacy journal mode pass. [Scope and evidence](../QUEST_TURN_IN_XP.md). Item turn-in grants, general quests and a complete authored production zone remain open. |
 | P3-17 | UNSPECIFIED in original transcript: needs reconciliation | Blocked: scope unknown | Obtain missing scope from the owner; do not block unrelated defined tasks. |
 | P3-18 | UNSPECIFIED in original transcript: needs reconciliation | Blocked: scope unknown | Obtain missing scope from the owner; do not block unrelated defined tasks. |
 
@@ -566,12 +916,12 @@ and loot P3-09. Do not invent scope for P3-17/18.
 |---|---|---|---|
 | P4-01 | World region ownership | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
 | P4-02 | Predictive terrain/object streaming | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
-| P4-03 | Streamed navigation and spatial queries | Initial offline prerequisite qualified; runtime scope open | [Baked local navigation and route contracts](../CREATURE_AI_FOUNDATION.md). No runtime path service, streamed navigation or continent-wide routing claim. |
+| P4-03 | Streamed navigation and spatial queries | Local bake/query/worker and initial pursuit consumer qualified; streaming scope open | [Checked worker contract](../CREATURE_PATH_WORKER.md) and [native pursuit](../CREATURE_PURSUIT_NATIVE.md). Bounded static package, one outstanding job, expiry and full identity/revision checks; searches outside fixed ticks, collision-grounded movement. No all-world streamed navigation, hard query CPU deadline or population-capacity claim. |
 | P4-04 | Advanced interest management | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
 | P4-05 | Adaptive replication | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
 | P4-06 | Cross-region handoff | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
 | P4-07 | Population and overload management | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
-| P4-08 | Advanced combat interrupts/CC/AoE/healing/threat | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
+| P4-08 | Advanced combat interrupts/CC/AoE/healing/threat | Initial player direct-damage outcomes qualified | [Hit/miss/deflect authority, encrypted/native evidence and limits](../HIT_OUTCOMES.md). General interrupts/CC/AoE/healing/threat remain open. |
 | P4-09 | Classes and specializations | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
 | P4-10 | Group encounters | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
 | P4-11 | Parties and group rules | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
@@ -603,7 +953,7 @@ and loot P3-09. Do not invent scope for P3-17/18.
 | P5-12 | Animation LOD | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
 | P5-13 | Character readability | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
 | P5-14 | Particle expansion | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
-| P5-15 | Projectiles/AoE effects | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
+| P5-15 | Projectiles/AoE effects | Initial authoritative travelling magic qualified | [Finite travel, impact-only damage, encrypted/native evidence and limits](../PROJECTILE_TRAVEL.md). Bow/arrow equipment and presentation, ranged NPC casting, general volumes and AoE remain open. |
 | P5-16 | VFX priority and density limits | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
 | P5-17 | World editor | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |
 | P5-18 | Creature/item/ability/quest editors | Not started | Implement the named scope after reviewing real prerequisites and defining concrete acceptance checks. |

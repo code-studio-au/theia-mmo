@@ -4,7 +4,9 @@ mod admissions;
 mod checkpoints;
 pub mod dialogue;
 pub mod inventory;
+pub mod player_life;
 pub mod progression;
+pub mod quest_lifecycle;
 mod tickets;
 use crate::{
     Result,
@@ -24,7 +26,7 @@ use std::{
     path::Path,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
-use theia_core::time::TickMetrics;
+use theia_core::time::{TickMetrics, TickRate};
 pub use tickets::{IssuedTicket, TicketIssuer, secure_issuer};
 use tokio::{
     sync::{Semaphore, mpsc, oneshot, watch},
@@ -91,6 +93,8 @@ pub fn read_ticket(bytes: &[u8], address: SocketAddr) -> Result<ConnectToken> {
 }
 
 struct Peer {
+    life_sent: Option<crate::simulation::combat::player_life::Observation>,
+    lifecycle_requests: u32,
     dialogue: Option<dialogue::Peer>,
     admission: Option<Box<dyn AdmissionLease>>,
     progression: Option<progression::Peer>,
@@ -106,6 +110,7 @@ struct Peer {
     target_accepted: bool,
     target_sent: Option<crate::targeting_wire::State>,
     combat_sent: Option<crate::combat_wire::State>,
+    melee_sent: Option<crate::simulation::combat::autoattack::Snapshot>,
     status_sent: Option<crate::status_wire::State>,
     appearance_sent: Option<crate::appearance_wire::State>,
     combat_event_sequence: u64,
@@ -114,6 +119,25 @@ struct Peer {
 
 #[derive(Clone, Debug, Default, serde::Serialize)]
 pub struct ServerStats {
+    pub hit_outcomes: Option<crate::simulation::combat::OutcomeMetrics>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub physical_damage: Option<crate::simulation::combat::physical::Metrics>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub white_melee: Option<crate::simulation::combat::white_melee::Metrics>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ability_damage: Option<crate::simulation::combat::ability_damage::Metrics>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub projectiles: Option<crate::simulation::combat::ProjectileMetrics>,
+    pub player_life: Option<crate::simulation::combat::player_life::Metrics>,
+    pub creature_pursuit: Option<crate::simulation::combat::player_life::PursuitMetrics>,
+    pub life_states_sent: u64,
+    pub life_states_rejected: u64,
+    pub life_backpressure_disconnects: u64,
+    pub life_max_frame_bytes: usize,
+    pub lifecycle_states_sent: u64,
+    pub lifecycle_replies_sent: u64,
+    pub lifecycle_requests_forwarded: u64,
+    pub lifecycle_requests_ignored: u64,
     pub dialogue_requests_accepted: u64,
     pub dialogue_requests_rejected: u64,
     pub dialogue_views_sent: u64,
@@ -136,6 +160,10 @@ pub struct ServerStats {
     pub checkpoint_publications: u64,
     pub persistent_spawn_admissions: u64,
     pub combat_states_sent: u64,
+    pub melee_states_sent: u64,
+    pub melee_requests_accepted: u64,
+    pub melee_requests_ignored: u64,
+    pub melee_requests_rejected: u64,
     pub combat_events_sent: u64,
     pub combat_backpressure_disconnects: u64,
     pub cast_requests_accepted: u64,
@@ -485,7 +513,17 @@ fn admit_peer(
         (Some(a), Some(b)) if a.hash() == b.hash() => {}
         _ => return Err("Admitted objective profile differs from authority".into()),
     }
+    match (
+        world.quest_lifecycle_profile(),
+        progression.as_ref().and_then(|p| p.port.lifecycle.as_ref()),
+    ) {
+        (None, None) => {}
+        (Some(a), Some(b)) if a.hash() == b.hash() => {}
+        _ => return Err("Admitted explicit quest profile differs from authority".into()),
+    }
     let peer = Peer {
+        life_sent: None,
+        lifecycle_requests: 0,
         dialogue: world.dialogue_profile().map(|_| dialogue::Peer::default()),
         progression,
         inventory,
@@ -501,6 +539,7 @@ fn admit_peer(
         target_accepted: false,
         target_sent: None,
         combat_sent: None,
+        melee_sent: None,
         status_sent: None,
         appearance_sent: None,
         combat_event_sequence: 0,
@@ -574,6 +613,11 @@ fn publish_progression(
             (Some(_), None) => continue,
             (None, Some(_)) => return Err("Unexpected committed objective state".into()),
         }
+        match (&owner.port.lifecycle, &view.lifecycle) {
+            (None, None) | (Some(_), Some(_)) => {}
+            (Some(_), None) => continue,
+            (None, Some(_)) => return Err("Unexpected committed explicit quest state".into()),
+        }
         let actor = world
             .entity_key(peer.actor)
             .ok_or("Progression actor missing")?;
@@ -611,6 +655,20 @@ fn publish_progression(
             owner.quest_sent = Some(progress);
             stats.quest_states_sent += 1;
         }
+        if let (Some(mode), Some(profile), Some(progress)) =
+            (&mut owner.lifecycle, &owner.port.lifecycle, &view.lifecycle)
+            && !mode.publish(
+                server,
+                id,
+                actor,
+                profile,
+                progress,
+                view.lifecycle_reply,
+                stats,
+            )?
+        {
+            retired.push(id);
+        }
     }
     retire_peers(server, peers, world, &retired)
 }
@@ -634,8 +692,8 @@ fn forward_experience_opportunity(
     {
         return Err("XP fact profile mismatch".into());
     }
-    port.earned
-        .try_send(fact.event)
+    port.input
+        .try_send(progression::Input::Kill(fact.event))
         .map_err(|_| "XP fact queue unavailable")?;
     stats.experience_opportunities_forwarded += 1;
     Ok(())
@@ -751,6 +809,17 @@ fn forward_reward_opportunities(
     Ok(())
 }
 
+fn observe_combat_equipment(world: &mut World, peer: &Peer) {
+    let Some(actor) = world.entity_key(peer.actor) else {
+        return;
+    };
+    let committed = peer
+        .inventory
+        .as_ref()
+        .and_then(inventory::Peer::combat_equipment);
+    world.observe_combat_equipment(actor, committed);
+}
+
 fn publish_appearance(
     server: &mut RenetServer,
     peers: &mut BTreeMap<u64, Peer>,
@@ -851,7 +920,16 @@ fn publish_combat_events(
     let tick = world.completed_tick();
     let mut slow = Vec::new();
     for (&id, peer) in peers.iter_mut() {
-        for chunk in events.chunks(crate::combat_wire::MAX_BATCH_EVENTS) {
+        let actor = world.entity_key(peer.actor);
+        let visible: Vec<_> = events
+            .iter()
+            .filter(|event| {
+                event
+                    .private_player_victim()
+                    .is_none_or(|target| Some(target) == actor)
+            })
+            .collect();
+        for chunk in visible.chunks(crate::combat_wire::max_batch_events(catalog)) {
             let sequence = peer
                 .combat_event_sequence
                 .checked_add(1)
@@ -860,9 +938,36 @@ fn publish_combat_events(
                 epoch: world.epoch(),
                 sequence,
                 tick,
-                events: chunk.to_vec(),
+                events: chunk.iter().map(|event| (*event).clone()).collect(),
             };
-            let bytes = batch.encode(catalog)?;
+            let bytes = if let Some(profile) = world.ability_damage_profile() {
+                batch.encode_abilities(
+                    world
+                        .autoattack_catalog()
+                        .ok_or("Ability events require melee profile")?,
+                    profile,
+                )?
+            } else if let Some(profile) = world.white_melee_profile() {
+                batch.encode_white(
+                    catalog,
+                    world
+                        .autoattack_catalog()
+                        .ok_or("Ordinary events require melee profile")?,
+                    profile,
+                )?
+            } else if let Some(profile) = world.physical_damage_profile() {
+                batch.encode_physical(
+                    catalog,
+                    world
+                        .autoattack_catalog()
+                        .ok_or("Physical events require melee profile")?,
+                    profile,
+                )?
+            } else if let Some(weapons) = world.autoattack_catalog() {
+                batch.encode_melee(catalog, weapons)?
+            } else {
+                batch.encode(catalog)?
+            };
             if !server.can_send_message(id, EVENT_CHANNEL, bytes.len()) {
                 slow.push(id);
                 break;
@@ -912,6 +1017,40 @@ fn publish_status_state(
         stats.status_states_sent += 1;
     }
     stats.status_backpressure_disconnects += slow.len() as u64;
+    retire_peers(server, peers, world, &slow)
+}
+fn publish_melee_state(
+    server: &mut RenetServer,
+    peers: &mut BTreeMap<u64, Peer>,
+    world: &mut World,
+    stats: &mut ServerStats,
+) -> Result<()> {
+    let Some(catalog) = world.autoattack_catalog() else {
+        return Ok(());
+    };
+    let mut slow = Vec::new();
+    for (&id, peer) in peers.iter_mut() {
+        let view = world
+            .autoattack_snapshot(peer.actor)
+            .ok_or("Melee peer without actor")?;
+        let same = peer.melee_sent.as_ref().is_some_and(|old| {
+            let mut previous = old.clone();
+            previous.tick = view.tick;
+            previous == view
+        });
+        if same {
+            continue;
+        }
+        let bytes = crate::combat_wire::melee::encode_state(&view, catalog)?;
+        if !server.can_send_message(id, EVENT_CHANNEL, bytes.len()) {
+            slow.push(id);
+            continue;
+        }
+        server.send_message(id, EVENT_CHANNEL, bytes);
+        peer.melee_sent = Some(view);
+        stats.melee_states_sent += 1;
+    }
+    stats.combat_backpressure_disconnects += slow.len() as u64;
     retire_peers(server, peers, world, &slow)
 }
 fn publish_combat_state(
@@ -998,8 +1137,15 @@ async fn run_server_inner(
                 for peer in peers.values_mut() {
                     if let Some(input) = peer.latest.take() && world.input(peer.actor, input) { stats.applied_inputs += 1; }
                 }
+                for peer in peers.values() { observe_combat_equipment(&mut world, peer); }
                 let snapshot = world.step();
+                player_life::publish(&mut server,&mut peers,&mut world,&mut stats)?;
                 stats.patrol = world.patrol_snapshot();
+                stats.hit_outcomes = world.combat_outcome_metrics();
+                stats.physical_damage = world.physical_damage_metrics();
+                stats.white_melee=world.white_melee_metrics();stats.ability_damage=world.ability_damage_metrics();
+                stats.projectiles = world.projectile_metrics();
+                stats.creature_pursuit = world.creature_pursuit_metrics();
                 for peer in peers.values() { admissions::capture(&world, peer)?; }
                 if let Some(bridge)=&mut checkpoints {
                     stats.checkpoint_publications+=u64::from(bridge.capture(&world,&peers));
@@ -1011,7 +1157,7 @@ async fn run_server_inner(
                     publish_combat_events(&mut server, &mut peers, &mut world, &mut stats, &events)?;
                 }
                 if world.procedural().is_some() {
-                    for (&id,peer) in &peers {server.send_message(id,MOVEMENT_CHANNEL,encode(&world.snapshot_for(peer.actor))?); if let Some(correction)=world.correction(peer.actor) {server.send_message(id,MOVEMENT_CHANNEL,correction.encode()?);}}
+                    for (&id,peer) in &peers {server.send_message(id,MOVEMENT_CHANNEL,encode(&world.snapshot_for(peer.actor))?); if let Some(correction)=world.correction(peer.actor) {let bytes=if world.classic_enabled() {crate::classic_wire::encode_correction(correction)?} else {match world.dodge_profile() {Some(profile)=>crate::dodge_prediction_wire::encode_correction(correction,profile)?,None=>correction.encode()?}};server.send_message(id,MOVEMENT_CHANNEL,bytes);}}
                 } else {
                     let bytes = encode(&snapshot)?;
                     server.broadcast_message(MOVEMENT_CHANNEL, bytes);
@@ -1039,6 +1185,7 @@ async fn run_server_inner(
                     }
                 }
                 publish_combat_state(&mut server, &mut peers, &mut world, &mut stats)?;
+                publish_melee_state(&mut server, &mut peers, &mut world, &mut stats)?;
                 publish_status_state(&mut server,&mut peers,&mut world,&mut stats)?;
                 dialogue::publish(&mut server,&mut peers,&mut world,&mut stats)?;
                 stats.observe(&server, &peers);
@@ -1128,7 +1275,7 @@ async fn run_server_inner(
                     if let Some(admission) = &peer.admission && !admission.live()? {
                         server.disconnect(id); retired_combat_peers.push(id); continue;
                     }
-                    if current.duration_since(peer.period) >= Duration::from_secs(1) { peer.period = current; peer.received = 0; peer.cast_requests = 0; peer.inventory_requests = 0; }
+                    if current.duration_since(peer.period) >= Duration::from_secs(1) { peer.period = current; peer.received = 0; peer.cast_requests = 0; peer.inventory_requests = 0; peer.lifecycle_requests = 0; }
                     let mut controls = 0;
                     let mut invalid_control = false;
                     for _ in 0..8 {
@@ -1137,9 +1284,24 @@ async fn run_server_inner(
                         if peer.received > 180 || (world.chunks().is_none() && world.procedural().is_none()) {
                             invalid_control = true; stats.rejected_chunk_ready += 1; break;
                         }
+                        if crate::player_life_wire::is_any_state(&bytes) {
+                            stats.life_states_rejected+=1;invalid_control=true;break;
+                        }
                         if bytes.starts_with(crate::dialogue_wire::REQUEST_TAG) {
                             let Some(dialogue)=&mut peer.dialogue else {stats.dialogue_requests_rejected+=1;invalid_control=true;break;};
                             if dialogue.request(&mut world,peer.actor,&bytes,&mut stats).is_err() {invalid_control=true;break;}
+                            continue;
+                        }
+                        if bytes.starts_with(crate::quest_lifecycle_wire::REQUEST_TAG) {
+                            peer.lifecycle_requests+=1;
+                            if peer.lifecycle_requests>8 {invalid_control=true;break;}
+                            let Some(owner)=&mut peer.progression else {invalid_control=true;break;};
+                            let Some(mode)=&mut owner.lifecycle else {invalid_control=true;break;};
+                            match mode.request(&world,peer.actor,&bytes,&owner.port) {
+                                Ok(true)=>stats.lifecycle_requests_forwarded+=1,
+                                Ok(false)=>stats.lifecycle_requests_ignored+=1,
+                                Err(_)=>{invalid_control=true;break;},
+                            }
                             continue;
                         }
                         if bytes.starts_with(crate::inventory_wire::REQUEST_TAG) || bytes.starts_with(crate::inventory_wire::ITEM_REQUEST_TAG) || bytes.starts_with(crate::reward_wire::REQUEST_TAG) || bytes.starts_with(crate::vendor_wire::REQUEST_TAG) {
@@ -1153,9 +1315,26 @@ async fn run_server_inner(
                             }
                             continue;
                         }
+                        if bytes.starts_with(crate::combat_wire::melee::REQUEST_TAG) {
+                            peer.cast_requests += 1;
+                            if !world.autoattack_enabled() || peer.cast_requests > 10 {
+                                stats.melee_requests_rejected += 1; invalid_control=true; break;
+                            }
+                            let command = match crate::combat_wire::melee::decode_request(&bytes) {
+                                Ok(command)=>command,
+                                Err(_)=>{stats.melee_requests_rejected+=1;invalid_control=true;break;}
+                            };
+                            observe_combat_equipment(&mut world,peer);
+                            match world.request_autoattack(peer.actor,command).outcome {
+                                crate::simulation::combat::autoattack::Outcome::Ignored=>stats.melee_requests_ignored+=1,
+                                crate::simulation::combat::autoattack::Outcome::Rejected(_)=>stats.melee_requests_rejected+=1,
+                                _=>stats.melee_requests_accepted+=1,
+                            }
+                            continue;
+                        }
                         if bytes.starts_with(crate::combat_wire::REQUEST_TAG) {
                             peer.cast_requests += 1;
-                            if !world.combat_enabled() || peer.cast_requests > 10 || combat_events.len()+2 > crate::simulation::combat::MAX_STEP_EVENTS {
+                            if !world.combat_enabled() || peer.cast_requests > 10 || combat_events.len()+2 > world.combat_step_event_budget() {
                                 stats.cast_requests_rejected += 1; invalid_control=true; break;
                             }
                             let command = match crate::combat_wire::Request::decode(&bytes, world.combat_catalog().unwrap())
@@ -1163,6 +1342,7 @@ async fn run_server_inner(
                                 Ok(command)=>command,
                                 Err(_)=>{stats.cast_requests_rejected+=1;invalid_control=true;break;}
                             };
+                            observe_combat_equipment(&mut world,peer);
                             let result=world.cast(peer.actor,command);
                             use crate::simulation::combat::Outcome;
                             match result.reply.outcome {
@@ -1215,7 +1395,7 @@ async fn run_server_inner(
                         batch += 1; stats.received_inputs += 1;
                         if peer.received > 180 { stats.rejected_inputs += 1; peer.latest = None; server.disconnect(id); break; }
                         if world.prediction_enabled() {
-                            match crate::prediction_wire::Commands::decode(&bytes) {
+                            match if world.classic_enabled() {crate::classic_wire::decode_commands(&bytes)} else {match world.dodge_profile() {Some(_)=>crate::dodge_prediction_wire::decode_commands(&bytes),None=>crate::prediction_wire::Commands::decode(&bytes)}} {
                                 Ok(packet) => {stats.queued_commands += world.command(peer.actor,&packet) as u64;}
                                 Err(_) => {stats.rejected_inputs += 1; server.disconnect(id); break;}
                             }
@@ -1285,6 +1465,15 @@ async fn run_server_inner(
     );
     result?;
     final_capture?;
+    if let Some(metrics) = world.creature_pursuit_metrics() {
+        eprintln!(
+            "{}",
+            serde_json::json!({"creature_pursuit_summary":metrics})
+        );
+    }
+    if let Some(metrics) = world.creature_reset_metrics() {
+        eprintln!("{}", serde_json::json!({"creature_reset_summary":metrics}));
+    }
     if let Some(chunks) = world.chunks() {
         stats.chunk_generation = chunks.residency().generation();
         stats.chunk_rejections = chunks.rejected();
@@ -1346,6 +1535,9 @@ pub async fn run_client_with_chunks(
         shutdown,
         expected_world,
         ClientMode {
+            classic_source: None,
+            dodge: None,
+            player_life: None,
             ready: Some(ready),
             ..ClientMode::default()
         },
@@ -1374,10 +1566,14 @@ pub async fn run_client_predicted(
         shutdown,
         expected_world,
         ClientMode {
+            classic_source: None,
+            dodge: None,
+            player_life: None,
             ready: Some(ready),
             commands: Some(commands),
             choices: None,
             combat: None,
+            lifecycle: None,
             dialogue: None,
             quest: None,
             progression: None,
@@ -1397,6 +1593,10 @@ pub struct TargetingClient {
 }
 #[derive(Default)]
 struct ClientMode {
+    classic_source: Option<[u8; 32]>,
+    dodge: Option<DodgeClient>,
+    player_life: Option<player_life::Client>,
+    lifecycle: Option<quest_lifecycle::Client>,
     dialogue: Option<dialogue::Client>,
     ready: Option<ChunkReadiness>,
     commands: Option<mpsc::Receiver<crate::prediction_wire::Commands>>,
@@ -1425,10 +1625,14 @@ pub async fn run_client_targeted(
         shutdown,
         expected_world,
         ClientMode {
+            classic_source: None,
+            dodge: None,
+            player_life: None,
             ready: Some(mode.ready),
             commands: mode.commands,
             choices: Some(mode.choices),
             combat: None,
+            lifecycle: None,
             dialogue: None,
             quest: None,
             progression: None,
@@ -1451,7 +1655,21 @@ pub struct CombatClient {
     pub casts: mpsc::Receiver<CastChoice>,
     pub events: mpsc::Sender<crate::combat_wire::Batch>,
 }
+/// Latest explicit attack intent, stamped by the prediction stream at input time.
+#[derive(Clone, Copy, Debug)]
+pub struct MeleeChoice {
+    pub stream_epoch: u64,
+    pub target: Option<theia_core::identity::EntityKey>,
+}
+pub struct MeleeActions {
+    pub catalog: std::sync::Arc<theia_core::melee::Catalog>,
+    pub physical: Option<std::sync::Arc<crate::simulation::combat::physical::Profile>>,
+    pub white: Option<std::sync::Arc<crate::simulation::combat::white_melee::Profile>>,
+    pub ability: Option<std::sync::Arc<crate::simulation::combat::ability_damage::Profile>>,
+    pub choices: watch::Receiver<Option<MeleeChoice>>,
+}
 pub struct CombatActions {
+    pub melee: Option<MeleeActions>,
     pub catalog: std::sync::Arc<theia_core::abilities::Catalog>,
     pub casts: mpsc::Receiver<CastChoice>,
     pub events: mpsc::Sender<crate::combat_wire::Batch>,
@@ -1476,14 +1694,19 @@ pub async fn run_client_combat(
         shutdown,
         expected_world,
         ClientMode {
+            classic_source: None,
+            dodge: None,
+            player_life: None,
             ready: Some(mode.targeting.ready),
             commands: mode.targeting.commands,
             choices: Some(mode.targeting.choices),
             combat: Some(CombatActions {
+                melee: None,
                 catalog: mode.catalog,
                 casts: mode.casts,
                 events: mode.events,
             }),
+            lifecycle: None,
             dialogue: None,
             quest: None,
             progression: None,
@@ -1493,7 +1716,17 @@ pub async fn run_client_combat(
     )
     .await
 }
+/// Immutable movement-profile-2 binding. The source identity includes every
+/// other enabled gameplay profile, before applying the dodge policy identity.
+pub struct DodgeClient {
+    pub source_world: [u8; 32],
+    pub profile: std::sync::Arc<crate::dodging::Profile>,
+}
 pub struct GameplayClient {
+    pub classic_source: Option<[u8; 32]>,
+    pub dodge: Option<DodgeClient>,
+    pub player_life: Option<player_life::Client>,
+    pub lifecycle: Option<quest_lifecycle::Client>,
     pub dialogue: Option<dialogue::Client>,
     pub ready: ChunkReadiness,
     pub commands: Option<mpsc::Receiver<crate::prediction_wire::Commands>>,
@@ -1522,10 +1755,14 @@ pub async fn run_client_gameplay(
         shutdown,
         expected_world,
         ClientMode {
+            classic_source: mode.classic_source,
+            dodge: mode.dodge,
+            player_life: mode.player_life,
             ready: Some(mode.ready),
             commands: mode.commands,
             choices: mode.choices,
             combat: mode.combat,
+            lifecycle: mode.lifecycle,
             dialogue: mode.dialogue,
             quest: mode.quest,
             progression: mode.progression,
@@ -1545,22 +1782,121 @@ async fn run_client_inner(
     mode: ClientMode,
 ) -> Result<()> {
     let ClientMode {
+        classic_source,
+        dodge,
+        player_life,
         ready,
         mut commands,
         mut choices,
         mut combat,
         inventory,
+        lifecycle,
         dialogue,
         progression,
         quest,
         statuses,
     } = mode;
+    if let Some(source) = classic_source
+        && (dodge.is_some()
+            || commands.is_none()
+            || ready.is_none()
+            || expected_world != crate::classic::profile_identity(source))
+    {
+        return Err("Unbound classic transport profile".into());
+    }
+    if let Some(mode) = &dodge
+        && (commands.is_none()
+            || ready.is_none()
+            || expected_world != crate::dodging::profile_identity(mode.source_world, &mode.profile))
+    {
+        return Err("Unbound dodge transport profile".into());
+    }
+    if let Some(melee) = combat.as_ref().and_then(|c| c.melee.as_ref())
+        && let Some(white) = &melee.white
+        && (melee
+            .physical
+            .as_ref()
+            .is_none_or(|p| p.context_hash() != white.physical().context_hash())
+            || melee.catalog.weapons().len()
+                != white
+                    .physical()
+                    .catalog()
+                    .attacks()
+                    .filter(|(_, a)| {
+                        matches!(a, theia_core::damage::catalog::Attack::Weapon { .. })
+                    })
+                    .count()
+            || melee.catalog.weapons().any(|w| {
+                white
+                    .physical()
+                    .weapon(w.item())
+                    .is_none_or(|(_, damage)| damage.base_speed_ms() != w.period_ms())
+            }))
+    {
+        return Err("Unbound ordinary-melee transport profile".into());
+    }
+    if let Some(mode) = &combat
+        && let Some(melee) = &mode.melee
+        && let Some(ability) = &melee.ability
+        && (melee
+            .white
+            .as_ref()
+            .is_none_or(|w| w.context_hash() != ability.ordinary().context_hash())
+            || mode.catalog.as_ref() != ability.catalog())
+    {
+        return Err("Unbound ability-damage transport profile".into());
+    }
+    let physical_active = combat
+        .as_ref()
+        .and_then(|c| c.melee.as_ref())
+        .is_some_and(|m| m.physical.is_some());
+    if physical_active
+        && (classic_source.is_none()
+            || player_life.is_none()
+            || inventory.is_none()
+            || combat.as_ref().is_some_and(|c| c.catalog.schema() != 7))
+    {
+        return Err("Physical results require classic prediction, life, inventory and explicit ability rules".into());
+    }
+    if let Some(life) = &player_life {
+        life.validate()?;
+        if life.membership.is_some()
+            && combat
+                .as_ref()
+                .and_then(|c| c.melee.as_ref())
+                .and_then(|m| m.ability.as_ref())
+                .is_none()
+        {
+            return Err("Membership observations require explicit ability-damage combat".into());
+        }
+        if commands.is_none() || combat.is_none() || ready.is_none() {
+            return Err("Player life requires predicted combat and readiness".into());
+        }
+    }
+    if lifecycle.is_some()
+        && (quest.is_some() || progression.is_none() || dialogue.is_none() || commands.is_none())
+    {
+        return Err(
+            "Explicit quests require exclusive quest mode, prediction, progression and dialogue"
+                .into(),
+        );
+    }
     if quest.is_some() && progression.is_none() {
         return Err("Objectives require progression profile".into());
+    }
+    if let Some(mode) = &lifecycle {
+        mode.profile.check_progression(
+            progression
+                .as_ref()
+                .ok_or("Explicit quests require progression")?,
+        )?;
     }
     if statuses.is_some() && combat.is_none() {
         return Err("Statuses require the combat profile".into());
     }
+    let mut lifecycle = lifecycle
+        .map(quest_lifecycle::ClientState::new)
+        .transpose()?;
     let mut dialogue = dialogue.map(dialogue::ClientState::new).transpose()?;
     let mut inventory = inventory.map(inventory::ClientState::new).transpose()?;
     if combat
@@ -1568,6 +1904,11 @@ async fn run_client_inner(
         .is_some_and(|m| m.casts.max_capacity() > 8 || m.events.max_capacity() > 16)
     {
         return Err("Combat action/event queue exceeds prototype budget".into());
+    }
+    if combat.as_ref().is_some_and(|m| m.melee.is_some())
+        && (classic_source.is_none() || commands.is_none() || choices.is_none())
+    {
+        return Err("Melee requires classic prediction and targeting".into());
     }
     let token = read_ticket(ticket, address)?;
     let bind = if address.is_ipv4() {
@@ -1585,12 +1926,15 @@ async fn run_client_inner(
     let mut sequence = 0u64;
     let mut target_sequence = 0u64;
     let mut cast_sequence = 0u64;
+    let mut melee_sequence = 0u64;
+    let mut melee_state: Option<crate::simulation::combat::autoattack::Snapshot> = None;
     let mut combat_event_sequence = 0u64;
     let mut combat_state: Option<crate::combat_wire::State> = None;
     let mut quest_state: Option<crate::quest_wire::State> = None;
     let mut progression_state: Option<crate::progression_wire::State> = None;
     let mut status_state: Option<crate::status_wire::State> = None;
     let mut targeting: Option<crate::targeting_wire::State> = None;
+    let mut player_life_state: Option<crate::player_life_wire::ClientState> = None;
     let mut ready_sequence = 0u64;
     let mut last_ready = None;
     let mut last_report: Option<ChunkReady> = None;
@@ -1616,7 +1960,7 @@ async fn run_client_inner(
                 client.update(delta);
                 transport.update(delta, &mut client)?;
                 if id.is_none() && started.elapsed() > Duration::from_secs(5) { return Err("Renet welcome timed out".into()); }
-                if commands.is_some() && id.is_some() && correction.is_none() && started.elapsed()>Duration::from_secs(8) {return Err("Server did not enable prediction profile 1".into());}
+                if commands.is_some() && id.is_some() && correction.is_none() && started.elapsed()>Duration::from_secs(8) {return Err("Server did not enable the requested prediction profile".into());}
                 if combat.is_some() && id.is_some() && combat_state.is_none() && started.elapsed()>Duration::from_secs(8) {return Err("Server did not enable combat profile 2".into());}
                 if choices.is_some() && id.is_some() && targeting.is_none() && started.elapsed()>Duration::from_secs(8) {return Err("Server did not enable targeting profile 1".into());}
                 if id.is_some() && let Some(mode)=&inventory {mode.check_deadline(current,started)?;}
@@ -1624,6 +1968,7 @@ async fn run_client_inner(
                 if quest.is_some() && id.is_some() && quest_state.is_none() && started.elapsed()>Duration::from_secs(8) {return Err("Server did not publish committed objective".into());}
                 if progression.is_some() && id.is_some() && progression_state.is_none() && started.elapsed()>Duration::from_secs(8) {return Err("Server did not publish committed XP".into());}
                 if statuses.is_some() && id.is_some() && status_state.is_none() && started.elapsed()>Duration::from_secs(8) {return Err("Server did not enable status profile 1".into());}
+                if let Some(mode)=&lifecycle {mode.check(started.elapsed(),id.is_some(),current)?;}
                 for _ in 0..8 {
                     let Some(bytes) = client.receive_message(EVENT_CHANNEL) else { break; };
                     if id.is_none() {
@@ -1633,6 +1978,21 @@ async fn run_client_inner(
                         admission=Some(welcome.clone());
                         state.send_replace(State {id,welcome:Some(welcome),..State::default()});
                     } else {
+                        if crate::player_life_wire::is_any_state(&bytes) {
+                            let mode=player_life.as_ref().ok_or("Unexpected player-life observation")?;
+                            let welcome=admission.as_ref().unwrap();
+                            let snapshot_rate=state.borrow().snapshot.as_ref().and_then(|s|TickRate::from_hz(s.tick_hz));
+                            let correction_rate=correction.map(|c|c.state.rate);
+                            player_life::receive(mode,welcome,[snapshot_rate,correction_rate],&bytes,&mut player_life_state,&mut stats)?;
+                            state.send_modify(|value|{value.player_life=player_life_state.clone();value.transport=Some(stats.clone());});
+                            continue;
+                        }
+                        if quest_lifecycle::is_frame(&bytes) {
+                            let mode=lifecycle.as_mut().ok_or("Unexpected explicit quest observation")?;
+                            mode.receive(&bytes,admission.as_ref().ok_or("Quest before admission")?,&mut stats)?;
+                            state.send_modify(|s|{mode.copy_to(s);s.transport=Some(stats.clone());});
+                            continue;
+                        }
                         if dialogue::is_frame(&bytes) {
                             let mode=dialogue.as_mut().ok_or("Unexpected dialogue observation")?;
                             mode.receive(&bytes,admission.as_ref().ok_or("Dialogue before admission")?,&mut stats)?;
@@ -1693,6 +2053,21 @@ async fn run_client_inner(
                             state.send_modify(|s|{s.inventory=mode.view.clone();s.inventory_pending=mode.pending();s.transport=Some(stats.clone());});
                             continue;
                         }
+                        if bytes.starts_with(crate::combat_wire::melee::STATE_TAG) {
+                            let mode=combat.as_ref().and_then(|m| m.melee.as_ref()).ok_or("Unexpected melee state")?;
+                            let view=crate::combat_wire::melee::decode_state(&bytes,&mode.catalog)?;
+                            let welcome=admission.as_ref().unwrap();
+                            if view.actor.epoch.value()!=welcome.epoch || view.actor.entity.value()!=welcome.id
+                                || view.reply.is_some_and(|r| r.sequence>melee_sequence) {
+                                return Err("Foreign or unsent melee acknowledgement".into());
+                            }
+                            if melee_state.as_ref().is_some_and(|old| view.tick<old.tick
+                                || view.stream_epoch<old.stream_epoch || view.swing_sequence<old.swing_sequence
+                                || view.reply.map_or(0,|r|r.sequence)<old.reply.map_or(0,|r|r.sequence)) {continue;}
+                            melee_state=Some(view);stats.melee_states_received+=1;
+                            state.send_modify(|value| {value.autoattack=melee_state.clone();value.transport=Some(stats.clone());});
+                            continue;
+                        }
                         if bytes.starts_with(crate::combat_wire::STATE_TAG) || bytes.starts_with(crate::combat_wire::RESOURCE_STATE_TAG) {
                             let mode=combat.as_ref().ok_or("Unexpected opt-in combat state")?;
                             let view=crate::combat_wire::State::decode(&bytes,&mode.catalog)?;
@@ -1704,11 +2079,23 @@ async fn run_client_inner(
                             state.send_modify(|value| {value.combat=combat_state.clone();value.transport=Some(stats.clone());});
                             continue;
                         }
-                        if bytes.starts_with(crate::combat_wire::EVENTS_TAG) {
+                        if bytes.starts_with(crate::combat_wire::EVENTS_TAG) || bytes.starts_with(crate::combat_wire::OUTCOME_EVENTS_TAG) || bytes.starts_with(crate::combat_wire::PROJECTILE_EVENTS_TAG) || bytes.starts_with(crate::combat_wire::melee::EVENTS_TAG) || bytes.starts_with(crate::combat_wire::physical::EVENTS_TAG) || bytes.starts_with(crate::combat_wire::white_melee::EVENTS_TAG) || bytes.starts_with(crate::combat_wire::ability_damage::EVENTS_TAG) {
                             let mode=combat.as_ref().ok_or("Unexpected opt-in combat events")?;
-                            let batch=crate::combat_wire::Batch::decode(&bytes,&mode.catalog)?;
+                            let batch=if let Some(melee)=&mode.melee {
+                                if let Some(profile)=&melee.ability {
+                                    crate::combat_wire::Batch::decode_abilities(&bytes,&melee.catalog,profile)?
+                                } else if let Some(profile)=&melee.white {
+                                    crate::combat_wire::Batch::decode_white(&bytes,&mode.catalog,&melee.catalog,profile)?
+                                } else if let Some(profile)=&melee.physical {
+                                    crate::combat_wire::Batch::decode_physical(&bytes,&mode.catalog,&melee.catalog,profile)?
+                                } else {crate::combat_wire::Batch::decode_melee(&bytes,&mode.catalog,&melee.catalog)?}
+                            } else {crate::combat_wire::Batch::decode(&bytes,&mode.catalog)?};
                             if batch.epoch!=admission.as_ref().unwrap().epoch || batch.sequence!=combat_event_sequence.checked_add(1).ok_or("Combat event sequence exhausted")? {
                                 return Err("Foreign or discontinuous combat event stream".into());
+                            }
+                            let welcome=admission.as_ref().unwrap();
+                            if batch.events.iter().any(|event|event.private_player_victim().is_some_and(|victim|victim.entity.value()!=welcome.id)) {
+                                return Err("Foreign private physical result".into());
                             }
                             let next=batch.sequence;let count=batch.events.len();
                             mode.events.try_send(batch).map_err(|_| "Combat presentation queue full or closed; disconnecting instead of dropping gameplay events")?;
@@ -1761,9 +2148,13 @@ async fn run_client_inner(
                 // Snapshots may arrive before reliable welcome; discard those
                 // rather than publishing an identity-less presentation state.
                 while let Some(bytes) = client.receive_message(MOVEMENT_CHANNEL) {
-                    if bytes.starts_with(crate::prediction_wire::CORRECTION_TAG) {
+                    if bytes.starts_with(crate::classic_wire::CORRECTION_TAG) || bytes.starts_with(crate::prediction_wire::CORRECTION_TAG) || bytes.starts_with(crate::dodge_prediction_wire::CORRECTION_TAG) {
                         if commands.is_none() {return Err("Server requires the opt-in prediction profile".into());}
-                        let packet=crate::prediction_wire::Corrected::decode(&bytes)?;
+                        let packet=if classic_source.is_some() {crate::classic_wire::decode_correction(&bytes)?} else {match &dodge {
+                            Some(mode)=>crate::dodge_prediction_wire::decode_correction(&bytes,&mode.profile)?,
+                            None=>crate::prediction_wire::Corrected::decode(&bytes)?,
+                        }};
+                        if player_life_state.as_ref().is_some_and(|s|s.rate()!=packet.state.rate) {return Err("Correction disagrees with player-life rate".into());}
                         let Some(welcome)=&admission else {continue;};
                         if packet.state.world!=welcome.world || packet.state.actor.epoch.value()!=welcome.epoch || packet.state.actor.entity.value()!=welcome.id || packet.state.ready_sequence>ready_sequence || crate::procedural::owner(packet.state.pose.feet).is_none() || packet.state.pose.feet.metres()[1].abs()>1023. {return Err("Foreign prediction correction".into());}
                         if correction.is_some_and(|old|packet.state.input.stream_epoch<old.state.input.stream_epoch || packet.state.input.tick<old.state.input.tick || (packet.state.input.stream_epoch==old.state.input.stream_epoch && packet.state.input.tick==old.state.input.tick)) {continue;}
@@ -1773,6 +2164,7 @@ async fn run_client_inner(
                         continue;
                     }
                     let snapshot = Snapshot::decode(&bytes)?;
+                    if player_life_state.as_ref().is_some_and(|s|s.rate().hz()!=snapshot.tick_hz) {return Err("Snapshot disagrees with player-life rate".into());}
                     if status_state.as_ref().is_some_and(|s|s.rate.hz()!=snapshot.tick_hz) {return Err("Authority snapshot disagrees with status tick rate".into());}
                     stats.snapshots_received += 1;
                     if snapshot.tick <= latest_tick { stats.stale_snapshots_discarded += 1; }
@@ -1786,12 +2178,17 @@ async fn run_client_inner(
                         stats.rtt_ms = info.rtt * 1000.; stats.packet_loss = info.packet_loss;
                         stats.bytes_sent_per_second = info.bytes_sent_per_second;
                         stats.bytes_received_per_second = info.bytes_received_per_second;
-                        let mut update=State { dialogue:None, guide:None, dialogue_reply:None, dialogue_pending:false, quest:quest_state.clone(), progression:progression_state.clone(), rewards:inventory.as_ref().and_then(|m|m.rewards.clone()), appearance:inventory.as_ref().and_then(|m|m.appearance.clone()), statuses:status_state.clone(), inventory:inventory.as_ref().and_then(|m|m.view.clone()), inventory_pending:inventory.as_ref().is_some_and(|m|m.pending()), combat:combat_state.clone(), targeting:targeting.clone(), id, snapshot: Some(snapshot), error: None, transport: Some(stats.clone()), welcome:admission.clone(), wire_rebases:rebases, chunk_report:last_report.clone(), chunk_ack:last_ack.clone(),chunk_offer:last_offer.clone(),correction,correction_received,correction_ready:correction_ready.clone() };
+                        let mut update=State { player_life:player_life_state.clone(), quest_lifecycle:None, quest_lifecycle_reply:None, quest_lifecycle_pending:false, dialogue:None, guide:None, dialogue_reply:None, dialogue_pending:false, quest:quest_state.clone(), progression:progression_state.clone(), rewards:inventory.as_ref().and_then(|m|m.rewards.clone()), appearance:inventory.as_ref().and_then(|m|m.appearance.clone()), statuses:status_state.clone(), inventory:inventory.as_ref().and_then(|m|m.view.clone()), inventory_pending:inventory.as_ref().is_some_and(|m|m.pending()), combat:combat_state.clone(), autoattack:melee_state.clone(), targeting:targeting.clone(), id, snapshot: Some(snapshot), error: None, transport: Some(stats.clone()), welcome:admission.clone(), wire_rebases:rebases, chunk_report:last_report.clone(), chunk_ack:last_ack.clone(),chunk_offer:last_offer.clone(),correction,correction_received,correction_ready:correction_ready.clone() };
+                        if let Some(mode)=&lifecycle {mode.copy_to(&mut update);}
                         if let Some(mode)=&dialogue {mode.copy_to(&mut update);}
                         state.send_replace(update);
                     }
                 }
                 if let (Some(mode),Some(welcome))=(&mut dialogue,&admission)
+                    && mode.send(&mut client,welcome,current,&mut stats)? {
+                    state.send_modify(|s|{mode.copy_to(s);s.transport=Some(stats.clone());});
+                }
+                if let (Some(mode),Some(welcome))=(&mut lifecycle,&admission)
                     && mode.send(&mut client,welcome,current,&mut stats)? {
                     state.send_modify(|s|{mode.copy_to(s);s.transport=Some(stats.clone());});
                 }
@@ -1807,7 +2204,7 @@ async fn run_client_inner(
                     for _ in 0..8 {match queue.try_recv() {Ok(packet)=>latest=Some(packet),Err(_)=>break,}}
                     if let (Some(welcome),Some(packet))=(&admission,latest) {
                         if packet.epoch!=welcome.epoch {return Err("Foreign local prediction commands".into());}
-                        let bytes=packet.encode()?;
+                        let bytes=if classic_source.is_some() {crate::classic_wire::encode_commands(&packet)?} else if dodge.is_some() {crate::dodge_prediction_wire::encode_commands(&packet)?} else {packet.encode()?};
                         if client.can_send_message(MOVEMENT_CHANNEL,bytes.len()) {client.send_message(MOVEMENT_CHANNEL,bytes);}
                     }
                 }
@@ -1817,6 +2214,20 @@ async fn run_client_inner(
                     if let Some(bytes)=mode.next(actor,current)? {
                         client.send_message(EVENT_CHANNEL,bytes);stats.inventory_requests_sent+=1;
                         state.send_modify(|s|{s.inventory_pending=true;s.transport=Some(stats.clone());});
+                    }
+                }
+                if let (Some(welcome),Some(mode))=(&admission,combat.as_mut().and_then(|m|m.melee.as_mut()))
+                    && mode.choices.has_changed().unwrap_or(false)
+                    && client.can_send_message(EVENT_CHANNEL,crate::combat_wire::melee::REQUEST_BYTES)
+                    && let Some(choice)=*mode.choices.borrow_and_update() {
+                    // Consume stale local intents without re-stamping them into a new life.
+                    if correction.is_some_and(|c| c.state.input.stream_epoch==choice.stream_epoch) {
+                        let next=melee_sequence.checked_add(1).ok_or("Melee request sequence exhausted")?;
+                        let request=crate::simulation::combat::autoattack::Request {
+                            epoch:welcome.epoch,stream_epoch:choice.stream_epoch,sequence:next,target:choice.target,
+                        };
+                        client.send_message(EVENT_CHANNEL,crate::combat_wire::melee::encode_request(request)?);
+                        melee_sequence=next;stats.melee_requests_sent+=1;
                     }
                 }
                 if let (Some(welcome),Some(mode))=(&admission,&mut combat) {

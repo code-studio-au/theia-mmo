@@ -131,9 +131,11 @@ mod tests {
     use super::*;
     fn intent(axes: [i16; 2]) -> Intent {
         Intent {
+            facing: None,
             jump: false,
             axes,
             sprint: false,
+            dodge: None,
         }
     }
     #[test]

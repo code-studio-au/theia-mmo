@@ -1,4 +1,4 @@
-//! Original development props on the inspected POLYGON hand joint. Standard
+//! Original development props on authored POLYGON sockets (legacy hand fallback). Standard
 //! Bevy meshes, hierarchy and animation; no colliders or gameplay authority.
 use crate::{
     movement::LocalPawn,
@@ -32,6 +32,17 @@ impl Kind {
         }
     }
 }
+/// Stance follows only the authoritative public appearance for this exact actor.
+pub(crate) fn sword_equipped(
+    appearance: Option<&theia_network::appearance_wire::State>,
+    actor: EntityKey,
+) -> bool {
+    appearance
+        .filter(|state| state.epoch == actor.epoch.value())
+        .and_then(|state| state.actors.iter().find(|entry| entry.key == actor))
+        .and_then(|entry| entry.main_hand.as_ref())
+        .is_some_and(|id| Kind::for_id(id) == Some(Kind::Sword))
+}
 #[derive(Clone)]
 struct Part {
     mesh: Handle<Mesh>,
@@ -46,6 +57,7 @@ pub(crate) struct Attachment {
     pub(crate) actor: EntityKey,
     pub(crate) hand: Entity,
     pub(crate) appearance: ContentId,
+    authored_socket: bool,
     last: Option<GlobalPosition>,
 }
 #[derive(Resource, Default, serde::Serialize)]
@@ -64,9 +76,16 @@ pub(crate) struct Metrics {
     pub max_grip_offset: f32,
     pub max_scale_error: f32,
     pub readiness_waits: u64,
+    pub authored_socket_samples: u64,
+    pub legacy_hand_samples: u64,
     pub last_error: Option<String>,
 }
-fn socket() -> Transform {
+fn socket(authored: bool) -> Transform {
+    if authored {
+        // Prop_R already carries the authored grip position and orientation.
+        // Geometry is in metres; the imported skeleton is in centimetres.
+        return Transform::from_scale(Vec3::splat(100.));
+    }
     // Inspected SyntyRig carries centimetre scale. Source hand +Y goes towards
     // fingers; move grip 3 cm into the palm, point the blade towards hand -Z.
     Transform {
@@ -236,12 +255,41 @@ fn sync(world: &mut World) {
             continue;
         }
         let hand = hands[0];
+        let sockets: Vec<_> = descendants
+            .iter()
+            .copied()
+            .filter(|e| {
+                world
+                    .get::<Name>(*e)
+                    .is_some_and(|n| n.as_str() == "Prop_R")
+            })
+            .collect();
+        let binding = match sockets.as_slice() {
+            [] => Some((hand, false)),
+            [socket]
+                if world
+                    .get::<ChildOf>(*socket)
+                    .is_some_and(|p| p.parent() == hand) =>
+            {
+                Some((*socket, true))
+            }
+            _ => None,
+        };
+        let Some((attachment_joint, authored_socket)) = binding else {
+            report(
+                world,
+                "POLYGON requires one Prop_R directly below Hand_R".into(),
+            );
+            continue;
+        };
         let skin_ok = descendants.iter().any(|e| {
-            world
-                .get::<SkinnedMesh>(*e)
-                .is_some_and(|s| s.joints.len() == 50 && s.joints.contains(&hand))
+            world.get::<SkinnedMesh>(*e).is_some_and(|s| {
+                s.joints.len() == if authored_socket { 52 } else { 50 }
+                    && s.joints.contains(&hand)
+                    && s.joints.contains(&attachment_joint)
+            })
         });
-        let Some(global) = world.get::<GlobalTransform>(hand).copied() else {
+        let Some(global) = world.get::<GlobalTransform>(attachment_joint).copied() else {
             continue;
         };
         let scale = global.to_scale_rotation_translation().0;
@@ -260,7 +308,7 @@ fn sync(world: &mut World) {
             continue;
         };
         let parts = world.resource::<Props>().0[kind.index()].clone();
-        let local = socket();
+        let local = socket(authored_socket);
         let global = global.mul_transform(local);
         let root = world
             .spawn((
@@ -268,12 +316,13 @@ fn sync(world: &mut World) {
                 local,
                 global,
                 Visibility::Inherited,
-                ChildOf(hand),
+                ChildOf(attachment_joint),
                 Attachment {
                     owner,
                     actor: key,
-                    hand,
+                    hand: attachment_joint,
                     appearance,
+                    authored_socket,
                     last: None,
                 },
             ))
@@ -296,13 +345,13 @@ fn observe(world: &mut World) {
     let roots: Vec<_> = world
         .query::<(Entity, &Attachment, &GlobalTransform)>()
         .iter(world)
-        .map(|(e, a, t)| (e, a.owner, a.hand, *t, a.last))
+        .map(|(e, a, t)| (e, a.owner, a.hand, *t, a.last, a.authored_socket))
         .collect();
-    for (entity, owner, hand, actual, last) in roots {
+    for (entity, owner, hand, actual, last, authored_socket) in roots {
         let Some(hand) = world.get::<GlobalTransform>(hand).copied() else {
             continue;
         };
-        let expected = hand.mul_transform(socket());
+        let expected = hand.mul_transform(socket(authored_socket));
         let socket_error = actual.translation().distance(expected.translation());
         let grip_offset = actual.translation().distance(hand.translation());
         let scale_error = (actual.to_scale_rotation_translation().0 - Vec3::ONE)
@@ -336,9 +385,80 @@ fn observe(world: &mut World) {
         metrics.remote_visible_samples += u64::from(!local && visible);
         metrics.visible_moving_samples += u64::from(moving && visible);
         metrics.moving_samples += u64::from(moving);
+        metrics.authored_socket_samples += u64::from(authored_socket);
+        metrics.legacy_hand_samples += u64::from(!authored_socket);
         metrics.max_socket_error = metrics.max_socket_error.max(socket_error);
         metrics.max_grip_offset = metrics.max_grip_offset.max(grip_offset);
         metrics.max_scale_error = metrics.max_scale_error.max(scale_error);
         world.get_mut::<Attachment>(entity).unwrap().last = position;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn sword_stance_requires_current_exact_public_actor_and_sword_binding() {
+        use theia_network::appearance_wire::{Actor, State};
+        let actor = EntityKey {
+            entity: EntityId::new(3).unwrap(),
+            epoch: WorldEpoch::new(2).unwrap(),
+        };
+        let mut state = State {
+            epoch: 2,
+            tick: 1,
+            catalog_hash: [1; 32],
+            actors: vec![Actor {
+                key: actor,
+                main_hand: Some(ContentId::new("theia.dev.simple-sword").unwrap()),
+            }],
+        };
+        assert!(sword_equipped(Some(&state), actor));
+        assert!(!sword_equipped(None, actor));
+        assert!(!sword_equipped(
+            Some(&state),
+            EntityKey {
+                entity: EntityId::new(4).unwrap(),
+                ..actor
+            }
+        ));
+        assert!(!sword_equipped(
+            Some(&state),
+            EntityKey {
+                epoch: WorldEpoch::new(3).unwrap(),
+                ..actor
+            }
+        ));
+        state.epoch = 3;
+        assert!(!sword_equipped(Some(&state), actor));
+        state.epoch = 2;
+        for id in [
+            None,
+            Some("theia.dev.simple-wand"),
+            Some("theia.dev.unknown"),
+        ] {
+            state.actors[0].main_hand = id.and_then(ContentId::new);
+            assert!(!sword_equipped(Some(&state), actor));
+        }
+        state.actors.clear();
+        assert!(!sword_equipped(Some(&state), actor));
+    }
+    #[test]
+    fn authored_socket_preserves_grip_origin_and_axes_at_metre_scale() {
+        let joint = GlobalTransform::from(
+            Transform::from_xyz(5., 2., -3.)
+                .with_rotation(Quat::from_rotation_y(0.7))
+                .with_scale(Vec3::splat(0.01)),
+        );
+        let actual = joint.mul_transform(socket(true));
+        assert!(actual.translation().abs_diff_eq(joint.translation(), 1e-6));
+        let (scale, rotation, _) = actual.to_scale_rotation_translation();
+        assert!(scale.abs_diff_eq(Vec3::ONE, 1e-6));
+        assert!((rotation * Vec3::Y).abs_diff_eq(Quat::from_rotation_y(0.7) * Vec3::Y, 1e-6));
+        assert!(
+            socket(false)
+                .translation
+                .abs_diff_eq(Vec3::new(0., 3., 0.), 1e-6)
+        );
     }
 }

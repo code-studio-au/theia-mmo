@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "id": "theia.dev.physical-damage-v1",
+  "attacks": [
+    {
+      "kind": "weapon",
+      "id": "theia.dev.training-sword-swing",
+      "item": "theia.dev.training-sword",
+      "minimum": 10,
+      "maximum": 12,
+      "base_speed_ms": 2400
+    },
+    {
+      "kind": "creature",
+      "id": "theia.dev.wolf-bite",
+      "creature": "theia.dev.training-creature",
+      "minimum": 4,
+      "maximum": 6
+    }
+  ]
+}

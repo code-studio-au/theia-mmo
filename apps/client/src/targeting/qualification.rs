@@ -88,8 +88,20 @@ fn pointer_input(world: &mut World) {
     use bevy::picking::pointer::{Location, PointerAction, PointerButton, PointerId, PointerInput};
     let mut run = world.remove_resource::<Run>().unwrap();
     if run.action_ui && (run.pointer_pending || run.pointer_release) {
-        let button = world.query_filtered::<(&ComputedNode, &bevy::ui::UiGlobalTransform), With<crate::combat::ui::ActionButton>>()
-            .iter(world).next().map(|(node, transform)| (node.size(), transform.affine().translation * node.inverse_scale_factor()));
+        let button = world
+            .query::<(
+                &ComputedNode,
+                &bevy::ui::UiGlobalTransform,
+                &crate::combat::ui::ActionButton,
+            )>()
+            .iter(world)
+            .find(|(_, _, button)| button.0 == 0)
+            .map(|(node, transform, _)| {
+                (
+                    node.size(),
+                    transform.affine().translation * node.inverse_scale_factor(),
+                )
+            });
         let window = world
             .query_filtered::<Entity, With<bevy::window::PrimaryWindow>>()
             .iter(world)

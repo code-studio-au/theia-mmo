@@ -57,12 +57,14 @@ pub fn move_local_pawn(
     }
     let direction = intent.direction.clamp_length_max(1.);
     let intent = theia_network::wire::Intent {
+        facing: None,
         jump: false,
         axes: [
             (intent.direction.x.clamp(-1., 1.) * 1000.) as i16,
             (intent.direction.y.clamp(-1., 1.) * 1000.) as i16,
         ],
         sprint: intent.sprint,
+        dodge: None,
     };
     for (mut pawn, mut body, motion) in &mut pawns {
         let before = pawn.translation;

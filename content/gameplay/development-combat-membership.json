@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "id": "theia.dev.combat-membership-v1",
+  "ruleset": "combat_membership_fixture_v1",
+  "maximum_opponents": 32,
+  "hostility_grace_ms": 5000
+}

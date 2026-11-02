@@ -39,6 +39,8 @@ pub struct Graybox {
     pending: Option<(ChunkId, usize)>,
     prepared_visuals: std::collections::BTreeSet<ChunkId>,
     gpu_mesh_assets: usize,
+    terrain_pipeline_clear_frames: u32,
+    pub(crate) unrelated_pipeline_pending_frames: u64,
     patch_sender: mpsc::SyncSender<ChunkId>,
     patch_receiver: Mutex<mpsc::Receiver<theia_network::Result<Arc<Patch>>>>,
     patch_pending: Option<ChunkId>,
@@ -111,6 +113,8 @@ impl Graybox {
             pending: None,
             prepared_visuals: Default::default(),
             gpu_mesh_assets: 0,
+            terrain_pipeline_clear_frames: 0,
+            unrelated_pipeline_pending_frames: 0,
             patch_sender,
             patch_receiver: Mutex::new(patch_receiver),
             patch_pending: None,
@@ -435,9 +439,7 @@ pub fn tick(world: &mut World) {
                 .filter(|id| {
                     current.get(id) == Some(&32)
                         && world.resource::<Graybox>().prepared_visuals.contains(id)
-                        && world
-                            .resource::<crate::capture_ready::CaptureReady>()
-                            .ready()
+                        && world.resource::<Graybox>().terrain_pipeline_clear_frames >= 3
                 })
                 .copied()
                 .collect()
@@ -685,6 +687,8 @@ impl Plugin for ReadinessPlugin {
 fn render_readiness(
     mut main: ResMut<bevy::render::MainWorld>,
     meshes: Res<bevy::render::render_asset::RenderAssets<bevy::render::mesh::RenderMesh>>,
+    specialized: Res<bevy::pbr::SpecializedMaterialPipelineCache>,
+    pipelines: Res<bevy::render::render_resource::PipelineCache>,
 ) {
     if !main.contains_resource::<Graybox>() {
         return;
@@ -695,7 +699,31 @@ fn render_readiness(
         .filter(|tile| meshes.get(tile.mesh.id()).is_some())
         .map(|tile| tile.id)
         .collect();
+    // All greybox tiles share one material and vertex layout. Observe its
+    // actual per-view PBR specializations, including pending replacements.
+    // Offscreen chunks still need GPU meshes, but need not be drawn to grant
+    // readiness. A screenshot, UI or skinned-character pipeline is unrelated.
+    let entities: Vec<_> = main
+        .query_filtered::<Entity, With<Tile>>()
+        .iter(&main)
+        .map(bevy::render::sync_world::MainEntity::from)
+        .collect();
+    let terrain: Vec<_> = specialized
+        .values()
+        .flat_map(|view| entities.iter().filter_map(move |entity| view.get(entity)))
+        .collect();
+    let terrain_ready = !terrain.is_empty()
+        && terrain
+            .iter()
+            .all(|id| pipelines.get_render_pipeline(**id).is_some());
     let mut gray = main.resource_mut::<Graybox>();
+    gray.terrain_pipeline_clear_frames = if terrain_ready {
+        gray.terrain_pipeline_clear_frames.saturating_add(1)
+    } else {
+        0
+    };
+    gray.unrelated_pipeline_pending_frames +=
+        u64::from(terrain_ready && pipelines.waiting_pipelines().next().is_some());
     gray.prepared_visuals = prepared;
     gray.gpu_mesh_assets = meshes.iter().count();
 }
@@ -703,6 +731,22 @@ fn render_readiness(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn terrain_lods_share_the_vertex_layout_used_for_pipeline_readiness() {
+        let layout = |cells| {
+            let mesh = mesh(
+                procedural::geometry(ChunkId { x: 117, z: 117 }, cells),
+                cells,
+            );
+            (
+                mesh.primitive_topology(),
+                mesh.attributes()
+                    .map(|(attribute, _)| (attribute.id, attribute.format))
+                    .collect::<Vec<_>>(),
+            )
+        };
+        assert_eq!(layout(8), layout(32));
+    }
     #[test]
     fn both_visual_lods_have_valid_bounded_geometry_and_full_detail_matches_collision() {
         for cells in [8, 32] {

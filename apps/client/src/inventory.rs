@@ -1,5 +1,6 @@
 //! Standard Bevy backpack widgets. Contents and outcomes come from the authority;
 //! selecting slots never changes the displayed bag optimistically.
+mod lifecycle_qualification;
 mod qualification;
 mod vendor_qualification;
 mod zone_qualification;
@@ -127,6 +128,7 @@ pub(crate) fn install(app: &mut App, profile: Profile) {
         .init_resource::<Ui>()
         .init_resource::<Pending>()
         .add_observer(activate)
+        .add_systems(Update, close_panel.before(present))
         .add_systems(Startup, setup)
         .add_systems(
             Update,
@@ -137,6 +139,7 @@ pub(crate) fn install(app: &mut App, profile: Profile) {
     qualification::install(app);
     vendor_qualification::install(app);
     zone_qualification::install(app);
+    lifecycle_qualification::install(app);
 }
 fn text(value: &str, size: f32) -> impl Bundle {
     (
@@ -325,6 +328,28 @@ fn reason(reason: Reason) -> &'static str {
         Reason::EmptyHand => "No main-hand item is equipped.",
     }
 }
+pub(crate) fn close_panel(
+    keys: Res<ButtonInput<KeyCode>>,
+    mut ui: ResMut<Ui>,
+    dialogue: Option<Res<crate::dialogue::Ui>>,
+    network: Option<Res<Network>>,
+) {
+    let talking = dialogue
+        .as_ref()
+        .is_some_and(|ui| ui.open || ui.pending || ui.close_when_open)
+        || network.as_ref().is_some_and(|network| {
+            let state = network.state();
+            state.error.is_none()
+                && (state.dialogue_pending
+                    || state
+                        .dialogue
+                        .is_some_and(|dialogue| dialogue.open.is_some()))
+        });
+    if keys.just_pressed(KeyCode::Escape) && !talking {
+        ui.open = false;
+    }
+}
+
 fn present(
     network: Res<Network>,
     keys: Res<ButtonInput<KeyCode>>,

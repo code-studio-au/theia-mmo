@@ -76,11 +76,13 @@ fn source_ground_queries_and_cross_chunk_motion_match_full_sample_packages() {
                             &mut body,
                             feet,
                             Intent {
+                                facing: None,
                                 axes: if distance < 4. { axes } else { [0, 0] },
                                 // Launch from the validated support before the
                                 // route descends onto uneven source terrain.
                                 jump: jump && tick < hz / 4,
                                 sprint: false,
+                                dodge: None,
                             },
                             TickRate::from_hz(hz).unwrap(),
                         )

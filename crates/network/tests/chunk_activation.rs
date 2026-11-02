@@ -48,9 +48,11 @@ fn step(world: &mut World, id: u64, seq: u64, axes: [i16; 2], jump: bool) -> [f3
             epoch: world.epoch(),
             sequence: seq,
             intent: Intent {
+                facing: None,
                 axes,
                 jump,
-                sprint: false
+                sprint: false,
+                dodge: None,
             }
         }
     ));
@@ -573,9 +575,11 @@ fn falling_without_input_can_request_adjacent_collision_while_idle_grounded_acto
         chunks.demand(&[(
             f.point(127.6, 5.),
             Intent {
+                facing: None,
                 axes: [-1000, 0],
                 jump: false,
-                sprint: false
+                sprint: false,
+                dodge: None,
             },
             true
         )]),

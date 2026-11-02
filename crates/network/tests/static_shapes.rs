@@ -55,9 +55,11 @@ fn mixed_standard_shapes_support_authoritative_movement_and_lower_room_camera() 
                 &mut body,
                 feet,
                 Intent {
+                    facing: None,
                     axes: [1000, 0],
                     sprint: false,
                     jump: false,
+                    dodge: None,
                 },
                 TickRate::from_hz(hz).unwrap(),
             )

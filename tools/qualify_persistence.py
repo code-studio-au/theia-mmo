@@ -38,8 +38,28 @@ def run(output, sdk):
         cargo('rewards-contract', ['test', '--locked', '-p', 'theia-persistence', '--test', 'rewards_contract',
                                    '-j', '2', '--', '--ignored', '--test-threads=1'])
         cargo('quests-contract', ['test', '--locked', '-p', 'theia-persistence', '--test', 'quests_contract', '-j', '2', '--', '--ignored', '--test-threads=1'])
+        cargo('quest-lifecycle-contract', ['test', '--locked', '-p', 'theia-persistence', '--test', 'quest_lifecycle_contract', '-j', '2', '--', '--ignored', '--test-threads=1'])
+        cargo('gameplay-profiles-contract', ['test', '--locked', '-p', 'theia-persistence', '--test', 'gameplay_profiles_contract', '-j', '2', '--', '--ignored', '--test-threads=1'])
+        cargo('quest-turn-in-xp-contract', ['test', '--locked', '-p', 'theia-persistence', '--test', 'quest_turn_in_xp_contract', '-j', '2', '--', '--ignored', '--test-threads=1'])
         cargo('vendors-contract', ['test', '--locked', '-p', 'theia-persistence', '--test', 'vendors_contract', '-j', '2', '--', '--ignored', '--test-threads=1'])
         cargo('progression-contract', ['test', '--locked', '-p', 'theia-persistence', '--test', 'progression_contract', '-j', '2', '--', '--ignored', '--test-threads=1'])
+        cargo('quest-journal-contract', ['test', '--locked', '-p', 'theia-persistence', '--test', 'quest_journal_contract', '-j', '2', '--', '--ignored', '--test-threads=1'])
+        journal_query = """
+            SELECT n.display_name,h.revision,p.experience,
+              (SELECT count(*) FROM theia.quest_journal_entries e WHERE e.realm_id=n.realm_id AND e.character_id=n.character_id),
+              (SELECT count(*) FROM theia.quest_journal_events e WHERE e.realm_id=n.realm_id AND e.character_id=n.character_id),
+              (SELECT count(*) FROM theia.quest_journal_actions a WHERE a.realm_id=n.realm_id AND a.character_id=n.character_id),
+              (SELECT coalesce(sum(xp_granted),0) FROM theia.quest_journal_actions a WHERE a.realm_id=n.realm_id AND a.character_id=n.character_id),
+              (SELECT md5(string_agg(encode(state,'hex'),'|' ORDER BY quest_id)) FROM theia.quest_journal_entries e WHERE e.realm_id=n.realm_id AND e.character_id=n.character_id)
+            FROM theia.character_names n JOIN theia.quest_journal_heads h USING(realm_id,character_id)
+            JOIN theia.progression p USING(realm_id,character_id)
+            WHERE n.display_name LIKE 'Journal%' ORDER BY n.display_name;
+        """
+        journal_before = cluster.query(journal_query)
+        assert journal_before.returncode == 0
+        journal_rows = [row.split('|') for row in journal_before.stdout.splitlines()]
+        assert {row[0]: int(row[2]) for row in journal_rows} == {'Journalone':75,'Journaltwo':25,'Journalatomic':25,'Journalguard':0,'Journalzero':0,'Journalcap':25}
+        (output/'quest-journal-before-restart.txt').write_text(journal_before.stdout)
         cargo('write', ['run', '--locked', '-p', 'theia-persistence', '--example', 'store_qualification', '--', 'write'])
         cargo('character-write', ['run', '--locked', '-p', 'theia-persistence', '--example', 'character_qualification', '--', 'write'])
         cargo('inventory-write', ['run', '--locked', '-p', 'theia-persistence', '--example', 'inventory_qualification', '--', 'write'])
@@ -48,7 +68,12 @@ def run(output, sdk):
         cargo('progression-write', ['run', '--locked', '-p', 'theia-persistence', '--example', 'progression_qualification', '--', 'write'])
         cargo('quests-write', ['run', '--locked', '-p', 'theia-persistence', '--example', 'quests_qualification', '--', 'write'])
         cargo('vendors-write', ['run', '--locked', '-p', 'theia-persistence', '--example', 'vendors_qualification', '--', 'write'])
+        cargo('quest-lifecycle-write', ['run', '--locked', '-p', 'theia-persistence', '--example', 'quest_lifecycle_qualification', '--', 'write'])
+        cargo('quest-turn-in-xp-write', ['run', '--locked', '-p', 'theia-persistence', '--example', 'quest_turn_in_xp_qualification', '--', 'write'])
         cluster.restart()
+        journal_after = cluster.query(journal_query)
+        assert journal_after.returncode == 0 and journal_after.stdout == journal_before.stdout, 'Multi-quest rows/receipts changed across database process restart'
+        (output/'quest-journal-after-restart.txt').write_text(journal_after.stdout)
         cargo('reload', ['run', '--locked', '-p', 'theia-persistence', '--example', 'store_qualification', '--', 'read'])
         cargo('character-reload', ['run', '--locked', '-p', 'theia-persistence', '--example', 'character_qualification', '--', 'read'])
         cargo('inventory-reload', ['run', '--locked', '-p', 'theia-persistence', '--example', 'inventory_qualification', '--', 'read'])
@@ -56,6 +81,14 @@ def run(output, sdk):
         cargo('rewards-reload', ['run', '--locked', '-p', 'theia-persistence', '--example', 'rewards_qualification', '--', 'read'])
         cargo('progression-reload', ['run', '--locked', '-p', 'theia-persistence', '--example', 'progression_qualification', '--', 'read'])
         cargo('quests-reload', ['run', '--locked', '-p', 'theia-persistence', '--example', 'quests_qualification', '--', 'read'])
+        cargo('quest-lifecycle-reload', ['run', '--locked', '-p', 'theia-persistence', '--example', 'quest_lifecycle_qualification', '--', 'read'])
+        cargo('quest-turn-in-xp-reload', ['run', '--locked', '-p', 'theia-persistence', '--example', 'quest_turn_in_xp_qualification', '--', 'read'])
+        def completion_probe(name):
+            return next(json.loads(line.removeprefix('quest_turn_in_xp_probe ')) for line in (output/(name+'.log')).read_text().splitlines() if line.startswith('quest_turn_in_xp_probe '))
+        assert completion_probe('quest-turn-in-xp-write') == completion_probe('quest-turn-in-xp-reload'), 'Completion XP state/receipts changed across actual process/database restart'
+        def lifecycle_probe(name):
+            return next(json.loads(line.removeprefix('quest_lifecycle_probe ')) for line in (output/(name+'.log')).read_text().splitlines() if line.startswith('quest_lifecycle_probe '))
+        assert lifecycle_probe('quest-lifecycle-write') == lifecycle_probe('quest-lifecycle-reload'), 'Explicit quest phase and pre-accept/action receipts changed across actual database restart'
         def quest_probe(name):
             return next(json.loads(line.removeprefix('quest_probe ')) for line in (output/(name+'.log')).read_text().splitlines() if line.startswith('quest_probe '))
         assert quest_probe('quests-write') == quest_probe('quests-reload'), 'Objective/XP state and old receipts changed across actual database restart'
@@ -82,9 +115,12 @@ def run(output, sdk):
         version = subprocess.check_output([str(cluster.bin/'postgres'), '--version'], env=cluster.env, text=True).strip()
     assert cluster.server is None
     assert not (output/'cluster'/'password').exists() and not (output/'cluster'/'pgpass').exists()
-    result = dict(passed=True, scope='PostgreSQL store/account/character/item/reward/progression/objective/vendor boundaries; no live kill credit, NPC/range, networking or native purchase proof',
+    result = dict(passed=True, scope='PostgreSQL store/account/character/item/reward/progression/objective/vendor/explicit-quest-journal-and-completion-XP boundaries; no live kill credit, NPC/range, networking or native purchase proof',
                   postgres=version, commands=commands, authenticated_loopback=True,
                   wrong_password_rejected=True, durability_flags=['fsync=on','synchronous_commit=on','full_page_writes=on'],
+                  multi_quest_rows_event_receipts_and_exact_snapshots_survive_restart=True,
+                  multi_quest_atomic_completion_rollback_and_lock_barrier=True,
+                  quest_events_independent_of_kill_xp_recipe=True,
                   real_clean_restart_reload=True, named_character_identity_and_pose_survive_restart=True,
                   bounded_character_create_list_select=True, durable_backpack_restart_and_latest_receipt=True,
                   inventory_conflict_and_foreign_owner_rejection=True, inventory_dropped_response_recovery=True,
@@ -102,6 +138,17 @@ def run(output, sdk):
                   quest_atomic_xp_and_objective_receipts=True,
                   quest_completion_independent_of_xp_cap=True,
                   quest_old_event_queue_backend_and_restart=True,
+                  explicit_quest_acceptance_turn_in_and_retained_action_receipts=True,
+                  preaccept_capped_kill_receipts_prevent_retrospective_credit=True,
+                  explicit_quest_process_database_restart=True,
+                  journal_only_turn_in_grants_enabled=False,
+                  completion_xp_atomic_positive_clipped_and_capped=True,
+                  completion_xp_lost_answers_bounded_worker_and_backend_loss=True,
+                  completion_xp_migration_legacy_rows_and_no_silent_adoption=True,
+                  completion_xp_process_database_restart_and_receipts=True,
+                  live_completion_xp_enabled=False,
+                  gameplay_profile_preflight_read_only_and_expected_mismatch=True,
+                  gameplay_profile_preflight_cancelled_answer_and_bounded_queue=True,
                   vendor_atomic_cost_output_and_latest_receipt=True,
                   vendor_full_bag_rollback_and_freed_slot=True,
                   vendor_dropped_answer_queue_and_backend_failure=True,

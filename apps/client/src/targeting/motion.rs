@@ -25,6 +25,7 @@ pub(super) struct Presentation<'w> {
     pub assets: Res<'w, Assets>,
     pub time: Res<'w, Time>,
     pub metrics: ResMut<'w, Metrics>,
+    pub creatures: Option<Res<'w, crate::creature_visual::Pending>>,
 }
 #[derive(Component)]
 pub(crate) struct TargetMotion {

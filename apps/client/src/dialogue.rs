@@ -39,7 +39,9 @@ pub(super) struct GuideVisual;
 #[derive(Component)]
 struct Panel;
 #[derive(Component)]
-struct Pane;
+pub(crate) struct Pane;
+#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
+pub(crate) struct GuideUiSetup;
 #[derive(Component)]
 struct Body;
 #[derive(Component)]
@@ -79,7 +81,10 @@ pub(crate) fn install(app: &mut App, profile: Arc<Profile>) {
         .init_resource::<Ui>()
         .init_resource::<Pending>()
         .add_observer(activate)
-        .add_systems(Startup, setup.after(crate::scene::setup))
+        .add_systems(
+            Startup,
+            setup.after(crate::scene::setup).in_set(GuideUiSetup),
+        )
         .add_systems(
             Update,
             (controls, present, scroll)
@@ -212,6 +217,7 @@ fn controls(
     network: Res<Network>,
     mut pending: ResMut<Pending>,
     mut ui: ResMut<Ui>,
+    classic: Option<Res<crate::classic_controls::Controller>>,
 ) {
     let state = network.state();
     let pointer_choice = pending.choice.take();
@@ -255,7 +261,9 @@ fn controls(
         }
     } else {
         ui.close_when_open = false;
-        if keys.just_pressed(KeyCode::KeyE) {
+        if keys.just_pressed(KeyCode::KeyF)
+            || (classic.is_none() && keys.just_pressed(KeyCode::KeyE))
+        {
             ui.keyboard_actions += 1;
             state
                 .guide
@@ -389,7 +397,7 @@ fn present(
                     .authority_focus()
                     .is_some_and(|p| theia_network::dialogue::in_range(p, guide.position))
                 {
-                    format!("{} [E]", config.0.profile().name())
+                    format!("{} [F / RMB]", config.0.profile().name())
                 } else {
                     format!("{} — move closer to talk", config.0.profile().name())
                 }

@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "id": "theia.dev.training-turn-in-xp",
+  "quest": "theia.dev.training-exercise",
+  "progression": "theia.dev.progression",
+  "experience": 25
+}

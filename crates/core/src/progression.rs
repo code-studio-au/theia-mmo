@@ -11,6 +11,7 @@ pub const MAX_LEVELS: usize = 32;
 pub const MAX_EXPERIENCE: u32 = 10_000;
 pub const MAX_KILL_DEFINITIONS: usize = 16;
 pub const MAX_KILL_EXPERIENCE: u32 = 1000;
+pub const MAX_GRANT_EXPERIENCE: u32 = 1000;
 pub const MAX_REVISION: u64 = i64::MAX as u64;
 pub const PROFILE_DOMAIN: &[u8] = b"theia-progression-profile-v1\0";
 /// Receipt identity for a server-owned victim life, distinct from a persistent
@@ -143,6 +144,24 @@ impl Profile {
         let amount = self
             .kill_experience(creature)
             .ok_or(Error::UnknownCreature)?;
+        self.propose_amount(state, amount, before)
+    }
+    /// Pure bounded grant arithmetic for a trusted server-selected recipe. This
+    /// does not establish entitlement, consume a receipt or commit an award.
+    /// Persistence must bind exact profile bytes and deduplicate the source.
+    pub fn propose_grant(&self, state: &State, amount: u32) -> Result<Proposal, Error> {
+        let before = self.progress(state)?;
+        if !(1..=MAX_GRANT_EXPERIENCE).contains(&amount) {
+            return Err(Error::InvalidGrant);
+        }
+        self.propose_amount(state, amount, before)
+    }
+    fn propose_amount(
+        &self,
+        state: &State,
+        amount: u32,
+        before: Progress,
+    ) -> Result<Proposal, Error> {
         let granted = amount.min(self.maximum_experience() - state.total);
         if granted == 0 {
             return Ok(Proposal {
@@ -219,6 +238,7 @@ pub struct Proposal {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Error {
     InvalidState,
+    InvalidGrant,
     ProfileMismatch,
     UnknownCreature,
     RevisionExhausted,

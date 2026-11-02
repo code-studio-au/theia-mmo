@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "id": "theia.dev.training-retaliation",
+  "creature": "theia.dev.training-creature",
+  "damage": 5,
+  "reach_metres": 3.0,
+  "windup_ms": 500,
+  "recovery_ms": 1500,
+  "memory_ms": 10000
+}

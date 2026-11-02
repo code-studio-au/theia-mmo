@@ -1,12 +1,18 @@
 //! Typed bounded account/character commands; never the superseding pose mailbox.
 use super::{Publisher, WorkerStatus};
 use crate::{
-    Binding, Character, CharacterName, CharacterSummary, Error, OwnerId, Result, Store,
-    store::validate_identity,
+    Binding, Character, CharacterName, CharacterSummary, Error, GameplayProfiles, OwnerId,
+    ProfileCompatibility, Result, Store, store::validate_identity,
 };
 use theia_core::coordinates::GlobalPosition;
 use tokio::sync::oneshot;
 pub(super) enum Request {
+    CheckProfiles {
+        binding: Binding,
+        world: [u8; 32],
+        profiles: GameplayProfiles,
+        reply: oneshot::Sender<Result<ProfileCompatibility>>,
+    },
     Owner {
         issuer: String,
         subject: String,
@@ -32,12 +38,34 @@ pub(super) enum Request {
 }
 #[derive(Clone, Copy)]
 enum Operation {
+    CheckProfiles,
     Owner,
     Create,
     List,
     Select,
 }
 impl Publisher {
+    /// Read-only compatibility result, not a ticket, owner claim or migration.
+    pub async fn check_gameplay_profiles(
+        &self,
+        binding: Binding,
+        world: [u8; 32],
+        profiles: GameplayProfiles,
+    ) -> Result<ProfileCompatibility> {
+        valid_world(world)?;
+        let (reply, answer) = oneshot::channel();
+        self.account_request(
+            Request::CheckProfiles {
+                binding,
+                world,
+                profiles,
+                reply,
+            },
+            answer,
+        )
+        .await
+    }
+
     /// Trusted caller must use a verified provider identity. Success means COMMIT.
     pub async fn resolve_owner(&self, issuer: &str, subject: &str) -> Result<OwnerId> {
         validate_identity(issuer, subject)?;
@@ -130,6 +158,26 @@ fn valid_world(world: [u8; 32]) -> Result<()> {
 impl Request {
     pub(super) async fn run(self, store: &mut Store, status: &mut WorkerStatus) -> Result<()> {
         match self {
+            Self::CheckProfiles {
+                binding,
+                world,
+                profiles,
+                reply,
+            } => {
+                if reply.is_closed() {
+                    return Ok(());
+                }
+                let result = store
+                    .check_gameplay_profiles(binding, world, profiles)
+                    .await;
+                status.incompatible_gameplay_profiles = status
+                    .incompatible_gameplay_profiles
+                    .saturating_add(u64::from(matches!(
+                        result,
+                        Ok(ProfileCompatibility::Incompatible)
+                    )));
+                respond(result, reply, status, Operation::CheckProfiles)
+            }
             Self::Owner {
                 issuer,
                 subject,
@@ -205,6 +253,7 @@ fn respond<T>(
     let fatal = match &result {
         Ok(_) => {
             let counter = match operation {
+                Operation::CheckProfiles => &mut status.gameplay_profile_checks,
                 Operation::Owner => &mut status.resolved_owners,
                 Operation::Create => &mut status.created_characters,
                 Operation::List => &mut status.character_lists,

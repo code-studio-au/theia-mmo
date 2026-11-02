@@ -195,7 +195,7 @@ async fn owned_characters_names_quotas_selection_and_rejections_are_transactiona
     // Upgrade a genuine version-3 shape while preserving accounts, development
     // bindings and unnamed character rows. Names did not exist in version 3.
     store.close().await.unwrap();
-    admin.batch_execute("DROP TABLE theia.quest_kill_receipts; DROP TABLE theia.quest_objectives; DROP TABLE theia.experience_receipts; DROP TABLE theia.progression; DROP TABLE theia.reward_claims; DROP TABLE theia.backpacks; DROP TABLE theia.character_names; DELETE FROM theia.schema_migrations WHERE version>=4;").await.unwrap();
+    admin.batch_execute("DROP TABLE theia.quest_journal_actions; DROP TABLE theia.quest_journal_events; DROP TABLE theia.quest_journal_entries; DROP TABLE theia.quest_journal_heads; DROP TABLE theia.quest_lifecycle_kills; DROP TABLE theia.quest_action_receipts; DROP TABLE theia.quest_lifecycles; DROP TABLE theia.quest_kill_receipts; DROP TABLE theia.quest_objectives; DROP TABLE theia.experience_receipts; DROP TABLE theia.progression; DROP TABLE theia.reward_claims; DROP TABLE theia.backpacks; DROP TABLE theia.character_names; DELETE FROM theia.schema_migrations WHERE version>=4;").await.unwrap();
     let mut store = Store::connect_loopback(&url, realm).await.unwrap();
     assert_eq!(store.resolve_owner(&issuer, "alice").await.unwrap(), alice);
     assert_eq!(

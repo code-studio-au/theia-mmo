@@ -16,6 +16,12 @@ import numpy as np
 
 CLIPS = {'Idle': 'A_Idle_Standing_Masc.fbx', 'Walk': 'A_Walk_F_Masc.fbx',
          'Run': 'A_Run_F_Masc.fbx', 'Jump': 'A_Jump_Idle_Masc.fbx'}
+SWORD_CLIPS = {'SwordIdle': 'A_Idle_Base_Sword.fbx',
+               'SwordAttack': 'A_Attack_LightCombo01A_Sword.fbx',
+               'SwordHit': 'A_Hit_F_React_Sword.fbx', 'Death': 'A_Death_F_01_Sword.fbx'}
+DODGE_CLIPS = {kind + label: f'A_{kind}_{direction}_Sword.fbx'
+               for kind in ['Dodge', 'DodgeRoll']
+               for label, direction in [('Forward', 'F'), ('Back', 'B'), ('Left', 'L'), ('Right', 'R')]}
 
 
 def unique(root, name):
@@ -25,7 +31,8 @@ def unique(root, name):
     return paths[0]
 
 
-def convert(source, output, four_weight_preview=False):
+def convert(source, output, four_weight_preview=False, combat_source=None, dodge_source=None,
+            include_dodge_rolls=False):
     source, output = source.resolve(strict=True), output.resolve()
     if output.exists() or output.is_relative_to(source):
         raise FileExistsError('Conversion output must be new and outside source')
@@ -33,6 +40,34 @@ def convert(source, output, four_weight_preview=False):
     for name, binding in inputs.items():
         if hashlib.sha256((source / name).read_bytes()).hexdigest() != binding['sha256']:
             raise ValueError('Extracted source changed')
+    clip_sources = {name: (source, filename) for name, filename in CLIPS.items()}
+    combat_inputs = None
+    if combat_source is not None:
+        combat_source = combat_source.resolve(strict=True)
+        if output.is_relative_to(combat_source):
+            raise ValueError('Output must be outside combat sources')
+        combat_inputs = json.loads((combat_source / 'extraction.json').read_bytes())['selected']
+        for name, binding in combat_inputs.items():
+            path = (combat_source / name).resolve(strict=True)
+            if not path.is_relative_to(combat_source) or hashlib.sha256(path.read_bytes()).hexdigest() != binding['sha256']:
+                raise ValueError('Combat source payload changed or escaped source directory')
+        clip_sources.update({name: (combat_source, filename) for name, filename in SWORD_CLIPS.items()})
+    dodge_inputs = None
+    if include_dodge_rolls and dodge_source is None:
+        raise ValueError('Dodge rolls require explicit dodge sources')
+    if dodge_source is not None:
+        dodge_source = dodge_source.resolve(strict=True)
+        if combat_source is None or output.is_relative_to(dodge_source):
+            raise ValueError('Dodge conversion requires combat sockets and an output outside sources')
+        dodge_inputs = json.loads((dodge_source / 'extraction.json').read_bytes())['selected']
+        for name, binding in dodge_inputs.items():
+            path = (dodge_source / name).resolve(strict=True)
+            if not path.is_relative_to(dodge_source) or hashlib.sha256(path.read_bytes()).hexdigest() != binding['sha256']:
+                raise ValueError('Dodge source payload changed or escaped source directory')
+        clip_sources.update({name: (dodge_source, filename) for name, filename in DODGE_CLIPS.items()
+                             if include_dodge_rolls or not name.startswith('DodgeRoll')})
+    for directory, filename in clip_sources.values():
+        unique(directory, filename)
     bpy.ops.wm.read_factory_settings(use_empty=True)
     scene = bpy.context.scene
     scene.render.fps, scene.render.fps_base = 30, 1.
@@ -44,6 +79,34 @@ def convert(source, output, four_weight_preview=False):
         raise ValueError('Expected the sample character skin and one armature')
     rig, mesh = rigs[0], meshes[0]
     rig.name, mesh.name = 'SyntyRig', 'CharacterMesh'
+    body_names = set(rig.data.bones.keys())
+    socket_names = {'Prop_L', 'Prop_R'} if combat_source else set()
+    if socket_names:
+        before = set(bpy.data.objects)
+        bpy.ops.import_scene.fbx(filepath=str(unique(combat_source, 'PolygonSyntyCharacter.fbx')),
+                                 use_anim=False, automatic_bone_orientation=False, use_custom_props=False)
+        added = set(bpy.data.objects) - before
+        socket_rigs = [o for o in added if o.type == 'ARMATURE']
+        if len(socket_rigs) != 1 or set(socket_rigs[0].data.bones.keys()) != body_names | socket_names:
+            raise ValueError('Unexpected socket reference skeleton')
+        reference_rig = socket_rigs[0]
+        socket_bind = {}
+        for name in socket_names:
+            bone = reference_rig.data.bones[name]
+            if bone.children or bone.parent is None or bone.parent.name != name.replace('Prop_', 'Hand_'):
+                raise ValueError('Unexpected socket reference parentage')
+            socket_bind[name] = (bone.parent.matrix_local.inverted() @ bone.matrix_local, bone.length)
+        bpy.context.view_layer.objects.active = rig
+        bpy.ops.object.mode_set(mode='EDIT')
+        for name, (relative, length) in socket_bind.items():
+            bone = rig.data.edit_bones.new(name)
+            bone.parent = rig.data.edit_bones[name.replace('Prop_', 'Hand_')]
+            bone.matrix = bone.parent.matrix @ relative
+            bone.length = length
+            bone.use_deform = False
+        bpy.ops.object.mode_set(mode='OBJECT')
+        for obj in added:
+            bpy.data.objects.remove(obj, do_unlink=True)
     # The mesh FBX connects Hips to Root's tail, while animation sources translate
     # Hips independently. Connectivity is a Blender editing constraint, absent
     # from glTF; clear it without changing the bind matrices or parentage.
@@ -53,7 +116,7 @@ def convert(source, output, four_weight_preview=False):
         bone.use_connect = False
     bpy.ops.object.mode_set(mode='OBJECT')
     bones = sorted(rig.data.bones, key=lambda bone: len(bone.parent_recursive))
-    if len(bones) != 50:
+    if len(body_names) != 50 or len(bones) != 50 + len(socket_names):
         raise ValueError('Unexpected sample skeleton')
     bone_indices = {bone.name: n for n, bone in enumerate(bones)}
     source_weights = []
@@ -83,27 +146,34 @@ def convert(source, output, four_weight_preview=False):
     material.node_tree.links.new(texture.outputs['Color'], principled.inputs['Base Color'])
     mesh.data.materials.clear();mesh.data.materials.append(material)
     actions, report, references = [], {}, {}
-    for name, filename in CLIPS.items():
+    for name, (directory, filename) in clip_sources.items():
         before = set(bpy.data.objects)
-        bpy.ops.import_scene.fbx(filepath=str(unique(source, filename)), use_anim=True,
+        bpy.ops.import_scene.fbx(filepath=str(unique(directory, filename)), use_anim=True,
                                  automatic_bone_orientation=False, use_custom_props=False)
         added = [o for o in bpy.data.objects if o not in before]
         source_rigs = [o for o in added if o.type == 'ARMATURE']
         if len(source_rigs) != 1:
             raise ValueError('Animation source must contain exactly one rig')
         animated = source_rigs[0]
-        if set(animated.data.bones.keys()) != set(rig.data.bones.keys()):
+        expected = body_names | (socket_names if name in SWORD_CLIPS or name in DODGE_CLIPS else set())
+        if set(animated.data.bones.keys()) != expected:
             raise ValueError('Animation skeleton names differ')
+        for prop in socket_names & set(animated.data.bones.keys()):
+            bone = animated.data.bones[prop]
+            if bone.children or bone.parent is None or bone.parent.name != prop.replace('Prop_', 'Hand_'):
+                raise ValueError('Unexpected sword prop parentage')
+        # Sockets have no body weights, but their authored poses are required for
+        # equipment. Legacy locomotion holds their hand-relative reference pose.
         if any((bone.parent.name if bone.parent else None) !=
                (rig.data.bones[bone.name].parent.name if rig.data.bones[bone.name].parent else None)
-               for bone in animated.data.bones):
+               for bone in animated.data.bones if bone.name in rig.data.bones):
             raise ValueError('Animation skeleton parentage differs')
         original = animated.animation_data.action
         first, last = (int(round(v)) for v in original.frame_range)
         if not 1 <= last - first <= 180 or scene.render.fps != 30 or scene.render.fps_base != 1.:
             raise ValueError('Unsupported source animation timing')
         rest_error = max(abs(bone.matrix_local[i][j] - animated.data.bones[bone.name].matrix_local[i][j])
-                         for bone in bones for i in range(4) for j in range(4))
+                         for bone in bones if bone.name in animated.data.bones for i in range(4) for j in range(4))
         action = bpy.data.actions.new(name);action.use_fake_user = True
         rig.animation_data_create();rig.animation_data.action = action
         for pose in rig.pose.bones:
@@ -112,7 +182,11 @@ def convert(source, output, four_weight_preview=False):
         for frame in range(first, last + 1):
             scene.frame_set(frame)
             conversion = rig.matrix_world.inverted() @ animated.matrix_world
-            desired = {bone.name: conversion @ animated.pose.bones[bone.name].matrix.copy() for bone in bones}
+            desired = {}
+            for bone in bones:
+                desired[bone.name] = (conversion @ animated.pose.bones[bone.name].matrix.copy()
+                    if bone.name in animated.pose.bones else
+                    desired[bone.parent.name] @ bone.parent.matrix_local.inverted() @ bone.matrix_local)
             # Converting pose matrices with explicit desired parent matrices
             # avoids assuming identical bind poses or copying incompatible curves.
             for bone in bones:
@@ -133,7 +207,7 @@ def convert(source, output, four_weight_preview=False):
             wanted = {}
             for bone in bones:
                 actual = rig.matrix_world @ rig.pose.bones[bone.name].matrix
-                expected = animated.matrix_world @ animated.pose.bones[bone.name].matrix
+                expected = rig.matrix_world @ desired[bone.name]
                 error = max(abs(actual[i][j] - expected[i][j]) for i in range(4) for j in range(4))
                 maximum_error = max(maximum_error, error)
                 if error > .0001:
@@ -146,7 +220,9 @@ def convert(source, output, four_weight_preview=False):
             raise ValueError('Source root has horizontal locomotion; authority must not inherit it')
         if skin_error > .005 and not four_weight_preview:
             raise ValueError(f'Standard four-influence skin error exceeds 5mm in {name}: {skin_error}')
-        report[name] = {'frames': [first, last], 'fps': 30, 'source_bind_matrix_difference': rest_error,
+        report[name] = {'retained_prop_sockets': sorted(socket_names),
+                        'socket_pose_source': 'authored animation' if name in SWORD_CLIPS or name in DODGE_CLIPS else 'hand-relative reference bind',
+                        'frames': [first, last], 'fps': 30, 'source_bind_matrix_difference': rest_error,
                         'maximum_world_pose_matrix_error': maximum_error, 'root_horizontal_span_metres': root_xz_span,
                         'maximum_four_influence_skin_error_metres': skin_error}
         references[name] = samples
@@ -186,7 +262,9 @@ def convert(source, output, four_weight_preview=False):
                   'four_weight_preview_opt_in': four_weight_preview,
                   'four_weight_skin_within_5mm_gate': all(r['maximum_four_influence_skin_error_metres'] <= .005 for r in report.values()),
                   'clips': report, 'material': 'Explicit standard base-colour palette, metallic 0, roughness 0.5',
-                  'inputs': inputs, 'scope': 'isolated sample character conversion; not game character adoption'}
+                  'inputs': inputs, 'combat_inputs': combat_inputs, 'dodge_inputs': dodge_inputs,
+                  'dodge_rolls_included': include_dodge_rolls,
+                  'scope': 'isolated sample character conversion; not game character adoption'}
         (output / 'conversion.json').write_text(json.dumps(result, indent=2) + '\n')
         (output / 'source-pose-reference.json').write_text(json.dumps(references, separators=(',', ':')) + '\n')
         return result
@@ -199,6 +277,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('source', type=Path)
     parser.add_argument('output', type=Path)
+    parser.add_argument('--combat-source', type=Path, help='Explicit extracted Sword Combat source; add four fixed clips to the retained body skin')
+    parser.add_argument('--dodge-source', type=Path, help='Four directional non-root-motion dodge clips; requires --combat-source')
+    parser.add_argument('--include-dodge-rolls', action='store_true', help='Also export the four longer roll clips for separate inspection')
     parser.add_argument('--four-weight-preview', action='store_true', help='Allow a measured preview above the 5mm gate; preserve the full source skin GLB separately')
     args = parser.parse_args()
-    print(json.dumps(convert(args.source, args.output, args.four_weight_preview), indent=2))
+    print(json.dumps(convert(args.source, args.output, args.four_weight_preview, args.combat_source,
+                             args.dodge_source, args.include_dodge_rolls), indent=2))

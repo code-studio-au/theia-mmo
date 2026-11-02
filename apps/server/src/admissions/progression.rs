@@ -1,17 +1,21 @@
-//! Generation-bound durable XP owner; accepted facts drain before slot reuse.
+//! Generation-bound durable progression owner. Accepted actions and earned facts
+//! share one FIFO and drain before retirement releases the character slot.
 use super::{GameAdmissions, Phase};
 use std::sync::{
     Arc, Weak,
     atomic::{AtomicBool, Ordering},
 };
-use theia_core::progression::KillEvent;
+use theia_core::{identity::EntityKey, progression::KillEvent};
 use theia_network::{
     Result,
-    renet_runtime::progression::{CAPACITY, Observation, Port},
+    quest_lifecycle_wire::{self as life, Rejection},
+    renet_runtime::progression::{ActionReply, CAPACITY, Input, Observation, Port},
 };
-use theia_persistence::{Binding, ProgressionCatalog, Publisher};
+use theia_persistence::{Binding, Error, ProgressionCatalog, Publisher};
 use tokio::sync::{mpsc, watch};
+
 pub(super) struct Config {
+    lifecycle: Option<(theia_persistence::QuestLifecycleCatalog, Arc<life::Profile>)>,
     quest: Option<(
         theia_persistence::QuestCatalog,
         Arc<theia_network::quest_wire::Profile>,
@@ -21,6 +25,14 @@ pub(super) struct Config {
     publisher: Publisher,
 }
 impl Config {
+    pub(super) fn admission_profiles(&self) -> ([u8; 32], Option<[u8; 32]>, Option<[u8; 32]>) {
+        (
+            self.profile.hash(),
+            self.quest.as_ref().map(|(profile, _)| profile.hash()),
+            self.lifecycle.as_ref().map(|(profile, _)| profile.hash()),
+        )
+    }
+
     pub(super) fn new(
         profile: ProgressionCatalog,
         wire: Arc<theia_network::progression_wire::Profile>,
@@ -30,6 +42,7 @@ impl Config {
             return Err("XP store/wire profile mismatch".into());
         }
         Ok(Self {
+            lifecycle: None,
             quest: None,
             profile,
             wire,
@@ -41,7 +54,9 @@ impl Config {
         quest: theia_persistence::QuestCatalog,
         wire: Arc<theia_network::quest_wire::Profile>,
     ) -> Result<()> {
-        if quest.hash() != wire.hash()
+        if self.quest.is_some()
+            || self.lifecycle.is_some()
+            || quest.hash() != wire.hash()
             || self
                 .profile
                 .profile()
@@ -53,6 +68,26 @@ impl Config {
         self.quest = Some((quest, wire));
         Ok(())
     }
+    pub(super) fn set_lifecycle(
+        &mut self,
+        quest: theia_persistence::QuestLifecycleCatalog,
+        wire: Arc<life::Profile>,
+    ) -> Result<()> {
+        if self.quest.is_some()
+            || self.lifecycle.is_some()
+            || quest.hash() != wire.hash()
+            || self
+                .profile
+                .profile()
+                .kill_experience(quest.profile().creature())
+                .is_none()
+        {
+            return Err("Explicit quest store/wire/progression profile mismatch".into());
+        }
+        wire.check_progression(&self.wire)?;
+        self.lifecycle = Some((quest, wire));
+        Ok(())
+    }
     pub(super) fn start(
         &self,
         gate: Weak<GameAdmissions>,
@@ -61,52 +96,30 @@ impl Config {
         binding: Binding,
         world: [u8; 32],
     ) -> Session {
-        let (earned, mut receiver) = mpsc::channel::<KillEvent>(CAPACITY);
+        let (input, receiver) = mpsc::channel::<Input>(CAPACITY);
         let (publish, state) = watch::channel(Observation::default());
-        let (stop, mut stopping) = watch::channel(false);
+        let (stop, stopping) = watch::channel(false);
         let done = Arc::new(AtomicBool::new(false));
         let guard = Finished {
             gate: gate.clone(),
             done: done.clone(),
             handled: false,
         };
-        let profile = self.profile.clone();
-        let quest = self.quest.as_ref().map(|(q, _)| q.clone());
-        let publisher = self.publisher.clone();
+        let owner = Owner {
+            gate,
+            slot,
+            generation,
+            binding,
+            world,
+            profile: self.profile.clone(),
+            quest: self.quest.as_ref().map(|q| q.0.clone()),
+            lifecycle: self.lifecycle.as_ref().map(|q| q.0.clone()),
+            publisher: self.publisher.clone(),
+            sequence: 0,
+        };
         tokio::spawn(async move {
             let mut guard = guard;
-            let result: Result<()>=async {
-                let authorized=|| -> Result<bool> {
-                    let Some(gate)=gate.upgrade() else {return Ok(false);};
-                    let state=gate.lock()?;
-                    Ok(state.slots[slot].as_ref().is_some_and(|entry| entry.generation==generation && entry.binding==binding && matches!(entry.phase,Phase::Consumed|Phase::Active|Phase::Retiring)))
-                };
-                if !authorized()? {return Err("XP character ownership lost".into());}
-                let initial=publisher.ensure_progression(binding,world,&profile).await?;
-                let objective=if let Some(quest)=&quest {Some(publisher.ensure_quest(binding,world,quest).await?)} else {None};
-                publish.send_modify(|s|{s.progress=Some(initial);s.quest=objective;});
-                loop {
-                    if *stopping.borrow() { receiver.close(); }
-                    let event=if receiver.is_closed() {
-                        receiver.recv().await
-                    } else {
-                        tokio::select! {biased;
-                            changed=stopping.changed()=>{if changed.is_err() || *stopping.borrow() {receiver.close();} continue;},
-                            event=receiver.recv()=>event,
-                        }
-                    };
-                    let Some(event)=event else {break;};
-                    if !authorized()? {return Err("Accepted XP fact lost ownership".into());}
-                    if let Some(quest)=&quest {
-                        let applied=publisher.award_progression_and_quest(binding,world,&profile,quest,&event).await?;
-                        publish.send_modify(|s|{s.progress=Some(applied.experience.state);s.quest=Some(applied.quest.state);});
-                    } else {
-                        let applied=publisher.award_experience(binding,world,&profile,&event).await?;
-                        publish.send_modify(|s|s.progress=Some(applied.state));
-                    }
-                }
-                Ok(())
-            }.await;
+            let result = owner.run(receiver, stopping, &publish).await;
             if result.is_err()
                 && let Some(gate) = guard.gate.upgrade()
             {
@@ -120,15 +133,220 @@ impl Config {
         });
         Session {
             port: Port {
-                quest: self.quest.as_ref().map(|(_, wire)| wire.clone()),
+                lifecycle: self.lifecycle.as_ref().map(|q| q.1.clone()),
+                quest: self.quest.as_ref().map(|q| q.1.clone()),
                 profile: self.wire.clone(),
-                earned,
+                input,
                 state,
             },
             stop,
             done,
         }
     }
+}
+struct Owner {
+    gate: Weak<GameAdmissions>,
+    slot: usize,
+    generation: u64,
+    binding: Binding,
+    world: [u8; 32],
+    profile: ProgressionCatalog,
+    quest: Option<theia_persistence::QuestCatalog>,
+    lifecycle: Option<theia_persistence::QuestLifecycleCatalog>,
+    publisher: Publisher,
+    sequence: u64,
+}
+impl Owner {
+    fn authorized(&self, actor: Option<EntityKey>) -> Result<bool> {
+        let Some(gate) = self.gate.upgrade() else {
+            return Ok(false);
+        };
+        let state = gate.lock()?;
+        Ok(state.slots[self.slot].as_ref().is_some_and(|entry| {
+            entry.generation == self.generation
+                && entry.binding == self.binding
+                && matches!(
+                    entry.phase,
+                    Phase::Consumed | Phase::Active | Phase::Retiring
+                )
+                && actor.is_none_or(|actor| entry.actor == Some(actor))
+        }))
+    }
+    async fn run(
+        mut self,
+        mut receiver: mpsc::Receiver<Input>,
+        mut stopping: watch::Receiver<bool>,
+        publish: &watch::Sender<Observation>,
+    ) -> Result<()> {
+        if !self.authorized(None)? {
+            return Err("Progression character ownership lost".into());
+        }
+        let initial = self
+            .publisher
+            .ensure_progression(self.binding, self.world, &self.profile)
+            .await?;
+        let objective = if let Some(quest) = &self.quest {
+            Some(
+                self.publisher
+                    .ensure_quest(self.binding, self.world, quest)
+                    .await?,
+            )
+        } else {
+            None
+        };
+        let lifecycle = if let Some(quest) = &self.lifecycle {
+            Some(
+                self.publisher
+                    .ensure_quest_lifecycle(self.binding, self.world, quest)
+                    .await?,
+            )
+        } else {
+            None
+        };
+        publish.send_modify(|s| {
+            s.progress = Some(initial);
+            s.quest = objective;
+            s.lifecycle = lifecycle;
+        });
+        loop {
+            if *stopping.borrow() {
+                receiver.close();
+            }
+            let input = if receiver.is_closed() {
+                receiver.recv().await
+            } else {
+                tokio::select! {biased;
+                    changed=stopping.changed()=>{if changed.is_err()||*stopping.borrow(){receiver.close();}continue;},
+                    input=receiver.recv()=>input,
+                }
+            };
+            let Some(input) = input else {
+                break;
+            };
+            if !self.authorized(None)? {
+                return Err("Accepted progression input lost ownership".into());
+            }
+            match input {
+                Input::Kill(event) => self.award(event, publish).await?,
+                Input::QuestAction(request) => self.command(request, publish).await?,
+            }
+        }
+        Ok(())
+    }
+    async fn award(&self, event: KillEvent, publish: &watch::Sender<Observation>) -> Result<()> {
+        if let Some(quest) = &self.lifecycle {
+            let applied = self
+                .publisher
+                .award_progression_and_quest_lifecycle(
+                    self.binding,
+                    self.world,
+                    &self.profile,
+                    quest,
+                    &event,
+                )
+                .await?;
+            publish.send_modify(|s| {
+                s.progress = Some(applied.experience.state);
+                s.lifecycle = Some(applied.quest.state);
+            });
+        } else if let Some(quest) = &self.quest {
+            let applied = self
+                .publisher
+                .award_progression_and_quest(self.binding, self.world, &self.profile, quest, &event)
+                .await?;
+            publish.send_modify(|s| {
+                s.progress = Some(applied.experience.state);
+                s.quest = Some(applied.quest.state);
+            });
+        } else {
+            let applied = self
+                .publisher
+                .award_experience(self.binding, self.world, &self.profile, &event)
+                .await?;
+            publish.send_modify(|s| s.progress = Some(applied.state));
+        }
+        Ok(())
+    }
+    async fn command(
+        &mut self,
+        request: life::Request,
+        publish: &watch::Sender<Observation>,
+    ) -> Result<()> {
+        // The world checked NPC entitlement before queue acceptance. Only the
+        // retained generation/actor is rechecked now; close/walkaway/logout must
+        // not erase an accepted intent or change its painted revision.
+        if !self.authorized(Some(request.actor))?
+            || request.sequence <= self.sequence
+            || request.sequence.saturating_sub(self.sequence) > 128
+        {
+            return Err("Accepted quest action lost actor/sequence binding".into());
+        }
+        self.sequence = request.sequence;
+        let quest = self
+            .lifecycle
+            .as_ref()
+            .ok_or("Quest action requires explicit lifecycle owner")?;
+        let result = if quest.turn_in_xp().is_some() {
+            self.publisher
+                .command_quest_lifecycle_with_experience(
+                    self.binding,
+                    self.world,
+                    &self.profile,
+                    quest,
+                    request.command,
+                )
+                .await
+                .map(|r| (r.quest, Some(r.experience.state)))
+        } else {
+            self.publisher
+                .command_quest_lifecycle(self.binding, self.world, quest, request.command)
+                .await
+                .map(|r| (r, None))
+        };
+        match result {
+            Ok((applied, experience)) => publish.send_modify(|s| {
+                if let Some(experience) = experience {
+                    s.progress = Some(experience);
+                }
+                s.lifecycle_reply = Some(ActionReply {
+                    sequence: request.sequence,
+                    quest_revision: applied.state.revision(),
+                    rejection: None,
+                });
+                s.lifecycle = Some(applied.state);
+            }),
+            Err(error) => {
+                let rejection = normal_refusal(error)?;
+                publish.send_modify(|s| {
+                    s.lifecycle_reply = Some(ActionReply {
+                        sequence: request.sequence,
+                        quest_revision: s
+                            .lifecycle
+                            .as_ref()
+                            .expect("Initialized quest owner")
+                            .revision(),
+                        rejection: Some(rejection),
+                    })
+                });
+            }
+        }
+        Ok(())
+    }
+}
+fn normal_refusal(error: Error) -> Result<Rejection> {
+    use theia_core::quests::lifecycle::Error as E;
+    Ok(match error {
+        Error::QuestLifecycleCommand(E::StaleRevision) | Error::QuestConflict => {
+            Rejection::StaleRevision
+        }
+        Error::QuestLifecycleCommand(E::AlreadyAccepted | E::NotAccepted) => {
+            Rejection::NotAvailable
+        }
+        Error::QuestLifecycleCommand(E::NotReady) => Rejection::NotReady,
+        Error::QuestLifecycleCommand(E::AlreadyTurnedIn) => Rejection::AlreadyTurnedIn,
+        Error::InventoryBusy => Rejection::Busy,
+        other => return Err(other.into()),
+    })
 }
 pub(super) struct Session {
     pub(super) port: Port,

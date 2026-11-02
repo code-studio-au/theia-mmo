@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "id": "theia.dev.ability-damage-reference-fixture-v1",
+  "ruleset": "ability_damage_reference_fixture_v1",
+  "starting": "theia.dev.ability-starting-fixture-v1",
+  "ordinary": "theia.dev.white-melee-v1",
+  "spell_bonus_damage": 0,
+  "abilities": [
+    {
+      "kind": "melee_special",
+      "ability": "theia.dev.sword-slash",
+      "miss_bp": 500,
+      "dodge_bp": 500,
+      "parry_bp": 0,
+      "critical_bp": 500,
+      "can_crit": true
+    },
+    {
+      "kind": "arcane_zero_resistance",
+      "ability": "theia.dev.arcane-bolt",
+      "hit_bonus_bp": 0,
+      "critical_bp": 500,
+      "can_crit": true
+    }
+  ]
+}

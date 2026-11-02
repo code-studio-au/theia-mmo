@@ -15,9 +15,23 @@ from private_identity import Identity, _NoRedirect
 from account_login import AccountClient, AccountError
 from private_postgres import Cluster
 from gpu_validation import check_gpu_diagnostics
+from launch_environment import client_environment
 
 
-def run(output, identity_sdk, postgres_sdk, client, terrain, players, server_binary=None, inventory=False, validation=False, equipment=False, rewards=False, progression=False, window_size="1280x720", fullscreen=False, quests=False, dialogue=False, vendors=False, zone=False):
+def run(output, identity_sdk, postgres_sdk, client, terrain, players, server_binary=None, inventory=False, validation=False, equipment=False, rewards=False, progression=False, window_size="1280x720", fullscreen=False, quests=False, dialogue=False, vendors=False, zone=False, lifecycle=False, completion_xp=False, profile_preflight=False, player_life=False, creature_asset=None, life_respawn_ms=600, quest_markers=False, world_input=False):
+    quest_markers = quest_markers or world_input
+    completion_xp = completion_xp or player_life or quest_markers
+    if profile_preflight and not completion_xp:
+        raise ValueError("Profile-preflight qualification requires rewarded lifecycle mode")
+    if type(life_respawn_ms) is not int or not 600 <= life_respawn_ms <= 5000:
+        raise ValueError("Qualification respawn delay must be 600..5000ms")
+    conversion_path=players/'conversion.json'
+    authored_sockets=conversion_path.is_file() and json.loads(conversion_path.read_bytes()).get('bones')==52
+    if player_life and authored_sockets and life_respawn_ms<2500:
+        raise ValueError('Authored combat rig qualification needs at least 2500ms for the completed death pose and stable capture')
+    legacy_character=None
+    lifecycle = lifecycle or completion_xp
+    zone = zone or lifecycle
     if not zone and dialogue and any([inventory,equipment,rewards,progression,quests]):
         raise ValueError('Focused native dialogue fixture runs separately from item/combat automation')
     if not zone and vendors and any([inventory,equipment,rewards,progression,quests]):
@@ -35,7 +49,7 @@ def run(output, identity_sdk, postgres_sdk, client, terrain, players, server_bin
     progression_profile=output/'qualification-progression.json'
     if progression:
         data=json.loads(Path('content/gameplay/development-progression.json').read_text())
-        data['level_thresholds']=[0,25,50]
+        if not completion_xp:data['level_thresholds']=[0,25,50]
         progression_profile.write_text(json.dumps(data)+'\n')
     quest_profile=Path('content/gameplay/development-quest.json').resolve()
     combat_profile=Path('content/gameplay/development-abilities.json').resolve()
@@ -43,10 +57,22 @@ def run(output, identity_sdk, postgres_sdk, client, terrain, players, server_bin
         data=json.loads(combat_profile.read_text())
         data['abilities'][0]['cast_ms']=0
         data['abilities'][0]['cooldown_ms']=0
-        data['abilities'][0]['effect']['amount']=100
+        data['abilities'][0]['effect']['amount']=25 if player_life else 100
+        if player_life:data['abilities'][0]['uses_global_cooldown']=False
         combat_profile=output/'qualification-abilities.json'
         combat_profile.write_text(json.dumps(data)+'\n')
         combat_profile=combat_profile.resolve()
+    creature_profile=Path('content/gameplay/development-creature-patrol.json').resolve()
+    retaliation_profile=output/'qualification-retaliation.json'
+    respawn_profile=output/'qualification-respawn.json'
+    if player_life:
+        creature=json.loads(creature_profile.read_text());creature['speed_metres_per_second']=0.1
+        creature_profile=output/'qualification-creature.json';creature_profile.write_text(json.dumps(creature)+'\n')
+        policy=json.loads(Path('content/gameplay/development-creature-retaliation.json').read_text())
+        policy.update(damage=100,windup_ms=2000,recovery_ms=100)
+        retaliation_profile.write_text(json.dumps(policy)+'\n')
+        respawn=json.loads(Path('content/gameplay/development-player-respawn.json').read_text());respawn['delay_ms']=life_respawn_ms
+        respawn_profile.write_text(json.dumps(respawn)+'\n')
     objective_gate=(output/'allow-second-objective-finish').resolve()
     if server_binary is None:
         with (output/'build.log').open('w') as log:
@@ -59,10 +85,11 @@ def run(output, identity_sdk, postgres_sdk, client, terrain, players, server_bin
               'scope':'Actual local OIDC accounts, owned PostgreSQL and native Linux encrypted clients; no physical browser or Windows execution'}
     evidence['known_surface_resize_diagnostics']={}
     server=None;children=[];handles=[];bearers=[];private=[]
-    with Identity(output/'provider',identity_sdk,users=2) as identity, Cluster(output/'cluster',postgres_sdk) as cluster:
+    with Identity(output/'provider',identity_sdk,users=2,token_seconds=180 if player_life else 60) as identity, Cluster(output/'cluster',postgres_sdk) as cluster:
         env=dict(cluster.test_environment(),THEIA_TEST_OIDC_ISSUER=identity.issuer,
                  THEIA_TEST_OIDC_CLIENT=identity.client_id,THEIA_TEST_ACCOUNT_BIND=urllib.parse.urlsplit(identity.redirect).netloc,
-                 THEIA_TEST_SAVED_TERRAIN=str(terrain),THEIA_TEST_DIALOGUE='1' if dialogue else '0',THEIA_TEST_GUIDE_POSITION=guide_position,THEIA_TEST_VENDORS="1" if vendors else "0",THEIA_TEST_INVENTORY="1" if inventory or vendors else "0",THEIA_TEST_EQUIPMENT="1" if equipment or vendors else "0",THEIA_TEST_REWARDS="1" if rewards else "0",THEIA_TEST_PROGRESSION="1" if progression else "0",THEIA_TEST_PROGRESSION_PROFILE=str(progression_profile.resolve()),THEIA_TEST_QUESTS="1" if quests else "0",THEIA_TEST_COMBAT_PROFILE=str(combat_profile),THEIA_TEST_NAVIGATION=str(Path('build/navigation-terrain-far-v1').resolve()))
+                 THEIA_TEST_SAVED_TERRAIN=str(terrain),THEIA_TEST_DIALOGUE='1' if dialogue else '0',THEIA_TEST_GUIDE_POSITION=guide_position,THEIA_TEST_VENDORS="1" if vendors else "0",THEIA_TEST_INVENTORY="1" if inventory or vendors else "0",THEIA_TEST_EQUIPMENT="1" if equipment or vendors else "0",THEIA_TEST_REWARDS="1" if rewards else "0",THEIA_TEST_PROGRESSION="1" if progression else "0",THEIA_TEST_PROGRESSION_PROFILE=str(progression_profile.resolve()),THEIA_TEST_QUESTS="1" if quests and not lifecycle else "0",THEIA_TEST_QUEST_LIFECYCLE="1" if lifecycle else "0",THEIA_TEST_QUEST_TURN_IN_XP="1" if completion_xp else "0",THEIA_TEST_COMBAT_PROFILE=str(combat_profile),THEIA_TEST_NAVIGATION=str(Path('build/navigation-terrain-far-v1').resolve()))
+        env.update(THEIA_TEST_PLAYER_LIFE='1' if player_life else '0',THEIA_TEST_CREATURE_PROFILE=str(creature_profile.resolve()),THEIA_TEST_RETALIATION_PROFILE=str(retaliation_profile.resolve()),THEIA_TEST_RESPAWN_PROFILE=str(respawn_profile.resolve()))
         private.extend([cluster.password]+[p for _,p in identity.users])
         opener=urllib.request.build_opener(urllib.request.ProxyHandler({}),_NoRedirect())
         base=None;server_log=None;accounts={};ticket_counter=0
@@ -127,7 +154,7 @@ def run(output, identity_sdk, postgres_sdk, client, terrain, players, server_bin
         def native(name,ticket,seconds=12,autoplay=True):
             folder=output/name;folder.mkdir();log=(folder/'client.log').open('w');handles.append(log)
             path=ticket_file(name,ticket)
-            client_env=dict(os.environ,DISPLAY=':0',XDG_RUNTIME_DIR='/run/user/1000',THEIA_PERFORMANCE_UNCAPPED='1',
+            client_env=dict(client_environment(os.environ),DISPLAY=':0',XDG_RUNTIME_DIR='/run/user/1000',THEIA_PERFORMANCE_UNCAPPED='1',
                             THEIA_GRAYBOX_QUALIFY=str(folder),THEIA_GRAYBOX_QUALIFY_SECONDS=str(seconds),RUST_LOG='info')
             if autoplay:client_env['THEIA_GRAYBOX_AUTOPLAY']='1'
             else:client_env.pop('THEIA_GRAYBOX_AUTOPLAY',None)
@@ -139,6 +166,10 @@ def run(output, identity_sdk, postgres_sdk, client, terrain, players, server_bin
                 client_env.pop('THEIA_INVENTORY_QUALIFY' if equipment else 'THEIA_EQUIPMENT_QUALIFY',None)
             else:
                 client_env.pop('THEIA_INVENTORY_QUALIFY',None);client_env.pop('THEIA_EQUIPMENT_QUALIFY',None)
+            if world_input:client_env['THEIA_WORLD_INPUT_QUALIFY']='1'
+            else:client_env.pop('THEIA_WORLD_INPUT_QUALIFY',None)
+            if quest_markers:client_env['THEIA_QUEST_MARKERS_QUALIFY']='1'
+            else:client_env.pop('THEIA_QUEST_MARKERS_QUALIFY',None)
             if rewards and not zone and name.endswith(('-a','-b')):client_env['THEIA_REWARDS_QUALIFY']='1'
             else:client_env.pop('THEIA_REWARDS_QUALIFY',None)
             if progression and not zone and name.endswith(('-a','-b')):client_env['THEIA_PROGRESSION_QUALIFY']='1'
@@ -155,16 +186,18 @@ def run(output, identity_sdk, postgres_sdk, client, terrain, players, server_bin
             if vendors and not zone and name.endswith(('-a','-b')):client_env['THEIA_VENDOR_QUALIFY']='1'
             else:client_env.pop('THEIA_VENDOR_QUALIFY',None)
             if zone and name.endswith(('-a','-b')):
-                client_env['THEIA_ZONE_QUALIFY']='1'
+                client_env['THEIA_LIFECYCLE_QUALIFY' if lifecycle else 'THEIA_ZONE_QUALIFY']='1'
+                client_env.pop('THEIA_ZONE_QUALIFY' if lifecycle else 'THEIA_LIFECYCLE_QUALIFY',None)
                 if name=='first-b':client_env['THEIA_ZONE_COMBAT_GATE']=str(objective_gate)
                 else:client_env.pop('THEIA_ZONE_COMBAT_GATE',None)
             else:
-                client_env.pop('THEIA_ZONE_QUALIFY',None);client_env.pop('THEIA_ZONE_COMBAT_GATE',None)
+                client_env.pop('THEIA_ZONE_QUALIFY',None);client_env.pop('THEIA_LIFECYCLE_QUALIFY',None);client_env.pop('THEIA_ZONE_COMBAT_GATE',None)
             vendor_args=['--vendor-catalog',str(Path('content/gameplay/development-vendor.json').resolve())] if vendors else []
             dialogue_args=['--dialogue-catalog',str(dialogue_profile),'--guide-position',guide_position] if dialogue else []
-            quest_args=['--quest-catalog',str(quest_profile)] if quests else []
-            reward_args=['--reward-catalog',str(Path('content/gameplay/development-rewards.json').resolve()),'--creature-profile',str(Path('content/gameplay/development-creature-patrol.json').resolve()),'--navigation',str(Path('build/navigation-terrain-far-v1').resolve()),'--combat-catalog',str(combat_profile)] if rewards else []
-            child=subprocess.Popen([str(client),'--window-size',window_size,*(['--fullscreen'] if fullscreen else []),*vendor_args,*dialogue_args,*quest_args,*progression_args,*reward_args,*(['--item-catalog',str(item_catalog)] if inventory or vendors else []),'--saved-terrain',str(terrain),'--prediction','--player-assets',str(players),
+            quest_args=[*(['--quest-lifecycle'] if lifecycle else []),*(['--quest-turn-in-xp',str(Path('content/gameplay/development-quest-turn-in-xp.json').resolve())] if completion_xp else []),'--quest-catalog',str(quest_profile)] if quests else []
+            reward_args=['--reward-catalog',str(Path('content/gameplay/development-rewards.json').resolve()),'--creature-profile',str(creature_profile.resolve()),'--navigation',str(Path('build/navigation-terrain-far-v1').resolve()),'--combat-catalog',str(combat_profile)] if rewards else []
+            life_args=['--character-stats',str(Path('content/gameplay/development-character-stats.json').resolve()),'--creature-retaliation',str(retaliation_profile.resolve()),'--player-respawn',str(respawn_profile.resolve())] if player_life else []
+            child=subprocess.Popen([str(client),*(['--creature-asset',str(creature_asset)] if creature_asset else []),'--window-size',window_size,*(['--fullscreen'] if fullscreen else []),*life_args,*vendor_args,*dialogue_args,*quest_args,*progression_args,*reward_args,*(['--item-catalog',str(item_catalog)] if inventory or vendors else []),'--saved-terrain',str(terrain),'--prediction','--player-assets',str(players),
                                     '--renet-connect',ticket['address'],str(path)],env=client_env,stdout=log,stderr=subprocess.STDOUT)
             children.append(child);return child,folder
         def finish(item,connected):
@@ -179,11 +212,18 @@ def run(output, identity_sdk, postgres_sdk, client, terrain, players, server_bin
             return report
         def zone_report(item,complete=True):
             folder=item[1]
+            if complete and (folder/'world.json').is_file():
+                final=json.loads((folder/'world.json').read_text())
+                if final.get('network_error') and not (folder/'zone-complete.png').is_file():
+                    raise AssertionError('Native flow disconnected before completion: '+final['network_error'])
             try:report=json.loads((folder/'zone.json').read_text())
             except (FileNotFoundError,json.JSONDecodeError):return None
             if not complete:return report
             images=['zone-dialogue.png','zone-complete.png','zone-closed.png']
-            if not report['resumed']:images+=['zone-objective.png','zone-reward.png','zone-trade.png']
+            if not report['resumed']:
+                images+=['zone-objective.png','zone-reward.png','zone-trade.png']
+                if lifecycle:images+=['life-offer.png','life-accepted.png','life-ready.png','life-turned-in.png']
+                if player_life:images+=['player-dead.png']
             return report if report['passed'] and all((folder/name).is_file() for name in images) else None
         def check_dialogue(item):
             folder=item[1]
@@ -226,15 +266,15 @@ def run(output, identity_sdk, postgres_sdk, client, terrain, players, server_bin
             assert result.returncode==0,'Owned inventory row verification failed'
             return {r['character']:r for r in json.loads(result.stdout)}
         def progression_rows():
-            result=cluster.query("SELECT coalesce(json_agg(r ORDER BY character),'[]'::json)::text FROM (SELECT character_id::text AS character,revision,experience FROM theia.progression WHERE realm_id='74686569-6100-0000-0000-000000000007'::uuid) r;")
+            result=cluster.query("SELECT coalesce(json_agg(r ORDER BY character),'[]'::json)::text FROM (SELECT character_id::text AS character,revision,experience,encode(profile_hash,'hex') AS profile_hash FROM theia.progression WHERE realm_id='74686569-6100-0000-0000-000000000007'::uuid) r;")
             assert result.returncode==0,'Owned XP row verification failed'
             return {r['character']:r for r in json.loads(result.stdout)}
         def check_progression(item,character):
             if zone:
                 report=wait(lambda:zone_report(item),15,'Combined native XP display incomplete')
                 row=progression_rows()[character]
-                assert report['xp']['total']==row['experience']==50 and report['xp']['revision']==row['revision']
-                assert report['xp']['level']==3 and report['text_samples']>10 and report['invalid_text']==0
+                assert report['xp']['total']==row['experience']==(100 if completion_xp else 50) and report['xp']['revision']==row['revision']
+                assert report['xp']['level']==(2 if completion_xp else 3) and report['text_samples']>10 and report['invalid_text']==0
                 return report['xp']
             folder=item[1]
             def ready():
@@ -250,9 +290,12 @@ def run(output, identity_sdk, postgres_sdk, client, terrain, players, server_bin
             assert report['window_size']==[int(n) for n in window_size.split('x')], 'Actual native window size differs from requested qualification size'
             return report
         def quest_rows():
-            result=cluster.query("SELECT coalesce(json_agg(r ORDER BY character),'[]'::json)::text FROM (SELECT character_id::text AS character,revision,kill_count,encode(profile_hash,'hex') AS profile_hash FROM theia.quest_objectives WHERE realm_id='74686569-6100-0000-0000-000000000007'::uuid) r;")
+            table='quest_lifecycles' if lifecycle else 'quest_objectives'
+            metadata=",encode(xp_profile_hash,'hex') AS xp_profile_hash,xp_granted,xp_revision,xp_total" if completion_xp else ""
+            extra=",status,(SELECT coalesce(json_agg(a ORDER BY a.expected_revision),'[]'::json) FROM (SELECT expected_revision,action,encode(command_hash,'hex') AS command_hash"+metadata+" FROM theia.quest_action_receipts q WHERE q.realm_id=l.realm_id AND q.character_id=l.character_id) a) AS actions" if lifecycle else ""
+            result=cluster.query("SELECT coalesce(json_agg(r ORDER BY character),'[]'::json)::text FROM (SELECT character_id::text AS character,revision,kill_count,encode(profile_hash,'hex') AS profile_hash"+extra+" FROM theia."+table+" l WHERE realm_id='74686569-6100-0000-0000-000000000007'::uuid) r;")
             assert result.returncode==0,'Owned objective row verification failed'
-            return {r['character']:r for r in json.loads(result.stdout)}
+            return {r['character']:r for r in json.loads(result.stdout) if r['character'] != legacy_character}
         def quest_report(item,count=3):
             if zone:
                 report=zone_report(item)
@@ -265,14 +308,29 @@ def run(output, identity_sdk, postgres_sdk, client, terrain, players, server_bin
         def check_quest(item,character,resumed,count=3):
             report=wait(lambda:quest_report(item,count),10,'Native objective display incomplete')
             row=quest_rows()[character]
-            assert report['count']==row['kill_count']==count and report['revision']==row['revision']==count
+            assert report['count']==row['kill_count']==count and report['revision']==row['revision']==(5 if lifecycle else count)
+            if lifecycle:
+                assert row['status']==2 and report['phase']=='turned_in'
+                assert [r['expected_revision'] for r in row['actions']]==[0,4]
+                assert [r['action'] for r in row['actions']]==[1,2]
+                if completion_xp:
+                    xp_row=progression_rows()[character]
+                    assert [r['xp_granted'] for r in row['actions']]==[0,25]
+                    assert [r['xp_total'] for r in row['actions']]==[0,100]
+                    assert [r['xp_revision'] for r in row['actions']]==[0,4]
+                    assert all(r['xp_profile_hash']==xp_row['profile_hash'] for r in row['actions'])
+                    assert xp_row['experience']==100 and xp_row['revision']==4
+                for receipt in row['actions']:
+                    raw=b'theia-quest-lifecycle-command-v1\0'+bytes.fromhex(row['profile_hash'])+receipt['expected_revision'].to_bytes(8,'little')+bytes([receipt['action']])
+                    assert hashlib.sha256(raw).hexdigest()==receipt['command_hash']
             assert bytes(report['profile_hash']).hex()==row['profile_hash']
             assert report['window_size']==[int(n) for n in window_size.split('x')]
             if count==3:
                 assert report['passed'] and report['complete']
                 if not resumed:
                     assert [v['count'] for v in report['seen']]==[0,1,2,3]
-                    assert report['seen'][-2]['xp_total']==report['seen'][-1]['xp_total']==50
+                    if completion_xp:assert [v['xp_total'] for v in report['seen']]==[0,25,50,75]
+                    else:assert report['seen'][-2]['xp_total']==report['seen'][-1]['xp_total']==50
                     assert report['casts']>=2
             return report
         def reward_rows():
@@ -284,16 +342,66 @@ def run(output, identity_sdk, postgres_sdk, client, terrain, players, server_bin
                 report=wait(lambda:zone_report(item),15,'Combined native bag display incomplete')
                 variant_b=item[1].name.endswith('-b');desired=4 if variant_b else 3
                 assert report['resumed']==resumed and report['snapshot']==inventory_rows()[character]['bag']
+                if player_life:
+                    life=report['combat_metrics']
+                    assert report['combat_ui']['player_health']==1.0
+                    assert not report['combat_ui']['life_blocked']
+                    assert life['player_generation']==(1 if resumed else 2)
+                    assert life['player_deaths']==life['player_respawns']==(0 if resumed else 1)
+                    if authored_sockets:
+                        animation=report['player_animation']
+                        assert animation['available'] and animation['sword_stance_available'],animation
+                        assert animation['death_starts']==animation['life_restarts']==(0 if resumed else 1),animation
+                        if not resumed:
+                            assert animation['sword_stance_remote_starts' if variant_b else 'sword_stance_local_starts']>=1,animation
+                            assert animation['sword_stance_remote_frames' if variant_b else 'sword_stance_local_frames']>10,animation
+                            assert animation['maximum_sword_pose_changes']>10,animation
+                            assert animation['dead_frames']>0 and animation['maximum_death_pose_changes']>10,animation
+                            assert animation['death_finished_frames']>0 and animation['maximum_death_elapsed']>=1.4,animation
+                    if not resumed:
+                        assert report['dead_input_attempted'] and life['blocked_life_casts']>=1
+                        assert life['incoming_windups']>=1 and report['casts']>=12
+
+                if not authored_sockets:
+                    animation=report['player_animation']
+                    assert not animation['sword_stance_available'],animation
+                    assert animation['sword_stance_local_frames']==animation['sword_stance_remote_frames']==0,animation
+                equipment_metrics=report['equipment_metrics']
+                assert equipment_metrics['last_error'] is None,equipment_metrics
+                if authored_sockets:
+                    assert equipment_metrics['authored_socket_samples']>10 and equipment_metrics['legacy_hand_samples']==0,equipment_metrics
+                assert equipment_metrics['max_socket_error']<.002 and equipment_metrics['max_scale_error']<.002,equipment_metrics
                 receipt=inventory_rows()[character]['last_command']
                 assert isinstance(receipt,str) and len(bytes.fromhex(receipt))==32
                 assert report['revision']==desired and report['invalid_layouts']==report['invalid_text']==0
                 assert report['layout_samples']>10 and report['text_samples']>10 and not report['ui']['pending']
                 if not resumed:
-                    assert report['pointer_inputs']==(5 if variant_b else 4)
+                    assert report['pointer_inputs']==(((7 if variant_b else 6)+(2 if world_input else 0)) if lifecycle else (5 if variant_b else 4))
                     assert report['ui']['applied']==report['ui']['submitted']==desired and report['ui']['rejected']==0
                     assert report['ui']['reward_clicks']==1 and report['ui']['equipment_clicks']==1
                     assert report['ui']['vendor_clicks']==(2 if variant_b else 1)
                 else:assert report['pointer_inputs']==report['casts']==report['ui']['submitted']==0
+                if lifecycle:
+                    q=report['lifecycle_ui']
+                    assert not report.get('dialogue_rejections'), report.get('dialogue_rejections')
+                    if world_input and not resumed:
+                        assert report['world_input']['friendly_clicks']==2 and report['world_input']['interaction_requests']==1, report['world_input']
+                    if quest_markers:
+                        marker=report['quest_marker']
+                        assert marker is not None and not marker['visible_now'], 'Turned-in quest still has a marker'
+                        if not resumed:
+                            assert all(n > 0 for n in marker['renderable_frames']), 'Missing visible available/active/ready marker glyphs'
+                            for phase in ['available','active','ready']:
+                                assert (item[1]/f'marker-{phase}.png').is_file(), 'Missing unobstructed marker screenshot'
+                        else:
+                            assert marker['projected_frames']==0, 'Completed journal marker returned on rejoin'
+                    assert not q['pending'] and q['rejected']==0
+                    assert q['submitted']==q['applied']==q['pointer_actions']==(0 if resumed else 2)
+                    assert [r['revision'] for r in report['lifecycle_seen']]==([5] if resumed else [0,1,2,3,4,5])
+                    assert report['lifecycle_seen'][-1]['phase']=='turned_in'
+                    if completion_xp:
+                        assert report['lifecycle_seen'][-1]['xp_total']==100 and report['lifecycle_seen'][-1]['xp_revision']==4
+                        if not resumed:assert report['lifecycle_seen'][-2]['xp_total']==75 and report['lifecycle_seen'][-2]['xp_revision']==3
                 return report
             report=inventory_ready(item);assert report,'Native inventory qualification incomplete'
             assert report['resumed']==resumed
@@ -317,6 +425,15 @@ def run(output, identity_sdk, postgres_sdk, client, terrain, players, server_bin
                 assert report['equipment'] is not None
                 metrics=report['equipment_metrics'];assert metrics['last_error'] is None
                 assert metrics['max_socket_error']<.002 and metrics['max_scale_error']<.002 and metrics['max_grip_offset']<.04
+                if authored_sockets:
+                    animation=report['player_animation'];assert animation['sword_stance_available'],animation
+                    if not resumed:
+                        assert animation['sword_stance_local_starts']>0 and animation['sword_stance_remote_starts']>0,animation
+                        assert animation['sword_stance_local_exits']>0 and animation['sword_stance_remote_exits']>0,animation
+                        assert animation['maximum_sword_pose_changes']>10,animation
+                        for observed in report['equipment_phases']:
+                            assert observed['stance_available'],observed
+                            if observed['standing']:assert observed['sword_stance']==(observed['hand']=='theia.dev.simple-sword'),observed
             return report
         def first_pose(folder,expected):
             reports=[json.loads(line)['graybox'] for line in (folder/'client.log').read_text().splitlines() if line.startswith('{"graybox":')]
@@ -327,7 +444,18 @@ def run(output, identity_sdk, postgres_sdk, client, terrain, players, server_bin
         def rows():
             result=cluster.query("SELECT coalesce(json_agg(r ORDER BY character),'[]'::json)::text FROM (SELECT character_id::text AS character,owner_id::text AS owner,ARRAY[x,y,z] AS position,checkpoint_sequence AS sequence FROM theia.characters WHERE realm_id='74686569-6100-0000-0000-000000000007'::uuid) r;")
             assert result.returncode==0,'Owned row verification failed'
-            return {r['character']:r for r in json.loads(result.stdout)}
+            return {r['character']:r for r in json.loads(result.stdout) if r['character'] != legacy_character}
+        def legacy_snapshot():
+            result=cluster.query("SELECT row_to_json(q)::text FROM theia.quest_lifecycles q WHERE character_id='"+legacy_character+"'::uuid")
+            assert result.returncode==0
+            return json.loads(result.stdout)
+        def refuse_legacy(session, name):
+            path=output/(name+'.token');bearers.append(path)
+            try:accounts[session].enter(legacy_character,path)
+            except AccountError as error:
+                assert error.status==409 and not error.retryable and 'incompatible gameplay content' in str(error)
+            else:raise AssertionError('Incompatible character received a ticket')
+            assert not path.exists() and legacy_snapshot()==legacy_before
         def stop_server():
             server.send_signal(signal.SIGINT)
             assert server.wait(timeout=15)==0,'Account authority shutdown failed'
@@ -349,9 +477,28 @@ def run(output, identity_sdk, postgres_sdk, client, terrain, players, server_bin
             start('before','15040,15040' if rewards else '15400,12860')
             a=login(0);b=login(1)
             arden=accounts[a].choose_character(read=lambda _: 'Arden');selene=accounts[b].choose_character(read=lambda _: 'Selene')
+            if profile_preflight:
+                creation_answers=iter(['n','Legacy'])
+                legacy_character=accounts[a].choose_character(read=lambda _:next(creation_answers),write=lambda _:None)
+                old_hash=hashlib.sha256(b'theia-quest-lifecycle-profile-v1\0'+Path('content/gameplay/development-quest.json').read_bytes()).hexdigest()
+                seeded=cluster.query("INSERT INTO theia.quest_lifecycles(realm_id,character_id,world_id,profile_hash,revision,status,kill_count) SELECT realm_id,character_id,world_id,decode('"+old_hash+"','hex'),0,0,0 FROM theia.characters WHERE character_id='"+legacy_character+"'::uuid")
+                assert seeded.returncode==0
+                legacy_before=legacy_snapshot()
+                refuse_legacy(a,'incompatible-before')
+                enter(b,legacy_character,404)
+                assert admissions()==[], 'Preflight refusal created a native actor'
             enter(b,arden,404)
             http('/characters/enter',a,{'character_id':arden,'owner_id':'forbidden'},400)
-            ta=enter(a,arden);tb=enter(b,selene)
+            if profile_preflight:
+                listed=http('/characters',a)['characters']
+                menu_answers=iter([str(next(i for i,c in enumerate(listed,1) if c['id']==legacy_character)),str(next(i for i,c in enumerate(listed,1) if c['id']==arden))])
+                menu_output=[];menu_path=output/'character-menu.token';bearers.append(menu_path)
+                address=accounts[a].choose_and_enter(menu_path,read=lambda _:next(menu_answers),write=menu_output.append)
+                assert sum('incompatible gameplay content' in line for line in menu_output)==1
+                assert menu_path.stat().st_mode & 0o777==0o600
+                ta={'address':address,'ticket':list(menu_path.read_bytes())};menu_path.unlink()
+            else:ta=enter(a,arden)
+            tb=enter(b,selene)
             enter(a,arden,409);enter(b,selene,409)
             # A failed browser launch cancels its proof-bound challenge without
             # replacing the already collected account credential.
@@ -360,15 +507,18 @@ def run(output, identity_sdk, postgres_sdk, client, terrain, players, server_bin
             except AccountError:pass
             else:raise AssertionError('Failed browser launch unexpectedly logged in')
             assert http('/development/auth-metrics')['pending_logins']==0
-            first_a=native('first-a',ta,45 if zone else 32 if dialogue else 45 if rewards else 24 if inventory else 14);first_b=native('first-b',tb,45 if zone else 32 if dialogue else 45 if rewards else 24 if inventory else 14)
+            first_a=native('first-a',ta,75 if player_life else 45 if zone else 32 if dialogue else 45 if rewards else 24 if inventory else 14);first_b=native('first-b',tb,75 if player_life else 45 if zone else 32 if dialogue else 45 if rewards else 24 if inventory else 14)
             wait(lambda:len(admissions())==2,label='Two authenticated native players did not join')
             initial=admissions();assert all(r['position'][0]>15000 for r in initial)
             time.sleep(4)
             if zone:
-                complete_a=wait(lambda:zone_report(first_a),30,'A never completed the combined training flow')
+                complete_a=wait(lambda:zone_report(first_a),45 if player_life else 30,'A never completed the combined training flow')
                 waiting_b=wait(lambda:zone_report(first_b,False),5,'B has no initial private observation')
                 assert waiting_b['quest']['count']==waiting_b['xp']['total']==waiting_b['revision']==0
+                if player_life:assert waiting_b['combat_metrics']['player_deaths']==0 and waiting_b['combat_metrics']['player_health']==100
                 assert quest_rows()[selene]['kill_count']==progression_rows()[selene]['experience']==inventory_rows()[selene]['revision']==0
+                if lifecycle:
+                    assert quest_rows()[selene]['status']==0 and quest_rows()[selene]['actions']==[]
                 assert inventory_rows()[selene]['last_command'] is None
                 assert selene not in reward_rows()
                 distinct_quest={'a':complete_a['quest'],'b':waiting_b['quest']}
@@ -449,7 +599,8 @@ def run(output, identity_sdk, postgres_sdk, client, terrain, players, server_bin
             start('after','8000,8000')
             http('/characters',a2,expected=401)
             anew=login(0);bnew=login(1)
-            assert [r['id'] for r in http('/characters',anew)['characters']]==[arden]
+            assert set(r['id'] for r in http('/characters',anew)['characters'])==({arden,legacy_character} if profile_preflight else {arden})
+            if profile_preflight:refuse_legacy(anew,'incompatible-after-restart')
             assert [r['id'] for r in http('/characters',bnew)['characters']]==[selene]
             after_b=native('after-b',enter(bnew,selene),30 if dialogue else 20 if inventory else 14);after_a=native('after-a',enter(anew,arden),30 if dialogue else 20 if inventory else 14)
             wait(lambda:len(admissions())==2,label='Distant restore after restart failed')
@@ -483,10 +634,10 @@ def run(output, identity_sdk, postgres_sdk, client, terrain, players, server_bin
                 evidence["inventory"]={"passed":True,"first":first_inventory,"rejoined":rejoined_inventory,"restarted":restarted_inventory,"rows_before_restart":items_before_restart,"rows_after_backend_loss":inventory_rows(),"per_character_contents_match":True,"distinct_arrangements":True,"keyboard_toggle_and_actual_native_widget_path":True,"physical_os_mouse_tested":False,"validation":validation}
             if quests:
                 assert quest_rows()==quests_before
-                evidence['quests']={'passed':True,'distinct_active_complete':distinct_quest,'first':first_quests,'rejoined':rejoined_quests,'restarted':restarted_quests,'rows_before_restart':quests_before,'rows_after_backend_loss':quest_rows(),'default_goal':3,'native_fixture_ability':{'cast_ms':0,'damage':100},'quest_advances_after_xp_cap':True,'each_own_character_counter':True}
+                evidence['quests']={'passed':True,'distinct_active_complete':distinct_quest,'first':first_quests,'rejoined':rejoined_quests,'restarted':restarted_quests,'rows_before_restart':quests_before,'rows_after_backend_loss':quest_rows(),'default_goal':3,'native_fixture_ability':{'cast_ms':0,'damage':25 if player_life else 100},'quest_advances_after_xp_cap':not completion_xp,'each_own_character_counter':True}
             if progression:
                 assert progression_rows()==progression_before
-                evidence['progression']={'passed':True,'first':first_progression,'rejoined':rejoined_progression,'restarted':restarted_progression,'rows_before_restart':progression_before,'rows_after_backend_loss':progression_rows(),'qualification_thresholds':[0,25,50],'default_thresholds':[0,100,250],'grant_per_kill':25,'actual_kill_to_committed_native_level':True}
+                evidence['progression']={'passed':True,'first':first_progression,'rejoined':rejoined_progression,'restarted':restarted_progression,'rows_before_restart':progression_before,'rows_after_backend_loss':progression_rows(),'qualification_thresholds':[0,100,250] if completion_xp else [0,25,50],'default_thresholds':[0,100,250],'grant_per_kill':25,'actual_kill_to_committed_native_level':True}
             if rewards:
                 assert reward_rows()==reward_before
                 evidence['rewards']={'passed':True,'rows_before_restart':reward_before,'rows_after_backend_loss':reward_rows(),'each_own_qualifying_kill_and_widget_claim':True,'durable_once_through_rejoin_and_restart':True}
@@ -497,9 +648,39 @@ def run(output, identity_sdk, postgres_sdk, client, terrain, players, server_bin
                 if vendors:assert inventory_rows()==vendor_before_restart,'Reconnect/backend loss changed committed purchases'
                 evidence['vendors' if vendors else 'dialogue']={'passed':True,'first':first_dialogue,'rejoined':rejoined_dialogue,'restarted':restarted_dialogue,'guide_position':guide_position,'actual_native_keyboard_and_picking':True,'physical_os_input_tested':False,'ephemeral_sessions_start_closed':True,'walkaway_closes':True}
             if zone:
-                evidence['zone']={'passed':True,'first':first_inventory,'rejoined':rejoined_inventory,'restarted':restarted_inventory,'private_progress_before_b_inputs':distinct_quest,'all_item_actions_share_one_stream':True,'native_keyboard_and_picking':True,'physical_os_input_tested':False,'accelerated_fixture_ability_and_xp_curve':True}
+                evidence['zone']={'passed':True,'first':first_inventory,'rejoined':rejoined_inventory,'restarted':restarted_inventory,'private_progress_before_b_inputs':distinct_quest,'all_item_actions_share_one_stream':True,'native_keyboard_and_picking':True,'physical_os_input_tested':False,'accelerated_fixture_ability_and_xp_curve':not completion_xp,'accelerated_fixture_ability':True,'default_xp_curve':completion_xp}
+            if lifecycle:
+                assert all(row['status']==2 and row['revision']==5 and len(row['actions'])==2 for row in quest_rows().values())
+                old=cluster.query('SELECT count(*) FROM theia.quest_objectives;')
+                assert old.returncode==0 and old.stdout.strip()=='0'
+                evidence['quest_lifecycle']={'passed':True,'actual_native_accept_three_kills_turn_in':True,'two_committed_action_receipts_per_character':True,'private_available_before_b_inputs':True,'no_reacceptance_or_turn_in_on_resume':True,'rows_after_backend_loss':quest_rows(),'turn_in_item_or_xp_grants_enabled':completion_xp,'turn_in_item_grants_enabled':False}
+            if profile_preflight:
+                assert legacy_snapshot()==legacy_before
+                evidence['character_menu']={'passed':True,'actual_oidc_create_another_character':True,'incompatible_selection_returns_to_menu':True,'existing_compatible_selection_enters_native_game':True,'existing_legacy_save_unchanged':True,'physical_terminal_input_tested':False}
+                evidence['profile_preflight']={'passed':True,'actual_oidc_http_refusal_before_ticket':True,'clear_nonretryable_launcher_error':True,'legacy_journal_row_unchanged_through_restart':True,'fresh_compatible_characters_played':True,'retained_expected_incompatibility_did_not_fail_worker':True,'owned_fixture_seed_not_runtime_migration':True}
             if equipment and not zone:
                 evidence['equipment']={'passed':True,'own_and_remote_visible_motion':equipment_motion,'public_cosmetics_exclude_private_bags':True,'durable_rejoin_and_restart':True,'actual_widget_equip_replace_reject_unequip':True}
+            if quest_markers:
+                evidence['quest_markers']={'passed':True,'first':{key:value['quest_marker'] for key,value in first_inventory.items()},'rejoined':{key:value['quest_marker'] for key,value in rejoined_inventory.items()},'restarted':{key:value['quest_marker'] for key,value in restarted_inventory.items()},'scope':'Actual committed quest phases and laid-out Bevy glyphs, per-phase screenshots; physical OS input and native Windows not tested'}
+            if player_life:
+                evidence['player_life']={'passed':True,'actual_bevy_dead_movement_and_cast_attempts':True,'physical_os_input_tested':False,'first':{key:value['combat_metrics'] for key,value in first_inventory.items()},'rejoined':{key:value['combat_metrics'] for key,value in rejoined_inventory.items()},'restarted':{key:value['combat_metrics'] for key,value in restarted_inventory.items()},'private_passive_peer_health':True,'fresh_admission_life_generation':1,'health_is_transient':True,'fixture':{'creature_speed_mps':0.1,'ability_damage':25,'windup_ms':2000,'strike_damage':100,'respawn_ms':life_respawn_ms}}
+            if authored_sockets:
+                evidence['player_animation']={'passed':True,'authored_sockets':True,'first':{name:report['player_animation'] for name,report in first_inventory.items()},'equipment':{name:report['equipment_metrics'] for name,report in first_inventory.items()},'scope':'Authoritative public sword appearance selects local/remote standing stance; own death/fresh-life override; remote health remains private; original primitive weapon geometry at authored Prop_R'}
+            if creature_asset:
+                assert lifecycle, 'Wolf qualification needs the existing explicit lifecycle'
+                visual = {name: report['creature_visuals'] for name, report in first_inventory.items()}
+                for name, metrics in visual.items():
+                    assert metrics and metrics['attached'] >= 4 and metrics['players'] >= 4, (name,metrics)
+                    assert metrics['transitions'][5] >= 3, (name,metrics)
+                    if player_life:assert metrics['transitions'][3] > 0, (name,metrics)
+                    elif first_inventory[name]['combat_metrics']['damage'] > first_inventory[name]['combat_metrics']['deaths']:
+                        assert metrics['transitions'][4] > 0, (name,metrics)
+                    assert metrics['dead_frames'] > 0 and metrics['moving_frames'] > 0, (name,metrics)
+                    if player_life:assert metrics['attack_frames'] > 0, (name,metrics)
+                    assert metrics['max_cues'] <= 16 and metrics['max_visuals'] <= 2 and metrics['dropped_cues'] == 0, (name,metrics)
+                evidence['creature_visuals'] = {'passed':True,'asset_sha256':hashlib.sha256(creature_asset.read_bytes()).hexdigest(),'first':visual,'scope':'Two actual native clients; own-victim windup, authoritative hits/death/respawn and patrol presentation; no new public attack protocol'}
+            if completion_xp:
+                evidence['completion_xp']={'passed':True,'actual_native_ready_75_to_completed_100':True,'actual_default_progression_curve':True,'actual_award_per_character':25,'durable_once_through_rejoin_and_restart':True,'committed_xp_visible_before_turn_in_success':True,'item_turn_in_grants_enabled':False}
         finally:
             for child in reversed(children):
                 if child.poll() is None:
@@ -526,13 +707,21 @@ if __name__=='__main__':
     parser.add_argument('output',type=Path)
     parser.add_argument('--identity-sdk',type=Path,default=Path('build/identity-sdk'))
     parser.add_argument('--postgres-sdk',type=Path,default=Path('build/postgres-sdk'))
+    parser.add_argument('--world-input',action='store_true',help='Use actual mesh picking for friendly selection/right-click and F on return')
+    parser.add_argument('--quest-markers',action='store_true',help='Require rendered available/active/ready guide markers and removal on turn-in/rejoin')
     parser.add_argument('--fullscreen',action='store_true')
     parser.add_argument('--window-size',default='1280x720')
     parser.add_argument('--client',type=Path,default=Path('build/persistence-qualified-v1-20261029/theia-client'))
     parser.add_argument('--terrain',type=Path,default=Path('build/graybox-terrain-v1'))
+    parser.add_argument('--life-respawn-ms',type=int,default=600,help='Fixture-only delay; use 2500 for full death animation and stable capture')
     parser.add_argument('--players',type=Path,default=Path('build/synty-character-canonical-stage'))
     parser.add_argument('--inventory',action='store_true')
     parser.add_argument('--equipment',action='store_true')
+    parser.add_argument('--profile-preflight',action='store_true',help='Refuse an owned legacy-journal character before tickets and after restart, then play fresh characters; requires completion-xp')
+    parser.add_argument('--creature-asset',type=Path,help='Opt-in wolf art; validated with player-life lifecycle')
+    parser.add_argument('--player-life',action='store_true',help='Actual opt-in retaliation, transient death and fresh-stream respawn; implies rewarded lifecycle')
+    parser.add_argument('--completion-xp',action='store_true',help='Explicit rewarded training, default XP curve and committed 75-to-100 completion; implies lifecycle')
+    parser.add_argument('--lifecycle',action='store_true',help='Explicit acceptance/turn-in combined native integration; implies zone systems')
     parser.add_argument('--zone',action='store_true',help='Combined persistent training objective/reward/trade/equipment lifecycle')
     parser.add_argument('--vendors',action='store_true',help='Focused two-account native barter input/commit/restart fixture')
     parser.add_argument('--dialogue',action='store_true',help='Focused informational dialogue input/panel/closure fixture')
@@ -542,5 +731,5 @@ if __name__=='__main__':
     parser.add_argument('--validation',action='store_true')
     parser.add_argument('--server',type=Path,help='Use an exact already built qualification executable')
     args=parser.parse_args()
-    result=run(args.output,*[getattr(args,name).resolve() for name in ['identity_sdk','postgres_sdk','client','terrain','players']],server_binary=args.server.resolve() if args.server else None,inventory=args.inventory,validation=args.validation,equipment=args.equipment,rewards=args.rewards,progression=args.progression,window_size=args.window_size,fullscreen=args.fullscreen,quests=args.quests,dialogue=args.dialogue,vendors=args.vendors,zone=args.zone)
+    result=run(args.output,*[getattr(args,name).resolve() for name in ['identity_sdk','postgres_sdk','client','terrain','players']],server_binary=args.server.resolve() if args.server else None,inventory=args.inventory,validation=args.validation,equipment=args.equipment,rewards=args.rewards,progression=args.progression,window_size=args.window_size,fullscreen=args.fullscreen,quests=args.quests,dialogue=args.dialogue,vendors=args.vendors,zone=args.zone,lifecycle=args.lifecycle,completion_xp=args.completion_xp,profile_preflight=args.profile_preflight,player_life=args.player_life,life_respawn_ms=args.life_respawn_ms,creature_asset=args.creature_asset.resolve() if args.creature_asset else None,quest_markers=args.quest_markers,world_input=args.world_input)
     print(json.dumps({key:result[key] for key in ['passed','scope','actual_native_players','exact_distant_restore','database_loss_failed_closed']},indent=2))

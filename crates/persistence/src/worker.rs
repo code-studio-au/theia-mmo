@@ -4,6 +4,7 @@
 mod accounts;
 mod inventory;
 mod progression;
+mod quest_lifecycle;
 mod quests;
 mod rewards;
 mod vendors;
@@ -93,6 +94,8 @@ pub struct WorkerStatus {
     pub created_characters: u64,
     pub character_lists: u64,
     pub character_selections: u64,
+    pub gameplay_profile_checks: u64,
+    pub incompatible_gameplay_profiles: u64,
     pub processed_inventory_requests: u64,
     pub inventory_ensures: u64,
     pub inventory_loads: u64,
@@ -114,6 +117,17 @@ pub struct WorkerStatus {
     pub quest_replayed: u64,
     pub quest_noops: u64,
     pub quest_rejected: u64,
+    pub lifecycle_ensures: u64,
+    pub lifecycle_loads: u64,
+    pub lifecycle_actions: u64,
+    pub lifecycle_turn_ins: u64,
+    pub lifecycle_advances: u64,
+    pub lifecycle_replayed: u64,
+    pub lifecycle_noops: u64,
+    pub lifecycle_rejected: u64,
+    pub lifecycle_xp_awards: u64,
+    pub lifecycle_xp_units: u64,
+    pub lifecycle_xp_capped: u64,
     pub progression_ensures: u64,
     pub progression_loads: u64,
     pub experience_committed: u64,

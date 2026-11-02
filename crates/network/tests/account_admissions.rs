@@ -85,6 +85,8 @@ impl AccountAdmissions for Policy {
     }
 }
 struct Client {
+    casts: tokio::sync::mpsc::Sender<net::CastChoice>,
+    combat_events: tokio::sync::mpsc::Receiver<theia_network::combat_wire::Batch>,
     state: watch::Receiver<State>,
     stop: watch::Sender<bool>,
     task: tokio::task::JoinHandle<Result<()>>,
@@ -103,6 +105,15 @@ impl Client {
         world: [u8; 32],
         profile: Option<net::inventory::Profile>,
     ) -> Self {
+        Self::start_profiles(address, ticket, world, profile, None)
+    }
+    fn start_profiles(
+        address: std::net::SocketAddr,
+        ticket: Vec<u8>,
+        world: [u8; 32],
+        profile: Option<net::inventory::Profile>,
+        combat_catalog: Option<Arc<theia_core::abilities::Catalog>>,
+    ) -> Self {
         let (input, inputs) = watch::channel(Intent::default());
         let (states, state) = watch::channel(State::default());
         let (stop, shutdown) = watch::channel(false);
@@ -116,8 +127,12 @@ impl Client {
         let inventory_enabled = profile.is_some();
         let vendor_enabled = profile.as_ref().is_some_and(|p| p.vendor().is_some());
         let (dialogue, dialogue_actions) = tokio::sync::mpsc::channel(4);
+        let (casts, cast_requests) = tokio::sync::mpsc::channel(1);
+        let (events, combat_events) = tokio::sync::mpsc::channel(16);
+        let (choice, choices) = watch::channel(None);
         let task = tokio::spawn(async move {
-            let _keep = ready;
+            let _keep = (ready, choice);
+            let combat_enabled = combat_catalog.is_some();
             if let Some(profile) = profile {
                 return net::run_client_gameplay(
                     address,
@@ -127,6 +142,10 @@ impl Client {
                     shutdown,
                     world,
                     net::GameplayClient {
+                        classic_source: None,
+                        dodge: None,
+                        player_life: None,
+                        lifecycle: None,
                         dialogue: if vendor_enabled {
                             Some(net::dialogue::Client {
                                 profile: Arc::new(
@@ -144,9 +163,21 @@ impl Client {
                         progression: None,
                         ready: readiness,
                         commands: Some(packets),
-                        choices: None,
-                        combat: None,
-                        statuses: None,
+                        choices: combat_enabled.then_some(choices),
+                        combat: combat_catalog.map(|catalog| net::CombatActions {
+                            melee: None,
+                            catalog,
+                            casts: cast_requests,
+                            events,
+                        }),
+                        statuses: combat_enabled.then(|| {
+                            Arc::new(
+                                theia_core::statuses::Catalog::from_json(include_bytes!(
+                                    "../../../content/gameplay/development-statuses.json"
+                                ))
+                                .unwrap(),
+                            )
+                        }),
                         inventory: Some(net::inventory::Client {
                             profile,
                             commands: item_requests,
@@ -161,6 +192,8 @@ impl Client {
             .await
         });
         Self {
+            casts,
+            combat_events,
             state,
             stop,
             task,
@@ -198,7 +231,12 @@ impl Client {
             }
         })
         .await
-        .expect("Encrypted inventory observation timed out")
+        .unwrap_or_else(|error| {
+            panic!(
+                "Encrypted gameplay observation timed out: {error}; combat={:?}",
+                self.state.borrow().combat
+            )
+        })
     }
 }
 struct Routing([Arc<Policy>; 2]);
@@ -454,9 +492,11 @@ async fn encrypted_item_ports_keep_two_actors_separate_and_do_not_block_movement
                 sequence: 1,
                 tick: correction.state.input.tick + 2,
                 intent: Intent {
+                    facing: None,
                     axes: [1000, 0],
                     sprint: false,
                     jump: false,
+                    dodge: None,
                 },
             }],
         })
@@ -599,9 +639,11 @@ async fn saved_collision_revocation_replay_reuse_and_shutdown_keep_exact_lease_l
                 sequence: 1,
                 tick: correction.state.input.tick + 2,
                 intent: Intent {
+                    facing: None,
                     axes: [1000, 0],
                     sprint: false,
                     jump: false,
+                    dodge: None,
                 },
             }],
         })
@@ -1227,4 +1269,338 @@ async fn encrypted_vendor_rejects_closed_session_then_commits_accepted_trade_aft
         server.await.unwrap().unwrap().inventory_requests_forwarded,
         3
     );
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn encrypted_melee_uses_each_actors_committed_gear_and_cancels_on_unequip() {
+    melee_delivery(false, false).await;
+}
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn encrypted_avoidance_resolves_once_after_commit_and_reaches_both_real_peers() {
+    melee_delivery(true, false).await;
+}
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn encrypted_projectile_launch_precedes_health_change_and_one_impact_reaches_both_peers() {
+    melee_delivery(false, true).await;
+}
+async fn melee_delivery(miss: bool, projectile: bool) {
+    use theia_core::{
+        abilities::Catalog,
+        content::ContentId,
+        inventory::{EquipmentCommand, EquipmentOperation as Op},
+    };
+    use theia_network::simulation::combat::{Event, Outcome, Reason};
+    let mut data: serde_json::Value = serde_json::from_slice(include_bytes!(
+        "../../../content/gameplay/development-melee-abilities.json"
+    ))
+    .unwrap();
+    if miss {
+        data["schema"] = serde_json::json!(5);
+        data["abilities"][1]["hit_table"] =
+            serde_json::json!({"hit_bp":0,"miss_bp":10000,"deflect_bp":0});
+    }
+    if projectile {
+        data["schema"] = serde_json::json!(6);
+        data["abilities"][1]["projectile"] = serde_json::json!({"speed_metres_per_second":2.,"maximum_distance_metres":6.,"lifetime_ms":3000,"target_radius_metres":0.2});
+        data["abilities"][1]["hit_table"] =
+            serde_json::json!({"hit_bp":10000,"miss_bp":0,"deflect_bp":0});
+    }
+    let abilities = serde_json::to_vec(&data).unwrap();
+    let mut world = World::with_procedural([15400., 12860.], 1.).unwrap();
+    world.enable_prediction().unwrap();
+    let target = world.spawn_development_target([15402., 12860.]).unwrap();
+    world
+        .enable_status_combat(
+            &abilities,
+            100,
+            5000,
+            include_bytes!("../../../content/gameplay/development-character-stats.json"),
+            include_bytes!("../../../content/gameplay/development-statuses.json"),
+        )
+        .unwrap();
+    let identity = world.identity();
+    let patch = Patch::build(ChunkId { x: 120, z: 100 });
+    let (stop, shutdown) = watch::channel(false);
+    let (release_a, waiting) = watch::channel(false);
+    let (_release_b, ready) = watch::channel(true);
+    let (items_a, task_a, received_a) =
+        synthetic_items_with_profile(13, waiting, shutdown.clone(), true);
+    let (items_b, task_b, _) = synthetic_items_with_profile(7, ready, shutdown.clone(), true);
+    let policies: [Arc<Policy>; 2] = std::array::from_fn(|i| {
+        let policy = Arc::new(Policy::default());
+        policy.live.store(true, Ordering::SeqCst);
+        let mut p = patch.try_spawn(15400., 12860. + i as f64).unwrap().metres();
+        p[1] += f64::from(theia_network::world::PAWN_Y);
+        {
+            let mut ledger = policy.state.lock().unwrap();
+            ledger.code = i as u8 + 1;
+            ledger.position = GlobalPosition::new(p);
+            ledger.inventory = Some(if i == 0 {
+                items_a.clone()
+            } else {
+                items_b.clone()
+            });
+        }
+        policy
+    });
+    let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+    let address = socket.local_addr().unwrap();
+    let (transport, issuer) = net::secure_issuer(socket, vec![address]).unwrap();
+    let server = tokio::spawn(net::run_server_with_admissions(
+        transport,
+        shutdown,
+        world,
+        Arc::new(Routing(policies)),
+    ));
+    let profile = net::inventory::Profile::from_json(include_bytes!(
+        "../../../content/gameplay/development-equipment-items.json"
+    ))
+    .unwrap();
+    let catalog = Arc::new(Catalog::from_json(&abilities).unwrap());
+    let token = |id, code| {
+        issuer
+            .issue(id, Some(&[code; 256]), 30)
+            .unwrap()
+            .bytes()
+            .to_vec()
+    };
+    let mut a = Client::start_profiles(
+        address,
+        token(1, 1),
+        identity,
+        Some(profile.clone()),
+        Some(catalog.clone()),
+    );
+    let mut b =
+        Client::start_profiles(address, token(2, 2), identity, Some(profile), Some(catalog));
+    a.until(|s| s.inventory.is_some() && s.chunk_ack.is_some() && s.combat.is_some())
+        .await;
+    b.until(|s| s.inventory.is_some() && s.chunk_ack.is_some() && s.combat.is_some())
+        .await;
+    let choice = || net::CastChoice {
+        ability: ContentId::new("theia.dev.sword-slash").unwrap(),
+        target: target.entity,
+    };
+    a.casts.send(choice()).await.unwrap();
+    a.until(|s| {
+        s.combat.as_ref().is_some_and(|c| {
+            c.reply.is_some_and(|r| {
+                r.sequence == 1 && r.outcome == Outcome::Rejected(Reason::EquipmentRequired)
+            })
+        })
+    })
+    .await;
+    a.items
+        .as_ref()
+        .unwrap()
+        .send(
+            EquipmentCommand {
+                expected_revision: 0,
+                operation: Op::Equip { from: 1 },
+            }
+            .into(),
+        )
+        .await
+        .unwrap();
+    tokio::time::timeout(Duration::from_secs(3), async {
+        while received_a.load(Ordering::SeqCst) == 0 {
+            tokio::time::sleep(Duration::from_millis(5)).await;
+        }
+    })
+    .await
+    .unwrap();
+    a.casts.send(choice()).await.unwrap();
+    a.until(|s| {
+        s.combat.as_ref().is_some_and(|c| {
+            c.reply.is_some_and(|r| {
+                r.sequence == 2 && r.outcome == Outcome::Rejected(Reason::EquipmentRequired)
+            })
+        })
+    })
+    .await;
+    release_a.send_replace(true);
+    a.until(|s| s.inventory.as_ref().is_some_and(|i| i.bag.revision() == 1))
+        .await;
+    b.items
+        .as_ref()
+        .unwrap()
+        .send(
+            EquipmentCommand {
+                expected_revision: 0,
+                operation: Op::Equip { from: 2 },
+            }
+            .into(),
+        )
+        .await
+        .unwrap();
+    b.until(|s| s.inventory.as_ref().is_some_and(|i| i.bag.revision() == 1))
+        .await;
+    b.casts.send(choice()).await.unwrap();
+    b.until(|s| {
+        s.combat.as_ref().is_some_and(|c| {
+            c.reply
+                .is_some_and(|r| r.outcome == Outcome::Rejected(Reason::EquipmentRequired))
+        })
+    })
+    .await;
+    a.casts.send(choice()).await.unwrap();
+    a.until(|s| {
+        s.combat
+            .as_ref()
+            .is_some_and(|c| c.cast.as_ref().is_some_and(|c| c.sequence == 3))
+    })
+    .await;
+    a.items
+        .as_ref()
+        .unwrap()
+        .send(
+            EquipmentCommand {
+                expected_revision: 1,
+                operation: Op::Unequip { to: 1 },
+            }
+            .into(),
+        )
+        .await
+        .unwrap();
+    let unequipped = a
+        .until(|s| {
+            s.inventory.as_ref().is_some_and(|i| i.bag.revision() == 2)
+                && s.combat.as_ref().is_some_and(|c| c.cast.is_none())
+        })
+        .await;
+    assert_eq!(unequipped.combat.unwrap().targets[0].current, 100);
+    a.items
+        .as_ref()
+        .unwrap()
+        .send(
+            EquipmentCommand {
+                expected_revision: 2,
+                operation: Op::Equip { from: 1 },
+            }
+            .into(),
+        )
+        .await
+        .unwrap();
+    a.until(|s| {
+        s.inventory.as_ref().is_some_and(|i| i.bag.revision() == 3)
+            && s.combat
+                .as_ref()
+                .is_some_and(|c| c.gcd_until <= c.tick && c.cooldowns.is_empty())
+    })
+    .await;
+    a.casts.send(choice()).await.unwrap();
+    if projectile {
+        let launched = a
+            .until(|s| {
+                s.combat.as_ref().is_some_and(|c| {
+                    c.cast.is_none()
+                        && c.reply.is_some_and(|r| r.sequence == 4)
+                        && c.targets[0].current == 100
+                })
+            })
+            .await;
+        let tick = launched.combat.unwrap().tick;
+        b.until(|s| {
+            // An observer's unchanged combat view is intentionally not
+            // republished merely because a projectile launched. Use its live
+            // movement clock while checking the retained authoritative health.
+            s.snapshot.as_ref().is_some_and(|s| s.tick >= tick)
+                && s.combat
+                    .as_ref()
+                    .is_some_and(|c| c.targets[0].current == 100)
+        })
+        .await;
+    }
+    a.until(|s| {
+        s.combat.as_ref().is_some_and(|c| {
+            c.targets[0].current == if miss { 100 } else { 80 }
+                && c.cast.is_none()
+                && c.reply.is_some_and(|r| r.sequence == 4)
+        })
+    })
+    .await;
+    b.until(|s| {
+        s.combat
+            .as_ref()
+            .is_some_and(|c| c.targets[0].current == if miss { 100 } else { 80 })
+    })
+    .await;
+    let mut cancelled = false;
+    let mut avoided = [0usize; 2];
+    let mut launches = [Vec::new(), Vec::new()];
+    let mut impacts = [Vec::new(), Vec::new()];
+    tokio::time::timeout(Duration::from_secs(3), async {
+        loop {
+            for (index, peer) in [&mut a, &mut b].into_iter().enumerate() {
+                while let Ok(batch) = peer.combat_events.try_recv() {
+                    for event in batch.events {
+                        if matches!(event, Event::ProjectileLaunched { sequence: 4, .. }) {
+                            launches[index].push(batch.tick);
+                        }
+                        if matches!(event, Event::Damage { sequence: 4, .. }) {
+                            impacts[index].push(batch.tick);
+                        }
+                        cancelled |= index == 0
+                            && matches!(
+                                event,
+                                Event::Cancelled {
+                                    sequence: 3,
+                                    reason: Reason::EquipmentRequired,
+                                    ..
+                                }
+                            );
+                        avoided[index] += usize::from(matches!(
+                            event,
+                            Event::Avoided {
+                                sequence: 4,
+                                kind: theia_network::simulation::combat::Avoidance::Miss,
+                                ..
+                            }
+                        ));
+                    }
+                }
+            }
+            if cancelled
+                && (!miss || avoided == [1, 1])
+                && (!projectile
+                    || (launches.iter().all(|v| v.len() == 1)
+                        && impacts.iter().all(|v| v.len() == 1)))
+            {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(5)).await;
+        }
+    })
+    .await
+    .expect("Reliable outcomes did not reach both encrypted peers");
+    assert_eq!(avoided, if miss { [1, 1] } else { [0, 0] });
+    if projectile {
+        assert_eq!(launches[0], launches[1]);
+        assert_eq!(impacts[0], impacts[1]);
+        assert!(
+            impacts[0][0] >= launches[0][0] + 20,
+            "Travel must delay impact at 30 Hz"
+        );
+    }
+    a.close().await;
+    b.close().await;
+    stop.send_replace(true);
+    let stats = server.await.unwrap().unwrap();
+    if miss || projectile {
+        let outcomes = stats.hit_outcomes.unwrap();
+        assert_eq!(outcomes.resolved, 1);
+        assert_eq!(outcomes.random_draws, 1);
+        assert_eq!(outcomes.misses, u64::from(miss));
+        assert_eq!(outcomes.hits, u64::from(projectile));
+    } else {
+        assert!(stats.hit_outcomes.is_none());
+    }
+    if projectile {
+        let travel = stats.projectiles.unwrap();
+        assert_eq!(travel.launched, 1);
+        assert_eq!(travel.impacts, 1);
+        assert_eq!(travel.peak_active, 1);
+    }
+    task_a.await.unwrap();
+    task_b.await.unwrap();
 }

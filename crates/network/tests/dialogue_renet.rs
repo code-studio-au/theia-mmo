@@ -69,6 +69,10 @@ impl Peer {
                 shutdown,
                 identity,
                 net::GameplayClient {
+                    classic_source: None,
+                    dodge: None,
+                    player_life: None,
+                    lifecycle: None,
                     dialogue: Some(Client {
                         profile,
                         actions: requests,
@@ -228,9 +232,11 @@ async fn encrypted_clients_keep_independent_dialogue_and_acknowledge_refusals_an
     a.action(3, Action::Open(guide.key)).await;
     a.reply(6, 4).await;
     a.input.send_replace(Intent {
+        facing: None,
         axes: [-1000, 0],
         sprint: true,
         jump: false,
+        dodge: None,
     });
     let left = a
         .until(|s| {

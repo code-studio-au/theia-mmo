@@ -1,0 +1,17 @@
+{
+  "schema": 2,
+  "id": "theia.dev.training-creature",
+  "route": "theia.dev.training-patrol",
+  "speed_metres_per_second": 2.0,
+  "wait_ms": 1000,
+  "aggro": {
+    "perception_metres": 12.0,
+    "leash_metres": 35.0,
+    "chase_speed": 5.0,
+    "return_speed": 5.0,
+    "los_grace_ms": 2000,
+    "engagement_ms": 30000,
+    "reacquire_ms": 2000
+  },
+  "can_deflect": true
+}
