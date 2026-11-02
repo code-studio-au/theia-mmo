@@ -2,6 +2,21 @@
 
 **Status: implementation authoring draft, not production-ready or playtested.** Companion to [canonical campaign](Human_1_80_Canonical_Campaign.md), which remains authoritative for story decisions. This register supplies individual locations, contacts, objectives and lore for all 184 editorial quests, including previously underspecified late-game entries. The quest titles and canonical outcomes are unchanged.
 
+
+## Playable quest packs (complete editorial coverage)
+
+The following packs collectively cover all Q001–Q184, providing staged gameplay proposals, narrative intent, completion conditions and recovery behavior. They are **not** final implementation data; exact coordinates, dialogue, encounters, XP and item rewards still require development.
+
+- [Levels 1–10](Human_Levels_1_10_Playable_Quest_Pack.md)
+- [Levels 10–20](Human_10_20_Playable_Quest_Pack.md)
+- [Levels 20–30](Human_20_30_Playable_Quest_Pack.md)
+- [Levels 30–35](Human_30_35_Playable_Quest_Pack.md)
+- [Levels 35–45](Human_35_45_Playable_Quest_Pack.md)
+- [Levels 45–55](Human_45_55_Playable_Quest_Pack.md)
+- [Levels 55–70](Human_55_70_Playable_Quest_Pack.md)
+- [Levels 70–80](Human_70_80_Playable_Quest_Pack.md)
+- [Levels 80 finale](Human_80_Finale_Playable_Quest_Pack.md)
+
 ## Runtime contract and content acceptance criteria
 
 - **Quest states:** locked → available → accepted → objectives-complete → turned-in; optional abandoned and retryable-instance states. Each objective has stable server-authoritative credit and idempotent turn-in. The final story chapter unlocks at character level 80, not from XP gained in the finale.
