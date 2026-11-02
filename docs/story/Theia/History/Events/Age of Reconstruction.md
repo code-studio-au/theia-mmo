@@ -2,7 +2,7 @@
 type: event
 chronology_order: 10
 canon_status: source-specific
-source: "[[Sources/THEIA_DETAILED_LORE_ARCHIVE]]"
+source: "../../Sources/THEIA_DETAILED_LORE_ARCHIVE.md"
 up: "[[Historical Timeline]]"
 ---
 # Age of Reconstruction
@@ -11,7 +11,7 @@ This note covers postwar recovery and alliance formation. The overlapping [[Age 
 
 Historical sequence and causes are distinct from [[Timelines|player revelation]]. Dates and durations are not supplied by this import. The following source section may cover more than one event; its status labels and later creator decisions govern.
 
-![[Sources/THEIA_DETAILED_LORE_ARCHIVE#5.3 Recovery and alliance formation]]
+[Read historical source section](../../Sources/THEIA_DETAILED_LORE_ARCHIVE.md)
 
 [[Historical Timeline]] · [[Welcome|Home]]
 
