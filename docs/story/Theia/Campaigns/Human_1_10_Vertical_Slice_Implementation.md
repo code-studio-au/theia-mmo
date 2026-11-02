@@ -1,6 +1,6 @@
 # Human 1–10 — First Playable Vertical Slice Implementation Brief
 
-**Status: implementation proposal / Needs Review.** This is a build handoff for Q001–Q004 and Q009–Q013, not a claim that code, NPCs, maps or rewards are implemented. It is subordinate to [the canonical campaign](Human_1_80_Canonical_Campaign.md). [Quest pack](Human_Levels_1_10_Playable_Quest_Pack.md) remains the wider level-1–10 design reference.
+**Status: implementation proposal / Needs Review.** This is a build handoff for Q001–Q004 and Q009–Q013, not a claim that code, NPCs, maps or rewards are implemented. It is subordinate to [the canonical campaign](Human_1_80_Canonical_Campaign.md). [Quest pack](Human_Q001_Q017_Gameplay_Detail_Migration.md) remains the wider level-1–10 design reference.
 
 ## Definition of the slice
 
