@@ -229,3 +229,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 
 - [x] Compared H1-12 through H1-16 against Q020/Q021/Q022/Q027/Q028 in the full 64-entry objective comparison; contact, stage structure and prerequisite chains align (commit `4db494eb`).
 - [ ] Verify original intended-killing evidence in H1-15/Q027 dialogue and custody record before approving the mapping. Preserve Garrick's innocence-of-involvement distinction and lawful court handling.
+
+## Act I conclusion reconciliation — 2 November 2026
+
+- [x] Compared H1-17/Q030 and H1-18/Q031; H1-17 is a **modified prerequisite** because current Q029 introduces separate evacuation/evidence preparation before Q030 (commit `535a6d09`). Preserve Q029.
+- [x] Confirmed draft crosswalk has no H1-19 or H1-20 rows; do not invent IDs.
+- [ ] Verify H1-18 removal-from-office and Dominion non-absolution consequences in current dialogue before mapping approval.
