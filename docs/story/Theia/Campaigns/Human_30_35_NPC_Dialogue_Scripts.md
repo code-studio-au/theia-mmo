@@ -1,6 +1,6 @@
 # Theia — Human Levels 30–35 NPC Dialogue Scripts, Pass 1
 
-**Status: Needs Review — original dialogue drafts, not recorded or integrated.** Canon authority: [Human 1–80 Canonical Campaign](Human_1_80_Canonical_Campaign.md). Structured stages: [Human 30–35 Quest Data](Human_30_35_Quest_Data_Draft.json).
+**Status: Needs Review — original dialogue drafts, not recorded or integrated.** Canon authority: [Human 1–80 Canonical Campaign](Human_1_80_Canonical_Campaign.md). Structured stages: [Human 30–35 Quest Data](Human_1_80_Current_Quest_Authoring_Manifest.json).
 
 ## Narrative and reveal boundaries
 
