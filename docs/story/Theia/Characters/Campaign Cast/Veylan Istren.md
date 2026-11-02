@@ -1,7 +1,7 @@
 ---
 type: character
 canon_status: Needs Review
-source: "[[Sources/THEIA_HUMAN_CAST_AND_PLACES]]"
+source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
 up: "[[Characters]]"
 ---
 # Veylan Istren
@@ -15,7 +15,7 @@ New Aelari former ward assistant
 ## Motivation, limitations and proposed outcome
 Sold restricted observations and knowingly concealed risk; political criticism is distinct from his culpable actions. Held under Aelari inquiry.
 
-Source: [[Sources/THEIA_HUMAN_CAST_AND_PLACES#Allied and Kel'vari cast|Allied and Kel'vari cast]].
+Source: [Allied and Kel'vari cast](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
 [[Characters]] · [[Human Campaign]]
 
