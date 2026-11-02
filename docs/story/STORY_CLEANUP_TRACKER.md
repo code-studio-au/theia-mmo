@@ -122,3 +122,10 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Reconciled 23 later locked-decision lines from imported mirror into root (commit `1e6dedca`).
 - [x] Remaining three normalized differences are early historical lines 19, 37 and 60: 'seventh race vanished', 'seventh god later renamed Ascendant', and 'seventh god THE ASCENDANT'. These are intentionally preserved as historical language, **not** unresolved current canon. The mirror's substitutions do not add unique decisions.
 - [ ] Validate all incoming references to `Sources/THEIA_SOURCE_DECISION_RECOVERY.md` before retiring the imported copy.
+
+## Source Decision Recovery mirror retired — 2 November 2026
+
+- [x] Replaced obsolete Obsidian reading-map mirror link with the authoritative root document (commit `1638594a`).
+- [x] Deleted reconciled `Theia/Sources/THEIA_SOURCE_DECISION_RECOVERY.md` (commit `c8f77fba`); three early historical phrases remain preserved in root.
+- [x] Appended current retirement status to legacy divergence register (commit `b7fb610b`). Earlier 'mirrors remain' statements there are dated historical snapshots.
+- [ ] Review whether `Theia/Sources/README.md` and duplicate `IMPORT_MANIFEST.json` are still needed, and repair import-era references; continue broader story and Obsidian cleanup.
