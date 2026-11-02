@@ -1,12 +1,12 @@
 # Human 1–80 — Legacy Pack Consolidation Checklist
 
-**Status: In progress — no deletion authorization.** This document inventories old quest packs and implementation briefs to prevent loss of unique design details. [Current Human Campaign](CURRENT_HUMAN_CAMPAIGN.md) is the entry point; [Current Quest Authoring Manifest](Human_1_80_Current_Quest_Authoring_Manifest.json) is the sole structured working quest inventory. [Quest Engine](../../../QUEST_ENGINE.md) is Codex's runtime agreement.
+**Status: In progress — verified deletions only.** This document inventories old quest packs and implementation briefs to prevent loss of unique design details. [Current Human Campaign](CURRENT_HUMAN_CAMPAIGN.md) is the entry point; [Current Quest Authoring Manifest](Human_1_80_Current_Quest_Authoring_Manifest.json) is the sole structured working quest inventory. [Quest Engine](../../../QUEST_ENGINE.md) is Codex's runtime agreement.
 
 ## Sources awaiting reconciliation
 
 | Band | Playable quest pack | Detailed implementation brief |
 |---|---|---|
-| 1–10 | `Human_Levels_1_10_Playable_Quest_Pack.md` | no matching chapter brief in this inventory |
+| 1–10 | **Retired** (content preserved in `Human_Q001_Q017_Gameplay_Detail_Migration.md`) | no matching chapter brief in this inventory |
 | 10–20 | `Human_10_20_Playable_Quest_Pack.md` | `Human_10_20_Implementation_Brief.md` |
 | 20–30 | `Human_20_30_Playable_Quest_Pack.md` | `Human_20_30_Implementation_Brief.md` |
 | 30–35 | `Human_30_35_Playable_Quest_Pack.md` | `Human_30_35_Implementation_Brief.md` |
@@ -71,3 +71,7 @@ Both `Human_55_70_Playable_Quest_Pack.md` and `Human_55_70_Implementation_Brief.
 ## Levels 70–80 and finale reconciliation
 
 All four remaining legacy files (`Human_70_80_Playable_Quest_Pack.md`, `Human_70_80_Implementation_Brief.md`, `Human_80_Finale_Playable_Quest_Pack.md`, `Human_80_Finale_Implementation_Brief.md`) have been compared for their 17 + 10 quest sections. Still-current gameplay, QA and ending chronology are captured in [Q158–Q184 Legacy Pack Migration](Human_Q158_Q184_Legacy_Pack_Migration.md). The manifest's explicit Q181 death stage takes precedence over old finale text. **All 17 old playable/brief files have now received an editorial reconciliation pass; no bulk deletion has yet occurred.** Next step is inbound-reference and unique-detail verification before removal.
+
+## Verified deletion — levels 1–10
+
+The Q001–Q017 legacy playable pack was removed from the active tree after its 17 sections and distinct gameplay/QA details were preserved in [Q001–Q017 Gameplay Detail Migration](Human_Q001_Q017_Gameplay_Detail_Migration.md). Direct links in the production specification, NPC dialogue and vertical-slice handoff were updated to the current migration document. The source remains recoverable through Git history. **16 legacy packs/briefs remain** for unique-detail and inbound-reference verification before deletion. This does not imply approval of all migrated mechanics as executable quest objectives.
