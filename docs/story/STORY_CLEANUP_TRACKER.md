@@ -193,3 +193,8 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Verified `Theia/Sources/THEIA_HUMAN_QUEST_REGISTER.md` is absent and root `THEIA_HUMAN_QUEST_REGISTER.md` remains.
 - [x] Corrected outdated mirror and retired-pack statements in `Human_Quest_Editorial_ID_Crosswalk_Review.md` (commit `d0a0791a`).
 - [ ] Mapping approval for 92 H and 24 HS IDs remains outstanding; preserve original objectives and crosswalk. No stable runtime IDs allocated.
+
+## Exact-title audit historical status correction — 2 November 2026
+
+- [x] Corrected `Human_Legacy_Exact_Title_Mapping_Audit.md` to acknowledge retired Obsidian source mirror while protecting the root historical H/HS register (commit `00e8e8ee`).
+- [ ] The 64 exact-title H candidates are title matches only; eight identified objective-specific details and four contact discrepancies still require semantic review. Do not approve runtime mappings from title matches.
