@@ -2,7 +2,7 @@
 
 These Chronicle passages include proposed connective history. Consult [[Canon and Open Questions]] for precedence.
 
-[Read historical source section](../Sources/THEIA_INTERWOVEN_CHRONICLE.md)
+[Read historical source section](../../THEIA_INTERWOVEN_CHRONICLE.md)
 
 Continue with [[Sources/THEIA_INTERWOVEN_CHRONICLE#The First Years of Silence|First Years of Silence]], [[Sources/THEIA_INTERWOVEN_CHRONICLE#The Age of Reconstruction — New Peoples and New Powers|Age of Reconstruction]], and [[Sources/THEIA_INTERWOVEN_CHRONICLE#The Modern Age — War and the Shattered Delegation|Modern Age]].
 
