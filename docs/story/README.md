@@ -5,6 +5,14 @@ story decisions in the active Theia-MMO project, adopted by the user on
 2026-10-26. These are narrative design documents; they do not establish working
 quests, NPCs, combat, persistence or approved engineering requirements.
 
+## Current authority — read this first
+
+The historical import table below records source provenance and is **not** the current campaign reading order. For active Human story work, use [Current Human Campaign](Theia/Campaigns/CURRENT_HUMAN_CAMPAIGN.md), then [Canonical 1–80 Campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md) and the [184-quest authoring manifest](Theia/Campaigns/Human_1_80_Current_Quest_Authoring_Manifest.json). The manifest is editorial planning, not executable Rust quest data. Unique unused historical hooks belong in the [legacy ideas archive](Theia/Campaigns/Human_Legacy_Sidequest_Zone_Character_Archive.md). [Story decisions](DECISIONS.md) govern precedence. The [temporary cleanup tracker](STORY_CLEANUP_TRACKER.md) is noncanonical and must be removed after final verification.
+
+The older 1–60 campaign, quest register and imported review materials below are historical references only. Their old quest counts, progression and finale do not override the approved 1–80 campaign. Historical source documents may still contain unreconciled details; do not delete them without comparison and link verification.
+
+## Historical import index (not current campaign authority)
+
 ## Start here
 
 | Subject | Documents |
