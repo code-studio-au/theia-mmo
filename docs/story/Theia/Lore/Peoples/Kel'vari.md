@@ -1,22 +1,22 @@
 ---
 type: people
 canon_status: source-specific
-source: "[[Sources/THEIA_WORLD_BIBLE]]"
+source: "../../Sources/THEIA_WORLD_BIBLE.md"
 up: "[[Peoples and Allegiances]]"
 ---
 # Kel'vari
 
 This reading page includes the full relevant source section; shared material may describe several institutions. Approval remains scoped to the source statements.
 
-![[Sources/THEIA_WORLD_BIBLE#2026-10-13 creator LOCK — Kel'vari race and Oth'vaeri language]]
+[Read historical source section](../../Sources/THEIA_WORLD_BIBLE.md)
 
 ## Ancestry and surviving enclaves
 
 Read these sections alongside later dated amendments in [[Sources/THEIA_WORLD_BIBLE|World Bible]].
 
-![[Sources/THEIA_WORLD_BIBLE#Interracial ancestry: The Kel'vari's unique compatibility [USER-LOCKED · 2026-10-12]]]
+[Read historical source section](../../Sources/THEIA_WORLD_BIBLE.md)
 
-![[Sources/THEIA_WORLD_BIBLE#The Kel'vari's surviving enclaves [USER-LOCKED · 2026-10-12]]]
+[Read historical source section](../../Sources/THEIA_WORLD_BIBLE.md)
 
 ## Notable characters
 
