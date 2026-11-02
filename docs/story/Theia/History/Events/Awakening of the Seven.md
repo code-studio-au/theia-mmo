@@ -1,7 +1,7 @@
 ---
 type: event
 canon_status: confirmed-foundation; details-open
-source: "../../Sources/THEIA_DETAILED_LORE_ARCHIVE.md"
+source: "../../../THEIA_DETAILED_LORE_ARCHIVE.md"
 up: "[[Historical Timeline]]"
 chronology_order: 2
 ---
@@ -13,7 +13,7 @@ Divine awakening begins before [[Mortal Creation]]. The gods awaken separately a
 
 This event concerns the **Seven gods**, not [[Creation of the Kel'vari]], the later creation of the [[Kel'vari]] mortal race.
 
-[Read historical source section](../../Sources/THEIA_DETAILED_LORE_ARCHIVE.md)
+[Read historical source section](../../../THEIA_DETAILED_LORE_ARCHIVE.md)
 
 [[First Sundering]] · [[Mortal Creation]] · [[The Seven Gods]]
 
