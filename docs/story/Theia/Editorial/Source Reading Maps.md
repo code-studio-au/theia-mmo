@@ -9,4 +9,4 @@ For current work, start with:
 - [Story documentation index](../../README.md) — root documents and historical provenance.
 - [Canon and Open Questions](Canon%20and%20Open%20Questions.md) — editorial status.
 
-The individual historical reading maps remain under [Reading Maps](Reading%20Maps/) while incoming links and any unique source annotations are reviewed. Do not use them to override later creator decisions. Obsidian-only `[[wikilink]]` navigation is intentionally not maintained here.
+The individual historical reading maps remain in the `Reading Maps/` folder while incoming links and any unique source annotations are reviewed. Do not use them to override later creator decisions. Obsidian-only `[[wikilink]]` navigation is intentionally not maintained here.
