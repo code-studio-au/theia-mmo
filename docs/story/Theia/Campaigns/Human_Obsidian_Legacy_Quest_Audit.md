@@ -61,3 +61,7 @@ All 19 `THEIA_*.md` source mirrors were compared to the same-named `docs/story/`
 ## Additional mirror reconciliation
 
 Two further Obsidian source mirrors, `THEIA_HUMAN_QUEST_REGISTER.md` and `THEIA_HUMAN_CAMPAIGN.md`, matched their root historical originals after removing only the root's newer **SUPERSEDED** notice and normalizing wiki-link/whitespace formatting. Their mirror copies were removed on `main` (commit `5af9651`); the original root documents and editorial crosswalk remain. Other mirrors, including World Bible and Interwoven Chronicle, show substantive wording differences and remain protected. References to the deleted mirrors in source reading maps still need migration.
+
+## Source mirror divergence — World Bible
+
+The root `THEIA_WORLD_BIBLE.md` and Obsidian mirror differ in actual wording, not just wiki-link syntax: the root refers to the historical 'seventh creation' wording while the mirror says 'Kel'vari creation' in the Q40 decision summary. This is a historical editorial wording change, **not** approval to alter the locked sequence (uncorrupted Kel'vari creation, accidental First Resonance, later Nhal influence). Keep both documents until remaining differences are classified; never select a canonical variant merely because one mirror is newer or has cleaner links.
