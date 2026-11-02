@@ -5,11 +5,11 @@
 Complete static navigation alongside the live browsing tables. Approval boundaries remain scoped to the source statements.
 
 ## campaign act
-- [Human Act 1](../Campaigns/Human%20Act%201.md)
+- Human Act 1 — historical act reference; see [current canonical campaign](../Campaigns/Human_1_80_Canonical_Campaign.md)
 - [Human Act 2](../Campaigns/Human%20Act%202.md)
-- [Human Act 3](../Campaigns/Human%20Act%203.md)
-- [Human Act 4](../Campaigns/Human%20Act%204.md)
-- [Human Act 5](../Campaigns/Human%20Act%205.md)
+- Human Act 3 — historical act reference; see [current canonical campaign](../Campaigns/Human_1_80_Canonical_Campaign.md)
+- Human Act 4 — historical act reference; see [current canonical campaign](../Campaigns/Human_1_80_Canonical_Campaign.md)
+- Human Act 5 — historical act reference; see [current canonical campaign](../Campaigns/Human_1_80_Canonical_Campaign.md)
 
 ## character
 - [Aru'ven](../Characters/Campaign%20Cast/Aru'ven.md)
