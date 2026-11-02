@@ -531,3 +531,30 @@ Compared the source crosswalk with the current 184-quest manifest. These are **e
 **Dependency exceptions:** H2-06, H2-07, H2-08, H2-16, H2-17 and H2-18 do not preserve their old direct dependency edges. These are not grounds to overwrite the current campaign. The current order separates Northwatch (Q038–Q047), the optional healing observation (Q048), and Kar Durn (Q049–Q052); old H2 ordering is superseded.
 
 **Status:** all 18 H2 entries have now been given an objective/prerequisite review in this comparison. Dialogue, evidence custody, optional access and consequence verification remain outstanding. Do not assign runtime IDs or delete historical provenance on this basis.
+
+## H3-series objective and prerequisite triage — 2 November 2026
+
+All 18 original H3 entries were compared with the draft crosswalk and the current manifest. **Candidate mappings only; no runtime IDs approved.**
+
+| Legacy → current | Dependency result | Specificity to preserve or verify |
+|---|---|---|
+| H3-01 → Q054 | Old H2-18 vs current Q053 | Sylvaren entry, Aelari limited permission and ward-tender concerns; changed entry prerequisite |
+| H3-02 → Q055 | Old H3-01 vs current no prerequisite | Independent optional rescue/ward repair; avoid turning it into a required gate |
+| H3-03 → Q056 | Old H3-02 vs current Q054 | Authorized ward baseline and deliberate alteration; do not require optional Q055 |
+| H3-04 → Q057 | H3-03 → Q056 aligns | Veylan's sale correspondence and testimony; preserve grievance versus concealment distinction |
+| H3-05 → Q058 | H3-04 → Q057 aligns | Queen's limited disclosure, Caelith's assistance and coastal lead; check companion role |
+| H3-06 → Q059 | H3-05 → Q058 aligns | Northwatch staging and extraction route for second Dominion operation |
+| H3-07 → Q060 | H3-06 → Q059 aligns | Ilyss inspection copy, guarded/stealth PvE approach, no friendly enemy dialogue |
+| H3-08 → Q061 | H3-07 → Q060 aligns | Courier interception and surviving fragment; verify independently lodged duplicate |
+| H3-09 → Q062 | H3-08 → Q061 aligns | Shared alteration pattern; avoid claim of universal infiltration; Korrath lead |
+| H3-10 → Q063 | H3-09 → Q062 aligns | Drom Kar water-route assignment before archive access; verify custodial limits |
+| H3-11 → Q064 | H3-10 → Q063 aligns | Maintenance access, crew protection and omitted warning |
+| H3-12 → Q065 | H3-11 → Q064 aligns | Authenticated warning and restricted council comparison; avoid final judgment on Vorrath exile |
+| H3-13 → Q066 | H3-12 → Q065 aligns | Guardian multiracial origin, cooperation without compulsory membership |
+| H3-14 → Q067 | H3-13 → Q066 aligns | Incomplete shutdown order and missing stability material |
+| H3-15 → Q068 | H3-14 → Q067 aligns | Interrupt Halden's premature attempt; retryable story-scene behavior |
+| H3-16 → Q069 | H3-15 → Q068 aligns | Solo dungeon, rescue, support isolation before Regional Anchor core shutdown |
+| H3-17 → Q070 | H3-16 → Q069 aligns | Independent evidence deposit and distribution of full safety instructions |
+| H3-18 → Q083 | Old H3-17 vs current no prerequisite | Optional low-capacity Guardian Passage survey; current stages verify throughput/return, but Corven proposal requires review |
+
+**Changed dependency edges:** H3-01, H3-02, H3-03 and H3-18. The old sequence must not silently gate modern optional content. Other 14 edges correspond to current predecessors. All contacts match the crosswalk's source strings; equivalence of consequences, dialogue and optional access is still pending.
