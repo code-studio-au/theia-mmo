@@ -151,3 +151,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Fixed `Reading Map - THEIA_HUMAN_QUEST_REGISTER.md` link to root historical register (was `../../../../`, now `../../../`; commit `015daa7b`).
 - [x] Verified canonical root links in Chronicle, Detailed Lore Archive and Canon Reconciliation Report reading-map redirects use `../../../` from `Theia/Editorial/Reading Maps/`.
 - [ ] Broader remaining reading-map link audit still needed; do not treat individual checks as full repository-wide validation.
+
+## Reading-map link target verification — 2 November 2026
+
+- [x] Resolved 11 Markdown file links across `Source Reading Maps.md`, Source Decision Recovery reading map and Human Quest Register reading map to existing `main` files.
+- [x] Replaced one unverified directory-target link with plain folder text (commit `ee49fad6`); this was a directory rather than a verified file target, not proof the directory was absent.
+- [ ] Continue auditing other reading maps and campaign files; these 12 checks are not a full-tree validation.
