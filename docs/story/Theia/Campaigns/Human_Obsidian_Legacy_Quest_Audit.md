@@ -93,3 +93,7 @@ All **19** `History/` Markdown files were processed for Obsidian source-embed co
 ## Lore relative-link verification — PASS
 
 All **28** `Lore/` Markdown files were checked in three batches (10+9+9) against the current repository tree. **224 relative Markdown source/file links** were examined; three stale references in `Lore/World Population.md` pointed to the deleted `Sources/THEIA_ZONE_POPULATION_FRAMEWORK.md` mirror and were corrected to the original `docs/story/THEIA_ZONE_POPULATION_FRAMEWORK.md`. A fresh check confirmed all three repaired links resolve. No other missing file targets were identified. This is file-target verification only; Obsidian wiki-links, heading fragments and lore approval remain separate checks.
+
+## Current source-mirror status correction — 2 November 2026
+
+Earlier sections of this audit describe protected lore mirrors as still present. Those were historical snapshots. The imported World Bible, Chronicle, Detailed Lore Archive, Canon Reconciliation Report and Source Decision Recovery mirrors have since been reconciled and deleted from `main`; see Git history and `docs/story/STORY_CLEANUP_TRACKER.md` for commits. **The H/HS quest crosswalk remains unresolved and protected.** Do not interpret the retired lore mirrors as evidence that the old 1–60 quest notes are safe to remove without reviewing unique objectives and references.
