@@ -1,3 +1,5 @@
+> **SUPERSEDED — historical reference only (2 November 2026).** The single source of truth for the Human level 1–80 quest order, locations, objectives and main-story outcomes is [Human 1–80 Canonical Campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md). The older plot timings, finale and contradictory mechanics below are retired; retain this file solely for source quest IDs, legacy dialogue and migration traceability.
+
 # THEIA — HUMAN QUEST REGISTER
 
 **Status: Needs Review.** Proposed quests supporting the complete [Human Campaign](THEIA_HUMAN_CAMPAIGN.md). All IDs, objectives, rewards, dependencies, dialogue and encounter mechanics are draft design. Planning bands are not tuned levels or XP commitments. This is not an imported game database or a claim of implementation.

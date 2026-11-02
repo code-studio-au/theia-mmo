@@ -47,6 +47,8 @@ Source: [[Sources/THEIA_MODERN_STORY_REVELATION_TIMELINE#Creator-approved five-a
 
 ## Beyond the launch story — possible future developments
 
+**Later scoped creator lock — 29 October 2026:** Oth'varen survives launch and later dies stabilising the Seven's six-energy alignment through the inverted Major Anchor network during the confrontation with Nhal. He sees the alignment hold before dying; the player and trained Guardian teams continue the work. This fixes his future role and death, not an expansion date or the Conclave founders' fates. See [[Sources/DECISIONS#2026-10-29 — Creator LOCK: Oth'varen's final alignment and death]] and [[Future Saga]].
+
 [[Future Saga]] develops a chronological **Needs Review** proposal from an Act V Major Anchor inversion through Nhal's escape, the Seven's reconciliation, Nhal's fragmentation, emerging divinities and a final distributed defence of the world. It includes recommended changes to the launch ending; it does not override the current approval boundaries above.
 
 These are development possibilities, not a fixed sequence or promised outcomes:
@@ -69,3 +71,8 @@ Sources: [[Sources/THEIA_DETAILED_LORE_ARCHIVE#1.2a The Seven's separate awakeni
 The modern Anchor network and awakening are described in [[Resonance Inversion]] and [[Sources/THEIA_INTERWOVEN_CHRONICLE#The Awakening — The Network Reaches Its Threshold|the Chronicle's awakening account]].
 
 [[Timelines]] governs when players learn this history. [[Chronicles and History]] contains the full narrative.
+
+
+## Creator-locked founder endings — 29 October 2026
+
+The approved relative sequence is Oma'vira in Act V, Su'vareth during the investigation leading to the Veilbreaker, Khor'vun during its activation, Vaer'uun after Nhal arrives, and Thes'var attacking the final alignment. Oth'varen then dies completing its stabilisation before Nhal's final shattering. Thes'var's sabotage compounds Nhal's disruption. Exact site names, dates and release boundaries remain open. See [[Sources/DECISIONS#2026-10-29 — Creator LOCK: Conclave deaths and final succession]]; this scoped approval does not approve every other future proposal.
