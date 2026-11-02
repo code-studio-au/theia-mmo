@@ -295,7 +295,7 @@ The 1–80 progression prototype remains a **numeric XP/playtime hypothesis only
 
 ## Production authoring companion
 
-The [Human 1–80 Production Quest Specification](Human_1_80_Production_Quest_Specification.md) contains per-quest NPC contacts, narrower locations, objectives, stable editorial completion flags, and implementation acceptance rules. It is subordinate to this canonical campaign and does not supersede the locked plot. Its remaining implementation checklist must be completed before claiming production readiness.
+The [Current Quest Authoring Manifest](Human_1_80_Current_Quest_Authoring_Manifest.json) is the sole working structured quest inventory. The [Editorial Location and Lore Reference](Human_1_80_Location_and_Lore_Editorial_Reference.md) preserves historical location and lore summaries for review; it is not executable quest data or an authority over this locked plot. Stable runtime IDs, rewards, actor references, evidence and engine capability gaps must be resolved before production readiness.
 
 ## Implementation backlog
 
