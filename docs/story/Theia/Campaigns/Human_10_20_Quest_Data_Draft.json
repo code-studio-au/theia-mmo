@@ -19,32 +19,42 @@
         {
           "id": "S01",
           "kind": "talk",
-          "targetKey": "briefing",
-          "description": "Receive assignment from Mara",
+          "targetKey": "mara_intake",
+          "description": "Submit Stoneford sealed evidence",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S02",
           "kind": "inspect",
-          "targetKey": "objective_18",
-          "description": "Present the sealed case in Valecrown; verify courier and warehouse testimony independently before receiving court access",
+          "targetKey": "courier_copy",
+          "description": "Authenticate courier docket",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S03",
-          "kind": "talk",
-          "targetKey": "turnin",
-          "description": "Confirm result with Mara",
+          "kind": "inspect",
+          "targetKey": "warehouse_copy",
+          "description": "Authenticate warehouse ledger",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S04",
+          "kind": "talk",
+          "targetKey": "mara_verdict",
+          "description": "Receive restricted inquiry authorization",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
         }
       ],
       "completionFlag": "HUMAN_Q018_DONE",
@@ -71,32 +81,42 @@
         {
           "id": "S01",
           "kind": "talk",
-          "targetKey": "briefing",
-          "description": "Receive assignment from Lysa",
+          "targetKey": "lysa",
+          "description": "Obtain authorized register access",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S02",
           "kind": "inspect",
-          "targetKey": "objective_19",
-          "description": "Check authorised office records; make an authenticated copy of the post-delegation reorganisation dates",
+          "targetKey": "office_register",
+          "description": "Copy office reassignment dates",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S03",
-          "kind": "talk",
-          "targetKey": "turnin",
-          "description": "Confirm result with Lysa",
+          "kind": "inspect",
+          "targetKey": "delegation_date_record",
+          "description": "Compare dates to Delegation chronology",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S04",
+          "kind": "talk",
+          "targetKey": "lysa",
+          "description": "Authenticate comparison",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
         }
       ],
       "completionFlag": "HUMAN_Q019_DONE",
@@ -123,32 +143,42 @@
         {
           "id": "S01",
           "kind": "talk",
-          "targetKey": "briefing",
-          "description": "Receive assignment from Aldren / Cassian",
+          "targetKey": "court_steward",
+          "description": "Request private royal audience",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S02",
-          "kind": "interact",
-          "targetKey": "objective_20",
-          "description": "Attend the audience, hear Aldren's account and accept a continuing warrant; Cassian supplies a plausible military lead",
+          "kind": "observe",
+          "targetKey": "aldren_edric_account",
+          "description": "Hear Aldren's account of Edric",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S03",
           "kind": "talk",
-          "targetKey": "turnin",
-          "description": "Confirm result with Aldren / Cassian",
+          "targetKey": "cassian_lead",
+          "description": "Hear Cassian's military allegation",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S04",
+          "kind": "talk",
+          "targetKey": "aldren_warrant",
+          "description": "Receive continuing investigative warrant",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
         }
       ],
       "completionFlag": "HUMAN_Q020_DONE",
@@ -175,32 +205,42 @@
         {
           "id": "S01",
           "kind": "talk",
-          "targetKey": "briefing",
-          "description": "Receive assignment from Garrick",
+          "targetKey": "garrick",
+          "description": "Obtain Garrick's account",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S02",
-          "kind": "interact",
-          "targetKey": "objective_21",
-          "description": "Check the alleged military source against Garrick's preserved logs; establish his opposition to peace is not proof of involvement",
+          "kind": "inspect",
+          "targetKey": "garrison_duty_log",
+          "description": "Check deployment records",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S03",
-          "kind": "talk",
-          "targetKey": "turnin",
-          "description": "Confirm result with Garrick",
+          "kind": "inspect",
+          "targetKey": "supply_authorization",
+          "description": "Compare military signatures",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S04",
+          "kind": "talk",
+          "targetKey": "mara",
+          "description": "Report unsupported accusation",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
         }
       ],
       "completionFlag": "HUMAN_Q021_DONE",
@@ -226,33 +266,43 @@
       "stages": [
         {
           "id": "S01",
-          "kind": "talk",
-          "targetKey": "briefing",
-          "description": "Receive assignment from Mara",
+          "kind": "inspect",
+          "targetKey": "authorization_timestamp",
+          "description": "Record authorization time",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S02",
           "kind": "inspect",
-          "targetKey": "objective_22",
-          "description": "Compare the authorisation time, office format and independently interviewed witness; record the contradictions without an accusation",
+          "targetKey": "office_format_sample",
+          "description": "Compare administrative format",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S03",
           "kind": "talk",
-          "targetKey": "turnin",
-          "description": "Confirm result with Mara",
+          "targetKey": "independent_witness",
+          "description": "Record witness testimony",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S04",
+          "kind": "talk",
+          "targetKey": "mara",
+          "description": "Report contradictions without premature accusation",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
         }
       ],
       "completionFlag": "HUMAN_Q022_DONE",
@@ -277,32 +327,42 @@
         {
           "id": "S01",
           "kind": "talk",
-          "targetKey": "briefing",
-          "description": "Receive assignment from Lysa",
+          "targetKey": "lysa",
+          "description": "Obtain public index repair request",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S02",
           "kind": "inspect",
-          "targetKey": "objective_23",
-          "description": "Help restore a damaged public index to learn how Valecrown's records are accessed",
+          "targetKey": "damaged_index",
+          "description": "Identify damaged entries",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S03",
-          "kind": "talk",
-          "targetKey": "turnin",
-          "description": "Confirm result with Lysa",
+          "kind": "interact",
+          "targetKey": "archive_reference_sheets",
+          "description": "Restore cross-references",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S04",
+          "kind": "talk",
+          "targetKey": "lysa",
+          "description": "Confirm public index available",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
         }
       ],
       "completionFlag": "HUMAN_Q023_DONE",
@@ -327,32 +387,42 @@
         {
           "id": "S01",
           "kind": "talk",
-          "targetKey": "briefing",
-          "description": "Receive assignment from City quartermaster",
+          "targetKey": "quartermaster",
+          "description": "Review ration shortfall",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S02",
           "kind": "inspect",
-          "targetKey": "objective_24",
-          "description": "Investigate a legitimate ration shortage and secure a non-corrupt supply solution",
+          "targetKey": "barracks_ration_book",
+          "description": "Compare ration allocation",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S03",
-          "kind": "talk",
-          "targetKey": "turnin",
-          "description": "Confirm result with City quartermaster",
+          "kind": "inspect",
+          "targetKey": "delivery_manifest",
+          "description": "Find legitimate delayed shipment",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S04",
+          "kind": "talk",
+          "targetKey": "quartermaster",
+          "description": "Arrange alternate supply",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
         }
       ],
       "completionFlag": "HUMAN_Q024_DONE",
@@ -377,32 +447,42 @@
         {
           "id": "S01",
           "kind": "talk",
-          "targetKey": "briefing",
-          "description": "Receive assignment from Mara",
+          "targetKey": "mara",
+          "description": "Receive witness interview guidance",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S02",
-          "kind": "inspect",
-          "targetKey": "objective_25",
-          "description": "Interview a witness without leading questions; record and compare the independent account",
+          "kind": "talk",
+          "targetKey": "independent_witness",
+          "description": "Take nonleading statement",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S03",
-          "kind": "talk",
-          "targetKey": "turnin",
-          "description": "Confirm result with Mara",
+          "kind": "inspect",
+          "targetKey": "witness_account",
+          "description": "Compare testimony to known record",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S04",
+          "kind": "talk",
+          "targetKey": "mara",
+          "description": "Register independent account",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
         }
       ],
       "completionFlag": "HUMAN_Q025_DONE",
@@ -427,32 +507,42 @@
         {
           "id": "S01",
           "kind": "talk",
-          "targetKey": "briefing",
-          "description": "Receive assignment from Garrick",
+          "targetKey": "garrick",
+          "description": "Receive road patrol request",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S02",
           "kind": "inspect",
-          "targetKey": "objective_26",
-          "description": "Inspect a neglected approach road and repel opportunistic raiders, separating wartime danger from political suspicion",
+          "targetKey": "outer_road_damage",
+          "description": "Inspect neglected approach",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S03",
+          "kind": "combat",
+          "targetKey": "opportunistic_raiders",
+          "description": "Clear raider threat",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "encounter_retry",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S04",
           "kind": "talk",
-          "targetKey": "turnin",
-          "description": "Confirm result with Garrick",
+          "targetKey": "garrick",
+          "description": "Confirm safe route",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         }
       ],
       "completionFlag": "HUMAN_Q026_DONE",
@@ -479,32 +569,52 @@
         {
           "id": "S01",
           "kind": "talk",
-          "targetKey": "briefing",
-          "description": "Receive assignment from Mara",
+          "targetKey": "mara",
+          "description": "Receive authorization to pursue intermediary",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S02",
-          "kind": "combat",
-          "targetKey": "objective_27",
-          "description": "Secure the surviving intermediary and independently stored payments linking Cassian to the security compromise and intended killing",
-          "required": true,
-          "creditMode": "per_character",
-          "resetPolicy": "encounter_retry",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
-        },
-        {
-          "id": "S03",
-          "kind": "talk",
-          "targetKey": "turnin",
-          "description": "Confirm result with Mara",
+          "kind": "discover",
+          "targetKey": "intermediary_refuge",
+          "description": "Locate surviving intermediary",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S03",
+          "kind": "defend",
+          "targetKey": "intermediary_extraction",
+          "description": "Protect witness extraction",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "encounter_retry",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S04",
+          "kind": "inspect",
+          "targetKey": "independent_payment_copy",
+          "description": "Secure authenticated payment evidence",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S05",
+          "kind": "talk",
+          "targetKey": "mara",
+          "description": "Confirm chain of custody",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
         }
       ],
       "completionFlag": "HUMAN_Q027_DONE",
@@ -531,32 +641,42 @@
         {
           "id": "S01",
           "kind": "talk",
-          "targetKey": "briefing",
-          "description": "Receive assignment from Aldren",
+          "targetKey": "aldren_private_court",
+          "description": "Present corroborated evidence privately",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S02",
-          "kind": "combat",
-          "targetKey": "objective_28",
-          "description": "Present the corroborated case in private; witness lawful detention ordered and Cassian's flight. No attack on a neutral court NPC",
-          "required": true,
-          "creditMode": "per_character",
-          "resetPolicy": "encounter_retry",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
-        },
-        {
-          "id": "S03",
-          "kind": "talk",
-          "targetKey": "turnin",
-          "description": "Confirm result with Aldren",
+          "kind": "observe",
+          "targetKey": "lawful_warrant",
+          "description": "Witness Aldren order detention",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S03",
+          "kind": "observe",
+          "targetKey": "cassian_flight",
+          "description": "Witness Cassian escape without combat against court NPC",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S04",
+          "kind": "talk",
+          "targetKey": "mara",
+          "description": "Receive lawful pursuit order",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
         }
       ],
       "completionFlag": "HUMAN_Q028_DONE",
@@ -582,33 +702,43 @@
       "stages": [
         {
           "id": "S01",
-          "kind": "talk",
-          "targetKey": "briefing",
-          "description": "Receive assignment from Mara",
+          "kind": "inspect",
+          "targetKey": "civilian_exit_north",
+          "description": "Secure first civilian exit",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S02",
           "kind": "inspect",
-          "targetKey": "objective_29",
-          "description": "Secure civilian exits and establish an independent evidence-copy checkpoint before Cassian's capture",
+          "targetKey": "civilian_exit_south",
+          "description": "Secure second civilian exit",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S03",
-          "kind": "talk",
-          "targetKey": "turnin",
-          "description": "Confirm result with Mara",
+          "kind": "interact",
+          "targetKey": "evidence_checkpoint",
+          "description": "Create independent evidence copy",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S04",
+          "kind": "talk",
+          "targetKey": "mara",
+          "description": "Authorize dungeon entry",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
         }
       ],
       "completionFlag": "HUMAN_Q029_DONE",
@@ -646,7 +776,7 @@
           "id": "S02",
           "kind": "combat",
           "targetKey": "sorn_guard",
-          "description": "Defeat Sorn and secure the dispatch archive",
+          "description": "Defeat Sorn and secure dispatch archive",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "encounter_retry",
@@ -666,7 +796,7 @@
           "id": "S04",
           "kind": "talk",
           "targetKey": "mara",
-          "description": "Return the authenticated evidence",
+          "description": "Return authenticated evidence",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
@@ -697,32 +827,42 @@
         {
           "id": "S01",
           "kind": "talk",
-          "targetKey": "briefing",
-          "description": "Receive assignment from Aldren / Elara",
+          "targetKey": "aldren",
+          "description": "Confirm Cassian is held lawfully",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S02",
           "kind": "inspect",
-          "targetKey": "objective_31",
-          "description": "Confirm removal from office and lawful custody; receive the follow-up warrant and report home. Close the betrayal arc without absolving Dominion",
+          "targetKey": "followup_warrant",
+          "description": "Receive limited investigation commission",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S03",
-          "kind": "talk",
-          "targetKey": "turnin",
-          "description": "Confirm result with Aldren / Elara",
+          "kind": "travel",
+          "targetKey": "millhaven_return",
+          "description": "Return to Millhaven by established travel",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S04",
+          "kind": "talk",
+          "targetKey": "elara",
+          "description": "Report outcome",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
         }
       ],
       "completionFlag": "HUMAN_Q031_DONE",
@@ -747,32 +887,42 @@
         {
           "id": "S01",
           "kind": "talk",
-          "targetKey": "briefing",
-          "description": "Receive assignment from Elara",
+          "targetKey": "elara",
+          "description": "Receive household restitution ledger",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S02",
-          "kind": "defend",
-          "targetKey": "objective_32",
-          "description": "Return recovered goods and inform affected households without disclosing protected witnesses",
+          "kind": "interact",
+          "targetKey": "recovered_goods",
+          "description": "Distribute returned goods",
           "required": true,
           "creditMode": "per_character",
-          "resetPolicy": "encounter_retry",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S03",
           "kind": "talk",
-          "targetKey": "turnin",
-          "description": "Confirm result with Elara",
+          "targetKey": "affected_household",
+          "description": "Inform affected family without revealing protected witness",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S04",
+          "kind": "talk",
+          "targetKey": "elara",
+          "description": "Close restitution record",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
         }
       ],
       "completionFlag": "HUMAN_Q032_DONE",
@@ -797,32 +947,42 @@
         {
           "id": "S01",
           "kind": "talk",
-          "targetKey": "briefing",
-          "description": "Receive assignment from Darian",
+          "targetKey": "darian",
+          "description": "Receive restored patrol route",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S02",
-          "kind": "defend",
-          "targetKey": "objective_33",
-          "description": "Lead a local patrol and protect a newly reopened road without a mandatory escort timer",
-          "required": true,
-          "creditMode": "per_character",
-          "resetPolicy": "encounter_retry",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
-        },
-        {
-          "id": "S03",
-          "kind": "talk",
-          "targetKey": "turnin",
-          "description": "Confirm result with Darian",
+          "kind": "inspect",
+          "targetKey": "watchpost_marker",
+          "description": "Inspect new patrol marker",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S03",
+          "kind": "defend",
+          "targetKey": "road_patrol",
+          "description": "Defend road against ordinary threats",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "encounter_retry",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S04",
+          "kind": "talk",
+          "targetKey": "darian",
+          "description": "Record road reopened",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
         }
       ],
       "completionFlag": "HUMAN_Q033_DONE",
@@ -847,32 +1007,42 @@
         {
           "id": "S01",
           "kind": "talk",
-          "targetKey": "briefing",
-          "description": "Receive assignment from Brenna",
+          "targetKey": "brenna",
+          "description": "Review village relief requests",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S02",
-          "kind": "interact",
-          "targetKey": "objective_34",
-          "description": "Choose a local relief priority and complete the delivery; the royal case ends but village life continues",
+          "kind": "choose",
+          "targetKey": "relief_priority",
+          "description": "Choose one of two legitimate priorities",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S03",
-          "kind": "talk",
-          "targetKey": "turnin",
-          "description": "Confirm result with Brenna",
+          "kind": "travel",
+          "targetKey": "relief_destination",
+          "description": "Deliver supplies",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S04",
+          "kind": "talk",
+          "targetKey": "brenna",
+          "description": "Record completed aid",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
         }
       ],
       "completionFlag": "HUMAN_Q034_DONE",
