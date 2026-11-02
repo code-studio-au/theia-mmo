@@ -102,3 +102,10 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Updated three editorial reading maps to link authoritative root documents rather than imported Detailed Lore Archive, Canon Reconciliation Report and Interwoven Chronicle mirrors.
 - [x] Redirected three History/Events files from imported Chronicle to root Chronicle.
 - [ ] Re-fetch live files and check relative path resolution; recheck additional references beyond the indexed set before deleting source mirrors.
+
+## Four imported source duplicates retired — 2 November 2026
+
+- [x] Live-fetched and verified 19 migrated incoming-link files; no old mirror references in those files and canonical relative links checked.
+- [x] Normalized content identical for Detailed Lore Archive, Canon Reconciliation Report and DECISIONS; Chronicle differs only at editorial-status line 784, where canonical root correctly supersedes old 'ending open' wording.
+- [x] Deleted imported duplicates from `Theia/Sources/`: Detailed Lore Archive (`4550b1e4`), Canon Reconciliation Report (`e33bf37d`), Interwoven Chronicle (`63a58cb7`), DECISIONS (`54e81ff8`). Root documents retained.
+- [ ] Continue remaining source duplicates and vault cleanup; perform full repository-wide link validation before declaring all cleanup finished. **Delete this tracker itself only at final completion.**
