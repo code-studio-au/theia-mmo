@@ -95,3 +95,10 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Root Detailed Lore Archive and imported source now match after Obsidian wikilink normalization (35 additional line corrections, commit `2f2262cc`).
 - [x] Root Canon Reconciliation Report and imported source now match after wikilink normalization (20 additional line corrections, commit `e61734f9`).
 - [ ] Incoming links to imported archive/report copies must be migrated and verified before deletion; historical reports must not override the approved level-80 ending.
+
+## Imported lore link migration — 2 November 2026
+
+- [x] Redirected 13 divine-character/historical-event files from imported `Sources/THEIA_DETAILED_LORE_ARCHIVE.md` to canonical root archive.
+- [x] Updated three editorial reading maps to link authoritative root documents rather than imported Detailed Lore Archive, Canon Reconciliation Report and Interwoven Chronicle mirrors.
+- [x] Redirected three History/Events files from imported Chronicle to root Chronicle.
+- [ ] Re-fetch live files and check relative path resolution; recheck additional references beyond the indexed set before deleting source mirrors.
