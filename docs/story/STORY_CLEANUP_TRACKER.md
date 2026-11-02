@@ -224,3 +224,8 @@ Do not tick work merely because it is planned or described in older reports. Rec
 
 - [x] Compared five additional historical quests to Q011/Q012/Q013/Q018/Q019 in existing 64-entry comparison; objectives, contacts and prerequisite chains align (commit `baebd2d9`).
 - [ ] Verify historical protected travel route, interview authority, court-access framing and evidence custody before mapping approval. Do not change canonical quest stages or assign runtime IDs based on this review.
+
+## H1-12 through H1-16 review — 2 November 2026
+
+- [x] Compared H1-12 through H1-16 against Q020/Q021/Q022/Q027/Q028 in the full 64-entry objective comparison; contact, stage structure and prerequisite chains align (commit `4db494eb`).
+- [ ] Verify original intended-killing evidence in H1-15/Q027 dialogue and custody record before approving the mapping. Preserve Garrick's innocence-of-involvement distinction and lawful court handling.
