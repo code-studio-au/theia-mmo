@@ -1,6 +1,6 @@
 # Theia — Human Level-80 Finale NPC Dialogue Scripts, Pass 1
 
-**Status: Needs Review; original first-pass dialogue, not localized, voice-recorded or engine-integrated.** Canonical authority: [Human 1–80 Campaign](Human_1_80_Canonical_Campaign.md). Quest stages: [Human 80_Finale Quest Data](Human_80_Finale_Quest_Data_Draft.json).
+**Status: Needs Review; original first-pass dialogue, not localized, voice-recorded or engine-integrated.** Canonical authority: [Human 1–80 Campaign](Human_1_80_Canonical_Campaign.md). Quest stages: [Human 80_Finale Quest Data](Human_1_80_Current_Quest_Authoring_Manifest.json).
 
 ## Q175 — Nessa
 
