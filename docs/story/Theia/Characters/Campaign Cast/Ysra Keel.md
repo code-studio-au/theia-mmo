@@ -1,7 +1,7 @@
 ---
 type: character
 canon_status: Needs Review
-source: "[[Sources/THEIA_HUMAN_CAST_AND_PLACES]]"
+source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
 up: "[[Characters]]"
 ---
 # Ysra Keel
@@ -18,7 +18,7 @@ Wants honest manifests and a functioning harbour
 ## Proposed quest role and endpoint
 Separates mundane loss from false requisitions; remains at port
 
-Source: [[Sources/THEIA_HUMAN_CAST_AND_PLACES#New human and expedition cast|New human and expedition cast]].
+Source: [New human and expedition cast](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
 [[Characters]] · [[Human Campaign]]
 
