@@ -1,3 +1,5 @@
+> **SUPERSEDED — historical reference only (2 November 2026).** The single source of truth for the Human level 1–80 quest order, locations, objectives and main-story outcomes is [Human 1–80 Canonical Campaign](Human_1_80_Canonical_Campaign.md). The older plot timings, finale and contradictory mechanics below are retired; retain this file solely for source quest IDs, legacy dialogue and migration traceability.
+
 # Theia — Human 1–80 Playable Main-Quest Design Draft
 
 **Status: Needs Review — 2 November 2026.** New quest objectives are proposals, not approved lore or implemented content. This document adds playable mission design to the [Level 1–80 Progression Prototype](Level_1_80_Progression_Prototype.md) and [Human quest migration register](Human_1_80_Quest_Migration_Register.md). Existing 92 principal quests and 24 optional quests remain in their source files, untouched.
