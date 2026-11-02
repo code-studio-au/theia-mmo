@@ -1,6 +1,6 @@
 # Theia — Human Levels 45–55 NPC Dialogue Scripts, Pass 1
 
-**Status: Needs Review; original dialogue draft, not localized or engine-integrated.** Canonical story: [Human 1–80 Canonical Campaign](Human_1_80_Canonical_Campaign.md). Structured stages: [Human 45–55 Quest Data](Human_45_55_Quest_Data_Draft.json).
+**Status: Needs Review; original dialogue draft, not localized or engine-integrated.** Canonical story: [Human 1–80 Canonical Campaign](Human_1_80_Canonical_Campaign.md). Structured stages: [Human 45–55 Quest Data](Human_1_80_Current_Quest_Authoring_Manifest.json).
 
 ## Narrative guardrails
 
