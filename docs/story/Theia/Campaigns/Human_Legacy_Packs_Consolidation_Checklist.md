@@ -47,3 +47,7 @@ The 17 quest sections and their distinctive mechanics, NPC/location context, fai
 ## Levels 10–20 reconciliation
 
 Both legacy sources (`Human_10_20_Playable_Quest_Pack.md` and `Human_10_20_Implementation_Brief.md`) have been compared at quest-section and shared-rules level. Their current narrative purposes, location bands, recovery expectations and QA checks are captured in [Q018–Q034 Legacy Pack Migration](Human_Q018_Q034_Legacy_Pack_Migration.md). The older brief's generic stage templates and minimum-level assumptions are not authoritative. **Original files remain until inbound links and unique details are verified; no deletion is claimed.**
+
+## Levels 20–30 reconciliation
+
+The 28 entries in both `Human_20_30_Playable_Quest_Pack.md` and `Human_20_30_Implementation_Brief.md` were compared by ID and purpose. Their chapter-specific gameplay context, region/permission rules, common retry and QA expectations and superseded level assumptions are captured in [Q035–Q062 Legacy Pack Migration](Human_Q035_Q062_Legacy_Pack_Migration.md). The original files are retained until reference and unique-detail verification; this comparison does **not** authorize deleting them yet.
