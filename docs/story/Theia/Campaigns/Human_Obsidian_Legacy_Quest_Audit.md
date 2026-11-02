@@ -89,3 +89,7 @@ The 24 Atlas Markdown files were rechecked in three fresh batches (8+8+8) agains
 ## History source-link verification — PASS
 
 All **19** `History/` Markdown files were processed for Obsidian source-embed conversion, then verified in two fresh batches (10+9) against the repository tree. **32/32 relative Markdown source links resolved to existing files, with zero missing targets.** This check does not validate heading anchors, unrelated Obsidian wiki-links, or historical canon claims. The original history descriptions and approval labels were preserved.
+
+## Lore relative-link verification — PASS
+
+All **28** `Lore/` Markdown files were checked in three batches (10+9+9) against the current repository tree. **224 relative Markdown source/file links** were examined; three stale references in `Lore/World Population.md` pointed to the deleted `Sources/THEIA_ZONE_POPULATION_FRAMEWORK.md` mirror and were corrected to the original `docs/story/THEIA_ZONE_POPULATION_FRAMEWORK.md`. A fresh check confirmed all three repaired links resolve. No other missing file targets were identified. This is file-target verification only; Obsidian wiki-links, heading fragments and lore approval remain separate checks.
