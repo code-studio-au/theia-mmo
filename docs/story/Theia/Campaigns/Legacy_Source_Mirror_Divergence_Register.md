@@ -25,3 +25,7 @@ These are **first-difference samples**, not an exhaustive semantic diff. Even a 
 ## Royal-court discrepancy follow-up
 
 A further check found that **both** root and mirrored `THEIA_MODERN_STORY_REVELATION_TIMELINE.md` contain the section `Approved human royal court characters (15 October 2026)`, explicitly identifying King Aldren Vaelmont, Lord Edric Halewyn, Lord Cassian Veyr and their roles. The root also retains an earlier statement that the royal names were not yet approved; the mirror replaces that older line with an approval summary. Therefore the first-difference sample is **stale text versus later approval within the root**, not evidence that the named royal cast is unapproved. The later dated approval section governs that historical conflict. Preserve both versions until other differences are checked; do not alter canonical quest data.
+
+## Remaining seven mirrors — terminology is not the whole difference
+
+A second normalization pass tested common historical substitutions (seventh race/creation/project/researchers → Kel'vari equivalents) across the seven remaining `THEIA_*.md` mirror pairs. **None became fully equivalent.** Do not mass-delete these files or apply global search-and-replace: the historical Seventh terminology can be relevant to original creator decision provenance, and additional differences remain. Continue document-by-document review, particularly the World Bible, Chronicle, and source decision records. The Revelation Timeline mirror was separately verified equivalent and retired.
