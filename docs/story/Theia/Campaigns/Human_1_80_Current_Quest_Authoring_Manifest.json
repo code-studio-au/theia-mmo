@@ -11,7 +11,8 @@
     "Runtime IDs and editorial H/HS mapping deliberately unresolved; do not auto-assign.",
     "Planning level bands do not impose eligibility gates.",
     "Item possession and consumption remain quest-specific unresolved fields.",
-    "Current Rust P3-11 objective foundation is narrower than this manifest."
+    "Current Rust P3-11 objective foundation is narrower than this manifest.",
+    "Editorial consistency corrections applied 2026-11-02: Q071/Q072/Q097 spoiler-safe contact labels; Q157 Shroud fade timing; Q181 explicit Oth'varen death fact. Optional region/phase requirements remain proposed metadata, not executable prerequisites."
   ],
   "quests": [
     {
@@ -4645,7 +4646,11 @@
         "rewards_unbalanced",
         "evidence_provenance_needs_engine_binding",
         "inventory_and_choice_semantics_require_quest_specific_review"
-      ]
+      ],
+      "authoring_access_review": {
+        "status": "proposed_not_executable",
+        "condition": "Restitution is post-arrest; proposed Q030/Q031 prerequisite pending approval."
+      }
     },
     {
       "campaign_reference": "Q033",
@@ -4789,7 +4794,11 @@
         "rewards_unbalanced",
         "evidence_provenance_needs_engine_binding",
         "inventory_and_choice_semantics_require_quest_specific_review"
-      ]
+      ],
+      "authoring_access_review": {
+        "status": "proposed_not_executable",
+        "condition": "Post-arrest patrol restoration; access after local resolution pending approval."
+      }
     },
     {
       "campaign_reference": "Q034",
@@ -4931,7 +4940,11 @@
         "rewards_unbalanced",
         "evidence_provenance_needs_engine_binding",
         "inventory_and_choice_semantics_require_quest_specific_review"
-      ]
+      ],
+      "authoring_access_review": {
+        "status": "proposed_not_executable",
+        "condition": "Village epilogue requires return to Millhaven after Q031 or equivalent."
+      }
     },
     {
       "campaign_reference": "Q035",
@@ -10309,7 +10322,7 @@
       "definition_status": "planning_not_importable",
       "narrative_source": "Human_1_80_Canonical_Campaign.md",
       "giver_npc": {
-        "editorial_contact": "Oth'varen / Brynja",
+        "editorial_contact": "Grey Surveyor / Brynja",
         "stable_id": null
       },
       "turn_in_npc": {
@@ -10455,7 +10468,7 @@
       "definition_status": "planning_not_importable",
       "narrative_source": "Human_1_80_Canonical_Campaign.md",
       "giver_npc": {
-        "editorial_contact": "Oth'varen",
+        "editorial_contact": "Grey Surveyor",
         "stable_id": null
       },
       "turn_in_npc": {
@@ -11967,7 +11980,14 @@
         "rewards_unbalanced",
         "evidence_provenance_needs_engine_binding",
         "inventory_and_choice_semantics_require_quest_specific_review"
-      ]
+      ],
+      "player_facing_reveal_gate": {
+        "before_quest": "Q086",
+        "hide_terms": [
+          "Kel'vari"
+        ],
+        "public_label": "Custodians beyond the gate"
+      }
     },
     {
       "campaign_reference": "Q083",
@@ -12091,7 +12111,11 @@
         "rewards_unbalanced",
         "evidence_provenance_needs_engine_binding",
         "inventory_and_choice_semantics_require_quest_specific_review"
-      ]
+      ],
+      "authoring_access_review": {
+        "status": "proposed_not_executable",
+        "condition": "Requires post-disclosure gate knowledge and authorized visit; optional Q083 must never gate Q084–Q086."
+      }
     },
     {
       "campaign_reference": "Q084",
@@ -12217,7 +12241,14 @@
         "rewards_unbalanced",
         "evidence_provenance_needs_engine_binding",
         "inventory_and_choice_semantics_require_quest_specific_review"
-      ]
+      ],
+      "player_facing_reveal_gate": {
+        "before_quest": "Q086",
+        "hide_terms": [
+          "Kel'vari"
+        ],
+        "public_label": "Custodian"
+      }
     },
     {
       "campaign_reference": "Q085",
@@ -12341,7 +12372,14 @@
         "rewards_unbalanced",
         "evidence_provenance_needs_engine_binding",
         "inventory_and_choice_semantics_require_quest_specific_review"
-      ]
+      ],
+      "player_facing_reveal_gate": {
+        "before_quest": "Q086",
+        "hide_terms": [
+          "Kel'vari"
+        ],
+        "public_label": "Outpost Custodian"
+      }
     },
     {
       "campaign_reference": "Q086",
@@ -12612,7 +12650,11 @@
         "rewards_unbalanced",
         "evidence_provenance_needs_engine_binding",
         "inventory_and_choice_semantics_require_quest_specific_review"
-      ]
+      ],
+      "authoring_access_review": {
+        "status": "proposed_not_executable",
+        "condition": "Requires Q086 first living Kel'vari reveal and Q088 access permission or equivalent."
+      }
     },
     {
       "campaign_reference": "Q088",
@@ -13026,7 +13068,11 @@
         "rewards_unbalanced",
         "evidence_provenance_needs_engine_binding",
         "inventory_and_choice_semantics_require_quest_specific_review"
-      ]
+      ],
+      "authoring_access_review": {
+        "status": "proposed_not_executable",
+        "condition": "Requires authorized Kel'vari archive access; cannot precede discovery of the archive."
+      }
     },
     {
       "campaign_reference": "Q091",
@@ -13420,7 +13466,11 @@
         "rewards_unbalanced",
         "evidence_provenance_needs_engine_binding",
         "inventory_and_choice_semantics_require_quest_specific_review"
-      ]
+      ],
+      "authoring_access_review": {
+        "status": "proposed_not_executable",
+        "condition": "Requires authorized Kel'vari archive access; must not gate Q094."
+      }
     },
     {
       "campaign_reference": "Q094",
@@ -13810,7 +13860,7 @@
       "definition_status": "planning_not_importable",
       "narrative_source": "Human_1_80_Canonical_Campaign.md",
       "giver_npc": {
-        "editorial_contact": "Oth'varen",
+        "editorial_contact": "Grey Surveyor (until identity reveal)",
         "stable_id": null
       },
       "turn_in_npc": {
@@ -13920,7 +13970,14 @@
         "rewards_unbalanced",
         "evidence_provenance_needs_engine_binding",
         "inventory_and_choice_semantics_require_quest_specific_review"
-      ]
+      ],
+      "player_facing_reveal_gate": {
+        "before_quest": "Q097 identity disclosure",
+        "hide_terms": [
+          "Oth'varen"
+        ],
+        "public_label": "Grey Surveyor"
+      }
     },
     {
       "campaign_reference": "Q098",
@@ -14312,7 +14369,11 @@
         "rewards_unbalanced",
         "evidence_provenance_needs_engine_binding",
         "inventory_and_choice_semantics_require_quest_specific_review"
-      ]
+      ],
+      "authoring_access_review": {
+        "status": "proposed_not_executable",
+        "condition": "Requires Kel'vari frontier access; must not be offered before first contact."
+      }
     },
     {
       "campaign_reference": "Q101",
@@ -14436,7 +14497,11 @@
         "rewards_unbalanced",
         "evidence_provenance_needs_engine_binding",
         "inventory_and_choice_semantics_require_quest_specific_review"
-      ]
+      ],
+      "authoring_access_review": {
+        "status": "proposed_not_executable",
+        "condition": "Requires Kel'vari archive permission; independent of mandatory records."
+      }
     },
     {
       "campaign_reference": "Q102",
@@ -21724,7 +21789,7 @@
               "type": "scene_observed",
               "target_editorial_alias": "shroud_dissipation",
               "target_stable_id": null,
-              "description": "Witness Shroud immediately begin dissipating",
+              "description": "Observe Shroud dissipation already underway since Veilbreaker (Q156)",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -22072,7 +22137,11 @@
         "rewards_unbalanced",
         "evidence_provenance_needs_engine_binding",
         "inventory_and_choice_semantics_require_quest_specific_review"
-      ]
+      ],
+      "authoring_access_review": {
+        "status": "proposed_not_executable",
+        "condition": "Requires post-Q156 Veilbreaker world phase and Kel'vari access."
+      }
     },
     {
       "campaign_reference": "Q160",
@@ -23370,7 +23439,11 @@
         "rewards_unbalanced",
         "evidence_provenance_needs_engine_binding",
         "inventory_and_choice_semantics_require_quest_specific_review"
-      ]
+      ],
+      "authoring_access_review": {
+        "status": "proposed_not_executable",
+        "condition": "Requires post-Q156 Shroud-fade phase and Aelari area access."
+      }
     },
     {
       "campaign_reference": "Q169",
@@ -23532,7 +23605,11 @@
         "rewards_unbalanced",
         "evidence_provenance_needs_engine_binding",
         "inventory_and_choice_semantics_require_quest_specific_review"
-      ]
+      ],
+      "authoring_access_review": {
+        "status": "proposed_not_executable",
+        "condition": "Requires Guardian gate knowledge and custodial consent for restricted Passage checks."
+      }
     },
     {
       "campaign_reference": "Q170",
@@ -24254,7 +24331,11 @@
         "rewards_unbalanced",
         "evidence_provenance_needs_engine_binding",
         "inventory_and_choice_semantics_require_quest_specific_review"
-      ]
+      ],
+      "authoring_eligibility_review": {
+        "status": "explicit_design_confirmation_required",
+        "proposal": "Level 80 finale eligibility; do not encode until Rust engine supports approved level condition"
+      }
     },
     {
       "campaign_reference": "Q175",
@@ -25102,7 +25183,7 @@
               "type": "scene_observed",
               "target_editorial_alias": "alignment_holds",
               "target_stable_id": null,
-              "description": "Witness alignment hold before Oth'varen's physical death",
+              "description": "Witness alignment hold while Oth'varen is still alive",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -25118,11 +25199,11 @@
           "completion_rule": "all_required",
           "objectives": [
             {
-              "objective_id": "q181.objective.03",
-              "type": "object_interacted",
-              "target_editorial_alias": "coordinated_inversion",
+              "objective_id": "q181.objective.othvaren_death",
+              "type": "story_fact_recorded",
+              "target_editorial_alias": "othvaren_physical_death",
               "target_stable_id": null,
-              "description": "Complete inversion",
+              "description": "Record Oth'varen's physical death after he verifies alignment and before final inversion",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -25139,6 +25220,26 @@
           "objectives": [
             {
               "objective_id": "q181.objective.04",
+              "type": "object_interacted",
+              "target_editorial_alias": "coordinated_inversion",
+              "target_stable_id": null,
+              "description": "Complete inversion",
+              "required_count": 1,
+              "progress_semantics": "historical_event",
+              "completion_evidence": "trusted_rust_server_fact_required",
+              "credit_scope": "character",
+              "reset_on_failure": false
+            }
+          ],
+          "next_stage": "q181.stage.05"
+        },
+        {
+          "stage_id": "q181.stage.05",
+          "order": 5,
+          "completion_rule": "all_required",
+          "objectives": [
+            {
+              "objective_id": "q181.objective.05",
               "type": "scene_observed",
               "target_editorial_alias": "nhal_identity_shattered",
               "target_stable_id": null,
@@ -25173,7 +25274,8 @@
         "planned": [
           "general_quest_acceptance_turn_in",
           "multistage_objectives",
-          "npc_interaction_and_other_objective_kinds"
+          "npc_interaction_and_other_objective_kinds",
+          "authoritative_story_fact_recorded"
         ],
         "script_required": false
       },
@@ -25183,7 +25285,8 @@
         "stable_npc_target_ids_unassigned",
         "rewards_unbalanced",
         "evidence_provenance_needs_engine_binding",
-        "inventory_and_choice_semantics_require_quest_specific_review"
+        "inventory_and_choice_semantics_require_quest_specific_review",
+        "othvaren_death_story_fact_engine_capability_pending"
       ]
     },
     {
