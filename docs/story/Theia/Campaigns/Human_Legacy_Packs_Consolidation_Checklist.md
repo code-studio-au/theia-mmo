@@ -63,3 +63,7 @@ Both `Human_35_45_Playable_Quest_Pack.md` and `Human_35_45_Implementation_Brief.
 ## Levels 45–55 reconciliation
 
 Both `Human_45_55_Playable_Quest_Pack.md` and `Human_45_55_Implementation_Brief.md` cover the same 25 Q104–Q128 entries. Their still-current player purposes, location context, safe encounter/retry and QA rules are captured in [Q104–Q128 Legacy Pack Migration](Human_Q104_Q128_Legacy_Pack_Migration.md). Critical canon preserved: the reluctant anti-peace Dominion delegate, Su'vareth's permanent death, ongoing war and Anchors' separate function from the Binding. Older hard level gates and generic stages remain superseded. Original files await inbound-reference and unique-detail checks.
+
+## Levels 55–70 reconciliation
+
+Both `Human_55_70_Playable_Quest_Pack.md` and `Human_55_70_Implementation_Brief.md` cover the same 29 Q129–Q157 quests. Their still-current location, player-purpose, recovery and QA information is captured in [Q129–Q157 Legacy Pack Migration](Human_Q129_Q157_Legacy_Pack_Migration.md). Special continuity checks preserve the first Nhal name at Q143, Keeper/Guardian testimony, Khor'vun's death and the immediate Q156 Veil/Binding/Shroud transition. The old files remain pending incoming-reference and unique-detail verification.
