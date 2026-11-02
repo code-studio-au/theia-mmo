@@ -29,3 +29,7 @@
 **No deletion of H/HS source register, mirrored source library, or Obsidian quest pages is authorized by this audit.** Their linked graph must be reconciled first. The earlier 17 obsolete playable packs/briefs and duplicate 184-quest production specification were already retired. Git history preserves their old versions.
 
 This audit is an inventory and cleanup plan, not a second set of executable quest definitions.
+
+## Preservation update — 2 November 2026
+
+The [legacy ideas archive](Human_Legacy_Sidequest_Zone_Character_Archive.md) now records all 24 HS optional hooks and all 28 non-exact H dispositions, including five canon conflicts. The [draft crosswalk](Human_Quest_Editorial_ID_Crosswalk_Draft.json) retains source objectives and all 116 historical IDs. This is preservation of candidates, **not approval of mappings or proof of unique content**. The 64 exact-title H candidates also remain unapproved. The original register and mirrored source documents must not be removed until unique dialogue, location, NPC and quest detail comparisons and wiki-link migration are verified. Obsidian application assets can be removed independently. The old story branch has zero commits ahead of main but should be deleted only after this final verification and through an authorized branch deletion mechanism.
