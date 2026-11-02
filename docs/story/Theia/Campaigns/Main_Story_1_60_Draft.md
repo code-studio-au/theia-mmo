@@ -1,3 +1,5 @@
+> **SUPERSEDED — historical reference only (2 November 2026).** The single source of truth for the Human level 1–80 quest order, locations, objectives and main-story outcomes is [Human 1–80 Canonical Campaign](Human_1_80_Canonical_Campaign.md). The older plot timings, finale and contradictory mechanics below are retired; retain this file solely for source quest IDs, legacy dialogue and migration traceability.
+
 # Theia main story from level 1 to 60
 
 **Working narrative draft — Needs Review, 30 October 2026.** This version follows the human protagonist through a proposed five-act launch campaign ending with Nhal's shattering. Other playable peoples retain their own racial beginnings and faction-loyal routes. The existing level bands remain: Act I 1–20, Act II 20–30, Act III 30–40, Act IV 40–50 and Act V 50–60. Later acts contain progressively longer regional campaigns; ordinary exploration and regional adventures supply substantial progression between principal chapters.
