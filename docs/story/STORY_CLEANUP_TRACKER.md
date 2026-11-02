@@ -175,3 +175,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Live-verified 14 links across six Human historical reading maps (Quest Register, Story Dungeons, Campaign Review, Cast and Places, Connected Racial Stories, Heartlands Settlement Register); all resolve.
 - [x] Confirmed older `Reading Map - THEIA_CHARACTER_ARCS.md` and `Reading Map - THEIA_HUMAN_ACT_I_STORY.md` paths are absent; no replacement created without evidence of required incoming links.
 - [ ] Continue checking other old redirects and repository-wide links; historical H/HS ID crosswalk remains protected.
+
+## Historical redirect and mirror-audit consolidation — 2 November 2026
+
+- [x] Live-verified eight links in Human Act 2 historical redirect, World Directory historical redirect and legacy source mirror divergence register; all resolve.
+- [x] Replaced outdated divergence register with a short CLOSED historical audit summary, retaining reconciliation outcomes and Git provenance (commit `35c3f918`).
+- [ ] Remaining old Obsidian quest notes and campaign registers require preservation/retirement audit; final repository-wide validation outstanding. Delete this temporary tracker only after completion.
