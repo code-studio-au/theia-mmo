@@ -89,3 +89,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Detailed Lore Archive: replaced outdated 'species name remains open' claim with confirmed Kel'vari name (commit `e6f1dbcf`).
 - [x] Canon Reconciliation Report: corrected stale open-name inventory with approved Kel'vari and named founders (commit `62d6ed4c`).
 - [ ] Other differences remain; older historical passages may describe superseded decisions, and later level-80 ending locks override old 'Nhal fate open' claims. Do not bulk-copy historical statements or delete source files until verified.
+
+## Imported lore text alignment — 2 November 2026
+
+- [x] Root Detailed Lore Archive and imported source now match after Obsidian wikilink normalization (35 additional line corrections, commit `2f2262cc`).
+- [x] Root Canon Reconciliation Report and imported source now match after wikilink normalization (20 additional line corrections, commit `e61734f9`).
+- [ ] Incoming links to imported archive/report copies must be migrated and verified before deletion; historical reports must not override the approved level-80 ending.
