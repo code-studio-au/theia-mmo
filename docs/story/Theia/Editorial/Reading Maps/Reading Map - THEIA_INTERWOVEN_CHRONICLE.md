@@ -3,7 +3,7 @@
 The former Obsidian reading map is retired. Both versions remain because their contents have not yet been proven equivalent.
 
 - [Preserved original source](../../../../THEIA_INTERWOVEN_CHRONICLE.md)
-- [Historical source mirror](../../Sources/THEIA_INTERWOVEN_CHRONICLE.md)
+- [Authoritative story document](../../../THEIA_INTERWOVEN_CHRONICLE.md)
 - [Source divergence review](../../Campaigns/Legacy_Source_Mirror_Divergence_Register.md)
 - [Current Human campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
