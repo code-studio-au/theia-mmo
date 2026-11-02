@@ -507,3 +507,27 @@ The draft crosswalk has H1-01 through H1-18 for this act; no H1-19 or H1-20 rows
 | H2-05 → Q050 | H2-04 → Q049 | Original drawing, substituted specification and engineer exoneration correspond; historical hold permission to recover a measuring assembly is not explicit in current stages and needs review. |
 
 **Status:** candidate objective correspondences, not approved mappings. H2-04 is a changed progression edge. Do not alter canonical prerequisites, invent permission stages or assign runtime IDs without further review.
+
+## Act II remaining H2-06–H2-18 — prerequisite and objective triage (2 November 2026)
+
+Compared the source crosswalk with the current 184-quest manifest. These are **editorial candidates only**, not approved equivalences.
+
+| Legacy → current | Prerequisite finding | Specificity to preserve / verify |
+|---|---|---|
+| H2-06 → Q051 | H2-05 required historically; Q051 currently has no prerequisite | Damaged maintenance gallery, trapped crew, service equipment and mundane pressure fault; verify restoration outcome |
+| H2-07 → Q052 | H2-06 historically; Q052 requires Q050, not Q051 | Grain/iron trade dispute; verify inspection report and limited engineering commission |
+| H2-08 → Q038 | H2-07 historically; current Q038 requires Q037 | Northwatch ship arrival; verify garrison, Darian's support unit and extraction procedures |
+| H2-09 → Q039 | H2-08 → Q038 aligns | Rescue stranded personnel; preserve PvE-only coastal route and military route report |
+| H2-10 → Q040 | H2-09 → Q039 aligns | Defender patrols and civilian boundaries; optional guarded/avoidance approach, no civilian-home intrusion |
+| H2-11 → Q041 | H2-10 → Q040 aligns | Depot records predating attack; check Nemi serials and removed private consignment |
+| H2-12 → Q042 | H2-11 → Q041 aligns | Sera's unstable observation position, device housing and Brynja comparison; protect Grey Surveyor alias |
+| H2-13 → Q043 | H2-12 → Q042 aligns | Preserve-or-destroy choice and critical measurement record represented in current stages |
+| H2-14 → Q044 | H2-13 → Q043 aligns | Isolation supports and shutdown access present; check explicit mechanical isolators, documented emergency cutoff and Surveyor limits |
+| H2-15 → Q045 | H2-14 → Q044 aligns | Solo Halvek encounter and Minor Resonator disable match; check captives and essential observations |
+| H2-16 → Q046 | H2-15 historically; Q046 currently has no prerequisite | Conventional Dominion attack and evacuation are distinct from hidden operation; preserve optional NPC/instanced defense route |
+| H2-17 → Q047 | H2-16 historically; Q047 requires Q045 | Resonator readings and supplier notation match; verify restricted Aelari material reference and procurement chain |
+| H2-18 → Q048 | H2-17 historically; Q048 currently has no prerequisite | Beneficial healing observation and uncertain cause match; verify local ward safety and homecoming |
+
+**Dependency exceptions:** H2-06, H2-07, H2-08, H2-16, H2-17 and H2-18 do not preserve their old direct dependency edges. These are not grounds to overwrite the current campaign. The current order separates Northwatch (Q038–Q047), the optional healing observation (Q048), and Kar Durn (Q049–Q052); old H2 ordering is superseded.
+
+**Status:** all 18 H2 entries have now been given an objective/prerequisite review in this comparison. Dialogue, evidence custody, optional access and consequence verification remain outstanding. Do not assign runtime IDs or delete historical provenance on this basis.
