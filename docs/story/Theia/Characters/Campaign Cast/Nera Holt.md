@@ -1,7 +1,7 @@
 ---
 type: character
 canon_status: Needs Review
-source: "[[Sources/THEIA_HUMAN_CAST_AND_PLACES]]"
+source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
 up: "[[Characters]]"
 ---
 # Nera Holt
@@ -18,7 +18,7 @@ Knows local business records and can run it without Brenna
 ## Proposed quest role and endpoint
 Keeps basic trade available during testimony; resolves mill accounting
 
-Source: [[Sources/THEIA_HUMAN_CAST_AND_PLACES#New human and expedition cast|New human and expedition cast]].
+Source: [New human and expedition cast](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
 [[Characters]] · [[Human Campaign]]
 

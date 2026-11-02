@@ -1,7 +1,7 @@
 ---
 type: character
 canon_status: Needs Review
-source: "[[Sources/THEIA_HUMAN_CAST_AND_PLACES]]"
+source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
 up: "[[Characters]]"
 ---
 # Perrin Vale
@@ -18,7 +18,7 @@ Profit and fear; handled diverted cargo under false authority
 ## Proposed quest role and endpoint
 Gives a verifiable lead under legal inquiry; subject to local proceedings, not silently forgiven
 
-Source: [[Sources/THEIA_HUMAN_CAST_AND_PLACES#New human and expedition cast|New human and expedition cast]].
+Source: [New human and expedition cast](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
 [[Characters]] · [[Human Campaign]]
 
