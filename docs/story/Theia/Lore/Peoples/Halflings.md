@@ -1,7 +1,7 @@
 ---
 type: people
 canon_status: confirmed-foundation; details-open
-source: "[[Sources/THEIA_WORLD_BIBLE]]"
+source: "../../Sources/THEIA_WORLD_BIBLE.md"
 up: "[[Peoples and Allegiances]]"
 ---
 # Halflings
@@ -15,7 +15,7 @@ Keeper-created, principally Seeker-worshipping; guild government, modern surface
 - [[Nemi Brindlewick]] — garrison quartermaster; Needs Review.
 
 ## Broader context
-![[Sources/THEIA_WORLD_BIBLE#6. Playable races, allegiances and governments [CONFIRMED]]]
+[Read historical source section](../../Sources/THEIA_WORLD_BIBLE.md)
 
 [[Magic]] · [[The Seven Gods]]
 
