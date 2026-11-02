@@ -19,32 +19,42 @@
         {
           "id": "S01",
           "kind": "talk",
-          "targetKey": "briefing",
-          "description": "Receive assignment from Urodan",
+          "targetKey": "urodan",
+          "description": "Receive waterway work assignment",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S02",
-          "kind": "inspect",
-          "targetKey": "objective_63",
-          "description": "Arrive at Drom Kar, hear its custodial limits and secure a water-route work assignment before archive access",
+          "kind": "travel",
+          "targetKey": "dromkar_waterway",
+          "description": "Reach damaged channel",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S03",
-          "kind": "talk",
-          "targetKey": "turnin",
-          "description": "Confirm result with Urodan",
+          "kind": "interact",
+          "targetKey": "waterway_repair",
+          "description": "Secure water route",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S04",
+          "kind": "talk",
+          "targetKey": "urodan_archive",
+          "description": "Obtain archive referral",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
         }
       ],
       "completionFlag": "HUMAN_Q063_DONE",
@@ -71,32 +81,42 @@
         {
           "id": "S01",
           "kind": "talk",
-          "targetKey": "briefing",
-          "description": "Receive assignment from Urodan / Tarek",
+          "targetKey": "tarek",
+          "description": "Receive tunnel access",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S02",
-          "kind": "inspect",
-          "targetKey": "objective_64",
-          "description": "Secure the existing maintenance route and retrieve records from the endangered store; obtain the omitted warning",
+          "kind": "travel",
+          "targetKey": "maintenance_tunnels",
+          "description": "Reach old store",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S03",
-          "kind": "talk",
-          "targetKey": "turnin",
-          "description": "Confirm result with Urodan / Tarek",
+          "kind": "defend",
+          "targetKey": "maintenance_workers",
+          "description": "Protect crew",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "encounter_retry",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S04",
+          "kind": "inspect",
+          "targetKey": "ancient_warning",
+          "description": "Recover warning",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         }
       ],
       "completionFlag": "HUMAN_Q064_DONE",
@@ -122,33 +142,33 @@
       "stages": [
         {
           "id": "S01",
-          "kind": "talk",
-          "targetKey": "briefing",
-          "description": "Receive assignment from Dromak",
+          "kind": "inspect",
+          "targetKey": "warning_copy",
+          "description": "Authenticate warning",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S02",
           "kind": "inspect",
-          "targetKey": "objective_65",
-          "description": "Authenticate the warning and obtain council permission for restricted comparison; no definitive judgment on the Vorrath exile",
+          "targetKey": "missing_margin",
+          "description": "Compare omitted section",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S03",
           "kind": "talk",
-          "targetKey": "turnin",
-          "description": "Confirm result with Dromak",
+          "targetKey": "dromak",
+          "description": "Secure restricted access",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         }
       ],
       "completionFlag": "HUMAN_Q065_DONE",
@@ -175,32 +195,32 @@
         {
           "id": "S01",
           "kind": "talk",
-          "targetKey": "briefing",
-          "description": "Receive assignment from Sera",
+          "targetKey": "sera",
+          "description": "Meet Guardian representative",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S02",
-          "kind": "travel",
-          "targetKey": "objective_66",
-          "description": "Receive a private account of the order and its multiracial origins; accept associate status without compulsory membership",
+          "kind": "inspect",
+          "targetKey": "guardian_charter",
+          "description": "Review limited authority",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S03",
           "kind": "talk",
-          "targetKey": "turnin",
-          "description": "Confirm result with Sera",
+          "targetKey": "sera_associate",
+          "description": "Accept cooperation without membership",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         }
       ],
       "completionFlag": "HUMAN_Q066_DONE",
@@ -226,33 +246,33 @@
       "stages": [
         {
           "id": "S01",
-          "kind": "talk",
-          "targetKey": "briefing",
-          "description": "Receive assignment from Grey Surveyor",
+          "kind": "inspect",
+          "targetKey": "regional_anchor_plan",
+          "description": "Read plan",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S02",
           "kind": "inspect",
-          "targetKey": "objective_67",
-          "description": "Compare the Regional Anchor plan with Halden's incomplete shutdown order; obtain the missing stability material",
+          "targetKey": "halden_order",
+          "description": "Compare incomplete order",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S03",
           "kind": "talk",
-          "targetKey": "turnin",
-          "description": "Confirm result with Grey Surveyor",
+          "targetKey": "grey_surveyor",
+          "description": "Identify missing safeguards",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         }
       ],
       "completionFlag": "HUMAN_Q067_DONE",
@@ -278,33 +298,43 @@
       "stages": [
         {
           "id": "S01",
-          "kind": "talk",
-          "targetKey": "briefing",
-          "description": "Receive assignment from Sera",
+          "kind": "travel",
+          "targetKey": "freight_works",
+          "description": "Reach works",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S02",
-          "kind": "travel",
-          "targetKey": "objective_68",
-          "description": "Reach the freight works and interrupt Halden's premature destruction attempt in a retryable story scene",
+          "kind": "talk",
+          "targetKey": "halden",
+          "description": "Warn of incomplete procedure",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S03",
-          "kind": "talk",
-          "targetKey": "turnin",
-          "description": "Confirm result with Sera",
+          "kind": "interact",
+          "targetKey": "premature_charge",
+          "description": "Interrupt activation",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S04",
+          "kind": "talk",
+          "targetKey": "sera",
+          "description": "Report",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
         }
       ],
       "completionFlag": "HUMAN_Q068_DONE",
@@ -330,33 +360,43 @@
       "stages": [
         {
           "id": "S01",
-          "kind": "talk",
-          "targetKey": "briefing",
-          "description": "Receive assignment from Halden / Sera",
+          "kind": "travel",
+          "targetKey": "broken_measure_instance",
+          "description": "Enter solo dungeon",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S02",
-          "kind": "inspect",
-          "targetKey": "objective_69",
-          "description": "Complete the solo dungeon, rescue the cell and isolate the Regional Anchor's supports before core shutdown",
+          "kind": "defend",
+          "targetKey": "research_cell",
+          "description": "Rescue researchers",
           "required": true,
           "creditMode": "per_character",
-          "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "resetPolicy": "encounter_retry",
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S03",
-          "kind": "talk",
-          "targetKey": "turnin",
-          "description": "Confirm result with Halden / Sera",
+          "kind": "interact",
+          "targetKey": "regional_supports",
+          "description": "Isolate supports",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S04",
+          "kind": "interact",
+          "targetKey": "core_shutdown",
+          "description": "Secure core",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
         }
       ],
       "completionFlag": "HUMAN_Q069_DONE",
@@ -382,33 +422,33 @@
       "stages": [
         {
           "id": "S01",
-          "kind": "talk",
-          "targetKey": "briefing",
-          "description": "Receive assignment from Grey Surveyor",
+          "kind": "inspect",
+          "targetKey": "safety_copies",
+          "description": "Collect full instructions",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S02",
-          "kind": "inspect",
-          "targetKey": "objective_70",
-          "description": "Receive and distribute full safety instructions to the cleared team; lodge the measured evidence independently",
+          "kind": "talk",
+          "targetKey": "cleared_team",
+          "description": "Distribute to team",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S03",
-          "kind": "talk",
-          "targetKey": "turnin",
-          "description": "Confirm result with Grey Surveyor",
+          "kind": "interact",
+          "targetKey": "evidence_deposit",
+          "description": "Deposit measurements",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         }
       ],
       "completionFlag": "HUMAN_Q070_DONE",
@@ -434,33 +474,43 @@
       "stages": [
         {
           "id": "S01",
-          "kind": "talk",
-          "targetKey": "briefing",
-          "description": "Receive assignment from Oth'varen / Brynja",
+          "kind": "inspect",
+          "targetKey": "minor_trial_site",
+          "description": "Inspect isolation",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S02",
-          "kind": "inspect",
-          "targetKey": "objective_71",
-          "description": "Set up a fully isolated Minor Resonator trial with instruments, physical cutoff and reserve limits",
+          "kind": "interact",
+          "targetKey": "physical_cutoff",
+          "description": "Fit cutoff",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S03",
-          "kind": "talk",
-          "targetKey": "turnin",
-          "description": "Confirm result with Oth'varen / Brynja",
+          "kind": "inspect",
+          "targetKey": "reserve_limits",
+          "description": "Verify limits",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S04",
+          "kind": "talk",
+          "targetKey": "sera",
+          "description": "Authorize trial",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
         }
       ],
       "completionFlag": "HUMAN_Q071_DONE",
@@ -486,33 +536,43 @@
       "stages": [
         {
           "id": "S01",
-          "kind": "talk",
-          "targetKey": "briefing",
-          "description": "Receive assignment from Oth'varen",
+          "kind": "interact",
+          "targetKey": "trial_start",
+          "description": "Start bounded inversion",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S02",
-          "kind": "inspect",
-          "targetKey": "objective_72",
-          "description": "Conduct the controlled inversion trial; stop at its measured duration and record both result and uncertainty",
+          "kind": "observe",
+          "targetKey": "trial_measurements",
+          "description": "Measure polarity",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S03",
-          "kind": "talk",
-          "targetKey": "turnin",
-          "description": "Confirm result with Oth'varen",
+          "kind": "interact",
+          "targetKey": "trial_cutoff",
+          "description": "Stop on threshold",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S04",
+          "kind": "inspect",
+          "targetKey": "trial_record",
+          "description": "Archive result",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
         }
       ],
       "completionFlag": "HUMAN_Q072_DONE",
@@ -539,32 +599,42 @@
         {
           "id": "S01",
           "kind": "talk",
-          "targetKey": "briefing",
-          "description": "Receive assignment from Halden / Sera",
+          "targetKey": "halden",
+          "description": "Hear severance case",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S02",
-          "kind": "interact",
-          "targetKey": "objective_73",
-          "description": "Review severance and bounded-inversion plans; select a provisional preference that may be changed at the final cutoff",
+          "kind": "talk",
+          "targetKey": "sera",
+          "description": "Hear inversion case",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S03",
-          "kind": "talk",
-          "targetKey": "turnin",
-          "description": "Confirm result with Halden / Sera",
+          "kind": "inspect",
+          "targetKey": "safety_comparison",
+          "description": "Compare risks",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S04",
+          "kind": "choose",
+          "targetKey": "provisional_preference",
+          "description": "Record revisable view",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
         }
       ],
       "completionFlag": "HUMAN_Q073_DONE",
@@ -590,33 +660,43 @@
       "stages": [
         {
           "id": "S01",
-          "kind": "talk",
-          "targetKey": "briefing",
-          "description": "Receive assignment from Sera",
+          "kind": "inspect",
+          "targetKey": "disturbance_set_a",
+          "description": "Compare three signatures",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S02",
           "kind": "inspect",
-          "targetKey": "objective_74",
-          "description": "Compare six measured disturbances and mark common timing",
+          "targetKey": "disturbance_set_b",
+          "description": "Compare remaining signatures",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S03",
-          "kind": "talk",
-          "targetKey": "turnin",
-          "description": "Confirm result with Sera",
+          "kind": "interact",
+          "targetKey": "timing_overlay",
+          "description": "Align readings",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S04",
+          "kind": "talk",
+          "targetKey": "sera",
+          "description": "Report pattern",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
         }
       ],
       "completionFlag": "HUMAN_Q074_DONE",
@@ -642,33 +722,43 @@
       "stages": [
         {
           "id": "S01",
-          "kind": "talk",
-          "targetKey": "briefing",
-          "description": "Receive assignment from Nessa",
+          "kind": "travel",
+          "targetKey": "chainworks_perimeter",
+          "description": "Scout perimeter",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S02",
-          "kind": "travel",
-          "targetKey": "objective_75",
-          "description": "Scout guard routes and recover Harbinger orders",
+          "kind": "inspect",
+          "targetKey": "guard_rotation",
+          "description": "Record patrols",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S03",
-          "kind": "talk",
-          "targetKey": "turnin",
-          "description": "Confirm result with Nessa",
+          "kind": "inspect",
+          "targetKey": "harbinger_orders",
+          "description": "Recover Harbinger instructions",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S04",
+          "kind": "talk",
+          "targetKey": "nessa",
+          "description": "Report",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
         }
       ],
       "completionFlag": "HUMAN_Q075_DONE",
@@ -694,33 +784,43 @@
       "stages": [
         {
           "id": "S01",
-          "kind": "talk",
-          "targetKey": "briefing",
-          "description": "Receive assignment from Sera",
+          "kind": "inspect",
+          "targetKey": "harbinger_signature",
+          "description": "Authenticate Oma'vira signature",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S02",
           "kind": "inspect",
-          "targetKey": "objective_76",
-          "description": "Secure signed instructions and destroyed-gate schematic",
+          "targetKey": "passage_schematic",
+          "description": "Recover gate schematic",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S03",
-          "kind": "talk",
-          "targetKey": "turnin",
-          "description": "Confirm result with Sera",
+          "kind": "inspect",
+          "targetKey": "destination_fragment",
+          "description": "Identify Shroud destination",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S04",
+          "kind": "talk",
+          "targetKey": "sera",
+          "description": "Confirm",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
         }
       ],
       "completionFlag": "HUMAN_Q076_DONE",
@@ -747,8 +847,8 @@
         {
           "id": "S01",
           "kind": "travel",
-          "targetKey": "harbinger_facility",
-          "description": "Enter Oma'vira's conditioning facility",
+          "targetKey": "harbinger_instance",
+          "description": "Enter conditioning facility",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
@@ -757,8 +857,8 @@
         {
           "id": "S02",
           "kind": "interact",
-          "targetKey": "captive_controls",
-          "description": "Disable conditioning relays",
+          "targetKey": "conditioning_relays",
+          "description": "Disable controls",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
@@ -767,8 +867,8 @@
         {
           "id": "S03",
           "kind": "defend",
-          "targetKey": "captive_rescue",
-          "description": "Protect reachable captives",
+          "targetKey": "captive_exit",
+          "description": "Protect captives",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "encounter_retry",
@@ -778,7 +878,7 @@
           "id": "S04",
           "kind": "combat",
           "targetKey": "omavira",
-          "description": "Defeat Oma'vira permanently",
+          "description": "Kill Oma'vira",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "encounter_retry",
@@ -788,7 +888,7 @@
           "id": "S05",
           "kind": "inspect",
           "targetKey": "gate_records",
-          "description": "Secure Passage evidence",
+          "description": "Recover Passage evidence",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
@@ -819,8 +919,8 @@
         {
           "id": "S01",
           "kind": "inspect",
-          "targetKey": "major_anchor_cutoff",
-          "description": "Verify cutoff and instrument stations",
+          "targetKey": "major_anchor_safeties",
+          "description": "Check instruments and cutoff",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
@@ -830,7 +930,7 @@
           "id": "S02",
           "kind": "defend",
           "targetKey": "inversion_specialists",
-          "description": "Protect specialists during inversion",
+          "description": "Protect specialists",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "encounter_retry",
@@ -839,8 +939,8 @@
         {
           "id": "S03",
           "kind": "observe",
-          "targetKey": "bounded_inversion",
-          "description": "Record bounded polarity reversal",
+          "targetKey": "polarity_reversal",
+          "description": "Record bounded inversion",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
@@ -850,7 +950,7 @@
           "id": "S04",
           "kind": "talk",
           "targetKey": "sera",
-          "description": "Confirm maintenance responsibilities",
+          "description": "Assign maintenance",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
@@ -880,33 +980,33 @@
       "stages": [
         {
           "id": "S01",
-          "kind": "talk",
-          "targetKey": "briefing",
-          "description": "Receive assignment from Sera",
+          "kind": "inspect",
+          "targetKey": "passage_destination",
+          "description": "Copy destination records",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S02",
           "kind": "inspect",
-          "targetKey": "objective_79",
-          "description": "Recover gate destination record and verify gate is unusable",
+          "targetKey": "gate_destroyed",
+          "description": "Verify gate destroyed",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         },
         {
           "id": "S03",
           "kind": "talk",
-          "targetKey": "turnin",
-          "description": "Confirm result with Sera",
+          "targetKey": "sera",
+          "description": "Request explanation",
           "required": true,
           "creditMode": "per_character",
           "resetPolicy": "persist_on_logout",
-          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+          "implementationStatus": "authored_proposal"
         }
       ],
       "completionFlag": "HUMAN_Q079_DONE",
