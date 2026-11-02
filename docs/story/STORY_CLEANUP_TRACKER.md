@@ -129,3 +129,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Deleted reconciled `Theia/Sources/THEIA_SOURCE_DECISION_RECOVERY.md` (commit `c8f77fba`); three early historical phrases remain preserved in root.
 - [x] Appended current retirement status to legacy divergence register (commit `b7fb610b`). Earlier 'mirrors remain' statements there are dated historical snapshots.
 - [ ] Review whether `Theia/Sources/README.md` and duplicate `IMPORT_MANIFEST.json` are still needed, and repair import-era references; continue broader story and Obsidian cleanup.
+
+## Import provenance duplicates retired — 2 November 2026
+
+- [x] Root `docs/story/IMPORT_MANIFEST.json` and `Theia/Sources/IMPORT_MANIFEST.json` were byte-identical; deleted duplicate source manifest (commit `5bde970f`). Root import provenance remains.
+- [x] Retired obsolete `Theia/Sources/README.md` after its source mirrors were removed (commit `ad728521`). Root story README and import manifest remain.
+- [ ] Verify no remaining live source mirrors or stale references, then continue Obsidian/campaign cleanup. This temporary tracker must be deleted at the very end.
