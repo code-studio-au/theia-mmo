@@ -209,3 +209,8 @@ Do not tick work merely because it is planned or described in older reports. Rec
 
 - [x] Verified canonical branching scene for Q097 includes independently verified signature evidence, Oth'varen's firsthand account, accusation/curiosity/trust responses, and Sel'ora's explicit scrutiny requirement. Dialogue Continuity Audit confirms Grey Surveyor spoiler gate in Q071–Q072 (commit `6f9d6c58`).
 - [ ] H4-07 editorial ID mapping still needs prerequisite/consequence review and approval; no runtime ID assignment.
+
+## Quest comparison consolidation — 2 November 2026
+
+- [x] Linked focused exact-title audit to existing full 64-entry objective comparison, avoiding duplicate comparison registers (commit `190d3e65`).
+- [ ] Continue reviewing unique dialogue and outcomes against the full comparison and draft crosswalk. No mappings or runtime IDs are approved by this documentation change.
