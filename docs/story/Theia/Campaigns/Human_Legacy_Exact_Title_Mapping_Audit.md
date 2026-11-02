@@ -19,7 +19,7 @@
 
 ## Preservation and deletion policy
 
-The [legacy ideas archive](Human_Legacy_Sidequest_Zone_Character_Archive.md) records 24 optional HS hooks and 28 non-exact H ideas. The [draft crosswalk](Human_Quest_Editorial_ID_Crosswalk_Draft.json) retains all 116 original IDs and their original objectives, contacts and candidate Q mappings. **Do not delete the source register or mirrored source graph until historical unique NPC/zone/dialogue details and backlinks are checked.** Individual obsolete Obsidian navigation files may be retired independently.
+The [legacy ideas archive](Human_Legacy_Sidequest_Zone_Character_Archive.md) records 24 optional HS hooks and 28 non-exact H ideas. The [draft crosswalk](Human_Quest_Editorial_ID_Crosswalk_Draft.json) retains all 116 original IDs and their original objectives, contacts and candidate Q mappings. **Retain the root historical source register until unique NPC/zone/dialogue details and backlinks are checked. The duplicated Obsidian source mirror has already been retired; do not recreate it.** Individual obsolete Obsidian navigation files may be retired independently.
 
 This is an evidence-based **title and giver check**, not approval to delete the 64 historical quests' source provenance.
 
