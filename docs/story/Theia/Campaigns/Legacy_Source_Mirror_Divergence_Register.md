@@ -21,3 +21,7 @@ These are **first-difference samples**, not an exhaustive semantic diff. Even a 
 2. Preserve unique names, regional geography, NPC motivations, quest mechanics and side-story hooks in the [legacy ideas archive](Human_Legacy_Sidequest_Zone_Character_Archive.md) if compatible; mark conflicts explicitly.
 3. Retain both versions of the eight source files until the complete differences and inbound links are reconciled. Do not silently promote the royal-name assertion.
 4. Keep the old branch available until the preservation and reference audit is complete; its lack of ahead commits is necessary but not sufficient evidence of content equivalence.
+
+## Royal-court discrepancy follow-up
+
+A further check found that **both** root and mirrored `THEIA_MODERN_STORY_REVELATION_TIMELINE.md` contain the section `Approved human royal court characters (15 October 2026)`, explicitly identifying King Aldren Vaelmont, Lord Edric Halewyn, Lord Cassian Veyr and their roles. The root also retains an earlier statement that the royal names were not yet approved; the mirror replaces that older line with an approval summary. Therefore the first-difference sample is **stale text versus later approval within the root**, not evidence that the named royal cast is unapproved. The later dated approval section governs that historical conflict. Preserve both versions until other differences are checked; do not alter canonical quest data.
