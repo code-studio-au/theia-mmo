@@ -108,14 +108,14 @@ Complete static navigation alongside the live browsing tables. Approval boundari
 - [Quest Index](../Campaigns/Quest%20Index.md)
 
 ## institution
-- [Covenant](../Lore/Institutions/Covenant.md)
-- [Dominion](../Lore/Institutions/Dominion.md)
-- [The Corrupted Conclave](../Lore/Institutions/The%20Corrupted%20Conclave.md)
-- [The Guardians](../Lore/Institutions/The%20Guardians.md)
-- [The Unmade](../Lore/Institutions/The%20Unmade.md)
+- [Covenant](./Institutions/Covenant.md)
+- [Dominion](./Institutions/Dominion.md)
+- [The Corrupted Conclave](./Institutions/The%20Corrupted%20Conclave.md)
+- [The Guardians](./Institutions/The%20Guardians.md)
+- [The Unmade](./Institutions/The%20Unmade.md)
 
 ## language
-- [Oth'vaeri](../Lore/Oth'vaeri.md)
+- [Oth'vaeri](./Oth'vaeri.md)
 
 ## location
 - [Oru'sava](../Atlas/Enclaves/Oru'sava.md)
@@ -144,15 +144,15 @@ Complete static navigation alongside the live browsing tables. Approval boundari
 - [The Six Reunited](../History/The%20Six%20Reunited.md)
 
 ## people
-- [Kel'vari](../Lore/Peoples/Kel'vari.md)
-- [Aelari](../Lore/Peoples/Aelari.md)
-- [Dwarves](../Lore/Peoples/Dwarves.md)
-- [Halflings](../Lore/Peoples/Halflings.md)
-- [Humans](../Lore/Peoples/Humans.md)
-- [Korrath](../Lore/Peoples/Korrath.md)
-- [Orcs](../Lore/Peoples/Orcs.md)
-- [Vaelari](../Lore/Peoples/Vaelari.md)
-- [Vorrath](../Lore/Peoples/Vorrath.md)
+- [Kel'vari](./Peoples/Kel'vari.md)
+- [Aelari](./Peoples/Aelari.md)
+- [Dwarves](./Peoples/Dwarves.md)
+- [Halflings](./Peoples/Halflings.md)
+- [Humans](./Peoples/Humans.md)
+- [Korrath](./Peoples/Korrath.md)
+- [Orcs](./Peoples/Orcs.md)
+- [Vaelari](./Peoples/Vaelari.md)
+- [Vorrath](./Peoples/Vorrath.md)
 
 ## primordial
 - [Aethyr](../Characters/Divine/Aethyr.md)
@@ -290,7 +290,7 @@ Complete static navigation alongside the live browsing tables. Approval boundari
 
 ## reference
 - [Settlement Services](../Atlas/Settlement%20Services.md)
-- [World Population](../Lore/World%20Population.md)
+- [World Population](./World%20Population.md)
 
 ## story beat
 - [CR-A1 — Help before access](../Campaigns/Connected%20Stories/CR-A1%20%E2%80%94%20Help%20before%20access.md)
@@ -304,14 +304,14 @@ Complete static navigation alongside the live browsing tables. Approval boundari
 - [CR-K3 — The return path](../Campaigns/Connected%20Stories/CR-K3%20%E2%80%94%20The%20return%20path.md)
 
 ## topic
-- [Anchors and the Shroud](../Lore/Anchors%20and%20the%20Shroud.md)
-- [Divine and Mortal History](../Lore/Divine%20and%20Mortal%20History.md)
-- [Magic](../Lore/Magic.md)
-- [Orders and Hidden Conflict](../Lore/Orders%20and%20Hidden%20Conflict.md)
-- [Passage Gates](../Lore/Passage%20Gates.md)
-- [Peoples and Allegiances](../Lore/Peoples%20and%20Allegiances.md)
-- [Primordial Cosmology](../Lore/Primordial%20Cosmology.md)
-- [Resonance Inversion](../Lore/Resonance%20Inversion.md)
-- [The Seven Gods](../Lore/The%20Seven%20Gods.md)
+- [Anchors and the Shroud](./Anchors%20and%20the%20Shroud.md)
+- [Divine and Mortal History](./Divine%20and%20Mortal%20History.md)
+- [Magic](./Magic.md)
+- [Orders and Hidden Conflict](./Orders%20and%20Hidden%20Conflict.md)
+- [Passage Gates](./Passage%20Gates.md)
+- [Peoples and Allegiances](./Peoples%20and%20Allegiances.md)
+- [Primordial Cosmology](./Primordial%20Cosmology.md)
+- [Resonance Inversion](./Resonance%20Inversion.md)
+- [The Seven Gods](./The%20Seven%20Gods.md)
 
 [Source Reading Maps](../Source%20Reading%20Maps.md) · [Source Library](../Source%20Library.md) · [Home](../Welcome.md)
