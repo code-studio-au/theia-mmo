@@ -1,8 +1,7 @@
 # Historical THEIA DETAILED LORE ARCHIVE — Reading Map Redirect
 
-The former Obsidian reading map is retired. Both versions remain because their contents have not yet been proven equivalent.
+The former Obsidian reading map is retired. The imported duplicate has been reconciled and retired; the root document is authoritative.
 
-- [Preserved original source](../../../../THEIA_DETAILED_LORE_ARCHIVE.md)
 - [Authoritative story document](../../../THEIA_DETAILED_LORE_ARCHIVE.md)
 - [Source divergence review](../../Campaigns/Legacy_Source_Mirror_Divergence_Register.md)
 - [Current Human campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
