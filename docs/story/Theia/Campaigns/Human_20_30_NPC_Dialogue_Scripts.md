@@ -1,6 +1,6 @@
 # Theia — Human Levels 20–30 NPC Dialogue Scripts, Pass 1
 
-**Status: Needs Review; original first-pass dialogue, not localized or implemented.** Story authority: [Human 1–80 Canonical Campaign](Human_1_80_Canonical_Campaign.md). Companion to [Human 20–30 Quest Data](Human_20_30_Quest_Data_Draft.json).
+**Status: Needs Review; original first-pass dialogue, not localized or implemented.** Story authority: [Human 1–80 Canonical Campaign](Human_1_80_Canonical_Campaign.md). Companion to [Human 20–30 Quest Data](Human_1_80_Current_Quest_Authoring_Manifest.json).
 
 **Character constraints:** Covenant allies maintain independent sovereignty; Dominion encounters are hostile infiltration, never friendly Dominion leadership; the Guardians and Grey Surveyor reveal limited scientific knowledge, not Nhal, the Binding or Kel'vari. Brynja's preliminary note precedes the player's first visit to Kar Durn. The High King's letter leads to Sylvaren but does not grant access there. The sample preservation choice affects acknowledgements, not the main outcome.
 
