@@ -1,57 +1,16 @@
-# Theia story, lore and campaign
+# Historical imported story sources — non-authoritative
 
-This folder is the home for Theia's worldbuilding, characters, acts, quests and
-story decisions in the active Theia-MMO project, adopted by the user on
-2026-10-26. These are narrative design documents; they do not establish working
-quests, NPCs, combat, persistence or approved engineering requirements.
+This directory contains imported source snapshots retained for provenance. **Do not edit or consult these copies as the current canon or quest specification.** They may repeat files under `docs/story/` and may describe superseded 1–60 campaign plans.
 
-## Start here
+## Current entry points
 
-| Subject | Documents |
-|---|---|
-| Reading order and canon rules | [Imported documentation guide](THEIA_DOCUMENTATION_GUIDE.md), [local decisions and maintenance](DECISIONS.md) |
-| World and lore | [World Bible](THEIA_WORLD_BIBLE.md), [Detailed Lore Archive](THEIA_DETAILED_LORE_ARCHIVE.md), [Interwoven Chronicle](THEIA_INTERWOVEN_CHRONICLE.md) |
-| [[Characters]] | [Character Arcs](THEIA_CHARACTER_ARCS.md), [Human Cast and Places](THEIA_HUMAN_CAST_AND_PLACES.md) |
-| Campaign acts and revelation | [Modern Story Revelation Timeline](THEIA_MODERN_STORY_REVELATION_TIMELINE.md), [Human Act I](THEIA_HUMAN_ACT_I_STORY.md), [Complete Human Campaign](THEIA_HUMAN_CAMPAIGN.md) |
-| Quests and encounters | [Human Quest Register](THEIA_HUMAN_QUEST_REGISTER.md), [Human Story Dungeons](THEIA_HUMAN_STORY_DUNGEONS.md), [Connected Racial Stories](THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md) |
-| Settlements and world population | [Human Heartlands Settlement Register](THEIA_HUMAN_HEARTLANDS_SETTLEMENT_REGISTER.md), [Zone Population Framework](THEIA_ZONE_POPULATION_FRAMEWORK.md) |
-| Story scenes | [Memory Scenes](THEIA_MEMORY_SCENES.md) |
-| Decisions and source recovery | [Source Decision Recovery](THEIA_SOURCE_DECISION_RECOVERY.md), [Canon Reconciliation Report](THEIA_CANON_RECONCILIATION_REPORT.md), [Line-by-Line Verification Status](THEIA_LINE_BY_LINE_VERIFICATION_STATUS.md) |
-| Campaign review | [Human Campaign Review](THEIA_HUMAN_CAMPAIGN_REVIEW.md) |
+- [Current Human Campaign](../Campaigns/CURRENT_HUMAN_CAMPAIGN.md) — authoritative reading order and cleanup status.
+- [Human 1–80 Canonical Campaign](../Campaigns/Human_1_80_Canonical_Campaign.md) — current narrative authority.
+- [Current Quest Authoring Manifest](../Campaigns/Human_1_80_Current_Quest_Authoring_Manifest.json) — consolidated working quest inventory, **not executable content**.
+- [Story root](../../README.md) — historical imports and provenance context.
 
-## Approval and precedence
+## Retirement rule
 
-Preserve each document's CONFIRMED, USER LOCKED, WORKING, OPEN, SUPERSEDED and
-Needs Review labels. A later explicit creator decision takes precedence over an
-older proposal or summary. The imported guide explains the historical source
-hierarchy; consult the dated decisions in the relevant documents together.
+Compare each imported document with the current authoritative equivalent before deletion. Preserve unique source decisions and evidence, including the original H/HS quest-ID provenance; move unused ideas to the non-canonical legacy idea bank. When a source copy is entirely redundant, remove it and repair incoming links. Git history retains deleted versions.
 
-Human Act I is explicitly creator-approved. The subsequent complete human
-campaign packet remains **Needs Review**, including its proposed 92 principal
-quests, 24 optional local quests and 12 native-side companion quests. Importing
-these files does not approve that packet. The Chronicle also contains proposed
-connective history; its narrative form does not confer canon status.
-
-## Import provenance and limits
-
-The 19 documents were recovered from the locally available Engine `origin/main`
-commit `94cc79228bc90db13d83116f76f6cdba51b72630`, which merged the campaign branch
-at `d89257a9ecb270a18542eed2f9f31acef0b65a3c`. They were absent from the Engine's
-checked-out rendering benchmark branch. This is a transfer from those local Git
-objects; remote freshness was not checked.
-
-[IMPORT_MANIFEST.json](IMPORT_MANIFEST.json) records every original path and both
-source and destination SHA-256 hashes. Eighteen documents are byte-identical;
-the reconciliation report's extractor link now points to the source commit.
-The Engine checkout and history were left unchanged.
-
-The original 403-page story PDF and full generated question/answer audit registers
-are not in this source snapshot. Historical claims about their examination have
-not been independently reverified during this import. The extraction command in
-the imported guide belongs to the Engine's tools; that tool was not migrated.
-Private conversation/account exports were not copied.
-
-Historical headings referring to a custom MMO engine are retained as provenance.
-The active game uses the [MMO engineering architecture](../engineering/README.md).
-Narrative decisions do not silently override that architecture or create gameplay
-implementation commitments.
+**Status:** This folder has not yet been verified file-by-file; its presence is not evidence of current approval. The original 403-page conversation export and complete question/answer evidence register are not available here, so do not claim exhaustive verification.
