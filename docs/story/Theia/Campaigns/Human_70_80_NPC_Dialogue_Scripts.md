@@ -1,6 +1,6 @@
 # Theia — Human Levels 70–80 NPC Dialogue Scripts, Pass 1
 
-**Status: Needs Review; original first-pass dialogue, not localized, voice-recorded or engine-integrated.** Canonical authority: [Human 1–80 Campaign](Human_1_80_Canonical_Campaign.md). Quest stages: [Human 70_80 Quest Data](Human_70_80_Quest_Data_Draft.json).
+**Status: Needs Review; original first-pass dialogue, not localized, voice-recorded or engine-integrated.** Canonical authority: [Human 1–80 Campaign](Human_1_80_Canonical_Campaign.md). Quest stages: [Human 70_80 Quest Data](Human_1_80_Current_Quest_Authoring_Manifest.json).
 
 ## Q158 — Sera
 
