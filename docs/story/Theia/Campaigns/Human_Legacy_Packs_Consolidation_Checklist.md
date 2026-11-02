@@ -9,8 +9,8 @@
 | 1–10 | **Retired** (content preserved in `Human_Q001_Q017_Gameplay_Detail_Migration.md`) | no matching chapter brief in this inventory |
 | 10–20 | **Retired** (Q018–Q034 migration retained) | **Retired** |
 | 20–30 | **Retired** (Q035–Q062 migration retained) | **Retired** |
-| 30–35 | `Human_30_35_Playable_Quest_Pack.md` | `Human_30_35_Implementation_Brief.md` |
-| 35–45 | `Human_35_45_Playable_Quest_Pack.md` | `Human_35_45_Implementation_Brief.md` |
+| 30–35 | **Retired** (Q063–Q079 migration retained) | **Retired** |
+| 35–45 | **Retired** (Q080–Q103 migration retained) | **Retired** |
 | 45–55 | `Human_45_55_Playable_Quest_Pack.md` | `Human_45_55_Implementation_Brief.md` |
 | 55–70 | `Human_55_70_Playable_Quest_Pack.md` | `Human_55_70_Implementation_Brief.md` |
 | 70–80 | `Human_70_80_Playable_Quest_Pack.md` | `Human_70_80_Implementation_Brief.md` |
@@ -79,3 +79,7 @@ The Q001–Q017 legacy playable pack was removed from the active tree after its 
 ## Verified deletion — levels 10–30
 
 Four legacy sources were removed after both chapter pairs were compared, their 17 and 28 quest references confirmed, and current narrative/QA/recovery details preserved in [Q018–Q034 migration](Human_Q018_Q034_Legacy_Pack_Migration.md) and [Q035–Q062 migration](Human_Q035_Q062_Legacy_Pack_Migration.md). The current production specification links were already redirected to those documents. Git history retains originals. **5 of 17 legacy pack/brief files are now deleted; 12 remain.** This is an editorial cleanup, not a claim that the migrated quest data is executable or production ready.
+
+## Verified deletion — levels 30–45
+
+Four reconciled source files were deleted after confirming Q063–Q079 (17 quests) and Q080–Q103 (24 quests) coverage, redirecting their earlier active links and preserving relevant narrative, encounter and QA constraints in [Q063–Q079 migration](Human_Q063_Q079_Legacy_Pack_Migration.md) and [Q080–Q103 migration](Human_Q080_Q103_Legacy_Pack_Migration.md). Git history retains originals. **9 of 17** legacy pack/brief files removed; **8 remain**. Editorial migration does not certify executable Rust content.
