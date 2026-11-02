@@ -213,4 +213,4 @@ Travel should advance character relationships, cultural understanding and meanin
 
 **Corven Vaelmont** is Covenant's hereditary **High Ruler**, from a separate branch of the human royal dynasty and a distant relation of Aldren. He governs the four-sovereign alliance from its multicultural coastal capital, not the human inland capital. A capable negotiator, he balances human, dwarven, Aelari and Korrath obligations. His caution may delay action. He becomes important in the alliance's overseas war, Shroud expedition and response to the Anchor network. His stronger support for the original peace negotiations than Aldren's remains a possible relationship detail, not a fixed event.
 
-These three character names, roles, histories and broad arcs are creator-approved. Exact quest staging, the royal family's other members and succession arrangements remain open.
+These seven character names, roles, histories and broad arcs are creator-approved. Exact quest staging, the royal family's other members and succession arrangements remain open.
