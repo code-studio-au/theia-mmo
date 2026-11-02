@@ -293,6 +293,10 @@ The original 92 principal quests and 24 optional local quests remain preserved i
 
 The 1–80 progression prototype remains a **numeric XP/playtime hypothesis only**. Its original chapter plot descriptions are not authoritative when they conflict with this document. Retune XP and optional quest pools against this updated chapter structure; do not imply the 184 editorial entries are the approved 163 main-story step budget. All quest mechanics and regional content expansion remain to be validated.
 
+## Production authoring companion
+
+The [Human 1–80 Production Quest Specification](Human_1_80_Production_Quest_Specification.md) contains per-quest NPC contacts, narrower locations, objectives, stable editorial completion flags, and implementation acceptance rules. It is subordinate to this canonical campaign and does not supersede the locked plot. Its remaining implementation checklist must be completed before claiming production readiness.
+
 ## Implementation backlog
 
 1. Split this editorial register into main and optional tracks with individual NPC contacts, prerequisites, start/turn-in positions and travel requirements.
