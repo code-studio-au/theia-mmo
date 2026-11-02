@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "status": "all_original_h_series_triaged_not_approved",
+  "status": "all_original_116_quests_triaged_unapproved",
   "source_register": "docs/story/THEIA_HUMAN_QUEST_REGISTER.md",
   "canonical": "Human_1_80_Canonical_Campaign.md",
   "warnings": [
@@ -9,7 +9,8 @@
     "Current minLevel values are planning annotations, not approved runtime eligibility.",
     "Original optional quest identifiers outside the H-series table require separate reconciliation.",
     "All 24 HS-series original optional quests are now preserved as structured provenance; none is silently equated with a current optional quest.",
-    "28 unmatched H-series quests now have candidate dispositions; all remain unapproved and original source facts preserved."
+    "28 unmatched H-series quests now have candidate dispositions; all remain unapproved and original source facts preserved.",
+    "24 optional HS-series quests have thematic candidates only; several map to a single Q and may represent omitted standalone content."
   ],
   "legacy_quest_rows": [
     {
@@ -3774,8 +3775,13 @@
       "original_quest_and_outcome": "**Seed Before Tax:** count protected seed and household stores, correct a duplicate levy and resolve a village dispute. No cult explanation.",
       "original_access_note": "Standalone",
       "candidate_campaign_refs": [],
-      "status": "unmapped_requires_review",
-      "runtime_id": null
+      "status": "thematic_candidate_only_needs_manual_review",
+      "runtime_id": null,
+      "proposed_campaign_refs": [
+        "Q006"
+      ],
+      "proposed_relation": "possible_rewrite_or_unretained_optional",
+      "notes": "Thematic overlap only; do not treat as equivalent or assign the original editorial ID without checking source objective, contact, access and outcome."
     },
     {
       "editorial_id": "HS-02",
@@ -3783,8 +3789,13 @@
       "original_quest_and_outcome": "**Iron for Ordinary Hands:** obtain safely salvageable stock and choose which public tools to repair first; both needs are eventually met.",
       "original_access_note": "Standalone",
       "candidate_campaign_refs": [],
-      "status": "unmapped_requires_review",
-      "runtime_id": null
+      "status": "thematic_candidate_only_needs_manual_review",
+      "runtime_id": null,
+      "proposed_campaign_refs": [
+        "Q007"
+      ],
+      "proposed_relation": "possible_rewrite_or_unretained_optional",
+      "notes": "Thematic overlap only; do not treat as equivalent or assign the original editorial ID without checking source objective, contact, access and outcome."
     },
     {
       "editorial_id": "HS-03",
@@ -3792,8 +3803,13 @@
       "original_quest_and_outcome": "**Room at the Reed:** help settle a displaced family and a returning worker without treating a missing fee as criminal hostility.",
       "original_access_note": "Standalone",
       "candidate_campaign_refs": [],
-      "status": "unmapped_requires_review",
-      "runtime_id": null
+      "status": "thematic_candidate_only_needs_manual_review",
+      "runtime_id": null,
+      "proposed_campaign_refs": [
+        "Q032"
+      ],
+      "proposed_relation": "possible_rewrite_or_unretained_optional",
+      "notes": "Thematic overlap only; do not treat as equivalent or assign the original editorial ID without checking source objective, contact, access and outcome."
     },
     {
       "editorial_id": "HS-04",
@@ -3801,8 +3817,13 @@
       "original_quest_and_outcome": "**The Old Wardstone:** map a warning pattern, secure a hazardous approach and lodge a cautious scholarly interpretation. Oren remains an ordinary scholar.",
       "original_access_note": "Standalone",
       "candidate_campaign_refs": [],
-      "status": "unmapped_requires_review",
-      "runtime_id": null
+      "status": "thematic_candidate_only_needs_manual_review",
+      "runtime_id": null,
+      "proposed_campaign_refs": [
+        "Q055"
+      ],
+      "proposed_relation": "possible_rewrite_or_unretained_optional",
+      "notes": "Thematic overlap only; do not treat as equivalent or assign the original editorial ID without checking source objective, contact, access and outcome."
     },
     {
       "editorial_id": "HS-05",
@@ -3810,8 +3831,13 @@
       "original_quest_and_outcome": "**The Mill's Due:** compare water-use allocations and grain weights; resolve a milling dispute through a witnessed agreement.",
       "original_access_note": "Standalone",
       "candidate_campaign_refs": [],
-      "status": "unmapped_requires_review",
-      "runtime_id": null
+      "status": "thematic_candidate_only_needs_manual_review",
+      "runtime_id": null,
+      "proposed_campaign_refs": [
+        "Q015"
+      ],
+      "proposed_relation": "possible_rewrite_or_unretained_optional",
+      "notes": "Thematic overlap only; do not treat as equivalent or assign the original editorial ID without checking source objective, contact, access and outcome."
     },
     {
       "editorial_id": "HS-06",
@@ -3819,8 +3845,13 @@
       "original_quest_and_outcome": "**Below the Workface:** recover survey tools, rescue quarry workers and retreat from native cave threats. Optional elite mode adds loot only.",
       "original_access_note": "Standalone",
       "candidate_campaign_refs": [],
-      "status": "unmapped_requires_review",
-      "runtime_id": null
+      "status": "thematic_candidate_only_needs_manual_review",
+      "runtime_id": null,
+      "proposed_campaign_refs": [
+        "Q014"
+      ],
+      "proposed_relation": "possible_rewrite_or_unretained_optional",
+      "notes": "Thematic overlap only; do not treat as equivalent or assign the original editorial ID without checking source objective, contact, access and outcome."
     },
     {
       "editorial_id": "HS-07",
@@ -3828,8 +3859,13 @@
       "original_quest_and_outcome": "**The Unmarked Shift:** find a missing maintenance team's last route and recover its equipment after rescuing survivors.",
       "original_access_note": "Standalone",
       "candidate_campaign_refs": [],
-      "status": "unmapped_requires_review",
-      "runtime_id": null
+      "status": "thematic_candidate_only_needs_manual_review",
+      "runtime_id": null,
+      "proposed_campaign_refs": [
+        "Q051"
+      ],
+      "proposed_relation": "possible_rewrite_or_unretained_optional",
+      "notes": "Thematic overlap only; do not treat as equivalent or assign the original editorial ID without checking source objective, contact, access and outcome."
     },
     {
       "editorial_id": "HS-08",
@@ -3837,8 +3873,13 @@
       "original_quest_and_outcome": "**A Hold's Word:** document a contractor's unpaid work and broker an accountable settlement under hold law.",
       "original_access_note": "Standalone",
       "candidate_campaign_refs": [],
-      "status": "unmapped_requires_review",
-      "runtime_id": null
+      "status": "thematic_candidate_only_needs_manual_review",
+      "runtime_id": null,
+      "proposed_campaign_refs": [
+        "Q052"
+      ],
+      "proposed_relation": "possible_rewrite_or_unretained_optional",
+      "notes": "Thematic overlap only; do not treat as equivalent or assign the original editorial ID without checking source objective, contact, access and outcome."
     },
     {
       "editorial_id": "HS-09",
@@ -3846,8 +3887,13 @@
       "original_quest_and_outcome": "**Tools That Last:** gather ordinary materials and complete a repair demonstration; introduce craft services without locking recipes behind story.",
       "original_access_note": "Standalone",
       "candidate_campaign_refs": [],
-      "status": "unmapped_requires_review",
-      "runtime_id": null
+      "status": "thematic_candidate_only_needs_manual_review",
+      "runtime_id": null,
+      "proposed_campaign_refs": [
+        "Q007"
+      ],
+      "proposed_relation": "possible_rewrite_or_unretained_optional",
+      "notes": "Thematic overlap only; do not treat as equivalent or assign the original editorial ID without checking source objective, contact, access and outcome."
     },
     {
       "editorial_id": "HS-10",
@@ -3855,8 +3901,13 @@
       "original_quest_and_outcome": "**A Space to Grow:** protect a nursery from mundane damage and repair its marked boundaries.",
       "original_access_note": "Standalone",
       "candidate_campaign_refs": [],
-      "status": "unmapped_requires_review",
-      "runtime_id": null
+      "status": "thematic_candidate_only_needs_manual_review",
+      "runtime_id": null,
+      "proposed_campaign_refs": [
+        "Q055"
+      ],
+      "proposed_relation": "possible_rewrite_or_unretained_optional",
+      "notes": "Thematic overlap only; do not treat as equivalent or assign the original editorial ID without checking source objective, contact, access and outcome."
     },
     {
       "editorial_id": "HS-11",
@@ -3864,8 +3915,13 @@
       "original_quest_and_outcome": "**A Hunter's Error:** track an injured predator and correct an unsafe hunting practice; choose containment or necessary combat.",
       "original_access_note": "Standalone",
       "candidate_campaign_refs": [],
-      "status": "unmapped_requires_review",
-      "runtime_id": null
+      "status": "thematic_candidate_only_needs_manual_review",
+      "runtime_id": null,
+      "proposed_campaign_refs": [
+        "Q055"
+      ],
+      "proposed_relation": "possible_rewrite_or_unretained_optional",
+      "notes": "Thematic overlap only; do not treat as equivalent or assign the original editorial ID without checking source objective, contact, access and outcome."
     },
     {
       "editorial_id": "HS-12",
@@ -3873,8 +3929,13 @@
       "original_quest_and_outcome": "**Two Accounts, One Copy:** annotate conflicting nondefinitive historical copies; preserve disagreement instead of selecting the elven schism's true cause.",
       "original_access_note": "Standalone",
       "candidate_campaign_refs": [],
-      "status": "unmapped_requires_review",
-      "runtime_id": null
+      "status": "thematic_candidate_only_needs_manual_review",
+      "runtime_id": null,
+      "proposed_campaign_refs": [
+        "Q101"
+      ],
+      "proposed_relation": "possible_rewrite_or_unretained_optional",
+      "notes": "Thematic overlap only; do not treat as equivalent or assign the original editorial ID without checking source objective, contact, access and outcome."
     },
     {
       "editorial_id": "HS-13",
@@ -3882,8 +3943,13 @@
       "original_quest_and_outcome": "**A Name Kept Correctly:** restore a damaged civic memorial using family and archive records, with no hidden bloodline revelation.",
       "original_access_note": "Standalone",
       "candidate_campaign_refs": [],
-      "status": "unmapped_requires_review",
-      "runtime_id": null
+      "status": "thematic_candidate_only_needs_manual_review",
+      "runtime_id": null,
+      "proposed_campaign_refs": [
+        "Q063"
+      ],
+      "proposed_relation": "possible_rewrite_or_unretained_optional",
+      "notes": "Thematic overlap only; do not treat as equivalent or assign the original editorial ID without checking source objective, contact, access and outcome."
     },
     {
       "editorial_id": "HS-14",
@@ -3891,8 +3957,13 @@
       "original_quest_and_outcome": "**A Safe Step:** map an exposed highland route and recover a stranded survey party.",
       "original_access_note": "Standalone",
       "candidate_campaign_refs": [],
-      "status": "unmapped_requires_review",
-      "runtime_id": null
+      "status": "thematic_candidate_only_needs_manual_review",
+      "runtime_id": null,
+      "proposed_campaign_refs": [
+        "Q064"
+      ],
+      "proposed_relation": "possible_rewrite_or_unretained_optional",
+      "notes": "Thematic overlap only; do not treat as equivalent or assign the original editorial ID without checking source objective, contact, access and outcome."
     },
     {
       "editorial_id": "HS-15",
@@ -3900,8 +3971,13 @@
       "original_quest_and_outcome": "**Winter's Reserve:** protect existing fuel stores and repair tools before the weather changes.",
       "original_access_note": "Standalone",
       "candidate_campaign_refs": [],
-      "status": "unmapped_requires_review",
-      "runtime_id": null
+      "status": "thematic_candidate_only_needs_manual_review",
+      "runtime_id": null,
+      "proposed_campaign_refs": [
+        "Q063"
+      ],
+      "proposed_relation": "possible_rewrite_or_unretained_optional",
+      "notes": "Thematic overlap only; do not treat as equivalent or assign the original editorial ID without checking source objective, contact, access and outcome."
     },
     {
       "editorial_id": "HS-16",
@@ -3909,8 +3985,13 @@
       "original_quest_and_outcome": "**The Missing Berth:** resolve an honest arrival-schedule error and rescue stranded cargo; no additional infiltrator.",
       "original_access_note": "Standalone",
       "candidate_campaign_refs": [],
-      "status": "unmapped_requires_review",
-      "runtime_id": null
+      "status": "thematic_candidate_only_needs_manual_review",
+      "runtime_id": null,
+      "proposed_campaign_refs": [
+        "Q037"
+      ],
+      "proposed_relation": "possible_rewrite_or_unretained_optional",
+      "notes": "Thematic overlap only; do not treat as equivalent or assign the original editorial ID without checking source objective, contact, access and outcome."
     },
     {
       "editorial_id": "HS-17",
@@ -3918,8 +3999,13 @@
       "original_quest_and_outcome": "**A Defensible Line:** complete NPC fort-maintenance and supply tasks; optional contested-world equivalents offer parallel credit.",
       "original_access_note": "Standalone",
       "candidate_campaign_refs": [],
-      "status": "unmapped_requires_review",
-      "runtime_id": null
+      "status": "thematic_candidate_only_needs_manual_review",
+      "runtime_id": null,
+      "proposed_campaign_refs": [
+        "Q046"
+      ],
+      "proposed_relation": "possible_rewrite_or_unretained_optional",
+      "notes": "Thematic overlap only; do not treat as equivalent or assign the original editorial ID without checking source objective, contact, access and outcome."
     },
     {
       "editorial_id": "HS-18",
@@ -3927,8 +4013,13 @@
       "original_quest_and_outcome": "**What We Bring Back:** recover identification and belongings from a military skirmish site, returning them to Covenant families through the garrison.",
       "original_access_note": "After HS-17",
       "candidate_campaign_refs": [],
-      "status": "unmapped_requires_review",
-      "runtime_id": null
+      "status": "thematic_candidate_only_needs_manual_review",
+      "runtime_id": null,
+      "proposed_campaign_refs": [
+        "Q046"
+      ],
+      "proposed_relation": "possible_rewrite_or_unretained_optional",
+      "notes": "Thematic overlap only; do not treat as equivalent or assign the original editorial ID without checking source objective, contact, access and outcome."
     },
     {
       "editorial_id": "HS-19",
@@ -3936,8 +4027,13 @@
       "original_quest_and_outcome": "**The Gate's Share:** secure limited repair materials under the enclave agreement; no new throughput miracle.",
       "original_access_note": "Story arrival or equivalent independent access",
       "candidate_campaign_refs": [],
-      "status": "unmapped_requires_review",
-      "runtime_id": null
+      "status": "thematic_candidate_only_needs_manual_review",
+      "runtime_id": null,
+      "proposed_campaign_refs": [
+        "Q088"
+      ],
+      "proposed_relation": "possible_rewrite_or_unretained_optional",
+      "notes": "Thematic overlap only; do not treat as equivalent or assign the original editorial ID without checking source objective, contact, access and outcome."
     },
     {
       "editorial_id": "HS-20",
@@ -3945,8 +4041,13 @@
       "original_quest_and_outcome": "**A Copyist's Work:** recover ordinary household records from an exposed store, showing Kel'vari civilian life.",
       "original_access_note": "Story arrival or equivalent independent access",
       "candidate_campaign_refs": [],
-      "status": "unmapped_requires_review",
-      "runtime_id": null
+      "status": "thematic_candidate_only_needs_manual_review",
+      "runtime_id": null,
+      "proposed_campaign_refs": [
+        "Q093"
+      ],
+      "proposed_relation": "possible_rewrite_or_unretained_optional",
+      "notes": "Thematic overlap only; do not treat as equivalent or assign the original editorial ID without checking source objective, contact, access and outcome."
     },
     {
       "editorial_id": "HS-21",
@@ -3954,8 +4055,13 @@
       "original_quest_and_outcome": "**Beyond the Wards:** recover cultivation instruments and protect a field team; no demand that the enclave surrender its knowledge.",
       "original_access_note": "Story arrival or equivalent independent access",
       "candidate_campaign_refs": [],
-      "status": "unmapped_requires_review",
-      "runtime_id": null
+      "status": "thematic_candidate_only_needs_manual_review",
+      "runtime_id": null,
+      "proposed_campaign_refs": [
+        "Q087"
+      ],
+      "proposed_relation": "possible_rewrite_or_unretained_optional",
+      "notes": "Thematic overlap only; do not treat as equivalent or assign the original editorial ID without checking source objective, contact, access and outcome."
     },
     {
       "editorial_id": "HS-22",
@@ -3963,8 +4069,13 @@
       "original_quest_and_outcome": "**A Better Limit:** test a newly effective healing technique with consent and conservative reserve limits; lodge the result without promising universal cures.",
       "original_access_note": "After HS-03 or local healer introduction",
       "candidate_campaign_refs": [],
-      "status": "unmapped_requires_review",
-      "runtime_id": null
+      "status": "thematic_candidate_only_needs_manual_review",
+      "runtime_id": null,
+      "proposed_campaign_refs": [
+        "Q008"
+      ],
+      "proposed_relation": "possible_rewrite_or_unretained_optional",
+      "notes": "Thematic overlap only; do not treat as equivalent or assign the original editorial ID without checking source objective, contact, access and outcome."
     },
     {
       "editorial_id": "HS-23",
@@ -3972,8 +4083,13 @@
       "original_quest_and_outcome": "**The Longer Road:** help a caravan prepare its first expanded allied route; service deputies stay available.",
       "original_access_note": "After HS-05",
       "candidate_campaign_refs": [],
-      "status": "unmapped_requires_review",
-      "runtime_id": null
+      "status": "thematic_candidate_only_needs_manual_review",
+      "runtime_id": null,
+      "proposed_campaign_refs": [
+        "Q017"
+      ],
+      "proposed_relation": "possible_rewrite_or_unretained_optional",
+      "notes": "Thematic overlap only; do not treat as equivalent or assign the original editorial ID without checking source objective, contact, access and outcome."
     },
     {
       "editorial_id": "HS-24",
@@ -3981,8 +4097,13 @@
       "original_quest_and_outcome": "**A Recruit's First Lesson:** assist a new patrol's preparation and help it finish a safe local circuit. Darian's growth resolves in service.",
       "original_access_note": "H5-20; optional epilogue",
       "candidate_campaign_refs": [],
-      "status": "unmapped_requires_review",
-      "runtime_id": null
+      "status": "thematic_candidate_only_needs_manual_review",
+      "runtime_id": null,
+      "proposed_campaign_refs": [
+        "Q033"
+      ],
+      "proposed_relation": "possible_rewrite_or_unretained_optional",
+      "notes": "Thematic overlap only; do not treat as equivalent or assign the original editorial ID without checking source objective, contact, access and outcome."
     }
   ],
   "source_status": "original H/HS source preserved in this crosswalk; no superseded story decision is authoritative"
