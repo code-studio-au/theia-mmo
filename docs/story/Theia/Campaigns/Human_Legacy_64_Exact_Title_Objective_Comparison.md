@@ -450,3 +450,15 @@
 - **Contact:** historical Elara / home cast; current Elara
 - **Decision:** compare dialogue, objective evidence and story consequences; no automatic mapping approval.
 
+
+## Prerequisite and objective review — first five additional H-series candidates (2 November 2026)
+
+| Legacy → current | Source prerequisite → current prerequisite | Objective correspondence and unresolved specificity |
+|---|---|---|
+| H1-02 → Q002 | H1-01 → Q001 | Both inspect predator signs, find/protect the delayed worker and report route conditions; current stages avoid a generic kill-count requirement. |
+| H1-03 → Q003 | H1-02 → Q002 | Both recover and deliver the medical parcel; current adds witnessing treatment. Verify the original safe-roadside-store location in location/dialogue notes. |
+| H1-04 → Q004 | H1-03 → Q003 | Both trace the caravan stop, examine wagon and find the survivor; current adds explicit reporting. Verify survivor is the historical teamster. |
+| H1-05 → Q009 | H1-04 → Q004 | Both cover Iven Rusk's camp, selected cargo, buyer instructions and royal seal. Current copies seal evidence; verify damaged original-document handling and disruption consequence. |
+| H1-06 → Q010 | H1-05 → Q009 | Both compare the fitting to workshop stock; current records findings. Verify the original document is retained and the need for external authentication is conveyed in dialogue. |
+
+**Status:** five strong structural/prerequisite candidates, not approved equivalences. The original contacts match the current manifest. No runtime IDs, quest stages, level gates or canon outcomes were changed.
