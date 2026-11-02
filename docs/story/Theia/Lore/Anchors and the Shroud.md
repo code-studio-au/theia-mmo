@@ -1,16 +1,16 @@
 ---
 type: topic
-source: "[[Sources/THEIA_WORLD_BIBLE]]"
+source: "../Sources/THEIA_WORLD_BIBLE.md"
 ---
 # Anchors and the Shroud
 
 Read these section labels together with later dated amendments in [[Sources/THEIA_WORLD_BIBLE|World Bible]].
 
-![[Sources/THEIA_WORLD_BIBLE#Anchor taxonomy and player destruction rules [LOCKED · 2026-10-12]]]
+[Read historical source section](../Sources/THEIA_WORLD_BIBLE.md)
 
-![[Sources/THEIA_WORLD_BIBLE#The ancient Passage gates after The Binding [LOCKED · 2026-10-12]]]
+[Read historical source section](../Sources/THEIA_WORLD_BIBLE.md)
 
-![[Sources/THEIA_WORLD_BIBLE#The Shroud's interior and The Unmade's epicentre [USER CLARIFICATION · 2026-10-12]]]
+[Read historical source section](../Sources/THEIA_WORLD_BIBLE.md)
 
 [[Lore and World]] · [[Chronicles and History]] · [[Welcome|Home]]
 
