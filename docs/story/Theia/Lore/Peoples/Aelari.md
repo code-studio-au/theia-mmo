@@ -1,7 +1,7 @@
 ---
 type: people
 canon_status: confirmed-foundation; details-open
-source: "../../Sources/THEIA_WORLD_BIBLE.md"
+source: "../../../../THEIA_WORLD_BIBLE.md"
 up: "[[Peoples and Allegiances]]"
 ---
 # Aelari
@@ -16,7 +16,7 @@ Guardian-created elves, Guardian-worshipping; woodland monarchy, postwar primeva
 - [[Caelith Rowan]] · [[Irielle Mossward]] — additional campaign cast; see their notes for approval scope.
 
 ## Broader context
-[Read historical source section](../../Sources/THEIA_WORLD_BIBLE.md)
+[Read historical source section](../../../../THEIA_WORLD_BIBLE.md)
 
 [[Magic]] · [[The Seven Gods]]
 
