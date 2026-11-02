@@ -495,3 +495,15 @@
 | H1-18 → Q031 | H1-17 → Q030. Both confirm lawful custody, grant continuing commission and return to Millhaven. | Strong structural candidate; verify removal-from-office consequence and that the outcome does not absolve Dominion. |
 
 The draft crosswalk has H1-01 through H1-18 for this act; no H1-19 or H1-20 rows were found. Do not invent missing legacy IDs. Both candidates remain unapproved; no quest definitions or runtime IDs were changed.
+
+## Act II opening — H2-01 to H2-05 (2 November 2026)
+
+| Legacy → current | Dependency comparison | Outcome and remaining detail |
+|---|---|---|
+| H2-01 → Q035 | H1-18 → Q031 | Tidehold customs, sealed shipping reference and authorized inquiry correspond. Confirm customs case registration in dialogue. |
+| H2-02 → Q036 | H2-01 → Q035 | Corven briefing, distinction between royal and alliance jurisdiction, and limited inspection authority correspond. |
+| H2-03 → Q037 | H2-02 → Q036 | Provision depot, cargo/manifest comparison and false requisition correspond; verify exposed-goods recovery is separately represented. |
+| H2-04 → Q049 | H2-03 → Q037 **does not directly match** Q049's Q047 prerequisite. | The modern campaign has intervening investigations before Kar Durn; retain Q038–Q048 continuity and do not force the old direct edge. Current contract, travel, Brynja and altered component order correspond. |
+| H2-05 → Q050 | H2-04 → Q049 | Original drawing, substituted specification and engineer exoneration correspond; historical hold permission to recover a measuring assembly is not explicit in current stages and needs review. |
+
+**Status:** candidate objective correspondences, not approved mappings. H2-04 is a changed progression edge. Do not alter canonical prerequisites, invent permission stages or assign runtime IDs without further review.
