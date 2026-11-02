@@ -40,4 +40,4 @@
 
 ## Prototype scope
 
-The companion [Quest Runtime Prototype](Human_Quest_Runtime_Prototype.js) and [Tests](Human_Quest_Runtime_Prototype.test.js) demonstrate availability, ordered credit, retry, idempotent completion and basic AI chase/attack/leash logic. They intentionally omit engine positions, real networking, persistence, world geometry, XP and combat balance. Use them as design tests, not production server code.
+The obsolete JavaScript illustration and tests have been deleted. Implement and test the lifecycle in the existing Rust quest foundation; this document is a design contract, not an implementation proof.
