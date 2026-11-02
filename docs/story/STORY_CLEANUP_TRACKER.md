@@ -145,3 +145,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 
 - [x] Replaced `Theia/Editorial/Source Reading Maps.md` obsolete Obsidian wiki-link index with a historical redirect to current 1–80 campaign, canonical story, story index and editorial status (commit `396457b3`).
 - [ ] Individual historical reading maps still require unique-annotation and incoming-link review before removal. Do not use their old 1–60 quest claims as active canon.
+
+## Historical reading-map link check — 2 November 2026
+
+- [x] Fixed `Reading Map - THEIA_HUMAN_QUEST_REGISTER.md` link to root historical register (was `../../../../`, now `../../../`; commit `015daa7b`).
+- [x] Verified canonical root links in Chronicle, Detailed Lore Archive and Canon Reconciliation Report reading-map redirects use `../../../` from `Theia/Editorial/Reading Maps/`.
+- [ ] Broader remaining reading-map link audit still needed; do not treat individual checks as full repository-wide validation.
