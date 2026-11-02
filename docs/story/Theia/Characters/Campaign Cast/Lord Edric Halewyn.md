@@ -1,7 +1,7 @@
 ---
 type: character
 canon_status: approved-role; proposed-development
-source: "[[Sources/THEIA_HUMAN_CAST_AND_PLACES]]"
+source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
 up: "[[Characters]]"
 ---
 # Lord Edric Halewyn
@@ -18,6 +18,6 @@ Present through correspondence, habits of inquiry and memories that show both wa
 ## Proposed launch ending — Needs Review
 His legacy changes institutional practice; never resurrected or used as an infallible magical oracle
 
-Source: [[Sources/THEIA_HUMAN_CAST_AND_PLACES#Approved recurring humans: complete launch movements|Approved recurring humans: complete launch movements]].
+Source: [Approved recurring humans: complete launch movements](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
 [[Characters]] · [[Human Campaign]]

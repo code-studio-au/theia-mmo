@@ -1,7 +1,7 @@
 ---
 type: character
 canon_status: Needs Review
-source: "[[Sources/THEIA_HUMAN_CAST_AND_PLACES]]"
+source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
 up: "[[Characters]]"
 ---
 # Leth'ari
@@ -15,7 +15,7 @@ New Kel'vari cultivation specialist associated with Oru'sava
 ## Motivation, limitations and proposed outcome
 Optional contact met at an authorised outer station; their livelihood shows ordinary work, not a new magical superior caste. No full Oru'sava tour is required.
 
-Source: [[Sources/THEIA_HUMAN_CAST_AND_PLACES#Allied and Kel'vari cast|Allied and Kel'vari cast]].
+Source: [Allied and Kel'vari cast](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
 [[Characters]] · [[Human Campaign]]
 
