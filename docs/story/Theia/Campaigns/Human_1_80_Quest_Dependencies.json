@@ -1,6 +1,6 @@
 {
-  "schemaVersion": 1,
-  "status": "needs_review",
+  "schemaVersion": 2,
+  "status": "needs_review_classification_v2",
   "quests": [
     {
       "id": 1,
@@ -741,16 +741,15 @@
       "location": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
       "contact": "Nessa / Garrick",
       "objective": "Support an NPC defensive action or equivalent instanced task; report the hidden operation separately from the continuing Dominion attack.",
-      "type": "main_story",
+      "type": "regional_optional",
       "minLevel": 20,
-      "prerequisites": [
-        "HUMAN_Q045_DONE"
-      ],
+      "prerequisites": [],
       "completionFlag": "HUMAN_Q046_DONE",
       "rewardXP": null,
       "mapId": null,
       "npcId": null,
-      "encounterId": null
+      "encounterId": null,
+      "classificationNote": "Northwatch defense is regional war content; do not require for the Resonator investigation"
     },
     {
       "id": 47,
@@ -761,7 +760,7 @@
       "type": "main_story",
       "minLevel": 20,
       "prerequisites": [
-        "HUMAN_Q046_DONE"
+        "HUMAN_Q045_DONE"
       ],
       "completionFlag": "HUMAN_Q047_DONE",
       "rewardXP": null,
@@ -775,16 +774,15 @@
       "location": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
       "contact": "Anwen / Oren",
       "objective": "Return home, document a real healing benefit and make a local ward safe; distinguish the beneficial awakening from deliberate interference.",
-      "type": "main_story",
+      "type": "regional_optional",
       "minLevel": 20,
-      "prerequisites": [
-        "HUMAN_Q047_DONE"
-      ],
+      "prerequisites": [],
       "completionFlag": "HUMAN_Q048_DONE",
       "rewardXP": null,
       "mapId": null,
       "npcId": null,
-      "encounterId": null
+      "encounterId": null,
+      "classificationNote": "Anwen's healing study is a local follow-up; main-story science evidence remains available elsewhere"
     },
     {
       "id": 49,
@@ -795,7 +793,7 @@
       "type": "main_story",
       "minLevel": 25,
       "prerequisites": [
-        "HUMAN_Q048_DONE"
+        "HUMAN_Q047_DONE"
       ],
       "completionFlag": "HUMAN_Q049_DONE",
       "rewardXP": null,
@@ -826,16 +824,15 @@
       "location": "Kar Durn, Sylvaren, hostile Dominion coast, Tidehold",
       "contact": "Rurik",
       "objective": "Restore maintenance access by securing its existing route and returning equipment; document a mundane pressure fault and neglected maintenance.",
-      "type": "main_story",
+      "type": "regional_optional",
       "minLevel": 25,
-      "prerequisites": [
-        "HUMAN_Q050_DONE"
-      ],
+      "prerequisites": [],
       "completionFlag": "HUMAN_Q051_DONE",
       "rewardXP": null,
       "mapId": null,
       "npcId": null,
-      "encounterId": null
+      "encounterId": null,
+      "classificationNote": "Feeder Gallery maintenance can be regional; Brynja's original drawings are obtained in Q050"
     },
     {
       "id": 52,
@@ -846,7 +843,7 @@
       "type": "main_story",
       "minLevel": 25,
       "prerequisites": [
-        "HUMAN_Q051_DONE"
+        "HUMAN_Q050_DONE"
       ],
       "completionFlag": "HUMAN_Q052_DONE",
       "rewardXP": null,
@@ -894,16 +891,15 @@
       "location": "Kar Durn, Sylvaren, hostile Dominion coast, Tidehold",
       "contact": "Caelith",
       "objective": "Rescue workers and secure a woodland maintenance path threatened by local fauna and a neglected branch-ward.",
-      "type": "main_story",
+      "type": "regional_optional",
       "minLevel": 25,
-      "prerequisites": [
-        "HUMAN_Q054_DONE"
-      ],
+      "prerequisites": [],
       "completionFlag": "HUMAN_Q055_DONE",
       "rewardXP": null,
       "mapId": null,
       "npcId": null,
-      "encounterId": null
+      "encounterId": null,
+      "classificationNote": "Nursery rescue is regional; Caelith provides direct research permission"
     },
     {
       "id": 56,
@@ -914,7 +910,7 @@
       "type": "main_story",
       "minLevel": 25,
       "prerequisites": [
-        "HUMAN_Q055_DONE"
+        "HUMAN_Q054_DONE"
       ],
       "completionFlag": "HUMAN_Q056_DONE",
       "rewardXP": null,
@@ -1370,16 +1366,15 @@
       "location": "Drom Kar, hidden Guardian gate, Lantern Redoubt, Kel'vari homeland",
       "contact": "Tarek / Dromak",
       "objective": "Survey the separate low-capacity Passage, test a small-group return path and deliver an expedition proposal to Corven.",
-      "type": "main_story",
+      "type": "regional_optional",
       "minLevel": 35,
-      "prerequisites": [
-        "HUMAN_Q082_DONE"
-      ],
+      "prerequisites": [],
       "completionFlag": "HUMAN_Q083_DONE",
       "rewardXP": null,
       "mapId": null,
       "npcId": null,
-      "encounterId": null
+      "encounterId": null,
+      "classificationNote": "Guardian archive history can be optional after Q082; gate access remains on critical path"
     },
     {
       "id": 84,
@@ -1390,7 +1385,7 @@
       "type": "main_story",
       "minLevel": 35,
       "prerequisites": [
-        "HUMAN_Q083_DONE"
+        "HUMAN_Q082_DONE"
       ],
       "completionFlag": "HUMAN_Q084_DONE",
       "rewardXP": null,
@@ -1438,16 +1433,15 @@
       "location": "Kel'vari settlement",
       "contact": "Aru'ven",
       "objective": "Rescue work party and meet surviving Kel'vari.",
-      "type": "main_story",
+      "type": "regional_optional",
       "minLevel": 35,
-      "prerequisites": [
-        "HUMAN_Q086_DONE"
-      ],
+      "prerequisites": [],
       "completionFlag": "HUMAN_Q087_DONE",
       "rewardXP": null,
       "mapId": null,
       "npcId": null,
-      "encounterId": null
+      "encounterId": null,
+      "classificationNote": "Kel'vari rescue is regional; first living Kel'vari reveal must occur in Q086 or Q089 main story"
     },
     {
       "id": 88,
@@ -1458,13 +1452,14 @@
       "type": "main_story",
       "minLevel": 35,
       "prerequisites": [
-        "HUMAN_Q087_DONE"
+        "HUMAN_Q086_DONE"
       ],
       "completionFlag": "HUMAN_Q088_DONE",
       "rewardXP": null,
       "mapId": null,
       "npcId": null,
-      "encounterId": null
+      "encounterId": null,
+      "classificationNote": "Boundary agreement remains a mandatory dialogue/permission step embedded in Q089, not a separate optional bypass"
     },
     {
       "id": 89,
@@ -1489,16 +1484,15 @@
       "location": "Kel'vari record store",
       "contact": "Sel'ora",
       "objective": "Stabilize damaged warning and preserve copy.",
-      "type": "main_story",
+      "type": "regional_optional",
       "minLevel": 35,
-      "prerequisites": [
-        "HUMAN_Q089_DONE"
-      ],
+      "prerequisites": [],
       "completionFlag": "HUMAN_Q090_DONE",
       "rewardXP": null,
       "mapId": null,
       "npcId": null,
-      "encounterId": null
+      "encounterId": null,
+      "classificationNote": "Warning restoration is regional; main-story Sixth Scholar lead is available in Q091"
     },
     {
       "id": 91,
@@ -1509,7 +1503,7 @@
       "type": "main_story",
       "minLevel": 35,
       "prerequisites": [
-        "HUMAN_Q090_DONE"
+        "HUMAN_Q089_DONE"
       ],
       "completionFlag": "HUMAN_Q091_DONE",
       "rewardXP": null,
@@ -1540,16 +1534,15 @@
       "location": "Oth'irun archive",
       "contact": "Sel'ora",
       "objective": "Secure exposed records and access approval.",
-      "type": "main_story",
+      "type": "regional_optional",
       "minLevel": 40,
-      "prerequisites": [
-        "HUMAN_Q092_DONE"
-      ],
+      "prerequisites": [],
       "completionFlag": "HUMAN_Q093_DONE",
       "rewardXP": null,
       "mapId": null,
       "npcId": null,
-      "encounterId": null
+      "encounterId": null,
+      "classificationNote": "Archive service optional; Q092 permission sufficient for mandatory archive investigation"
     },
     {
       "id": 94,
@@ -1560,7 +1553,7 @@
       "type": "main_story",
       "minLevel": 40,
       "prerequisites": [
-        "HUMAN_Q093_DONE"
+        "HUMAN_Q092_DONE"
       ],
       "completionFlag": "HUMAN_Q094_DONE",
       "rewardXP": null,
@@ -1659,16 +1652,15 @@
       "location": "Oth'irun and Kel'vari archive approaches",
       "contact": "Sera",
       "objective": "Rescue threatened custodians using an authorised route disclosure; preserve enclave security through restricted case access.",
-      "type": "main_story",
+      "type": "regional_optional",
       "minLevel": 40,
-      "prerequisites": [
-        "HUMAN_Q099_DONE"
-      ],
+      "prerequisites": [],
       "completionFlag": "HUMAN_Q100_DONE",
       "rewardXP": null,
       "mapId": null,
       "npcId": null,
-      "encounterId": null
+      "encounterId": null,
+      "classificationNote": "Custodian rescue is regional; critical records protected by independent evidence"
     },
     {
       "id": 101,
@@ -1676,16 +1668,15 @@
       "location": "Oth'irun archive",
       "contact": "Sel'ora",
       "objective": "Compare conflicting historical copies.",
-      "type": "main_story",
+      "type": "regional_optional",
       "minLevel": 40,
-      "prerequisites": [
-        "HUMAN_Q100_DONE"
-      ],
+      "prerequisites": [],
       "completionFlag": "HUMAN_Q101_DONE",
       "rewardXP": null,
       "mapId": null,
       "npcId": null,
-      "encounterId": null
+      "encounterId": null,
+      "classificationNote": "Historical comparison is regional; Delegation evidence begins in Q102"
     },
     {
       "id": 102,
@@ -1696,7 +1687,7 @@
       "type": "main_story",
       "minLevel": 40,
       "prerequisites": [
-        "HUMAN_Q101_DONE"
+        "HUMAN_Q099_DONE"
       ],
       "completionFlag": "HUMAN_Q102_DONE",
       "rewardXP": null,
@@ -2662,16 +2653,15 @@
       "location": "Exposed Kel'vari approaches",
       "contact": "Aru'ven",
       "objective": "Escort displaced residents to shelter.",
-      "type": "main_story",
+      "type": "regional_optional",
       "minLevel": 70,
-      "prerequisites": [
-        "HUMAN_Q158_DONE"
-      ],
+      "prerequisites": [],
       "completionFlag": "HUMAN_Q159_DONE",
       "rewardXP": null,
       "mapId": null,
       "npcId": null,
-      "encounterId": null
+      "encounterId": null,
+      "classificationNote": "Kel'vari refugee escort regional; Shroud dissolution witnessed in Q157"
     },
     {
       "id": 160,
@@ -2682,7 +2672,7 @@
       "type": "main_story",
       "minLevel": 70,
       "prerequisites": [
-        "HUMAN_Q159_DONE"
+        "HUMAN_Q158_DONE"
       ],
       "completionFlag": "HUMAN_Q160_DONE",
       "rewardXP": null,
@@ -2815,16 +2805,15 @@
       "location": "Distributed Anchors, Covenant and Kel'vari regions, Guardian camp",
       "contact": "Caelith",
       "objective": "Measure ecological effects near another installation and mitigate harm.",
-      "type": "main_story",
+      "type": "regional_optional",
       "minLevel": 75,
-      "prerequisites": [
-        "HUMAN_Q167_DONE"
-      ],
+      "prerequisites": [],
       "completionFlag": "HUMAN_Q168_DONE",
       "rewardXP": null,
       "mapId": null,
       "npcId": null,
-      "encounterId": null
+      "encounterId": null,
+      "classificationNote": "Ecological mitigation regional; main readiness includes environmental safety checks"
     },
     {
       "id": 169,
@@ -2832,16 +2821,15 @@
       "location": "Distributed Anchors, Covenant and Kel'vari regions, Guardian camp",
       "contact": "Tarek",
       "objective": "Travel by ship, flight path and overland to check network connections; no unlimited teleportation.",
-      "type": "main_story",
+      "type": "regional_optional",
       "minLevel": 75,
-      "prerequisites": [
-        "HUMAN_Q168_DONE"
-      ],
+      "prerequisites": [],
       "completionFlag": "HUMAN_Q169_DONE",
       "rewardXP": null,
       "mapId": null,
       "npcId": null,
-      "encounterId": null
+      "encounterId": null,
+      "classificationNote": "Transport route verification regional; mandatory convergence access established in Q174"
     },
     {
       "id": 170,
@@ -2852,7 +2840,7 @@
       "type": "main_story",
       "minLevel": 75,
       "prerequisites": [
-        "HUMAN_Q169_DONE"
+        "HUMAN_Q167_DONE"
       ],
       "completionFlag": "HUMAN_Q170_DONE",
       "rewardXP": null,
@@ -3098,5 +3086,6 @@
       "npcId": null,
       "encounterId": null
     }
-  ]
+  ],
+  "classificationPolicy": "Critical plot evidence and permission on main path; independent local adventures optional. Explicit regional access checks to be authored."
 }
