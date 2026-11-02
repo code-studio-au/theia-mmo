@@ -235,3 +235,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Compared H1-17/Q030 and H1-18/Q031; H1-17 is a **modified prerequisite** because current Q029 introduces separate evacuation/evidence preparation before Q030 (commit `535a6d09`). Preserve Q029.
 - [x] Confirmed draft crosswalk has no H1-19 or H1-20 rows; do not invent IDs.
 - [ ] Verify H1-18 removal-from-office and Dominion non-absolution consequences in current dialogue before mapping approval.
+
+## Act II opening reconciliation — 2 November 2026
+
+- [x] Compared H2-01 through H2-05 against Q035/Q036/Q037/Q049/Q050 (commit `e9e8a3a2`).
+- [ ] H2-04's old direct prerequisite H2-03 differs from current Q049 prerequisite Q047; preserve intervening modern investigations.
+- [ ] Review exposed goods, customs registration and H2-05's historical hold permission before approving mappings. No runtime IDs assigned.
