@@ -1,0 +1,1244 @@
+{
+  "schemaVersion": 1,
+  "status": "implementation_data_draft",
+  "canonical": "Human_1_80_Canonical_Campaign.md",
+  "runtimeIntegrated": false,
+  "quests": [
+    {
+      "id": "HUMAN_Q080",
+      "editorialId": 80,
+      "title": "Aftermath of Inversion",
+      "track": "main_story",
+      "minLevel": 35,
+      "prerequisites": [
+        "HUMAN_Q079_DONE"
+      ],
+      "contact": "Sera",
+      "region": "Drom Kar laboratory",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Sera",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_80",
+          "description": "Show the captured Passage records and request explanation",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Sera",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q080_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q081",
+      "editorialId": 81,
+      "title": "The Gate They Kept",
+      "track": "main_story",
+      "minLevel": 35,
+      "prerequisites": [
+        "HUMAN_Q080_DONE"
+      ],
+      "contact": "Sera",
+      "region": "Guardian sanctuary",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "inspect",
+          "targetKey": "omavira_gate_proof",
+          "description": "Present destroyed-gate records",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S02",
+          "kind": "talk",
+          "targetKey": "sera_confrontation",
+          "description": "Confront Sera about Guardian crossings",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "guardian_disclosure",
+          "description": "Record restricted gate disclosure",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        }
+      ],
+      "completionFlag": "HUMAN_Q081_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q082",
+      "editorialId": 82,
+      "title": "The Price of Secrecy",
+      "track": "main_story",
+      "minLevel": 35,
+      "prerequisites": [
+        "HUMAN_Q081_DONE"
+      ],
+      "contact": "Guardian archivist",
+      "region": "Restricted archive",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Guardian archivist",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_82",
+          "description": "Inspect gate maintenance and consent logs",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Guardian archivist",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q082_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q083",
+      "editorialId": 83,
+      "title": "The Route That Never Closed",
+      "track": "regional_optional",
+      "minLevel": 35,
+      "prerequisites": [],
+      "contact": "Tarek / Dromak",
+      "region": "Drom Kar, hidden Guardian gate, Lantern Redoubt, Kel'vari homeland",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Tarek / Dromak",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "interact",
+          "targetKey": "objective_83",
+          "description": "Survey the separate low-capacity Passage, test a small-group return path and deliver an expedition proposal to Corven",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Tarek / Dromak",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q083_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q084",
+      "editorialId": 84,
+      "title": "Permission to Enter",
+      "track": "main_story",
+      "minLevel": 35,
+      "prerequisites": [
+        "HUMAN_Q082_DONE"
+      ],
+      "contact": "Sera / Kel'vari custodian",
+      "region": "Guardian sanctuary",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Sera / Kel'vari custodian",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "interact",
+          "targetKey": "objective_84",
+          "description": "Obtain permission for a small supervised delegation",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Sera / Kel'vari custodian",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q084_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q085",
+      "editorialId": 85,
+      "title": "The Hidden Crossing",
+      "track": "main_story",
+      "minLevel": 35,
+      "prerequisites": [
+        "HUMAN_Q084_DONE"
+      ],
+      "contact": "Tarek",
+      "region": "Restricted Guardian Passage",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "interact",
+          "targetKey": "kelvari_consent",
+          "description": "Confirm custodial permission",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S02",
+          "kind": "travel",
+          "targetKey": "guardian_passage",
+          "description": "Cross the low-capacity Passage",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "redoubt_custodian",
+          "description": "Register at Lantern Redoubt",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        }
+      ],
+      "completionFlag": "HUMAN_Q085_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q086",
+      "editorialId": 86,
+      "title": "Lantern Redoubt",
+      "track": "main_story",
+      "minLevel": 35,
+      "prerequisites": [
+        "HUMAN_Q085_DONE"
+      ],
+      "contact": "Nessa / Aru'ven",
+      "region": "Drom Kar, hidden Guardian gate, Lantern Redoubt, Kel'vari homeland",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "redoubt_custodian",
+          "description": "Meet the long-standing joint outpost custodian",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S02",
+          "kind": "observe",
+          "targetKey": "kelvari_reveal",
+          "description": "Witness the first living Kel'vari reveal",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "aruven",
+          "description": "Confirm restrictions and return route",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        }
+      ],
+      "completionFlag": "HUMAN_Q086_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q087",
+      "editorialId": 87,
+      "title": "Those Who Remained",
+      "track": "regional_optional",
+      "minLevel": 35,
+      "prerequisites": [],
+      "contact": "Aru'ven",
+      "region": "Kel'vari settlement",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Aru'ven",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "defend",
+          "targetKey": "objective_87",
+          "description": "Rescue work party and meet surviving Kel'vari",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "encounter_retry",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Aru'ven",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q087_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q088",
+      "editorialId": 88,
+      "title": "Permission to Remain",
+      "track": "main_story",
+      "minLevel": 35,
+      "prerequisites": [
+        "HUMAN_Q086_DONE"
+      ],
+      "contact": "Aru'ven",
+      "region": "Lantern Redoubt",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Aru'ven",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "interact",
+          "targetKey": "objective_88",
+          "description": "Agree boundaries, supplies and site access",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Aru'ven",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q088_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q089",
+      "editorialId": 89,
+      "title": "The Broken Path",
+      "track": "main_story",
+      "minLevel": 35,
+      "prerequisites": [
+        "HUMAN_Q088_DONE"
+      ],
+      "contact": "Tarek",
+      "region": "Ancient Passage ruins",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Tarek",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "interact",
+          "targetKey": "objective_89",
+          "description": "Recover intrusion traces linked to Oma'vira",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Tarek",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q089_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q090",
+      "editorialId": 90,
+      "title": "A Warning Preserved",
+      "track": "regional_optional",
+      "minLevel": 35,
+      "prerequisites": [],
+      "contact": "Sel'ora",
+      "region": "Kel'vari record store",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Sel'ora",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "interact",
+          "targetKey": "objective_90",
+          "description": "Stabilize damaged warning and preserve copy",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Sel'ora",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q090_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q091",
+      "editorialId": 91,
+      "title": "Questions for the Sixth",
+      "track": "main_story",
+      "minLevel": 35,
+      "prerequisites": [
+        "HUMAN_Q089_DONE"
+      ],
+      "contact": "Sel'ora",
+      "region": "Lantern Redoubt",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Sel'ora",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_91",
+          "description": "Request supervised archive audience",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Sel'ora",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q091_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q092",
+      "editorialId": 92,
+      "title": "The Custodian's Conditions",
+      "track": "main_story",
+      "minLevel": 40,
+      "prerequisites": [
+        "HUMAN_Q091_DONE"
+      ],
+      "contact": "Sel'ora",
+      "region": "Oth'irun and Kel'vari archive approaches",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Sel'ora",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_92",
+          "description": "Meet the archive party at a protected approach, accept access limits and recover its missing copyist",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Sel'ora",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q092_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q093",
+      "editorialId": 93,
+      "title": "An Audience Earned",
+      "track": "regional_optional",
+      "minLevel": 40,
+      "prerequisites": [],
+      "contact": "Sel'ora",
+      "region": "Oth'irun archive",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Sel'ora",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_93",
+          "description": "Secure exposed records and access approval",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Sel'ora",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q093_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q094",
+      "editorialId": 94,
+      "title": "Six Names in the Record",
+      "track": "main_story",
+      "minLevel": 40,
+      "prerequisites": [
+        "HUMAN_Q092_DONE"
+      ],
+      "contact": "Sel'ora / Mara",
+      "region": "Oth'irun and Kel'vari archive approaches",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Sel'ora / Mara",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_94",
+          "description": "Compare the project list, verifier image and distinctive stability sequence; request the Surveyor's explanation",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Sel'ora / Mara",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q094_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q095",
+      "editorialId": 95,
+      "title": "The Scholar Who Remained",
+      "track": "main_story",
+      "minLevel": 40,
+      "prerequisites": [
+        "HUMAN_Q094_DONE"
+      ],
+      "contact": "Leth'ari",
+      "region": "Oth'irun archive",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Leth'ari",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "interact",
+          "targetKey": "objective_95",
+          "description": "Match verifier mark to ancient instruments",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Leth'ari",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q095_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q096",
+      "editorialId": 96,
+      "title": "The Verifier's Mark",
+      "track": "main_story",
+      "minLevel": 40,
+      "prerequisites": [
+        "HUMAN_Q095_DONE"
+      ],
+      "contact": "Leth'ari",
+      "region": "Oth'irun and Kel'vari archive approaches",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Leth'ari",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_96",
+          "description": "Match a project signature with independently preserved instrument records",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Leth'ari",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q096_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q097",
+      "editorialId": 97,
+      "title": "The Last Witness",
+      "track": "main_story",
+      "minLevel": 40,
+      "prerequisites": [
+        "HUMAN_Q096_DONE"
+      ],
+      "contact": "Oth'varen",
+      "region": "Oth'irun and Kel'vari archive approaches",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "inspect",
+          "targetKey": "verifier_record",
+          "description": "Authenticate the Grey Surveyor's ancient mark",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S02",
+          "kind": "talk",
+          "targetKey": "grey_surveyor",
+          "description": "Confront the Surveyor with evidence",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        },
+        {
+          "id": "S03",
+          "kind": "observe",
+          "targetKey": "othvaren_identity",
+          "description": "Hear Oth'varen confirm his identity",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "authored_proposal"
+        }
+      ],
+      "completionFlag": "HUMAN_Q097_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q098",
+      "editorialId": 98,
+      "title": "Echoes Before the Sundering",
+      "track": "main_story",
+      "minLevel": 40,
+      "prerequisites": [
+        "HUMAN_Q097_DONE"
+      ],
+      "contact": "Sel'ora",
+      "region": "Ancient archive",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Sel'ora",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_98",
+          "description": "Reconstruct early interference from original records",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Sel'ora",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q098_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q099",
+      "editorialId": 99,
+      "title": "The Six Reunited",
+      "track": "main_story",
+      "minLevel": 40,
+      "prerequisites": [
+        "HUMAN_Q098_DONE"
+      ],
+      "contact": "Sel'ora",
+      "region": "Historical projection chamber",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Sel'ora",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_99",
+          "description": "Witness six scholars' recorded dispute",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Sel'ora",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q099_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q100",
+      "editorialId": 100,
+      "title": "The Cost of Keeping Quiet",
+      "track": "regional_optional",
+      "minLevel": 40,
+      "prerequisites": [],
+      "contact": "Sera",
+      "region": "Oth'irun and Kel'vari archive approaches",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Sera",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "defend",
+          "targetKey": "objective_100",
+          "description": "Rescue threatened custodians using an authorised route disclosure; preserve enclave security through restricted case access",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "encounter_retry",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Sera",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q100_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q101",
+      "editorialId": 101,
+      "title": "Two Histories",
+      "track": "regional_optional",
+      "minLevel": 40,
+      "prerequisites": [],
+      "contact": "Sel'ora",
+      "region": "Oth'irun archive",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Sel'ora",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_101",
+          "description": "Compare conflicting historical copies",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Sel'ora",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q101_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q102",
+      "editorialId": 102,
+      "title": "The Delegation's Shadow",
+      "track": "main_story",
+      "minLevel": 40,
+      "prerequisites": [
+        "HUMAN_Q099_DONE"
+      ],
+      "contact": "Mara",
+      "region": "Oth'irun archive",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Mara",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_102",
+          "description": "Compare Delegation dates with archival entries",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Mara",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q102_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    },
+    {
+      "id": "HUMAN_Q103",
+      "editorialId": 103,
+      "title": "The Scholar's Request",
+      "track": "main_story",
+      "minLevel": 40,
+      "prerequisites": [
+        "HUMAN_Q102_DONE"
+      ],
+      "contact": "Oth'varen",
+      "region": "Oth'varen's study",
+      "stages": [
+        {
+          "id": "S01",
+          "kind": "talk",
+          "targetKey": "briefing",
+          "description": "Receive assignment from Oth'varen",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S02",
+          "kind": "inspect",
+          "targetKey": "objective_103",
+          "description": "Accept bounded Shattered Delegation investigation",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        },
+        {
+          "id": "S03",
+          "kind": "talk",
+          "targetKey": "turnin",
+          "description": "Confirm result with Oth'varen",
+          "required": true,
+          "creditMode": "per_character",
+          "resetPolicy": "persist_on_logout",
+          "implementationStatus": "generic_placeholder_requires_encounter_authoring"
+        }
+      ],
+      "completionFlag": "HUMAN_Q103_DONE",
+      "repeatable": false,
+      "worldMapId": null,
+      "npcSpawnId": null,
+      "encounterIds": [],
+      "rewardXp": null,
+      "rewardItems": [],
+      "implementationStatus": "blocked_on_world_and_balancing"
+    }
+  ]
+}
