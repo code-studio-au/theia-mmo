@@ -140,3 +140,8 @@ Do not tick work merely because it is planned or described in older reports. Rec
 
 - [x] Corrected stale 'both versions remain' statements in Chronicle, Detailed Lore Archive and Canon Reconciliation Report reading maps (commits `449894fd`, `cd66f46f`, `2f9964e1`). Removed duplicate root links while retaining authoritative root references.
 - [ ] Audit remaining Obsidian reading maps and legacy quest navigation for stale 1–60 claims and broken links; preserve original H/HS ID provenance until crosswalk is approved.
+
+## Obsidian source reading-map index retired — 2 November 2026
+
+- [x] Replaced `Theia/Editorial/Source Reading Maps.md` obsolete Obsidian wiki-link index with a historical redirect to current 1–80 campaign, canonical story, story index and editorial status (commit `396457b3`).
+- [ ] Individual historical reading maps still require unique-annotation and incoming-link review before removal. Do not use their old 1–60 quest claims as active canon.
