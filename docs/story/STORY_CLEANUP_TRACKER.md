@@ -248,3 +248,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Flagged six changed prerequisite edges: H2-06, H2-07, H2-08, H2-16, H2-17, H2-18. Preserve the modern campaign ordering.
 - [ ] Dialogue, consequences, original optional access and evidence details still need review; no historical mappings approved.
 - [ ] Continue H3/H4/H5 and 24 HS optional quest provenance; do not delete original evidence prematurely.
+
+## H3-series triage complete — 2 November 2026
+
+- [x] Compared all 18 H3-series historical objectives, contacts and prerequisite edges with current manifest (commit `9415b095`).
+- [x] Flagged four changed dependency edges: H3-01, H3-02, H3-03 and H3-18; optional content must not be made mandatory by importing old prerequisites.
+- [ ] Dialogue/consequence and unique detail checks remain before mapping approval; continue H4/H5 and HS optional hooks.
