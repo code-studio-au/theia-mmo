@@ -6,17 +6,6 @@
     "authoring": "Human_Rust_Quest_Authoring_Contract.md",
     "provenance": "Human_Quest_Editorial_ID_Crosswalk_Draft.json"
   },
-  "source_files": [
-    "Human_1_10_Quest_Data_Draft.json",
-    "Human_10_20_Quest_Data_Draft.json",
-    "Human_20_30_Quest_Data_Draft.json",
-    "Human_30_35_Quest_Data_Draft.json",
-    "Human_35_45_Quest_Data_Draft.json",
-    "Human_45_55_Quest_Data_Draft.json",
-    "Human_55_70_Quest_Data_Draft.json",
-    "Human_70_80_Quest_Data_Draft.json",
-    "Human_80_Finale_Quest_Data_Draft.json"
-  ],
   "notes": [
     "This is one consolidated working quest inventory, not production Rust definitions.",
     "Runtime IDs and editorial H/HS mapping deliberately unresolved; do not auto-assign.",
@@ -25613,5 +25602,6 @@
         "inventory_and_choice_semantics_require_quest_specific_review"
       ]
     }
-  ]
+  ],
+  "migration_provenance": "Consolidated from nine chapter draft JSON files, verified for 184 quest IDs, stage counts and target aliases; former files deleted from current tree, recoverable in Git history."
 }
