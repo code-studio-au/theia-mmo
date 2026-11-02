@@ -462,3 +462,15 @@
 | H1-06 → Q010 | H1-05 → Q009 | Both compare the fitting to workshop stock; current records findings. Verify the original document is retained and the need for external authentication is conveyed in dialogue. |
 
 **Status:** five strong structural/prerequisite candidates, not approved equivalences. The original contacts match the current manifest. No runtime IDs, quest stages, level gates or canon outcomes were changed.
+
+## Prerequisite and objective review — H1-07 to H1-11 (2 November 2026)
+
+| Legacy → current | Chain alignment | Evidence and outstanding details |
+|---|---|---|
+| H1-07 → Q011 | H1-06 → Q010 | Caravan arrival, crossing and Stoneford warehouse match. The old optional protected-PvE-route travel note is not a required stage; verify route availability separately. |
+| H1-08 → Q012 | H1-07 → Q011 | All three records (stock book, courier docket, warehouse tally) and discrepancy identification explicitly match. |
+| H1-09 → Q013 | H1-08 → Q012 | Payment order, Perrin interview and introduction to Mara match. Verify regional interview authority and transfer-cache context in dialogue. |
+| H1-10 → Q018 | H1-09 → Q013 | Sealed evidence, courier/warehouse authentication and restricted inquiry access match. Verify Valecrown location and court-access framing. |
+| H1-11 → Q019 | H1-10 → Q018 | Authorized register access, dated copy, Delegation chronology and authentication match. Verify record custody and the post-Delegation reorganization interpretation. |
+
+**Status:** five additional strong structural candidates with matching prerequisite chains and contacts. Historical travel options and evidence custody are not automatically approved quest stages. No runtime IDs or quest data were changed.
