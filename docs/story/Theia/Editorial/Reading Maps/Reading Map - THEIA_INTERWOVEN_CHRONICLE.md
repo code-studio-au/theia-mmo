@@ -1,8 +1,7 @@
 # Historical THEIA INTERWOVEN CHRONICLE — Reading Map Redirect
 
-The former Obsidian reading map is retired. Both versions remain because their contents have not yet been proven equivalent.
+The former Obsidian reading map is retired. The imported duplicate has been reconciled and retired; only the authoritative root document remains.
 
-- [Preserved original source](../../../../THEIA_INTERWOVEN_CHRONICLE.md)
 - [Authoritative story document](../../../THEIA_INTERWOVEN_CHRONICLE.md)
 - [Source divergence review](../../Campaigns/Legacy_Source_Mirror_Divergence_Register.md)
 - [Current Human campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
