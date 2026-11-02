@@ -59,3 +59,7 @@ Do not change canonical quest stages or treat matching titles as sufficient evid
 The [Dialogue Continuity Audit](Human_1_80_Dialogue_Continuity_Audit.md) explicitly prohibits exposing Oth'varen's identity in player-facing Q071–Q072 speaker labels before Q097. The [Key Scenes](Human_1_80_Key_Scenes_Branching_Dialogue.md) Q097 reveal includes independently verified signature evidence, the Surveyor's first-person explanation, three player responses (accusation, curiosity, trust), and Sel'ora's warning that his account still requires scrutiny. This corroborates the source H4-07 testimony/cross-check objective and explains the deliberate historical contact mismatch.
 
 **Disposition:** H4-07 → Q097 has strong stage-and-dialogue correspondence, but remains an **unapproved editorial mapping** pending prerequisite/consequence and reviewer checks. H5-09 → Q071 and H5-10 → Q072 retain the spoiler-safe Grey Surveyor alias. Do not replace it with Oth'varen before the reveal.
+
+## Consolidation note — 2 November 2026
+
+The existing [64-entry objective comparison](Human_Legacy_64_Exact_Title_Objective_Comparison.md) already records historical objectives, current stage descriptions, and contacts for all 64 exact-title candidates. Treat it as the full comparison record; the focused checks here add dialogue and continuity evidence only. Do not create another competing quest register or approve mappings based on title matches.
