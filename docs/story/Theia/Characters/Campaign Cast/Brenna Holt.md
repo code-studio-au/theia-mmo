@@ -1,7 +1,7 @@
 ---
 type: character
 canon_status: approved-role; proposed-development
-source: "[[Sources/THEIA_HUMAN_CAST_AND_PLACES]]"
+source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
 up: "[[Characters]]"
 ---
 # Brenna Holt
@@ -18,7 +18,7 @@ Caravan victim becomes reliable witness, then organiser of carefully expanded al
 ## Proposed launch ending — Needs Review
 Resumes ordinary trade, keeps named deputies and gains a sustainable regional connection
 
-Source: [[Sources/THEIA_HUMAN_CAST_AND_PLACES#Approved recurring humans: complete launch movements|Approved recurring humans: complete launch movements]].
+Source: [Approved recurring humans: complete launch movements](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
 [[Characters]] · [[Human Campaign]]
 

@@ -1,7 +1,7 @@
 ---
 type: character
 canon_status: approved-role; proposed-development
-source: "[[Sources/THEIA_HUMAN_CAST_AND_PLACES]]"
+source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
 up: "[[Characters]]"
 ---
 # Darian Cole
@@ -18,7 +18,7 @@ Enthusiasm becomes preparation; serves overseas after training; participates in 
 ## Proposed launch ending — Needs Review
 Helps train the next local recruit and remains a serving rescue soldier with leave at home
 
-Source: [[Sources/THEIA_HUMAN_CAST_AND_PLACES#Approved recurring humans: complete launch movements|Approved recurring humans: complete launch movements]].
+Source: [Approved recurring humans: complete launch movements](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
 [[Characters]] · [[Human Campaign]]
 

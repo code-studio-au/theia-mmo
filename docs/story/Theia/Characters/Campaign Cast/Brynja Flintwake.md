@@ -1,7 +1,7 @@
 ---
 type: character
 canon_status: Needs Review
-source: "[[Sources/THEIA_HUMAN_CAST_AND_PLACES]]"
+source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
 up: "[[Characters]]"
 ---
 # Brynja Flintwake
@@ -15,7 +15,7 @@ New dwarf engineer / workshop lead
 ## Motivation, limitations and proposed outcome
 Defends her craft through original specifications, joins by contract, records limits of inversion. Delegates her home services to Edda.
 
-Source: [[Sources/THEIA_HUMAN_CAST_AND_PLACES#Allied and Kel'vari cast|Allied and Kel'vari cast]].
+Source: [Allied and Kel'vari cast](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
 [[Characters]] · [[Human Campaign]]
 

@@ -1,7 +1,7 @@
 ---
 type: character
 canon_status: Needs Review
-source: "[[Sources/THEIA_HUMAN_CAST_AND_PLACES]]"
+source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
 up: "[[Characters]]"
 ---
 # Caelith Rowan
@@ -15,7 +15,7 @@ New Aelari wardkeeper
 ## Motivation, limitations and proposed outcome
 Protects living systems while accepting responsible inquiry; rejects treating the forest as military material. Becomes a cleared technical observer.
 
-Source: [[Sources/THEIA_HUMAN_CAST_AND_PLACES#Allied and Kel'vari cast|Allied and Kel'vari cast]].
+Source: [Allied and Kel'vari cast](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
 [[Characters]] · [[Human Campaign]]
 
