@@ -486,3 +486,12 @@
 | H1-16 → Q028 | H1-15 → Q027 | Private corroborated case, Aldren's lawful detention order, Cassian's flight and no attack on neutral court NPC match. |
 
 **Status:** five further strong structural candidates with matching contact and prerequisite chains. No mapping approvals, runtime IDs, level gates or quest-stage edits are implied.
+
+## Act I conclusion — H1-17 and H1-18 (2 November 2026)
+
+| Legacy → current | Dependency evidence | Disposition |
+|---|---|---|
+| H1-17 → Q030 | Old H1-16 leads directly to the Hidden Passage dungeon. Current Q030 requires Q029, an additional evacuation/evidence checkpoint after Q028. Solo instance, Sorn, authenticated dispatch and Cassian captured alive match. | **Modified prerequisite chain**, not literal reuse. Preserve Q029; do not remove its separate evidence/evacuation role. |
+| H1-18 → Q031 | H1-17 → Q030. Both confirm lawful custody, grant continuing commission and return to Millhaven. | Strong structural candidate; verify removal-from-office consequence and that the outcome does not absolve Dominion. |
+
+The draft crosswalk has H1-01 through H1-18 for this act; no H1-19 or H1-20 rows were found. Do not invent missing legacy IDs. Both candidates remain unapproved; no quest definitions or runtime IDs were changed.
