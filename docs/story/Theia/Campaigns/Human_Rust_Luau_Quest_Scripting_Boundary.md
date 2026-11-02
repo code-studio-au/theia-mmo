@@ -45,4 +45,4 @@ Rust owns the atomic transition: Khor'vun defeated → Veil destroyed → Bindin
 
 ## Disposition of earlier JavaScript prototype
 
-[Human Quest Runtime Prototype](Human_Quest_Runtime_Prototype.js) and its [tests](Human_Quest_Runtime_Prototype.test.js) are historical **illustrations only**. They do not run the Rust server, cannot prove authoritative persistence, and should not be used as the runtime architecture. Prefer migrating their test intentions into Rust tests against the existing quest foundation rather than building a second quest engine.
+The obsolete JavaScript prototype and tests were removed from the current tree. Their historical versions remain recoverable through Git history. Implement the relevant behavior and tests against the existing Rust foundation instead.
