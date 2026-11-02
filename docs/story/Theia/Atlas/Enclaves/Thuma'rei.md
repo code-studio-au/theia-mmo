@@ -1,7 +1,7 @@
 ---
 type: location
 canon_status: source-specific
-source: "[[Sources/THEIA_WORLD_BIBLE]]"
+source: "../../../Sources/THEIA_WORLD_BIBLE.md"
 up: "[[Atlas]]"
 ---
 # Thuma'rei
@@ -10,7 +10,7 @@ up: "[[Atlas]]"
 
 These are independent Kel'vari enclaves, not a single kingdom or the entire surviving population. The full context and approval boundaries are in the source.
 
-![[Sources/THEIA_WORLD_BIBLE#2026-10-13 creator LOCK — Kel'vari federation and authorised First Anchor project]]
+[Read historical source section](../../../Sources/THEIA_WORLD_BIBLE.md)
 
 [[Kel'vari]]
 
