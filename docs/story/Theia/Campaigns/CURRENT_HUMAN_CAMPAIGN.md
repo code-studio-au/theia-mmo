@@ -43,3 +43,7 @@ The duplicate 184-entry `Human_1_80_Production_Quest_Specification.md` has been 
 5. Validate all references and implement/test against the existing Rust quest foundation.
 
 **Do not call the Human quest content production-ready until these milestones and engine tests pass.**
+
+## Obsidian retirement (in progress)
+
+The creator has discontinued Obsidian. Obsidian-only navigation (`Story Browser.base`, `Quest Index.md`, `Welcome.md`) has been removed. Legacy H/HS per-quest Obsidian notes are being retired; some were deleted, but **the removal is not yet complete or verified**. Do not treat surviving H/HS vault pages or old source-library copies as active quest content. Preserve the 184-quest manifest, canonical narrative, approved dialogue and engine agreement. Before removing source-library duplicates or old H/HS registers, verify original editorial provenance and links.
