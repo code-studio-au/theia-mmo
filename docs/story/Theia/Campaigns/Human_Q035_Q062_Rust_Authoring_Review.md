@@ -117,6 +117,17 @@ No quest is deleted, renumbered or assigned a runtime ID in this review. Level b
 - No standard quest requires Luau by default.
 - Exportable content packs and version migrations must follow Codex's future registry/persistence compatibility contract, not a fixed 32-quest split.
 
+## Consolidated legacy context — 3 November 2026
+
+**ARCHIVED source evidence / WORKING authoring detail.** The [retired migration note](https://github.com/code-studio-au/theia-mmo/blob/eeeeabae9eb4037093f7fd39e60532d722bacd81/docs/story/Theia/Campaigns/Human_Q035_Q062_Legacy_Pack_Migration.md) compared `Human_20_30_Playable_Quest_Pack.md` v0.1 and `Human_20_30_Implementation_Brief.md` v0.2. Both covered the same 28 Q035–Q062 references and introduced no additional quest IDs. The chapter purposes and continuity requirements are retained above; historical location bands remain in the [existing location/lore reference](Human_1_80_Location_and_Lore_Editorial_Reference.md), not another quest inventory.
+
+- The old 20/25 minimum-level assumptions, `HUMAN_Q###_DONE` aliases and generic “accept, inspect two sources, report” templates are not approved gates, runtime identities or replacements for distinct objective evidence.
+- Retain Classic manual target/facing/range and weapon-timed autoattack; solo-accessible story dungeons; no mandatory PvP, class, profession or group requirement. Road, ship and fixed flight paths remain ordinary travel. Exceptional Guardian Passage requires permission and must not be prematurely revealed.
+- Retry proposals reset active encounters while retaining verified evidence, persistent choices and authorized permissions. Q043's sample-preservation choice changes follow-up reactions only, not mandatory story outcome or essential evidence.
+- Do not infer collective Dwarven culpability from substituted plans, or universal infiltration from the three independent Q062 sources.
+- QA still covers ordered journal progress, distinct interaction actions, duplicate rewards, logout/reconnect, travel availability, spawn/leash behavior, dialogue knowledge gates and class-neutral completion. Coordinates, enemy tuning, item consumption, XP/loot, localization and client/World integration remain unresolved.
+- Chapter size does not prescribe one executable catalogue or a fixed development-limit partition. No inspection, travel, defense, object use, choice or escort capability is approved or implemented merely because an old brief describes it.
+
 ## Next pass
 
 Continue with Q063–Q079 (Korrath, Guardian scientific dispute, first inversion, Oma'vira) and check cross-chapter transitions before applying approved revisions to the sole manifest.
