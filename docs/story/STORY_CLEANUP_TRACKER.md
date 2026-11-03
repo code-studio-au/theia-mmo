@@ -303,3 +303,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Replaced obsolete `.base` embed and source-mirror references in `Theia/Lore/Lore and World.md` with root story sources and subject navigation (commit `703c9bb8`).
 - [x] Replaced retired source-mirror wiki-link navigation in `Theia/History/Chronicles and History.md` with Markdown links to surviving history/lore sources (commit `74948ecb`).
 - [ ] Continue auditing other index pages, full link targets, original H/HS dialogue and consequences. The old branch and this tracker remain until complete.
+
+## Recent index target spot-check — 3 November 2026
+
+- [x] Directly fetched all six Conclave/Sixth Scholar character-note targets referenced by `Theia/Characters/Characters.md`: Oth'varen, Vaer'uun, Thes'var, Su'vareth, Oma'vira and Khor'vun all exist on `main`.
+- [x] Removed two directory-only Markdown links in `Theia/Atlas/Atlas.md`, leaving the folder names as plain navigation guidance rather than pretending they are verified file targets (commit `b97a6c94`).
+- [ ] Continue checking every relative link in remaining indexes and documents; six verified character targets do not establish repository-wide link validity.
