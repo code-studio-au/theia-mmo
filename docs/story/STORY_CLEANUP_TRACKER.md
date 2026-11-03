@@ -396,3 +396,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 
 - [x] Directly fetched eight unique destinations referenced by the recent Memory Scenes, editorial and racial index repairs: character index, history index, timelines, Six Reunited, import manifest, story README, current Human campaign and Peoples and Allegiances. **8/8 file targets exist on main**.
 - [ ] File existence does not verify every wiki-link, heading anchor or story claim. Continue the broader audit before retiring the story branch and deleting this tracker.
+
+## Memory-scene character navigation and racial index clarification — 3 November 2026
+
+- [x] Converted all six remaining character wiki-links in `Theia/History/Memory Scenes.md` to direct Markdown paths for previously live-verified Conclave/Sixth Scholar character notes (commit `4e2164d8`).
+- [x] Clarified that the 21 CR/DR labels in `Theia/Campaigns/Connected Racial Stories.md` are noncanonical historical references rather than unverified active quest links; removed duplicate current campaign link (commit `9fad5f39`).
+- [ ] Continue other surviving historical wiki-links and source-content reconciliation; no claim of whole-vault validation.
