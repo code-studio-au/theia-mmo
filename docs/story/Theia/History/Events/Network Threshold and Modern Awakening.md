@@ -19,7 +19,7 @@ Before the start of play, the [Corrupted Conclave](../../Lore/Institutions/The%2
 
 By the opening of [Act I](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md), Minor Resonators, Regional Anchors and functioning Major Anchors are already established. The player discovers and investigates their effects during the main storyline. The Unmade can continue expanding the network after play begins; its original construction and initial threshold are preceding history.
 
-[Shattered Delegation](Shattered%20Delegation.md) also precedes play. Its precise timing relative to this threshold is not fixed. No calendar date or exact interval is supplied.
+[Shattered Delegation](Shattered%20Delegation.md) occurs before Nhal's renewed communication at this threshold. This relative order is **LOCKED** in the [World Bible](../../../THEIA_WORLD_BIBLE.md#2026-10-14-creator-lock--anchor-network-awakening-and-resonance-inversion); the calendar date and exact interval remain OPEN.
 
 Resonance Inversion is a possible response investigated later, not an already completed solution at the opening of play.
 
