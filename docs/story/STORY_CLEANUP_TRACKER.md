@@ -963,3 +963,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Compared all 24 HS historical optional source objectives and proposed modern references against actual current manifest stages. HS-01–HS-12 findings recorded in crosswalk review (commit `39c77cbe`); HS-13–HS-24 findings recorded there (commit `c363cd4e`).
 - [x] Preserved distinctive civilian, exploration, crafting, archive, enclave and epilogue ideas without inventing new canonical quests or equating thematic similarities to approved mappings. Original source access requirements remain historical evidence, not automatic runtime gates.
 - [ ] Continue H-series original objective/dialogue consequence approvals, sidequest idea-bank deduplication, root historical register/backlink audit and final repository verification. All HS mappings remain unapproved.
+
+## Four H-series dialogue-consequence checks — 3 November 2026
+
+- [x] Cross-checked historical H1-15/Q027, H1-16/Q028 and H1-18/Q031 against the current 10–20 dialogue pack. Preserved independently corroborated evidence, lawful court action, live Cassian capture and continuing war; did not assume historical intent allegations are fully proven by dialogue alone.
+- [x] Compared historical H4-15/Q115 Malrec/projection outcome with the current 45–55 dialogue and locked Su'vareth encounter; retained old boss as historical provenance, not a replacement for Su'vareth. Findings appended to focused mapping audit (commit `9ee5f99b`).
+- [ ] Continue remaining H-series dialogue/consequence and location reviews; original 116 mappings remain unapproved. Root historical register and backlink checks still block final retirement.
