@@ -1,6 +1,6 @@
 # Atlas — current navigation
 
-Browse [places and geography](Places/) and [Kel'vari enclaves](Enclaves/) as individual reference notes. The obsolete Obsidian Story Browser embed has been retired; it was not a valid current location index.
+Browse the `Places/` location notes and `Enclaves/` Kel'vari enclave notes as individual reference notes. The obsolete Obsidian Story Browser embed has been retired; it was not a valid current location index.
 
 ## Sources
 
