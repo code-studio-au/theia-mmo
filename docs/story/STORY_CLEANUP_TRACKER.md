@@ -901,3 +901,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Compared all eighteen Q119–Q136 canonical entries with their current working manifest stages and replaced repeated chapter-wide `Objective:` wording with the distinct per-quest stage actions (commit `a39015aa`).
 - [x] Preserved Khor'vun's Anchor-network chain, restricted Redoubt evacuation, partial rather than total relay victory, and Q136's authenticated Vaer'uun lead. No new quest outcomes or runtime mechanics approved.
 - [ ] Continue Q074–Q118 repeated-summary audit, then historical H/HS dialogue/consequence reconciliation and final link/duplicate verification.
+
+## Q104–Q118 delegation and Su'vareth objective pass — 3 November 2026
+
+- [x] Compared Q104–Q118 canonical lines with the consolidated quest manifest; replaced eleven repeated chapter-wide objectives with stage-grounded quest purposes (commit `ce0686ac`). Q112, Q113, Q115 and Q116 already had specific gameplay descriptions and were not overwritten.
+- [ ] **Q115 continuity blocker:** canonical gameplay text still describes defeating Malrec and interrupting a projection, while the current manifest specifies entering a solo dungeon, protecting witnesses, killing Su'vareth and recovering orders. Verify the locked Su'vareth permanent-death sequence against dialogue/encounter documents before rewriting Q115; do not silently retain the older Malrec encounter as the final boss or introduce a second death.
+- [ ] Continue Q074–Q103 repeated summaries and original H/HS dialogue/consequence reconciliation; no manifest or Rust edits in this pass.
