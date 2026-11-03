@@ -47,7 +47,6 @@ later approved Human 1–80 campaign.
 
 The [Source Decision Recovery](THEIA_SOURCE_DECISION_RECOVERY.md) preserves the
 historical decision summaries, corrections and consolidated audit evidence. The [World Bible](THEIA_WORLD_BIBLE.md),
-[Detailed Lore Archive](THEIA_DETAILED_LORE_ARCHIVE.md),
 [Character Arcs](THEIA_CHARACTER_ARCS.md) and
 [Modern Story Revelation Timeline](THEIA_MODERN_STORY_REVELATION_TIMELINE.md)
 also contain dated creator locks. Use the [documentation guide](THEIA_DOCUMENTATION_GUIDE.md)

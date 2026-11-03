@@ -11,8 +11,8 @@
 
 1. **[THEIA_WORLD_BIBLE.md](THEIA_WORLD_BIBLE.md)** — short canonical reference. Where a user-confirmed decision conflicts with an assistant proposal, the decision wins.
 2. **[THEIA_INTERWOVEN_CHRONICLE.md](THEIA_INTERWOVEN_CHRONICLE.md)** — current creator-facing chronological narrative, expanded with divine relationships, the vanished Kel'vari, Keeper/Ascendant conflict, Nhal, ancient institutions, Second Sundering, racial migrations, the Guardians and Unmade, Shattered Delegation, modern leaders and overseas incursions. It contains proposed connective history that is NOT automatically ratified.
-3. **[THEIA_DETAILED_LORE_ARCHIVE.md](THEIA_DETAILED_LORE_ARCHIVE.md)** — supporting worldbuilding archive, cultural systems, world regions, institutions and late-stage question answers.
-4. **[THEIA_SOURCE_DECISION_RECOVERY.md](THEIA_SOURCE_DECISION_RECOVERY.md)** — source-audit summary for original Q1–435, including corrections and later renames.
+3. **[THEIA_SOURCE_DECISION_RECOVERY.md](THEIA_SOURCE_DECISION_RECOVERY.md)** — consolidated historical question/page evidence, including Q376–435 selection detail, unanswered Q436–444 prompts, corrections and later renames.
+4. **[Legacy Ideas Archive](Theia/Campaigns/Human_Legacy_Sidequest_Zone_Character_Archive.md)** — distinct unapproved world, institution, character and campaign possibilities preserved from retired secondary compilations.
 
 The earlier duplicate **THEIA_TRUE_CHRONICLE.md** was removed from the current branch to avoid two competing primary narratives. Its content remains recoverable from Git history.
 
