@@ -268,3 +268,10 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Flagged major non-equivalences: Kel'vari consent, optional WvW exercise, winter levy versus restitution, earlier Dominion arc relocation, Malrec versus Su'vareth, and Cassian custody follow-up. No canonical quest data changed.
 - [ ] Verify dialogue, location, historical choices and consequences for H4 before approving any editorial mappings; retain unique candidate side-story material and source provenance.
 - [ ] Continue H5-series and HS-series detailed review; final link audit, branch retirement and deletion of this tracker remain outstanding.
+
+## H5-series triage — 3 November 2026
+
+- [x] Compared all 20 historical H5 source objectives and prerequisites to proposed live-manifest quest stages, recording per-entry evidence in `Theia/Campaigns/Human_Legacy_64_Exact_Title_Objective_Comparison.md` (commit `1f7dd05f`).
+- [x] Identified non-equivalent historical finale claims: premature Nhal naming, early Thes'var intervention, old Keld/Voss outcomes, severance branch, and unconfirmed Cassian sentencing. The locked level-80 finale remains unchanged.
+- [ ] Review source dialogue, contacts, evidence consequences and regional optional ideas before approving historical mappings or deleting original register. H4 and H5 objective/prerequisite triage is complete, **not** semantic approval.
+- [ ] Continue 24 HS optional entries, other historical lore/navigation duplicates and full-tree link validation. Keep this tracker until verified closure.
