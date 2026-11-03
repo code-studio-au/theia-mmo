@@ -70,3 +70,12 @@ The existing [64-entry objective comparison](Human_Legacy_64_Exact_Title_Objecti
 - Q184 retains the return to Millhaven, Elara and the original companions. Elara's actual closing exchange emphasizes ordinary village work and relationships; **no explicit formal service commendation appears in the current Q184 dialogue**. Do not add a reward or ceremony solely because the legacy H5-20 source mentions one.
 - **Disposition:** strong thematic homecoming correspondence, but historical commendation remains a noncanonical optional idea pending explicit approval. H5-20 → Q184 editorial mapping and runtime ID remain unapproved.
 - Q170 dialogue confirms Oth'varen expects danger but does not foresee his fatal sacrifice. Q176–Q181 dialogue confirms Thes'var's death, discovered sabotage, Oth'varen's later choice and physical death before Nhal's shattering. Q181's alignment line was clarified to refer to six fields aligned, not fusion (commit `da3d0e8a`).
+
+## H1 and H4 historical dialogue consequence check — 3 November 2026
+
+- **H1-15 / Q027:** Current Mara dialogue independently corroborates intermediary testimony and payment records, then refers evidence to Aldren privately. The old intended-killing allegation is historical context; the current dialogue does not by itself establish every element of criminal intent. **Strong evidence-chain correspondence, mapping unapproved.**
+- **H1-16 / Q028:** Aldren orders lawful detention and explicitly rejects violence in court; Cassian escapes and a live-capture warrant follows. **Strong consequence correspondence, mapping unapproved.**
+- **H1-18 / Q031:** Cassian is returned alive, the inquiry continues under a limited allied-consent warrant, and Elara receives a local report. The dialogue does not absolve Dominion or settle the war. **Strong outcome correspondence, mapping unapproved.**
+- **H4-15 / Q115:** The historical Malrec/projection dungeon outcome conflicts with current Q115. Current dialogue and encounter review establish Su'vareth's permanent death and surviving contingency orders. **Do not reuse the old boss outcome as an equivalent Q115 definition.** Preserve Malrec as historical character/encounter provenance only, pending independent side-content review.
+
+These checks compare dialogue consequences, not source-ID approval, rewards, implementation or full stage equivalence. The root historical register and draft crosswalk remain protected.
