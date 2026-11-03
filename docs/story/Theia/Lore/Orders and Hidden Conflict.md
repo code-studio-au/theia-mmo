@@ -4,9 +4,7 @@ source: "../../THEIA_WORLD_BIBLE.md"
 ---
 # Orders and Hidden Conflict
 
-Read these section labels together with later dated amendments in [[Sources/THEIA_WORLD_BIBLE|World Bible]].
-
-[Read historical source section](../../THEIA_WORLD_BIBLE.md)
+Read the [World Bible](../../THEIA_WORLD_BIBLE.md) alongside [later story decisions](../../DECISIONS.md); later creator locks govern conflicting historical wording.
 
 [Read historical source section](../../THEIA_WORLD_BIBLE.md)
 
