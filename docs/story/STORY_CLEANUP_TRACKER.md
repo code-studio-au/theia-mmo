@@ -1052,4 +1052,11 @@ Do not tick work merely because it is planned or described in older reports. Rec
 
 - [x] Compared canonical Q176–Q181 with `Human_80_Finale_NPC_Dialogue_Scripts.md` and `Human_1_80_Key_Scenes_Branching_Dialogue.md`. Both supporting Markdown records keep Oth'varen alive through his Q179 farewell and Q180 approach, with physical death only after alignment holds in Q181.
 - [x] Corrected Q178's gameplay summary to the existing fatal-correction discovery, informed choice and team-safety steps. Removed its premature death description; the locked Q181 outcome, all 184 quest identifiers and their order are unchanged.
-- [ ] Independently review and merge `cleanup/q178-finale-sequence-20261103`; this correction does not claim a complete campaign consistency pass. No code, runtime data or CI changes.
+- [x] Independently reviewed and merged Q178 correction in PR #4 (merge `60cbd9f996a705d3583d42f238897ff59382b893`). This correction does not claim a complete campaign consistency pass. No code, runtime data or CI changes.
+
+## Completed Markdown consolidation — 3 November 2026
+
+- [x] PR #5 (merge `450664657d81d6d93f3cf76a02c34bc81b1e34b5`) preserved the unique dependency gates and dated structural checkpoint in `Human_Rust_Quest_Authoring_Contract.md`, then retired `Human_1_80_Quest_Dependency_Review.md`. WORKING/OPEN boundaries and source-history provenance remain; no narrative or runtime changes.
+- [x] Compared the entire `Theia/Editorial/Canon and Open Questions.md` with the story README. Its hierarchy, approval-scope, player-knowledge, implementation and missing-source limits were already preserved; moved its historical-open-question interpretation to the README, then retired the duplicate note. Source remains in Git history at `60cbd9f996a705d3583d42f238897ff59382b893`.
+- [x] Full 377-file Markdown backlink scan found only one active incoming reference, from `Theia/History/The Binding and its Aftermath.md`; redirected it to the README authority section. The tracker's older mention remains historical evidence, not a live link. Later Q178 and dependency-review changes add no incoming references.
+- [ ] Independently review and merge `cleanup/retire-editorial-canon-note-20261103`; validate its changed links and absence of active links to the retired note. Broader world/history consolidation and final repository validation remain open.

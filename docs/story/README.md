@@ -71,6 +71,11 @@ H/HS identifiers remain provenance, not approved runtime mappings. Keep world
 truth separate from player knowledge and revelation timing. Record a fact once
 in its authoritative home and link supporting documents to it.
 
+Open questions belong with their relevant authoritative source, including the
+[World Bible](THEIA_WORLD_BIBLE.md), not a second canon ledger. Interpret historical
+open-question lists under later creator locks; a resolved question does not become
+OPEN again merely because an older record still lists it.
+
 ## Import provenance and limits
 
 The 19 documents were recovered from the locally available Engine `origin/main`
