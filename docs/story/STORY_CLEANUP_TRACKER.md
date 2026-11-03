@@ -325,3 +325,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Live-fetched all **9 Markdown file targets** in `Theia/Characters/Characters.md`: six Conclave/Sixth Scholar character pages, the historical Human Cast and Places source, Seven Gods lore, and current Human campaign. **9/9 exist, zero missing**.
 - [x] Replaced one directory-only Markdown link to `Campaign Cast/` with a plain folder reference (commit `ecef0783`).
 - [ ] Continue repository-wide source references and historical-content semantic audit. File-target existence does not verify heading anchors or canon status.
+
+## Historical Timeline obsolete-finale correction — 3 November 2026
+
+- [x] Removed obsolete Obsidian Story Browser embed and superseded five-act level-60 launch / later-expansion Nhal finale sections from `Theia/History/Historical Timeline.md` (commit `cdd2772d`). Kept the thirteen historical milestone entries and present-day context, with links to the current 1–80 campaign and creator decisions.
+- [x] Explicitly documented that Oth'varen dies and Nhal's unified identity is shattered during the level-80 launch finale, while divine essence persists. Old wording is recoverable from Git history, not active authority.
+- [ ] Audit historical event links and remaining old-finale claims elsewhere. The retained milestone wiki-links and headings have not all been verified; final link and semantic validation remains outstanding.
