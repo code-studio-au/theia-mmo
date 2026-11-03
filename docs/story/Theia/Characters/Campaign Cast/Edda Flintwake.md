@@ -2,7 +2,7 @@
 type: character
 canon_status: Needs Review
 source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
-up: "[[Characters]]"
+up: "../Characters.md"
 ---
 # Edda Flintwake
 
@@ -17,8 +17,8 @@ Maintains Brynja's workshop services and handles local repair instruction while 
 
 Source: [Allied and Kel'vari cast](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
-[[Characters]] · [[Human Campaign]]
+[Characters](../Characters.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
 ## Related notes
 
-[[Dwarves]] · [[Brynja Flintwake]]
+[Dwarves](../../Lore/Peoples/Dwarves.md) · [Brynja Flintwake](Brynja%20Flintwake.md)
