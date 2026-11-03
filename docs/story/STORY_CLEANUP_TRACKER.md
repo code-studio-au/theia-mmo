@@ -951,3 +951,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Clarified Q181 spoken line from ambiguous `fields are one` to `six fields are aligned` to avoid implying the Seven permanently fuse or reconstitute Aethyr (commit `da3d0e8a`).
 - [x] Compared historical H5-20 homecoming/service-commendation with current Q184 dialogue and manifest. Millhaven, Elara and original companions are retained; a formal commendation is absent and remains an unapproved historical idea, not an automatic reward. Recorded in focused mapping audit (commit `ea7f66f9`).
 - [ ] Continue H/HS dialogue and consequence reviews, then root-story duplicate and backlink/heading validation. Do not approve original-to-current runtime ID mappings by thematic similarity.
+
+## Five H5 legacy finale conflicts disposition review — 3 November 2026
+
+- [x] Inspected original source objectives and proposed relations for H5-03, H5-12, H5-14, H5-15 and H5-16 in the protected crosswalk. Recorded explicit safe dispositions in `Human_Quest_Editorial_ID_Crosswalk_Review.md` (commit `9028aa9b`).
+- [x] Protected Q143 Nhal name gate, Q176 Thes'var death, Q156 Khor'vun/Veilbreaker event, Q181 Oth'varen sacrifice and Nhal's shattering; retained possible distinct evacuation, diagram, retry and severance research ideas as noncanonical provenance.
+- [ ] No H/HS-to-Q mapping approved by this editorial review. Continue other historical objective/dialogue/consequence comparisons and final root-register/backlink checks before retirement.
