@@ -54,7 +54,7 @@ The creator authorised completing the human story and necessary connected racial
 - [Solo Story Climaxes](THEIA_HUMAN_STORY_DUNGEONS.md) — all five essential story encounters without required raids or PvP.
 - [Cast, Places and Services](THEIA_HUMAN_CAST_AND_PLACES.md) — recurring humans, new contacts, working geography and stable services.
 - [Connected Racial Stories](THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md) — allied visits, Dominion counterpart motivations and 12 proposed native-side companion quests.
-- [Campaign Review Record](THEIA_HUMAN_CAMPAIGN_REVIEW.md) — source precedence, continuity checks, proposed decisions and implementation limits.
+- Historical Human 1–60 Campaign Review Record — retired from the active tree; its original review and source precedence notes remain in Git history at `docs/story/THEIA_HUMAN_CAMPAIGN_REVIEW.md`. For current story status use [Current Human Campaign](Theia/Campaigns/CURRENT_HUMAN_CAMPAIGN.md).
 
 Read the approved [Human Act I](THEIA_HUMAN_ACT_I_STORY.md) and [Heartlands framework](THEIA_HUMAN_HEARTLANDS_SETTLEMENT_REGISTER.md) alongside the packet. Latest dated creator locks in the [Modern Timeline](THEIA_MODERN_STORY_REVELATION_TIMELINE.md) establish the five-act bands and first Shroud expedition around level 40; these supersede older six-band and later-expansion proposals. New dialogue, locations, quest staging, Cassian's final sentence and inversion outcomes remain **Needs Review**, even where the draft provides a complete proposed outcome.
 
