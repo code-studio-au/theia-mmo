@@ -13,8 +13,6 @@ The older 1–60 campaign, quest register and imported review materials below ar
 
 ## Historical import index (not current campaign authority)
 
-## Start here
-
 | Subject | Documents |
 |---|---|
 | Reading order and canon rules | [Imported documentation guide](THEIA_DOCUMENTATION_GUIDE.md), [local decisions and maintenance](DECISIONS.md) |
