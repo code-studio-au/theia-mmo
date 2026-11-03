@@ -9,7 +9,7 @@ up: "../Historical Timeline.md"
 
 This modern Unmade operation is separate from the generations-long [Age of Silence and Anchor Network Development](Age%20of%20Silence%20and%20Anchor%20Network%20Development.md). Both the delegation's destruction and [Network Threshold and Modern Awakening](Network%20Threshold%20and%20Modern%20Awakening.md) precede the start of play; their exact timing relative to one another is not fixed by the timeline's display order.
 
-Historical sequence and causes are distinct from [player revelation](../Timelines.md). Dates and durations are not supplied by this import. The following source section may cover more than one event; its status labels and later creator decisions govern.
+Historical sequence and causes are distinct from [player revelation](../../../THEIA_MODERN_STORY_REVELATION_TIMELINE.md). Dates and durations are not supplied by this import. The following source section may cover more than one event; its status labels and later creator decisions govern.
 
 [Read historical source section](../../../THEIA_DETAILED_LORE_ARCHIVE.md)
 
