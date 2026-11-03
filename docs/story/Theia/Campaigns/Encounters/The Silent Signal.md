@@ -1,17 +1,17 @@
 ---
 type: encounter
 canon_status: Needs Review
-source: "[[Sources/THEIA_HUMAN_STORY_DUNGEONS]]"
-up: "[[Story Encounters]]"
+source: "../../../THEIA_HUMAN_STORY_DUNGEONS.md"
+up: "../Story Encounters.md"
 ---
 # The Silent Signal
 
 > [!important] Needs Review
-> Narrative encounter design; not implemented, balanced or playtested. The common contract applies to every encounter.
+> Historical narrative encounter proposal; not implemented, balanced or playtested. Its former Act I–V placement does not supersede the canonical 1–80 campaign. The common historical encounter contract is linked below.
 
-![[Sources/THEIA_HUMAN_STORY_DUNGEONS#Common encounter contract]]
+[Historical source: Common encounter contract](../../../THEIA_HUMAN_STORY_DUNGEONS.md)
 
-![[Sources/THEIA_HUMAN_STORY_DUNGEONS#Act II — The Silent Signal]]
+[Historical source: Act II — The Silent Signal](../../../THEIA_HUMAN_STORY_DUNGEONS.md)
 
-[[Story Encounters]] · [[Welcome|Home]]
+[Story Encounters](../Story%20Encounters.md) · [Story index](../../../README.md)
 
