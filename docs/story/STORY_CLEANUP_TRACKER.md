@@ -649,3 +649,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Migrated Divine Schism, Divine War and The Binding notes to direct historical timeline, divine character, Guardians, Conclave, Kel'vari and adjacent event Markdown links (commits `44bd4c06`, `c6d38e6f`, `ea99b41f`).
 - [x] Kept Nhal as a plain name where no standalone note target was verified. Source-specific approval and no-invented-date constraints remain intact.
 - [ ] Four remaining History/Events notes require migration, followed by file-target and historical-semantic checks.
+
+## Historical Events final four migrations — 3 November 2026
+
+- [x] Migrated Age of Reconstruction, Age of Silence and Anchor Network Development, Shattered Delegation and Network Threshold and Modern Awakening notes to direct Markdown links (commits `9e38045e`, `714c748c`, `4a4a59f7`, `2073fe37`). All 13 event notes have now received Obsidian navigation migration.
+- [x] Preserved the separate origins of the Anchor network and Shattered Delegation, their pre-play timing and the lack of fixed numerical dates. Nhal is retained as a name where no verified standalone note target exists.
+- [ ] Run a fresh 13/13 event-file scan and verify Markdown link destinations and historical semantics; completion of migration is not completion of validation.
