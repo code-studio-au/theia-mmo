@@ -483,3 +483,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Verified 10 unique character, people and institution targets referenced by the Guardians, Unmade and Corrupted Conclave pages; all 10 exist on live `main`.
 - [x] Replaced remaining institution/founder/Kel'vari wiki-links in `Theia/Lore/Institutions/The Unmade.md` and `The Corrupted Conclave.md` with direct Markdown paths (commits `150d9964`, `01d15f7c`). Nhal is retained as a plain historical name rather than an unverified file target.
 - [ ] Continue full-tree reference and semantic checks before branch and tracker retirement.
+
+## Divine character source-path audit — 3 November 2026
+
+- [x] Found obsolete `../../Sources/THEIA_WORLD_BIBLE.md` source metadata across the seven `Theia/Characters/Divine/` notes; the surviving root story World Bible is reached from that folder via `../../../THEIA_WORLD_BIBLE.md`.
+- [x] Corrected The Keeper and The Guardian source metadata, source-account links, parent navigation and historical Binding reference (commits `76cdaba1`, `b0c2f403`). Their confirmed-foundation/details-open statuses remain unchanged.
+- [ ] Apply the same verified path correction to Judge, Warrior, Seeker, Shaper and Ascendant, then verify their related-note links. Do not claim all seven complete yet.
