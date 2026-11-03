@@ -45,9 +45,8 @@ later approved Human 1–80 campaign.
 
 ## Existing story decisions
 
-The imported [Source Decision Recovery](THEIA_SOURCE_DECISION_RECOVERY.md) and
-[Canon Reconciliation Report](THEIA_CANON_RECONCILIATION_REPORT.md) preserve the
-historical decision summaries and corrections. The [World Bible](THEIA_WORLD_BIBLE.md),
+The [Source Decision Recovery](THEIA_SOURCE_DECISION_RECOVERY.md) preserves the
+historical decision summaries, corrections and consolidated audit evidence. The [World Bible](THEIA_WORLD_BIBLE.md),
 [Detailed Lore Archive](THEIA_DETAILED_LORE_ARCHIVE.md),
 [Character Arcs](THEIA_CHARACTER_ARCS.md) and
 [Modern Story Revelation Timeline](THEIA_MODERN_STORY_REVELATION_TIMELINE.md)

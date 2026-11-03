@@ -314,4 +314,4 @@ Complete static navigation alongside the live browsing tables. Approval boundari
 - [Resonance Inversion](./Resonance%20Inversion.md)
 - [The Seven Gods](./The%20Seven%20Gods.md)
 
-[Historical Source Reading Maps](../Editorial/Source%20Reading%20Maps.md) · [Current Human Campaign](../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
+[Story documentation guide](../../THEIA_DOCUMENTATION_GUIDE.md) · [Current Human Campaign](../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
