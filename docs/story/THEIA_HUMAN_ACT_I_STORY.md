@@ -1,3 +1,5 @@
+> **HISTORICAL ACT I FOUNDATION — CURRENT QUEST ORDER SUPERSEDED (3 November 2026).** This document preserves the creator-approved 15 October 2026 Act I premise and evidence-based Cassian betrayal arc. The current [Human 1–80 Canonical Campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md) and [Current Human Campaign](Theia/Campaigns/CURRENT_HUMAN_CAMPAIGN.md) govern present quest numbering, detailed locations, dialogue and final outcomes. Do not treat old H-series IDs, level-1–20 structure or earlier proposed legal consequences as independent current authority. Retain unique foundational narrative until compared before retirement.
+
 # THEIA — HUMAN ACT I: THE CROWN AND THE BETRAYAL
 
 **Status: creator-approved and locked (15 October 2026).** This document preserves the human racial Act I narrative, levels 1–20. Exact zone and settlement names, individual quests, combat balance, dialogue, dungeon mechanics and Cassian's final legal disposition remain open. The campaign must be solo-accessible and permit independent levelling.
