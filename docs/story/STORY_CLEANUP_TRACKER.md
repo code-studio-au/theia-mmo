@@ -471,3 +471,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Migrated Atlas parent, story-index, Kel'vari people and related campaign-cast wiki-links in the five enclave pages Veyr'athun, Oth'irun, Oru'sava, Thuma'rei and Soru'vaeth to direct Markdown links (commits `83de7b5a`, `778fcfcf`, `d8d4ea1c`, `a82dd23b`, `a1b8e349`).
 - [x] Live-verified the Kel'vari people note and Sel'ora, Leth'ari and Aru'ven campaign-cast targets. Kept enclave identities and source-specific approval status unchanged.
 - [ ] Continue wider Atlas/lore link validation and historical semantic reconciliation before final tracker deletion and branch retirement.
+
+## Institution World Bible path correction — 3 November 2026
+
+- [x] Corrected root World Bible paths in three institution notes under `Theia/Lore/Institutions/`: Guardians, Unmade and Corrupted Conclave. Their former `../../../../THEIA_WORLD_BIBLE.md` links escaped the story folder; correct relative path is `../../../THEIA_WORLD_BIBLE.md`. Commits `265d02e5`, `6acd9425`, `603415c6`.
+- [x] Replaced retired imported-source references and parent navigation in all three. Guardians related character/institution links were also migrated.
+- [ ] Continue the remaining Unmade/Conclave related-note wiki-links, then revalidate the three documents and broader repository paths. No semantic canon approval follows from path correction.
