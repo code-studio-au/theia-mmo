@@ -1129,4 +1129,11 @@ Do not tick work merely because it is planned or described in older reports. Rec
 
 - [x] Moved unique six-act/racial openings, campaign and antagonist names, future labels, local-story hooks, 38-area historical matrix and dungeon proposals from Detailed Lore Archive sections 7–8 to the single Legacy Ideas Archive. Preserved all proposal details, historical level bands and immutable source provenance without promoting them to canon.
 - [x] Kept both source headings as navigation, retained travel/approval boundaries, and linked established world geography and open-world principles to the Bible. No protected narrative, quest inventory or runtime data changed.
-- [ ] Independently review and merge this bounded catalogue consolidation; future outcomes and runtime mappings remain OPEN.
+- [x] PR #35 independently reviewed and merged (`d92442414202fc7d4048120b7d8416cdc023c57d`); historical catalogue consolidated, all proposal details retained and links validated.
+- [x] PR #34 (`e86b8e65447417537af5926c25267e4deed61563`) corrected the H4-05/Q092 comparison to missing-copyist rescue and scoped earlier comparison snapshots as historical evidence.
+
+## Historical question-register consolidation — 3 November 2026
+
+- [x] Consolidated all 60 detailed Q376–Q435 selection rows and nine unanswered Q436–Q444 prompts into the existing Source Decision Recovery index, replacing its overlapping compressed stage summaries. Preserved original source headings as links and immutable provenance; no PDF re-audit claimed.
+- [x] Corrected obsolete source-availability wording. Historical selections remain subject to later creator decisions; unanswered prompts remain OPEN.
+- [ ] Independently review and merge the question-register consolidation.
