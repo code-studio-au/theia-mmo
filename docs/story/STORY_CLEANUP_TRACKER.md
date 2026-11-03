@@ -519,3 +519,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Corrected `Theia/Lore/Institutions/Covenant.md` and `Dominion.md` root World Bible source paths from the obsolete four-parent form to `../../../THEIA_WORLD_BIBLE.md`, and migrated Lore/Story navigation (commits `76f06831`, `6713c9fb`).
 - [x] Live-verified ten unique related race/leadership file targets: Humans, Dwarves, Aelari, Korrath, Orcs, Halflings, Vaelari, Vorrath, Corven Vaelmont and First Archon Selrion; all exist. Replaced their wiki-links with direct Markdown paths and linked the two institutions to each other.
 - [ ] Continue the remaining institution, character and repository-wide link checks. No alliance or canon outcomes changed.
+
+## Campaign cast navigation follow-up — 3 November 2026
+
+- [x] Corven Vaelmont: migrated parent/current campaign and Tidehold/Kel'vari links (commit `21d1ad5d`).
+- [x] Sel'ora, Aru'ven and Leth'ari: migrated parent/current campaign, Kel'vari and associated enclave links (commits `09ac468f`, `16be2e3e`, `6d1ebbac`). Their approval statuses remain unchanged.
+- [ ] Continue remaining campaign cast navigation and semantic audit. This tracker remains temporary.
