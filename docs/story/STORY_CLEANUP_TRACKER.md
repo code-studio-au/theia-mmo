@@ -261,3 +261,10 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Verified the active `CURRENT_HUMAN_CAMPAIGN.md` identifies the 184-quest / 684-stage manifest as working editorial data, not executable Rust, and retains the original H/HS crosswalk as unapproved provenance.
 - [ ] Audit other entry points and backlinks to the historical 1–60 import index. The README change does not establish that all remaining vault links resolve or that old quest mappings are approved.
 - [ ] Continue the H4/H5 and HS dialogue, prerequisites and consequence comparisons; preserve unique evidence before retiring the historical quest register.
+
+## H4-series triage — 3 November 2026
+
+- [x] Compared all 18 H4 historical objectives and proposed mappings against live current-manifest stages and prerequisites; recorded the complete per-entry comparison in `Theia/Campaigns/Human_Legacy_64_Exact_Title_Objective_Comparison.md` (commit `0d3660c7`).
+- [x] Flagged major non-equivalences: Kel'vari consent, optional WvW exercise, winter levy versus restitution, earlier Dominion arc relocation, Malrec versus Su'vareth, and Cassian custody follow-up. No canonical quest data changed.
+- [ ] Verify dialogue, location, historical choices and consequences for H4 before approving any editorial mappings; retain unique candidate side-story material and source provenance.
+- [ ] Continue H5-series and HS-series detailed review; final link audit, branch retirement and deletion of this tracker remain outstanding.
