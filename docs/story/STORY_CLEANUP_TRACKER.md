@@ -453,3 +453,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Migrated `Atlas/Places/Chainworks.md`, `Millhaven.md` and `Valecrown.md` from obsolete Obsidian source/parent/related links to Markdown links for the root cast-and-places source, Atlas, current campaign and related notes (commits `79fc4a7f`, `377ea42b`, `11e5d214`).
 - [x] Live-verified four unique related destinations: The Unmade, Lantern Redoubt, Stoneford and Tidehold. All exist on `main`.
 - [ ] Retain **Needs Review** geography and continue checking the remaining place notes and source-reference graph; no map placement was approved by these edits.
+
+## Stoneford and allied capital Atlas navigation — 3 November 2026
+
+- [x] Migrated `Atlas/Places/Stoneford.md`, `Tidehold.md` and `Kar Durn.md` to direct root cast-and-places source, Atlas parent and current Human campaign Markdown links (commits `2f3e577d`, `22f8d1b9`, `dee87ae4`).
+- [x] Converted the Stoneford→Valecrown and Kar Durn→Tidehold related-note links; both targets were live-fetched during earlier cleanup.
+- [ ] Continue remaining Atlas notes and full source-link audit. These files retain **Needs Review** geography and do not authorize map or travel changes.
