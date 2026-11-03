@@ -402,3 +402,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Converted all six remaining character wiki-links in `Theia/History/Memory Scenes.md` to direct Markdown paths for previously live-verified Conclave/Sixth Scholar character notes (commit `4e2164d8`).
 - [x] Clarified that the 21 CR/DR labels in `Theia/Campaigns/Connected Racial Stories.md` are noncanonical historical references rather than unverified active quest links; removed duplicate current campaign link (commit `9fad5f39`).
 - [ ] Continue other surviving historical wiki-links and source-content reconciliation; no claim of whole-vault validation.
+
+## Approved memory-scene navigation migration — 3 November 2026
+
+- [x] Converted `Theia/History/The Six Reunited.md` Obsidian frontmatter, character, institution, historical-event and index navigation to Markdown paths (commit `aab2b494`). The scene's approved status and disclosure caveats remain unchanged.
+- [x] Directly checked the Corrupted Conclave institution and Binding history target files exist. The six scholar character targets had already been verified in prior cleanup.
+- [ ] Continue other derived historical scenes and source links; this does not approve new dialogue or complete whole-vault link validation.
