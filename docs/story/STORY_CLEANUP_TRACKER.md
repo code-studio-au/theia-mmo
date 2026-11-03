@@ -913,3 +913,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Cross-checked Q115 against `Human_45_55_NPC_Dialogue_Scripts.md`, `Human_1_80_Encounter_Barks_and_Cinematic_Timing.md`, `Human_Q104_Q128_Rust_Authoring_Review.md` and `Human_Q104_Q128_Legacy_Pack_Migration.md`; all establish Su'vareth as the actual solo boss, permanently killed, with witnesses/captives protected and contingency orders recovered.
 - [x] Corrected the canonical Q115 gameplay objective, removing the obsolete Malrec/projection final-boss description (commit `fd5e7498`). Su'vareth's permanent death and posthumous contingency orders remain intact; no extra death or new gameplay mechanic introduced.
 - [ ] Continue Q074–Q103 chapter-summary audit and original H/HS semantic mapping; full repository backlink and heading-anchor verification remain outstanding.
+
+## Q074–Q103 canonical objective summary differentiation — 3 November 2026
+
+- [x] Compared all thirty Q074–Q103 canonical entries with the sole working manifest's stages. Replaced 22 repeated chapter-wide `Objective:` summaries with their actual per-quest stage descriptions (commit `c2b275fc`); eight already-specific `Gameplay objective` entries were retained.
+- [x] Preserved Oma'vira's permanent Q077 death, bounded Q078 Major Anchor inversion, destroyed-gate evidence, the Guardian's restricted low-capacity Passage and Kel'vari consent, Lantern Redoubt first living Kel'vari reveal, and Q097 independent Oth'varen identity verification.
+- [ ] Continue earlier canonical quest summary audit (Q001–Q073), compare existing detailed entries against the manifest and dialogue, and finish H/HS provenance approvals and final repository backlinks. No quest count or Rust runtime changes.
