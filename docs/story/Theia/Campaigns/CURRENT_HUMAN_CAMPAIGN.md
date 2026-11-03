@@ -2,9 +2,13 @@
 
 **Current-state entry point — 2 November 2026.** Work from this page, not historical drafts. The Human launch campaign is **levels 1–80**. The story is approved; executable Rust quest content is **not yet complete**. Git history, rather than live superseded documents, preserves deleted iterations.
 
-## Source-of-truth hierarchy
+## Campaign reading order and implementation boundaries
 
-1. **Narrative canon:** [Human 1–80 Canonical Campaign](Human_1_80_Canonical_Campaign.md) — locked plot, 184 editorial quest concepts and immutable story outcomes. Any contradiction in downstream files resolves here.
+Follow the [repository-wide authority hierarchy and canon classifications](../../README.md#approval-and-precedence).
+Later explicit creator decisions override narrative documents; the list below
+organizes campaign sources by purpose, not a competing authority hierarchy.
+
+1. **Narrative canon:** [Human 1–80 Canonical Campaign](Human_1_80_Canonical_Campaign.md) — locked plot, 184 editorial quest concepts and immutable story outcomes. Downstream campaign contradictions resolve here, subject to later explicit creator decisions.
 2. **Quest authoring contract:** [Rust Quest Authoring Contract](Human_Rust_Quest_Authoring_Contract.md) — required IDs, evidence, giver/turn-in, choices, rewards, retries, credit scopes and planned versus implemented capabilities.
 3. **Legacy idea bank:** [Side Quest, Zone and Character Archive](Human_Legacy_Sidequest_Zone_Character_Archive.md) — non-canonical optional regional hooks and historical contacts retained for future review, not active quest definitions.
 4. **Provenance and migration:** [Editorial ID Crosswalk Draft](Human_Quest_Editorial_ID_Crosswalk_Draft.json) — all 92 original H-series identifiers and all 24 HS-series optional IDs with source objectives; mappings not yet approved. Do not allocate stable runtime IDs based solely on titles.
@@ -48,3 +52,4 @@ The duplicate 184-entry `Human_1_80_Production_Quest_Specification.md` has been 
 ## Obsidian retirement (in progress)
 
 The creator has discontinued Obsidian. Obsidian-only navigation (`Story Browser.base`, `Quest Index.md`, `Welcome.md`) has been removed. Legacy H/HS per-quest Obsidian notes are being retired; some were deleted, but **the removal is not yet complete or verified**. Do not treat surviving H/HS vault pages or old source-library copies as active quest content. Preserve the 184-quest manifest, canonical narrative, approved dialogue and engine agreement. Before removing source-library duplicates or old H/HS registers, verify original editorial provenance and links.
+

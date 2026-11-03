@@ -2,11 +2,21 @@
 
 > **Lifecycle: DELETE THIS FILE after all checklist items are complete and verified on `main`.** This is a disposable working checklist, **not** a permanent canon document, archive or second source of truth. Do not preserve this tracker after closure; Git history retains its audit trail.
 
-Status: **IN PROGRESS** (2 November 2026). No unchecked item is represented as finished.
+Status: **IN PROGRESS** (3 November 2026). No unchecked item is represented as finished.
+
+## Authority-entry-point consolidation — 3 November 2026
+
+- [x] Established one repository-wide hierarchy and six status definitions in the story README; campaign reading order now links to it rather than competing with it.
+- [x] Recorded the creator's current level-80 finale confirmation in the decision ledger and explicitly marked October 29/30 conflicting timing and launch-survival claims SUPERSEDED.
+- [x] Removed the documentation guide's misleading application of the historical Needs Review packet heading to the approved 1–80 campaign; preserved original provenance and proposal boundaries.
+- [x] Validated all 83 relative Markdown links and six heading fragments in the five changed entry-point files against the fresh repository tree; whitespace checks pass. Canonical campaign and working manifest remain unchanged. No files retired in this authority pass.
+- [ ] Obtain independent review and merge `cleanup/canon-authority-20261103` before treating this area as integrated.
+- [ ] Propagate current authority and status boundaries through remaining supporting world/history/character records; this entry-point correction is not a whole-repository contradiction clearance.
 
 ## Authoritative destinations
 
-- [Current Human Campaign](Theia/Campaigns/CURRENT_HUMAN_CAMPAIGN.md): current hierarchy and campaign status.
+- [Story README](README.md#approval-and-precedence): repository-wide authority hierarchy and canon classifications.
+- [Current Human Campaign](Theia/Campaigns/CURRENT_HUMAN_CAMPAIGN.md): campaign reading order and status.
 - [Canonical 1–80 Campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md): narrative authority.
 - [Consolidated Quest Manifest](Theia/Campaigns/Human_1_80_Current_Quest_Authoring_Manifest.json): working 184-quest inventory, not executable Rust.
 - [Legacy idea bank](Theia/Campaigns/Human_Legacy_Sidequest_Zone_Character_Archive.md): unique, non-canonical side quests, zones, characters and hooks.
@@ -1036,3 +1046,4 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Marked root `THEIA_HUMAN_CAST_AND_PLACES.md` as historical 1–60 source with links to current Human 1–80 authority and approval boundaries for cast and settlement services (commit `e4250c98`).
 - [x] Marked `THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md` as historical cross-racial proposals: allied `CR-` groupings do not add current quests and twelve Dominion companion quests are not approved Human-friendly or independent race campaigns (commit `1862e150`).
 - [ ] Preserve unique character, zone, service and Dominion-perspective ideas after detailed comparison; complete incoming-link verification before any retirement. No current quest or Rust changes.
+

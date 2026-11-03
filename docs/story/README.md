@@ -27,16 +27,49 @@ The older 1–60 campaign, quest register and imported review materials below ar
 
 ## Approval and precedence
 
-Preserve each document's CONFIRMED, USER LOCKED, WORKING, OPEN, SUPERSEDED and
-Needs Review labels. A later explicit creator decision takes precedence over an
-older proposal or summary. The imported guide explains the historical source
-hierarchy; consult the dated decisions in the relevant documents together.
+This is the repository-wide story authority hierarchy, confirmed by the creator
+on 3 November 2026. Authority is scoped by subject; narrative authority does not
+approve executable quest data or engineering changes.
 
-Human Act I is explicitly creator-approved. The subsequent complete human
-campaign packet remains **Needs Review**, including its proposed 92 principal
-quests, 24 optional local quests and 12 native-side companion quests. Importing
-these files does not approve that packet. The Chronicle also contains proposed
-connective history; its narrative form does not confer canon status.
+1. **Creator-confirmed decisions** have highest authority. Later explicit decisions
+   override earlier ones; [Story decisions](DECISIONS.md) records the current locks,
+   supersession and evidence. An assistant proposal or older summary is not approval.
+2. **[World Bible](THEIA_WORLD_BIBLE.md)** is the reference for established world
+   facts, divine history, races, magic and institutions.
+3. **[Interwoven Chronicle](THEIA_INTERWOVEN_CHRONICLE.md)** is the historical
+   narrative, subject to creator decisions. Proposed connective material is not
+   automatically locked canon.
+4. **[Canonical Human 1–80 Campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md)**
+   governs approved Human launch progression, revelations, deaths and ending.
+5. **[Quest Authoring Manifest](Theia/Campaigns/Human_1_80_Current_Quest_Authoring_Manifest.json)**
+   is the single working inventory of 184 Human quest concepts. It must conform to
+   the canonical narrative and is not executable Rust content.
+6. **Supporting character, location, dialogue and encounter documents** are
+   authoritative only within their explicitly approved scope.
+7. **[Legacy Ideas Archive](Theia/Campaigns/Human_Legacy_Sidequest_Zone_Character_Archive.md)**
+   preserves unapproved historical and future possibilities, not active canon.
+
+### Canon classifications
+
+- **LOCKED:** explicitly confirmed by the creator.
+- **CANONICAL:** established by the current approved narrative, subject to later
+  creator decisions. This does not imply every supporting implementation detail is locked.
+- **WORKING:** a proposal being developed, not approved canon.
+- **OPEN:** requires a decision; preserve the exact unresolved question.
+- **SUPERSEDED:** replaced by a later decision; retain provenance, not authority.
+- **ARCHIVED:** preserved for possible future use, not active canon.
+
+Historical `CONFIRMED` and `USER LOCKED` labels mean LOCKED only where explicit
+creator approval supports their stated scope. `Needs Review` denotes WORKING
+material, not a conflicting approval class. Do not relabel an entire mixed-status
+document as locked merely because one section contains a creator decision.
+
+Human Act I's approved narrative foundation remains preserved. The historical
+1–60 packet's 92 H-series, 24 HS-series and 12 native-side proposals were not
+approved by import; they do not downgrade or replace the approved 1–80 campaign.
+H/HS identifiers remain provenance, not approved runtime mappings. Keep world
+truth separate from player knowledge and revelation timing. Record a fact once
+in its authoritative home and link supporting documents to it.
 
 ## Import provenance and limits
 
@@ -61,3 +94,4 @@ Historical headings referring to a custom MMO engine are retained as provenance.
 The active game uses the [MMO engineering architecture](../engineering/README.md).
 Narrative decisions do not silently override that architecture or create gameplay
 implementation commitments.
+

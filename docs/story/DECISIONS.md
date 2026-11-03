@@ -1,5 +1,35 @@
 # Story decisions and maintenance
 
+Use the [authority hierarchy and canon classifications](README.md#approval-and-precedence).
+This ledger indexes creator decisions; historical entries retain their original
+scope and are not all simultaneously current.
+
+## 2026-11-03 — LOCKED: canon stewardship and current launch outcome
+
+**Approval evidence:** the creator explicitly supplied the Theia Canon & Repository
+Steward instructions on 3 November 2026, confirming the source hierarchy, six
+classification labels, protected documents, 184-quest working inventory, and the
+level-80 finale below. The existing [canonical campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md#non-negotiable-story-rules)
+records the detailed approved sequencing from the 2 November story review.
+
+**Current outcome:** Thes'var dies; his sabotage misaligns convergence. Only then
+Oth'varen learns the correction will kill him and makes an informed sacrifice.
+He physically dies after seeing the alignment hold, before the Seven and mortal
+teams finish shattering Nhal's coherent identity, will and memory. The Seven
+survive. Divine essence is indestructible; the future fate of Nhal's fragments
+remains OPEN for later development, not an approved expansion outcome.
+
+**Supersession:** the October 29 post-launch placement, launch-survival constraint
+and October 30 unapproved-launch-placement warning below are SUPERSEDED for this
+finale. Earlier Act/level labels do not override current 1–80 placement. Retained
+historical cause, staging or location proposals must conform to the canonical
+sequence; they are not additional required events. This does not approve new
+dialogue, encounter mechanics, runtime IDs or executable quest content.
+
+**Maintenance:** the [story README](README.md#approval-and-precedence) is the one
+home for hierarchy and status definitions; the canonical campaign owns detailed
+launch sequencing. Preserve unique legacy ideas without promoting them to canon.
+
 ## 2026-10-26 — Story home moves to Theia-MMO
 
 The user chose to continue game development in this repository and requested a
@@ -10,7 +40,8 @@ source; the transfer preserves its original story material without deleting it.
 This is a repository ownership decision, not a new canon approval. Existing
 creator locks, rejected directions, superseded choices and open questions retain
 their recorded status. In particular, the complete human campaign review packet
-remains Needs Review.
+remained Needs Review at import. This historical status does not override the
+later approved Human 1–80 campaign.
 
 ## Existing story decisions
 
@@ -37,6 +68,10 @@ for reading order and the [import notes](README.md) for source limitations.
 
 ## 2026-10-29 — Creator LOCK: Oth'varen's final alignment and death
 
+> **SUPERSEDED IN PART:** the post-launch timing and statement that he survives
+> launch below are historical, replaced by the current level-80 lock above.
+> Read the original record below as provenance, not an alternate ending.
+
 **Status: USER LOCKED.** Approval evidence: after proposing that Oth'varen die helping align the gods' six energies and receiving the developed sequence, the creator explicitly approved that sequence and requested it be locked. The creator separately proposed that a Conclave founder might interfere; that identity and encounter remain WORKING.
 
 **Approved sequence and limits:**
@@ -53,6 +88,11 @@ for reading order and the [import notes](README.md) for source limitations.
 **Affected documents:** both story decision ledgers, both Character Arcs copies, Oth'varen's derived note, Future Saga and Historical Timeline. Narrative decisions do not establish implemented gameplay.
 
 ## 2026-10-29 — Creator LOCK: Conclave deaths and final succession
+
+> **SUPERSEDED IN PART:** retain approved permanent outcomes and founder order,
+> but use the canonical 1–80 campaign for current quest/level placement and exact
+> finale sequencing. Old Act bands, post-launch assumptions and claims that the
+> launch ending remains unresolved are historical.
 
 **Status: USER LOCKED.** The creator explicitly agreed to Oma'vira dying in Act V, then approved and requested locking the proposed endings for the remaining four founders, including Su'vareth's surviving contingencies and the pre-combat confrontation between Thes'var and Oth'varen. This dated decision supersedes earlier draft statements that all founders survive launch or that these five fates remain undecided.
 
@@ -72,8 +112,13 @@ for reading order and the [import notes](README.md) for source limitations.
 
 ## 2026-10-30 — Level 1–60 launch restructure draft — Needs Review
 
+> **SUPERSEDED:** this historical proposal is not current campaign authority.
+> The later approved 1–80 campaign and current lock above resolve launch placement;
+> do not read this record as reopening those decisions.
+
 The creator requested a detailed narrative outline of the proposed five-act launch story ending with Nhal's shattering. The draft retains Act I 1–20, II 20–30, III 30–40, IV 40–50 and V 50–60; later bands can contain longer campaigns through XP pacing and substantial regional content. A level interval does not imply a fixed amount of playtime.
 
 The new `Main_Story_1_60_Draft.md` under the vault's Campaigns folder follows the human protagonist and includes regional journeys, character relationships, staged revelations, the agreed founder-death order, the final alignment and a homecoming. Other peoples retain their own openings and faction-loyal routes. All essential outcomes remain solo-accessible.
 
 **Proposal boundaries:** Oma'vira's move to Act II, first Shroud access in Act III, the mainland Chainworks location, and moving Oth'varen's death and Nhal's shattering into the launch finale are draft changes, not silent supersessions of earlier locks. The existing detailed campaign and quest registers remain historical review drafts until a deliberate reconciliation pass. The creator's request to commit this work does not approve its unratified events or establish implemented gameplay.
+

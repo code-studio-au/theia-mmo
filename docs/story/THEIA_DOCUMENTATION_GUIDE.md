@@ -32,12 +32,17 @@ This produces `docs/THEIA_ORIGINAL_QUESTIONS_Q001-Q444.md`. The generated file r
 
 ## Editorial guardrails
 
-- **CONFIRMED** — explicitly selected by the user, including later corrections and names.
-- **WORKING** — coherent narrative proposal; may be adopted, revised or rejected.
-- **OPEN** — no final decision.
-- **SUPERSEDED** — old name, earlier draft or previous selection replaced by later user instruction.
+Use the [repository authority hierarchy and six canon classifications](README.md#approval-and-precedence).
+Historical CONFIRMED / USER LOCKED labels require creator evidence; Needs Review
+means WORKING. Do not treat import-era review status as a downgrade of the later
+approved Human 1–80 campaign, or as approval of new connective history.
 
-The question numbers were reused around Q297–317, so identify questions by stage and source page as well as number. Stage 62 Q436–444 received no submitted answers. The creator narrative's detailed Second Sundering machinery, original surviving great order identity and fate of individual gods are still working/open.
+The question numbers were reused around Q297–317, so identify questions by stage
+and source page as well as number. Stage 62 Q436–444 received no submitted answers.
+Unanswered historical questions stay OPEN unless a later explicit decision resolves
+them. In particular, the Seven's survival and Oth'varen's physical death at the
+level-80 finale are settled by the [current creator lock](DECISIONS.md); old
+statements that their launch fates remain open are SUPERSEDED.
 
 ## Remaining archival work
 
@@ -45,16 +50,32 @@ The recovered decision file is a *summary*, not a complete verified answer regis
 
 The story's long-form draft is deliberately separate from the authoritative decision ledger so it can become increasingly novel-like without erasing provenance.
 
-## Human launch campaign — Needs Review (15 October 2026)
+## Human launch campaign — current and historical scope
 
-The creator authorised completing the human story and necessary connected racial material autonomously, with new work marked **Needs Review**. The following proposed packet is not a new canon lock:
+Start with [Current Human Campaign](Theia/Campaigns/CURRENT_HUMAN_CAMPAIGN.md),
+then the [canonical 1–80 narrative](Theia/Campaigns/Human_1_80_Canonical_Campaign.md)
+and [single working quest manifest](Theia/Campaigns/Human_1_80_Current_Quest_Authoring_Manifest.json).
+The narrative is approved; the manifest is planning material, not executable
+Rust content. Detailed dialogue and encounter design retain their stated review
+boundaries. The [current encounter design](Theia/Campaigns/Human_1_80_Encounter_Barks_and_Cinematic_Timing.md)
+does not acquire blanket approval from the narrative.
 
-- [Canonical Human 1–80 Campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md) — current Human 1–80 launch narrative; superseded five-act source remains in Git history.
-- [Historical Human Quest Register](THEIA_HUMAN_QUEST_REGISTER.md) — superseded 1–60 source evidence for 92 H and 24 HS editorial IDs; **not** the current quest order, runtime IDs or approved dependencies.
-- [Current Encounter Design](Theia/Campaigns/Human_1_80_Encounter_Barks_and_Cinematic_Timing.md) — current 1–80 encounters; the five historical 1–60 dungeon proposals are preserved in the legacy ideas archive and Git history.
-- [Cast, Places and Services](THEIA_HUMAN_CAST_AND_PLACES.md) — recurring humans, new contacts, working geography and stable services.
-- [Connected Racial Stories](Theia/Campaigns/Human_Legacy_Sidequest_Zone_Character_Archive.md) — allied visits, Dominion counterpart motivations and 12 proposed native-side companion quests.
-- Historical Human 1–60 Campaign Review Record — retired from the active tree; its original review and source precedence notes remain in Git history at `docs/story/THEIA_HUMAN_CAMPAIGN_REVIEW.md`. For current story status use [Current Human Campaign](Theia/Campaigns/CURRENT_HUMAN_CAMPAIGN.md).
+The creator's 15 October instruction to complete a packet marked Needs Review
+applies to the historical 1–60 proposals, not to the later approved 1–80 baseline:
 
-Read the approved [Human Act I](THEIA_HUMAN_ACT_I_STORY.md) and [Heartlands framework](THEIA_HUMAN_HEARTLANDS_SETTLEMENT_REGISTER.md) alongside the packet. Latest dated creator locks in the [Modern Timeline](THEIA_MODERN_STORY_REVELATION_TIMELINE.md) establish the five-act bands and first Shroud expedition around level 40; these supersede older six-band and later-expansion proposals. New dialogue, locations, quest staging, Cassian's final sentence and inversion outcomes remain **Needs Review**, even where the draft provides a complete proposed outcome.
+- [Historical Human Quest Register](THEIA_HUMAN_QUEST_REGISTER.md): 92 H and
+  24 HS editorial source IDs, not current order, runtime IDs or approved mappings.
+- [Cast, Places and Services](THEIA_HUMAN_CAST_AND_PLACES.md): historical contacts,
+  working geography and services, with approval boundaries retained.
+- [Legacy Ideas Archive](Theia/Campaigns/Human_Legacy_Sidequest_Zone_Character_Archive.md):
+  preserved connected-racial, sidequest and encounter proposals, not added Human quests.
+- The retired Human 1–60 Campaign Review Record remains in Git history at
+  `docs/story/THEIA_HUMAN_CAMPAIGN_REVIEW.md`.
 
+The approved [Human Act I](THEIA_HUMAN_ACT_I_STORY.md) and
+[Heartlands framework](THEIA_HUMAN_HEARTLANDS_SETTLEMENT_REGISTER.md) retain their
+approved scope. The [Modern Timeline](THEIA_MODERN_STORY_REVELATION_TIMELINE.md)
+contains dated historical locks; superseded five-act bands and launch outcomes
+must defer to the current canonical campaign. New dialogue, locations and
+encounter mechanics remain WORKING unless explicitly approved. Cassian's final
+sentence and other unresolved details must not be inferred from historical drafts.
