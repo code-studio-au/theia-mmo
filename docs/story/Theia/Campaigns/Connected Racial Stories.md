@@ -31,5 +31,5 @@ The following 21 CR/DR labels are historical editorial references, **not active 
 
 The proposed Dwarven, Aelari, Korrath, Orc, Halfling, Vaelari, Vorrath and Kel'vari routes, plus shared-world/faction consistency notes, are preserved together in [Connected Racial Stories](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md). They remain **Needs Review** and do not override the [current Human campaign](CURRENT_HUMAN_CAMPAIGN.md).
 
-[[Human Campaign]] · [[Peoples and Allegiances]]
+[Current Human Campaign](CURRENT_HUMAN_CAMPAIGN.md) · [Peoples and Allegiances](../Lore/Peoples%20and%20Allegiances.md)
 
