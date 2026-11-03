@@ -1112,4 +1112,7 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] PR #24 (`b4c29af3417ae1474af99f049f82d9ba641c7429`) reconciled Q092/Q118/Q125/Q157 dialogue timing, Q174 canonical-cap authority and Q183 excerpt scope. Remaining OPEN work: Q014–Q017 dialogue sections absent, Q183 Kel'vari report dialogue absent, non-executable gate metadata/runtime reconciliation, and Q176/Q181 completion-contact semantics. No JSON/code work authorized by this Markdown pass.
 
 - [x] Compared six dated creator-lock bodies in both Source Decision Recovery and Detailed Lore Archive against their World Bible home: all 12 duplicates byte-identical. Consolidated them to exact section links, retaining every heading and immutable provenance. Corrected the Bible's summary to distinguish the publicly authorised First Anchor project from its secret alterations, matching the later creator lock and Chronicle.
-- [ ] Independently review and merge creator-lock deduplication; no protected document retired and no new lore introduced.
+- [x] PR #29 independently reviewed and merged (`757f5e866ede0b2d450586ecc90847af04d6ea38`): 12 exact lock copies consolidated, original headings retained and First Anchor authorization corrected.
+
+- [x] Consolidated the remaining six Conclave/Oth'varen/inversion lock copies into current Bible links after verifying their old bodies matched the pre-reconciliation Bible. Preserved prior wording in Git history and scoped historical archive launch/zone/future proposals without approving or deleting unique concepts.
+- [ ] Independently review and merge remaining lock consolidation; legacy regional concepts and other derived references still require disposition work.
