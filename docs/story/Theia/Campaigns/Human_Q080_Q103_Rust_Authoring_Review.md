@@ -53,6 +53,15 @@
 - **Correct player-visible labels** in Q082, Q084, Q085 and Q097 without changing the underlying stable actor IDs.
 - **Preserve Q086 and Q097 as mandatory reveal gates**, with per-character, idempotent story flags.
 
+## Consolidated legacy context — 3 November 2026
+
+**ARCHIVED source evidence / WORKING authoring detail.** The [retired migration note](https://github.com/code-studio-au/theia-mmo/blob/3330fa9f9e99f8e8e737e8c07a4e22f7a0328b9a/docs/story/Theia/Campaigns/Human_Q080_Q103_Legacy_Pack_Migration.md) compared `Human_35_45_Playable_Quest_Pack.md` v0.1 and `Human_35_45_Implementation_Brief.md` v0.2. Both covered the same 24 Q080–Q103 references, not additional quests. Their distinct permission, first-contact and evidence requirements are retained in the matrix above; regional setting context remains in the [existing location/lore reference](Human_1_80_Location_and_Lore_Editorial_Reference.md).
+
+- Broad chapter summaries naming Kel'vari or Oth'varen are **not player knowledge at Q080**. Dialogue, journals, subtitles and NPC nameplates must all respect Q086 first contact and Q097 identity disclosure, including arrival at Lantern Redoubt before the reveal.
+- Preserve Classic manual targeting/facing and weapon-timed autoattack, solo-accessible progression, independent evidence receipts, safe death/disconnect recovery and no mandatory PvP, party, class or profession gate.
+- Road, ship and fixed flight paths remain ordinary travel; the restricted Passage is a consent-based exception, not general teleport access. Optional regional work cannot become a hidden prerequisite for mandatory revelations.
+- Coordinates, spawn/actor identities, semantic actions, rewards, tuning, localization and integration remain unresolved authoring inputs. The old minimum-level 35/40 assumptions, completion aliases and generic stage templates are not approved eligibility, runtime IDs or replacements for distinct stage evidence. Chapter size does not impose a permanent catalogue limit.
+
 ## Next review
 
 Proceed to Q104–Q128: Shattered Delegation evidence, Su'vareth's death, Veilbreaker discovery and the first distributed Anchor operations. Apply approved corrections to the **single manifest**, not to a parallel quest pack. No engine modifications are proposed.
