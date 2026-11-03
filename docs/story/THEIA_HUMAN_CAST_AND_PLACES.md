@@ -2,7 +2,7 @@
 
 # THEIA — HUMAN CAMPAIGN CAST, PLACES AND SERVICES
 
-**Status: Needs Review.** Companion to the [Human Campaign](THEIA_HUMAN_CAMPAIGN.md). Existing approved characters retain their established names and offices. Every proposed destination name, new character, service assignment and future outcome here needs creator review. Appearance, exact ages, numerical abilities, succession and class rosters are not fixed by this draft.
+**Status: Needs Review.** Companion to the [canonical Human 1–80 campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md). Existing approved characters retain their established names and offices. Every proposed destination name, new character, service assignment and future outcome here needs creator review. Appearance, exact ages, numerical abilities, succession and class rosters are not fixed by this draft.
 
 ## Geography and travel
 
