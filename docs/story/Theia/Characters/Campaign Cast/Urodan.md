@@ -1,7 +1,7 @@
 ---
 type: character
 canon_status: Needs Review
-source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
+source: "../../../THEIA_HUMAN_CAST_AND_PLACES.md"
 up: "../Characters.md"
 ---
 # Urodan
@@ -15,7 +15,7 @@ New Korrath chronicle-custodian
 ## Motivation, limitations and proposed outcome
 Restores a warning and the history of its omission without pretending one archive holds everything; records civilians' names as well as great events.
 
-Source: [Allied and Kel'vari cast](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
+Source: [Allied and Kel'vari cast](../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
 [Characters](../Characters.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
