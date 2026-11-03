@@ -343,3 +343,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Reclassified `Theia/Campaigns/Future Saga.md` as a historical proposal and deferred-idea archive with a prominent 3 November 2026 authority notice (commit `0d33f360`). Current Human 1–80 narrative and decisions take precedence over older launch-versus-expansion speculation.
 - [x] Corrected historical text that claimed Oth'varen must survive launch and that conflicting launch-inversion endings remained unresolved. The approved launch finale includes Oth'varen's death and Nhal's coherent identity shattering; divine essence persists. No future fragment outcome or expansion storyline is approved.
 - [ ] Review the remaining historical proposal sections and their inbound links before considering any deletion. The archived ideas are not active canon and must not be silently promoted.
+
+## Five Conclave founder source-embed migrations — 3 November 2026
+
+- [x] Replaced obsolete `Sources/THEIA_CHARACTER_ARCS` embeds and `Sources/DECISIONS` wiki-links in the Thes'var, Vaer'uun, Su'vareth, Khor'vun and Oma'vira character pages with direct links to root historical arcs, story decisions and the authoritative 1–80 campaign. Commits `d42f2716`, `b9bfa991`, `95fe1fc0`, `50db606a`, `5ea19475`.
+- [x] Preserved their existing creator-locked outcomes without rewriting quest implementation or inventing encounter details. The canonical 1–80 campaign now explicitly governs launch timing in each page.
+- [ ] Continue stale Obsidian embeds and source references in other derived pages; verify full link graph before deleting the temporary tracker or retiring the old story branch.
