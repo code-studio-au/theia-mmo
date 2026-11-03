@@ -17,6 +17,6 @@ Browse individual notes under [Campaign Cast](Campaign%20Cast/). [Human Cast and
 
 ## Divine and primordial figures
 
-See [The Seven Gods](../Lore/The%20Seven%20Gods.md), [Aethyr](../Lore/Aethyr.md), [Nhal](../Lore/Nhal.md), and [Current Human Campaign](../Campaigns/CURRENT_HUMAN_CAMPAIGN.md).
+See [The Seven Gods](../Lore/The%20Seven%20Gods.md) and [Current Human Campaign](../Campaigns/CURRENT_HUMAN_CAMPAIGN.md) for approved context on the divine and primordial figures.
 
 The obsolete Obsidian Story Browser character embed and mirrored source links are retired; this index is navigation, not independent canon.
