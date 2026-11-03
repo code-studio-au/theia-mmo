@@ -2,7 +2,7 @@
 type: topic
 canon_status: source-specific
 source: "../../THEIA_WORLD_BIBLE.md"
-up: "[[Lore and World]]"
+up: "Lore and World.md"
 ---
 # Resonance Inversion
 
@@ -10,10 +10,10 @@ This reading page includes the full relevant source section; shared material may
 
 [Read historical source section](../../THEIA_WORLD_BIBLE.md)
 
-[[Lore and World]] · [[Welcome|Home]]
+[Lore and World](Lore%20and%20World.md) · [Home](../../README.md)
 
 ## Related notes
 
-[[Future Saga]] proposes a successful Act V Major Anchor inversion and follows its consequences through later campaigns to the saga's ending. These outcomes remain **Needs Review**; the established metaphysical foundation above is unchanged.
+[Future Saga](../Campaigns/Future%20Saga.md) contains older Act V and post-launch inversion proposals, now superseded by the creator-locked level-80 launch outcome. The coordinated inversion shatters Nhal's coherent identity and will; his essence persists as fragments without unified memory. The Seven survive. No later fragment fate or expansion plot has been approved. See [current Human campaign](../Campaigns/CURRENT_HUMAN_CAMPAIGN.md) and [story decisions](../../DECISIONS.md).
 
-[[Anchors and the Shroud]] · [[The Unmade]] · [[Nhal]]
+[Anchors and the Shroud](Anchors%20and%20the%20Shroud.md) · [The Unmade](Institutions/The%20Unmade.md) · Nhal
