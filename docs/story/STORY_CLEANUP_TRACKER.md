@@ -994,3 +994,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Searched indexed incoming references to `THEIA_HUMAN_QUEST_REGISTER.md` and live-checked root README, Documentation Guide and historical Reading Map. Root register remains a cited historical source and is **not yet safe to delete**.
 - [x] Updated `THEIA_DOCUMENTATION_GUIDE.md` to foreground current Human 1–80 campaign and sole working manifest, and label the 92 H / 24 HS source register as superseded provenance rather than current quest order (commit `894af827`).
 - [ ] Search results are indexed, not a complete fresh full-tree backlink scan. Verify all surviving root and Editorial references, historical unique source detail, and approved H/HS mapping ledger before any register retirement.
+
+## Historical Human campaign review authority correction — 3 November 2026
+
+- [x] Live-reviewed root `README.md`, historical `THEIA_HUMAN_CAMPAIGN.md` and `THEIA_HUMAN_CAMPAIGN_REVIEW.md` backlinks to the protected old H/HS register. README and historical campaign already identify current 1–80 authority; review record lacked an explicit top-level superseded warning.
+- [x] Added a superseded historical-review banner to `THEIA_HUMAN_CAMPAIGN_REVIEW.md`, linking current 1–80 narrative and sole working manifest (commit `227e82f2`). Its old Cassian sentencing and level-60 outcome remain provenance only.
+- [ ] Continue other root-story historical authority/backlink checks. The root H/HS register still has legitimate source references and unapproved mappings; do not delete it yet.
