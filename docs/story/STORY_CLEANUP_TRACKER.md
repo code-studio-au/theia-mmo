@@ -739,3 +739,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Re-fetched all 19 Lore Markdown files outside `Peoples/` against tree `8b3538a9`: **447 relative Markdown links**, zero missing file targets, zero remaining `[[...]]` wiki-links.
 - [x] Combined with the previously verified nine peoples' files (119 links), the **28-file Lore directory** now passes file-target and Obsidian syntax checks: **566 relative Markdown link occurrences**, zero missing file targets.
 - [ ] Heading fragments, content canon precedence, incoming backlinks and historical duplicate analysis remain outstanding; do not treat this as whole-story completion.
+
+## Divine and primordial character directory verification — 3 November 2026
+
+- [x] Complete tree audit found nine `Theia/Characters/Divine/*.md` notes, including surviving standalone Aethyr and Nhal notes. Earlier claims that Nhal lacked a standalone target were incorrect; retain and link the existing note instead of inventing a replacement.
+- [x] Migrated Aethyr and Nhal's remaining wiki-links (commits `0389d37b`, `79b5db2a`). Re-fetched all nine notes against tree `79b5db2a`: **46 Markdown file-link occurrences, zero missing targets and zero remaining Obsidian wiki-links**.
+- [ ] Consider correcting earlier plain-text Nhal/Aethyr references to these verified existing notes during the broader backlink audit. This directory-level check does not validate heading fragments or canon semantics.
