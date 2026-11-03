@@ -4,9 +4,12 @@
 
 > **SOURCE REVIEW COMPLETE (12 October 2026):** Read [THEIA_CANON_RECONCILIATION_REPORT.md](THEIA_CANON_RECONCILIATION_REPORT.md) for the 403-page source-index methodology, 471 separately indexed question prompt occurrences, 418 source-located numbered identifiers, 26 deliberately open/deferred identifiers, and corrections propagated into the current World Bible and chronicle. The complete original-question evidence register was generated in an earlier ChatGPT workspace but is **not committed to GitHub**; regenerate or upload it before treating the repository as a complete source archive.
 
-# Theia documentation — source of truth and reading order
+# Theia documentation — historical source guide and current reading order
 
-## Current documents (after the original 403-page conversation export was supplied)
+> **Current campaign authority (3 November 2026):** For the Human launch story use [Current Human Campaign](Theia/Campaigns/CURRENT_HUMAN_CAMPAIGN.md), [Canonical Human 1–80 Campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md), and the [single working quest manifest](Theia/Campaigns/Human_1_80_Current_Quest_Authoring_Manifest.json). This document retains older import-era reading guidance as historical context, not as a competing 1–60 campaign authority. The original H/HS register is provenance only; its 92 H and 24 HS editorial IDs are not approved runtime mappings.
+
+
+## Historical source documents (after the original 403-page conversation export was supplied)
 
 1. **[THEIA_WORLD_BIBLE.md](THEIA_WORLD_BIBLE.md)** — short canonical reference. Where a user-confirmed decision conflicts with an assistant proposal, the decision wins.
 2. **[THEIA_INTERWOVEN_CHRONICLE.md](THEIA_INTERWOVEN_CHRONICLE.md)** — current creator-facing chronological narrative, expanded with divine relationships, the vanished Kel'vari, Keeper/Ascendant conflict, Nhal, ancient institutions, Second Sundering, racial migrations, the Guardians and Unmade, Shattered Delegation, modern leaders and overseas incursions. It contains proposed connective history that is NOT automatically ratified.
@@ -47,7 +50,7 @@ The story's long-form draft is deliberately separate from the authoritative deci
 The creator authorised completing the human story and necessary connected racial material autonomously, with new work marked **Needs Review**. The following proposed packet is not a new canon lock:
 
 - [Complete Human Campaign](THEIA_HUMAN_CAMPAIGN.md) — five acts, levels 1–60, concluding the human launch narrative.
-- [Human Quest Register](THEIA_HUMAN_QUEST_REGISTER.md) — 92 principal quests, 24 optional local quests, dependencies and choices.
+- [Historical Human Quest Register](THEIA_HUMAN_QUEST_REGISTER.md) — superseded 1–60 source evidence for 92 H and 24 HS editorial IDs; **not** the current quest order, runtime IDs or approved dependencies.
 - [Solo Story Climaxes](THEIA_HUMAN_STORY_DUNGEONS.md) — all five essential story encounters without required raids or PvP.
 - [Cast, Places and Services](THEIA_HUMAN_CAST_AND_PLACES.md) — recurring humans, new contacts, working geography and stable services.
 - [Connected Racial Stories](THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md) — allied visits, Dominion counterpart motivations and 12 proposed native-side companion quests.
