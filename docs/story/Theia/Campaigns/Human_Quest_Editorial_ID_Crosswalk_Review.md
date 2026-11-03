@@ -50,3 +50,7 @@ Rechecked the five conflict-flagged source objectives and `proposed_relation` fi
 | H5-16 | Q181 | Preserve bounded severance as historical research context only; **do not offer a branching finale** that bypasses Oth'varen's physical death and Nhal's coherent shattering. |
 
 The original objectives and candidate references remain intact in the crosswalk and root historical register. No new runtime IDs, canonical quest changes, or approval of optional quest additions follows from this classification. The archive remains the destination for distinct future sidequest ideas.
+
+## Optional HS-01–HS-12 stage comparison — 3 November 2026
+
+The first twelve historical optional quests were compared with current manifest objectives. None is approved as a one-to-one migration. HS-01, HS-02, HS-06, HS-08 and HS-10 have partial objective overlap with Q006, Q007, Q014, Q052 and Q055. HS-07 and HS-12 have strong thematic overlap with Q051 and Q101 but still need detail review. HS-03, HS-04, HS-05, HS-09 and HS-11 retain distinctive standalone sidequest concepts not represented by the proposed current stages: displaced-family settlement, wardstone interpretation, mill allocation, craft demonstration and injured-predator hunting practice. Preserve all original source outcomes and standalone access in the historical crosswalk and idea bank. Do not assign runtime IDs or add quests automatically. Review HS-13–HS-24 next.
