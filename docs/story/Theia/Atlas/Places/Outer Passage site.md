@@ -25,4 +25,4 @@ Source: [Geography and travel](../../../THEIA_HUMAN_CAST_AND_PLACES.md) (entry: 
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
 
-[[Atlas/Places/Drom Kar|Drom Kar]] · [[Lore/Peoples/Korrath|Korrath]]
+[Drom Kar](Drom%20Kar.md) · [Korrath](../../Lore/Peoples/Korrath.md)
