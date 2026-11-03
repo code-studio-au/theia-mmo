@@ -1025,3 +1025,8 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Live-fetched Campaign Cast cards for Elara Fenwick, Mara Thorne, King Aldren Vaelmont, Lord Cassian Veyr, Lord Edric Halewyn and Garrick Ashford. All six Act I role/development themes have corresponding cards with approval boundaries. Cross-check recorded in original Act I document (commit `d3fddd6b`).
 - [x] Confirmed Cassian's old trial and permanent imprisonment remain historical Needs Review, not approved current 1–80 outcome.
 - [ ] Complete Act I unique-prose and incoming-link audit before considering deletion. Continue other root-story documents and H/HS provenance; no Rust or manifest changes.
+
+## Historical Act I incoming-reference dependency audit — 3 November 2026
+
+- [x] Indexed-search review identified incoming references from root README, Documentation Guide, historical Human Campaign, creator-approved Heartlands Settlement Register, import manifest and temporary cleanup tracker. Live-fetched Heartlands and import-manifest references; recorded provenance dependencies in the Act I file (commit `9951961e`).
+- [ ] Do not delete the original Act I source yet. Preserve original import path provenance, reconcile legitimate companion links and perform complete fresh-tree backlink scan before retirement. Search index results alone are not exhaustive.
