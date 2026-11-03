@@ -331,3 +331,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Removed obsolete Obsidian Story Browser embed and superseded five-act level-60 launch / later-expansion Nhal finale sections from `Theia/History/Historical Timeline.md` (commit `cdd2772d`). Kept the thirteen historical milestone entries and present-day context, with links to the current 1–80 campaign and creator decisions.
 - [x] Explicitly documented that Oth'varen dies and Nhal's unified identity is shattered during the level-80 launch finale, while divine essence persists. Old wording is recoverable from Git history, not active authority.
 - [ ] Audit historical event links and remaining old-finale claims elsewhere. The retained milestone wiki-links and headings have not all been verified; final link and semantic validation remains outstanding.
+
+## Oth'varen current-canon character correction — 3 November 2026
+
+- [x] Replaced the obsolete 'survives launch, dies later' statement in `Theia/Characters/Oth'varen.md` with the locked level-80 finale sequence, including Thes'var's defeat, Oth'varen's physical death, Nhal's identity shattering and surviving divine essence (commit `6f44e8d5`).
+- [x] Replaced obsolete historical `Sources/THEIA_CHARACTER_ARCS` embed with a direct root historical source link, explicitly subordinate to current campaign canon.
+- [ ] Audit other derived character pages and historical Future Saga for stale launch-versus-expansion wording. The original historical source can remain as provenance but must not be presented as current canon.
