@@ -926,3 +926,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Replaced Q053 with the current manifest-grounded engineering-report, High King's introduction, established travel and Caelith handoff steps (commit `7f15d5a7`).
 - [x] Corrected Q071 and Q072 canonical contact labels from the premature Oth'varen name to spoiler-safe `Grey Surveyor`, matching the working manifest and preserving the Q097 identity reveal (same commit).
 - [ ] Complete final whole-campaign quest-summary/contacts verification, then H/HS provenance and dialogue consequences, duplicate story document retirement, and repository-wide links/heading anchors. No quest count or runtime changes.
+
+## Full 184-entry canonical ID/title/contact consistency pass — 3 November 2026
+
+- [x] Parsed all canonical `Q001–Q184` bullet entries against the sole consolidated working manifest: **184 canonical entries, 184 unique IDs, 184 manifest entries, zero missing IDs, zero duplicate IDs, zero title mismatches**.
+- [x] Compared explicit canonical `Contact` fields against manifest editorial giver contacts; found only Q097 premature Oth'varen label. Changed it to `Grey Surveyor (until identity reveal)` (commit `989258f8`) and rechecked: **zero remaining explicit contact mismatches**.
+- [ ] This structural check does not establish complete stage-by-stage narrative equivalence, dialogue reveal safety, location correctness, H/HS mapping approval or executable Rust readiness. Continue those separate reviews and final backlink/heading validation before tracker deletion.
