@@ -4,6 +4,19 @@ Use the [authority hierarchy and canon classifications](README.md#approval-and-p
 This ledger indexes creator decisions; historical entries retain their original
 scope and are not all simultaneously current.
 
+## 2026-11-03 — LOCKED: Q176 and Q181 turn-in contact
+
+**Approval evidence:** when asked to choose between automatic completion after the
+final objectives and turning both quests in to Sera, the creator explicitly chose
+Sera for both. This resolves the previously OPEN completion-contact decision.
+
+**Scope:** the [canonical campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md)
+records Sera as the turn-in contact after all Q176 and Q181 objectives. Existing
+objectives, permanent deaths and finale ordering are unchanged. This decision
+does not approve new dialogue wording, runtime IDs or implementation. The JSON
+manifest remains outside the current Markdown-only scope; its previously
+documented contact labels require a separately authorized reconciliation.
+
 ## 2026-11-03 — LOCKED: canon stewardship and current launch outcome
 
 **Approval evidence:** the creator explicitly supplied the Theia Canon & Repository

@@ -31,12 +31,12 @@
 | Quest | Authoring intent / authoritative evidence | Key blockers and continuity |
 |---|---|---|
 | **Q175 Inside the Architect's Design** | Enter facility → identify controls → defeat defenders → preserve convergence mechanism | Preserve apparatus for inversion; generic kill credit alone does not prove machinery preserved |
-| **Q176 The Architect's Last Argument** | Confront and kill Thes'var → detect unexpected control irregularity afterward | Thes'var dies physically. Sabotage discovery must occur **after** defeat, not during pre-fight dialogue |
+| **Q176 The Architect's Last Argument** | Confront and kill Thes'var → detect unexpected control irregularity afterward → turn in to Sera | Thes'var dies physically. Sabotage discovery must occur **after** defeat, not during pre-fight dialogue |
 | **Q177 The Broken Alignment** | Inspect tampered junction → attempt safe correction → prove failure → alert Sera | Explicit failed-safe-correction event; no automatic catastrophic loss on player error |
 | **Q178 The Scholar's Correction** | Verify fatal correction model → Oth'varen chooses → Sera establishes safeguards | He discovers the lethal cost only now, following sabotage; choice is voluntary |
 | **Q179 The Sixth Scholar's Choice** | Farewell dialogue → ready stations → receive final instructions | Player tone can vary; no false branch where Oth'varen survives |
 | **Q180 The Seven Hold** | Defend mortal stations → confirm Seven's voluntary participation → maintain six-field support | Seven cooperate freely and remain unbound. Defense and field alignment require trusted outcome facts |
-| **Q181 The Shattering of Nhal** | Protect correction → verify alignment holds → Oth'varen physically dies → final inversion → Nhal's coherent identity shatters | **Resolved in the working manifest:** `q181.objective.othvaren_death` records the physical death between alignment hold and inversion. Rust support remains planned; do not add a duplicate stage |
+| **Q181 The Shattering of Nhal** | Protect correction → verify alignment holds → Oth'varen physically dies → final inversion → Nhal's coherent identity shatters → turn in to Sera | **Resolved in the working manifest:** `q181.objective.othvaren_death` records the physical death between alignment hold and inversion. Rust support remains planned; do not add a duplicate stage |
 | **Q182 Silence After** | Confirm surviving Seven and teams → record memorial → document fragment uncertainty | Essence survives; no determination of fragment destination or new identity |
 | **Q183 A World Unbound** | Report to Kel'vari and Covenant separately → verify Shroud fade began at Q156 → war remains | No instant peace treaty, no renewed Binding, no delayed start of Shroud dissipation |
 | **Q184 The Road Home** | Return by ordinary travel → revisit Elara and companions → close personal arc | Final contact and closure should be idempotent; optional regional work may remain available |
@@ -61,9 +61,11 @@ These are **server-authoritative, per-character story facts** requiring atomic o
 - Separate Thes'var's defeat, discovered sabotage, correction failure and Oth'varen's voluntary choice into non-skippable authoritative facts.
 - Define Q184's final giver/turn-in and one-time closure, while allowing independent optional quests to remain playable.
 
-## OPEN: completion contacts after permanent deaths
+## LOCKED: completion contacts after permanent deaths
 
-The working manifest still lists **Thes'var** as Q176's turn-in contact and **Sera / Oth'varen** as Q181's turn-in contact, each with `requires_verification: true`. Both quests permanently kill the named character before completion. These labels must not become living-NPC turn-in requirements. [Finale dialogue](Human_80_Finale_NPC_Dialogue_Scripts.md) assigns the aftermath speech to Sera in both cases, but a speaker label alone does not approve the final gameplay turn-in mechanism. Resolve the intended completion contact or authoritative auto-completion semantics before runtime conversion. Keep the locked deaths and quest outcomes unchanged; no replacement NPC, resurrection or runtime ID is approved here.
+**Creator decision, 3 November 2026:** turn Q176 and Q181 in to Sera after their final objectives, as recorded in the [canonical campaign](Human_1_80_Canonical_Campaign.md) and [decision ledger](../../DECISIONS.md#2026-11-03--locked-q176-and-q181-turn-in-contact). The earlier choice between Sera and automatic completion is resolved. Thes'var's physical death in Q176 and Oth'varen's death after alignment holds but before final inversion in Q181 remain unchanged.
+
+**OPEN implementation reconciliation:** the previously documented working-manifest labels were Thes'var for Q176 and Sera / Oth'varen for Q181, each requiring verification. Those labels are superseded by the creator's Sera turn-in decision, not permission for dead-NPC turn-in or resurrection. JSON and runtime content were not inspected or changed in this Markdown-only update; separately authorized reconciliation is still required before runtime conversion. Existing [finale dialogue](Human_80_Finale_NPC_Dialogue_Scripts.md) assigns both aftermath speeches to Sera; its wording remains WORKING.
 
 ## Engine-independent authoring constraints
 
