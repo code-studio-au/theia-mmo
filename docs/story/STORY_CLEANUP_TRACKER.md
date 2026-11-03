@@ -596,3 +596,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Retried and completed King Aldren Vaelmont, Lord Cassian Veyr and Lord Edric Halewyn direct Characters/current campaign navigation (commits `38346bae`, `1e1d0a3a`, `eb047fad`). Aldren's Valecrown, Cassian and Covenant related links were also migrated.
 - [x] Explicitly marked Cassian's conviction/permanent imprisonment as a **Needs Review historical proposal**, not approved current 1–80 canon. Preserved his approved starting role and Edric's death/legacy boundaries.
 - [ ] Continue remaining Campaign Cast and repository-wide source/link/semantic checks.
+
+## Leadership cast navigation — 3 November 2026
+
+- [x] Updated First Elder Dromak, High Thane Bromund Stonevein and Warden Shorvek Tal links (commits `83eb22ea`, `7432bc22`, `1b069fa6`).
+- [x] Preserved Dromak's council constraints, Bromund's working-name status and Shorvek's coastal sovereignty.
+- [ ] Continue remaining cast and repository-wide validation.
