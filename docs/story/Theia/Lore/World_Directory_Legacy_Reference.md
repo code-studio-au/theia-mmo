@@ -86,11 +86,11 @@ Complete static navigation alongside the live browsing tables. Approval boundari
 - [The Warrior](../Characters/Divine/The%20Warrior.md)
 
 ## encounter
-- The Broken Measure — historical encounter card retired; original details preserved in [Human 1–60 dungeon source](../../THEIA_HUMAN_STORY_DUNGEONS.md) and Git history
-- The Hidden Passage — historical encounter card retired; original details preserved in [Human 1–60 dungeon source](../../THEIA_HUMAN_STORY_DUNGEONS.md) and Git history
-- The Severed Chain — historical encounter card retired; original details preserved in [Human 1–60 dungeon source](../../THEIA_HUMAN_STORY_DUNGEONS.md) and Git history
-- The Silent Signal — historical encounter card retired; original details preserved in [Human 1–60 dungeon source](../../THEIA_HUMAN_STORY_DUNGEONS.md) and Git history
-- The Witness Vault — historical encounter card retired; original details preserved in [Human 1–60 dungeon source](../../THEIA_HUMAN_STORY_DUNGEONS.md) and Git history
+- The Broken Measure — historical encounter card retired; original details preserved in [legacy encounter ideas](../Campaigns/Human_Legacy_Sidequest_Zone_Character_Archive.md) and Git history
+- The Hidden Passage — historical encounter card retired; original details preserved in [legacy encounter ideas](../Campaigns/Human_Legacy_Sidequest_Zone_Character_Archive.md) and Git history
+- The Severed Chain — historical encounter card retired; original details preserved in [legacy encounter ideas](../Campaigns/Human_Legacy_Sidequest_Zone_Character_Archive.md) and Git history
+- The Silent Signal — historical encounter card retired; original details preserved in [legacy encounter ideas](../Campaigns/Human_Legacy_Sidequest_Zone_Character_Archive.md) and Git history
+- The Witness Vault — historical encounter card retired; original details preserved in [legacy encounter ideas](../Campaigns/Human_Legacy_Sidequest_Zone_Character_Archive.md) and Git history
 
 ## event
 - [Age of Reconstruction](../History/Events/Age%20of%20Reconstruction.md)
