@@ -309,3 +309,8 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Directly fetched all six Conclave/Sixth Scholar character-note targets referenced by `Theia/Characters/Characters.md`: Oth'varen, Vaer'uun, Thes'var, Su'vareth, Oma'vira and Khor'vun all exist on `main`.
 - [x] Removed two directory-only Markdown links in `Theia/Atlas/Atlas.md`, leaving the folder names as plain navigation guidance rather than pretending they are verified file targets (commit `b97a6c94`).
 - [ ] Continue checking every relative link in remaining indexes and documents; six verified character targets do not establish repository-wide link validity.
+
+## Lore index file-target verification — 3 November 2026
+
+- [x] Directly verified all 13 Markdown file targets in `Theia/Lore/Lore and World.md` against live `main`; **13/13 exist, zero missing**. Includes root World Bible, Detailed Lore Archive, Chronicle, story decisions, eight topic notes and current campaign entry point.
+- [ ] This verifies file existence only, not heading fragments, semantic accuracy or repository-wide links. Continue other index and legacy-content audits before closure.
