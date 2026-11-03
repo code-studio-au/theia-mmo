@@ -391,3 +391,8 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Replaced missing Vault Import Record navigation with surviving import provenance and story index (commit `8fed9439`).
 - [x] Updated Memory Scenes navigation to Markdown links, including the existing Six Reunited scene (commit `e26529e4`).
 - [ ] Continue checking remaining historical links and unique material. These changes do not complete the repository-wide audit.
+
+## Recent navigation target validation — 3 November 2026
+
+- [x] Directly fetched eight unique destinations referenced by the recent Memory Scenes, editorial and racial index repairs: character index, history index, timelines, Six Reunited, import manifest, story README, current Human campaign and Peoples and Allegiances. **8/8 file targets exist on main**.
+- [ ] File existence does not verify every wiki-link, heading anchor or story claim. Continue the broader audit before retiring the story branch and deleting this tracker.
