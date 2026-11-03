@@ -9,7 +9,7 @@ The overarching arc is approved; specific scenes, dialogue and outcomes retain t
 
 [Read the historical character arc](../../THEIA_CHARACTER_ARCS.md) (subject to later creator locks).
 
-[Characters](Characters.md) · [Orders and Hidden Conflict](../Lore/Orders%20and%20Hidden%20Conflict.md) · [Timelines](../History/Timelines.md)
+[Characters](Characters.md) · [Orders and Hidden Conflict](../Lore/Orders%20and%20Hidden%20Conflict.md) · [Historical Timeline](../History/Historical%20Timeline.md)
 
 ## Related notes
 
