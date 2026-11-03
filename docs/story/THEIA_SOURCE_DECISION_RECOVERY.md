@@ -425,3 +425,15 @@ The First Anchor's breach initiated the Second Sundering as a literal geographic
 
 **LOCKED within the original approval scope:** the complete authoritative text is in the [World Bible](THEIA_WORLD_BIBLE.md#2026-10-15-creator-lock--unmade-hostility-corruption-and-conditioning). This duplicate is consolidated there without changing the decision, its exclusions or its remaining OPEN details.
 
+
+
+## Retired secondary lore compilation — source-specific detail
+
+**Supporting historical characterization, not a new creator lock.** The [retired Detailed Lore Archive](https://github.com/code-studio-au/theia-mmo/blob/c8aa57513b42f3de7675e4cf40e53141e96cbbfd/docs/story/THEIA_DETAILED_LORE_ARCHIVE.md) was a reconstruction rather than a verbatim transcript or certified review of every original message. Its distinct historical nuances are retained here without silently strengthening the current Bible's wording or changing later creator decisions:
+
+- The Seven's relationship notes described Warrior as relatively indifferent to Shaper's inventions, Seeker as suspicious of Ascendant, Judge as distrusting Seeker, and Shaper's dismissiveness as contributing to Ascendant's envy. The Bible's established relationships remain authoritative; these are preserved characterizations from the secondary source, not new dialogue or wartime allegiance decisions.
+- The halfling precision-combat explanation included marksmanship and stealth tactics alongside Q382's revised all-three selection. This is cultural elaboration, not a separate recovered choice, mandatory racial restriction or approved class mechanic.
+- The recovery narrative described surviving dwarf and ancestral troll centres retaining ancient infrastructure and scholarship with variable authenticity/interpretation; the human–dwarf pact paired mutual defence and economic cooperation, agricultural plains and mountain engineering, while the orc–halfling partnership paired security with guild ingenuity. It did not select exact treaty text, founding dates or the halfling displacement disaster.
+- The compilation attributed the distinction between the Shaper's ambition and the superseded title “The Ambitious” to a later voice correction. Its exact wording is not reproduced or invented here.
+
+Core world facts and scoped observation/independent-working/travel/war qualifications are retained in the [World Bible](THEIA_WORLD_BIBLE.md); unique unapproved institutional, character and frontier ideas reside in the [Legacy Ideas Archive](Theia/Campaigns/Human_Legacy_Sidequest_Zone_Character_Archive.md#retired-detailed-lore--distinct-historical-proposals). The question register above already preserves the compilation's Q376–Q444 evidence. Its obsolete organizational file proposals and alternate launch endings remain only immutable source history.

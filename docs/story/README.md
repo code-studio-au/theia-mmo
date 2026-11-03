@@ -16,7 +16,7 @@ The older 1–60 campaign, quest register and imported review materials below ar
 | Subject | Documents |
 |---|---|
 | Reading order and canon rules | [Imported documentation guide](THEIA_DOCUMENTATION_GUIDE.md), [local decisions and maintenance](DECISIONS.md) |
-| World and lore | [World Bible](THEIA_WORLD_BIBLE.md), [Detailed Lore Archive](THEIA_DETAILED_LORE_ARCHIVE.md), [Interwoven Chronicle](THEIA_INTERWOVEN_CHRONICLE.md) |
+| World and lore | [World Bible](THEIA_WORLD_BIBLE.md), [Interwoven Chronicle](THEIA_INTERWOVEN_CHRONICLE.md) |
 | Characters | [Character Arcs](THEIA_CHARACTER_ARCS.md), [Campaign character cards](Theia/Characters/Characters.md) |
 | Campaign acts and revelation | [Modern Story Revelation Timeline](THEIA_MODERN_STORY_REVELATION_TIMELINE.md), [Human Act I](THEIA_HUMAN_ACT_I_STORY.md), [Canonical Human 1–80 Campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md) |
 | Quests and encounters | [Human Quest Register](THEIA_HUMAN_QUEST_REGISTER.md), [Current Encounter Design](Theia/Campaigns/Human_1_80_Encounter_Barks_and_Cinematic_Timing.md), [Connected Racial Stories](Theia/Campaigns/Human_Legacy_Sidequest_Zone_Character_Archive.md) |

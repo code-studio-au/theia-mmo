@@ -1,6 +1,6 @@
 # Lore and World — navigation
 
-The former Obsidian Story Browser embed is retired. Use the authoritative root [World Bible](../../THEIA_WORLD_BIBLE.md), [Detailed Lore Archive](../../THEIA_DETAILED_LORE_ARCHIVE.md), [Interwoven Chronicle](../../THEIA_INTERWOVEN_CHRONICLE.md), and [story decisions](../../DECISIONS.md) with their explicit approval labels and dated amendments.
+The former Obsidian Story Browser embed is retired. Use the authoritative root [World Bible](../../THEIA_WORLD_BIBLE.md), [Source Decision Recovery](../../THEIA_SOURCE_DECISION_RECOVERY.md), [Interwoven Chronicle](../../THEIA_INTERWOVEN_CHRONICLE.md), and [story decisions](../../DECISIONS.md) with their explicit approval labels and dated amendments.
 
 ## Reference topics
 
