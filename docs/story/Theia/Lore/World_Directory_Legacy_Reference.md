@@ -163,7 +163,7 @@ Complete static navigation alongside the live browsing tables. Approval boundari
 - [DR-H2 — Charged to a Battle](../Campaigns/Connected%20Stories/DR-H2%20%E2%80%94%20Charged%20to%20a%20Battle.md)
 - [DR-H3 — A Closed Account](../Campaigns/Connected%20Stories/DR-H3%20%E2%80%94%20A%20Closed%20Account.md)
 - [DR-O1 — Households Behind the Line](../Campaigns/Connected%20Stories/DR-O1%20%E2%80%94%20Households%20Behind%20the%20Line.md)
-- [DR-O2 — The Wrong Hour](../Campaigns/Connected%20Stories/DR-O2%20%E2%80%94%20The%20Wrong%20Hour.md)
+- DR-O2 — The Wrong Hour (historical quest; see [connected racial source](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md))
 - [DR-O3 — A Shore Still Held](../Campaigns/Connected%20Stories/DR-O3%20%E2%80%94%20A%20Shore%20Still%20Held.md)
 - [DR-R1 — The Pilgrims' Road](../Campaigns/Connected%20Stories/DR-R1%20%E2%80%94%20The%20Pilgrims'%20Road.md)
 - [DR-R2 — Missing Before the Landing](../Campaigns/Connected%20Stories/DR-R2%20%E2%80%94%20Missing%20Before%20the%20Landing.md)
@@ -300,7 +300,7 @@ Complete static navigation alongside the live browsing tables. Approval boundari
 - [CR-D2 — The neglected gallery](../Campaigns/Connected%20Stories/CR-D2%20%E2%80%94%20The%20neglected%20gallery.md)
 - [CR-D3 — The hold's commission](../Campaigns/Connected%20Stories/CR-D3%20%E2%80%94%20The%20hold's%20commission.md)
 - [CR-K1 — A city maintained](../Campaigns/Connected%20Stories/CR-K1%20%E2%80%94%20A%20city%20maintained.md)
-- [CR-K2 — The full margin](../Campaigns/Connected%20Stories/CR-K2%20%E2%80%94%20The%20full%20margin.md)
+- CR-K2 — The full margin (historical beat; see [connected racial source](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md))
 - [CR-K3 — The return path](../Campaigns/Connected%20Stories/CR-K3%20%E2%80%94%20The%20return%20path.md)
 
 ## topic
