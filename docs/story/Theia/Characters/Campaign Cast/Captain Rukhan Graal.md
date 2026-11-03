@@ -1,7 +1,7 @@
 ---
 type: character
 canon_status: Needs Review
-source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
+source: "../../../THEIA_HUMAN_CAST_AND_PLACES.md"
 up: "../Characters.md"
 ---
 # Captain Rukhan Graal
@@ -18,7 +18,7 @@ Scouts, patrol plans and a later strengthened garrison
 ## Boundary and proposed resolution
 Hostile military opponent; not default [Unmade](../../Lore/Institutions/The%20Unmade.md). Remains a capable defender after the Covenant raid withdraws. Great Clans are not renamed Great Houses.
 
-Source: [Dominion characters required by this human route](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
+Source: [Dominion characters required by this human route](../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
 [Characters](../Characters.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
