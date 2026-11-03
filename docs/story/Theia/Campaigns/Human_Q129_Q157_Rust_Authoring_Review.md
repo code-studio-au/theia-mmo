@@ -61,6 +61,17 @@
 - Solo boss checkpoints preserve verified evidence and prevent repeat rewards; no Luau required for ordinary quest objectives.
 - The future cross-pack registry and content-version migration rules must be qualified before production quest content is deployed.
 
+## Consolidated legacy context — 3 November 2026
+
+**ARCHIVED source evidence / WORKING authoring detail.** The [retired migration note](https://github.com/code-studio-au/theia-mmo/blob/90365d28de75c7596d5119c6a9595995ec15e495/docs/story/Theia/Campaigns/Human_Q129_Q157_Legacy_Pack_Migration.md) compared `Human_55_70_Playable_Quest_Pack.md` v0.1 and `Human_55_70_Implementation_Brief.md` v0.2. Each covered the same 29 Q129–Q157 references, with no additional quests. The matrix above preserves their distinct narrative and encounter constraints; historical locations remain in the [existing location/lore reference](Human_1_80_Location_and_Lore_Editorial_Reference.md).
+
+- Preserve Kel'vari sovereignty as well as restricted Passage permission and capacity. Physical roads, ships and fixed flight paths remain ordinary travel; no ordinary teleport waypoints are inferred.
+- Classic explicit targeting, manual facing, range and weapon-timed autoattack remain the combat baseline. Critical story encounters stay solo-accessible, with no mandatory PvP, group, class or profession requirement.
+- Persist authenticated evidence and personal story facts across death/reconnect; reset only active hostile encounter state. Boss outcomes, device cutoffs, research copies, evacuation and irreversible world transitions are distinct evidence, not generic kill or conversation credit.
+- Historical level-55/60/65 assumptions, draft completion aliases and repetitive accept/inspect/report templates are not approved eligibility, runtime IDs or additional canonical objectives.
+- The old chapter-wide Veilbreaker/Binding/Shroud payoff is not knowledge available before its canonical revelation sequence. Q157 observes Shroud dissipation already begun at Q156; it does not start the event again.
+- Spawn geometry, world positions, localization, combat tuning, QA and actual client/World integration remain unresolved alongside the authoring inputs above. These historical plans do not establish implemented capabilities.
+
 ## Next pass
 
 Review Q158–Q184, including manifestations, Thes'var's facility, Oth'varen's sacrifice, Nhal's shattering and the Human homecoming. Apply accepted refinements to the **single working manifest**, not a competing quest inventory.
