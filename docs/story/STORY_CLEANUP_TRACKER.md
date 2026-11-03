@@ -667,3 +667,8 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Checked first eight alphabetic Campaign Cast files against live Git tree `9dfb9c14`: 40 Markdown link occurrences; eight broken historical source links all used `../../../../THEIA_HUMAN_CAST_AND_PLACES.md` instead of `../../../THEIA_HUMAN_CAST_AND_PLACES.md`.
 - [x] Fixed these eight files: Aru'ven, Brenna Holt, Brynja Flintwake, Caelith Rowan, Captain Rukhan Graal, Commander Nessa Ward, Corven Vaelmont, Darian Cole (commits `b4c58626`, `f4265706`, `5fff9f70`, `fcb31905`, `076ae632`, `df6b72f5`, `45575bad`, `187f69fd`).
 - [ ] Continue auditing the other 39 Campaign Cast files for the same path error, then run full link validation. Earlier syntax-only completion did not verify link targets.
+
+## Campaign Cast source paths, entries 9–20 — 3 November 2026
+
+- [x] Repaired the incorrect four-parent Human Cast and Places path in 12 more Campaign Cast files (Edda Flintwake through Joss Arden, alphabetical tree order). Ten changes were confirmed by a subsequent live re-fetch after a tool-call limit interrupted the initial batch; Iven Rusk and Joss Arden were then committed separately (`1bfbb749`, `db9f3ec7`).
+- [ ] Audit the remaining 27 cast files and run a complete 47-file link-target validation. Earlier navigation-only checks did not catch these root source paths.
