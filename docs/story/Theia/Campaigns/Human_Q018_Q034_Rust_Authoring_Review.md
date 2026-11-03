@@ -49,6 +49,17 @@ Current Rust catalogue supports versioned quest definitions, prerequisites, orde
 4. Resolve Q031's giver/turn-in NPCs and authoritative commission evidence.
 5. Refine Q018–Q022 document-inspection and NPC semantic action identifiers.
 
+## Consolidated legacy context — 3 November 2026
+
+**ARCHIVED source evidence / WORKING authoring detail, not additional approved objectives.** The [retired migration note](https://github.com/code-studio-au/theia-mmo/blob/450664657d81d6d93f3cf76a02c34bc81b1e34b5/docs/story/Theia/Campaigns/Human_Q018_Q034_Legacy_Pack_Migration.md) reconciled `Human_10_20_Playable_Quest_Pack.md` v0.1 and `Human_10_20_Implementation_Brief.md` v0.2. Both contained the same 17 Q018–Q034 references, not new quests. Their per-quest purposes are covered by the authoring dispositions above and the [existing location/lore reference](Human_1_80_Location_and_Lore_Editorial_Reference.md). The source history preserves the full wording; these summaries do not supersede the canonical campaign.
+
+- Retained shared design constraints: Classic manual target/facing and persistent weapon-timed autoattack; safe solo story instances; no mandatory PvP, group, profession or class gate. Hostile Dominion territory remains hostile. Ordinary travel uses roads, ships or fixed flight paths; exceptional Guardian/Kel'vari Passage requires consent and does not replace world travel.
+- Recovery proposals retain safe respawn/reconnect checkpoints, reset hostile encounters, and preserve verified evidence and meaningful choices. Q034 relief can have persistent acknowledgements without a main-story fork. These are authoring requirements, not claims of implemented support.
+- The old brief's sample-preservation choice belongs to **Q043**, not Q018–Q034. Its later dialogue effects are a cross-chapter continuity requirement, not a new objective here.
+- The old minimum-level 10/15 and chapter unlock claims are pacing proposals, not approved eligibility. `HUMAN_Q###_DONE` is a draft alias, not a runtime ID. Repeated “accept → inspect → complete → report” text is generic scaffolding, not four verified gameplay stages.
+- Outstanding authoring inputs include coordinates, spawn/actor IDs, interaction volumes, combat stats, XP/loot and localization. The sources supply no additional approved dialogue or production-ready data.
+- Retain QA coverage for optional independence, scene replay, nonlethal arrest, boss reset, travel availability, reconnect, duplicate rewards, class-neutral completion and accessibility. A dialogue opening is not a verified report; one event must not cascade through later stages.
+
 ## Implementation handoff
 
 Do **not** export this review as executable JSON or change Codex's engine code. After editorial approval, apply decisions to the **single current manifest** and update the canonical narrative only where needed. Before deployment, validate the new catalogue registry and content-version migration policy against `docs/QUEST_ENGINE.md`.
