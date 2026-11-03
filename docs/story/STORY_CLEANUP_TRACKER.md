@@ -981,3 +981,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Compared H4-02/Q086, H4-05/Q092, H4-07/Q097 and H4-08/Q100 against live Q083–Q100 dialogue. Confirmed restricted gate capacity, custodial permission, supervised archive access, independent signature verification and the Q097 Grey Surveyor identity reveal (commit `f02e6c77`).
 - [x] Preserved historical outer-site maintenance terms and restricted-route/case security as unapproved detail candidates where not established in current dialogue. No automatic H4 ID mapping or new gate capability approved.
 - [ ] Continue remaining H-series dialogue/consequence review and full historical register/backlink verification before any final duplicate retirement.
+
+## H3 civic and access consequence checks — 3 November 2026
+
+- [x] Reviewed H3-01/Q054, H3-02/Q055, H3-05/Q058, H3-10/Q063, H3-11/Q064 and H3-18/Q083 against current NPC dialogue and manifest stages. Findings in focused mapping audit (commit `f5d0dae8`).
+- [x] Preserved consent, local repairs, restricted disclosure and low-capacity Passage rules; the historical Corven expedition proposal is not an approved Q083 prerequisite.
+- [ ] Continue other historical consequences, source register backlinks and final duplicate retirement. H/HS mappings remain unapproved.
