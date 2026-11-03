@@ -867,3 +867,10 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Corrected remaining present-tense claims in `Human_Production_Specification_Retirement_Audit.md`: the 184-entry duplicate was already retired, its unique editorial context is in the Location and Lore Reference, and final repository-wide backlink validation remains outstanding (commit `88f8624c`).
 - [x] Corrected `Human_Obsidian_Legacy_Quest_Audit.md` inventory and example wording: retired H/HS cards, imported register mirror and vault navigation are historical evidence rather than live quest surfaces. The surviving root register and unapproved 116-entry crosswalk remain protected (commit `3ea82a35`).
 - [ ] Continue the remaining campaign and root story semantic audits, original H/HS objective-to-stage approvals, incoming links and heading anchors. Do not delete this tracker until final verification.
+
+## Focused duplicate-quest semantic verification — 3 November 2026
+
+- [x] Compared canonical Q029/Q030, Q128/Q154 and Q137/Q145 narrative summaries; recorded distinct preparation/dungeon roles and flagged duplicate Vaer'uun death summary in `Human_1_80_Quest_Necessity_Audit.md` (commit `621a75f`).
+- [x] Re-fetched the sole 184-quest authoring manifest and inspected Q128/Q154/Q137/Q145 stage objectives and prerequisites. Q137 is Sel'ora's permitted archive research with no kill; Q145 is Sera's Vaer'uun solo dungeon with permanent kill. Q128/Q154 have different prerequisites and preparation phases but overlap mechanically. Findings recorded (commit `26db092`).
+- [ ] Correct Q137's overbroad canonical summary after checking neighboring narrative continuity; consider distinct Q128/Q154 UI titles only after dialogue and pacing review. Do not change quest count, runtime IDs or manifest stages by inference.
+- [ ] Continue the remaining H/HS objective and dialogue crosswalk, historical duplicate review, and final backlinks/heading anchors before deleting this tracker.
