@@ -384,3 +384,10 @@ Do not tick work merely because it is planned or described in older reports. Rec
 
 - [x] Converted 21 CR/DR Obsidian wiki-link quest labels in `Theia/Campaigns/Connected Racial Stories.md` into plain historical editorial labels, preserving their titles and the root cultural-stories source (commit `53003595`). Sampled candidate per-quest target paths were absent; **this is not a full 21-target path audit**.
 - [ ] Verify any remaining inbound links to retired individual CR/DR notes and compare unique source details before deleting other historical records. These labels are not current executable quest definitions.
+
+## Navigation repairs recorded — 3 November 2026
+
+- [x] Updated Connected Racial Stories navigation to current campaign and peoples references (commit `e01b24d0`).
+- [x] Replaced missing Vault Import Record navigation with surviving import provenance and story index (commit `8fed9439`).
+- [x] Updated Memory Scenes navigation to Markdown links, including the existing Six Reunited scene (commit `e26529e4`).
+- [ ] Continue checking remaining historical links and unique material. These changes do not complete the repository-wide audit.
