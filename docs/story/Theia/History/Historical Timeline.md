@@ -1,7 +1,5 @@
 # Historical Timeline
 
-![[Campaigns/Story Browser.base#Historical Events]]
-
 This is the broad historical sequence, followed by the present-day marker and the main storyline ahead. No in-world calendar dates or elapsed years are established. Events and eras can overlap; the table lists historical events in the same milestone order as the historical list.
 
 ## Historical events
@@ -29,50 +27,16 @@ The Age of Silence begins after [[The Binding]] and overlaps reconstruction and 
 
 This marks the opening of **Act I**, after the [[Shattered Delegation]] and [[Network Threshold and Modern Awakening]]. Minor Resonators, Regional Anchors and functioning Major Anchors already exist for players to discover. The Conclave can continue extending and refining its network during the campaign. It is a story-relative present, not a real-world date. The interval between the delegation's destruction, the awakening and the opening quests is not numerically fixed.
 
-[[Resonance Inversion]] · [[Sources/THEIA_INTERWOVEN_CHRONICLE#The Awakening — The Network Reaches Its Threshold|The awakening]] · [[Sources/THEIA_INTERWOVEN_CHRONICLE#Theia at the Threshold|The world at the opening of play]].
-
-## Main storyline ahead
-
-The five-act progression below is creator-approved. Working titles, specific quests, encounters and outcomes retain their source approval boundaries. These are events and investigations ahead of the player; the ancient events they uncover have already happened. Level bands are planning ranges, not calendar dates or compulsory progression gates.
-
-1. **Act I — Racial Origins (levels 1–20).** Eight distinct racial openings establish local lives, political conflicts and the first anomalies. The human route investigates the royal adviser betrayal connected to the [[Shattered Delegation]], bringing evidence through [[Mara Thorne]] to [[King Aldren Vaelmont]]. It does not yet reveal Nhal or the whole conspiracy. Human route: [[Human Act 1]] · [[The Hidden Passage]].
-2. **Act II — Shadows of Conflict (levels 20–30).** The wider main campaign becomes available alongside continuing racial stories. Alliance warfare and covert interference lead to investigation of Minor Resonators and evidence that some disturbances are engineered. Human route: [[Human Act 2]] · [[The Silent Signal]].
-3. **Act III — The Hidden Design (levels 30–40).** Investigations expose Regional Anchor operations and introduce [[The Guardians]], [[The Unmade]] and the historical connections between the [[Kel'vari]], the First Anchor and [[The Binding]]. Human route: [[Human Act 3]] · [[The Broken Measure]].
-4. **Act IV — Echoes of the Sundering (levels 40–50).** A first limited Shroud expedition near level 40 brings deeper evidence of surviving Kel'vari communities and [[Oth'varen]]'s testimony. This is bounded access, not unrestricted travel throughout the Shroud. Dedicated frontier warfare can be introduced without gating the essential solo story. Human route: [[Human Act 4]] · [[The Witness Vault]].
-5. **Act V — The Severed Chain (levels 50–60).** The campaign confronts a Major Anchor operation, investigates the wider network and develops [[Resonance Inversion]] as a possible response. The approved direction is a limited launch victory without defeating Nhal. The draft proposes a small inversion test and severing an Anchor's supports; exact results and endings remain Needs Review. Human route: [[Human Act 5]] · [[The Severed Chain]].
-
-The linked human acts and story climaxes provide the existing detailed route; they do not establish identical quests for every playable people. The alliances pursue separate faction-loyal campaigns and remain hostile.
-
-Source: [[Sources/THEIA_MODERN_STORY_REVELATION_TIMELINE#Creator-approved five-act launch campaign (15 October 2026)|Approved five-act progression]] · [[Human Campaign|Campaign approval boundaries]]. Later approvals for the Act IV expedition supersede older suggestions that all Shroud access must wait for a post-launch campaign.
-
-## Beyond the launch story — possible future developments
-
-**Later scoped creator lock — 29 October 2026:** Oth'varen survives launch and later dies stabilising the Seven's six-energy alignment through the inverted Major Anchor network during the confrontation with Nhal. He sees the alignment hold before dying; the player and trained Guardian teams continue the work. This fixes his future role and death, not an expansion date or the Conclave founders' fates. See [[Sources/DECISIONS#2026-10-29 — Creator LOCK: Oth'varen's final alignment and death]] and [[Future Saga]].
-
-[[Future Saga]] develops a chronological **Needs Review** proposal from an Act V Major Anchor inversion through Nhal's escape, the Seven's reconciliation, Nhal's fragmentation, emerging divinities and a final distributed defence of the world. It includes recommended changes to the launch ending; it does not override the current approval boundaries above.
-
-These are development possibilities, not a fixed sequence or promised outcomes:
-
-- **Expanded Shroud access:** restoring larger Passage connections and establishing separate Covenant and Dominion staging grounds, with independently negotiated access to Kel'vari enclaves.
-- **A wider struggle over the Anchor network:** further investigation of the [[The Corrupted Conclave|Corrupted Conclave]], ancient sites and the feasibility, costs and limits of inversion at larger scales.
-- **Resolution of the original breach:** the fate of the First Anchor, the Shroud and the Seven remains open. Nhal's emergence or defeat, freeing the Seven, their voluntary reunion into Aethyr, or a mortal-sustained replacement boundary are unapproved possibilities.
-
-Source: [[Sources/THEIA_INTERWOVEN_CHRONICLE#Future Shrouded Lands campaigns — working development|Future campaign possibilities]].
-
-## Sequence qualifications
-
-- **The Seven are gods; the Kel'vari are a mortal people.** Divine awakening begins before mortal creation. The precise awakening order remains open; Ascendant awakens independently and joins the others only after five mortal races already exist.
-- **Mortal creation has an established internal order:** elves, orcs, dwarves, humans, halflings, then trolls co-created by Keeper and Ascendant. The Kel'vari follow those six species.
-- **The schism develops over time.** Mistrust follows Ascendant's unauthorised creation; the First Anchor catastrophe deepens the divisions that lead into the Divine War. Its position here marks that escalation, not a precisely dated beginning.
-- **The Second Sundering, Divine War and Binding are distinct milestones.** The initial breach precedes the war; the war worsens the destruction; The Binding is the concluding containment. All Seven survive as distinct conscious essences.
-
-Sources: [[Sources/THEIA_DETAILED_LORE_ARCHIVE#1.2a The Seven's separate awakenings and Ascendant's arrival [USER-CONFIRMED DIRECTION, 2026-10-12]|Divine awakenings and arrival]] · [[Sources/THEIA_DETAILED_LORE_ARCHIVE#1.2c Origin of mortal life and six-species chronology [USER LOCKED · 2026-10-12]|Mortal creation order]] · [[Sources/THEIA_WORLD_BIBLE#2026-10-13 creator LOCK — Kel'vari federation and authorised First Anchor project|First Anchor project]] · [[Sources/THEIA_WORLD_BIBLE#2026-10-13 creator LOCK — Oth'varen, the Sixth Scholar and Last Witness|Guardian founding]].
-
-The modern Anchor network and awakening are described in [[Resonance Inversion]] and [[Sources/THEIA_INTERWOVEN_CHRONICLE#The Awakening — The Network Reaches Its Threshold|the Chronicle's awakening account]].
-
-[[Timelines]] governs when players learn this history. [[Chronicles and History]] contains the full narrative.
+[[Resonance Inversion]] · [The awakening and world at the threshold](../../THEIA_INTERWOVEN_CHRONICLE.md).
 
 
-## Creator-locked founder endings — 29 October 2026
+## Current launch campaign — canonical 1–80 progression
 
-The approved relative sequence is Oma'vira in Act V, Su'vareth during the investigation leading to the Veilbreaker, Khor'vun during its activation, Vaer'uun after Nhal arrives, and Thes'var attacking the final alignment. Oth'varen then dies completing its stabilisation before Nhal's final shattering. Thes'var's sabotage compounds Nhal's disruption. Exact site names, dates and release boundaries remain open. See [[Sources/DECISIONS#2026-10-29 — Creator LOCK: Conclave deaths and final succession]]; this scoped approval does not approve every other future proposal.
+The older five-act **1–60** outline and proposed post-launch Nhal confrontation that formerly appeared below were superseded by explicit creator decisions. They remain recoverable in Git history and the historical source documents; they are **not active canon**. In particular, Oth'varen dies during the level-80 finale, and Nhal's coherent identity and will are shattered at launch (divine essence persists). Do not revive the obsolete 'Nhal survives launch intact' or 'Oth'varen dies in a later expansion' claims.
+
+- [Current Human Campaign](../Campaigns/CURRENT_HUMAN_CAMPAIGN.md) — approved status and authority
+- [Canonical Human 1–80 Campaign](../Campaigns/Human_1_80_Canonical_Campaign.md) — current progression and ending
+- [Story decisions](../../DECISIONS.md) — creator locks and precedence
+- [Interwoven Chronicle](../../THEIA_INTERWOVEN_CHRONICLE.md) — historical narrative, subject to approval labels
+
+The thirteen historical milestones above remain a high-level reading sequence, not a calendar. No numerical interval is inferred by this index. The Shattered Delegation and network threshold are both before play; their exact relative timing is not established here.
