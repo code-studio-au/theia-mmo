@@ -2,7 +2,7 @@
 type: location
 canon_status: Needs Review
 source: "../../../THEIA_HUMAN_CAST_AND_PLACES.md"
-up: "[[Atlas]]"
+up: "../Atlas.md"
 ---
 # Valecrown
 
@@ -18,11 +18,11 @@ Maintained regional road from Stoneford; royal road to Tidehold
 ## Community and function
 Human monarchy, royal court, markets, professions and investigation; distinct from alliance government
 
-Source: [[Sources/THEIA_HUMAN_CAST_AND_PLACES#Geography and travel|Geography and travel]] (entry: **Valecrown**).
+Source: [Geography and travel](../../../THEIA_HUMAN_CAST_AND_PLACES.md) (entry: **Valecrown**).
 
-[[Atlas]] · [[Human Campaign]]
+[Atlas](../Atlas.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
 
-[[Atlas/Places/Stoneford|Stoneford]] · [[Atlas/Places/Tidehold|Tidehold]]
+[Stoneford](Stoneford.md) · [Tidehold](Tidehold.md)
