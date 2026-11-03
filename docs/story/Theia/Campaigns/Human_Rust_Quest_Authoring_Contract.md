@@ -50,6 +50,24 @@ Narrative bands (1–5, 5–10, etc.) describe pacing. **Do not** translate them
 5. Mark unsupported features as **planned**, not implemented. Existing P3-11 Rust objective foundation supports only its qualified initial slice; do not claim it handles the full campaign.
 6. Prototype a standard kill quest with no Luau; then NPC interaction/turn-in; then staged quests; then scripted boss/cinematic events.
 
+## Human campaign dependency review
+
+**WORKING / OPEN, not approval of executable content.** This section preserves the unique dependency checks and remaining gates from the [retired dependency review](https://github.com/code-studio-au/theia-mmo/blob/c6ac6c69f3af21b79b228c1e03f5859556153bd8/docs/story/Theia/Campaigns/Human_1_80_Quest_Dependency_Review.md). Use the [single working manifest](Human_1_80_Current_Quest_Authoring_Manifest.json); do not recreate the deleted chapter JSON files or older dependency JSON.
+
+### Structural checkpoint — 3 November 2026
+
+The Markdown review recorded 184 campaign entries, 684 unique stage IDs and 684 unique objective IDs; all prerequisite and next-stage references resolved, and the prerequisite graph was acyclic. The provisional split was 156 main-story / 28 optional quests, with no main-story dependency on optional quests. All candidate/proposed Q references in 92 H-series and 24 HS-series source rows resolved. This is a dated structural checkpoint, not approval of the split, H/HS equivalence, runtime IDs, semantic order or executable readiness. [Current campaign status](CURRENT_HUMAN_CAMPAIGN.md) remains the entry point.
+
+### Remaining semantic gates
+
+- **OPEN:** validate revelation, permission and world-phase order against the canonical campaign. Structural reference checks cannot establish these.
+- **WORKING:** optional access conditions remain `authoring_access_review` proposals. Approve them before runtime conversion; do not silently activate them. Q084 depends on Q082 rather than optional Q083; Q094 depends on Q092 rather than optional Q093. Preserve those independent mandatory paths.
+- Preserve Q029's civilian/evidence checkpoint before the Q030 Cassian encounter.
+- Keep Q128's early expedition staging distinct from Q154's final assault preparation. Any further rename remains a proposal.
+- Preserve the canonical Q156 transition and Q176–Q181 fatal-correction order. Exact events and revelation timing belong in the [canonical campaign](Human_1_80_Canonical_Campaign.md), not a second account here.
+- Historical evidence, current possession, consumption, atomic rewards, retries and credit scope require quest-specific authoring under this contract.
+- Consult the existing [Quest Engine agreement](../../../QUEST_ENGINE.md) for actual supported capabilities before conversion. Do not infer acceptance, branching, party sharing, phasing, exploration or Luau support from these authoring plans; development limits are not permanent campaign limits.
+
 ## Example schema (illustrative, not a deployed runtime definition)
 
 ```json
