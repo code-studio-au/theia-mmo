@@ -9,11 +9,11 @@ The overarching arc is approved; the [canonical Human 1–80 campaign](../Campai
 
 [Historical character arc](../../THEIA_CHARACTER_ARCS.md) — subject to later creator locks.
 
-[[Characters]] · [[Orders and Hidden Conflict]] · [[Timelines]]
+[Characters](Characters.md) · [Orders and Hidden Conflict](../Lore/Orders%20and%20Hidden%20Conflict.md) · [Timelines](../History/Timelines.md)
 
 ## Related notes
 
-[[Kel'vari]] · [[The Corrupted Conclave]] · [[The Unmade]] · [[Nhal]] · [[Oth'varen]] · [[The Six Reunited]]
+[Kel'vari](../Lore/Peoples/Kel%27vari.md) · [The Corrupted Conclave](../Lore/Institutions/The%20Corrupted%20Conclave.md) · [The Unmade](../Lore/Institutions/The%20Unmade.md) · [Nhal](Divine/Nhal.md) · [Oth'varen](Oth%27varen.md) · [The Six Reunited](../History/The%20Six%20Reunited.md)
 
 ## Later creator lock — Conclave succession (29 October 2026)
 
