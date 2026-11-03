@@ -1,6 +1,6 @@
 # Human Production Specification — Retirement Audit
 
-**Status: historical retirement audit — production specification already retired from active `main`.** The former 175 KB `Human_1_80_Production_Quest_Specification.md` contained **184 distinct Q001–Q184 sections** and is a competing editorial register alongside the [single current authoring manifest](Human_1_80_Current_Quest_Authoring_Manifest.json).
+**Status: historical retirement audit — production specification already retired from active `main`.** The former 175 KB `Human_1_80_Production_Quest_Specification.md` contained **184 distinct Q001–Q184 sections** and formerly competed as an editorial register with the [single current authoring manifest](Human_1_80_Current_Quest_Authoring_Manifest.json).
 
 ## Findings
 
@@ -10,10 +10,10 @@
 - At the time of this audit, the old file's opening links had been redirected. The production specification was subsequently retired, and its location/lore editorial context was preserved in [Location and Lore Reference](Human_1_80_Location_and_Lore_Editorial_Reference.md).
 - The current manifest contains more specific stage/objective target aliases and explicit blockers; the canonical campaign controls story outcomes.
 
-## Historical retirement requirements (completed for the old production register; runtime validation remains separate)
+## Retirement verification record and remaining follow-up
 
-1. Verify the 184 old per-quest locations, contacts, player-objective summaries and lore purposes against the manifest and canonical campaign. Preserve any unique, still-valid detail as reviewed metadata or in the canonical narrative.
-2. Confirm no active documentation links to the old specification or relies on its old level-gate assertions.
+1. **Completed for editorial retirement:** the old 184 entries were compared with the current campaign and manifest; unique historical location and lore summaries were preserved in [Location and Lore Reference](Human_1_80_Location_and_Lore_Editorial_Reference.md) as unapproved editorial context, not imported as executable objectives.
+2. **Prior retirement check:** active references were redirected as part of the earlier removal. A new repository-wide backlink scan remains part of the final story cleanup; do not claim that this file alone proves all references are clear.
 3. **Completed:** the redundant production specification was removed from the active tree; Git history preserves it. This does not approve its former level gates or generic stages.
 4. Reconcile the original H/HS register separately. The current crosswalk preserves 92 H-series and 24 HS-series entries, but proposed mappings are **not approved**.
 5. **Still outstanding:** retire or fold temporary migration/review notes into a concise approved authoring guide only once their unique decisions are reflected in the manifest.
