@@ -944,3 +944,10 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Live-reviewed Q071–Q072, Q081–Q086 and Q096–Q097 dialogue scene headings and spoken lines. Q081/Q082 preserve Guardian secrecy/accountability; Q086 is the first explicit living Kel'vari self-introduction; Q096 authenticates the Surveyor's mark; Q097 reveals his identity in spoken dialogue.
 - [x] Replaced Q084's premature `Kel'vari custodian` scene heading with `custodian beyond the gate`, and Q097's premature `Oth'varen` heading with `Grey Surveyor (identity revealed during scene)` (commit `ca66bf2a`). Spoken dialogue unchanged.
 - [ ] Check other scene packs, journal/tooltips and source summaries for premature labels. Continue H/HS dialogue/consequence reconciliation and final link/duplicate audit.
+
+## Finale dialogue and H5-20 homecoming evidence — 3 November 2026
+
+- [x] Verified Q170 and Q176–Q184 finale dialogue against the locked causal order. Q170 does not predict Oth'varen's death; Q176–Q181 follow Thes'var death → discovered sabotage → fatal correction realised → informed choice → alignment held → physical death → Nhal shattering.
+- [x] Clarified Q181 spoken line from ambiguous `fields are one` to `six fields are aligned` to avoid implying the Seven permanently fuse or reconstitute Aethyr (commit `da3d0e8a`).
+- [x] Compared historical H5-20 homecoming/service-commendation with current Q184 dialogue and manifest. Millhaven, Elara and original companions are retained; a formal commendation is absent and remains an unapproved historical idea, not an automatic reward. Recorded in focused mapping audit (commit `ea7f66f9`).
+- [ ] Continue H/HS dialogue and consequence reviews, then root-story duplicate and backlink/heading validation. Do not approve original-to-current runtime ID mappings by thematic similarity.
