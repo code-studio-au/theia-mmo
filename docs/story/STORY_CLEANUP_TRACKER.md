@@ -690,3 +690,10 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Scanned all 16 `Theia/Atlas/Places/*.md` files against the live recursive `main` tree. Found one final note with Obsidian links, `Oth'irun archive approach.md`, and migrated it to root geography, Atlas, current campaign and Oth'irun enclave Markdown references (commit `947be58a`).
 - [x] Re-fetched all 16 files after correction at tree `947be58a`: **74 relative Markdown link occurrences, zero missing file targets, zero remaining `[[...]]` wiki-links**. Atlas Places directory syntax and file-target audit passed.
 - [ ] Continue Atlas index/enclave and other story directory audits; approval status, heading fragments and map geography remain separate.
+
+## Atlas indexes and enclaves final verification — 3 November 2026
+
+- [x] Corrected five enclave World Bible source paths to `../../../THEIA_WORLD_BIBLE.md`; migrated Settlement Services and Travel and Transport navigation to Markdown, and aligned transport wording with the approved level-80 cap (commits `e81a4c0c`, `c7ea4e97`, `3f6b1598`, `3421fe96`, `009fb4a2`, `a8a9049c`, `fb5f1b89`).
+- [x] Re-fetched all eight Atlas Markdown files outside Places against live tree `fb5f1b89`: **35 Markdown links, zero missing file targets, zero remaining Obsidian wiki-links**.
+- [x] With the previously verified 16 Places files (74 links), the **24-file Atlas Markdown section** passes syntax and file-target checks. This does not certify heading anchors, map placements or semantic canon.
+- [ ] Continue remaining story sections and duplicate-content audit before branch/tracker retirement.
