@@ -63,3 +63,14 @@ Compared the canonical 1–80 campaign entries directly (not merely titles):
 | Q137 / Q145 | The canonical summary currently repeats the same Vaer'uun manipulation/name-reveal/death wording for both entries, unlike the earlier audit's proposed archive-versus-boss distinction. | **Needs stage/dialogue verification.** Do not infer that both quests kill Vaer'uun, or delete either quest, from this duplicated summary; preserve the locked single permanent death and Nhal reveal gate. |
 
 This is a focused semantic check of six editorial entries, **not** approval of a reduced quest count or runtime mapping. The 184-entry manifest and canonical campaign were not edited. Q137/Q145 duplication requires checking detailed stage evidence before a canonical wording correction.
+
+### Manifest-stage corroboration (follow-up)
+
+The consolidated working manifest was checked directly for Q128, Q154, Q137 and Q145 (planning data, not executable Rust):
+
+- **Q137:** Sel'ora; prerequisite Q136; permitted Kel'vari archive entry, early research recovery and chronology authentication. **No Vaer'uun kill objective.** The canonical one-line summary's shared boss/death wording is overbroad for this entry.
+- **Q145:** Sera; prerequisite Q144; solo Vaer'uun dungeon, disable exploitative apparatus, **kill Vaer'uun**, preserve evidence concerning Keeper. This is the actual planned confrontation/death stage.
+- **Q128:** Nessa; prerequisite Q127; staging assignment, extraction routes, measurement teams.
+- **Q154:** Nessa; prerequisite Q153; final assault organization, civilian extraction, measurement teams. Despite distinct narrative placements, both share similar preparation mechanics and the same title. **Do not assert they are mechanically distinct without pacing/dialogue review.**
+
+**Editorial recommendation:** correct the Q137 canonical summary to describe archive provenance rather than Vaer'uun's death after checking its neighboring entries; retain Q145 as the confrontation. Keep both Q128/Q154 provisionally, flag repeated preparation tasks and consider a later title clarification. No canonical, manifest, or runtime edits were made in this audit.
