@@ -1,6 +1,6 @@
 # Human Q158–Q184 — Rust Quest Authoring Review and Finale Contract
 
-**Status: Needs Review — narrative/authoring recommendations, not executable definitions.** [Canonical Human Campaign](Human_1_80_Canonical_Campaign.md) is the narrative authority; [Current Quest Authoring Manifest](Human_1_80_Current_Quest_Authoring_Manifest.json) is the sole structured working inventory; [Codex Quest Engine](../../../QUEST_ENGINE.md) defines current runtime capabilities.
+**Status: WORKING — narrative/authoring recommendations, not executable definitions.** [Canonical Human Campaign](Human_1_80_Canonical_Campaign.md) is the narrative authority; [Current Quest Authoring Manifest](Human_1_80_Current_Quest_Authoring_Manifest.json) is the sole structured working inventory; [Codex Quest Engine](../../../QUEST_ENGINE.md) defines current runtime capabilities.
 
 **27 quests reviewed; 184 total campaign entries remain intact.** Current Rust catalogue supports kill and semantic NPC interaction with ordered stages and `all/any/at_least` completion. Its multi-quest journal and PostgreSQL Store are independently qualified but not yet in the normal live World/client path. Exploration, inspection, escort/defense, scene, choice, world phasing, item/currency rewards, party sharing, Luau and cross-pack registry/content migrations remain planned. No hard level gate is inferred from narrative bands, except Q174's explicit proposed finale level-80 gate, which requires separate product approval and runtime support.
 
@@ -36,7 +36,7 @@
 | **Q178 The Scholar's Correction** | Verify fatal correction model → Oth'varen chooses → Sera establishes safeguards | He discovers the lethal cost only now, following sabotage; choice is voluntary |
 | **Q179 The Sixth Scholar's Choice** | Farewell dialogue → ready stations → receive final instructions | Player tone can vary; no false branch where Oth'varen survives |
 | **Q180 The Seven Hold** | Defend mortal stations → confirm Seven's voluntary participation → maintain six-field support | Seven cooperate freely and remain unbound. Defense and field alignment require trusted outcome facts |
-| **Q181 The Shattering of Nhal** | Protect correction → verify alignment holds → Oth'varen physically dies → final inversion → Nhal's coherent identity shatters | **Manifest gap:** no explicit stage records Oth'varen's physical death between alignment hold and inversion. Add authoritative death fact to future stage model, without making player cause it |
+| **Q181 The Shattering of Nhal** | Protect correction → verify alignment holds → Oth'varen physically dies → final inversion → Nhal's coherent identity shatters | **Resolved in the working manifest:** `q181.objective.othvaren_death` records the physical death between alignment hold and inversion. Rust support remains planned; do not add a duplicate stage |
 | **Q182 Silence After** | Confirm surviving Seven and teams → record memorial → document fragment uncertainty | Essence survives; no determination of fragment destination or new identity |
 | **Q183 A World Unbound** | Report to Kel'vari and Covenant separately → verify Shroud fade began at Q156 → war remains | No instant peace treaty, no renewed Binding, no delayed start of Shroud dissipation |
 | **Q184 The Road Home** | Return by ordinary travel → revisit Elara and companions → close personal arc | Final contact and closure should be idempotent; optional regional work may remain available |
@@ -52,14 +52,18 @@
 
 These are **server-authoritative, per-character story facts** requiring atomic or recoverable transitions; a cinematic played on the client is not sufficient evidence. No duplicate world catastrophe or resurrection can occur on reconnect/retry.
 
-## High-priority corrections for the single manifest
+## Remaining authoring decisions for the single manifest
 
-- Add access/phase prerequisites to optional Q159 and Q168; add knowledge/permission requirements to Q169.
+- **OPEN:** approve the access/phase conditions for optional Q159/Q168 and the knowledge/permission conditions for Q169. The manifest already preserves these as `authoring_access_review` proposals; they are not executable prerequisites.
 - Clarify whether the Q174 level-80 finale gate is a locked eligibility decision; if approved, request a versioned engine capability from Codex rather than inventing a field.
-- Add a durable, explicit Oth'varen death transition between alignment-holds and final inversion in Q181.
+- Q181's explicit death transition is already present in the working manifest. **OPEN:** implement and validate its future authoritative story-fact capability separately; no gameplay-code change is authorized by this documentation cleanup.
 - Keep Q161–Q162 essence interpretation carefully uncertain about fragments.
 - Separate Thes'var's defeat, discovered sabotage, correction failure and Oth'varen's voluntary choice into non-skippable authoritative facts.
 - Define Q184's final giver/turn-in and one-time closure, while allowing independent optional quests to remain playable.
+
+## OPEN: completion contacts after permanent deaths
+
+The working manifest still lists **Thes'var** as Q176's turn-in contact and **Sera / Oth'varen** as Q181's turn-in contact, each with `requires_verification: true`. Both quests permanently kill the named character before completion. These labels must not become living-NPC turn-in requirements. [Finale dialogue](Human_80_Finale_NPC_Dialogue_Scripts.md) assigns the aftermath speech to Sera in both cases, but a speaker label alone does not approve the final gameplay turn-in mechanism. Resolve the intended completion contact or authoritative auto-completion semantics before runtime conversion. Keep the locked deaths and quest outcomes unchanged; no replacement NPC, resurrection or runtime ID is approved here.
 
 ## Engine-independent authoring constraints
 
