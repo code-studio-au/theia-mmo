@@ -1,25 +1,22 @@
-# Characters
+# Characters — current navigation
 
 ## Sixth Scholar and Corrupted Conclave
-These six have creator-approved overarching arcs. Specific scenes, dialogue and outcomes retain their individual limits.
 
-- [[Oth'varen]] — Sixth Scholar and Last Witness.
-- [[Vaer'uun]] — First Voice.
-- [[Thes'var]] — Architect.
-- [[Su'vareth]] — Veiled Hand.
-- [[Oma'vira]] — Harbinger.
-- [[Khor'vun]] — Warden.
+These overarching arcs are creator-approved, while specific scenes retain their individual approval limits.
 
-## Campaign cast
-![[Campaigns/Story Browser.base#Characters]]
+- [Oth'varen](Oth%27varen.md) — Sixth Scholar and Last Witness
+- [Vaer'uun](Vaer%27uun.md) — First Voice
+- [Thes'var](Thes%27var.md) — Architect
+- [Su'vareth](Su%27vareth.md) — Veiled Hand
+- [Oma'vira](Oma%27vira.md) — Harbinger
+- [Khor'vun](Khor%27vun.md) — Warden
 
-Individual campaign entries preserve the source's distinction between approved starting roles and proposed developments.
+## Campaign cast and source status
 
-[[Sources/THEIA_HUMAN_CAST_AND_PLACES|Human Cast, Places and Services]] separates approved recurring characters from proposed additions. New characters, destinations and future outcomes are **Needs Review**.
-
-[[The Seven Gods]] · [[Memory Scenes]] · [[Human Campaign]] · [[Welcome|Home]]
+Browse individual notes under [Campaign Cast](Campaign%20Cast/). [Human Cast and Places](../../THEIA_HUMAN_CAST_AND_PLACES.md) distinguishes approved starting roles from proposed additions. New characters, destinations and future outcomes retain their **Needs Review** status unless superseded by explicit creator decisions.
 
 ## Divine and primordial figures
-[[The Seven Gods]] · [[Aethyr]] · [[Nhal]]
 
-[[First Archon Selrion]]
+See [The Seven Gods](../Lore/The%20Seven%20Gods.md), [Aethyr](../Lore/Aethyr.md), [Nhal](../Lore/Nhal.md), and [Current Human Campaign](../Campaigns/CURRENT_HUMAN_CAMPAIGN.md).
+
+The obsolete Obsidian Story Browser character embed and mirrored source links are retired; this index is navigation, not independent canon.
