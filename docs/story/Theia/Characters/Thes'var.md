@@ -1,13 +1,13 @@
 ---
 type: character
 canon_status: approved-overarching-arc
-source: "[[Sources/THEIA_CHARACTER_ARCS]]"
+source: "../../THEIA_CHARACTER_ARCS.md"
 ---
 # Thes'var
 
-The overarching arc is approved; specific scenes, dialogue and outcomes retain the limits in the source.
+The overarching arc is approved; the [canonical Human 1–80 campaign](../Campaigns/Human_1_80_Canonical_Campaign.md) governs launch timing and outcomes. Specific scenes and dialogue retain their approval limits.
 
-![[Sources/THEIA_CHARACTER_ARCS#Thes'var, the Architect — the unfinished masterpiece]]
+[Historical character arc](../../THEIA_CHARACTER_ARCS.md) — subject to later creator locks.
 
 [[Characters]] · [[Orders and Hidden Conflict]] · [[Timelines]]
 
@@ -19,4 +19,4 @@ The overarching arc is approved; specific scenes, dialogue and outcomes retain t
 
 The final living Conclave founder dies attacking supporting connections at the final alignment's critical network junction. Before combat, he confronts Oth'varen, recognises inversion works and rejects its protective purpose. The player kills him; his sabotage compounds Nhal's disruption and leaves instability Oth'varen corrects at fatal cost. Oth'varen briefly becomes the last living member of the original six scholars.
 
-This dated lock supersedes earlier open-fate or proposed-interference statements. See [[Sources/DECISIONS#2026-10-29 — Creator LOCK: Conclave deaths and final succession]]. Site names, dialogue and encounter mechanics remain open.
+This dated lock supersedes earlier open-fate or proposed-interference statements. See [story decisions](../../DECISIONS.md). Site names, dialogue and encounter mechanics remain open.
