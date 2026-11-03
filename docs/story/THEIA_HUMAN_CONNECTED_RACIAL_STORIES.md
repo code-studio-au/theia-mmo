@@ -2,7 +2,7 @@
 
 # THEIA — RACIAL STORIES CONNECTED TO THE HUMAN CAMPAIGN
 
-**Status: Needs Review.** These are the allied quest sequences and Dominion character stories needed to support the proposed complete [Human Campaign](THEIA_HUMAN_CAMPAIGN.md). They preserve sovereign institutions and permanent alliance separation. They are not approval of the other races' openings or a claim to have written all eight full campaigns.
+**Status: Needs Review.** These are the allied quest sequences and Dominion character stories needed to support the proposed complete [canonical Human 1–80 campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md). They preserve sovereign institutions and permanent alliance separation. They are not approval of the other races' openings or a claim to have written all eight full campaigns.
 
 The allied sequences below are substantial visits within the 92-quest human route; their `CR-` identifiers group existing quests and do not add duplicate mandatory tasks. Dominion sequences are **12 proposed companion-race quests** for the native alliance's future use. They have local beginnings and endings here, but are not prerequisites, friendly NPC quests or playable additions to the human route. A future Dominion writer can retain the character motive and evidence boundary without adopting every proposed objective.
 
