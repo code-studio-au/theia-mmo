@@ -309,3 +309,15 @@ The remaining twelve optional HS source objectives were checked against the prop
 ## Original five-act Human narrative — retirement boundary
 
 The superseded `docs/story/THEIA_HUMAN_CAMPAIGN.md` contains a complete 1–60 narrative, not just a quest index. Its unique prose must be treated separately from the 92 H / 24 HS source register. Preserve potentially reusable civilian incidents, NPC motivations, local geography, evidence/custody consequences and noncanonical encounter ideas here before retiring the original. Its old level bands, Act V severance branches and launch-ending chronology must **not** override the canonical 1–80 campaign. The full original remains recoverable through Git history after eventual retirement; historical provenance alone is not a reason to recreate a second active campaign.
+
+## Retired five-act narrative: retained character and world themes
+
+The original `THEIA_HUMAN_CAMPAIGN.md` (superseded 1–60, preserved verbatim in Git history) offered these reusable themes, **not approved new quests**:
+
+- The player earns standing through service, never ancestry, prophecy or special immunity. Elara teaches responsibility for neighbours; Mara insists on corroboration; Aldren must confront loyalty to an inaccurate account; Garrick adapts defence without abandoning it; Corven respects four allied sovereign peoples; Oth'varen must share knowledge instead of keeping it solely himself.
+- The Covenant–Dominion war remains genuine and morally consequential, not a misunderstanding resolved by revealing the Unmade. Enemy officers may have intelligible motives while remaining hostile. Neither alliance inherits the other's campaign or institutions.
+- Each allied-capital visit should involve a meaningful local problem, assistance and institutional decision, rather than a courier-only visit. Allied-city access and ordinary levelling do not require main-story completion. Enemy-continent and Shroud story objectives must remain solo-accessible PvE, without mandatory WvW, raid or enemy-player cooperation.
+- Historical regional progression included Millhaven, Stoneford, Valecrown, Tidehold, Kar Durn, Sylvaren, Drom Kar, Dominion relay and storm coasts, and outer Passage/Anchor approaches. This is geographical provenance only; the approved 1–80 campaign and later map decisions govern actual travel and timing.
+- The old level-60 severance/inversion choice, Nhal still imprisoned at the old finale, and unresolved fate of the Seven are **superseded outcomes**, not alternate launch endings. The old narrative's civilian rescues, evidence chains, independent institutions and local service encounters remain potential source ideas.
+
+The retired document's full prose, scene descriptions and old act sequence remain recoverable from Git history. The canonical 1–80 campaign and the existing H/HS crosswalk take precedence; this archive does not recreate a second main campaign.
