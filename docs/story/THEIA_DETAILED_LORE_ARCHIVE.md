@@ -1,6 +1,8 @@
 > **2026-10-12 SOURCE RECONCILIATION:** The complete 403-page original `Create MMO Story.pdf` is now available. This archive is a secondary interpretive account, **not** a complete decision register. Use [THEIA_SOURCE_DECISION_RECOVERY.md](THEIA_SOURCE_DECISION_RECOVERY.md) for recovered decisions Q1–435, and the original PDF for exact question/answer language. The current primary chronological narrative is [THEIA_INTERWOVEN_CHRONICLE.md](THEIA_INTERWOVEN_CHRONICLE.md). Prior claims that Q1–375 could not be recovered are superseded. Q35 direct ancestry, Q40 hidden corruption, Q42 divine empowerment and Q420's later D correction are source-backed. Q436–444 remain unanswered.
 
 # THEIA — DETAILED LORE, DECISION AND DESIGN ARCHIVE
+
+**Creator-lock consolidation — 3 November 2026:** Six dated sections below now link to their World Bible home. Their removed bodies were byte-identical to that source; no unique decision or limitation was removed. The [pre-consolidation record](https://github.com/code-studio-au/theia-mmo/blob/37dd8520f7990cbb42bc7c7c52f02de0efd31a76/docs/story/THEIA_DETAILED_LORE_ARCHIVE.md) preserves the duplicate wording and original provenance. All section headings remain stable.
 **Companion to:** [THEIA_WORLD_BIBLE.md](THEIA_WORLD_BIBLE.md)
 **Archive revision:** 2026-10-12 · Reconstructed from conversation available to this assistant
 **Classification:** Creator-facing / includes spoilers and working proposals
@@ -536,33 +538,15 @@ The First Anchor's activation began the Second Sundering by physically tearing a
 
 ## 2026-10-13 creator LOCK — Kel'vari race and Oth'vaeri language
 
-The people's official name is **Kel'vari** (both singular and plural: one Kel'vari scholar; the Kel'vari people). Their ancestral language is **Oth'vaeri**. The ancient homeland may be called the Kel'vari homeland; its devastated territory was later enclosed within the Shrouded Lands. Oth'vaeri naming convention uses **apostrophes**, not hyphens, for meaningful sound boundaries in joined names; the intended sound is melodic, elegant and subtly unfamiliar, distinct from elven naming. The Kel'vari and Oth'vaeri names are **locked**. The five Conclave founders' personal names, Oth'varen's name and the five significant enclave names are also **locked** by the creator decisions below. A complete language grammar remains open.
+**LOCKED within the original approval scope:** the complete authoritative text is in the [World Bible](THEIA_WORLD_BIBLE.md#2026-10-13-creator-lock--kelvari-race-and-othvaeri-language). This duplicate is consolidated there without changing the decision, its exclusions or its remaining OPEN details.
 
 ## 2026-10-13 creator LOCK — Kel'vari names and original scholarly status
 
-**Five original Corrupted Conclave founders (personal name — title — original specialty):**
-- **Vaer'uun — The First Voice:** Led First Anchor resonance and divine-communication research; authoritative, persuasive and devoted to interpreting Nhal's will.
-- **Thes'var — The Architect:** Principal designer of the First Anchor's complex magical structures; brilliant, exacting and obsessive.
-- **Su'vareth — The Veiled Hand:** Oversaw restricted research and external relationships; patient, calculating and skilled at covert influence.
-- **Oma'vira — The Harbinger:** Studied consciousness, perception and magical influence; charismatic, fervent and a powerful recruiter.
-- **Khor'vun — The Warden:** Directed protective structures, wards and containment; disciplined, pragmatic and formidable.
-
-The five were **highly respected Kel'vari scholars in legitimate society**, celebrated for contributions to the First Anchor project. Their willing secret pursuit of Nhal and involvement in redirecting the Anchor were concealed behind those reputations. Nhal deliberately transformed all five during the breach; they remain extraordinarily long-lived, powerful but killable founding members of the Conclave. Their original names survive in ancient records while modern Unmade chiefly use their titles.
-
-**Five significant surviving Kel'vari enclaves (names predate the Second Sundering):**
-- **Veyr'athun — The Last Bastion:** Ancient protective research centre; now fortified defensive sanctuary.
-- **Oth'irun — The Archive Sanctuary:** Ancient scholarly archive; now preserves surviving records and knowledge.
-- **Oru'sava — The Verdant Refuge:** Ancient cultivation and restoration centre; now sustains agriculture and healing.
-- **Thuma'rei — The Passage Nexus:** Ancient transport and Passage research hub; now guards low-capacity surviving gates.
-- **Soru'vaeth — The Reclaimers:** Ancient reconstruction and material research centre; now recovers ruins, tools and records.
-
-These are **five significant enclaves, not the total surviving Kel'vari population**; they remain independent and are not one hidden kingdom. The names are Oth'vaeri and follow the approved apostrophe convention. Specific governments, leaders, exact locations, dialects and encounter design remain open.
+**LOCKED within the original approval scope:** the complete authoritative text is in the [World Bible](THEIA_WORLD_BIBLE.md#2026-10-13-creator-lock--kelvari-names-and-original-scholarly-status). This duplicate is consolidated there without changing the decision, its exclusions or its remaining OPEN details.
 
 ## 2026-10-13 creator LOCK — Kel'vari federation and authorised First Anchor project
 
-The Kel'vari civilization before the Second Sundering was a **federation of largely autonomous cities**, with local civic councils, scholarly assemblies and a federal assembly coordinating intercity law, shared infrastructure, defence and consequential research. Its population included ordinary families, farmers, builders, merchants, artists, healers and craftspeople as well as exceptional scholars; magical aptitude did not make every Kel'vari a professional mage. Its cities depended on sophisticated but finite magical infrastructure and ordinary work.
-
-The **First Anchor began as a legitimate, publicly supported and authorised project** intended to establish a stable connection with the Kel'vari's creator, Ascendant. Appropriate federal and scholarly authorities approved that legitimate objective. The five celebrated principal researchers — Vaer'uun, Thes'var, Su'vareth, Oma'vira and Khor'vun — exploited divided oversight and scholarly trust to secretly alter sensitive workings toward a breach of the Veil under Nhal's subtle influence. They knowingly pursued the alien intelligence but **Nhal concealed the full destructive consequences** from them. Other Kel'vari investigators noticed discrepancies, preserved evidence and later helped found the multiracial Guardians during the Divine War. The broader Kel'vari population and government were not collectively complicit. Specific institutional titles, legal procedures, political leaders, project milestones and the five scholars' exact knowledge remain to be developed.
+**LOCKED within the original approval scope:** the complete authoritative text is in the [World Bible](THEIA_WORLD_BIBLE.md#2026-10-13-creator-lock--kelvari-federation-and-authorised-first-anchor-project). This duplicate is consolidated there without changing the decision, its exclusions or its remaining OPEN details.
 
 ## 2026-10-13 creator LOCK — Oth'varen, the Sixth Scholar and Last Witness
 
@@ -572,15 +556,11 @@ During the Divine War he became a principal founding member of the **multiracial
 
 ## 2026-10-13 creator LOCK — the Six Reunited, progressive corruption and chronological narration
 
-After The Binding, Oth'varen confronts all five original Corrupted Conclave scholars at a ruined Kel'vari research sanctuary within the Shroud. They are no longer reasonable colleagues capable of a calm reconciliation: years of Nhal's subtle influence before the First Anchor and their deliberate transformation during its breach have progressively warped their logic, ambitions and loyalties. Vaer'uun rationalises transcendence through destruction; Thes'var treats the catastrophe as a technical failure; Su'vareth justifies deception as necessary; Oma'vira interprets corruption as enlightenment; Khor'vun has twisted protection into defence of the Conclave against its victims. The five seek to draw Oth'varen into their shared transformed resonance. His own lingering corruption responds, but he painfully resists and escapes after disrupting the sanctuary's wards. This is **not** fresh direct communication or an order from Nhal: reliable contact was lost after the catastrophe and Binding. The five remain formidable, intelligent, dangerous and ideologically corrupted. Oth'varen remains vulnerable to the pull without surrendering his will.
-
-**Narrative rule:** tell these events chronologically. In pre-activation scenes use the six scholars' personal names, never future-facing labels such as 'First Voice-to-be'; titles and the Corrupted Conclave are introduced only after their actual formation. The expanded confrontation dialogue is approved as the intended dramatic direction; the Chronicle currently contains a condensed adaptation.
+**LOCKED within the original approval scope:** the complete authoritative text is in the [World Bible](THEIA_WORLD_BIBLE.md#2026-10-13-creator-lock--the-six-reunited-progressive-corruption-and-chronological-narration). This duplicate is consolidated there without changing the decision, its exclusions or its remaining OPEN details.
 
 ## 2026-10-14 creator LOCK — Nhal's voice between the rupture and Binding
 
-Before the First Anchor breached the Veil, Nhal could only subtly influence particular six-field experimental resonances, not speak directly. **Between the rupture and The Binding**, the open breach and primordial corruption allowed Nhal to communicate selectively through thoughts, whispers, guiding impressions, brief commands and seemingly spontaneous knowledge, especially to the five transformed willing scholars. The communication was neither continuous nor absolute mind control; other willing Unmade followers received weaker, inconsistent guidance near corrupted workings. This enabled coordination and deeper ideological corruption during the Divine War. **Oth'varen** occasionally perceived the same presence through his transformed nature but resisted it and did not accept its authority.
-
-**The Binding immediately severed dependable communication**, both within and beyond the Shroud. The five experienced the sudden loss of the voice; attempts to restore contact failed. Their corrupted beliefs and transformed abilities endured, as did the primordial pressure near the First Anchor, but pressure was not direct instruction. Oth'varen experienced relief without losing the persistent corruption within him. The resulting prolonged silence later became the Age of Silence. Nhal's selective communication resumes only in the modern magical awakening. Avoid portraying Nhal as an ordinary conversational god or implying it controlled all minds.
+**LOCKED within the original approval scope:** the complete authoritative text is in the [World Bible](THEIA_WORLD_BIBLE.md#2026-10-14-creator-lock--nhals-voice-between-the-rupture-and-binding). This duplicate is consolidated there without changing the decision, its exclusions or its remaining OPEN details.
 
 ## 2026-10-14 creator LOCK — Anchor network, awakening and resonance inversion
 
@@ -590,10 +570,5 @@ The Conclave developed lesser Anchor technology across the **Age of Silence**, w
 
 ## 2026-10-15 creator LOCK — Unmade hostility, corruption and conditioning
 
-**The Unmade's hostile forces have three overlapping origins, not three new races or exclusive factions:** (1) **Willing** followers who knowingly embrace Nhal's purpose for belief, ambition, knowledge or power, and fight deliberately for Unmade objectives; (2) **Corrupted** mortals, wildlife or other beings whose prolonged exposure to unstable primordial influence has altered magical structure, perception, cognition, instincts or bodies, sometimes producing dangerous aggression without willing allegiance; (3) **Bound** soldiers, captives, creatures and constructs conditioned or constrained through Unmade Mind workings, rituals, altered six-field structures or enforced instructions. A willing follower may become corrupted; a corrupted victim may be bound. Some constructs also continue ancient defensive duties without ever serving Nhal.
+**LOCKED within the original approval scope:** the complete authoritative text is in the [World Bible](THEIA_WORLD_BIBLE.md#2026-10-15-creator-lock--unmade-hostility-corruption-and-conditioning). This duplicate is consolidated there without changing the decision, its exclusions or its remaining OPEN details.
 
-**Exposure is not automatic allegiance or guaranteed hostility.** Outcomes vary from temporary symptoms through persistent influence and transformation to profound loss of control. Corruption is not universal mind control; **Oth'varen** is the central example of resistance. Many Kel'vari and transformed inhabitants of the Shroud are innocent or non-hostile. Not every hostile being can be rescued during an attack, but combat, containment, rescue and breaking compulsions should remain distinct possibilities. Avoid making all corrupted inhabitants or all Kel'vari enemies.
-
-**Oma'vira, the Harbinger**, originally a scholar of Mind, consciousness and perception, is the Conclave's leading authority on devotion, mental influence and magical conditioning. Her centuries of work support recruitment and the transformation of willing recruits or unwilling captives into dangerous conditioned forces. Her teachings alone do not explain every hostile NPC. **Khor'vun, the Warden**, commands and deploys organised defensive forces and protects Anchor approaches and Unmade strongholds. He may favour disciplined fighters over unstable conditioned troops, creating a potential methodological tension with Oma'vira. The other founders provide doctrine, research, covert logistics and strategic purpose. Outside the Shroud, players mainly encounter organised operatives, hidden facilities, Anchor defenders and local corruption; within it, older corruption, transformed victims, wildlife, ancient constructs and enduring strongholds produce a distinct ecology of threats.
-
-This is a **locked world and MMO combat foundation**, not approval of particular enemy designs, irreversible corruption mechanics, specific rescue outcomes, or the full previously proposed Oma'vira eight-milestone character arc. Develop those separately.
