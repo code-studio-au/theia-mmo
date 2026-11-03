@@ -661,3 +661,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] At `main` tree `1f0e9618fd9743c4380708238f4e46758283ef0c`, fetched all 13 `Theia/History/Events/*.md` files, resolved **112 relative Markdown link occurrences** against the complete live Git tree and found **zero missing file targets**.
 - [x] All 13 files contain **zero** remaining `[[...]]` Obsidian wiki-links. This completes event-directory syntax and file-target validation at that revision.
 - [ ] Heading anchors, semantic precedence, inbound references and the rest of the story tree remain outstanding. Do not infer final cleanup completion from this targeted audit.
+
+## Campaign Cast relative-source link audit — 3 November 2026
+
+- [x] Checked first eight alphabetic Campaign Cast files against live Git tree `9dfb9c14`: 40 Markdown link occurrences; eight broken historical source links all used `../../../../THEIA_HUMAN_CAST_AND_PLACES.md` instead of `../../../THEIA_HUMAN_CAST_AND_PLACES.md`.
+- [x] Fixed these eight files: Aru'ven, Brenna Holt, Brynja Flintwake, Caelith Rowan, Captain Rukhan Graal, Commander Nessa Ward, Corven Vaelmont, Darian Cole (commits `b4c58626`, `f4265706`, `5fff9f70`, `fcb31905`, `076ae632`, `df6b72f5`, `45575bad`, `187f69fd`).
+- [ ] Continue auditing the other 39 Campaign Cast files for the same path error, then run full link validation. Earlier syntax-only completion did not verify link targets.
