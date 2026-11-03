@@ -637,3 +637,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Migrated First Sundering, Awakening of the Seven and Mortal Creation event notes from Obsidian wiki-link navigation to relative Markdown links for the historical timeline, adjacent events, divine figures and relevant lore (commits `626c2850`, `d60098df`, `d8f3effc`).
 - [x] Kept unverified Aethyr/Nhal note references as plain names rather than inventing targets; preserved chronology and source-specific approval labels.
 - [ ] Audit the remaining ten History/Events notes and verify their Markdown target paths and narrative precedence before completion.
+
+## Historical Events chronology 4–6 navigation — 3 November 2026
+
+- [x] Migrated Creation of the Kel'vari, First Resonance and Second Sundering notes to direct historical timeline, related event, Kel'vari and Ascendant Markdown links (commits `468040a2`, `6d4ad67f`, `65206092`). Unverified Nhal standalone note remains a plain name.
+- [x] Preserved the source-specific historical sequence: Kel'vari created by Ascendant, Nhal influence only later, First Anchor catastrophe distinct from first resonance. No dates or new event chronology added.
+- [ ] Seven remaining History/Events notes require wiki-link migration, then a complete target/semantic audit.
