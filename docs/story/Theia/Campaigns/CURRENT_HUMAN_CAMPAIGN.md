@@ -33,7 +33,7 @@ organizes campaign sources by purpose, not a competing authority hierarchy.
 
 ## Authoring review status
 
-All 184 quests have completed first-pass Rust authoring review. Safe editorial corrections have been applied directly to the sole manifest: spoiler-safe Grey Surveyor contacts, Q157 ongoing Shroud fade, and an explicit Q181 Oth'varen death fact between alignment confirmation and final inversion. Proposed optional access conditions and the level-80 finale gate are recorded as **non-executable review metadata**, not silently activated. The new Q181 story-fact objective requires future Rust support. The 184-quest count is unchanged; the authored stage count is now 684.
+All 184 quests have completed first-pass Rust authoring review. Safe editorial corrections have been applied directly to the sole manifest: spoiler-safe Grey Surveyor contacts, Q157 ongoing Shroud fade, and an explicit Q181 Oth'varen death fact between alignment confirmation and final inversion. Proposed optional access conditions are **non-executable review metadata**, not silently activated. Canonical Q174 explicitly requires reaching the level-80 cap before finale authorization. The existing authoring review records conflicting non-executable gate metadata; reconciling that metadata and defining runtime realization remain **OPEN**, without overriding the campaign or changing eligibility data. The new Q181 story-fact objective requires future Rust support. The 184-quest count is unchanged; the authored stage count is now 684.
 
 ## Production register retirement
 

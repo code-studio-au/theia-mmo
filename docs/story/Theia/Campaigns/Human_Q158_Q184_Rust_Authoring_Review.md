@@ -2,7 +2,7 @@
 
 **Status: WORKING — narrative/authoring recommendations, not executable definitions.** [Canonical Human Campaign](Human_1_80_Canonical_Campaign.md) is the narrative authority; [Current Quest Authoring Manifest](Human_1_80_Current_Quest_Authoring_Manifest.json) is the sole structured working inventory; [Codex Quest Engine](../../../QUEST_ENGINE.md) defines current runtime capabilities.
 
-**27 quests reviewed; 184 total campaign entries remain intact.** Current Rust catalogue supports kill and semantic NPC interaction with ordered stages and `all/any/at_least` completion. Its multi-quest journal and PostgreSQL Store are independently qualified but not yet in the normal live World/client path. Exploration, inspection, escort/defense, scene, choice, world phasing, item/currency rewards, party sharing, Luau and cross-pack registry/content migrations remain planned. No hard level gate is inferred from narrative bands, except Q174's explicit proposed finale level-80 gate, which requires separate product approval and runtime support.
+**27 quests reviewed; 184 total campaign entries remain intact.** Current Rust catalogue supports kill and semantic NPC interaction with ordered stages and `all/any/at_least` completion. Its multi-quest journal and PostgreSQL Store are independently qualified but not yet in the normal live World/client path. Exploration, inspection, escort/defense, scene, choice, world phasing, item/currency rewards, party sharing, Luau and cross-pack registry/content migrations remain planned. Do not infer hard level gates from narrative bands. Q174 explicitly requires reaching the level-80 cap in the canonical campaign; conflicting working authoring metadata and its runtime realization remain OPEN, not permission to bypass that narrative requirement.
 
 ## Q158–Q174: manifestations and inversion preparations
 
@@ -24,7 +24,7 @@
 | **Q171 The Consent of Neighbors** | Request Covenant assistance and Kel'vari consent separately → record terms | Sovereignty remains distinct; no single faction can authorize the whole operation |
 | **Q172 A Failure We Can See** | Survey vulnerable junction → model risk → verify emergency access → report | **Foreshadowing only:** must not reveal Thes'var's future sabotage or the fatal correction |
 | **Q173 The Last Measure** | Check independent cutoffs → bounded alignment test → record results → readiness authorization | No full Nhal shattering before finale; safety trial is not final activation |
-| **Q174 Before the Final Crossing** | Confirm team readiness, consent, evacuation and supplies → authorize final operation | **Level-80 gate:** explicitly present in objective; decide whether this is an intentional eligibility rule. Codex's current catalogue has no level-eligibility field; don't fake it through an objective |
+| **Q174 Before the Final Crossing** | Confirm team readiness, consent, evacuation and supplies → authorize final operation | **CANONICAL:** Q174 explicitly requires reaching the level-80 cap. **OPEN:** reconcile conflicting working authoring metadata and define runtime support; do not invent an executable field or change eligibility in this review |
 
 ## Q175–Q184: finale and homecoming
 
@@ -55,7 +55,7 @@ These are **server-authoritative, per-character story facts** requiring atomic o
 ## Remaining authoring decisions for the single manifest
 
 - **OPEN:** approve the access/phase conditions for optional Q159/Q168 and the knowledge/permission conditions for Q169. The manifest already preserves these as `authoring_access_review` proposals; they are not executable prerequisites.
-- Clarify whether the Q174 level-80 finale gate is a locked eligibility decision; if approved, request a versioned engine capability from Codex rather than inventing a field.
+- **CANONICAL / OPEN implementation:** canonical Q174 requires the level-80 cap before finale authorization. Current authoring-status Markdown describes the gate as non-executable review metadata, while this review formerly called its narrative approval unresolved. Preserve the higher-authority campaign requirement; reconcile that metadata and define future runtime realization separately, without changing eligibility data here.
 - Q181's explicit death transition is already present in the working manifest. **OPEN:** implement and validate its future authoritative story-fact capability separately; no gameplay-code change is authorized by this documentation cleanup.
 - Keep Q161–Q162 essence interpretation carefully uncertain about fragments.
 - Separate Thes'var's defeat, discovered sabotage, correction failure and Oth'varen's voluntary choice into non-skippable authoritative facts.
@@ -81,7 +81,7 @@ The working manifest still lists **Thes'var** as Q176's turn-in contact and **Se
 - Preserve Classic explicit targeting, manual facing and weapon-timed autoattack, solo-accessible critical story, safe checkpoints and no mandatory PvP, group, class or profession requirement.
 - Travel remains physical roads, ships and fixed flight paths. Restricted Passage requires separate consent, and the Millhaven homecoming does not require optional regional cleanup.
 - Encounter failure resets active combat, not irreversible story facts, durable choices or verified evidence. Boss death, rescue, correction, alignment and final inversion need distinct trusted events; watching a cinematic alone is not authoritative credit.
-- Historical level-70/75/80 chapter minima, draft completion aliases and repeated accept/inspect/report scaffolding are not approved eligibility, runtime IDs or extra objectives. Q174's explicit level-80 proposal remains a separate OPEN approval question.
+- Historical level-70/75/80 chapter minima, draft completion aliases and repeated accept/inspect/report scaffolding are not approved eligibility, runtime IDs or extra objectives. The old source treated Q174's level-80 rule as a proposal; the canonical campaign now states the cap requirement explicitly. Metadata reconciliation and runtime realization remain OPEN as described above.
 - The older Q181 description omitted the explicit physical-death stage now recorded in the working manifest. Preserve the canonical order above and do not add a duplicate death stage.
 - Spawn geometry, encounter timing, localization and actual engine integration remain unresolved alongside the actor, reward, item, phasing and saved-definition inputs above. Historical QA plans do not establish implementation.
 

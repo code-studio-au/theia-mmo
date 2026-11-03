@@ -64,7 +64,7 @@ The [retired detail-migration note](https://github.com/code-studio-au/theia-mmo/
 
 Teach Classic manual targeting, facing, weapon-timed autoattack, interaction, objective tracking, safe respawn and physical road travel. Millhaven's ordinary problems are not automatically Unmade conspiracies. Optional regional work supplies experience independently and is not required by the main-story chain. Historical minimum levels 1/5 are pacing proposals, not hard eligibility gates.
 
-Parcel-seal inspection, wheel marks, cart movement tests, scouting, repair materials and other extra details remain **WORKING**, not automatic additions to the 684-stage working manifest. The finale's proposed level-80 gate remains a separate OPEN question. Never infer native escort, inspection, choice, inventory or encounter-outcome support from this prose.
+Parcel-seal inspection, wheel marks, cart movement tests, scouting, repair materials and other extra details remain **WORKING**, not automatic additions to the 684-stage working manifest. The canonical Q174 finale requires the level-80 cap; conflicting working metadata and runtime realization remain OPEN in the [finale authoring review](Human_Q158_Q184_Rust_Authoring_Review.md#remaining-authoring-decisions-for-the-single-manifest). Never infer native escort, inspection, choice, inventory or encounter-outcome support from this prose.
 
 Zone positions, spawn densities/groups, NPC schedules/archetypes, object IDs, enemy tuning, dialogue/localization, class balance, journal UI, save/load, reconnect and automated completion tests remain unresolved alongside the identity/reward/persistence decisions above. Playtesting must establish balance and numerical values; none are approved here.
 
