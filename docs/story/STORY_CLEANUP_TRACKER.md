@@ -1136,4 +1136,11 @@ Do not tick work merely because it is planned or described in older reports. Rec
 
 - [x] Consolidated all 60 detailed Q376–Q435 selection rows and nine unanswered Q436–Q444 prompts into the existing Source Decision Recovery index, replacing its overlapping compressed stage summaries. Preserved original source headings as links and immutable provenance; no PDF re-audit claimed.
 - [x] Corrected obsolete source-availability wording. Historical selections remain subject to later creator decisions; unanswered prompts remain OPEN.
-- [ ] Independently review and merge the question-register consolidation.
+- [x] PR #37 independently reviewed and merged (`23a1453a75e9de3153044b41ceba471e012fd6fa`); 60 selection rows and nine unanswered prompts preserved in the source index.
+- [x] PR #36 (`a8fb72f4b215751951ffa3903f535dfd16dc9066`) reconciled four location cards against current campaign/transport authority.
+
+## Historical open-question lists — 3 November 2026
+
+- [x] Reconciled stale uncertainty about Keeper's betrayal, Kel'vari identity/survival and launch outcomes with current Bible/campaign authority. Preserved genuine divine-wartime, mechanism, ancient-order, geography and future-fragment unknowns; historical proposals remain unapproved.
+- [x] Scoped old PDF-availability and repeat-audit instructions to their historical context, preserving source evidence and headings.
+- [ ] Independently review and merge these source-status corrections.

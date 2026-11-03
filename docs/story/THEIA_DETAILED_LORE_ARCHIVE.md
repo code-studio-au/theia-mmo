@@ -395,18 +395,13 @@ See the [consolidated question evidence](THEIA_SOURCE_DECISION_RECOVERY.md#stage
 
 # 12 — Canon risk review and unresolved editorial issues
 
-1. **Historical source coverage:** The source index consolidates the historical Q1–444 recovery and the detailed Q376–444 evidence formerly copied here. The PDF is not in the repository; exact prompt wording and exhaustive verification retain the index's stated evidence limits.
-2. **The Second Sundering:** A very detailed Guardian/Keeper sacrifice narrative was drafted repeatedly, but user explicitly selected only the primordial Aethyr origin. Distinguish working story from locked ancient betrayal.
-3. **Four order archetypes:** “Understanding / Making / Preservation / Horizons” and naming Preservation the surviving order were proposals; confirmed count is **three or four** and exactly **one surviving**.
-4. **Alliance separation:** Old assistant proposals about normal scholarship exchange, friendly encounters and modern direct friendships across Covenant–Dominion must yield to **strict separation**. The extraordinary failed peace delegation is the exception that reinforces why peace is currently absent.
-5. **Faction vs geography:** Overseas military footholds are confirmed. Do not revert to treating both continental populations as wholly isolated.
-6. **Racial city counts:** 34 city types are lore target, not an engine milestone requiring 34 modeled launch metropolises.
-7. **Player classes and skills:** Remain unfinalized; neither this file nor any assistant-generated tables create a class list.
-8. **Player freedom:** Strong racial magical/martial traditions are culture and available training, not universal bloodline exclusions or stereotypical restrictions.
-9. **The Unmade Shattered Delegation:** Their authorship is now confirmed and overrides earlier generic hardliner explanations.
-10. **Title versus personality:** “The Ascendant” is canonical. *Ambition* as the Shaper's flaw is correct and distinct from that title.
-11. **Full saga ending:** Interesting suggestions involving restored cooperative boundary infrastructure or reborn Aethyr do not constitute confirmed final resolution.
-12. **Latest voice feature:** Multi-zone cross-continental Guardian and Unmade incursion threads are important design direction; faction allegiance never changes.
+**Current authority, not a second decision ledger:** Use the [World Bible's established facts and open-decision boundaries](THEIA_WORLD_BIBLE.md), [later creator decisions](DECISIONS.md) and [canonical Human campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md). The [previous risk list](https://github.com/code-studio-au/theia-mmo/blob/23a1453a75e9de3153044b41ceba471e012fd6fa/docs/story/THEIA_DETAILED_LORE_ARCHIVE.md) is historical provenance.
+
+- **SUPERSEDED uncertainty:** Keeper's deliberate concealment at The Binding is LOCKED; the earlier Guardian/Keeper commandeering proposal is not governing canon. All Seven survive, and the Kel'vari's name, independent origin and surviving enclaves are established. Launch revelations and the ending are fixed by the campaign. Reborn Aethyr or an alternative cooperative seal cannot replace that ending; Nhal's fragments remain OPEN.
+- **OPEN ancient-order detail:** The recorded selection is three or four great orders and exactly one hidden survivor. “Understanding / Making / Preservation / Horizons” and making Preservation the survivor remain WORKING proposals, not selected identities. The full nine unanswered prompts are in the [source index](THEIA_SOURCE_DECISION_RECOVERY.md#stage-62--q436444).
+- **Faction and geography boundaries:** Strict Covenant–Dominion separation overrides old proposals for normal modern scholarly exchange or direct friendships. The failed peace delegation does not establish ordinary peace. Hostile overseas military footholds and cross-continental Guardian/Unmade investigation threads remain approved direction without changing allegiance. The 34-centre lore target is not a requirement to build 34 launch cities.
+- **Scope of cultural proposals:** This historical archive does not establish a class list or final skill system. Racial magical/martial traditions describe culture and training, not universal bloodline restrictions. Ascendant's name is distinct from ambition as a personality flaw, and the Unmade's confirmed role in the Shattered Delegation supersedes generic hardliner explanations.
+- **Source verification:** The source index now holds the historical Q1–Q444 recovery and detailed Q376–Q444 evidence. Exact original prompt wording requires the PDF, which is not in the repository; later prose proposals do not become approved decisions through repetition.
 
 # 13 — Recommended supporting repository organization
 
@@ -421,7 +416,7 @@ This archive is intended to be **searched or referenced**, not mechanically rewr
 - **THEIA_WAR_AND_INCURSIONS.md:** persistent military occupation model, coexisting Guardian/Unmade plot incursions and anti-grief PvP rules.
 - **THEIA_LAUNCH_CAMPAIGN.md:** faction-separate 1–60 act outline and detailed side-story chains.
 
-The original "Create MMO Story" chat has now been supplied as a 403-page PDF. The remaining work is a systematic question-by-question audit of that source, resolving later revisions and expanding the narrative where confirmed decisions were previously omitted.
+The original chat was supplied historically as a 403-page PDF, but that artifact is not in the repository. The existing source index records the completed historical recovery and its remaining evidence limits. Do not restart a full audit or expand canon merely because this old organizational proposal requests it.
 
 
 ### Later creator-locked clarification (12 October 2026): recurrent resonance and continental separation
