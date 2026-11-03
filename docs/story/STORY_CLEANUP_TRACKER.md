@@ -282,3 +282,10 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Preserved distinct thematic ideas where multiple HS hooks point to one current Q (HS-02/HS-09, HS-04/HS-10/HS-11, HS-13/HS-15, HS-17/HS-18), and flagged HS-19, HS-22 and HS-24 access/outcome differences. No active quest count, runtime IDs or canonical outcomes changed.
 - [ ] Review source-specific NPC dialogue, geography, decisions, access and consequences before any mapping approval. Historical 92 H + 24 HS source entries now have documented objective/stage comparison coverage, **not** 116 approved equivalences.
 - [ ] Finish remaining legacy file/backlink reconciliation, full-tree link audit, branch retirement and final tracker deletion only after verification.
+
+## Historical story branch ancestry check — 3 November 2026
+
+- [x] Compared `main` with `story/launch-main-story-1-60` through GitHub commit ancestry: old branch 0 commits ahead, 534 commits behind at the time of the check. No branch-only commits require cherry-picking.
+- [x] Recorded the result and its limits in `Theia/Campaigns/Human_Quest_Editorial_ID_Crosswalk_Review.md` (commit `6f708688`). Branch ancestry does not prove all historical content was semantically reconciled.
+- [ ] Keep the old branch until remaining protected historical source, semantic checks and backlinks are resolved; retire it with an authorized branch deletion action only after verification.
+- [ ] Do not delete this tracker until the full cleanup is complete.
