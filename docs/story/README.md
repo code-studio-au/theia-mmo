@@ -23,7 +23,7 @@ The older 1–60 campaign, quest register and imported review materials below ar
 | Settlements and world population | [Human Heartlands Settlement Register](THEIA_HUMAN_HEARTLANDS_SETTLEMENT_REGISTER.md), [Zone Population Framework](THEIA_ZONE_POPULATION_FRAMEWORK.md) |
 | Story scenes | [Memory Scenes](THEIA_MEMORY_SCENES.md) |
 | Decisions and source recovery | [Source Decision Recovery](THEIA_SOURCE_DECISION_RECOVERY.md), [Canon Reconciliation Report](THEIA_CANON_RECONCILIATION_REPORT.md), [Line-by-Line Verification Status](THEIA_LINE_BY_LINE_VERIFICATION_STATUS.md) |
-| Campaign review | [Human Campaign Review](THEIA_HUMAN_CAMPAIGN_REVIEW.md) |
+| Campaign review | [Current Human Campaign](Theia/Campaigns/CURRENT_HUMAN_CAMPAIGN.md) (historical review retired; see Git history) |
 
 ## Approval and precedence
 
