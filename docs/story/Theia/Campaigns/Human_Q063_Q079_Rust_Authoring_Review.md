@@ -10,7 +10,7 @@ The current Rust catalogue accepts ordered stages with `all`, `any`, or `at_leas
 
 | Quest | Recommended stage grouping and authoritative evidence | Blocking capability / review |
 |---|---|---|
-| **Q063 The City That Endured** | Urodan's waterway assignment → authorized travel and completed repair → archive referral | Stable NPC action IDs; trusted repair outcome, not merely arriving at waterway |
+| **Q063 The City That Endured** | Arrive at Drom Kar → hear Urodan's custodial limits → secure the water-route work assignment before archive access | Stable NPC action IDs; confirm the assignment, not completed repair or archive access. Securing the maintenance route and retrieving its records belong to Q064 |
 | **Q064 Water and Memory** | Tarek's tunnel permission → reach store and defend crew → preserve warning copy | Crew survival and warning provenance persist through retry; rescue and inspection planned |
 | **Q065 The Missing Margin** | Authenticate original warning and missing margin in either order → Dromak grants restricted access | Two independent archive facts; don't infer identity of the person who removed text |
 | **Q066 A Name for the Guardians** | Meet Sera → read Guardian charter → accept limited associate cooperation | Distinguish introduction, charter acknowledgement and association; no forced Guardian membership |
