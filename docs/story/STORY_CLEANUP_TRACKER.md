@@ -625,3 +625,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Enumerated all 47 `Theia/Characters/Campaign Cast/*.md` files from the nontruncated recursive `main` tree, then directly fetched and scanned **47/47 live contents** in three batches. **Zero** files retained the obsolete `up: "[[Characters]]"`, `[[Human Campaign]]`, any `[[...]]` wiki-link or `Sources/` mirror reference.
 - [x] Campaign Cast Obsidian syntax migration is complete for the 47-file inventory at the checked revision. This verifies syntax removal only; Markdown target resolution, semantic canon approval and incoming backlinks remain separate.
 - [ ] Continue full-tree story Markdown link checks, provenance/duplicate comparisons and final branch retirement safeguards.
+
+## Historical Events directory discovery and timeline repair — 3 November 2026
+
+- [x] Complete tree inventory exposed **13 existing** historical event notes under `Theia/History/Events/`; earlier samples had checked the wrong parent directory. All 13 files were directly fetched and their `chronology_order` entries inspected. The prior removal of timeline wiki-links was safe as a temporary non-link presentation, but the assertion that individual event pages might not exist was incomplete.
+- [x] Restored all 13 Historical Timeline milestone links as direct Markdown paths to the verified `Events/` notes (commit `f9278760`). No duplicate event files were created.
+- [ ] Audit the 13 event notes' remaining wiki-links and historical claims against later creator decisions. All 13 currently contain old `[[...]]` links; current 1–80 campaign still governs modern outcomes.
