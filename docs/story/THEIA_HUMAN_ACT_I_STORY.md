@@ -83,3 +83,9 @@ Aldren confronts the betrayal of a trusted adviser and orders further inquiry. C
 6. Do not prematurely reveal the Conclave or settle the Shattered Delegation's full authorship in the player's knowledge.
 7. Preserve independent levelling, exploration and side quests.
 8. Do not require raids or PvP for story completion.
+
+## Editorial preservation review — 3 November 2026
+
+The current [Human 1–80 canonical campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md) and [legacy ideas archive](Theia/Campaigns/Human_Legacy_Sidequest_Zone_Character_Archive.md) retain the Act I evidence-based Cassian betrayal, local civilian problems, lawful capture, non-omniscient adviser and independent levelling. The original Act I note additionally supplies character-development framing for Elara, Mara, Aldren, Cassian, Edric and Garrick and early-player guardrails against chosen-one framing, premature Conclave disclosure and forced PvP/raids. Preserve these as narrative provenance until character/continuity notes are compared in full; do not delete this file solely because Q001–Q034 are now canonical elsewhere.
+
+The older 'Continuation through Acts II–V' paragraph is a historical planning snapshot, not approved later-act sequencing. In particular, it does not override the current 1–80 Veilbreaker, Shroud and Nhal finale. No quest or runtime changes are implied by this review.
