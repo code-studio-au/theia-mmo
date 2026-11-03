@@ -1,6 +1,6 @@
 # Human 1–80 — Quest Necessity and Duplication Audit (Pass 1)
 
-**Status: Needs Review; no quests removed.** This document evaluates the current 184-entry canonical Human campaign without changing its story or quest count. Source: [Canonical Campaign](Human_1_80_Canonical_Campaign.md), [Quest Dependencies](Human_1_80_Quest_Dependencies.json), [Current State](CURRENT_HUMAN_CAMPAIGN.md). The existing classification of 156 main and 28 regional quests is **provisional**, not an approved release design.
+**Status: Needs Review; no canonical quests removed by this audit.** This document evaluates the current 184-entry canonical Human campaign without changing its story or quest count. Source: [Canonical Campaign](Human_1_80_Canonical_Campaign.md), [Quest Dependencies](Human_1_80_Quest_Dependencies.json), [Current State](CURRENT_HUMAN_CAMPAIGN.md). The existing classification of 156 main and 28 regional quests is **provisional**, not an approved release design.
 
 ## Current inventory
 
@@ -50,4 +50,4 @@ This is a first-pass editorial audit, **not** a full objective-by-objective dedu
 
 ## Next work
 
-Review the flagged quest clusters against their detailed stage data and dialogue, approve concrete keep/combine/regionalize decisions, and build one Rust-compatible quest-definition set. Then remove redundant implementation briefs and superseded registers after checking that unique objectives and original editorial IDs survive.
+Review the flagged quest clusters against their detailed stage data and dialogue, approve concrete keep/combine/regionalize decisions, and build one Rust-compatible quest-definition set. The 17 legacy playable packs/implementation briefs and duplicate 184-entry production specification have already been retired after separate migration reviews; do not recreate them. Continue checking surviving review notes and the historical H/HS register before any further removals.
