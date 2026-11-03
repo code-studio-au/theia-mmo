@@ -66,7 +66,7 @@ Tomas, Heddan, Mera, Oren, Nera, Joss, Brynja, Rurik, Caelith, Irielle, Urodan, 
 
 ## Explicitly rejected historical story outcomes
 
-H5-03's early Nhal identification, H5-12's early Thes'var intervention, H5-14's old level-60 finale, H5-15's conflicting Keld/Voss outcome, and H5-16's local severance alternative **must not** overwrite the locked level-80 ending. Retain their original text only as historical provenance, not as active quest content.
+The [consolidated H-series dispositions](#non-exact-h-series-ideas-requiring-individual-disposition-28) identify the superseded reveal, voyage and finale outcomes and the separate optional ideas that may be retained. Historical source text is provenance, never permission to replace the canonical launch story.
 
 ## Next review checklist
 
@@ -78,83 +78,47 @@ H5-03's early Nhal identification, H5-12's early Thes'var intervention, H5-14's 
 
 ## Non-exact H-series ideas requiring individual disposition (28)
 
-These are **candidate remnants**, not newly approved quests. Current Q references are proposed comparisons only. Preserve specific details only if not already represented in the current manifest or lore.
+**ARCHIVED source ideas; WORKING comparisons; reuse approval OPEN.** This is the consolidated disposition table for the 28 non-exact H-series entries. It incorporates the 2 November objective-level triage and 3 November five-conflict review, replacing duplicate tables. [Original H objectives](../../THEIA_HUMAN_QUEST_REGISTER.md) and [prior review provenance](https://github.com/code-studio-au/theia-mmo/blob/ea770ab99a367fc83d40439897626b42695f8830/docs/story/Theia/Campaigns/Human_Legacy_Sidequest_Zone_Character_Archive.md) remain available. The [canonical campaign](Human_1_80_Canonical_Campaign.md) controls the current story; Q references below are comparisons, not approved equivalents or runtime IDs.
 
-| Legacy ID | Original title | Proposed current comparison | Editorial assessment |
+| Legacy ID | Original title | Proposed current comparison | Retained findings and safe disposition |
 |---|---|---|---|
-| H4-01 | An Expedition, Not an Army | Q084 | Approval and extraction overlap, but later canon requires Kel'vari consent. |
-| H4-03 | A Living Homeland | Q087 | Kel'vari worker rescue retained; historical location differs. |
-| H4-04 | The Frontier Beyond the Camp | Q089 | Frontier survey overlaps; mandatory WvW training is not part of the current canonical objective. |
-| H4-09 | What the Village Can Give | Q032 | Local relief theme overlaps; original royal levy detail not confirmed. |
-| H4-10 | A Third Shore | Q059 | Dominion coastal journey overlaps; original staging route differs. |
-| H4-11 | The Missing Survey Team | Q039 | Rescue of a supply/survey team overlaps but is in a different arc. |
-| H4-12 | Stolen Under Another Flag | Q041 | Hostile Dominion depot records overlap; original named witnesses not retained. |
-| H4-13 | The Inherited Contract | Q112 | Contract evidence overlaps; Shroud archive destination differs. |
-| H4-14 | A Way Out for the Bound | Q115 | Captive extraction overlaps; new Su'vareth dungeon changes location and sequence. |
-| H4-16 | More Than a Confession | Q114 | Corroboration of Unmade orchestration overlaps. |
-| H4-17 | The King's Correction | Q117 | Royal correction retained; specifics must be reviewed. |
-| H4-18 | The Answer Cassian Avoided | Q117 | Cassian custody follow-up not clearly represented as separate current quest. |
-| H5-01 | A Branch Still Growing | Q120 | Anchor network survey overlaps; Chainworks expansion is no longer the same story. |
-| H5-02 | The Covenant's Terms | Q127 | Limited mandate overlaps; Tidehold council details differ. |
-| H5-03 | A Name Beyond the Veil | Q143 | Original Nhal naming earlier than current Q143; do not migrate old timing. |
-| H5-04 | The Crossing Again | Q032 | Home relief theme overlaps, not necessarily same narrative beat. |
-| H5-05 | What Edric Asked | Q106 | Edric evidence overlaps; original independent-record warrant differs. |
-| H5-06 | The Coast Remembers | Q059 | Coastal return overlaps; old named military records not retained. |
-| H5-07 | The Team Behind the Line | Q039 | Rescue theme overlaps but original relay context differs. |
-| H5-08 | The Relay's Schedule | Q130 | Relay schedule evidence overlaps, no verified one-to-one match. |
-| H5-12 | The Architect's Objection | Q163 | Thes'var early intervention differs from current invitation and final death. |
-| H5-13 | Everyone's Route Home | Q154 | Extraction preparation overlaps, different chapter timing. |
-| H5-14 | Cut the Outer Links | Q155 | Old level-60 finale superseded by level-80 convergence. |
-| H5-15 | The Ledger and the Warden | Q156 | Keld/Voss outcome differs from Khor'vun and Veilbreaker. |
-| H5-16 | The Severed Chain | Q181 | Old local severance choice cannot replace canonical Nhal shattering. |
-| H5-17 | What the Instruments Prove | Q162 | Technical evidence overlaps; original branch-specific results differ. |
-| H5-18 | A Corrected Record | Q183 | Postwar report overlaps; Cassian sentence not confirmed in new canon. |
-| H5-19 | A Different Legacy | Q170 | Shared technical knowledge overlaps, but new finale differs. |
+| H4-01 | An Expedition, Not an Army | Q084 | Approval and extraction overlap, but later canon requires Kel'vari consent. Expedition mandate overlaps; preserve multi-authority resources and extraction-plan detail.  |
+| H4-03 | A Living Homeland | Q087 | Kel'vari worker rescue retained; historical location differs. Kel'vari worker rescue overlaps; preserve water-run and ancient-defence hazard as candidate setting detail.  |
+| H4-04 | The Frontier Beyond the Camp | Q089 | Frontier survey overlaps; mandatory WvW training is not part of the current canonical objective. Current Passage investigation differs from old NPC WvW tutorial; preserve optional frontier training idea separately.  |
+| H4-09 | What the Village Can Give | Q032 | Local relief theme overlaps; original royal levy detail not confirmed. Household relief overlaps; preserve royal levy revision/winter stores as potential civic follow-up.  |
+| H4-10 | A Third Shore | Q059 | Dominion coastal journey overlaps; original staging route differs. Dominion voyage overlaps; storm-coast anchorage and extraction boat may be separate location details.  |
+| H4-11 | The Missing Survey Team | Q039 | Rescue of a supply/survey team overlaps but is in a different arc. Personnel rescue overlaps; old pilgrimage-site and PvE-route context differs.  |
+| H4-12 | Stolen Under Another Flag | Q041 | Hostile Dominion depot records overlap; original named witnesses not retained. Depot infiltration/records overlap; Voss receipt and Shorvek objection require character/provenance check.  |
+| H4-13 | The Inherited Contract | Q112 | Contract evidence overlaps; Shroud archive destination differs. Contract evidence overlaps; old Shroud station archive route differs.  |
+| H4-14 | A Way Out for the Bound | Q115 | Captive extraction overlaps; new Su'vareth dungeon changes location and sequence. Captive rescue overlaps; retain independent exit/conditioning-control idea without changing Su'vareth finale.  |
+| H4-16 | More Than a Confession | Q114 | Corroboration of Unmade orchestration overlaps. Multi-source Unmade evidence substantially overlaps; preserve false-attribution specifics if not elsewhere recorded.  |
+| H4-17 | The King's Correction | Q117 | Royal correction retained; specifics must be reviewed. Royal correction overlaps; review related prosecutions may be a distinct consequence.  |
+| H4-18 | The Answer Cassian Avoided | Q117 | Cassian custody follow-up not clearly represented as separate current quest. Cassian lawful-custody confrontation absent from stage wording; optional legal follow-up, no player sentencing.  |
+| H5-01 | A Branch Still Growing | Q120 | Anchor network survey overlaps; Chainworks expansion is no longer the same story. Anchor measurement overlaps; old Chainworks expansion not current canon; archive technical design only.  |
+| H5-02 | The Covenant's Terms | Q127 | Limited mandate overlaps; Tidehold council details differ. Limited mandate overlaps; Tidehold council setting differs from royal audience.  |
+| H5-03 | A Name Beyond the Veil | Q143 | Original Nhal naming earlier than current Q143; do not migrate old timing. **Conflict:** do not restore earlier Nhal name/reveal timing. Preserve independent network-record/testimony idea, but **retire the early Nhal-name reveal**; Q143 alone authenticates the name. |
+| H5-04 | The Crossing Again | Q032 | Home relief theme overlaps, not necessarily same narrative beat. Relief overlaps; old homecoming/winter circuit could be optional local follow-up.  |
+| H5-05 | What Edric Asked | Q106 | Edric evidence overlaps; original independent-record warrant differs. Edric correspondence overlaps; protected independent-record warrant is a possible procedural detail.  |
+| H5-06 | The Coast Remembers | Q059 | Coastal return overlaps; old named military records not retained. **Old voyage count conflicts** with current sequence; Rukhan/Nemi defence and garrison records are historical character hooks only.  |
+| H5-07 | The Team Behind the Line | Q039 | Rescue theme overlaps but original relay context differs. Extraction rescue overlaps; relay/coastal context differs.  |
+| H5-08 | The Relay's Schedule | Q130 | Relay schedule evidence overlaps, no verified one-to-one match. Relay measurement overlaps; timing tables/support assembly and solo infiltration are separate encounter ideas.  |
+| H5-12 | The Architect's Objection | Q163 | Thes'var early intervention differs from current invitation and final death. **Conflict:** old Thes'var intervention and survival cannot override canonical timing/death. Preserve possible observation-post evacuation/diagram-protection side hook; **do not insert an early Thes'var boss encounter** or alter his Q176 permanent death. |
+| H5-13 | Everyone's Route Home | Q154 | Extraction preparation overlaps, different chapter timing. Extraction staging overlaps; medical stores and enclave boundary protections add possible operational detail.  |
+| H5-14 | Cut the Outer Links | Q155 | Old level-60 finale superseded by level-80 convergence. **Conflict:** old level-60 finale must not replace irreversible activation and level-80 convergence. Preserve worker evacuation and recoverable courier evidence as optional encounter ideas; **do not substitute the old level-60 finale** for the level-70 Veilbreaker or level-80 convergence. |
+| H5-15 | The Ledger and the Warden | Q156 | Keld/Voss outcome differs from Khor'vun and Veilbreaker. **Conflict:** Voss/Keld fight must not replace Khor'vun and Veilbreaker outcomes. Preserve safe-retry/defence-support ideas only if independently compatible; **do not replace Khor'vun with Keld/Voss** or change the immediate Veil/Binding transition. |
+| H5-16 | The Severed Chain | Q181 | Old local severance choice cannot replace canonical Nhal shattering. **Conflict:** old severance/bounded-inversion choice must not replace Oth'varen death and Nhal identity shattering. Preserve bounded severance as historical research context only; **do not offer a branching finale** that bypasses Oth'varen's physical death and Nhal's coherent shattering. |
+| H5-17 | What the Instruments Prove | Q162 | Technical evidence overlaps; original branch-specific results differ. Technical residual-evidence theme overlaps; reject old branch-specific ending assumption.  |
+| H5-18 | A Corrected Record | Q183 | Postwar report overlaps; Cassian sentence not confirmed in new canon. Reporting overlaps; Cassian sentencing is **unconfirmed** and must not be promoted as canon.  |
+| H5-19 | A Different Legacy | Q170 | Shared technical knowledge overlaps, but new finale differs. Distributed technical records/training overlap; reject old ending-dependent interpretation.  |
 
-**Review disposition:** 5 finale/reveal conflicts are historical-only; the other 23 entries are possible worldbuilding, quest-detail or regional follow-up material pending stage-by-stage comparison. No runtime IDs or canon changes are approved by this table.
+**Canonical Markdown clarifications — 3 November 2026:** Q084 requires independent Kel'vari approval; Q089 records Oma'vira's Passage intrusion without reopening the gate; Q112 requires human and hostile-coast evidence without friendly Dominion contacts. Q059 is explicitly the second Dominion operation, so neither old third-shore nor fourth-voyage sequencing transfers. Q115 permanently kills Su'vareth and recovers her contingency orders. Q117 does not confirm Cassian's sentence, and Q183 requires both Kel'vari and Covenant reports. These established details govern the candidate comparisons above; no new lore is inferred.
 
+**Disposition:** all 28 objective-level comparisons are recorded, not waiting to be repeated. The five highlighted finale/reveal conflicts and additional sequencing conflicts remain historical-only; any compatible standalone detail remains an unapproved archive candidate. Further reuse decisions must resolve specific contact, location, access and consequence differences. Keep the source register until its unique evidence and approval requirements are satisfied; no canonical quest, manifest entry or runtime data changes follow.
 ## Potentially reusable quest implementation detail (from exact-title objective comparison)
 
 The [exact-title audit](Human_Legacy_64_Exact_Title_Objective_Comparison.md) records eight legacy details that may enrich existing quests or separate local content: H2-05 hold permission for measuring-assembly recovery; H2-07 limited engineering commission and inspection report; H2-12 Sera's unstable observation site and comparison with Brynja's report; H2-14 physical isolation and emergency cutoff documentation; H2-17 Aelari material/procurement reference; H4-02 surveyed group access and maintenance terms; H4-08 restricted route disclosure and enclave security; H2-08 Northwatch garrison and extraction procedure. **All are unapproved candidates**, not new stages, canon or production requirements. Do not assume these are absent from dialogue or lore simply because manifest objective wording differs.
 
 
-
-## Non-exact H-series stage-level triage — 2 November 2026
-
-Compared each of the 28 non-exact H-series source objectives with the authored stage descriptions of its proposed Q reference. **No canonical change or automatic mapping approval** follows. This table identifies what is clearly overlapping and what remains a possible separate encounter, side objective or lore detail.
-
-| Legacy | Current | Review finding |
-|---|---|---|
-| H4-01 | Q084 | Expedition mandate overlaps; preserve multi-authority resources and extraction-plan detail |
-| H4-03 | Q087 | Kel'vari worker rescue overlaps; preserve water-run and ancient-defence hazard as candidate setting detail |
-| H4-04 | Q089 | Current Passage investigation differs from old NPC WvW tutorial; preserve optional frontier training idea separately |
-| H4-09 | Q032 | Household relief overlaps; preserve royal levy revision/winter stores as potential civic follow-up |
-| H4-10 | Q059 | Dominion voyage overlaps; storm-coast anchorage and extraction boat may be separate location details |
-| H4-11 | Q039 | Personnel rescue overlaps; old pilgrimage-site and PvE-route context differs |
-| H4-12 | Q041 | Depot infiltration/records overlap; Voss receipt and Shorvek objection require character/provenance check |
-| H4-13 | Q112 | Contract evidence overlaps; old Shroud station archive route differs |
-| H4-14 | Q115 | Captive rescue overlaps; retain independent exit/conditioning-control idea without changing Su'vareth finale |
-| H4-16 | Q114 | Multi-source Unmade evidence substantially overlaps; preserve false-attribution specifics if not elsewhere recorded |
-| H4-17 | Q117 | Royal correction overlaps; review related prosecutions may be a distinct consequence |
-| H4-18 | Q117 | Cassian lawful-custody confrontation absent from stage wording; optional legal follow-up, no player sentencing |
-| H5-01 | Q120 | Anchor measurement overlaps; old Chainworks expansion not current canon; archive technical design only |
-| H5-02 | Q127 | Limited mandate overlaps; Tidehold council setting differs from royal audience |
-| H5-03 | Q143 | **Conflict:** do not restore earlier Nhal name/reveal timing |
-| H5-04 | Q032 | Relief overlaps; old homecoming/winter circuit could be optional local follow-up |
-| H5-05 | Q106 | Edric correspondence overlaps; protected independent-record warrant is a possible procedural detail |
-| H5-06 | Q059 | **Old voyage count conflicts** with current sequence; Rukhan/Nemi defence and garrison records are historical character hooks only |
-| H5-07 | Q039 | Extraction rescue overlaps; relay/coastal context differs |
-| H5-08 | Q130 | Relay measurement overlaps; timing tables/support assembly and solo infiltration are separate encounter ideas |
-| H5-12 | Q163 | **Conflict:** old Thes'var intervention and survival cannot override canonical timing/death |
-| H5-13 | Q154 | Extraction staging overlaps; medical stores and enclave boundary protections add possible operational detail |
-| H5-14 | Q155 | **Conflict:** old level-60 finale must not replace irreversible activation and level-80 convergence |
-| H5-15 | Q156 | **Conflict:** Voss/Keld fight must not replace Khor'vun and Veilbreaker outcomes |
-| H5-16 | Q181 | **Conflict:** old severance/bounded-inversion choice must not replace Oth'varen death and Nhal identity shattering |
-| H5-17 | Q162 | Technical residual-evidence theme overlaps; reject old branch-specific ending assumption |
-| H5-18 | Q183 | Reporting overlaps; Cassian sentencing is **unconfirmed** and must not be promoted as canon |
-| H5-19 | Q170 | Distributed technical records/training overlap; reject old ending-dependent interpretation |
-
-**Disposition:** All 28 have been compared at the objective-description level. The five explicitly conflicting finale/reveal rows remain historical-only. Additional timing/sequence contradictions (e.g. H5-06 voyage count) must also be excluded. The remaining useful details stay in this non-canonical archive until checked against dialogue, zones and NPC records. A comparison is not proof that the old source copies are safe to delete.
 
 
 ## Historical H/HS mapping review — consolidated
@@ -174,11 +138,7 @@ Original review findings preserved below. These are unapproved editorial disposi
 
 ## Canon conflicts that must not be resurrected
 
-- **H5-03 — A Name Beyond the Veil:** proposed Q143; Original Nhal naming earlier than current Q143; do not migrate old timing.
-- **H5-12 — The Architect's Objection:** proposed Q163; Thes'var early intervention differs from current invitation and final death.
-- **H5-14 — Cut the Outer Links:** proposed Q155; Old level-60 finale superseded by level-80 convergence.
-- **H5-15 — The Ledger and the Warden:** proposed Q156; Keld/Voss outcome differs from Khor'vun and Veilbreaker.
-- **H5-16 — The Severed Chain:** proposed Q181; Old local severance choice cannot replace canonical Nhal shattering.
+See the [consolidated H-series dispositions](#non-exact-h-series-ideas-requiring-individual-disposition-28) for H5-03, H5-12 and H5-14–H5-16. These source outcomes are superseded; compatible encounter ideas remain archived, not approved quests.
 
 ## Approval rules
 
@@ -199,21 +159,6 @@ Original review findings preserved below. These are unapproved editorial disposi
 ## Verified branch provenance — 3 November 2026
 
 GitHub comparison of `main` against `story/launch-main-story-1-60` reports the historical story branch **0 commits ahead and 534 behind** `main` at the time checked. This means no branch-only commits require cherry-picking; it does **not** establish semantic equivalence of all old story documents or authorize deletion of the protected H/HS source register. Retire the branch only after final content/backlink verification and an authorized branch deletion action. The 92 H + 24 HS objective/stage comparisons are documented, but editorial ID mappings remain unapproved.
-
-## Five H5 historical conflict dispositions — 3 November 2026
-
-Rechecked the five conflict-flagged source objectives and `proposed_relation` fields in the 116-entry crosswalk against the current campaign and manifest. These are **historical source dispositions, not approved one-to-one quest migrations**:
-
-| Historical source | Proposed modern thematic reference | Safe editorial disposition |
-|---|---|---|
-| H5-03 | Q143 | Preserve independent network-record/testimony idea, but **retire the early Nhal-name reveal**; Q143 alone authenticates the name. |
-| H5-12 | Q163 | Preserve possible observation-post evacuation/diagram-protection side hook; **do not insert an early Thes'var boss encounter** or alter his Q176 permanent death. |
-| H5-14 | Q155 | Preserve worker evacuation and recoverable courier evidence as optional encounter ideas; **do not substitute the old level-60 finale** for the level-70 Veilbreaker or level-80 convergence. |
-| H5-15 | Q156 | Preserve safe-retry/defence-support ideas only if independently compatible; **do not replace Khor'vun with Keld/Voss** or change the immediate Veil/Binding transition. |
-| H5-16 | Q181 | Preserve bounded severance as historical research context only; **do not offer a branching finale** that bypasses Oth'varen's physical death and Nhal's coherent shattering. |
-
-The original objectives and candidate references remain intact in the crosswalk and root historical register. No new runtime IDs, canonical quest changes, or approval of optional quest additions follows from this classification. The archive remains the destination for distinct future sidequest ideas.
-
 
 
 ## Original five-act Human narrative — retirement boundary
