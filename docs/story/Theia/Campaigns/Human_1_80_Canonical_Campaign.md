@@ -190,29 +190,29 @@ Each entry gives **title — location — gameplay objective — lore purpose**.
 
 **Region(s):** Drom Kar, Covenant Anchor sites, contested routes, Valecrown. **Narrative objective:** Khor'vun coordinates Anchor manipulation to amplify original tear; Anchors are not Binding.
 
-- **Q119 — The Warden's Orders.** Drom Kar, Covenant Anchor sites, contested routes, Valecrown. Objective: Khor'vun coordinates Anchor manipulation to amplify original tear; Anchors are not Binding.
-- **Q120 — Network Awakens.** Drom Kar, Covenant Anchor sites, contested routes, Valecrown. Objective: Khor'vun coordinates Anchor manipulation to amplify original tear; Anchors are not Binding.
-- **Q121 — The First Breach.** Drom Kar, Covenant Anchor sites, contested routes, Valecrown. Objective: Khor'vun coordinates Anchor manipulation to amplify original tear; Anchors are not Binding.
-- **Q122 — A Signal Answered.** Drom Kar, Covenant Anchor sites, contested routes, Valecrown. Objective: Khor'vun coordinates Anchor manipulation to amplify original tear; Anchors are not Binding.
-- **Q123 — The Warden's Approaches.** Drom Kar, Covenant Anchor sites, contested routes, Valecrown. Objective: Khor'vun coordinates Anchor manipulation to amplify original tear; Anchors are not Binding.
-- **Q124 — Lines of Defense.** Drom Kar, Covenant Anchor sites, contested routes, Valecrown. Objective: Khor'vun coordinates Anchor manipulation to amplify original tear; Anchors are not Binding.
-- **Q125 — The Anchor Beneath.** Drom Kar, Covenant Anchor sites, contested routes, Valecrown. Objective: Khor'vun coordinates Anchor manipulation to amplify original tear; Anchors are not Binding.
-- **Q126 — A Measure of Time.** Drom Kar, Covenant Anchor sites, contested routes, Valecrown. Objective: Khor'vun coordinates Anchor manipulation to amplify original tear; Anchors are not Binding.
-- **Q127 — The Gathering Storm.** Drom Kar, Covenant Anchor sites, contested routes, Valecrown. Objective: Khor'vun coordinates Anchor manipulation to amplify original tear; Anchors are not Binding.
-- **Q128 — Before the Veil Breaks.** Drom Kar, Covenant Anchor sites, contested routes, Valecrown. Objective: Khor'vun coordinates Anchor manipulation to amplify original tear; Anchors are not Binding.
+- **Q119 — The Warden's Orders.** Drom Kar, Covenant Anchor sites, contested routes, Valecrown. Objective: Deliver translated lead; Authenticate delivery destination; Receive field assignment
+- **Q120 — Network Awakens.** Drom Kar, Covenant Anchor sites, contested routes, Valecrown. Objective: Reach targeted Regional Anchor; Install sensors; Compare measurements; Report
+- **Q121 — The First Breach.** Drom Kar, Covenant Anchor sites, contested routes, Valecrown. Objective: Locate Unmade technicians; Defeat hostile installers; Preserve gear
+- **Q122 — A Signal Answered.** Drom Kar, Covenant Anchor sites, contested routes, Valecrown. Objective: Intercept Warden relay; Authenticate command origin; Record chain
+- **Q123 — The Warden's Approaches.** Drom Kar, Covenant Anchor sites, contested routes, Valecrown. Objective: Scout contested convoy route; Copy transport manifest; Identify terminus; Report
+- **Q124 — Lines of Defense.** Drom Kar, Covenant Anchor sites, contested routes, Valecrown. Objective: Receive frontier defense task; Protect outpost; Secure civilian exit; Report
+- **Q125 — The Anchor Beneath.** Drom Kar, Covenant Anchor sites, contested routes, Valecrown. Objective: Enter buried Anchor site; Recover synchronized activation diagram; Verify Anchor manipulation widens original tear; Report
+- **Q126 — A Measure of Time.** Drom Kar, Covenant Anchor sites, contested routes, Valecrown. Objective: Compare activation clocks; Match signals; Confirm convergence
+- **Q127 — The Gathering Storm.** Drom Kar, Covenant Anchor sites, contested routes, Valecrown. Objective: Request royal audience; Present documented threat; Receive limited expedition mandate
+- **Q128 — Before the Veil Breaks.** Drom Kar, Covenant Anchor sites, contested routes, Valecrown. Objective: Review staging assignment; Confirm extraction routes; Verify measurement teams
 
 ### Levels 55–60: The Warden's Network
 
 **Region(s):** Anchor relays, Lantern Redoubt, Guardian camp. **Narrative objective:** Player stops one branch, not distributed operation; Vaer'uun trail.
 
-- **Q129 — The Warden Unmasked.** Anchor relays, Lantern Redoubt, Guardian camp. Objective: Player stops one branch, not distributed operation; Vaer'uun trail.
-- **Q130 — Anchors in Concert.** Anchor relays, Lantern Redoubt, Guardian camp. Objective: Player stops one branch, not distributed operation; Vaer'uun trail.
-- **Q131 — Siege of Lantern Redoubt.** Anchor relays, Lantern Redoubt, Guardian camp. Objective: Player stops one branch, not distributed operation; Vaer'uun trail.
-- **Q132 — The Pattern Breaks.** Anchor relays, Lantern Redoubt, Guardian camp. Objective: Player stops one branch, not distributed operation; Vaer'uun trail.
-- **Q133 — Into the Warden's Forge.** Anchor relays, Lantern Redoubt, Guardian camp. Objective: Player stops one branch, not distributed operation; Vaer'uun trail.
-- **Q134 — The Severed Signal.** Anchor relays, Lantern Redoubt, Guardian camp. Objective: Player stops one branch, not distributed operation; Vaer'uun trail.
-- **Q135 — Aftermath of the Break.** Anchor relays, Lantern Redoubt, Guardian camp. Objective: Player stops one branch, not distributed operation; Vaer'uun trail.
-- **Q136 — What the Warden Left Behind.** Anchor relays, Lantern Redoubt, Guardian camp. Objective: Player stops one branch, not distributed operation; Vaer'uun trail.
+- **Q129 — The Warden Unmasked.** Anchor relays, Lantern Redoubt, Guardian camp. Objective: Reach fortified relay; Copy signed Warden orders; Confirm Khor'vun's identity
+- **Q130 — Anchors in Concert.** Anchor relays, Lantern Redoubt, Guardian camp. Objective: Measure first linked relay; Measure second relay; Measure third relay; Compare synchronized signatures
+- **Q131 — Siege of Lantern Redoubt.** Anchor relays, Lantern Redoubt, Guardian camp. Objective: Receive Redoubt defense plan; Protect custodians and civilians; Maintain restricted gate extraction; Confirm survivors
+- **Q132 — The Pattern Breaks.** Anchor relays, Lantern Redoubt, Guardian camp. Objective: Review relay layout; Identify vulnerable branch; Approve bounded disruption
+- **Q133 — Into the Warden's Forge.** Anchor relays, Lantern Redoubt, Guardian camp. Objective: Enter solo relay dungeon; Defeat hostile defenders; Reach protected controls
+- **Q134 — The Severed Signal.** Anchor relays, Lantern Redoubt, Guardian camp. Objective: Disable one synchronized branch; Preserve residual readings; Confirm partial victory
+- **Q135 — Aftermath of the Break.** Anchor relays, Lantern Redoubt, Guardian camp. Objective: Compare remaining Anchor signals; Verify other branches active; Report operation persists
+- **Q136 — What the Warden Left Behind.** Anchor relays, Lantern Redoubt, Guardian camp. Objective: Recover Vaer'uun's instructions; Verify their source; Request ancient archive comparison
 
 ### Levels 60–65: The First Voice
 
