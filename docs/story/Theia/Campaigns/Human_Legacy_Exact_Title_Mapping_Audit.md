@@ -79,3 +79,15 @@ The existing [64-entry objective comparison](Human_Legacy_64_Exact_Title_Objecti
 - **H4-15 / Q115:** The historical Malrec/projection dungeon outcome conflicts with current Q115. Current dialogue and encounter review establish Su'vareth's permanent death and surviving contingency orders. **Do not reuse the old boss outcome as an equivalent Q115 definition.** Preserve Malrec as historical character/encounter provenance only, pending independent side-content review.
 
 These checks compare dialogue consequences, not source-ID approval, rewards, implementation or full stage equivalence. The root historical register and draft crosswalk remain protected.
+
+## H2 evidence and dialogue review — 3 November 2026
+
+Checked H2-05/Q050, H2-07/Q052, H2-12/Q042, H2-14/Q044 and H2-17/Q047 against the current 20–30 NPC dialogue pack and authored stages:
+
+- **H2-05/Q050:** Brynja's signed original, altered revision and dated workshop marks are corroborated; historical permission to recover a measuring assembly is not independently established in Q050 dialogue.
+- **H2-07/Q052:** Trade officer confirms reconciled grain deliveries and release of the engineering report. This supports the original limited engineering-commission theme without making a new quest gate.
+- **H2-12/Q042:** Sera confirms a resonance anomaly, measurement-first approach and Surveyor consultation. Historical unstable-position and housing-comparison specifics are not spoken in the reviewed scene.
+- **H2-14/Q044:** Sera references Brynja's preliminary safety note, exact isolator placement and accessible cutoff. The Surveyor's own limit-setting speech is not established by this scene.
+- **H2-17/Q047:** Mara confirms the Aelari material notation and legitimate Kar Durn engineering lead without accusing an Aelari people or authority.
+
+All five remain **strong or partial semantic candidates, not approved historical-to-current IDs**. Preserve missing source-specific detail for encounter, dialogue or optional review; do not import old level gates or create new executable objectives by inference.
