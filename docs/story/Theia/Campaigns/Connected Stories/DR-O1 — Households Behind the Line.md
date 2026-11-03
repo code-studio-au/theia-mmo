@@ -4,8 +4,8 @@ quest_id: DR-O1
 quest_kind: companion
 act: Connected racial stories
 canon_status: Needs Review
-source: "[[Sources/THEIA_HUMAN_CONNECTED_RACIAL_STORIES]]"
-up: "[[Connected Racial Stories]]"
+source: "../../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md"
+up: "../Connected Racial Stories.md"
 ---
 # DR-O1 — Households Behind the Line
 
@@ -18,11 +18,11 @@ Rukhan: protect a civilian withdrawal and secure a garrison approach against NPC
 ## Local resolution
 Civilians reach safety; war is shown through native responsibilities.
 
-Source: [[Sources/THEIA_HUMAN_CONNECTED_RACIAL_STORIES#Orcs — A shore worth defending|Orcs — A shore worth defending]].
+Source: [Orcs — A shore worth defending](../../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md).
 
-[[Connected Racial Stories]] · [[Welcome|Home]]
+[Connected Racial Stories](../Connected%20Racial%20Stories.md) · [Story index](../../../README.md)
 
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
 
-[[Characters/Campaign Cast/Captain Rukhan Graal|Captain Rukhan Graal]] · [[Lore/Institutions/Covenant|Covenant]] · [[Lore/Institutions/Dominion|Dominion]]
+[Captain Rukhan Graal](../../Characters/Campaign%20Cast/Captain%20Rukhan%20Graal.md) · [Covenant](../../Lore/Institutions/Covenant.md) · [Dominion](../../Lore/Institutions/Dominion.md)
