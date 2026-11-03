@@ -2,7 +2,7 @@
 type: character
 canon_status: approved-role; proposed-development
 source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
-up: "[[Characters]]"
+up: "../Characters.md"
 ---
 # Corven Vaelmont
 
@@ -20,9 +20,9 @@ Maintains separate alliance authority, review duties and negotiated obligations 
 
 Source: [Approved recurring humans: complete launch movements](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
-[[Characters]] · [[Human Campaign]]
+[Characters](../Characters.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
 
-[[Atlas/Places/Tidehold|Tidehold]] · [[Lore/Peoples/Kel'vari|Kel'vari]]
+[Tidehold](../../Atlas/Places/Tidehold.md) · [Kel'vari](../../Lore/Peoples/Kel%27vari.md)
