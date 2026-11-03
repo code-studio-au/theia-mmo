@@ -1030,3 +1030,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 
 - [x] Indexed-search review identified incoming references from root README, Documentation Guide, historical Human Campaign, creator-approved Heartlands Settlement Register, import manifest and temporary cleanup tracker. Live-fetched Heartlands and import-manifest references; recorded provenance dependencies in the Act I file (commit `9951961e`).
 - [ ] Do not delete the original Act I source yet. Preserve original import path provenance, reconcile legitimate companion links and perform complete fresh-tree backlink scan before retirement. Search index results alone are not exhaustive.
+
+## Historical Human cast and connected-racial packets — 3 November 2026
+
+- [x] Marked root `THEIA_HUMAN_CAST_AND_PLACES.md` as historical 1–60 source with links to current Human 1–80 authority and approval boundaries for cast and settlement services (commit `e4250c98`).
+- [x] Marked `THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md` as historical cross-racial proposals: allied `CR-` groupings do not add current quests and twelve Dominion companion quests are not approved Human-friendly or independent race campaigns (commit `1862e150`).
+- [ ] Preserve unique character, zone, service and Dominion-perspective ideas after detailed comparison; complete incoming-link verification before any retirement. No current quest or Rust changes.
