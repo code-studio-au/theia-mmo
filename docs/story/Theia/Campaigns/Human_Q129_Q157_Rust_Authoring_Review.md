@@ -41,7 +41,7 @@
 ## Priority consistency corrections
 
 1. **Q155–Q156 atomicity:** Once Veilbreaker destroys the Veil, Binding dissolution and release of the Seven are immediate consequences. The player defeats Khor'vun but cannot reverse the already-completed activation. Never award a successful shutdown flag.
-2. **Q157 timing:** The stage description `Witness Shroud immediately begin dissipating` can imply the fade starts after the Q157 rescue. Rewrite as observing **ongoing** dissipation that started at Q156.
+2. **Q157 timing — resolved editorial correction:** The [canonical campaign](Human_1_80_Canonical_Campaign.md) describes Shroud dissipation already underway since Q156, and [current authoring status](CURRENT_HUMAN_CAMPAIGN.md) records the matching working-manifest correction. Preserve this ongoing-fade wording; no new correction or delayed start of the Shroud fade is proposed.
 3. **Q151 causal explanation:** The Veil and Binding are distinct. Anchors converge energies to strengthen the original tear and enable Nhal's release; they do not sustain the Seven's prison.
 4. **Q143 reveal gate:** Nhal's name is first authenticated here. Audit earlier dialogue, journal text, object names, map markers and UI metadata for premature disclosure.
 5. **Q138–Q145 Vaer'uun:** The First Voice's manipulation uses genuine evidence and withheld history. He knowingly serves Nhal, though corrupted; his death is permanent.
