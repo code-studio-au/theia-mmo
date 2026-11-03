@@ -608,3 +608,8 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Migrated Commander Nessa Ward, Captain Rukhan Graal and Lieutenant Corra Baines to direct Characters/current campaign, Northwatch, related officer, Orcs and Covenant/Dominion/Unmade links (commits `7e510db4`, `25cbd532`, `ab44f700`).
 - [x] Preserved their **Needs Review** status, Rukhan's non-Unmade default and Great Clan terminology, and Corra's independent garrison continuity role.
 - [ ] Continue remaining character records and final repository audit.
+
+## Campaign Cast search-index spot check — 3 November 2026
+
+- [x] Re-fetched all 16 Campaign Cast files returned by GitHub's stale `up: [[Characters]]` search; **0/16** still contained that old frontmatter link in live file content. This is a targeted search-result verification, not a full directory listing.
+- [ ] Obtain a complete live tree enumeration before claiming all Campaign Cast notes are migrated; GitHub search results can lag recent commits. Continue source and backlink checks.
