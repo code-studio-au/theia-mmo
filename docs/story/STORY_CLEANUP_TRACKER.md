@@ -854,3 +854,10 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Re-read `Human_Legacy_Packs_Consolidation_Checklist.md` and `CURRENT_HUMAN_CAMPAIGN.md`. The checklist had contradictory early snapshots ('17 remain', 'no deletion') despite its final section documenting all 17 retired. Clarified the current status and labelled intermediate sections as historical snapshots (commit `4f3a5518`).
 - [x] Preserved the eight migration-note references, 184-quest editorial coverage and warning that migrated mechanics are not executable Rust data. No old packs recreated, no runtime or quest manifest changes.
 - [ ] Check the remaining 51 Campaigns root documents for similar stale intermediate statuses and duplicate current-authority claims. Preserve original H/HS provenance and historical evidence; do not infer production readiness.
+
+## Three historical Human audit status repairs — 3 November 2026
+
+- [x] Updated `Human_Production_Specification_Retirement_Audit.md` to reflect the previously completed retirement of the duplicate 184-quest specification, with its distinct editorial context preserved in the Location and Lore Reference (commit `5c3a5af6`).
+- [x] Updated `Human_1_80_Quest_Necessity_Audit.md` to distinguish the unchanged canonical 184-quest register from already-retired legacy packs and production specification (commit `d4239f52`).
+- [x] Updated `Human_Obsidian_Legacy_Quest_Audit.md` to acknowledge retired source mirror/navigation and discontinued Obsidian while protecting unresolved root H/HS provenance (commit `10a4e278`).
+- [ ] Further historical paragraphs in these audits and other Campaigns root files may still describe obsolete states. Continue targeted verification and repair; do not claim whole-directory semantic completion.
