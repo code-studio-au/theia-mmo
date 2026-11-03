@@ -355,3 +355,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Replaced obsolete `Sources/THEIA_WORLD_BIBLE` wiki-links with direct surviving root World Bible and story decisions links in `Lore/Magic.md`, `Lore/The Seven Gods.md`, and `Lore/Primordial Cosmology.md` (commits `2a492fad`, `fc7f9008`, `aa85611d`).
 - [x] Removed a duplicated identical historical-source link in Magic. Existing lore claims and individual deity references were not changed.
 - [ ] Continue auditing surviving wiki-links and references across other lore/character/atlas notes; source-link cleanup is not a semantic canon approval.
+
+## Additional World Bible topic source-link cleanup — 3 November 2026
+
+- [x] Replaced retired `Sources/THEIA_WORLD_BIBLE` wiki-links in `Lore/Divine and Mortal History.md`, `Lore/Anchors and the Shroud.md` and `Lore/Peoples and Allegiances.md` with root World Bible and dated story decision links (commits `7e9b603f`, `e084b055`, `122bd35e`).
+- [x] Collapsed three identical historical-source links in Anchors and the Shroud into one. No narrative content or quest definitions changed.
+- [ ] Continue link and semantic verification across the remaining derived notes; do not infer whole-vault completion from these targeted changes.
