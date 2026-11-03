@@ -254,3 +254,10 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Compared all 18 H3-series historical objectives, contacts and prerequisite edges with current manifest (commit `9415b095`).
 - [x] Flagged four changed dependency edges: H3-01, H3-02, H3-03 and H3-18; optional content must not be made mandatory by importing old prerequisites.
 - [ ] Dialogue/consequence and unique detail checks remain before mapping approval; continue H4/H5 and HS optional hooks.
+
+## Root story entry-point authority correction — 3 November 2026
+
+- [x] Updated `docs/story/README.md` to direct readers first to `CURRENT_HUMAN_CAMPAIGN.md`, the canonical 1–80 campaign, the single 184-quest authoring manifest, the legacy ideas archive and story decisions (commits `43dce554`, `2b627ced`). Its former 1–60 import table is now explicitly a historical index, not the active quest reading order.
+- [x] Verified the active `CURRENT_HUMAN_CAMPAIGN.md` identifies the 184-quest / 684-stage manifest as working editorial data, not executable Rust, and retains the original H/HS crosswalk as unapproved provenance.
+- [ ] Audit other entry points and backlinks to the historical 1–60 import index. The README change does not establish that all remaining vault links resolve or that old quest mappings are approved.
+- [ ] Continue the H4/H5 and HS dialogue, prerequisites and consequence comparisons; preserve unique evidence before retiring the historical quest register.
