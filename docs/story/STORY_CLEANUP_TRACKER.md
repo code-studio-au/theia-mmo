@@ -579,3 +579,8 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Updated Teren Malrec, Maelin Voss and Sareth Keld to direct Characters/current Human campaign and Unmade/Chainworks navigation (commits `07b7ae60`, `fea09014`, `10ffeb7d`).
 - [x] Added explicit historical-candidate caveats: their old Act IV/V custody, capture and finale outcomes are not approved current 1–80 campaign canon. Retained their source provenance and **Needs Review** status for possible optional use.
 - [ ] Continue remaining Campaign Cast and source/backlink reconciliation. No active quest definitions changed.
+
+## Dominion cast navigation follow-up — 3 November 2026
+
+- [x] Updated Ilyss Varen's current campaign, Characters, Vaelari, Dominion and Unmade links (commit `befe8ad3`). Her independent research does not establish defection or faction cooperation; **Needs Review** remains.
+- [ ] Continue remaining cast and full repository source/link checks.
