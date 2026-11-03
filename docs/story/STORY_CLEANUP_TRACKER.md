@@ -655,3 +655,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Migrated Age of Reconstruction, Age of Silence and Anchor Network Development, Shattered Delegation and Network Threshold and Modern Awakening notes to direct Markdown links (commits `9e38045e`, `714c748c`, `4a4a59f7`, `2073fe37`). All 13 event notes have now received Obsidian navigation migration.
 - [x] Preserved the separate origins of the Anchor network and Shattered Delegation, their pre-play timing and the lack of fixed numerical dates. Nhal is retained as a name where no verified standalone note target exists.
 - [ ] Run a fresh 13/13 event-file scan and verify Markdown link destinations and historical semantics; completion of migration is not completion of validation.
+
+## Historical Events complete live link-target audit — 3 November 2026
+
+- [x] At `main` tree `1f0e9618fd9743c4380708238f4e46758283ef0c`, fetched all 13 `Theia/History/Events/*.md` files, resolved **112 relative Markdown link occurrences** against the complete live Git tree and found **zero missing file targets**.
+- [x] All 13 files contain **zero** remaining `[[...]]` Obsidian wiki-links. This completes event-directory syntax and file-target validation at that revision.
+- [ ] Heading anchors, semantic precedence, inbound references and the rest of the story tree remain outstanding. Do not infer final cleanup completion from this targeted audit.
