@@ -2,7 +2,7 @@
 type: location
 canon_status: Needs Review
 source: "../../../THEIA_HUMAN_CAST_AND_PLACES.md"
-up: "[[Atlas]]"
+up: "../Atlas.md"
 ---
 # Millhaven
 
@@ -18,11 +18,11 @@ Farm roads to Stoneford through the same inhabited district
 ## Community and function
 Farming, millwork, local militia, healing house, basic market; livestock, river fauna, predators and justified human outlaws nearby
 
-Source: [[Sources/THEIA_HUMAN_CAST_AND_PLACES#Geography and travel|Geography and travel]] (entry: **Millhaven**).
+Source: [Geography and travel](../../../THEIA_HUMAN_CAST_AND_PLACES.md) (entry: **Millhaven**).
 
-[[Atlas]] · [[Human Campaign]]
+[Atlas](../Atlas.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
 
-[[Atlas/Places/Stoneford|Stoneford]]
+[Stoneford](Stoneford.md)
