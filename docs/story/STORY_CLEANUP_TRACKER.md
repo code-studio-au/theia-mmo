@@ -703,3 +703,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Complete tree enumerates **28 Lore Markdown files**. Preliminary live inspection found residual Obsidian navigation in multiple topic notes; full directory target verification remains pending.
 - [x] Migrated Magic and Oth'vaeri notes to Markdown Lore/History/story index and Kel'vari navigation (commits `14e97aab`, `4fa8e989`). Existing lore content and approval status were preserved.
 - [ ] Continue other 26 Lore notes, check relative Markdown file targets and historical semantic precedence before marking this directory complete.
+
+## Foundational Lore topic navigation — 3 November 2026
+
+- [x] Migrated `Lore/Anchors and the Shroud.md`, `Divine and Mortal History.md` and `Orders and Hidden Conflict.md` related-note and index wiki-links to direct Markdown targets (commits `5c63e83a`, `d5b38a8a`, `04e95dfe`). Kept Nhal as plain name where no verified standalone file target was selected.
+- [x] Preserved historical source provenance and later creator-decision precedence; no new lore outcomes approved.
+- [ ] Continue remaining Lore files and complete live file-target validation.
