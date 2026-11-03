@@ -672,3 +672,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 
 - [x] Repaired the incorrect four-parent Human Cast and Places path in 12 more Campaign Cast files (Edda Flintwake through Joss Arden, alphabetical tree order). Ten changes were confirmed by a subsequent live re-fetch after a tool-call limit interrupted the initial batch; Iven Rusk and Joss Arden were then committed separately (`1bfbb749`, `db9f3ec7`).
 - [ ] Audit the remaining 27 cast files and run a complete 47-file link-target validation. Earlier navigation-only checks did not catch these root source paths.
+
+## Campaign Cast provenance source-path repairs completed — 3 November 2026
+
+- [x] Repaired entries 21–36 (King Aldren Vaelmont through Sareth Keld) and final entries 37–47 (Sel'ora through Ysra Keel) from the broken four-parent cast source path to `../../../THEIA_HUMAN_CAST_AND_PLACES.md`. A tool-call cap interrupted the last batch; a subsequent live re-fetch confirmed the first ten of that batch were already fixed, and Ysra Keel was corrected separately (`bd8e9069`).
+- [x] All 47 Campaign Cast files have now received the known source-path correction; this is not yet a complete 47-file Markdown link validation.
+- [ ] Run a fresh tree-based audit of every Markdown link in all 47 cast files, then continue other story directories and historical duplicate checks.
