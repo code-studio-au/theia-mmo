@@ -51,7 +51,7 @@ The creator authorised completing the human story and necessary connected racial
 
 - [Canonical Human 1–80 Campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md) — current Human 1–80 launch narrative; superseded five-act source remains in Git history.
 - [Historical Human Quest Register](THEIA_HUMAN_QUEST_REGISTER.md) — superseded 1–60 source evidence for 92 H and 24 HS editorial IDs; **not** the current quest order, runtime IDs or approved dependencies.
-- [Solo Story Climaxes](THEIA_HUMAN_STORY_DUNGEONS.md) — all five essential story encounters without required raids or PvP.
+- [Current Encounter Design](Theia/Campaigns/Human_1_80_Encounter_Barks_and_Cinematic_Timing.md) — current 1–80 encounters; the five historical 1–60 dungeon proposals are preserved in the legacy ideas archive and Git history.
 - [Cast, Places and Services](THEIA_HUMAN_CAST_AND_PLACES.md) — recurring humans, new contacts, working geography and stable services.
 - [Connected Racial Stories](THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md) — allied visits, Dominion counterpart motivations and 12 proposed native-side companion quests.
 - Historical Human 1–60 Campaign Review Record — retired from the active tree; its original review and source precedence notes remain in Git history at `docs/story/THEIA_HUMAN_CAMPAIGN_REVIEW.md`. For current story status use [Current Human Campaign](Theia/Campaigns/CURRENT_HUMAN_CAMPAIGN.md).
