@@ -374,3 +374,8 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Migrated `Theia/History/Memory Scenes.md` to the surviving root Memory Scenes source (commit `a539c09e`).
 - [x] Migrated nine source-section wiki-links in `Theia/Campaigns/Connected Racial Stories.md` to the surviving root connected racial stories source, retaining **Needs Review** status (commit `cb48c20c`).
 - [ ] Continue residual wiki-link and content checks; these migrations do not establish all individual quest-note links resolve or that racial stories are approved.
+
+## Connected racial index source-link deduplication — 3 November 2026
+
+- [x] Replaced nine repeated links to the same root `THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md` document with one explicit historical source link and a list of covered cultural routes (commit `d6fe4a11`). The detailed racial proposals remain in the source, and the index retains **Needs Review**.
+- [ ] Individual CR/DR quest-note wiki-links still require target verification. Do not remove the index or assert those links resolve without checking live files.
