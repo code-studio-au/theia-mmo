@@ -2,7 +2,7 @@
 type: character
 canon_status: approved-role; proposed-development
 source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
-up: "[[Characters]]"
+up: "../Characters.md"
 ---
 # Mara Thorne
 
@@ -20,9 +20,9 @@ Holds a continuing independent-records warrant and a resolved human criminal cas
 
 Source: [Approved recurring humans: complete launch movements](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
-[[Characters]] · [[Human Campaign]]
+[Characters](../Characters.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
 
-[[Atlas/Places/Valecrown|Valecrown]]
+[Valecrown](../../Atlas/Places/Valecrown.md)
