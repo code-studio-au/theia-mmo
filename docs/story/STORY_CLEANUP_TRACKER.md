@@ -549,3 +549,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Migrated Queen Seralyth, Caelith Rowan and Veylan Istren character cards to direct Characters/current campaign and Aelari people links after earlier blocked update (commits `c7647d35`, `d3bf464c`, `e548150a`).
 - [x] Preserved Queen Seralyth's approved role and the two other characters' **Needs Review** status; no new relationship with Selrion or new canon was established.
 - [ ] Continue remaining campaign cast and repository-wide historical link/content checks.
+
+## Korrath and dwarf campaign cast navigation — 3 November 2026
+
+- [x] Migrated Urodan and Tarek Oss to direct Characters/current campaign and Korrath links (commits `14422c49`, `2a7ab3f0`).
+- [x] Retried and completed Rurik Anvilmark's Characters/current campaign and Dwarves links (commit `d3918065`).
+- [ ] Continue remaining Campaign Cast cards and full repository semantic/link checks; existing **Needs Review** statuses remain unchanged.
