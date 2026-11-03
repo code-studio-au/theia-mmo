@@ -1,7 +1,7 @@
 ---
 type: character
 canon_status: Needs Review
-source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
+source: "../../../THEIA_HUMAN_CAST_AND_PLACES.md"
 up: "../Characters.md"
 ---
 # Nemi Brindlewick
@@ -18,7 +18,7 @@ Depot accounting, legitimate serials and later corrected requisitions
 ## Boundary and proposed resolution
 No friendly trading or direct assistance. Her work reveals a discrepancy because she keeps honest accounts. Not related to the archive's working Guildmaster Tessa Brindle.
 
-Source: [Dominion characters required by this human route](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
+Source: [Dominion characters required by this human route](../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
 [Characters](../Characters.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
