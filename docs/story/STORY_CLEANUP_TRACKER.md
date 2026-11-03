@@ -465,3 +465,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Updated `Atlas/Places/Sylvaren.md`, `Drom Kar.md` and `Elderwood.md` to use root Human Cast and Places, Atlas and current Human campaign Markdown links instead of retired Obsidian source/parent references (commits `9c46346f`, `a33ba706`, `0999e2fc`).
 - [x] Converted Sylvaren's Tidehold/Aelari and Drom Kar's Outer Passage site/Korrath related links; all four unique destinations were directly verified to exist on `main`.
 - [ ] Keep their **Needs Review** geography status; finish other historical references, full-tree link checks and content reconciliation before branch/tracker retirement.
+
+## Five Kel'vari enclave navigation migrations — 3 November 2026
+
+- [x] Migrated Atlas parent, story-index, Kel'vari people and related campaign-cast wiki-links in the five enclave pages Veyr'athun, Oth'irun, Oru'sava, Thuma'rei and Soru'vaeth to direct Markdown links (commits `83de7b5a`, `778fcfcf`, `d8d4ea1c`, `a82dd23b`, `a1b8e349`).
+- [x] Live-verified the Kel'vari people note and Sel'ora, Leth'ari and Aru'ven campaign-cast targets. Kept enclave identities and source-specific approval status unchanged.
+- [ ] Continue wider Atlas/lore link validation and historical semantic reconciliation before final tracker deletion and branch retirement.
