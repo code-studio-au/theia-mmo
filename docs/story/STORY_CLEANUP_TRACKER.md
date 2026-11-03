@@ -543,3 +543,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Migrated Tomas Greymere, Mera Reed, Nera Holt and Joss Arden character notes to direct Characters/current campaign and related Millhaven/Stoneford/Brenna links (commits `a6834e2f`, `1575d30a`, `15b4cb0b`, `ce4537aa`). Previously blocked edits were retried successfully.
 - [x] Preserved existing approval statuses and Nera Holt's working surname caveat; no kinship or new canon established.
 - [ ] Continue other Campaign Cast notes and full repository backlink/content validation.
+
+## Aelari campaign cast navigation — 3 November 2026
+
+- [x] Migrated Queen Seralyth, Caelith Rowan and Veylan Istren character cards to direct Characters/current campaign and Aelari people links after earlier blocked update (commits `c7647d35`, `d3bf464c`, `e548150a`).
+- [x] Preserved Queen Seralyth's approved role and the two other characters' **Needs Review** status; no new relationship with Selrion or new canon was established.
+- [ ] Continue remaining campaign cast and repository-wide historical link/content checks.
