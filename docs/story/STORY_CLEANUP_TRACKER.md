@@ -631,3 +631,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Complete tree inventory exposed **13 existing** historical event notes under `Theia/History/Events/`; earlier samples had checked the wrong parent directory. All 13 files were directly fetched and their `chronology_order` entries inspected. The prior removal of timeline wiki-links was safe as a temporary non-link presentation, but the assertion that individual event pages might not exist was incomplete.
 - [x] Restored all 13 Historical Timeline milestone links as direct Markdown paths to the verified `Events/` notes (commit `f9278760`). No duplicate event files were created.
 - [ ] Audit the 13 event notes' remaining wiki-links and historical claims against later creator decisions. All 13 currently contain old `[[...]]` links; current 1–80 campaign still governs modern outcomes.
+
+## Historical Events first three navigation repairs — 3 November 2026
+
+- [x] Migrated First Sundering, Awakening of the Seven and Mortal Creation event notes from Obsidian wiki-link navigation to relative Markdown links for the historical timeline, adjacent events, divine figures and relevant lore (commits `626c2850`, `d60098df`, `d8f3effc`).
+- [x] Kept unverified Aethyr/Nhal note references as plain names rather than inventing targets; preserved chronology and source-specific approval labels.
+- [ ] Audit the remaining ten History/Events notes and verify their Markdown target paths and narrative precedence before completion.
