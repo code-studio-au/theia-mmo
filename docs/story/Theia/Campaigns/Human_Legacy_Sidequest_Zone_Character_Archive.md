@@ -543,3 +543,41 @@ campaign, not newly approved mechanics. The founders' ancient friendship with
 him did not imply a modern reconciliation. The old packet's claim that all
 founders survive is SUPERSEDED, not a future alternative. Their locked deaths, Oth'varen's Q181
 sacrifice and Nhal's shattering remain governed by the canonical narrative.
+
+
+## Chronicle future campaign and frontier concepts
+
+**ARCHIVED/WORKING, not approved expansion events.** Consolidated from the
+[Chronicle's historical development appendix](https://github.com/code-studio-au/theia-mmo/blob/c13994dcafd4e8e7107974c208bd990d997e4e6f/docs/story/THEIA_INTERWOVEN_CHRONICLE.md#future-shrouded-lands-campaigns--working-development).
+Current canonical travel restrictions, enclave sovereignty, faction separation
+and permanent outcomes remain binding. None of these concepts restores a dead
+founder, changes launch revelations or selects Nhal's fragments' future.
+
+- **Larger Passage expeditions:** possible restoration of larger ancient gateways,
+  with separate Covenant and Dominion staging grounds at the Shroud's edges.
+  These proposed connections are distinct from surviving low-capacity gates,
+  ordinary sea routes and existing cross-continent military footholds. No larger
+  gateway is approved or already restored by this proposal.
+- **Enclave negotiations:** separate access, provisions, protection and ancient
+  infrastructure-reclamation agreements with hostile alliance expeditions.
+  Unselected governments, leaders, locations and agreements remain OPEN; existing
+  approved enclave facts are not reopened. Kel'vari are neither an automatic third
+  playable faction nor universal allies. Discovery does not reconcile the alliances.
+- **Contested ruins:** wards, fortifications and supply routes as optional territorial
+  hooks; abandoned sites may be reclaimed by corrupted defenders, remain neutral
+  or be disrupted by magical events. A gatehouse defended by Kel'vari families for
+  generations is a distinct possible siege setting. PvP rules, zone boundaries
+  and settlement designs remain unapproved; essential story remains solo-accessible.
+- **Historical discovery hooks:** the Unmade's manipulation of accusations against
+  Ascendant, the Seven's incomplete memories and Kel'vari history can inform
+  optional research, only within current reveal gates. Their old placement as
+  necessarily post-launch discoveries is not approved.
+- **Overseas frontier hooks:** reconnaissance, supply raids, excavations, resource
+  control and assaults on stronger fortifications, supported by established ships,
+  landing garrisons and conventional supply lines. **Broken Coast** and **Ashen Reach**
+  are working names, not locked geography. These are enemy-continent concepts,
+  not permission for ordinary sea access through the Shroud.
+
+The old alternate-ending menu is retained only as SUPERSEDED source provenance,
+not active creative options for the launch finale. Historical Severed Chain
+support/evacuation ideas already appear above and are not duplicated here.

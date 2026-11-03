@@ -20,14 +20,14 @@ Each milestone below links to its corresponding verified `History/Events/` note.
 12. [Shattered Delegation](Events/Shattered%20Delegation.md) — the Unmade sabotage an exceptional modern peace negotiation; this is a separate covert operation, not the origin of the Anchor network.
 13. [Network Threshold and Modern Awakening](Events/Network%20Threshold%20and%20Modern%20Awakening.md) — coordinated Major Anchors bring the cumulative network to a threshold, triggering the awakening and restoring Nhal's limited, selective communication before play begins.
 
-The Age of Silence begins after the Binding and overlaps reconstruction and later history. The delegation's destruction and the network reaching its threshold both precede the present-day marker; their exact timing relative to one another remains unspecified. Their display order is a reading sequence, not a newly fixed chronology.
+The Age of Silence begins after the Binding and overlaps reconstruction and later history. **LOCKED relative order:** the Shattered Delegation precedes Nhal's renewed communication at the network threshold, as explicitly recorded in the [World Bible](../../THEIA_WORLD_BIBLE.md#2026-10-14-creator-lock--anchor-network-awakening-and-resonance-inversion). Both precede play. Exact dates and elapsed intervals remain OPEN; this does not date the generations-long network's earlier development.
 
 ## Present day — start of play
 
 > [!important] Current timeline marker — YOU ARE HERE
 > The modern magical awakening is underway. The Corrupted Conclave's cumulative Anchor network has reached a threshold, redistributing access to existing primordial energy and allowing Nhal's selective communication to resume. Ordinary people experience both beneficial new abilities and dangerous anomalies without knowing their common cause. Covenant and Dominion remain at war; the Binding still holds.
 
-This marks the opening of **Act I**, after the the Shattered Delegation and the Network Threshold and Modern Awakening. Minor Resonators, Regional Anchors and functioning Major Anchors already exist for players to discover. The Conclave can continue extending and refining its network during the campaign. It is a story-relative present, not a real-world date. The interval between the delegation's destruction, the awakening and the opening quests is not numerically fixed.
+This marks the opening of **Act I**, after the Shattered Delegation and the Network Threshold and Modern Awakening. Minor Resonators, Regional Anchors and functioning Major Anchors already exist for players to discover. The Conclave can continue extending and refining its network during the campaign. It is a story-relative present, not a real-world date. The interval between the delegation's destruction, the awakening and the opening quests is not numerically fixed.
 
 Resonance Inversion · [The awakening and world at the threshold](../../THEIA_INTERWOVEN_CHRONICLE.md).
 
@@ -41,4 +41,4 @@ The older five-act **1–60** outline and proposed post-launch Nhal confrontatio
 - [Story decisions](../../DECISIONS.md) — creator locks and precedence
 - [Interwoven Chronicle](../../THEIA_INTERWOVEN_CHRONICLE.md) — historical narrative, subject to approval labels
 
-The thirteen historical milestones above remain a high-level reading sequence, not a calendar. No numerical interval is inferred by this index. The Shattered Delegation and network threshold are both before play; their exact relative timing is not established here.
+The thirteen historical milestones above remain a high-level reading sequence, not a calendar. No numerical interval is inferred by this index. The Delegation-before-threshold order is source-confirmed above; only calendar dates and elapsed intervals remain unspecified.
