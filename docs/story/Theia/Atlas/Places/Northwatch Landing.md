@@ -2,7 +2,7 @@
 type: location
 canon_status: Needs Review
 source: "../../../THEIA_HUMAN_CAST_AND_PLACES.md"
-up: "[[Atlas]]"
+up: "../Atlas.md"
 ---
 # Northwatch Landing
 
@@ -18,9 +18,9 @@ Repeated ship sailings from Tidehold; escorted coastal departures
 ## Community and function
 Expedition garrison, civilian support contractors and military stores; Dominion coastal settlements and forces remain sovereign and hostile
 
-Source: [[Sources/THEIA_HUMAN_CAST_AND_PLACES#Geography and travel|Geography and travel]] (entry: **Broken Coast / Northwatch Landing**).
+Source: [Geography and travel](../../../THEIA_HUMAN_CAST_AND_PLACES.md) (entry: **Broken Coast / Northwatch Landing**).
 
-[[Atlas]] · [[Human Campaign]]
+[Atlas](../Atlas.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
