@@ -531,3 +531,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Migrated Mara Thorne, Darian Cole and Elara Fenwick campaign cast notes to direct Characters/current campaign navigation and verified Valecrown/Millhaven/Elara related file paths (commits `12b56934`, `3af13d18`, `596f9bf6`).
 - [x] Preserved approved starting roles and **Needs Review** development/outcome status; no canonical dialogue or quest data changed.
 - [ ] Continue remaining campaign cast cards and broader backlink/content checks.
+
+## Heartlands cast navigation retry completed — 3 November 2026
+
+- [x] Successfully migrated Brenna Holt, Sister Anwen, Heddan Pike and Perrin Vale campaign cast notes to direct Characters/current campaign and Millhaven/Stoneford Markdown links after an earlier blocked attempt (commits `ba0f7394`, `2ca84611`, `d8402c8e`, `20188814`).
+- [x] Preserved existing approved-role versus **Needs Review** distinctions and character development text. No quest data or canonical outcomes changed.
+- [ ] Continue remaining Campaign Cast cards and repository-wide historical link/content checks.
