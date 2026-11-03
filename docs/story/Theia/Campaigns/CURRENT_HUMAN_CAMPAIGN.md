@@ -37,7 +37,7 @@ All 184 quests have completed first-pass Rust authoring review. Safe editorial c
 
 ## Production register retirement
 
-The duplicate 184-entry `Human_1_80_Production_Quest_Specification.md` has been retired from the active tree. All 184 historical location bands, player-purpose descriptions and lore summaries are preserved as **unapproved editorial context** in [Location and Lore Reference](Human_1_80_Location_and_Lore_Editorial_Reference.md); its outdated hard-level and generic-stage claims were not migrated. The current manifest remains the sole structured working quest inventory. The 17 legacy playable packs/briefs have also been retired, with originals recoverable through Git history.
+The duplicate 184-entry `Human_1_80_Production_Quest_Specification.md` has been retired from the active tree. Its duplicate location/lore appendix is also retired: broad location bands and established narrative belong to the canonical campaign, while distinct site labels and production details are preserved as **unapproved proposals** in the [legacy archive](Human_Legacy_Sidequest_Zone_Character_Archive.md#retired-production-location-and-lore-proposals). Full source wording remains in linked Git history; outdated hard-level, stage and outcome claims do not become active content. The current manifest remains the sole structured working quest inventory. The 17 legacy playable packs/briefs have also been retired, with originals recoverable through Git history.
 
 ## Next reconciliation milestones
 

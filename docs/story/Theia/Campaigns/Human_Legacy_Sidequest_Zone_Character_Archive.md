@@ -554,3 +554,93 @@ The 38 proposed area labels in a 1–60 example matrix were NEVER approved as fi
 Working dungeons: **Emberworks** (Covenant dwarf industry), **Rootbound Sanctum** (Aelari forest ward failure), **Sealed Mechanism** (Dominion halfling ancient works), **Stormvault** (Vorrath coastal temple), **Forsaken Repository** (related but separate faction-specific ancient research locations). **Severed Chain** was a provisional level-60 final raid about severing a deliberately connected Void-anchor system; there must be no mixed playable raid groups.
 
 The starting-region entries and first row of the matrix name the same eight proposals; the list supplies their distinct hooks, while the matrix preserves their historical level context. The future mortal-maintenance theme above complements the [distributed protective-network proposal](#unapproved-post-launch-and-long-range-possibilities); neither resolves Nhal's fragments or authorizes a different launch ending.
+
+## Retired production location and lore proposals
+
+**ARCHIVED / WORKING, not an approved map or second quest inventory.** The retired [Location and Lore Editorial Reference](https://github.com/code-studio-au/theia-mmo/blob/8c1e84a02a92393c39475fea6f3f8b025ebe24ec/docs/story/Theia/Campaigns/Human_1_80_Location_and_Lore_Editorial_Reference.md) preserved v0.2 production-specification context. Its 184 titles already match the [canonical campaign](Human_1_80_Canonical_Campaign.md); broad location bands and established story summaries belong there, not in another maintained table. Historical H/HS provenance is unaffected.
+
+The following 65 distinct site labels cover the 80 source rows whose location wording is not already present verbatim in the corresponding canonical entry. Some are alternate descriptions of established places, not necessarily new sites. Q numbers identify the old source row only: they do not lock NPC placement, scene order, map adjacency, an extra objective, friendly faction access or a travel shortcut. Exact placement and any reuse remain **OPEN**; canonical region and access rules take precedence.
+
+- **Kar Durn royal court → Sylvaren** (Q053).
+- **Drom Kar research chamber** (Q074, Q126).
+- **Chainworks exterior** (Q075).
+- **Chainworks records vault** (Q076).
+- **Chainworks solo dungeon** (Q077).
+- **Chainworks archive** (Q079).
+- **Drom Kar laboratory** (Q080).
+- **Guardian sanctuary** (Q081, Q084, Q114, Q182).
+- **Restricted archive** (Q082, Q139).
+- **Restricted Guardian Passage** (Q085).
+- **Kel'vari settlement** (Q087).
+- **Ancient Passage ruins** (Q089).
+- **Kel'vari record store** (Q090).
+- **Oth'irun archive** (Q093, Q095, Q101, Q102, Q104, Q105).
+- **Ancient archive** (Q098).
+- **Historical projection chamber** (Q099).
+- **Oth'varen's study** (Q103).
+- **Valecrown archive** (Q106).
+- **Covenant intelligence office** (Q107).
+- **Hostile Dominion military archive** (Q108).
+- **Historic delegation site** (Q109).
+- **Ruined conference compound** (Q110).
+- **Neutral witness refuge** (Q111).
+- **Valecrown court** (Q117, Q127).
+- **Oth'varen sanctuary** (Q118, Q142).
+- **Covenant Regional Anchor** (Q120).
+- **Anchor perimeter** (Q121).
+- **Signal station** (Q122).
+- **Contested mountain route** (Q123).
+- **Covenant frontier** (Q124).
+- **Buried installation** (Q125).
+- **Guardian staging camp** (Q128, Q135).
+- **Fortified relay** (Q129).
+- **Linked relay sites** (Q130).
+- **Guardian station** (Q132).
+- **Relay solo dungeon** (Q133).
+- **Relay control chamber** (Q134).
+- **Relay archive** (Q136).
+- **Abandoned research facility** (Q138).
+- **Ancient communicator** (Q140, Q163).
+- **Ancient research site** (Q141).
+- **First Voice solo dungeon** (Q145).
+- **Sanctuary** (Q146, Q151).
+- **Kel'vari restricted archive** (Q148).
+- **Ancient testimony vault** (Q149).
+- **Historical chamber** (Q150).
+- **Guardian research chamber** (Q152).
+- **Anchor monitoring network** (Q153).
+- **Expedition staging ground** (Q154).
+- **Veilbreaker solo dungeon** (Q156).
+- **Exposed Kel'vari approaches** (Q159).
+- **Unmade installation** (Q160).
+- **Inverted Major Anchor** (Q161).
+- **Distributed Anchor sites** (Q164).
+- **Guardian council** (Q165).
+- **Architect facility approaches** (Q166).
+- **Covenant and Kel'vari councils** (Q171).
+- **Guardian test chamber** (Q173).
+- **Staging camp** (Q174).
+- **Architect central facility** (Q175).
+- **Solo boss chamber** (Q176).
+- **Control junction** (Q177).
+- **Convergence entrance** (Q179).
+- **Final convergence chamber** (Q181).
+- **Oth'irun, Tidehold, Valecrown** (Q183).
+
+### Distinct production-detail possibilities
+
+Retain these as optional presentation or encounter ideas, not missing mandatory stages:
+- Gate-maintenance and consent logs as physical evidence of historic crossings (source Q082), and supply terms within a bounded site-access agreement (Q088).
+- Ancient instruments as an identity-corroboration prop (Q095). The canonical Q094–Q097 evidence sequence and Q097 identity reveal govern; do not relocate the verification or expose the name earlier.
+- Witness records alongside Edric correspondence (Q106), and guard-position reconstruction at the historic Delegation approaches (Q109), without asserting a new witness identity or political relationship.
+- Supply/instrument-team checks at staging (Q128), controlled defensive apparatus at the Veilbreaker approach (Q155), and evacuation/instrument-station support during final correction preparations (Q178). These are encounter presentation candidates, not permission to change canonical objectives or Oth'varen's death timing.
+- The old Q115 Malrec/projection/transaction-archive idea is already preserved through [historical H-series evidence](Human_Legacy_64_Exact_Title_Objective_Comparison.md#h4-15--q115-the-witness-vault) and the [retired dungeon packet](#retired-five-dungeon-packet--reusable-encounter-details); do not copy it into the current Su'vareth outcome.
+
+### Superseded wording and retirement boundary
+
+- The source's Q087 “first direct revelation” cannot move the living Kel'vari encounter later than canonical Q086. Its Q091 Oth'varen introduction and old contact-label warning cannot override the Q097 identity revelation; Q097 itself is not premature.
+- Q119's “First Anchor destination” is not an approved destination at the original First Anchor. The canonical delivery lead and field assignment govern; the original First Anchor remains distinct from modern devices.
+- The old Q115 Malrec objective is **SUPERSEDED** by Su'vareth's permanent death and surviving contingency orders. Q157 observes dissipation already underway since Q156, not its delayed start. Q178 verifies the fatal correction and choice; physical death occurs in Q181 after alignment holds.
+- Other objective/lore wording is a shortened or historical description of the current narrative, not a separate canon decision. Follow canonical permissions, revelation sequence, independent evidence, solo accessibility, founder deaths, the Seven's survival and unresolved fragment fate. The full old wording is retained in the immutable source above, not recopied as active lore.
+
+**Preservation check:** all 184 source titles align with canonical editorial references; 104 location rows already occur in their corresponding canonical entry, while all 80 remaining row-to-label associations are retained above. Unique production-detail possibilities and conflicting historical outcomes are separated. This retirement changes neither the 184-quest inventory nor any canonical quest text.

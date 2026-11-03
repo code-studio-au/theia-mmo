@@ -295,7 +295,7 @@ The 1–80 progression prototype remains a **numeric XP/playtime hypothesis only
 
 ## Production authoring companion
 
-The [Current Quest Authoring Manifest](Human_1_80_Current_Quest_Authoring_Manifest.json) is the sole working structured quest inventory. The [Editorial Location and Lore Reference](Human_1_80_Location_and_Lore_Editorial_Reference.md) preserves historical location and lore summaries for review; it is not executable quest data or an authority over this locked plot. Stable runtime IDs, rewards, actor references, evidence and engine capability gaps must be resolved before production readiness.
+The [Current Quest Authoring Manifest](Human_1_80_Current_Quest_Authoring_Manifest.json) is the sole working structured quest inventory. The [Archived location and lore proposals](Human_Legacy_Sidequest_Zone_Character_Archive.md#retired-production-location-and-lore-proposals) preserve distinct historical site and production proposals for review; they are not executable quest data or an authority over this locked plot. Stable runtime IDs, rewards, actor references, evidence and engine capability gaps must be resolved before production readiness.
 
 ## Implementation backlog
 
