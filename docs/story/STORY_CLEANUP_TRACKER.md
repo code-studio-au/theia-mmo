@@ -919,3 +919,10 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Compared all thirty Q074–Q103 canonical entries with the sole working manifest's stages. Replaced 22 repeated chapter-wide `Objective:` summaries with their actual per-quest stage descriptions (commit `c2b275fc`); eight already-specific `Gameplay objective` entries were retained.
 - [x] Preserved Oma'vira's permanent Q077 death, bounded Q078 Major Anchor inversion, destroyed-gate evidence, the Guardian's restricted low-capacity Passage and Kel'vari consent, Lantern Redoubt first living Kel'vari reveal, and Q097 independent Oth'varen identity verification.
 - [ ] Continue earlier canonical quest summary audit (Q001–Q073), compare existing detailed entries against the manifest and dialogue, and finish H/HS provenance approvals and final repository backlinks. No quest count or Rust runtime changes.
+
+## Q001–Q073 canonical summary and spoiler-label pass — 3 November 2026
+
+- [x] Reviewed Q001–Q073 canonical quest lines. Unlike later chapters, most already contain individual `Gameplay objective` descriptions; Q053 retained a generic one-line summary.
+- [x] Replaced Q053 with the current manifest-grounded engineering-report, High King's introduction, established travel and Caelith handoff steps (commit `7f15d5a7`).
+- [x] Corrected Q071 and Q072 canonical contact labels from the premature Oth'varen name to spoiler-safe `Grey Surveyor`, matching the working manifest and preserving the Q097 identity reveal (same commit).
+- [ ] Complete final whole-campaign quest-summary/contacts verification, then H/HS provenance and dialogue consequences, duplicate story document retirement, and repository-wide links/heading anchors. No quest count or runtime changes.
