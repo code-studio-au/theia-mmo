@@ -8,8 +8,8 @@ Read the [World Bible](../../THEIA_WORLD_BIBLE.md) alongside [later story decisi
 
 [Read historical source section](../../THEIA_WORLD_BIBLE.md)
 
-[[Lore and World]] · [[Chronicles and History]] · [[Welcome|Home]]
+[Lore and World](Lore%20and%20World.md) · [Chronicles and History](../History/Chronicles%20and%20History.md) · [Home](../../README.md)
 
 ## Related notes
 
-[[The Guardians]] · [[Oth'varen]] · [[The Unmade]] · [[The Corrupted Conclave]] · [[Nhal]]
+[The Guardians](Institutions/The%20Guardians.md) · [Oth'varen](../Characters/Oth%27varen.md) · [The Unmade](Institutions/The%20Unmade.md) · [The Corrupted Conclave](Institutions/The%20Corrupted%20Conclave.md) · Nhal
