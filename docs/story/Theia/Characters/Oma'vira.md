@@ -1,13 +1,13 @@
 ---
 type: character
-canon_status: approved-overarching-arc
+canon_status: "LOCKED overarching arc; CANONICAL launch sequence; WORKING unapproved scenes"
 source: "../../THEIA_CHARACTER_ARCS.md"
 ---
 # Oma'vira
 
-The overarching arc is approved; the [canonical Human 1–80 campaign](../Campaigns/Human_1_80_Canonical_Campaign.md) governs launch timing and outcomes. Specific scenes and dialogue retain their approval limits.
+The overarching arc is **LOCKED** within its recorded approval scope. Unapproved scenes, dialogue and mechanics remain **WORKING**; current launch sequence and permanent outcomes follow the canonical campaign.
 
-[Historical character arc](../../THEIA_CHARACTER_ARCS.md) — subject to later creator locks.
+[Approved character foundation and scoped proposals](../../THEIA_CHARACTER_ARCS.md#omavira-the-harbinger--the-shaping-of-will) — subject to later creator decisions.
 
 [Characters](Characters.md) · [Orders and Hidden Conflict](../Lore/Orders%20and%20Hidden%20Conflict.md) · [Historical Timeline](../History/Historical%20Timeline.md)
 
@@ -17,6 +17,6 @@ The overarching arc is approved; the [canonical Human 1–80 campaign](../Campai
 
 ## Later creator lock — Conclave succession (29 October 2026)
 
-Dies in Act V at her actual conditioning facility within the Major Anchor complex. The player breaks control systems, rescues captives where possible and kills her. The Act IV encounter is a limited projection. Her death removes her specialist work but does not automatically restore conditioned victims.
+**Current CANONICAL reference:** [Q077 in the canonical campaign](../Campaigns/Human_1_80_Canonical_Campaign.md#levels-3035-the-first-inversion). This is the authoritative home for the permanent outcome and its required sequence.
 
-This dated lock supersedes earlier open-fate or proposed-interference statements. See [story decisions](../../DECISIONS.md). Site names, dialogue and encounter mechanics remain open.
+The older Act-IV projection / Act-V death bands are historical; they must not override Q077. The [decision ledger](../../DECISIONS.md) preserves the complete dated lock and its supersession. Unapproved presentation remains WORKING; permanent outcomes are not OPEN.

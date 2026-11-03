@@ -1,13 +1,13 @@
 ---
 type: character
-canon_status: approved-overarching-arc
+canon_status: "LOCKED overarching arc; CANONICAL launch sequence; WORKING unapproved scenes"
 source: "../../THEIA_CHARACTER_ARCS.md"
 ---
 # Thes'var
 
-The overarching arc is approved; the [canonical Human 1–80 campaign](../Campaigns/Human_1_80_Canonical_Campaign.md) governs launch timing and outcomes. Specific scenes and dialogue retain their approval limits.
+The overarching arc is **LOCKED** within its recorded approval scope. Unapproved scenes, dialogue and mechanics remain **WORKING**; current launch sequence and permanent outcomes follow the canonical campaign.
 
-[Historical character arc](../../THEIA_CHARACTER_ARCS.md) — subject to later creator locks.
+[Approved character foundation and scoped proposals](../../THEIA_CHARACTER_ARCS.md#thesvar-the-architect--the-unfinished-masterpiece) — subject to later creator decisions.
 
 [Characters](Characters.md) · [Orders and Hidden Conflict](../Lore/Orders%20and%20Hidden%20Conflict.md) · [Historical Timeline](../History/Historical%20Timeline.md)
 
@@ -17,6 +17,6 @@ The overarching arc is approved; the [canonical Human 1–80 campaign](../Campai
 
 ## Later creator lock — Conclave succession (29 October 2026)
 
-The final living Conclave founder dies attacking supporting connections at the final alignment's critical network junction. Before combat, he confronts Oth'varen, recognises inversion works and rejects its protective purpose. The player kills him; his sabotage compounds Nhal's disruption and leaves instability Oth'varen corrects at fatal cost. Oth'varen briefly becomes the last living member of the original six scholars.
+**Current CANONICAL reference:** [Q176 in the canonical campaign](../Campaigns/Human_1_80_Canonical_Campaign.md#levels-80-finale-the-shattering-of-nhal). This is the authoritative home for the permanent outcome and its required sequence.
 
-This dated lock supersedes earlier open-fate or proposed-interference statements. See [story decisions](../../DECISIONS.md). Site names, dialogue and encounter mechanics remain open.
+Older Act bands and historical timing cannot override this current sequence. The [decision ledger](../../DECISIONS.md) preserves the complete dated lock and its supersession. Unapproved presentation remains WORKING; permanent outcomes are not OPEN.
