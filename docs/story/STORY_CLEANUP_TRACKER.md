@@ -895,3 +895,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Replaced 19 repeated broad `Objective:` summaries with distinct stage-grounded actions (commit `ed23612e`). Eight entries already containing specific `Gameplay objective` descriptions were preserved without rewriting their established lore-purpose context.
 - [x] Preserved final order: Thes'var killed at Q176, misalignment examined at Q177, Oth'varen learns fatal cost and chooses correction Q178–Q179, Seven/mortal teams sustain alignment Q180, Oth'varen physically dies before completed Nhal shattering Q181, epilogue Q182–Q184.
 - [ ] Continue earlier duplicated canonical chapter summaries (especially Q074–Q136), check specific contact/location/quest-stage alignment, and finish historical H/HS mapping and repository backlinks before tracker retirement.
+
+## Q119–Q136 canonical objective summary repair — 3 November 2026
+
+- [x] Compared all eighteen Q119–Q136 canonical entries with their current working manifest stages and replaced repeated chapter-wide `Objective:` wording with the distinct per-quest stage actions (commit `a39015aa`).
+- [x] Preserved Khor'vun's Anchor-network chain, restricted Redoubt evacuation, partial rather than total relay victory, and Q136's authenticated Vaer'uun lead. No new quest outcomes or runtime mechanics approved.
+- [ ] Continue Q074–Q118 repeated-summary audit, then historical H/HS dialogue/consequence reconciliation and final link/duplicate verification.
