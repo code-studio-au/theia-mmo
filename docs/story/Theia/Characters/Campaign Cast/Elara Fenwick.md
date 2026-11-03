@@ -12,6 +12,14 @@ Historical source details retain their recorded approval limits; the [current ca
 > [!important] Approval scope
 > The established starting role is approved. Campaign movements, service assignments and proposed endings remain Needs Review.
 
+## Creator-approved foundation — 15 October 2026
+
+**LOCKED within this scope:** The following role, history and broad arc are creator-approved. Current campaign chronology and outcomes take precedence over historical level/act wording. Exact quest staging, other royal family members and succession arrangements remain OPEN.
+
+**Elara Fenwick**, a respected rural militia captain and Regional Warden, is the human player's first major mentor. She knows the starting district's people and problems, guides the player through local responsibilities and recognises when recovered royal correspondence requires Mara's investigation. She continues to represent the effect of larger events on the player's home region throughout the campaign.
+
+Provenance: [original approved court record](https://github.com/code-studio-au/theia-mmo/blob/a7ca2aa17e4c2f1fcb40b7392fe68164af579b1a/docs/story/THEIA_MODERN_STORY_REVELATION_TIMELINE.md#approved-human-royal-court-characters-15-october-2026). This foundation is distinct from the proposed development and ending sections below.
+
 ## Home and responsibility
 Millhaven militia post; Captain and Regional Warden
 
