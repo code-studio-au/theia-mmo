@@ -1,12 +1,12 @@
 ---
 type: story-beat
 canon_status: Needs Review
-source: "[[Sources/THEIA_HUMAN_CONNECTED_RACIAL_STORIES]]"
-up: "[[Connected Racial Stories]]"
+source: "../../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md"
+up: "../Connected Racial Stories.md"
 ---
 # CR-D3 — The hold's commission
 
-Human quest references: [[Campaigns/Quests/H2-07 - Grain for Iron|H2-07]].
+Human quest references: H2-07.
 
 > [!important] Needs Review
 > Proposed connected racial material. Dominion stories use their own institutions and do not create friendly cross-alliance cooperation.
@@ -20,11 +20,11 @@ Present independent measurements and verified shipment records to the local auth
 ## Decision and closure
 The workshop is cleared of the substitution, the broker's route is investigated and Brynja accepts a contracted expedition role.
 
-Source: [[Sources/THEIA_HUMAN_CONNECTED_RACIAL_STORIES#Dwarves — An honest measure|Dwarves — An honest measure]].
+Source: [Dwarves — An honest measure](../../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md).
 
-[[Connected Racial Stories]] · [[Welcome|Home]]
+[Connected Racial Stories](../Connected%20Racial%20Stories.md) · [Story index](../../../README.md)
 
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
 
-[[Characters/Campaign Cast/Brynja Flintwake|Brynja Flintwake]] · [[Lore/Institutions/Dominion|Dominion]]
+[Brynja Flintwake](../../Characters/Campaign%20Cast/Brynja%20Flintwake.md) · [Dominion](../../Lore/Institutions/Dominion.md)
