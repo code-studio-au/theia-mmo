@@ -314,3 +314,8 @@ Do not tick work merely because it is planned or described in older reports. Rec
 
 - [x] Directly verified all 13 Markdown file targets in `Theia/Lore/Lore and World.md` against live `main`; **13/13 exist, zero missing**. Includes root World Bible, Detailed Lore Archive, Chronicle, story decisions, eight topic notes and current campaign entry point.
 - [ ] This verifies file existence only, not heading fragments, semantic accuracy or repository-wide links. Continue other index and legacy-content audits before closure.
+
+## History and encounter index file-target verification — 3 November 2026
+
+- [x] Live-fetched **9/9** Markdown targets in `Theia/History/Chronicles and History.md`, **5/5** in `Theia/History/Timelines.md`, and **4/4** in `Theia/Campaigns/Story Encounters.md`; **18/18 target references exist, zero missing**. Some target files are shared between indexes, so 18 counts link occurrences, not unique documents.
+- [ ] This does not verify heading anchors, all Obsidian wiki-links, narrative equivalence or all repository paths. Continue remaining index checks and protected historical content review.
