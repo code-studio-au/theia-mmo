@@ -619,3 +619,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Retrieved GitHub's recursive Git tree for `main` at `e42bbb598d35a2f6ae8bd52b377238fd853a334f`, with `truncated=false`: 1,304 repository entries, 290 entries under `docs/story/`, including 269 blobs and 47 Markdown Campaign Cast files. This is a complete **path inventory at that commit**, not a content/link or canon audit.
 - [ ] Audit all 47 Campaign Cast file contents against old Obsidian parent/source references, then other 222 story blobs; do not equate tree completeness with link validity.
 - [ ] Check the surviving `.agents`/`.copilot` imported configuration and historical duplicates before removing anything. Retire the old branch and delete this tracker only after final validation.
+
+## Complete Campaign Cast live-content syntax audit — 3 November 2026
+
+- [x] Enumerated all 47 `Theia/Characters/Campaign Cast/*.md` files from the nontruncated recursive `main` tree, then directly fetched and scanned **47/47 live contents** in three batches. **Zero** files retained the obsolete `up: "[[Characters]]"`, `[[Human Campaign]]`, any `[[...]]` wiki-link or `Sources/` mirror reference.
+- [x] Campaign Cast Obsidian syntax migration is complete for the 47-file inventory at the checked revision. This verifies syntax removal only; Markdown target resolution, semantic canon approval and incoming backlinks remain separate.
+- [ ] Continue full-tree story Markdown link checks, provenance/duplicate comparisons and final branch retirement safeguards.
