@@ -1,12 +1,12 @@
 ---
 type: story-beat
 canon_status: Needs Review
-source: "[[Sources/THEIA_HUMAN_CONNECTED_RACIAL_STORIES]]"
-up: "[[Connected Racial Stories]]"
+source: "../../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md"
+up: "../Connected Racial Stories.md"
 ---
 # CR-K2 — The full margin
 
-Human quest references: [[Campaigns/Quests/H3-12 - The Missing Margin|H3-12]] · [[Campaigns/Quests/H3-14 - The Instruction Without Its Diagram|H3-14]].
+Human quest references: H3-12 · H3-14.
 
 > [!important] Needs Review
 > Proposed connected racial material. Dominion stories use their own institutions and do not create friendly cross-alliance cooperation.
@@ -20,11 +20,11 @@ Authenticate the omission, obtain the elders' limited access decision and compar
 ## Decision and closure
 Dromak authorises the survey through the council; the player has cause to challenge Halden's plan.
 
-Source: [[Sources/THEIA_HUMAN_CONNECTED_RACIAL_STORIES#Korrath — The warning in the margin|Korrath — The warning in the margin]].
+Source: [Korrath — The warning in the margin](../../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md).
 
-[[Connected Racial Stories]] · [[Welcome|Home]]
+[Connected Racial Stories](../Connected%20Racial%20Stories.md) · [Story index](../../../README.md)
 
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
 
-[[Characters/Campaign Cast/First Elder Dromak|First Elder Dromak]] · [[Characters/Divine/The Guardian|The Guardian]] · [[Lore/Institutions/Dominion|Dominion]]
+[First Elder Dromak](../../Characters/Campaign%20Cast/First%20Elder%20Dromak.md) · [The Guardian](../../Characters/Divine/The%20Guardian.md) · [Dominion](../../Lore/Institutions/Dominion.md)
