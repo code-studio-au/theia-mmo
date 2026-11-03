@@ -228,7 +228,9 @@
 
 **High King, response:** “Then carry my letter intact. Let the Aelari decide what they will share.”
 
-**Completion:** “You have my seal. Present it with the engineering findings, and speak plainly about what remains uncertain.”
+**Departure / letter handoff:** “You have my seal. Present it with the engineering findings, and speak plainly about what remains uncertain.”
+
+**Q053 completion boundary:** Travel by established routes to Sylvaren and present both letter and engineering report to Caelith before completion. This handoff does not grant Q054's separate Aelari access permission; Caelith's receipt dialogue remains to be authored.
 
 **In progress:** “Finish the agreed investigation or service, then bring back what you can verify.”
 
@@ -318,7 +320,7 @@
 
 ## Q061
 
-**Field agent, offer:** “The courier is destroying both copies of the instructions. We have one chance to secure a surviving fragment.”
+**Field agent, offer:** “The courier is destroying the cached instructions. Intercept them before the archive burns. We have already lodged a duplicate; recover what additional evidence you can.”
 
 **Player:** “Do we need the courier alive?”
 
