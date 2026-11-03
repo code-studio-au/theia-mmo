@@ -49,7 +49,7 @@ The story's long-form draft is deliberately separate from the authoritative deci
 
 The creator authorised completing the human story and necessary connected racial material autonomously, with new work marked **Needs Review**. The following proposed packet is not a new canon lock:
 
-- [Complete Human Campaign](THEIA_HUMAN_CAMPAIGN.md) — five acts, levels 1–60, concluding the human launch narrative.
+- [Canonical Human 1–80 Campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md) — current Human 1–80 launch narrative; superseded five-act source remains in Git history.
 - [Historical Human Quest Register](THEIA_HUMAN_QUEST_REGISTER.md) — superseded 1–60 source evidence for 92 H and 24 HS editorial IDs; **not** the current quest order, runtime IDs or approved dependencies.
 - [Solo Story Climaxes](THEIA_HUMAN_STORY_DUNGEONS.md) — all five essential story encounters without required raids or PvP.
 - [Cast, Places and Services](THEIA_HUMAN_CAST_AND_PLACES.md) — recurring humans, new contacts, working geography and stable services.
