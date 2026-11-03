@@ -1,17 +1,15 @@
-# Chronicles and History
+# Chronicles and History — navigation
 
-[[Sources/THEIA_INTERWOVEN_CHRONICLE|Read the complete Interwoven Chronicle]]. Its connective prose includes proposals; narrative detail alone does not establish canon.
+[Read the Interwoven Chronicle](../../THEIA_INTERWOVEN_CHRONICLE.md) for creator-facing historical sequence. Its connective prose includes proposals; narrative detail alone does not establish canon. Later creator-locked decisions take precedence.
 
-- [[Primordial Cosmology]]
-- [[The Seven Gods]]
-- [[Divine and Mortal History]]
-- [[The Binding and its Aftermath]]
-- [[Kel'vari]]
-- [[Memory Scenes]]
+## Historical topics
 
-[[Timelines]] separates historical truth from the order in which players learn it.
+- [Primordial Cosmology](../Lore/Primordial%20Cosmology.md)
+- [The Seven Gods](../Lore/The%20Seven%20Gods.md)
+- [Divine and Mortal History](../Lore/Divine%20and%20Mortal%20History.md)
+- [The Binding and its Aftermath](The%20Binding%20and%20its%20Aftermath.md)
+- [Memory Scenes](Memory%20Scenes.md)
+- [The Six Reunited](The%20Six%20Reunited.md)
+- [Timelines](Timelines.md) — distinguishes historical events from player revelation
 
-[[Canon and Open Questions]] · [[Welcome|Home]]
-
-## Events and scenes
-[[Historical Timeline]] · [[Divine Schism]] · [[The Six Reunited]]
+For the approved Human launch progression, see [Current Human Campaign](../Campaigns/CURRENT_HUMAN_CAMPAIGN.md). Obsolete Obsidian source-mirror links are retired.
