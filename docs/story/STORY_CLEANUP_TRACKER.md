@@ -763,3 +763,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Re-fetched all **17 Editorial Markdown files** against tree `e56b0dc6`: **49 relative Markdown links**, zero missing file targets. The only `[[...]]` match was literal explanatory text `[[wikilink]]` in Source Reading Maps, not an active navigation link.
 - [x] Reading Maps are explicitly historical aids, not independent canon or current quest registry. No unique annotations were deleted.
 - [ ] Verify incoming links and unique historical annotations before retiring individual reading maps. Continue Campaigns and root story audits.
+
+## Campaigns Connected Stories audit started — 3 November 2026
+
+- [x] Complete tree enumerates 77 Campaigns Markdown files: 51 directly under Campaigns, 21 Connected Stories, and five Encounters. The first ten Connected Stories notes contain old Obsidian source, index and legacy quest-label links; these require provenance-preserving migration rather than new quest targets.
+- [x] Migrated Aelari connected beats CR-A1, CR-A2 and CR-A3 to surviving root connected-racial source, index and related notes (commits `81bf4f0f`, `a2d60994`, `7a5dd8a9`). Former H3 quest wiki-links are plain historical identifiers, not assertions that individual executable quest files exist.
+- [ ] Audit the other 18 Connected Stories notes, five Encounters and 51 Campaigns root notes. Preserve Needs Review status and canonical 1–80 quest authority.
