@@ -969,3 +969,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Cross-checked historical H1-15/Q027, H1-16/Q028 and H1-18/Q031 against the current 10–20 dialogue pack. Preserved independently corroborated evidence, lawful court action, live Cassian capture and continuing war; did not assume historical intent allegations are fully proven by dialogue alone.
 - [x] Compared historical H4-15/Q115 Malrec/projection outcome with the current 45–55 dialogue and locked Su'vareth encounter; retained old boss as historical provenance, not a replacement for Su'vareth. Findings appended to focused mapping audit (commit `9ee5f99b`).
 - [ ] Continue remaining H-series dialogue/consequence and location reviews; original 116 mappings remain unapproved. Root historical register and backlink checks still block final retirement.
+
+## Five H2 historical dialogue corroborations — 3 November 2026
+
+- [x] Checked H2-05/Q050, H2-07/Q052, H2-12/Q042, H2-14/Q044 and H2-17/Q047 against the current 20–30 dialogue pack and manifest stages. Recorded corroborated evidence and remaining source-specific details in the focused mapping audit (commit `cc5d53a6`).
+- [x] Preserved Brynja's engineer exoneration, limited trade-report release, measurement-first resonance research, mechanical isolators and non-accusatory Aelari procurement lead. Missing historical nuances remain review candidates, not silently approved new objectives.
+- [ ] Continue H-series dialogue and consequence review, then root historical register provenance/backlink checks and final duplicate retirement. No historical ID mapping or runtime change approved.
