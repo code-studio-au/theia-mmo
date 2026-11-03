@@ -745,3 +745,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Complete tree audit found nine `Theia/Characters/Divine/*.md` notes, including surviving standalone Aethyr and Nhal notes. Earlier claims that Nhal lacked a standalone target were incorrect; retain and link the existing note instead of inventing a replacement.
 - [x] Migrated Aethyr and Nhal's remaining wiki-links (commits `0389d37b`, `79b5db2a`). Re-fetched all nine notes against tree `79b5db2a`: **46 Markdown file-link occurrences, zero missing targets and zero remaining Obsidian wiki-links**.
 - [ ] Consider correcting earlier plain-text Nhal/Aethyr references to these verified existing notes during the broader backlink audit. This directory-level check does not validate heading fragments or canon semantics.
+
+## Conclave and remaining Characters directory audit — 3 November 2026
+
+- [x] Migrated Khor'vun, Oma'vira, Oth'varen, Su'vareth, Thes'var and Vaer'uun remaining wiki-links to existing Markdown targets, including the verified `Characters/Divine/Nhal.md` note (commits `72a3f887`, `83365cde`, `b7b85dcc`, `a9ed1e59`, `5b26db41`, `21c3a3ed`). Oth'varen's approved level-80 sacrifice was preserved.
+- [x] Re-fetched all **17** Characters Markdown files outside Divine and Campaign Cast (including nine Services notes) against tree `21c3a3ed`: **124 relative Markdown links**, zero missing file targets, zero remaining `[[...]]` links.
+- [ ] Continue full story-directory audit and historical source precedence/duplicate review. No additional character fates were approved.
