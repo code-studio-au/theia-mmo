@@ -51,3 +51,15 @@ This is a first-pass editorial audit, **not** a full objective-by-objective dedu
 ## Next work
 
 Review the flagged quest clusters against their detailed stage data and dialogue, approve concrete keep/combine/regionalize decisions, and build one Rust-compatible quest-definition set. The 17 legacy playable packs/implementation briefs and duplicate 184-entry production specification have already been retired after separate migration reviews; do not recreate them. Continue checking surviving review notes and the historical H/HS register before any further removals.
+
+## Focused canonical-purpose check — 3 November 2026
+
+Compared the canonical 1–80 campaign entries directly (not merely titles):
+
+| Entries | Canonical distinction | Editorial disposition |
+|---|---|---|
+| Q128 / Q154 | Both are titled *Before the Veil Breaks*. Q128 frames Khor'vun's Anchor manipulation and the distinction between Anchors and the Binding; Q154 covers Keeper/Guardian truth, Khor'vun's too-late defeat and the immediate Veil/Binding/Shroud transition. | **Distinct story purposes; do not merge by title.** Consider a later UI-title clarification only after checking manifest stages/dialogue. |
+| Q029 / Q030 | Q029 independently secures civilian exits and an evidence-copy checkpoint before Cassian's capture; Q030 is the solo-accessible dungeon stopping Sorn and capturing Cassian alive. | **Keep separate as the current canonical baseline.** The checkpoint is a meaningful dependency, not demonstrated redundant filler. |
+| Q137 / Q145 | The canonical summary currently repeats the same Vaer'uun manipulation/name-reveal/death wording for both entries, unlike the earlier audit's proposed archive-versus-boss distinction. | **Needs stage/dialogue verification.** Do not infer that both quests kill Vaer'uun, or delete either quest, from this duplicated summary; preserve the locked single permanent death and Nhal reveal gate. |
+
+This is a focused semantic check of six editorial entries, **not** approval of a reduced quest count or runtime mapping. The 184-entry manifest and canonical campaign were not edited. Q137/Q145 duplication requires checking detailed stage evidence before a canonical wording correction.
