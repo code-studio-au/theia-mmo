@@ -4,8 +4,8 @@ quest_id: DR-H3
 quest_kind: companion
 act: Connected racial stories
 canon_status: Needs Review
-source: "[[Sources/THEIA_HUMAN_CONNECTED_RACIAL_STORIES]]"
-up: "[[Connected Racial Stories]]"
+source: "../../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md"
+up: "../Connected Racial Stories.md"
 ---
 # DR-H3 — A Closed Account
 
@@ -18,11 +18,11 @@ Nemi: restore the legitimate supply schedule and file the exception through a Do
 ## Local resolution
 Needed equipment reaches the garrison; a restricted investigation continues without defection.
 
-Source: [[Sources/THEIA_HUMAN_CONNECTED_RACIAL_STORIES#Halflings — The record that does its job|Halflings — The record that does its job]].
+Source: [Halflings — The record that does its job](../../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md).
 
-[[Connected Racial Stories]] · [[Welcome|Home]]
+[Connected Racial Stories](../Connected%20Racial%20Stories.md) · [Story index](../../../README.md)
 
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
 
-[[Characters/Campaign Cast/Nemi Brindlewick|Nemi Brindlewick]] · [[Lore/Institutions/Dominion|Dominion]]
+[Nemi Brindlewick](../../Characters/Campaign%20Cast/Nemi%20Brindlewick.md) · [Dominion](../../Lore/Institutions/Dominion.md)
