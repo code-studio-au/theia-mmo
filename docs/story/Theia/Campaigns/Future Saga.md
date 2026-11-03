@@ -228,7 +228,7 @@ Expansion count, exact dates, deaths among the Seven and the new people's identi
 
 [[Historical Timeline]] · [[Timelines]] · [[Human Campaign]] · [[Resonance Inversion]] · [[Anchors and the Shroud]] · [[The Seven Gods]] · [[The Corrupted Conclave]]
 
-[[Sources/THEIA_WORLD_BIBLE#2026-10-14 creator LOCK — Anchor network, awakening and resonance inversion|Established Anchor and inversion foundation]] · [[Sources/THEIA_MODERN_STORY_REVELATION_TIMELINE#Creator-approved five-act launch campaign (15 October 2026)|Approved launch structure]] · [[Sources/THEIA_INTERWOVEN_CHRONICLE#Future Shrouded Lands campaigns — working development|Earlier future campaign possibilities]].
+[Established Anchor and inversion foundation](../../THEIA_WORLD_BIBLE.md) · [Approved launch structure](../../THEIA_MODERN_STORY_REVELATION_TIMELINE.md) · [Earlier future campaign possibilities](../../THEIA_INTERWOVEN_CHRONICLE.md).
 
 ## Related launch restructure draft
 
