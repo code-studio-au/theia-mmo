@@ -29,7 +29,7 @@
 6. **Oth'varen's foreknowledge:** Q118 must not imply he knew the modern Veilbreaker before translating Su'vareth's records. Q170 should express the value of sharing knowledge, not a foreseen death.
 7. **Anchors versus Binding:** Q125 and Q151 must explicitly separate them. Veilbreaker destroys the Veil; the Binding dissolves immediately because it has no object left to contain.
 8. **Vaer'uun's manipulation:** His invitation at Q140 is persuasive because the historical evidence is authentic. He knowingly serves Nhal, even though corruption distorts his justifications.
-9. **Nhal's name:** Q138 Oth'varen's answer currently uses the literal name Nhal before the intended Q143 name authentication. This is a **specific spoiler bug**; rewrite the response to avoid the name.
+9. **Nhal's name (verified resolved in current dialogue):** Q138 Oth'varen's answer now avoids the literal name and says the researchers lacked knowledge to name the disturbance. Q143 Sel'ora's authenticated source comparison introduces Nhal by name. Preserve this reveal gate in subsequent edits; earlier reports of a live Q138 spoiler were historical.
 10. **The Seven:** Q180 should not imply the Seven were re-bound or compelled. Their participation must be informed and voluntary.
 11. **Oth'varen:** The fatal cost is learned only after Thes'var's sabotage in Q177–Q178. Physical death occurs only after he sees alignment hold in Q181.
 12. **Fragments:** Q162 may describe possible mana direction and loss of memory, but Q182–Q184 must not establish where fragments go or what they become.
