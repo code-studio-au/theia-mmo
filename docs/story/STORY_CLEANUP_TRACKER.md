@@ -721,3 +721,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Inspected all 28 Lore Markdown files against the live tree. The nine `Lore/Peoples/*.md` notes retain Obsidian wiki-links and broken four-parent World Bible paths; some other topic notes also retained wiki-links. Do not mark Lore as passed.
 - [x] Migrated Primordial Cosmology, The Seven Gods and World Population topic navigation to Markdown links (commits `b60ca2aa`, `bf3b37fe`, `4e7ebaae`). Preserved historical source and approval boundaries.
 - [ ] Repair nine peoples' notes next, including source paths and character/institution backlinks; then re-run 28-file link-target validation.
+
+## Peoples lore migration — 3 November 2026
+
+- [x] Corrected World Bible source paths and migrated Obsidian links in Aelari, Dwarves and Halflings (`feb549df`, `23a75328`, `d75e2223`), plus Humans, Kel'vari and Korrath (`3666d8d5`, `f1ed9f1b`, `52b04737`).
+- [x] Preserved race, faction and character approval distinctions; no proposed cast material was promoted to canon.
+- [ ] Finish Orcs, Vaelari and Vorrath; then verify all nine peoples' Markdown links against the live repository tree. Check remaining Lore files separately.
