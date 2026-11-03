@@ -441,3 +441,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Live-verified seven unique related-note destinations across Lantern Redoubt, Outer Passage site and Northwatch Landing: Covenant, Dominion, Kel'vari, Thuma'rei, Drom Kar, Korrath and Tidehold; **7/7 file targets exist**.
 - [x] Replaced those seven old Obsidian-style related-note links with explicit Markdown paths in the three place notes (commits `718f8ede`, `02dc99b8`, `47dc4adc`).
 - [ ] Continue remaining Atlas and character references. Link existence does not approve working geography or settle map distances.
+
+## Coastal and quarry Atlas reference migration — 3 November 2026
+
+- [x] Migrated `Atlas/Places/Greyfall Quarry.md`, `Storm-coast depot.md` and `Relay coast.md` from obsolete Obsidian source/related-note links to Markdown links for the root cast-and-places source, Atlas, current campaign and adjacent places/peoples/institutions (commits `6c9e731d`, `1bf742c9`, `b833e03d`).
+- [x] Live-verified five unique related destinations: Stoneford, Tidehold, Vorrath, Dominion and Vaelari. All five exist on `main`.
+- [ ] Continue Atlas and historical semantic review. Their geography remains **Needs Review** and is not a newly approved travel plan.
