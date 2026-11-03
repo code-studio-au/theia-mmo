@@ -874,3 +874,10 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Re-fetched the sole 184-quest authoring manifest and inspected Q128/Q154/Q137/Q145 stage objectives and prerequisites. Q137 is Sel'ora's permitted archive research with no kill; Q145 is Sera's Vaer'uun solo dungeon with permanent kill. Q128/Q154 have different prerequisites and preparation phases but overlap mechanically. Findings recorded (commit `26db092`).
 - [ ] Correct Q137's overbroad canonical summary after checking neighboring narrative continuity; consider distinct Q128/Q154 UI titles only after dialogue and pacing review. Do not change quest count, runtime IDs or manifest stages by inference.
 - [ ] Continue the remaining H/HS objective and dialogue crosswalk, historical duplicate review, and final backlinks/heading anchors before deleting this tracker.
+
+## Q137–Q146 canonical summary reconciliation — 3 November 2026
+
+- [x] Compared all ten Q137–Q146 stage objective sequences in the sole 184-quest working manifest. The canonical campaign had repeated the same Vaer'uun/Nhal/death summary for all ten quests, contradicting the detailed sequence.
+- [x] Replaced those ten generic canonical one-line objectives with stage-grounded descriptions (commit `b6e94434`): Q137 permitted archive investigation; Q138 laboratory debate; Q139 missing entries; Q140 selective communication; Q141 facility clues; Q142 Oth'varen partial disclosure; Q143 authenticated first Nhal name; Q144 apparatus shutdown; Q145 Vaer'uun solo confrontation/permanent death; Q146 independent post-death verification.
+- [x] Preserved 184 quest entries and the existing manifest stages. No runtime IDs, executable Rust, level gates or new lore outcomes were introduced.
+- [ ] Continue adjacent canonical chapter-summary duplication audit and H/HS objective/dialogue mapping. Confirm reveal gates in dialogue during final narrative QA; no claim of complete campaign validation yet.
