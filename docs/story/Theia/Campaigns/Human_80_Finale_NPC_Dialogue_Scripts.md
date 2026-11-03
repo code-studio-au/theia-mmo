@@ -80,7 +80,7 @@
 
 **Player:** “Oth'varen, can you hear us?”
 
-**Response:** “Oth'varen: I can see it. The fields are one. Now finish what we began.”
+**Response:** “Oth'varen: I can see it. The six fields are aligned. Now finish what we began.”
 
 **Completion / aftermath:** “Sera, afterward: He's gone. The inversion held. Nhal's unified will is shattered. His essence remains, but the being that directed it no longer does.”
 
