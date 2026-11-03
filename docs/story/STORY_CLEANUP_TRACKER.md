@@ -861,3 +861,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Updated `Human_1_80_Quest_Necessity_Audit.md` to distinguish the unchanged canonical 184-quest register from already-retired legacy packs and production specification (commit `d4239f52`).
 - [x] Updated `Human_Obsidian_Legacy_Quest_Audit.md` to acknowledge retired source mirror/navigation and discontinued Obsidian while protecting unresolved root H/HS provenance (commit `10a4e278`).
 - [ ] Further historical paragraphs in these audits and other Campaigns root files may still describe obsolete states. Continue targeted verification and repair; do not claim whole-directory semantic completion.
+
+## Historical quest audit wording reconciliation — 3 November 2026
+
+- [x] Corrected remaining present-tense claims in `Human_Production_Specification_Retirement_Audit.md`: the 184-entry duplicate was already retired, its unique editorial context is in the Location and Lore Reference, and final repository-wide backlink validation remains outstanding (commit `88f8624c`).
+- [x] Corrected `Human_Obsidian_Legacy_Quest_Audit.md` inventory and example wording: retired H/HS cards, imported register mirror and vault navigation are historical evidence rather than live quest surfaces. The surviving root register and unapproved 116-entry crosswalk remain protected (commit `3ea82a35`).
+- [ ] Continue the remaining campaign and root story semantic audits, original H/HS objective-to-stage approvals, incoming links and heading anchors. Do not delete this tracker until final verification.
