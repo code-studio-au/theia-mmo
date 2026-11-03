@@ -1,7 +1,7 @@
 ---
 type: character
 canon_status: approved-role; proposed-development
-source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
+source: "../../../THEIA_HUMAN_CAST_AND_PLACES.md"
 up: "../Characters.md"
 ---
 # Corven Vaelmont
@@ -18,7 +18,7 @@ Balances four sovereign partners; learns to take bounded action rather than wait
 ## Proposed launch ending — Needs Review
 Maintains separate alliance authority, review duties and negotiated obligations without annexing racial or Kel'vari institutions
 
-Source: [Approved recurring humans: complete launch movements](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
+Source: [Approved recurring humans: complete launch movements](../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
 [Characters](../Characters.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
