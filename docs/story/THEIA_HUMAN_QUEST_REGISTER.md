@@ -2,7 +2,7 @@
 
 # THEIA — HUMAN QUEST REGISTER
 
-**Status: Needs Review.** Proposed quests supporting the complete [Human Campaign](THEIA_HUMAN_CAMPAIGN.md). All IDs, objectives, rewards, dependencies, dialogue and encounter mechanics are draft design. Planning bands are not tuned levels or XP commitments. This is not an imported game database or a claim of implementation.
+**Status: Needs Review.** Proposed quests supporting the complete [canonical Human 1–80 campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md). All IDs, objectives, rewards, dependencies, dialogue and encounter mechanics are draft design. Planning bands are not tuned levels or XP commitments. This is not an imported game database or a claim of implementation.
 
 The register contains **92 principal quests**, five solo story climaxes and **24 optional local quests**. Those counts describe this review draft, not an approved production scope. A principal quest may become several tasks or merge with a neighbour after pacing tests. Optional stories do not provide indispensable campaign evidence.
 
