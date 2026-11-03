@@ -805,3 +805,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Migrated final Vaelari DR-V1, DR-V2 and DR-V3 companion notes to root connected-racial provenance, index, Ilyss Varen and Dominion links (commits `e368cb7d`, `34c40c10`, `29fbbf3e`). Preserved **Needs Review** and no-defection/no-friendly-cooperation boundaries.
 - [x] All 21 Connected Stories notes have now received the planned Obsidian-link migration edits.
 - [ ] Complete a fresh 21-file live-tree link-target and residual-wiki audit. Two attempted full-batch validations hit tool-call limits; do not mark that verification passed yet. Then audit five Encounters and 51 Campaigns root Markdown files.
+
+## Connected Stories 21-file verification — 3 November 2026
+
+- [x] Completed live-tree audit of all 21 Connected Stories files in three seven-file batches. The first batch revealed one residual Queen Seralyth wiki-link in CR-A3, corrected in commit `84853368`; the other two batches had no issues.
+- [x] Across the 21-file batches, **107 Markdown links** were checked before the CR-A3 correction (33 + 37 + 37), all resolving to existing file targets. The correction adds a direct Seralyth Markdown link; recheck final link count in a full post-fix pass if an exact final total is required.
+- [ ] Complete post-fix first-batch recheck before marking the entire section zero-wiki verified; then audit five Encounters and 51 Campaigns root files.
