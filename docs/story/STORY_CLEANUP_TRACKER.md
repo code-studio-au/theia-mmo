@@ -799,3 +799,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Migrated DR-R1, DR-R2 and DR-R3 to surviving connected-racial provenance, index, Shorvek Tal, Dominion and Unmade Markdown references (commits `7ab35f75`, `8b3ac929`, `880b8499`).
 - [x] Preserved their **Needs Review** status, local civilian and military sovereignty, and bounded evidence (no proof of all Unmade leaders or friendly Covenant cooperation).
 - [ ] Three Vaelari Connected Stories remain, followed by full 21-file link-target audit and Campaigns root/Encounters review.
+
+## Connected Stories all 21 migration edits complete — 3 November 2026
+
+- [x] Migrated final Vaelari DR-V1, DR-V2 and DR-V3 companion notes to root connected-racial provenance, index, Ilyss Varen and Dominion links (commits `e368cb7d`, `34c40c10`, `29fbbf3e`). Preserved **Needs Review** and no-defection/no-friendly-cooperation boundaries.
+- [x] All 21 Connected Stories notes have now received the planned Obsidian-link migration edits.
+- [ ] Complete a fresh 21-file live-tree link-target and residual-wiki audit. Two attempted full-batch validations hit tool-call limits; do not mark that verification passed yet. Then audit five Encounters and 51 Campaigns root Markdown files.
