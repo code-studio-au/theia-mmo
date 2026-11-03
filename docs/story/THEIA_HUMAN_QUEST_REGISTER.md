@@ -1,10 +1,12 @@
-> **SUPERSEDED — historical reference only (2 November 2026).** The single source of truth for the Human level 1–80 quest order, locations, objectives and main-story outcomes is [Human 1–80 Canonical Campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md). The older plot timings, finale and contradictory mechanics below are retired; retain this file solely for source quest IDs, legacy dialogue and migration traceability.
+> **ARCHIVED source / SUPERSEDED campaign — historical reference only.** The single source of truth for the Human level 1–80 quest order, locations, objectives and main-story outcomes is [Human 1–80 Canonical Campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md). The older plot timings, finale and contradictory mechanics below are retired; retain this file solely for source quest IDs, legacy dialogue and migration traceability.
 
 # THEIA — HUMAN QUEST REGISTER
 
-**Status: Needs Review.** Proposed quests supporting the complete [canonical Human 1–80 campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md). All IDs, objectives, rewards, dependencies, dialogue and encounter mechanics are draft design. Planning bands are not tuned levels or XP commitments. This is not an imported game database or a claim of implementation.
+**Status: ARCHIVED — all 92 H-series and 24 HS-series concepts.** This is the retained source record for the superseded campaign, not a second active inventory supporting the current 184-quest campaign. Its original objectives, contacts, locations, choices, prerequisites and outcomes remain below as historical evidence. Reusable ideas are classified in the [Legacy Ideas Archive](Theia/Campaigns/Human_Legacy_Sidequest_Zone_Character_Archive.md); H/HS-to-Q comparisons remain unapproved, and the source IDs are not runtime mappings.
 
-The register contains **92 principal quests**, five solo story climaxes and **24 optional local quests**. Those counts describe this review draft, not an approved production scope. A principal quest may become several tasks or merge with a neighbour after pacing tests. Optional stories do not provide indispensable campaign evidence.
+**OPEN: future reuse and mapping decisions, not archival status.** No old timing, gate, reveal, character outcome or finale becomes current through preservation. Proposed rewards, mechanics and planning bands are not implementation, tuned levels or XP commitments. Shared story facts and evidence/safety principles follow their current authoritative homes rather than this old graph.
+
+The historical register contains **92 principal quests**, five solo story climaxes and **24 optional local quests**. Those counts describe the old draft, not approved production scope or additions to the 184-quest inventory. Its possibility of splitting/merging tasks after pacing tests and its independent optional stories remain historical design context; any actual reuse requires its own scoped decision.
 
 ## Progression conventions
 
