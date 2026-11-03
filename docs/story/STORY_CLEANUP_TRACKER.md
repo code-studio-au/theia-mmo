@@ -525,3 +525,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Corven Vaelmont: migrated parent/current campaign and Tidehold/Kel'vari links (commit `21d1ad5d`).
 - [x] Sel'ora, Aru'ven and Leth'ari: migrated parent/current campaign, Kel'vari and associated enclave links (commits `09ac468f`, `16be2e3e`, `6d1ebbac`). Their approval statuses remain unchanged.
 - [ ] Continue remaining campaign cast navigation and semantic audit. This tracker remains temporary.
+
+## Core Human cast navigation — 3 November 2026
+
+- [x] Migrated Mara Thorne, Darian Cole and Elara Fenwick campaign cast notes to direct Characters/current campaign navigation and verified Valecrown/Millhaven/Elara related file paths (commits `12b56934`, `3af13d18`, `596f9bf6`).
+- [x] Preserved approved starting roles and **Needs Review** development/outcome status; no canonical dialogue or quest data changed.
+- [ ] Continue remaining campaign cast cards and broader backlink/content checks.
