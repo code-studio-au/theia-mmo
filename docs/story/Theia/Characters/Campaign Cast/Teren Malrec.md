@@ -2,15 +2,17 @@
 type: character
 canon_status: Needs Review
 source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
-up: "[[Characters]]"
+up: "../Characters.md"
 ---
 # Teren Malrec
+
+**Historical candidate only:** the proposed Act IV custody outcome is not approved current 1–80 campaign canon. See [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md).
 
 > [!important] Approval scope
 > This campaign entry is Needs Review. Established facts explicitly identified by the source retain their existing status.
 
 ## Public role and location
-Human [[The Unmade|Unmade]] conditioning commandant in the Shroud
+Human [Unmade](../../Lore/Institutions/The%20Unmade.md) conditioning commandant in the Shroud
 
 ## Knowledge and motivation
 Trained in a limited part of Oma'vira's methods; willing allegiance
@@ -20,4 +22,4 @@ Act IV opponent; defeated and taken into custody, with surviving victims rescued
 
 Source: [New human and expedition cast](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
-[[Characters]] · [[Human Campaign]]
+[Characters](../Characters.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
