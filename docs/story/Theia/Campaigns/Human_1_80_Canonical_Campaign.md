@@ -218,16 +218,16 @@ Each entry gives **title — location — gameplay objective — lore purpose**.
 
 **Region(s):** Kel'vari archives, ancient communicator and Unmade research site. **Narrative objective:** Vaer'uun manipulates player with selective truth; player learns Nhal's name; Vaer'uun killed.
 
-- **Q137 — Records of the First Voice.** Kel'vari archives, ancient communicator and Unmade research site. Objective: Vaer'uun manipulates player with selective truth; player learns Nhal's name; Vaer'uun killed.
-- **Q138 — The Forgotten Investigation.** Kel'vari archives, ancient communicator and Unmade research site. Objective: Vaer'uun manipulates player with selective truth; player learns Nhal's name; Vaer'uun killed.
-- **Q139 — The Missing Records.** Kel'vari archives, ancient communicator and Unmade research site. Objective: Vaer'uun manipulates player with selective truth; player learns Nhal's name; Vaer'uun killed.
-- **Q140 — The Voice That Answers.** Kel'vari archives, ancient communicator and Unmade research site. Objective: Vaer'uun manipulates player with selective truth; player learns Nhal's name; Vaer'uun killed.
-- **Q141 — Beneath the Binding.** Kel'vari archives, ancient communicator and Unmade research site. Objective: Vaer'uun manipulates player with selective truth; player learns Nhal's name; Vaer'uun killed.
-- **Q142 — Truth Withheld.** Kel'vari archives, ancient communicator and Unmade research site. Objective: Vaer'uun manipulates player with selective truth; player learns Nhal's name; Vaer'uun killed.
-- **Q143 — Name in the Records.** Kel'vari archives, ancient communicator and Unmade research site. Objective: Vaer'uun manipulates player with selective truth; player learns Nhal's name; Vaer'uun killed.
-- **Q144 — The First Voice's Design.** Kel'vari archives, ancient communicator and Unmade research site. Objective: Vaer'uun manipulates player with selective truth; player learns Nhal's name; Vaer'uun killed.
-- **Q145 — The First Voice.** Kel'vari archives, ancient communicator and Unmade research site. Objective: Vaer'uun manipulates player with selective truth; player learns Nhal's name; Vaer'uun killed.
-- **Q146 — The Silence Beneath.** Kel'vari archives, ancient communicator and Unmade research site. Objective: Vaer'uun manipulates player with selective truth; player learns Nhal's name; Vaer'uun killed.
+- **Q137 — Records of the First Voice.** Kel'vari archives, ancient communicator and Unmade research site. Objective: With Sel'ora's permission, enter the Kel'vari archive, recover early research and authenticate its chronology; Vaer'uun remains alive.
+- **Q138 — The Forgotten Investigation.** Kel'vari archives, ancient communicator and Unmade research site. Objective: Visit the ancient laboratory, examine the historical research debate and copy independent annotations.
+- **Q139 — The Missing Records.** Kel'vari archives, ancient communicator and Unmade research site. Objective: Identify missing research entries, restore damaged pages and confirm deliberate omissions without claiming their full author.
+- **Q140 — The Voice That Answers.** Kel'vari archives, ancient communicator and Unmade research site. Objective: Restore approved communications, hear Vaer'uun's calculated invitation and selective truths, then verify the location independently.
+- **Q141 — Beneath the Binding.** Kel'vari archives, ancient communicator and Unmade research site. Objective: Reach the invited facility, document genuine historical clues and stop the Unmade exploiting access.
+- **Q142 — Truth Withheld.** Kel'vari archives, ancient communicator and Unmade research site. Objective: Confront Oth'varen with independently verified evidence, compare his earlier account and obtain a partial disclosure.
+- **Q143 — Name in the Records.** Kel'vari archives, ancient communicator and Unmade research site. Objective: Authenticate the first explicit Nhal reference and record the name with its provenance; do not reveal it earlier.
+- **Q144 — The First Voice's Design.** Kel'vari archives, ancient communicator and Unmade research site. Objective: Locate Vaer'uun's exploitation apparatus, defeat its defenders and disable its mechanism before the final confrontation.
+- **Q145 — The First Voice.** Kel'vari archives, ancient communicator and Unmade research site. Objective: Enter Vaer'uun's solo story dungeon, disable the remaining apparatus, kill Vaer'uun permanently and preserve evidence implicating Keeper's role.
+- **Q146 — The Silence Beneath.** Kel'vari archives, ancient communicator and Unmade research site. Objective: After Vaer'uun's death, test his selective truths against an independent record and identify unresolved Keeper involvement.
 
 ### Levels 65–70: The Truth of the Binding
 
