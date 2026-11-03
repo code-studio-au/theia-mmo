@@ -1,8 +1,8 @@
 # Human 1–80 — Legacy Pack Consolidation Checklist
 
-**Status: In progress — verified deletions only.** This document inventories old quest packs and implementation briefs to prevent loss of unique design details. [Current Human Campaign](CURRENT_HUMAN_CAMPAIGN.md) is the entry point; [Current Quest Authoring Manifest](Human_1_80_Current_Quest_Authoring_Manifest.json) is the sole structured working quest inventory. [Quest Engine](../../../QUEST_ENGINE.md) is Codex's runtime agreement.
+**Status: CLOSED for legacy pack retirement; historical reconciliation log retained pending broader story cleanup.** This document inventories old quest packs and implementation briefs to prevent loss of unique design details. [Current Human Campaign](CURRENT_HUMAN_CAMPAIGN.md) is the entry point; [Current Quest Authoring Manifest](Human_1_80_Current_Quest_Authoring_Manifest.json) is the sole structured working quest inventory. [Quest Engine](../../../QUEST_ENGINE.md) is Codex's runtime agreement.
 
-## Sources awaiting reconciliation
+## Historical source inventory — all 17 retired
 
 | Band | Playable quest pack | Detailed implementation brief |
 |---|---|---|
@@ -16,7 +16,7 @@
 | 70–80 | **Retired** (Q158–Q184 migration retained) | **Retired** |
 | 80 finale | **Retired** (Q158–Q184 migration retained) | **Retired** |
 
-These **17 files** contain substantial authored prose. They are **not authoritative** over the canonical story or the single manifest. They cannot safely be deleted merely because the JSON stage data has been consolidated.
+These **17 historical files** contained substantial authored prose and have all been retired from the active tree after editorial migration. They were never authoritative over the canonical story or sole structured manifest. Git history preserves their original bytes.
 
 ## Required migration checks per quest
 
@@ -28,21 +28,21 @@ These **17 files** contain substantial authored prose. They are **not authoritat
 6. Check all incoming links and replace references before removing a source file.
 7. Record reviewed source and migration disposition in a final provenance ledger. Only then delete the redundant source from the active tree; Git history retains it.
 
-## Current progress and blocker
+## Historical progress snapshot (superseded by final retirement below)
 
 - **184 quests / 684 stages** are consolidated in one manifest; first-pass Rust authoring reviews cover the whole campaign.
 - The chapter JSON duplicates have been removed after count/stage/target verification.
-- These 17 prose sources have been located and inventoried, **not yet line-by-line reconciled**. Their unique details are not guaranteed to be represented in the manifest.
+- At this earlier stage the 17 prose sources had only been inventoried. Subsequent chapter migration notes and verified deletions supersede this snapshot; migrated mechanics are still editorial, not automatically executable.
 - The older H/HS register remains until editorial mapping is approved.
 - Codex's quest catalogue registry, migration and live adoption are separate engineering tasks; do not edit or delete Codex's Rust files during story cleanup.
 
 **Levels 1–10 comparison completed:** the old pack has 17 quest sections, including gameplay and QA notes not yet fully present in the manifest. It also proposes hard level-1/5 eligibility and strict sequential stages that conflict with the current authoring agreement. Preserve the pack until those unique notes are migrated; do not delete it merely because objective targets match. Specific findings: Q001 should allow the three NPC conversations in any order; Q003 adds parcel-seal inspection; Q004 adds wheel-track and cargo-frame clues; Q006 adds a restitution dialogue choice; Q007 adds cart movement testing; Q009 adds Iven Rusk surrender/defeat alternative; Q011 adds caravan checkpoint recovery; Q012 adds retryable non-guesswork deduction; Q015 adds repair-material collection; Q017 adds caravan rejoin logic. These are review candidates, not approved runtime data.
 
-**Next:** migrate those unique mechanics and QA requirements into the sole manifest, then delete the old 1–10 pack only after a complete content comparison. Continue chapter by chapter. Delete only after verified migration, not as a bulk cleanup.
+**Historical next action, completed for retirement:** capture unique mechanics and QA requirements in the Q001–Q017 editorial migration note, then retire the old pack after reference checks. Migration into executable Rust quest content remains separate.
 
 ## Levels 1–10 migration update
 
-The 17 quest sections and their distinctive mechanics, NPC/location context, failure behavior and QA notes have been transferred into [Q001–Q017 Gameplay Detail Migration](Human_Q001_Q017_Gameplay_Detail_Migration.md). These details remain editorial proposals rather than executable quest definitions. The original playable pack is retained until the proposed extra objectives and inbound references are reviewed; the manifest is still the sole structured inventory.
+The 17 quest sections and their distinctive mechanics, NPC/location context, failure behavior and QA notes have been transferred into [Q001–Q017 Gameplay Detail Migration](Human_Q001_Q017_Gameplay_Detail_Migration.md). These details remain editorial proposals rather than executable quest definitions. The original playable pack was subsequently retired after editorial migration and inbound-reference checks; the manifest remains the sole structured inventory. Proposed extra objectives are not approved executable data.
 
 ## Levels 10–20 reconciliation
 
@@ -70,11 +70,11 @@ Both `Human_55_70_Playable_Quest_Pack.md` and `Human_55_70_Implementation_Brief.
 
 ## Levels 70–80 and finale reconciliation
 
-All four remaining legacy files (`Human_70_80_Playable_Quest_Pack.md`, `Human_70_80_Implementation_Brief.md`, `Human_80_Finale_Playable_Quest_Pack.md`, `Human_80_Finale_Implementation_Brief.md`) have been compared for their 17 + 10 quest sections. Still-current gameplay, QA and ending chronology are captured in [Q158–Q184 Legacy Pack Migration](Human_Q158_Q184_Legacy_Pack_Migration.md). The manifest's explicit Q181 death stage takes precedence over old finale text. **All 17 old playable/brief files have now received an editorial reconciliation pass; no bulk deletion has yet occurred.** Next step is inbound-reference and unique-detail verification before removal.
+All four remaining legacy files (`Human_70_80_Playable_Quest_Pack.md`, `Human_70_80_Implementation_Brief.md`, `Human_80_Finale_Playable_Quest_Pack.md`, `Human_80_Finale_Implementation_Brief.md`) have been compared for their 17 + 10 quest sections. Still-current gameplay, QA and ending chronology are captured in [Q158–Q184 Legacy Pack Migration](Human_Q158_Q184_Legacy_Pack_Migration.md). The manifest's explicit Q181 death stage takes precedence over old finale text. **Historical snapshot:** all 17 files had received editorial reconciliation at this stage. Subsequent verified retirement, recorded below, removed all 17 from the active tree.
 
 ## Verified deletion — levels 1–10
 
-The Q001–Q017 legacy playable pack was removed from the active tree after its 17 sections and distinct gameplay/QA details were preserved in [Q001–Q017 Gameplay Detail Migration](Human_Q001_Q017_Gameplay_Detail_Migration.md). Direct links in the production specification, NPC dialogue and vertical-slice handoff were updated to the current migration document. The source remains recoverable through Git history. **All 17 legacy packs/briefs have now been retired** for unique-detail and inbound-reference verification before deletion. This does not imply approval of all migrated mechanics as executable quest objectives.
+The Q001–Q017 legacy playable pack was removed from the active tree after its 17 sections and distinct gameplay/QA details were preserved in [Q001–Q017 Gameplay Detail Migration](Human_Q001_Q017_Gameplay_Detail_Migration.md). Direct links in the production specification, NPC dialogue and vertical-slice handoff were updated to the current migration document. The source remains recoverable through Git history. **The first pack was retired at this stage;** the later final-retirement section records completion for all 17. This does not imply approval of all migrated mechanics as executable quest objectives.
 
 ## Verified deletion — levels 10–30
 
@@ -82,7 +82,7 @@ Four legacy sources were removed after both chapter pairs were compared, their 1
 
 ## Verified deletion — levels 30–45
 
-Four reconciled source files were deleted after confirming Q063–Q079 (17 quests) and Q080–Q103 (24 quests) coverage, redirecting their earlier active links and preserving relevant narrative, encounter and QA constraints in [Q063–Q079 migration](Human_Q063_Q079_Legacy_Pack_Migration.md) and [Q080–Q103 migration](Human_Q080_Q103_Legacy_Pack_Migration.md). Git history retains originals. **All 17** legacy pack/brief files are now deleted. Editorial migration does not certify executable Rust content.
+Four reconciled source files were deleted after confirming Q063–Q079 (17 quests) and Q080–Q103 (24 quests) coverage, redirecting their earlier active links and preserving relevant narrative, encounter and QA constraints in [Q063–Q079 migration](Human_Q063_Q079_Legacy_Pack_Migration.md) and [Q080–Q103 migration](Human_Q080_Q103_Legacy_Pack_Migration.md). Git history retains originals. **Nine of 17** legacy pack/brief files had been deleted at this stage; the remaining eight were removed later as recorded in the final-retirement section. Editorial migration does not certify executable Rust content.
 
 ## Final legacy-pack retirement
 
