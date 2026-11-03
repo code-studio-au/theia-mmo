@@ -781,3 +781,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Migrated CR-K1, CR-K2 and CR-K3 from imported-source wiki-links to root connected-racial provenance, current index, cast and institutional Markdown references (commits `a7e609de`, `88159999`, `126c810b`). Legacy H3 quest references remain plain historical IDs, not invented individual quest files.
 - [x] Preserved council-authorised research, limited Passage return capacity and **Needs Review** status; no automatic cross-alliance friendship or unrestricted gate travel approved.
 - [ ] Twelve Connected Stories files remain, then Encounters and Campaigns root validation.
+
+## Halfling Dominion companion story migration — 3 November 2026
+
+- [x] Migrated DR-H1, DR-H2 and DR-H3 source, index, Nemi Brindlewick and Dominion wiki-links to surviving Markdown files (commits `3e6ab074`, `206ff461`, `c41ed223`). Preserved their **Needs Review** quest proposal status and Nemi's no-defection/no-cross-alliance-cooperation boundaries.
+- [x] Re-fetched all three notes: **15 Markdown links**, zero missing file targets and zero remaining Obsidian wiki-links.
+- [ ] Nine Connected Stories remain (DR-O, DR-R, DR-V), then a full 21-file audit and Campaigns root/Encounters review.
