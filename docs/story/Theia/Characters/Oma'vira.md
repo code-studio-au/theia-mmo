@@ -1,13 +1,13 @@
 ---
 type: character
 canon_status: approved-overarching-arc
-source: "[[Sources/THEIA_CHARACTER_ARCS]]"
+source: "../../THEIA_CHARACTER_ARCS.md"
 ---
 # Oma'vira
 
-The overarching arc is approved; specific scenes, dialogue and outcomes retain the limits in the source.
+The overarching arc is approved; the [canonical Human 1–80 campaign](../Campaigns/Human_1_80_Canonical_Campaign.md) governs launch timing and outcomes. Specific scenes and dialogue retain their approval limits.
 
-![[Sources/THEIA_CHARACTER_ARCS#Oma'vira, the Harbinger — the shaping of will]]
+[Historical character arc](../../THEIA_CHARACTER_ARCS.md) — subject to later creator locks.
 
 [[Characters]] · [[Orders and Hidden Conflict]] · [[Timelines]]
 
@@ -19,4 +19,4 @@ The overarching arc is approved; specific scenes, dialogue and outcomes retain t
 
 Dies in Act V at her actual conditioning facility within the Major Anchor complex. The player breaks control systems, rescues captives where possible and kills her. The Act IV encounter is a limited projection. Her death removes her specialist work but does not automatically restore conditioned victims.
 
-This dated lock supersedes earlier open-fate or proposed-interference statements. See [[Sources/DECISIONS#2026-10-29 — Creator LOCK: Conclave deaths and final succession]]. Site names, dialogue and encounter mechanics remain open.
+This dated lock supersedes earlier open-fate or proposed-interference statements. See [story decisions](../../DECISIONS.md). Site names, dialogue and encounter mechanics remain open.
