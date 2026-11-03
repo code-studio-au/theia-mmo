@@ -414,3 +414,8 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Replaced three obsolete imported-Chronicle section wiki-links in `Theia/History/The Binding and its Aftermath.md` with one root Chronicle reference, and added direct editorial decisions, current campaign and history navigation (commit `b3df7922`).
 - [x] Kept First Years of Silence, Age of Reconstruction and Modern Age / Shattered Delegation as historical source-section labels without asserting unverified heading anchors.
 - [ ] Continue checking remaining historical pages and backlinks; canonical modern Binding dissolution remains governed by the 1–80 campaign.
+
+## Future Saga remaining imported-source links — 3 November 2026
+
+- [x] Migrated three old `Sources/THEIA_*` section wiki-links in `Theia/Campaigns/Future Saga.md` to surviving root World Bible, Modern Story Revelation Timeline and Interwoven Chronicle documents (commit `f9364ae2`). Section descriptions remain historical provenance, not independently verified heading anchors or approved future expansion canon.
+- [ ] Continue the repository-wide audit of other source-mirror references and unverified wiki-links before deleting this tracker or retiring the historical branch.
