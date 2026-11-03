@@ -408,3 +408,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Converted `Theia/History/The Six Reunited.md` Obsidian frontmatter, character, institution, historical-event and index navigation to Markdown paths (commit `aab2b494`). The scene's approved status and disclosure caveats remain unchanged.
 - [x] Directly checked the Corrupted Conclave institution and Binding history target files exist. The six scholar character targets had already been verified in prior cleanup.
 - [ ] Continue other derived historical scenes and source links; this does not approve new dialogue or complete whole-vault link validation.
+
+## Binding aftermath historical source-link repair — 3 November 2026
+
+- [x] Replaced three obsolete imported-Chronicle section wiki-links in `Theia/History/The Binding and its Aftermath.md` with one root Chronicle reference, and added direct editorial decisions, current campaign and history navigation (commit `b3df7922`).
+- [x] Kept First Years of Silence, Age of Reconstruction and Modern Age / Shattered Delegation as historical source-section labels without asserting unverified heading anchors.
+- [ ] Continue checking remaining historical pages and backlinks; canonical modern Binding dissolution remains governed by the 1–80 campaign.
