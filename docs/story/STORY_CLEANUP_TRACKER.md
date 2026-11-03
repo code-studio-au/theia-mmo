@@ -1013,3 +1013,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Compared the original Act I–V solo dungeon packet against current E01–E04 encounter design and canonical finale constraints. Preserved unique historical ideas for evidence checkpoint recovery, local isolators, support-station ordering, crew evacuation and independently authenticated records as unapproved encounter design candidates (commit `adaa1cca`).
 - [x] Explicitly rejected importing old Malrec/projection Q115 boss outcome or Keld/Voss branching level-60 finale as current canon. No original dungeon source deleted and no runtime/manifest changes.
 - [ ] Continue full unique-mechanics and incoming-link review of historical Act I and dungeon packets before possible retirement; root H/HS provenance and final backlink audit remain pending.
+
+## Historical Act I unique-content preservation review — 3 November 2026
+
+- [x] Reviewed the original Act I narrative premise, six character-development notes, continuation outline and eight early-player guardrails. Recorded their remaining provenance value directly in `THEIA_HUMAN_ACT_I_STORY.md` (commit `3b995792`).
+- [x] Identified older Acts II–V continuation paragraph as historical planning, not authority over the locked 1–80 ending. Preserved local civilian/character framing without modifying current quest content.
+- [ ] Compare unique character arcs against current character records and complete incoming-link checks before retiring the original Act I document; no deletion yet.
