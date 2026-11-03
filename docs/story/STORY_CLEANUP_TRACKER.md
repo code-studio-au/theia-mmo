@@ -684,3 +684,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] At the `main` tree following the 47 source-path corrections (`6371240e`), directly fetched all **47/47** Campaign Cast Markdown files in three batches (16, 16, 15). Resolved **206 relative Markdown link occurrences** against the live tree (74 + 70 + 62); **zero missing file targets**.
 - [x] Campaign Cast directory has passed both the prior Obsidian syntax scan and this complete file-target link audit. These checks do not validate heading fragments, semantic canon status, inbound backlinks or other directories.
 - [ ] Continue tree-based audit of remaining story Markdown and historical duplicates before retiring the old branch or deleting this temporary tracker.
+
+## Complete Atlas Places live link audit — 3 November 2026
+
+- [x] Scanned all 16 `Theia/Atlas/Places/*.md` files against the live recursive `main` tree. Found one final note with Obsidian links, `Oth'irun archive approach.md`, and migrated it to root geography, Atlas, current campaign and Oth'irun enclave Markdown references (commit `947be58a`).
+- [x] Re-fetched all 16 files after correction at tree `947be58a`: **74 relative Markdown link occurrences, zero missing file targets, zero remaining `[[...]]` wiki-links**. Atlas Places directory syntax and file-target audit passed.
+- [ ] Continue Atlas index/enclave and other story directory audits; approval status, heading fragments and map geography remain separate.
