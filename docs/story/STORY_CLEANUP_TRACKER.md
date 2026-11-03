@@ -507,3 +507,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Replaced obsolete `Sources/THEIA_HUMAN_CAST_AND_PLACES` source metadata/embeds and Obsidian parent/location navigation in all nine `Theia/Characters/Services/` cards: Cal Norr, Oda Flint, Adra Pell, Evin Reed, Marta Venn, Joric Hale, Sella Marr, Torren Vale and Sabren Holt. Commits `44929a9c`, `6e83cf6c`, `2b21b8a9`, `d0c4f73a`, `3af413ba`, `ab3a67dd`, `b131063c`, `ffdd1ce5`, `65f2010c`.
 - [x] Live-fetched surviving root Human Cast and Places, Characters index, Stoneford and Valecrown destinations. All four exist. Preserved all nine **Needs Review** labels and proposed service roles; no approved NPC or class roster created.
 - [ ] Continue broader character backlinks and full-tree link/content validation before branch retirement or tracker deletion.
+
+## First Archon Selrion source migration — 3 November 2026
+
+- [x] Migrated `Theia/Characters/First Archon Selrion.md` off obsolete `Sources/THEIA_HUMAN_CAST_AND_PLACES` metadata and source wiki-links to the root cast-and-places document, with direct Characters, story index, Vaelari, Covenant and Dominion links (commit `9740c8b3`).
+- [x] Live-fetched the Vaelari, Covenant and Dominion related files; all three exist. Preserved Selrion's approved role and the restriction against inventing friendly Covenant meetings.
+- [ ] Continue remaining character/campaign backlinks and full-tree validation. GitHub search may retain stale indexed paths; verify apparent obsolete references with fresh file fetches.
