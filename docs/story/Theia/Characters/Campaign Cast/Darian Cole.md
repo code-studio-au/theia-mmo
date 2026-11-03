@@ -2,7 +2,7 @@
 type: character
 canon_status: approved-role; proposed-development
 source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
-up: "[[Characters]]"
+up: "../Characters.md"
 ---
 # Darian Cole
 
@@ -20,9 +20,9 @@ Helps train the next local recruit and remains a serving rescue soldier with lea
 
 Source: [Approved recurring humans: complete launch movements](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
-[[Characters]] · [[Human Campaign]]
+[Characters](../Characters.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
 
-[[Atlas/Places/Millhaven|Millhaven]] · [[Characters/Campaign Cast/Elara Fenwick|Elara Fenwick]]
+[Millhaven](../../Atlas/Places/Millhaven.md) · [Elara Fenwick](Elara%20Fenwick.md)
