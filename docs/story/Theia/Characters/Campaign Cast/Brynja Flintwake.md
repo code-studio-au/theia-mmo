@@ -2,7 +2,7 @@
 type: character
 canon_status: Needs Review
 source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
-up: "[[Characters]]"
+up: "../Characters.md"
 ---
 # Brynja Flintwake
 
@@ -17,8 +17,8 @@ Defends her craft through original specifications, joins by contract, records li
 
 Source: [Allied and Kel'vari cast](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
-[[Characters]] · [[Human Campaign]]
+[Characters](../Characters.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
 ## Related notes
 
-[[Dwarves]] · [[Edda Flintwake]]
+[Dwarves](../../Lore/Peoples/Dwarves.md) · [Edda Flintwake](Edda%20Flintwake.md)
