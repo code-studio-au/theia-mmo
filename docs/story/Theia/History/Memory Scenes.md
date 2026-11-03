@@ -1,6 +1,6 @@
 # Memory Scenes
 
-[[Sources/THEIA_MEMORY_SCENES|Read the complete Memory Scenes document]]. Preserve scene-specific status and disclosure rules when adapting scenes for players.
+[Read the complete Memory Scenes document](../../THEIA_MEMORY_SCENES.md). Preserve scene-specific status and disclosure rules when adapting scenes for players.
 
 [[Characters]] · [[Chronicles and History]] · [[Timelines]]
 
