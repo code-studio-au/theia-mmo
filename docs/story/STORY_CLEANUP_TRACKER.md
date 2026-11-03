@@ -289,3 +289,10 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Recorded the result and its limits in `Theia/Campaigns/Human_Quest_Editorial_ID_Crosswalk_Review.md` (commit `6f708688`). Branch ancestry does not prove all historical content was semantically reconciled.
 - [ ] Keep the old branch until remaining protected historical source, semantic checks and backlinks are resolved; retire it with an authorized branch deletion action only after verification.
 - [ ] Do not delete this tracker until the full cleanup is complete.
+
+## Obsidian navigation retirement — 3 November 2026
+
+- [x] Replaced obsolete `Story Browser.base` embeds and `Sources/THEIA_*` wiki-links in `Theia/Atlas/Atlas.md`, `Theia/History/Timelines.md` and `Theia/Characters/Characters.md` with Markdown links to surviving root sources and current campaign. Commits `0d6b6adf`, `4c7c22cc`, `2080effa`.
+- [x] Removed two unverified Aethyr/Nhal file links from the character index after direct fetches returned 404 (commit `8eea1037`). Divine context remains accessible through the Seven Gods and current campaign links.
+- [ ] Continue replacing remaining obsolete `.base` embeds and source-mirror wiki-links in other index pages. Verify each target against the live repository before claiming full link health.
+- [ ] Do not retire historical source evidence, story branch or this tracker until final validation is complete.
