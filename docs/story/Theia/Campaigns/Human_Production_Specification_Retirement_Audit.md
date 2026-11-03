@@ -21,3 +21,9 @@
 **Current active authorities:** [Current Human Campaign](CURRENT_HUMAN_CAMPAIGN.md), [Canonical Campaign](Human_1_80_Canonical_Campaign.md), [Current Quest Authoring Manifest](Human_1_80_Current_Quest_Authoring_Manifest.json), [Rust Authoring Contract](Human_Rust_Quest_Authoring_Contract.md), and [Codex Quest Engine](../../../QUEST_ENGINE.md).
 
 **No Rust engine changes are proposed.**
+
+## Historical five-dungeon comparison — 3 November 2026
+
+Compared the old `THEIA_HUMAN_STORY_DUNGEONS.md` Act I–V encounter descriptions with the current E01–E04 barks and the canonical 1–80 outcomes. Historical mechanical ideas worth retaining for optional encounter design include: recoverable evidence copies and witness checkpoints in the Cassian pursuit; independent physical isolators and local-versus-global resonance distinctions at the signal house; recoverable support-station ordering and crew evacuation in the Regional Anchor operation; and civilian-first rescue plus independently authenticated records in the former Witness Vault. These are **design candidates**, not imported executable objectives.
+
+The old Act IV Malrec/projection boss outcome conflicts with current Q115 Su'vareth's permanent death. The old Act V Keld/Voss and branching severance finale conflicts with the approved Veilbreaker and level-80 Nhal shattering. Do not transplant these old boss/finale outcomes. Current encounters E01–E09 remain the working reference; the old five-dungeon packet is preserved for provenance pending detailed mechanics and backlink review. No file retirement authorized by this comparison.
