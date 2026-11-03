@@ -4,21 +4,21 @@ This is the broad historical sequence, followed by the present-day marker and a 
 
 ## Historical events
 
-These are historical milestone labels, not links to individually verified Obsidian event notes. Consult the root Chronicle and World Bible for source context.
+Each milestone below links to its corresponding verified `History/Events/` note. These event notes are historical references with source-specific approval limits; consult the root Chronicle, World Bible and later creator decisions for authority.
 
-1. First Sundering
-2. Awakening of the Seven — independent divine beings emerge from Aethyr's shards.
-3. Mortal Creation — the six original mortal species arise.
-4. Creation of the Kel'vari — Ascendant alone creates the Kel'vari.
-5. First Resonance — later Kel'vari research first permits Nhal's faint influence; the Veil is not yet breached.
-6. Second Sundering — activation of the redirected First Anchor breaches the Veil and begins the catastrophe.
-7. Divine Schism — existing tensions over Ascendant's conduct deepen into divisions over the catastrophe and its containment.
-8. Divine War — the conflict escalates the devastation; the multiracial Guardians form before The Binding.
-9. The Binding — the Seven become bound to sustaining the Shroud around the breached region.
-10. Age of Reconstruction — postwar recovery, migrations and alliance formation.
-11. Age of Silence and Anchor Network Development — without fresh guidance from Nhal, the Conclave develops Minor Resonators, then Regional Anchors, and attempts Major Anchors over generations.
-12. Shattered Delegation — the Unmade sabotage an exceptional modern peace negotiation; this is a separate covert operation, not the origin of the Anchor network.
-13. Network Threshold and Modern Awakening — coordinated Major Anchors bring the cumulative network to a threshold, triggering the awakening and restoring Nhal's limited, selective communication before play begins.
+1. [First Sundering](Events/First%20Sundering.md)
+2. [Awakening of the Seven](Events/Awakening%20of%20the%20Seven.md) — independent divine beings emerge from Aethyr's shards.
+3. [Mortal Creation](Events/Mortal%20Creation.md) — the six original mortal species arise.
+4. [Creation of the Kel'vari](Events/Creation%20of%20the%20Kel'vari.md) — Ascendant alone creates the Kel'vari.
+5. [First Resonance](Events/First%20Resonance.md) — later Kel'vari research first permits Nhal's faint influence; the Veil is not yet breached.
+6. [Second Sundering](Events/Second%20Sundering.md) — activation of the redirected First Anchor breaches the Veil and begins the catastrophe.
+7. [Divine Schism](Events/Divine%20Schism.md) — existing tensions over Ascendant's conduct deepen into divisions over the catastrophe and its containment.
+8. [Divine War](Events/Divine%20War.md) — the conflict escalates the devastation; the multiracial Guardians form before The Binding.
+9. [The Binding](Events/The%20Binding.md) — the Seven become bound to sustaining the Shroud around the breached region.
+10. [Age of Reconstruction](Events/Age%20of%20Reconstruction.md) — postwar recovery, migrations and alliance formation.
+11. [Age of Silence and Anchor Network Development](Events/Age%20of%20Silence%20and%20Anchor%20Network%20Development.md) — without fresh guidance from Nhal, the Conclave develops Minor Resonators, then Regional Anchors, and attempts Major Anchors over generations.
+12. [Shattered Delegation](Events/Shattered%20Delegation.md) — the Unmade sabotage an exceptional modern peace negotiation; this is a separate covert operation, not the origin of the Anchor network.
+13. [Network Threshold and Modern Awakening](Events/Network%20Threshold%20and%20Modern%20Awakening.md) — coordinated Major Anchors bring the cumulative network to a threshold, triggering the awakening and restoring Nhal's limited, selective communication before play begins.
 
 The Age of Silence begins after the Binding and overlaps reconstruction and later history. The delegation's destruction and the network reaching its threshold both precede the present-day marker; their exact timing relative to one another remains unspecified. Their display order is a reading sequence, not a newly fixed chronology.
 
