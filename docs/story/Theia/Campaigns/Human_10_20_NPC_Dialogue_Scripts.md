@@ -170,7 +170,9 @@ Cassian must initially appear helpful and competent, not a theatrical villain. A
 
 **Aldren, response:** “The shipping references extend beyond our borders. This warrant permits you to pursue the evidence with the consent of our allies.”
 
-**Completion:** “Take the commission. And when you can, tell Elara what became of the case she sent you to investigate.”
+**Commission handoff:** “Take the commission. Report to Elara what became of the case she sent you to investigate.”
+
+**Q031 completion boundary:** The warrant handoff precedes the required report home to Elara. Complete the canonical custody/removal confirmation and home report before closing the betrayal arc; Elara's report-response dialogue remains to be authored.
 
 **In-progress:** “Finish the evidence or service we've agreed on. If the situation changes, come back and tell me.”
 

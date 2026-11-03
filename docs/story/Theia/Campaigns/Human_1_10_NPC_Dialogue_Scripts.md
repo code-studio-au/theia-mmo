@@ -2,6 +2,8 @@
 
 **Status: Needs Review — authored dialogue, not recorded or implemented.** Based on [Human 1–80 Canonical Campaign](Human_1_80_Canonical_Campaign.md) and [Q001–Q017 working authoring review](Human_Q001_Q017_Rust_Authoring_Review.md). This expands the earlier [vertical slice dialogue brief](Human_1_10_Vertical_Slice_Implementation.md) into reusable quest-offer, progress, choice and turn-in dialogue. All lines are original first-pass text.
 
+**Coverage:** This first pass contains Q001–Q013. Dialogue for optional Q014–Q017 remains to be authored; their canonical quests and outcomes remain in the campaign and consolidated authoring review.
+
 ## Dialogue design constraints
 
 The player is a new Human resident/traveler, not a chosen hero. Early speakers know nothing of Nhal, the Seven's Binding, the Conclave, the Guardian gate, or the Kel'vari. The stolen goods are a local mystery. NPCs retain individual viewpoints. Dialogue choices change tone and later acknowledgement, never the canonical outcome. Dialogue is text-first, concise enough for an MMO dialogue panel. No player voice or gender assumption.
@@ -190,7 +192,9 @@ The player is a new Human resident/traveler, not a chosen hero. Early speakers k
 
 **Player choice B:** “Why keep a copy?” → **Perrin:** “Because I knew someone would ask later. I didn't expect it to be you.”
 
-**Correspondent, completion:** “This belongs in Valecrown. Elara can introduce you to Mara Thorne. She'll know what to do with a record like this.”
+**Correspondent, referral handoff:** “This belongs in Valecrown. Elara can introduce you to Mara Thorne. She'll know what to do with a record like this.”
+
+**Q013 completion boundary:** Obtain Elara's introduction to Mara after the payment evidence and authorized interview. The correspondent's referral is not final completion; Elara's handoff dialogue remains to be authored.
 
 ## Implementation requirements
 
