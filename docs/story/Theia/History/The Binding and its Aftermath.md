@@ -4,4 +4,4 @@ These Chronicle passages include proposed connective history. Consult [Canon and
 
 [Read the Interwoven Chronicle](../../THEIA_INTERWOVEN_CHRONICLE.md), including the historical First Years of Silence, Age of Reconstruction, and Modern Age / Shattered Delegation sections. These are source-section labels, not independently verified heading anchors.
 
-[Historical Timeline](Historical%20Timeline.md) · [Timelines](Timelines.md)
+[Historical Timeline](Historical%20Timeline.md) · [Revelation Timeline](../../THEIA_MODERN_STORY_REVELATION_TIMELINE.md)
