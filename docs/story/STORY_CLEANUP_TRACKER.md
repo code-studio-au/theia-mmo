@@ -832,3 +832,11 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Corrected the historical claim that Nhal deliberately shatters himself: the approved level-80 coordinated inversion shatters his coherent identity and will. Future independent fragment-born gods remain unapproved possibilities.
 - [ ] Continue semantic precedence review of the remainder of `Future Saga.md`: some older sections still describe the Veilbreaker and final alignment as post-launch, whereas the approved 1–80 ending occurs at launch. Do not silently approve future expansion outcomes or delete historical proposal evidence.
 - [ ] Continue other root Campaigns documents, root story files and the H/HS provenance crosswalk; final repository-wide heading-anchor/backlink validation and tracker retirement are still pending.
+
+## Future Saga launch-versus-expansion semantic pass — 3 November 2026
+
+- [x] Updated `Theia/Campaigns/Future Saga.md` headings and explicit status labels to distinguish the approved level-70 Veilbreaker and level-80 Nhal finale from historical post-launch proposals (commit `e25fd59`).
+- [x] Corrected the obsolete separate First Anchor containment-failure explanation: current canon makes the Binding dissolve immediately when the Veil is destroyed; Anchors amplify the tear and are not the prison.
+- [x] Identified old Act V Major Anchor inversion as a superseded launch-finale placement, and the scattered-divinity/new-divine-war/long-range-accord material as unapproved future concepts. Preserved original prose for provenance rather than deleting unreviewed unique ideas.
+- [ ] Review remaining internal Future Saga sentences for implicit post-launch timing and superseded inversion mechanics; verify dialogue/quest implications against canonical Q entries before any substantive consolidation.
+- [ ] Continue other Campaigns and root-story duplicate audits, original H/HS crosswalk, final backlinks and heading anchors. Tracker remains temporary until all checks pass.
