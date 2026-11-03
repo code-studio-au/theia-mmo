@@ -769,3 +769,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Complete tree enumerates 77 Campaigns Markdown files: 51 directly under Campaigns, 21 Connected Stories, and five Encounters. The first ten Connected Stories notes contain old Obsidian source, index and legacy quest-label links; these require provenance-preserving migration rather than new quest targets.
 - [x] Migrated Aelari connected beats CR-A1, CR-A2 and CR-A3 to surviving root connected-racial source, index and related notes (commits `81bf4f0f`, `a2d60994`, `7a5dd8a9`). Former H3 quest wiki-links are plain historical identifiers, not assertions that individual executable quest files exist.
 - [ ] Audit the other 18 Connected Stories notes, five Encounters and 51 Campaigns root notes. Preserve Needs Review status and canonical 1–80 quest authority.
+
+## Dwarven connected story-beat migration — 3 November 2026
+
+- [x] Migrated CR-D1, CR-D2 and CR-D3 to root connected-racial provenance, Connected Racial Stories index, Rurik/Brynja/Nhal and institution Markdown references (commits `3e4fac0d`, `27a52f11`, `3ad436b6`). H2-05 through H2-07 remain historical quest identifiers, not invented quest files.
+- [x] Re-fetched the three Dwarven beats against live tree: **15 Markdown link occurrences**, zero missing file targets, zero remaining wiki-links.
+- [ ] Continue the other 15 Connected Stories files, then Encounters and Campaigns root audit.
