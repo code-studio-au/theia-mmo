@@ -697,3 +697,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Re-fetched all eight Atlas Markdown files outside Places against live tree `fb5f1b89`: **35 Markdown links, zero missing file targets, zero remaining Obsidian wiki-links**.
 - [x] With the previously verified 16 Places files (74 links), the **24-file Atlas Markdown section** passes syntax and file-target checks. This does not certify heading anchors, map placements or semantic canon.
 - [ ] Continue remaining story sections and duplicate-content audit before branch/tracker retirement.
+
+## Lore directory audit initiated — 3 November 2026
+
+- [x] Complete tree enumerates **28 Lore Markdown files**. Preliminary live inspection found residual Obsidian navigation in multiple topic notes; full directory target verification remains pending.
+- [x] Migrated Magic and Oth'vaeri notes to Markdown Lore/History/story index and Kel'vari navigation (commits `14e97aab`, `4fa8e989`). Existing lore content and approval status were preserved.
+- [ ] Continue other 26 Lore notes, check relative Markdown file targets and historical semantic precedence before marking this directory complete.
