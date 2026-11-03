@@ -1,17 +1,17 @@
 ---
 type: character
 canon_status: Needs Review
-source: "[[Sources/THEIA_HUMAN_CAST_AND_PLACES]]"
-up: "[[Characters]]"
+source: "../../../THEIA_HUMAN_CAST_AND_PLACES.md"
+up: "../Characters.md"
 ---
 # Torren Vale
 
-Proposed weaponsmith in [[Stoneford]].
+Proposed weaponsmith in [Stoneford](../../Atlas/Places/Stoneford.md).
 
 > [!important] Needs Review
 > Service names and assignments are proposed. Shared surnames do not establish kinship. Training labels do not lock a class list or profession system.
 
-![[Sources/THEIA_HUMAN_CAST_AND_PLACES#Services and NPC availability]]
+[Services and NPC availability](../../../THEIA_HUMAN_CAST_AND_PLACES.md) — historical proposed source, not approved service roster.
 
-[[Characters]] · [[Welcome|Home]]
+[Characters](../Characters.md) · [Story index](../../../README.md)
 
