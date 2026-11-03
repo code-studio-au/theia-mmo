@@ -2,7 +2,138 @@
 
 **Source:** uploaded 403-page `Create MMO Story.pdf` (2026-10-12). **Scope:** recovery index for Q1–Q444, NOT a verbatim reproduction of every option. The original PDF contains the full question wording. Earlier files that claimed Q1–375 were unavailable were based on incomplete context and are superseded by this source audit.
 
+**Current scope:** The recovered rounds and dated summaries below are historical source evidence, not a second current canon ledger. Later creator locks and the canonical Human campaign supersede old creation, identity and ending claims. **LOCKED** facts require explicit creator evidence; unapproved connective material stays **WORKING**. Historical questions are **OPEN** only where not subsequently resolved. Original source wording is preserved as **ARCHIVED** provenance, including superseded selections.
+
 **Canon rule:** Later explicit user choices override earlier proposals, auto-selected form defaults and assistant-generated narratives. The first ~40 PDF pages contain repeatedly rejected alternate concepts (Remembrance/Unbound, Shattered Heavens, Empire, Nhalor underground world, Binding/Oaths, Hollow Sun, Eclipseborn). **Do not import these as canon.** Collaborative Stage 1 begins around PDF page 41.
+
+## Historical audit evidence and limits
+
+**ARCHIVED audit record, 12 October 2026; consolidated 3 November 2026.**
+The historical review covered 62 collaborative stages and later narrative discussions.
+The later full-conversation integrity pass was cross-document reconciliation,
+not a fresh PDF audit. This section preserves claims and source locators from the retired
+[reconciliation report](https://github.com/code-studio-au/theia-mmo/blob/b4c29af3417ae1474af99f049f82d9ba641c7429/docs/story/THEIA_CANON_RECONCILIATION_REPORT.md) and
+[verification status](https://github.com/code-studio-au/theia-mmo/blob/b4c29af3417ae1474af99f049f82d9ba641c7429/docs/story/THEIA_LINE_BY_LINE_VERIFICATION_STATUS.md).
+It is not a new independent audit of the PDF or a new approval of historical answers.
+Use the [current hierarchy](README.md#approval-and-precedence), [World Bible](THEIA_WORLD_BIBLE.md)
+and [decision ledger](DECISIONS.md) for later supersession; the
+[canonical Human campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md)
+owns current revelation timing and endings.
+
+### Audit coverage and missing evidence
+
+- The reports describe a machine-indexed pass over 403 PDF pages and targeted
+  manual collision/correction checks, not independent word-by-word adjudication
+  of every page or later unnumbered proposal.
+- Final historical index: **444 distinct question identifiers**, **471 numbered
+  prompt occurrences**, **418 identifiers with a source-located answer or confirmed
+  later variant**, and **26 open/deferred identifiers**. These counts are not proof
+  of current canon approval. In the earlier 412-candidate page-neighbourhood test,
+  411 matched; Q60 was manually checked on PDF p72 as the explicit **all six races**
+  correction.
+- Earlier **412/32**, then **412 source-located + 2 verified + 30 unanswered/deferred**
+  tallies are SUPERSEDED by that final index. Their omission of explicit PvP answers
+  was corrected; do not present either as a completed manual audit.
+- Historical outputs were named `THEIA_FULL_SOURCE_VERIFIED_REGISTER.md`
+  (approximately 367 KB) and `THEIA_LINE_BY_LINE_DECISION_AUDIT.md` (reported as
+  335/336 KB in successive notes). The reports said they were generated in an
+  earlier ChatGPT workspace, not committed here. Their current availability is
+  unverified; neither those artifacts nor the original PDF is supplied by this
+  consolidation.
+- The reports cite the [historical extraction script](https://github.com/code-studio-au/theia-engine/blob/94cc79228bc90db13d83116f76f6cdba51b72630/tools/extract_theia_questions.py)
+  as a prompt-indexing aid, not answer inference. No script or code was reviewed
+  during this Markdown consolidation.
+- The recorded 26 open/deferred identifiers are **Q179–183, reissued Q194–197,
+  Q212–219 and Q436–444**. Q212–219 stopped when the user returned to lore; Stage 62's Q436–444 form was
+  presented but not submitted. Earlier reused variants may also be unanswered. Later
+  standalone decisions can settle a topic without supplying an answer to its
+  original multiple-choice prompt.
+
+### Source-page evidence index
+
+These are historical answers and page locators, not a current canon table.
+In particular, Q12 god-death interpretations, Q40 creation-time corruption and
+older Passage assumptions must be read with the later explicit locks in the
+World Bible. Source wording stays available without reactivating it.
+
+| Question(s) | Verified user choice | Source PDF page(s) |
+|---|---|---|
+| Q1–3 | Ancient war **and** betrayal; magic returning **and** distinct traditions; archaeological discoveries **and** an ancient return | 42 |
+| Q4–7 | Betrayal + ancient enmity; ancient mysterious evil; betrayal's precise truth deferred, possible sacrifice; ancient history largely myth except rare scholars/hidden factions | 43 |
+| Q8–11 | Multiple great civilizations and physically present gods; awakening among previously ungifted; instability, powerful wielders and legendary creatures; secret guardian order | 45 |
+| Q12–19 | Some gods fell and others survived; war among gods; gradual magic awakening; hidden Guardians; converging causes; mortals chose divine sides; magic predates gods; different divine fates | 48–50 |
+| Q35 | **Direct ancestry** for magical bloodlines, not the alternative widespread-dormant-heritage choice | 60 |
+| Q40 | **Hidden corruption** in creation of a new people, not the alternative “multiple causes” selection | 63 |
+| Q42–44 | Divine empowerment of original magical lineages; uncommon but recognized awakening; contradictory creation beliefs | 63 |
+| Q47 | **Mixed morality** selected for the Seven (not automatically the assistant's “all well-intentioned” generalization) | 65 |
+| Q60–64 | Six playable races supersede four; D/E/A/A for alliance/cultural design and relative balance | 72 |
+| Q97–102 | Ancestral homelands: inland plains, ancient mountains, grasslands, underground valleys, primeval forests, rugged highlands | 91 |
+| Q131–133 | Surviving mountain/subterranean dwarf metropolis; expansion settlements; human royal dynasty (later refined to separate royal branch) | 103 |
+| Q166–178 | Elven/troll regional cities, including living woodland, scholarly, coastal, arcane, frontier, chronicle, ward, resource, divination, storm harbour; ancient sites with varied access | 118 |
+| Q184–188 | A/B/C/A/A; Great Clans replaces Great Houses; ancient passages mostly inactive; Shrouded Lands access through rediscovered passage | 122 |
+| Q189–190 | Flight paths and ship routes; contested mysterious Shrouded Lands potentially at the epicentre of Divine War | 125 |
+| Q287–296 | Divine essence + magical craftsmanship; ongoing creator link; Judge created humans, Shaper dwarves, Warrior orcs, Keeper halflings, Guardian elves; troll creators initially undecided; diverse patronage histories | 165 |
+| Q308–309 | **Keeper + Ascendant** co-created trolls; Ascendant required knowledge possessed by Keeper (“knowledge and ambition”) | 168 |
+| Q310–314 | Ascendant sought lasting legacy; Keeper joined to impose safeguards; distrust arose during creation; earlier divine disagreement; subtle shared halfling–troll magical connection | 170 |
+| Q382 | Explicitly revised to **D: all three** halfling martial traditions | 203 |
+| Q420 | Explicitly revised to **D: founding teachings, occasional direct visits and mortal intermediaries** | 219 |
+| Q434–435 | Exactly one ancient great magical order survives secretly; different modern civilizations inherited different fragments of knowledge | 222 |
+
+### Reissued prompt evidence
+
+| Identifier | Earlier question | Later question and source-backed answer |
+|---|---|---|
+| Q191 | Alliance relations, PDF p. 122 | Reissued p. 125; user chose **A**, almost complete separation, p. 126 |
+| Q192 | Third PvP territory, PDF p. 124 | Reissued p. 125; user said **“as stated previously”**: Shrouded Lands confirmed as concept, exact option not selected |
+| Q193 | Why territory matters, PDF p. 124 | Reissued p. 125 for **primary PvP type**; user chose **E**, combination, p. 126 |
+| Q194–197 | PvP and entry questions, PDF p. 124 | Reused for geography, access and encounters, p. 127; **not confirmed by prior choices** |
+| Q198 | Persistent/seasonal ownership model, PDF p. 128 | Reused for **influence decay**, PDF p. 129; user chose hybrid, p. 130 |
+| Q199 | Overextension, PDF p. 129 | User chose yes, p. 130 |
+| Q200 | Neutralization, PDF p. 129 | User chose mix of all three, p. 130 |
+
+Q200's p130 reply was “200 should be a mix of all three”; the subsequent
+“Hybrid and yes” supplied Q198/Q199. The later Q193 E answer does **not** answer
+the earlier question about why territory matters. Q192 confirms the concept
+without selecting an exact letter; reissued Q194–197 remain unconfirmed.
+
+Additional collision/correction context retained from the reports:
+
+- **Q55 → Q60:** the earlier four-race answer was superseded by six.
+- **Q315–317, Stage 47:** magical stability, unauthorized experimentation and shared
+  halfling–troll resilience. **Q315–317, Stage 49:** different divine specialties,
+  limits through laws/understanding/consequences and gradual discovery. These are
+  distinct prompts, not alternatives to collapse into one answer.
+- **Q427–435:** three or four independent interconnected great magical orders,
+  with exactly one secret survivor. Q436–444 leave that survivor's purpose,
+  method, archives, Guardian relationship, and ancient-record distribution and
+  authenticity unanswered in the original source.
+- **Q201–202:** moderate overextension and dynamic neutralization depending on
+  territory type, magical instability and activity. **Q203–211:** logistics,
+  defensive NPC support, underdog incentives, siege limits/windows, shared upkeep
+  and persistent ownership with seasonal objectives. These are recorded fairness
+  principles, not final numerical balance.
+- **Q308 and Q309:** answered in separate conversational turns, not the Stage 45
+  batch form. Preserve free-form answers such as “all six”, “knowledge and ambition”
+  and “flight paths and ship routes”; do not force them into a letter choice.
+- Reused Q297–317 require stage and PDF-page context. Form defaults and assistant
+  recommendations cannot establish approval.
+- Stage 11 Q47 mixed morality, Q382's revised D (all three halfling traditions) and Q420's
+  revised D (all three teaching channels) are not displaced by assistant summaries.
+  The Shaper's ambition remains a personality trait, not an obsolete god title.
+
+### What remains unverified
+
+The underlying PDF, full evidence register and later creator messages must be
+compared before claiming exhaustive manual verification. The current repository
+index preserves the recorded evidence; it does not certify unavailable artifacts
+or silently answer Q436–444. The reports' duplicate canon explanations now defer
+to the World Bible and current campaign. Their stale several-god Kel'vari creation,
+unresolved Binding betrayer, level-60 ending and open Seven/Nhal launch-fate claims
+are SUPERSEDED, not additional creative options.
+
+The reports also recorded the historical retirement of `THEIA_TRUE_CHRONICLE.md`
+in favor of the Interwoven Chronicle. Its older prose remains Git history, not a
+second active narrative. No new audit documents are needed for this consolidation.
 
 ## Recovered decision rounds
 
@@ -70,7 +201,7 @@ The exact ancient betrayer(s), divine wartime sides, fate of each god, vanished 
 
 ## Corrective source audit: reused PvP identifiers
 
-The first version of this index incorrectly treated Q191–200 as wholly unanswered. The original PDF pp. 125–131 shows that Q191 (reissued) was **A**, almost complete separation; Q192 (reissued) was answered “as stated previously” for the Shrouded Lands concept without an unambiguous letter; Q193 (reissued) was **E**, combining several PvP types. **Q198 (reissued)** was answered “Hybrid” (grace period then escalating influence decay); **Q199** was “yes” (overextension increases decay); **Q200** was “a mix of all three” (NPC reclamation, unclaimed territory and magical events). Q194–197, reissued with new geography/access questions, were not answered by the earlier forms. The numbering collision must be recorded by question text, stage and PDF page, not number alone. The [verification status](THEIA_LINE_BY_LINE_VERIFICATION_STATUS.md) records the source detail.
+The first version of this index incorrectly treated Q191–200 as wholly unanswered. The original PDF pp. 125–131 shows that Q191 (reissued) was **A**, almost complete separation; Q192 (reissued) was answered “as stated previously” for the Shrouded Lands concept without an unambiguous letter; Q193 (reissued) was **E**, combining several PvP types. **Q198 (reissued)** was answered “Hybrid” (grace period then escalating influence decay); **Q199** was “yes” (overextension increases decay); **Q200** was “a mix of all three” (NPC reclamation, unclaimed territory and magical events). Q194–197, reissued with new geography/access questions, were not answered by the earlier forms. The numbering collision must be recorded by question text, stage and PDF page, not number alone. The [consolidated source-page evidence](#reissued-prompt-evidence) records the prompt-specific detail.
 
 **Q47 correction:** The original user explicitly chose **mixed morality** for the Seven. Do not state that all gods are necessarily well-intentioned; individual motivations may be compassionate, authoritarian or dangerously ambitious. This does not make Ascendant inherently evil.
 
