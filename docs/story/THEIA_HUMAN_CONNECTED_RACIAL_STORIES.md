@@ -1,3 +1,5 @@
+> **HISTORICAL CROSS-RACIAL CAMPAIGN PROPOSALS (3 November 2026).** The allied `CR-` groupings and twelve proposed Dominion companion-race quests below were authored for the superseded Human 1–60 route. They are **not** additional Human 1–80 quest definitions or approved Dominion racial campaigns. Current Human authority: [Current Human Campaign](Theia/Campaigns/CURRENT_HUMAN_CAMPAIGN.md) and [Canonical Human 1–80 Campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md). Preserve unique Dominion perspectives, sovereign institutions and faction-boundary ideas for later independent race-story review. Do not delete this source before unique content and incoming links are checked.
+
 # THEIA — RACIAL STORIES CONNECTED TO THE HUMAN CAMPAIGN
 
 **Status: Needs Review.** These are the allied quest sequences and Dominion character stories needed to support the proposed complete [Human Campaign](THEIA_HUMAN_CAMPAIGN.md). They preserve sovereign institutions and permanent alliance separation. They are not approval of the other races' openings or a claim to have written all eight full campaigns.
