@@ -643,3 +643,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Migrated Creation of the Kel'vari, First Resonance and Second Sundering notes to direct historical timeline, related event, Kel'vari and Ascendant Markdown links (commits `468040a2`, `6d4ad67f`, `65206092`). Unverified Nhal standalone note remains a plain name.
 - [x] Preserved the source-specific historical sequence: Kel'vari created by Ascendant, Nhal influence only later, First Anchor catastrophe distinct from first resonance. No dates or new event chronology added.
 - [ ] Seven remaining History/Events notes require wiki-link migration, then a complete target/semantic audit.
+
+## Historical Events chronology 7–9 navigation — 3 November 2026
+
+- [x] Migrated Divine Schism, Divine War and The Binding notes to direct historical timeline, divine character, Guardians, Conclave, Kel'vari and adjacent event Markdown links (commits `44bd4c06`, `c6d38e6f`, `ea99b41f`).
+- [x] Kept Nhal as a plain name where no standalone note target was verified. Source-specific approval and no-invented-date constraints remain intact.
+- [ ] Four remaining History/Events notes require migration, followed by file-target and historical-semantic checks.
