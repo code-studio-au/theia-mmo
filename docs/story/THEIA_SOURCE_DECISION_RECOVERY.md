@@ -181,13 +181,110 @@ Troll joint creation with Keeper stabilization and Ascendant unauthorized experi
 Divine specializations; channeling by intent and learned technique; finite internal reserve, bloodline and training; exactly six disciplines Elements & Energy, Matter, Life, Form, Mind, Passage; one individual must master every discipline used; complex spells, rare resurrection and creation, limits on Mind, temporary/rechargeable/rare self-sustaining enchantments; natural/ambient/meditative recovery; mental overload, exhaustion and environmental differences.
 
 ### Stage 55–58 — Q369–407
-Magic optional for martial classes; differentiated combat resources, deep gear customization, counterplay and cultural fighting styles; fragmented Divine Age martial traditions; human knights/armies/schools, dwarf defence/engineering, orc Great Clans/champions, halfling Q382 revised to D all three combat engineering/precision/defence; magic common in cities, conventional tech competes, different medicine, anti-mage tactics, diverse academies; racial magic traditions: humans protection/structure/war, dwarves Matter/Form/Energy, orcs clan specialisms, halflings engineering/infrastructure/defence, Aelari Life/wards/ancestral, Vaelari research/perception/combinations; elven disagreement MAGICAL RESPONSIBILITY; Korrath Keeper, Vorrath Ascendant.
+
+Stage 55 preserves magic being optional for martial classes, differentiated combat resources, deep gear customization and counterplay. The detailed Stage 56–62 evidence below is consolidated from the [historical Detailed Lore Archive](https://github.com/code-studio-au/theia-mmo/blob/d92442414202fc7d4048120b7d8416cdc023c57d/docs/story/THEIA_DETAILED_LORE_ARCHIVE.md). It preserves the recorded choices and paraphrased question focuses, not the full prompt wording or a new PDF verification. **LOCKED** here denotes the historical recorded selection within its scope, subject to later explicit creator decisions.
+
+#### Stage 56 / Q376–385 [LOCKED historical selections; subject to later decisions]
+| Q | Question focus | User decision |
+|---|---|---|
+| 376 | Origin of martial styles | Fragmented Divine Age traditions |
+| 377 | Fighting style differentiation | Strong racial styles |
+| 378 | Martial vs magic institution relationships | Institutional rivalry |
+| 379 | Human martial institutions | Royal armies, knightly orders, martial schools |
+| 380 | Dwarven martial style | Defence, equipment and engineering |
+| 381 | Orcish martial style | Great Clans, professional armies and champions |
+| 382 | Halfling martial style | **D: All three — combat engineering, precision combat and defensive mastery** (replaced earlier engineering-only choice) |
+| 383 | Elven martial styles | All three: shared roots, divergent traditions, magic integration |
+| 384 | Troll martial styles | All three: ancestral/exile, religion, geography |
+| 385 | Shared heritage | Common roots, divergent techniques, wartime adaptation |
+
+#### Stage 57 / Q386–396 [LOCKED historical selections; subject to later decisions]
+| Q | Focus | Decision |
+|---|---|---|
+| 386 | Civilian access | Magic common in major cities |
+| 387 | Magic vs technology | Competing approaches |
+| 388 | Medical systems | Different cultural traditions |
+| 389 | Army mages | All three: supports, unit integration, rare powerful wielders |
+| 390 | Anti-mage strategies | Gear, tactics, dedicated specialists |
+| 391 | Relative battlefield strength | All three: vulnerable specialists, rare legendary mages, martial parity in role |
+| 392 | Academy governance | Mixed royal, guild, independent and religious models |
+| 393 | Martial/academy rivalry reason | Prestige and political influence |
+| 394 | Dangerous research oversight | Varies between civilizations |
+| 395 | Cultural magic | Racial, regional and bloodline specialties |
+| 396 | Lost age knowledge | Lost, secretly guarded and rediscovered |
+
+#### Stage 58 / Q397–407 [LOCKED historical selections; subject to later decisions]
+| Q | Focus | Decision |
+|---|---|---|
+| 397 | Human magical culture | Protection, structured magic, military uses |
+| 398 | Dwarven magical culture | Matter, Form and Energy |
+| 399 | Orcish magical culture | Different Great Clan specialties |
+| 400 | Halfling magical culture | Engineering, infrastructure and defence |
+| 401 | Aelari magical culture | Life, wards, ancestral knowledge |
+| 402 | Vaelari magical culture | Research, magical perception, advanced combinations |
+| 403 | Elven philosophical schism | **Magical responsibility** |
+| 404 | Ancestral troll patron | **Keeper** |
+| 405 | Exiled troll patron | **Ascendant** (earlier title “Ambitious”) |
+| 406 | Troll cultural divergence | Heritage, religion, geography |
+| 407 | Racial magic benefits | Different instructors, transferable techniques, bloodline affinities |
 
 ### Stage 59–61 — Q408–435
-Ancient independent great magical orders, broad knowledge exchange and passageways, occasional divine teaching; loss through destruction, deaths and suppression of particular dangerous advanced techniques; modern academies, royal institutions and smaller orders with fragmentary inherited knowledge; Guardians selectively guard forbidden knowledge; divided modern institutions; three or four original great orders organized by philosophy/specialty/purpose, independent but interconnected, several divine influences, mortals openly challenged gods; mostly cooperative until war; EXACTLY ONE original great order survives secretly.
+
+#### Stage 59 / Q408–417 [LOCKED historical selections; subject to later decisions]
+| Q | Focus | Decision |
+|---|---|---|
+| 408 | Divine Age educational organization | Independent magical orders |
+| 409 | Ancient circulation of magic | Broadly shared knowledge |
+| 410 | Divine influence | **D: Founding teachings, occasional direct teaching and mortal intermediaries** (explicit later revision) |
+| 411 | Loss of ancient arts | Destruction, deaths and deliberate suppression |
+| 412 | Survivors | Academies, secret orders, royal institutions |
+| 413 | Modern grasp of lost arts | Fragmented knowledge |
+| 414 | Guardians' archives | Selective forbidden knowledge relevant to ancient threat |
+| 415 | Guardian secrecy | Danger, political mistrust, inherited duty |
+| 416 | Modern rediscovery | Stronger wielders, awakened sites, retrieved knowledge |
+| 417 | Institutions' response | Deep division over rediscovery |
+
+#### Stage 60 / Q418–426 [LOCKED historical selections; subject to later decisions]
+| Q | Focus | Decision |
+|---|---|---|
+| 418 | Ancient order count/organization | Several great orders |
+| 419 | Research exchange | Libraries, visiting scholars/councils and passages |
+| 420 | Divine guidance | **D: founding teachings + occasional direct visits + trusted intermediaries** (supersedes initial A) |
+| 421 | Initial suppressors | Surviving masters |
+| 422 | Restriction types | Specific dangerous advanced techniques |
+| 423 | Resistant orders | Varied fates: hidden, destroyed, exiled |
+| 424 | Modern institutional heritage | Diverse continuity histories |
+| 425 | Rival academies | Academic competition |
+| 426 | Ancient remnants | Ruins, artifacts, structures within living cities |
+
+#### Stage 61 / Q427–435 [LOCKED historical selections; subject to later decisions]
+| Q | Focus | Decision |
+|---|---|---|
+| 427 | What defines a great order | Philosophy, specialty, purpose |
+| 428 | How many great orders | **Three or four** |
+| 429 | Government | Independent but interconnected |
+| 430 | Gods and orders | Several divine influences |
+| 431 | Could mortals challenge gods | Openly |
+| 432 | Sources of rivalry | Ethics, knowledge access and political power |
+| 433 | Prewar relations | Largely cooperative until war |
+| 434 | Surviving original order | **Exactly one** hidden survivor |
+| 435 | Regional inherited knowledge | Distinct fragments among civilizations |
 
 ### Stage 62 — Q436–444
-Questions posed, but NO user choices submitted. Do not mark assistant default selections as confirmed. The original magical order's purpose, survival, archives, relation to Guardians and detailed source distribution remain open.
+
+#### Stage 62 / Q436–444 [OPEN — unanswered]
+These were presented as selectable questions, but there is no subsequent user submission resolving them:
+- 436 surviving order original mission (understanding, transformation, preservation, exploration or multi-purpose).
+- 437 how it survives (lineage, refuge, modern institutional infiltrators, mix).
+- 438 extent of preserved knowledge (archives, specialism, fragments, dormant records or mixed).
+- 439 relationship between surviving old order and Guardians (allies, rivals, unaware, one-way awareness, undecided).
+- 440 how their responsibilities differ (magical knowledge, historic truth, intervention vs preparation, overlap).
+- 441 what the dwarf capital keeps (old mechanisms, archives, living craft, combination).
+- 442 Korrath archives (chronicles, wardcraft, early divine texts, combination).
+- 443 Vaelari rediscovery specialty (experimentation, analysis, passage research, combination).
+- 444 reliability of ancient documents (accurate fragments, misinterpretation, falsification, all three).
+
+**Crucial:** An on-screen default selection is *not* a user answer. Never mark Q436–444 as finalized simply because one was preselected in an earlier form.
 
 ## Post-question canon and overrides
 

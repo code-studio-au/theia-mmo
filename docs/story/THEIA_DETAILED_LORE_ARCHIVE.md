@@ -363,109 +363,39 @@ Working interpersonal disputes: Alaric and Draven carry losses from Shattered De
 
 # 11 — Question-by-question recoverable canon register
 
-**Method:** Q numbers and choices are reproduced from messages accessible here; descriptions paraphrase the prompt and recorded selection. Where a prior answer superseded an earlier one, the last choice is listed. Earlier question rounds before Q376 are not visible in full; their effects are synthesized above. Do not invent texts for Q1–Q375.
+**Disposition: MERGE.** The detailed Q376–Q435 selection rows and all nine unanswered Q436–Q444 prompts are consolidated in the existing [Source Decision Recovery index](THEIA_SOURCE_DECISION_RECOVERY.md#stage-5558--q369407). Their historical selections do not override later creator decisions; no default selection is an answer. The old statement that Q1–Q375 were unavailable is SUPERSEDED by the historical source recovery, whose PDF availability and audit limits remain explicit.
 
 ## Stage 56 / Q376–385 [CONFIRMED]
-| Q | Question focus | User decision |
-|---|---|---|
-| 376 | Origin of martial styles | Fragmented Divine Age traditions |
-| 377 | Fighting style differentiation | Strong racial styles |
-| 378 | Martial vs magic institution relationships | Institutional rivalry |
-| 379 | Human martial institutions | Royal armies, knightly orders, martial schools |
-| 380 | Dwarven martial style | Defence, equipment and engineering |
-| 381 | Orcish martial style | Great Clans, professional armies and champions |
-| 382 | Halfling martial style | **D: All three — combat engineering, precision combat and defensive mastery** (replaced earlier engineering-only choice) |
-| 383 | Elven martial styles | All three: shared roots, divergent traditions, magic integration |
-| 384 | Troll martial styles | All three: ancestral/exile, religion, geography |
-| 385 | Shared heritage | Common roots, divergent techniques, wartime adaptation |
+
+See the [consolidated question evidence](THEIA_SOURCE_DECISION_RECOVERY.md#stage-56--q376385-locked-historical-selections-subject-to-later-decisions).
 
 ## Stage 57 / Q386–396 [CONFIRMED]
-| Q | Focus | Decision |
-|---|---|---|
-| 386 | Civilian access | Magic common in major cities |
-| 387 | Magic vs technology | Competing approaches |
-| 388 | Medical systems | Different cultural traditions |
-| 389 | Army mages | All three: supports, unit integration, rare powerful wielders |
-| 390 | Anti-mage strategies | Gear, tactics, dedicated specialists |
-| 391 | Relative battlefield strength | All three: vulnerable specialists, rare legendary mages, martial parity in role |
-| 392 | Academy governance | Mixed royal, guild, independent and religious models |
-| 393 | Martial/academy rivalry reason | Prestige and political influence |
-| 394 | Dangerous research oversight | Varies between civilizations |
-| 395 | Cultural magic | Racial, regional and bloodline specialties |
-| 396 | Lost age knowledge | Lost, secretly guarded and rediscovered |
+
+See the [consolidated question evidence](THEIA_SOURCE_DECISION_RECOVERY.md#stage-57--q386396-locked-historical-selections-subject-to-later-decisions).
 
 ## Stage 58 / Q397–407 [CONFIRMED]
-| Q | Focus | Decision |
-|---|---|---|
-| 397 | Human magical culture | Protection, structured magic, military uses |
-| 398 | Dwarven magical culture | Matter, Form and Energy |
-| 399 | Orcish magical culture | Different Great Clan specialties |
-| 400 | Halfling magical culture | Engineering, infrastructure and defence |
-| 401 | Aelari magical culture | Life, wards, ancestral knowledge |
-| 402 | Vaelari magical culture | Research, magical perception, advanced combinations |
-| 403 | Elven philosophical schism | **Magical responsibility** |
-| 404 | Ancestral troll patron | **Keeper** |
-| 405 | Exiled troll patron | **Ascendant** (earlier title “Ambitious”) |
-| 406 | Troll cultural divergence | Heritage, religion, geography |
-| 407 | Racial magic benefits | Different instructors, transferable techniques, bloodline affinities |
+
+See the [consolidated question evidence](THEIA_SOURCE_DECISION_RECOVERY.md#stage-58--q397407-locked-historical-selections-subject-to-later-decisions).
 
 ## Stage 59 / Q408–417 [CONFIRMED]
-| Q | Focus | Decision |
-|---|---|---|
-| 408 | Divine Age educational organization | Independent magical orders |
-| 409 | Ancient circulation of magic | Broadly shared knowledge |
-| 410 | Divine influence | **D: Founding teachings, occasional direct teaching and mortal intermediaries** (explicit later revision) |
-| 411 | Loss of ancient arts | Destruction, deaths and deliberate suppression |
-| 412 | Survivors | Academies, secret orders, royal institutions |
-| 413 | Modern grasp of lost arts | Fragmented knowledge |
-| 414 | Guardians' archives | Selective forbidden knowledge relevant to ancient threat |
-| 415 | Guardian secrecy | Danger, political mistrust, inherited duty |
-| 416 | Modern rediscovery | Stronger wielders, awakened sites, retrieved knowledge |
-| 417 | Institutions' response | Deep division over rediscovery |
+
+See the [consolidated question evidence](THEIA_SOURCE_DECISION_RECOVERY.md#stage-59--q408417-locked-historical-selections-subject-to-later-decisions).
 
 ## Stage 60 / Q418–426 [CONFIRMED]
-| Q | Focus | Decision |
-|---|---|---|
-| 418 | Ancient order count/organization | Several great orders |
-| 419 | Research exchange | Libraries, visiting scholars/councils and passages |
-| 420 | Divine guidance | **D: founding teachings + occasional direct visits + trusted intermediaries** (supersedes initial A) |
-| 421 | Initial suppressors | Surviving masters |
-| 422 | Restriction types | Specific dangerous advanced techniques |
-| 423 | Resistant orders | Varied fates: hidden, destroyed, exiled |
-| 424 | Modern institutional heritage | Diverse continuity histories |
-| 425 | Rival academies | Academic competition |
-| 426 | Ancient remnants | Ruins, artifacts, structures within living cities |
+
+See the [consolidated question evidence](THEIA_SOURCE_DECISION_RECOVERY.md#stage-60--q418426-locked-historical-selections-subject-to-later-decisions).
 
 ## Stage 61 / Q427–435 [CONFIRMED]
-| Q | Focus | Decision |
-|---|---|---|
-| 427 | What defines a great order | Philosophy, specialty, purpose |
-| 428 | How many great orders | **Three or four** |
-| 429 | Government | Independent but interconnected |
-| 430 | Gods and orders | Several divine influences |
-| 431 | Could mortals challenge gods | Openly |
-| 432 | Sources of rivalry | Ethics, knowledge access and political power |
-| 433 | Prewar relations | Largely cooperative until war |
-| 434 | Surviving original order | **Exactly one** hidden survivor |
-| 435 | Regional inherited knowledge | Distinct fragments among civilizations |
+
+See the [consolidated question evidence](THEIA_SOURCE_DECISION_RECOVERY.md#stage-61--q427435-locked-historical-selections-subject-to-later-decisions).
 
 ## Stage 62 / Q436–444 [QUESTIONS ASKED, NO ANSWERS RECEIVED]
-These were presented as selectable questions, but there is no subsequent user submission resolving them:
-- 436 surviving order original mission (understanding, transformation, preservation, exploration or multi-purpose).
-- 437 how it survives (lineage, refuge, modern institutional infiltrators, mix).
-- 438 extent of preserved knowledge (archives, specialism, fragments, dormant records or mixed).
-- 439 relationship between surviving old order and Guardians (allies, rivals, unaware, one-way awareness, undecided).
-- 440 how their responsibilities differ (magical knowledge, historic truth, intervention vs preparation, overlap).
-- 441 what the dwarf capital keeps (old mechanisms, archives, living craft, combination).
-- 442 Korrath archives (chronicles, wardcraft, early divine texts, combination).
-- 443 Vaelari rediscovery specialty (experimentation, analysis, passage research, combination).
-- 444 reliability of ancient documents (accurate fragments, misinterpretation, falsification, all three).
 
-**Crucial:** An on-screen default selection is *not* a user answer. Never mark Q436–444 as finalized simply because one was preselected in an earlier form.
+See the [consolidated question evidence](THEIA_SOURCE_DECISION_RECOVERY.md#stage-62--q436444-open--unanswered).
 
 # 12 — Canon risk review and unresolved editorial issues
 
-1. **Full prior transcript gap:** The original 403-page PDF now contains Stages 1 onward and Q1–444, including earlier user selections and rejected alternatives. This archive still only gives a detailed summary of Q376 onward; consult the source decision recovery and original PDF for the full earlier rounds.
+1. **Historical source coverage:** The source index consolidates the historical Q1–444 recovery and the detailed Q376–444 evidence formerly copied here. The PDF is not in the repository; exact prompt wording and exhaustive verification retain the index's stated evidence limits.
 2. **The Second Sundering:** A very detailed Guardian/Keeper sacrifice narrative was drafted repeatedly, but user explicitly selected only the primordial Aethyr origin. Distinguish working story from locked ancient betrayal.
 3. **Four order archetypes:** “Understanding / Making / Preservation / Horizons” and naming Preservation the surviving order were proposals; confirmed count is **three or four** and exactly **one surviving**.
 4. **Alliance separation:** Old assistant proposals about normal scholarship exchange, friendly encounters and modern direct friendships across Covenant–Dominion must yield to **strict separation**. The extraordinary failed peace delegation is the exception that reinforces why peace is currently absent.
