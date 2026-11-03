@@ -156,7 +156,7 @@ Sera has knowingly concealed a restricted Guardian gate, but she is not a secret
 
 **Player:** “I'll follow them.”
 
-**NPC response:** “Then help the copyist secure the exposed records, and we can begin.”
+**NPC response:** “Then help recover our missing copyist, and we can begin.”
 
 **Completion:** “You have earned supervised access. The oldest testimony remains protected.”
 

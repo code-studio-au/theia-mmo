@@ -100,6 +100,8 @@
 
 ## Q183 — Mara and Corven
 
+**Stage scope:** These lines cover the Covenant-side report. Canonical Q183 also requires a separate Kel'vari report; its dialogue remains to be authored. The completion line follows both reports and must not collapse them into one faction's authorization.
+
 **Opening:** “Mara: The Shroud began fading when Veilbreaker destroyed the Veil. Corven: And now Nhal's unified threat has ended, though our nations remain divided.”
 
 **Player:** “Will the war end?”
@@ -130,6 +132,6 @@
 4. Q179: Oth'varen tells Sera and the player plainly. He chooses freely; there is no fake player choice to save him.
 5. Q180: the Seven cooperate knowingly and remain independent; there is no new Binding.
 6. Q181: Oth'varen sees the alignment hold, then physically dies. Coordinated inversion shatters Nhal's unified identity, memory and will, not his divine essence.
-7. Q182–Q184: the Seven survive, Nhal's fragments remain unexplained for a future expansion, the Shroud has been dissipating since Veilbreaker, and the Covenant–Dominion war remains unresolved.
+7. Q182–Q184: the Seven survive, Nhal's fragments retain an unresolved future, with no expansion outcome approved, the Shroud has been dissipating since Veilbreaker, and the Covenant–Dominion war remains unresolved.
 
 **Implementation follow-up:** distinct farewell player tones, combat phase barks, timed interjections, subtitles and accessibility, emotional pacing, epilogue variations and voice casting. Dialogue is not yet performance-final.
