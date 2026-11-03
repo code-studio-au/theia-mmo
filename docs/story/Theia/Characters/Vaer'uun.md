@@ -1,13 +1,13 @@
 ---
 type: character
 canon_status: approved-overarching-arc
-source: "[[Sources/THEIA_CHARACTER_ARCS]]"
+source: "../../THEIA_CHARACTER_ARCS.md"
 ---
 # Vaer'uun
 
-The overarching arc is approved; specific scenes, dialogue and outcomes retain the limits in the source.
+The overarching arc is approved; the [canonical Human 1–80 campaign](../Campaigns/Human_1_80_Canonical_Campaign.md) governs launch timing and outcomes. Specific scenes and dialogue retain their approval limits.
 
-![[Sources/THEIA_CHARACTER_ARCS#Vaer'uun, the First Voice — the burden of authority]]
+[Historical character arc](../../THEIA_CHARACTER_ARCS.md) — subject to later creator locks.
 
 [[Characters]] · [[Orders and Hidden Conflict]] · [[Timelines]]
 
@@ -19,4 +19,4 @@ The overarching arc is approved; specific scenes, dialogue and outcomes retain t
 
 Dies after Nhal's arrival at a major manifestation site. Despite evidence that his followers are expendable and his doctrine flawed, he chooses obedience and binds himself to its communication working. The player dismantles the supports and kills him, ending the Conclave's central authority.
 
-This dated lock supersedes earlier open-fate or proposed-interference statements. See [[Sources/DECISIONS#2026-10-29 — Creator LOCK: Conclave deaths and final succession]]. Site names, dialogue and encounter mechanics remain open.
+This dated lock supersedes earlier open-fate or proposed-interference statements. See [story decisions](../../DECISIONS.md). Site names, dialogue and encounter mechanics remain open.
