@@ -22,4 +22,4 @@ All Seven survive the Binding as distinct conscious essences. Personal names, ap
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
 
-[[Lore/Peoples/Humans|Humans]]
+[Humans](../../Lore/Peoples/Humans.md)
