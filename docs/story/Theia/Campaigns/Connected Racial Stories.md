@@ -2,9 +2,9 @@
 
 These proposed stories preserve local sovereignty, native motivations and the permanent alliance boundary. They are **Needs Review**.
 
-## Historical quest and beat labels (not verified live links)
+## Historical quest and beat labels (noncanonical references)
 
-The following 21 CR/DR labels are historical editorial references, **not active quest links**. Their source context is preserved in the root cultural-stories document and Git history; individual note targets have not been verified. Do not treat them as executable or approved quests.
+The following 21 CR/DR labels are historical editorial references, **not active quest links**. Their source context is preserved in the root cultural-stories document and Git history; the former individual Obsidian note links are not used as active navigation. Do not treat them as executable or approved quests.
 - CR-D1 — The accused craft
 - CR-D2 — The neglected gallery
 - CR-D3 — The hold's commission
@@ -29,7 +29,7 @@ The following 21 CR/DR labels are historical editorial references, **not active 
 
 ## Complete cultural routes — historical source
 
-The proposed Dwarven, Aelari, Korrath, Orc, Halfling, Vaelari, Vorrath and Kel'vari routes, plus shared-world/faction consistency notes, are preserved together in [Connected Racial Stories](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md). They remain **Needs Review** and do not override the [current Human campaign](CURRENT_HUMAN_CAMPAIGN.md).
+The proposed Dwarven, Aelari, Korrath, Orc, Halfling, Vaelari, Vorrath and Kel'vari routes, plus shared-world/faction consistency notes, are preserved together in [Connected Racial Stories](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md). They remain **Needs Review** and do not override the current Human campaign.
 
 [Current Human Campaign](CURRENT_HUMAN_CAMPAIGN.md) · [Peoples and Allegiances](../Lore/Peoples%20and%20Allegiances.md)
 
