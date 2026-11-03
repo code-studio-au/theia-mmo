@@ -447,3 +447,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Migrated `Atlas/Places/Greyfall Quarry.md`, `Storm-coast depot.md` and `Relay coast.md` from obsolete Obsidian source/related-note links to Markdown links for the root cast-and-places source, Atlas, current campaign and adjacent places/peoples/institutions (commits `6c9e731d`, `1bf742c9`, `b833e03d`).
 - [x] Live-verified five unique related destinations: Stoneford, Tidehold, Vorrath, Dominion and Vaelari. All five exist on `main`.
 - [ ] Continue Atlas and historical semantic review. Their geography remains **Needs Review** and is not a newly approved travel plan.
+
+## Chainworks and Heartlands place navigation — 3 November 2026
+
+- [x] Migrated `Atlas/Places/Chainworks.md`, `Millhaven.md` and `Valecrown.md` from obsolete Obsidian source/parent/related links to Markdown links for the root cast-and-places source, Atlas, current campaign and related notes (commits `79fc4a7f`, `377ea42b`, `11e5d214`).
+- [x] Live-verified four unique related destinations: The Unmade, Lantern Redoubt, Stoneford and Tidehold. All exist on `main`.
+- [ ] Retain **Needs Review** geography and continue checking the remaining place notes and source-reference graph; no map placement was approved by these edits.
