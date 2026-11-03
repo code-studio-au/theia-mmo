@@ -12,6 +12,14 @@ Historical source details retain their recorded approval limits; the [current ca
 > [!important] Approval scope
 > The established starting role is approved. Campaign movements, service assignments and proposed endings remain Needs Review.
 
+## Creator-approved foundation — 15 October 2026
+
+**LOCKED within this scope:** The following role, history and broad arc are creator-approved. Current campaign chronology and outcomes take precedence over historical level/act wording. Exact quest staging, other royal family members and succession arrangements remain OPEN.
+
+**Corven Vaelmont** is Covenant's hereditary **High Ruler**, from a separate branch of the human royal dynasty and a distant relation of Aldren. He governs the four-sovereign alliance from its multicultural coastal capital, not the human inland capital. A capable negotiator, he balances human, dwarven, Aelari and Korrath obligations. His caution may delay action. He becomes important in the alliance's overseas war, Shroud expedition and response to the Anchor network. His stronger support for the original peace negotiations than Aldren's remains a possible relationship detail, not a fixed event.
+
+Provenance: [original approved court record](https://github.com/code-studio-au/theia-mmo/blob/a7ca2aa17e4c2f1fcb40b7392fe68164af579b1a/docs/story/THEIA_MODERN_STORY_REVELATION_TIMELINE.md#approved-human-royal-court-characters-15-october-2026). This foundation is distinct from the proposed development and ending sections below.
+
 ## Home and responsibility
 Tidehold alliance government; hereditary High Ruler from a different dynastic branch
 

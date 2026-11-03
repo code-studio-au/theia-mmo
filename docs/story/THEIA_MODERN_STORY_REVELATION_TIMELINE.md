@@ -1,8 +1,10 @@
 # THEIA — MODERN STORY AND REVELATION TIMELINE
 
-**Status:** Working narrative-development document. This separates established historical truth from proposed player-facing disclosure, without making every proposed quest, character encounter or revelation schedule canon.
+**Status:** **WORKING** disclosure-design reference with scoped **LOCKED** structural principles. Historical phases are not the current Human quest chronology. Later canonical outcomes and reveal gates supersede the old 1–60 plan.
 
-**Authority:** [THEIA_INTERWOVEN_CHRONICLE.md](THEIA_INTERWOVEN_CHRONICLE.md) establishes what actually happened. This document establishes a recommended structure for how the MMO gradually reveals that history. [THEIA_WORLD_BIBLE.md](THEIA_WORLD_BIBLE.md) records broader world canon. Do not treat proposed reveal beats as already-approved events.
+**Authority:** Follow the [source hierarchy and status definitions](README.md#approval-and-precedence). The [World Bible](THEIA_WORLD_BIBLE.md) and [Interwoven Chronicle](THEIA_INTERWOVEN_CHRONICLE.md) establish world facts and historical narrative, subject to creator decisions. The [canonical Human 1–80 campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md) owns current quest order, revelations and permanent outcomes. This document retains disclosure principles, proposed examples and cross-racial structural guidance; it does not establish a competing timeline.
+
+**Historical provenance:** The [pre-consolidation timeline](https://github.com/code-studio-au/theia-mmo/blob/a7ca2aa17e4c2f1fcb40b7392fe68164af579b1a/docs/story/THEIA_MODERN_STORY_REVELATION_TIMELINE.md) preserves the earlier phase/act plan and approval wording. Superseded launch endings and unresolved-outcome claims are not future alternatives. **ARCHIVED** means preserved, not approved.
 
 ## 1. The core narrative principle
 
@@ -30,6 +32,8 @@ The **magical awakening** is genuine. The resonance network built by the Conclav
 These are **recommended starting knowledge boundaries**, not a claim that every individual within a group possesses identical information. Exceptional witnesses and secret custodians may know more.
 
 ## 3. Recommended player revelation sequence
+
+**Historical WORKING framework:** The phases below preserve disclosure reasoning and possible scene approaches. They do not move current Human quests or replace canonical reveal gates. Any use in other racial campaigns requires its own approval; it is not an approved Dominion campaign.
 
 ### Phase I — Local lives and the first anomalies
 
@@ -101,11 +105,13 @@ The possibility of **resonance inversion** emerges from recovered stabilisation 
 
 The underlying six-field structures can potentially be reconfigured so that a captured installation reinforces the Shroud rather than straining it. The redistribution of accessible primordial energy may be partly preserved, but the method requires difficult reconstruction and may have consequences that remain uncertain.
 
-A Minor Resonator can provide a controlled proof of concept; Regional Anchors require coordinated adjustment of supporting structures; Major Anchors may demand simultaneous control of several linked sites. **A proven large-scale inversion, preservation of every magical benefit, and release of the Seven are not established outcomes.**
+A Minor Resonator can provide a controlled proof of concept; Regional Anchors require coordinated adjustment of supporting structures; Major Anchors may demand simultaneous control of several linked sites. The historical uncertainty about whether large-scale inversion or the Seven's release occurs is **SUPERSEDED** by the canonical Human campaign. Preservation of every magical benefit is not promised. Do not infer that inversion itself releases the Seven; the canonical campaign distinguishes the Veilbreaker event from the final inversion.
 
 The discovery creates a meaningful strategic disagreement: destroy a dangerous working immediately, or risk a harder operation to capture and reconfigure it. Neither choice should be made trivial.
 
 ## 4. Reveal gates: what must not be disclosed prematurely
+
+These are **WORKING disclosure rationales**, not a second gate inventory. Exact Human gates follow the canonical campaign; the old general descriptions cannot advance or postpone them.
 
 | Revelation | Earliest recommended point | Reason |
 | --- | --- | --- |
@@ -117,7 +123,7 @@ The discovery creates a meaningful strategic disagreement: destroy a dangerous w
 | Oth'varen was the Sixth Scholar | After trust and significant historical evidence | Preserve his role as a living source of truth |
 | The Binding permanently bound the Seven through Keeper's concealment | Later major historical revelation | Preserve the central moral conflict |
 | Resonance inversion is possible | After meaningful six-field research and Anchor encounters | Make it a discovery, not an opening mechanic |
-| The Seven can be freed | **Not established** | Do not promise an ending the canon has not resolved |
+| The Seven can be freed | Follow the canonical Veilbreaker revelation and outcome | The former unresolved-ending warning is SUPERSEDED; do not attribute their release to the Anchor network |
 
 ## 5. Alliance separation and narrative convergence
 
@@ -129,7 +135,7 @@ The Guardians can aid individuals from both sides through separate cells. They a
 
 ## 6. Character disclosure
 
-**Oth'varen:** Begin with a trusted but enigmatic expert or distant source of evidence, subject to later character design. His knowledge of the First Anchor is firsthand; his transformed nature and struggle with corruption are not public information. His identity as the sixth scholar should be a significant revelation, not a character introduction.
+**Oth'varen:** His established public identity is the Grey Surveyor until the canonical Q097 reveal, not an identity still awaiting design. His knowledge of the First Anchor is firsthand; his transformed nature and struggle with corruption are not public information. His identity as the sixth scholar should be a significant revelation, not a character introduction.
 
 **The five Conclave founders:** Early appearances may be indirect through agents, doctrine, recovered work or unusual magical signatures. After formal identification, use both their personal names and titles: **Vaer'uun, the First Voice; Thes'var, the Architect; Su'vareth, the Veiled Hand; Oma'vira, the Harbinger; Khor'vun, the Warden.** Their ancient personal names need not be publicly known at the start.
 
@@ -139,25 +145,13 @@ The Guardians can aid individuals from both sides through separate cells. They a
 
 ## 7. Proposed launch endpoint and later campaigns
 
-A launch finale can involve a consequential victory against a senior Unmade operation and a dangerous modern Anchor without killing Nhal or dismantling the whole network. The working raid concept **The Severed Chain** concerns severing an Anchor's supports. Whether inversion becomes a tested option during the launch campaign or a later expansion remains open.
+**SUPERSEDED:** The former limited 1–60 launch victory, delayed Shroud entry, undecided launch inversion and unresolved liberation of the Seven no longer define the Human campaign. Use the canonical 1–80 narrative for their placement and outcomes. Nhal's fragments remain intentionally OPEN; do not invent their future.
 
-The **Shrouded Lands** remain a later campaign destination. Restored larger Passage connections, separate Covenant and Dominion entry bases, Kel'vari enclaves and contested ancient sites belong to future development, not events already completed at launch.
-
-The complete truth about Keeper, the Seven and Aethyr can be distributed across later discoveries. A permanent new containment, liberation of the gods or reunion into Aethyr remains unresolved.
+The historical Severed Chain support/evacuation concepts remain in the [Legacy Ideas Archive](Theia/Campaigns/Human_Legacy_Sidequest_Zone_Character_Archive.md). They cannot replace the canonical finale or require a raid for essential story. Original endpoint wording remains in the pinned historical source above.
 
 ## 8. Decisions to develop next
 
-The following are recommendations requiring separate approval, not locked canon:
-
-1. **Opening player perspective:** the precise first anomaly or local incident for each of the eight starting peoples.
-2. **Guardian contact:** the first recurring character who introduces players to the hidden investigation without revealing Oth'varen.
-3. **Oth'varen's modern identity:** public role, concealment, relationships, limits and the circumstances of his revelation.
-4. **First Minor Resonator investigation:** its location, symptoms, witnesses, technical evidence and outcome.
-5. **Shattered Delegation evidence:** the sequence of clues and the political consequences of partial disclosure.
-6. **Inversion reveal timing:** whether the first proof of concept occurs in the launch campaign or later.
-7. **Launch climax:** the specific senior Unmade antagonist, Anchor installation and scale of victory.
-
-The recommended next creative task is to define the **opening knowledge and first anomaly for each playable race**, then build a shared but faction-separated investigation structure that leads towards the first Minor Resonator.
+Develop only genuinely **OPEN** details: unapproved openings and local antagonists for the other playable peoples; scene presentation, exact dialogue and encounter mechanics within approved boundaries. The Human first anomaly, recurring contacts, Grey Surveyor identity, political investigation, inversion discovery and launch climax are no longer an unresolved planning queue. Follow their current canonical sequence rather than deciding them again.
 
 ## Creator-approved launch structure — racial stories and shared main campaign (15 October 2026)
 
@@ -165,52 +159,40 @@ The recommended next creative task is to define the **opening knowledge and firs
 
 **Locked human opening arc:** An ambitious human court official knowingly cooperated with intermediaries of **Su'vareth, the Veiled Hand**, to compromise the Shattered Delegation, intending to have the human ruler's trusted adviser killed and take that position. He did not know the Unmade's full purpose or anticipate the complete devastation of the negotiations. He subsequently became the King's new adviser, while the Unmade retained leverage over him through evidence of his complicity. His motivations combine ambition, hostility towards peace, political conviction and self-preservation. He is a knowingly culpable human collaborator, **not necessarily magically corrupted or privy to Nhal's identity**.
 
-The human level 1–20 racial arc moves from local supply theft and ordinary human outlaws through suspicious royal correspondence and a justified visit to the human **racial capital** around levels 10–15. The player encounters the King and his new adviser, hears the King's sincerely held but incomplete account of the Shattered Delegation and its personal cost, then follows a misleading trail that seems to implicate Dominion. Corroborated evidence eventually connects the new adviser to the original security compromise and subsequent concealment. The player challenges him **through the King and lawful royal authority**, not by casually attacking a court official. A level-20 climax may involve an attempted arrest, escape and pursuit through a concealed route, with capture preferred as a possible outcome; exact staging, identities and final disposition remain open. The King can recognise the adviser's guilt without immediately accepting that Dominion was wholly innocent or that a primordial conspiracy exists. This provides a satisfying local conclusion and a gateway into the larger mystery, **not the complete Shattered Delegation revelation**.
+The human level 1–20 racial arc moves from local supply theft and ordinary human outlaws through suspicious royal correspondence and a justified visit to the human **racial capital** around levels 10–15. The player encounters the King and his new adviser, hears the King's sincerely held but incomplete account of the Shattered Delegation and its personal cost, then follows a misleading trail that seems to implicate Dominion. Corroborated evidence eventually connects the new adviser to the original security compromise and subsequent concealment. The player challenges him **through the King and lawful royal authority**, not by casually attacking a court official. A level-20 climax may involve an attempted arrest, escape and pursuit through a concealed route, with capture preferred in that historical proposal. The canonical Human campaign now fixes Cassian's capture alive; only unapproved presentation details remain OPEN. The King can recognise the adviser's guilt without immediately accepting that Dominion was wholly innocent or that a primordial conspiracy exists. This provides a satisfying local conclusion and a gateway into the larger mystery, **not the complete Shattered Delegation revelation**.
 
 **Political constraint:** The human King rules the inland human kingdom, while Covenant's hereditary High Ruler belongs to a separate branch of the royal dynasty and governs from the distinct multicultural coastal alliance capital. Do not conflate these offices or capitals. King Aldren Vaelmont, Lord Edric Halewyn, Lord Cassian Veyr, Mara Thorne and Garrick Ashford are creator-approved in the royal court character record below. Elara Fenwick and Covenant High Ruler Corven Vaelmont are also approved; precise quest staging and unapproved biographical details remain open.
 
-**Later racial questlines:** Each people retains continuing local and political stories after the shared campaign opens. Covenant and Dominion remain hostile; characters can discover different pieces of the Unmade conspiracy without a public cross-alliance partnership. The eight other opening designs, their precise local antagonists and their relation (if any) to the Unmade are still to be developed.
+**Later racial questlines:** Each people retains continuing local and political stories after the shared campaign opens. Covenant and Dominion remain hostile; characters can discover different pieces of the Unmade conspiracy without a public cross-alliance partnership. The seven other opening designs, their precise local antagonists and their relation (if any) to the Unmade are still to be developed.
 
 ## Creator-approved five-act launch campaign (15 October 2026)
 
-The racial level 1–20 stories are **Act I**, not a separate prologue. They introduce the world, its political conflicts and early hints of the wider mystery. The approved narrative planning structure is:
+**Historical approval scope:** The racial openings were Act I, not a separate prologue. The former five-act 1–60 bands, titles and limited-victory endpoint are **SUPERSEDED** for the Human campaign by the canonical 1–80 structure. Their original table remains in the pinned historical source and the [decision ledger](DECISIONS.md); do not reproduce it as a second current campaign outline.
 
-| Act | Levels | Working title | Focus |
-| --- | --- | --- | --- |
-| **I** | **1–20** | **Racial Origins** | Eight distinct racial stories, local conflicts, first clues; for humans, the royal adviser betrayal |
-| **II** | **20–30** | **Shadows of Conflict** | Alliance warfare, covert manipulation, Minor Resonators |
-| **III** | **30–40** | **The Hidden Design** | Guardians, Kel'vari, First Anchor, The Binding, Unmade and Regional Anchors |
-| **IV** | **40–50** | **Echoes of the Sundering** | First Shroud expedition near level 40, introduction to dedicated WvW, deeper Kel'vari and Oth'varen revelations |
-| **V** | **50–60** | **The Severed Chain** | Major Anchor network, resonance inversion, limited launch victory without defeating Nhal |
+The retained **LOCKED** accessibility principle is that each major campaign act has a meaningful **solo-accessible story dungeon or equivalent climax**, with eight distinct racial climaxes possible in Act I. Story-mode dungeons and solo quests provide the full essential narrative; organised raids and challenging group dungeons are optional, adding rewards and supplementary lore without gating progression. Racial questlines continue beyond level 20 alongside the main story, and ordinary levelling remains possible independently. Later acts can contain progressively more overall content as XP requirements increase, without requiring proportionally more mandatory story quests. The act bands are narrative planning ranges, not rigid level gates.
 
-The titles remain working titles. Each act has a meaningful **solo-accessible story dungeon or equivalent climax**, with eight distinct racial climaxes possible in Act I. Story-mode dungeons and solo quests provide the full essential narrative; organised raids and challenging group dungeons are optional, adding rewards and supplementary lore without gating progression. Racial questlines continue beyond level 20 alongside the main story, and ordinary levelling remains possible independently. Later acts can contain progressively more overall content as XP requirements increase, without requiring proportionally more mandatory story quests. The act bands are narrative planning ranges, not rigid level gates.
-
-The first Shroud expedition is proposed for the transition into Act IV, after players learn enough about the Guardians, Kel'vari, Unmade and The Binding to understand its significance. WvW in a dedicated Shroud frontier must not gate solo story progression. Exact Passage access, PvP systems, story dungeon locations, bosses and act endings remain open for development.
+The former Act-IV expedition placement is historical, not a current reveal gate. The canonical campaign governs first Shroud access and what the player knows then. WvW in a dedicated Shroud frontier must not gate solo story progression. Exact Passage access, PvP systems, story dungeon locations, bosses and act endings remain open for development.
 
 ## Approved campaign travel and cross-continent progression (15 October 2026)
 
-Every player must make meaningful story visits to **all four racial capitals of their own alliance**, plus the distinct alliance capital, during the five-act campaign. The player's home capital features in Act I; the other racial capitals are introduced across later acts for significant quests involving their leaders, institutions and local concerns. The alliance capital should recur rather than appear only at level 60. Visit order may vary by starting race. Players remain free to travel to allied capitals earlier for social, trade, exploration and profession purposes; only formal story visits occur at prescribed milestones. The same principle applies to Covenant and Dominion.
+Every player must make meaningful story visits to **all four racial capitals of their own alliance**, plus the distinct alliance capital, during the campaign. The player's home capital features in Act I; the other racial capitals are introduced across later acts for significant quests involving their leaders, institutions and local concerns. The alliance capital should recur rather than appear only at the finale. Visit order may vary by starting race. Players remain free to travel to allied capitals earlier for social, trade, exploration and profession purposes; only formal story visits occur at prescribed milestones. The same principle applies to Covenant and Dominion.
 
-Every character also undertakes **several major expeditions to the opposing continent**, beginning in Act II (levels 20–30) and recurring through Acts III–V. A proposed sequence is: first exposure to the overseas war and established coastal footholds; a later intelligence or artifact mission; a larger operation exploring the consequences of conflict; and a high-stakes mission involving Unmade activity or the Anchor network. Exact destinations, counts, and missions are open. Enemy-continent travel must respect existing maritime routes, supply lines and military footholds, rather than placing unexplained foreign forces deep inside racial homelands.
+Every character also undertakes **several major expeditions to the opposing continent**, with their Human placement governed by the canonical campaign rather than the old act bands. A proposed sequence is: first exposure to the overseas war and established coastal footholds; a later intelligence or artifact mission; a larger operation exploring the consequences of conflict; and a high-stakes mission involving Unmade activity or the Anchor network. Exact destinations, counts, and missions are open. Enemy-continent travel must respect existing maritime routes, supply lines and military footholds, rather than placing unexplained foreign forces deep inside racial homelands.
 
-**World PvP and Shroud WvW are distinct.** Earlier enemy-continent visits introduce the ordinary Covenant–Dominion war and possible open-world PvP. Around level 40, the Shroud introduces a dedicated large-scale WvW frontier with territorial and supply objectives. Required story missions on either continent and within the Shroud must remain solo-accessible without mandatory PvP victories; protected approaches or story instances can support this. WvW participation remains optional for completing the main narrative.
+**World PvP and Shroud WvW are distinct.** Earlier enemy-continent visits introduce the ordinary Covenant–Dominion war and possible open-world PvP. The historical proposal places a dedicated large-scale Shroud WvW frontier with territorial and supply objectives around level 40; this is **WORKING** placement, not an approved current story gate or implemented PvP system. Required story missions on either continent and within the Shroud must remain solo-accessible without mandatory PvP victories; protected approaches or story instances can support this. WvW participation remains optional for completing the main narrative.
 
 Travel should advance character relationships, cultural understanding and meaningful discoveries, not consist solely of courier errands. Allied capitals must feel like sovereign racial centres, separate from the multicultural alliance capital. These are approved structural principles; specific routes, quests, encounter designs and level placements are not yet locked.
 
 ## Approved human royal court characters (15 October 2026)
 
-**King Aldren Vaelmont** rules the human kingdom, separately from Covenant's High Ruler. His grief over the Shattered Delegation and the death of his trusted counsellor has deepened his distrust of Dominion, though he remains a capable ruler who once supported negotiations.
+The seven approved roles, histories and broad arcs have one character-specific home:
 
-**Lord Edric Halewyn**, the former First Royal Counsellor, was Aldren's trusted confidant and a pragmatic advocate of peace. He died in the Shattered Delegation. His correspondence and former colleagues inform the later investigation.
+- [King Aldren Vaelmont](Theia/Characters/Campaign%20Cast/King%20Aldren%20Vaelmont.md#creator-approved-foundation--15-october-2026)
+- [Lord Edric Halewyn](Theia/Characters/Campaign%20Cast/Lord%20Edric%20Halewyn.md#creator-approved-foundation--15-october-2026)
+- [Lord Cassian Veyr](Theia/Characters/Campaign%20Cast/Lord%20Cassian%20Veyr.md#creator-approved-foundation--15-october-2026)
+- [Mara Thorne](Theia/Characters/Campaign%20Cast/Mara%20Thorne.md#creator-approved-foundation--15-october-2026)
+- [Garrick Ashford](Theia/Characters/Campaign%20Cast/Garrick%20Ashford.md#creator-approved-foundation--15-october-2026)
+- [Elara Fenwick](Theia/Characters/Campaign%20Cast/Elara%20Fenwick.md#creator-approved-foundation--15-october-2026)
+- [Corven Vaelmont](Theia/Characters/Campaign%20Cast/Corven%20Vaelmont.md#creator-approved-foundation--15-october-2026)
 
-**Lord Cassian Veyr**, the current First Royal Counsellor, is a competent administrator who knowingly helped intermediaries connected to the Veiled Hand compromise the delegation to eliminate Edric and gain his office. He did not know the full Unmade plan. His contacts retain leverage over him, and he initially appears helpful to the player.
-
-**Mara Thorne** is a methodical senior Royal Investigator who verifies evidence and becomes the player's recurring ally. The human Act I investigation culminates around level 20 in a challenge to Cassian through the King's lawful authority, without revealing the complete conspiracy or ending the war.
-
-**Garrick Ashford**, the human Royal Marshal, is a veteran career commander whose loyalty is to the kingdom and the soldiers he leads. He opposed the Shattered Delegation negotiations on strategic grounds but had no involvement in the attack. He respects Edric's integrity, mistrusts Cassian's selective use of military intelligence, and becomes a recurring military contact for overseas expeditions and later Shroud operations.
-
-**Elara Fenwick**, a respected rural militia captain and Regional Warden, is the human player's first major mentor. She knows the starting district's people and problems, guides the player through local responsibilities and recognises when recovered royal correspondence requires Mara's investigation. She continues to represent the effect of larger events on the player's home region throughout the campaign.
-
-**Corven Vaelmont** is Covenant's hereditary **High Ruler**, from a separate branch of the human royal dynasty and a distant relation of Aldren. He governs the four-sovereign alliance from its multicultural coastal capital, not the human inland capital. A capable negotiator, he balances human, dwarven, Aelari and Korrath obligations. His caution may delay action. He becomes important in the alliance's overseas war, Shroud expedition and response to the Anchor network. His stronger support for the original peace negotiations than Aldren's remains a possible relationship detail, not a fixed event.
-
-These seven character names, roles, histories and broad arcs are creator-approved. Exact quest staging, the royal family's other members and succession arrangements remain open.
+Each card preserves the complete approved paragraph and its original provenance. Exact quest staging, other royal family members and succession remain OPEN; Corven's stronger support for peace remains a proposal. The canonical campaign governs current chronology and outcomes.
