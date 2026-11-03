@@ -489,3 +489,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Found obsolete `../../Sources/THEIA_WORLD_BIBLE.md` source metadata across the seven `Theia/Characters/Divine/` notes; the surviving root story World Bible is reached from that folder via `../../../THEIA_WORLD_BIBLE.md`.
 - [x] Corrected The Keeper and The Guardian source metadata, source-account links, parent navigation and historical Binding reference (commits `76cdaba1`, `b0c2f403`). Their confirmed-foundation/details-open statuses remain unchanged.
 - [ ] Apply the same verified path correction to Judge, Warrior, Seeker, Shaper and Ascendant, then verify their related-note links. Do not claim all seven complete yet.
+
+## Seven divine source paths completed — 3 November 2026
+
+- [x] Corrected the remaining five divine character source metadata and source-account links to the root World Bible: Judge (`5e2d0dc8`), Warrior (`05dce4eb`), Seeker (`9d5d7e34`), Shaper (`5269cb17`) and Ascendant (`8528b332`). Keeper and Guardian were corrected in the preceding batch. All seven now use `../../../THEIA_WORLD_BIBLE.md` and link to the Seven Gods topic index.
+- [x] Preserved confirmed-foundation/details-open status and original creator/patron descriptions; no divine outcome was changed.
+- [ ] Continue related-note wiki-link target checks and the remaining full repository audit before retiring the old branch and tracker.
