@@ -727,3 +727,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Corrected World Bible source paths and migrated Obsidian links in Aelari, Dwarves and Halflings (`feb549df`, `23a75328`, `d75e2223`), plus Humans, Kel'vari and Korrath (`3666d8d5`, `f1ed9f1b`, `52b04737`).
 - [x] Preserved race, faction and character approval distinctions; no proposed cast material was promoted to canon.
 - [ ] Finish Orcs, Vaelari and Vorrath; then verify all nine peoples' Markdown links against the live repository tree. Check remaining Lore files separately.
+
+## Nine peoples' lore files fully verified — 3 November 2026
+
+- [x] Migrated Orcs, Vaelari and Vorrath notes to correct World Bible paths and direct Markdown links (commits `2bffeed3`, `0b86bfad`, `fa1c60f4`). All nine `Lore/Peoples/*.md` notes now have their source and wiki-link migrations completed.
+- [x] Re-fetched all nine peoples' notes against live tree `fa1c60f4`: **119 relative Markdown links checked, zero missing file targets, zero remaining `[[...]]` wiki-links**.
+- [ ] Continue the remaining Lore root and Institutions pages, then complete the 28-file directory audit and historical semantic checks.
