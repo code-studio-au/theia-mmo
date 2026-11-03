@@ -32,3 +32,7 @@
 - The root H-series register remains **temporarily** until mapping approval. The duplicated Obsidian source copy has already been retired; do not recreate it.
 - Earlier playable packs and implementation briefs were retired after consolidation; continue checking any surviving notes for unique mechanics and dialogue before deletion.
 - Unrelated engine and world lore documentation is outside this Human campaign cleanup.
+
+## Verified branch provenance — 3 November 2026
+
+GitHub comparison of `main` against `story/launch-main-story-1-60` reports the historical story branch **0 commits ahead and 534 behind** `main` at the time checked. This means no branch-only commits require cherry-picking; it does **not** establish semantic equivalence of all old story documents or authorize deletion of the protected H/HS source register. Retire the branch only after final content/backlink verification and an authorized branch deletion action. The 92 H + 24 HS objective/stage comparisons are documented, but editorial ID mappings remain unapproved.
