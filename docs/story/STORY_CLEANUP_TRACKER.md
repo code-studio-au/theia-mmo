@@ -787,3 +787,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Migrated DR-H1, DR-H2 and DR-H3 source, index, Nemi Brindlewick and Dominion wiki-links to surviving Markdown files (commits `3e6ab074`, `206ff461`, `c41ed223`). Preserved their **Needs Review** quest proposal status and Nemi's no-defection/no-cross-alliance-cooperation boundaries.
 - [x] Re-fetched all three notes: **15 Markdown links**, zero missing file targets and zero remaining Obsidian wiki-links.
 - [ ] Nine Connected Stories remain (DR-O, DR-R, DR-V), then a full 21-file audit and Campaigns root/Encounters review.
+
+## Orc Dominion companion story migration — 3 November 2026
+
+- [x] Migrated DR-O1, DR-O2 and DR-O3 to root connected-racial provenance, index, Captain Rukhan Graal and Covenant/Dominion Markdown links (commits `3ee81fd8`, `99ddafcaa`, `812efcdf`).
+- [x] Preserved **Needs Review** status and native Dominion military agency; local defence does not end the war or create cross-alliance friendship.
+- [ ] Six Connected Stories remain (DR-R and DR-V); run full 21-file audit after their migration.
