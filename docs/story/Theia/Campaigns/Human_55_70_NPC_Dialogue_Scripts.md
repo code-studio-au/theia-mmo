@@ -350,7 +350,7 @@ Khor'vun operates a distributed Anchor network that amplifies the original tear.
 
 **Response:** “We don't know its full shape. The instruments show something growing, slowly. First we get our people to safety.”
 
-**Completion / aftermath:** “The evacuation is complete. The Shroud has begun to fade, and it will not return simply because we wish it.”
+**Completion / aftermath:** “The evacuation is complete. The Shroud is still fading, and it will not return simply because we wish it.”
 
 **In-progress fallback:** “Complete the agreed work and return with verified evidence. We cannot afford an assumption.”
 

@@ -180,7 +180,7 @@ Su'vareth orchestrated the Shattered Delegation, planting conflicting evidence t
 
 **Player:** “Did you know about this plan?”
 
-**Response:** “Not this operation. I can read its language and recognize its methods. That is not the same as knowing what Khor'vun has built.”
+**Response:** “Not this operation. I can read its language and recognize its methods. That is not the same as knowing what this operation has built.”
 
 **Completion:** “Take the destination to Sera now. We have enough to act without waiting for perfect understanding.”
 
@@ -262,7 +262,7 @@ Su'vareth orchestrated the Shattered Delegation, planting conflicting evidence t
 
 **Opening:** “These schematics show the Anchors being driven together, their resonance directed toward the original tear.”
 
-**Player:** “Are the Anchors holding Nhal prisoner?”
+**Player:** “Are the Anchors holding something prisoner?”
 
 **Response:** “No. Nothing in these plans describes a prison. They are being used to widen something that should have remained closed.”
 

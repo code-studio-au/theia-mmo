@@ -209,7 +209,7 @@
 | Encounter barks overlap | Priority system favors critical subtitle; never hides objective state |
 | Player fails an escort | Safe retry without permanent NPC loss |
 | Boss killed in group | Each eligible player receives credit independently; story instance stays solo-accessible |
-| Player reaches Q175 below level 80 | Finale remains locked |
+| Player reaches Q175 below level 80 | **OPEN:** expected eligibility behavior depends on explicit approval of the proposed Q174 level-80 gate; do not infer a hard lock from the chapter band. See [finale authoring decisions](Human_Q158_Q184_Rust_Authoring_Review.md#remaining-authoring-decisions-for-the-single-manifest). |
 | Q181 completes | Oth'varen physically dead; Nhal identity shattered, essence remains; Seven survive |
 
 **Remaining production blockers:** engine encounter state machines, actor spawn IDs, exact ability timings, combat balance, camera blocking, voice casting, localization keys, subtitle priority and automated runtime tests.
