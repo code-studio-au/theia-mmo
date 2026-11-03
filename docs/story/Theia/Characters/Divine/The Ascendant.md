@@ -22,6 +22,6 @@ All Seven survive the Binding as distinct conscious essences. Personal names, ap
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
 
-[[Lore/Peoples/Vorrath|Vorrath]]
+[Vorrath](../../Lore/Peoples/Vorrath.md)
 
-[[Kel'vari]] · [[Korrath]] · [[The Keeper]] · [[Creation of the Kel'vari]]
+[Kel'vari](../../Lore/Peoples/Kel%27vari.md) · [Korrath](../../Lore/Peoples/Korrath.md) · [The Keeper](The%20Keeper.md) · Creation of the Kel'vari (historical event label)
