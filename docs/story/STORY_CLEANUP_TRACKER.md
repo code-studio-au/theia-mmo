@@ -275,3 +275,10 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Identified non-equivalent historical finale claims: premature Nhal naming, early Thes'var intervention, old Keld/Voss outcomes, severance branch, and unconfirmed Cassian sentencing. The locked level-80 finale remains unchanged.
 - [ ] Review source dialogue, contacts, evidence consequences and regional optional ideas before approving historical mappings or deleting original register. H4 and H5 objective/prerequisite triage is complete, **not** semantic approval.
 - [ ] Continue 24 HS optional entries, other historical lore/navigation duplicates and full-tree link validation. Keep this tracker until verified closure.
+
+## HS optional quest stage comparison — 3 November 2026
+
+- [x] Compared all 24 HS historical optional hooks to live proposed Q-stage descriptions and recorded historical access conditions in `Theia/Campaigns/Human_Legacy_Sidequest_Zone_Character_Archive.md` (commit `425a08b4`).
+- [x] Preserved distinct thematic ideas where multiple HS hooks point to one current Q (HS-02/HS-09, HS-04/HS-10/HS-11, HS-13/HS-15, HS-17/HS-18), and flagged HS-19, HS-22 and HS-24 access/outcome differences. No active quest count, runtime IDs or canonical outcomes changed.
+- [ ] Review source-specific NPC dialogue, geography, decisions, access and consequences before any mapping approval. Historical 92 H + 24 HS source entries now have documented objective/stage comparison coverage, **not** 116 approved equivalences.
+- [ ] Finish remaining legacy file/backlink reconciliation, full-tree link audit, branch retirement and final tracker deletion only after verification.
