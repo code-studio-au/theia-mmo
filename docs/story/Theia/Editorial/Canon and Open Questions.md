@@ -15,4 +15,4 @@ See [World Bible — open decisions and consistency checks](../../THEIA_WORLD_BI
 ## Evidence limits
 The original 403-page PDF and complete generated question/answer registers are absent. This import is not an independent audit. Chronicle connective history and the complete human campaign retain their stated review limits.
 
-[[Vault Import Record]] · [[Welcome|Home]]
+[Story import provenance](../../IMPORT_MANIFEST.json) · [Story documentation index](../../README.md)
