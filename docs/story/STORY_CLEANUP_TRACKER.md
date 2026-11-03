@@ -296,3 +296,10 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Removed two unverified Aethyr/Nhal file links from the character index after direct fetches returned 404 (commit `8eea1037`). Divine context remains accessible through the Seven Gods and current campaign links.
 - [ ] Continue replacing remaining obsolete `.base` embeds and source-mirror wiki-links in other index pages. Verify each target against the live repository before claiming full link health.
 - [ ] Do not retire historical source evidence, story branch or this tracker until final validation is complete.
+
+## Additional index retirement — 3 November 2026
+
+- [x] Replaced stale Obsidian source links and the obsolete five-climax active roster in `Theia/Campaigns/Story Encounters.md` with a historical note and current 1–80 narrative/encounter links (commit `94eb392d`). The original titles remain in the historical dungeon source and Git history.
+- [x] Replaced obsolete `.base` embed and source-mirror references in `Theia/Lore/Lore and World.md` with root story sources and subject navigation (commit `703c9bb8`).
+- [x] Replaced retired source-mirror wiki-link navigation in `Theia/History/Chronicles and History.md` with Markdown links to surviving history/lore sources (commit `74948ecb`).
+- [ ] Continue auditing other index pages, full link targets, original H/HS dialogue and consequences. The old branch and this tracker remain until complete.
