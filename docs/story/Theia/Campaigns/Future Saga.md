@@ -226,10 +226,10 @@ Expansion count, exact dates, deaths among the Seven and the new people's identi
 
 ## Governing foundation and related notes
 
-[Historical Timeline](../History/Historical%20Timeline.md) · [Timelines](../History/Timelines.md) · Human Campaign · [Resonance Inversion](../Lore/Resonance%20Inversion.md) · Anchors and the Shroud · [The Seven Gods](../Lore/The%20Seven%20Gods.md) · [The Corrupted Conclave](../Lore/The%20Corrupted%20Conclave.md)
+[Historical Timeline](../History/Historical%20Timeline.md) · [Timelines](../History/Timelines.md) · [Current Human Campaign](CURRENT_HUMAN_CAMPAIGN.md) · [Resonance Inversion](../Lore/Resonance%20Inversion.md) · [Anchors and the Shroud](../Lore/Anchors%20and%20the%20Shroud.md) · [The Seven Gods](../Lore/The%20Seven%20Gods.md) · [The Corrupted Conclave](../Lore/Institutions/The%20Corrupted%20Conclave.md)
 
 [Established Anchor and inversion foundation](../../THEIA_WORLD_BIBLE.md) · [Approved launch structure](../../THEIA_MODERN_STORY_REVELATION_TIMELINE.md) · [Earlier future campaign possibilities](../../THEIA_INTERWOVEN_CHRONICLE.md).
 
 ## Related launch restructure draft
 
-Theia main story from level 1 to 60 develops a proposed five-act launch ending with Nhal's shattering. Its revised act placements, mainland Chainworks and launch-finale scope remain **Needs Review**. The dated locks above retain their stated scope until the creator approves those replacements.
+The historical 1–60 main-story draft developed a proposed five-act launch ending with Nhal's shattering; its old level bands are superseded by the canonical 1–80 campaign. Its revised act placements, mainland Chainworks and launch-finale scope remain **Needs Review**. The dated locks above retain their stated scope until the creator approves those replacements.
