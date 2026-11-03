@@ -424,3 +424,8 @@ Do not tick work merely because it is planned or described in older reports. Rec
 
 - [x] Converted 13 historical milestone wiki-links in `Theia/History/Historical Timeline.md` into plain event labels, preserving the event order and descriptive claims (commit `f2793917`). Removed additional obsolete wiki-links in the present-day marker. Sampled First Sundering, Second Sundering and Shattered Delegation paths under `History/` were absent, but **not all 13 possible note locations were exhaustively searched**.
 - [ ] Verify individual event-page locations and incoming links separately if needed; the timeline labels are now historical navigation without asserting live per-event file targets. Keep current 1–80 campaign as narrative authority.
+
+## World Directory historical redirect status correction — 3 November 2026
+
+- [x] Updated `Theia/Lore/World Directory.md` to reflect the earlier recorded 281/281 historical Markdown file-target check instead of incorrectly saying the converted archive had never been verified (commit `936d2ba7`). This is a correction to the redirect's status statement, **not a fresh 281-link scan**.
+- [ ] Revalidate targets after any further deletions and separately check heading anchors and semantic currency. The World Directory archive remains historical provenance, not current quest authority.
