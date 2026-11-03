@@ -27,4 +27,4 @@ Source: [Aelari — The living boundary](../../../THEIA_HUMAN_CONNECTED_RACIAL_S
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
 
-[[Characters/Campaign Cast/Queen Seralyth|Queen Seralyth]] · [Dominion](../../Lore/Institutions/Dominion.md)
+[Queen Seralyth](../../Characters/Campaign%20Cast/Queen%20Seralyth.md) · [Dominion](../../Lore/Institutions/Dominion.md)
