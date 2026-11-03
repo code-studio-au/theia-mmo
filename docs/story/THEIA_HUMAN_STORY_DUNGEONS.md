@@ -2,7 +2,7 @@
 
 # THEIA — HUMAN SOLO STORY CLIMAXES
 
-**Status: Needs Review.** Narrative encounter designs for the [Human Campaign](THEIA_HUMAN_CAMPAIGN.md) and [Quest Register](THEIA_HUMAN_QUEST_REGISTER.md). None is implemented, balanced or playtested. Five story versions carry the entire essential plot; optional group/raid variants may add challenge, equipment and supplementary lore only.
+**Status: Needs Review.** Narrative encounter designs for the [canonical Human 1–80 campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md) and [Quest Register](THEIA_HUMAN_QUEST_REGISTER.md). None is implemented, balanced or playtested. Five story versions carry the entire essential plot; optional group/raid variants may add challenge, equipment and supplementary lore only.
 
 ## Common encounter contract
 
