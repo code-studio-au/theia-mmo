@@ -8,11 +8,7 @@ up: "[[Lore and World]]"
 
 The framework separates ordinary life, local threats and justified covert activity. Its racial palettes are examples, not approved species or faction rosters.
 
-[Read historical source section](../../THEIA_ZONE_POPULATION_FRAMEWORK.md)
-
-[Read historical source section](../../THEIA_ZONE_POPULATION_FRAMEWORK.md)
-
-[[Sources/THEIA_ZONE_POPULATION_FRAMEWORK|Read the full encounter and placement framework]].
+[Read the historical encounter and placement framework](../../THEIA_ZONE_POPULATION_FRAMEWORK.md). The source is a reference framework, not an approved roster.
 
 [[Lore and World]] · [[Welcome|Home]]
 
