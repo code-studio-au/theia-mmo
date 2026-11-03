@@ -987,3 +987,10 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Reviewed H3-01/Q054, H3-02/Q055, H3-05/Q058, H3-10/Q063, H3-11/Q064 and H3-18/Q083 against current NPC dialogue and manifest stages. Findings in focused mapping audit (commit `f5d0dae8`).
 - [x] Preserved consent, local repairs, restricted disclosure and low-capacity Passage rules; the historical Corven expedition proposal is not an approved Q083 prerequisite.
 - [ ] Continue other historical consequences, source register backlinks and final duplicate retirement. H/HS mappings remain unapproved.
+
+## Historical quest register backlink and documentation entry-point audit — 3 November 2026
+
+- [x] Recovered and recorded the previously completed six H3 civic/access checks (commit `05286b04`).
+- [x] Searched indexed incoming references to `THEIA_HUMAN_QUEST_REGISTER.md` and live-checked root README, Documentation Guide and historical Reading Map. Root register remains a cited historical source and is **not yet safe to delete**.
+- [x] Updated `THEIA_DOCUMENTATION_GUIDE.md` to foreground current Human 1–80 campaign and sole working manifest, and label the 92 H / 24 HS source register as superseded provenance rather than current quest order (commit `894af827`).
+- [ ] Search results are indexed, not a complete fresh full-tree backlink scan. Verify all surviving root and Editorial references, historical unique source detail, and approved H/HS mapping ledger before any register retirement.
