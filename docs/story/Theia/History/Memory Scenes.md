@@ -8,4 +8,4 @@
 
 ## Related notes
 
-[[Oth'varen]] · [[Vaer'uun]] · [[Thes'var]] · [[Su'vareth]] · [[Oma'vira]] · [[Khor'vun]]
+[Oth'varen](../Characters/Oth'varen.md) · [Vaer'uun](../Characters/Vaer'uun.md) · [Thes'var](../Characters/Thes'var.md) · [Su'vareth](../Characters/Su'vareth.md) · [Oma'vira](../Characters/Oma'vira.md) · [Khor'vun](../Characters/Khor'vun.md)
