@@ -932,3 +932,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Parsed all canonical `Q001–Q184` bullet entries against the sole consolidated working manifest: **184 canonical entries, 184 unique IDs, 184 manifest entries, zero missing IDs, zero duplicate IDs, zero title mismatches**.
 - [x] Compared explicit canonical `Contact` fields against manifest editorial giver contacts; found only Q097 premature Oth'varen label. Changed it to `Grey Surveyor (until identity reveal)` (commit `989258f8`) and rechecked: **zero remaining explicit contact mismatches**.
 - [ ] This structural check does not establish complete stage-by-stage narrative equivalence, dialogue reveal safety, location correctness, H/HS mapping approval or executable Rust readiness. Continue those separate reviews and final backlink/heading validation before tracker deletion.
+
+## Q138/Q143 dialogue reveal-gate verification — 3 November 2026
+
+- [x] Live-fetched `Human_55_70_NPC_Dialogue_Scripts.md`: Q138 Oth'varen's answer says the scholars lacked the knowledge to name the disturbance; Q143 Sel'ora first introduces the authenticated name Nhal. The earlier Continuity Audit's claim of a live Q138 spoiler was stale.
+- [x] Corrected finding 9 in `Human_1_80_Dialogue_Continuity_Audit.md` to record this resolved state and protect the Q143 reveal gate (commit `aec79348`). No dialogue lines or quest manifest changed.
+- [ ] Continue live dialogue reveal-gate checks, H/HS consequences and root-story duplicate/backlink audits; final tracker deletion remains blocked.
