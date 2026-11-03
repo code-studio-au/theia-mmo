@@ -1,7 +1,7 @@
 ---
 type: character
 canon_status: approved-role; proposed-development
-source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
+source: "../../../THEIA_HUMAN_CAST_AND_PLACES.md"
 up: "../Characters.md"
 ---
 # Queen Seralyth
@@ -15,7 +15,7 @@ Approved Aelari ruler
 ## Motivation, limitations and proposed outcome
 Permits bounded cooperation after local needs are met; safeguards woodland resources and sovereign authority. No modern friendly relationship with Selrion is added.
 
-Source: [Allied and Kel'vari cast](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
+Source: [Allied and Kel'vari cast](../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
 [Characters](../Characters.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
