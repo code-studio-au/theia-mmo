@@ -1,6 +1,6 @@
 # Theia — Human Levels 1–10 NPC Dialogue Scripts, Pass 1
 
-**Status: Needs Review — authored dialogue, not recorded or implemented.** Based on [Human 1–80 Canonical Campaign](Human_1_80_Canonical_Campaign.md) and [Human 1–10 Quest Pack](Human_Q001_Q017_Gameplay_Detail_Migration.md). This expands the earlier [vertical slice dialogue brief](Human_1_10_Vertical_Slice_Implementation.md) into reusable quest-offer, progress, choice and turn-in dialogue. All lines are original first-pass text.
+**Status: Needs Review — authored dialogue, not recorded or implemented.** Based on [Human 1–80 Canonical Campaign](Human_1_80_Canonical_Campaign.md) and [Q001–Q017 working authoring review](Human_Q001_Q017_Rust_Authoring_Review.md). This expands the earlier [vertical slice dialogue brief](Human_1_10_Vertical_Slice_Implementation.md) into reusable quest-offer, progress, choice and turn-in dialogue. All lines are original first-pass text.
 
 ## Dialogue design constraints
 
