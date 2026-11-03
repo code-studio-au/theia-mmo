@@ -709,3 +709,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Migrated `Lore/Anchors and the Shroud.md`, `Divine and Mortal History.md` and `Orders and Hidden Conflict.md` related-note and index wiki-links to direct Markdown targets (commits `5c63e83a`, `d5b38a8a`, `04e95dfe`). Kept Nhal as plain name where no verified standalone file target was selected.
 - [x] Preserved historical source provenance and later creator-decision precedence; no new lore outcomes approved.
 - [ ] Continue remaining Lore files and complete live file-target validation.
+
+## Passage, peoples and inversion lore reconciliation — 3 November 2026
+
+- [x] Migrated `Lore/Passage Gates.md`, `Peoples and Allegiances.md` and `Resonance Inversion.md` to Markdown navigation for the lore index, peoples, relevant events/institutions and historical saga (commits `5b6ed29e`, `4fdc82f3`, `acbdbadb`).
+- [x] Corrected Resonance Inversion's obsolete claim that successful inversion remains only an unapproved Act V proposal. The creator-locked level-80 coordinated inversion shatters Nhal's coherent will and identity; indestructible divine essence persists as fragments and the Seven survive. No future fragment outcome was approved.
+- [ ] Continue remaining Lore syntax and file-target audit; check heading anchors and historical semantic claims separately.
