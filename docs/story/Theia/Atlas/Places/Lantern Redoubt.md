@@ -25,4 +25,4 @@ Source: [Geography and travel](../../../THEIA_HUMAN_CAST_AND_PLACES.md) (entry: 
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
 
-[[Lore/Institutions/Covenant|Covenant]] · [[Lore/Peoples/Kel'vari|Kel'vari]] · [[Atlas/Enclaves/Thuma'rei|Thuma'rei]]
+[Covenant](../../Lore/Institutions/Covenant.md) · [Kel'vari](../../Lore/Peoples/Kel%27vari.md) · [Thuma'rei](../Enclaves/Thuma%27rei.md)
