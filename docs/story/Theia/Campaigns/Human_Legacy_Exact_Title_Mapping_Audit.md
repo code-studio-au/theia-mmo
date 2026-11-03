@@ -100,3 +100,14 @@ All five remain **strong or partial semantic candidates, not approved historical
 - **H4-08/Q100:** Sera's dialogue confirms endangered custodians are protected while public disclosure remains unresolved. The historical restricted-route disclosure and case-access safeguards are not explicitly spoken in this scene; preserve them for encounter/security review.
 
 No new gate throughput, faction friendship, automatic archive rights or early identity reveal is approved. Historical H4→Q mappings remain unapproved pending complete consequence/location review.
+
+## H3 permissions and civic consequences — 3 November 2026
+
+- **H3-01/Q054:** Caelith explicitly treats the High King's letter as introduction, not archive authority. The player must present evidence and accept supervised ward access. Historical ward-tender concerns remain compatible; mapping unapproved.
+- **H3-02/Q055:** Caelith identifies a genuine nursery repair/rescue problem, not automatic conspiracy sabotage. This preserves independent local civic content; mapping unapproved.
+- **H3-05/Q058:** Seralyth grants a limited Dominion inspection reference and Caelith's permitted copy, not friendly Dominion diplomacy or blanket disclosure of Aelari research. Mapping unapproved.
+- **H3-10/Q063:** Urodan requires practical water-route service before referring the player to archive custodians; access remains conditional. Mapping unapproved.
+- **H3-11/Q064:** Tarek prioritizes rescuing the maintenance crew and recovering the historical warning, without guessing its contents. Mapping unapproved.
+- **H3-18/Q083:** The current manifest and Q083 dialogue confirm low gate throughput and a safe return procedure; the historical proposal to Corven is not confirmed in the current Q083 stages and should not become an automatic story prerequisite.
+
+These are evidence-based dialogue and stage checks only. Do not promote historical H3 prerequisite edges, optional access or cross-faction cooperation into the current campaign without explicit approval.
