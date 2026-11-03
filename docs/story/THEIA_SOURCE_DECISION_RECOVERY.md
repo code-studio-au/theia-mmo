@@ -298,7 +298,11 @@ These were presented as selectable questions, but there is no subsequent user su
 
 ## Open questions and source integrity
 
-The exact ancient betrayer(s), divine wartime sides, fate of each god, vanished people's name/fate, which ancient order survived and its current identity, full magical ranks/classes, precise zone geography and ultimate ending remain unresolved unless later user messages explicitly settled them. Some detailed narrative drafts in the original PDF are assistant proposals and should be presented as such, even if they are useful. Q436–444 were never answered. Around Q297–317 the PDF repeats question numbers for distinct stages; use stage and PDF page as identifiers rather than relying solely on Q number. For exhaustive auditing consult the source PDF alongside this index.
+**SUPERSEDED open questions:** Keeper's knowing concealment at The Binding, the Seven's survival, the Kel'vari's identity and surviving enclaves are established by the [World Bible](THEIA_WORLD_BIBLE.md). The [canonical Human campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md) and [later decision ledger](DECISIONS.md) govern the launch revelations, permanent deaths, Nhal's shattering and the Seven's independent survival. These are not open alternatives merely because earlier question rounds left them undecided.
+
+**OPEN:** Exact divine wartime allegiances and individual experiences, unapproved magical mechanisms, ancient-order identity and the unanswered Q436–Q444 details, unapproved class/rank details and precise geography remain subject to their authoritative scopes. Future outcomes beyond the approved ending, especially Nhal's fragments, remain unresolved. Consult the Bible's current open-decision list rather than treating this historical index as a second canon ledger.
+
+**Source evidence limits:** Detailed narrative drafts in the original PDF may be proposals rather than creator decisions. Q436–Q444 received no answers. Around Q297–Q317, question numbers repeat across distinct stages; use stage, question context and PDF page as identifiers. The PDF is not in the repository, and this consolidation is not a new exhaustive audit; exact source verification requires that artifact. The [prior open-question wording](https://github.com/code-studio-au/theia-mmo/blob/23a1453a75e9de3153044b41ceba471e012fd6fa/docs/story/THEIA_SOURCE_DECISION_RECOVERY.md) remains historical provenance.
 
 ## Corrective source audit: reused PvP identifiers
 
