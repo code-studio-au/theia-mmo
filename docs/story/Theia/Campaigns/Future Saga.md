@@ -58,15 +58,15 @@ The central question is whether people and gods can take responsibility for thei
 
 ## 1. Before play — the world begins to awaken
 
-The established historical foundation is [[Age of Silence and Anchor Network Development]], followed by [[Network Threshold and Modern Awakening]]. The Conclave has already developed Minor Resonators, Regional Anchors and functioning Major Anchors. Their cumulative resonance redistributes access to existing primordial magic and restores Nhal's selective communication. [[Shattered Delegation]] precedes the return of that communication; it was independently orchestrated by the Conclave.
+The established historical foundation is [Age of Silence and Anchor Network Development](../History/Events/Age%20of%20Silence%20and%20Anchor%20Network%20Development.md), followed by [Network Threshold and Modern Awakening](../History/Events/Network%20Threshold%20and%20Modern%20Awakening.md). The Conclave has already developed Minor Resonators, Regional Anchors and functioning Major Anchors. Their cumulative resonance redistributes access to existing primordial magic and restores Nhal's selective communication. [Shattered Delegation](../History/Events/Shattered%20Delegation.md) precedes the return of that communication; it was independently orchestrated by the Conclave.
 
-The original First Anchor remains entangled with the ancient Veil breach. The Seven sustain the Shroud through [[The Binding]]. Most people do not understand the source of the awakening, and the two playable alliances remain hostile.
+The original First Anchor remains entangled with the ancient Veil breach. The Seven sustain the Shroud through [The Binding](../History/The%20Binding%20and%20its%20Aftermath.md). Most people do not understand the source of the awakening, and the two playable alliances remain hostile.
 
 ## 2. Acts I–IV — discovery, evidence and the first Shroud expedition
 
 The approved five-act framework supplies the launch campaign's foundation. Distinct racial openings lead into alliance warfare, investigation of hidden devices and discovery of the Unmade network. The player encounters evidence of Regional Anchors, the Guardians' unequal knowledge and the difference between willing followers, corrupted victims and bound forces.
 
-Limited Shroud access brings contact with surviving [[Kel'vari]] communities and testimony from [[Oth'varen]]. Independent records establish the six scholars' work, the concealed redirection of the First Anchor and the distinction between Ascendant's misconduct and the innocence of the wider Kel'vari population.
+Limited Shroud access brings contact with surviving [Kel'vari](../Lore/Peoples/Kel'vari.md) communities and testimony from [Oth'varen](../Characters/Oth'varen.md). Independent records establish the six scholars' work, the concealed redirection of the First Anchor and the distinction between Ascendant's misconduct and the innocence of the wider Kel'vari population.
 
 The campaign introduces inversion as difficult reconstruction of six-field workings. A controlled smaller test can establish the principle before the finale. Research, access to suitable equipment and safeguarding supporting connections prepare a meaningful attempt at a Major Anchor.
 
@@ -110,10 +110,10 @@ Its construction requires rare knowledge, materials and coordinated installation
 
 Oma'vira is already dead. The four remaining founders have different roles and locked eventual endings:
 
-- [[Vaer'uun]] sees the culmination of their long obedience and defends the promise of Nhal's arrival.
-- [[Thes'var]] believes deliberate control can overcome the failures of the original project.
-- [[Su'vareth]] protects logistics and information while preparing contingencies against defeat or betrayal.
-- [[Khor'vun]] faces the consequences of defending a project that may consume the forces and strongholds entrusted to him.
+- [Vaer'uun](../Characters/Vaer'uun.md) sees the culmination of their long obedience and defends the promise of Nhal's arrival.
+- [Thes'var](../Characters/Thes'var.md) believes deliberate control can overcome the failures of the original project.
+- [Su'vareth](../Characters/Su'vareth.md) protects logistics and information while preparing contingencies against defeat or betrayal.
+- [Khor'vun](../Characters/Khor'vun.md) faces the consequences of defending a project that may consume the forces and strongholds entrusted to him.
 
 **Creator-locked Su'vareth ending:** During the investigation leading to the Veilbreaker, the player corroborates her concealed headquarters through evidence from several cells, dismantles escape arrangements and defeats her final deception. She dies in the confrontation. Incomplete project evidence survives; her death breaks coordination without exposing every agent. Established contingency orders continue, clearly distinguished from her survival. This phase retains her contribution to logistics before her death.
 
@@ -151,13 +151,13 @@ The player helps establish the conditions under which the Seven can act together
 
 The divine conflict involves several responsibilities:
 
-- [[The Ascendant]] acknowledges misuse of Keeper's restricted knowledge while defending the Kel'vari's right to exist. Creating them was not service to Nhal, and their people do not inherit collective guilt.
-- [[The Keeper]] reveals the full truth of the Binding and relinquishes any claim to decide another being's sacrifice without consent.
-- [[The Seeker]] shares uncertain knowledge when waiting for complete certainty would condemn others.
-- [[The Shaper]] confronts losses that cannot be repaired by restoring every ancient work unchanged.
-- [[The Guardian]] accepts forms of protection that do not depend on endless personal sacrifice.
-- [[The Warrior]] distinguishes accountability from vengeance that would prevent necessary cooperation.
-- [[The Judge]] helps establish obligations that constrain divine power as well as mortal institutions.
+- [The Ascendant](../Characters/Divine/The%20Ascendant.md) acknowledges misuse of Keeper's restricted knowledge while defending the Kel'vari's right to exist. Creating them was not service to Nhal, and their people do not inherit collective guilt.
+- [The Keeper](../Characters/Divine/The%20Keeper.md) reveals the full truth of the Binding and relinquishes any claim to decide another being's sacrifice without consent.
+- [The Seeker](../Characters/Divine/The%20Seeker.md) shares uncertain knowledge when waiting for complete certainty would condemn others.
+- [The Shaper](../Characters/Divine/The%20Shaper.md) confronts losses that cannot be repaired by restoring every ancient work unchanged.
+- [The Guardian](../Characters/Divine/The%20Guardian.md) accepts forms of protection that do not depend on endless personal sacrifice.
+- [The Warrior](../Characters/Divine/The%20Warrior.md) distinguishes accountability from vengeance that would prevent necessary cooperation.
+- [The Judge](../Characters/Divine/The%20Judge.md) helps establish obligations that constrain divine power as well as mortal institutions.
 
 They need not forgive one another before cooperating. The recommended resolution is an explicit, informed agreement with shared limits, responsibilities and means of withdrawal. Its relationship to separate alliance societies remains to be designed; divine cooperation does not merge their governments or player factions.
 
@@ -175,13 +175,13 @@ The player and trained Guardians maintain the alignment and complete the operati
 
 The remaining technical staging and exact final working require development. Existing inversion research, the distributed network, divine consent and mortal participation must remain causally essential.
 
-As defeat becomes unavoidable, Nhal deliberately shatters its remaining essence across the world. Its unified consciousness ends; the continuing network and surviving world carry the consequences. The distinction between the approved alignment/death sequence and other future proposals remains governed by the dated decision ledger. The irreversible fragmentation mechanism and subsequent divinities require their own detailed development; founder fates are governed by the dated creator lock above.
+**Superseded historical proposal:** Nhal deliberately shattering its own essence is not the approved launch mechanism. In the locked level-80 finale, the player, Seven and distributed Guardian teams complete the coordinated inversion, shattering Nhal's coherent divine identity and will. Indestructible essence remains fragmented without Nhal's unified consciousness or memories; its future is undecided. The distinction between the approved alignment/death sequence and other future proposals remains governed by the dated decision ledger. The irreversible fragmentation mechanism and subsequent divinities require their own detailed development; founder fates are governed by the dated creator lock above.
 
-## 10. The scattered inheritance — corruption and emerging divinities
+## 10. The scattered inheritance — unapproved future possibilities
 
 Nhal's dispersed essence reaches regions beyond its former footholds. The network protects some populations and helps contain or recover other areas, but cannot prevent every consequence. The player returns to places whose histories and survival already matter.
 
-Over time, concentrations of essence develop into independent divine beings. Their number, names and exact emergence remain open. The recommendation is an uneven, internally divided group rather than seven identical evil counterparts to the existing gods.
+**Unapproved possibility:** Over time, concentrations of essence might develop into independent divine beings. Their number, names and exact emergence remain open. The recommendation is an uneven, internally divided group rather than seven identical evil counterparts to the existing gods.
 
 Possible philosophies include ending suffering by ending desire and life; preserving everything in absolute stillness; severing dependence between beings; absorbing individuals into a single whole; and treating physical form as an imprisonment to overcome.
 
@@ -226,10 +226,10 @@ Expansion count, exact dates, deaths among the Seven and the new people's identi
 
 ## Governing foundation and related notes
 
-[[Historical Timeline]] · [[Timelines]] · [[Human Campaign]] · [[Resonance Inversion]] · [[Anchors and the Shroud]] · [[The Seven Gods]] · [[The Corrupted Conclave]]
+[Historical Timeline](../History/Historical%20Timeline.md) · [Timelines](../History/Timelines.md) · Human Campaign · [Resonance Inversion](../Lore/Resonance%20Inversion.md) · Anchors and the Shroud · [The Seven Gods](../Lore/The%20Seven%20Gods.md) · [The Corrupted Conclave](../Lore/The%20Corrupted%20Conclave.md)
 
 [Established Anchor and inversion foundation](../../THEIA_WORLD_BIBLE.md) · [Approved launch structure](../../THEIA_MODERN_STORY_REVELATION_TIMELINE.md) · [Earlier future campaign possibilities](../../THEIA_INTERWOVEN_CHRONICLE.md).
 
 ## Related launch restructure draft
 
-[[Main_Story_1_60_Draft|Theia main story from level 1 to 60]] develops a proposed five-act launch ending with Nhal's shattering. Its revised act placements, mainland Chainworks and launch-finale scope remain **Needs Review**. The dated locks above retain their stated scope until the creator approves those replacements.
+Theia main story from level 1 to 60 develops a proposed five-act launch ending with Nhal's shattering. Its revised act placements, mainland Chainworks and launch-finale scope remain **Needs Review**. The dated locks above retain their stated scope until the creator approves those replacements.
