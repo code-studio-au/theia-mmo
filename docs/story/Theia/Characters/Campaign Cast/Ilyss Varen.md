@@ -2,7 +2,7 @@
 type: character
 canon_status: Needs Review
 source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
-up: "[[Characters]]"
+up: "../Characters.md"
 ---
 # Ilyss Varen
 
@@ -16,13 +16,13 @@ Vaelari researcher under a Dominion contract
 An independently filed rejection of unstable parts
 
 ## Boundary and proposed resolution
-Not automatically [[The Unmade|Unmade]] or a defector. Remains with her people; useful observations do not create cooperation.
+Not automatically [Unmade](../../Lore/Institutions/The%20Unmade.md) or a defector. Remains with her people; useful observations do not create cooperation.
 
 Source: [Dominion characters required by this human route](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
-[[Characters]] · [[Human Campaign]]
+[Characters](../Characters.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
 
-[[Lore/Peoples/Vaelari|Vaelari]] · [[Lore/Institutions/Dominion|Dominion]]
+[Vaelari](../../Lore/Peoples/Vaelari.md) · [Dominion](../../Lore/Institutions/Dominion.md)
