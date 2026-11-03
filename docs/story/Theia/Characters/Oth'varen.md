@@ -9,11 +9,11 @@ The overarching arc is approved; specific scenes, dialogue and outcomes retain t
 
 [Read the historical character arc](../../THEIA_CHARACTER_ARCS.md) (subject to later creator locks).
 
-[[Characters]] · [[Orders and Hidden Conflict]] · [[Timelines]]
+[Characters](Characters.md) · [Orders and Hidden Conflict](../Lore/Orders%20and%20Hidden%20Conflict.md) · [Timelines](../History/Timelines.md)
 
 ## Related notes
 
-[[Kel'vari]] · [[The Guardians]] · [[The Corrupted Conclave]] · [[Nhal]] · [[The Six Reunited]]
+[Kel'vari](../Lore/Peoples/Kel%27vari.md) · [The Guardians](../Lore/Institutions/The%20Guardians.md) · [The Corrupted Conclave](../Lore/Institutions/The%20Corrupted%20Conclave.md) · [Nhal](Divine/Nhal.md) · [The Six Reunited](../History/The%20Six%20Reunited.md)
 
 ## Current creator-locked fate — level-80 launch finale (2 November 2026)
 
