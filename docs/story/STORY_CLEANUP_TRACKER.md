@@ -10,7 +10,7 @@ Status: **IN PROGRESS** (3 November 2026). No unchecked item is represented as f
 - [x] Recorded the creator's current level-80 finale confirmation in the decision ledger and explicitly marked October 29/30 conflicting timing and launch-survival claims SUPERSEDED.
 - [x] Removed the documentation guide's misleading application of the historical Needs Review packet heading to the approved 1–80 campaign; preserved original provenance and proposal boundaries.
 - [x] Validated all 83 relative Markdown links and six heading fragments in the five changed entry-point files against the fresh repository tree; whitespace checks pass. Canonical campaign and working manifest remain unchanged. No files retired in this authority pass.
-- [ ] Obtain independent review and merge `cleanup/canon-authority-20261103` before treating this area as integrated.
+- [x] Independently reviewed and merged authority-entry-point consolidation in PR #3 (merge `e1ac7a1fe7f5dee3f22afc5b88207120b1cf63c6`); verified the current hierarchy on `main`.
 - [ ] Propagate current authority and status boundaries through remaining supporting world/history/character records; this entry-point correction is not a whole-repository contradiction clearance.
 
 ## Authoritative destinations
@@ -1047,3 +1047,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Marked `THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md` as historical cross-racial proposals: allied `CR-` groupings do not add current quests and twelve Dominion companion quests are not approved Human-friendly or independent race campaigns (commit `1862e150`).
 - [ ] Preserve unique character, zone, service and Dominion-perspective ideas after detailed comparison; complete incoming-link verification before any retirement. No current quest or Rust changes.
 
+
+## Q178 finale chronology correction — 3 November 2026
+
+- [x] Compared canonical Q176–Q181 with `Human_80_Finale_NPC_Dialogue_Scripts.md` and `Human_1_80_Key_Scenes_Branching_Dialogue.md`. Both supporting Markdown records keep Oth'varen alive through his Q179 farewell and Q180 approach, with physical death only after alignment holds in Q181.
+- [x] Corrected Q178's gameplay summary to the existing fatal-correction discovery, informed choice and team-safety steps. Removed its premature death description; the locked Q181 outcome, all 184 quest identifiers and their order are unchanged.
+- [ ] Independently review and merge `cleanup/q178-finale-sequence-20261103`; this correction does not claim a complete campaign consistency pass. No code, runtime data or CI changes.
