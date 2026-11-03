@@ -349,3 +349,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Replaced obsolete `Sources/THEIA_CHARACTER_ARCS` embeds and `Sources/DECISIONS` wiki-links in the Thes'var, Vaer'uun, Su'vareth, Khor'vun and Oma'vira character pages with direct links to root historical arcs, story decisions and the authoritative 1–80 campaign. Commits `d42f2716`, `b9bfa991`, `95fe1fc0`, `50db606a`, `5ea19475`.
 - [x] Preserved their existing creator-locked outcomes without rewriting quest implementation or inventing encounter details. The canonical 1–80 campaign now explicitly governs launch timing in each page.
 - [ ] Continue stale Obsidian embeds and source references in other derived pages; verify full link graph before deleting the temporary tracker or retiring the old story branch.
+
+## Lore topic World Bible reference cleanup — 3 November 2026
+
+- [x] Replaced obsolete `Sources/THEIA_WORLD_BIBLE` wiki-links with direct surviving root World Bible and story decisions links in `Lore/Magic.md`, `Lore/The Seven Gods.md`, and `Lore/Primordial Cosmology.md` (commits `2a492fad`, `fc7f9008`, `aa85611d`).
+- [x] Removed a duplicated identical historical-source link in Magic. Existing lore claims and individual deity references were not changed.
+- [ ] Continue auditing surviving wiki-links and references across other lore/character/atlas notes; source-link cleanup is not a semantic canon approval.
