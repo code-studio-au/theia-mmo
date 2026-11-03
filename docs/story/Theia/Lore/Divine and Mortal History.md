@@ -8,8 +8,8 @@ Read the [World Bible](../../THEIA_WORLD_BIBLE.md) together with [later story de
 
 [Read historical source section](../../THEIA_WORLD_BIBLE.md)
 
-[[Lore and World]] · [[Chronicles and History]] · [[Welcome|Home]]
+[Lore and World](Lore%20and%20World.md) · [Chronicles and History](../History/Chronicles%20and%20History.md) · [Home](../../README.md)
 
 ## Related notes
 
-[[The Seven Gods]] · [[Kel'vari]] · [[First Resonance]] · [[Second Sundering]] · [[Divine War]] · [[The Binding]]
+[The Seven Gods](The%20Seven%20Gods.md) · [Kel'vari](Peoples/Kel%27vari.md) · [First Resonance](../History/Events/First%20Resonance.md) · [Second Sundering](../History/Events/Second%20Sundering.md) · [Divine War](../History/Events/Divine%20War.md) · [The Binding](../History/Events/The%20Binding.md)
