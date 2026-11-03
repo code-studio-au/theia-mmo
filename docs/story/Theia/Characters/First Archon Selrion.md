@@ -1,20 +1,20 @@
 ---
 type: character
 canon_status: approved-role
-source: "[[Sources/THEIA_HUMAN_CAST_AND_PLACES]]"
-up: "[[Characters]]"
+source: "../../THEIA_HUMAN_CAST_AND_PLACES.md"
+up: "Characters.md"
 ---
 # First Archon Selrion
 
 Approved Vaelari ruler. Referencing his institutions does not establish an invented friendly meeting with Covenant characters.
 
-Source: [[Sources/THEIA_HUMAN_CAST_AND_PLACES#Dominion characters required by this human route|Dominion characters]].
+Source: [Dominion characters](../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
-[[Vaelari]] · [[Dominion]]
+[Vaelari](../Lore/Peoples/Vaelari.md) · [Dominion](../Lore/Institutions/Dominion.md)
 
-[[Characters]] · [[Welcome|Home]]
+[Characters](Characters.md) · [Story index](../../README.md)
 
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
 
-[[Lore/Peoples/Vaelari|Vaelari]] · [[Lore/Institutions/Covenant|Covenant]]
+[Vaelari](../Lore/Peoples/Vaelari.md) · [Covenant](../Lore/Institutions/Covenant.md)
