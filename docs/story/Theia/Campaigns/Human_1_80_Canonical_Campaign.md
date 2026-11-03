@@ -125,46 +125,46 @@ Each entry gives **title — location — gameplay objective — lore purpose**.
 - **Q071 — Make the Measure Small.** Drom Kar, freight works, mainland Chainworks. **Contact:** Oth'varen / Brynja. **Gameplay objective:** Set up a fully isolated Minor Resonator trial with instruments, physical cutoff and reserve limits. **Lore purpose:** Oma'vira killed; bounded Major Anchor inversion; her destroyed Passage gate points to Shroud.
 - **Q072 — A Brief Reversal.** Drom Kar, freight works, mainland Chainworks. **Contact:** Oth'varen. **Gameplay objective:** Conduct the controlled inversion trial; stop at its measured duration and record both result and uncertainty. **Lore purpose:** Oma'vira killed; bounded Major Anchor inversion; her destroyed Passage gate points to Shroud.
 - **Q073 — The Safer Argument.** Drom Kar, freight works, mainland Chainworks. **Contact:** Halden / Sera. **Gameplay objective:** Review severance and bounded-inversion plans; select a provisional preference that may be changed at the final cutoff. **Lore purpose:** Oma'vira killed; bounded Major Anchor inversion; her destroyed Passage gate points to Shroud.
-- **Q074 — The Pattern Beneath.** Drom Kar, freight works, mainland Chainworks. Objective: Oma'vira killed; bounded Major Anchor inversion; her destroyed Passage gate points to Shroud.
-- **Q075 — The Anchor's Defenses.** Drom Kar, freight works, mainland Chainworks. Objective: Oma'vira killed; bounded Major Anchor inversion; her destroyed Passage gate points to Shroud.
-- **Q076 — The Harbinger's Design.** Drom Kar, freight works, mainland Chainworks. Objective: Oma'vira killed; bounded Major Anchor inversion; her destroyed Passage gate points to Shroud.
-- **Q077 — Against the Harbinger.** Drom Kar, freight works, mainland Chainworks. Objective: Oma'vira killed; bounded Major Anchor inversion; her destroyed Passage gate points to Shroud.
+- **Q074 — The Pattern Beneath.** Drom Kar, freight works, mainland Chainworks. Objective: Compare three signatures; Compare remaining signatures; Align readings; Report pattern
+- **Q075 — The Anchor's Defenses.** Drom Kar, freight works, mainland Chainworks. Objective: Scout perimeter; Record patrols; Recover Harbinger instructions; Report
+- **Q076 — The Harbinger's Design.** Drom Kar, freight works, mainland Chainworks. Objective: Authenticate Oma'vira signature; Recover gate schematic; Identify Shroud destination; Confirm
+- **Q077 — Against the Harbinger.** Drom Kar, freight works, mainland Chainworks. Objective: Enter conditioning facility; Disable controls; Protect captives; Kill Oma'vira; Recover Passage evidence
 - **Q078 — The First Major Reversal.** Drom Kar, freight works, mainland Chainworks. **Contact:** Brynja / Sera. **Gameplay objective:** Defend the cutoff while qualified specialists invert the captured Major Anchor; record bounded success and maintenance duties. **Lore purpose:** Oma'vira killed; bounded Major Anchor inversion; her destroyed Passage gate points to Shroud.
-- **Q079 — The Harbinger's Secret.** Drom Kar, freight works, mainland Chainworks. Objective: Oma'vira killed; bounded Major Anchor inversion; her destroyed Passage gate points to Shroud.
+- **Q079 — The Harbinger's Secret.** Drom Kar, freight works, mainland Chainworks. Objective: Copy destination records; Verify gate destroyed; Request explanation
 
 ### Levels 35–40: The Gate They Kept
 
 **Region(s):** Drom Kar, hidden Guardian gate, Lantern Redoubt, Kel'vari homeland. **Narrative objective:** Guardians have limited secret gate; Kel'vari nearly erased from history; sovereign consent; Redoubt is longstanding.
 
-- **Q080 — Aftermath of Inversion.** Drom Kar, hidden Guardian gate, Lantern Redoubt, Kel'vari homeland. Objective: Guardians have limited secret gate; Kel'vari nearly erased from history; sovereign consent; Redoubt is longstanding.
-- **Q081 — The Gate They Kept.** Drom Kar, hidden Guardian gate, Lantern Redoubt, Kel'vari homeland. Objective: Guardians have limited secret gate; Kel'vari nearly erased from history; sovereign consent; Redoubt is longstanding.
-- **Q082 — The Price of Secrecy.** Drom Kar, hidden Guardian gate, Lantern Redoubt, Kel'vari homeland. Objective: Guardians have limited secret gate; Kel'vari nearly erased from history; sovereign consent; Redoubt is longstanding.
+- **Q080 — Aftermath of Inversion.** Drom Kar, hidden Guardian gate, Lantern Redoubt, Kel'vari homeland. Objective: Present Oma'vira's destroyed gate records; Verify destination within Shroud; Ask how access was possible
+- **Q081 — The Gate They Kept.** Drom Kar, hidden Guardian gate, Lantern Redoubt, Kel'vari homeland. Objective: Present authenticated evidence; Confront Sera about secret crossings; Record acknowledgement of surviving restricted gate
+- **Q082 — The Price of Secrecy.** Drom Kar, hidden Guardian gate, Lantern Redoubt, Kel'vari homeland. Objective: Review historic low-capacity crossings; Verify custodial consent; Discuss why the Guardians concealed access
 - **Q083 — The Route That Never Closed.** Drom Kar, hidden Guardian gate, Lantern Redoubt, Kel'vari homeland. **Contact:** Tarek / Dromak. **Gameplay objective:** Survey the separate low-capacity Passage, test a small-group return path and deliver an expedition proposal to Corven. **Lore purpose:** Guardians have limited secret gate; Kel'vari nearly erased from history; sovereign consent; Redoubt is longstanding.
-- **Q084 — Permission to Enter.** Drom Kar, hidden Guardian gate, Lantern Redoubt, Kel'vari homeland. Objective: Guardians have limited secret gate; Kel'vari nearly erased from history; sovereign consent; Redoubt is longstanding.
-- **Q085 — The Hidden Crossing.** Drom Kar, hidden Guardian gate, Lantern Redoubt, Kel'vari homeland. Objective: Guardians have limited secret gate; Kel'vari nearly erased from history; sovereign consent; Redoubt is longstanding.
+- **Q084 — Permission to Enter.** Drom Kar, hidden Guardian gate, Lantern Redoubt, Kel'vari homeland. Objective: Submit bounded expedition request; Obtain independent Kel'vari approval; Record restrictions
+- **Q085 — The Hidden Crossing.** Drom Kar, hidden Guardian gate, Lantern Redoubt, Kel'vari homeland. Objective: Verify custodial permission; Cross ancient low-power gate; Register at Lantern Redoubt
 - **Q086 — Lantern Redoubt.** Drom Kar, hidden Guardian gate, Lantern Redoubt, Kel'vari homeland. **Contact:** Nessa / Aru'ven. **Gameplay objective:** Cross in a small surveyed group and agree access/maintenance terms for this outer site; no continent-wide gate restoration. **Lore purpose:** Guardians have limited secret gate; Kel'vari nearly erased from history; sovereign consent; Redoubt is longstanding.
-- **Q087 — Those Who Remained.** Drom Kar, hidden Guardian gate, Lantern Redoubt, Kel'vari homeland. Objective: Guardians have limited secret gate; Kel'vari nearly erased from history; sovereign consent; Redoubt is longstanding.
-- **Q088 — Permission to Remain.** Drom Kar, hidden Guardian gate, Lantern Redoubt, Kel'vari homeland. Objective: Guardians have limited secret gate; Kel'vari nearly erased from history; sovereign consent; Redoubt is longstanding.
-- **Q089 — The Broken Path.** Drom Kar, hidden Guardian gate, Lantern Redoubt, Kel'vari homeland. Objective: Guardians have limited secret gate; Kel'vari nearly erased from history; sovereign consent; Redoubt is longstanding.
-- **Q090 — A Warning Preserved.** Drom Kar, hidden Guardian gate, Lantern Redoubt, Kel'vari homeland. Objective: Guardians have limited secret gate; Kel'vari nearly erased from history; sovereign consent; Redoubt is longstanding.
-- **Q091 — Questions for the Sixth.** Drom Kar, hidden Guardian gate, Lantern Redoubt, Kel'vari homeland. Objective: Guardians have limited secret gate; Kel'vari nearly erased from history; sovereign consent; Redoubt is longstanding.
+- **Q087 — Those Who Remained.** Drom Kar, hidden Guardian gate, Lantern Redoubt, Kel'vari homeland. Objective: Receive missing worker request; Reach authorized site; Protect workers; Return equipment and report
+- **Q088 — Permission to Remain.** Drom Kar, hidden Guardian gate, Lantern Redoubt, Kel'vari homeland. Objective: Hear Kel'vari access conditions; Register research boundaries; Receive permission to remain
+- **Q089 — The Broken Path.** Drom Kar, hidden Guardian gate, Lantern Redoubt, Kel'vari homeland. Objective: Reach ancient Passage remains; Identify Oma'vira's intrusion traces; Document without reopening gate; Report
+- **Q090 — A Warning Preserved.** Drom Kar, hidden Guardian gate, Lantern Redoubt, Kel'vari homeland. Objective: Receive damaged warning record; Stabilize fragile material; Copy surviving warning; Deposit evidence
+- **Q091 — Questions for the Sixth.** Drom Kar, hidden Guardian gate, Lantern Redoubt, Kel'vari homeland. Objective: Review authenticated Sixth Scholar reference; Request supervised meeting; Obtain entry permission
 
 ### Levels 40–45: The Sixth Scholar
 
 **Region(s):** Oth'irun and Kel'vari archive approaches. **Narrative objective:** Grey Surveyor revealed as Oth'varen, sixth resistant scholar; historical records independently verified.
 
 - **Q092 — The Custodian's Conditions.** Oth'irun and Kel'vari archive approaches. **Contact:** Sel'ora. **Gameplay objective:** Meet the archive party at a protected approach, accept access limits and recover its missing copyist. **Lore purpose:** Grey Surveyor revealed as Oth'varen, sixth resistant scholar; historical records independently verified.
-- **Q093 — An Audience Earned.** Oth'irun and Kel'vari archive approaches. Objective: Grey Surveyor revealed as Oth'varen, sixth resistant scholar; historical records independently verified.
+- **Q093 — An Audience Earned.** Oth'irun and Kel'vari archive approaches. Objective: Receive exposed record assignment; Protect threatened store; Rehouse records; Report
 - **Q094 — Six Names in the Record.** Oth'irun and Kel'vari archive approaches. **Contact:** Sel'ora / Mara. **Gameplay objective:** Compare the project list, verifier image and distinctive stability sequence; request the Surveyor's explanation. **Lore purpose:** Grey Surveyor revealed as Oth'varen, sixth resistant scholar; historical records independently verified.
-- **Q095 — The Scholar Who Remained.** Oth'irun and Kel'vari archive approaches. Objective: Grey Surveyor revealed as Oth'varen, sixth resistant scholar; historical records independently verified.
+- **Q095 — The Scholar Who Remained.** Oth'irun and Kel'vari archive approaches. Objective: Present inversion readings; Review his precise corrections; Seek independent authentication
 - **Q096 — The Verifier's Mark.** Oth'irun and Kel'vari archive approaches. **Contact:** Leth'ari. **Gameplay objective:** Match a project signature with independently preserved instrument records. **Lore purpose:** Grey Surveyor revealed as Oth'varen, sixth resistant scholar; historical records independently verified.
 - **Q097 — The Last Witness.** Oth'irun and Kel'vari archive approaches. **Contact:** Oth'varen. **Gameplay objective:** Hear his identity and firsthand account, then cross-check independent records; trust may be qualified rather than absolute. **Lore purpose:** Grey Surveyor revealed as Oth'varen, sixth resistant scholar; historical records independently verified.
-- **Q098 — Echoes Before the Sundering.** Oth'irun and Kel'vari archive approaches. Objective: Grey Surveyor revealed as Oth'varen, sixth resistant scholar; historical records independently verified.
-- **Q099 — The Six Reunited.** Oth'irun and Kel'vari archive approaches. Objective: Grey Surveyor revealed as Oth'varen, sixth resistant scholar; historical records independently verified.
+- **Q098 — Echoes Before the Sundering.** Oth'irun and Kel'vari archive approaches. Objective: Review original project records; Identify deliberate redirection; Hear his limited firsthand testimony
+- **Q099 — The Six Reunited.** Oth'irun and Kel'vari archive approaches. Objective: Activate archival reconstruction; Witness recorded scholarly conflict; Preserve verified record
 - **Q100 — The Cost of Keeping Quiet.** Oth'irun and Kel'vari archive approaches. **Contact:** Sera. **Gameplay objective:** Rescue threatened custodians using an authorised route disclosure; preserve enclave security through restricted case access. **Lore purpose:** Grey Surveyor revealed as Oth'varen, sixth resistant scholar; historical records independently verified.
-- **Q101 — Two Histories.** Oth'irun and Kel'vari archive approaches. Objective: Grey Surveyor revealed as Oth'varen, sixth resistant scholar; historical records independently verified.
-- **Q102 — The Delegation's Shadow.** Oth'irun and Kel'vari archive approaches. Objective: Grey Surveyor revealed as Oth'varen, sixth resistant scholar; historical records independently verified.
-- **Q103 — The Scholar's Request.** Oth'irun and Kel'vari archive approaches. Objective: Grey Surveyor revealed as Oth'varen, sixth resistant scholar; historical records independently verified.
+- **Q101 — Two Histories.** Oth'irun and Kel'vari archive approaches. Objective: Read first post-Sundering history; Read independently preserved history; Record differences
+- **Q102 — The Delegation's Shadow.** Oth'irun and Kel'vari archive approaches. Objective: Review first Delegation date; Compare contradictory dispatch; Identify modern inquiry
+- **Q103 — The Scholar's Request.** Oth'irun and Kel'vari archive approaches. Objective: Hear bounded Delegation investigation proposal; Receive authorized evidence access; Arrange Covenant-side inquiry
 
 ### Levels 45–50: The Hand Behind the War
 
