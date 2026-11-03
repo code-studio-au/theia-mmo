@@ -321,3 +321,16 @@ The original `THEIA_HUMAN_CAMPAIGN.md` (superseded 1–60, preserved verbatim in
 - The old level-60 severance/inversion choice, Nhal still imprisoned at the old finale, and unresolved fate of the Seven are **superseded outcomes**, not alternate launch endings. The old narrative's civilian rescues, evidence chains, independent institutions and local service encounters remain potential source ideas.
 
 The retired document's full prose, scene descriptions and old act sequence remain recoverable from Git history. The canonical 1–80 campaign and the existing H/HS crosswalk take precedence; this archive does not recreate a second main campaign.
+
+## Retired five-dungeon packet — reusable encounter details
+
+Historical source: `docs/story/THEIA_HUMAN_STORY_DUNGEONS.md` (full original recoverable in Git history). The current [Encounter Barks and Cinematic Timing](Human_1_80_Encounter_Barks_and_Cinematic_Timing.md) and [Canonical Human Campaign](Human_1_80_Canonical_Campaign.md) govern all current bosses and outcomes.
+
+- **Hidden Passage:** abandoned loading room, optional smuggler surrender testimony, frightened courier and ledger copy, protected dispatch lockbox, Cassian's realization that his allies intend to silence him, and lawful live capture. Evidence copies and checkpoint retry must survive interrupted combat.
+- **Silent Signal:** mixed ordinary fauna and conditioned defenders, separate mechanical isolator controls, optional release of a bound defender, recoverable measurements regardless of sample choice, and clear distinction between local resonator shutdown and worldwide effects.
+- **Broken Measure:** a visible unsafe-disconnection surge, Halden changing his orders when evidence proves the warning, three readable support stations, crew-first evacuation, optional nonessential design notes and a separate surviving low-capacity Passage route.
+- **Historical Witness Vault:** captive evacuation through existing exits, transaction archive copies and independently authenticated evidence. Malrec's prepared projection and Oma'vira's remote intervention are **unapproved historical encounter ideas**, not the current Q115 Su'vareth death encounter.
+- **Historical Severed Chain:** worker evacuation, courier evidence, finite reinforcement stations and safe cutoff/fallback mechanics may inform future optional instances. Voss/Keld boss roles, Thes'var's escape and player-choice severance/inversion as the level-60 finale are **superseded** and cannot replace Q156/Q176/Q181.
+- **Common encounter contract candidates:** solo class independence, readable state changes, safe checkpoints, persistent critical evidence, bounded NPC support, no forced PvP or raid for indispensable plot, and optional group variants with supplemental rather than exclusive lore. These are design suggestions, not confirmed engine implementation.
+
+This section preserves the unique encounter hooks without retaining a second active five-act dungeon specification.
