@@ -435,3 +435,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Migrated source, Atlas parent and current campaign navigation in `Atlas/Places/Lantern Redoubt.md`, `Outer Passage site.md` and `Northwatch Landing.md` to direct Markdown paths (commits `55b9b790`, `1faf73a2`, `0cbe7c60`). The original source remains `THEIA_HUMAN_CAST_AND_PLACES.md`.
 - [x] Preserved each location's **Needs Review** status and working geography without asserting new travel routes or approved map coordinates.
 - [ ] Continue reviewing remaining related-note wiki-links and verifying their actual targets; these three files are not a complete Atlas semantic audit.
+
+## Atlas place related-note link verification — 3 November 2026
+
+- [x] Live-verified seven unique related-note destinations across Lantern Redoubt, Outer Passage site and Northwatch Landing: Covenant, Dominion, Kel'vari, Thuma'rei, Drom Kar, Korrath and Tidehold; **7/7 file targets exist**.
+- [x] Replaced those seven old Obsidian-style related-note links with explicit Markdown paths in the three place notes (commits `718f8ede`, `02dc99b8`, `47dc4adc`).
+- [ ] Continue remaining Atlas and character references. Link existence does not approve working geography or settle map distances.
