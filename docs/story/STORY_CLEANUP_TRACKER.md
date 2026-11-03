@@ -888,3 +888,10 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Replaced all eleven Q147–Q157 generic one-line objectives with distinct stage-grounded descriptions (commit `f3facdd7`). Preserved the order of Keeper/Guardian testimony, unproven inversion countermeasure, final Warden approach, Q156 immediate Veil/Binding transition and Q157 already-dissipating Shroud.
 - [x] No quest count, manifest stages, runtime IDs or engine files changed.
 - [ ] Continue other repeated-summary bands (Q074–Q136, Q158–Q184) against the manifest and dialogue, without changing locked canon or prematurely approving editorial H/HS mappings.
+
+## Q158–Q184 canonical objective summary differentiation — 3 November 2026
+
+- [x] Compared all 27 final-chapter Q158–Q184 entries with stage descriptions in the sole working quest manifest.
+- [x] Replaced 19 repeated broad `Objective:` summaries with distinct stage-grounded actions (commit `ed23612e`). Eight entries already containing specific `Gameplay objective` descriptions were preserved without rewriting their established lore-purpose context.
+- [x] Preserved final order: Thes'var killed at Q176, misalignment examined at Q177, Oth'varen learns fatal cost and chooses correction Q178–Q179, Seven/mortal teams sustain alignment Q180, Oth'varen physically dies before completed Nhal shattering Q181, epilogue Q182–Q184.
+- [ ] Continue earlier duplicated canonical chapter summaries (especially Q074–Q136), check specific contact/location/quest-stage alignment, and finish historical H/HS mapping and repository backlinks before tracker retirement.
