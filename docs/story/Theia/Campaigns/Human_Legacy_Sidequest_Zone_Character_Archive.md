@@ -532,7 +532,14 @@ cards. It is retained for future review, subject to the current canonical campai
   access. The old packet's uncertainty about the Shattered Delegation victim
   is SUPERSEDED by the creator-confirmed High Ruler's brother/Great Clan chief.
 
-Oth'varen's restricted expertise and limits belong to his existing character
-record and approved campaign. The old packet's claim that all founders survive
-is SUPERSEDED, not a future alternative. Their locked deaths, Oth'varen's Q181
+**Oth'varen — retained historical character constraints (ARCHIVED/WORKING):**
+The Grey Surveyor was an occupational identity, not a replacement name or an
+invented bloodline. The packet explicitly limited his effectiveness through
+finite reserves, corruption, incomplete knowledge of the modern world, and the
+need to protect several people at once. Six-field expertise did not enable
+ordinary cooperative multi-mage casting. Preserve these as source-specific
+character/design constraints for review against his approved arc and current
+campaign, not newly approved mechanics. The founders' ancient friendship with
+him did not imply a modern reconciliation. The old packet's claim that all
+founders survive is SUPERSEDED, not a future alternative. Their locked deaths, Oth'varen's Q181
 sacrifice and Nhal's shattering remain governed by the canonical narrative.
