@@ -1115,4 +1115,11 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] PR #29 independently reviewed and merged (`757f5e866ede0b2d450586ecc90847af04d6ea38`): 12 exact lock copies consolidated, original headings retained and First Anchor authorization corrected.
 
 - [x] Consolidated the remaining six Conclave/Oth'varen/inversion lock copies into current Bible links after verifying their old bodies matched the pre-reconciliation Bible. Preserved prior wording in Git history and scoped historical archive launch/zone/future proposals without approving or deleting unique concepts.
-- [ ] Independently review and merge remaining lock consolidation; legacy regional concepts and other derived references still require disposition work.
+- [x] PR #31 independently reviewed and merged (`871275e1b4781058423dfd9f528467a26d650e65`): six remaining lock copies consolidated and historical archive scope clarified; unique proposals preserved.
+
+## Act I foundation and Heartlands reference — 3 November 2026
+
+- [x] Kept the approved Act I foundation and all unique narrative/character/guardrail content, condensed repetitive preservation reviews, and reconciled Cassian's fixed live capture/custody with canonical Q030/Q031. Future sentence and unapproved presentation stay OPEN.
+- [x] Aligned Heartlands village/town/capital references with canonical Millhaven/Stoneford/Valecrown and preserved Greyfall Quarry's established name. All service tables and approval limits retained; unapproved layouts, assignments and systems remain WORKING/OPEN.
+- [x] PR #30 (`ea770ab99a367fc83d40439897626b42695f8830`) consolidated four HS archive tables into one, preserving all 24 hook/triage/stage/access rows; mappings remain OPEN.
+- [ ] Independently review and merge foundation/reference reconciliation. This retains necessary supporting documents rather than retiring unique approved story.
