@@ -840,3 +840,11 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Identified old Act V Major Anchor inversion as a superseded launch-finale placement, and the scattered-divinity/new-divine-war/long-range-accord material as unapproved future concepts. Preserved original prose for provenance rather than deleting unreviewed unique ideas.
 - [ ] Review remaining internal Future Saga sentences for implicit post-launch timing and superseded inversion mechanics; verify dialogue/quest implications against canonical Q entries before any substantive consolidation.
 - [ ] Continue other Campaigns and root-story duplicate audits, original H/HS crosswalk, final backlinks and heading anchors. Tracker remains temporary until all checks pass.
+
+## Future Saga internal timing and finale contradiction pass — 3 November 2026
+
+- [x] Reconciled nine further `Future Saga.md` statements against the canonical Human 1–80 campaign (commit `329a5631`). Explicitly marked post-launch Shroud travel as a historical proposal incompatible with an intact Shroud after the level-70 Veilbreaker; kept former Shroud territory access as an unapproved possibility.
+- [x] Separated approved Veilbreaker outcome from unapproved engineering/construction sequencing, proposed Anchor conversion, and hypothetical technical limits on Nhal's gradual manifestation.
+- [x] Corrected the finale causal order: Thes'var dies; his sabotage misaligns convergence; only then Oth'varen realises the correction is fatal, tells Sera and the player, sees alignment hold and physically dies before Nhal's shattering. Older Nhal-only disruption attribution is superseded.
+- [ ] Continue review of other historical Future Saga details against the 184-quest register, especially implied optional facilities, travel, and unresolved expansion ideas. Do not promote them into the manifest by inference.
+- [ ] Continue remaining Campaigns and root-story audits, H/HS editorial ID crosswalk, backlink/heading-fragment checks and final tracker retirement.
