@@ -8,7 +8,7 @@ Read the [World Bible](../../THEIA_WORLD_BIBLE.md) alongside [later story decisi
 
 [Read historical source section](../../THEIA_WORLD_BIBLE.md)
 
-[Lore and World](Lore%20and%20World.md) · [Chronicles and History](../History/Chronicles%20and%20History.md) · [Home](../../README.md)
+[Lore and World](Lore%20and%20World.md) · [Historical Timeline](../History/Historical%20Timeline.md) · [Home](../../README.md)
 
 ## Related notes
 
