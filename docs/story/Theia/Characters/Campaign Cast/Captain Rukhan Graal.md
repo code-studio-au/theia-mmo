@@ -2,7 +2,7 @@
 type: character
 canon_status: Needs Review
 source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
-up: "[[Characters]]"
+up: "../Characters.md"
 ---
 # Captain Rukhan Graal
 
@@ -16,15 +16,15 @@ Orc military officer defending a Dominion coast
 Scouts, patrol plans and a later strengthened garrison
 
 ## Boundary and proposed resolution
-Hostile military opponent; not default [[The Unmade|Unmade]]. Remains a capable defender after the Covenant raid withdraws. Great Clans are not renamed Great Houses.
+Hostile military opponent; not default [Unmade](../../Lore/Institutions/The%20Unmade.md). Remains a capable defender after the Covenant raid withdraws. Great Clans are not renamed Great Houses.
 
 Source: [Dominion characters required by this human route](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
-[[Characters]] · [[Human Campaign]]
+[Characters](../Characters.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
 
-[[Lore/Institutions/Covenant|Covenant]] · [[Lore/Institutions/Dominion|Dominion]]
+[Covenant](../../Lore/Institutions/Covenant.md) · [Dominion](../../Lore/Institutions/Dominion.md)
 
-[[Orcs]]
+[Orcs](../../Lore/Peoples/Orcs.md)
