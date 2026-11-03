@@ -1,7 +1,7 @@
 ---
 type: character
 canon_status: Needs Review
-source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
+source: "../../../THEIA_HUMAN_CAST_AND_PLACES.md"
 up: "../Characters.md"
 ---
 # Sel'ora
@@ -15,7 +15,7 @@ New Kel'vari archive custodian associated with Oth'irun
 ## Motivation, limitations and proposed outcome
 Grants bounded record access after assistance; supplies independent evidence while protecting civilians and archive security.
 
-Source: [Allied and Kel'vari cast](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
+Source: [Allied and Kel'vari cast](../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
 [Characters](../Characters.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
