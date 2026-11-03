@@ -54,3 +54,7 @@ The original objectives and candidate references remain intact in the crosswalk 
 ## Optional HS-01–HS-12 stage comparison — 3 November 2026
 
 The first twelve historical optional quests were compared with current manifest objectives. None is approved as a one-to-one migration. HS-01, HS-02, HS-06, HS-08 and HS-10 have partial objective overlap with Q006, Q007, Q014, Q052 and Q055. HS-07 and HS-12 have strong thematic overlap with Q051 and Q101 but still need detail review. HS-03, HS-04, HS-05, HS-09 and HS-11 retain distinctive standalone sidequest concepts not represented by the proposed current stages: displaced-family settlement, wardstone interpretation, mill allocation, craft demonstration and injured-predator hunting practice. Preserve all original source outcomes and standalone access in the historical crosswalk and idea bank. Do not assign runtime IDs or add quests automatically. Review HS-13–HS-24 next.
+
+## HS-13–HS-24 review — 3 November 2026
+
+The remaining twelve optional HS source objectives were checked against the proposed current manifest stages. HS-13–16 and HS-18–19 preserve distinctive local tasks not present in those stages. HS-22–24 also retain distinct optional healing, caravan and patrol-training ideas. HS-17, HS-20 and HS-21 partially overlap current defense, archive and worker-protection quests but retain additional local context. Historical dependencies and enclave permissions remain source evidence, not approved runtime prerequisites. No one-to-one HS mappings, new quests or runtime IDs were approved.
