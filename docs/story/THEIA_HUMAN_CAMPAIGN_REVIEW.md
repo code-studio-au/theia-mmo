@@ -1,3 +1,5 @@
+> **HISTORICAL REVIEW RECORD — SUPERSEDED (3 November 2026).** This file documents the proposed 1–60 campaign packet, not the current launch narrative. For active Human story work use [Current Human Campaign](Theia/Campaigns/CURRENT_HUMAN_CAMPAIGN.md), [Canonical 1–80 Campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md) and the [single working quest manifest](Theia/Campaigns/Human_1_80_Current_Quest_Authoring_Manifest.json). Old Cassian sentencing, level-60 ending, quest counts and encounter outcomes below are historical proposals, not automatically approved current canon. Preserve unique source evidence and provenance until reconciliation; do not treat this review as a second quest register.
+
 # THEIA — HUMAN CAMPAIGN REVIEW RECORD
 
 **Status: Needs Review.** Prepared 15 October 2026. The complete proposed human launch story is ready for creator review; none of its new connective lore is labelled approved or locked. This record describes narrative and document validation, not a playable game build.
