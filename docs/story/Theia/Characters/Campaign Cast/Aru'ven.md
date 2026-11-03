@@ -1,7 +1,7 @@
 ---
 type: character
 canon_status: Needs Review
-source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
+source: "../../../THEIA_HUMAN_CAST_AND_PLACES.md"
 up: "../Characters.md"
 ---
 # Aru'ven
@@ -15,7 +15,7 @@ New Kel'vari gate steward associated with Thuma'rei
 ## Motivation, limitations and proposed outcome
 Authorises limited local access and protects neighbours. Neither ruler of the five enclaves nor proof they all agree.
 
-Source: [Allied and Kel'vari cast](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
+Source: [Allied and Kel'vari cast](../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
 [Characters](../Characters.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
