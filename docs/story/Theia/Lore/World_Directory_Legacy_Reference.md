@@ -6,7 +6,7 @@ Complete static navigation alongside the live browsing tables. Approval boundari
 
 ## campaign act
 - Human Act 1 — historical act reference; see [current canonical campaign](../Campaigns/Human_1_80_Canonical_Campaign.md)
-- [Human Act 2](../Campaigns/Human%20Act%202.md)
+- Human Act 2 — historical redirect retired; see [current canonical campaign](../Campaigns/Human_1_80_Canonical_Campaign.md)
 - Human Act 3 — historical act reference; see [current canonical campaign](../Campaigns/Human_1_80_Canonical_Campaign.md)
 - Human Act 4 — historical act reference; see [current canonical campaign](../Campaigns/Human_1_80_Canonical_Campaign.md)
 - Human Act 5 — historical act reference; see [current canonical campaign](../Campaigns/Human_1_80_Canonical_Campaign.md)
