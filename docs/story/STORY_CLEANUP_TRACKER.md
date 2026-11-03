@@ -757,3 +757,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Re-fetched all **six** History Markdown files outside `Events/` (Chronicles and History, Historical Timeline, Memory Scenes, The Binding and its Aftermath, The Six Reunited, Timelines). Their **60 Markdown link occurrences** resolve to existing files against the live main tree; zero remaining `[[...]]` wiki-links.
 - [x] Combined with the earlier 13-event audit (112 links), the **19-file History section** has passed syntax and file-target checks (172 links). These are not heading-anchor or semantic approval checks.
 - [ ] Continue Campaigns, Editorial, root story files and historical duplicate/branch reconciliation before removing this temporary tracker.
+
+## Editorial reading maps audit — 3 November 2026
+
+- [x] Re-fetched all **17 Editorial Markdown files** against tree `e56b0dc6`: **49 relative Markdown links**, zero missing file targets. The only `[[...]]` match was literal explanatory text `[[wikilink]]` in Source Reading Maps, not an active navigation link.
+- [x] Reading Maps are explicitly historical aids, not independent canon or current quest registry. No unique annotations were deleted.
+- [ ] Verify incoming links and unique historical annotations before retiring individual reading maps. Continue Campaigns and root story audits.
