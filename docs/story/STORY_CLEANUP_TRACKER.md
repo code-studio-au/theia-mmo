@@ -793,3 +793,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Migrated DR-O1, DR-O2 and DR-O3 to root connected-racial provenance, index, Captain Rukhan Graal and Covenant/Dominion Markdown links (commits `3ee81fd8`, `99ddafcaa`, `812efcdf`).
 - [x] Preserved **Needs Review** status and native Dominion military agency; local defence does not end the war or create cross-alliance friendship.
 - [ ] Six Connected Stories remain (DR-R and DR-V); run full 21-file audit after their migration.
+
+## Vorrath Dominion companion story migration — 3 November 2026
+
+- [x] Migrated DR-R1, DR-R2 and DR-R3 to surviving connected-racial provenance, index, Shorvek Tal, Dominion and Unmade Markdown references (commits `7ab35f75`, `8b3ac929`, `880b8499`).
+- [x] Preserved their **Needs Review** status, local civilian and military sovereignty, and bounded evidence (no proof of all Unmade leaders or friendly Covenant cooperation).
+- [ ] Three Vaelari Connected Stories remain, followed by full 21-file link-target audit and Campaigns root/Encounters review.
