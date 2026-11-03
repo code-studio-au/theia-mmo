@@ -2,7 +2,7 @@
 type: character
 canon_status: Needs Review
 source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
-up: "[[Characters]]"
+up: "../Characters.md"
 ---
 # Iven Rusk
 
@@ -20,4 +20,4 @@ Defeated and detained where feasible; not promoted to a primordial cult leader
 
 Source: [New human and expedition cast](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
-[[Characters]] · [[Human Campaign]]
+[Characters](../Characters.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
