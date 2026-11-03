@@ -4,7 +4,7 @@ Browse the `Places/` location notes and `Enclaves/` Kel'vari enclave notes as in
 
 ## Sources
 
-- [Human cast and places](../../THEIA_HUMAN_CAST_AND_PLACES.md)
+- [Retained historical geography and service context](../Campaigns/Human_Legacy_Sidequest_Zone_Character_Archive.md#retired-cast-geography-and-service-packet); individual place notes preserve their approval limits
 - [Heartlands settlement register](../../THEIA_HUMAN_HEARTLANDS_SETTLEMENT_REGISTER.md)
 - [Zone population framework](../../THEIA_ZONE_POPULATION_FRAMEWORK.md)
 - [World Bible](../../THEIA_WORLD_BIBLE.md) — geography and canon-status distinctions

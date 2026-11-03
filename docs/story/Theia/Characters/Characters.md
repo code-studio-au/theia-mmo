@@ -13,7 +13,7 @@ These overarching arcs are creator-approved, while specific scenes retain their 
 
 ## Campaign cast and source status
 
-Browse individual notes in the `Campaign Cast/` folder. [Human Cast and Places](../../THEIA_HUMAN_CAST_AND_PLACES.md) distinguishes approved starting roles from proposed additions. New characters, destinations and future outcomes retain their **Needs Review** status unless superseded by explicit creator decisions.
+Browse individual notes in the `Campaign Cast/` folder. Each card distinguishes its approved roles from proposed additions and links its archived source evidence. [Shared historical cast/service context](../Campaigns/Human_Legacy_Sidequest_Zone_Character_Archive.md#retired-cast-geography-and-service-packet) is retained once in the legacy archive. New characters, destinations and future outcomes retain their **Needs Review** status unless superseded by explicit creator decisions.
 
 ## Divine and primordial figures
 

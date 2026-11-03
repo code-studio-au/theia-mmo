@@ -134,7 +134,7 @@ The register contains **92 principal quests**, five solo story climaxes and **24
 
 ## Optional local stories
 
-These branches can be taken without the principal campaign unless their optional continuation explicitly needs a previous local quest. Their consequences use local dialogue and nonessential rewards; they never hold up the case or replace a main prerequisite. New NPCs are defined in [Cast and Places](THEIA_HUMAN_CAST_AND_PLACES.md).
+These branches can be taken without the principal campaign unless their optional continuation explicitly needs a previous local quest. Their consequences use local dialogue and nonessential rewards; they never hold up the case or replace a main prerequisite. Historical NPC proposals are preserved in the [character cards](Theia/Characters/Characters.md), with shared context in the [legacy archive](Theia/Campaigns/Human_Legacy_Sidequest_Zone_Character_Archive.md#retired-cast-geography-and-service-packet); this source register does not approve them.
 
 | ID | Area / contact | Quest and complete local outcome | Link |
 | --- | --- | --- | --- |

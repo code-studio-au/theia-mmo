@@ -339,11 +339,11 @@ This section preserves the unique encounter hooks without retaining a second act
 
 The complete former `docs/story/THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md` content is retained below as **historical, unapproved proposals**, including the 9 CR story beats, 12 DR Dominion-side quests, faction constraints and local story closures. These are not additional Human Q001–Q184 quests. Internal links and H-series labels in this preserved excerpt are historical and may no longer resolve as active pages.
 
-> **HISTORICAL CROSS-RACIAL CAMPAIGN PROPOSALS (3 November 2026).** The allied `CR-` groupings and twelve proposed Dominion companion-race quests below were authored for the superseded Human 1–60 route. They are **not** additional Human 1–80 quest definitions or approved Dominion racial campaigns. Current Human authority: [Current Human Campaign](Theia/Campaigns/CURRENT_HUMAN_CAMPAIGN.md) and [Canonical Human 1–80 Campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md). Preserve unique Dominion perspectives, sovereign institutions and faction-boundary ideas for later independent race-story review. Do not delete this source before unique content and incoming links are checked.
+> **HISTORICAL CROSS-RACIAL CAMPAIGN PROPOSALS (3 November 2026).** The allied `CR-` groupings and twelve proposed Dominion companion-race quests below were authored for the superseded Human 1–60 route. They are **not** additional Human 1–80 quest definitions or approved Dominion racial campaigns. Current Human authority: [Current Human Campaign](CURRENT_HUMAN_CAMPAIGN.md) and [Canonical Human 1–80 Campaign](Human_1_80_Canonical_Campaign.md). Preserve unique Dominion perspectives, sovereign institutions and faction-boundary ideas for later independent race-story review. Do not delete this source before unique content and incoming links are checked.
 
 ### Original cross-racial source (historical copy)
 
-**Status: Needs Review.** These are the allied quest sequences and Dominion character stories needed to support the proposed complete [canonical Human 1–80 campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md). They preserve sovereign institutions and permanent alliance separation. They are not approval of the other races' openings or a claim to have written all eight full campaigns.
+**Status: Needs Review.** These are the allied quest sequences and Dominion character stories needed to support the proposed complete [canonical Human 1–80 campaign](Human_1_80_Canonical_Campaign.md). They preserve sovereign institutions and permanent alliance separation. They are not approval of the other races' openings or a claim to have written all eight full campaigns.
 
 The allied sequences below are substantial visits within the 92-quest human route; their `CR-` identifiers group existing quests and do not add duplicate mandatory tasks. Dominion sequences are **12 proposed companion-race quests** for the native alliance's future use. They have local beginnings and endings here, but are not prerequisites, friendly NPC quests or playable additions to the human route. A future Dominion writer can retain the character motive and evidence boundary without adopting every proposed objective.
 
@@ -471,3 +471,75 @@ These proposed native quests supply authors with motives and counterpart evidenc
 
 Live territorial events may change supplies, patrol activity and optional rewards within their approved systems. They do not retroactively change which official betrayed Edric or whether a player completed the human story. Dominion's future full campaign must produce its own defensive victory through its own institutions, without needing the human hero's completion flag.
 
+## Retired cast, geography and service packet
+
+**ARCHIVED source; proposal details remain WORKING, not newly approved canon.**
+The [original Human 1–60 packet](https://github.com/code-studio-au/theia-mmo/blob/a52b29999d803e2b861319ffefcd3c394baaa1ad/docs/story/THEIA_HUMAN_CAST_AND_PLACES.md) is preserved in Git history.
+Its 16 place rows and 47 character rows are retained in the existing
+[place notes](../Atlas/Atlas.md) and [character cards](../Characters/Characters.md),
+with their original approval boundaries. The nine named service cards remain
+individual proposals. These are the homes for those details; the obsolete table
+is not copied into this archive. Approved starting roles remain approved, while
+later developments, endings and assignments require their own evidence.
+
+The following shared proposal context was not fully represented by individual
+cards. It is retained for future review, subject to the current canonical campaign:
+
+- **Topology:** ordinary allied-city access need not wait for a formal campaign
+  visit; overseas military access used friendly footholds, while Shroud access
+  was a separate restricted Passage problem. Working roads/sites may move to fit
+  the map, not locked racial terrain or inland/coastal political distinctions.
+  Distances, bearings and travel times were never fixed by this packet. Its old
+  Outer Passage, Chainworks and Lantern Redoubt route claims do not override
+  the canonical Guardian–Kel'vari gate and longstanding Redoubt.
+- **Repair staging:** the historical design used material delivery, securing
+  existing routes, services or non-collision presentation changes rather than
+  rebuilding terrain or demanding destructible buildings. This preserves an
+  old design constraint, not a new implementation requirement or code review.
+- **Civilian continuity:** Millhaven shops and healing supplies remain staffed
+  when named contacts travel; Elara's district does not lose its permanent
+  defender. Stoneford's everyday services stay available during investigation.
+  Royal audiences and Mara's field duties do not remove Valecrown services;
+  authorised deputies can receive case deliveries.
+- **Expedition continuity:** Tidehold keeps ordinary harbour and expedition
+  suppliers, with Ysra at the docks; Corven is not a routine vendor or delivery
+  contact. Allied specialists use deputies rather than closing home services.
+  Corra covers Northwatch while Nessa travels. Northwatch retains supplies,
+  medical/repair and extraction contacts, not a replacement capital economy.
+  Historical Northwatch and Redoubt story interiors were intended to remain
+  usable independently of contested-frontier ownership; this is a proposed
+  access safeguard, not approval of a world-control system.
+- **Redoubt support:** limited expedition repair, medicine and provisions under
+  local agreement, not an automatic full city/auction economy. The earlier
+  proposed Covenant-post origin is SUPERSEDED by the canonical longstanding
+  Guardian–Kel'vari outpost.
+- **Service assignments:** Heddan's craft orientation, Anwen's introductory Life
+  guidance, Elara/Darian's combat orientation, visiting Oren and Brynja/Edda or
+  Irielle's local training are historical proposed responsibilities, not a
+  locked class/profession roster. Basic training remains subject to the
+  [approved settlement framework](../../THEIA_HUMAN_HEARTLANDS_SETTLEMENT_REGISTER.md).
+  Inventories, item tiers, recipes, schedules and merchant presentation were
+  left open. Shared surnames establish no kinship; no race acquires exclusive
+  access to a magical discipline from these labels.
+- **Defeat and custody:** historical captured opponents use surrender/detention
+  after defeat, not repeated execution and resurrection. Exact presentation,
+  durability and group variants were unapproved. Old Malrec/Keld/Voss staging
+  and Cassian's proposed sentence cannot replace the current campaign outcomes.
+- **Scope and sovereignty:** not every vendor needs a secret or tragic arc.
+  The enclave route did not require visits or invented rulers for Veyr'athun
+  and Soru'vaeth; the five enclaves are not the whole Kel'vari population.
+  First Archon Selrion's public institutions do not grant friendly Human
+  access. The old packet's uncertainty about the Shattered Delegation victim
+  is SUPERSEDED by the creator-confirmed High Ruler's brother/Great Clan chief.
+
+**Oth'varen — retained historical character constraints (ARCHIVED/WORKING):**
+The Grey Surveyor was an occupational identity, not a replacement name or an
+invented bloodline. The packet explicitly limited his effectiveness through
+finite reserves, corruption, incomplete knowledge of the modern world, and the
+need to protect several people at once. Six-field expertise did not enable
+ordinary cooperative multi-mage casting. Preserve these as source-specific
+character/design constraints for review against his approved arc and current
+campaign, not newly approved mechanics. The founders' ancient friendship with
+him did not imply a modern reconciliation. The old packet's claim that all
+founders survive is SUPERSEDED, not a future alternative. Their locked deaths, Oth'varen's Q181
+sacrifice and Nhal's shattering remain governed by the canonical narrative.

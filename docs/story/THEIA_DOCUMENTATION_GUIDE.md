@@ -65,8 +65,7 @@ applies to the historical 1–60 proposals, not to the later approved 1–80 bas
 
 - [Historical Human Quest Register](THEIA_HUMAN_QUEST_REGISTER.md): 92 H and
   24 HS editorial source IDs, not current order, runtime IDs or approved mappings.
-- [Cast, Places and Services](THEIA_HUMAN_CAST_AND_PLACES.md): historical contacts,
-  working geography and services, with approval boundaries retained.
+- [Retained cast, geography and service context](Theia/Campaigns/Human_Legacy_Sidequest_Zone_Character_Archive.md#retired-cast-geography-and-service-packet): historical proposal context, with individual character/place cards preserving their approval boundaries.
 - [Legacy Ideas Archive](Theia/Campaigns/Human_Legacy_Sidequest_Zone_Character_Archive.md):
   preserved connected-racial, sidequest and encounter proposals, not added Human quests.
 - The retired Human 1–60 Campaign Review Record remains in Git history at
