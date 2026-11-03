@@ -1,7 +1,7 @@
 ---
 type: character
 canon_status: approved-role; proposed-development
-source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
+source: "../../../THEIA_HUMAN_CAST_AND_PLACES.md"
 up: "../Characters.md"
 ---
 # King Aldren Vaelmont
@@ -18,7 +18,7 @@ Grief makes the planted account persuasive; accepts betrayal inside his court; r
 ## Proposed launch ending — Needs Review
 Removes Cassian, protects review of convictions and records, publishes a safe correction; remains human King, not Covenant High Ruler
 
-Source: [Approved recurring humans: complete launch movements](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
+Source: [Approved recurring humans: complete launch movements](../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
 [Characters](../Characters.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
