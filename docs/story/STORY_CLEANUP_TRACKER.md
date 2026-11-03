@@ -319,3 +319,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 
 - [x] Live-fetched **9/9** Markdown targets in `Theia/History/Chronicles and History.md`, **5/5** in `Theia/History/Timelines.md`, and **4/4** in `Theia/Campaigns/Story Encounters.md`; **18/18 target references exist, zero missing**. Some target files are shared between indexes, so 18 counts link occurrences, not unique documents.
 - [ ] This does not verify heading anchors, all Obsidian wiki-links, narrative equivalence or all repository paths. Continue remaining index checks and protected historical content review.
+
+## Character index link-target verification — 3 November 2026
+
+- [x] Live-fetched all **9 Markdown file targets** in `Theia/Characters/Characters.md`: six Conclave/Sixth Scholar character pages, the historical Human Cast and Places source, Seven Gods lore, and current Human campaign. **9/9 exist, zero missing**.
+- [x] Replaced one directory-only Markdown link to `Campaign Cast/` with a plain folder reference (commit `ecef0783`).
+- [ ] Continue repository-wide source references and historical-content semantic audit. File-target existence does not verify heading anchors or canon status.
