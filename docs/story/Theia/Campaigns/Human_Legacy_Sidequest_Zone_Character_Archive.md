@@ -10,35 +10,47 @@ A candidate is **not confirmed unique** until checked against the current manife
 
 ## Optional local side-quest candidates (HS-01–HS-24)
 
-| Historical ID | Location / contact | Reusable standalone hook |
-|---|---|---|
-| HS-01 | Millhaven / Tomas | Seed stores, duplicate levy and village dispute |
-| HS-02 | Millhaven / Heddan | Salvaged iron and public-tool repair priorities |
-| HS-03 | Millhaven / Mera | Displaced family, returning worker and inn accommodation |
-| HS-04 | Elderwood / Oren | Wardstone warning survey; cautious scholarship |
-| HS-05 | Stoneford / Nera | Water and grain-weight milling dispute |
-| HS-06 | Greyfall Quarry / Joss | Rescue trapped workers and recover survey equipment |
-| HS-07 | Kar Durn / Brynja | Missing maintenance crew and hold infrastructure |
-| HS-08 | Kar Durn / Rurik | Unpaid contractor and hold-law settlement |
-| HS-09 | Kar Durn / forge services | Craft-service introduction through practical repairs |
-| HS-10 | Sylvaren / Caelith | Nursery boundary repair and mundane threats |
-| HS-11 | Sylvaren / Irielle | Injured predator and responsible hunting |
-| HS-12 | Sylvaren / archive staff | Conflicting historical copies without forced certainty |
-| HS-13 | Drom Kar / Urodan | Civic memorial and ordinary family records |
-| HS-14 | Drom Kar / Tarek | Highland route survey and rescue |
-| HS-15 | Drom Kar / craft services | Winter fuel and tool preparation |
-| HS-16 | Tidehold / Ysra | Berth scheduling and stranded cargo rescue |
-| HS-17 | Northwatch / Nessa | Fort maintenance, supply and optional contested-world variant |
-| HS-18 | Northwatch / Darian | Return the belongings of fallen soldiers to families |
-| HS-19 | Shroud approach / Aru'ven | Repair-material allocation within enclave limits |
-| HS-20 | Shroud archive / Sel'ora | Recover civilian household records |
-| HS-21 | Shroud frontier / Leth'ari | Protect cultivation fieldwork and instruments |
-| HS-22 | Heartlands / Anwen | Consent-based conservative healing trial |
-| HS-23 | Heartlands / Brenna | Caravan preparations for an expanded allied route |
-| HS-24 | Millhaven / Darian | Recruit patrol training; possible optional epilogue |
+**ARCHIVED: 24 historical optional hooks, not 24 approved quests.** This single table consolidates the former hook list, thematic crosswalk, 2 November triage, 3 November stage/access comparison and two half-range summaries. [Historical source objectives](../../THEIA_HUMAN_QUEST_REGISTER.md#optional-local-stories) retain the full local outcomes and safeguards; [prior comparison tables](https://github.com/code-studio-au/theia-mmo/blob/37dd8520f7990cbb42bc7c7c52f02de0efd31a76/docs/story/Theia/Campaigns/Human_Legacy_Sidequest_Zone_Character_Archive.md) preserve their review provenance.
 
-These are **candidates**, not 24 newly approved quests. Check thematic overlap, travel and spoiler gates before reuse. HS-24's old H5-20 prerequisite is historical only.
+The Q references are **WORKING comparison proposals, not approved mappings or runtime IDs**. The stage column preserves the earlier review's wording as historical evidence, not a second current inventory or a claim of implementation. The [canonical campaign](Human_1_80_Canonical_Campaign.md) controls current objectives, contacts and consequences. Strong overlap does not authorize deleting a source ID, collapsing several distinct regional hooks into one Q entry, or importing historical prerequisites. Future reuse and mapping approval remain **OPEN**.
 
+| Historical ID | Historical location / contact | Reusable hook | Historical access (not a current gate) | Proposed Q comparison | Historical stage-comparison snapshot | Retained triage and candidate disposition |
+|---|---|---|---|---|---|---|
+| HS-01 | Millhaven / Tomas | Seed stores, duplicate levy and village dispute | Standalone | Q006 — Seed Before Winter | Count seed sacks; Check levy ledger; Correct requisition | Seed inventory and levy correction represented; original village dispute not explicit; Partial — keep village mediation hook |
+| HS-02 | Millhaven / Heddan | Salvaged iron and public-tool repair priorities | Standalone | Q007 — A Cart That Can Move | Inspect axle; Collect iron; Repair cart | Iron collection/repair represented, but public-tool priorities are different from cart repair; Distinct local craft candidate |
+| HS-03 | Millhaven / Mera | Displaced family, returning worker and inn accommodation | Standalone | Q032 — After the Arrest | Receive household restitution ledger; Distribute returned goods; Inform affected family without revealing protected witness; Close restitution record | Restitution/family aid represented, but inn lodging and returning worker are different; Distinct social sidequest candidate |
+| HS-04 | Elderwood / Oren | Wardstone warning survey; cautious scholarship | Standalone | Q055 — The Nursery Route | Receive local rescue request; Reach damaged woodland ward; Rescue forest workers from ordinary hazards; Protect and repair local ward; Report local outcome | Ward repair represented, but Oren's warning survey/scholarship absent from objective wording; Distinct scholarly survey candidate |
+| HS-05 | Stoneford / Nera | Water and grain-weight milling dispute | Standalone | Q015 — One Bridge, Two Claims | Inspect supports; Hear miller; Hear merchant; Choose repair priority; Reopen crossing | Miller involved, but water allocation/grain weight agreement differs from bridge repair; Distinct civic dispute candidate |
+| HS-06 | Greyfall Quarry / Joss | Rescue trapped workers and recover survey equipment | Standalone | Q014 — The Quarry Bell | Find missing crew; Clear cave hazard; Recover tally; Return findings | Quarry rescue and cave hazard represented; survey tools and optional elite variant not explicit; Partial — preserve details |
+| HS-07 | Kar Durn / Brynja | Missing maintenance crew and hold infrastructure | Standalone | Q051 — The Feeder Gallery | Receive maintenance incident report; Enter damaged tunnels; Secure trapped crew from hazards; Recover service equipment; Report neglected maintenance rather than conspiracy | Missing maintenance crew/equipment and rescue represented; Strong overlap — verify character/route detail |
+| HS-08 | Kar Durn / Rurik | Unpaid contractor and hold-law settlement | Standalone | Q052 — Grain for Iron | Review grain and iron deliveries; Compare conflicting delivery dates; Secure engineering cooperation; Close legitimate trade dispute | Trade dispute represented, but unpaid contractor and hold law differ; Distinct legal sidequest candidate |
+| HS-09 | Kar Durn / forge services | Craft-service introduction through practical repairs | Standalone | Q007 — A Cart That Can Move | Inspect axle; Collect iron; Repair cart | Materials/repair represented, but craft-service tutorial differs; Distinct service tutorial candidate |
+| HS-10 | Sylvaren / Caelith | Nursery boundary repair and mundane threats | Standalone | Q055 — The Nursery Route | Receive local rescue request; Reach damaged woodland ward; Rescue forest workers from ordinary hazards; Protect and repair local ward; Report local outcome | Nursery ward repair and hazard represented; Strong overlap — verify boundaries and nursery context |
+| HS-11 | Sylvaren / Irielle | Injured predator and responsible hunting | Standalone | Q055 — The Nursery Route | Receive local rescue request; Reach damaged woodland ward; Rescue forest workers from ordinary hazards; Protect and repair local ward; Report local outcome | Injured predator/hunting ethics not present in current stage descriptions; Distinct ecology sidequest candidate |
+| HS-12 | Sylvaren / archive staff | Conflicting historical copies without forced certainty | Standalone | Q101 — Two Histories | Read first post-Sundering history; Read independently preserved history; Record differences | Comparison of conflicting historical accounts represented; Strong overlap — verify archival provenance |
+| HS-13 | Drom Kar / Urodan | Civic memorial and ordinary family records | Standalone | Q063 — The City That Endured | Receive waterway work assignment; Reach damaged channel; Secure water route; Obtain archive referral | Civic memorial/family records not represented in waterway assignment; Distinct memorial candidate |
+| HS-14 | Drom Kar / Tarek | Highland route survey and rescue | Standalone | Q064 — Water and Memory | Receive tunnel access; Reach old store; Protect crew; Recover warning | Crew protection represented; highland route mapping and stranded survey differ; Distinct exploration candidate |
+| HS-15 | Drom Kar / craft services | Winter fuel and tool preparation | Standalone | Q063 — The City That Endured | Receive waterway work assignment; Reach damaged channel; Secure water route; Obtain archive referral | Winter fuel/tools not represented in waterway assignment; Distinct preparedness candidate |
+| HS-16 | Tidehold / Ysra | Berth scheduling and stranded cargo rescue | Standalone | Q037 — Short of the Manifest | Inspect damaged delivery; Read official manifest; Compare requisition against cargo; Authenticate false requisition | Manifest comparison represented, but innocent scheduling error differs from forged requisition; Distinct harbour logistics candidate |
+| HS-17 | Northwatch / Nessa | Fort maintenance, supply and optional contested-world variant | Standalone | Q046 — A Landing Still at War | Receive Northwatch defense briefing; Defend supply evacuation against conventional Dominion attack; Protect wounded and equipment; Report ordinary wartime losses | Defense and supply represented; fort maintenance/contested-world alternative not explicit; Partial — preserve optional variant idea |
+| HS-18 | Northwatch / Darian | Return the belongings of fallen soldiers to families | After HS-17 | Q046 — A Landing Still at War | Receive Northwatch defense briefing; Defend supply evacuation against conventional Dominion attack; Protect wounded and equipment; Report ordinary wartime losses | Wartime losses represented, but return of personal belongings to families differs; Distinct aftermath candidate |
+| HS-19 | Shroud approach / Aru'ven | Repair-material allocation within enclave limits | Story arrival or equivalent independent access | Q088 — Permission to Remain | Hear Kel'vari access conditions; Register research boundaries; Receive permission to remain | Access agreement represented; repair material scarcity/allocation not explicit; Distinct enclave logistics candidate |
+| HS-20 | Shroud archive / Sel'ora | Recover civilian household records | Story arrival or equivalent independent access | Q093 — An Audience Earned | Receive exposed record assignment; Protect threatened store; Rehouse records; Report | Exposed archive recovery represented; civilian household-record emphasis worth retaining; Strong overlap — verify civilian framing |
+| HS-21 | Shroud frontier / Leth'ari | Protect cultivation fieldwork and instruments | Story arrival or equivalent independent access | Q087 — Those Who Remained | Receive missing worker request; Reach authorized site; Protect workers; Return equipment and report | Worker rescue and equipment return represented; cultivation instruments/team context may differ; Partial — preserve cultivation specificity |
+| HS-22 | Heartlands / Anwen | Consent-based conservative healing trial | After HS-03 or local healer introduction | Q008 — The Healer's Ledger | Interview first patient; Interview second patient; Deliver herbs; File observations | Healer observations represented; consent-based trial and conservative reserve limits differ; Distinct healing research candidate |
+| HS-23 | Heartlands / Brenna | Caravan preparations for an expanded allied route | After HS-05 | Q017 — The Long Way Home | Prepare returned supplies; Travel with caravan; Clear obstruction; Deliver supplies | Caravan preparation/travel represented; expansion to allied trade route not explicit; Partial — preserve route-expansion hook |
+| HS-24 | Millhaven / Darian | Recruit patrol training; possible optional epilogue | H5-20; optional epilogue | Q033 — The Watch Restored | Receive restored patrol route; Inspect new patrol marker; Defend road against ordinary threats; Record road reopened | Patrol route and road defense represented; recruit training/epilogue timing differs; Distinct training/epilogue candidate |
+
+**Canonical Markdown checks — 3 November 2026:**
+
+- HS-07's proposed Brynja contact is not Q051's canonical Rurik contact. Q051 restores maintenance access and equipment; its old stage snapshot's trapped-crew details cannot approve a one-to-one migration.
+- HS-05's Nera milling dispute is distinct from Q015's Stoneford reeve and bridge/transport mediation. HS-23's Brenna expanded allied route is distinct from Q017's Elara contact and return escort to Millhaven; the historical stage snapshot is not a replacement for that outcome.
+- HS-13 and HS-15 remain distinct memorial and winter-preparation ideas. Q063 grants a water-route work assignment before archive access; the historical stage snapshot must not be read as requiring that route already secured at Q063. Q064 carries the maintenance-route and warning-recovery work.
+- The remaining proposed Q references were checked against their canonical Markdown objectives: shared seed, repair, relief, nursery, historical-copy, depot, defence, access, record, worker, healing and patrol themes do not erase the source-specific choices, civilian purposes, contacts or access conditions.
+- Keep HS-02 public-tool priorities and HS-09 craft-service introduction separate; keep HS-04 scholarship, HS-10 nursery boundaries and HS-11 hunting ethics separate. HS-17 fort maintenance and HS-18 returning soldiers' belongings also remain distinct, including HS-18's historical dependency.
+- HS-19 material allocation does not enlarge enclave access. HS-22 consent and conservative healing limits do not promise universal cures. HS-24's old H5-20 epilogue condition cannot become a current level gate or replace Q033's patrol.
+
+**Disposition:** preserve all 24 hooks and their original source outcomes, including optional variants and nonessential rewards. Exact contact, location, access and consequence equivalence still requires approval before reuse. No canonical quest, manifest entry, outcome, runtime ID or executable data is changed.
 ## Zone and civilian-life opportunities
 
 - **Human Heartlands:** Millhaven, Stoneford, Elderwood and Greyfall Quarry provide low-stakes economic, rescue and civic storylines without making every incident part of the Unmade conspiracy.
@@ -58,7 +70,7 @@ H5-03's early Nhal identification, H5-12's early Thes'var intervention, H5-14's 
 
 ## Next review checklist
 
-1. Compare each HS hook and 28 non-exact H dispositions against Q001–Q184 stages and current dialogue.
+1. Use the consolidated HS table and non-exact H findings below; do not restart the completed objective-level comparisons. Resolve remaining contact, access and consequence questions against canonical narrative and supporting dialogue before approving any reuse.
 2. Record `accounted-for`, `distinct-candidate`, `conflicted-retired` or `needs-review` in an approved provenance ledger; do not assume title equality proves content equality.
 3. Review unique regional NPC, settlement, encounter and service details against existing lore before extracting anything else.
 4. Once original source provenance is represented and all links are migrated, remove redundant Obsidian copies and navigation; keep one readable Markdown archive.
@@ -105,69 +117,7 @@ These are **candidate remnants**, not newly approved quests. Current Q reference
 
 The [exact-title audit](Human_Legacy_64_Exact_Title_Objective_Comparison.md) records eight legacy details that may enrich existing quests or separate local content: H2-05 hold permission for measuring-assembly recovery; H2-07 limited engineering commission and inspection report; H2-12 Sera's unstable observation site and comparison with Brynja's report; H2-14 physical isolation and emergency cutoff documentation; H2-17 Aelari material/procurement reference; H4-02 surveyed group access and maintenance terms; H4-08 restricted route disclosure and enclave security; H2-08 Northwatch garrison and extraction procedure. **All are unapproved candidates**, not new stages, canon or production requirements. Do not assume these are absent from dialogue or lore simply because manifest objective wording differs.
 
-## Optional-quest thematic crosswalk (not equivalence)
 
-The historical crosswalk proposes the following current quest references as **comparison targets only**. Shared setting or theme does not prove the original side quest is implemented or redundant.
-
-| Original optional ID | Compare with current campaign | Disposition |
-|---|---|---|
-| HS-01 | Q006 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
-| HS-02 | Q007 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
-| HS-03 | Q032 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
-| HS-04 | Q055 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
-| HS-05 | Q015 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
-| HS-06 | Q014 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
-| HS-07 | Q051 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
-| HS-08 | Q052 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
-| HS-09 | Q007 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
-| HS-10 | Q055 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
-| HS-11 | Q055 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
-| HS-12 | Q101 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
-| HS-13 | Q063 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
-| HS-14 | Q064 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
-| HS-15 | Q063 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
-| HS-16 | Q037 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
-| HS-17 | Q046 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
-| HS-18 | Q046 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
-| HS-19 | Q088 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
-| HS-20 | Q093 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
-| HS-21 | Q087 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
-| HS-22 | Q008 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
-| HS-23 | Q017 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
-| HS-24 | Q033 | Standalone candidate; verify objective, NPC, access and outcome before deduplication |
-
-## HS-series stage-level triage — 2 November 2026
-
-Compared the original HS descriptions with the **actual objective descriptions** in their proposed Q-series counterparts. These are editorial findings, not approval of runtime mappings. "Partial" means a similar action exists but the original standalone scenario is not demonstrably preserved.
-
-| Legacy | Proposed Q | Stage-level assessment | Disposition |
-|---|---|---|---|
-| HS-01 | Q006 | Seed inventory and levy correction represented; original village dispute not explicit | Partial — keep village mediation hook |
-| HS-02 | Q007 | Iron collection/repair represented, but public-tool priorities are different from cart repair | Distinct local craft candidate |
-| HS-03 | Q032 | Restitution/family aid represented, but inn lodging and returning worker are different | Distinct social sidequest candidate |
-| HS-04 | Q055 | Ward repair represented, but Oren's warning survey/scholarship absent from objective wording | Distinct scholarly survey candidate |
-| HS-05 | Q015 | Miller involved, but water allocation/grain weight agreement differs from bridge repair | Distinct civic dispute candidate |
-| HS-06 | Q014 | Quarry rescue and cave hazard represented; survey tools and optional elite variant not explicit | Partial — preserve details |
-| HS-07 | Q051 | Missing maintenance crew/equipment and rescue represented | Strong overlap — verify character/route detail |
-| HS-08 | Q052 | Trade dispute represented, but unpaid contractor and hold law differ | Distinct legal sidequest candidate |
-| HS-09 | Q007 | Materials/repair represented, but craft-service tutorial differs | Distinct service tutorial candidate |
-| HS-10 | Q055 | Nursery ward repair and hazard represented | Strong overlap — verify boundaries and nursery context |
-| HS-11 | Q055 | Injured predator/hunting ethics not present in current stage descriptions | Distinct ecology sidequest candidate |
-| HS-12 | Q101 | Comparison of conflicting historical accounts represented | Strong overlap — verify archival provenance |
-| HS-13 | Q063 | Civic memorial/family records not represented in waterway assignment | Distinct memorial candidate |
-| HS-14 | Q064 | Crew protection represented; highland route mapping and stranded survey differ | Distinct exploration candidate |
-| HS-15 | Q063 | Winter fuel/tools not represented in waterway assignment | Distinct preparedness candidate |
-| HS-16 | Q037 | Manifest comparison represented, but innocent scheduling error differs from forged requisition | Distinct harbour logistics candidate |
-| HS-17 | Q046 | Defense and supply represented; fort maintenance/contested-world alternative not explicit | Partial — preserve optional variant idea |
-| HS-18 | Q046 | Wartime losses represented, but return of personal belongings to families differs | Distinct aftermath candidate |
-| HS-19 | Q088 | Access agreement represented; repair material scarcity/allocation not explicit | Distinct enclave logistics candidate |
-| HS-20 | Q093 | Exposed archive recovery represented; civilian household-record emphasis worth retaining | Strong overlap — verify civilian framing |
-| HS-21 | Q087 | Worker rescue and equipment return represented; cultivation instruments/team context may differ | Partial — preserve cultivation specificity |
-| HS-22 | Q008 | Healer observations represented; consent-based trial and conservative reserve limits differ | Distinct healing research candidate |
-| HS-23 | Q017 | Caravan preparation/travel represented; expansion to allied trade route not explicit | Partial — preserve route-expansion hook |
-| HS-24 | Q033 | Patrol route and road defense represented; recruit training/epilogue timing differs | Distinct training/epilogue candidate |
-
-**Important:** Even "strong overlap" does not authorize deletion of the original editorial ID or all unique NPC/zone details. No HS entry has been promoted to an approved playable quest. These findings justify archiving rather than blindly deleting potential regional stories.
 
 ## Non-exact H-series stage-level triage — 2 November 2026
 
@@ -206,40 +156,6 @@ Compared each of the 28 non-exact H-series source objectives with the authored s
 
 **Disposition:** All 28 have been compared at the objective-description level. The five explicitly conflicting finale/reveal rows remain historical-only. Additional timing/sequence contradictions (e.g. H5-06 voyage count) must also be excluded. The remaining useful details stay in this non-canonical archive until checked against dialogue, zones and NPC records. A comparison is not proof that the old source copies are safe to delete.
 
-## HS-01–HS-24 candidate comparison against current manifest — 3 November 2026
-
-**Coverage: 24/24 historical optional hooks. Status: thematic comparison only; no migration or quest approval.** All 24 retain their original objectives in the draft crosswalk above. This table records the actual current candidate stages and original access conditions, so similarities do not silently erase distinct civilian content.
-
-| Historical ID | Proposed current candidate | Actual current stages | Historical access |
-|---|---|---|---|
-| HS-01 | Q006 — Seed Before Winter | Count seed sacks; Check levy ledger; Correct requisition | Standalone |
-| HS-02 | Q007 — A Cart That Can Move | Inspect axle; Collect iron; Repair cart | Standalone |
-| HS-03 | Q032 — After the Arrest | Receive household restitution ledger; Distribute returned goods; Inform affected family without revealing protected witness; Close restitution record | Standalone |
-| HS-04 | Q055 — The Nursery Route | Receive local rescue request; Reach damaged woodland ward; Rescue forest workers from ordinary hazards; Protect and repair local ward; Report local outcome | Standalone |
-| HS-05 | Q015 — One Bridge, Two Claims | Inspect supports; Hear miller; Hear merchant; Choose repair priority; Reopen crossing | Standalone |
-| HS-06 | Q014 — The Quarry Bell | Find missing crew; Clear cave hazard; Recover tally; Return findings | Standalone |
-| HS-07 | Q051 — The Feeder Gallery | Receive maintenance incident report; Enter damaged tunnels; Secure trapped crew from hazards; Recover service equipment; Report neglected maintenance rather than conspiracy | Standalone |
-| HS-08 | Q052 — Grain for Iron | Review grain and iron deliveries; Compare conflicting delivery dates; Secure engineering cooperation; Close legitimate trade dispute | Standalone |
-| HS-09 | Q007 — A Cart That Can Move | Inspect axle; Collect iron; Repair cart | Standalone |
-| HS-10 | Q055 — The Nursery Route | Receive local rescue request; Reach damaged woodland ward; Rescue forest workers from ordinary hazards; Protect and repair local ward; Report local outcome | Standalone |
-| HS-11 | Q055 — The Nursery Route | Receive local rescue request; Reach damaged woodland ward; Rescue forest workers from ordinary hazards; Protect and repair local ward; Report local outcome | Standalone |
-| HS-12 | Q101 — Two Histories | Read first post-Sundering history; Read independently preserved history; Record differences | Standalone |
-| HS-13 | Q063 — The City That Endured | Receive waterway work assignment; Reach damaged channel; Secure water route; Obtain archive referral | Standalone |
-| HS-14 | Q064 — Water and Memory | Receive tunnel access; Reach old store; Protect crew; Recover warning | Standalone |
-| HS-15 | Q063 — The City That Endured | Receive waterway work assignment; Reach damaged channel; Secure water route; Obtain archive referral | Standalone |
-| HS-16 | Q037 — Short of the Manifest | Inspect damaged delivery; Read official manifest; Compare requisition against cargo; Authenticate false requisition | Standalone |
-| HS-17 | Q046 — A Landing Still at War | Receive Northwatch defense briefing; Defend supply evacuation against conventional Dominion attack; Protect wounded and equipment; Report ordinary wartime losses | Standalone |
-| HS-18 | Q046 — A Landing Still at War | Receive Northwatch defense briefing; Defend supply evacuation against conventional Dominion attack; Protect wounded and equipment; Report ordinary wartime losses | After HS-17 |
-| HS-19 | Q088 — Permission to Remain | Hear Kel'vari access conditions; Register research boundaries; Receive permission to remain | Story arrival or equivalent independent access |
-| HS-20 | Q093 — An Audience Earned | Receive exposed record assignment; Protect threatened store; Rehouse records; Report | Story arrival or equivalent independent access |
-| HS-21 | Q087 — Those Who Remained | Receive missing worker request; Reach authorized site; Protect workers; Return equipment and report | Story arrival or equivalent independent access |
-| HS-22 | Q008 — The Healer's Ledger | Interview first patient; Interview second patient; Deliver herbs; File observations | After HS-03 or local healer introduction |
-| HS-23 | Q017 — The Long Way Home | Prepare returned supplies; Travel with caravan; Clear obstruction; Deliver supplies | After HS-05 |
-| HS-24 | Q033 — The Watch Restored | Receive restored patrol route; Inspect new patrol marker; Defend road against ordinary threats; Record road reopened | H5-20; optional epilogue |
-
-**Notable differences requiring preservation:** HS-02's public-tool priority choice and HS-09's crafting demonstration both point to Q007's cart repair, but are distinct ideas; HS-04's Oren wardstone scholarship, HS-10's nursery boundary and HS-11's injured predator all point to Q055's worker rescue, not one interchangeable quest. HS-13's memorial and HS-15's winter reserve both point to Q063's waterway task. HS-17 fort maintenance and HS-18 recovery of fallen soldiers' belongings both point to Q046's defense, but HS-18 has a distinct memorial consequence and historical dependency. HS-19 enclave repair-material allocation differs from Q088's access permission. HS-22's consent-based healing trial is not Q008's ordinary patient ledger. HS-24's historical post-H5 epilogue condition must not become a level gate or replace Q033's road patrol. Other close thematic matches still require contact, access and consequence checks.
-
-**Disposition:** preserve all 24 as noncanonical optional hooks pending independent editorial review. Do not add 24 active quests, merge source IDs, change the 184-quest manifest, or delete the original register solely on this stage comparison.
 
 ## Historical H/HS mapping review — consolidated
 
@@ -298,13 +214,7 @@ Rechecked the five conflict-flagged source objectives and `proposed_relation` fi
 
 The original objectives and candidate references remain intact in the crosswalk and root historical register. No new runtime IDs, canonical quest changes, or approval of optional quest additions follows from this classification. The archive remains the destination for distinct future sidequest ideas.
 
-## Optional HS-01–HS-12 stage comparison — 3 November 2026
 
-The first twelve historical optional quests were compared with current manifest objectives. None is approved as a one-to-one migration. HS-01, HS-02, HS-06, HS-08 and HS-10 have partial objective overlap with Q006, Q007, Q014, Q052 and Q055. HS-07 and HS-12 have strong thematic overlap with Q051 and Q101 but still need detail review. HS-03, HS-04, HS-05, HS-09 and HS-11 retain distinctive standalone sidequest concepts not represented by the proposed current stages: displaced-family settlement, wardstone interpretation, mill allocation, craft demonstration and injured-predator hunting practice. Preserve all original source outcomes and standalone access in the historical crosswalk and idea bank. Do not assign runtime IDs or add quests automatically. Review HS-13–HS-24 next.
-
-## HS-13–HS-24 review — 3 November 2026
-
-The remaining twelve optional HS source objectives were checked against the proposed current manifest stages. HS-13–16 and HS-18–19 preserve distinctive local tasks not present in those stages. HS-22–24 also retain distinct optional healing, caravan and patrol-training ideas. HS-17, HS-20 and HS-21 partially overlap current defense, archive and worker-protection quests but retain additional local context. Historical dependencies and enclave permissions remain source evidence, not approved runtime prerequisites. No one-to-one HS mappings, new quests or runtime IDs were approved.
 
 ## Original five-act Human narrative — retirement boundary
 
