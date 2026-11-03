@@ -1,12 +1,20 @@
 # THEIA — CHARACTER ARCS AND MILESTONES
 
-**Status:** Oth'varen and all five Corrupted Conclave founders have **creator-approved overarching character arcs** (14–15 October 2026). Their ancient histories, original roles, names, titles, transformations and loyalties remain established canon. Specific encounters, dialogue, outcomes and production details remain open unless separately approved.
+**Status:** Oth'varen and all five Corrupted Conclave founders have **creator-approved overarching character arcs** (14–15 October 2026). Their ancient histories, original roles, names, titles, transformations and loyalties remain established canon. Specific encounters, dialogue and production details retain their separate approval limits. Permanent launch outcomes are now fixed by the later canonical campaign, not left open by this historical arc plan.
 
-**Sources:** [Interwoven Chronicle](THEIA_INTERWOVEN_CHRONICLE.md) and [Modern Story and Revelation Timeline](THEIA_MODERN_STORY_REVELATION_TIMELINE.md). This is a player-facing development plan, not a replacement for the historical narrative.
+**Sources:** [Interwoven Chronicle](THEIA_INTERWOVEN_CHRONICLE.md) and [Modern Story and Revelation Timeline](THEIA_MODERN_STORY_REVELATION_TIMELINE.md). This is the home for character histories, personalities, relationships and approved thematic arcs, not a second campaign chronology.
+
+## Current authority and retained historical scope
+
+Follow the [story hierarchy and status definitions](README.md#approval-and-precedence). The overarching arcs retain their dated **LOCKED** approval. Their old milestone bands are thematic source context, not an instruction to change current quest order or revelation timing. Specific unapproved scenes/mechanics remain **WORKING**. The [canonical Human 1–80 campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md#non-negotiable-story-rules) governs the **CANONICAL** launch sequence and permanent outcomes, subject to later creator decisions.
+
+Oth'varen's launch-survival restriction, undecided founder fates, post-launch death placement and continued founder appearances after their permanent endings are **SUPERSEDED**. Use the [current decision ledger](DECISIONS.md) for the explicit supersession. His public identity is the Grey Surveyor until the Q097 reveal; do not disclose Oth'varen prematurely. Narrative truth and player knowledge remain distinct.
+
+The [pre-consolidation arc record](https://github.com/code-studio-au/theia-mmo/blob/399561a1f7645b481961f56ef115c6572bdec86b/docs/story/THEIA_CHARACTER_ARCS.md) preserves earlier wording and proposal provenance. Superseded outcomes are not future creative alternatives.
 
 ## Oth'varen — locked overarching arc
 
-**Core movement:** *Keeper of Secrets → Restorer of Trust*. Oth'varen is the sixth scholar who resisted Nhal during the First Anchor's activation. His transformed body grants exceptional longevity and power, but he remains mortal, vulnerable and subject to the corruption's persistent pull. He helped found the multiracial Guardians, witnessed the five founders' corruption and survived their first post-Binding reunion. His modern identity remains to be designed.
+**Core movement:** *Keeper of Secrets → Restorer of Trust*. Oth'varen is the sixth scholar who resisted Nhal during the First Anchor's activation. His transformed body grants exceptional longevity and power, but he remains mortal, vulnerable and subject to the corruption's persistent pull. He helped found the multiracial Guardians, witnessed the five founders' corruption and survived their first post-Binding reunion. His current public identity and reveal gate are governed by the canonical campaign above.
 
 **Inner conflict:** He believes dangerous knowledge must be contained because he saw trusted scholars conceal and misuse it. Centuries later, Guardian secrecy has also destroyed context, isolated cells and allowed the Unmade to exploit gaps in institutional memory. His challenge is to trust others with knowledge that could be used either to save or endanger Theia.
 
@@ -35,17 +43,17 @@
 - **Trust the Sixth Scholar.** His testimony is invaluable, but his concealment and lingering corruption are legitimate grounds for scrutiny.
 - **Attempt resonance inversion.** He must entrust other people with knowledge he once would have withheld.
 
-**Constraints:** Do not kill Oth'varen, cleanse his corruption or make him the sole saviour during the launch campaign. His greatest change is learning that secrecy alone cannot prevent another First Anchor. Preserve the full ancient reunion as a separate Memory Scene.
+**Current constraints:** Preserve Oth'varen's informed sacrifice and physical death at the locked level-80 finale. Do not cleanse him, resurrect him, make him a permanent vessel or make him the sole saviour. His greatest change is learning that secrecy alone cannot prevent another First Anchor. The canonical campaign owns exact sequencing; preserve the ancient reunion separately in [Memory Scenes](THEIA_MEMORY_SCENES.md).
 
 ---
 
-## Corrupted Conclave — proposed parallel character arcs
+## Corrupted Conclave — approved overarching arcs and scoped encounter proposals
 
 The five are not interchangeable bosses. Each should pursue Nhal's purpose through an established scholarly talent and a personal interpretation of what the catastrophe meant. Their extraordinary longevity makes them recurring antagonists; they remain vulnerable and not divine. The Conclave formed after The Binding, and Nhal's voice returned only after the Major Anchor network crossed the critical resonance threshold.
 
 ### Vaer'uun, the First Voice — the burden of authority
 
-**Status: creator-approved and locked (15 October 2026).** The overarching character arc and eight milestones are approved. Exact dialogue, missions, confrontation and ultimate fate remain open.
+**Status: creator-approved and locked (15 October 2026).** The overarching character arc and eight milestones are approved. Exact unapproved dialogue, missions and encounter mechanics remain WORKING; his permanent outcome is governed by the canonical campaign.
 
 **Core movement:** The brilliant scholar who coordinated resonance and communication research became the interpreter of Nhal's remembered will during the Age of Silence. He held the Conclave together for centuries, but the return of Nhal's voice challenges whether his authority reflects his master's purpose or his own need to be obeyed.
 
@@ -86,7 +94,7 @@ Commanding, persuasive, intellectually formidable, strategically patient, proud 
 5. **The Voice Returns — Major Anchor revelation.** The network's restoration of Nhal's selective communication initially strengthens Vaer'uun's standing.
 6. **The Contradiction — internal Conclave conflict.** A renewed instruction appears inconsistent with established doctrine or strategy; Vaer'uun struggles to reconcile the two without admitting error.
 7. **The Authority of the First Voice — major confrontation.** Players exploit tensions around conflicting directives to disrupt an operation requiring unified Conclave leadership.
-8. **The Voice and the Will — later campaigns.** Clearer communications increasingly expose the distinction between Nhal's purpose and Vaer'uun's personal authority; his response remains undecided.
+8. **The Voice and the Will — resolution.** The distinction between Nhal's purpose and Vaer'uun's personal authority remains central. His final response and permanent outcome are no longer undecided; use the canonical campaign rather than the superseded later-campaign placement.
 
 #### Defining confrontation and major encounter
 
@@ -94,15 +102,15 @@ Oth'varen confronts Vaer'uun with the distinction between extraordinary understa
 
 Reserve Vaer'uun for a major encounter involving coordination, resonance and Mind workings, not an early generic boss. Players may disrupt the systems through which he directs Unmade forces, forcing retreat or abandonment of an objective without necessarily killing him.
 
-#### Long-term possibility
+#### Resolution boundary
 
-Nhal may eventually show that its purpose does not depend upon the Conclave's survival or Vaer'uun's authority. This should challenge rather than automatically redeem him. Denial, fanaticism, resistance or another response remains open.
+The historical alternatives for Vaer'uun's response are SUPERSEDED by his locked choice and ending in the canonical campaign. The thematic challenge to his authority remains; it does not imply redemption, survival or an unspecified expansion outcome.
 
 **Character-defining principle:** Vaer'uun's strength kept the Conclave united through silence; his weakness is the inability to separate serving a purpose from preserving his own power.
 
 ### Thes'var, the Architect — the unfinished masterpiece
 
-**Status: creator-approved and locked (14 October 2026).** The overarching arc and eight milestones below are approved. Exact quest scenes, raid mechanics, dialogue and his ultimate fate remain open.
+**Status: creator-approved and locked (14 October 2026).** The overarching arc and eight milestones below are approved. Exact unapproved quest scenes, encounter mechanics and dialogue remain WORKING; his permanent outcome is governed by the canonical campaign.
 
 **Core movement:** From an extraordinarily gifted structural scholar whose innovations complemented Oth'varen's stability expertise to a corrupted visionary whose centuries of independent research made Nhal's return possible. His tragedy is not an absence of intelligence: he can recognise almost any weakness in a magical structure, but no longer sees the fatal weakness in the purpose he serves.
 
@@ -143,7 +151,7 @@ He speaks as a researcher confident in his evidence rather than as a conventiona
 5. **The Network Revealed — Major Anchor storyline.** The scale of his achievement becomes clear: centuries of engineering culminated in the network that strained the Shroud and restored Nhal's whispers.
 6. **The Impossible Alternative — inversion discovery.** Thes'var immediately recognises the technical validity of Oth'varen's inversion hypothesis but rejects its purpose: reinforcing the prison he has spent centuries trying to weaken.
 7. **The Contest of Designs — major confrontation.** Players attempt to capture or reconfigure a significant Anchor while Thes'var seeks to preserve its destabilising purpose. The conflict concerns control and stability of interdependent workings, not merely killing a boss.
-8. **The Unfinished Work — aftermath.** His certainty is challenged but he is not automatically redeemed or killed. His survival permits later campaigns and deeper confrontation with Oth'varen.
+8. **The Unfinished Work — resolution.** His challenged certainty and confrontation with Oth'varen remain the thematic culmination. The earlier continued-survival proposal is SUPERSEDED by the canonical final confrontation, sabotage and permanent death; it does not establish a later campaign appearance.
 
 #### Defining confrontation
 
@@ -151,13 +159,13 @@ When presented with the inversion hypothesis, Thes'var studies it seriously. He 
 
 #### Major encounter principles
 
-A late operation may centre on a partially activated Major Anchor. Thes'var alters wards, conduits and six-field relationships while players seek to stabilise or isolate the network. A victory can force him to abandon an installation, creating an opportunity to investigate inversion. Do not require his death as the encounter's outcome. Exact mechanics and the location remain undecided.
+A late operation may centre on a partially activated Major Anchor. Thes'var alters wards, conduits and six-field relationships while players seek to stabilise or isolate the network. A victory can force him to abandon an installation, creating an opportunity to investigate inversion. This historical encounter concept remains WORKING; it cannot replace his locked final confrontation and permanent death. Exact unapproved mechanics and location remain OPEN.
 
 **Character-defining principle:** Thes'var is correct about the extraordinary technical significance of his achievements and catastrophically wrong about their purpose. He can recognise the validity of inversion yet reject it because it would turn his life's work against Nhal.
 
 ### Su'vareth, the Veiled Hand — the web of betrayal
 
-**Status: creator-approved and locked (14 October 2026).** The overarching character arc and eight milestones are approved; specific missions, the first Guardian betrayal, evidence recovered from the Shattered Delegation and her ultimate fate remain open.
+**Status: creator-approved and locked (14 October 2026).** The overarching character arc and eight milestones are approved; specific unapproved missions, the first Guardian betrayal and evidence details retain their review boundaries; her permanent fate is governed by the canonical campaign.
 
 **Core movement:** From a trusted Kel'vari research coordinator responsible for records, external relationships and institutional confidence to the architect of a covert network embedded across hostile civilizations. Her greatest talent is not inventing obvious lies, but arranging authentic information so that people reach false conclusions.
 
@@ -198,17 +206,17 @@ Patient, perceptive, socially adaptable, pragmatic, intellectually proud and emo
 5. **The Veiled Hand Revealed — major revelation.** Ancient records and modern evidence identify Su'vareth as both a founder who concealed the First Anchor's alterations and a centuries-long manipulator of institutions.
 6. **The Price of Exposure — Conclave confrontation.** She threatens Guardian cells and vulnerable allies unless investigators abandon an operation. Players and Oth'varen confront the costs of secrecy and selective disclosure.
 7. **The Broken Network — major climax.** Players dismantle part of her covert infrastructure and interrupt resources required for a Major Anchor. She sacrifices compromised operations to protect the wider network.
-8. **The Enemy Who Remembers — later campaigns.** She adapts to the Guardians' increasing openness and remains dangerous because she understands the relationships and institutional weaknesses of her opponents.
+8. **The Enemy Who Remembers — thematic consequence.** Her understanding of relationships and institutional weaknesses explains the danger of her operations. The earlier later-campaign survival assumption is SUPERSEDED; only explicitly established posthumous contingencies may continue after her canonical death.
 
 #### Defining confrontation
 
 Su'vareth arranges evidence so that exposing her network without careful verification would also implicate innocent people and Guardian agents. Oth'varen initially favours withholding it until secured. Players must authenticate records, protect witnesses and distinguish genuine collaborators from manipulated intermediaries. They defeat her operation by making truth verifiable, not by becoming better deceivers.
 
-**Character-defining principle:** Her greatest defeat is not simply the loss of agents or a stronghold, but the restoration of trust between people she has spent centuries turning against one another. She should survive the initial exposure of her networks; exact later outcomes remain open.
+**Character-defining principle:** Her greatest defeat is not simply the loss of agents or a stronghold, but the restoration of trust between people she has spent centuries turning against one another. Initial exposure is not the same event as her final confrontation; her permanent death and surviving contingencies follow the canonical campaign, not an open alternative ending.
 
 ### Oma'vira, the Harbinger — the shaping of will
 
-**Status: creator-approved and locked (15 October 2026).** The overarching arc, psychological and conditioning role, and eight milestones are approved. Exact encounters, conditioning reversibility and her ultimate fate remain open.
+**Status: creator-approved and locked (15 October 2026).** The overarching arc, psychological and conditioning role, and eight milestones are approved. Exact unapproved encounters and conditioning reversibility remain WORKING/OPEN; her permanent fate follows the canonical campaign.
 
 **Core movement:** A scholar who studied the independence and perception of mortal consciousness becomes the Conclave's foremost authority on reshaping that consciousness. She does not merely recruit the Unmade; she develops methods of indoctrination, mental influence and magical conditioning that sustain many of their hostile forces.
 
@@ -257,7 +265,7 @@ A major encounter centres on a conditioning complex defended by willing soldiers
 
 ### Khor'vun, the Warden — the last defender
 
-**Status: creator-approved and locked (15 October 2026).** The overarching character arc, military role and eight milestones are approved. Exact strongholds, encounters, dialogue and his ultimate fate remain open.
+**Status: creator-approved and locked (15 October 2026).** The overarching character arc, military role and eight milestones are approved. Exact unapproved strongholds, encounters and dialogue remain WORKING; his permanent fate follows the canonical campaign.
 
 **Core movement:** The scholar once entrusted with safeguarding the First Anchor project has become the formidable commander who protects the organisation responsible for his homeland's destruction. His tragedy is that he still considers himself a protector while losing sight of what deserves protection.
 
@@ -300,20 +308,20 @@ Restrained, authoritative, observant, patient and ruthless when he judges a thre
 5. **The Limits of Control — conditioning storyline.** Oma'vira's conditioned troops fail to adapt; Khor'vun intervenes with disciplined soldiers, revealing tension over imposed loyalty.
 6. **The Siege of the Anchor — major military campaign.** Players assault a fortified Regional or Major Anchor defended by troops, wards, constructs and fallback positions.
 7. **The Last Defence — major confrontation.** Oth'varen challenges Khor'vun's claim to have always protected his colleagues, confronting him with the lives endangered by that protection.
-8. **The Broken Shield — later campaign.** A major defeat forces Khor'vun to reassess his defensive doctrine without automatically changing allegiance; he remains a possible recurring antagonist.
+8. **The Broken Shield — resolution boundary.** Defeat challenges Khor'vun's defensive doctrine without redeeming him. The earlier recurring-antagonist continuation cannot extend beyond his locked permanent death; the canonical campaign governs his final response and outcome.
 
 #### Defining confrontation and major encounter
 
 Oth'varen's challenge is that Khor'vun was entrusted with protecting people, not shielding ambition from consequences. Khor'vun believes Oth'varen abandoned their colleagues. Neither has forgotten their former trust.
 
-His major encounter should centre on a fortified Anchor complex. Players overcome layered defences, disable wards and reinforcements, and prevent the Warden from restoring compromised positions. He may redirect attacks through wards, isolate battlefield areas and reinforce structures, but remains killable and not divine. A victory need not end in his death; the exact outcome remains undecided.
+His major encounter should centre on a fortified Anchor complex. Players overcome layered defences, disable wards and reinforcements, and prevent the Warden from restoring compromised positions. He may redirect attacks through wards, isolate battlefield areas and reinforce structures, but remains killable and not divine. This historical encounter design remains WORKING; it does not reopen or replace his locked permanent ending in the canonical campaign.
 
 **Character-defining principle:** Khor'vun has become extraordinarily good at protecting something that should never have been allowed to continue.
 
 
 ---
 
-## Interlocking milestones — recommended sequence
+## Interlocking milestones — historical thematic sequence
 
 | Story phase | Oth'varen | Conclave pressure | Guardian and alliance consequences |
 | --- | --- | --- | --- |
@@ -325,7 +333,7 @@ His major encounter should centre on a fortified Anchor complex. Players overcom
 | Major network and Nhal | Corruption tested | First Voice's authority; Harbinger's doctrine; Architect's coordination | Wider threat recognised without ending faction war |
 | Inversion hypothesis | Shares dangerous knowledge | Architect contests purpose; Warden defends installations | Destroy-versus-invert debate |
 | Major confrontation | Entrusts others | Multiple founders' objectives intersect | Limited victory, continuing threat |
-| Aftermath | Begins changing Guardians | Conclave remains a long-term antagonist | Future Shroud campaign remains open |
+| Aftermath | His knowledge and changed institutional practice survive him | Founder endings follow the canonical campaign; only established surviving consequences persist | Future campaign specifics remain unapproved |
 
 ## Design guardrails
 
@@ -333,40 +341,27 @@ His major encounter should centre on a fortified Anchor complex. Players overcom
 2. Keep Covenant and Dominion hostile; separate investigations may uncover complementary evidence without producing a public alliance.
 3. Do not make the Unmade responsible for every legitimate local grievance or every benefit of the awakening.
 4. Do not treat a single Major Anchor's destruction or inversion as sufficient to end Nhal's communication or free the Seven.
-5. Preserve uncertainty around the method, cost and ultimate consequences of inversion.
-6. Do not prematurely assign dungeon or raid deaths to the founders. Their survival or defeat requires specific story decisions.
+5. Preserve player uncertainty until the approved revelation gates; do not reopen the creator-locked method, cost or outcomes of the finale.
+6. Follow the canonical campaign's permanent founder outcomes. Unapproved encounter mechanics must not change those outcomes or require raids for essential story.
 7. Separate historical canon from proposed encounters and dialogue.
 
 ## Next development decisions
 
-The most consequential open questions are **Oth'varen's modern public identity**, the first Guardian contact players meet, which founder appears directly first, and whether the initial inversion proof of concept belongs in the launch campaign or a later chapter. These should be resolved before writing quest scripts.
+The earlier checklist of public identity, first contacts, founder appearances and launch inversion placement is SUPERSEDED as a planning queue: use the current canonical campaign and its reveal gates for those narrative choices. Continue only genuinely OPEN details, such as unapproved scene dialogue and encounter presentation, without changing locked chronology or outcomes.
 
-## 2026-10-15 creator LOCK — Unmade hostility, corruption and conditioning
+## World-rule and ending references
 
-**The Unmade's hostile forces have three overlapping origins, not three new races or exclusive factions:** (1) **Willing** followers who knowingly embrace Nhal's purpose for belief, ambition, knowledge or power, and fight deliberately for Unmade objectives; (2) **Corrupted** mortals, wildlife or other beings whose prolonged exposure to unstable primordial influence has altered magical structure, perception, cognition, instincts or bodies, sometimes producing dangerous aggression without willing allegiance; (3) **Bound** soldiers, captives, creatures and constructs conditioned or constrained through Unmade Mind workings, rituals, altered six-field structures or enforced instructions. A willing follower may become corrupted; a corrupted victim may be bound. Some constructs also continue ancient defensive duties without ever serving Nhal.
+The duplicated 15 October hostility/conditioning statement is consolidated in
+the [World Bible](THEIA_WORLD_BIBLE.md#2026-10-15-creator-lock--unmade-hostility-corruption-and-conditioning).
+Its complete wording, including overlapping Willing/Corrupted/Bound origins,
+non-hostile transformed inhabitants, and limits on specific enemy/rescue designs,
+is retained there. Character-specific motivations and conditioning limits above
+remain here; do not create a second world-rule definition.
 
-**Exposure is not automatic allegiance or guaranteed hostility.** Outcomes vary from temporary symptoms through persistent influence and transformation to profound loss of control. Corruption is not universal mind control; **Oth'varen** is the central example of resistance. Many Kel'vari and transformed inhabitants of the Shroud are innocent or non-hostile. Not every hostile being can be rescued during an attack, but combat, containment, rescue and breaking compulsions should remain distinct possibilities. Avoid making all corrupted inhabitants or all Kel'vari enemies.
-
-**Oma'vira, the Harbinger**, originally a scholar of Mind, consciousness and perception, is the Conclave's leading authority on devotion, mental influence and magical conditioning. Her centuries of work support recruitment and the transformation of willing recruits or unwilling captives into dangerous conditioned forces. Her teachings alone do not explain every hostile NPC. **Khor'vun, the Warden**, commands and deploys organised defensive forces and protects Anchor approaches and Unmade strongholds. He may favour disciplined fighters over unstable conditioned troops, creating a potential methodological tension with Oma'vira. The other founders provide doctrine, research, covert logistics and strategic purpose. Outside the Shroud, players mainly encounter organised operatives, hidden facilities, Anchor defenders and local corruption; within it, older corruption, transformed victims, wildlife, ancient constructs and enduring strongholds produce a distinct ecology of threats.
-
-This is a **locked world and MMO combat foundation**, not approval of particular enemy designs, irreversible corruption mechanics, specific rescue outcomes, or the full previously proposed Oma'vira eight-milestone character arc. Develop those separately.
-
-## 2026-10-29 creator LOCK — Oth'varen's final alignment and death
-
-After launch, Oth'varen dies stabilising the inverted Major Anchor network while the Seven coordinate their workings across the six energies against Nhal. He prepares the network and trains successors expecting to survive. When Nhal disrupts the alignment, he recognises the instability, shares the corrections with the player and distributed Guardian teams, and holds the central transition beyond his finite reserves. He sees the alignment hold but dies before Nhal's defeat.
-
-His knowledge survives him: the player, Guardians and Seven complete the operation. He is not resurrected, cleansed, made a vessel for divine power or bound as a permanent power source. His death enables the confrontation that forces Nhal's shattering and leaves a permanent personal and institutional loss. The launch survival constraint above remains intact.
-
-The creator explicitly locked this sequence on 29 October 2026. A Conclave founder attempting to prevent his correction remains a proposal; no founder's death or involvement is approved by this lock. The earlier suggested evacuation death is superseded. See the dated story decision ledger and Future Saga for scope.
-
-## 2026-10-29 creator LOCK — Conclave deaths and final succession
-
-The later scoped decision in the story ledger fixes these permanent endings and supersedes the older open-fate statements above:
-
-- Oma'vira dies in Act V at her actual conditioning facility in the Major Anchor complex. The player breaks the systems, rescues captives where possible and kills her. Act IV retains a limited projection. Her victims do not automatically recover.
-- Su'vareth dies at her intelligence headquarters during the investigation leading to the Veilbreaker, after the player corroborates her location, blocks escape and defeats her final deception. Incomplete project evidence survives; established contingency orders continue without implying she survived.
-- Khor'vun dies defending the Veilbreaker approaches during activation, refusing withdrawal. The player kills him and opens an evacuation route after activation has passed its stopping point.
-- Vaer'uun dies at a manifestation site after Nhal arrives. He knowingly chooses obedience despite the exposure of his doctrine's failures, binds himself to the communication working and is killed when the player dismantles its supports.
-- Thes'var is the last founder alive. Before attacking the final alignment, he confronts Oth'varen, recognises inversion works and rejects its purpose. The player kills him at a critical network junction; sabotage compounds Nhal's disruption and leaves instability that Oth'varen corrects at fatal cost.
-
-Oth'varen briefly becomes the last living scholar, sees the alignment hold and dies before Nhal's defeat. The player, trained Guardians and independent Seven finish the working. Exact site names, dialogue and encounter mechanics remain open. Essential story conclusions remain solo-accessible; this lock does not approve an expansion count or the full future draft.
+The duplicated 29 October death/succession records are consolidated in
+[Story decisions](DECISIONS.md), where their historical scope and later
+supersession are explicit. The [canonical campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md)
+owns current quest placement and the complete finale sequence. The earlier
+post-launch placement, Act-IV/V bands and unresolved-outcome warnings are not
+independent current constraints. Original wording remains in the pinned arc
+record linked above; no unique character history or personality has been removed.
