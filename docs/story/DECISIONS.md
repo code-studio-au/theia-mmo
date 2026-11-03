@@ -89,10 +89,14 @@ for reading order and the [import notes](README.md) for source limitations.
 
 ## 2026-10-29 — Creator LOCK: Conclave deaths and final succession
 
-> **SUPERSEDED IN PART:** retain approved permanent outcomes and founder order,
-> but use the canonical 1–80 campaign for current quest/level placement and exact
-> finale sequencing. Old Act bands, post-launch assumptions and claims that the
-> launch ending remains unresolved are historical.
+> **SUPERSEDED IN PART:** retain the approved permanent endings, but the older
+> founder order and story-phase placement below are historical where they differ
+> from the [canonical 1–80 campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md).
+> In that current sequence, Q145 kills Vaer'uun before Q156 kills Khor'vun; the old
+> Khor'vun-before-Vaer'uun order and Vaer'uun-after-arrival placement do not apply.
+> Use the canonical campaign for current quest order, causes and exact finale
+> sequencing. Old Act bands, post-launch assumptions and unresolved-launch-ending
+> warnings below do not reopen current outcomes.
 
 **Status: USER LOCKED.** The creator explicitly agreed to Oma'vira dying in Act V, then approved and requested locking the proposed endings for the remaining four founders, including Su'vareth's surviving contingencies and the pre-combat confrontation between Thes'var and Oth'varen. This dated decision supersedes earlier draft statements that all founders survive launch or that these five fates remain undecided.
 
@@ -102,9 +106,9 @@ for reading order and the [import notes](README.md) for source limitations.
 4. **Vaer'uun — after Nhal's arrival.** At a major manifestation site, Nhal's actions expose the gap between its purpose and his doctrine. Despite evidence that his followers are expendable, he knowingly chooses obedience and binds himself to the manifestation's communication working. The player dismantles its supports and kills him. His death ends the Conclave's central authority and contributes evidence for constraining Nhal's physical presence.
 5. **Thes'var — final alignment.** The last living Conclave founder attacks supporting connections at a critical junction of the inverted network. Before combat, he and Oth'varen confront one another: Thes'var recognises inversion works but rejects its protective purpose and chooses to destroy it. The player defeats and kills him; his interference leaves cascading instability. Oth'varen completes the correction at the cost of his life, sees the alignment hold and dies before Nhal's defeat. The player and distributed Guardian teams sustain the working with the Seven. This supplements, rather than replaces, the locked Nhal disruption: Thes'var's sabotage compounds the disturbance.
 
-**Sequence:** Oma'vira → Su'vareth → Khor'vun → Vaer'uun → Thes'var → Oth'varen → Nhal's final shattering. Oth'varen briefly becomes the last living member of the original six scholars. The five founders receive permanent endings; surviving agents, forces and institutional consequences may continue.
+**Historical 29 October sequence (SUPERSEDED where noted above):** Oma'vira → Su'vareth → Khor'vun → Vaer'uun → Thes'var → Oth'varen → Nhal's final shattering. Oth'varen briefly becomes the last living member of the original six scholars. The five founders receive permanent endings; surviving agents, forces and institutional consequences may continue.
 
-**Scope:** Timing by story phase, broad site functions, causes of death and consequences are locked. Exact site names, expansion counts, levels beyond launch, dialogue and encounter mechanics remain open. Existing permanent alliance separation and solo access to the essential story remain in force. This is narrative canon, not implemented gameplay or approval of every other Future Saga proposal. The conflicting launch-inversion outcomes remain separately unresolved.
+**Historical 29 October scope (subject to the supersession above):** Timing by story phase, broad site functions, causes of death and consequences were locked in this dated record. Exact site names, expansion counts, levels beyond launch, dialogue and encounter mechanics remain open. Existing permanent alliance separation and solo access to the essential story remain in force. This is narrative canon, not implemented gameplay or approval of every other Future Saga proposal. The conflicting launch-inversion outcomes remain separately unresolved.
 
 **Future development retained:** develop substantial recurring bosses below the Conclave and later Nhal, supporting dungeons and optional raids, with personal motives, histories, territorial or institutional power and consequences for defeat. Independent major threats should also exist. No specific roster, six-to-eight count, named new boss or raid production scope is approved; essential story conclusions remain solo-accessible.
 
