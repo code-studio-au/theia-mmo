@@ -2,7 +2,7 @@
 type: character
 canon_status: Needs Review
 source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
-up: "[[Characters]]"
+up: "../Characters.md"
 ---
 # Nera Holt
 
@@ -20,9 +20,9 @@ Keeps basic trade available during testimony; resolves mill accounting
 
 Source: [New human and expedition cast](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
-[[Characters]] · [[Human Campaign]]
+[Characters](../Characters.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
 
-[[Atlas/Places/Stoneford|Stoneford]] · [[Characters/Campaign Cast/Brenna Holt|Brenna Holt]]
+[Stoneford](../../Atlas/Places/Stoneford.md) · [Brenna Holt](Brenna%20Holt.md)
