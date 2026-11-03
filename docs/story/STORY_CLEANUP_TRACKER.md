@@ -715,3 +715,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Migrated `Lore/Passage Gates.md`, `Peoples and Allegiances.md` and `Resonance Inversion.md` to Markdown navigation for the lore index, peoples, relevant events/institutions and historical saga (commits `5b6ed29e`, `4fdc82f3`, `acbdbadb`).
 - [x] Corrected Resonance Inversion's obsolete claim that successful inversion remains only an unapproved Act V proposal. The creator-locked level-80 coordinated inversion shatters Nhal's coherent will and identity; indestructible divine essence persists as fragments and the Seven survive. No future fragment outcome was approved.
 - [ ] Continue remaining Lore syntax and file-target audit; check heading anchors and historical semantic claims separately.
+
+## Full Lore scan and three topic repairs — 3 November 2026
+
+- [x] Inspected all 28 Lore Markdown files against the live tree. The nine `Lore/Peoples/*.md` notes retain Obsidian wiki-links and broken four-parent World Bible paths; some other topic notes also retained wiki-links. Do not mark Lore as passed.
+- [x] Migrated Primordial Cosmology, The Seven Gods and World Population topic navigation to Markdown links (commits `b60ca2aa`, `bf3b37fe`, `4e7ebaae`). Preserved historical source and approval boundaries.
+- [ ] Repair nine peoples' notes next, including source paths and character/institution backlinks; then re-run 28-file link-target validation.
