@@ -811,3 +811,10 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Completed live-tree audit of all 21 Connected Stories files in three seven-file batches. The first batch revealed one residual Queen Seralyth wiki-link in CR-A3, corrected in commit `84853368`; the other two batches had no issues.
 - [x] Across the 21-file batches, **107 Markdown links** were checked before the CR-A3 correction (33 + 37 + 37), all resolving to existing file targets. The correction adds a direct Seralyth Markdown link; recheck final link count in a full post-fix pass if an exact final total is required.
 - [ ] Complete post-fix first-batch recheck before marking the entire section zero-wiki verified; then audit five Encounters and 51 Campaigns root files.
+
+## Connected Stories and historical Encounters verification — 3 November 2026
+
+- [x] Post-fix rechecked Connected Stories first seven files (34 links, zero missing targets/wiki-links); combined with prior second/third batches (37 each), **21/21 Connected Stories pass with 108 links**.
+- [x] Migrated five `Campaigns/Encounters/*.md` files from retired Obsidian source embeds to direct historical story-dungeon source links (commits `507c7e22`, `a32feb48`, `3dbdbea8`, `f1b6ed1d`, `4f10b77c`). Marked their old Act I–V placement as historical proposals subordinate to the canonical 1–80 campaign; kept Needs Review status.
+- [x] Re-fetched five Encounters: **20 Markdown links, zero missing file targets, zero remaining wiki-links**.
+- [ ] Continue the 51 Campaigns root Markdown files and verify historical quest/encounter source precedence before final branch/tracker retirement.
