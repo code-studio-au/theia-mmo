@@ -37,7 +37,8 @@ These are integrated outcomes, not a claim that all remaining documents are cons
 
 - [x] [PR41](https://github.com/code-studio-au/theia-mmo/pull/41) compacted the temporary tracker while preserving full historical evidence, genuine blockers and acceptance criteria.
 - [x] [PR43](https://github.com/code-studio-au/theia-mmo/pull/43) retired the Detailed Lore Archive after unique-source comparison and preservation in Bible/source index/Legacy Ideas Archive; 19 backlink documents repaired and source-specific cards retain immutable provenance. Merge efc76763a72163b6aaefe169812ecf0827c2b60d verified.
-- [ ] Review and merge historical World Directory retirement: all 116 H/HS and 21 CR/DR labels already preserved, useful character/place/reference links consolidated into existing subject indexes; no unique lore prose or quest inventory removed.
+- [x] [PR44](https://github.com/code-studio-au/theia-mmo/pull/44) retired the historical World Directory after label preservation and a complete zero-backlink scan; useful navigation now lives in subject indexes. Merge ebbaa3c44cbf01db4aab0c8aa5708d5550db94b8 verified.
+- [ ] Review and merge guide disposition/source-scope reconciliation: distinct retained document roles recorded, obsolete local extractor claim corrected from import provenance, historical PDF audit distinguished from current safe consolidation. No final semantic certification implied.
 
 ## Validation checkpoints, not final certification
 
