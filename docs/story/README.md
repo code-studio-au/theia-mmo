@@ -85,14 +85,14 @@ checked-out rendering benchmark branch. This is a transfer from those local Git
 objects; remote freshness was not checked.
 
 [IMPORT_MANIFEST.json](IMPORT_MANIFEST.json) records every original path and both
-source and destination SHA-256 hashes. Eighteen documents are byte-identical;
-the reconciliation report's extractor link now points to the source commit.
+source and destination SHA-256 hashes. At import, eighteen documents were byte-identical;
+the then-imported reconciliation report's extractor link was adjusted to the source commit. Later consolidation and retirement do not rewrite that transfer baseline.
 The Engine checkout and history were left unchanged.
 
 The original 403-page story PDF and full generated question/answer audit registers
 are not in this source snapshot. Historical claims about their examination have
-not been independently reverified during this import. The extraction command in
-the imported guide belongs to the Engine's tools; that tool was not migrated.
+not been independently reverified during this import. The historical extraction workflow referenced by
+the guide belongs to the Engine's tools; that tool was not migrated.
 Private conversation/account exports were not copied.
 
 Historical headings referring to a custom MMO engine are retained as provenance.
