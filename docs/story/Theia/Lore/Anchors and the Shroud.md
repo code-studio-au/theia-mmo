@@ -4,11 +4,7 @@ source: "../../THEIA_WORLD_BIBLE.md"
 ---
 # Anchors and the Shroud
 
-Read these section labels together with later dated amendments in [[Sources/THEIA_WORLD_BIBLE|World Bible]].
-
-[Read historical source section](../../THEIA_WORLD_BIBLE.md)
-
-[Read historical source section](../../THEIA_WORLD_BIBLE.md)
+Read the [World Bible](../../THEIA_WORLD_BIBLE.md) together with [later story decisions](../../DECISIONS.md). Later creator locks take precedence over historical wording.
 
 [Read historical source section](../../THEIA_WORLD_BIBLE.md)
 
