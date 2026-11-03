@@ -25,4 +25,4 @@ Source: [Geography and travel](../../../THEIA_HUMAN_CAST_AND_PLACES.md) (entry: 
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
 
-[[Atlas/Places/Tidehold|Tidehold]] · [[Lore/Institutions/Covenant|Covenant]] · [[Lore/Institutions/Dominion|Dominion]]
+[Tidehold](Tidehold.md) · [Covenant](../../Lore/Institutions/Covenant.md) · [Dominion](../../Lore/Institutions/Dominion.md)
