@@ -1,7 +1,7 @@
 ---
 type: character
 canon_status: Needs Review
-source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
+source: "../../../THEIA_HUMAN_CAST_AND_PLACES.md"
 up: "../Characters.md"
 ---
 # Lysa Marden
@@ -18,7 +18,7 @@ Values dated records; has access to her office's files, not every royal secret
 ## Proposed quest role and endpoint
 Authenticates office chronology; later independent-records procedures protect her work
 
-Source: [New human and expedition cast](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
+Source: [New human and expedition cast](../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
 [Characters](../Characters.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
