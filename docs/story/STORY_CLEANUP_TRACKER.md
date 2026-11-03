@@ -848,3 +848,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Corrected the finale causal order: Thes'var dies; his sabotage misaligns convergence; only then Oth'varen realises the correction is fatal, tells Sera and the player, sees alignment hold and physically dies before Nhal's shattering. Older Nhal-only disruption attribution is superseded.
 - [ ] Continue review of other historical Future Saga details against the 184-quest register, especially implied optional facilities, travel, and unresolved expansion ideas. Do not promote them into the manifest by inference.
 - [ ] Continue remaining Campaigns and root-story audits, H/HS editorial ID crosswalk, backlink/heading-fragment checks and final tracker retirement.
+
+## Legacy pack retirement status consolidation — 3 November 2026
+
+- [x] Re-read `Human_Legacy_Packs_Consolidation_Checklist.md` and `CURRENT_HUMAN_CAMPAIGN.md`. The checklist had contradictory early snapshots ('17 remain', 'no deletion') despite its final section documenting all 17 retired. Clarified the current status and labelled intermediate sections as historical snapshots (commit `4f3a5518`).
+- [x] Preserved the eight migration-note references, 184-quest editorial coverage and warning that migrated mechanics are not executable Rust data. No old packs recreated, no runtime or quest manifest changes.
+- [ ] Check the remaining 51 Campaigns root documents for similar stale intermediate statuses and duplicate current-authority claims. Preserve original H/HS provenance and historical evidence; do not infer production readiness.
