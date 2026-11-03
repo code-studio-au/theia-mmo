@@ -4,8 +4,8 @@ quest_id: DR-R1
 quest_kind: companion
 act: Connected racial stories
 canon_status: Needs Review
-source: "[[Sources/THEIA_HUMAN_CONNECTED_RACIAL_STORIES]]"
-up: "[[Connected Racial Stories]]"
+source: "../../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md"
+up: "../Connected Racial Stories.md"
 ---
 # DR-R1 — The Pilgrims' Road
 
@@ -18,11 +18,11 @@ Shorvek: escort a local group away from a military approach using native routes 
 ## Local resolution
 Civilian travel is redirected safely, independent of contested player combat.
 
-Source: [[Sources/THEIA_HUMAN_CONNECTED_RACIAL_STORIES#Vorrath — What the raid did not take|Vorrath — What the raid did not take]].
+Source: [Vorrath — What the raid did not take](../../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md).
 
-[[Connected Racial Stories]] · [[Welcome|Home]]
+[Connected Racial Stories](../Connected%20Racial%20Stories.md) · [Story index](../../../README.md)
 
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
 
-[[Characters/Campaign Cast/Warden Shorvek Tal|Warden Shorvek Tal]] · [[Lore/Institutions/Dominion|Dominion]]
+[Warden Shorvek Tal](../../Characters/Campaign%20Cast/Warden%20Shorvek%20Tal.md) · [Dominion](../../Lore/Institutions/Dominion.md)
