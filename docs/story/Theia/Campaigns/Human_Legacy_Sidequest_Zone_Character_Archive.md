@@ -581,3 +581,44 @@ founder, changes launch revelations or selects Nhal's fragments' future.
 The old alternate-ending menu is retained only as SUPERSEDED source provenance,
 not active creative options for the launch finale. Historical Severed Chain
 support/evacuation ideas already appear above and are not duplicated here.
+
+## Retired Future Saga — historical proposals and deferred possibilities
+
+**ARCHIVED, not an approved expansion roadmap.** Source: [Future Saga, draft dated 27 October 2026 with later annotations](https://github.com/code-studio-au/theia-mmo/blob/9f52c53e0bb24ffdb5f231598116138653bd19e4/docs/story/Theia/Campaigns/Future%20Saga.md). The source's copied creator-decision blocks remain in the [decision ledger](../../DECISIONS.md); their superseded sequencing is not restored here. Current history belongs to the World Bible and Chronicle, and launch sequencing to the [canonical Human campaign](Human_1_80_Canonical_Campaign.md). The ideas below preserve distinctive development possibilities without approving new quests, abilities, sites or outcomes.
+
+**SUPERSEDED source assumptions:** the old Act V launch-finale placement, Vaer'uun-after-Veilbreaker ordering, decisive misalignment attributed solely to Nhal, deliberate self-shattering by Nhal and intact post-launch Shroud assumptions are historical provenance only. They do not compete with current Q145, Q156 and Q176–Q181 sequencing. Exact current outcomes are not reproduced as a second history here.
+
+### Historical launch and recovery concepts
+
+- **Captured installations as lasting victories:** an older Act V proposal captured and reconstructed one Major Anchor instead of destroying it, retaining useful magical redistribution while reinforcing local protection. Its configurations, damage and defenses made inversion site-specific rather than a universally repeatable procedure. Maintenance, defense and negotiated custodianship would continue; the Conclave would adapt designs and try to recapture installations. This is not an additional approved launch ending, a closed breach or a claim that the old Shroud persists after Q156.
+- **A living homeland to reclaim:** alongside the enclave-negotiation and route concepts in the Chronicle section above, the saga proposed disagreements over sharing archives and reclaiming lost cities, with cultivation and safe water as priorities rather than treating residents only as expedition supporters. Stabilizing routes and wards, recovering evidence and reclaiming a research complex could bring durable local security, then reveal that essential research had moved elsewhere. An additional supporting inverted Anchor remains a proposal.
+- **A surviving ancient magical order:** a group with limited knowledge and interests of its own could emerge during recovery. Its identity and relationship to the Guardians are unresolved; it is not approved as their hidden ruler.
+- **Veilbreaker development rationale:** the historical “Veilbreaker Anchor” label and construction model proposed rare knowledge, materials and coordinated installations concentrating energy on the boundary while avoiding another uncontrolled continental fracture. One suggested motive was the distributed network's vulnerability to capture/inversion. Neither that causal order nor the device model is locked; why it could not be built during the Age of Silence and what renewed Nhal guidance contributed remain development questions.
+- **Consequential successes despite irreversible activation:** evacuating captives and expedition survivors, preserving research, protecting inverted installations and disrupting components threatening prepared refuges could let a failed shutdown still save people and places. These are encounter possibilities, not additions to the current quest inventory.
+- **Contested manifestation footholds:** the draft proposed that Nhal required local concentrations of essence to project power across the Physical Realm. Gradual manifestation is established in the campaign; this precise limit, spread rate, costs and relation to the six fields are not. Failing wards, altered terrain, unstable magic and broken routes could motivate rescue and resource defense without treating exposure as willing allegiance.
+- **Adapted inversion after the Shroud:** local stabilization against unmaking could require new research and field operations, rather than continuing to strengthen a vanished Shroud. Preserved refuges and infrastructure would make earlier victories matter. This additional capability is unapproved, and separate alliance defensive campaigns do not imply peace or shared government.
+
+### Divine cooperation and mortal stewardship themes
+
+The source proposed recovering and testing history, protecting communities and constructing safeguards before an informed, bounded agreement among independent divine participants. Cooperation need not imply forgiveness; limits, responsibilities and withdrawal would matter. Oth'varen's testimony would remain fallible rather than omniscient. These specific character developments remain proposals, not new creator locks:
+
+- Ascendant acknowledges misuse of Keeper's knowledge while defending the Kel'vari's independent right to exist, without collective guilt.
+- Keeper relinquishes the claim to decide another being's sacrifice without consent.
+- Seeker shares uncertain knowledge when waiting for certainty would condemn others.
+- Shaper accepts losses that cannot be repaired by restoring every ancient work.
+- Guardian accepts protection that does not require endless personal sacrifice.
+- Warrior distinguishes accountability from vengeance that prevents cooperation.
+- Judge develops obligations constraining divine power as well as mortal institutions.
+
+The current campaign already governs the Seven's voluntary participation and survival, Oth'varen's informed fatal correction and Nhal's shattering. No additional finale, divine merger, resurrection or alternate death mechanism is retained as an active option. The source's broader theme was responsibility for inherited harm without inevitable repetition; it does not settle later plot outcomes.
+
+### Unapproved post-launch and long-range possibilities
+
+- **Scattered inheritance:** essence concentrations might develop independent beings, with no approved number, names, emergence mechanism or memories. Proposed conflicting philosophies included ending suffering by ending desire/life, absolute stillness, severing dependence, absorbing individuals into a whole and rejecting physical form as imprisonment. These are historical motives, not portfolios or proof that any fragment develops an identity.
+- **Choice rather than ancestry:** a hypothetical fragment-born being could reject destructive inheritance. Aethyr's successors, the Kel'vari and resistance to corruption were thematic precedents, not evidence of a new fragment-autonomy mechanism. The old proposal to seed such an outcome into earlier campaigns is not permission to alter approved revelation timing.
+- **A different divine conflict:** hypothetical powers might compete over territory and magical conditions, seek followers, transform places or create a non-playable people suited to hostile environments. Such a people's culture, dependence on makers and capacity to refuse them would need development; non-playable does not mean uniformly hostile or guilty. Alignments need not follow divine ancestry.
+- **Unselected future divine deaths:** the source entertained them only as contingent future possibilities tied to established arcs and lasting institutional consequences. It selected no victim; no death among the Seven is approved, and magic would not automatically lose an entire discipline.
+- **A distributed protective network:** the long-range concept favored mortal expertise, maintenance, resources, local consent and defended installations, with willing divine contributions under enforceable limits rather than another deceived eternal sacrifice. Terms, enforcement and containment remained undesigned. Separate societies would retain responsibility; neither one world government nor Covenant–Dominion reconciliation was approved.
+- **A changed but habitable world:** lost and reclaimed places, dangerous regions, independent threats and ordinary lives continuing beyond primordial crisis formed an aspirational ending, not a settled expansion outcome. Fragment fate, new peoples, expansion count and dates remain OPEN.
+
+For the creator's separate direction to develop substantial recurring bosses, dungeons and optional raids with motives, histories and consequences, consult the dated decision ledger rather than infer a roster, boss count or production scope from this saga. Essential story conclusions remain solo-accessible.
