@@ -1,13 +1,13 @@
 ---
 type: character
-canon_status: approved-overarching-arc
+canon_status: "LOCKED overarching arc; CANONICAL launch sequence; WORKING unapproved scenes"
 source: "../../THEIA_CHARACTER_ARCS.md"
 ---
 # Khor'vun
 
-The overarching arc is approved; the [canonical Human 1–80 campaign](../Campaigns/Human_1_80_Canonical_Campaign.md) governs launch timing and outcomes. Specific scenes and dialogue retain their approval limits.
+The overarching arc is **LOCKED** within its recorded approval scope. Unapproved scenes, dialogue and mechanics remain **WORKING**; current launch sequence and permanent outcomes follow the canonical campaign.
 
-[Historical character arc](../../THEIA_CHARACTER_ARCS.md) — subject to later creator locks.
+[Approved character foundation and scoped proposals](../../THEIA_CHARACTER_ARCS.md#khorvun-the-warden--the-last-defender) — subject to later creator decisions.
 
 [Characters](Characters.md) · [Orders and Hidden Conflict](../Lore/Orders%20and%20Hidden%20Conflict.md) · [Historical Timeline](../History/Historical%20Timeline.md)
 
@@ -17,6 +17,6 @@ The overarching arc is approved; the [canonical Human 1–80 campaign](../Campai
 
 ## Later creator lock — Conclave succession (29 October 2026)
 
-Dies defending the Veilbreaker approaches during activation. He refuses withdrawal and commits his remaining troops. The player kills him and opens an evacuation route for captives and expedition survivors; activation has already passed its stopping point.
+**Current CANONICAL reference:** [Q156 in the canonical campaign](../Campaigns/Human_1_80_Canonical_Campaign.md#levels-6570-the-truth-of-the-binding). This is the authoritative home for the permanent outcome and its required sequence.
 
-This dated lock supersedes earlier open-fate or proposed-interference statements. See [story decisions](../../DECISIONS.md). Site names, dialogue and encounter mechanics remain open.
+Older Act bands and historical timing cannot override this current sequence. The [decision ledger](../../DECISIONS.md) preserves the complete dated lock and its supersession. Unapproved presentation remains WORKING; permanent outcomes are not OPEN.

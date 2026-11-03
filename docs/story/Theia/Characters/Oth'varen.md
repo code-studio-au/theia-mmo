@@ -1,13 +1,13 @@
 ---
 type: character
-canon_status: approved-overarching-arc
+canon_status: "LOCKED overarching arc; CANONICAL launch sequence; WORKING unapproved scenes"
 source: "../../THEIA_CHARACTER_ARCS.md"
 ---
 # Oth'varen
 
-The overarching arc is approved; specific scenes, dialogue and outcomes retain the limits in the source.
+The overarching arc is **LOCKED** within its recorded approval scope. Unapproved scenes, dialogue and mechanics remain **WORKING**; current launch sequence and permanent outcomes follow the canonical campaign.
 
-[Read the historical character arc](../../THEIA_CHARACTER_ARCS.md) (subject to later creator locks).
+[Approved character foundation and scoped proposals](../../THEIA_CHARACTER_ARCS.md#othvaren--locked-overarching-arc) — subject to later creator decisions.
 
 [Characters](Characters.md) · [Orders and Hidden Conflict](../Lore/Orders%20and%20Hidden%20Conflict.md) · [Historical Timeline](../History/Historical%20Timeline.md)
 
@@ -17,6 +17,6 @@ The overarching arc is approved; specific scenes, dialogue and outcomes retain t
 
 ## Current creator-locked fate — level-80 launch finale (2 November 2026)
 
-**Current canon:** Oth'varen physically dies during the level-80 launch finale, not in a later expansion. After Thes'var's final sabotage and death, Oth'varen corrects the six-energy alignment, confirms it holds, then dies before the coordinated inversion shatters Nhal's unified will and memory. Divine essence persists without Nhal's coherent identity. The Seven survive. The player and distributed Guardian teams complete the working; Oth'varen is not resurrected or made a permanent vessel.
+**Current CANONICAL reference:** [Q178–Q181 in the canonical campaign](../Campaigns/Human_1_80_Canonical_Campaign.md#levels-80-finale-the-shattering-of-nhal). This is the authoritative home for the permanent outcome and its required sequence.
 
-The older 29 October 'survives launch' / later-confrontation placement was superseded by the approved level-80 ending. For current authority use [Canonical Human 1–80 Campaign](../Campaigns/Human_1_80_Canonical_Campaign.md), [Current Human Campaign](../Campaigns/CURRENT_HUMAN_CAMPAIGN.md) and [story decisions](../../DECISIONS.md). The original dated wording remains recoverable in Git history; do not treat historical source embeds as a later override.
+The older launch-survival/post-launch placement is SUPERSEDED. The [decision ledger](../../DECISIONS.md) preserves the complete dated lock and its supersession. Unapproved presentation remains WORKING; permanent outcomes are not OPEN.

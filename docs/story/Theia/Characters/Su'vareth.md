@@ -1,13 +1,13 @@
 ---
 type: character
-canon_status: approved-overarching-arc
+canon_status: "LOCKED overarching arc; CANONICAL launch sequence; WORKING unapproved scenes"
 source: "../../THEIA_CHARACTER_ARCS.md"
 ---
 # Su'vareth
 
-The overarching arc is approved; the [canonical Human 1–80 campaign](../Campaigns/Human_1_80_Canonical_Campaign.md) governs launch timing and outcomes. Specific scenes and dialogue retain their approval limits.
+The overarching arc is **LOCKED** within its recorded approval scope. Unapproved scenes, dialogue and mechanics remain **WORKING**; current launch sequence and permanent outcomes follow the canonical campaign.
 
-[Historical character arc](../../THEIA_CHARACTER_ARCS.md) — subject to later creator locks.
+[Approved character foundation and scoped proposals](../../THEIA_CHARACTER_ARCS.md#suvareth-the-veiled-hand--the-web-of-betrayal) — subject to later creator decisions.
 
 [Characters](Characters.md) · [Orders and Hidden Conflict](../Lore/Orders%20and%20Hidden%20Conflict.md) · [Historical Timeline](../History/Historical%20Timeline.md)
 
@@ -17,6 +17,6 @@ The overarching arc is approved; the [canonical Human 1–80 campaign](../Campai
 
 ## Later creator lock — Conclave succession (29 October 2026)
 
-Dies during the investigation leading to the Veilbreaker, at her concealed intelligence headquarters. The player corroborates her location, blocks escape and defeats her final deception before killing her. Incomplete project evidence survives; previously established contingency orders remain active without implying her survival.
+**Current CANONICAL reference:** [Q115 in the canonical campaign](../Campaigns/Human_1_80_Canonical_Campaign.md#levels-4550-the-hand-behind-the-war). This is the authoritative home for the permanent outcome and its required sequence.
 
-This dated lock supersedes earlier open-fate or proposed-interference statements. See [story decisions](../../DECISIONS.md). Site names, dialogue and encounter mechanics remain open.
+Older Act bands and historical timing cannot override this current sequence. The [decision ledger](../../DECISIONS.md) preserves the complete dated lock and its supersession. Unapproved presentation remains WORKING; permanent outcomes are not OPEN.
