@@ -517,3 +517,40 @@ The sample requires alternatives: other racial stories, adventures elsewhere, co
 **Untested playtime hypothesis:** 8–12 hours, with an illustrative middle route of 2.5 hours main story, 4.5 regional/local stories, 1.5 travel and 1–2 exploration/other activity; combat is included rather than added again. A ten-minute and twenty-minute quest with the same 1,500 turn-in reward have different rates. Eleven main and thirty regional/local steps, encounter density, discoveries and actual order require joint measurement.
 
 Measure activity/travel duration, XP sources, downtime, skipped content, fast/slow routes, replacement activities and solo-story access. Adjust rewards or worthwhile alternatives rather than enforcing grinding or stretching travel. Field contacts can reduce return journeys, but no flight duration, portal queue, coordinates, creature roster, combat tuning or tested economy is established.
+
+## Historical multiracial campaign and world-content catalogue
+
+**ARCHIVED / WORKING proposals; historical level placement and limited Anchor finale SUPERSEDED.** Preserved from [Detailed Lore Archive sections 7–8](https://github.com/code-studio-au/theia-mmo/blob/45f415a50244d5703748604163dcb195e56bb688/docs/story/THEIA_DETAILED_LORE_ARCHIVE.md). These names, hooks and mechanics are possibilities, not a second campaign inventory, launch scope or approved future outcome. The [World Bible](../../THEIA_WORLD_BIBLE.md) governs established geography and open-world principles; the [canonical Human campaign](Human_1_80_Canonical_Campaign.md) governs current progression.
+
+Suggested six thematic acts:
+- **I: Roots of the Realm (1–10):** eight distinct beginnings with local conflicts and culturally specific recurring NPCs. Humans deal with garrison corruption, dwarves with malfunctioning deep structures, Aelari with failing forest wards, Korrath with silent ancient wardstones; orcs with clan succession, halflings with an exposed ancient engineering complex, Vaelari with an unsafe experiment, Vorrath with pilgrim/sacred phenomena.
+- **II: Restless Frontiers (10–20):** widen into regional settlements and first dungeons; local stories remain intrinsically valuable.
+- **III: Gathering War (20–30):** alliance warfare, political pressure, overseas footholds and clues from Shattered Delegation.
+- **IV: Echoes of a Forgotten Age (30–40):** ruins awaken, scholars disagree, magic increases, hidden historian/Guardian may guide players without disclosure.
+- **V: War Beneath the War (40–50):** Unmade networks identified, selected Guardian agents disclosed, conspiracies around military/academic institutions uncovered.
+- **VI: First Reckoning (50–60):** *separate* Covenant and Dominion defences against ancient mechanism/anchor activation. Significant senior Unmade cell exposed or destroyed, faction territory saved, deeper mystery opened.
+
+Campaign working titles **Oaths in Ashes** for Covenant, **The Price of Dominion** for Dominion, **The Severed Chain** for finale/raid. No final quest counts, raid designs or production guarantees. A proposed mortal scholar/political antagonist **Sered Vhal** and the elusive **Architect** appeared in exploratory writing; these are not fully reconciled, and must not be silently merged or canonized.
+
+A set of major continuing historical movements was proposed after launch: rediscover passageways and enter Shrouded Lands, uncover the false divine accusation, understand lost people, face Nhal openly, and eventually confront the cost of restoring an ancient seal. Proposed expansion labels such as *Broken Passage, Inheritance of the Seven, Lost Creation, Reckoning* are NOT final release plans. One working ultimate possibility is mortal civilizations independently contributing distinct infrastructure to maintain the boundary without collapsing into a merged alliance or requiring casual multi-mage spellcasting. **Current boundary:** the launch ending is fixed by the canonical campaign. The old seal-replacement/merged-essence alternatives cannot replace it; the future fate of Nhal's fragments remains OPEN.
+
+Working starting region labels:
+- Covenant: **Royal Marches** (human frontier garrison), **Deepward Holds** (dwarven old machinery), **Greenward** (Aelari sanctuary), **First Highlands** (Korrath wardstone).
+- Dominion: **Great Grasslands** (orcish Great Clans), **Guilded Valleys** (halfling guild excavation), **Lakeward Spires** (Vaelari academy), **Stormward Coast** (Vorrath sacred weather/pilgrims).
+
+Working independent regional stories include River Compact (human river politics), Burning Forge (dwarven volcano), Hollow Grove (elven wards), Stones of Memory (Korrath chronicles), Broken Challenge (orcish champions), Unfinished Engine (halfling guild), Silent Observatory (Vaelari expedition), Pilgrim's Storm (Vorrath faith).
+
+The 38 proposed area labels in a 1–60 example matrix were NEVER approved as fixed launch zones:
+
+| Levels | Covenant (working) | Dominion (working) |
+|---|---|---|
+| 1–10 | Royal Marches, Deepward Holds, Greenward, First Highlands | Great Grasslands, Guilded Valleys, Lakeward Spires, Stormward Coast |
+| 10–20 | Riverlands, Stonefall Pass, Whispering Wood | Clanbound Frontier, Copper Vale, Mistlake Reach |
+| 20–30 | Ashen Foothills, Western Watch, Verdant Basin | Redgrass Expanse, Ironstep Highlands, Guildway Coast |
+| 30–40 | Shattered Hills, Elderwood Deeps, Stoneward Basin | Broken Escarpment, Crystal Mere, Thunder Coast |
+| 40–50 | Blackstone Frontier, Veiled Marshes, Northern Bastions | Sundered Steppe, Riftward Heights, Saltwind Reaches |
+| 50–60 | Last March, Ancient Wardlands, Crownfall Expanse | Great Divide, Stormbreak Highlands, Hollow Frontier |
+
+Working dungeons: **Emberworks** (Covenant dwarf industry), **Rootbound Sanctum** (Aelari forest ward failure), **Sealed Mechanism** (Dominion halfling ancient works), **Stormvault** (Vorrath coastal temple), **Forsaken Repository** (related but separate faction-specific ancient research locations). **Severed Chain** was a provisional level-60 final raid about severing a deliberately connected Void-anchor system; there must be no mixed playable raid groups.
+
+The starting-region entries and first row of the matrix name the same eight proposals; the list supplies their distinct hooks, while the matrix preserves their historical level context. The future mortal-maintenance theme above complements the [distributed protective-network proposal](#unapproved-post-launch-and-long-range-possibilities); neither resolves Nhal's fragments or authorizes a different launch ending.

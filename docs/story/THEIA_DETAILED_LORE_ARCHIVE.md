@@ -294,48 +294,15 @@ This former level-60 disclosure plan is SUPERSEDED. Use the canonical Human camp
 
 # 7 — Long-form launch story proposals
 
-**ARCHIVED/WORKING historical plan:** The level-60 bands and limited Anchor finale below are SUPERSEDED, not a current progression schedule. Distinct local-story and future-development concepts remain proposals; no expansion outcome is approved.
+**Disposition: MERGE.** The unique historical racial openings, six-act concept sequence, campaign titles, provisional antagonists and future labels now have one home in the [Legacy Ideas Archive](Theia/Campaigns/Human_Legacy_Sidequest_Zone_Character_Archive.md#historical-multiracial-campaign-and-world-content-catalogue). They are ARCHIVED/WORKING; the old level-60 placement and limited Anchor finale are SUPERSEDED.
 
-User-approved structural vision: original mythology should be planned in full for author consistency, but the leveling game must be a big, **classic nonlinear open-world MMORPG**, not an on-rails 1–60 mandatory campaign. Characters may gain experience through exploration, local side narratives, dungeon/group play, professions, war/PvP and selected main chapters. Launch level 60 is a **working target** and the story must provide satisfying victories without revealing the whole saga.
-
-Suggested six thematic acts:
-- **I: Roots of the Realm (1–10):** eight distinct beginnings with local conflicts and culturally specific recurring NPCs. Humans deal with garrison corruption, dwarves with malfunctioning deep structures, Aelari with failing forest wards, Korrath with silent ancient wardstones; orcs with clan succession, halflings with an exposed ancient engineering complex, Vaelari with an unsafe experiment, Vorrath with pilgrim/sacred phenomena.
-- **II: Restless Frontiers (10–20):** widen into regional settlements and first dungeons; local stories remain intrinsically valuable.
-- **III: Gathering War (20–30):** alliance warfare, political pressure, overseas footholds and clues from Shattered Delegation.
-- **IV: Echoes of a Forgotten Age (30–40):** ruins awaken, scholars disagree, magic increases, hidden historian/Guardian may guide players without disclosure.
-- **V: War Beneath the War (40–50):** Unmade networks identified, selected Guardian agents disclosed, conspiracies around military/academic institutions uncovered.
-- **VI: First Reckoning (50–60):** *separate* Covenant and Dominion defences against ancient mechanism/anchor activation. Significant senior Unmade cell exposed or destroyed, faction territory saved, deeper mystery opened.
-
-Campaign working titles **Oaths in Ashes** for Covenant, **The Price of Dominion** for Dominion, **The Severed Chain** for finale/raid. No final quest counts, raid designs or production guarantees. A proposed mortal scholar/political antagonist **Sered Vhal** and the elusive **Architect** appeared in exploratory writing; these are not fully reconciled, and must not be silently merged or canonized.
-
-A set of major continuing historical movements was proposed after launch: rediscover passageways and enter Shrouded Lands, uncover the false divine accusation, understand lost people, face Nhal openly, and eventually confront the cost of restoring an ancient seal. Proposed expansion labels such as *Broken Passage, Inheritance of the Seven, Lost Creation, Reckoning* are NOT final release plans. One working ultimate possibility is mortal civilizations independently contributing distinct infrastructure to maintain the boundary without collapsing into a merged alliance or requiring casual multi-mage spellcasting. **Current boundary:** the launch ending is fixed by the canonical campaign. The old seal-replacement/merged-essence alternatives cannot replace it; the future fate of Nhal's fragments remains OPEN.
+The approved nonlinear open-world vision, independent regional stories and creator-facing full mythology remain governed by the [World Bible](THEIA_WORLD_BIBLE.md). Current Human progression and its ending belong to the [canonical 1–80 campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md), not the historical six-act proposal.
 
 # 8 — Geography, levels, quest regions and world content
 
-**ARCHIVED/WORKING concept catalogue:** Names and regional hooks below preserve creative possibilities. Historical level bands and raid-finale placement are not current campaign authority or approved production scope.
+**Disposition: MERGE.** Unique proposed starting regions, independent local stories, the historical 38-area matrix and dungeon concepts now reside in the same [archive catalogue](Theia/Campaigns/Human_Legacy_Sidequest_Zone_Character_Archive.md#historical-multiracial-campaign-and-world-content-catalogue). No name, level band, raid or production scope is newly approved.
 
-Two major continental heartlands contain the races and their state capitals. Covenant's separate multicultural alliance capital is **coastal**; Dominion's is in the **highlands**. A ruined central war-scarred territory, the **Shrouded Lands**, is shrouded and initially normally inaccessible. **Ancient passageways** are rediscovered/activated through a major quest milestone and give access to later contested PvP territorial war. Working map layout placed Covenant west, Dominion east and shrouded centre; neither coordinate system nor exact geology was ratified.
-
-The world-bible goal is 34 major centres (two alliance capitals, eight racial capitals, 24 three-per-civilization regional cities). ALL are lore locations, not a requirement to build 34 at launch.
-
-Working starting region labels:
-- Covenant: **Royal Marches** (human frontier garrison), **Deepward Holds** (dwarven old machinery), **Greenward** (Aelari sanctuary), **First Highlands** (Korrath wardstone).
-- Dominion: **Great Grasslands** (orcish Great Clans), **Guilded Valleys** (halfling guild excavation), **Lakeward Spires** (Vaelari academy), **Stormward Coast** (Vorrath sacred weather/pilgrims).
-
-Working independent regional stories include River Compact (human river politics), Burning Forge (dwarven volcano), Hollow Grove (elven wards), Stones of Memory (Korrath chronicles), Broken Challenge (orcish champions), Unfinished Engine (halfling guild), Silent Observatory (Vaelari expedition), Pilgrim's Storm (Vorrath faith).
-
-The 38 proposed area labels in a 1–60 example matrix were NEVER approved as fixed launch zones:
-
-| Levels | Covenant (working) | Dominion (working) |
-|---|---|---|
-| 1–10 | Royal Marches, Deepward Holds, Greenward, First Highlands | Great Grasslands, Guilded Valleys, Lakeward Spires, Stormward Coast |
-| 10–20 | Riverlands, Stonefall Pass, Whispering Wood | Clanbound Frontier, Copper Vale, Mistlake Reach |
-| 20–30 | Ashen Foothills, Western Watch, Verdant Basin | Redgrass Expanse, Ironstep Highlands, Guildway Coast |
-| 30–40 | Shattered Hills, Elderwood Deeps, Stoneward Basin | Broken Escarpment, Crystal Mere, Thunder Coast |
-| 40–50 | Blackstone Frontier, Veiled Marshes, Northern Bastions | Sundered Steppe, Riftward Heights, Saltwind Reaches |
-| 50–60 | Last March, Ancient Wardlands, Crownfall Expanse | Great Divide, Stormbreak Highlands, Hollow Frontier |
-
-Working dungeons: **Emberworks** (Covenant dwarf industry), **Rootbound Sanctum** (Aelari forest ward failure), **Sealed Mechanism** (Dominion halfling ancient works), **Stormvault** (Vorrath coastal temple), **Forsaken Repository** (related but separate faction-specific ancient research locations). **Severed Chain** was a provisional level-60 final raid about severing a deliberately connected Void-anchor system; there must be no mixed playable raid groups.
+For the two continental heartlands, separate capitals, central Shrouded Lands, restricted Passage access and 34-centre world-building target, use the [World Bible](THEIA_WORLD_BIBLE.md). The target is not a requirement to build all centres at launch. The old west/east/centre map arrangement remains WORKING; neither coordinates nor exact geology was ratified.
 
 Travel philosophy: roads, ships, faction flight paths, dangerous natural wilderness and distinct strategic routes; not every corner of the continent should be safe. Players can explore within their own alliance's entire continent, regardless of their own playable race. Do not treat all Covenant residents as humans or all Dominion residents as orcs.
 

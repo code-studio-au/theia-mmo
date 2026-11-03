@@ -1122,4 +1122,11 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Kept the approved Act I foundation and all unique narrative/character/guardrail content, condensed repetitive preservation reviews, and reconciled Cassian's fixed live capture/custody with canonical Q030/Q031. Future sentence and unapproved presentation stay OPEN.
 - [x] Aligned Heartlands village/town/capital references with canonical Millhaven/Stoneford/Valecrown and preserved Greyfall Quarry's established name. All service tables and approval limits retained; unapproved layouts, assignments and systems remain WORKING/OPEN.
 - [x] PR #30 (`ea770ab99a367fc83d40439897626b42695f8830`) consolidated four HS archive tables into one, preserving all 24 hook/triage/stage/access rows; mappings remain OPEN.
-- [ ] Independently review and merge foundation/reference reconciliation. This retains necessary supporting documents rather than retiring unique approved story.
+- [x] PR #33 independently reviewed and merged (`45f415a50244d5703748604163dcb195e56bb688`); foundation and settlement references reconciled, unique narrative and service tables preserved.
+- [x] PR #32 (`01d774344e69ebac9a048e1a47c46cfe9e9d699b`) consolidated duplicate H-series archive tables and conflict summaries into one 28-row provenance/comparison table without approving mappings.
+
+## Historical campaign and world-content catalogue — 3 November 2026
+
+- [x] Moved unique six-act/racial openings, campaign and antagonist names, future labels, local-story hooks, 38-area historical matrix and dungeon proposals from Detailed Lore Archive sections 7–8 to the single Legacy Ideas Archive. Preserved all proposal details, historical level bands and immutable source provenance without promoting them to canon.
+- [x] Kept both source headings as navigation, retained travel/approval boundaries, and linked established world geography and open-world principles to the Bible. No protected narrative, quest inventory or runtime data changed.
+- [ ] Independently review and merge this bounded catalogue consolidation; future outcomes and runtime mappings remain OPEN.
