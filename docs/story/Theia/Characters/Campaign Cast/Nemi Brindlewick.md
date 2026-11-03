@@ -2,7 +2,7 @@
 type: character
 canon_status: Needs Review
 source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
-up: "[[Characters]]"
+up: "../Characters.md"
 ---
 # Nemi Brindlewick
 
@@ -20,8 +20,8 @@ No friendly trading or direct assistance. Her work reveals a discrepancy because
 
 Source: [Dominion characters required by this human route](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
-[[Characters]] · [[Human Campaign]]
+[Characters](../Characters.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
 ## Related notes
 
-[[Halflings]] · [[Dominion]]
+[Halflings](../../Lore/Peoples/Halflings.md) · [Dominion](../../Lore/Institutions/Dominion.md)
