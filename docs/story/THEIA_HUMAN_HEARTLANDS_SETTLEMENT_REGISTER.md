@@ -44,7 +44,7 @@ Existing characters should perform useful services when their established respon
 | **General goods / food merchants** | Supplies, tools, consumables | Regional market |
 | **Innkeeper** | Rest point, food and drink | Social and traveller hub |
 | **Profession trainers and material merchants** | Intermediate instruction and recipes | Accessible progression |
-| **Stable / coach service** | Regional travel | Road connection to capital |
+| **Stable / regional travel services** | Regional travel support; specific service assignments remain WORKING | Historical road connection to capital; no coach service or specific hub approved here |
 | **Courier / mail service** | Correspondence and delivery | Supports economy and investigation |
 | **Storage keeper** | Limited personal storage if system supports it | Convenience without replacing capital services |
 | **Regional administrators** | Trade registers and legal records | Possible sources for the smuggling investigation |
@@ -62,9 +62,11 @@ Existing characters should perform useful services when their established respon
 | Scholarly quarter | Magical training, archives, specialist reagents | Research and historical context |
 | Military quarter | Combat trainers, military suppliers, barracks | **Garrick Ashford** and royal military offices |
 | Royal quarter | Court, administration, investigative offices | **King Aldren Vaelmont**, **Mara Thorne**, **Lord Cassian Veyr** |
-| Transport district | Coaches, stables, couriers and routes | Connections to other Covenant territories |
+| Transport district | Stables, couriers and travel support; exact transport facilities remain WORKING | Connections to other Covenant territories, subject to approved travel modes and access |
 
 The King is not a routine vendor; his audiences are major narrative events. Mara works from an investigative office rather than permanently waiting in the throne room. Garrick has military headquarters and later provides overseas mission contacts. Edric Halewyn appears through records, testimony and legacy, not as a living NPC.
+
+**Transport supersession:** The former coach listings are **SUPERSEDED** by the later [locked Travel and Transport decision](Theia/Atlas/Travel_and_Transport.md): the initial network uses ships and fixed-route flight paths, with onward travel on foot or by mount. This service framework does not choose flight carriers, hubs, schedules, fares, route unlocks or a Stoneford–Valecrown transport service. Ordinary settlement travel support remains part of the approved framework; precise facilities remain OPEN.
 
 ## Service coverage by scale
 
