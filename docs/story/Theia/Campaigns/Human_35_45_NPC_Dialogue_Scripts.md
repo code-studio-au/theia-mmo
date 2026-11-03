@@ -54,7 +54,7 @@ Sera has knowingly concealed a restricted Guardian gate, but she is not a secret
 
 **In progress:** “Finish the agreed work and bring back what you can verify. Our permission and safety limits still apply.”
 
-## Q084 — Sera and Kel'vari custodian
+## Q084 — Sera and custodian beyond the gate
 
 **Offer / opening:** “Sera: We have asked for an audience, not demanded passage. Custodian: You have exposed a route our people kept hidden for generations.”
 
@@ -210,7 +210,7 @@ Sera has knowingly concealed a restricted Guardian gate, but she is not a secret
 
 **In progress:** “Finish the agreed work and bring back what you can verify. Our permission and safety limits still apply.”
 
-## Q097 — Oth'varen
+## Q097 — Grey Surveyor (identity revealed during scene)
 
 **Offer / opening:** “I hoped to remain useful without becoming the story myself. You have made that impossible.”
 
