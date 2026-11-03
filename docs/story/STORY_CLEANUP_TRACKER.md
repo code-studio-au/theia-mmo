@@ -537,3 +537,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Successfully migrated Brenna Holt, Sister Anwen, Heddan Pike and Perrin Vale campaign cast notes to direct Characters/current campaign and Millhaven/Stoneford Markdown links after an earlier blocked attempt (commits `ba0f7394`, `2ca84611`, `d8402c8e`, `20188814`).
 - [x] Preserved existing approved-role versus **Needs Review** distinctions and character development text. No quest data or canonical outcomes changed.
 - [ ] Continue remaining Campaign Cast cards and repository-wide historical link/content checks.
+
+## Civic and regional cast navigation completed — 3 November 2026
+
+- [x] Migrated Tomas Greymere, Mera Reed, Nera Holt and Joss Arden character notes to direct Characters/current campaign and related Millhaven/Stoneford/Brenna links (commits `a6834e2f`, `1575d30a`, `15b4cb0b`, `ce4537aa`). Previously blocked edits were retried successfully.
+- [x] Preserved existing approval statuses and Nera Holt's working surname caveat; no kinship or new canon established.
+- [ ] Continue other Campaign Cast notes and full repository backlink/content validation.
