@@ -1,7 +1,7 @@
 ---
 type: character
 canon_status: Needs Review
-source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
+source: "../../../THEIA_HUMAN_CAST_AND_PLACES.md"
 up: "../Characters.md"
 ---
 # Commander Nessa Ward
@@ -18,7 +18,7 @@ Protects a sustainable foothold and soldiers' extraction
 ## Proposed quest role and endpoint
 Leads military briefings and finales; a named deputy keeps Northwatch functioning during Shroud duty
 
-Source: [New human and expedition cast](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
+Source: [New human and expedition cast](../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
 [Characters](../Characters.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
