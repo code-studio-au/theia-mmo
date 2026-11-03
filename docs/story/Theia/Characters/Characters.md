@@ -13,7 +13,7 @@ These overarching arcs are creator-approved, while specific scenes retain their 
 
 ## Campaign cast and source status
 
-Browse individual notes under [Campaign Cast](Campaign%20Cast/). [Human Cast and Places](../../THEIA_HUMAN_CAST_AND_PLACES.md) distinguishes approved starting roles from proposed additions. New characters, destinations and future outcomes retain their **Needs Review** status unless superseded by explicit creator decisions.
+Browse individual notes in the `Campaign Cast/` folder. [Human Cast and Places](../../THEIA_HUMAN_CAST_AND_PLACES.md) distinguishes approved starting roles from proposed additions. New characters, destinations and future outcomes retain their **Needs Review** status unless superseded by explicit creator decisions.
 
 ## Divine and primordial figures
 
