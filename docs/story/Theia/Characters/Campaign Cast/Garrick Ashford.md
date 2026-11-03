@@ -1,7 +1,7 @@
 ---
 type: character
 canon_status: approved-role; proposed-development
-source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
+source: "../../../THEIA_HUMAN_CAST_AND_PLACES.md"
 up: "../Characters.md"
 ---
 # Garrick Ashford
@@ -18,7 +18,7 @@ Opposed peace for strategic reasons, not involved in sabotage; grants evidence a
 ## Proposed launch ending — Needs Review
 Commands legitimate human military contributions, respects the player's judgement and continues the real war
 
-Source: [Approved recurring humans: complete launch movements](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
+Source: [Approved recurring humans: complete launch movements](../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
 [Characters](../Characters.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
