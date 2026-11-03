@@ -305,3 +305,7 @@ The first twelve historical optional quests were compared with current manifest 
 ## HS-13–HS-24 review — 3 November 2026
 
 The remaining twelve optional HS source objectives were checked against the proposed current manifest stages. HS-13–16 and HS-18–19 preserve distinctive local tasks not present in those stages. HS-22–24 also retain distinct optional healing, caravan and patrol-training ideas. HS-17, HS-20 and HS-21 partially overlap current defense, archive and worker-protection quests but retain additional local context. Historical dependencies and enclave permissions remain source evidence, not approved runtime prerequisites. No one-to-one HS mappings, new quests or runtime IDs were approved.
+
+## Original five-act Human narrative — retirement boundary
+
+The superseded `docs/story/THEIA_HUMAN_CAMPAIGN.md` contains a complete 1–60 narrative, not just a quest index. Its unique prose must be treated separately from the 92 H / 24 HS source register. Preserve potentially reusable civilian incidents, NPC motivations, local geography, evidence/custody consequences and noncanonical encounter ideas here before retiring the original. Its old level bands, Act V severance branches and launch-ending chronology must **not** override the canonical 1–80 campaign. The full original remains recoverable through Git history after eventual retirement; historical provenance alone is not a reason to recreate a second active campaign.
