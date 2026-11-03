@@ -775,3 +775,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Migrated CR-D1, CR-D2 and CR-D3 to root connected-racial provenance, Connected Racial Stories index, Rurik/Brynja/Nhal and institution Markdown references (commits `3e4fac0d`, `27a52f11`, `3ad436b6`). H2-05 through H2-07 remain historical quest identifiers, not invented quest files.
 - [x] Re-fetched the three Dwarven beats against live tree: **15 Markdown link occurrences**, zero missing file targets, zero remaining wiki-links.
 - [ ] Continue the other 15 Connected Stories files, then Encounters and Campaigns root audit.
+
+## Korrath connected story-beat migration — 3 November 2026
+
+- [x] Migrated CR-K1, CR-K2 and CR-K3 from imported-source wiki-links to root connected-racial provenance, current index, cast and institutional Markdown references (commits `a7e609de`, `88159999`, `126c810b`). Legacy H3 quest references remain plain historical IDs, not invented individual quest files.
+- [x] Preserved council-authorised research, limited Passage return capacity and **Needs Review** status; no automatic cross-alliance friendship or unrestricted gate travel approved.
+- [ ] Twelve Connected Stories files remain, then Encounters and Campaigns root validation.
