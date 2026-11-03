@@ -16,6 +16,8 @@
 
 ## Q176 — Thes'var
 
+**Turn-in contact: Sera (LOCKED).** Turn in only after all objectives in the [canonical campaign](Human_1_80_Canonical_Campaign.md) are complete. The dialogue wording below remains WORKING.
+
 **Opening:** “You have spent years undoing our work, yet you stand inside the only system capable of shaping what comes next. You should understand its value by now.”
 
 **Player:** “You are giving Nhal a form.”
@@ -75,6 +77,8 @@
 **In-progress:** “Complete the agreed task and return with the result. We still have work ahead.”
 
 ## Q181 — Oth'varen and Sera
+
+**Turn-in contact: Sera (LOCKED).** Turn in only after all objectives in the [canonical campaign](Human_1_80_Canonical_Campaign.md) are complete. The dialogue wording below remains WORKING.
 
 **Opening:** “Oth'varen: The correction is taking. Hold the stations. Sera: The alignment is stabilizing. Stay with us.”
 
