@@ -2,10 +2,13 @@
 type: saga-plan
 canon_status: mixed — dated creator locks; remaining proposals Needs Review
 draft_date: 2026-10-27
-updated: 2026-10-29
-up: "[[Historical Timeline]]"
+updated: 2026-11-03
+up: "../History/Historical Timeline.md"
 ---
-# Future Saga
+# Future Saga — historical proposals and deferred possibilities
+
+> **Editorial status (3 November 2026): noncanonical historical proposal archive, not the current launch plan or an approved expansion roadmap.** The [canonical Human 1–80 campaign](Human_1_80_Canonical_Campaign.md), [current campaign index](CURRENT_HUMAN_CAMPAIGN.md) and [story decisions](../../DECISIONS.md) take precedence over any conflicting statements below. The level-80 launch concludes Nhal's coherent threat: Thes'var is defeated, Oth'varen dies correcting alignment, and the coordinated inversion shatters Nhal's unified will and memory; divine essence persists and the Seven survive. The Veilbreaker dissolves the Binding and begins the Shroud's immediate dissipation. **No later Nhal return, new divine identity, expansion plot or fragment outcome is approved.** Historical post-launch placements and proposed future events below are retained as provenance/idea material only, not current canon. The approved Conclave sequence remains part of launch where specified by the current campaign.
+
 
 ## 2026-10-29 — Creator LOCK: Conclave deaths and final succession
 
@@ -19,7 +22,7 @@ up: "[[Historical Timeline]]"
 
 **Sequence:** Oma'vira → Su'vareth → Khor'vun → Vaer'uun → Thes'var → Oth'varen → Nhal's final shattering. Oth'varen briefly becomes the last living member of the original six scholars. The five founders receive permanent endings; surviving agents, forces and institutional consequences may continue.
 
-**Scope:** Timing by story phase, broad site functions, causes of death and consequences are locked. Exact site names, expansion counts, levels beyond launch, dialogue and encounter mechanics remain open. Existing permanent alliance separation and solo access to the essential story remain in force. This is narrative canon, not implemented gameplay or approval of every other Future Saga proposal. The conflicting launch-inversion outcomes remain separately unresolved.
+**Scope:** Timing by story phase, broad site functions, causes of death and consequences are locked. Exact site names, expansion counts, levels beyond launch, dialogue and encounter mechanics remain open. Existing permanent alliance separation and solo access to the essential story remain in force. This is narrative canon, not implemented gameplay or approval of every other Future Saga proposal. The older conflicting launch-inversion proposals are superseded by the locked level-80 ending.
 
 **Future development retained:** develop substantial recurring bosses below the Conclave and later Nhal, supporting dungeons and optional raids, with personal motives, histories, territorial or institutional power and consequences for defeat. Independent major threats should also exist. No specific roster, six-to-eight count, named new boss or raid production scope is approved; essential story conclusions remain solo-accessible.
 
@@ -37,9 +40,9 @@ up: "[[Historical Timeline]]"
 - He gives the player and distributed teams the necessary corrections and remains at the central installation to stabilise the transition. His transformed nature permits exceptional endurance, but his magical reserves remain finite.
 - The effort kills him after he sees the alignment hold, before Nhal's defeat. He is not resurrected, cleansed of corruption, made a divine vessel or imprisoned as an enduring power source.
 - The player and trained Guardians keep the network operating and complete the work with the Seven. His knowledge survives him; his death contributes directly to the threat that forces Nhal to shatter, without making him the sole saviour.
-- His permanent loss affects the player, the Guardians and surviving Kel'vari communities. The earlier evacuation-death suggestion is superseded. The launch constraint that he survives remains unchanged.
+- His permanent loss affects the player, the Guardians and surviving Kel'vari communities. The earlier evacuation-death suggestion is superseded. This historical launch-survival constraint was superseded on 2 November 2026: he dies during the level-80 launch finale.
 
-**Still open:** the central site's name and location, exact dialogue and encounter staging, the possible founder attack and all five Conclave founders' individual death timings, sites and methods. The previously suggested founder-death table was not approved. These locks do not approve the entire Future Saga, fix an expansion count, or resolve the conflicting launch-inversion drafts.
+**Still open:** the central site's name and location, exact dialogue and encounter staging, the possible founder attack and all five Conclave founders' individual death timings, sites and methods. The previously suggested founder-death table was not approved. These locks do not approve the entire Future Saga, fix an expansion count, or override the subsequently locked level-80 launch ending.
 
 **Affected documents:** both story decision ledgers, both Character Arcs copies, Oth'varen's derived note, Future Saga and Historical Timeline. Narrative decisions do not establish implemented gameplay.
 
