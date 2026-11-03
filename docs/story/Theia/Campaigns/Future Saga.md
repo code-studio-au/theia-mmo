@@ -35,7 +35,7 @@ up: "../History/Historical Timeline.md"
 
 **Approved sequence and limits:**
 
-- After launch, Oth'varen helps design the alignment, trains Guardian teams and prepares the inverted Major Anchor network. The Seven remain independent beings coordinating workings across six energies; there is no one-god-per-energy assignment or permanent reunion into Aethyr.
+- During the level-80 launch campaign, Oth'varen helps design the alignment, trains Guardian teams and prepares the inverted Major Anchor network. The Seven remain independent beings coordinating workings across six energies; there is no one-god-per-energy assignment or permanent reunion into Aethyr.
 - He expects to survive. During the confrontation with Nhal, Nhal disrupts the alignment, endangering the gods, installations and nearby communities. Oth'varen recognises a failure resembling the First Anchor catastrophe.
 - He gives the player and distributed teams the necessary corrections and remains at the central installation to stabilise the transition. His transformed nature permits exceptional endurance, but his magical reserves remain finite.
 - The effort kills him after he sees the alignment hold, before Nhal's defeat. He is not resurrected, cleansed of corruption, made a divine vessel or imprisoned as an enduring power source.
@@ -72,11 +72,11 @@ The campaign introduces inversion as difficult reconstruction of six-field worki
 
 The smaller test and its exact placement are proposals; they are not already approved launch outcomes.
 
-## 3. Act V — Oma'vira's death and the proposed Major Anchor inversion
+## 3. Historical Act V proposal — Oma'vira and Major Anchor inversion
 
 **Creator-locked founder outcome:** Oma'vira dies at her actual conditioning facility within the Major Anchor complex after the player breaks control systems and rescues captives where possible. Her Act IV encounter remains a limited projection. The Anchor operation remains the central objective; existing victims do not automatically recover. Khor'vun loses her specialist work and must rely more on willing troops and surviving forces.
 
-**Recommended launch finale, inversion result still Needs Review:** the player helps capture and successfully invert one Major Anchor rather than destroying it. The operation requires securing its supporting installations, understanding the particular configuration, evacuating endangered people and completing reconstruction while the Unmade resist.
+**Superseded as a launch-finale placement; retained as a historical proposal, not an approved additional ending:** the player helps capture and successfully invert one Major Anchor rather than destroying it. The operation requires securing its supporting installations, understanding the particular configuration, evacuating endangered people and completing reconstruction while the Unmade resist.
 
 The converted installation reinforces the Shroud and preserves some beneficial redistribution of magical energy. It does not close the original breach, end the awakening, silence Nhal everywhere or free the Seven.
 
@@ -88,7 +88,7 @@ The victory changes the strategic situation. The Conclave can no longer assume t
 
 **End state:** a real local victory and a functioning foundation for later protection. The original threat survives, but the player's achievement remains useful throughout the saga.
 
-## 4. Beyond launch — reclaiming a living homeland
+## 4. Historical post-launch proposal — reclaiming a living homeland
 
 The next movement expands Shroud access through carefully restored Passage connections. Covenant and Dominion establish separate approaches and negotiate independently with Kel'vari communities. Existing low-capacity routes are not suddenly equivalent to mass transport.
 
@@ -100,7 +100,7 @@ The surviving ancient magical order can emerge during this movement with limited
 
 **Campaign resolution:** a community or region gains durable security, and a Conclave operation is defeated. Recovered records reveal that essential research has already been moved to another location.
 
-## 5. The Conclave's new undertaking — a deliberate Veil-destroying Anchor
+## 5. Veilbreaker concept — approved launch event, historical development proposal
 
 The Conclave develops a new device, provisionally called the **Veilbreaker Anchor**. Its final name and location remain undecided. It is not another ordinary Major Anchor, nor a declaration that the original First Anchor can now be safely replaced or destroyed.
 
@@ -123,15 +123,15 @@ Oma'vira is already dead. The four remaining founders have different roles and l
 
 The player understands the undertaking but cannot prevent its final activation. The confrontation still allows consequential successes: evacuation, preservation of research, protection of inverted installations and disruption of components that would otherwise destroy prepared refuges. Exact objectives remain to be designed.
 
-**Recommended major turning point:** the Veil is completely destroyed, rather than merely acquiring another local tear. Nhal gains access to the Physical Realm. This is an irreversible change to the world's condition, not a larger repetition of the original breach.
+**Approved launch event at approximately level 70 (not a future expansion turning point):** the Veil is completely destroyed, rather than merely acquiring another local tear. Nhal gains access to the Physical Realm. This is an irreversible change to the world's condition, not a larger repetition of the original breach.
 
-The Shroud fails through a related but distinct mechanism. The Veilbreaker operation also overwhelms the original First Anchor's containment arrangement, breaking the working that binds the Seven. This mechanism needs further definition; the Veil and Shroud do not collapse together merely because both are barriers.
+**Superseded mechanism:** the old proposal had Veilbreaker separately overwhelm the First Anchor containment arrangement. Current canon instead establishes that destroying the Veil immediately dissolves the Binding because there is no Veil left to contain; the Shroud begins dissipating immediately. Anchors amplify the original tear, not the prison.
 
 The Seven are released from their commitment. Their individual identities survive, but freedom does not automatically restore their relationships, their knowledge or unlimited power.
 
 **End state:** the old containment is gone. The player's preserved refuges and infrastructure determine how much of the world can withstand what follows.
 
-## 7. The Unveiling — resisting the unmaking of the world
+## 7. The Unveiling — historical threat-staging proposals within launch
 
 **Creator-locked Vaer'uun ending:** After Nhal arrives, its actions expose the gap between its purpose and his doctrine. At a major manifestation site, he knowingly chooses obedience despite evidence that his followers are expendable and binds himself to its communication working. The player dismantles the supports and kills him. His death ends central Conclave authority and helps establish how Nhal's physical presence can be constrained.
 
@@ -145,7 +145,7 @@ Inverted installations remain valuable, but their role changes. Before the fall 
 
 The player helps secure concentrations of survivors and deny Nhal footholds. Earlier victories preserve populations and places rather than being erased by the catastrophe. Both alliances continue their own defensive campaigns; existential danger does not itself establish peace, friendly trade or shared playable allegiance.
 
-## 8. The Seven Unbound — cooperation without concealed sacrifice
+## 8. The Seven Unbound — launch alignment and historical cooperation proposals
 
 The player helps establish the conditions under which the Seven can act together. Evidence of the past must be recovered and tested, threatened populations protected and practical safeguards built. Oth'varen contributes firsthand testimony without becoming an omniscient authority over the gods.
 
@@ -163,7 +163,7 @@ They need not forgive one another before cooperating. The recommended resolution
 
 **Campaign resolution:** the Seven agree to a bounded combined working, supported by a mortal-built defensive network. This reverses the moral pattern of the Binding: no participant is deceived about the cost.
 
-## 9. The primordial confrontation — alignment, loss and Nhal's shattering
+## 9. Level-80 launch finale — alignment, loss and Nhal's shattering
 
 **Creator-locked contribution and death — 29 October 2026:** Oth'varen helps design the alignment, trains Guardian teams and prepares the inverted Major Anchor network expecting to survive. The Seven remain independent persons, coordinating their different workings across all six energies without permanently recreating Aethyr. Mortals maintain and defend the installations.
 
@@ -177,7 +177,7 @@ The remaining technical staging and exact final working require development. Exi
 
 **Superseded historical proposal:** Nhal deliberately shattering its own essence is not the approved launch mechanism. In the locked level-80 finale, the player, Seven and distributed Guardian teams complete the coordinated inversion, shattering Nhal's coherent divine identity and will. Indestructible essence remains fragmented without Nhal's unified consciousness or memories; its future is undecided. The distinction between the approved alignment/death sequence and other future proposals remains governed by the dated decision ledger. The irreversible fragmentation mechanism and subsequent divinities require their own detailed development; founder fates are governed by the dated creator lock above.
 
-## 10. The scattered inheritance — unapproved future possibilities
+## 10. Post-launch possibilities — unapproved scattered inheritance
 
 Nhal's dispersed essence reaches regions beyond its former footholds. The network protects some populations and helps contain or recover other areas, but cannot prevent every consequence. The player returns to places whose histories and survival already matter.
 
@@ -189,7 +189,7 @@ These are proposed motives, not final divine portfolios. Some beings pursue dest
 
 To prepare this development, earlier campaigns should establish that fragments of primordial essence can develop autonomy and that neither creation nor ancestry guarantees obedience. Aethyr's successors, the Kel'vari and resistance to corruption provide thematic precedents, not automatic proof of the new process's mechanics.
 
-## 11. The new divine war — creation, allegiance and survival
+## 11. Unapproved expansion concept — a new divine war
 
 The emerging gods contest territory, magical conditions and the future of mortal societies. Some seek followers; some transform places; one or more may create a new non-playable people capable of surviving environments hostile to existing populations.
 
@@ -201,7 +201,7 @@ Deaths among the original Seven remain possible future events, not required mile
 
 The player protects populations, contests divine strongholds, builds enforceable alliances and helps beings born for destructive purposes claim other futures. The two playable alliances retain their separate identities and hostile relationship unless the creator explicitly revises that existing constraint.
 
-## 12. The recommended ending — a world sustained by many
+## 12. Unapproved long-range ending concept — a world sustained by many
 
 The final objective is to make the world resilient without recreating the original Binding. The player and other mortal communities establish a distributed protective network, drawing on the hard-earned inversion and stabilisation research. Willing divine beings contribute through explicit agreements rather than indefinite imprisonment.
 
@@ -213,14 +213,14 @@ The world does not return unchanged to its opening state. Some places are lost, 
 
 **Final resolution:** Nhal's singular will is gone; neither primordial inheritance determines every descendant's choices; no small group of prisoners secretly bears the entire world's survival. The player's first successful inversion remains part of the foundation that made this possible.
 
-## Decisions to settle before rewriting the main campaign
+## Historical decision prompts — superseded where launch canon is now locked
 
-1. Approve or revise the successful Act V Major Anchor inversion and its continuing costs.
+1. Historical proposal: assess whether an Act V Major Anchor inversion belongs in the current 1–80 quest register; do not assume it is the launch finale.
 2. Define the Veilbreaker Anchor's requirements, its location and how it defeats the Shroud's separate binding arrangement.
 3. Define limits on Nhal's physical influence so resistance remains credible after the Veil falls.
 4. Establish what inversion can do after the Shroud is gone, and what further discoveries adaptation requires.
-5. Choose the combined working that defeats Nhal and the irreversible cost of its fragmentation.
-6. Develop the emerging gods, their differences and the enforcement of a final divine accord.
+5. **Resolved for launch:** coordinated level-80 inversion shatters Nhal's coherent will and identity; essence persists as fragments without a decided future.
+6. **Unapproved future concept:** consider whether any fragment-born gods or divine accord should exist; neither is canon.
 
 Expansion count, exact dates, deaths among the Seven and the new people's identity remain open. The five founders' deaths and Oth'varen's final alignment death are now locked by story phase; exact site names and encounter mechanics remain open. The recommended causal arc above should guide those choices without fixing them prematurely.
 
