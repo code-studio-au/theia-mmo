@@ -26,15 +26,15 @@ These proposed stories preserve local sovereignty, native motivations and the pe
 - [[DR-R3 — An Account Owed]]
 
 ## Complete cultural routes
-- [[Sources/THEIA_HUMAN_CONNECTED_RACIAL_STORIES#Dwarves — An honest measure|Dwarves — An honest measure]]
-- [[Sources/THEIA_HUMAN_CONNECTED_RACIAL_STORIES#Aelari — The living boundary|Aelari — The living boundary]]
-- [[Sources/THEIA_HUMAN_CONNECTED_RACIAL_STORIES#Korrath — The warning in the margin|Korrath — The warning in the margin]]
-- [[Sources/THEIA_HUMAN_CONNECTED_RACIAL_STORIES#Orcs — A shore worth defending|Orcs — A shore worth defending]]
-- [[Sources/THEIA_HUMAN_CONNECTED_RACIAL_STORIES#Halflings — The record that does its job|Halflings — The record that does its job]]
-- [[Sources/THEIA_HUMAN_CONNECTED_RACIAL_STORIES#Vaelari — A rejected result|Vaelari — A rejected result]]
-- [[Sources/THEIA_HUMAN_CONNECTED_RACIAL_STORIES#Vorrath — What the raid did not take|Vorrath — What the raid did not take]]
-- [[Sources/THEIA_HUMAN_CONNECTED_RACIAL_STORIES#Kel'vari — Permission is not possession|Kel'vari — Permission is not possession]]
-- [[Sources/THEIA_HUMAN_CONNECTED_RACIAL_STORIES#Shared-world and faction consistency|Shared-world and faction consistency]]
+- [Dwarves — An honest measure](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md)
+- [Aelari — The living boundary](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md)
+- [Korrath — The warning in the margin](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md)
+- [Orcs — A shore worth defending](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md)
+- [Halflings — The record that does its job](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md)
+- [Vaelari — A rejected result](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md)
+- [Vorrath — What the raid did not take](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md)
+- [Kel'vari — Permission is not possession](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md)
+- [Shared-world and faction consistency](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md)
 
 [[Human Campaign]] · [[Peoples and Allegiances]]
 
