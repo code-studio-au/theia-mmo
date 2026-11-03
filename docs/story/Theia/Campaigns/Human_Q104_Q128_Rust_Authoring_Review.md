@@ -56,6 +56,16 @@
 - Failed solo encounters reset only active encounter state, not previously committed evidence or one-time story outcomes.
 - Standard quests should require no Luau. Optional scripted presentation must not own authoritative quest credit.
 
+## Consolidated legacy context — 3 November 2026
+
+**ARCHIVED source evidence / WORKING authoring detail.** The [retired migration note](https://github.com/code-studio-au/theia-mmo/blob/399561a1f7645b481961f56ef115c6572bdec86b/docs/story/Theia/Campaigns/Human_Q104_Q128_Legacy_Pack_Migration.md) compared `Human_45_55_Playable_Quest_Pack.md` v0.1 and `Human_45_55_Implementation_Brief.md` v0.2. Both contained the same 25 Q104–Q128 references with no additional quests. Their distinct case, political and Anchor-network constraints are retained above; historical named locations remain in the [existing location/lore reference](Human_1_80_Location_and_Lore_Editorial_Reference.md).
+
+- Covenant and Dominion accounts are independent evidence, not a declaration of moral equivalence. Preserve the Great Clan chief's anti-peace position, reluctant official attendance and personal relationship to the High Ruler, and distinguish his murder from Edric's.
+- The old chapter-wide lore payoff is not knowledge already available to the player at Q104. Su'vareth attribution, her permanent death and the recovered Veilbreaker intelligence retain their canonical sequence; no prior Oth'varen foreknowledge is implied.
+- Retain Classic manual target/facing and weapon-timed autoattack, solo-accessible critical instances, safe recovery and no mandatory PvP, profession, class or party requirement. Travel remains physical roads, scheduled ships and fixed flight paths; restricted Passage is exceptional and permission-based.
+- Historical level-45/50 assumptions, draft completion aliases and generic accept/inspect/report templates are not approved eligibility, runtime IDs or replacements for specific objective evidence.
+- Positions, actor identities, semantic actions, rewards, encounter tuning, QA and integration remain unresolved authoring inputs. Evidence durability and separate possession/consumption decisions remain governed by the requirements above, not by obsolete generic retry clauses.
+
 ## Next pass
 
 Review Q129–Q157 (distributed Warden network, Vaer'uun's selective truths, Keeper/Guardian testimony, Veilbreaker's irreversible activation). Approved edits belong in the single current manifest, with narrative/dialogue references updated together; this review is not a competing quest-definition set.
