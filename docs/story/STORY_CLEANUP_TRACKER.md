@@ -361,3 +361,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Replaced retired `Sources/THEIA_WORLD_BIBLE` wiki-links in `Lore/Divine and Mortal History.md`, `Lore/Anchors and the Shroud.md` and `Lore/Peoples and Allegiances.md` with root World Bible and dated story decision links (commits `7e9b603f`, `e084b055`, `122bd35e`).
 - [x] Collapsed three identical historical-source links in Anchors and the Shroud into one. No narrative content or quest definitions changed.
 - [ ] Continue link and semantic verification across the remaining derived notes; do not infer whole-vault completion from these targeted changes.
+
+## Orders and population reference cleanup — 3 November 2026
+
+- [x] Removed stale `Sources/THEIA_WORLD_BIBLE` wiki-link and duplicate root source link from `Lore/Orders and Hidden Conflict.md`, linking current story decisions (commit `34dda4e2`).
+- [x] Removed obsolete `Sources/THEIA_ZONE_POPULATION_FRAMEWORK` wiki-link and duplicate historical source references from `Lore/World Population.md`, retaining the root framework and its source-specific approval boundary (commit `58db7202`).
+- [ ] Continue remaining derived source references, incoming links and final semantic verification. No quest definitions changed.
