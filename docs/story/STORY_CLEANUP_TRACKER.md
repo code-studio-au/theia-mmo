@@ -40,7 +40,7 @@ These are integrated outcomes, not a claim that all remaining documents are cons
 - At main 37dd8520f7990cbb42bc7c7c52f02de0efd31a76, the complete 362-Markdown snapshot passed 3,182 relative file links and 56 section links repository-wide; story subset 1,463/51. Later PRs received their own bounded link/preservation checks. Run fresh combined validation after the remaining work.
 - That checkpoint found 184 unique canonical quest identifiers and 184 matching review entries with no title mismatches or gaps. It did not establish full stage equivalence, runtime readiness, all reveal gates or approved H/HS mappings.
 - Dialogue corpus has 180 quest sections: Q014–Q017 are absent. Q183's Covenant excerpt does not supply its required Kel'vari report dialogue.
-- Source evidence records 444 distinct question identifiers / 471 occurrences, 418 historical answered prompts and 26 unanswered prompts. Reused question numbers require stage/page context. Original PDF and complete external audit artifacts are not in the repository; exhaustive independent PDF verification is not certified.
+- Source evidence records 444 distinct question identifiers / 471 numbered prompt occurrences, 418 identifiers with a source-located answer or confirmed later variant, and 26 open/deferred identifiers. Reused question numbers require stage/page context. Original PDF and complete external audit artifacts are not in the repository; exhaustive independent PDF verification is not certified.
 - Legacy branch story/launch-main-story-1-60 was previously 0 commits ahead and 534 behind main. This was an ancestry checkpoint, not content-equivalence proof or permission to delete it.
 
 ## Remaining work and exact blockers
