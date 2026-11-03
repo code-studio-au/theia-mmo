@@ -226,7 +226,7 @@ Expansion count, exact dates, deaths among the Seven and the new people's identi
 
 ## Governing foundation and related notes
 
-[Historical Timeline](../History/Historical%20Timeline.md) · [Timelines](../History/Timelines.md) · [Current Human Campaign](CURRENT_HUMAN_CAMPAIGN.md) · [Resonance Inversion](../Lore/Resonance%20Inversion.md) · [Anchors and the Shroud](../Lore/Anchors%20and%20the%20Shroud.md) · [The Seven Gods](../Lore/The%20Seven%20Gods.md) · [The Corrupted Conclave](../Lore/Institutions/The%20Corrupted%20Conclave.md)
+[Historical Timeline](../History/Historical%20Timeline.md) · [Revelation Timeline](../../THEIA_MODERN_STORY_REVELATION_TIMELINE.md) · [Current Human Campaign](CURRENT_HUMAN_CAMPAIGN.md) · [Resonance Inversion](../Lore/Resonance%20Inversion.md) · [Anchors and the Shroud](../Lore/Anchors%20and%20the%20Shroud.md) · [The Seven Gods](../Lore/The%20Seven%20Gods.md) · [The Corrupted Conclave](../Lore/Institutions/The%20Corrupted%20Conclave.md)
 
 [Established Anchor and inversion foundation](../../THEIA_WORLD_BIBLE.md) · [Approved launch structure](../../THEIA_MODERN_STORY_REVELATION_TIMELINE.md) · [Earlier future campaign possibilities](../../THEIA_INTERWOVEN_CHRONICLE.md).
 
