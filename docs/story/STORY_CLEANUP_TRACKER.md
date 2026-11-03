@@ -733,3 +733,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Migrated Orcs, Vaelari and Vorrath notes to correct World Bible paths and direct Markdown links (commits `2bffeed3`, `0b86bfad`, `fa1c60f4`). All nine `Lore/Peoples/*.md` notes now have their source and wiki-link migrations completed.
 - [x] Re-fetched all nine peoples' notes against live tree `fa1c60f4`: **119 relative Markdown links checked, zero missing file targets, zero remaining `[[...]]` wiki-links**.
 - [ ] Continue the remaining Lore root and Institutions pages, then complete the 28-file directory audit and historical semantic checks.
+
+## Full 28-file Lore Markdown syntax and file-target audit — 3 November 2026
+
+- [x] Re-fetched all 19 Lore Markdown files outside `Peoples/` against tree `8b3538a9`: **447 relative Markdown links**, zero missing file targets, zero remaining `[[...]]` wiki-links.
+- [x] Combined with the previously verified nine peoples' files (119 links), the **28-file Lore directory** now passes file-target and Obsidian syntax checks: **566 relative Markdown link occurrences**, zero missing file targets.
+- [ ] Heading fragments, content canon precedence, incoming backlinks and historical duplicate analysis remain outstanding; do not treat this as whole-story completion.
