@@ -2,9 +2,9 @@
 
 [Read the complete Memory Scenes document](../../THEIA_MEMORY_SCENES.md). Preserve scene-specific status and disclosure rules when adapting scenes for players.
 
-[[Characters]] · [[Chronicles and History]] · [[Timelines]]
+[Characters](../Characters/Characters.md) · [Chronicles and History](Chronicles%20and%20History.md) · [Timelines](Timelines.md)
 
-[[The Six Reunited|Read the approved reunion scene]]
+[Read The Six Reunited](The%20Six%20Reunited.md) — preserve its scene-specific approval status
 
 ## Related notes
 
