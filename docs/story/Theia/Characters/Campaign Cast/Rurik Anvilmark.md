@@ -2,7 +2,7 @@
 type: character
 canon_status: Needs Review
 source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
-up: "[[Characters]]"
+up: "../Characters.md"
 ---
 # Rurik Anvilmark
 
@@ -17,8 +17,8 @@ Protects local legal process and workers' interests; authorises inspections rath
 
 Source: [Allied and Kel'vari cast](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
-[[Characters]] · [[Human Campaign]]
+[Characters](../Characters.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
 ## Related notes
 
-[[Dwarves]]
+[Dwarves](../../Lore/Peoples/Dwarves.md)
