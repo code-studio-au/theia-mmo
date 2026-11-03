@@ -337,3 +337,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Replaced the obsolete 'survives launch, dies later' statement in `Theia/Characters/Oth'varen.md` with the locked level-80 finale sequence, including Thes'var's defeat, Oth'varen's physical death, Nhal's identity shattering and surviving divine essence (commit `6f44e8d5`).
 - [x] Replaced obsolete historical `Sources/THEIA_CHARACTER_ARCS` embed with a direct root historical source link, explicitly subordinate to current campaign canon.
 - [ ] Audit other derived character pages and historical Future Saga for stale launch-versus-expansion wording. The original historical source can remain as provenance but must not be presented as current canon.
+
+## Future Saga authority reconciliation — 3 November 2026
+
+- [x] Reclassified `Theia/Campaigns/Future Saga.md` as a historical proposal and deferred-idea archive with a prominent 3 November 2026 authority notice (commit `0d33f360`). Current Human 1–80 narrative and decisions take precedence over older launch-versus-expansion speculation.
+- [x] Corrected historical text that claimed Oth'varen must survive launch and that conflicting launch-inversion endings remained unresolved. The approved launch finale includes Oth'varen's death and Nhal's coherent identity shattering; divine essence persists. No future fragment outcome or expansion storyline is approved.
+- [ ] Review the remaining historical proposal sections and their inbound links before considering any deletion. The archived ideas are not active canon and must not be silently promoted.
