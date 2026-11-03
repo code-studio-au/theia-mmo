@@ -429,3 +429,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 
 - [x] Updated `Theia/Lore/World Directory.md` to reflect the earlier recorded 281/281 historical Markdown file-target check instead of incorrectly saying the converted archive had never been verified (commit `936d2ba7`). This is a correction to the redirect's status statement, **not a fresh 281-link scan**.
 - [ ] Revalidate targets after any further deletions and separately check heading anchors and semantic currency. The World Directory archive remains historical provenance, not current quest authority.
+
+## Three Atlas place source-link migrations — 3 November 2026
+
+- [x] Migrated source, Atlas parent and current campaign navigation in `Atlas/Places/Lantern Redoubt.md`, `Outer Passage site.md` and `Northwatch Landing.md` to direct Markdown paths (commits `55b9b790`, `1faf73a2`, `0cbe7c60`). The original source remains `THEIA_HUMAN_CAST_AND_PLACES.md`.
+- [x] Preserved each location's **Needs Review** status and working geography without asserting new travel routes or approved map coordinates.
+- [ ] Continue reviewing remaining related-note wiki-links and verifying their actual targets; these three files are not a complete Atlas semantic audit.
