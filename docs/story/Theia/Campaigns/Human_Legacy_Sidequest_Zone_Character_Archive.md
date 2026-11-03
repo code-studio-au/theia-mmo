@@ -205,3 +205,38 @@ Compared each of the 28 non-exact H-series source objectives with the authored s
 | H5-19 | Q170 | Distributed technical records/training overlap; reject old ending-dependent interpretation |
 
 **Disposition:** All 28 have been compared at the objective-description level. The five explicitly conflicting finale/reveal rows remain historical-only. Additional timing/sequence contradictions (e.g. H5-06 voyage count) must also be excluded. The remaining useful details stay in this non-canonical archive until checked against dialogue, zones and NPC records. A comparison is not proof that the old source copies are safe to delete.
+
+## HS-01–HS-24 candidate comparison against current manifest — 3 November 2026
+
+**Coverage: 24/24 historical optional hooks. Status: thematic comparison only; no migration or quest approval.** All 24 retain their original objectives in the draft crosswalk above. This table records the actual current candidate stages and original access conditions, so similarities do not silently erase distinct civilian content.
+
+| Historical ID | Proposed current candidate | Actual current stages | Historical access |
+|---|---|---|---|
+| HS-01 | Q006 — Seed Before Winter | Count seed sacks; Check levy ledger; Correct requisition | Standalone |
+| HS-02 | Q007 — A Cart That Can Move | Inspect axle; Collect iron; Repair cart | Standalone |
+| HS-03 | Q032 — After the Arrest | Receive household restitution ledger; Distribute returned goods; Inform affected family without revealing protected witness; Close restitution record | Standalone |
+| HS-04 | Q055 — The Nursery Route | Receive local rescue request; Reach damaged woodland ward; Rescue forest workers from ordinary hazards; Protect and repair local ward; Report local outcome | Standalone |
+| HS-05 | Q015 — One Bridge, Two Claims | Inspect supports; Hear miller; Hear merchant; Choose repair priority; Reopen crossing | Standalone |
+| HS-06 | Q014 — The Quarry Bell | Find missing crew; Clear cave hazard; Recover tally; Return findings | Standalone |
+| HS-07 | Q051 — The Feeder Gallery | Receive maintenance incident report; Enter damaged tunnels; Secure trapped crew from hazards; Recover service equipment; Report neglected maintenance rather than conspiracy | Standalone |
+| HS-08 | Q052 — Grain for Iron | Review grain and iron deliveries; Compare conflicting delivery dates; Secure engineering cooperation; Close legitimate trade dispute | Standalone |
+| HS-09 | Q007 — A Cart That Can Move | Inspect axle; Collect iron; Repair cart | Standalone |
+| HS-10 | Q055 — The Nursery Route | Receive local rescue request; Reach damaged woodland ward; Rescue forest workers from ordinary hazards; Protect and repair local ward; Report local outcome | Standalone |
+| HS-11 | Q055 — The Nursery Route | Receive local rescue request; Reach damaged woodland ward; Rescue forest workers from ordinary hazards; Protect and repair local ward; Report local outcome | Standalone |
+| HS-12 | Q101 — Two Histories | Read first post-Sundering history; Read independently preserved history; Record differences | Standalone |
+| HS-13 | Q063 — The City That Endured | Receive waterway work assignment; Reach damaged channel; Secure water route; Obtain archive referral | Standalone |
+| HS-14 | Q064 — Water and Memory | Receive tunnel access; Reach old store; Protect crew; Recover warning | Standalone |
+| HS-15 | Q063 — The City That Endured | Receive waterway work assignment; Reach damaged channel; Secure water route; Obtain archive referral | Standalone |
+| HS-16 | Q037 — Short of the Manifest | Inspect damaged delivery; Read official manifest; Compare requisition against cargo; Authenticate false requisition | Standalone |
+| HS-17 | Q046 — A Landing Still at War | Receive Northwatch defense briefing; Defend supply evacuation against conventional Dominion attack; Protect wounded and equipment; Report ordinary wartime losses | Standalone |
+| HS-18 | Q046 — A Landing Still at War | Receive Northwatch defense briefing; Defend supply evacuation against conventional Dominion attack; Protect wounded and equipment; Report ordinary wartime losses | After HS-17 |
+| HS-19 | Q088 — Permission to Remain | Hear Kel'vari access conditions; Register research boundaries; Receive permission to remain | Story arrival or equivalent independent access |
+| HS-20 | Q093 — An Audience Earned | Receive exposed record assignment; Protect threatened store; Rehouse records; Report | Story arrival or equivalent independent access |
+| HS-21 | Q087 — Those Who Remained | Receive missing worker request; Reach authorized site; Protect workers; Return equipment and report | Story arrival or equivalent independent access |
+| HS-22 | Q008 — The Healer's Ledger | Interview first patient; Interview second patient; Deliver herbs; File observations | After HS-03 or local healer introduction |
+| HS-23 | Q017 — The Long Way Home | Prepare returned supplies; Travel with caravan; Clear obstruction; Deliver supplies | After HS-05 |
+| HS-24 | Q033 — The Watch Restored | Receive restored patrol route; Inspect new patrol marker; Defend road against ordinary threats; Record road reopened | H5-20; optional epilogue |
+
+**Notable differences requiring preservation:** HS-02's public-tool priority choice and HS-09's crafting demonstration both point to Q007's cart repair, but are distinct ideas; HS-04's Oren wardstone scholarship, HS-10's nursery boundary and HS-11's injured predator all point to Q055's worker rescue, not one interchangeable quest. HS-13's memorial and HS-15's winter reserve both point to Q063's waterway task. HS-17 fort maintenance and HS-18 recovery of fallen soldiers' belongings both point to Q046's defense, but HS-18 has a distinct memorial consequence and historical dependency. HS-19 enclave repair-material allocation differs from Q088's access permission. HS-22's consent-based healing trial is not Q008's ordinary patient ledger. HS-24's historical post-H5 epilogue condition must not become a level gate or replace Q033's road patrol. Other close thematic matches still require contact, access and consequence checks.
+
+**Disposition:** preserve all 24 as noncanonical optional hooks pending independent editorial review. Do not add 24 active quests, merge source IDs, change the 184-quest manifest, or delete the original register solely on this stage comparison.
