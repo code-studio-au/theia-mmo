@@ -25,16 +25,9 @@ These proposed stories preserve local sovereignty, native motivations and the pe
 - [[DR-R2 — Missing Before the Landing]]
 - [[DR-R3 — An Account Owed]]
 
-## Complete cultural routes
-- [Dwarves — An honest measure](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md)
-- [Aelari — The living boundary](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md)
-- [Korrath — The warning in the margin](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md)
-- [Orcs — A shore worth defending](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md)
-- [Halflings — The record that does its job](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md)
-- [Vaelari — A rejected result](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md)
-- [Vorrath — What the raid did not take](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md)
-- [Kel'vari — Permission is not possession](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md)
-- [Shared-world and faction consistency](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md)
+## Complete cultural routes — historical source
+
+The proposed Dwarven, Aelari, Korrath, Orc, Halfling, Vaelari, Vorrath and Kel'vari routes, plus shared-world/faction consistency notes, are preserved together in [Connected Racial Stories](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md). They remain **Needs Review** and do not override the [current Human campaign](CURRENT_HUMAN_CAMPAIGN.md).
 
 [[Human Campaign]] · [[Peoples and Allegiances]]
 
