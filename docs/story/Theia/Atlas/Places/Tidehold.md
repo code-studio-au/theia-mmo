@@ -2,7 +2,7 @@
 type: location
 canon_status: Needs Review
 source: "../../../THEIA_HUMAN_CAST_AND_PLACES.md"
-up: "[[Atlas]]"
+up: "../Atlas.md"
 ---
 # Tidehold
 
@@ -18,6 +18,6 @@ Royal road and allied road network; maintained harbour and military ships
 ## Community and function
 Corven's alliance offices, delegates, docks, trade and expedition staging
 
-Source: [[Sources/THEIA_HUMAN_CAST_AND_PLACES#Geography and travel|Geography and travel]] (entry: **Tidehold**).
+Source: [Geography and travel](../../../THEIA_HUMAN_CAST_AND_PLACES.md) (entry: **Tidehold**).
 
-[[Atlas]] · [[Human Campaign]]
+[Atlas](../Atlas.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
