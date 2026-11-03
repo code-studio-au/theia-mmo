@@ -2,7 +2,7 @@
 type: character
 canon_status: Needs Review
 source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
-up: "[[Characters]]"
+up: "../Characters.md"
 ---
 # Halvek Dorn
 
@@ -10,7 +10,7 @@ up: "[[Characters]]"
 > This campaign entry is Needs Review. Established facts explicitly identified by the source retain their existing status.
 
 ## Public role and location
-Covenant-facing supply factor, willing [[The Unmade|Unmade]] local operator
+Covenant-facing supply factor, willing [Unmade](../../Lore/Institutions/The%20Unmade.md) local operator
 
 ## Knowledge and motivation
 Knows the small device's assignment, not full ancient cosmology
@@ -20,9 +20,9 @@ Act II opponent; detained after defeat; technical records survive independently
 
 Source: [New human and expedition cast](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
-[[Characters]] · [[Human Campaign]]
+[Characters](../Characters.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
 
-[[Lore/Institutions/Covenant|Covenant]]
+[Covenant](../../Lore/Institutions/Covenant.md)
