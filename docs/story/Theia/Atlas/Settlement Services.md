@@ -10,7 +10,7 @@ Approved service functions and open assignments must remain distinct from the ca
 
 [Read historical source](../../THEIA_HUMAN_HEARTLANDS_SETTLEMENT_REGISTER.md)
 
-[Read historical source](../../THEIA_HUMAN_CAST_AND_PLACES.md)
+[Retained historical service context](../Campaigns/Human_Legacy_Sidequest_Zone_Character_Archive.md#retired-cast-geography-and-service-packet)
 
 [Atlas](Atlas.md) · [Story index](../../README.md)
 
