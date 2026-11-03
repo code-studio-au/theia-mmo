@@ -555,3 +555,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Migrated Urodan and Tarek Oss to direct Characters/current campaign and Korrath links (commits `14422c49`, `2a7ab3f0`).
 - [x] Retried and completed Rurik Anvilmark's Characters/current campaign and Dwarves links (commit `d3918065`).
 - [ ] Continue remaining Campaign Cast cards and full repository semantic/link checks; existing **Needs Review** statuses remain unchanged.
+
+## Port and expedition cast navigation completed — 3 November 2026
+
+- [x] Migrated Ysra Keel, Iven Rusk and Sera Venn to direct Characters/current Human campaign navigation, including Tidehold and Covenant related-note links (commits `d8a3d019`, `28ec6efd`, `dd7ea3ee`). Previously blocked edits were retried successfully.
+- [x] Preserved each **Needs Review** status and established role distinctions; no quest or canon outcomes changed.
+- [ ] Continue remaining Campaign Cast notes and final repository-wide historical/backlink verification.
