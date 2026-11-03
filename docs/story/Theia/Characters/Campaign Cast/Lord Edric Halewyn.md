@@ -2,7 +2,7 @@
 type: character
 canon_status: approved-role; proposed-development
 source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
-up: "[[Characters]]"
+up: "../Characters.md"
 ---
 # Lord Edric Halewyn
 
@@ -20,4 +20,4 @@ His legacy changes institutional practice; never resurrected or used as an infal
 
 Source: [Approved recurring humans: complete launch movements](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
-[[Characters]] · [[Human Campaign]]
+[Characters](../Characters.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
