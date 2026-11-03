@@ -1,12 +1,12 @@
 ---
 type: story-beat
 canon_status: Needs Review
-source: "[[Sources/THEIA_HUMAN_CONNECTED_RACIAL_STORIES]]"
-up: "[[Connected Racial Stories]]"
+source: "../../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md"
+up: "../Connected Racial Stories.md"
 ---
 # CR-A1 — Help before access
 
-Human quest references: [[Campaigns/Quests/H3-01 - Permission to Ask|H3-01]] · [[Campaigns/Quests/H3-02 - The Nursery Route|H3-02]].
+Human quest references: H3-01 · H3-02.
 
 > [!important] Needs Review
 > Proposed connected racial material. Dominion stories use their own institutions and do not create friendly cross-alliance cooperation.
@@ -20,11 +20,11 @@ Hear ward-tenders, secure the nursery path and bring missing workers home.
 ## Decision and closure
 Local lives establish a reason for trust; restricted access is not bought by royal rank.
 
-Source: [[Sources/THEIA_HUMAN_CONNECTED_RACIAL_STORIES#Aelari — The living boundary|Aelari — The living boundary]].
+Source: [Aelari — The living boundary](../../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md).
 
-[[Connected Racial Stories]] · [[Welcome|Home]]
+[Connected Racial Stories](../Connected%20Racial%20Stories.md) · [Story index](../../../README.md)
 
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
 
-[[Lore/Institutions/Dominion|Dominion]]
+[Dominion](../../Lore/Institutions/Dominion.md)
