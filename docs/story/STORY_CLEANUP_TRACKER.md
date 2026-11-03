@@ -367,3 +367,10 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Removed stale `Sources/THEIA_WORLD_BIBLE` wiki-link and duplicate root source link from `Lore/Orders and Hidden Conflict.md`, linking current story decisions (commit `34dda4e2`).
 - [x] Removed obsolete `Sources/THEIA_ZONE_POPULATION_FRAMEWORK` wiki-link and duplicate historical source references from `Lore/World Population.md`, retaining the root framework and its source-specific approval boundary (commit `58db7202`).
 - [ ] Continue remaining derived source references, incoming links and final semantic verification. No quest definitions changed.
+
+## Editorial and racial source-link migration — 3 November 2026
+
+- [x] Replaced obsolete source-mirror links and World Bible embed in `Theia/Editorial/Canon and Open Questions.md` with verified root story sources and current campaign precedence (commit `072232de`).
+- [x] Migrated `Theia/History/Memory Scenes.md` to the surviving root Memory Scenes source (commit `a539c09e`).
+- [x] Migrated nine source-section wiki-links in `Theia/Campaigns/Connected Racial Stories.md` to the surviving root connected racial stories source, retaining **Needs Review** status (commit `cb48c20c`).
+- [ ] Continue residual wiki-link and content checks; these migrations do not establish all individual quest-note links resolve or that racial stories are approved.
