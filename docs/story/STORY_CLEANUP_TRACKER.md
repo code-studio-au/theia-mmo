@@ -818,3 +818,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Migrated five `Campaigns/Encounters/*.md` files from retired Obsidian source embeds to direct historical story-dungeon source links (commits `507c7e22`, `a32feb48`, `3dbdbea8`, `f1b6ed1d`, `4f10b77c`). Marked their old Act I–V placement as historical proposals subordinate to the canonical 1–80 campaign; kept Needs Review status.
 - [x] Re-fetched five Encounters: **20 Markdown links, zero missing file targets, zero remaining wiki-links**.
 - [ ] Continue the 51 Campaigns root Markdown files and verify historical quest/encounter source precedence before final branch/tracker retirement.
+
+## Main Campaigns 51-file first-pass audit — 3 November 2026
+
+- [x] Scanned all **51 root Campaigns Markdown files** against the live tree in three batches (12, 12, 12, 15): **175 existing Markdown link occurrences** (40+28+63+44), zero missing file targets. Three documents contained wiki-link syntax: Future Saga (25 historical references), Human Obsidian Legacy Quest Audit (two documentary examples), and Level 35–40 Progression Prototype (one missing historical document reference).
+- [x] Removed the missing `Level_1_80_Progression_Prototype` wiki-link and corrected the prototype's obsolete claim that level 80 is not approved (commit `7844bdc6`). The cap is locked; XP pacing and reward budgets remain untested proposals.
+- [ ] Review Future Saga's 25 references against verified targets without promoting historical expansion ideas to canon. Preserve intentional wiki-link examples in the audit as literal documentation. Then recheck root Campaigns and complete semantic/duplicate verification.
