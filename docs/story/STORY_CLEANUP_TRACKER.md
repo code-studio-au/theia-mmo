@@ -567,3 +567,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Retried and completed Garrick Ashford, Halden Marr, Lysa Marden and Edda Flintwake character navigation to direct Characters/current campaign and related Valecrown, Covenant, Dwarves and Brynja links (commits `022c2bc7`, `030975a0`, `8d0039cd`, `ff20c7c9`).
 - [x] Preserved Garrick's noninvolvement in sabotage, Halden's incomplete knowledge, Lysa's limited archive access, and Edda/Brynja's no-assumed-kinship restriction. No canonical outcomes changed.
 - [ ] Continue remaining cast and repository-wide link/content verification.
+
+## Dwarf and historical antagonist cast navigation — 3 November 2026
+
+- [x] Retried and completed Brynja Flintwake, Varric Sorn and Halvek Dorn character navigation to direct Characters/current campaign and relevant Dwarves, Edda, Covenant and Unmade references (commits `4cd1ed96`, `c93aaada`, `eda2390f`).
+- [x] Preserved all **Needs Review** status and no-assumed-kinship limits; historical antagonist roles do not override the canonical 1–80 campaign.
+- [ ] Continue remaining cast and repository-wide historical link/content checks.
