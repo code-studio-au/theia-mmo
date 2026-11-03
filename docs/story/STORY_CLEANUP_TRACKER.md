@@ -477,3 +477,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Corrected root World Bible paths in three institution notes under `Theia/Lore/Institutions/`: Guardians, Unmade and Corrupted Conclave. Their former `../../../../THEIA_WORLD_BIBLE.md` links escaped the story folder; correct relative path is `../../../THEIA_WORLD_BIBLE.md`. Commits `265d02e5`, `6acd9425`, `603415c6`.
 - [x] Replaced retired imported-source references and parent navigation in all three. Guardians related character/institution links were also migrated.
 - [ ] Continue the remaining Unmade/Conclave related-note wiki-links, then revalidate the three documents and broader repository paths. No semantic canon approval follows from path correction.
+
+## Institution related-link completion — 3 November 2026
+
+- [x] Verified 10 unique character, people and institution targets referenced by the Guardians, Unmade and Corrupted Conclave pages; all 10 exist on live `main`.
+- [x] Replaced remaining institution/founder/Kel'vari wiki-links in `Theia/Lore/Institutions/The Unmade.md` and `The Corrupted Conclave.md` with direct Markdown paths (commits `150d9964`, `01d15f7c`). Nhal is retained as a plain historical name rather than an unverified file target.
+- [ ] Continue full-tree reference and semantic checks before branch and tracker retirement.
