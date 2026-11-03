@@ -602,3 +602,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Updated First Elder Dromak, High Thane Bromund Stonevein and Warden Shorvek Tal links (commits `83eb22ea`, `7432bc22`, `1b069fa6`).
 - [x] Preserved Dromak's council constraints, Bromund's working-name status and Shorvek's coastal sovereignty.
 - [ ] Continue remaining cast and repository-wide validation.
+
+## Northwatch and Dominion officer navigation — 3 November 2026
+
+- [x] Migrated Commander Nessa Ward, Captain Rukhan Graal and Lieutenant Corra Baines to direct Characters/current campaign, Northwatch, related officer, Orcs and Covenant/Dominion/Unmade links (commits `7e510db4`, `25cbd532`, `ab44f700`).
+- [x] Preserved their **Needs Review** status, Rukhan's non-Unmade default and Great Clan terminology, and Corra's independent garrison continuity role.
+- [ ] Continue remaining character records and final repository audit.
