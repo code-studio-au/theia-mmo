@@ -2,7 +2,7 @@
 type: location
 canon_status: Needs Review
 source: "../../../THEIA_HUMAN_CAST_AND_PLACES.md"
-up: "[[Atlas]]"
+up: "../Atlas.md"
 ---
 # Storm-coast depot
 
@@ -18,11 +18,11 @@ Tidehold ship to a supported coastal anchorage; limited landing by boat
 ## Community and function
 Military custody site, occupied sacred routes and stolen component cache; native culture has independent reasons to exist
 
-Source: [[Sources/THEIA_HUMAN_CAST_AND_PLACES#Geography and travel|Geography and travel]] (entry: **Storm-coast depot**).
+Source: [Geography and travel](../../../THEIA_HUMAN_CAST_AND_PLACES.md) (entry: **Storm-coast depot**).
 
-[[Atlas]] · [[Human Campaign]]
+[Atlas](../Atlas.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
 
-[[Atlas/Places/Tidehold|Tidehold]] · [[Lore/Peoples/Vorrath|Vorrath]] · [[Lore/Institutions/Dominion|Dominion]]
+[Tidehold](Tidehold.md) · [Vorrath](../../Lore/Peoples/Vorrath.md) · [Dominion](../../Lore/Institutions/Dominion.md)
