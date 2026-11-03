@@ -1,6 +1,6 @@
 # THEIA — HUMAN HEARTLANDS: SETTLEMENT AND NPC REGISTER
 
-**Status:** Creator-approved settlement-services framework and recurring Heartlands cast (15 October 2026). This register distinguishes locked roles from **working settlement names, precise locations, NPC inventories and quest implementation**, which remain open.
+**Status:** Creator-approved settlement-services framework and recurring Heartlands cast (15 October 2026). This register distinguishes **LOCKED** service principles and scoped recurring roles from **WORKING** inventories, precise layouts and unapproved implementation. The [canonical Human campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md) now establishes Millhaven, Stoneford, Valecrown and Greyfall Quarry; their names are not an unresolved design task. Historical suggested bands below are not independent quest gates.
 
 **Companion sources:** [Human Act I](THEIA_HUMAN_ACT_I_STORY.md), [Zone Population Framework](THEIA_ZONE_POPULATION_FRAMEWORK.md), [Modern Story Timeline](THEIA_MODERN_STORY_REVELATION_TIMELINE.md).
 
@@ -12,7 +12,7 @@ Existing characters should perform useful services when their established respon
 
 ## Settlement A — Lower Heartlands starting village
 
-**Working identity:** A productive agricultural village with farms, a small market, militia post, smithy, inn, healing house and surrounding grazing land. Suggested play band: 1–7. Exact name and map position are open.
+**Current narrative identity: Millhaven.** The approved framework is a productive agricultural village with farms, a small market, militia post, smithy, inn, healing house and surrounding grazing land. The former suggested 1–7 band is historical planning context; current quest placement follows the canonical campaign. Precise map position and unapproved layout details remain OPEN.
 
 | NPC / service | Role | Narrative connection | Status |
 | --- | --- | --- | --- |
@@ -33,7 +33,7 @@ Existing characters should perform useful services when their established respon
 
 ## Settlement B — Upper Heartlands market town
 
-**Working identity:** A larger commercial town at a river crossing, with warehouses, caravan yards, markets, workshops, transport services and regional authorities. Suggested band: 7–13. Name, distance and layout open.
+**Current narrative identity: Stoneford.** The framework describes a larger commercial town at a river crossing, with warehouses, caravan yards, markets, workshops, transport services and regional authorities. The former 7–13 band is historical planning context; distance and unapproved layout details remain OPEN.
 
 | NPC / service | Role | Narrative connection |
 | --- | --- | --- |
@@ -53,7 +53,7 @@ Existing characters should perform useful services when their established respon
 
 ## Settlement C — Human inland racial capital
 
-**Working identity:** A permanent major city, distinct from Covenant's multicultural coastal alliance capital. Available for normal travel before the formal story audience; becomes central around levels 10–20 and remains relevant through Act V.
+**Current narrative identity: Valecrown.** A permanent major city, distinct from Covenant's multicultural coastal alliance capital. Available for normal travel before the formal story audience; its current story appearances follow the canonical campaign rather than the old five-act plan.
 
 | District | Principal services | Story presence |
 | --- | --- | --- |
@@ -83,6 +83,8 @@ This is a service-coverage target, not approval of a particular economy, auction
 
 ## Recurring characters and later acts
 
+The continuations below retain their historical proposal scope. Current campaign appearances take precedence; no new fate, service assignment or Guardian membership is implied.
+
 | Character | Act I role | Possible continuation |
 | --- | --- | --- |
 | Elara Fenwick | Mentor and militia leader | Home-region consequences of mobilisation and magical disturbances |
@@ -98,13 +100,13 @@ Returning players should see changes appropriate to their progress, but core mer
 
 ## Design questions still open
 
-1. Name and place the village, market town, river, ruins, quarry and capital.
+1. Define unapproved exact positions/layouts and remaining unnamed river or ruin details. Preserve the established Millhaven, Stoneford, Valecrown and Greyfall Quarry identities.
 2. Define class roster and exactly which trainers teach what.
 3. Define professions, vendor inventories, item tiers, repair economy and storage rules.
-4. Name the blacksmith, innkeeper and specialised market-town service NPCs.
+4. Confirm still-unapproved service assignments and any genuinely unnamed NPCs against the current cast before proposing new names; do not replace established contacts.
 5. Design fauna species and ordinary enemy placement by habitat.
 6. Determine XP, respawn and travel pacing.
 7. Design local quests and the optional quarry dungeon without making them compulsory.
 8. Determine shared-world phasing and NPC schedule constraints.
 
-**Next step:** Establish the geography and named settlements before assigning detailed quest objectives and NPC schedules.
+**Next step:** Use the established settlement/cast identities and current quest sequence to resolve remaining service layouts, inventories and schedules. Do not restart the settled naming or campaign-design work.

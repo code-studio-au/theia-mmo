@@ -1,8 +1,8 @@
-> **HISTORICAL ACT I FOUNDATION — CURRENT QUEST ORDER SUPERSEDED (3 November 2026).** This document preserves the creator-approved 15 October 2026 Act I premise and evidence-based Cassian betrayal arc. The current [Human 1–80 Canonical Campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md) and [Current Human Campaign](Theia/Campaigns/CURRENT_HUMAN_CAMPAIGN.md) govern present quest numbering, detailed locations, dialogue and final outcomes. Do not treat old H-series IDs, level-1–20 structure or earlier proposed legal consequences as independent current authority. Retain unique foundational narrative until compared before retirement.
+> **HISTORICAL ACT I FOUNDATION — CURRENT QUEST ORDER SUPERSEDED (3 November 2026).** This document preserves the creator-approved 15 October 2026 Act I premise and evidence-based Cassian betrayal arc. The current [Human 1–80 Canonical Campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md) and [Current Human Campaign](Theia/Campaigns/CURRENT_HUMAN_CAMPAIGN.md) govern present quest numbering, detailed locations, dialogue and final outcomes. Do not treat old H-series IDs, level-1–20 structure or earlier proposed legal consequences as independent current authority. **Disposition: KEEP** as the approved foundational narrative; current quest details have one home in the canonical campaign.
 
 # THEIA — HUMAN ACT I: THE CROWN AND THE BETRAYAL
 
-**Status: creator-approved and locked (15 October 2026).** This document preserves the human racial Act I narrative, levels 1–20. Exact zone and settlement names, individual quests, combat balance, dialogue, dungeon mechanics and Cassian's final legal disposition remain open. The campaign must be solo-accessible and permit independent levelling.
+**Status: creator-approved and locked (15 October 2026).** This document preserves the human racial Act I narrative, levels 1–20. The current canonical campaign now establishes settlement names, quest order, Cassian's live capture and lawful custody. Unapproved combat balance, dialogue, dungeon presentation and any later sentence remain OPEN; historical details below cannot override the canonical sequence. The campaign must be solo-accessible and permit independent levelling.
 
 ## Narrative premise
 
@@ -54,7 +54,7 @@ Mara arranges a private audience with Aldren. Cassian calls the evidence Dominio
 
 A disused passage and storage network beneath an old administrative complex near the capital has been adapted for covert transport. Mara, royal guards and the player pursue Cassian through smugglers, hired fighters and a few unusually disciplined operatives associated with the Veiled Hand's network. Their actual allegiance remains undisclosed.
 
-At the deepest chamber Cassian discovers his contacts intend to silence him, not rescue him. The player defeats the operatives and can bring Cassian into royal custody. **Capturing him alive is the preferred story direction**, but his exact fate and mechanics remain open. The dungeon is completable solo with appropriate NPC assistance; group modes may add challenge and rewards without withholding essential story.
+At the deepest chamber Cassian discovers his contacts intend to silence him, not rescue him. The player defeats the operatives and brings Cassian into royal custody. **Live capture is now the canonical Q030 outcome**, followed by removal from office and lawful custody in Q031, not an optional preferred ending. Unapproved mechanics and any later sentence remain OPEN. The dungeon is completable solo with appropriate NPC assistance; group modes may add challenge and rewards without withholding essential story.
 
 ### Aftermath
 
@@ -71,6 +71,8 @@ Aldren confronts the betrayal of a trusted adviser and orders further inquiry. C
 
 ## Continuation through Acts II–V
 
+**SUPERSEDED placement / WORKING thematic context:** This historical continuation does not assign current quest order or reveal gates. Use the canonical 1–80 campaign for later events; the broad character relationships remain context, not extra required scenes.
+
 **Act II:** Mara traces Cassian's intermediaries while Garrick introduces overseas military operations. **Act III:** Evidence suggests a conspiracy extending beyond the human kingdom, complicating relations with Covenant institutions. **Act IV:** Aldren and High Ruler Corven Vaelmont confront different responsibilities in preparing for the Shroud. **Act V:** The Anchor network's true danger challenges assumptions about the war and what the kingdom has failed to recognise.
 
 ## Guardrails
@@ -86,14 +88,15 @@ Aldren confronts the betrayal of a trusted adviser and orders further inquiry. C
 
 ## Editorial preservation review — 3 November 2026
 
-The current [Human 1–80 canonical campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md) and [legacy ideas archive](Theia/Campaigns/Human_Legacy_Sidequest_Zone_Character_Archive.md) retain the Act I evidence-based Cassian betrayal, local civilian problems, lawful capture, non-omniscient adviser and independent levelling. The original Act I note additionally supplies character-development framing for Elara, Mara, Aldren, Cassian, Edric and Garrick and early-player guardrails against chosen-one framing, premature Conclave disclosure and forced PvP/raids. Preserve these as narrative provenance until character/continuity notes are compared in full; do not delete this file solely because Q001–Q034 are now canonical elsewhere.
+**KEEP:** this document retains unique approved narrative framing, corroboration
+details, character development and early-player guardrails. The current campaign
+owns quest order and outcomes; this foundation does not reopen them.
+The [Heartlands framework](THEIA_HUMAN_HEARTLANDS_SETTLEMENT_REGISTER.md)
+remains a legitimate companion, and the [character cards](Theia/Characters/Characters.md)
+hold their scoped roles.
 
-The older 'Continuation through Acts II–V' paragraph is a historical planning snapshot, not approved later-act sequencing. In particular, it does not override the current 1–80 Veilbreaker, Shroud and Nhal finale. No quest or runtime changes are implied by this review.
-
-## Six-character cross-check — 3 November 2026
-
-The current Campaign Cast cards for [Elara](Theia/Characters/Campaign%20Cast/Elara%20Fenwick.md), [Mara](Theia/Characters/Campaign%20Cast/Mara%20Thorne.md), [Aldren](Theia/Characters/Campaign%20Cast/King%20Aldren%20Vaelmont.md), [Cassian](Theia/Characters/Campaign%20Cast/Lord%20Cassian%20Veyr.md), [Edric](Theia/Characters/Campaign%20Cast/Lord%20Edric%20Halewyn.md) and [Garrick](Theia/Characters/Campaign%20Cast/Garrick%20Ashford.md) were checked against the six Act I development notes. All six foundational roles are represented: Elara's local service, Mara's corroboration, Aldren's correction, Cassian's culpability, Edric's legacy and Garrick's innocence despite opposing peace. Their cards explicitly distinguish approved starting roles from proposed development. Cassian's old trial/sentence remains historical, not approved current canon. These character roles are **accounted for**, but this does not certify all unique Act I prose or backlinks for deletion.
-
-## Incoming-reference audit — 3 November 2026
-
-Indexed repository search found references to this historical Act I source in root `README.md`, `THEIA_DOCUMENTATION_GUIDE.md`, `THEIA_HUMAN_CAMPAIGN.md`, `THEIA_HUMAN_HEARTLANDS_SETTLEMENT_REGISTER.md`, `IMPORT_MANIFEST.json` and the temporary cleanup tracker. The Heartlands settlement register explicitly uses Act I as a companion source for its creator-approved settlement/service framework. The import manifest preserves original source/destination path provenance. These are **legitimate historical dependencies**, not necessarily mistaken current-canon links. Do not delete or rename this source without preserving its archival path and migrating live companion links. Search results are indexed, not a verified complete repository-tree backlink scan.
+The repeated six-character and incoming-reference review notes are consolidated
+here. Their complete historical findings and old open-outcome wording remain in
+the [pre-consolidation source](https://github.com/code-studio-au/theia-mmo/blob/ea770ab99a367fc83d40439897626b42695f8830/docs/story/THEIA_HUMAN_ACT_I_STORY.md).
+Original import metadata is provenance, not a reason to retain duplicate review
+prose. No unique story prose, character-development note or guardrail was removed.
