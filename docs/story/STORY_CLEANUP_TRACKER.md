@@ -584,3 +584,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 
 - [x] Updated Ilyss Varen's current campaign, Characters, Vaelari, Dominion and Unmade links (commit `befe8ad3`). Her independent research does not establish defection or faction cooperation; **Needs Review** remains.
 - [ ] Continue remaining cast and full repository source/link checks.
+
+## Scholar, Aelari and Halfling cast navigation — 3 November 2026
+
+- [x] Migrated Master Oren Bell, Irielle Mossward and Nemi Brindlewick character cards to direct Characters/current campaign and related location, people or institution Markdown paths (commits `d8137c26`, `58bcce0e`, `97adf2d1`).
+- [x] Preserved Oren's non-Guardian scholarly status, Irielle's lack of hidden Guardian rank, and Nemi's Dominion independence/no-friendly-trade and no-assumed-kinship boundaries.
+- [ ] Continue remaining Campaign Cast and full-tree backlink/content audit. GitHub text search can return stale results; direct file fetches govern completion status.
