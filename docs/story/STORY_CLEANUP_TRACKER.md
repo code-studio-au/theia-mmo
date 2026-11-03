@@ -495,3 +495,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Corrected the remaining five divine character source metadata and source-account links to the root World Bible: Judge (`5e2d0dc8`), Warrior (`05dce4eb`), Seeker (`9d5d7e34`), Shaper (`5269cb17`) and Ascendant (`8528b332`). Keeper and Guardian were corrected in the preceding batch. All seven now use `../../../THEIA_WORLD_BIBLE.md` and link to the Seven Gods topic index.
 - [x] Preserved confirmed-foundation/details-open status and original creator/patron descriptions; no divine outcome was changed.
 - [ ] Continue related-note wiki-link target checks and the remaining full repository audit before retiring the old branch and tracker.
+
+## Seven divine related-note links completed — 3 November 2026
+
+- [x] Verified all nine unique peoples' file targets referenced by the seven divine character notes: Korrath, Halflings, Humans, Aelari, Orcs, Vaelari, Dwarves, Vorrath and Kel'vari. **9/9 exist** on live `main`.
+- [x] Replaced all `Lore/Peoples/...` Obsidian wiki-links across Keeper, Guardian, Judge, Warrior, Seeker, Shaper and Ascendant notes with explicit relative Markdown links (commits `22c31123`, `4515aefd`, `670799fb`, `b293ad67`, `89cc1b3b`, `5dbcf195`, `14d9df57`). Ascendant's Keeper and Kel'vari references were also clarified.
+- [ ] Continue remaining source/backlink and content audits. No divine lore or runtime quest data changed.
