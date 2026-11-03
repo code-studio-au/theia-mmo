@@ -618,3 +618,66 @@ All 20 historical H5 entries were checked against the live proposed Q references
 **Critical canon differences:** H5-03/Q143 cannot move Nhal's name reveal earlier; H5-12/Q163 cannot import an early Thes'var intervention or override his final confrontation; H5-14–H5-16/Q155–Q181 cannot replace Khor'vun, Veilbreaker, Oth'varen's death or Nhal's shattering with the old Keld/Voss and severance choice. H5-17/Q162's branch-specific report is not a current outcome. H5-18/Q183's Cassian conviction/permanent imprisonment is historical, **not confirmed current canon**. H5-04/Q032 and H5-06–H5-08/Q059/Q039/Q130 are thematic/relocated candidates rather than direct sequels. H5-09–H5-11/Q071–Q073 remain structurally close but current timing and choices govern. H5-20/Q184 preserves the return-home theme, not automatic source-ID equivalence.
 
 **Outstanding:** source dialogue, exact contacts, choices, custody/record consequences, locations and regional side-story preservation require further review. No changes to canonical narrative, quest manifest, runtime IDs or level gates.
+
+## Consolidated historical dialogue and consequence evidence
+
+Migrated from the retired preliminary title-mapping audit. These are evidence comparisons only; no H/HS-to-Q mapping is approved.
+
+## Dialogue corroboration — Grey Surveyor reveal (2 November 2026)
+
+The [Dialogue Continuity Audit](Human_1_80_Dialogue_Continuity_Audit.md) explicitly prohibits exposing Oth'varen's identity in player-facing Q071–Q072 speaker labels before Q097. The [Key Scenes](Human_1_80_Key_Scenes_Branching_Dialogue.md) Q097 reveal includes independently verified signature evidence, the Surveyor's first-person explanation, three player responses (accusation, curiosity, trust), and Sel'ora's warning that his account still requires scrutiny. This corroborates the source H4-07 testimony/cross-check objective and explains the deliberate historical contact mismatch.
+
+**Disposition:** H4-07 → Q097 has strong stage-and-dialogue correspondence, but remains an **unapproved editorial mapping** pending prerequisite/consequence and reviewer checks. H5-09 → Q071 and H5-10 → Q072 retain the spoiler-safe Grey Surveyor alias. Do not replace it with Oth'varen before the reveal.
+
+
+## H5-20 / Q184 finale dialogue corroboration — 3 November 2026
+
+- Compared the original H5-20 service-commendation/homecoming objective with current Q184 dialogue in `Human_80_Finale_NPC_Dialogue_Scripts.md` and the consolidated manifest.
+- Q184 retains the return to Millhaven, Elara and the original companions. Elara's actual closing exchange emphasizes ordinary village work and relationships; **no explicit formal service commendation appears in the current Q184 dialogue**. Do not add a reward or ceremony solely because the legacy H5-20 source mentions one.
+- **Disposition:** strong thematic homecoming correspondence, but historical commendation remains a noncanonical optional idea pending explicit approval. H5-20 → Q184 editorial mapping and runtime ID remain unapproved.
+- Q170 dialogue confirms Oth'varen expects danger but does not foresee his fatal sacrifice. Q176–Q181 dialogue confirms Thes'var's death, discovered sabotage, Oth'varen's later choice and physical death before Nhal's shattering. Q181's alignment line was clarified to refer to six fields aligned, not fusion (commit `da3d0e8a`).
+
+
+## H1 and H4 historical dialogue consequence check — 3 November 2026
+
+- **H1-15 / Q027:** Current Mara dialogue independently corroborates intermediary testimony and payment records, then refers evidence to Aldren privately. The old intended-killing allegation is historical context; the current dialogue does not by itself establish every element of criminal intent. **Strong evidence-chain correspondence, mapping unapproved.**
+- **H1-16 / Q028:** Aldren orders lawful detention and explicitly rejects violence in court; Cassian escapes and a live-capture warrant follows. **Strong consequence correspondence, mapping unapproved.**
+- **H1-18 / Q031:** Cassian is returned alive, the inquiry continues under a limited allied-consent warrant, and Elara receives a local report. The dialogue does not absolve Dominion or settle the war. **Strong outcome correspondence, mapping unapproved.**
+- **H4-15 / Q115:** The historical Malrec/projection dungeon outcome conflicts with current Q115. Current dialogue and encounter review establish Su'vareth's permanent death and surviving contingency orders. **Do not reuse the old boss outcome as an equivalent Q115 definition.** Preserve Malrec as historical character/encounter provenance only, pending independent side-content review.
+
+These checks compare dialogue consequences, not source-ID approval, rewards, implementation or full stage equivalence. The root historical register and draft crosswalk remain protected.
+
+
+## H2 evidence and dialogue review — 3 November 2026
+
+Checked H2-05/Q050, H2-07/Q052, H2-12/Q042, H2-14/Q044 and H2-17/Q047 against the current 20–30 NPC dialogue pack and authored stages:
+
+- **H2-05/Q050:** Brynja's signed original, altered revision and dated workshop marks are corroborated; historical permission to recover a measuring assembly is not independently established in Q050 dialogue.
+- **H2-07/Q052:** Trade officer confirms reconciled grain deliveries and release of the engineering report. This supports the original limited engineering-commission theme without making a new quest gate.
+- **H2-12/Q042:** Sera confirms a resonance anomaly, measurement-first approach and Surveyor consultation. Historical unstable-position and housing-comparison specifics are not spoken in the reviewed scene.
+- **H2-14/Q044:** Sera references Brynja's preliminary safety note, exact isolator placement and accessible cutoff. The Surveyor's own limit-setting speech is not established by this scene.
+- **H2-17/Q047:** Mara confirms the Aelari material notation and legitimate Kar Durn engineering lead without accusing an Aelari people or authority.
+
+All five remain **strong or partial semantic candidates, not approved historical-to-current IDs**. Preserve missing source-specific detail for encounter, dialogue or optional review; do not import old level gates or create new executable objectives by inference.
+
+
+## H4 access, archive and identity dialogue review — 3 November 2026
+
+- **H4-02/Q086:** Current Q083–Q086 dialogue confirms small-party Passage capacity, a verified return route, separate custodial consent and the first living Kel'vari self-identification at Q086. The historical outer-site maintenance agreement is not explicitly established in Q086 dialogue; preserve it for optional site-service review, not automatic access expansion.
+- **H4-05/Q092:** Sel'ora's dialogue confirms supervised archive access conditional on helping the copyist secure records. The oldest testimony remains protected; access is not blanket permission.
+- **H4-07/Q097:** Q094 and Q096 independently establish the sixth scholar's omitted name and matching verifier mark before the Grey Surveyor admits he is Oth'varen in Q097. The player may question his account; the dialogue does not require unconditional trust. This supports strong narrative correspondence, **not approved ID equivalence**.
+- **H4-08/Q100:** Sera's dialogue confirms endangered custodians are protected while public disclosure remains unresolved. The historical restricted-route disclosure and case-access safeguards are not explicitly spoken in this scene; preserve them for encounter/security review.
+
+No new gate throughput, faction friendship, automatic archive rights or early identity reveal is approved. Historical H4→Q mappings remain unapproved pending complete consequence/location review.
+
+
+## H3 permissions and civic consequences — 3 November 2026
+
+- **H3-01/Q054:** Caelith explicitly treats the High King's letter as introduction, not archive authority. The player must present evidence and accept supervised ward access. Historical ward-tender concerns remain compatible; mapping unapproved.
+- **H3-02/Q055:** Caelith identifies a genuine nursery repair/rescue problem, not automatic conspiracy sabotage. This preserves independent local civic content; mapping unapproved.
+- **H3-05/Q058:** Seralyth grants a limited Dominion inspection reference and Caelith's permitted copy, not friendly Dominion diplomacy or blanket disclosure of Aelari research. Mapping unapproved.
+- **H3-10/Q063:** Urodan requires practical water-route service before referring the player to archive custodians; access remains conditional. Mapping unapproved.
+- **H3-11/Q064:** Tarek prioritizes rescuing the maintenance crew and recovering the historical warning, without guessing its contents. Mapping unapproved.
+- **H3-18/Q083:** The current manifest and Q083 dialogue confirm low gate throughput and a safe return procedure; the historical proposal to Corven is not confirmed in the current Q083 stages and should not become an automatic story prerequisite.
+
+These are evidence-based dialogue and stage checks only. Do not promote historical H3 prerequisite edges, optional access or cross-faction cooperation into the current campaign without explicit approval.
