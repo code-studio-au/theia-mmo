@@ -459,3 +459,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Migrated `Atlas/Places/Stoneford.md`, `Tidehold.md` and `Kar Durn.md` to direct root cast-and-places source, Atlas parent and current Human campaign Markdown links (commits `2f3e577d`, `22f8d1b9`, `dee87ae4`).
 - [x] Converted the Stoneford→Valecrown and Kar Durn→Tidehold related-note links; both targets were live-fetched during earlier cleanup.
 - [ ] Continue remaining Atlas notes and full source-link audit. These files retain **Needs Review** geography and do not authorize map or travel changes.
+
+## Woodland and highland Atlas link migration — 3 November 2026
+
+- [x] Updated `Atlas/Places/Sylvaren.md`, `Drom Kar.md` and `Elderwood.md` to use root Human Cast and Places, Atlas and current Human campaign Markdown links instead of retired Obsidian source/parent references (commits `9c46346f`, `a33ba706`, `0999e2fc`).
+- [x] Converted Sylvaren's Tidehold/Aelari and Drom Kar's Outer Passage site/Korrath related links; all four unique destinations were directly verified to exist on `main`.
+- [ ] Keep their **Needs Review** geography status; finish other historical references, full-tree link checks and content reconciliation before branch/tracker retirement.
