@@ -4,7 +4,7 @@ source: "../../THEIA_WORLD_BIBLE.md"
 ---
 # The Seven Gods
 
-Read these section labels together with later dated amendments in [[Sources/THEIA_WORLD_BIBLE|World Bible]].
+Read the [World Bible](../../THEIA_WORLD_BIBLE.md) together with [later story decisions](../../DECISIONS.md). Historical wording does not override current canon.
 
 [Read historical source section](../../THEIA_WORLD_BIBLE.md)
 
