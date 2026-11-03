@@ -957,3 +957,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Inspected original source objectives and proposed relations for H5-03, H5-12, H5-14, H5-15 and H5-16 in the protected crosswalk. Recorded explicit safe dispositions in `Human_Quest_Editorial_ID_Crosswalk_Review.md` (commit `9028aa9b`).
 - [x] Protected Q143 Nhal name gate, Q176 Thes'var death, Q156 Khor'vun/Veilbreaker event, Q181 Oth'varen sacrifice and Nhal's shattering; retained possible distinct evacuation, diagram, retry and severance research ideas as noncanonical provenance.
 - [ ] No H/HS-to-Q mapping approved by this editorial review. Continue other historical objective/dialogue/consequence comparisons and final root-register/backlink checks before retirement.
+
+## HS optional-quest review coverage — 3 November 2026
+
+- [x] Compared all 24 HS historical optional source objectives and proposed modern references against actual current manifest stages. HS-01–HS-12 findings recorded in crosswalk review (commit `39c77cbe`); HS-13–HS-24 findings recorded there (commit `c363cd4e`).
+- [x] Preserved distinctive civilian, exploration, crafting, archive, enclave and epilogue ideas without inventing new canonical quests or equating thematic similarities to approved mappings. Original source access requirements remain historical evidence, not automatic runtime gates.
+- [ ] Continue H-series original objective/dialogue consequence approvals, sidequest idea-bank deduplication, root historical register/backlink audit and final repository verification. All HS mappings remain unapproved.
