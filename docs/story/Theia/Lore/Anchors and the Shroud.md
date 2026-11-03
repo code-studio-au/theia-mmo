@@ -8,8 +8,8 @@ Read the [World Bible](../../THEIA_WORLD_BIBLE.md) together with [later story de
 
 [Read historical source section](../../THEIA_WORLD_BIBLE.md)
 
-[[Lore and World]] · [[Chronicles and History]] · [[Welcome|Home]]
+[Lore and World](Lore%20and%20World.md) · [Chronicles and History](../History/Chronicles%20and%20History.md) · [Home](../../README.md)
 
 ## Related notes
 
-[[The Unmade]] · [[The Corrupted Conclave]] · [[Kel'vari]] · [[Passage Gates]] · [[Resonance Inversion]]
+[The Unmade](Institutions/The%20Unmade.md) · [The Corrupted Conclave](Institutions/The%20Corrupted%20Conclave.md) · [Kel'vari](Peoples/Kel%27vari.md) · [Passage Gates](Passage%20Gates.md) · [Resonance Inversion](Resonance%20Inversion.md)
