@@ -379,3 +379,8 @@ Do not tick work merely because it is planned or described in older reports. Rec
 
 - [x] Replaced nine repeated links to the same root `THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md` document with one explicit historical source link and a list of covered cultural routes (commit `d6fe4a11`). The detailed racial proposals remain in the source, and the index retains **Needs Review**.
 - [ ] Individual CR/DR quest-note wiki-links still require target verification. Do not remove the index or assert those links resolve without checking live files.
+
+## CR/DR historical quest navigation retirement — 3 November 2026
+
+- [x] Converted 21 CR/DR Obsidian wiki-link quest labels in `Theia/Campaigns/Connected Racial Stories.md` into plain historical editorial labels, preserving their titles and the root cultural-stories source (commit `53003595`). Sampled candidate per-quest target paths were absent; **this is not a full 21-target path audit**.
+- [ ] Verify any remaining inbound links to retired individual CR/DR notes and compare unique source details before deleting other historical records. These labels are not current executable quest definitions.
