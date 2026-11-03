@@ -938,3 +938,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Live-fetched `Human_55_70_NPC_Dialogue_Scripts.md`: Q138 Oth'varen's answer says the scholars lacked the knowledge to name the disturbance; Q143 Sel'ora first introduces the authenticated name Nhal. The earlier Continuity Audit's claim of a live Q138 spoiler was stale.
 - [x] Corrected finding 9 in `Human_1_80_Dialogue_Continuity_Audit.md` to record this resolved state and protect the Q143 reveal gate (commit `aec79348`). No dialogue lines or quest manifest changed.
 - [ ] Continue live dialogue reveal-gate checks, H/HS consequences and root-story duplicate/backlink audits; final tracker deletion remains blocked.
+
+## Q084/Q097 dialogue heading spoiler repair — 3 November 2026
+
+- [x] Live-reviewed Q071–Q072, Q081–Q086 and Q096–Q097 dialogue scene headings and spoken lines. Q081/Q082 preserve Guardian secrecy/accountability; Q086 is the first explicit living Kel'vari self-introduction; Q096 authenticates the Surveyor's mark; Q097 reveals his identity in spoken dialogue.
+- [x] Replaced Q084's premature `Kel'vari custodian` scene heading with `custodian beyond the gate`, and Q097's premature `Oth'varen` heading with `Grey Surveyor (identity revealed during scene)` (commit `ca66bf2a`). Spoken dialogue unchanged.
+- [ ] Check other scene packs, journal/tooltips and source summaries for premature labels. Continue H/HS dialogue/consequence reconciliation and final link/duplicate audit.
