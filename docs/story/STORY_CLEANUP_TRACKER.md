@@ -573,3 +573,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Retried and completed Brynja Flintwake, Varric Sorn and Halvek Dorn character navigation to direct Characters/current campaign and relevant Dwarves, Edda, Covenant and Unmade references (commits `4cd1ed96`, `c93aaada`, `eda2390f`).
 - [x] Preserved all **Needs Review** status and no-assumed-kinship limits; historical antagonist roles do not override the canonical 1–80 campaign.
 - [ ] Continue remaining cast and repository-wide historical link/content checks.
+
+## Three legacy antagonist character outcomes clarified — 3 November 2026
+
+- [x] Updated Teren Malrec, Maelin Voss and Sareth Keld to direct Characters/current Human campaign and Unmade/Chainworks navigation (commits `07b7ae60`, `fea09014`, `10ffeb7d`).
+- [x] Added explicit historical-candidate caveats: their old Act IV/V custody, capture and finale outcomes are not approved current 1–80 campaign canon. Retained their source provenance and **Needs Review** status for possible optional use.
+- [ ] Continue remaining Campaign Cast and source/backlink reconciliation. No active quest definitions changed.
