@@ -36,3 +36,17 @@
 ## Verified branch provenance — 3 November 2026
 
 GitHub comparison of `main` against `story/launch-main-story-1-60` reports the historical story branch **0 commits ahead and 534 behind** `main` at the time checked. This means no branch-only commits require cherry-picking; it does **not** establish semantic equivalence of all old story documents or authorize deletion of the protected H/HS source register. Retire the branch only after final content/backlink verification and an authorized branch deletion action. The 92 H + 24 HS objective/stage comparisons are documented, but editorial ID mappings remain unapproved.
+
+## Five H5 historical conflict dispositions — 3 November 2026
+
+Rechecked the five conflict-flagged source objectives and `proposed_relation` fields in the 116-entry crosswalk against the current campaign and manifest. These are **historical source dispositions, not approved one-to-one quest migrations**:
+
+| Historical source | Proposed modern thematic reference | Safe editorial disposition |
+|---|---|---|
+| H5-03 | Q143 | Preserve independent network-record/testimony idea, but **retire the early Nhal-name reveal**; Q143 alone authenticates the name. |
+| H5-12 | Q163 | Preserve possible observation-post evacuation/diagram-protection side hook; **do not insert an early Thes'var boss encounter** or alter his Q176 permanent death. |
+| H5-14 | Q155 | Preserve worker evacuation and recoverable courier evidence as optional encounter ideas; **do not substitute the old level-60 finale** for the level-70 Veilbreaker or level-80 convergence. |
+| H5-15 | Q156 | Preserve safe-retry/defence-support ideas only if independently compatible; **do not replace Khor'vun with Keld/Voss** or change the immediate Veil/Binding transition. |
+| H5-16 | Q181 | Preserve bounded severance as historical research context only; **do not offer a branching finale** that bypasses Oth'varen's physical death and Nhal's coherent shattering. |
+
+The original objectives and candidate references remain intact in the crosswalk and root historical register. No new runtime IDs, canonical quest changes, or approval of optional quest additions follows from this classification. The archive remains the destination for distinct future sidequest ideas.
