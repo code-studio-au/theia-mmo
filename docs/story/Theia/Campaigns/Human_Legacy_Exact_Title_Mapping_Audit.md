@@ -63,3 +63,10 @@ The [Dialogue Continuity Audit](Human_1_80_Dialogue_Continuity_Audit.md) explici
 ## Consolidation note — 2 November 2026
 
 The existing [64-entry objective comparison](Human_Legacy_64_Exact_Title_Objective_Comparison.md) already records historical objectives, current stage descriptions, and contacts for all 64 exact-title candidates. Treat it as the full comparison record; the focused checks here add dialogue and continuity evidence only. Do not create another competing quest register or approve mappings based on title matches.
+
+## H5-20 / Q184 finale dialogue corroboration — 3 November 2026
+
+- Compared the original H5-20 service-commendation/homecoming objective with current Q184 dialogue in `Human_80_Finale_NPC_Dialogue_Scripts.md` and the consolidated manifest.
+- Q184 retains the return to Millhaven, Elara and the original companions. Elara's actual closing exchange emphasizes ordinary village work and relationships; **no explicit formal service commendation appears in the current Q184 dialogue**. Do not add a reward or ceremony solely because the legacy H5-20 source mentions one.
+- **Disposition:** strong thematic homecoming correspondence, but historical commendation remains a noncanonical optional idea pending explicit approval. H5-20 → Q184 editorial mapping and runtime ID remain unapproved.
+- Q170 dialogue confirms Oth'varen expects danger but does not foresee his fatal sacrifice. Q176–Q181 dialogue confirms Thes'var's death, discovered sabotage, Oth'varen's later choice and physical death before Nhal's shattering. Q181's alignment line was clarified to refer to six fields aligned, not fusion (commit `da3d0e8a`).
