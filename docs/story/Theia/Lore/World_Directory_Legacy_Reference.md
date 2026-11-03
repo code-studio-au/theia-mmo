@@ -162,7 +162,7 @@ Complete static navigation alongside the live browsing tables. Approval boundari
 - DR-H1 — Serial and Seal — historical proposal; see [connected racial source](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md)
 - DR-H2 — Charged to a Battle — historical racial proposal; see [preserved source](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md)
 - DR-H3 — A Closed Account — historical proposal; see [connected racial source](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md)
-- [DR-O1 — Households Behind the Line](../Campaigns/Connected%20Stories/DR-O1%20%E2%80%94%20Households%20Behind%20the%20Line.md)
+- DR-O1 — Households Behind the Line — historical Dominion-side quest proposal; see [preserved racial stories](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md)
 - DR-O2 — The Wrong Hour (historical quest; see [connected racial source](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md))
 - DR-O3 — A Shore Still Held — historical proposal; see [connected racial source](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md)
 - DR-R1 — The Pilgrims' Road — historical proposal; see [connected racial source](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md)
