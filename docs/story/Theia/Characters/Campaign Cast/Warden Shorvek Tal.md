@@ -2,7 +2,7 @@
 type: character
 canon_status: Needs Review
 source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
-up: "[[Characters]]"
+up: "../Characters.md"
 ---
 # Warden Shorvek Tal
 
@@ -20,9 +20,9 @@ Enemy to an intrusion, not a caricature of Ascendant worship. Continues defendin
 
 Source: [Dominion characters required by this human route](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
-[[Characters]] · [[Human Campaign]]
+[Characters](../Characters.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
 
-[[Lore/Peoples/Vorrath|Vorrath]]
+[Vorrath](../../Lore/Peoples/Vorrath.md)
