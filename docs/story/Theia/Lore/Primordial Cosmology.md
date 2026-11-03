@@ -8,6 +8,6 @@ Read the [World Bible](../../THEIA_WORLD_BIBLE.md) together with [later story de
 
 [Read historical source section](../../THEIA_WORLD_BIBLE.md)
 
-[[Lore and World]] · [[Chronicles and History]] · [[Welcome|Home]]
+[Lore and World](Lore%20and%20World.md) · [Chronicles and History](../History/Chronicles%20and%20History.md) · [Home](../../README.md)
 
-[[Aethyr]] · [[Nhal]] · [[First Sundering]]
+Aethyr · Nhal · [First Sundering](../History/Events/First%20Sundering.md)
