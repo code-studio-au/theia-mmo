@@ -2,7 +2,7 @@
 type: character
 canon_status: approved-role; proposed-development
 source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
-up: "[[Characters]]"
+up: "../Characters.md"
 ---
 # First Elder Dromak
 
@@ -17,9 +17,9 @@ Requires safe, council-authorised research and reliable copies; does not become 
 
 Source: [Allied and Kel'vari cast](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
-[[Characters]] · [[Human Campaign]]
+[Characters](../Characters.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
 
-[[Lore/Peoples/Korrath|Korrath]]
+[Korrath](../../Lore/Peoples/Korrath.md)
