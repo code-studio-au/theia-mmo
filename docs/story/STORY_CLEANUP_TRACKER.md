@@ -975,3 +975,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Checked H2-05/Q050, H2-07/Q052, H2-12/Q042, H2-14/Q044 and H2-17/Q047 against the current 20–30 dialogue pack and manifest stages. Recorded corroborated evidence and remaining source-specific details in the focused mapping audit (commit `cc5d53a6`).
 - [x] Preserved Brynja's engineer exoneration, limited trade-report release, measurement-first resonance research, mechanical isolators and non-accusatory Aelari procurement lead. Missing historical nuances remain review candidates, not silently approved new objectives.
 - [ ] Continue H-series dialogue and consequence review, then root historical register provenance/backlink checks and final duplicate retirement. No historical ID mapping or runtime change approved.
+
+## H4 Passage, archive and Surveyor dialogue corroboration — 3 November 2026
+
+- [x] Compared H4-02/Q086, H4-05/Q092, H4-07/Q097 and H4-08/Q100 against live Q083–Q100 dialogue. Confirmed restricted gate capacity, custodial permission, supervised archive access, independent signature verification and the Q097 Grey Surveyor identity reveal (commit `f02e6c77`).
+- [x] Preserved historical outer-site maintenance terms and restricted-route/case security as unapproved detail candidates where not established in current dialogue. No automatic H4 ID mapping or new gate capability approved.
+- [ ] Continue remaining H-series dialogue/consequence review and full historical register/backlink verification before any final duplicate retirement.
