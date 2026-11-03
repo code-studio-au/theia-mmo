@@ -590,3 +590,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Migrated Master Oren Bell, Irielle Mossward and Nemi Brindlewick character cards to direct Characters/current campaign and related location, people or institution Markdown paths (commits `d8137c26`, `58bcce0e`, `97adf2d1`).
 - [x] Preserved Oren's non-Guardian scholarly status, Irielle's lack of hidden Guardian rank, and Nemi's Dominion independence/no-friendly-trade and no-assumed-kinship boundaries.
 - [ ] Continue remaining Campaign Cast and full-tree backlink/content audit. GitHub text search can return stale results; direct file fetches govern completion status.
+
+## Royal court character navigation and legal-status clarification — 3 November 2026
+
+- [x] Retried and completed King Aldren Vaelmont, Lord Cassian Veyr and Lord Edric Halewyn direct Characters/current campaign navigation (commits `38346bae`, `1e1d0a3a`, `eb047fad`). Aldren's Valecrown, Cassian and Covenant related links were also migrated.
+- [x] Explicitly marked Cassian's conviction/permanent imprisonment as a **Needs Review historical proposal**, not approved current 1–80 canon. Preserved his approved starting role and Edric's death/legacy boundaries.
+- [ ] Continue remaining Campaign Cast and repository-wide source/link/semantic checks.
