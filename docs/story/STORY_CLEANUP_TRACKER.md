@@ -1094,4 +1094,11 @@ Do not tick work merely because it is planned or described in older reports. Rec
 
 - [x] Corrected the 29 October decision record's supersession note: preserve permanent endings, not the obsolete Khor'vun-before-Vaer'uun sequence. Current canonical Q145 kills Vaer'uun before Q156 kills Khor'vun. The original dated block remains explicit historical provenance; no new sequence, quest change or outcome introduced.
 - [x] PR #17 (`b1a818d2c236e1f3623c302333707c7a8b9da02f`) closed the stale Q157 review request using existing canonical/current-campaign Markdown evidence. PR #18 (`9f52c53e0bb24ffdb5f231598116138653bd19e4`) retired Q001–Q017 gameplay-detail migration into its existing review, retaining 17 rows and all 34 source detail/recovery cells; both live backlinks updated. All eight range migration notes are now consolidated.
-- [ ] Independently review and merge this ledger correction. The historical record is not a second active founder-order authority.
+- [x] PR #20 independently reviewed and merged (`dfaf05c5b97e9a4e1a981a36505f7b843b9c65df`); original dated record preserved as superseded provenance, current Q145/Q156 order verified.
+
+## World Bible current-campaign reconciliation — 3 November 2026
+
+- [x] Retained the protected World Bible and all historical creator-lock sections. Clarified legacy CONFIRMED scope using the existing six-classification hierarchy and separated opening-of-play world conditions from later canonical events.
+- [x] Replaced superseded level-60/reveal outline and unresolved public-identity/founder-ending claims with canonical campaign references. Preserved unique world history, magical constraints, faction institutions, names, PvP/design proposals and genuine open details; original wording remains pinned in Git history.
+- [x] Clarified Anchor/Veil/Binding/Shroud distinction, restricted launch access, independent Seven coordination and established survival. No new future fate or successor selected; remaining First Anchor physical consequences and Nhal fragment futures stay OPEN.
+- [ ] Independently review and merge this World Bible reconciliation. Other derived references still require consistency checks; this is not a repository-wide completion claim.
