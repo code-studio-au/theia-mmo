@@ -6,7 +6,7 @@
 
 This is a narrative design draft, not implemented or playtested game content. The approved [Human Act I](THEIA_HUMAN_ACT_I_STORY.md), [Heartlands register](THEIA_HUMAN_HEARTLANDS_SETTLEMENT_REGISTER.md), and latest dated locks in the [Modern Timeline](THEIA_MODERN_STORY_REVELATION_TIMELINE.md) govern it. Their later five-act and level-40 Shroud decisions supersede older six-band/later-expansion proposals. The World Bible governs historical and magical constraints. All new names, dialogue, quest staging, outcomes and locations below are **Needs Review**.
 
-Companions: [Quest Register](THEIA_HUMAN_QUEST_REGISTER.md), [Solo Story Dungeons](THEIA_HUMAN_STORY_DUNGEONS.md), [Cast and Places](THEIA_HUMAN_CAST_AND_PLACES.md), [Connected Racial Stories](THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md), [Review Record](THEIA_HUMAN_CAMPAIGN_REVIEW.md). These documents together provide the proposed complete human launch narrative. They do not attempt to finish the cosmic saga or replace the other seven peoples' own campaigns.
+Companions: [Quest Register](THEIA_HUMAN_QUEST_REGISTER.md), [Solo Story Dungeons](THEIA_HUMAN_STORY_DUNGEONS.md), [Cast and Places](THEIA_HUMAN_CAST_AND_PLACES.md), [Connected Racial Stories](THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md). These documents together provide the proposed complete human launch narrative. They do not attempt to finish the cosmic saga or replace the other seven peoples' own campaigns.
 
 ## The human through-line
 
