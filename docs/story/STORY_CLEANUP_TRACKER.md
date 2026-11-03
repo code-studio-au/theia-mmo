@@ -1007,3 +1007,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Marked old five-climax `THEIA_HUMAN_STORY_DUNGEONS.md` as historical encounter evidence with links to the current 1–80 campaign, manifest and encounter timing (commit `167360a0`). Old Malrec/projection and level-60 finale are not current Q115 or Q181 outcomes.
 - [x] Marked `THEIA_HUMAN_ACT_I_STORY.md` as a preserved creator-approved early narrative foundation while deferring current numbering, quest staging and later consequences to canonical 1–80 campaign (commit `9cbbd00a`).
 - [ ] Compare unique Act I prose and old dungeon mechanics against current canonical/dialogue/encounter files before any deletion. Continue remaining root-story authority/backlinks and H/HS provenance review.
+
+## Historical five-dungeon mechanics comparison — 3 November 2026
+
+- [x] Compared the original Act I–V solo dungeon packet against current E01–E04 encounter design and canonical finale constraints. Preserved unique historical ideas for evidence checkpoint recovery, local isolators, support-station ordering, crew evacuation and independently authenticated records as unapproved encounter design candidates (commit `adaa1cca`).
+- [x] Explicitly rejected importing old Malrec/projection Q115 boss outcome or Keld/Voss branching level-60 finale as current canon. No original dungeon source deleted and no runtime/manifest changes.
+- [ ] Continue full unique-mechanics and incoming-link review of historical Act I and dungeon packets before possible retirement; root H/HS provenance and final backlink audit remain pending.
