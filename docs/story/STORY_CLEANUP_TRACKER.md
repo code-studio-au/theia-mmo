@@ -1019,3 +1019,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Reviewed the original Act I narrative premise, six character-development notes, continuation outline and eight early-player guardrails. Recorded their remaining provenance value directly in `THEIA_HUMAN_ACT_I_STORY.md` (commit `3b995792`).
 - [x] Identified older Acts II–V continuation paragraph as historical planning, not authority over the locked 1–80 ending. Preserved local civilian/character framing without modifying current quest content.
 - [ ] Compare unique character arcs against current character records and complete incoming-link checks before retiring the original Act I document; no deletion yet.
+
+## Six Act I character cards corroborated — 3 November 2026
+
+- [x] Live-fetched Campaign Cast cards for Elara Fenwick, Mara Thorne, King Aldren Vaelmont, Lord Cassian Veyr, Lord Edric Halewyn and Garrick Ashford. All six Act I role/development themes have corresponding cards with approval boundaries. Cross-check recorded in original Act I document (commit `d3fddd6b`).
+- [x] Confirmed Cassian's old trial and permanent imprisonment remain historical Needs Review, not approved current 1–80 outcome.
+- [ ] Complete Act I unique-prose and incoming-link audit before considering deletion. Continue other root-story documents and H/HS provenance; no Rust or manifest changes.
