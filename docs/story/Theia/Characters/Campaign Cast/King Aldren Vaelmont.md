@@ -2,7 +2,7 @@
 type: character
 canon_status: approved-role; proposed-development
 source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
-up: "[[Characters]]"
+up: "../Characters.md"
 ---
 # King Aldren Vaelmont
 
@@ -20,9 +20,9 @@ Removes Cassian, protects review of convictions and records, publishes a safe co
 
 Source: [Approved recurring humans: complete launch movements](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
-[[Characters]] · [[Human Campaign]]
+[Characters](../Characters.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
 
-[[Atlas/Places/Valecrown|Valecrown]] · [[Characters/Campaign Cast/Lord Cassian Veyr|Lord Cassian Veyr]] · [[Lore/Institutions/Covenant|Covenant]]
+[Valecrown](../../Atlas/Places/Valecrown.md) · [Lord Cassian Veyr](Lord%20Cassian%20Veyr.md) · [Covenant](../../Lore/Institutions/Covenant.md)
