@@ -145,4 +145,4 @@ No XP economy, creature roster, combat tuning, flight-path implementation, map c
 
 ## Full campaign progression option
 
-[[Level_1_80_Progression_Prototype]] extends the five-level test across a proposed five-act level 1–80 journey, with chapter unlocks, regional alternatives, a complete reference XP curve and interval budgets. The cap, revised plot placements, reward values and playtime targets remain Needs Review. It does not supersede approved level-60 decisions.
+An earlier `Level_1_80_Progression_Prototype` reference points to a document that is not present in the current repository tree. Preserve it as a historical planning identifier, not a live link. The **level-80 launch cap is creator-locked**; individual XP budgets, chapter pacing, reward values and playtime targets in this five-level prototype remain untested proposals. For current narrative authority, see the [canonical Human 1–80 campaign](Human_1_80_Canonical_Campaign.md) and [current campaign index](CURRENT_HUMAN_CAMPAIGN.md). Older level-60 decisions do not override the current level-80 campaign.
