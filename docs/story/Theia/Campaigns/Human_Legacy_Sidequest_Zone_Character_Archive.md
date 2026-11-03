@@ -622,3 +622,43 @@ The current campaign already governs the Seven's voluntary participation and sur
 - **A changed but habitable world:** lost and reclaimed places, dangerous regions, independent threats and ordinary lives continuing beyond primordial crisis formed an aspirational ending, not a settled expansion outcome. Fragment fate, new peoples, expansion count and dates remain OPEN.
 
 For the creator's separate direction to develop substantial recurring bosses, dungeons and optional raids with motives, histories and consequences, consult the dated decision ledger rather than infer a roster, boss count or production scope from this saga. Essential story conclusions remain solo-accessible.
+
+## Retired level 35–40 progression prototype
+
+**ARCHIVED / WORKING numerical and narrative proposals, not approved quest additions, eligibility or rewards.** Source: [31 October progression prototype](https://github.com/code-studio-au/theia-mmo/blob/07846d3ed3321cc6740a776ea0d1559a1d8e61a4/docs/story/Theia/Campaigns/Level_35_40_Progression_Prototype.md). Its opening claim that the level-80 cap was unapproved and the 1–60 draft remained governing is **SUPERSEDED** by the current [canonical Human campaign](Human_1_80_Canonical_Campaign.md). The prototype's levels 35/40 and story unlocks are historical pacing assumptions, not approved hard gates. Its missing `Level_1_80_Progression_Prototype` reference remains a historical identifier, not a live document.
+
+### Distinct regional story proposals
+
+**Permission to Remain** proposed roughly eleven substantial rewarded steps, with briefings integrated into missions. Corven would authorize a bounded multi-people Covenant expedition from Tidehold; ordinary transport reaches a highland hub, followed by foot/mount travel to exceptional Passage access. Nessa sets the field plan, Tarek measures the return path and limits loads and specialist arrivals, Brynja joins technical work, and Caelith observes the environment. The Grey Surveyor advises without revealing his identity.
+
+At Lantern Redoubt, Aru'ven would grant temporary shelter without conceding ownership. A water-maintenance rescue involves territorial wildlife, an ancient defensive installation, a separate control station, protection of a local worker identifying the mechanism and a secured retreat, all sequentially solo-accessible. The Surveyor recognizes machinery before translation, helps prevent injury and avoids explaining his familiarity; Aru'ven notices. A second expedition follows supply-route damage, scavenging and theft to a shared storehouse guarded by a damaged construct following an obsolete protective instruction, not Nhal. Isolating the working restores access without granting a permanent class ability.
+
+An agreement would define Redoubt use, supplies, boundaries and withdrawal, with Nessa accepting deployment limits and Aru'ven granting only local permission. Archive custodians prepare a supervised approach while route work continues, creating a narrative pause rather than a real-time countdown. Three proposed enclave-associated outposts form a district, not new capitals or approved geography; name, distances and adjacency remain open.
+
+- **The Return Route:** a Thuma'rei-associated supply route faces expedition traffic beyond its safe capacity. A scheduled party finds displaced animal nesting near a sheltered crossing, hazardous detours, broken warning markers and scavenged supplies. Eight proposed steps cover surveying alternatives, recovering equipment, protecting workers and a final supply movement against a territorial threat. Outward/return grouping and field reports reduce repeated backtracking. A negotiated local transport stop is possible, not an unrestricted portal. No Conclave exposure, identity reveal or hidden Unmade plot is required.
+- **What the Gardens Need:** an Oru'sava-associated cultivation settlement loses harvest while a growth working coincides with symptoms in workers and animals. Neglected equipment, contaminated stores and a configuration mismatched to local conditions interact. Caelith observes and respects local expertise; Anwen may receive authorized medical observations without Guardian status or secret maps. Eight steps culminate in either immediate isolation or bounded safeguarded repair, both preserving harvest and people. Choices alter local responses and follow-up work without withholding essential campaign evidence.
+- **The People Who Return:** a Soru'vaeth reclaiming party needs practical materials for homes from a ruined research district. Records of a missing earlier group reveal a mistaken defensive boundary and matter to relatives as well as scholars. Eight steps ask what can be recovered safely; the player disables construct defenses while NPC crews hold cleared stations, without simultaneous multiplayer or raid requirements. The return brings useful salvage and an accurate account of the lost. The Surveyor interprets a warning but accepts correction from a local worker, foreshadowing shared authority without revealing his history.
+- **Six smaller adventures:** lost tools, safe hunting grounds, a missing delivery, a damaged warning marker, an endangered researcher and an inhabited route. They carry no indispensable revelation and may overlap larger journeys.
+- **The Sixth Scholar follow-on:** the historical next chapter used the expedition agreement for supervised Oth'irun access, with optional service enriching dialogue rather than unlocking the revelation. Separate records identify the Surveyor among six scholars and corroborate his account. These concepts must conform to current Q097 revelation timing; no optional chain may become essential for understanding it.
+
+### Preserved numerical test, not production balance
+
+The invented Theia curve was 20,000 / 21,000 / 22,000 / 23,000 / 24,000 XP for transitions 35→36 through 39→40, totaling **110,000**; these were not GW2 values or a chosen final curve.
+
+| Proposed source | XP | Illustrative share |
+|---|---:|---:|
+| Opening chapter: ten × 2,250 plus 5,000 conclusion | 27,500 | 25% |
+| Three regional chains: each seven × 1,500 plus 3,500 conclusion | 42,000 | 38.2% |
+| Six standalone quests × 1,250 | 7,500 | 6.8% |
+| Combat throughout activities/journeys | 22,000 | 20% |
+| First-time meaningful discoveries | 7,000 | 6.4% |
+| Gathering or other eligible activity | 4,000 | 3.6% |
+| Total | 110,000 | 100% |
+
+Ordinary regional tasks were tentatively placed around 36–38 with higher conclusions. Starting exactly at 35, chapter turn-ins alone reach 36 plus 7,500 XP, leaving 82,500 to 40 before other earnings. The 25/45/30 mix is a sample route, not an individual quota. Combat is counted once, gathering is not compulsory, and discoveries do not repeatedly award XP for transport use. Follow-on chapter rewards are outside this budget.
+
+The sample requires alternatives: other racial stories, adventures elsewhere, combat, gathering or optional dungeons may replace the regional route. Leaving and returning must not lose the main-story opportunity; overlevelled players would not need the sample checklist. No PvP, profession, all-discovery or all-regional-completion gate is approved.
+
+**Untested playtime hypothesis:** 8–12 hours, with an illustrative middle route of 2.5 hours main story, 4.5 regional/local stories, 1.5 travel and 1–2 exploration/other activity; combat is included rather than added again. A ten-minute and twenty-minute quest with the same 1,500 turn-in reward have different rates. Eleven main and thirty regional/local steps, encounter density, discoveries and actual order require joint measurement.
+
+Measure activity/travel duration, XP sources, downtime, skipped content, fast/slow routes, replacement activities and solo-story access. Adjust rewards or worthwhile alternatives rather than enforcing grinding or stretching travel. Field contacts can reduce return journeys, but no flight duration, portal queue, coordinates, creature roster, combat tuning or tested economy is established.
