@@ -2,7 +2,7 @@
 type: location
 canon_status: source-specific
 source: "../../../../THEIA_WORLD_BIBLE.md"
-up: "[[Atlas]]"
+up: "../Atlas.md"
 ---
 # Oth'irun
 
@@ -12,10 +12,10 @@ These are independent Kel'vari enclaves, not a single kingdom or the entire surv
 
 [Read historical source section](../../../../THEIA_WORLD_BIBLE.md)
 
-[[Kel'vari]]
+[Kel'vari](../../Lore/Peoples/Kel%27vari.md)
 
-[[Atlas]] · [[Welcome|Home]]
+[Atlas](../Atlas.md) · [Story index](../../../README.md)
 
 ## Related notes
 
-[[Sel'ora]] — proposed campaign archive custodian; Needs Review.
+[Sel'ora](../../Characters/Campaign%20Cast/Sel%27ora.md) — proposed campaign archive custodian; Needs Review.
