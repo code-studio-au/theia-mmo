@@ -91,3 +91,12 @@ Checked H2-05/Q050, H2-07/Q052, H2-12/Q042, H2-14/Q044 and H2-17/Q047 against th
 - **H2-17/Q047:** Mara confirms the Aelari material notation and legitimate Kar Durn engineering lead without accusing an Aelari people or authority.
 
 All five remain **strong or partial semantic candidates, not approved historical-to-current IDs**. Preserve missing source-specific detail for encounter, dialogue or optional review; do not import old level gates or create new executable objectives by inference.
+
+## H4 access, archive and identity dialogue review — 3 November 2026
+
+- **H4-02/Q086:** Current Q083–Q086 dialogue confirms small-party Passage capacity, a verified return route, separate custodial consent and the first living Kel'vari self-identification at Q086. The historical outer-site maintenance agreement is not explicitly established in Q086 dialogue; preserve it for optional site-service review, not automatic access expansion.
+- **H4-05/Q092:** Sel'ora's dialogue confirms supervised archive access conditional on helping the copyist secure records. The oldest testimony remains protected; access is not blanket permission.
+- **H4-07/Q097:** Q094 and Q096 independently establish the sixth scholar's omitted name and matching verifier mark before the Grey Surveyor admits he is Oth'varen in Q097. The player may question his account; the dialogue does not require unconditional trust. This supports strong narrative correspondence, **not approved ID equivalence**.
+- **H4-08/Q100:** Sera's dialogue confirms endangered custodians are protected while public disclosure remains unresolved. The historical restricted-route disclosure and case-access safeguards are not explicitly spoken in this scene; preserve them for encounter/security review.
+
+No new gate throughput, faction friendship, automatic archive rights or early identity reveal is approved. Historical H4→Q mappings remain unapproved pending complete consequence/location review.
