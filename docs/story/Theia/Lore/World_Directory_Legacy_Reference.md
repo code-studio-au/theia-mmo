@@ -159,17 +159,17 @@ Complete static navigation alongside the live browsing tables. Approval boundari
 - [Nhal](../Characters/Divine/Nhal.md)
 
 ## quest
-- [DR-H1 — Serial and Seal](../Campaigns/Connected%20Stories/DR-H1%20%E2%80%94%20Serial%20and%20Seal.md)
+- DR-H1 — Serial and Seal — historical proposal; see [connected racial source](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md)
 - [DR-H2 — Charged to a Battle](../Campaigns/Connected%20Stories/DR-H2%20%E2%80%94%20Charged%20to%20a%20Battle.md)
-- [DR-H3 — A Closed Account](../Campaigns/Connected%20Stories/DR-H3%20%E2%80%94%20A%20Closed%20Account.md)
+- DR-H3 — A Closed Account — historical proposal; see [connected racial source](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md)
 - [DR-O1 — Households Behind the Line](../Campaigns/Connected%20Stories/DR-O1%20%E2%80%94%20Households%20Behind%20the%20Line.md)
 - DR-O2 — The Wrong Hour (historical quest; see [connected racial source](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md))
 - [DR-O3 — A Shore Still Held](../Campaigns/Connected%20Stories/DR-O3%20%E2%80%94%20A%20Shore%20Still%20Held.md)
 - [DR-R1 — The Pilgrims' Road](../Campaigns/Connected%20Stories/DR-R1%20%E2%80%94%20The%20Pilgrims'%20Road.md)
 - [DR-R2 — Missing Before the Landing](../Campaigns/Connected%20Stories/DR-R2%20%E2%80%94%20Missing%20Before%20the%20Landing.md)
-- [DR-R3 — An Account Owed](../Campaigns/Connected%20Stories/DR-R3%20%E2%80%94%20An%20Account%20Owed.md)
+- DR-R3 — An Account Owed — historical proposal; see [connected racial source](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md)
 - [DR-V1 — Repeat the Measure](../Campaigns/Connected%20Stories/DR-V1%20%E2%80%94%20Repeat%20the%20Measure.md)
-- [DR-V2 — A Result Refused](../Campaigns/Connected%20Stories/DR-V2%20%E2%80%94%20A%20Result%20Refused.md)
+- DR-V2 — A Result Refused — historical proposal; see [connected racial source](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md)
 - [DR-V3 — Inquiry Without Surrender](../Campaigns/Connected%20Stories/DR-V3%20%E2%80%94%20Inquiry%20Without%20Surrender.md)
 - H1-01 - Before the Next Caravan — historical quest reference; see [legacy quest crosswalk](../Campaigns/Human_Quest_Editorial_ID_Crosswalk_Draft.json)
 - H1-02 - The Road Patrol — historical quest reference; see [legacy quest crosswalk](../Campaigns/Human_Quest_Editorial_ID_Crosswalk_Draft.json)
@@ -294,14 +294,14 @@ Complete static navigation alongside the live browsing tables. Approval boundari
 
 ## story beat
 - [CR-A1 — Help before access](../Campaigns/Connected%20Stories/CR-A1%20%E2%80%94%20Help%20before%20access.md)
-- [CR-A2 — A grievance used](../Campaigns/Connected%20Stories/CR-A2%20%E2%80%94%20A%20grievance%20used.md)
+- CR-A2 — A grievance used — historical proposal; see [connected racial source](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md)
 - [CR-A3 — Permission with limits](../Campaigns/Connected%20Stories/CR-A3%20%E2%80%94%20Permission%20with%20limits.md)
 - [CR-D1 — The accused craft](../Campaigns/Connected%20Stories/CR-D1%20%E2%80%94%20The%20accused%20craft.md)
 - [CR-D2 — The neglected gallery](../Campaigns/Connected%20Stories/CR-D2%20%E2%80%94%20The%20neglected%20gallery.md)
 - [CR-D3 — The hold's commission](../Campaigns/Connected%20Stories/CR-D3%20%E2%80%94%20The%20hold's%20commission.md)
 - [CR-K1 — A city maintained](../Campaigns/Connected%20Stories/CR-K1%20%E2%80%94%20A%20city%20maintained.md)
 - CR-K2 — The full margin (historical beat; see [connected racial source](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md))
-- [CR-K3 — The return path](../Campaigns/Connected%20Stories/CR-K3%20%E2%80%94%20The%20return%20path.md)
+- CR-K3 — The return path — historical proposal; see [connected racial source](../../THEIA_HUMAN_CONNECTED_RACIAL_STORIES.md)
 
 ## topic
 - [Anchors and the Shroud](./Anchors%20and%20the%20Shroud.md)
