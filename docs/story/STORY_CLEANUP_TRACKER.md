@@ -678,3 +678,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Repaired entries 21–36 (King Aldren Vaelmont through Sareth Keld) and final entries 37–47 (Sel'ora through Ysra Keel) from the broken four-parent cast source path to `../../../THEIA_HUMAN_CAST_AND_PLACES.md`. A tool-call cap interrupted the last batch; a subsequent live re-fetch confirmed the first ten of that batch were already fixed, and Ysra Keel was corrected separately (`bd8e9069`).
 - [x] All 47 Campaign Cast files have now received the known source-path correction; this is not yet a complete 47-file Markdown link validation.
 - [ ] Run a fresh tree-based audit of every Markdown link in all 47 cast files, then continue other story directories and historical duplicate checks.
+
+## Complete Campaign Cast live Markdown file-target audit — 3 November 2026
+
+- [x] At the `main` tree following the 47 source-path corrections (`6371240e`), directly fetched all **47/47** Campaign Cast Markdown files in three batches (16, 16, 15). Resolved **206 relative Markdown link occurrences** against the live tree (74 + 70 + 62); **zero missing file targets**.
+- [x] Campaign Cast directory has passed both the prior Obsidian syntax scan and this complete file-target link audit. These checks do not validate heading fragments, semantic canon status, inbound backlinks or other directories.
+- [ ] Continue tree-based audit of remaining story Markdown and historical duplicates before retiring the old branch or deleting this temporary tracker.
