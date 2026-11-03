@@ -1,7 +1,7 @@
 ---
 type: character
 canon_status: approved-role; proposed-development
-source: "../../../../THEIA_HUMAN_CAST_AND_PLACES.md"
+source: "../../../THEIA_HUMAN_CAST_AND_PLACES.md"
 up: "../Characters.md"
 ---
 # Sister Anwen
@@ -18,7 +18,7 @@ Provides basic care and Life-magic orientation; sees real awakening benefits; do
 ## Proposed launch ending — Needs Review
 Treats returning wounded and trains cautious new practitioners; no universal cure or resurrection solution
 
-Source: [Approved recurring humans: complete launch movements](../../../../THEIA_HUMAN_CAST_AND_PLACES.md).
+Source: [Approved recurring humans: complete launch movements](../../../THEIA_HUMAN_CAST_AND_PLACES.md).
 
 [Characters](../Characters.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
