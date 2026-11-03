@@ -1,7 +1,7 @@
 ---
 type: location
 canon_status: source-specific
-source: "../../../../THEIA_WORLD_BIBLE.md"
+source: "../../../THEIA_WORLD_BIBLE.md"
 up: "../Atlas.md"
 ---
 # Oth'irun
@@ -10,7 +10,7 @@ up: "../Atlas.md"
 
 These are independent Kel'vari enclaves, not a single kingdom or the entire surviving population. The full context and approval boundaries are in the source.
 
-[Read historical source section](../../../../THEIA_WORLD_BIBLE.md)
+[Read historical source section](../../../THEIA_WORLD_BIBLE.md)
 
 [Kel'vari](../../Lore/Peoples/Kel%27vari.md)
 
