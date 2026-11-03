@@ -1000,3 +1000,10 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Live-reviewed root `README.md`, historical `THEIA_HUMAN_CAMPAIGN.md` and `THEIA_HUMAN_CAMPAIGN_REVIEW.md` backlinks to the protected old H/HS register. README and historical campaign already identify current 1–80 authority; review record lacked an explicit top-level superseded warning.
 - [x] Added a superseded historical-review banner to `THEIA_HUMAN_CAMPAIGN_REVIEW.md`, linking current 1–80 narrative and sole working manifest (commit `227e82f2`). Its old Cassian sentencing and level-60 outcome remain provenance only.
 - [ ] Continue other root-story historical authority/backlink checks. The root H/HS register still has legitimate source references and unapproved mappings; do not delete it yet.
+
+## Root Act I and solo-dungeon historical authority review — 3 November 2026
+
+- [x] Live-reviewed root historical Human Act I, Solo Story Dungeons and H/HS Quest Register. The register already carries a superseded warning; the other two lacked clear current-authority routing.
+- [x] Marked old five-climax `THEIA_HUMAN_STORY_DUNGEONS.md` as historical encounter evidence with links to the current 1–80 campaign, manifest and encounter timing (commit `167360a0`). Old Malrec/projection and level-60 finale are not current Q115 or Q181 outcomes.
+- [x] Marked `THEIA_HUMAN_ACT_I_STORY.md` as a preserved creator-approved early narrative foundation while deferring current numbering, quest staging and later consequences to canonical 1–80 campaign (commit `9cbbd00a`).
+- [ ] Compare unique Act I prose and old dungeon mechanics against current canonical/dialogue/encounter files before any deletion. Continue remaining root-story authority/backlinks and H/HS provenance review.
