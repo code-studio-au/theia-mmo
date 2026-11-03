@@ -419,3 +419,8 @@ Do not tick work merely because it is planned or described in older reports. Rec
 
 - [x] Migrated three old `Sources/THEIA_*` section wiki-links in `Theia/Campaigns/Future Saga.md` to surviving root World Bible, Modern Story Revelation Timeline and Interwoven Chronicle documents (commit `f9364ae2`). Section descriptions remain historical provenance, not independently verified heading anchors or approved future expansion canon.
 - [ ] Continue the repository-wide audit of other source-mirror references and unverified wiki-links before deleting this tracker or retiring the historical branch.
+
+## Historical Timeline event-link retirement — 3 November 2026
+
+- [x] Converted 13 historical milestone wiki-links in `Theia/History/Historical Timeline.md` into plain event labels, preserving the event order and descriptive claims (commit `f2793917`). Removed additional obsolete wiki-links in the present-day marker. Sampled First Sundering, Second Sundering and Shattered Delegation paths under `History/` were absent, but **not all 13 possible note locations were exhaustively searched**.
+- [ ] Verify individual event-page locations and incoming links separately if needed; the timeline labels are now historical navigation without asserting live per-event file targets. Keep current 1–80 campaign as narrative authority.
