@@ -881,3 +881,10 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Replaced those ten generic canonical one-line objectives with stage-grounded descriptions (commit `b6e94434`): Q137 permitted archive investigation; Q138 laboratory debate; Q139 missing entries; Q140 selective communication; Q141 facility clues; Q142 Oth'varen partial disclosure; Q143 authenticated first Nhal name; Q144 apparatus shutdown; Q145 Vaer'uun solo confrontation/permanent death; Q146 independent post-death verification.
 - [x] Preserved 184 quest entries and the existing manifest stages. No runtime IDs, executable Rust, level gates or new lore outcomes were introduced.
 - [ ] Continue adjacent canonical chapter-summary duplication audit and H/HS objective/dialogue mapping. Confirm reveal gates in dialogue during final narrative QA; no claim of complete campaign validation yet.
+
+## Q147–Q157 canonical summary repair — 3 November 2026
+
+- [x] Scanned adjacent canonical quest summaries and identified repeated broad outcome descriptions across multiple Q bands. Verified Q147–Q157 individually against the consolidated manifest's actual objective descriptions.
+- [x] Replaced all eleven Q147–Q157 generic one-line objectives with distinct stage-grounded descriptions (commit `f3facdd7`). Preserved the order of Keeper/Guardian testimony, unproven inversion countermeasure, final Warden approach, Q156 immediate Veil/Binding transition and Q157 already-dissipating Shroud.
+- [x] No quest count, manifest stages, runtime IDs or engine files changed.
+- [ ] Continue other repeated-summary bands (Q074–Q136, Q158–Q184) against the manifest and dialogue, without changing locked canon or prematurely approving editorial H/HS mappings.
