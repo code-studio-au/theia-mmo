@@ -74,6 +74,17 @@ The working manifest still lists **Thes'var** as Q176's turn-in contact and **Se
 - Rewards, NPC/creature IDs, item semantics, retry and abandonment policies are unresolved and must be validated before executable export.
 - Future quest packs must resolve prerequisites through a registry and support explicit saved-definition compatibility/migration. No permanent 32-quest split is implied.
 
+## Consolidated legacy context — 3 November 2026
+
+**ARCHIVED source evidence / WORKING authoring detail.** The [retired final migration note](https://github.com/code-studio-au/theia-mmo/blob/a7ca2aa17e4c2f1fcb40b7392fe68164af579b1a/docs/story/Theia/Campaigns/Human_Q158_Q184_Legacy_Pack_Migration.md) compared `Human_70_80_Playable_Quest_Pack.md` v0.1 with `Human_70_80_Implementation_Brief.md` v0.2 (17 Q158–Q174 references each), and `Human_80_Finale_Playable_Quest_Pack.md` v0.1 with `Human_80_Finale_Implementation_Brief.md` v0.2 (10 Q175–Q184 references each). No extra quests were introduced. Their distinctive purposes and finale constraints are retained above; historical locations remain in the [existing location/lore reference](Human_1_80_Location_and_Lore_Editorial_Reference.md).
+
+- Preserve Classic explicit targeting, manual facing and weapon-timed autoattack, solo-accessible critical story, safe checkpoints and no mandatory PvP, group, class or profession requirement.
+- Travel remains physical roads, ships and fixed flight paths. Restricted Passage requires separate consent, and the Millhaven homecoming does not require optional regional cleanup.
+- Encounter failure resets active combat, not irreversible story facts, durable choices or verified evidence. Boss death, rescue, correction, alignment and final inversion need distinct trusted events; watching a cinematic alone is not authoritative credit.
+- Historical level-70/75/80 chapter minima, draft completion aliases and repeated accept/inspect/report scaffolding are not approved eligibility, runtime IDs or extra objectives. Q174's explicit level-80 proposal remains a separate OPEN approval question.
+- The older Q181 description omitted the explicit physical-death stage now recorded in the working manifest. Preserve the canonical order above and do not add a duplicate death stage.
+- Spawn geometry, encounter timing, localization and actual engine integration remain unresolved alongside the actor, reward, item, phasing and saved-definition inputs above. Historical QA plans do not establish implementation.
+
 ## Next milestone
 
 The **entire 184-quest Human campaign now has a first-pass Rust authoring review**. Consolidate reviewed, approved corrections into the sole working manifest, resolve identity/provenance and runtime capability gaps, and remove redundant review/draft documents only after their unique decisions are captured. This document is not a second quest inventory.
