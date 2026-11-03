@@ -501,3 +501,9 @@ Do not tick work merely because it is planned or described in older reports. Rec
 - [x] Verified all nine unique peoples' file targets referenced by the seven divine character notes: Korrath, Halflings, Humans, Aelari, Orcs, Vaelari, Dwarves, Vorrath and Kel'vari. **9/9 exist** on live `main`.
 - [x] Replaced all `Lore/Peoples/...` Obsidian wiki-links across Keeper, Guardian, Judge, Warrior, Seeker, Shaper and Ascendant notes with explicit relative Markdown links (commits `22c31123`, `4515aefd`, `670799fb`, `b293ad67`, `89cc1b3b`, `5dbcf195`, `14d9df57`). Ascendant's Keeper and Kel'vari references were also clarified.
 - [ ] Continue remaining source/backlink and content audits. No divine lore or runtime quest data changed.
+
+## Nine proposed service NPC source migrations — 3 November 2026
+
+- [x] Replaced obsolete `Sources/THEIA_HUMAN_CAST_AND_PLACES` source metadata/embeds and Obsidian parent/location navigation in all nine `Theia/Characters/Services/` cards: Cal Norr, Oda Flint, Adra Pell, Evin Reed, Marta Venn, Joric Hale, Sella Marr, Torren Vale and Sabren Holt. Commits `44929a9c`, `6e83cf6c`, `2b21b8a9`, `d0c4f73a`, `3af413ba`, `ab3a67dd`, `b131063c`, `ffdd1ce5`, `65f2010c`.
+- [x] Live-fetched surviving root Human Cast and Places, Characters index, Stoneford and Valecrown destinations. All four exist. Preserved all nine **Needs Review** labels and proposed service roles; no approved NPC or class roster created.
+- [ ] Continue broader character backlinks and full-tree link/content validation before branch retirement or tracker deletion.
