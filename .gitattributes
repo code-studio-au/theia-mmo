@@ -1,0 +1,10 @@
+# Stable byte-bound content and source checkouts on Linux and Windows.
+* text=auto eol=lf
+
+# Runtime binary assets must never receive line-ending conversion.
+*.glb binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.wav binary
+*.bin binary
