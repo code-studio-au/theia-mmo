@@ -1,3 +1,12 @@
+Per-life loot core prerequisite checked locally, 4 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: schema 2 and trusted victim-life selector added;
+339 core tests, three reward-wire checks and one non-SQL storage gate pass.
+Formatting and strict workspace/all-target Clippy pass. Runtime/storage still
+refuse per-life content; no live repeatable-loot or new SQL/native claim.
+[Current boundary and next work](QUEST_ITEM_OBJECTIVES.md#per-life-loot-core-prerequisite--4-november-2026).
+User-authorized work continues with local commits only. Durable per-life claims
+and bounded pending availability are next; item-quest admission stays closed.
+
 Confirmed destruction UI qualified locally, 4 November 2026:
 P3-05 / P3-09 / P3-11 / P3-15: normal split/confirm/cancel/close/reopen/destroy
 and database restart/rejoin pass at 1920x1200, 3440x1440 and 1280x720.

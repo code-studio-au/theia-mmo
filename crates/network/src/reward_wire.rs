@@ -28,6 +28,12 @@ impl Profile {
         items: &crate::renet_runtime::inventory::Profile,
     ) -> Result<Self> {
         let catalog = Arc::new(Catalog::from_json(bytes, items.catalog())?);
+        if catalog
+            .definitions()
+            .any(|d| d.scope() == theia_core::rewards::Scope::PerCreatureLife)
+        {
+            return Err("Per-creature-life reward runtime is not installed".into());
+        }
         let mut bound = theia_core::rewards::PROFILE_DOMAIN.to_vec();
         bound.extend(items.hash());
         bound.extend(bytes);

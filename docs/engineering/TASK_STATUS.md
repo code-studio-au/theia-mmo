@@ -1,3 +1,9 @@
+Per-life loot core prerequisite, 4 November 2026: schema 2 and victim-life
+selectors pass core/codec admission checks; runtime and storage remain gated.
+[Exact scope](../QUEST_ITEM_OBJECTIVES.md#per-life-loot-core-prerequisite--4-november-2026).
+Continue P3-05 / P3-09 / P3-11 / P3-15 with durable per-life claims and bounded
+pending availability. Local commits only; native destruction remains qualified.
+
 Resumed implementation, 4 November 2026: confirmed item destruction is now
 qualified at all three native Linux sizes and after database restart/rejoin.
 [Scope and evidence](../QUEST_ITEM_OBJECTIVES.md#confirmed-destruction-ui-qualified--4-november-2026).

@@ -1,4 +1,4 @@
-//! Checked nonrepeatable reward recipes and pure trusted grant proposals.
+//! Checked reward recipes and pure trusted grant proposals.
 //! A proposal does not authorize a recipient, consume a claim, commit items or
 //! acknowledge success. Runtime input must never supply a recipe or item list.
 use crate::{
@@ -44,6 +44,16 @@ pub enum Scope {
     /// Checked policy metadata. The durable claim owner enforces consumption;
     /// calling a pure proposal repeatedly does not enforce nonrepeatability.
     OncePerCharacter,
+    /// One durable entitlement per recipient and authoritative victim life.
+    /// Only schema 2 admits this policy; storage/runtime support is separate.
+    PerCreatureLife,
+}
+/// Scope discriminator for a trusted kill selector. This conveys no recipient
+/// authorization, proof of death, durable offer or item grant by itself.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Occurrence {
+    OncePerCharacter,
+    CreatureLife(crate::progression::KillId),
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -103,15 +113,19 @@ impl Catalog {
         }
         let raw: RawCatalog =
             serde_json::from_slice(bytes).map_err(|_| "Invalid reward catalog")?;
-        if raw.schema != 1 || !(1..=MAX_DEFINITIONS).contains(&raw.rewards.len()) {
+        if !matches!(raw.schema, 1 | 2) || !(1..=MAX_DEFINITIONS).contains(&raw.rewards.len()) {
             return Err("Unsupported reward schema/count");
         }
         let id = ContentId::new(&raw.id).ok_or("Invalid reward catalog ID")?;
         let item_catalog = ContentId::new(&raw.item_catalog)
             .filter(|id| id == items.id())
             .ok_or("Reward item catalog mismatch")?;
+        let schema = raw.schema;
         let mut rewards = BTreeMap::new();
         for raw in raw.rewards {
+            if schema == 1 && raw.scope == Scope::PerCreatureLife {
+                return Err("Per-creature-life rewards require schema 2");
+            }
             let id = ContentId::new(&raw.id).ok_or("Invalid reward ID")?;
             let creature = ContentId::new(&raw.creature).ok_or("Invalid qualifying creature ID")?;
             if !(1..=48).contains(&raw.name.len())
@@ -184,6 +198,7 @@ impl Catalog {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Error {
     CatalogMismatch,
+    CreatureMismatch,
     ItemState(inventory::Error),
     StaleRevision,
     RevisionExhausted,
@@ -205,6 +220,18 @@ impl Definition {
     }
     pub fn grants(&self) -> &[Grant] {
         &self.grants
+    }
+    /// Check only the configured creature selector and scope. The authoritative
+    /// caller must establish the fatal event and recipient before creating an
+    /// offer; storage must bind that character and deduplicate this occurrence.
+    pub fn occurrence(&self, event: &crate::progression::KillEvent) -> Result<Occurrence, Error> {
+        if event.creature != self.creature {
+            return Err(Error::CreatureMismatch);
+        }
+        Ok(match self.scope {
+            Scope::OncePerCharacter => Occurrence::OncePerCharacter,
+            Scope::PerCreatureLife => Occurrence::CreatureLife(event.id),
+        })
     }
     /// First merge matching stacks in slot order, then fill empty slots. Work is
     /// bounded by MAX_GRANTS * SLOT_COUNT, not by the granted unit count. Equipment

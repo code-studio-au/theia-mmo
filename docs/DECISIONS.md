@@ -1,3 +1,11 @@
+## 2026-11-04 — explicit per-creature-life reward scope
+
+Preserve schema-1 once-character recipes. Use schema 2 for explicit repeatable
+victim-life entitlements, reusing the authoritative progression KillId type.
+Pure selectors establish no kill/recipient authority. Keep runtime and storage
+admission closed until durable uniqueness, bounded availability and publication
+are installed. [Core evidence and next work](QUEST_ITEM_OBJECTIVES.md#per-life-loot-core-prerequisite--4-november-2026).
+
 ## 2026-11-04 — confirmed item destruction native adoption
 
 Retain split/merge support and the exact confirmed backpack slot/revision in

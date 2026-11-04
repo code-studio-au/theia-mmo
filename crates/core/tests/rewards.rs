@@ -65,7 +65,7 @@ fn catalogs_reject_unbounded_unknown_duplicate_or_client_like_reward_definitions
     assert_eq!(reward.grants()[0].count(), 1);
     let original: Value = serde_json::from_slice(DATA).unwrap();
     for (key, value) in [
-        ("schema", json!(2)),
+        ("schema", json!(3)),
         ("id", json!("../rewards")),
         ("item_catalog", json!("theia.other.items")),
         ("rewards", json!([])),
@@ -306,4 +306,94 @@ fn repeated_trusted_proposals_mint_only_recipe_quantities_and_share_transfer_rev
     }
     assert_eq!(granted, 99 * SLOT_COUNT as u64);
     assert_eq!(totals(&bag).get(&id("sword")), Some(&1));
+}
+
+#[test]
+fn repeatable_scope_requires_schema_two_and_preserves_once_character_recipes() {
+    let items = Items::from_json(ITEMS).unwrap();
+    let mut value: Value = serde_json::from_slice(DATA).unwrap();
+    value["rewards"][0]["scope"] = json!("per_creature_life");
+    assert!(Catalog::from_json(&serde_json::to_vec(&value).unwrap(), &items).is_err());
+    value["schema"] = json!(2);
+    let mut once = value["rewards"][0].clone();
+    once["id"] = json!("theia.dev.first-kill-bonus");
+    once["scope"] = json!("once_per_character");
+    value["rewards"].as_array_mut().unwrap().push(once);
+    let catalog = Catalog::from_json(&serde_json::to_vec(&value).unwrap(), &items).unwrap();
+    assert_eq!(catalog.definitions().len(), 2);
+    assert_eq!(
+        catalog.definition(&reward_id()).unwrap().scope(),
+        Scope::PerCreatureLife
+    );
+    assert_eq!(
+        catalog
+            .definition(&ContentId::new("theia.dev.first-kill-bonus").unwrap())
+            .unwrap()
+            .scope(),
+        Scope::OncePerCharacter
+    );
+    assert_eq!(
+        Catalog::from_json(DATA, &items)
+            .unwrap()
+            .definition(&reward_id())
+            .unwrap()
+            .scope(),
+        Scope::OncePerCharacter
+    );
+}
+
+#[test]
+fn trusted_kill_selectors_bind_repeatable_occurrences_to_the_exact_victim_life() {
+    use theia_core::{
+        identity::{EntityId, EntityKey, WorldEpoch},
+        progression::{KillEvent, KillId},
+        rewards::Occurrence,
+    };
+    let items = Items::from_json(ITEMS).unwrap();
+    let old = Catalog::from_json(DATA, &items).unwrap();
+    let mut value: Value = serde_json::from_slice(DATA).unwrap();
+    value["schema"] = json!(2);
+    value["rewards"][0]["scope"] = json!("per_creature_life");
+    let repeatable = Catalog::from_json(&serde_json::to_vec(&value).unwrap(), &items).unwrap();
+    let reward = repeatable.definition(&reward_id()).unwrap();
+    let event = KillEvent {
+        id: KillId::from_victim(EntityKey {
+            epoch: WorldEpoch::new(7).unwrap(),
+            entity: EntityId::new(9).unwrap(),
+        }),
+        creature: reward.creature().clone(),
+    };
+    assert_eq!(
+        reward.occurrence(&event),
+        Ok(Occurrence::CreatureLife(event.id))
+    );
+    for key in [
+        EntityKey {
+            epoch: WorldEpoch::new(7).unwrap(),
+            entity: EntityId::new(10).unwrap(),
+        },
+        EntityKey {
+            epoch: WorldEpoch::new(8).unwrap(),
+            entity: EntityId::new(9).unwrap(),
+        },
+    ] {
+        let next = KillEvent {
+            id: KillId::from_victim(key),
+            creature: event.creature.clone(),
+        };
+        assert_ne!(reward.occurrence(&next), reward.occurrence(&event));
+        assert_eq!(
+            old.definition(&reward_id()).unwrap().occurrence(&next),
+            Ok(Occurrence::OncePerCharacter)
+        );
+    }
+    let wrong = KillEvent {
+        creature: ContentId::new("theia.dev.other-creature").unwrap(),
+        ..event
+    };
+    assert_eq!(reward.occurrence(&wrong), Err(Error::CreatureMismatch));
+    assert_eq!(
+        old.definition(&reward_id()).unwrap().occurrence(&wrong),
+        Err(Error::CreatureMismatch)
+    );
 }

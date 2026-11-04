@@ -407,3 +407,29 @@ actual authoritative victim life, preserving once-per-character recipes and
 bounded owner/availability queues, then the normal pelt quest. Reading documents
 remains a distinct planned condition. Work continues with local commits only;
 no pushes, native Windows, MMO capacity or new save-migration claim.
+
+
+## Per-life loot core prerequisite — 4 November 2026
+
+Reward schema 2 admits an explicit `per_creature_life` scope alongside the
+unchanged `once_per_character` policy. Schema 1 refuses the new scope. A pure
+creature-selector helper derives either the once-character discriminator or the
+existing `KillId` victim-life key from a trusted kill fact. A different entity
+or world epoch is a different occurrence. A mismatched creature refuses.
+This helper grants no recipient authority, death proof, durable offer or items.
+
+All 339 core tests, three reward-wire tests and the non-SQL storage admission
+check pass. The three existing reward database tests are skipped in this pure
+prerequisite run; no new SQL proof is claimed. Formatting and denied-warning
+workspace/all-target Clippy pass. Evidence logs are
+`build/quest-loot-scope-{core,wire,store-gate,fmt,clippy}-v1-20261104.log`.
+Runtime and storage profile constructors deliberately refuse per-life recipes
+until their durable occurrence/paging and runtime publication paths are installed.
+Schema-2 once-character recipes remain valid. Existing content bytes and wire
+layouts are unchanged. No new native rendering or live repeatable-loot claim.
+
+Next add an explicit durable scope/life discriminator with once-character and
+per-recipient-life uniqueness, atomic claim/possession reconciliation, bounded
+pending availability and replay-safe retained work. Keep consumed per-life
+receipts durable without loading all historical kills into the owner. Then bind
+actual fatal victim lives in World/runtime and qualify normal pelt quest play.

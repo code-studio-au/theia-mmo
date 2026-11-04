@@ -13,6 +13,14 @@ pub struct RewardCatalog {
 impl RewardCatalog {
     pub fn from_json(bytes: &[u8], items: &InventoryCatalog) -> Result<Self> {
         let catalog = Arc::new(Catalog::from_json(bytes, items.catalog()).map_err(Error::Invalid)?);
+        if catalog
+            .definitions()
+            .any(|d| d.scope() == theia_core::rewards::Scope::PerCreatureLife)
+        {
+            return Err(Error::Invalid(
+                "Per-creature-life reward storage is not installed",
+            ));
+        }
         let mut bound = theia_core::rewards::PROFILE_DOMAIN.to_vec();
         bound.extend(items.hash());
         bound.extend(bytes);

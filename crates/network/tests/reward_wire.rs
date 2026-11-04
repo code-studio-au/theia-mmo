@@ -120,3 +120,19 @@ fn private_availability_has_checked_identity_bounds_and_known_unique_recipes() {
     assert!(empty.encode(&c, [19; 32]).is_err());
     assert!(State::decode(&vec![0; wire::MAX_BYTES + 1], &c, [19; 32]).is_err());
 }
+
+#[test]
+fn uninstalled_per_life_runtime_refuses_the_new_core_policy() {
+    let data = include_bytes!("../../../content/gameplay/development-equipment-items.json");
+    let items = theia_network::renet_runtime::inventory::Profile::from_json(data).unwrap();
+    let mut value: serde_json::Value = serde_json::from_slice(include_bytes!(
+        "../../../content/gameplay/development-rewards.json"
+    ))
+    .unwrap();
+    value["schema"] = serde_json::json!(2);
+    assert!(wire::Profile::from_json(&serde_json::to_vec(&value).unwrap(), &items).is_ok());
+    value["rewards"][0]["scope"] = serde_json::json!("per_creature_life");
+    let bytes = serde_json::to_vec(&value).unwrap();
+    assert!(Catalog::from_json(&bytes, items.catalog()).is_ok());
+    assert!(wire::Profile::from_json(&bytes, &items).is_err());
+}
