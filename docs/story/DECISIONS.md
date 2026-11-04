@@ -1,5 +1,10 @@
 # Story decisions and maintenance
 
+## 2026-11-04 — LOCKED: distinct Q128 and Q154 titles
+
+**Creator approval:** Q128 is titled **The Warden's Preparations**; Q154 retains **Before the Veil Breaks**. The two quests remain distinct: Q128 concerns earlier Anchor-network staging, extraction routes and measurement teams; Q154 concerns final Veilbreaker assault preparations. No quest IDs, objectives, prerequisite order, outcomes or quest count change. Update the canonical campaign and supporting Markdown titles. Reconcile JSON manifest and dependency titles only under separately authorized non-Markdown scope.
+
+
 Use the [authority hierarchy and canon classifications](README.md#approval-and-precedence).
 This ledger indexes creator decisions; historical entries retain their original
 scope and are not all simultaneously current.
