@@ -1,5 +1,10 @@
 # Story decisions and maintenance
 
+## 2026-11-04 — LOCKED: Q159 The Lands Revealed optional access
+
+**Creator approval:** Q159 becomes available after Q156 completes. The player must already have established legitimate Kel'vari contact through the earlier main story. Aru'ven's evacuation request grants limited, purpose-specific permission to enter the affected settlement and assist evacuees; it does not authorise general enclave access. Q157 and Q181 completion are **not** prerequisites, and there is no additional hard character-level gate. The Shroud is already beginning to recede after Q156; the quest may proceed alongside Q157's aftermath. Preserve existing objectives, optional status and the 184-quest count. JSON/runtime eligibility changes require separate authorisation under the current Markdown-only cleanup scope.
+
+
 ## 2026-11-04 — LOCKED: distinct Q128 and Q154 titles
 
 **Creator approval:** Q128 is titled **The Warden's Preparations**; Q154 retains **Before the Veil Breaks**. The two quests remain distinct: Q128 concerns earlier Anchor-network staging, extraction routes and measurement teams; Q154 concerns final Veilbreaker assault preparations. No quest IDs, objectives, prerequisite order, outcomes or quest count change. Update the canonical campaign and supporting Markdown titles. Reconcile JSON manifest and dependency titles only under separately authorized non-Markdown scope.
