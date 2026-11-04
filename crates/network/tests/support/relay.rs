@@ -99,6 +99,11 @@ impl Relay {
                             let (len, source) = match socket.recv_from(&mut buffer) {
                                 Ok(value) => value,
                                 Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => break,
+                                // Winsock reports ICMP port-unreachable for a closed
+                                // UDP peer on a later receive. Keep relaying after
+                                // expected disconnect/rebind; no packet was received.
+                                #[cfg(windows)]
+                                Err(e) if e.kind() == std::io::ErrorKind::ConnectionReset => continue,
                                 Err(e) => panic!("Relay receive: {e}"),
                             };
                             if direction == 0 { client = Some(source); }
