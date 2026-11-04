@@ -1,5 +1,9 @@
 # Story decisions and maintenance
 
+## 2026-11-04 — LOCKED: Q169 unavailability at Oth'varen's death
+
+**Creator approval:** Q169 becomes unavailable when Q181 reaches Oth'varen's physical-death event. This includes already accepted Q169 quests whose conversation with him has not been completed: mark them expired and explain clearly why they cannot continue. Preserve completed quests and recorded evidence; do not resurrect Oth'varen or substitute a new contact. Exact explanatory wording remains WORKING, not approved final dialogue. The separate edge case of a completed Oth'varen conversation with unfinished journal custody is not resolved by this instruction; do not infer its expiry. This records authoring semantics, not implemented runtime behavior.
+
 ## 2026-11-04 — LOCKED: Q183 Kel'vari report recipients and separate Covenant report
 
 **Creator approval:** For Q183 *A World Unbound*, **Sel'ora** receives and safeguards the authenticated historical report of Nhal's coherent shattering and Oth'varen's physical death. **Aru'ven** participates in the Kel'vari response as a steward concerned for living communities; neither claims to speak for all five enclaves. The player then delivers a **separate** Covenant report to Mara and Corven. Both reports are required for quest completion; neither faction's acknowledgement substitutes for the other's permission or authority. The Shroud began dissipating at Q156, the Seven survive, the fate of Nhal's fragments is unresolved, and the Covenant–Dominion war continues. Exact dialogue is WORKING presentation, not a new canon revelation. Preserve Q183's identity and existing outcome; JSON/runtime reconciliation requires separate scope approval.
