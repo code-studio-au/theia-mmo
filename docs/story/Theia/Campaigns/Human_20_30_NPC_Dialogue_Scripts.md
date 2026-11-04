@@ -230,7 +230,15 @@
 
 **Departure / letter handoff:** “You have my seal. Present it with the engineering findings, and speak plainly about what remains uncertain.”
 
-**Q053 completion boundary:** Travel by established routes to Sylvaren and present both letter and engineering report to Caelith before completion. This handoff does not grant Q054's separate Aelari access permission; Caelith's receipt dialogue remains to be authored.
+**Q053 completion boundary:** Travel by established routes to Sylvaren and present both letter and engineering report to Caelith before completion. This handoff does not grant Q054's separate Aelari access permission.
+
+**Caelith, receipt (WORKING):** “The High King's seal is genuine, and Brynja's findings deserve examination. Neither gives you authority over our wards or records.”
+
+**Player:** “I'm asking you to review the evidence, not to surrender your archives.”
+
+**Caelith:** “Then I will register the report and the letter. If you seek access beyond this audience, we will discuss its limits separately.”
+
+**Completion evidence:** Both the sealed introduction and authenticated engineering report are presented to Caelith. Her receipt completes Q053; supervised ward access belongs to Q054 and is not silently granted here.
 
 **In progress:** “Finish the agreed investigation or service, then bring back what you can verify.”
 
