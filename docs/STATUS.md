@@ -1,3 +1,22 @@
+Repository alignment completed at user request, 4 November 2026:
+Approved story reconciliation [PR #52](https://github.com/code-studio-au/theia-mmo/pull/52)
+and clean-checkout CI repairs [PR #53](https://github.com/code-studio-au/theia-mmo/pull/53)
+are merged into `main`. Its tree matches the qualified story head exactly.
+The complete Linux/Windows matrix passed on
+[run 41801271067](https://github.com/code-studio-au/theia-mmo/actions/runs/41801271067):
+1,046 Rust tests on Linux and 1,044 on Windows, 46 service-dependent skips each;
+formatting, denied-warning Clippy and asset-tool suites pass on both.
+Q169's authoring cutoff binds to Oth'varen's actual death objective; runtime expiry
+and the unresolved custody/turn-in cases remain pending, not executable behavior.
+
+Unfinished MMO work is committed and pushed on `dev/quest-inventory-integration`,
+with current `main` merged back in. [PR #54](https://github.com/code-studio-au/theia-mmo/pull/54)
+remains a draft and is not merged. The aligned development branch passes all eight
+encrypted account tests, formatting and strict network/all-target Clippy locally.
+These checks do not qualify the unfinished destruction UI or native item-quest flow.
+Implementation remains paused; resume scope is [item quest work](QUEST_ITEM_OBJECTIVES.md).
+Earlier local-only/stop records below describe their historical checkpoints.
+
 Stopped safely at user request, 4 November 2026:
 Qualified retained inventory/quest owner work is preserved at
 `build/quest-item-owner-qualified-v1-20261104`: 1,271 workspace/all-target tests,

@@ -1,3 +1,9 @@
+Repository alignment, 4 November 2026: approved story authoring and CI repairs
+are merged into `main` through PRs #52/#53. Unfinished MMO development is preserved
+on `dev/quest-inventory-integration`, synchronized with main, in draft PR #54.
+Implementation remains paused; item-quest/native acceptance work is still pending.
+See [current status and validation](STATUS.md) before the historical checkpoints below.
+
 Stopped safely at user request, 4 November 2026:
 Qualified retained inventory/quest owner work is preserved at
 `build/quest-item-owner-qualified-v1-20261104`: 1,271 workspace/all-target tests,
