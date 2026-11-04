@@ -22,6 +22,9 @@ fn mode(
     source: [u8; 32],
 ) -> GameplayClient {
     GameplayClient {
+        avatar_life: None,
+        public_attacks: None,
+        journal: None,
         classic_source: Some(source),
         dodge: None,
         player_life: None,
@@ -159,6 +162,7 @@ async fn independent_facing_and_strafing_use_actual_driver_over_encrypted_impair
                     &raw,
                     Intent {
                         facing: Some(facing),
+                        sprint: seconds >= 0.8, // Switch gait during impaired movement.
                         axes,
                         ..Intent::default()
                     },

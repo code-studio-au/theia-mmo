@@ -4,6 +4,8 @@
 mod inventory;
 #[path = "admissions/progression.rs"]
 mod progression;
+#[path = "admissions/quest_items.rs"]
+mod quest_items;
 use ring::rand::{SecureRandom, SystemRandom};
 use std::{
     fmt,
@@ -184,9 +186,18 @@ impl GameAdmissions {
         gate: &mut Arc<Self>,
         profile: theia_persistence::QuestJournalCatalog,
     ) -> Result<()> {
-        Arc::get_mut(gate)
-            .ok_or("Journal configuration requires unshared gate")?
-            .progression
+        let gate = Arc::get_mut(gate).ok_or("Journal configuration requires unshared gate")?;
+        if let Some(items) = profile.inventory() {
+            let inventory = gate
+                .inventory
+                .as_mut()
+                .ok_or("Item journal requires inventory owner")?;
+            if inventory.profile_hash() != items.hash() {
+                return Err("Item journal/inventory profile mismatch".into());
+            }
+            inventory.set_journal(profile.clone())?;
+        }
+        gate.progression
             .as_mut()
             .ok_or("Journal requires progression owner")?
             .set_journal(profile)
@@ -584,6 +595,7 @@ impl AccountAdmissions for GameAdmissions {
                 entry.generation,
                 entry.binding,
                 self.world,
+                entry.inventory.as_ref().map(|i| i.port.state.clone()),
             ));
         }
         let position = entry.saved.as_ref().ok_or(Error::Unavailable)?.position;

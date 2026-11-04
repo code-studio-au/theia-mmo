@@ -142,6 +142,9 @@ impl Client {
                     shutdown,
                     world,
                     net::GameplayClient {
+                        avatar_life: None,
+                        public_attacks: None,
+                        journal: None,
                         classic_source: None,
                         dodge: None,
                         player_life: None,
@@ -270,9 +273,22 @@ fn synthetic_items(
 }
 fn synthetic_items_with_profile(
     count: u32,
+    released: watch::Receiver<bool>,
+    stop: watch::Receiver<bool>,
+    equipment: bool,
+) -> (
+    net::inventory::Port,
+    tokio::task::JoinHandle<()>,
+    Arc<std::sync::atomic::AtomicU64>,
+) {
+    synthetic_items_with_options(count, released, stop, equipment, false)
+}
+fn synthetic_items_with_options(
+    count: u32,
     mut released: watch::Receiver<bool>,
     mut stop: watch::Receiver<bool>,
     equipment: bool,
+    coalesced: bool,
 ) -> (
     net::inventory::Port,
     tokio::task::JoinHandle<()>,
@@ -331,6 +347,21 @@ fn synthetic_items_with_profile(
             let outcome = match command.command.propose(&bag, &catalog) {
                 Ok(next) => {
                     bag = next;
+                    if coalesced {
+                        let from = bag.slots().iter().position(Option::is_some).unwrap() as u8;
+                        bag = bag
+                            .propose(
+                                &catalog,
+                                theia_core::inventory::Command {
+                                    expected_revision: bag.revision(),
+                                    operation: theia_core::inventory::Operation::Destroy {
+                                        from,
+                                        amount: 1,
+                                    },
+                                },
+                            )
+                            .unwrap();
+                    }
                     theia_network::inventory_wire::Outcome::Applied
                 }
                 Err(theia_core::inventory::Error::StaleRevision) => {
@@ -359,6 +390,13 @@ fn synthetic_items_with_profile(
 }
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn encrypted_item_ports_keep_two_actors_separate_and_do_not_block_movement_while_pending() {
+    encrypted_item_ports(false).await;
+}
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn encrypted_coalesced_item_reply_preserves_later_removal_privacy_and_movement() {
+    encrypted_item_ports(true).await;
+}
+async fn encrypted_item_ports(coalesced: bool) {
     use theia_core::inventory::{Command, Operation};
     let mut world = World::with_procedural([8000., 8000.], 1.).unwrap();
     world.enable_prediction().unwrap();
@@ -367,7 +405,8 @@ async fn encrypted_item_ports_keep_two_actors_separate_and_do_not_block_movement
     let (stop, shutdown) = watch::channel(false);
     let (release_a, waiting) = watch::channel(false);
     let (_release_b, ready) = watch::channel(true);
-    let (items_a, task_a, received_a) = synthetic_items(13, waiting, shutdown.clone());
+    let (items_a, task_a, received_a) =
+        synthetic_items_with_options(13, waiting, shutdown.clone(), false, coalesced);
     let (items_b, task_b, _) = synthetic_items(7, ready, shutdown.clone());
     let policies: [Arc<Policy>; 2] = std::array::from_fn(|i| {
         let policy = Arc::new(Policy::default());
@@ -523,7 +562,10 @@ async fn encrypted_item_ports_keep_two_actors_separate_and_do_not_block_movement
     release_a.send_replace(true);
     let done = a
         .until(|s| {
-            s.inventory.as_ref().is_some_and(|i| i.bag.revision() == 1) && !s.inventory_pending
+            s.inventory
+                .as_ref()
+                .is_some_and(|i| i.bag.revision() == if coalesced { 2 } else { 1 })
+                && !s.inventory_pending
         })
         .await;
     assert_eq!(
@@ -531,7 +573,7 @@ async fn encrypted_item_ports_keep_two_actors_separate_and_do_not_block_movement
             .as_ref()
             .unwrap()
             .count(),
-        13
+        if coalesced { 12 } else { 13 }
     );
     assert!(done.inventory.as_ref().unwrap().bag.slots()[0].is_none());
     a.items

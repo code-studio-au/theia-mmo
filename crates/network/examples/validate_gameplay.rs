@@ -57,6 +57,10 @@ struct Manifest {
     creature_credit: Option<String>,
     #[serde(default, deserialize_with = "optional_profile")]
     creature_reset: Option<String>,
+    #[serde(default, deserialize_with = "optional_profile")]
+    creature_threat: Option<String>,
+    #[serde(default, deserialize_with = "optional_profile")]
+    quest_areas: Option<String>,
 }
 fn optional_profile<'de, D: serde::Deserializer<'de>>(
     d: D,
@@ -91,7 +95,15 @@ impl Manifest {
                 &self.progression,
                 progression::MAX_PROFILE_BYTES,
             ),
-            ("quest", &self.quest, quests::MAX_PROFILE_BYTES),
+            (
+                "quest",
+                &self.quest,
+                if self.schema >= 12 {
+                    quests::catalog::MAX_CATALOG_BYTES
+                } else {
+                    quests::MAX_PROFILE_BYTES
+                },
+            ),
         ];
         if let Some(path) = &self.quest_turn_in_xp {
             roles.push((
@@ -168,6 +180,16 @@ impl Manifest {
         if let Some(path) = &self.creature_reset {
             roles.push(("creature_reset", path, combat::reset::MAX_PROFILE_BYTES));
         }
+        if let Some(path) = &self.quest_areas {
+            roles.push(("quest_areas", path, quests::areas::MAX_CATALOG_BYTES));
+        }
+        if let Some(path) = &self.creature_threat {
+            roles.push((
+                "creature_threat",
+                path,
+                theia_core::threat::MAX_PROFILE_BYTES,
+            ));
+        }
         roles
     }
 }
@@ -223,7 +245,7 @@ fn relative(value: &str) -> bool {
             .all(|part| !part.is_empty() && !matches!(part, "." | ".."))
         && !Path::new(value).is_absolute()
 }
-fn check(bytes: &BTreeMap<&str, Vec<u8>>) -> Result<()> {
+fn check(bytes: &BTreeMap<&str, Vec<u8>>, journal: bool) -> Result<()> {
     let items =
         inventory::Catalog::from_json(&bytes["items"]).map_err(|_| "Invalid items profile")?;
     let abilities = theia_core::abilities::Catalog::from_json(&bytes["abilities"])?;
@@ -264,13 +286,81 @@ fn check(bytes: &BTreeMap<&str, Vec<u8>>) -> Result<()> {
     {
         return Err("Progression references an undeclared creature".into());
     }
-    let quest = quests::Profile::from_json(&bytes["quest"]).map_err(|_| "Invalid quest profile")?;
-    if quest.creature() != creature.id() {
-        return Err("Quest references an undeclared creature".into());
-    }
-    if let Some(recipe) = bytes.get("quest_turn_in_xp") {
-        quests::turn_in_xp::Recipe::from_json(recipe, &quest, &progression)
-            .map_err(|_| "Invalid completion XP/quest/progression configuration")?;
+    if journal {
+        let catalog = quests::catalog::Catalog::from_json(&bytes["quest"])
+            .map_err(|_| "Invalid expanded quest catalogue")?;
+        let areas = bytes
+            .get("quest_areas")
+            .map(|b| quests::areas::Catalog::from_json(b))
+            .transpose()?;
+        if let Some(areas) = &areas {
+            areas.validate_quests(&catalog)?;
+            let aliases = |id: &ContentId| {
+                id == guide.npc()
+                    || id == creature.id()
+                    || guide
+                        .nodes()
+                        .any(|n| n.choices().iter().any(|c| c.id() == id))
+            };
+            if aliases(areas.id()) || areas.areas().any(|a| aliases(a.id())) {
+                return Err("Area definitions alias declared World content".into());
+            }
+            if areas.areas().any(|a| {
+                [a.min(), a.max()].iter().any(|p| {
+                    let p = p.metres();
+                    [p[0], p[2]]
+                        .iter()
+                        .any(|v| !(0. ..=theia_network::procedural::SIDE).contains(v))
+                })
+            }) {
+                return Err("Area outside supported continental bounds".into());
+            }
+        }
+        for quest in catalog.quests() {
+            if quest.giver() != guide.npc() || quest.turn_in() != guide.npc() {
+                return Err("Journal contact differs from declared guide".into());
+            }
+            for objective in quest.stages().flat_map(|s| s.objectives()) {
+                match objective.event() {
+                    quests::catalog::EventKey::PossessItem(_) => {
+                        return Err(
+                            "Possession objectives require explicit inventory/journal admission"
+                                .into(),
+                        );
+                    }
+                    quests::catalog::EventKey::Kill(id) if id != creature.id() => {
+                        return Err("Journal references an undeclared creature".into());
+                    }
+                    quests::catalog::EventKey::NpcInteraction { npc, interaction }
+                        if npc != guide.npc()
+                            || !guide
+                                .nodes()
+                                .any(|n| n.choices().iter().any(|c| c.id() == interaction)) =>
+                    {
+                        return Err("Journal references an undeclared semantic interaction".into());
+                    }
+                    quests::catalog::EventKey::ReachArea(id)
+                        if areas.as_ref().is_none_or(|a| a.area(id).is_none()) =>
+                    {
+                        return Err(
+                            "Reach-area objectives require an explicitly installed area profile"
+                                .into(),
+                        );
+                    }
+                    _ => {}
+                }
+            }
+        }
+    } else {
+        let quest =
+            quests::Profile::from_json(&bytes["quest"]).map_err(|_| "Invalid quest profile")?;
+        if quest.creature() != creature.id() {
+            return Err("Quest references an undeclared creature".into());
+        }
+        if let Some(recipe) = bytes.get("quest_turn_in_xp") {
+            quests::turn_in_xp::Recipe::from_json(recipe, &quest, &progression)
+                .map_err(|_| "Invalid completion XP/quest/progression configuration")?;
+        }
     }
     if let (Some(policy), Some(respawn)) = (
         bytes.get("creature_retaliation"),
@@ -354,6 +444,9 @@ fn check(bytes: &BTreeMap<&str, Vec<u8>>) -> Result<()> {
             return Err("Creature reset requires the matching pursuit creature".into());
         }
     }
+    if let Some(policy) = bytes.get("creature_threat") {
+        theia_core::threat::Profile::from_json(policy)?;
+    }
     if let Some(policy) = bytes.get("dodge") {
         theia_network::dodging::Profile::from_json(policy).map_err(|_| "Invalid dodge profile")?;
     }
@@ -364,10 +457,10 @@ fn validate(path: &Path) -> Result<Report> {
     let raw = bounded(&path, MAX_MANIFEST_BYTES)?;
     let manifest: Manifest =
         serde_json::from_slice(&raw).map_err(|_| "Invalid gameplay manifest")?;
-    if !matches!(manifest.schema, 1..=11)
+    if !matches!(manifest.schema, 1..=16)
         || manifest.revision == 0
         || ContentId::new(&manifest.id).is_none()
-        || (manifest.schema >= 2) != manifest.quest_turn_in_xp.is_some()
+        || (matches!(manifest.schema, 2..=11)) != manifest.quest_turn_in_xp.is_some()
         || (manifest.schema >= 3) != manifest.creature_retaliation.is_some()
         || (manifest.schema >= 3) != manifest.player_respawn.is_some()
         || (manifest.schema == 4) != manifest.dodge.is_some()
@@ -379,7 +472,9 @@ fn validate(path: &Path) -> Result<Report> {
         || (manifest.schema >= 8) != manifest.ability_damage.is_some()
         || (manifest.schema >= 9) != manifest.combat_membership.is_some()
         || (manifest.schema >= 10) != manifest.creature_credit.is_some()
-        || (manifest.schema == 11) != manifest.creature_reset.is_some()
+        || (manifest.schema >= 11) != manifest.creature_reset.is_some()
+        || (manifest.schema >= 13) != manifest.creature_threat.is_some()
+        || (manifest.schema == 16) != manifest.quest_areas.is_some()
     {
         return Err("Invalid gameplay manifest identity/version".into());
     }
@@ -410,7 +505,7 @@ fn validate(path: &Path) -> Result<Report> {
         });
         bytes.insert(kind, data);
     }
-    check(&bytes)?;
+    check(&bytes, manifest.schema >= 12)?;
     profiles.sort_by(|a, b| a.kind.cmp(&b.kind));
     let manifest_hash = sha256(&raw);
     let mut identity = b"theia-gameplay-validation-bundle-v1\0".to_vec();
@@ -1526,5 +1621,332 @@ mod tests {
             m.as_object_mut().unwrap().remove("aggro");
         });
         assert!(validate(&f.manifest()).is_err());
+    }
+    fn journal_fixture() -> Fixture {
+        let f = Fixture::new();
+        let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
+        let data = fs::read(source.join("development-gameplay-classic-journal.json")).unwrap();
+        let manifest: Manifest = serde_json::from_slice(&data).unwrap();
+        for (_, path, _) in manifest.roles() {
+            fs::create_dir_all(f.0.join(path).parent().unwrap()).unwrap();
+            fs::copy(source.join(path), f.0.join(path)).unwrap();
+        }
+        fs::write(f.manifest(), data).unwrap();
+        f
+    }
+    #[test]
+    fn journal_manifest_binds_canonical_catalogue_and_semantic_guide_without_legacy_recipe() {
+        let f = journal_fixture();
+        let a = validate(&f.manifest()).unwrap();
+        assert_eq!((a.manifest_schema, a.profiles.len()), (12, 21));
+        assert!(!a.profiles.iter().any(|p| p.kind == "quest_turn_in_xp"));
+        assert_eq!(a, validate(&f.manifest()).unwrap());
+        let mut bytes = fs::read(f.path("quest")).unwrap();
+        bytes.push(b' ');
+        fs::write(f.path("quest"), bytes).unwrap();
+        assert_ne!(
+            a.validation_bundle_sha256,
+            validate(&f.manifest()).unwrap().validation_bundle_sha256
+        );
+    }
+    #[test]
+    fn journal_manifest_refuses_uninstalled_references_and_legacy_role_mixing() {
+        for field in ["giver", "turn_in"] {
+            let f = journal_fixture();
+            f.edit("quest", |q| {
+                q["quests"][0][field] = json!("theia.dev.absent-guide")
+            });
+            assert!(validate(&f.manifest()).is_err());
+        }
+        let f = journal_fixture();
+        f.edit("quest", |q| {
+            q["quests"][0]["stages"][0]["objectives"][0]["interaction"] =
+                json!("theia.dev.absent-choice")
+        });
+        assert!(validate(&f.manifest()).is_err());
+        let f = journal_fixture();
+        f.edit("quest", |q| {
+            q["quests"][1]["stages"][0]["objectives"][0]["creature"] =
+                json!("theia.dev.absent-creature")
+        });
+        assert!(validate(&f.manifest()).is_err());
+        let f = journal_fixture();
+        f.edit("manifest", |m| {
+            m["quest_turn_in_xp"] = json!("gameplay/development-quest-turn-in-xp.json")
+        });
+        assert!(validate(&f.manifest()).is_err());
+        let f = journal_fixture();
+        fs::write(
+            f.path("quest"),
+            include_bytes!("../../../content/gameplay/development-quest.json"),
+        )
+        .unwrap();
+        assert!(validate(&f.manifest()).is_err());
+    }
+    #[test]
+    fn area_objective_is_not_silently_admitted_without_area_role() {
+        let f = journal_fixture();
+        f.edit("quest", |q| {
+            q["schema"] = json!(2);
+            q["quests"][0]["stages"][0]["objectives"][0] = json!({
+                "kind":"reach_area","id":"theia.dev.quest-introduction.objective.road",
+                "label":"Reach","area":"theia.dev.area.overlook"});
+        });
+        let error = validate(&f.manifest()).unwrap_err().to_string();
+        assert!(
+            error.contains("explicitly installed area profile"),
+            "{error}"
+        );
+    }
+    #[test]
+    fn possession_objectives_fail_closed_without_inventory_journal_admission() {
+        let f = journal_fixture();
+        f.edit("quest",|q|{
+            q["schema"]=json!(3);
+            q["quests"][0]["stages"][1]["objectives"][0]=json!({
+                "kind":"possess_item","id":"theia.dev.quest-introduction.objective.report",
+                "label":"Bring","item":"theia.dev.training-stone","required":3,"consume_on_turn_in":true});
+        });
+        let error = validate(&f.manifest()).unwrap_err().to_string();
+        assert!(
+            error.contains("explicit inventory/journal admission"),
+            "{error}"
+        );
+    }
+    fn areas_fixture() -> Fixture {
+        let f = journal_fixture();
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
+        let bytes = fs::read(root.join("development-gameplay-classic-quest-areas.json")).unwrap();
+        let manifest: Manifest = serde_json::from_slice(&bytes).unwrap();
+        for (_, path, _) in manifest.roles() {
+            fs::create_dir_all(f.0.join(path).parent().unwrap()).unwrap();
+            fs::copy(root.join(path), f.0.join(path)).unwrap();
+        }
+        fs::write(f.manifest(), bytes).unwrap();
+        f
+    }
+    #[test]
+    fn area_manifest_binds_exact_geometry_and_preserves_original_quest_definitions() {
+        let f = areas_fixture();
+        let report = validate(&f.manifest()).unwrap();
+        assert_eq!((report.manifest_schema, report.profiles.len()), (16, 23));
+        let original = quests::catalog::Catalog::from_json(include_bytes!(
+            "../../../content/quests/development-journal.json"
+        ))
+        .unwrap();
+        let expanded =
+            quests::catalog::Catalog::from_json(&fs::read(f.path("quest")).unwrap()).unwrap();
+        assert_eq!(expanded.schema(), 2);
+        assert_eq!(expanded.quests().count(), 3);
+        for q in original.quests() {
+            assert_eq!(expanded.quest(q.id()), Some(q));
+        }
+        let mut bytes = fs::read(f.path("quest_areas")).unwrap();
+        bytes.push(b' ');
+        fs::write(f.path("quest_areas"), bytes).unwrap();
+        assert_ne!(
+            report.validation_bundle_sha256,
+            validate(&f.manifest()).unwrap().validation_bundle_sha256
+        );
+    }
+    #[test]
+    fn area_manifest_requires_explicit_exclusive_schema_and_role() {
+        for schema in [1, 12, 15, 17] {
+            let f = areas_fixture();
+            f.edit("manifest", |m| m["schema"] = json!(schema));
+            assert!(validate(&f.manifest()).is_err());
+        }
+        for value in [Value::Null, json!(true), json!("../outside.json")] {
+            let f = areas_fixture();
+            f.edit("manifest", |m| m["quest_areas"] = value);
+            assert!(validate(&f.manifest()).is_err());
+        }
+        let f = areas_fixture();
+        f.edit("manifest", |m| {
+            m.as_object_mut().unwrap().remove("quest_areas");
+        });
+        assert!(validate(&f.manifest()).is_err());
+    }
+    #[test]
+    fn area_manifest_refuses_unresolved_alias_outside_world_and_oversized_geometry() {
+        for value in [json!("theia.dev.missing"), json!("theia.dev.guide")] {
+            let f = areas_fixture();
+            f.edit("quest", |q| {
+                q["quests"][2]["stages"][0]["objectives"][0]["area"] = value
+            });
+            assert!(validate(&f.manifest()).is_err());
+        }
+        let f = areas_fixture();
+        f.edit("quest_areas", |a| {
+            a["id"] = json!("theia.dev.interaction.road")
+        });
+        assert!(validate(&f.manifest()).is_err());
+        let f = areas_fixture();
+        f.edit("quest_areas", |a| {
+            a["areas"][0]["min"][0] = json!(-1.);
+            a["areas"][0]["max"][0] = json!(1.);
+        });
+        assert!(validate(&f.manifest()).is_err());
+        let f = areas_fixture();
+        fs::write(
+            f.path("quest_areas"),
+            vec![b' '; quests::areas::MAX_CATALOG_BYTES + 1],
+        )
+        .unwrap();
+        assert!(validate(&f.manifest()).is_err());
+    }
+    fn threat_fixture() -> Fixture {
+        let f = journal_fixture();
+        let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
+        let data = fs::read(source.join("development-gameplay-classic-threat.json")).unwrap();
+        let manifest: Manifest = serde_json::from_slice(&data).unwrap();
+        for (_, path, _) in manifest.roles() {
+            fs::create_dir_all(f.0.join(path).parent().unwrap()).unwrap();
+            fs::copy(source.join(path), f.0.join(path)).unwrap();
+        }
+        fs::write(f.manifest(), data).unwrap();
+        f
+    }
+    #[test]
+    fn threat_manifest_seals_exact_policy_and_canonical_journal_in_distinct_schema() {
+        let f = threat_fixture();
+        let before = validate(&f.manifest()).unwrap();
+        assert_eq!((before.manifest_schema, before.profiles.len()), (13, 22));
+        assert!(!before.profiles.iter().any(|p| p.kind == "quest_turn_in_xp"));
+        let path = f.path("creature_threat");
+        let mut raw = fs::read(&path).unwrap();
+        raw.push(b' ');
+        fs::write(path, raw).unwrap();
+        assert_ne!(
+            before.validation_bundle_sha256,
+            validate(&f.manifest()).unwrap().validation_bundle_sha256
+        );
+    }
+    #[test]
+    fn public_attack_bundle_is_distinct_without_changing_existing_gameplay_bytes() {
+        let f = threat_fixture();
+        let before = validate(&f.manifest()).unwrap();
+        f.edit("manifest", |m| {
+            m["schema"] = json!(14);
+            m["id"] = json!("theia.dev.gameplay-classic-public-attacks");
+        });
+        let after = validate(&f.manifest()).unwrap();
+        assert_eq!((after.manifest_schema, after.profiles.len()), (14, 22));
+        assert_ne!(
+            before.validation_bundle_sha256,
+            after.validation_bundle_sha256
+        );
+        assert_eq!(
+            serde_json::to_value(before.profiles).unwrap(),
+            serde_json::to_value(after.profiles).unwrap()
+        );
+        f.edit("manifest", |m| m["schema"] = json!(16));
+        assert!(validate(&f.manifest()).is_err());
+    }
+    #[test]
+    fn avatar_bundle_seals_separate_version_without_changing_existing_content() {
+        let f = threat_fixture();
+        f.edit("manifest", |m| m["schema"] = json!(14));
+        let before = validate(&f.manifest()).unwrap();
+        f.edit("manifest", |m| {
+            m["schema"] = json!(15);
+            m["id"] = json!("theia.dev.gameplay-classic-public-life");
+        });
+        let after = validate(&f.manifest()).unwrap();
+        assert_eq!((after.manifest_schema, after.profiles.len()), (15, 22));
+        assert_ne!(
+            before.validation_bundle_sha256,
+            after.validation_bundle_sha256
+        );
+        assert_eq!(
+            serde_json::to_value(before.profiles).unwrap(),
+            serde_json::to_value(after.profiles).unwrap()
+        );
+    }
+    #[test]
+    fn threat_manifest_requires_exclusive_complete_distinct_context() {
+        for field in [
+            "creature_threat",
+            "creature_reset",
+            "creature_credit",
+            "combat_membership",
+            "ability_damage",
+            "player_respawn",
+        ] {
+            for missing in [false, true] {
+                let f = threat_fixture();
+                f.edit("manifest", |m| {
+                    if missing {
+                        m.as_object_mut().unwrap().remove(field);
+                    } else {
+                        m[field] = Value::Null;
+                    }
+                });
+                assert!(validate(&f.manifest()).is_err());
+            }
+        }
+        let f = threat_fixture();
+        f.edit("manifest", |m| m["schema"] = json!(12));
+        assert!(validate(&f.manifest()).is_err());
+        let f = journal_fixture();
+        f.edit("manifest", |m| m["schema"] = json!(13));
+        assert!(validate(&f.manifest()).is_err());
+        let f = threat_fixture();
+        f.edit("manifest", |m| {
+            m["creature_threat"] = m["creature_credit"].clone()
+        });
+        assert!(validate(&f.manifest()).is_err());
+        let f = threat_fixture();
+        f.edit("manifest", |m| {
+            m["quest_turn_in_xp"] = json!("gameplay/development-quest-turn-in-xp.json")
+        });
+        assert!(validate(&f.manifest()).is_err());
+    }
+    #[test]
+    fn threat_manifest_refuses_unsupported_rules_and_bounds_before_launch() {
+        for (field, value) in [
+            ("schema", json!(2)),
+            ("ruleset", json!("classic_verified")),
+            ("maximum_participants", json!(33)),
+            ("melee_transfer_basis_points", json!(11001)),
+            ("ranged_transfer_basis_points", json!(13001)),
+            ("unknown", json!(true)),
+        ] {
+            let f = threat_fixture();
+            f.edit("creature_threat", |m| m[field] = value);
+            assert!(validate(&f.manifest()).is_err());
+        }
+        let f = threat_fixture();
+        fs::write(
+            f.path("creature_threat"),
+            vec![b' '; theia_core::threat::MAX_PROFILE_BYTES + 1],
+        )
+        .unwrap();
+        assert!(validate(&f.manifest()).is_err());
+    }
+    #[test]
+    fn compiled_pack_subset_passes_normal_journal_admission_but_unknown_world_contacts_do_not() {
+        use theia_core::quests::catalog::registry::Registry;
+        for installed in [true, false] {
+            let f = journal_fixture();
+            let raw: Value = serde_json::from_slice(&fs::read(f.path("quest")).unwrap()).unwrap();
+            let sources:Vec<_>=(0..2).map(|n| {
+                let mut quest=raw["quests"][n].clone();
+                if !installed && n==1 {quest["giver"]=json!("theia.test.uninstalled-guide");}
+                serde_json::to_vec(&json!({"schema":1,"id":format!("theia.test.pack.{n}"),"revision":1,"quests":[quest]})).unwrap()
+            }).collect();
+            let registry =
+                Registry::from_catalogues(&sources.iter().map(Vec::as_slice).collect::<Vec<_>>())
+                    .unwrap();
+            let compiled = registry
+                .compile_catalogue(
+                    &ContentId::new("theia.test.compiled").unwrap(),
+                    1,
+                    &[ContentId::new("theia.dev.quest-follow-up").unwrap()],
+                )
+                .unwrap();
+            fs::write(f.path("quest"), compiled.as_bytes()).unwrap();
+            assert_eq!(validate(&f.manifest()).is_ok(), installed);
+        }
     }
 }

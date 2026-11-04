@@ -1,0 +1,131 @@
+{
+  "schema": 2,
+  "id": "theia.dev.quest-journal-areas",
+  "revision": 1,
+  "quests": [
+    {
+      "id": "theia.dev.quest-introduction",
+      "version": 1,
+      "title": "Meet the guide",
+      "description": "Development fixture for versioned quest catalogue validation.",
+      "prerequisites": [],
+      "giver": "theia.dev.guide",
+      "turn_in": "theia.dev.guide",
+      "repeat_policy": "once",
+      "credit_scope": "character",
+      "experience": 25,
+      "start_stage": "theia.dev.quest-introduction.meet",
+      "stages": [
+        {
+          "id": "theia.dev.quest-introduction.meet",
+          "completion": {
+            "kind": "all"
+          },
+          "next": "theia.dev.quest-introduction.report",
+          "objectives": [
+            {
+              "kind": "npc_interaction",
+              "id": "theia.dev.quest-introduction.objective.road",
+              "label": "Ask the guide about road",
+              "npc": "theia.dev.guide",
+              "interaction": "theia.dev.interaction.road"
+            },
+            {
+              "kind": "npc_interaction",
+              "id": "theia.dev.quest-introduction.objective.supplies",
+              "label": "Ask the guide about supplies",
+              "npc": "theia.dev.guide",
+              "interaction": "theia.dev.interaction.supplies"
+            }
+          ]
+        },
+        {
+          "id": "theia.dev.quest-introduction.report",
+          "completion": {
+            "kind": "all"
+          },
+          "next": null,
+          "objectives": [
+            {
+              "kind": "npc_interaction",
+              "id": "theia.dev.quest-introduction.objective.report",
+              "label": "Ask the guide about report",
+              "npc": "theia.dev.guide",
+              "interaction": "theia.dev.interaction.report"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "theia.dev.quest-follow-up",
+      "version": 1,
+      "title": "Practice and report",
+      "description": "Development fixture for versioned quest catalogue validation.",
+      "prerequisites": [
+        "theia.dev.quest-introduction"
+      ],
+      "giver": "theia.dev.guide",
+      "turn_in": "theia.dev.guide",
+      "repeat_policy": "once",
+      "credit_scope": "character",
+      "experience": 25,
+      "start_stage": "theia.dev.quest-follow-up.practice",
+      "stages": [
+        {
+          "id": "theia.dev.quest-follow-up.practice",
+          "completion": {
+            "kind": "all"
+          },
+          "next": null,
+          "objectives": [
+            {
+              "kind": "kill",
+              "id": "theia.dev.quest-follow-up.objective.wolves",
+              "label": "Defeat three training creatures",
+              "creature": "theia.dev.training-creature",
+              "required": 3
+            },
+            {
+              "kind": "npc_interaction",
+              "id": "theia.dev.quest-follow-up.objective.training",
+              "label": "Ask the guide about training",
+              "npc": "theia.dev.guide",
+              "interaction": "theia.dev.interaction.training"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "theia.dev.quest-overlook",
+      "version": 1,
+      "title": "Survey the western overlook",
+      "description": "Development fixture: reach the overlook west of the guide, then return.",
+      "prerequisites": [],
+      "giver": "theia.dev.guide",
+      "turn_in": "theia.dev.guide",
+      "repeat_policy": "once",
+      "credit_scope": "character",
+      "experience": 25,
+      "start_stage": "theia.dev.quest-overlook.survey",
+      "stages": [
+        {
+          "id": "theia.dev.quest-overlook.survey",
+          "completion": {
+            "kind": "all"
+          },
+          "next": null,
+          "objectives": [
+            {
+              "kind": "reach_area",
+              "id": "theia.dev.quest-overlook.objective.reach",
+              "label": "Reach the western overlook, about 140 m west of the guide",
+              "area": "theia.dev.area.western-overlook"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -17,6 +17,30 @@ impl Store {
         profile: &VendorCatalog,
         purchase: &Purchase,
     ) -> Result<InventoryApplied> {
+        self.purchase_vendor_inner(binding, world, profile, purchase, None)
+            .await
+    }
+    /// Commit the item mutation and all resulting possession projections together.
+    pub async fn purchase_vendor_with_quest_journal(
+        &mut self,
+        binding: Binding,
+        world: [u8; 32],
+        profile: &VendorCatalog,
+        purchase: &Purchase,
+        journal: &crate::QuestJournalCatalog,
+    ) -> Result<InventoryApplied> {
+        self.purchase_vendor_inner(binding, world, profile, purchase, Some(journal))
+            .await
+    }
+    #[allow(clippy::too_many_arguments)]
+    async fn purchase_vendor_inner(
+        &mut self,
+        binding: Binding,
+        world: [u8; 32],
+        profile: &VendorCatalog,
+        purchase: &Purchase,
+        journal: Option<&crate::QuestJournalCatalog>,
+    ) -> Result<InventoryApplied> {
         if purchase.expected_revision > MAX_REVISION {
             return Err(Error::InventoryStale);
         }
@@ -35,9 +59,21 @@ impl Store {
             if receipt.as_deref() != Some(hash.as_slice()) {
                 return Err(Error::InventoryConflict);
             }
+            let journal = super::quest_journal::reconcile_inventory(
+                &transaction,
+                self.realm,
+                binding,
+                world,
+                journal,
+                profile.items(),
+                &bag,
+                true,
+            )
+            .await?;
             bounded(transaction.commit()).await?;
             return Ok(InventoryApplied {
                 bag,
+                journal,
                 replayed: true,
             });
         }
@@ -53,9 +89,21 @@ impl Store {
         if updated != 1 {
             return Err(Error::InventoryData);
         }
+        let journal = super::quest_journal::reconcile_inventory(
+            &transaction,
+            self.realm,
+            binding,
+            world,
+            journal,
+            profile.items(),
+            &next,
+            false,
+        )
+        .await?;
         bounded(transaction.commit()).await?;
         Ok(InventoryApplied {
             bag: next,
+            journal,
             replayed: false,
         })
     }

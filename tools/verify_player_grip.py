@@ -89,8 +89,55 @@ def verify_dodge(asset, folder):
     return result
 
 
+def verify_directional(asset, folder):
+    document, binary = read(asset)
+    curves = {a['name']: tracks(document, binary, a) for a in document['animations']}
+    closed = poses(document, curves['SwordIdle'], 0.)
+    required = {'Walk', 'Run', 'Jump'} | {
+        gait+direction for gait in ['Walk', 'Run']
+        for direction in ['Back', 'Left', 'Right', 'ForwardLeft', 'ForwardRight', 'BackLeft', 'BackRight']}
+    reports = {}
+    for peer, local in [('owner', True), ('observer', False)]:
+        trace = json.loads((folder/peer/'input-os.json').read_bytes())
+        grip = trace['grip']
+        assert grip['available'] and len(grip['samples']) <= 36
+        results = {}
+        for observation in grip['samples']:
+            if observation['local'] != local:
+                continue
+            name = observation['clip']
+            base = poses(document, curves[name], observation['time'])
+            digit_error = body_error = 0.
+            different = 0
+            assert DIGITS <= observation['bones'].keys()
+            assert {'Hand_R', 'Prop_R', 'Hips', 'UpperLeg_R', 'UpperLeg_L'} <= observation['bones'].keys()
+            for bone, actual in observation['bones'].items():
+                expected = closed[bone] if bone in DIGITS else base[bone]
+                error = float(np.max(abs(local_matrix(actual)-local_matrix(expected))))
+                if bone in DIGITS:
+                    digit_error = max(digit_error, error)
+                    different += int(np.max(abs(local_matrix(closed[bone])-local_matrix(base[bone]))) > .01)
+                else:
+                    body_error = max(body_error, error)
+            assert digit_error < .002, (peer, name, 'digits', digit_error)
+            assert body_error < .002, (peer, name, 'body/wrist/socket', body_error)
+            results[name] = dict(digit_local_matrix_error=digit_error,
+                                 body_wrist_socket_local_matrix_error=body_error,
+                                 digits_changed_from_base=different, bones=len(observation['bones']),
+                                 source_time=observation['time'])
+        assert required <= results.keys(), (peer, required-results.keys())
+        assert max(r['digits_changed_from_base'] for r in results.values()) >= 3
+        reports[peer] = results
+    result = dict(passed=True, asset_sha256=hashlib.sha256(asset.read_bytes()).hexdigest(), peers=reports,
+                  scope='Actual native local/remote eight-way walk/run plus jump: closed authored fingers and original body/wrist/socket curves')
+    (folder/'grip-directional-verification.json').write_text(json.dumps(result, indent=2)+'\n')
+    return result
+
+
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('asset',type=Path);parser.add_argument('folder',type=Path)
-    parser.add_argument('--dodge-os',action='store_true')
-    args=parser.parse_args();print(json.dumps((verify_dodge if args.dodge_os else verify)(args.asset,args.folder),indent=2))
+    mode=parser.add_mutually_exclusive_group()
+    mode.add_argument('--dodge-os',action='store_true')
+    mode.add_argument('--directional-os',action='store_true')
+    args=parser.parse_args();print(json.dumps((verify_directional if args.directional_os else verify_dodge if args.dodge_os else verify)(args.asset,args.folder),indent=2))

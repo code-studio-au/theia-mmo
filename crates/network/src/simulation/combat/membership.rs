@@ -200,8 +200,10 @@ impl Authority {
                         .forget(world.tick, owner, runtime.npc)
                         .map_err(|e| format!("Membership retirement refused: {e:?}"))?;
                 }
-                let active =
-                    alive && matches!(mode, Mode::Chase | Mode::Attack) && target == Some(owner);
+                let active = alive
+                    && matches!(mode, Mode::Chase | Mode::Attack)
+                    && (target == Some(owner)
+                        || self.threat.as_ref().is_some_and(|t| t.contains(owner)));
                 state
                     .encounter(world.tick, owner, npc, active)
                     .map_err(|e| format!("Membership encounter refused: {e:?}"))?;

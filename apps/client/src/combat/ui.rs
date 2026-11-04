@@ -139,13 +139,21 @@ fn text(value: &str, size: f32) -> impl Bundle {
         TextColor(Color::WHITE),
     )
 }
-fn setup(mut commands: Commands, config: Res<Config>) {
+fn setup(
+    mut commands: Commands,
+    config: Res<Config>,
+    graybox: Option<Res<crate::graybox::Graybox>>,
+) {
     if config.1.is_some() {
         commands
             .spawn((
                 Node {
                     position_type: PositionType::Absolute,
-                    right: px(12),
+                    right: px(if graybox.is_some() {
+                        crate::minimap::VITALS_RIGHT
+                    } else {
+                        12.
+                    }),
                     top: px(12),
                     width: px(300),
                     padding: UiRect::all(px(10)),

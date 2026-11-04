@@ -39,6 +39,7 @@ pub(super) struct ResolvedHit {
     pub fatal: bool,
 }
 pub(super) struct Planned {
+    threat: Option<super::threat::Planned>,
     ledger: Ledger,
     kill: Option<KillCredit>,
     sequence: u64,
@@ -157,6 +158,7 @@ impl World {
         }
         if let Some(mut combat) = self.combat.take() {
             combat.sync_credit(self);
+            combat.retire_threat_encounter();
             self.combat = Some(combat);
         }
     }
@@ -234,7 +236,9 @@ impl Authority {
         } else {
             None
         };
+        let threat = self.prepare_threat(source, health_lost)?;
         Ok(Some(Planned {
+            threat,
             ledger,
             kill,
             sequence: sequence.get(),
@@ -262,6 +266,7 @@ impl Authority {
             runtime.last_kill = plan.kill;
             runtime.fatal = fatal;
             runtime.sequence = plan.sequence;
+            self.commit_threat(plan.threat);
         }
     }
     fn sync_credit(&mut self, world: &World) {

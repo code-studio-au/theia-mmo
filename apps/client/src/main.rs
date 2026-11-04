@@ -15,6 +15,7 @@ mod floating_origin;
 mod graybox;
 mod inventory;
 mod melee_qualification;
+mod minimap;
 mod movement;
 mod movement_metrics;
 mod network;
@@ -24,6 +25,7 @@ mod progression;
 mod projectile_qualification;
 mod projectile_visual;
 mod pursuit_qualification;
+mod quest_journal;
 mod quest_lifecycle;
 mod quest_marker;
 mod quests;
@@ -300,6 +302,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         false
     };
+    let journal_mode = if let Some(i) = args.iter().position(|a| a == "--quest-journal") {
+        args.remove(i);
+        true
+    } else {
+        false
+    };
+    if journal_mode && explicit_quest {
+        return Err("Choose expanded journal or legacy quest mode".into());
+    }
     let quest_turn_in_xp = if let Some(i) = args.iter().position(|a| a == "--quest-turn-in-xp") {
         use std::io::Read;
         if !explicit_quest {
@@ -317,7 +328,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         None
     };
-    let (quest_profile, lifecycle_profile) =
+    let quest_area_bytes = if let Some(i) = args.iter().position(|a| a == "--quest-areas") {
+        use std::io::Read;
+        args.remove(i);
+        if i >= args.len() || !journal_mode || !args.iter().any(|a| a == "--quest-catalog") {
+            return Err("Quest areas require expanded journal mode and a catalogue".into());
+        }
+        let mut bytes = Vec::new();
+        std::fs::File::open(args.remove(i))?
+            .take(theia_core::quests::areas::MAX_CATALOG_BYTES as u64 + 1)
+            .read_to_end(&mut bytes)?;
+        Some(bytes)
+    } else {
+        None
+    };
+    let (quest_profile, lifecycle_profile, journal_profile) =
         if let Some(i) = args.iter().position(|a| a == "--quest-catalog") {
             use std::io::Read;
             args.remove(i);
@@ -326,12 +351,36 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             let xp = progression_profile
                 .as_ref()
-                .ok_or("Objectives require progression")?;
+                .ok_or("Quests require progression")?;
             let mut bytes = Vec::new();
+            let budget = if journal_mode {
+                theia_core::quests::catalog::MAX_CATALOG_BYTES
+            } else {
+                theia_core::quests::MAX_PROFILE_BYTES
+            };
             std::fs::File::open(args.remove(i))?
-                .take(theia_core::quests::MAX_PROFILE_BYTES as u64 + 1)
+                .take(budget as u64 + 1)
                 .read_to_end(&mut bytes)?;
-            let profiles = if explicit_quest {
+            let profiles = if journal_mode {
+                if dialogue_profile.is_none() {
+                    return Err("Journal requires guide dialogue".into());
+                }
+                (
+                    None,
+                    None,
+                    Some(std::sync::Arc::new(
+                        if let Some(areas) = &quest_area_bytes {
+                            theia_network::quest_journal::Profile::from_json_with_areas(
+                                &bytes, areas, xp,
+                            )
+                            .map_err(|e| e.to_string())?
+                        } else {
+                            theia_network::quest_journal::Profile::from_json(&bytes, xp)
+                                .map_err(|e| e.to_string())?
+                        },
+                    )),
+                )
+            } else if explicit_quest {
                 if dialogue_profile.is_none() {
                     return Err("Explicit quests require guide dialogue".into());
                 }
@@ -344,7 +393,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     theia_network::quest_lifecycle_wire::Profile::from_json(&bytes)
                         .map_err(|e| e.to_string())?
                 };
-                (None, Some(std::sync::Arc::new(profile)))
+                (None, Some(std::sync::Arc::new(profile)), None)
             } else {
                 (
                     Some(std::sync::Arc::new(
@@ -352,23 +401,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             .map_err(|e| e.to_string())?,
                     )),
                     None,
+                    None,
                 )
             };
-            let creature = profiles
+            if let Some(creature) = profiles
                 .0
                 .as_ref()
                 .map(|p| p.profile().creature())
                 .or_else(|| profiles.1.as_ref().map(|p| p.profile().creature()))
-                .unwrap();
-            if xp.profile().kill_experience(creature).is_none() {
+                && xp.profile().kill_experience(creature).is_none()
+            {
                 return Err("Objective/progression creature mismatch".into());
             }
             profiles
         } else {
-            if explicit_quest {
-                return Err("Explicit quests require quest catalog".into());
+            if explicit_quest || journal_mode {
+                return Err("Quest mode requires quest catalog".into());
             }
-            (None, None)
+            (None, None, None)
         };
     let mut item_bytes = None;
     let mut inventory_profile = if let Some(i) = args.iter().position(|a| a == "--item-catalog") {
@@ -569,6 +619,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         credit_bytes.is_some(),
         patrol_binding.as_ref().map(|p| &p.0),
     )?;
+    let threat_bytes = player_life::parse_threat(&mut args, reset_profile.is_some())?;
+    let public_attack_profile = player_life::parse_public_attacks(
+        &mut args,
+        classic
+            && patrol_binding
+                .as_ref()
+                .is_some_and(|p| p.0.aggro().is_some()),
+        player_life_profile.as_ref(),
+    )?;
+    let public_avatar_profile =
+        player_life::parse_public_avatar(&mut args, classic, player_life_profile.as_ref())?;
     if let Some((_, catalog)) = &combat_catalog {
         catalog.validate_equipment(inventory_profile.as_ref().map(|p| p.catalog()))?;
     }
@@ -768,6 +829,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let base = reset_profile
                     .as_ref()
                     .map_or(base, |profile| profile.identity(base));
+                let base = if let Some(bytes) = &threat_bytes {
+                    theia_network::simulation::combat::threat::profile_identity(base, bytes)
+                        .map_err(|error| error.to_string())?
+                } else {
+                    base
+                };
+                let base = public_attack_profile
+                    .as_ref()
+                    .map_or(base, |profile| profile.identity(base));
+                let base = public_avatar_profile
+                    .as_ref()
+                    .map_or(base, |p| p.identity(base));
                 let base = inventory_profile
                     .as_ref()
                     .and_then(|p| p.rewards())
@@ -782,6 +855,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 });
                 let base = lifecycle_profile.as_ref().map_or(base, |p| {
                     theia_network::quest_lifecycle_wire::profile_identity(base, p.hash())
+                });
+                let base = journal_profile.as_ref().map_or(base, |p| {
+                    theia_network::quest_journal::profile_identity(base, p.hash())
                 });
                 let base = dialogue_profile.as_ref().map_or(base, |(profile, xz)| {
                     theia_network::dialogue::profile_identity(base, profile.hash(), *xz)
@@ -804,12 +880,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             },
             targeted,
             player_life_profile.clone(),
+            public_attack_profile.clone(),
+            public_avatar_profile.clone(),
             combat_catalog.as_ref().map(|(_, catalog)| catalog.clone()),
             inventory_profile.clone(),
             status_catalog.as_ref().map(|(_, catalog)| catalog.clone()),
             progression_profile.clone(),
             quest_profile.clone(),
             lifecycle_profile.clone(),
+            journal_profile.clone(),
             dialogue_profile
                 .as_ref()
                 .map(|(profile, _)| profile.clone()),
@@ -835,6 +914,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     if classic && (net.is_none() || dodge_profile.is_some()) {
         return Err("Classic controls require network admission and exclude dodge".into());
+    }
+    if journal_profile.is_some() && net.is_none() {
+        return Err("Journal requires network admission".into());
     }
     if lifecycle_profile.is_some() && net.is_none() {
         return Err("Explicit quests require network admission".into());
@@ -1045,6 +1127,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     if let Some(profile) = lifecycle_profile {
         quest_lifecycle::install(&mut app, profile);
+    }
+    if let Some(profile) = journal_profile {
+        quest_journal::install(&mut app, profile);
     }
     if let Some(profile) = quest_profile {
         quests::install(&mut app, profile);

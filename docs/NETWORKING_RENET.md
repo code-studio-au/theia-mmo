@@ -1,3 +1,11 @@
+Connection confirmation update, 3 November 2026: Renet transport revision 1
+requires an encrypted NC01 pre-admission confirmation, preventing a lost initial
+netcode KeepAlive from stalling continuous game traffic. Movement wire/Quinn ALPN
+12 remain unchanged. Both Renet ends need rebuilding and fresh tickets. Bounded
+waiters, exact marker refusal and five-second limits are explicit.
+[Reproduction, implementation and qualification](RENET_CONNECTION_CONFIRMATION.md).
+Earlier transport IDs and checkpoint claims below remain historical.
+
 # Renet executable bridge
 
 Foundation slice, 2026-10-19: P1-06/07/08 and P2-02/03. This extends the earlier

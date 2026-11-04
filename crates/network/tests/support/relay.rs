@@ -30,18 +30,30 @@ impl Profile {
 pub struct Stats {
     pub received_packets: [u64; 2],
     pub received_bytes: [u64; 2],
+    pub received_large_packets: [u64; 2],
     pub forwarded_packets: [u64; 2],
     pub forwarded_bytes: [u64; 2],
+    pub forwarded_large_packets: [u64; 2],
     pub configured_drops: u64,
+    pub configured_large_drops: [u64; 2],
     pub outage_drops: u64,
     pub duplicates: u64,
     pub reordered: u64,
     pub queue_high_water: usize,
     pub overflow: u64,
     pub injected_old_packets: u64,
+    pub dropped_server_keepalives: u64,
 }
 #[derive(Default)]
 pub struct Control {
+    /// Optional non-secret seed: choose one loss slot per block instead of
+    /// phase-locking a periodic loss to one periodic application packet class.
+    /// None retains every-Nth loss for all existing fixtures.
+    pub loss_seed: Option<u64>,
+    /// Pinned renetcode-2.0.0 public packet-type nibble (4 = KeepAlive).
+    /// Deliberately drop only this handshake/heartbeat packet, without decoding
+    /// or retaining its encrypted contents.
+    pub drop_server_keepalives: u32,
     pub blocked: bool,
     pub block_server_to_client: bool,
     pub stats: Stats,
@@ -60,6 +72,20 @@ struct Packet {
     direction: usize,
     serial: u64,
     bytes: Vec<u8>,
+}
+pub fn loss_due(serial: u64, every: u64, seed: Option<u64>, direction: usize) -> bool {
+    if every == 0 || serial == 0 {
+        return false;
+    }
+    let Some(seed) = seed else {
+        return serial.is_multiple_of(every);
+    };
+    let index = serial - 1;
+    let mut mixed = ((index / every) ^ seed ^ direction as u64).wrapping_add(0x9e37_79b9_7f4a_7c15);
+    mixed = (mixed ^ (mixed >> 30)).wrapping_mul(0xbf58_476d_1ce4_e5b9);
+    mixed = (mixed ^ (mixed >> 27)).wrapping_mul(0x94d0_49bb_1331_11eb);
+    mixed ^= mixed >> 31;
+    index % every == mixed % every
 }
 impl Relay {
     pub fn bind(profile: Profile) -> Self {
@@ -107,12 +133,23 @@ impl Relay {
                             let serial = *serial_counter;
                             control.stats.received_packets[direction] += 1;
                             control.stats.received_bytes[direction] += len as u64;
+                            control.stats.received_large_packets[direction] += u64::from(len >= 128);
+                            if direction == 1 && len > 0 && buffer[0] & 0x0f == 4
+                                && control.drop_server_keepalives > 0 {
+                                control.drop_server_keepalives -= 1;
+                                control.stats.dropped_server_keepalives += 1;
+                                continue;
+                            }
                             if direction == 0 {
                                 if control.captures.len() == CAPTURE_LIMIT { control.captures.pop_front(); }
                                 control.captures.push_back(buffer[..len].to_vec());
                             }
                             if control.blocked || (direction == 1 && control.block_server_to_client) { control.stats.outage_drops += 1; continue; }
-                            if self.profile.loss_every != 0 && serial.is_multiple_of(self.profile.loss_every) { control.stats.configured_drops += 1; continue; }
+                            if loss_due(serial, self.profile.loss_every, control.loss_seed, direction) {
+                                control.stats.configured_drops += 1;
+                                control.stats.configured_large_drops[direction] += u64::from(len >= 128);
+                                continue;
+                            }
                             let copies = if self.profile.duplicate_every != 0 && serial.is_multiple_of(self.profile.duplicate_every) {
                                 control.stats.duplicates += 1; 2
                             } else { 1 };
@@ -134,6 +171,7 @@ impl Relay {
                         let stats = &mut control.stats;
                         stats.forwarded_packets[packet.direction] += 1;
                         stats.forwarded_bytes[packet.direction] += packet.bytes.len() as u64;
+                        stats.forwarded_large_packets[packet.direction] += u64::from(packet.bytes.len() >= 128);
                         if packet.serial < last_delivered[packet.direction] { stats.reordered += 1; }
                         last_delivered[packet.direction] = last_delivered[packet.direction].max(packet.serial);
                     }

@@ -21,6 +21,8 @@ jobs:
       - run: cargo fmt --check
       - run: cargo clippy --locked --workspace --all-targets -- -D warnings
       - run: cargo test --locked --workspace -j 1
+      - name: Content authoring validators
+        run: cargo test --locked -p theia-network --example validate_gameplay --example validate_quest_packs --example review_quest_update -j 1
 
   asset-tools:
     strategy:

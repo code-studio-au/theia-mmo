@@ -381,6 +381,9 @@ impl Authority {
         npc: EntityKey,
         target: LifeKey,
     ) -> Result<Option<theia_core::player_life::Damage>> {
+        if self.threat.as_ref().is_some_and(|runtime| !runtime.ready()) {
+            return Err("Creature threat authority unavailable".into());
+        }
         if self.reset.as_ref().is_some_and(|runtime| !runtime.ready()) {
             return Err("Creature reset authority unavailable".into());
         }

@@ -45,20 +45,24 @@ def run(output, sdk):
         cargo('progression-contract', ['test', '--locked', '-p', 'theia-persistence', '--test', 'progression_contract', '-j', '2', '--', '--ignored', '--test-threads=1'])
         cargo('quest-journal-contract', ['test', '--locked', '-p', 'theia-persistence', '--test', 'quest_journal_contract', '-j', '2', '--', '--ignored', '--test-threads=1'])
         journal_query = """
-            SELECT n.display_name,h.revision,p.experience,
+            SELECT n.display_name,h.revision,coalesce(p.experience,-1),
               (SELECT count(*) FROM theia.quest_journal_entries e WHERE e.realm_id=n.realm_id AND e.character_id=n.character_id),
               (SELECT count(*) FROM theia.quest_journal_events e WHERE e.realm_id=n.realm_id AND e.character_id=n.character_id),
               (SELECT count(*) FROM theia.quest_journal_actions a WHERE a.realm_id=n.realm_id AND a.character_id=n.character_id),
               (SELECT coalesce(sum(xp_granted),0) FROM theia.quest_journal_actions a WHERE a.realm_id=n.realm_id AND a.character_id=n.character_id),
-              (SELECT md5(string_agg(encode(state,'hex'),'|' ORDER BY quest_id)) FROM theia.quest_journal_entries e WHERE e.realm_id=n.realm_id AND e.character_id=n.character_id)
+              (SELECT md5(string_agg(to_jsonb(e)::text,'|' ORDER BY quest_id)) FROM theia.quest_journal_entries e WHERE e.realm_id=n.realm_id AND e.character_id=n.character_id),
+              md5(to_jsonb(h)::text), md5(coalesce(to_jsonb(p)::text,'')),
+              (SELECT md5(string_agg(to_jsonb(e)::text,'|' ORDER BY event_id)) FROM theia.quest_journal_events e WHERE e.realm_id=n.realm_id AND e.character_id=n.character_id),
+              (SELECT md5(string_agg(to_jsonb(a)::text,'|' ORDER BY request_id)) FROM theia.quest_journal_actions a WHERE a.realm_id=n.realm_id AND a.character_id=n.character_id),
+              (SELECT md5(string_agg(to_jsonb(x)::text,'|' ORDER BY event_id)) FROM theia.experience_receipts x WHERE x.realm_id=n.realm_id AND x.character_id=n.character_id)
             FROM theia.character_names n JOIN theia.quest_journal_heads h USING(realm_id,character_id)
-            JOIN theia.progression p USING(realm_id,character_id)
-            WHERE n.display_name LIKE 'Journal%' ORDER BY n.display_name;
+            LEFT JOIN theia.progression p USING(realm_id,character_id)
+            WHERE n.display_name LIKE 'Journal%' OR n.display_name LIKE 'Atomic%' ORDER BY n.display_name;
         """
         journal_before = cluster.query(journal_query)
         assert journal_before.returncode == 0
         journal_rows = [row.split('|') for row in journal_before.stdout.splitlines()]
-        assert {row[0]: int(row[2]) for row in journal_rows} == {'Journalone':75,'Journaltwo':25,'Journalatomic':25,'Journalguard':0,'Journalzero':0,'Journalcap':25}
+        assert {row[0]: int(row[2]) for row in journal_rows} == {'Journalone':75,'Journaltwo':25,'Journalatomic':25,'Journalguard':0,'Journalzero':0,'Journalcap':25,'Atomicnormal':125,'Atomiccap':25,'Atomiconlyone':-1,'Atomiconlytwo':-1,'Atomicindependent':-1,'Atomicrollback':50}
         (output/'quest-journal-before-restart.txt').write_text(journal_before.stdout)
         cargo('write', ['run', '--locked', '-p', 'theia-persistence', '--example', 'store_qualification', '--', 'write'])
         cargo('character-write', ['run', '--locked', '-p', 'theia-persistence', '--example', 'character_qualification', '--', 'write'])
@@ -120,6 +124,7 @@ def run(output, sdk):
                   wrong_password_rejected=True, durability_flags=['fsync=on','synchronous_commit=on','full_page_writes=on'],
                   multi_quest_rows_event_receipts_and_exact_snapshots_survive_restart=True,
                   multi_quest_atomic_completion_rollback_and_lock_barrier=True,
+                  atomic_optional_xp_kill_snapshots_survive_process_restart=True,
                   quest_events_independent_of_kill_xp_recipe=True,
                   real_clean_restart_reload=True, named_character_identity_and_pose_survive_restart=True,
                   bounded_character_create_list_select=True, durable_backpack_restart_and_latest_receipt=True,

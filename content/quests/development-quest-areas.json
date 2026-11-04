@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "id": "theia.dev.quest-areas",
+  "revision": 1,
+  "areas": [
+    {
+      "id": "theia.dev.area.western-overlook",
+      "name": "Western overlook",
+      "min": [7856.0, -64.0, 7984.0],
+      "max": [7872.0, 64.0, 8016.0]
+    }
+  ]
+}
