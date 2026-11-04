@@ -102,19 +102,72 @@
 
 **In-progress:** “Complete the agreed task and return with the result. We still have work ahead.”
 
-## Q183 — Mara and Corven
+## Q183 — A World Unbound: Kel'vari and Covenant reports
 
-**Stage scope:** These lines cover the Covenant-side report. Canonical Q183 also requires a separate Kel'vari report; its dialogue remains to be authored. The completion line follows both reports and must not collapse them into one faction's authorization.
+**Creator-locked staging (4 November 2026):** Sel'ora receives the authenticated historical report; Aru'ven participates in the Kel'vari response without claiming authority over all enclaves. The separate Covenant report goes to Mara and Corven. Both acknowledgements are required before completion. Spoken wording below is WORKING and may be polished without changing the outcomes.
 
-**Opening:** “Mara: The Shroud began fading when Veilbreaker destroyed the Veil. Corven: And now Nhal's unified threat has ended, though our nations remain divided.”
+### Kel'vari report — Sel'ora and Aru'ven
+
+**Location:** authorised Kel'vari archive or meeting chamber; exact staging remains WORKING. The player arrives with an authenticated account, not a fragment or relic of Nhal.
+
+**Sel'ora (opening):** “You have returned. We received word that the alignment held, but no account I trust of what followed. Tell me what you witnessed.”
+
+**Player:** “Oth'varen corrected the alignment. He saw that it held. The correction took his life before the final inversion.”
+
+**Sel'ora:** “Then we will write those moments in that order. Not as a legend. Not as an excuse for what came before.”
+
+**Player:** “The inversion shattered Nhal's unified will and memory. His divine essence was not destroyed. We cannot say what becomes of it.”
+
+**Sel'ora:** “We will record what is known, and leave the rest unwritten. Too much harm has come from mistaking certainty for evidence.”
+
+**Aru'ven:** “The Shroud began to fade when the Veil fell. Now people must live beside lands they could not reach before. Our gates and our settlements remain ours to protect.”
+
+**Player choice — response tone (same story result):**
+- **Grief:** “Oth'varen should have lived to see what comes next.”
+- **Respect:** “He knew the cost and chose to protect the others.”
+- **Uncertainty:** “I don't know whether the world is ready for what comes next.”
+
+**Sel'ora (to grief):** “He did see the alignment hold. That truth will not make the loss smaller.”
+**Sel'ora (to respect):** “His choice was his own. We must not turn it into permission to demand the same of others.”
+**Aru'ven (to uncertainty):** “Neither do we. We can still choose what we do tomorrow.”
+
+**Sel'ora (acknowledgement):** “I accept this testimony for preservation in our records. It is not a proclamation on behalf of every enclave.”
+
+**Aru'ven:** “And I will carry the news to those who depend upon this passage. Their decisions remain their own.”
+
+**Stage outcome:** Record Kel'vari historical-report acknowledgement and custodial preservation of the evidence. Do not imply a united Kel'vari government, new unrestricted Passage access or knowledge of the fragments' destination.
+
+### Covenant report — Mara and Corven
+
+**Location:** Covenant audience or debriefing location; exact staging remains WORKING. This report is independent of the Kel'vari record.
+
+**Mara (opening):** “The Shroud began fading when Veilbreaker destroyed the Veil. We must keep that sequence clear.”
+
+**Corven:** “And now Nhal's unified threat has ended, though our nations remain divided.”
 
 **Player:** “Will the war end?”
 
-**Response:** “Mara: Not because of this alone. Corven: Peace will still require choices made by living people.”
+**Mara:** “Not because of this alone.”
 
-**Completion / aftermath:** “The reports are delivered. The world is changed, not made simple.”
+**Corven:** “Peace will still require choices made by living people. Neither our victory nor the Kel'vari's testimony gives us authority to make those choices for everyone.”
 
-**In-progress:** “Complete the agreed task and return with the result. We still have work ahead.”
+**Player choice — response tone (same story result):**
+- **Hope:** “Perhaps they will make those choices.”
+- **Concern:** “Then there is still more suffering ahead.”
+
+**Corven (to hope):** “Perhaps. We can make an honest account and refuse to build tomorrow on another lie.”
+**Mara (to concern):** “Then our reports must name what we know and what we cannot promise.”
+
+**Stage outcome:** Record independent Covenant acknowledgement; do not claim Dominion peace, a new Binding, or automatic access to Kel'vari records.
+
+### Completion and recovery
+
+**Completion (after both reports):** “The reports are delivered. The world is changed, not made simple.”
+
+**In progress — Kel'vari report outstanding:** “Sel'ora has not yet received the authenticated account. The Covenant cannot speak for the enclaves.”
+**In progress — Covenant report outstanding:** “The Kel'vari record is secured. Mara and Corven still require their own report.”
+
+**Persistence / skip:** The two acknowledgement facts are independent, durable and idempotent. Skipping dialogue or reconnecting must not erase a completed report or award completion before both reports. Q184 homecoming remains a separate follow-up.
 
 ## Q184 — Elara
 
