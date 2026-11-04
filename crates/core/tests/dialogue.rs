@@ -51,7 +51,14 @@ fn branches_resolve_only_offered_choices_and_leave_content_immutable() {
 
 #[test]
 fn malformed_profiles_and_unsupported_effects_fail_before_navigation() {
-    for bytes in [b"".as_slice(), b"{}", &DATA[..DATA.len() - 2]] {
+    let crlf = String::from_utf8(DATA.to_vec())
+        .unwrap()
+        .replace("\r\n", "\n")
+        .replace('\n', "\r\n");
+    assert!(Profile::from_json(crlf.as_bytes()).is_ok());
+    let mut truncated = serde_json::to_vec(&data()).unwrap();
+    truncated.pop(); // Remove the closing brace, not a platform-dependent newline.
+    for bytes in [b"".as_slice(), b"{}", truncated.as_slice()] {
         assert!(Profile::from_json(bytes).is_err());
     }
     for (key, value) in [

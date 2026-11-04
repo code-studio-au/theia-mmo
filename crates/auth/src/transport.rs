@@ -87,6 +87,9 @@ mod tests {
                     Err(error) => panic!("Owned fixture accept failed: {error}"),
                 }
             };
+            // Windows can inherit the listener's nonblocking mode on accept.
+            // This fixture uses blocking reads bounded by socket timeouts.
+            stream.set_nonblocking(false).unwrap();
             stream
                 .set_read_timeout(Some(Duration::from_secs(2)))
                 .unwrap();

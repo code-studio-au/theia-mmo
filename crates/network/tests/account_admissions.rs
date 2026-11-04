@@ -216,6 +216,55 @@ impl Client {
         .await
         .unwrap()
     }
+    async fn move_until_recorded(&self, policy: &Policy, start_x: f64) -> u64 {
+        // Refresh bounded, ordered input while waiting for authoritative movement.
+        // A single command two ticks ahead can expire during relay/scheduler delay.
+        tokio::time::timeout(Duration::from_secs(2), async {
+            let mut last_tick = 0;
+            let mut sent_commands = 0;
+            loop {
+                if policy
+                    .state
+                    .lock()
+                    .unwrap()
+                    .records
+                    .last()
+                    .is_some_and(|(_, position, _)| position.metres()[0] > start_x + 0.01)
+                {
+                    break sent_commands;
+                }
+                let state = self.state.borrow().clone();
+                let correction = state.correction.unwrap();
+                let tick = correction.state.input.tick + theia_network::commands::FUTURE_TICKS - 2;
+                if tick > last_tick {
+                    sent_commands += 1;
+                    self.commands
+                        .send(theia_network::prediction_wire::Commands {
+                            epoch: state.welcome.as_ref().unwrap().epoch,
+                            stream_epoch: correction.state.input.stream_epoch,
+                            ready_sequence: 1,
+                            commands: vec![theia_network::commands::Command {
+                                sequence: sent_commands,
+                                tick,
+                                intent: Intent {
+                                    facing: None,
+                                    axes: [1000, 0],
+                                    sprint: false,
+                                    jump: false,
+                                    dodge: None,
+                                },
+                            }],
+                        })
+                        .await
+                        .unwrap();
+                    last_tick = tick;
+                }
+                tokio::time::sleep(Duration::from_millis(15)).await;
+            }
+        })
+        .await
+        .expect("Fresh commands must produce recorded authoritative movement")
+    }
     async fn close(self) {
         self.stop.send_replace(true);
         let _ = self.task.await.unwrap();
@@ -420,8 +469,7 @@ async fn encrypted_item_ports_keep_two_actors_separate_and_do_not_block_movement
         identity,
         Some(profile),
     );
-    let initial = a
-        .until(|s| s.inventory.is_some() && s.correction.is_some() && s.chunk_ack.is_some())
+    a.until(|s| s.inventory.is_some() && s.correction.is_some() && s.chunk_ack.is_some())
         .await;
     b.until(|s| s.inventory.is_some() && s.correction.is_some() && s.chunk_ack.is_some())
         .await;
@@ -482,44 +530,8 @@ async fn encrypted_item_ports_keep_two_actors_separate_and_do_not_block_movement
         0
     );
     assert!(a.state.borrow().inventory_pending);
-    let correction = a.state.borrow().correction.unwrap();
-    a.commands
-        .send(theia_network::prediction_wire::Commands {
-            epoch: initial.welcome.as_ref().unwrap().epoch,
-            stream_epoch: correction.state.input.stream_epoch,
-            ready_sequence: 1,
-            commands: vec![theia_network::commands::Command {
-                sequence: 1,
-                tick: correction.state.input.tick + 2,
-                intent: Intent {
-                    facing: None,
-                    axes: [1000, 0],
-                    sprint: false,
-                    jump: false,
-                    dodge: None,
-                },
-            }],
-        })
-        .await
-        .unwrap();
     let x = policies[0].state.lock().unwrap().position.unwrap().metres()[0];
-    tokio::time::timeout(Duration::from_secs(2), async {
-        loop {
-            if policies[0]
-                .state
-                .lock()
-                .unwrap()
-                .records
-                .last()
-                .is_some_and(|(_, p, _)| p.metres()[0] > x + 0.01)
-            {
-                break;
-            }
-            tokio::time::sleep(Duration::from_millis(5)).await;
-        }
-    })
-    .await
-    .unwrap();
+    a.move_until_recorded(&policies[0], x).await;
     release_a.send_replace(true);
     let done = a
         .until(|s| {
@@ -628,44 +640,9 @@ async fn saved_collision_revocation_replay_reuse_and_shutdown_keep_exact_lease_l
         0,
         "A live idle session must remain admitted"
     );
-    let correction = client.state.borrow().correction.unwrap();
-    client
-        .commands
-        .send(theia_network::prediction_wire::Commands {
-            epoch: identity_epoch(&client),
-            stream_epoch: correction.state.input.stream_epoch,
-            ready_sequence: 1,
-            commands: vec![theia_network::commands::Command {
-                sequence: 1,
-                tick: correction.state.input.tick + 2,
-                intent: Intent {
-                    facing: None,
-                    axes: [1000, 0],
-                    sprint: false,
-                    jump: false,
-                    dodge: None,
-                },
-            }],
-        })
-        .await
-        .unwrap();
-    tokio::time::timeout(Duration::from_secs(2), async {
-        while policy
-            .state
-            .lock()
-            .unwrap()
-            .records
-            .last()
-            .unwrap()
-            .1
-            .metres()[0]
-            <= position.metres()[0] + 0.01
-        {
-            tokio::time::sleep(Duration::from_millis(5)).await;
-        }
-    })
-    .await
-    .unwrap();
+    let sent_commands = client
+        .move_until_recorded(&policy, position.metres()[0])
+        .await;
     let old_packets: Vec<_> = relay_control
         .lock()
         .unwrap()
@@ -740,13 +717,10 @@ async fn saved_collision_revocation_replay_reuse_and_shutdown_keep_exact_lease_l
         2,
         "Shutdown drops the joined lease before returning"
     );
-    assert_eq!(stats.queued_commands, 1);
+    assert!((1..=sent_commands).contains(&stats.queued_commands));
     replacement.close().await;
     relay_stop.send_replace(true);
     relay_task.await.unwrap();
-}
-fn identity_epoch(client: &Client) -> u64 {
-    client.state.borrow().welcome.as_ref().unwrap().epoch
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
