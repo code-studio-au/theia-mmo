@@ -46,8 +46,8 @@ impl Profile {
     ) -> Result<Self> {
         Self::parse(bytes, items, false)
     }
-    /// Opt-in codec prerequisite. World admission still refuses this content
-    /// until authoritative corpse interaction and pickup are installed.
+    /// Explicit opt-in for headless per-life pickup. Default content admission
+    /// remains unchanged until normal client interaction is qualified.
     pub fn from_json_with_creature_loot(
         bytes: &[u8],
         items: &crate::renet_runtime::inventory::Profile,

@@ -65,6 +65,13 @@ impl Profile {
         )?));
         Ok(self)
     }
+    /// Explicit headless per-life mode; does not change default manifest admission.
+    pub fn with_creature_loot(mut self, bytes: &[u8]) -> crate::Result<Self> {
+        self.rewards = Some(Arc::new(
+            crate::reward_wire::Profile::from_json_with_creature_loot(bytes, &self)?,
+        ));
+        Ok(self)
+    }
     pub fn with_vendor(mut self, bytes: &[u8]) -> crate::Result<Self> {
         self.vendor = Some(Arc::new(crate::vendor_wire::Profile::from_json(
             bytes, &self,
@@ -78,7 +85,14 @@ impl Profile {
         self.rewards.as_deref()
     }
 }
+#[derive(Clone, Copy, Debug)]
+pub struct Pickup {
+    pub command: theia_core::rewards::ClaimCommand,
+    pub life: theia_core::progression::KillId,
+}
 pub struct Client {
+    /// A second bounded intent inlet shares the same pending/sequence gate.
+    pub pickups: Option<mpsc::Receiver<Pickup>>,
     pub profile: Profile,
     pub commands: mpsc::Receiver<ItemCommand>,
 }
@@ -92,7 +106,12 @@ pub(super) struct ClientState {
 }
 impl ClientState {
     pub(super) fn new(config: Client) -> crate::Result<Self> {
-        if config.commands.max_capacity() != 1 {
+        if config.commands.max_capacity() != 1
+            || config
+                .pickups
+                .as_ref()
+                .is_some_and(|q| q.max_capacity() != 1)
+        {
             return Err("Inventory intent queue must have capacity one".into());
         }
         Ok(Self {
@@ -228,6 +247,36 @@ impl ClientState {
     ) -> crate::Result<Option<Vec<u8>>> {
         if self.pending.is_some() || self.view.is_none() {
             return Ok(None);
+        }
+        if let Some(pickup) = self.config.pickups.as_mut().and_then(|q| q.try_recv().ok()) {
+            let profile = self
+                .config
+                .profile
+                .rewards()
+                .ok_or("Pickup requires reward profile")?;
+            if !profile
+                .catalog()
+                .definitions()
+                .any(|d| d.scope() == theia_core::rewards::Scope::PerCreatureLife)
+            {
+                return Err("Pickup requires a per-life profile".into());
+            }
+            let sequence = self
+                .sequence
+                .checked_add(1)
+                .ok_or("Inventory sequence exhausted")?;
+            let bytes = crate::reward_wire::PickupRequest {
+                request: crate::reward_wire::Request {
+                    actor,
+                    sequence,
+                    command: pickup.command,
+                },
+                life: pickup.life,
+            }
+            .encode()?;
+            self.sequence = sequence;
+            self.pending = Some((sequence, pickup.command.into(), now));
+            return Ok(Some(bytes));
         }
         let Ok(command) = self.config.commands.try_recv() else {
             return Ok(None);
@@ -744,7 +793,12 @@ mod tests {
         })
         .unwrap();
         let (sender, commands) = mpsc::channel(1);
-        let mut client = ClientState::new(Client { profile, commands }).unwrap();
+        let mut client = ClientState::new(Client {
+            profile,
+            commands,
+            pickups: None,
+        })
+        .unwrap();
         let View::State(initial) = peer.view(actor).unwrap() else {
             panic!()
         };
@@ -888,7 +942,12 @@ mod tests {
             }],
         };
         let encoded_offer = offered.encode(reward.catalog(), reward.hash()).unwrap();
-        let mut client = ClientState::new(Client { profile, commands }).unwrap();
+        let mut client = ClientState::new(Client {
+            profile,
+            commands,
+            pickups: None,
+        })
+        .unwrap();
         client.receive(&encode(&client, &initial), actor()).unwrap();
         client.receive_rewards(&encoded_offer, actor()).unwrap();
         let claim = ClaimCommand {
@@ -997,7 +1056,12 @@ mod tests {
             reply: None,
         };
         (
-            ClientState::new(Client { profile, commands }).unwrap(),
+            ClientState::new(Client {
+                profile,
+                commands,
+                pickups: None,
+            })
+            .unwrap(),
             sender,
             view,
         )
@@ -1033,7 +1097,12 @@ mod tests {
             bag: Bag::from_slots(profile.catalog(), 0, slots).unwrap(),
             reply: None,
         };
-        let mut client = ClientState::new(Client { profile, commands }).unwrap();
+        let mut client = ClientState::new(Client {
+            profile,
+            commands,
+            pickups: None,
+        })
+        .unwrap();
         client.receive(&encode(&client, &state), actor()).unwrap();
         let first: ItemCommand = EquipmentCommand {
             expected_revision: 0,
@@ -1346,7 +1415,12 @@ mod tests {
         ))
         .unwrap();
         let (sender, commands) = mpsc::channel(1);
-        let mut client = ClientState::new(Client { profile, commands }).unwrap();
+        let mut client = ClientState::new(Client {
+            profile,
+            commands,
+            pickups: None,
+        })
+        .unwrap();
         let mut slots = std::array::from_fn(|_| None);
         slots[0] = Stack::new(
             client.config.profile.catalog(),
@@ -1482,7 +1556,14 @@ mod tests {
         let (mut client, sender, initial) = fixture();
         let profile = client.config.profile.clone();
         let (_, commands) = mpsc::channel(2);
-        assert!(ClientState::new(Client { profile, commands }).is_err());
+        assert!(
+            ClientState::new(Client {
+                profile,
+                commands,
+                pickups: None
+            })
+            .is_err()
+        );
         let now = tokio::time::Instant::now();
         let later = now + std::time::Duration::from_secs(9);
         assert!(client.check_deadline(later, now).is_err());
@@ -1507,3 +1588,7 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+#[path = "inventory/pickup_tests.rs"]
+mod pickup_tests;

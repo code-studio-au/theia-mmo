@@ -45,14 +45,37 @@ impl AccountAdmissions for CreditAdmissions {
 }
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn encrypted_competing_hitter_routes_only_tag_owner_to_xp_and_reward_queues_at_all_rates() {
+    exercise_credit(false).await;
+}
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn encrypted_per_life_loot_requires_private_pickup_and_preserves_full_bag_availability_at_all_rates()
+ {
+    exercise_credit(true).await;
+}
+async fn exercise_credit(per_life: bool) {
     for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
         let mut f = fixture_mode(rate, true);
         let npc = f.npc;
         f.world.enable_creature_credit(SOLO).unwrap();
-        f.session.items = f.session.items.clone().with_rewards(REWARDS).unwrap();
+        f.session.items = if per_life {
+            let mut value: serde_json::Value = serde_json::from_slice(REWARDS).unwrap();
+            value["schema"] = 2.into();
+            value["rewards"][0]["scope"] = "per_creature_life".into();
+            f.session
+                .items
+                .clone()
+                .with_creature_loot(&serde_json::to_vec(&value).unwrap())
+                .unwrap()
+        } else {
+            f.session.items.clone().with_rewards(REWARDS).unwrap()
+        };
         let rewards = Arc::new(f.session.items.rewards().unwrap().clone());
         let xp = Arc::new(crate::progression_wire::Profile::from_json(XP).unwrap());
-        f.world.enable_rewards(rewards.clone()).unwrap();
+        if per_life {
+            f.world.enable_creature_loot(rewards.clone()).unwrap();
+        } else {
+            f.world.enable_rewards(rewards.clone()).unwrap();
+        }
         f.world.enable_progression(xp.clone()).unwrap();
         f.session.progression = Some(xp.clone());
         f.session.identity = f.world.identity();
@@ -230,6 +253,153 @@ async fn encrypted_competing_hitter_routes_only_tag_owner_to_xp_and_reward_queue
         assert!(reward_receivers[1].try_recv().is_err());
         // Queued work has not been committed by these synthetic owners.
         assert_eq!(final_a.progression.as_ref().unwrap().progress.total(), 0);
+        if per_life {
+            use crate::{
+                inventory_wire::{Outcome as ItemOutcome, Reason, Reply},
+                renet_runtime::inventory::Pickup,
+                reward_wire::Available,
+            };
+            use theia_core::rewards::{ClaimCommand, ClaimId, CorpseSource};
+            let claim = ClaimId::new([77; 16]).unwrap();
+            let baseline = final_a.inventory.as_ref().unwrap().bag.clone();
+            assert!(final_a.rewards.as_ref().unwrap().available.is_empty());
+            // Synthetic committed owner boundary: delivery is encrypted, but
+            // SQL durability is separately qualified by persistence contracts.
+            inventory_publishers[0].send_modify(|s| {
+                s.rewards = Some(net::inventory::OwnedRewards {
+                    generation: 2,
+                    available: vec![Available {
+                        reward: reward.reward.clone(),
+                        claim,
+                        corpse: Some(CorpseSource {
+                            life: reward.event.id,
+                            position: reward.position,
+                        }),
+                    }],
+                })
+            });
+            let offered = a
+                .until(|s, _| s.rewards.as_ref().is_some_and(|r| r.available.len() == 1))
+                .await;
+            assert_eq!(offered.inventory.as_ref().unwrap().bag, baseline);
+            let command = ClaimCommand {
+                claim,
+                expected_revision: baseline.revision(),
+            };
+            // A competing final hitter cannot collect another owner's claim.
+            b._pickups
+                .try_send(Pickup {
+                    command,
+                    life: reward.event.id,
+                })
+                .unwrap();
+            let denied = b
+                .until(|s, _| {
+                    s.inventory
+                        .as_ref()
+                        .and_then(|i| i.reply)
+                        .is_some_and(|r| r.sequence == 1)
+                })
+                .await;
+            assert_eq!(
+                denied.inventory.unwrap().reply.unwrap().outcome,
+                ItemOutcome::Rejected(Reason::Conflict)
+            );
+            assert!(f._requests.try_recv().is_err());
+            a._pickups
+                .try_send(Pickup {
+                    command,
+                    life: reward.event.id,
+                })
+                .unwrap();
+            let first_pickup = tokio::time::timeout(Duration::from_secs(3), f._requests.recv())
+                .await
+                .unwrap()
+                .unwrap();
+            assert_eq!(
+                first_pickup.command,
+                theia_core::inventory::ItemCommand::RewardClaim(command)
+            );
+            assert_eq!(a.state.borrow().inventory.as_ref().unwrap().bag, baseline);
+            inventory_publishers[0].send_modify(|s| {
+                s.reply = Some(Reply {
+                    sequence: first_pickup.sequence,
+                    outcome: ItemOutcome::Rejected(Reason::Full),
+                })
+            });
+            let full = a
+                .until(|s, _| {
+                    !s.inventory_pending
+                        && s.inventory
+                            .as_ref()
+                            .and_then(|i| i.reply)
+                            .is_some_and(|r| r.sequence == first_pickup.sequence)
+                })
+                .await;
+            assert_eq!(full.inventory.as_ref().unwrap().bag, baseline);
+            assert_eq!(full.rewards.as_ref().unwrap().available.len(), 1);
+            a._pickups
+                .try_send(Pickup {
+                    command,
+                    life: reward.event.id,
+                })
+                .unwrap();
+            let retry = tokio::time::timeout(Duration::from_secs(3), f._requests.recv())
+                .await
+                .unwrap()
+                .unwrap();
+            assert_eq!(retry.sequence, first_pickup.sequence + 1);
+            let granted = rewards
+                .catalog()
+                .definition(&reward.reward)
+                .unwrap()
+                .propose(&baseline, f.policy.0.catalog.as_ref(), baseline.revision())
+                .unwrap();
+            inventory_publishers[0].send_modify(|s| {
+                s.bag = Some(granted.clone());
+                s.reply = Some(Reply {
+                    sequence: retry.sequence,
+                    outcome: ItemOutcome::Applied,
+                });
+                s.rewards = Some(net::inventory::OwnedRewards {
+                    generation: 3,
+                    available: vec![],
+                });
+            });
+            let collected = a
+                .until(|s, _| {
+                    !s.inventory_pending
+                        && s.inventory
+                            .as_ref()
+                            .is_some_and(|i| i.bag.revision() == granted.revision())
+                        && s.rewards.as_ref().is_some_and(|r| r.available.is_empty())
+                })
+                .await;
+            assert_eq!(collected.inventory.unwrap().bag, granted);
+            // A new sequence with the old claim is refused before owner enqueue.
+            a._pickups
+                .try_send(Pickup {
+                    command: ClaimCommand {
+                        expected_revision: granted.revision(),
+                        ..command
+                    },
+                    life: reward.event.id,
+                })
+                .unwrap();
+            let stale = a
+                .until(|s, _| {
+                    s.inventory
+                        .as_ref()
+                        .and_then(|i| i.reply)
+                        .is_some_and(|r| r.sequence == retry.sequence + 1)
+                })
+                .await;
+            assert_eq!(
+                stale.inventory.unwrap().reply.unwrap().outcome,
+                ItemOutcome::Rejected(Reason::Conflict)
+            );
+            assert!(f._requests.try_recv().is_err());
+        }
         stop.send_replace(true);
         let seen_a = a.finish(false).await;
         let seen_b = b.finish(false).await;

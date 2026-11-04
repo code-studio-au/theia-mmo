@@ -283,6 +283,7 @@ struct Peer {
     _choices: watch::Sender<Option<crate::targeting::Choice>>,
     _casts: mpsc::Sender<net::CastChoice>,
     _items: mpsc::Sender<theia_core::inventory::ItemCommand>,
+    _pickups: mpsc::Sender<net::inventory::Pickup>,
     _seen: watch::Sender<Seen>,
 }
 impl Peer {
@@ -317,6 +318,7 @@ impl Peer {
         let (casts, cast_rx) = mpsc::channel(8);
         let (events, event_rx) = mpsc::channel::<Batch>(if blocked { 1 } else { 16 });
         let (item_commands, item_rx) = mpsc::channel(1);
+        let (pickups, pickup_rx) = mpsc::channel(1);
         let (life_events, mut life_rx) = mpsc::channel(16);
         let (public_events, mut public_rx) =
             mpsc::channel(net::creature_attacks::PRESENTATION_CAPACITY);
@@ -406,7 +408,7 @@ impl Peer {
                 public_attacks: public_mode,
     journal: None,
     classic_source:Some(session.source),dodge:None,player_life:Some(net::player_life::Client{profile:session.life,membership:session.membership,events:life_events}),lifecycle:None,dialogue:None,ready:readiness,commands:Some(command_rx),choices:Some(choice_rx),
-    combat:Some(net::CombatActions{melee:Some(net::MeleeActions{catalog:Arc::new(melee::Catalog::from_json(include_bytes!("../../../../../../../content/gameplay/development-melee-weapons.json")).unwrap()),physical:Some(session.physical),white:Some(session.white),ability:Some(session.ability),choices:melee_rx}),catalog:session.abilities,casts:cast_rx,events}),quest:None,progression:session.progression,inventory:Some(net::inventory::Client{profile:session.items,commands:item_rx}),statuses:Some(Arc::new(theia_core::statuses::Catalog::from_json(STATUSES).unwrap())),
+    combat:Some(net::CombatActions{melee:Some(net::MeleeActions{catalog:Arc::new(melee::Catalog::from_json(include_bytes!("../../../../../../../content/gameplay/development-melee-weapons.json")).unwrap()),physical:Some(session.physical),white:Some(session.white),ability:Some(session.ability),choices:melee_rx}),catalog:session.abilities,casts:cast_rx,events}),quest:None,progression:session.progression,inventory:Some(net::inventory::Client{pickups:Some(pickup_rx),profile:session.items,commands:item_rx}),statuses:Some(Arc::new(theia_core::statuses::Catalog::from_json(STATUSES).unwrap())),
    }).await;
             if let Err(error) = &result {
                 publish.send_modify(|s| s.error = Some(error.to_string()));
@@ -429,6 +431,7 @@ impl Peer {
             _choices: choices,
             _casts: casts,
             _items: item_commands,
+            _pickups: pickups,
             _seen: seen_tx,
         }
     }

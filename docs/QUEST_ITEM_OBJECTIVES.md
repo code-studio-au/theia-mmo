@@ -611,3 +611,37 @@ Preserve source/proof at `build/quest-loot-pickup-stopped-v1-20261104` and runna
 native destruction at `build/quest-item-ui-qualified-v1-20261104`. Owned test
 services and desktop input are stopped/released. Local commits only; nothing
 pushed. Resume only on user instruction.
+
+
+## Explicit headless pickup integration — 5 November 2026
+
+Resumed at user request. P3-05 / P3-09 / P3-11 / P3-15: an explicit per-life
+inventory profile and World installation now support headless corpse pickup.
+Default profile construction, legacy World reward installation and normal
+manifest admission retain their gates. The optional capacity-one pickup inlet
+shares the existing backpack sequence, pending deadline and committed-revision
+acknowledgement rules; reward availability alone cannot clear a pending action.
+Existing normal clients supply no pickup inlet yet.
+
+Real World/bridge checks cover accepted exact pickup, protocol downgrade,
+wrong life/claim, closed/failed owner, unavailable terrain, three-dimensional
+range, missing availability and actual player death. Rejection leaves the bag
+unchanged and does not enqueue owner work. A full-bag acknowledgement preserves
+availability while releasing the shared stream for the next action.
+
+The actual encrypted two-peer test runs at 20/30/60 Hz with delayed/jittered/lost/
+duplicated UDP. A competing final hitter cannot pick up the tag owner's claim;
+viewing an offer does not mutate the bag; an owner full-bag refusal preserves
+availability; retry success waits for the committed observation; the collected
+claim cannot be enqueued again. Inventory owner/commit observations in this test
+are synthetic. They do not establish SQL or native corpse interaction. Fatal
+recipient routing uses the real combat World. Durable SQL evidence remains the
+separate 4 November qualification.
+
+381 selected tests pass: 361 network-library, eight account-admission, three
+melee transport and nine reward-wire tests. Formatting and strict workspace/
+all-target Clippy pass. Logs: `build/quest-loot-headless-{tests,fmt,clippy}-v1-20261105.log`.
+No rendering change or new native/Windows claim. Preserve
+`build/quest-loot-headless-qualified-v1-20261105`. Next: bounded nearby/selected
+corpse availability, normal client selection/pickup/loot UI, then live item-quest
+admission and native possession/reversal/turn-in/rejoin proof. Local commits only.

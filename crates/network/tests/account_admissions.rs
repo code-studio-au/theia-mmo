@@ -182,6 +182,7 @@ impl Client {
                             )
                         }),
                         inventory: Some(net::inventory::Client {
+                            pickups: None,
                             profile,
                             commands: item_requests,
                         }),

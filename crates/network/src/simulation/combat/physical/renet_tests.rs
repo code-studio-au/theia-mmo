@@ -284,7 +284,7 @@ impl Peer {
                 public_attacks: None,
     journal: None,
     classic_source:Some(session.source),dodge:None,player_life:Some(net::player_life::Client{profile:session.life,membership:None,events:life_events}),lifecycle:None,dialogue:None,ready:readiness,commands:Some(command_rx),choices:Some(choice_rx),
-    combat:Some(net::CombatActions{melee:Some(net::MeleeActions{catalog:Arc::new(melee::Catalog::from_json(include_bytes!("../../../../../../content/gameplay/development-melee-weapons.json")).unwrap()),physical:Some(session.physical),white:None,ability:None,choices:melee_rx}),catalog:session.abilities,casts:cast_rx,events}),quest:None,progression:None,inventory:Some(net::inventory::Client{profile:session.items,commands:item_rx}),statuses:Some(Arc::new(theia_core::statuses::Catalog::from_json(STATUSES).unwrap())),
+    combat:Some(net::CombatActions{melee:Some(net::MeleeActions{catalog:Arc::new(melee::Catalog::from_json(include_bytes!("../../../../../../content/gameplay/development-melee-weapons.json")).unwrap()),physical:Some(session.physical),white:None,ability:None,choices:melee_rx}),catalog:session.abilities,casts:cast_rx,events}),quest:None,progression:None,inventory:Some(net::inventory::Client{pickups:None,profile:session.items,commands:item_rx}),statuses:Some(Arc::new(theia_core::statuses::Catalog::from_json(STATUSES).unwrap())),
    }).await;
             if let Err(error) = &result {
                 publish.send_modify(|s| s.error = Some(error.to_string()));

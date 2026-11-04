@@ -256,6 +256,7 @@ async fn scenario(rate: TickRate, blocked_presentation: bool, explicit_rules: bo
                 quest: None,
                 progression: None,
                 inventory: Some(net::inventory::Client {
+                    pickups: None,
                     profile,
                     commands: item_rx,
                 }),

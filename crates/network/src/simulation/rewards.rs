@@ -25,6 +25,14 @@ pub struct Opportunity {
 }
 impl World {
     pub fn enable_rewards(&mut self, profile: Arc<Profile>) -> Result<()> {
+        self.install_rewards(profile, false)
+    }
+    /// Explicit headless loot adoption. Default content/manifest admission stays
+    /// unchanged until the normal client pickup flow is qualified.
+    pub fn enable_creature_loot(&mut self, profile: Arc<Profile>) -> Result<()> {
+        self.install_rewards(profile, true)
+    }
+    fn install_rewards(&mut self, profile: Arc<Profile>, allow_life: bool) -> Result<()> {
         if self.tick != 0
             || !self.players.is_empty()
             || self.combat.is_none()
@@ -32,10 +40,11 @@ impl World {
         {
             return Err("Rewards require inactive combat world".into());
         }
-        if profile
-            .catalog()
-            .definitions()
-            .any(|d| d.scope() == theia_core::rewards::Scope::PerCreatureLife)
+        if !allow_life
+            && profile
+                .catalog()
+                .definitions()
+                .any(|d| d.scope() == theia_core::rewards::Scope::PerCreatureLife)
         {
             return Err("Per-life corpse interaction and pickup are not installed".into());
         }

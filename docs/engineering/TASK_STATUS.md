@@ -1,3 +1,12 @@
+Implementation resumed, 5 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: explicit headless per-life pickup now shares the
+backpack acknowledgement stream and passes impaired encrypted two-peer tests
+at 20/30/60 Hz. 381 selected tests, formatting and strict all-target Clippy pass.
+[Scope and next slice](../QUEST_ITEM_OBJECTIVES.md#explicit-headless-pickup-integration--5-november-2026).
+Default/normal manifest adoption stays gated; corpse UI and native item-quest
+flow remain pending. Continue until user stops, commit locally, do not push.
+Earlier stop entries below are historical.
+
 Stopped safely at user request, 4 November 2026:
 Explicit corpse-life pickup validation prerequisite passes 367 selected tests,
 formatting and strict workspace/all-target Clippy. [Exact scope and resume work](../QUEST_ITEM_OBJECTIVES.md#safe-stop-explicit-pickup-authority-prerequisite--4-november-2026).

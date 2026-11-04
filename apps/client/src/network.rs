@@ -671,6 +671,7 @@ impl Network {
                                 statuses: status_catalog,
                                 inventory: inventory_profile.map(|profile| {
                                     theia_network::renet_runtime::inventory::Client {
+                                        pickups: None,
                                         profile,
                                         commands: item_queue,
                                     }
