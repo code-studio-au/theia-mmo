@@ -1,4 +1,4 @@
-//! Durable nonrepeatable claims. Authority creates offers; clients may only ask
+//! Durable once-character and per-victim-life loot entitlements. Authority creates offers; clients may only ask
 //! their admitted character to consume a known claim through the later adapter.
 use super::{
     Store, bounded,
@@ -6,9 +6,15 @@ use super::{
 };
 use crate::{
     Binding, ClaimId, Error, InventoryApplied, RealmId, Result, RewardCatalog, RewardClaim,
-    rewards::command_hash,
+    rewards::{CorpseSource, LIFE_CLAIM_PAGE_SIZE, command_hash},
 };
-use theia_core::{content::ContentId, inventory::MAX_REVISION, rewards::MAX_DEFINITIONS};
+use theia_core::{
+    content::ContentId,
+    coordinates::GlobalPosition,
+    inventory::MAX_REVISION,
+    progression::{KillEvent, KillId},
+    rewards::{MAX_DEFINITIONS, Occurrence, Scope},
+};
 use tokio_postgres::{Row, Transaction};
 fn checked(
     row: &Row,
@@ -25,6 +31,33 @@ fn checked(
     let reward = ContentId::new(&row.get::<_, String>(1))
         .filter(|id| profile.catalog().definition(id).is_some())
         .ok_or(Error::RewardData)?;
+    let definition = profile
+        .catalog()
+        .definition(&reward)
+        .ok_or(Error::RewardData)?;
+    let corpse = match (
+        row.get::<_, i16>(6),
+        row.get::<_, Option<Vec<u8>>>(7),
+        definition.scope(),
+    ) {
+        (0, None, Scope::OncePerCharacter) => {
+            if (8..=10).any(|i| row.get::<_, Option<f64>>(i).is_some()) {
+                return Err(Error::RewardData);
+            }
+            None
+        }
+        (1, Some(bytes), Scope::PerCreatureLife) => Some(CorpseSource {
+            life: KillId::from_bytes(bytes.try_into().map_err(|_| Error::RewardData)?)
+                .ok_or(Error::RewardData)?,
+            position: GlobalPosition::new([
+                row.get::<_, Option<f64>>(8).ok_or(Error::RewardData)?,
+                row.get::<_, Option<f64>>(9).ok_or(Error::RewardData)?,
+                row.get::<_, Option<f64>>(10).ok_or(Error::RewardData)?,
+            ])
+            .ok_or(Error::RewardData)?,
+        }),
+        _ => return Err(Error::RewardData),
+    };
     let revision: Option<i64> = row.get(4);
     let receipt: Option<Vec<u8>> = row.get(5);
     if revision.is_some() != receipt.is_some() || revision.is_some_and(|r| r <= 0) {
@@ -44,6 +77,7 @@ fn checked(
             id,
             reward,
             consumed_revision: revision.map(|r| r as u64),
+            corpse,
         },
         receipt,
     ))
@@ -69,22 +103,69 @@ impl Store {
         profile: &RewardCatalog,
         reward: &ContentId,
     ) -> Result<RewardClaim> {
-        if profile.catalog().definition(reward).is_none() {
-            return Err(Error::RewardMissing);
+        let definition = profile
+            .catalog()
+            .definition(reward)
+            .ok_or(Error::RewardMissing)?;
+        if definition.scope() != Scope::OncePerCharacter {
+            return Err(Error::Invalid(
+                "Repeatable loot requires a victim life and corpse position",
+            ));
         }
+        self.offer_reward_source(binding, world, profile, reward, None)
+            .await
+    }
+    /// Trusted authority fact only. Offer commits availability, never items or
+    /// possession progress. Pickup must separately validate ownership and range.
+    pub async fn offer_reward_for_kill(
+        &mut self,
+        binding: Binding,
+        world: [u8; 32],
+        profile: &RewardCatalog,
+        reward: &ContentId,
+        event: &KillEvent,
+        position: GlobalPosition,
+    ) -> Result<RewardClaim> {
+        let definition = profile
+            .catalog()
+            .definition(reward)
+            .ok_or(Error::RewardMissing)?;
+        let corpse = match definition.occurrence(event).map_err(Error::RewardCommand)? {
+            Occurrence::OncePerCharacter => None,
+            Occurrence::CreatureLife(life) => Some(CorpseSource { life, position }),
+        };
+        self.offer_reward_source(binding, world, profile, reward, corpse)
+            .await
+    }
+    async fn offer_reward_source(
+        &mut self,
+        binding: Binding,
+        world: [u8; 32],
+        profile: &RewardCatalog,
+        reward: &ContentId,
+        corpse: Option<CorpseSource>,
+    ) -> Result<RewardClaim> {
         let transaction = bounded(self.client.as_mut().unwrap().transaction()).await?;
         authorize(&transaction, self.realm, binding, world).await?;
         validate_items(&transaction, self.realm, binding, profile).await?;
         let claim = uuid::Uuid::new_v4();
-        bounded(transaction.execute("INSERT INTO theia.reward_claims(realm_id,claim_id,character_id,reward_id,world_id,profile_hash) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(realm_id,character_id,reward_id) DO NOTHING",&[&self.realm.value(),&claim,&binding.character.value(),&reward.as_str(),&world.as_slice(),&profile.hash().as_slice()])).await?;
-        let row=bounded(transaction.query_one("SELECT claim_id,reward_id,world_id,profile_hash,consumed_revision,consumed_command FROM theia.reward_claims WHERE realm_id=$1 AND character_id=$2 AND reward_id=$3 FOR UPDATE",&[&self.realm.value(),&binding.character.value(),&reward.as_str()])).await?;
+        let scope = i16::from(corpse.is_some());
+        let life = corpse.map(|c| c.life.bytes().to_vec());
+        let x = corpse.map(|c| c.position.metres()[0]);
+        let y = corpse.map(|c| c.position.metres()[1]);
+        let z = corpse.map(|c| c.position.metres()[2]);
+        bounded(transaction.execute("INSERT INTO theia.reward_claims(realm_id,claim_id,character_id,reward_id,world_id,profile_hash,claim_scope,victim_life,corpse_x,corpse_y,corpse_z) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT DO NOTHING",&[&self.realm.value(),&claim,&binding.character.value(),&reward.as_str(),&world.as_slice(),&profile.hash().as_slice(),&scope,&life,&x,&y,&z])).await?;
+        let row=bounded(transaction.query_one("SELECT claim_id,reward_id,world_id,profile_hash,consumed_revision,consumed_command,claim_scope,victim_life,corpse_x,corpse_y,corpse_z FROM theia.reward_claims WHERE realm_id=$1 AND character_id=$2 AND reward_id=$3 AND claim_scope=$4 AND victim_life IS NOT DISTINCT FROM $5 FOR UPDATE",&[&self.realm.value(),&binding.character.value(),&reward.as_str(),&scope,&life])).await?;
         let (claim, _) = checked(&row, world, profile)?;
+        if claim.corpse != corpse {
+            return Err(Error::RewardData);
+        }
         bounded(transaction.commit()).await?;
         Ok(claim)
     }
-    /// Bounded complete catalog view, including consumed records so repeated kills
-    /// cannot turn a completed definition into a fresh offer. Never silently omit
-    /// foreign profiles or excessive records and invent an incomplete claim list.
+    /// Complete bounded once-character history plus the oldest pending per-life
+    /// page. Unshown pending loot and consumed life receipts remain durable;
+    /// consuming an entry reveals the next page on reload.
     pub async fn list_reward_claims(
         &mut self,
         binding: Binding,
@@ -95,14 +176,21 @@ impl Store {
         authorize(&transaction, self.realm, binding, world).await?;
         validate_items(&transaction, self.realm, binding, profile).await?;
         let limit = (MAX_DEFINITIONS + 1) as i64;
-        let rows=bounded(transaction.query("SELECT claim_id,reward_id,world_id,profile_hash,consumed_revision,consumed_command FROM theia.reward_claims WHERE realm_id=$1 AND character_id=$2 ORDER BY reward_id,claim_id LIMIT $3",&[&self.realm.value(),&binding.character.value(),&limit])).await?;
+        let mut rows=bounded(transaction.query("SELECT claim_id,reward_id,world_id,profile_hash,consumed_revision,consumed_command,claim_scope,victim_life,corpse_x,corpse_y,corpse_z FROM theia.reward_claims WHERE realm_id=$1 AND character_id=$2 AND claim_scope=0 ORDER BY reward_id,claim_id LIMIT $3",&[&self.realm.value(),&binding.character.value(),&limit])).await?;
         if rows.len() > MAX_DEFINITIONS {
             return Err(Error::RewardData);
         }
-        let claims = rows
+        let page_limit = LIFE_CLAIM_PAGE_SIZE as i64;
+        rows.extend(bounded(transaction.query("SELECT claim_id,reward_id,world_id,profile_hash,consumed_revision,consumed_command,claim_scope,victim_life,corpse_x,corpse_y,corpse_z FROM theia.reward_claims WHERE realm_id=$1 AND character_id=$2 AND claim_scope=1 AND consumed_revision IS NULL ORDER BY created_at,claim_id LIMIT $3",&[&self.realm.value(),&binding.character.value(),&page_limit])).await?);
+        let mut claims = rows
             .iter()
             .map(|row| checked(row, world, profile).map(|(claim, _)| claim))
             .collect::<Result<Vec<_>>>()?;
+        claims.sort_by(|a, b| {
+            a.reward
+                .cmp(&b.reward)
+                .then_with(|| a.id.bytes().cmp(&b.id.bytes()))
+        });
         bounded(transaction.commit()).await?;
         Ok(claims)
     }
@@ -159,7 +247,7 @@ impl Store {
         let row=bounded(transaction.query_opt("SELECT catalog_hash,revision,state,last_command FROM theia.backpacks WHERE realm_id=$1 AND character_id=$2 FOR UPDATE",&[&self.realm.value(),&binding.character.value()])).await?.ok_or(Error::InventoryMissing)?;
         let bag = checked_bag(&row, profile.items())?;
         let receipt: Option<Vec<u8>> = row.get(3);
-        let row=bounded(transaction.query_opt("SELECT claim_id,reward_id,world_id,profile_hash,consumed_revision,consumed_command FROM theia.reward_claims WHERE realm_id=$1 AND character_id=$2 AND claim_id=$3 FOR UPDATE",&[&self.realm.value(),&binding.character.value(),&uuid::Uuid::from_bytes(claim.bytes())])).await?.ok_or(Error::RewardMissing)?;
+        let row=bounded(transaction.query_opt("SELECT claim_id,reward_id,world_id,profile_hash,consumed_revision,consumed_command,claim_scope,victim_life,corpse_x,corpse_y,corpse_z FROM theia.reward_claims WHERE realm_id=$1 AND character_id=$2 AND claim_id=$3 FOR UPDATE",&[&self.realm.value(),&binding.character.value(),&uuid::Uuid::from_bytes(claim.bytes())])).await?.ok_or(Error::RewardMissing)?;
         let (saved, consumed_receipt) = checked(&row, world, profile)?;
         let hash = command_hash(claim, expected_revision);
         if expected_revision.checked_add(1) == Some(bag.revision()) {

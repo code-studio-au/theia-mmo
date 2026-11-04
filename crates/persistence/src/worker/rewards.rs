@@ -4,7 +4,10 @@ use super::{
     inventory::{self, respond, valid_world},
 };
 use crate::{Binding, ClaimId, Error, InventoryApplied, Result, RewardCatalog, RewardClaim, Store};
-use theia_core::{content::ContentId, inventory::MAX_REVISION};
+use theia_core::{
+    content::ContentId, coordinates::GlobalPosition, inventory::MAX_REVISION,
+    progression::KillEvent,
+};
 use tokio::sync::oneshot;
 pub(super) enum Request {
     Offer {
@@ -12,6 +15,7 @@ pub(super) enum Request {
         world: [u8; 32],
         profile: RewardCatalog,
         reward: ContentId,
+        source: Option<(KillEvent, GlobalPosition)>,
         reply: oneshot::Sender<Result<RewardClaim>>,
     },
     List {
@@ -49,6 +53,38 @@ impl Publisher {
                 world,
                 profile: profile.clone(),
                 reward: reward.clone(),
+                source: None,
+                reply,
+            }),
+            answer,
+        )
+        .await
+    }
+    /// Accepted trusted loot offers survive response loss and drain on shutdown.
+    pub async fn offer_reward_for_kill(
+        &self,
+        binding: Binding,
+        world: [u8; 32],
+        profile: &RewardCatalog,
+        reward: &ContentId,
+        event: &KillEvent,
+        position: GlobalPosition,
+    ) -> Result<RewardClaim> {
+        valid_world(world)?;
+        profile
+            .catalog()
+            .definition(reward)
+            .ok_or(Error::RewardMissing)?
+            .occurrence(event)
+            .map_err(Error::RewardCommand)?;
+        let (reply, answer) = oneshot::channel();
+        self.inventory_request(
+            inventory::Request::Reward(Request::Offer {
+                binding,
+                world,
+                profile: profile.clone(),
+                reward: reward.clone(),
+                source: Some((event.clone(), position)),
                 reply,
             }),
             answer,
@@ -109,12 +145,21 @@ impl Request {
                 world,
                 profile,
                 reward,
+                source,
                 reply,
             } => {
-                if reply.is_closed() {
-                    return Ok(());
-                }
-                let result = store.offer_reward(binding, world, &profile, &reward).await;
+                // Availability is critical retained work once accepted, even if
+                // its caller stops waiting before this job reaches the store.
+                let result = match source {
+                    Some((event, position)) => {
+                        store
+                            .offer_reward_for_kill(
+                                binding, world, &profile, &reward, &event, position,
+                            )
+                            .await
+                    }
+                    None => store.offer_reward(binding, world, &profile, &reward).await,
+                };
                 status.reward_offers = status
                     .reward_offers
                     .saturating_add(u64::from(result.is_ok()));

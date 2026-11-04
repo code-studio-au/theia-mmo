@@ -1,3 +1,14 @@
+Per-life loot storage prerequisite qualified locally, 4 November 2026:
+P3-02 / P3-05 / P3-09 / P3-11 / P3-15: migration 12 preserves old once-character
+claims and binds repeatable loot to victim life and corpse position. Death/offer
+alone changes no bag or possession credit; explicit pickup commits both together.
+53 actual PostgreSQL contracts and restart hashes pass; 377 selected regular
+tests, formatting and strict workspace/all-target Clippy pass. No full-workspace
+execution claim. [Exact scope and pending corpse interaction](QUEST_ITEM_OBJECTIVES.md#per-life-loot-storage-prerequisite-qualified--4-november-2026).
+Preserve `build/quest-loot-storage-qualified-v1-20261104`. Runtime per-life content
+and live item quests stay gated. Continue explicit corpse pickup/UI with local
+commits only; no new native/Windows/capacity claim for this storage slice.
+
 Per-life loot core prerequisite checked locally, 4 November 2026:
 P3-05 / P3-09 / P3-11 / P3-15: schema 2 and trusted victim-life selector added;
 339 core tests, three reward-wire checks and one non-SQL storage gate pass.

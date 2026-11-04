@@ -1,3 +1,12 @@
+## 2026-11-04 — separate durable loot availability from pickup
+
+A fatal creature life creates a recipient-bound loot entitlement at its original
+checked metric corpse position. Availability/viewing do not add inventory or
+possession progress. Pickup commits bag, claim receipt and affected journals
+together. Keep life receipts durable and load bounded pending pages; consumed
+history is not a resident owner list. Preserve once-character content and require
+live corpse/life/range checks before runtime adoption. [Storage proof and limits](QUEST_ITEM_OBJECTIVES.md#per-life-loot-storage-prerequisite-qualified--4-november-2026).
+
 ## 2026-11-04 — explicit per-creature-life reward scope
 
 Preserve schema-1 once-character recipes. Use schema 2 for explicit repeatable

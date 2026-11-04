@@ -74,7 +74,26 @@ def run(output, sdk):
         cargo('vendors-write', ['run', '--locked', '-p', 'theia-persistence', '--example', 'vendors_qualification', '--', 'write'])
         cargo('quest-lifecycle-write', ['run', '--locked', '-p', 'theia-persistence', '--example', 'quest_lifecycle_qualification', '--', 'write'])
         cargo('quest-turn-in-xp-write', ['run', '--locked', '-p', 'theia-persistence', '--example', 'quest_turn_in_xp_qualification', '--', 'write'])
+        loot_query = """
+            SELECT n.display_name,
+              (SELECT count(*) FROM theia.reward_claims r WHERE r.realm_id=n.realm_id AND r.character_id=n.character_id),
+              (SELECT count(*) FROM theia.reward_claims r WHERE r.realm_id=n.realm_id AND r.character_id=n.character_id AND r.consumed_revision IS NULL),
+              (SELECT md5(string_agg(to_jsonb(r)::text,'|' ORDER BY claim_id)) FROM theia.reward_claims r WHERE r.realm_id=n.realm_id AND r.character_id=n.character_id),
+              (SELECT md5(to_jsonb(b)::text) FROM theia.backpacks b WHERE b.realm_id=n.realm_id AND b.character_id=n.character_id),
+              (SELECT md5(to_jsonb(h)::text) FROM theia.quest_journal_heads h WHERE h.realm_id=n.realm_id AND h.character_id=n.character_id),
+              (SELECT md5(string_agg(to_jsonb(q)::text,'|' ORDER BY quest_id)) FROM theia.quest_journal_entries q WHERE q.realm_id=n.realm_id AND q.character_id=n.character_id),
+              (SELECT md5(to_jsonb(p)::text) FROM theia.progression p WHERE p.realm_id=n.realm_id AND p.character_id=n.character_id)
+            FROM theia.character_names n WHERE n.display_name LIKE 'Loot%' ORDER BY n.display_name;
+        """
+        loot_before = cluster.query(loot_query)
+        assert loot_before.returncode == 0
+        loot_counts = {r[0]: (int(r[1]), int(r[2])) for r in (line.split('|') for line in loot_before.stdout.splitlines())}
+        assert loot_counts == {'Lootlife': (2, 0), 'Lootother': (1, 1), 'Lootpages': (19, 0), 'Lootquest': (4, 0), 'Lootretained': (2, 1)}, loot_counts
+        (output/'creature-loot-before-restart.txt').write_text(loot_before.stdout)
         cluster.restart()
+        loot_after = cluster.query(loot_query)
+        assert loot_after.returncode == 0 and loot_after.stdout == loot_before.stdout, 'Per-life loot source/availability/receipts/items/journals changed across restart'
+        (output/'creature-loot-after-restart.txt').write_text(loot_after.stdout)
         journal_after = cluster.query(journal_query)
         assert journal_after.returncode == 0 and journal_after.stdout == journal_before.stdout, 'Multi-quest rows/receipts changed across database process restart'
         (output/'quest-journal-after-restart.txt').write_text(journal_after.stdout)
@@ -137,6 +156,10 @@ def run(output, sdk):
                   reward_full_bag_retains_claim_and_transaction_rollback=True,
                   reward_availability_consumption_and_items_survive_restart=True,
                   reward_cancelled_response_and_backend_loss_fail_closed=True,
+                  per_life_offer_without_pickup_does_not_credit_possession=True,
+                  per_life_pending_consumed_corpse_bags_and_journals_survive_restart=True,
+                  per_life_accepted_offers_drain_after_lost_response=True,
+                  per_life_pending_page_size=16,
                   progression_old_event_deduplication_and_cap=True,
                   progression_atomic_receipt_rollback_and_backend_loss=True,
                   progression_process_database_restart_and_old_receipts=True,

@@ -433,3 +433,81 @@ per-recipient-life uniqueness, atomic claim/possession reconciliation, bounded
 pending availability and replay-safe retained work. Keep consumed per-life
 receipts durable without loading all historical kills into the owner. Then bind
 actual fatal victim lives in World/runtime and qualify normal pelt quest play.
+
+
+## Added requirement — explicit corpse-loot pickup, 4 November 2026
+
+The user clarified that a creature can die and drop loot without the player
+collecting it. Adopt separate states: authoritative death creates loot availability
+at that victim life's corpse; opening loot only views it; explicit pickup commits
+items into the backpack. Possession objectives change only after the inventory
+transaction commits. Uncollected drops, viewing the corpse and closing the loot
+window grant no possession credit. This does not change historical kill objectives.
+
+The recommended initial interaction is right-click corpse, then take an item or
+Loot all. Authority must check the recipient, exact corpse/life, current range,
+world/content binding and backpack capacity. A failed/full-bag pickup leaves the
+uncollected claim available. Bind the original death position so a new creature
+life or later movement cannot retarget an old drop. Keep accepted claim/receipt
+handling replay-safe; continue to support split/delete/reacquire after pickup.
+
+This is adopted scope under implementation, not a working corpse/loot window.
+The existing qualified training Claim button and once-character content remain
+legacy behavior. Per-life live admission stays closed until corpse presentation,
+authoritative interaction/pickup and normal native tests pass. Corpse expiry,
+party/shared loot, drop chance balance and general ground-item dropping require
+separate policies; no exact Classic parity for those rules is claimed here.
+
+
+## Per-life loot storage prerequisite qualified — 4 November 2026
+
+Migration 12 preserves once-character claims and adds a checked scope, victim-life
+key and immutable checked f64 corpse position in global Y-up metres. Separate
+partial unique indexes enforce once per character/recipe or once per character/
+recipe/victim life, including consumed history. Reoffering the same life returns
+the original claim; a changed corpse position, wrong creature or foreign owner
+refuses. A new life creates a new entitlement. The trusted API does not establish
+World kill credit or current pickup range by itself.
+
+Creating an entitlement commits availability only. It does not mutate the bag or
+quest possession. Explicit claim consumption uses the existing atomic bag/receipt/
+optional-journal transaction. Tests take three drops to reach Ready, destroy one
+to become Active, create a replacement drop while remaining Active, then pick it
+up to become Ready. A forced journal-write failure rolls back both the pickup and
+claim consumption. A full bag leaves uncollected loot available. Split/delete and
+normal completed-quest rules remain unchanged.
+
+Accepted trusted offer jobs now survive lost response receivers, including jobs
+still queued behind a blocked transaction, and drain during worker shutdown.
+Listing keeps complete once-character history (at most 16 definitions) plus the
+oldest 16 unconsumed life claims. Consumed life receipts and unshown pending drops
+stay in SQL; taking a visible entry exposes later entries on reload. This page is
+a bounded storage primitive, not general spatial corpse interest or live-world
+capacity proof. Selected-corpse/spatial lookup is still needed for live access to
+arbitrary nearby corpses without collecting older distant drops first.
+
+The actual owned PostgreSQL qualifier passes all 34 commands and 53 database
+contract tests, including seven reward contracts and the existing quest/inventory/
+XP/vendor regressions. Migration upgrade fixtures preserve an old consumed
+once-character claim, bag and quest rows; the schema-nine fixture now uses its
+own disposable database. Failure-injection constraints are scoped to their test
+realm so unrelated XP rows remain valid. Explicit restart hashes match for 28
+life claims (26 consumed, two pending), their corpse sources, backpacks, journals
+and XP. Durability flags remain fsync/synchronous_commit/full_page_writes on.
+Owned services stop and plaintext password files are removed.
+
+One non-SQL profile check, eight server tests and 368 selected network tests pass
+(377 selected tests, seven database skips in the non-service command). Formatting,
+Python compilation and denied-warning workspace/all-target Clippy pass. The broad
+all-target execution build was cancelled while relinking historical executables;
+it is not counted as a passing full-workspace test run. The actual SQL contracts
+were executed separately above. Source/proof checkpoint:
+`build/quest-loot-storage-qualified-v1-20261104`; raw database proof:
+`build/quest-loot-storage-postgres-v4-20261104`.
+
+Storage accepts explicit per-life profiles now; the network runtime constructor
+still refuses them. No live corpse, loot window, pickup range or native pelt-quest
+adoption is claimed. Keep that gate until corpse interaction, recipient/life/range
+validation, explicit item/Loot-all pickup and native tests pass. Earlier native
+confirmed destruction remains available at its frozen checkpoint. No quest-profile
+migration, native Windows or MMO-capacity claim. Continue with local commits only.

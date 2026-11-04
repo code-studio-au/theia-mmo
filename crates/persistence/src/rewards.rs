@@ -13,14 +13,6 @@ pub struct RewardCatalog {
 impl RewardCatalog {
     pub fn from_json(bytes: &[u8], items: &InventoryCatalog) -> Result<Self> {
         let catalog = Arc::new(Catalog::from_json(bytes, items.catalog()).map_err(Error::Invalid)?);
-        if catalog
-            .definitions()
-            .any(|d| d.scope() == theia_core::rewards::Scope::PerCreatureLife)
-        {
-            return Err(Error::Invalid(
-                "Per-creature-life reward storage is not installed",
-            ));
-        }
         let mut bound = theia_core::rewards::PROFILE_DOMAIN.to_vec();
         bound.extend(items.hash());
         bound.extend(bytes);
@@ -40,11 +32,20 @@ impl RewardCatalog {
         self.hash
     }
 }
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct CorpseSource {
+    pub life: theia_core::progression::KillId,
+    pub position: theia_core::coordinates::GlobalPosition,
+}
+/// Visible pending life page; historical consumed receipts stay in SQL.
+pub const LIFE_CLAIM_PAGE_SIZE: usize = 16;
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct RewardClaim {
     pub id: ClaimId,
     pub reward: ContentId,
     pub consumed_revision: Option<u64>,
+    pub corpse: Option<CorpseSource>,
 }
 pub(crate) fn command_hash(claim: ClaimId, expected_revision: u64) -> [u8; 32] {
     let mut bytes = theia_core::rewards::CLAIM_DOMAIN.to_vec();

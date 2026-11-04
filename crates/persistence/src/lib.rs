@@ -20,7 +20,7 @@ pub use quest_journal::{
 };
 pub use quest_lifecycle::{EarnedQuestLifecycle, QuestLifecycleApplied, QuestLifecycleCatalog};
 pub use quests::{EarnedProgression, QuestApplied, QuestCatalog};
-pub use rewards::{RewardCatalog, RewardClaim};
+pub use rewards::{CorpseSource, LIFE_CLAIM_PAGE_SIZE, RewardCatalog, RewardClaim};
 use std::fmt;
 pub use store::Store;
 use theia_core::coordinates::GlobalPosition;

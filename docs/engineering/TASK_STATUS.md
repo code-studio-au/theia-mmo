@@ -1,3 +1,10 @@
+Per-life loot storage qualified, 4 November 2026: durable victim/corpse binding,
+explicit pickup/possession transactions, bounded pending pages and actual SQL
+restart pass. [Scope](../QUEST_ITEM_OBJECTIVES.md#per-life-loot-storage-prerequisite-qualified--4-november-2026).
+P3-02 / P3-05 / P3-09 / P3-11 / P3-15 continue with corpse interaction and explicit
+pickup UI; runtime remains gated. Commit locally only. Native destruction remains
+qualified separately; do not equate storage offers with collected items.
+
 Per-life loot core prerequisite, 4 November 2026: schema 2 and victim-life
 selectors pass core/codec admission checks; runtime and storage remain gated.
 [Exact scope](../QUEST_ITEM_OBJECTIVES.md#per-life-loot-core-prerequisite--4-november-2026).
