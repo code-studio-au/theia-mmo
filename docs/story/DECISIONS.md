@@ -1,5 +1,10 @@
 # Story decisions and maintenance
 
+## 2026-11-04 — LOCKED: Q169 What the Shroud Concealed replaces transport survey
+
+**Creator approval:** Retain optional quest ID Q169 but replace **The Route Between** with **What the Shroud Concealed**. Following Q156's Veilbreaker event and receding Shroud, the player explores a newly exposed historical site, recovers and authenticates a personal journal written by **Thes'var before the Second Sundering**, with its final entry stopping before the catastrophe, and brings it to **Oth'varen** for authentication and personal context. The narrative purpose is to humanise the original scholar and illuminate pre-Sundering Conclave relationships, without absolving his knowing later corruption or rewriting First Anchor sabotage. Tarek may introduce the exposed-site report; Oth'varen provides the interpretive conversation. The site and precise dialogue are WORKING pending geographic/chronological validation. Do not reveal future Q176–Q181 events, imply Oth'varen anticipates his death, or establish new fragment lore. Q169 remains optional and is available after Q156, with ordinary regional access and any required local custodian permission; no additional hard level gate or Q157/Q181 requirement. This is a **story approval**, not approval of new JSON/runtime content or final dialogue wording.
+
+
 ## 2026-11-04 — LOCKED: Q168 Life at the Edges optional access
 
 **Creator approval:** Q168 unlocks after Q156 in the post-Veilbreaker environmental phase. Caelith gives the ecological survey assignment. The player uses established travel routes and ordinary regional access; obtain specific local permission only when entering restricted sites, respecting each people's sovereignty. Q157 and Q181 are not prerequisites and no additional hard level gate applies. Measurements and mitigation establish local effects only, not a universal ecological outcome. Preserve optional status, quest objectives and 184-quest count. JSON/runtime eligibility reconciliation remains separately scoped.
