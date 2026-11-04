@@ -32,7 +32,7 @@
 | **Q125 The Anchor Beneath** | Enter buried installation → recover synchronization schematic and original-tear evidence → report | **Critical canon:** Anchors manipulate the original tear; they are not the Seven's Binding or prison |
 | **Q126 A Measure of Time** | Compare activation clocks and relay signatures in either order → Sera confirms convergence | Measurement supports urgency; do not invent a precise countdown unless gameplay timing is defined |
 | **Q127 The Gathering Storm** | Request royal audience → present corroborated threat → obtain limited expedition mandate | Limited support, not unrestricted authority over other nations or Kel'vari lands |
-| **Q128 Before the Veil Breaks** | Nessa briefing → verify extraction routes and instrument teams in either order → record staging readiness | **Duplicate title:** Q154 uses the same name for final assault preparation. Proposed Q128 rename: *The Expedition Musters*; keep Q154's title |
+| **Q128 The Warden's Preparations** | Nessa briefing → verify extraction routes and instrument teams in either order → record staging readiness | **LOCKED creator decision (4 November 2026):** Q128 uses *The Warden's Preparations*; Q154 retains *Before the Veil Breaks*. The earlier *The Expedition Musters* proposal is SUPERSEDED. Preserve the distinct staging objectives; see the [decision ledger](../../DECISIONS.md#2026-11-04--locked-distinct-q128-and-q154-titles) |
 
 ## Continuity and implementation corrections to approve
 
