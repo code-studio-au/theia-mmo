@@ -172,7 +172,15 @@ Cassian must initially appear helpful and competent, not a theatrical villain. A
 
 **Commission handoff:** “Take the commission. Report to Elara what became of the case she sent you to investigate.”
 
-**Q031 completion boundary:** The warrant handoff precedes the required report home to Elara. Complete the canonical custody/removal confirmation and home report before closing the betrayal arc; Elara's report-response dialogue remains to be authored.
+**Q031 completion boundary:** The warrant handoff precedes the required report home to Elara. Complete the canonical custody/removal confirmation and home report before closing the betrayal arc.
+
+**Elara, home report (WORKING):** “Cassian was brought back alive, then? And the king has removed him from office?”
+
+**Player:** “Yes. The inquiry continues under a limited commission. Edric's death is not the end of the evidence.”
+
+**Elara:** “Good. People here deserved an answer, not a convenient story. The commission may take you farther, but bring back what can be proved.”
+
+**Completion evidence:** Confirm lawful custody and removal from office, receive Aldren's limited warrant, and report its terms to Elara. This does not absolve the Dominion or end the war.
 
 **In-progress:** “Finish the evidence or service we've agreed on. If the situation changes, come back and tell me.”
 
