@@ -2,7 +2,7 @@
 
 **Status: Needs Review — authored dialogue, not recorded or implemented.** Based on [Human 1–80 Canonical Campaign](Human_1_80_Canonical_Campaign.md) and [Q001–Q017 working authoring review](Human_Q001_Q017_Rust_Authoring_Review.md). This expands the earlier [vertical slice dialogue brief](Human_1_10_Vertical_Slice_Implementation.md) into reusable quest-offer, progress, choice and turn-in dialogue. All lines are original first-pass text.
 
-**Coverage:** This first pass contains Q001–Q013. Dialogue for optional Q014–Q017 remains to be authored; their canonical quests and outcomes remain in the campaign and consolidated authoring review.
+**Coverage:** This first pass now contains Q001–Q017, including WORKING drafts for optional Q014–Q017 and Elara's Q013 completion handoff. Their canonical quests and outcomes remain authoritative in the campaign; draft dialogue and completion-evidence detail do not independently approve extra objectives or mechanics.
 
 ## Dialogue design constraints
 

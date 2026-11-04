@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "status": "needs_review_classification_v2",
+  "status": "derived_dependency_reference_not_executable",
   "quests": [
     {
       "id": 1,
@@ -201,7 +201,7 @@
       "title": "The Office After Edric",
       "location": "Millhaven, Stoneford, Greyfall Quarry",
       "contact": "Elara",
-      "objective": "Recover a payment instruction from Perrin's transfer cache and interview him under regional authority; obtain Elara's introduction to Mara.",
+      "objective": "Copy payment order; Interview Perrin; Obtain Elara's introduction to Mara after payment evidence and the authorized Perrin interview",
       "type": "main_story",
       "minLevel": 5,
       "prerequisites": [
@@ -490,8 +490,8 @@
       "id": 31,
       "title": "The Commission",
       "location": "Valecrown and Millhaven",
-      "contact": "Aldren / Elara",
-      "objective": "Confirm removal from office and lawful custody; receive the follow-up warrant and report home. Close the betrayal arc without absolving Dominion.",
+      "contact": "Aldren",
+      "objective": "Confirm Cassian's lawful custody and removal from office; Receive limited investigation commission; Return to Millhaven by established travel; Report outcome",
       "type": "main_story",
       "minLevel": 15,
       "prerequisites": [
@@ -501,7 +501,8 @@
       "rewardXP": null,
       "mapId": null,
       "npcId": null,
-      "encounterId": null
+      "encounterId": null,
+      "turnInContact": "Elara"
     },
     {
       "id": 32,
@@ -689,7 +690,7 @@
       "title": "Keep the Evidence Safe",
       "location": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
       "contact": "Sera / Grey Surveyor",
-      "objective": "Choose sealed sample preservation or safe sample destruction after copying measurements; both retain the critical technical record.",
+      "objective": "Measure instability and preserve an independent copy of the technical measurements before choosing sample preservation or destruction; Choose secure preservation or controlled destruction; Carry out selected safety procedure; Record evidence and choice in case journal",
       "type": "main_story",
       "minLevel": 20,
       "prerequisites": [
@@ -773,7 +774,7 @@
       "title": "A Different Kind of Healing",
       "location": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
       "contact": "Anwen / Oren",
-      "objective": "Return home, document a real healing benefit and make a local ward safe; distinguish the beneficial awakening from deliberate interference.",
+      "objective": "Receive unusual healing observation request; Interview Oren about ward behavior; Measure non-harmful healing anomaly; Make the local ward safe while documenting the real healing benefit; Record uncertainty without inventing a cause",
       "type": "regional_optional",
       "minLevel": 20,
       "prerequisites": [],
@@ -806,7 +807,7 @@
       "title": "No Fault in the Drawing",
       "location": "Kar Durn, Sylvaren, hostile Dominion coast, Tidehold",
       "contact": "Brynja",
-      "objective": "Inspect her original plans and a broker's substituted specification; secure hold permission to recover a measuring assembly.",
+      "objective": "Review Brynja's signed original drawing; Compare unauthorized revision; Authenticate difference and exonerate original engineer; Preserve traceable report; Secure hold permission to recover the measuring assembly",
       "type": "main_story",
       "minLevel": 25,
       "prerequisites": [
@@ -839,7 +840,7 @@
       "title": "Grain for Iron",
       "location": "Kar Durn, Sylvaren, hostile Dominion coast, Tidehold",
       "contact": "Brynja / hold authority",
-      "objective": "Settle the contested shipment with verified records; secure a limited engineering commission and an inspection report.",
+      "objective": "Review grain and iron deliveries; Compare conflicting delivery dates; Secure a limited engineering commission using verified shipment records; Close the contested shipment and obtain the inspection report",
       "type": "main_story",
       "minLevel": 25,
       "prerequisites": [
@@ -855,8 +856,8 @@
       "id": 53,
       "title": "The King's Correspondence",
       "location": "Kar Durn royal court → Sylvaren",
-      "contact": "High King / Caelith",
-      "objective": "Obtain High King's sealed introduction and deliver Brynja's findings to Caelith.",
+      "contact": "High King",
+      "objective": "Present authenticated engineering report and request introduction; Receive High King's letter; Travel to Aelari capital by established routes; Present letter and report to Caelith",
       "type": "main_story",
       "minLevel": 25,
       "prerequisites": [
@@ -866,7 +867,8 @@
       "rewardXP": null,
       "mapId": null,
       "npcId": null,
-      "encounterId": null
+      "encounterId": null,
+      "turnInContact": "Caelith"
     },
     {
       "id": 54,
@@ -991,7 +993,7 @@
       "title": "The Courier Who Burned Both Copies",
       "location": "Kar Durn, Sylvaren, hostile Dominion coast, Tidehold",
       "contact": "Mara's field agent",
-      "objective": "Intercept an Unmade courier before the cached archive is destroyed; retain redundancy through an already lodged duplicate.",
+      "objective": "Receive courier interception intelligence; Find Unmade courier's route; Defeat or stop hostile courier; Recover the cached archive evidence while retaining redundancy through an already lodged duplicate; Report the interception and preserve chain of custody, including the already lodged duplicate",
       "type": "main_story",
       "minLevel": 25,
       "prerequisites": [
@@ -1025,7 +1027,7 @@
       "title": "The City That Endured",
       "location": "Drom Kar, freight works, mainland Chainworks",
       "contact": "Urodan",
-      "objective": "Arrive at Drom Kar, hear its custodial limits and secure a water-route work assignment before archive access.",
+      "objective": "Arrive at Drom Kar; Hear Urodan's custodial limits; Secure the water-route work assignment; Confirm the assignment before archive access; maintenance-route work follows in Q064",
       "type": "main_story",
       "minLevel": 30,
       "prerequisites": [
@@ -1042,7 +1044,7 @@
       "title": "Water and Memory",
       "location": "Drom Kar, freight works, mainland Chainworks",
       "contact": "Urodan / Tarek",
-      "objective": "Secure the existing maintenance route and retrieve records from the endangered store; obtain the omitted warning.",
+      "objective": "Receive tunnel access; Reach old store; Secure the maintenance route and protect the crew; Retrieve records from the endangered store and obtain the omitted warning",
       "type": "main_story",
       "minLevel": 30,
       "prerequisites": [
@@ -1160,8 +1162,8 @@
       "id": 71,
       "title": "Make the Measure Small",
       "location": "Drom Kar, freight works, mainland Chainworks",
-      "contact": "Oth'varen / Brynja",
-      "objective": "Set up a fully isolated Minor Resonator trial with instruments, physical cutoff and reserve limits.",
+      "contact": "Grey Surveyor / Brynja",
+      "objective": "Inspect isolation; Fit cutoff; Verify limits; Authorize trial",
       "type": "main_story",
       "minLevel": 30,
       "prerequisites": [
@@ -1177,8 +1179,8 @@
       "id": 72,
       "title": "A Brief Reversal",
       "location": "Drom Kar, freight works, mainland Chainworks",
-      "contact": "Oth'varen",
-      "objective": "Conduct the controlled inversion trial; stop at its measured duration and record both result and uncertainty.",
+      "contact": "Grey Surveyor",
+      "objective": "Start bounded inversion; Measure polarity; Stop on threshold; Archive result",
       "type": "main_story",
       "minLevel": 30,
       "prerequisites": [
@@ -1365,7 +1367,7 @@
       "title": "The Route That Never Closed",
       "location": "Drom Kar, hidden Guardian gate, Lantern Redoubt, Kel'vari homeland",
       "contact": "Tarek / Dromak",
-      "objective": "Survey the separate low-capacity Passage, test a small-group return path and deliver an expedition proposal to Corven.",
+      "objective": "Visit restricted Guardian Passage; Verify limited throughput; Test the small-group return path and confirm safe return procedure; Deliver the expedition proposal to Corven after testing the small-group return path",
       "type": "regional_optional",
       "minLevel": 35,
       "prerequisites": [],
@@ -1651,7 +1653,7 @@
       "title": "The Cost of Keeping Quiet",
       "location": "Oth'irun and Kel'vari archive approaches",
       "contact": "Sera",
-      "objective": "Rescue threatened custodians using an authorised route disclosure; preserve enclave security through restricted case access.",
+      "objective": "Receive the custodian protection request and authorized route disclosure; Reach the endangered custodians by the authorized route; Protect custodians; Report the rescue through restricted case access, preserving enclave security",
       "type": "regional_optional",
       "minLevel": 40,
       "prerequisites": [],
@@ -1870,7 +1872,7 @@
       "title": "The False Safe House",
       "location": "Oth'irun, Valecrown, contested delegation site, hostile Dominion military archive, Shroud",
       "contact": "Sera",
-      "objective": "Locate Su'vareth's headquarters using three independent trails and expose its decoy.",
+      "objective": "Investigate false location; Identify staged clues; Corroborate the genuine headquarters location using three independent trails; Confirm",
       "type": "main_story",
       "minLevel": 45,
       "prerequisites": [
@@ -2122,10 +2124,10 @@
     },
     {
       "id": 128,
-      "title": "Before the Veil Breaks",
+      "title": "The Warden's Preparations",
       "location": "Guardian staging camp",
       "contact": "Nessa",
-      "objective": "Verify extraction, supply and instrument teams.",
+      "objective": "Review staging assignment; Confirm extraction routes; Verify measurement teams",
       "type": "main_story",
       "minLevel": 50,
       "prerequisites": [
@@ -2652,16 +2654,18 @@
       "title": "The Lands Revealed",
       "location": "Exposed Kel'vari approaches",
       "contact": "Aru'ven",
-      "objective": "Escort displaced residents to shelter.",
+      "objective": "Receive Kel'vari evacuation request; Reach newly exposed settlement; Protect evacuees; Confirm shelter",
       "type": "regional_optional",
       "minLevel": 70,
-      "prerequisites": [],
+      "prerequisites": [
+        "HUMAN_Q156_DONE"
+      ],
       "completionFlag": "HUMAN_Q159_DONE",
       "rewardXP": null,
       "mapId": null,
       "npcId": null,
       "encounterId": null,
-      "classificationNote": "Kel'vari refugee escort regional; Shroud dissolution witnessed in Q157"
+      "classificationNote": "Optional evacuation after Q156 with earlier legitimate Kel'vari contact and Aru'ven's limited affected-settlement permission; Q157/Q181 are not prerequisites."
     },
     {
       "id": 160,
@@ -2804,32 +2808,37 @@
       "title": "Life at the Edges",
       "location": "Distributed Anchors, Covenant and Kel'vari regions, Guardian camp",
       "contact": "Caelith",
-      "objective": "Measure ecological effects near another installation and mitigate harm.",
+      "objective": "Receive local ecological survey request; Reach affected cultivation area; Measure local disturbance; Apply approved mitigation; Record results",
       "type": "regional_optional",
       "minLevel": 75,
-      "prerequisites": [],
+      "prerequisites": [
+        "HUMAN_Q156_DONE"
+      ],
       "completionFlag": "HUMAN_Q168_DONE",
       "rewardXP": null,
       "mapId": null,
       "npcId": null,
       "encounterId": null,
-      "classificationNote": "Ecological mitigation regional; main readiness includes environmental safety checks"
+      "classificationNote": "Optional ecological survey after Q156, Caelith assignment, established regional access and restricted-site permission; no Q157/Q181 or extra level gate."
     },
     {
       "id": 169,
-      "title": "The Route Between",
-      "location": "Distributed Anchors, Covenant and Kel'vari regions, Guardian camp",
+      "title": "What the Shroud Concealed",
+      "location": "Newly exposed historical site along the receding Shroud boundary; exact site/ownership WORKING",
       "contact": "Tarek",
-      "objective": "Travel by ship, flight path and overland to check network connections; no unlimited teleportation.",
+      "objective": "Investigate the newly exposed historical site following Tarek's report after Q156; Recover Thes'var's personal journal and independent authenticity evidence; Authenticate the surviving entries as pre-Second Sundering, ending before the catastrophe; Bring the authenticated journal to Oth'varen and record bounded personal recollection without future-finale revelations; Preserve the original journal with appropriate custodians",
       "type": "regional_optional",
       "minLevel": 75,
-      "prerequisites": [],
+      "prerequisites": [
+        "HUMAN_Q156_DONE"
+      ],
       "completionFlag": "HUMAN_Q169_DONE",
       "rewardXP": null,
       "mapId": null,
       "npcId": null,
       "encounterId": null,
-      "classificationNote": "Transport route verification regional; mandatory convergence access established in Q174"
+      "classificationNote": "Optional journal discovery after Q156. Creator-approved unavailability at Q181 Oth'varen death; expire accepted quests whose Oth'varen conversation is unfinished, explain clearly, preserve completed quests. Post-conversation unfinished custody remains a separate unresolved edge case.",
+      "turnInContact": "Oth'varen"
     },
     {
       "id": 170,
@@ -2904,7 +2913,7 @@
       "title": "Before the Final Crossing",
       "location": "Staging camp",
       "contact": "Nessa",
-      "objective": "Verify teams and complete readiness.",
+      "objective": "Confirm distributed team readiness; Verify permissions and evacuation plans; Confirm supplies; Authorize level-80 finale only after reaching cap",
       "type": "main_story",
       "minLevel": 75,
       "prerequisites": [
@@ -2914,7 +2923,8 @@
       "rewardXP": null,
       "mapId": null,
       "npcId": null,
-      "encounterId": null
+      "encounterId": null,
+      "eligibilityNote": "Canonical level-80 cap applies to final finale authorization, not an inferred Q174 acceptance gate. minLevel remains historical planning pace; runtime realization unresolved."
     },
     {
       "id": 175,
@@ -2938,7 +2948,7 @@
       "title": "The Architect's Last Argument",
       "location": "Solo boss chamber",
       "contact": "Thes'var",
-      "objective": "Defeat and kill Thes'var.",
+      "objective": "Reach Thes'var's control chamber; Hear knowingly corrupted justification; Kill Thes'var; Identify unexpected control irregularity",
       "type": "main_story",
       "minLevel": 80,
       "prerequisites": [
@@ -2948,7 +2958,8 @@
       "rewardXP": null,
       "mapId": null,
       "npcId": null,
-      "encounterId": null
+      "encounterId": null,
+      "turnInContact": "Sera"
     },
     {
       "id": 177,
@@ -2972,7 +2983,7 @@
       "title": "The Scholar's Correction",
       "location": "Thes'var central facility, distributed network, Oth'irun, Valecrown, Millhaven",
       "contact": "Oth'varen / Sera",
-      "objective": "Maintain evacuation and instrument stations as Oth'varen stabilises the alignment and dies after seeing it hold.",
+      "objective": "Verify fatal correction only after sabotage; Hear Oth'varen choose to perform it; Confirm team safety",
       "type": "main_story",
       "minLevel": 80,
       "prerequisites": [
@@ -3023,7 +3034,7 @@
       "title": "The Shattering of Nhal",
       "location": "Final convergence chamber",
       "contact": "Sera / Oth'varen",
-      "objective": "Defend correction, complete inversion and confirm Nhal's unified identity shattered.",
+      "objective": "Protect Oth'varen during alignment correction; Witness alignment hold while Oth'varen is still alive; Record Oth'varen's physical death after he verifies alignment and before final inversion; Complete inversion; Confirm Nhal's unified will and memory shattered, essence not annihilated",
       "type": "main_story",
       "minLevel": 80,
       "prerequisites": [
@@ -3033,7 +3044,8 @@
       "rewardXP": null,
       "mapId": null,
       "npcId": null,
-      "encounterId": null
+      "encounterId": null,
+      "turnInContact": "Sera"
     },
     {
       "id": 182,
@@ -3057,7 +3069,7 @@
       "title": "A World Unbound",
       "location": "Oth'irun, Tidehold, Valecrown",
       "contact": "Mara / Corven",
-      "objective": "Deliver restricted final reports.",
+      "objective": "Deliver authenticated historical testimony to Sel'ora, with Aru'ven participating in the Kel'vari response without speaking for all enclaves; Deliver a separate report to Mara and Corven; neither faction's acknowledgement substitutes for the other; Confirm the Shroud began dissipating at Q156, the Seven survived, Oth'varen died after alignment held, and Nhal's will and memory shattered without annihilating divine essence; fragment fate remains unknown; Confirm faction war remains",
       "type": "main_story",
       "minLevel": 80,
       "prerequisites": [
@@ -3067,7 +3079,8 @@
       "rewardXP": null,
       "mapId": null,
       "npcId": null,
-      "encounterId": null
+      "encounterId": null,
+      "turnInContact": "Mara / Corven"
     },
     {
       "id": 184,
@@ -3087,5 +3100,6 @@
       "encounterId": null
     }
   ],
-  "classificationPolicy": "Critical plot evidence and permission on main path; independent local adventures optional. Explicit regional access checks to be authored."
+  "classificationPolicy": "Critical plot evidence and permission on main path; independent local adventures optional. Explicit regional access checks to be authored. This is a derived dependency/classification reference, not a second authoring inventory. minLevel is historical planning pace, not eligibility; approved eligibility belongs to the sole manifest. The 156/28 classification remains provisional.",
+  "authority": "Human_1_80_Current_Quest_Authoring_Manifest.json"
 }
