@@ -1410,7 +1410,7 @@ async fn run_server_inner(
                             }
                             continue;
                         }
-                        if bytes.starts_with(crate::inventory_wire::REQUEST_TAG) || bytes.starts_with(crate::inventory_wire::ITEM_REQUEST_TAG) || bytes.starts_with(crate::reward_wire::REQUEST_TAG) || bytes.starts_with(crate::vendor_wire::REQUEST_TAG) {
+                        if bytes.starts_with(crate::inventory_wire::REQUEST_TAG) || bytes.starts_with(crate::inventory_wire::ITEM_REQUEST_TAG) || bytes.starts_with(crate::reward_wire::REQUEST_TAG) || bytes.starts_with(crate::reward_wire::PICKUP_TAG) || bytes.starts_with(crate::vendor_wire::REQUEST_TAG) {
                             peer.inventory_requests+=1;
                             if peer.inventory_requests>8 {invalid_control=true;break;}
                             let Some(inventory)=&mut peer.inventory else {invalid_control=true;break;};

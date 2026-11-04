@@ -573,3 +573,41 @@ pickup validation and selected/nearby availability, then corpse presentation and
 loot UI. The current oldest-pending storage page remains a storage primitive,
 not spatial corpse interest. This slice does not establish durable world-kill
 recording if the bounded fact queue fails before enqueue. Local commits only.
+
+
+## Safe stop: explicit pickup authority prerequisite — 4 November 2026
+
+Stopped at user request. P3-05 / P3-09 / P3-11 / P3-15 now have an explicit
+68-byte RC02 pickup frame binding actor, shared inventory sequence, expected bag
+revision, private claim ID and original victim-life key. The server dispatcher
+recognizes it separately from unchanged RC01/IR01/IR02. Per-life requests require
+an installed per-life profile and matching private committed availability; an
+RC01 request cannot bypass a life-bound claim. Recipient/claim/life/scope,
+current World profile, living loaded actor and three-dimensional 3m range are
+checked before owner enqueue. This is the current metric Theia interaction
+policy, not a sourced exact Classic loot-distance claim. Accepted SQL pickup
+uses the existing atomic bag/receipt/journal operation; later walking away does
+not cancel an already accepted critical intent.
+
+358 network-library tests and nine reward-wire tests pass (367 total), as do
+formatting and denied-warning workspace/all-target Clippy. The new frame tests
+reject truncation, trailing bytes, invalid identity halves/revisions and protocol
+downgrades. A synthetic World guard fixture checks absent/mismatched profile,
+unready/missing terrain footprint, vertical range boundary and departure, including
+a durable corpse from an older world epoch. That fixture sets the private profile
+directly for testing; normal per-life World admission remains closed. Evidence:
+`build/quest-loot-pickup-{tests,fmt,clippy}-v1-20261104.log`.
+
+This is a checked prerequisite, not a completed corpse interaction feature. There
+is no client pickup queue, rendered private corpse, loot window or Loot-all yet.
+Positive life-bound peer enqueue, death refusal and impaired encrypted per-life
+pickup still need integration qualification; then selected/nearby availability,
+client UI and normal native possession/reversal/turn-in/rejoin tests. Keep live
+item-quest and per-life content gates closed until those pass. The prior real
+OIDC/PostgreSQL reward-owner regression remains separately qualified, not proof
+of this new RC02 path. No new native, Windows or capacity claim.
+
+Preserve source/proof at `build/quest-loot-pickup-stopped-v1-20261104` and runnable
+native destruction at `build/quest-item-ui-qualified-v1-20261104`. Owned test
+services and desktop input are stopped/released. Local commits only; nothing
+pushed. Resume only on user instruction.

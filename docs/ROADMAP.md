@@ -1,3 +1,12 @@
+Stopped safely at user request, 4 November 2026:
+Explicit corpse-life pickup validation prerequisite passes 367 selected tests,
+formatting and strict workspace/all-target Clippy. [Exact scope and resume work](QUEST_ITEM_OBJECTIVES.md#safe-stop-explicit-pickup-authority-prerequisite--4-november-2026).
+Per-life content and live item-quest admission remain closed: corpse UI, client
+pickup and encrypted/native integration are unfinished. Source/proof preserved at
+`build/quest-loot-pickup-stopped-v1-20261104`; last qualified runnable UI remains
+`build/quest-item-ui-qualified-v1-20261104`. No active owned services or desktop
+input. Changes committed locally only; no push. Resume only when requested.
+
 Loot availability codec prerequisite checked locally, 4 November 2026:
 P3-05 / P3-09 / P3-11 / P3-15: opt-in RW02 carries bounded victim/corpse metadata;
 legacy RW01/RC01 remain byte-compatible. 366 selected checks, formatting and

@@ -378,7 +378,28 @@ impl Peer {
         bytes: &[u8],
         world: Option<(&crate::simulation::World, u64)>,
     ) -> crate::Result<bool> {
-        let message = if bytes.starts_with(crate::vendor_wire::REQUEST_TAG) {
+        let mut pickup_life = None;
+        let message = if bytes.starts_with(crate::reward_wire::PICKUP_TAG) {
+            let profile = self
+                .port
+                .rewards
+                .as_ref()
+                .ok_or("Pickup requires reward profile")?;
+            if !profile
+                .catalog()
+                .definitions()
+                .any(|d| d.scope() == theia_core::rewards::Scope::PerCreatureLife)
+            {
+                return Err("Pickup requires a per-life profile".into());
+            }
+            let pickup = crate::reward_wire::PickupRequest::decode(bytes)?;
+            pickup_life = Some(pickup.life);
+            crate::inventory_wire::ItemRequest {
+                actor: pickup.request.actor,
+                sequence: pickup.request.sequence,
+                command: pickup.request.command.into(),
+            }
+        } else if bytes.starts_with(crate::vendor_wire::REQUEST_TAG) {
             self.port
                 .vendor
                 .as_ref()
@@ -419,8 +440,56 @@ impl Peer {
         if self.pending.is_some() || self.port.state.borrow().bag.is_none() {
             return Err("Inventory intent before load or while another is pending".into());
         }
-        if let ItemCommand::Vendor(command) = message.command
-            && world.is_none_or(|(world, id)| !world.vendor_eligible(id, command))
+        let reward_refused = if let ItemCommand::RewardClaim(command) = message.command {
+            let profile = self.port.rewards.as_ref().ok_or("Reward profile missing")?;
+            let observation = self.port.state.borrow();
+            if pickup_life.is_some()
+                || profile
+                    .catalog()
+                    .definitions()
+                    .any(|d| d.scope() == theia_core::rewards::Scope::PerCreatureLife)
+            {
+                observation.failed
+                    || observation.closed
+                    || observation.rewards.as_ref().is_none_or(|owned| {
+                        !owned.available.iter().any(|row| {
+                            row.claim == command.claim
+                                && match (pickup_life, row.corpse) {
+                                    (Some(life), Some(source)) => {
+                                        source.life == life
+                                            && profile
+                                                .catalog()
+                                                .definition(&row.reward)
+                                                .is_some_and(|d| {
+                                                    d.scope()
+                                                    == theia_core::rewards::Scope::PerCreatureLife
+                                                })
+                                            && world.is_some_and(|(world, id)| {
+                                                world.corpse_pickup_eligible(
+                                                    id,
+                                                    profile.hash(),
+                                                    source,
+                                                )
+                                            })
+                                    }
+                                    (None, None) => {
+                                        profile.catalog().definition(&row.reward).is_some_and(|d| {
+                                            d.scope()
+                                                == theia_core::rewards::Scope::OncePerCharacter
+                                        })
+                                    }
+                                    _ => false,
+                                }
+                        })
+                    })
+            } else {
+                false
+            }
+        } else {
+            false
+        };
+        if reward_refused
+            || matches!(message.command, ItemCommand::Vendor(command) if world.is_none_or(|(world, id)| !world.vendor_eligible(id, command)))
         {
             self.sequence = message.sequence;
             self.pending = Some(message.sequence);

@@ -16,6 +16,8 @@ use theia_core::{
 };
 pub const REQUEST_TAG: &[u8; 4] = b"RC01";
 pub const REQUEST_BYTES: usize = 52;
+pub const PICKUP_TAG: &[u8; 4] = b"RC02";
+pub const PICKUP_BYTES: usize = REQUEST_BYTES + 16;
 pub const STATE_TAG: &[u8; 4] = b"RW01";
 pub const LOOT_STATE_TAG: &[u8; 4] = b"RW02";
 pub const HEADER_BYTES: usize = 61;
@@ -128,6 +130,33 @@ impl Request {
             return Err("Invalid reward request sequence/revision".into());
         }
         Ok(request)
+    }
+}
+/// Explicit pickup of one private claim from an exact original creature life.
+/// No client-supplied position or recipient. Structural validity grants nothing.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PickupRequest {
+    pub request: Request,
+    pub life: KillId,
+}
+impl PickupRequest {
+    pub fn encode(self) -> Result<Vec<u8>> {
+        let mut bytes = self.request.encode()?;
+        bytes[..4].copy_from_slice(PICKUP_TAG);
+        bytes.extend(self.life.bytes());
+        Ok(bytes)
+    }
+    pub fn decode(bytes: &[u8]) -> Result<Self> {
+        if bytes.len() != PICKUP_BYTES || !bytes.starts_with(PICKUP_TAG) {
+            return Err("Invalid corpse pickup frame".into());
+        }
+        let mut request = bytes[..REQUEST_BYTES].to_vec();
+        request[..4].copy_from_slice(REQUEST_TAG);
+        Ok(Self {
+            request: Request::decode(&request)?,
+            life: KillId::from_bytes(bytes[REQUEST_BYTES..].try_into().unwrap())
+                .ok_or("Invalid corpse pickup life")?,
+        })
     }
 }
 #[derive(Clone, Debug, PartialEq)]

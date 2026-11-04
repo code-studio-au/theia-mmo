@@ -248,3 +248,31 @@ fn maximum_mixed_page_is_bounded_and_seventeenth_life_claim_refuses() {
     assert!(state.encode(p.catalog(), p.hash()).is_err());
     assert!(State::decode(&vec![0; wire::MAX_LOOT_BYTES + 1], p.catalog(), p.hash()).is_err());
 }
+
+#[test]
+fn explicit_pickup_binds_a_claim_to_an_exact_life_and_cannot_downgrade() {
+    let pickup = wire::PickupRequest {
+        request: super::request(),
+        life: source(8, [0.; 3]).life,
+    };
+    let bytes = pickup.encode().unwrap();
+    assert_eq!(bytes.len(), wire::PICKUP_BYTES);
+    assert_eq!(wire::PickupRequest::decode(&bytes).unwrap(), pickup);
+    assert!(Request::decode(&bytes).is_err());
+    assert!(wire::PickupRequest::decode(&super::request().encode().unwrap()).is_err());
+    assert!(inventory_wire::ItemRequest::decode(&bytes).is_err());
+    for n in 0..bytes.len() {
+        assert!(wire::PickupRequest::decode(&bytes[..n]).is_err());
+    }
+    for span in [4..12, 12..20, 20..28, 36..52, 52..60, 60..68] {
+        let mut bad = bytes.clone();
+        bad[span].fill(0);
+        assert!(wire::PickupRequest::decode(&bad).is_err());
+    }
+    let mut bad = bytes.clone();
+    bad.push(0);
+    assert!(wire::PickupRequest::decode(&bad).is_err());
+    let mut bad = bytes;
+    bad[28..36].copy_from_slice(&(MAX_REVISION + 1).to_le_bytes());
+    assert!(wire::PickupRequest::decode(&bad).is_err());
+}
