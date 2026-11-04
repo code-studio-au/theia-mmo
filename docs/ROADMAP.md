@@ -1,3 +1,15 @@
+Confirmed destruction UI qualified locally, 4 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: normal split/confirm/cancel/close/reopen/destroy
+and database restart/rejoin pass at 1920x1200, 3440x1440 and 1280x720.
+All four native starts have zero GPU diagnostics on Linux RX 7900 XTX / RADV.
+144 client tests, 11 inventory bridge tests, formatting and strict workspace/
+all-target Clippy pass; optimized current-checkout client/server/validator built.
+[Exact scope and evidence](QUEST_ITEM_OBJECTIVES.md#confirmed-destruction-ui-qualified--4-november-2026).
+Preserve `build/quest-item-ui-qualified-v1-20261104`. User resumed implementation
+and authorized local commits only. Continue with actual per-creature-life loot;
+item-quest live admission and document-reading objectives remain pending.
+Earlier stop/local-only records below are historical. No new native Windows claim.
+
 Repository alignment, 4 November 2026: approved story authoring and CI repairs
 are merged into `main` through PRs #52/#53. Unfinished MMO development is preserved
 on `dev/quest-inventory-integration`, synchronized with main, in draft PR #54.

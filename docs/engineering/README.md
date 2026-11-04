@@ -1,3 +1,9 @@
+Resumed implementation, 4 November 2026: confirmed item destruction is now
+qualified at all three native Linux sizes and after database restart/rejoin.
+[Scope and evidence](../QUEST_ITEM_OBJECTIVES.md#confirmed-destruction-ui-qualified--4-november-2026).
+P3-05 / P3-09 / P3-11 / P3-15 continue with per-creature-life loot; live item-quest
+admission remains closed. Commit locally only; earlier stop entries are historical.
+
 Stopped safely at user request, 4 November 2026:
 Qualified retained inventory/quest owner work is preserved at
 `build/quest-item-owner-qualified-v1-20261104`: 1,271 workspace/all-target tests,

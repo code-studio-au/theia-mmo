@@ -365,3 +365,45 @@ split/confirm/cancel/reopen/destroy/restart checks at 1920x1200, 3440x1440 and
 World binding and full wolf-pelt item quest. Then implement the separately
 planned note-reading condition. Item-quest live admission remains closed.
 Nothing committed or pushed; no new Windows, capacity or save-migration claim.
+
+
+## Confirmed destruction UI qualified — 4 November 2026
+
+P3-05 / P3-09 / P3-11 / P3-15. The resumed native check passes with the settled
+NPC-close wait. Closing waits for both server dialogue pending state and the
+local deferred-close flag before testing the backpack's separate Escape action.
+The earlier timeout remains retained evidence; it is not reproduced by these
+runs and no new cause beyond the unsettled test prerequisite is asserted.
+
+Current-checkout optimized client/server and validator builds, all 144 client
+tests, all 11 focused inventory transport tests, formatting, Python compilation
+and denied-warning workspace/all-target Clippy pass. The merged development
+branch's eight encrypted account tests passed during repository alignment;
+these selected checks are not a new full-workspace/service qualification.
+
+Normal production-content launcher, actual local OIDC, owned PostgreSQL and
+PID-bound synthetic X11 input pass at 1920x1200, 3440x1440 fullscreen and 1280x720.
+Each run completes the unchanged two historical quests, three wolf kills and
+125 XP, then splits a stone into another stack without changing total holdings.
+The first Destroy click only arms the exact slot/revision confirmation; Cancel
+preserves it; closing/reopening cancels the old confirmation and requires a fresh
+one. Confirming removes exactly one stone (28 to 27), advances the backpack once,
+and preserves equipment and completed quest state. Database restart and normal
+rejoin retain 27 stones with no restored confirmation. All four native starts
+have zero GPU diagnostics on Linux AMD Radeon RX 7900 XTX / RADV Vulkan /
+Mesa 26.2.6. Screenshots were reviewed at 1920 and 720p.
+
+Freeze current source, binaries and proof at
+`build/quest-item-ui-qualified-v1-20261104`; raw final native evidence is
+`build/quest-items-ui-current-native-v1-20261104`. The first resumed diagnostic
+using the previous preserved binaries is separate evidence under
+`build/quest-items-ui-resume-native-v1-20261104`. No files in earlier checkpoints
+are replaced. All owned services and desktop input are released after each run.
+
+This qualifies ordinary confirmed item destruction and transport coexistence;
+it is not a live possession quest or per-life loot demonstration. Keep item-quest
+World/manifest admission closed. Next implement repeatable loot tied to the
+actual authoritative victim life, preserving once-per-character recipes and
+bounded owner/availability queues, then the normal pelt quest. Reading documents
+remains a distinct planned condition. Work continues with local commits only;
+no pushes, native Windows, MMO capacity or new save-migration claim.

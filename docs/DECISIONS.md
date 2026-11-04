@@ -1,3 +1,12 @@
+## 2026-11-04 — confirmed item destruction native adoption
+
+Retain split/merge support and the exact confirmed backpack slot/revision in
+IR02 destruction requests. Require a fresh confirmation after close/reopen or
+changed inventory. Preserve server-owned validation and committed views, including
+newer bags accompanying matching replies. Normal Linux native destruction and
+restart/rejoin now pass; per-life loot and possession-quest admission remain next.
+[Qualified scope](QUEST_ITEM_OBJECTIVES.md#confirmed-destruction-ui-qualified--4-november-2026).
+
 ## 2026-11-04 — retained item-aware quest owner publication
 
 Initialize inventory before item-aware progression and route supported bag writes
