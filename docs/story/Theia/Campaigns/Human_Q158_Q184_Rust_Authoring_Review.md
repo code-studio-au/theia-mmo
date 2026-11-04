@@ -9,7 +9,7 @@
 | Quest | Authoring intent / authoritative evidence | Key blockers and continuity |
 |---|---|---|
 | **Q158 Essence Without Form** | Sera authorizes survey → reach safe frontier → preserve independent non-Unmade readings → report | Manifestation is gradual after Q156; evidence must distinguish it from ordinary Unmade activity |
-| **Q159 The Lands Revealed (optional)** | Aru'ven requests aid → reach exposed Kel'vari settlement → protect evacuees → report shelter | **Availability defect:** no prerequisites. Require post-Veilbreaker world phase (Q156 or Q157) and Kel'vari contact access; cannot occur before Shroud fade |
+| **Q159 The Lands Revealed (optional)** | Aru'ven requests aid → reach exposed Kel'vari settlement → protect evacuees → report shelter | **LOCKED creator decision (2026-11-04):** available after Q156; earlier legitimate Kel'vari contact required; Aru'ven's evacuation request grants limited affected-settlement access. No Q157 or Q181 prerequisite and no additional level gate. JSON/runtime eligibility not yet reconciled |
 | **Q160 The Architect's Hand** | Infiltrate facility → authenticate Thes'var's orders → report deliberate stabilization plan | Thes'var knowingly serves Nhal; avoid implying he is merely mistaken |
 | **Q161 Fractured Manifestation** | Observe inverted Major Anchor effect → preserve residual essence → Oth'varen interprets | Fracture of coherent pattern, not annihilation of divine essence. Scene and measurement are distinct facts |
 | **Q162 What Cannot Be Destroyed** | Compare ancient testimony and residual traces in any order → record identity/essence distinction and uncertainty | Possible fragment directions and memory loss are hypotheses; do not determine future expansion outcomes |
@@ -54,7 +54,7 @@ These are **server-authoritative, per-character story facts** requiring atomic o
 
 ## Remaining authoring decisions for the single manifest
 
-- **OPEN:** approve the access/phase conditions for optional Q159/Q168 and the knowledge/permission conditions for Q169. The manifest already preserves these as `authoring_access_review` proposals; they are not executable prerequisites.
+- **Q159 LOCKED:** post-Q156, earlier Kel'vari contact and Aru'ven's limited evacuation permission; no Q157 or extra level gate. **OPEN:** approve Q168's phase/access and Q169's knowledge/permission conditions. The manifest already preserves these as `authoring_access_review` proposals; they are not executable prerequisites.
 - **CANONICAL / OPEN implementation:** canonical Q174 requires the level-80 cap before finale authorization. Current authoring-status Markdown describes the gate as non-executable review metadata, while this review formerly called its narrative approval unresolved. Preserve the higher-authority campaign requirement; reconcile that metadata and define future runtime realization separately, without changing eligibility data here.
 - Q181's explicit death transition is already present in the working manifest. **OPEN:** implement and validate its future authoritative story-fact capability separately; no gameplay-code change is authorized by this documentation cleanup.
 - Keep Q161–Q162 essence interpretation carefully uncertain about fragments.
