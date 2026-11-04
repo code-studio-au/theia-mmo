@@ -199,7 +199,7 @@ Each entry gives **title — location — gameplay objective — lore purpose**.
 - **Q125 — The Anchor Beneath.** Drom Kar, Covenant Anchor sites, contested routes, Valecrown. Objective: Enter buried Anchor site; Recover synchronized activation diagram; Verify Anchor manipulation widens original tear; Report
 - **Q126 — A Measure of Time.** Drom Kar, Covenant Anchor sites, contested routes, Valecrown. Objective: Compare activation clocks; Match signals; Confirm convergence
 - **Q127 — The Gathering Storm.** Drom Kar, Covenant Anchor sites, contested routes, Valecrown. Objective: Request royal audience; Present documented threat; Receive limited expedition mandate
-- **Q128 — Before the Veil Breaks.** Drom Kar, Covenant Anchor sites, contested routes, Valecrown. Objective: Review staging assignment; Confirm extraction routes; Verify measurement teams
+- **Q128 — The Warden's Preparations.** Drom Kar, Covenant Anchor sites, contested routes, Valecrown. Objective: Review staging assignment; Confirm extraction routes; Verify measurement teams
 
 ### Levels 55–60: The Warden's Network
 
