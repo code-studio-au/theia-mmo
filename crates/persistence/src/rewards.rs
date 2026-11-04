@@ -32,13 +32,9 @@ impl RewardCatalog {
         self.hash
     }
 }
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct CorpseSource {
-    pub life: theia_core::progression::KillId,
-    pub position: theia_core::coordinates::GlobalPosition,
-}
+pub use theia_core::rewards::CorpseSource;
 /// Visible pending life page; historical consumed receipts stay in SQL.
-pub const LIFE_CLAIM_PAGE_SIZE: usize = 16;
+pub const LIFE_CLAIM_PAGE_SIZE: usize = theia_core::rewards::MAX_VISIBLE_LIFE_CLAIMS;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct RewardClaim {

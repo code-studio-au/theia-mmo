@@ -14,7 +14,7 @@ pub struct Observation {
     pub closed: bool,
     pub failed: bool,
 }
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct OwnedRewards {
     pub generation: u64,
     pub available: Vec<crate::reward_wire::Available>,
@@ -815,6 +815,7 @@ mod tests {
             available: vec![crate::reward_wire::Available {
                 reward: reward.catalog().definitions().next().unwrap().id().clone(),
                 claim: ClaimId::new([17; 16]).unwrap(),
+                corpse: None,
             }],
         };
         let encoded_offer = offered.encode(reward.catalog(), reward.hash()).unwrap();

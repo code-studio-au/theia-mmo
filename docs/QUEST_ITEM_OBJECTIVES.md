@@ -511,3 +511,37 @@ adoption is claimed. Keep that gate until corpse interaction, recipient/life/ran
 validation, explicit item/Loot-all pickup and native tests pass. Earlier native
 confirmed destruction remains available at its frozen checkpoint. No quest-profile
 migration, native Windows or MMO-capacity claim. Continue with local commits only.
+
+
+## Bounded loot-availability codec prerequisite — 4 November 2026
+
+Opt-in RW02 observations carry per-claim victim-life keys and checked f64 global
+corpse positions. Different lives may share a recipe; each claim and each
+recipe/life pair must be unique. Several recipes for one corpse must agree on
+its location. Scope mismatches, unknown kinds, nonfinite/out-of-bounds positions,
+zero life halves, malformed/truncated/trailing data and noncanonical ordering
+refuse. Shared core corpse metadata and the 16-life visible-page bound retain
+the persistence API through a re-export.
+
+Once-character RW01 and RC01 layouts remain unchanged; a fixed RW01 byte sample
+passes. A mixed profile admits at most 16 once-definition rows and 16 visible
+life rows, within a conservative 1,277-byte frame bound. The maximal realizable
+mixed fixture (15 once recipes plus 16 life claims for one repeatable recipe)
+round-trips 31 rows / 1,259 bytes; the seventeenth life claim refuses. This is
+bounded encoding evidence, not encrypted RW02 delivery or corpse streaming proof.
+
+All 357 network-library tests, eight availability codec tests and the non-SQL
+storage profile check pass (366 selected checks; seven database skips in the
+non-service storage command). Formatting and denied-warning workspace/all-target
+Clippy pass. Existing encrypted tests in the library exercise their old profiles;
+no new encrypted per-life or SQL rerun is claimed here. Evidence is retained in
+`build/quest-loot-wire-{tests,storage-api,fmt,clippy}-v2-20261104.log`.
+
+A separate explicit constructor admits only the codec prerequisite. Default
+runtime profile construction still rejects per-life content, and World refuses
+it even when that explicit constructor is used, without changing World identity.
+Do not open those gates until original fatal-life forwarding, bounded selected/
+nearby-corpse availability, authoritative recipient/range/session checks and
+explicit pickup UI are installed and qualified. Viewing availability grants no
+items or possession credit. Native destruction and durable storage checkpoints
+remain separately preserved.

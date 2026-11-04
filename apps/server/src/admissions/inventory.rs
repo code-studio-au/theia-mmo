@@ -545,6 +545,7 @@ fn owned_rewards(
             .map(|c| theia_network::reward_wire::Available {
                 reward: c.reward.clone(),
                 claim: c.id,
+                corpse: c.corpse,
             })
             .collect(),
     }

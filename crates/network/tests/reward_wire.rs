@@ -84,10 +84,24 @@ fn private_availability_has_checked_identity_bounds_and_known_unique_recipes() {
         available: vec![Available {
             reward,
             claim: request().command.claim,
+            corpse: None,
         }],
     };
     let bytes = state.encode(&c, [19; 32]).unwrap();
     assert_eq!(bytes.len(), 78);
+    let golden = concat!(
+        "52573031",
+        "0700000000000000",
+        "0900000000000000",
+        "0100000000000000",
+        "1313131313131313131313131313131313131313131313131313131313131313",
+        "0100",
+        "11111111111111111111111111111111"
+    );
+    assert_eq!(
+        bytes.iter().map(|b| format!("{b:02x}")).collect::<String>(),
+        golden
+    );
     assert_eq!(State::decode(&bytes, &c, [19; 32]).unwrap(), state);
     for len in 0..bytes.len() {
         assert!(State::decode(&bytes[..len], &c, [19; 32]).is_err());
@@ -136,3 +150,6 @@ fn uninstalled_per_life_runtime_refuses_the_new_core_policy() {
     assert!(Catalog::from_json(&bytes, items.catalog()).is_ok());
     assert!(wire::Profile::from_json(&bytes, &items).is_err());
 }
+
+#[path = "reward_wire/per_life.rs"]
+mod per_life;

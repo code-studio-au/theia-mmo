@@ -9,6 +9,14 @@ use serde::Deserialize;
 use std::collections::BTreeMap;
 pub const MAX_CATALOG_BYTES: usize = 32 * 1024;
 pub const MAX_DEFINITIONS: usize = 16;
+/// Bounded visible page; uncollected loot outside it remains durable.
+pub const MAX_VISIBLE_LIFE_CLAIMS: usize = 16;
+/// Immutable source location, not proof of death or recipient entitlement.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct CorpseSource {
+    pub life: crate::progression::KillId,
+    pub position: crate::coordinates::GlobalPosition,
+}
 pub const MAX_GRANTS: usize = 8;
 pub const MAX_GRANT_UNITS: u32 = 10_000;
 pub const PROFILE_DOMAIN: &[u8] = b"theia-reward-profile-v1\0";

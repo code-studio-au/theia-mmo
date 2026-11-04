@@ -24,6 +24,13 @@ impl World {
         {
             return Err("Rewards require inactive combat world".into());
         }
+        if profile
+            .catalog()
+            .definitions()
+            .any(|d| d.scope() == theia_core::rewards::Scope::PerCreatureLife)
+        {
+            return Err("Per-life corpse interaction and pickup are not installed".into());
+        }
         let patrol = self
             .patrol
             .as_ref()

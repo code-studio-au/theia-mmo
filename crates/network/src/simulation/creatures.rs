@@ -1196,6 +1196,23 @@ pub(crate) mod tests {
             .enable_combat(&serde_json::to_vec(&data).unwrap(), 100, 1000)
             .unwrap();
         let base = world.identity();
+        let mut repeatable: serde_json::Value = serde_json::from_slice(include_bytes!(
+            "../../../../content/gameplay/development-rewards.json"
+        ))
+        .unwrap();
+        repeatable["schema"] = 2.into();
+        repeatable["rewards"][0]["scope"] = "per_creature_life".into();
+        let codec = crate::reward_wire::Profile::from_json_with_creature_loot(
+            &serde_json::to_vec(&repeatable).unwrap(),
+            &items,
+        )
+        .unwrap();
+        assert!(world.enable_rewards(Arc::new(codec)).is_err());
+        assert_eq!(
+            world.identity(),
+            base,
+            "Codec opt-in must not enable unfinished corpse pickup"
+        );
         world.enable_rewards(profile.clone()).unwrap();
         assert_eq!(
             world.identity(),

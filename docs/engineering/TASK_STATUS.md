@@ -1,3 +1,10 @@
+Loot availability codec prerequisite checked locally, 4 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: opt-in RW02 carries bounded victim/corpse metadata;
+legacy RW01/RC01 remain byte-compatible. 366 selected checks, formatting and
+strict workspace/all-target Clippy pass. [Exact bounds and remaining work](../QUEST_ITEM_OBJECTIVES.md#bounded-loot-availability-codec-prerequisite--4-november-2026).
+Default profile and World admission still refuse per-life loot. Continue with
+corpse interaction/explicit pickup; no new encrypted/native/SQL claim or push.
+
 Per-life loot storage qualified, 4 November 2026: durable victim/corpse binding,
 explicit pickup/possession transactions, bounded pending pages and actual SQL
 restart pass. [Scope](../QUEST_ITEM_OBJECTIVES.md#per-life-loot-storage-prerequisite-qualified--4-november-2026).

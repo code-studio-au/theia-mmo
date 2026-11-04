@@ -2220,7 +2220,7 @@ async fn run_client_inner(
                             state.send_modify(|s|{s.statuses=status_state.clone();s.transport=Some(stats.clone());});
                             continue;
                         }
-                        if bytes.starts_with(crate::reward_wire::STATE_TAG) {
+                        if bytes.starts_with(crate::reward_wire::STATE_TAG) || bytes.starts_with(crate::reward_wire::LOOT_STATE_TAG) {
                             let mode=inventory.as_mut().ok_or("Unexpected opt-in reward state")?;
                             let welcome=admission.as_ref().unwrap();
                             let actor=theia_core::identity::EntityKey {epoch:theia_core::identity::WorldEpoch::new(welcome.epoch).unwrap(),entity:theia_core::identity::EntityId::new(welcome.id).unwrap()};
