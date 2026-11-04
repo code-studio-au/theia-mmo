@@ -24,9 +24,10 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           cache-on-failure: true
+          cache-workspace-crates: true
       - run: cargo fmt --check
       - run: cargo clippy --locked --workspace --all-targets -- -D warnings
-      - run: cargo test --locked --workspace -j 1
+      - run: cargo test --locked --workspace --no-fail-fast -j 1
       - name: Content authoring validators
         run: cargo test --locked -p theia-network --example validate_gameplay --example validate_quest_packs --example review_quest_update -j 1
 
