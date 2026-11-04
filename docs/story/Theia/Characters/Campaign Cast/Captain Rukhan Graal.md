@@ -1,10 +1,13 @@
 ---
 type: character
 canon_status: Needs Review
-source: "[[Sources/THEIA_HUMAN_CAST_AND_PLACES]]"
-up: "[[Characters]]"
+source: "https://github.com/code-studio-au/theia-mmo/blob/a52b29999d803e2b861319ffefcd3c394baaa1ad/docs/story/THEIA_HUMAN_CAST_AND_PLACES.md"
+source_status: ARCHIVED
+up: "../Characters.md"
 ---
 # Captain Rukhan Graal
+
+Historical source details retain their recorded approval limits; the [current campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md) governs later chronology and outcomes.
 
 > [!important] Approval scope
 > This campaign entry is Needs Review. Established facts explicitly identified by the source retain their existing status.
@@ -16,15 +19,15 @@ Orc military officer defending a Dominion coast
 Scouts, patrol plans and a later strengthened garrison
 
 ## Boundary and proposed resolution
-Hostile military opponent; not default [[The Unmade|Unmade]]. Remains a capable defender after the Covenant raid withdraws. Great Clans are not renamed Great Houses.
+Hostile military opponent; not default [Unmade](../../Lore/Institutions/The%20Unmade.md). Remains a capable defender after the Covenant raid withdraws. Great Clans are not renamed Great Houses.
 
-Source: [[Sources/THEIA_HUMAN_CAST_AND_PLACES#Dominion characters required by this human route|Dominion characters required by this human route]].
+Historical source: [Dominion characters required by this human route](https://github.com/code-studio-au/theia-mmo/blob/a52b29999d803e2b861319ffefcd3c394baaa1ad/docs/story/THEIA_HUMAN_CAST_AND_PLACES.md).
 
-[[Characters]] · [[Human Campaign]]
+[Characters](../Characters.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
 
-[[Lore/Institutions/Covenant|Covenant]] · [[Lore/Institutions/Dominion|Dominion]]
+[Covenant](../../Lore/Institutions/Covenant.md) · [Dominion](../../Lore/Institutions/Dominion.md)
 
-[[Orcs]]
+[Orcs](../../Lore/Peoples/Orcs.md)

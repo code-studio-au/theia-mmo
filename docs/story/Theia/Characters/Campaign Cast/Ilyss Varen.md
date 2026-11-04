@@ -1,10 +1,13 @@
 ---
 type: character
 canon_status: Needs Review
-source: "[[Sources/THEIA_HUMAN_CAST_AND_PLACES]]"
-up: "[[Characters]]"
+source: "https://github.com/code-studio-au/theia-mmo/blob/a52b29999d803e2b861319ffefcd3c394baaa1ad/docs/story/THEIA_HUMAN_CAST_AND_PLACES.md"
+source_status: ARCHIVED
+up: "../Characters.md"
 ---
 # Ilyss Varen
+
+Historical source details retain their recorded approval limits; the [current campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md) governs later chronology and outcomes.
 
 > [!important] Approval scope
 > This campaign entry is Needs Review. Established facts explicitly identified by the source retain their existing status.
@@ -16,13 +19,13 @@ Vaelari researcher under a Dominion contract
 An independently filed rejection of unstable parts
 
 ## Boundary and proposed resolution
-Not automatically [[The Unmade|Unmade]] or a defector. Remains with her people; useful observations do not create cooperation.
+Not automatically [Unmade](../../Lore/Institutions/The%20Unmade.md) or a defector. Remains with her people; useful observations do not create cooperation.
 
-Source: [[Sources/THEIA_HUMAN_CAST_AND_PLACES#Dominion characters required by this human route|Dominion characters required by this human route]].
+Historical source: [Dominion characters required by this human route](https://github.com/code-studio-au/theia-mmo/blob/a52b29999d803e2b861319ffefcd3c394baaa1ad/docs/story/THEIA_HUMAN_CAST_AND_PLACES.md).
 
-[[Characters]] · [[Human Campaign]]
+[Characters](../Characters.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
 
-[[Lore/Peoples/Vaelari|Vaelari]] · [[Lore/Institutions/Dominion|Dominion]]
+[Vaelari](../../Lore/Peoples/Vaelari.md) · [Dominion](../../Lore/Institutions/Dominion.md)

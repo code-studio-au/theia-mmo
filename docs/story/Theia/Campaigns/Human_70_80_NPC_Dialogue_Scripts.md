@@ -136,6 +136,8 @@
 
 ## Q169 — Tarek
 
+**SUPERSEDED dialogue: former transport survey.** The lines below are retained only as historical drafting evidence from [the prior version](https://github.com/code-studio-au/theia-mmo/blob/8151a4aaac1ec3a5e7fd972ac5951642f59bf938/docs/story/Theia/Campaigns/Human_70_80_NPC_Dialogue_Scripts.md#q169--tarek), not active Q169 dialogue or objectives. Q169 is now **What the Shroud Concealed** under the [creator decision](../../DECISIONS.md#2026-11-04--locked-q169-what-the-shroud-concealed-replaces-transport-survey); follow the [canonical campaign](Human_1_80_Canonical_Campaign.md) for journal recovery, authentication and Oth'varen's interpretation. Replacement speech remains to be authored and is WORKING; these old route-confirmation lines must not be used as completion evidence for the new quest.
+
 **Opening:** “Ships, flight routes and the restricted Passage all have different limits. If one team arrives late, the whole operation may fail.”
 
 **Player:** “Can't the gate move everyone?”

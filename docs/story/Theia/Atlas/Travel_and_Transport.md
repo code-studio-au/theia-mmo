@@ -2,7 +2,7 @@
 type: topic
 canon_status: USER LOCKED
 updated: 2026-10-31
-up: "[[Atlas]]"
+up: "Atlas.md"
 ---
 # Travel and Transport
 
@@ -14,8 +14,8 @@ Travel creates opportunities for roadside encounters, local stories and explorat
 
 The ordinary transport network does not provide instant teleportation between discovered waypoints. Ancient Passage gates remain rare, significant story connections with their established capacity limits. They do not become a universal fast-travel service. Coaches in earlier draft material are not selected for the initial transport network; later additions and any limited recall abilities require separate development.
 
-This creator lock specifies travel design, not implemented gameplay or approval of the proposed level-80 cap.
+This creator lock specifies travel design, not implemented gameplay. The level-80 launch cap was separately approved and is reflected in the canonical 1–80 campaign.
 
 Creator approval: on 31 October 2026, the creator explicitly locked physical in-world travel with ships and flight paths as the initial transport options. This note records that scoped decision directly.
 
-[[Atlas]] · [[Passage Gates]] · [[Main_Story_1_60_Draft]]
+[Atlas](Atlas.md) · [Passage Gates](../Lore/Passage%20Gates.md) · [Canonical Human 1–80 Campaign](../Campaigns/Human_1_80_Canonical_Campaign.md)

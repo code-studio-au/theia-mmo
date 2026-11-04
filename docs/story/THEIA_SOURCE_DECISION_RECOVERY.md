@@ -1,8 +1,143 @@
 # THEIA — ORIGINAL-CONVERSATION DECISION RECOVERY
 
+**Remaining lock copies consolidated — 3 November 2026:** Conclave, Oth'varen and inversion sections now link to the World Bible as well. Their old bodies matched the Bible before its current-campaign reconciliation; only already-superseded identity/outcome warnings differed from the current home. The [prior record](https://github.com/code-studio-au/theia-mmo/blob/757f5e866ede0b2d450586ecc90847af04d6ea38/docs/story/THEIA_SOURCE_DECISION_RECOVERY.md) preserves that wording. This does not alter the source question/page evidence.
+
+**Creator-lock consolidation — 3 November 2026:** Six dated sections below now link to their World Bible home. Their removed bodies were byte-identical to that source; no unique decision or limitation was removed. The [pre-consolidation record](https://github.com/code-studio-au/theia-mmo/blob/37dd8520f7990cbb42bc7c7c52f02de0efd31a76/docs/story/THEIA_SOURCE_DECISION_RECOVERY.md) preserves the duplicate wording and original provenance. All section headings remain stable.
+
 **Source:** uploaded 403-page `Create MMO Story.pdf` (2026-10-12). **Scope:** recovery index for Q1–Q444, NOT a verbatim reproduction of every option. The original PDF contains the full question wording. Earlier files that claimed Q1–375 were unavailable were based on incomplete context and are superseded by this source audit.
 
+**Current scope:** The recovered rounds and dated summaries below are historical source evidence, not a second current canon ledger. Later creator locks and the canonical Human campaign supersede old creation, identity and ending claims. **LOCKED** facts require explicit creator evidence; unapproved connective material stays **WORKING**. Historical questions are **OPEN** only where not subsequently resolved. Original source wording is preserved as **ARCHIVED** provenance, including superseded selections.
+
 **Canon rule:** Later explicit user choices override earlier proposals, auto-selected form defaults and assistant-generated narratives. The first ~40 PDF pages contain repeatedly rejected alternate concepts (Remembrance/Unbound, Shattered Heavens, Empire, Nhalor underground world, Binding/Oaths, Hollow Sun, Eclipseborn). **Do not import these as canon.** Collaborative Stage 1 begins around PDF page 41.
+
+## Historical audit evidence and limits
+
+**ARCHIVED audit record, 12 October 2026; consolidated 3 November 2026.**
+The historical review covered 62 collaborative stages and later narrative discussions.
+The later full-conversation integrity pass was cross-document reconciliation,
+not a fresh PDF audit. This section preserves claims and source locators from the retired
+[reconciliation report](https://github.com/code-studio-au/theia-mmo/blob/b4c29af3417ae1474af99f049f82d9ba641c7429/docs/story/THEIA_CANON_RECONCILIATION_REPORT.md) and
+[verification status](https://github.com/code-studio-au/theia-mmo/blob/b4c29af3417ae1474af99f049f82d9ba641c7429/docs/story/THEIA_LINE_BY_LINE_VERIFICATION_STATUS.md).
+It is not a new independent audit of the PDF or a new approval of historical answers.
+Use the [current hierarchy](README.md#approval-and-precedence), [World Bible](THEIA_WORLD_BIBLE.md)
+and [decision ledger](DECISIONS.md) for later supersession; the
+[canonical Human campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md)
+owns current revelation timing and endings.
+
+### Audit coverage and missing evidence
+
+- The reports describe a machine-indexed pass over 403 PDF pages and targeted
+  manual collision/correction checks, not independent word-by-word adjudication
+  of every page or later unnumbered proposal.
+- Final historical index: **444 distinct question identifiers**, **471 numbered
+  prompt occurrences**, **418 identifiers with a source-located answer or confirmed
+  later variant**, and **26 open/deferred identifiers**. These counts are not proof
+  of current canon approval. In the earlier 412-candidate page-neighbourhood test,
+  411 matched; Q60 was manually checked on PDF p72 as the explicit **all six races**
+  correction.
+- Earlier **412/32**, then **412 source-located + 2 verified + 30 unanswered/deferred**
+  tallies are SUPERSEDED by that final index. Their omission of explicit PvP answers
+  was corrected; do not present either as a completed manual audit.
+- Historical outputs were named `THEIA_FULL_SOURCE_VERIFIED_REGISTER.md`
+  (approximately 367 KB) and `THEIA_LINE_BY_LINE_DECISION_AUDIT.md` (reported as
+  335/336 KB in successive notes). The reports said they were generated in an
+  earlier ChatGPT workspace, not committed here. Their current availability is
+  unverified; neither those artifacts nor the original PDF is supplied by this
+  consolidation.
+- The reports cite the [historical extraction script](https://github.com/code-studio-au/theia-engine/blob/94cc79228bc90db13d83116f76f6cdba51b72630/tools/extract_theia_questions.py)
+  as a prompt-indexing aid, not answer inference. No script or code was reviewed
+  during this Markdown consolidation.
+- The recorded 26 open/deferred identifiers are **Q179–183, reissued Q194–197,
+  Q212–219 and Q436–444**. Q212–219 stopped when the user returned to lore; Stage 62's Q436–444 form was
+  presented but not submitted. Earlier reused variants may also be unanswered. Later
+  standalone decisions can settle a topic without supplying an answer to its
+  original multiple-choice prompt.
+
+### Source-page evidence index
+
+These are historical answers and page locators, not a current canon table.
+In particular, Q12 god-death interpretations, Q40 creation-time corruption and
+older Passage assumptions must be read with the later explicit locks in the
+World Bible. Source wording stays available without reactivating it.
+
+| Question(s) | Verified user choice | Source PDF page(s) |
+|---|---|---|
+| Q1–3 | Ancient war **and** betrayal; magic returning **and** distinct traditions; archaeological discoveries **and** an ancient return | 42 |
+| Q4–7 | Betrayal + ancient enmity; ancient mysterious evil; betrayal's precise truth deferred, possible sacrifice; ancient history largely myth except rare scholars/hidden factions | 43 |
+| Q8–11 | Multiple great civilizations and physically present gods; awakening among previously ungifted; instability, powerful wielders and legendary creatures; secret guardian order | 45 |
+| Q12–19 | Some gods fell and others survived; war among gods; gradual magic awakening; hidden Guardians; converging causes; mortals chose divine sides; magic predates gods; different divine fates | 48–50 |
+| Q35 | **Direct ancestry** for magical bloodlines, not the alternative widespread-dormant-heritage choice | 60 |
+| Q40 | **Hidden corruption** in creation of a new people, not the alternative “multiple causes” selection | 63 |
+| Q42–44 | Divine empowerment of original magical lineages; uncommon but recognized awakening; contradictory creation beliefs | 63 |
+| Q47 | **Mixed morality** selected for the Seven (not automatically the assistant's “all well-intentioned” generalization) | 65 |
+| Q60–64 | Six playable races supersede four; D/E/A/A for alliance/cultural design and relative balance | 72 |
+| Q97–102 | Ancestral homelands: inland plains, ancient mountains, grasslands, underground valleys, primeval forests, rugged highlands | 91 |
+| Q131–133 | Surviving mountain/subterranean dwarf metropolis; expansion settlements; human royal dynasty (later refined to separate royal branch) | 103 |
+| Q166–178 | Elven/troll regional cities, including living woodland, scholarly, coastal, arcane, frontier, chronicle, ward, resource, divination, storm harbour; ancient sites with varied access | 118 |
+| Q184–188 | A/B/C/A/A; Great Clans replaces Great Houses; ancient passages mostly inactive; Shrouded Lands access through rediscovered passage | 122 |
+| Q189–190 | Flight paths and ship routes; contested mysterious Shrouded Lands potentially at the epicentre of Divine War | 125 |
+| Q287–296 | Divine essence + magical craftsmanship; ongoing creator link; Judge created humans, Shaper dwarves, Warrior orcs, Keeper halflings, Guardian elves; troll creators initially undecided; diverse patronage histories | 165 |
+| Q308–309 | **Keeper + Ascendant** co-created trolls; Ascendant required knowledge possessed by Keeper (“knowledge and ambition”) | 168 |
+| Q310–314 | Ascendant sought lasting legacy; Keeper joined to impose safeguards; distrust arose during creation; earlier divine disagreement; subtle shared halfling–troll magical connection | 170 |
+| Q382 | Explicitly revised to **D: all three** halfling martial traditions | 203 |
+| Q420 | Explicitly revised to **D: founding teachings, occasional direct visits and mortal intermediaries** | 219 |
+| Q434–435 | Exactly one ancient great magical order survives secretly; different modern civilizations inherited different fragments of knowledge | 222 |
+
+### Reissued prompt evidence
+
+| Identifier | Earlier question | Later question and source-backed answer |
+|---|---|---|
+| Q191 | Alliance relations, PDF p. 122 | Reissued p. 125; user chose **A**, almost complete separation, p. 126 |
+| Q192 | Third PvP territory, PDF p. 124 | Reissued p. 125; user said **“as stated previously”**: Shrouded Lands confirmed as concept, exact option not selected |
+| Q193 | Why territory matters, PDF p. 124 | Reissued p. 125 for **primary PvP type**; user chose **E**, combination, p. 126 |
+| Q194–197 | PvP and entry questions, PDF p. 124 | Reused for geography, access and encounters, p. 127; **not confirmed by prior choices** |
+| Q198 | Persistent/seasonal ownership model, PDF p. 128 | Reused for **influence decay**, PDF p. 129; user chose hybrid, p. 130 |
+| Q199 | Overextension, PDF p. 129 | User chose yes, p. 130 |
+| Q200 | Neutralization, PDF p. 129 | User chose mix of all three, p. 130 |
+
+Q200's p130 reply was “200 should be a mix of all three”; the subsequent
+“Hybrid and yes” supplied Q198/Q199. The later Q193 E answer does **not** answer
+the earlier question about why territory matters. Q192 confirms the concept
+without selecting an exact letter; reissued Q194–197 remain unconfirmed.
+
+Additional collision/correction context retained from the reports:
+
+- **Q55 → Q60:** the earlier four-race answer was superseded by six.
+- **Q315–317, Stage 47:** magical stability, unauthorized experimentation and shared
+  halfling–troll resilience. **Q315–317, Stage 49:** different divine specialties,
+  limits through laws/understanding/consequences and gradual discovery. These are
+  distinct prompts, not alternatives to collapse into one answer.
+- **Q427–435:** three or four independent interconnected great magical orders,
+  with exactly one secret survivor. Q436–444 leave that survivor's purpose,
+  method, archives, Guardian relationship, and ancient-record distribution and
+  authenticity unanswered in the original source.
+- **Q201–202:** moderate overextension and dynamic neutralization depending on
+  territory type, magical instability and activity. **Q203–211:** logistics,
+  defensive NPC support, underdog incentives, siege limits/windows, shared upkeep
+  and persistent ownership with seasonal objectives. These are recorded fairness
+  principles, not final numerical balance.
+- **Q308 and Q309:** answered in separate conversational turns, not the Stage 45
+  batch form. Preserve free-form answers such as “all six”, “knowledge and ambition”
+  and “flight paths and ship routes”; do not force them into a letter choice.
+- Reused Q297–317 require stage and PDF-page context. Form defaults and assistant
+  recommendations cannot establish approval.
+- Stage 11 Q47 mixed morality, Q382's revised D (all three halfling traditions) and Q420's
+  revised D (all three teaching channels) are not displaced by assistant summaries.
+  The Shaper's ambition remains a personality trait, not an obsolete god title.
+
+### What remains unverified
+
+The underlying PDF, full evidence register and later creator messages must be
+compared before claiming exhaustive manual verification. The current repository
+index preserves the recorded evidence; it does not certify unavailable artifacts
+or silently answer Q436–444. The reports' duplicate canon explanations now defer
+to the World Bible and current campaign. Their stale several-god Kel'vari creation,
+unresolved Binding betrayer, level-60 ending and open Seven/Nhal launch-fate claims
+are SUPERSEDED, not additional creative options.
+
+The reports also recorded the historical retirement of `THEIA_TRUE_CHRONICLE.md`
+in favor of the Interwoven Chronicle. Its older prose remains Git history, not a
+second active narrative. No new audit documents are needed for this consolidation.
 
 ## Recovered decision rounds
 
@@ -46,13 +181,110 @@ Troll joint creation with Keeper stabilization and Ascendant unauthorized experi
 Divine specializations; channeling by intent and learned technique; finite internal reserve, bloodline and training; exactly six disciplines Elements & Energy, Matter, Life, Form, Mind, Passage; one individual must master every discipline used; complex spells, rare resurrection and creation, limits on Mind, temporary/rechargeable/rare self-sustaining enchantments; natural/ambient/meditative recovery; mental overload, exhaustion and environmental differences.
 
 ### Stage 55–58 — Q369–407
-Magic optional for martial classes; differentiated combat resources, deep gear customization, counterplay and cultural fighting styles; fragmented Divine Age martial traditions; human knights/armies/schools, dwarf defence/engineering, orc Great Clans/champions, halfling Q382 revised to D all three combat engineering/precision/defence; magic common in cities, conventional tech competes, different medicine, anti-mage tactics, diverse academies; racial magic traditions: humans protection/structure/war, dwarves Matter/Form/Energy, orcs clan specialisms, halflings engineering/infrastructure/defence, Aelari Life/wards/ancestral, Vaelari research/perception/combinations; elven disagreement MAGICAL RESPONSIBILITY; Korrath Keeper, Vorrath Ascendant.
+
+Stage 55 preserves magic being optional for martial classes, differentiated combat resources, deep gear customization and counterplay. The detailed Stage 56–62 evidence below is consolidated from the [historical Detailed Lore Archive](https://github.com/code-studio-au/theia-mmo/blob/d92442414202fc7d4048120b7d8416cdc023c57d/docs/story/THEIA_DETAILED_LORE_ARCHIVE.md). It preserves the recorded choices and paraphrased question focuses, not the full prompt wording or a new PDF verification. **LOCKED** here denotes the historical recorded selection within its scope, subject to later explicit creator decisions.
+
+#### Stage 56 / Q376–385 [LOCKED historical selections; subject to later decisions]
+| Q | Question focus | User decision |
+|---|---|---|
+| 376 | Origin of martial styles | Fragmented Divine Age traditions |
+| 377 | Fighting style differentiation | Strong racial styles |
+| 378 | Martial vs magic institution relationships | Institutional rivalry |
+| 379 | Human martial institutions | Royal armies, knightly orders, martial schools |
+| 380 | Dwarven martial style | Defence, equipment and engineering |
+| 381 | Orcish martial style | Great Clans, professional armies and champions |
+| 382 | Halfling martial style | **D: All three — combat engineering, precision combat and defensive mastery** (replaced earlier engineering-only choice) |
+| 383 | Elven martial styles | All three: shared roots, divergent traditions, magic integration |
+| 384 | Troll martial styles | All three: ancestral/exile, religion, geography |
+| 385 | Shared heritage | Common roots, divergent techniques, wartime adaptation |
+
+#### Stage 57 / Q386–396 [LOCKED historical selections; subject to later decisions]
+| Q | Focus | Decision |
+|---|---|---|
+| 386 | Civilian access | Magic common in major cities |
+| 387 | Magic vs technology | Competing approaches |
+| 388 | Medical systems | Different cultural traditions |
+| 389 | Army mages | All three: supports, unit integration, rare powerful wielders |
+| 390 | Anti-mage strategies | Gear, tactics, dedicated specialists |
+| 391 | Relative battlefield strength | All three: vulnerable specialists, rare legendary mages, martial parity in role |
+| 392 | Academy governance | Mixed royal, guild, independent and religious models |
+| 393 | Martial/academy rivalry reason | Prestige and political influence |
+| 394 | Dangerous research oversight | Varies between civilizations |
+| 395 | Cultural magic | Racial, regional and bloodline specialties |
+| 396 | Lost age knowledge | Lost, secretly guarded and rediscovered |
+
+#### Stage 58 / Q397–407 [LOCKED historical selections; subject to later decisions]
+| Q | Focus | Decision |
+|---|---|---|
+| 397 | Human magical culture | Protection, structured magic, military uses |
+| 398 | Dwarven magical culture | Matter, Form and Energy |
+| 399 | Orcish magical culture | Different Great Clan specialties |
+| 400 | Halfling magical culture | Engineering, infrastructure and defence |
+| 401 | Aelari magical culture | Life, wards, ancestral knowledge |
+| 402 | Vaelari magical culture | Research, magical perception, advanced combinations |
+| 403 | Elven philosophical schism | **Magical responsibility** |
+| 404 | Ancestral troll patron | **Keeper** |
+| 405 | Exiled troll patron | **Ascendant** (earlier title “Ambitious”) |
+| 406 | Troll cultural divergence | Heritage, religion, geography |
+| 407 | Racial magic benefits | Different instructors, transferable techniques, bloodline affinities |
 
 ### Stage 59–61 — Q408–435
-Ancient independent great magical orders, broad knowledge exchange and passageways, occasional divine teaching; loss through destruction, deaths and suppression of particular dangerous advanced techniques; modern academies, royal institutions and smaller orders with fragmentary inherited knowledge; Guardians selectively guard forbidden knowledge; divided modern institutions; three or four original great orders organized by philosophy/specialty/purpose, independent but interconnected, several divine influences, mortals openly challenged gods; mostly cooperative until war; EXACTLY ONE original great order survives secretly.
+
+#### Stage 59 / Q408–417 [LOCKED historical selections; subject to later decisions]
+| Q | Focus | Decision |
+|---|---|---|
+| 408 | Divine Age educational organization | Independent magical orders |
+| 409 | Ancient circulation of magic | Broadly shared knowledge |
+| 410 | Divine influence | **D: Founding teachings, occasional direct teaching and mortal intermediaries** (explicit later revision) |
+| 411 | Loss of ancient arts | Destruction, deaths and deliberate suppression |
+| 412 | Survivors | Academies, secret orders, royal institutions |
+| 413 | Modern grasp of lost arts | Fragmented knowledge |
+| 414 | Guardians' archives | Selective forbidden knowledge relevant to ancient threat |
+| 415 | Guardian secrecy | Danger, political mistrust, inherited duty |
+| 416 | Modern rediscovery | Stronger wielders, awakened sites, retrieved knowledge |
+| 417 | Institutions' response | Deep division over rediscovery |
+
+#### Stage 60 / Q418–426 [LOCKED historical selections; subject to later decisions]
+| Q | Focus | Decision |
+|---|---|---|
+| 418 | Ancient order count/organization | Several great orders |
+| 419 | Research exchange | Libraries, visiting scholars/councils and passages |
+| 420 | Divine guidance | **D: founding teachings + occasional direct visits + trusted intermediaries** (supersedes initial A) |
+| 421 | Initial suppressors | Surviving masters |
+| 422 | Restriction types | Specific dangerous advanced techniques |
+| 423 | Resistant orders | Varied fates: hidden, destroyed, exiled |
+| 424 | Modern institutional heritage | Diverse continuity histories |
+| 425 | Rival academies | Academic competition |
+| 426 | Ancient remnants | Ruins, artifacts, structures within living cities |
+
+#### Stage 61 / Q427–435 [LOCKED historical selections; subject to later decisions]
+| Q | Focus | Decision |
+|---|---|---|
+| 427 | What defines a great order | Philosophy, specialty, purpose |
+| 428 | How many great orders | **Three or four** |
+| 429 | Government | Independent but interconnected |
+| 430 | Gods and orders | Several divine influences |
+| 431 | Could mortals challenge gods | Openly |
+| 432 | Sources of rivalry | Ethics, knowledge access and political power |
+| 433 | Prewar relations | Largely cooperative until war |
+| 434 | Surviving original order | **Exactly one** hidden survivor |
+| 435 | Regional inherited knowledge | Distinct fragments among civilizations |
 
 ### Stage 62 — Q436–444
-Questions posed, but NO user choices submitted. Do not mark assistant default selections as confirmed. The original magical order's purpose, survival, archives, relation to Guardians and detailed source distribution remain open.
+
+#### Stage 62 / Q436–444 [OPEN — unanswered]
+These were presented as selectable questions, but there is no subsequent user submission resolving them:
+- 436 surviving order original mission (understanding, transformation, preservation, exploration or multi-purpose).
+- 437 how it survives (lineage, refuge, modern institutional infiltrators, mix).
+- 438 extent of preserved knowledge (archives, specialism, fragments, dormant records or mixed).
+- 439 relationship between surviving old order and Guardians (allies, rivals, unaware, one-way awareness, undecided).
+- 440 how their responsibilities differ (magical knowledge, historic truth, intervention vs preparation, overlap).
+- 441 what the dwarf capital keeps (old mechanisms, archives, living craft, combination).
+- 442 Korrath archives (chronicles, wardcraft, early divine texts, combination).
+- 443 Vaelari rediscovery specialty (experimentation, analysis, passage research, combination).
+- 444 reliability of ancient documents (accurate fragments, misinterpretation, falsification, all three).
+
+**Crucial:** An on-screen default selection is *not* a user answer. Never mark Q436–444 as finalized simply because one was preselected in an earlier form.
 
 ## Post-question canon and overrides
 
@@ -66,11 +298,15 @@ Questions posed, but NO user choices submitted. Do not mark assistant default se
 
 ## Open questions and source integrity
 
-The exact ancient betrayer(s), divine wartime sides, fate of each god, vanished people's name/fate, which ancient order survived and its current identity, full magical ranks/classes, precise zone geography and ultimate ending remain unresolved unless later user messages explicitly settled them. Some detailed narrative drafts in the original PDF are assistant proposals and should be presented as such, even if they are useful. Q436–444 were never answered. Around Q297–317 the PDF repeats question numbers for distinct stages; use stage and PDF page as identifiers rather than relying solely on Q number. For exhaustive auditing consult the source PDF alongside this index.
+**SUPERSEDED open questions:** Keeper's knowing concealment at The Binding, the Seven's survival, the Kel'vari's identity and surviving enclaves are established by the [World Bible](THEIA_WORLD_BIBLE.md). The [canonical Human campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md) and [later decision ledger](DECISIONS.md) govern the launch revelations, permanent deaths, Nhal's shattering and the Seven's independent survival. These are not open alternatives merely because earlier question rounds left them undecided.
+
+**OPEN:** Exact divine wartime allegiances and individual experiences, unapproved magical mechanisms, ancient-order identity and the unanswered Q436–Q444 details, unapproved class/rank details and precise geography remain subject to their authoritative scopes. Future outcomes beyond the approved ending, especially Nhal's fragments, remain unresolved. Consult the Bible's current open-decision list rather than treating this historical index as a second canon ledger.
+
+**Source evidence limits:** Detailed narrative drafts in the original PDF may be proposals rather than creator decisions. Q436–Q444 received no answers. Around Q297–Q317, question numbers repeat across distinct stages; use stage, question context and PDF page as identifiers. The PDF is not in the repository, and this consolidation is not a new exhaustive audit; exact source verification requires that artifact. The [prior open-question wording](https://github.com/code-studio-au/theia-mmo/blob/23a1453a75e9de3153044b41ceba471e012fd6fa/docs/story/THEIA_SOURCE_DECISION_RECOVERY.md) remains historical provenance.
 
 ## Corrective source audit: reused PvP identifiers
 
-The first version of this index incorrectly treated Q191–200 as wholly unanswered. The original PDF pp. 125–131 shows that Q191 (reissued) was **A**, almost complete separation; Q192 (reissued) was answered “as stated previously” for the Shrouded Lands concept without an unambiguous letter; Q193 (reissued) was **E**, combining several PvP types. **Q198 (reissued)** was answered “Hybrid” (grace period then escalating influence decay); **Q199** was “yes” (overextension increases decay); **Q200** was “a mix of all three” (NPC reclamation, unclaimed territory and magical events). Q194–197, reissued with new geography/access questions, were not answered by the earlier forms. The numbering collision must be recorded by question text, stage and PDF page, not number alone. The [verification status](THEIA_LINE_BY_LINE_VERIFICATION_STATUS.md) records the source detail.
+The first version of this index incorrectly treated Q191–200 as wholly unanswered. The original PDF pp. 125–131 shows that Q191 (reissued) was **A**, almost complete separation; Q192 (reissued) was answered “as stated previously” for the Shrouded Lands concept without an unambiguous letter; Q193 (reissued) was **E**, combining several PvP types. **Q198 (reissued)** was answered “Hybrid” (grace period then escalating influence decay); **Q199** was “yes” (overextension increases decay); **Q200** was “a mix of all three” (NPC reclamation, unclaimed territory and magical events). Q194–197, reissued with new geography/access questions, were not answered by the earlier forms. The numbering collision must be recorded by question text, stage and PDF page, not number alone. The [consolidated source-page evidence](#reissued-prompt-evidence) records the prompt-specific detail.
 
 **Q47 correction:** The original user explicitly chose **mixed morality** for the Seven. Do not state that all gods are necessarily well-intentioned; individual motivations may be compassionate, authoritarian or dangerously ambitious. This does not make Ascendant inherently evil.
 
@@ -80,7 +316,7 @@ The first version of this index incorrectly treated Q191–200 as wholly unanswe
 
 ## 2026-10-12 user-approved lock — first mortal life and Ascendant's arrival
 
-**Later user decisions superseding earlier unresolved chronology:** The Seven awaken separately; Ascendant spends a meaningful period exploring independently and joins the divine community **only after the first five mortal species already exist**. Guardian and Warrior's bond begins through **philosophical disagreement** about protection and resilience, then grows into mutual respect. Seeker and Shaper meet through **shared magical discovery**, become close collaborators, and discover the principles that make independent consciousness possible. **They choose not to create mortal life because their knowledge is incomplete** (explicitly selected first alternative). Guardian and Warrior take that research further and create **elves first, then orcs**. Shaper next creates **dwarves** after seeing mortals become makers. Judge then creates **humans**, Keeper then creates **halflings**; Seeker remains a scholar and patron rather than creator of one of these six races. Ascendant arrives to find five races and existing divine relationships, subsequently collaborates with Keeper to create **trolls as the sixth species**, and later **creates the seventh race alone** after secretly exceeding Keeper's limited research permission (later user decision superseding the earlier multi-god proposal). His late arrival is not proof of intentional ostracism, inherent evil or sole responsibility for Nhal's corruption.
+**Later user decisions superseding earlier unresolved chronology:** The Seven awaken separately; Ascendant spends a meaningful period exploring independently and joins the divine community **only after the first five mortal species already exist**. Guardian and Warrior's bond begins through **philosophical disagreement** about protection and resilience, then grows into mutual respect. Seeker and Shaper meet through **shared magical discovery**, become close collaborators, and discover the principles that make independent consciousness possible. **They choose not to create mortal life because their knowledge is incomplete** (explicitly selected first alternative). Guardian and Warrior take that research further and create **elves first, then orcs**. Shaper next creates **dwarves** after seeing mortals become makers. Judge then creates **humans**, Keeper then creates **halflings**; Seeker remains a scholar and patron rather than creator of one of these six races. Ascendant arrives to find five races and existing divine relationships, subsequently collaborates with Keeper to create **trolls as the sixth species**, and later **creates the Kel'vari alone** after secretly exceeding Keeper's limited research permission (later user decision superseding the earlier multi-god proposal). His late arrival is not proof of intentional ostracism, inherent evil or sole responsibility for Nhal's corruption.
 
 **Still open:** awakening order of the first six gods, elapsed time and the specific first Seeker–Shaper experiment or Guardian–Warrior encounter. Their thematic relationship origins and the creation sequence are confirmed.
 
@@ -90,57 +326,57 @@ The first version of this index incorrectly treated Q191–200 as wholly unanswe
 
 ## 2026-10-12 later creator decision — The Binding and Keeper's deliberate deception
 
-**LOCKED:** The final containment of the First Anchor's damaged homeland is called **The Binding**. The Seven contribute their divine essences to create and maintain **the Shroud**, a barrier within the Physical Realm distinct from Aethyr's Veil. **Keeper knew with certainty before the ritual that all Seven would remain bound to the Shroud, unable to withdraw their essences freely, and deliberately did not disclose that fact.** The other six believed they were making a limited contribution, not accepting indefinite confinement. The betrayal is Keeper's knowingly withheld truth; **The Binding** is the event name. All seven essences and individual consciousnesses survive, allowing the *possible*, not predetermined, later voluntary reunification into a single primordial essence to oppose Nhal. This later decision supersedes older proposed deaths of particular gods and the prior working interpretation of the Great Betrayal as chiefly a secret seizure of shared mortal infrastructure. Exact mechanics and eventual ending remain open.
+**LOCKED:** The final containment of the First Anchor's damaged homeland is called **The Binding**. The Seven contribute their divine essences to create and maintain **the Shroud**, a barrier within the Physical Realm distinct from Aethyr's Veil. **Keeper knew with certainty before the ritual that all Seven would remain bound to the Shroud, unable to withdraw their essences freely, and deliberately did not disclose that fact.** The other six believed they were making a limited contribution, not accepting indefinite confinement. The betrayal is Keeper's knowingly withheld truth; **The Binding** is the event name. All seven essences and individual consciousnesses survive. Their later campaign coordination remains independent, not reunion into a single primordial essence; the older possibility is SUPERSEDED as the launch ending. This later decision supersedes older proposed deaths of particular gods and the prior working interpretation of the Great Betrayal as chiefly a secret seizure of shared mortal infrastructure. Unapproved exact mechanics remain OPEN; the canonical Human campaign now owns the established launch ending.
 
 ## 2026-10-12 LOCKED: First Anchor versus modern Unmade Anchors
 
-The user explicitly approved the following distinction: **the unique First Anchor cannot be safely destroyed because it became entangled with the persistent breach in Aethyr's Veil**; it is not materially indestructible. Its destruction could remove the structure still constraining that breach. The First Anchor was made by the seventh race's greatest researchers, whose complete knowledge was lost/isolated after the Second Sundering. **Modern Unmade Anchors are inferior, incomplete derivatives**, built from fragments of that knowledge and drawing upon the **pre-existing damage/connection** rather than making independent permanent Void breaches. They have vulnerable support structures and can be safely disabled or destroyed by players, often through staged disconnection. The progression categories are **Minor Resonators**, **Regional Anchors**, and **Major Anchors**, with escalating danger and complexity; exact numbers and zone implementations are open. Only a coordinated network of sophisticated major Anchors poses a major strain on the Shroud and The Binding. Guardians can guide safe dismantling. This resolves why players can destroy modern Anchors without contradicting the Seven's need to contain the First Anchor. Destroying modern Anchors does not automatically free the Seven or close the original breach.
+The user explicitly approved the following distinction: **the unique First Anchor cannot be safely destroyed because it became entangled with the persistent breach in Aethyr's Veil**; it is not materially indestructible. Its destruction could remove the structure still constraining that breach. The First Anchor was made by the Kel'vari's greatest researchers, whose complete knowledge was lost/isolated after the Second Sundering. **Modern Unmade Anchors are inferior, incomplete derivatives**, built from fragments of that knowledge and drawing upon the **pre-existing damage/connection** rather than making independent permanent Void breaches. They have vulnerable support structures and can be safely disabled or destroyed by players, often through staged disconnection. The progression categories are **Minor Resonators**, **Regional Anchors**, and **Major Anchors**, with escalating danger and complexity; exact numbers and zone implementations are open. Only a coordinated network of sophisticated major Anchors poses a major strain on the Shroud and The Binding. Guardians can guide safe dismantling. This resolves why players can destroy modern Anchors without contradicting the Seven's need to contain the First Anchor. Destroying modern Anchors does not automatically free the Seven or close the original breach.
 
 ## 2026-10-12 locked clarification — surviving gates operate continuously
 
-The user explicitly selected **continuous low-capacity operation** for the surviving ancient Passage gates after The Binding, **not** intermittent access during magical alignments. The Shroud weakened and suppressed the ancient network but did not deactivate every gate. Surviving routes permitted individuals, small groups and limited artifacts/supplies to travel through the centuries, while being unable to sustain armies or major supply lines. The Unmade used these routes for covert infiltration of both alliance continents, alongside cells that persisted outside the Shroud. These **physical Passage links** did not restore direct communication with Nhal, and did not bypass containment of the First Anchor. Major PvP gateways may later be restored through progression; conventional shipborne cross-continental incursions remain separate. Exact routes, capacities and whether corrupted Seventh NPCs also use them remain open.
+The user explicitly selected **continuous low-capacity operation** for the surviving ancient Passage gates after The Binding, **not** intermittent access during magical alignments. The Shroud weakened and suppressed the ancient network but did not deactivate every gate. Surviving routes permitted individuals, small groups and limited artifacts/supplies to travel through the centuries, while being unable to sustain armies or major supply lines. The Unmade used these routes for covert infiltration of both alliance continents, alongside cells that persisted outside the Shroud. These **physical Passage links** did not restore direct communication with Nhal, and did not bypass containment of the First Anchor. Major PvP gateways may later be restored through progression; conventional shipborne cross-continental incursions remain separate. Exact routes, capacities and whether corrupted Kel'vari NPCs also use them remain open.
 
 ## 2026-10-12 clarification — Shrouded Lands as the enduring epicentre of The Unmade
 
-**User direction:** The Shroud protects the **rest of Theia** from Nhal's corruption, but the corruption is **unrelenting within the contained region** surrounding the First Anchor. The Shrouded Lands are the original seventh race's homeland and the **historical and continuing epicentre of The Unmade**, whose roots lie among corrupted ancient researchers. We distinguish (1) Nhal's persistent local influence, (2) The Unmade's deliberate organization and covert cells, and (3) transformed Seventh inhabitants, not all of whom knowingly serve The Unmade. The Shroud still prevents full primordial emergence and outward spread. The weakened Passage gates allow small-scale physical infiltration without army-scale transit. Relentless corruption does not require that The Unmade received clear direct messages from Nhal throughout the Age of Silence; their loss of reliable contact remains compatible. Details of interior factions and command structure remain open.
+**User direction:** The Shroud protects the **rest of Theia** from Nhal's corruption, but the corruption is **unrelenting within the contained region** surrounding the First Anchor. The Shrouded Lands are the original Kel'vari's homeland and the **historical and continuing epicentre of The Unmade**, whose roots lie among corrupted ancient researchers. We distinguish (1) Nhal's persistent local influence, (2) The Unmade's deliberate organization and covert cells, and (3) transformed Kel'vari inhabitants, not all of whom knowingly serve The Unmade. The Shroud still prevents full primordial emergence and outward spread. The weakened Passage gates allow small-scale physical infiltration without army-scale transit. Relentless corruption does not require that The Unmade received clear direct messages from Nhal throughout the Age of Silence; their loss of reliable contact remains compatible. Details of interior factions and command structure remain open.
 
-## 2026-10-12 user-locked: multiple surviving Seventh enclaves
+## 2026-10-12 user-locked: multiple surviving Kel'vari enclaves
 
-The user chose **multiple small independent enclaves** of surviving, uncorrupted members of the seventh race within the Shrouded Lands, **not** a centrally governed surviving kingdom. These enclaves resist The Unmade and may offer independent entrance outposts for Covenant and Dominion through restored PvP gateways (outpost arrangements still working). The proposal that the Guardians were originally Seventh resisters and later recruited across races remains **OPEN**, not yet user-approved.
+The user chose **multiple small independent enclaves** of surviving, uncorrupted members of the Kel'vari within the Shrouded Lands, **not** a centrally governed surviving kingdom. These enclaves resist The Unmade and may offer independent entrance outposts for Covenant and Dominion through restored PvP gateways (outpost arrangements still working). The proposal that the Guardians were originally Kel'vari resisters and later recruited across races remains **OPEN**, not yet user-approved.
 
 ## 2026-10-12 Guardian knowledge clarification
 
-**User confirmed:** At the beginning, the Guardians knew **an unknown influence was manipulating magical research**; they did **not** know its identity as Nhal or its primordial origin. That discovery must be a later development. **LATER CONFIRMED:** the Guardians' founders were a multiracial coalition of Seventh researchers and trusted members of the other six races, formed during the Divine War before The Binding; some Seventh researchers were already abroad or escaped before the Shroud, and their descendants later assimilated through the Seventh's uniquely permitted interracial reproduction. The founders' knowledge of an unidentified research manipulator, **not Nhal's identity**, remains the confirmed initial limit.
+**User confirmed:** At the beginning, the Guardians knew **an unknown influence was manipulating magical research**; they did **not** know its identity as Nhal or its primordial origin. That discovery must be a later development. **LATER CONFIRMED:** the Guardians' founders were a multiracial coalition of Kel'vari researchers and trusted members of the other six races, formed during the Divine War before The Binding; some Kel'vari researchers were already abroad or escaped before the Shroud, and their descendants later assimilated through the Kel'vari's uniquely permitted interracial reproduction. The founders' knowledge of an unidentified research manipulator, **not Nhal's identity**, remains the confirmed initial limit.
 
-## 2026-10-12 explicit supersession — Seventh-only interracial reproduction
+## 2026-10-12 explicit supersession — Kel'vari-only interracial reproduction
 
-**User LOCKED:** The earlier answer permitting general interracial reproduction is superseded. **Only the seventh race** can have children with members of any of the six original mortal species. The six original species cannot ordinarily have children with one another across species boundaries; their internal cultural branches remain biologically compatible. The Seventh's unique compatibility is part of Ascendant's extraordinary design, not a combat advantage or immortality. Some Seventh researchers/survivors outside the Shroud could gradually assimilate into the six races through families, migration and loss of historical records. Modern individuals may have distant direct Seventh ancestry without knowing it; most show no unusual power, with rare affinity a possible narrative hook. Distinct Seventh enclaves persist within the Shroud. Precise reproductive biology, appearance, family identities and Guardian genealogical secrecy remain open.
+**User LOCKED:** The earlier answer permitting general interracial reproduction is superseded. **Only the Kel'vari** can have children with members of any of the six original mortal species. The six original species cannot ordinarily have children with one another across species boundaries; their internal cultural branches remain biologically compatible. The Kel'vari's unique compatibility is part of Ascendant's extraordinary design, not a combat advantage or immortality. Some Kel'vari researchers/survivors outside the Shroud could gradually assimilate into the six races through families, migration and loss of historical records. Modern individuals may have distant direct Kel'vari ancestry without knowing it; most show no unusual power, with rare affinity a possible narrative hook. Distinct Kel'vari enclaves persist within the Shroud. Precise reproductive biology, appearance, family identities and Guardian genealogical secrecy remain open.
 
-## 2026-10-12 LOCKED — Guardians founded by a multiracial coalition and deliberately hid The Seventh
+## 2026-10-12 LOCKED — Guardians founded by a multiracial coalition and deliberately hid The Kel'vari
 
-The user approved the proposed full Guardian founding narrative, including the recommendation that **early Guardians intentionally concealed surviving Seventh enclaves** to protect them, while generations of compartmentalization, migration, war and fragmented archives caused many later Guardians to lose knowledge of the enclaves and their own founding history.
+The user approved the proposed full Guardian founding narrative, including the recommendation that **early Guardians intentionally concealed surviving Kel'vari enclaves** to protect them, while generations of compartmentalization, migration, war and fragmented archives caused many later Guardians to lose knowledge of the enclaves and their own founding history.
 
-**Chronology:** Seventh researchers noticed unknown manipulation of advanced magical research before the First Anchor's activation, but **did not identify Nhal**. Some were abroad and others escaped before The Binding. Following the Anchor catastrophe, during the **Divine War and before The Binding**, they joined trusted scholars, witnesses and protectors from the **other six mortal races** to found the Guardians. The organization preserved evidence, investigated the unidentified influence, prevented repeat catastrophes and resisted exclusive control of the truth by any god, kingdom or academy. Cells and repositories existed both inside and outside the future Shroud before the final containment. The Binding divided those branches, with only limited travel through surviving gates.
+**Chronology:** Kel'vari researchers noticed unknown manipulation of advanced magical research before the First Anchor's activation, but **did not identify Nhal**. Some were abroad and others escaped before The Binding. Following the Anchor catastrophe, during the **Divine War and before The Binding**, they joined trusted scholars, witnesses and protectors from the **other six mortal races** to found the Guardians. The organization preserved evidence, investigated the unidentified influence, prevented repeat catastrophes and resisted exclusive control of the truth by any god, kingdom or academy. Cells and repositories existed both inside and outside the future Shroud before the final containment. The Binding divided those branches, with only limited travel through surviving gates.
 
-**Distinct entities:** The Seventh are a surviving people in small independent enclaves; the Guardians are a multiracial secret organization, not an ancestral caste; The Unmade are the separate Nhal-serving movement descended from compromised researchers. Outside Seventh descendants could assimilate into the other six races through their unique interspecies compatibility. Guardians' secrecy was initially protective but became a moral weakness as knowledge fragmented and members came to withhold vital truths. Modern Covenant and Dominion Guardian cells remain clandestine, not a public third faction.
+**Distinct entities:** Kel'vari are a surviving people in small independent enclaves; the Guardians are a multiracial secret organization, not an ancestral caste; The Unmade are the separate Nhal-serving movement descended from compromised researchers. Outside Kel'vari descendants could assimilate into the other six races through their unique interspecies compatibility. Guardians' secrecy was initially protective but became a moral weakness as knowledge fragmented and members came to withhold vital truths. Modern Covenant and Dominion Guardian cells remain clandestine, not a public third faction.
 
 **Still open:** exact founding individuals and meeting place, which Guardian custodians know the enclave locations, institutional titles and command structure, and whether the surviving ancient magical order has any relationship to the Guardians. The complete details of Keeper's betrayal may remain unknown to the Guardians.
 
-## Latest chronological supersession — sole Seventh Creation and Anchor-triggered Second Sundering
+## Latest chronological supersession — sole Kel'vari creation and Anchor-triggered Second Sundering
 
-**These later creator decisions override earlier assistant-authored collaborative creation and sealing sequences.** Ascendant is the **sole divine creator of the seventh race**. Keeper attempted to rebuild trust by sharing selected stability research; Ascendant knowingly exceeded that permission and independently created a free, magically sophisticated people. **This earlier Q40 interpretation is superseded:** Nhal did **not** influence the creation or Ascendant's research. Its first influence arose only after later Seventh researchers accidentally caused the First Resonance.
+**These later creator decisions override earlier assistant-authored collaborative creation and sealing sequences.** Ascendant is the **sole divine creator of the Kel'vari**. Keeper attempted to rebuild trust by sharing selected stability research; Ascendant knowingly exceeded that permission and independently created a free, magically sophisticated people. **This earlier Q40 interpretation is superseded:** Nhal did **not** influence the creation or Ascendant's research. Its first influence arose only after later Kel'vari researchers accidentally caused the First Resonance.
 
-Seventh researchers later constructed the **First Anchor**, believing it would establish lasting contact with their creator. A willing Nhal-influenced minority secretly redirected the device into the Veil. **Activation caused the initial catastrophe of the Second Sundering**, devastating their homeland and fracturing ancient geography. **The Divine War followed**, worsening the losses as gods and mortals fought over blame, research, control and containment. During that war and before The Binding, a multiracial coalition of Seventh investigators and members of the six older races founded the **Guardians**, knowing only that an unknown influence was manipulating research.
+Kel'vari researchers later constructed the **First Anchor**, believing it would establish lasting contact with their creator. A willing Nhal-influenced minority secretly redirected the device into the Veil. **Activation caused the initial catastrophe of the Second Sundering**, devastating their homeland and fracturing ancient geography. **The Divine War followed**, worsening the losses as gods and mortals fought over blame, research, control and containment. During that war and before The Binding, a multiracial coalition of Kel'vari investigators and members of the six older races founded the **Guardians**, knowing only that an unknown influence was manipulating research.
 
-**The Binding** concluded the crisis, with Keeper knowingly concealing that the Seven would be bound indefinitely into sustaining the Shroud. The original Anchor could not be safely destroyed after becoming entangled with the breach. The Shroud contains the corruption geographically but does not eliminate its relentless influence within the homeland. Multiple Seventh enclaves survive, while the Unmade maintain their epicentre there. Outside Seventh descendants gradually assimilated through their unique interracial compatibility. The Unmade's modern Anchors are imperfect, destructible resonators; some Passage gates remained continuously operational at low capacity.
+**The Binding** concluded the crisis, with Keeper knowingly concealing that the Seven would be bound indefinitely into sustaining the Shroud. The original Anchor could not be safely destroyed after becoming entangled with the breach. The Shroud contains the corruption geographically but does not eliminate its relentless influence within the homeland. Multiple Kel'vari enclaves survive, while the Unmade maintain their epicentre there. Outside Kel'vari descendants gradually assimilated through their unique interracial compatibility. The Unmade's modern Anchors are imperfect, destructible resonators; some Passage gates remained continuously operational at low capacity.
 
-**Not finalized:** The exact first-contact mechanism, the first Anchor's detailed design, named Seventh cities, the precise Divine War sides and dates, individual Seventh enclave leaders, detailed Guardian command structures, the surviving ancient magical order's identity, and the ultimate resolution of Nhal and the Seven. The Seven's possible voluntary reunification is future story potential, not a committed ending.
+**Not finalized:** The exact first-contact mechanism, the first Anchor's detailed design, named Kel'vari cities, the precise Divine War sides and dates, individual Kel'vari enclave leaders, detailed Guardian command structures, the surviving ancient magical order's identity, and the ultimate resolution of Nhal and the Seven. The Seven's possible voluntary reunification is future story potential, not a committed ending.
 
 ## 2026-10-12 later creator LOCK — Nhal observes, but cannot act until the First Resonance
 
-**Explicit supersession of the original Q40 interpretation:** Although the original source recorded a selection described as “hidden corruption” during the seventh creation, the creator subsequently rejected any Nhal interference in Ascendant's design. **The seventh race was created independently by Ascendant**, through his own reconstruction of Keeper's restricted research and dogged ambition to outshine the other gods. His design allowed unprecedented synthesis of **all six fundamental magical fields**, without Nhal's help, corruption, implanted influence or direction.
+**Explicit supersession of the original Q40 interpretation:** Although the original source recorded a selection described as “hidden corruption” during the Kel'vari creation, the creator subsequently rejected any Nhal interference in Ascendant's design. **The Kel'vari were created independently by Ascendant**, through his own reconstruction of Keeper's restricted research and dogged ambition to outshine the other gods. His design allowed unprecedented synthesis of **all six fundamental magical fields**, without Nhal's help, corruption, implanted influence or direction.
 
-**Nhal's powers after the First Sundering:** From the Void, Nhal could **observe the Physical Realm** and witness the Seven, their creations and their rivalries, but could **not interact directly**, influence experiments, whisper to minds or enter creation. Observation is not omniscience or prophecy. Nhal could therefore recognize the remote potential of Ascendant's seventh race and understand whose ambitions might later be exploited, but could not ensure that opportunity would ever arise.
+**Nhal's powers after the First Sundering:** From the Void, Nhal could **observe the Physical Realm** and witness the Seven, their creations and their rivalries, but could **not interact directly**, influence experiments, whisper to minds or enter creation. Observation is not omniscience or prophecy. Nhal could therefore recognize the remote potential of Ascendant's Kel'vari and understand whose ambitions might later be exploited, but could not ensure that opportunity would ever arise.
 
 **First Resonance:** Generations after the race's creation, its most accomplished scholars accidentally combined the six fields at a level that briefly **resonated with the Veil**, which they did not know existed. They also knew nothing of Nhal. This was **not** a breach and did not instantly corrupt the race. It was the **first opportunity for Nhal to exert limited influence** upon similarly resonant research: biasing possible outcomes, encouraging useful discoveries and cultivating the ambition to establish lasting divine contact. Nhal then manipulated the later First Anchor project toward an actual breach, triggering the Second Sundering.
 
@@ -150,82 +386,54 @@ Seventh researchers later constructed the **First Anchor**, believing it would e
 ## 2026-10-12 creator LOCK — recurring hidden resonance and physical continental sundering
 The first exceptional six-field experiment yielded an observable but incompletely explained result. The researchers did not recognize that its particular configuration briefly resonated with the Veil. Continued experiments repeatedly combining all six fields reproduced that resonance whenever the same specific alignment occurred, each time opening a fleeting opportunity for Nhal to influence the outcome. Nhal's subtle biases encouraged apparently promising discoveries and further experimentation. Not every magical working or arbitrary six-field combination permits influence; the particular resonant configuration matters. This supersedes any suggestion that the researchers knowingly investigated the Veil at first.
 
-The First Anchor's breach initiated the Second Sundering as a literal geographical cataclysm: once-connected landmasses physically fractured into the future Covenant and Dominion continents, while the Seventh homeland was devastated and isolated, later becoming the Shrouded Lands. Collapse of Passage routes and magical civic infrastructure caused wider cascading disasters. The subsequent Divine War and The Binding compounded the devastation. Continental outlines and precise geophysics remain unfinalized.
+The First Anchor's breach initiated the Second Sundering as a literal geographical cataclysm: once-connected landmasses physically fractured into the future Covenant and Dominion continents, while the Kel'vari homeland was devastated and isolated, later becoming the Shrouded Lands. Collapse of Passage routes and magical civic infrastructure caused wider cascading disasters. The subsequent Divine War and The Binding compounded the devastation. Continental outlines and precise geophysics remain unfinalized.
 
 
 ## 2026-10-13 creator LOCK — The Corrupted Conclave and five leadership roles
 
-**The Corrupted Conclave** is the ancient inner council directing **The Unmade** beneath Nhal. Its founding leadership arose from surviving Seventh researchers and followers who knowingly pursued the alien intelligence before the First Anchor catastrophe. Following the loss of reliable communication with Nhal, they assumed responsibility for preserving the Unmade's purpose, research, sanctuaries and covert operations during the Age of Silence. They were not personally appointed by Nhal; their authority arose from their surviving knowledge, influence and decision to continue. Their willing pursuit preceded their corruption; not every transformed Seventh inhabitant belongs to this leadership or to the Unmade.
-
-**Five approved leadership titles and character foundations:**
-- **The First Voice:** Principal interpreter of Nhal's will; authoritative and devoted, with legitimacy increasingly challenged by the long silence.
-- **The Architect:** Master of forbidden research and Anchor construction; brilliant, obsessive and determined to recover lost techniques.
-- **The Veiled Hand:** Oversees infiltration and covert networks; patient, calculating and adept at manipulating mortal institutions.
-- **The Harbinger:** Maintains doctrine, devotion and recruitment; charismatic, fanatical and willing to elevate fragmentary instructions into sacred teaching.
-- **The Warden:** Military protector of the First Anchor and Unmade strongholds; formidable, disciplined and relentless.
-
-**Later creator lock superseding the hybrid succession model:** All five founding Conclave members are the principal Seventh scholars who knowingly helped redirect and activate the First Anchor. During its breach, Nhal deliberately channelled escaping primordial energies into these willing followers, transforming their bodies and magical structures. All five endure into the modern era with extraordinary longevity, magical capacity and resilience; they are not divine, invulnerable or unkillable. Their exact limitations, costs, appearances, personal names and individual powers remain open. Their five offices may pass to successors if a founder is killed, but no founder's death or replacement is established. These leaders may serve as major storyline or raid antagonists, but exact encounters are not yet canon. Nhal's ongoing corrupting pressure within the Shroud must remain distinct from direct communication, which ceased reliably after the catastrophe and Binding.
+**LOCKED historical foundation, current scope reconciled:** use the complete [World Bible section](THEIA_WORLD_BIBLE.md#2026-10-13-creator-lock--the-corrupted-conclave-and-five-leadership-roles). Its historical facts and limits are preserved there; later campaign decisions supersede the copied undecided identity, founder-ending or inversion-outcome warnings. No successor or future event is approved by this consolidation.
 
 ## 2026-10-13 creator LOCK — Kel'vari race and Oth'vaeri language
 
-The formerly unnamed seventh mortal race is officially **Kel'vari** (both singular and plural: one Kel'vari scholar; the Kel'vari people). Their ancestral language is **Oth'vaeri**. The ancient homeland may be called the Kel'vari homeland; its devastated territory was later enclosed within the Shrouded Lands. Oth'vaeri naming convention uses **apostrophes**, not hyphens, for meaningful sound boundaries in joined names; the intended sound is melodic, elegant and subtly unfamiliar, distinct from elven naming. These names supersede any earlier statement that the Seventh's race name remains undecided. Individual enclave names, Conclave founders' personal names, and a complete language grammar remain **proposed, not locked**.
+**LOCKED within the original approval scope:** the complete authoritative text is in the [World Bible](THEIA_WORLD_BIBLE.md#2026-10-13-creator-lock--kelvari-race-and-othvaeri-language). This duplicate is consolidated there without changing the decision, its exclusions or its remaining OPEN details.
 
 ## 2026-10-13 creator LOCK — Kel'vari names and original scholarly status
 
-**Five original Corrupted Conclave founders (personal name — title — original specialty):**
-- **Vaer'uun — The First Voice:** Led First Anchor resonance and divine-communication research; authoritative, persuasive and devoted to interpreting Nhal's will.
-- **Thes'var — The Architect:** Principal designer of the First Anchor's complex magical structures; brilliant, exacting and obsessive.
-- **Su'vareth — The Veiled Hand:** Oversaw restricted research and external relationships; patient, calculating and skilled at covert influence.
-- **Oma'vira — The Harbinger:** Studied consciousness, perception and magical influence; charismatic, fervent and a powerful recruiter.
-- **Khor'vun — The Warden:** Directed protective structures, wards and containment; disciplined, pragmatic and formidable.
-
-The five were **highly respected Kel'vari scholars in legitimate society**, celebrated for contributions to the First Anchor project. Their willing secret pursuit of Nhal and involvement in redirecting the Anchor were concealed behind those reputations. Nhal deliberately transformed all five during the breach; they remain extraordinarily long-lived, powerful but killable founding members of the Conclave. Their original names survive in ancient records while modern Unmade chiefly use their titles.
-
-**Five significant surviving Kel'vari enclaves (names predate the Second Sundering):**
-- **Veyr'athun — The Last Bastion:** Ancient protective research centre; now fortified defensive sanctuary.
-- **Oth'irun — The Archive Sanctuary:** Ancient scholarly archive; now preserves surviving records and knowledge.
-- **Oru'sava — The Verdant Refuge:** Ancient cultivation and restoration centre; now sustains agriculture and healing.
-- **Thuma'rei — The Passage Nexus:** Ancient transport and Passage research hub; now guards low-capacity surviving gates.
-- **Soru'vaeth — The Reclaimers:** Ancient reconstruction and material research centre; now recovers ruins, tools and records.
-
-These are **five significant enclaves, not the total surviving Kel'vari population**; they remain independent and are not one hidden kingdom. The names are Oth'vaeri and follow the approved apostrophe convention. Specific governments, leaders, exact locations, dialects and encounter design remain open.
+**LOCKED within the original approval scope:** the complete authoritative text is in the [World Bible](THEIA_WORLD_BIBLE.md#2026-10-13-creator-lock--kelvari-names-and-original-scholarly-status). This duplicate is consolidated there without changing the decision, its exclusions or its remaining OPEN details.
 
 ## 2026-10-13 creator LOCK — Kel'vari federation and authorised First Anchor project
 
-The Kel'vari civilization before the Second Sundering was a **federation of largely autonomous cities**, with local civic councils, scholarly assemblies and a federal assembly coordinating intercity law, shared infrastructure, defence and consequential research. Its population included ordinary families, farmers, builders, merchants, artists, healers and craftspeople as well as exceptional scholars; magical aptitude did not make every Kel'vari a professional mage. Its cities depended on sophisticated but finite magical infrastructure and ordinary work.
-
-The **First Anchor began as a legitimate, publicly supported and authorised project** intended to establish a stable connection with the Kel'vari's creator, Ascendant. Appropriate federal and scholarly authorities approved that legitimate objective. The five celebrated principal researchers — Vaer'uun, Thes'var, Su'vareth, Oma'vira and Khor'vun — exploited divided oversight and scholarly trust to secretly alter sensitive workings toward a breach of the Veil under Nhal's subtle influence. They knowingly pursued the alien intelligence but **Nhal concealed the full destructive consequences** from them. Other Kel'vari investigators noticed discrepancies, preserved evidence and later helped found the multiracial Guardians during the Divine War. The broader Kel'vari population and government were not collectively complicit. Specific institutional titles, legal procedures, political leaders, project milestones and the five scholars' exact knowledge remain to be developed.
+**LOCKED within the original approval scope:** the complete authoritative text is in the [World Bible](THEIA_WORLD_BIBLE.md#2026-10-13-creator-lock--kelvari-federation-and-authorised-first-anchor-project). This duplicate is consolidated there without changing the decision, its exclusions or its remaining OPEN details.
 
 ## 2026-10-13 creator LOCK — Oth'varen, the Sixth Scholar and Last Witness
 
-**Oth'varen** is the original Kel'vari name of **the Sixth Scholar**, later known as **the Last Witness**. He was the sixth principal scholar of the First Anchor project, responsible for independent verification of six-field stability and a former trusted colleague and friend of the five who became the Corrupted Conclave. He identified concealed modifications and pleaded with them to halt the activation while present in its central chamber. Nhal deliberately tried to corrupt him during the breach as it transformed the other five, seeking to claim the leading opponent of its influence. Oth'varen's extraordinary will and resistance prevented the corruption of his allegiance, though primordial energies still transformed him: he gained extraordinary longevity and magical capacity, remained killable, and carries an enduring pull toward Nhal that he must resist. He is the principal surviving **non-aligned-to-Nhal** member of the original six and a firsthand witness to the activation, not an omniscient source of primordial truth.
-
-During the Divine War he became a principal founding member of the **multiracial Guardians**, alongside other surviving Kel'vari investigators and trusted members of the six older races. The Guardians are not his personal monarchy, and knowledge that he still lives is restricted. He can become a central modern source of firsthand testimony and a recurring figure in the Guardian/Unmade story. His exact abilities, limitations, public identity and encounter sequence remain open. The five Conclave founders retain their existing locked names and roles.
+**LOCKED historical foundation, current scope reconciled:** use the complete [World Bible section](THEIA_WORLD_BIBLE.md#2026-10-13-creator-lock--othvaren-the-sixth-scholar-and-last-witness). Its historical facts and limits are preserved there; later campaign decisions supersede the copied undecided identity, founder-ending or inversion-outcome warnings. No successor or future event is approved by this consolidation.
 
 ## 2026-10-13 creator LOCK — the Six Reunited, progressive corruption and chronological narration
 
-After The Binding, Oth'varen confronts all five original Corrupted Conclave scholars at a ruined Kel'vari research sanctuary within the Shroud. They are no longer reasonable colleagues capable of a calm reconciliation: years of Nhal's subtle influence before the First Anchor and their deliberate transformation during its breach have progressively warped their logic, ambitions and loyalties. Vaer'uun rationalises transcendence through destruction; Thes'var treats the catastrophe as a technical failure; Su'vareth justifies deception as necessary; Oma'vira interprets corruption as enlightenment; Khor'vun has twisted protection into defence of the Conclave against its victims. The five seek to draw Oth'varen into their shared transformed resonance. His own lingering corruption responds, but he painfully resists and escapes after disrupting the sanctuary's wards. This is **not** fresh direct communication or an order from Nhal: reliable contact was lost after the catastrophe and Binding. The five remain formidable, intelligent, dangerous and ideologically corrupted. Oth'varen remains vulnerable to the pull without surrendering his will.
-
-**Narrative rule:** tell these events chronologically. In pre-activation scenes use the six scholars' personal names, never future-facing labels such as 'First Voice-to-be'; titles and the Corrupted Conclave are introduced only after their actual formation. The expanded confrontation dialogue is approved as the intended dramatic direction; the Chronicle currently contains a condensed adaptation.
+**LOCKED within the original approval scope:** the complete authoritative text is in the [World Bible](THEIA_WORLD_BIBLE.md#2026-10-13-creator-lock--the-six-reunited-progressive-corruption-and-chronological-narration). This duplicate is consolidated there without changing the decision, its exclusions or its remaining OPEN details.
 
 ## 2026-10-14 creator LOCK — Nhal's voice between the rupture and Binding
 
-Before the First Anchor breached the Veil, Nhal could only subtly influence particular six-field experimental resonances, not speak directly. **Between the rupture and The Binding**, the open breach and primordial corruption allowed Nhal to communicate selectively through thoughts, whispers, guiding impressions, brief commands and seemingly spontaneous knowledge, especially to the five transformed willing scholars. The communication was neither continuous nor absolute mind control; other willing Unmade followers received weaker, inconsistent guidance near corrupted workings. This enabled coordination and deeper ideological corruption during the Divine War. **Oth'varen** occasionally perceived the same presence through his transformed nature but resisted it and did not accept its authority.
-
-**The Binding immediately severed dependable communication**, both within and beyond the Shroud. The five experienced the sudden loss of the voice; attempts to restore contact failed. Their corrupted beliefs and transformed abilities endured, as did the primordial pressure near the First Anchor, but pressure was not direct instruction. Oth'varen experienced relief without losing the persistent corruption within him. The resulting prolonged silence later became the Age of Silence. Nhal's selective communication resumes only in the modern magical awakening. Avoid portraying Nhal as an ordinary conversational god or implying it controlled all minds.
+**LOCKED within the original approval scope:** the complete authoritative text is in the [World Bible](THEIA_WORLD_BIBLE.md#2026-10-14-creator-lock--nhals-voice-between-the-rupture-and-binding). This duplicate is consolidated there without changing the decision, its exclusions or its remaining OPEN details.
 
 ## 2026-10-14 creator LOCK — Anchor network, awakening and resonance inversion
 
-The Conclave developed lesser Anchor technology across the **Age of Silence**, without reliable guidance from Nhal: **Minor Resonators** first proved that faint resonance with the original breach could be produced from afar; generations of refinement yielded **Regional Anchors** linking effects across wider areas; finally **Major Anchors** enabled synchronisation of multiple Regional Anchors. The first Major Anchor alone did not cause the awakening. Only when sufficient linked installations crossed a **cumulative resonance threshold** did their combined pressure weaken the Shroud enough for **Nhal's selective whispers to return**. The same network altered the **distribution/accessibility of existing primordial magical energy** across Theia, causing beneficial and dangerous magical awakening effects. It did not create energy, and Nhal is not the source of the world's magic. The Conclave's goal was restored contact and eventual escape, not universally improved magical ability. The Shattered Delegation remains an independently orchestrated Conclave operation **before** Nhal's renewed communication.
-
-**Resonance inversion is a locked metaphysical possibility, not yet a completed historical achievement.** A properly reconfigured lesser Anchor could potentially oppose the destabilising resonance and **strengthen the Shroud**, while preserving at least some beneficial ambient-magic redistribution. This is not a trivial polarity switch: it requires difficult six-field reconstruction and safe handling of supporting links, increasingly challenging from Minor to Regional to Major. Oth'varen's stability expertise and Guardian records could contribute to discovery. Inversion may lessen the Seven's burden but is **not guaranteed to free them or permanently replace their essences**. Whether, when, how, and at what cost the player-facing discovery succeeds remains open. Destruction remains possible but may sacrifice local benefits; inversion offers a more demanding strategic alternative. The network can continue to be built or expanded in the modern story, and disabling one Major Anchor does not automatically end the entire awakening or silence Nhal.
+**LOCKED historical foundation, current scope reconciled:** use the complete [World Bible section](THEIA_WORLD_BIBLE.md#2026-10-14-creator-lock--anchor-network-awakening-and-resonance-inversion). Its historical facts and limits are preserved there; later campaign decisions supersede the copied undecided identity, founder-ending or inversion-outcome warnings. No successor or future event is approved by this consolidation.
 
 ## 2026-10-15 creator LOCK — Unmade hostility, corruption and conditioning
 
-**The Unmade's hostile forces have three overlapping origins, not three new races or exclusive factions:** (1) **Willing** followers who knowingly embrace Nhal's purpose for belief, ambition, knowledge or power, and fight deliberately for Unmade objectives; (2) **Corrupted** mortals, wildlife or other beings whose prolonged exposure to unstable primordial influence has altered magical structure, perception, cognition, instincts or bodies, sometimes producing dangerous aggression without willing allegiance; (3) **Bound** soldiers, captives, creatures and constructs conditioned or constrained through Unmade Mind workings, rituals, altered six-field structures or enforced instructions. A willing follower may become corrupted; a corrupted victim may be bound. Some constructs also continue ancient defensive duties without ever serving Nhal.
+**LOCKED within the original approval scope:** the complete authoritative text is in the [World Bible](THEIA_WORLD_BIBLE.md#2026-10-15-creator-lock--unmade-hostility-corruption-and-conditioning). This duplicate is consolidated there without changing the decision, its exclusions or its remaining OPEN details.
 
-**Exposure is not automatic allegiance or guaranteed hostility.** Outcomes vary from temporary symptoms through persistent influence and transformation to profound loss of control. Corruption is not universal mind control; **Oth'varen** is the central example of resistance. Many Kel'vari and transformed inhabitants of the Shroud are innocent or non-hostile. Not every hostile being can be rescued during an attack, but combat, containment, rescue and breaking compulsions should remain distinct possibilities. Avoid making all corrupted inhabitants or all Kel'vari enemies.
 
-**Oma'vira, the Harbinger**, originally a scholar of Mind, consciousness and perception, is the Conclave's leading authority on devotion, mental influence and magical conditioning. Her centuries of work support recruitment and the transformation of willing recruits or unwilling captives into dangerous conditioned forces. Her teachings alone do not explain every hostile NPC. **Khor'vun, the Warden**, commands and deploys organised defensive forces and protects Anchor approaches and Unmade strongholds. He may favour disciplined fighters over unstable conditioned troops, creating a potential methodological tension with Oma'vira. The other founders provide doctrine, research, covert logistics and strategic purpose. Outside the Shroud, players mainly encounter organised operatives, hidden facilities, Anchor defenders and local corruption; within it, older corruption, transformed victims, wildlife, ancient constructs and enduring strongholds produce a distinct ecology of threats.
 
-This is a **locked world and MMO combat foundation**, not approval of particular enemy designs, irreversible corruption mechanics, specific rescue outcomes, or the full previously proposed Oma'vira eight-milestone character arc. Develop those separately.
+## Retired secondary lore compilation — source-specific detail
+
+**Supporting historical characterization, not a new creator lock.** The [retired Detailed Lore Archive](https://github.com/code-studio-au/theia-mmo/blob/c8aa57513b42f3de7675e4cf40e53141e96cbbfd/docs/story/THEIA_DETAILED_LORE_ARCHIVE.md) was a reconstruction rather than a verbatim transcript or certified review of every original message. Its distinct historical nuances are retained here without silently strengthening the current Bible's wording or changing later creator decisions:
+
+- The Seven's relationship notes described Warrior as relatively indifferent to Shaper's inventions, Seeker as suspicious of Ascendant, Judge as distrusting Seeker, and Shaper's dismissiveness as contributing to Ascendant's envy. The Bible's established relationships remain authoritative; these are preserved characterizations from the secondary source, not new dialogue or wartime allegiance decisions.
+- The halfling precision-combat explanation included marksmanship and stealth tactics alongside Q382's revised all-three selection. This is cultural elaboration, not a separate recovered choice, mandatory racial restriction or approved class mechanic.
+- The recovery narrative described surviving dwarf and ancestral troll centres retaining ancient infrastructure and scholarship with variable authenticity/interpretation; the human–dwarf pact paired mutual defence and economic cooperation, agricultural plains and mountain engineering, while the orc–halfling partnership paired security with guild ingenuity. It did not select exact treaty text, founding dates or the halfling displacement disaster.
+- The compilation attributed the distinction between the Shaper's ambition and the superseded title “The Ambitious” to a later voice correction. Its exact wording is not reproduced or invented here.
+
+Core world facts and scoped observation/independent-working/travel/war qualifications are retained in the [World Bible](THEIA_WORLD_BIBLE.md); unique unapproved institutional, character and frontier ideas reside in the [Legacy Ideas Archive](Theia/Campaigns/Human_Legacy_Sidequest_Zone_Character_Archive.md#retired-detailed-lore--distinct-historical-proposals). The question register above already preserves the compilation's Q376–Q444 evidence. Its obsolete organizational file proposals and alternate launch endings remain only immutable source history.

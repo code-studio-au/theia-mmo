@@ -32,7 +32,7 @@
 | **Q125 The Anchor Beneath** | Enter buried installation → recover synchronization schematic and original-tear evidence → report | **Critical canon:** Anchors manipulate the original tear; they are not the Seven's Binding or prison |
 | **Q126 A Measure of Time** | Compare activation clocks and relay signatures in either order → Sera confirms convergence | Measurement supports urgency; do not invent a precise countdown unless gameplay timing is defined |
 | **Q127 The Gathering Storm** | Request royal audience → present corroborated threat → obtain limited expedition mandate | Limited support, not unrestricted authority over other nations or Kel'vari lands |
-| **Q128 Before the Veil Breaks** | Nessa briefing → verify extraction routes and instrument teams in either order → record staging readiness | **Duplicate title:** Q154 uses the same name for final assault preparation. Proposed Q128 rename: *The Expedition Musters*; keep Q154's title |
+| **Q128 The Warden's Preparations** | Nessa briefing → verify extraction routes and instrument teams in either order → record staging readiness | **LOCKED creator decision (4 November 2026):** Q128 uses *The Warden's Preparations*; Q154 retains *Before the Veil Breaks*. The earlier *The Expedition Musters* proposal is SUPERSEDED. Preserve the distinct staging objectives; see the [decision ledger](../../DECISIONS.md#2026-11-04--locked-distinct-q128-and-q154-titles) |
 
 ## Continuity and implementation corrections to approve
 
@@ -55,6 +55,16 @@
 - Encounter defeat, rescue, escape and defense require future authoritative event types where native kill/interaction cannot express them.
 - Failed solo encounters reset only active encounter state, not previously committed evidence or one-time story outcomes.
 - Standard quests should require no Luau. Optional scripted presentation must not own authoritative quest credit.
+
+## Consolidated legacy context — 3 November 2026
+
+**ARCHIVED source evidence / WORKING authoring detail.** The [retired migration note](https://github.com/code-studio-au/theia-mmo/blob/399561a1f7645b481961f56ef115c6572bdec86b/docs/story/Theia/Campaigns/Human_Q104_Q128_Legacy_Pack_Migration.md) compared `Human_45_55_Playable_Quest_Pack.md` v0.1 and `Human_45_55_Implementation_Brief.md` v0.2. Both contained the same 25 Q104–Q128 references with no additional quests. Their distinct case, political and Anchor-network constraints are retained above; location bands follow the [canonical campaign](Human_1_80_Canonical_Campaign.md), while distinct unapproved site/design details remain in the [retained historical site proposals](Human_Legacy_Sidequest_Zone_Character_Archive.md#retired-production-location-and-lore-proposals).
+
+- Covenant and Dominion accounts are independent evidence, not a declaration of moral equivalence. Preserve the Great Clan chief's anti-peace position, reluctant official attendance and personal relationship to the High Ruler, and distinguish his murder from Edric's.
+- The old chapter-wide lore payoff is not knowledge already available to the player at Q104. Su'vareth attribution, her permanent death and the recovered Veilbreaker intelligence retain their canonical sequence; no prior Oth'varen foreknowledge is implied.
+- Retain Classic manual target/facing and weapon-timed autoattack, solo-accessible critical instances, safe recovery and no mandatory PvP, profession, class or party requirement. Travel remains physical roads, scheduled ships and fixed flight paths; restricted Passage is exceptional and permission-based.
+- Historical level-45/50 assumptions, draft completion aliases and generic accept/inspect/report templates are not approved eligibility, runtime IDs or replacements for specific objective evidence.
+- Positions, actor identities, semantic actions, rewards, encounter tuning, QA and integration remain unresolved authoring inputs. Evidence durability and separate possession/consumption decisions remain governed by the requirements above, not by obsolete generic retry clauses.
 
 ## Next pass
 

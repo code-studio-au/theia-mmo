@@ -1,17 +1,15 @@
 ---
 type: topic
-source: "[[Sources/THEIA_WORLD_BIBLE]]"
+source: "../../THEIA_WORLD_BIBLE.md"
 ---
 # Orders and Hidden Conflict
 
-Read these section labels together with later dated amendments in [[Sources/THEIA_WORLD_BIBLE|World Bible]].
+Read the [World Bible](../../THEIA_WORLD_BIBLE.md) alongside [later story decisions](../../DECISIONS.md); later creator locks govern conflicting historical wording.
 
-![[Sources/THEIA_WORLD_BIBLE#8. Great magical orders and ancient knowledge [CONFIRMED]]]
+[Read historical source section](../../THEIA_WORLD_BIBLE.md)
 
-![[Sources/THEIA_WORLD_BIBLE#9. Hidden conflict [CONFIRMED]]]
-
-[[Lore and World]] · [[Chronicles and History]] · [[Welcome|Home]]
+[Lore and World](Lore%20and%20World.md) · [Historical Timeline](../History/Historical%20Timeline.md) · [Home](../../README.md)
 
 ## Related notes
 
-[[The Guardians]] · [[Oth'varen]] · [[The Unmade]] · [[The Corrupted Conclave]] · [[Nhal]]
+[The Guardians](Institutions/The%20Guardians.md) · [Oth'varen](../Characters/Oth%27varen.md) · [The Unmade](Institutions/The%20Unmade.md) · [The Corrupted Conclave](Institutions/The%20Corrupted%20Conclave.md) · Nhal

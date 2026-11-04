@@ -228,7 +228,17 @@
 
 **High King, response:** “Then carry my letter intact. Let the Aelari decide what they will share.”
 
-**Completion:** “You have my seal. Present it with the engineering findings, and speak plainly about what remains uncertain.”
+**Departure / letter handoff:** “You have my seal. Present it with the engineering findings, and speak plainly about what remains uncertain.”
+
+**Q053 completion boundary:** Travel by established routes to Sylvaren and present both letter and engineering report to Caelith before completion. This handoff does not grant Q054's separate Aelari access permission.
+
+**Caelith, receipt (WORKING):** “The High King's seal is genuine, and Brynja's findings deserve examination. Neither gives you authority over our wards or records.”
+
+**Player:** “I'm asking you to review the evidence, not to surrender your archives.”
+
+**Caelith:** “Then I will register the report and the letter. If you seek access beyond this audience, we will discuss its limits separately.”
+
+**Completion evidence:** Both the sealed introduction and authenticated engineering report are presented to Caelith. Her receipt completes Q053; supervised ward access belongs to Q054 and is not silently granted here.
 
 **In progress:** “Finish the agreed investigation or service, then bring back what you can verify.”
 
@@ -318,7 +328,7 @@
 
 ## Q061
 
-**Field agent, offer:** “The courier is destroying both copies of the instructions. We have one chance to secure a surviving fragment.”
+**Field agent, offer:** “The courier is destroying the cached instructions. Intercept them before the archive burns. We have already lodged a duplicate; recover what additional evidence you can.”
 
 **Player:** “Do we need the courier alive?”
 

@@ -2,12 +2,12 @@
 type: event
 chronology_order: 13
 canon_status: source-specific
-source: "[[Sources/THEIA_INTERWOVEN_CHRONICLE]]"
-up: "[[Historical Timeline]]"
+source: "../../../THEIA_INTERWOVEN_CHRONICLE.md"
+up: "../Historical Timeline.md"
 ---
 # Network Threshold and Modern Awakening
 
-Before the start of play, the [[The Corrupted Conclave|Corrupted Conclave]]'s long-running network reaches a cumulative threshold. This follows the generations of research described in [[Age of Silence and Anchor Network Development]].
+Before the start of play, the [Corrupted Conclave](../../Lore/Institutions/The%20Corrupted%20Conclave.md)'s long-running network reaches a cumulative threshold. This follows the generations of research described in [Age of Silence and Anchor Network Development](Age%20of%20Silence%20and%20Anchor%20Network%20Development.md).
 
 ## What changes
 
@@ -17,16 +17,16 @@ Before the start of play, the [[The Corrupted Conclave|Corrupted Conclave]]'s lo
 
 ## Relation to the present day
 
-By the opening of [[Human Campaign|Act I]], Minor Resonators, Regional Anchors and functioning Major Anchors are already established. The player discovers and investigates their effects during the main storyline. The Unmade can continue expanding the network after play begins; its original construction and initial threshold are preceding history.
+By the opening of [Act I](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md), Minor Resonators, Regional Anchors and functioning Major Anchors are already established. The player discovers and investigates their effects during the main storyline. The Unmade can continue expanding the network after play begins; its original construction and initial threshold are preceding history.
 
-[[Shattered Delegation]] also precedes play. Its precise timing relative to this threshold is not fixed. No calendar date or exact interval is supplied.
+[Shattered Delegation](Shattered%20Delegation.md) occurs before Nhal's renewed communication at this threshold. This relative order is **LOCKED** in the [World Bible](../../../THEIA_WORLD_BIBLE.md#2026-10-14-creator-lock--anchor-network-awakening-and-resonance-inversion); the calendar date and exact interval remain OPEN.
 
-[[Resonance Inversion]] is a possible response investigated later, not an already completed solution at the opening of play.
+Resonance Inversion is a possible response investigated later, not an already completed solution at the opening of play.
 
 ## Source account
 
 The Chronicle includes connective prose; its detailed narrative retains the source's approval boundaries.
 
-![[Sources/THEIA_INTERWOVEN_CHRONICLE#The Awakening — The Network Reaches Its Threshold]]
+[Read historical source section](../../../THEIA_INTERWOVEN_CHRONICLE.md)
 
-[[Nhal]] · [[The Unmade]] · [[Anchors and the Shroud]] · [[Historical Timeline]]
+Nhal · [The Unmade](../../Lore/Institutions/The%20Unmade.md) · [Anchors and the Shroud](../../Lore/Anchors%20and%20the%20Shroud.md) · [Historical Timeline](../Historical%20Timeline.md)

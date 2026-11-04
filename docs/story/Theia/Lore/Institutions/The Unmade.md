@@ -1,21 +1,21 @@
 ---
 type: institution
 canon_status: source-specific
-source: "[[Sources/THEIA_WORLD_BIBLE]]"
-up: "[[Lore and World]]"
+source: "../../../THEIA_WORLD_BIBLE.md"
+up: "../Lore and World.md"
 ---
 # The Unmade
 
 This reading page includes the full relevant source section; shared material may describe several institutions. Approval remains scoped to the source statements.
 
-![[Sources/THEIA_WORLD_BIBLE#9. Hidden conflict [CONFIRMED]]]
+[Read historical source section](../../../THEIA_WORLD_BIBLE.md)
 
 ## Leadership and opposition
 
-[[The Corrupted Conclave]] directs the Unmade beneath [[Nhal]]. Its founding scholars are [[Vaer'uun]], [[Thes'var]], [[Su'vareth]], [[Oma'vira]] and [[Khor'vun]]. [[The Guardians]], whose founders include [[Oth'varen]], oppose the Unmade.
+[The Corrupted Conclave](The%20Corrupted%20Conclave.md) directs the Unmade beneath Nhal. Its founding scholars are [Vaer'uun](../../Characters/Vaer'uun.md), [Thes'var](../../Characters/Thes'var.md), [Su'vareth](../../Characters/Su'vareth.md), [Oma'vira](../../Characters/Oma'vira.md) and [Khor'vun](../../Characters/Khor'vun.md). [The Guardians](The%20Guardians.md), whose founders include [Oth'varen](../../Characters/Oth'varen.md), oppose the Unmade.
 
-Not all [[Kel'vari]] or transformed inhabitants of the Shroud belong to the Unmade.
+Not all [Kel'vari](../Peoples/Kel%27vari.md) or transformed inhabitants of the Shroud belong to the Unmade.
 
-Source: [[Sources/THEIA_WORLD_BIBLE#2026-10-13 creator LOCK — The Corrupted Conclave and five leadership roles|Conclave leadership]] · [[Sources/THEIA_WORLD_BIBLE#2026-10-13 creator LOCK — Oth'varen, the Sixth Scholar and Last Witness|Oth'varen and the Guardians]].
+Source: [Conclave leadership](../../../THEIA_WORLD_BIBLE.md) · [Oth'varen and the Guardians](../../../THEIA_WORLD_BIBLE.md).
 
-[[Lore and World]] · [[Welcome|Home]]
+[Lore and World](../Lore%20and%20World.md) · [Story index](../../../README.md)

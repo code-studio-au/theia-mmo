@@ -1,29 +1,29 @@
 ---
 type: institution
 canon_status: source-specific
-source: "[[Sources/THEIA_WORLD_BIBLE]]"
-up: "[[Lore and World]]"
+source: "../../../THEIA_WORLD_BIBLE.md"
+up: "../Lore and World.md"
 ---
 # The Corrupted Conclave
 
 This reading page includes the full relevant source section; shared material may describe several institutions. Approval remains scoped to the source statements.
 
-![[Sources/THEIA_WORLD_BIBLE#2026-10-13 creator LOCK — The Corrupted Conclave and five leadership roles]]
+[Read historical source section](../../../THEIA_WORLD_BIBLE.md)
 
 ## Founding scholars
 
-- [[Vaer'uun]] — First Voice.
-- [[Thes'var]] — Architect.
-- [[Su'vareth]] — Veiled Hand.
-- [[Oma'vira]] — Harbinger.
-- [[Khor'vun]] — Warden.
+- [Vaer'uun](../../Characters/Vaer'uun.md) — First Voice.
+- [Thes'var](../../Characters/Thes'var.md) — Architect.
+- [Su'vareth](../../Characters/Su'vareth.md) — Veiled Hand.
+- [Oma'vira](../../Characters/Oma'vira.md) — Harbinger.
+- [Khor'vun](../../Characters/Khor'vun.md) — Warden.
 
-The five are [[Kel'vari]] scholars who knowingly redirected the First Anchor project and were deliberately transformed by [[Nhal]]. Their former colleague [[Oth'varen]] resisted Nhal's attempt to claim him.
+The five are [Kel'vari](../Peoples/Kel%27vari.md) scholars who knowingly redirected the First Anchor project and were deliberately transformed by Nhal. Their former colleague [Oth'varen](../../Characters/Oth'varen.md) resisted Nhal's attempt to claim him.
 
-Source: [[Sources/THEIA_WORLD_BIBLE#2026-10-13 creator LOCK — Kel'vari names and original scholarly status|Names and original scholarly status]].
+Source: [Names and original scholarly status](../../../THEIA_WORLD_BIBLE.md).
 
 ## Related institutions
 
-[[The Unmade]] · [[The Guardians]]
+[The Unmade](The%20Unmade.md) · [The Guardians](The%20Guardians.md)
 
-[[Lore and World]] · [[Welcome|Home]]
+[Lore and World](../Lore%20and%20World.md) · [Story index](../../../README.md)

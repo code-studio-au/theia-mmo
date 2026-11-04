@@ -297,5 +297,13 @@
     "No new hard level eligibility gates are inferred from planning bands.",
     "Story source of truth remains the canonical campaign.",
     "All ID changes must preserve Q and original H/HS provenance and update references atomically."
-  ]
+  ],
+  "review_validation_requirements": [
+    "Compare proposed changes with canonical narrative, manifest stage JSON and dialogue before applying.",
+    "If Q128 is renamed, update canonical register, manifest, dialogue references and index together without changing its Q128 identity.",
+    "Verify Q083 optionality cannot block Q085 safe return or Q086 reveal; Q093 optionality cannot block Q094 archive investigation.",
+    "Verify no main-story prerequisite points to optional quests, no references disappear and no unintended level gate is introduced.",
+    "Keep the 184-quest count until a specific change and narrative consequence receive approval."
+  ],
+  "editorial_notice": "Consolidated from the retired Human_1_80_Quest_Necessity_Review_Pass2.md. All group recommendations remain proposals, not approved changes or executable Rust quest definitions."
 }

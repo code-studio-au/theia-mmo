@@ -14,7 +14,7 @@ The Grey Surveyor's true identity as Oth'varen is **not revealed** until the lev
 
 **Response:** “I want to know you understand the city you're asking to trust you.”
 
-**Completion / aftermath:** “The channel is safe. Dromak will hear your request now.”
+**Completion / aftermath:** “Your water-route assignment is recorded. The maintenance work comes next.”
 
 **In-progress:** “Finish the agreed work and bring back what you can verify. Don't take risks for a guess.”
 

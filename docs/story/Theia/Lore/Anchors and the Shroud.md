@@ -1,19 +1,15 @@
 ---
 type: topic
-source: "[[Sources/THEIA_WORLD_BIBLE]]"
+source: "../../THEIA_WORLD_BIBLE.md"
 ---
 # Anchors and the Shroud
 
-Read these section labels together with later dated amendments in [[Sources/THEIA_WORLD_BIBLE|World Bible]].
+Read the [World Bible](../../THEIA_WORLD_BIBLE.md) together with [later story decisions](../../DECISIONS.md). Later creator locks take precedence over historical wording.
 
-![[Sources/THEIA_WORLD_BIBLE#Anchor taxonomy and player destruction rules [LOCKED · 2026-10-12]]]
+[Read historical source section](../../THEIA_WORLD_BIBLE.md)
 
-![[Sources/THEIA_WORLD_BIBLE#The ancient Passage gates after The Binding [LOCKED · 2026-10-12]]]
-
-![[Sources/THEIA_WORLD_BIBLE#The Shroud's interior and The Unmade's epicentre [USER CLARIFICATION · 2026-10-12]]]
-
-[[Lore and World]] · [[Chronicles and History]] · [[Welcome|Home]]
+[Lore and World](Lore%20and%20World.md) · [Historical Timeline](../History/Historical%20Timeline.md) · [Home](../../README.md)
 
 ## Related notes
 
-[[The Unmade]] · [[The Corrupted Conclave]] · [[Kel'vari]] · [[Passage Gates]] · [[Resonance Inversion]]
+[The Unmade](Institutions/The%20Unmade.md) · [The Corrupted Conclave](Institutions/The%20Corrupted%20Conclave.md) · [Kel'vari](Peoples/Kel%27vari.md) · [Passage Gates](Passage%20Gates.md) · [Resonance Inversion](Resonance%20Inversion.md)

@@ -1,10 +1,13 @@
 ---
 type: character
 canon_status: approved-role; proposed-development
-source: "[[Sources/THEIA_HUMAN_CAST_AND_PLACES]]"
-up: "[[Characters]]"
+source: "https://github.com/code-studio-au/theia-mmo/blob/a52b29999d803e2b861319ffefcd3c394baaa1ad/docs/story/THEIA_HUMAN_CAST_AND_PLACES.md"
+source_status: ARCHIVED
+up: "../Characters.md"
 ---
 # Queen Seralyth
+
+Historical source details retain their recorded approval limits; the [current campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md) governs later chronology and outcomes.
 
 > [!important] Approval scope
 > The established starting role is approved. Campaign movements, service assignments and proposed endings remain Needs Review.
@@ -15,11 +18,11 @@ Approved Aelari ruler
 ## Motivation, limitations and proposed outcome
 Permits bounded cooperation after local needs are met; safeguards woodland resources and sovereign authority. No modern friendly relationship with Selrion is added.
 
-Source: [[Sources/THEIA_HUMAN_CAST_AND_PLACES#Allied and Kel'vari cast|Allied and Kel'vari cast]].
+Historical source: [Allied and Kel'vari cast](https://github.com/code-studio-au/theia-mmo/blob/a52b29999d803e2b861319ffefcd3c394baaa1ad/docs/story/THEIA_HUMAN_CAST_AND_PLACES.md).
 
-[[Characters]] · [[Human Campaign]]
+[Characters](../Characters.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
 
 ## Related notes
 Text references from this account; these links do not establish additional relationships.
 
-[[Lore/Peoples/Aelari|Aelari]]
+[Aelari](../../Lore/Peoples/Aelari.md)

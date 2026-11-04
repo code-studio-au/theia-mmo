@@ -1,5 +1,73 @@
 # Story decisions and maintenance
 
+## 2026-11-04 — LOCKED: Q183 Kel'vari report recipients and separate Covenant report
+
+**Creator approval:** For Q183 *A World Unbound*, **Sel'ora** receives and safeguards the authenticated historical report of Nhal's coherent shattering and Oth'varen's physical death. **Aru'ven** participates in the Kel'vari response as a steward concerned for living communities; neither claims to speak for all five enclaves. The player then delivers a **separate** Covenant report to Mara and Corven. Both reports are required for quest completion; neither faction's acknowledgement substitutes for the other's permission or authority. The Shroud began dissipating at Q156, the Seven survive, the fate of Nhal's fragments is unresolved, and the Covenant–Dominion war continues. Exact dialogue is WORKING presentation, not a new canon revelation. Preserve Q183's identity and existing outcome; JSON/runtime reconciliation requires separate scope approval.
+
+
+## 2026-11-04 — LOCKED: Q169 What the Shroud Concealed replaces transport survey
+
+**Creator approval:** Retain optional quest ID Q169 but replace **The Route Between** with **What the Shroud Concealed**. Following Q156's Veilbreaker event and receding Shroud, the player explores a newly exposed historical site, recovers and authenticates a personal journal written by **Thes'var before the Second Sundering**, with its final entry stopping before the catastrophe, and brings it to **Oth'varen** for authentication and personal context. The narrative purpose is to humanise the original scholar and illuminate pre-Sundering Conclave relationships, without absolving his knowing later corruption or rewriting First Anchor sabotage. Tarek may introduce the exposed-site report; Oth'varen provides the interpretive conversation. The site and precise dialogue are WORKING pending geographic/chronological validation. Do not reveal future Q176–Q181 events, imply Oth'varen anticipates his death, or establish new fragment lore. Q169 remains optional and is available after Q156, with ordinary regional access and any required local custodian permission; no additional hard level gate or Q157/Q181 requirement. This is a **story approval**, not approval of new JSON/runtime content or final dialogue wording.
+
+
+## 2026-11-04 — LOCKED: Q168 Life at the Edges optional access
+
+**Creator approval:** Q168 unlocks after Q156 in the post-Veilbreaker environmental phase. Caelith gives the ecological survey assignment. The player uses established travel routes and ordinary regional access; obtain specific local permission only when entering restricted sites, respecting each people's sovereignty. Q157 and Q181 are not prerequisites and no additional hard level gate applies. Measurements and mitigation establish local effects only, not a universal ecological outcome. Preserve optional status, quest objectives and 184-quest count. JSON/runtime eligibility reconciliation remains separately scoped.
+
+
+## 2026-11-04 — LOCKED: Q159 The Lands Revealed optional access
+
+**Creator approval:** Q159 becomes available after Q156 completes. The player must already have established legitimate Kel'vari contact through the earlier main story. Aru'ven's evacuation request grants limited, purpose-specific permission to enter the affected settlement and assist evacuees; it does not authorise general enclave access. Q157 and Q181 completion are **not** prerequisites, and there is no additional hard character-level gate. The Shroud is already beginning to recede after Q156; the quest may proceed alongside Q157's aftermath. Preserve existing objectives, optional status and the 184-quest count. JSON/runtime eligibility changes require separate authorisation under the current Markdown-only cleanup scope.
+
+
+## 2026-11-04 — LOCKED: distinct Q128 and Q154 titles
+
+**Creator approval:** Q128 is titled **The Warden's Preparations**; Q154 retains **Before the Veil Breaks**. The two quests remain distinct: Q128 concerns earlier Anchor-network staging, extraction routes and measurement teams; Q154 concerns final Veilbreaker assault preparations. No quest IDs, objectives, prerequisite order, outcomes or quest count change. Update the canonical campaign and supporting Markdown titles. Reconcile JSON manifest and dependency titles only under separately authorized non-Markdown scope.
+
+
+Use the [authority hierarchy and canon classifications](README.md#approval-and-precedence).
+This ledger indexes creator decisions; historical entries retain their original
+scope and are not all simultaneously current.
+
+## 2026-11-03 — LOCKED: Q176 and Q181 turn-in contact
+
+**Approval evidence:** when asked to choose between automatic completion after the
+final objectives and turning both quests in to Sera, the creator explicitly chose
+Sera for both. This resolves the previously OPEN completion-contact decision.
+
+**Scope:** the [canonical campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md)
+records Sera as the turn-in contact after all Q176 and Q181 objectives. Existing
+objectives, permanent deaths and finale ordering are unchanged. This decision
+does not approve new dialogue wording, runtime IDs or implementation. The JSON
+manifest remains outside the current Markdown-only scope; its previously
+documented contact labels require a separately authorized reconciliation.
+
+## 2026-11-03 — LOCKED: canon stewardship and current launch outcome
+
+**Approval evidence:** the creator explicitly supplied the Theia Canon & Repository
+Steward instructions on 3 November 2026, confirming the source hierarchy, six
+classification labels, protected documents, 184-quest working inventory, and the
+level-80 finale below. The existing [canonical campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md#non-negotiable-story-rules)
+records the detailed approved sequencing from the 2 November story review.
+
+**Current outcome:** Thes'var dies; his sabotage misaligns convergence. Only then
+Oth'varen learns the correction will kill him and makes an informed sacrifice.
+He physically dies after seeing the alignment hold, before the Seven and mortal
+teams finish shattering Nhal's coherent identity, will and memory. The Seven
+survive. Divine essence is indestructible; the future fate of Nhal's fragments
+remains OPEN for later development, not an approved expansion outcome.
+
+**Supersession:** the October 29 post-launch placement, launch-survival constraint
+and October 30 unapproved-launch-placement warning below are SUPERSEDED for this
+finale. Earlier Act/level labels do not override current 1–80 placement. Retained
+historical cause, staging or location proposals must conform to the canonical
+sequence; they are not additional required events. This does not approve new
+dialogue, encounter mechanics, runtime IDs or executable quest content.
+
+**Maintenance:** the [story README](README.md#approval-and-precedence) is the one
+home for hierarchy and status definitions; the canonical campaign owns detailed
+launch sequencing. Preserve unique legacy ideas without promoting them to canon.
+
 ## 2026-10-26 — Story home moves to Theia-MMO
 
 The user chose to continue game development in this repository and requested a
@@ -10,14 +78,13 @@ source; the transfer preserves its original story material without deleting it.
 This is a repository ownership decision, not a new canon approval. Existing
 creator locks, rejected directions, superseded choices and open questions retain
 their recorded status. In particular, the complete human campaign review packet
-remains Needs Review.
+remained Needs Review at import. This historical status does not override the
+later approved Human 1–80 campaign.
 
 ## Existing story decisions
 
-The imported [Source Decision Recovery](THEIA_SOURCE_DECISION_RECOVERY.md) and
-[Canon Reconciliation Report](THEIA_CANON_RECONCILIATION_REPORT.md) preserve the
-historical decision summaries and corrections. The [World Bible](THEIA_WORLD_BIBLE.md),
-[Detailed Lore Archive](THEIA_DETAILED_LORE_ARCHIVE.md),
+The [Source Decision Recovery](THEIA_SOURCE_DECISION_RECOVERY.md) preserves the
+historical decision summaries, corrections and consolidated audit evidence. The [World Bible](THEIA_WORLD_BIBLE.md),
 [Character Arcs](THEIA_CHARACTER_ARCS.md) and
 [Modern Story Revelation Timeline](THEIA_MODERN_STORY_REVELATION_TIMELINE.md)
 also contain dated creator locks. Use the [documentation guide](THEIA_DOCUMENTATION_GUIDE.md)
@@ -37,6 +104,10 @@ for reading order and the [import notes](README.md) for source limitations.
 
 ## 2026-10-29 — Creator LOCK: Oth'varen's final alignment and death
 
+> **SUPERSEDED IN PART:** the post-launch timing and statement that he survives
+> launch below are historical, replaced by the current level-80 lock above.
+> Read the original record below as provenance, not an alternate ending.
+
 **Status: USER LOCKED.** Approval evidence: after proposing that Oth'varen die helping align the gods' six energies and receiving the developed sequence, the creator explicitly approved that sequence and requested it be locked. The creator separately proposed that a Conclave founder might interfere; that identity and encounter remain WORKING.
 
 **Approved sequence and limits:**
@@ -54,6 +125,15 @@ for reading order and the [import notes](README.md) for source limitations.
 
 ## 2026-10-29 — Creator LOCK: Conclave deaths and final succession
 
+> **SUPERSEDED IN PART:** retain the approved permanent endings, but the older
+> founder order and story-phase placement below are historical where they differ
+> from the [canonical 1–80 campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md).
+> In that current sequence, Q145 kills Vaer'uun before Q156 kills Khor'vun; the old
+> Khor'vun-before-Vaer'uun order and Vaer'uun-after-arrival placement do not apply.
+> Use the canonical campaign for current quest order, causes and exact finale
+> sequencing. Old Act bands, post-launch assumptions and unresolved-launch-ending
+> warnings below do not reopen current outcomes.
+
 **Status: USER LOCKED.** The creator explicitly agreed to Oma'vira dying in Act V, then approved and requested locking the proposed endings for the remaining four founders, including Su'vareth's surviving contingencies and the pre-combat confrontation between Thes'var and Oth'varen. This dated decision supersedes earlier draft statements that all founders survive launch or that these five fates remain undecided.
 
 1. **Oma'vira — Act V.** Her Act IV encounter remains a limited projection. During Act V the player reaches her actual conditioning facility within the Major Anchor complex, breaks control systems, rescues captives where possible and kills her. The Anchor operation remains the act's central objective. Existing conditioned forces do not automatically recover; Khor'vun must rely more on willing troops and surviving forces after losing her specialist work.
@@ -62,9 +142,9 @@ for reading order and the [import notes](README.md) for source limitations.
 4. **Vaer'uun — after Nhal's arrival.** At a major manifestation site, Nhal's actions expose the gap between its purpose and his doctrine. Despite evidence that his followers are expendable, he knowingly chooses obedience and binds himself to the manifestation's communication working. The player dismantles its supports and kills him. His death ends the Conclave's central authority and contributes evidence for constraining Nhal's physical presence.
 5. **Thes'var — final alignment.** The last living Conclave founder attacks supporting connections at a critical junction of the inverted network. Before combat, he and Oth'varen confront one another: Thes'var recognises inversion works but rejects its protective purpose and chooses to destroy it. The player defeats and kills him; his interference leaves cascading instability. Oth'varen completes the correction at the cost of his life, sees the alignment hold and dies before Nhal's defeat. The player and distributed Guardian teams sustain the working with the Seven. This supplements, rather than replaces, the locked Nhal disruption: Thes'var's sabotage compounds the disturbance.
 
-**Sequence:** Oma'vira → Su'vareth → Khor'vun → Vaer'uun → Thes'var → Oth'varen → Nhal's final shattering. Oth'varen briefly becomes the last living member of the original six scholars. The five founders receive permanent endings; surviving agents, forces and institutional consequences may continue.
+**Historical 29 October sequence (SUPERSEDED where noted above):** Oma'vira → Su'vareth → Khor'vun → Vaer'uun → Thes'var → Oth'varen → Nhal's final shattering. Oth'varen briefly becomes the last living member of the original six scholars. The five founders receive permanent endings; surviving agents, forces and institutional consequences may continue.
 
-**Scope:** Timing by story phase, broad site functions, causes of death and consequences are locked. Exact site names, expansion counts, levels beyond launch, dialogue and encounter mechanics remain open. Existing permanent alliance separation and solo access to the essential story remain in force. This is narrative canon, not implemented gameplay or approval of every other Future Saga proposal. The conflicting launch-inversion outcomes remain separately unresolved.
+**Historical 29 October scope (subject to the supersession above):** Timing by story phase, broad site functions, causes of death and consequences were locked in this dated record. Exact site names, expansion counts, levels beyond launch, dialogue and encounter mechanics remain open. Existing permanent alliance separation and solo access to the essential story remain in force. This is narrative canon, not implemented gameplay or approval of every other Future Saga proposal. The conflicting launch-inversion outcomes remain separately unresolved.
 
 **Future development retained:** develop substantial recurring bosses below the Conclave and later Nhal, supporting dungeons and optional raids, with personal motives, histories, territorial or institutional power and consequences for defeat. Independent major threats should also exist. No specific roster, six-to-eight count, named new boss or raid production scope is approved; essential story conclusions remain solo-accessible.
 
@@ -72,8 +152,13 @@ for reading order and the [import notes](README.md) for source limitations.
 
 ## 2026-10-30 — Level 1–60 launch restructure draft — Needs Review
 
+> **SUPERSEDED:** this historical proposal is not current campaign authority.
+> The later approved 1–80 campaign and current lock above resolve launch placement;
+> do not read this record as reopening those decisions.
+
 The creator requested a detailed narrative outline of the proposed five-act launch story ending with Nhal's shattering. The draft retains Act I 1–20, II 20–30, III 30–40, IV 40–50 and V 50–60; later bands can contain longer campaigns through XP pacing and substantial regional content. A level interval does not imply a fixed amount of playtime.
 
 The new `Main_Story_1_60_Draft.md` under the vault's Campaigns folder follows the human protagonist and includes regional journeys, character relationships, staged revelations, the agreed founder-death order, the final alignment and a homecoming. Other peoples retain their own openings and faction-loyal routes. All essential outcomes remain solo-accessible.
 
 **Proposal boundaries:** Oma'vira's move to Act II, first Shroud access in Act III, the mainland Chainworks location, and moving Oth'varen's death and Nhal's shattering into the launch finale are draft changes, not silent supersessions of earlier locks. The existing detailed campaign and quest registers remain historical review drafts until a deliberate reconciliation pass. The creator's request to commit this work does not approve its unratified events or establish implemented gameplay.
+

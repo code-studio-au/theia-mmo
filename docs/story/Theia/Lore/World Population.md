@@ -1,18 +1,14 @@
 ---
 type: reference
 canon_status: source-specific
-source: "[[Sources/THEIA_ZONE_POPULATION_FRAMEWORK]]"
-up: "[[Lore and World]]"
+source: "../../THEIA_ZONE_POPULATION_FRAMEWORK.md"
+up: "Lore and World.md"
 ---
 # World Population
 
 The framework separates ordinary life, local threats and justified covert activity. Its racial palettes are examples, not approved species or faction rosters.
 
-![[Sources/THEIA_ZONE_POPULATION_FRAMEWORK#Design objective]]
+[Read the historical encounter and placement framework](../../THEIA_ZONE_POPULATION_FRAMEWORK.md). The source is a reference framework, not an approved roster.
 
-![[Sources/THEIA_ZONE_POPULATION_FRAMEWORK#Population layers]]
-
-[[Sources/THEIA_ZONE_POPULATION_FRAMEWORK|Read the full encounter and placement framework]].
-
-[[Lore and World]] · [[Welcome|Home]]
+[Lore and World](Lore%20and%20World.md) · [Home](../../README.md)
 

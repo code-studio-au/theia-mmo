@@ -1,15 +1,15 @@
 ---
 type: topic
-source: "[[Sources/THEIA_WORLD_BIBLE]]"
+source: "../../THEIA_WORLD_BIBLE.md"
 ---
 # Divine and Mortal History
 
-Read these section labels together with later dated amendments in [[Sources/THEIA_WORLD_BIBLE|World Bible]].
+Read the [World Bible](../../THEIA_WORLD_BIBLE.md) together with [later story decisions](../../DECISIONS.md). Later creator locks take precedence over historical wording.
 
-![[Sources/THEIA_WORLD_BIBLE#4. Divine and mortal history]]
+[Read historical source section](../../THEIA_WORLD_BIBLE.md)
 
-[[Lore and World]] · [[Chronicles and History]] · [[Welcome|Home]]
+[Lore and World](Lore%20and%20World.md) · [Historical Timeline](../History/Historical%20Timeline.md) · [Home](../../README.md)
 
 ## Related notes
 
-[[The Seven Gods]] · [[Kel'vari]] · [[First Resonance]] · [[Second Sundering]] · [[Divine War]] · [[The Binding]]
+[The Seven Gods](The%20Seven%20Gods.md) · [Kel'vari](Peoples/Kel%27vari.md) · [First Resonance](../History/Events/First%20Resonance.md) · [Second Sundering](../History/Events/Second%20Sundering.md) · [Divine War](../History/Events/Divine%20War.md) · [The Binding](../History/Events/The%20Binding.md)

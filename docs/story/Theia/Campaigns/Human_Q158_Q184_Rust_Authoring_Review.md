@@ -1,15 +1,15 @@
 # Human Q158–Q184 — Rust Quest Authoring Review and Finale Contract
 
-**Status: Needs Review — narrative/authoring recommendations, not executable definitions.** [Canonical Human Campaign](Human_1_80_Canonical_Campaign.md) is the narrative authority; [Current Quest Authoring Manifest](Human_1_80_Current_Quest_Authoring_Manifest.json) is the sole structured working inventory; [Codex Quest Engine](../../../QUEST_ENGINE.md) defines current runtime capabilities.
+**Status: WORKING — narrative/authoring recommendations, not executable definitions.** [Canonical Human Campaign](Human_1_80_Canonical_Campaign.md) is the narrative authority; [Current Quest Authoring Manifest](Human_1_80_Current_Quest_Authoring_Manifest.json) is the sole structured working inventory; [Codex Quest Engine](../../../QUEST_ENGINE.md) defines current runtime capabilities.
 
-**27 quests reviewed; 184 total campaign entries remain intact.** Current Rust catalogue supports kill and semantic NPC interaction with ordered stages and `all/any/at_least` completion. Its multi-quest journal and PostgreSQL Store are independently qualified but not yet in the normal live World/client path. Exploration, inspection, escort/defense, scene, choice, world phasing, item/currency rewards, party sharing, Luau and cross-pack registry/content migrations remain planned. No hard level gate is inferred from narrative bands, except Q174's explicit proposed finale level-80 gate, which requires separate product approval and runtime support.
+**27 quests reviewed; 184 total campaign entries remain intact.** Current Rust catalogue supports kill and semantic NPC interaction with ordered stages and `all/any/at_least` completion. Its multi-quest journal and PostgreSQL Store are independently qualified but not yet in the normal live World/client path. Exploration, inspection, escort/defense, scene, choice, world phasing, item/currency rewards, party sharing, Luau and cross-pack registry/content migrations remain planned. Do not infer hard level gates from narrative bands. Q174 explicitly requires reaching the level-80 cap in the canonical campaign; conflicting working authoring metadata and its runtime realization remain OPEN, not permission to bypass that narrative requirement.
 
 ## Q158–Q174: manifestations and inversion preparations
 
 | Quest | Authoring intent / authoritative evidence | Key blockers and continuity |
 |---|---|---|
 | **Q158 Essence Without Form** | Sera authorizes survey → reach safe frontier → preserve independent non-Unmade readings → report | Manifestation is gradual after Q156; evidence must distinguish it from ordinary Unmade activity |
-| **Q159 The Lands Revealed (optional)** | Aru'ven requests aid → reach exposed Kel'vari settlement → protect evacuees → report shelter | **Availability defect:** no prerequisites. Require post-Veilbreaker world phase (Q156 or Q157) and Kel'vari contact access; cannot occur before Shroud fade |
+| **Q159 The Lands Revealed (optional)** | Aru'ven requests aid → reach exposed Kel'vari settlement → protect evacuees → report shelter | **LOCKED creator decision (2026-11-04):** available after Q156; earlier legitimate Kel'vari contact required; Aru'ven's evacuation request grants limited affected-settlement access. No Q157 or Q181 prerequisite and no additional level gate. JSON/runtime eligibility not yet reconciled |
 | **Q160 The Architect's Hand** | Infiltrate facility → authenticate Thes'var's orders → report deliberate stabilization plan | Thes'var knowingly serves Nhal; avoid implying he is merely mistaken |
 | **Q161 Fractured Manifestation** | Observe inverted Major Anchor effect → preserve residual essence → Oth'varen interprets | Fracture of coherent pattern, not annihilation of divine essence. Scene and measurement are distinct facts |
 | **Q162 What Cannot Be Destroyed** | Compare ancient testimony and residual traces in any order → record identity/essence distinction and uncertainty | Possible fragment directions and memory loss are hypotheses; do not determine future expansion outcomes |
@@ -18,25 +18,25 @@
 | **Q165 The Guardian's Decision** | Present findings to council → review risks → obtain conditional authorization | Authorization is for preparation, not irreversible activation |
 | **Q166 The Architect's Invitation** | Nessa briefing → scout approach → map defenses and retreat in either order | Distinguish from Q163's transmission; no blind acceptance of invitation |
 | **Q167 Stone and Strain** | Brynja task → inspect supports → reinforce → confirm safe load | Supports have tested limits; no blanket guarantee of safety |
-| **Q168 Life at the Edges (optional)** | Caelith ecological survey → reach affected area → measure disturbance → apply mitigation → report | **Availability defect:** no prerequisites despite post-Shroud environmental change. Gate by Q156 world phase and regional access, not hard level |
-| **Q169 The Route Between (optional)** | Tarek transport survey → verify ship and flight links → confirm Passage limits → report | **Availability defect:** no prerequisites although it references restricted Guardian Passage. Require Q081/Q084 knowledge and consent or equivalent permission; never imply fast-travel waypoints |
+| **Q168 Life at the Edges (optional)** | Caelith ecological survey → reach affected area → measure disturbance → apply mitigation → report | **LOCKED creator decision (2026-11-04):** available after Q156 in post-Veilbreaker environmental phase; Caelith assigns survey; use established regional access and obtain local permission where restricted. No Q157, Q181 or additional level gate. JSON/runtime eligibility pending |
+| **Q169 What the Shroud Concealed (optional)** | Tarek's exposed-site report → investigate ruins → recover Thes'var's pre-Sundering personal journal and independent authentication → consult Oth'varen → preserve journal with custodians | **LOCKED story direction (2026-11-04):** post-Q156, no Q157/Q181 or extra level gate; local permission where restricted. No pre-Q156 Shroud exposure, early First Anchor mechanism disclosure, absolution of Thes'var, or Q176–Q181 foreknowledge. Site/dialogue WORKING; JSON manifest remains outdated pending separately authorised edit |
 | **Q170 Instructions That Survive Us** | Oth'varen trains independent crews and deposits redundant procedures | No prophecy or expectation of death; he does not learn fatal correction until Q177–Q178 |
 | **Q171 The Consent of Neighbors** | Request Covenant assistance and Kel'vari consent separately → record terms | Sovereignty remains distinct; no single faction can authorize the whole operation |
 | **Q172 A Failure We Can See** | Survey vulnerable junction → model risk → verify emergency access → report | **Foreshadowing only:** must not reveal Thes'var's future sabotage or the fatal correction |
 | **Q173 The Last Measure** | Check independent cutoffs → bounded alignment test → record results → readiness authorization | No full Nhal shattering before finale; safety trial is not final activation |
-| **Q174 Before the Final Crossing** | Confirm team readiness, consent, evacuation and supplies → authorize final operation | **Level-80 gate:** explicitly present in objective; decide whether this is an intentional eligibility rule. Codex's current catalogue has no level-eligibility field; don't fake it through an objective |
+| **Q174 Before the Final Crossing** | Confirm team readiness, consent, evacuation and supplies → authorize final operation | **CANONICAL:** Q174 explicitly requires reaching the level-80 cap. **OPEN:** reconcile conflicting working authoring metadata and define runtime support; do not invent an executable field or change eligibility in this review |
 
 ## Q175–Q184: finale and homecoming
 
 | Quest | Authoring intent / authoritative evidence | Key blockers and continuity |
 |---|---|---|
 | **Q175 Inside the Architect's Design** | Enter facility → identify controls → defeat defenders → preserve convergence mechanism | Preserve apparatus for inversion; generic kill credit alone does not prove machinery preserved |
-| **Q176 The Architect's Last Argument** | Confront and kill Thes'var → detect unexpected control irregularity afterward | Thes'var dies physically. Sabotage discovery must occur **after** defeat, not during pre-fight dialogue |
+| **Q176 The Architect's Last Argument** | Confront and kill Thes'var → detect unexpected control irregularity afterward → turn in to Sera | Thes'var dies physically. Sabotage discovery must occur **after** defeat, not during pre-fight dialogue |
 | **Q177 The Broken Alignment** | Inspect tampered junction → attempt safe correction → prove failure → alert Sera | Explicit failed-safe-correction event; no automatic catastrophic loss on player error |
 | **Q178 The Scholar's Correction** | Verify fatal correction model → Oth'varen chooses → Sera establishes safeguards | He discovers the lethal cost only now, following sabotage; choice is voluntary |
 | **Q179 The Sixth Scholar's Choice** | Farewell dialogue → ready stations → receive final instructions | Player tone can vary; no false branch where Oth'varen survives |
 | **Q180 The Seven Hold** | Defend mortal stations → confirm Seven's voluntary participation → maintain six-field support | Seven cooperate freely and remain unbound. Defense and field alignment require trusted outcome facts |
-| **Q181 The Shattering of Nhal** | Protect correction → verify alignment holds → Oth'varen physically dies → final inversion → Nhal's coherent identity shatters | **Manifest gap:** no explicit stage records Oth'varen's physical death between alignment hold and inversion. Add authoritative death fact to future stage model, without making player cause it |
+| **Q181 The Shattering of Nhal** | Protect correction → verify alignment holds → Oth'varen physically dies → final inversion → Nhal's coherent identity shatters → turn in to Sera | **Resolved in the working manifest:** `q181.objective.othvaren_death` records the physical death between alignment hold and inversion. Rust support remains planned; do not add a duplicate stage |
 | **Q182 Silence After** | Confirm surviving Seven and teams → record memorial → document fragment uncertainty | Essence survives; no determination of fragment destination or new identity |
 | **Q183 A World Unbound** | Report to Kel'vari and Covenant separately → verify Shroud fade began at Q156 → war remains | No instant peace treaty, no renewed Binding, no delayed start of Shroud dissipation |
 | **Q184 The Road Home** | Return by ordinary travel → revisit Elara and companions → close personal arc | Final contact and closure should be idempotent; optional regional work may remain available |
@@ -52,14 +52,20 @@
 
 These are **server-authoritative, per-character story facts** requiring atomic or recoverable transitions; a cinematic played on the client is not sufficient evidence. No duplicate world catastrophe or resurrection can occur on reconnect/retry.
 
-## High-priority corrections for the single manifest
+## Remaining authoring decisions for the single manifest
 
-- Add access/phase prerequisites to optional Q159 and Q168; add knowledge/permission requirements to Q169.
-- Clarify whether the Q174 level-80 finale gate is a locked eligibility decision; if approved, request a versioned engine capability from Codex rather than inventing a field.
-- Add a durable, explicit Oth'varen death transition between alignment-holds and final inversion in Q181.
+- **Q159 LOCKED:** post-Q156, earlier Kel'vari contact and Aru'ven's limited evacuation permission; no Q157 or extra level gate. **Q168 LOCKED:** post-Q156, Caelith's assignment, established regional access and restricted-site permission as needed, without Q157/Q181 or extra level gate. **Q169 LOCKED story direction:** journal recovery after Q156 and Oth'varen interpretation; specific site and dialogue WORKING. JSON/runtime objective and access data remain unreconciled. The manifest already preserves these as `authoring_access_review` proposals; they are not executable prerequisites.
+- **CANONICAL / OPEN implementation:** canonical Q174 requires the level-80 cap before finale authorization. Current authoring-status Markdown describes the gate as non-executable review metadata, while this review formerly called its narrative approval unresolved. Preserve the higher-authority campaign requirement; reconcile that metadata and define future runtime realization separately, without changing eligibility data here.
+- Q181's explicit death transition is already present in the working manifest. **OPEN:** implement and validate its future authoritative story-fact capability separately; no gameplay-code change is authorized by this documentation cleanup.
 - Keep Q161–Q162 essence interpretation carefully uncertain about fragments.
 - Separate Thes'var's defeat, discovered sabotage, correction failure and Oth'varen's voluntary choice into non-skippable authoritative facts.
 - Define Q184's final giver/turn-in and one-time closure, while allowing independent optional quests to remain playable.
+
+## LOCKED: completion contacts after permanent deaths
+
+**Creator decision, 3 November 2026:** turn Q176 and Q181 in to Sera after their final objectives, as recorded in the [canonical campaign](Human_1_80_Canonical_Campaign.md) and [decision ledger](../../DECISIONS.md#2026-11-03--locked-q176-and-q181-turn-in-contact). The earlier choice between Sera and automatic completion is resolved. Thes'var's physical death in Q176 and Oth'varen's death after alignment holds but before final inversion in Q181 remain unchanged.
+
+**OPEN implementation reconciliation:** the previously documented working-manifest labels were Thes'var for Q176 and Sera / Oth'varen for Q181, each requiring verification. Those labels are superseded by the creator's Sera turn-in decision, not permission for dead-NPC turn-in or resurrection. JSON and runtime content were not inspected or changed in this Markdown-only update; separately authorized reconciliation is still required before runtime conversion. Existing [finale dialogue](Human_80_Finale_NPC_Dialogue_Scripts.md) assigns both aftermath speeches to Sera; its wording remains WORKING.
 
 ## Engine-independent authoring constraints
 
@@ -69,6 +75,17 @@ These are **server-authoritative, per-character story facts** requiring atomic o
 - Character scope is the currently supported credit policy; party/instance sharing and phasing remain planned.
 - Rewards, NPC/creature IDs, item semantics, retry and abandonment policies are unresolved and must be validated before executable export.
 - Future quest packs must resolve prerequisites through a registry and support explicit saved-definition compatibility/migration. No permanent 32-quest split is implied.
+
+## Consolidated legacy context — 3 November 2026
+
+**ARCHIVED source evidence / WORKING authoring detail.** The [retired final migration note](https://github.com/code-studio-au/theia-mmo/blob/a7ca2aa17e4c2f1fcb40b7392fe68164af579b1a/docs/story/Theia/Campaigns/Human_Q158_Q184_Legacy_Pack_Migration.md) compared `Human_70_80_Playable_Quest_Pack.md` v0.1 with `Human_70_80_Implementation_Brief.md` v0.2 (17 Q158–Q174 references each), and `Human_80_Finale_Playable_Quest_Pack.md` v0.1 with `Human_80_Finale_Implementation_Brief.md` v0.2 (10 Q175–Q184 references each). No extra quests were introduced. Their distinctive purposes and finale constraints are retained above; location bands follow the [canonical campaign](Human_1_80_Canonical_Campaign.md), while distinct unapproved site/design details remain in the [retained historical site proposals](Human_Legacy_Sidequest_Zone_Character_Archive.md#retired-production-location-and-lore-proposals).
+
+- Preserve Classic explicit targeting, manual facing and weapon-timed autoattack, solo-accessible critical story, safe checkpoints and no mandatory PvP, group, class or profession requirement.
+- Travel remains physical roads, ships and fixed flight paths. Restricted Passage requires separate consent, and the Millhaven homecoming does not require optional regional cleanup.
+- Encounter failure resets active combat, not irreversible story facts, durable choices or verified evidence. Boss death, rescue, correction, alignment and final inversion need distinct trusted events; watching a cinematic alone is not authoritative credit.
+- Historical level-70/75/80 chapter minima, draft completion aliases and repeated accept/inspect/report scaffolding are not approved eligibility, runtime IDs or extra objectives. The old source treated Q174's level-80 rule as a proposal; the canonical campaign now states the cap requirement explicitly. Metadata reconciliation and runtime realization remain OPEN as described above.
+- The older Q181 description omitted the explicit physical-death stage now recorded in the working manifest. Preserve the canonical order above and do not add a duplicate death stage.
+- Spawn geometry, encounter timing, localization and actual engine integration remain unresolved alongside the actor, reward, item, phasing and saved-definition inputs above. Historical QA plans do not establish implementation.
 
 ## Next milestone
 

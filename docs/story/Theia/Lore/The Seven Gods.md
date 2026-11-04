@@ -1,17 +1,17 @@
 ---
 type: topic
-source: "[[Sources/THEIA_WORLD_BIBLE]]"
+source: "../../THEIA_WORLD_BIBLE.md"
 ---
 # The Seven Gods
 
-Read these section labels together with later dated amendments in [[Sources/THEIA_WORLD_BIBLE|World Bible]].
+Read the [World Bible](../../THEIA_WORLD_BIBLE.md) together with [later story decisions](../../DECISIONS.md). Historical wording does not override current canon.
 
-![[Sources/THEIA_WORLD_BIBLE#3. The Seven Gods [CONFIRMED]]]
+[Read historical source section](../../THEIA_WORLD_BIBLE.md)
 
-[[Lore and World]] · [[Chronicles and History]] · [[Welcome|Home]]
+[Lore and World](Lore%20and%20World.md) · [Historical Timeline](../History/Historical%20Timeline.md) · [Home](../../README.md)
 
 ## Individual figures
 
-[[Awakening of the Seven]] covers their emergence before mortal creation; [[Creation of the Kel'vari]] concerns the later Kel'vari race.
+[Awakening of the Seven](../History/Events/Awakening%20of%20the%20Seven.md) covers their emergence before mortal creation; [Creation of the Kel'vari](../History/Events/Creation%20of%20the%20Kel%27vari.md) concerns the later Kel'vari race.
 
-[[The Guardian]] · [[The Seeker]] · [[The Warrior]] · [[The Shaper]] · [[The Judge]] · [[The Keeper]] · [[The Ascendant]]
+[The Guardian](../Characters/Divine/The%20Guardian.md) · [The Seeker](../Characters/Divine/The%20Seeker.md) · [The Warrior](../Characters/Divine/The%20Warrior.md) · [The Shaper](../Characters/Divine/The%20Shaper.md) · [The Judge](../Characters/Divine/The%20Judge.md) · [The Keeper](../Characters/Divine/The%20Keeper.md) · [The Ascendant](../Characters/Divine/The%20Ascendant.md)

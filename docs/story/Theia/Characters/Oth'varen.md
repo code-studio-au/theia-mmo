@@ -1,28 +1,22 @@
 ---
 type: character
-canon_status: approved-overarching-arc
-source: "[[Sources/THEIA_CHARACTER_ARCS]]"
+canon_status: "LOCKED overarching arc; CANONICAL launch sequence; WORKING unapproved scenes"
+source: "../../THEIA_CHARACTER_ARCS.md"
 ---
 # Oth'varen
 
-The overarching arc is approved; specific scenes, dialogue and outcomes retain the limits in the source.
+The overarching arc is **LOCKED** within its recorded approval scope. Unapproved scenes, dialogue and mechanics remain **WORKING**; current launch sequence and permanent outcomes follow the canonical campaign.
 
-![[Sources/THEIA_CHARACTER_ARCS#Oth'varen — locked overarching arc]]
+[Approved character foundation and scoped proposals](../../THEIA_CHARACTER_ARCS.md#othvaren--locked-overarching-arc) — subject to later creator decisions.
 
-[[Characters]] · [[Orders and Hidden Conflict]] · [[Timelines]]
+[Characters](Characters.md) · [Orders and Hidden Conflict](../Lore/Orders%20and%20Hidden%20Conflict.md) · [Historical Timeline](../History/Historical%20Timeline.md)
 
 ## Related notes
 
-[[Kel'vari]] · [[The Guardians]] · [[The Corrupted Conclave]] · [[Nhal]] · [[The Six Reunited]]
+[Kel'vari](../Lore/Peoples/Kel%27vari.md) · [The Guardians](../Lore/Institutions/The%20Guardians.md) · [The Corrupted Conclave](../Lore/Institutions/The%20Corrupted%20Conclave.md) · [Nhal](Divine/Nhal.md) · [The Six Reunited](../History/The%20Six%20Reunited.md)
 
-## Creator-locked future death — 29 October 2026
+## Current creator-locked fate — level-80 launch finale (2 November 2026)
 
-Oth'varen survives launch. During the later confrontation with Nhal, he dies stabilising the gods' six-energy alignment through the inverted Major Anchor network. He shares the corrections and sees the alignment hold; the player and trained Guardians continue the working after his death. He remains mortal, corrupted but resistant, and is neither resurrected nor turned into a permanent power source.
+**Current CANONICAL reference:** [Q178–Q181 in the canonical campaign](../Campaigns/Human_1_80_Canonical_Campaign.md#levels-80-finale-the-shattering-of-nhal). This is the authoritative home for the permanent outcome and its required sequence.
 
-The approved sequence and its limits are recorded in [[Sources/DECISIONS#2026-10-29 — Creator LOCK: Oth'varen's final alignment and death]] and [[Sources/THEIA_CHARACTER_ARCS#2026-10-29 creator LOCK — Oth'varen's final alignment and death]]. A Conclave founder's possible interference remains WORKING.
-
-## Later creator lock — Conclave succession (29 October 2026)
-
-Thes'var is now locked as the final surviving founder who attacks the alignment. The player kills him; his sabotage compounds Nhal's disruption and leaves cascading instability. Oth'varen completes the correction at fatal cost, sees it hold and dies before Nhal's defeat. The player and Guardian teams sustain the working with the Seven. The earlier founder-interference proposal is now approved; exact encounter mechanics remain open.
-
-This dated lock supersedes earlier open-fate or proposed-interference statements. See [[Sources/DECISIONS#2026-10-29 — Creator LOCK: Conclave deaths and final succession]]. Site names, dialogue and encounter mechanics remain open.
+The older launch-survival/post-launch placement is SUPERSEDED. The [decision ledger](../../DECISIONS.md) preserves the complete dated lock and its supersession. Unapproved presentation remains WORKING; permanent outcomes are not OPEN.

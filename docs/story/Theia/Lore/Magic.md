@@ -1,13 +1,11 @@
 ---
 type: topic
-source: "[[Sources/THEIA_WORLD_BIBLE]]"
+source: "../../THEIA_WORLD_BIBLE.md"
 ---
 # Magic
 
-Read these section labels together with later dated amendments in [[Sources/THEIA_WORLD_BIBLE|World Bible]].
+Read the [World Bible](../../THEIA_WORLD_BIBLE.md) together with [later story decisions](../../DECISIONS.md). Historical wording does not override current canon.
 
-![[Sources/THEIA_WORLD_BIBLE#5. Magic [CONFIRMED]]]
+[Read historical source section](../../THEIA_WORLD_BIBLE.md)
 
-![[Sources/THEIA_WORLD_BIBLE#7. Cultural martial and magical traditions [CONFIRMED]]]
-
-[[Lore and World]] · [[Chronicles and History]] · [[Welcome|Home]]
+[Lore and World](Lore%20and%20World.md) · [Historical Timeline](../History/Historical%20Timeline.md) · [Story index](../../README.md)

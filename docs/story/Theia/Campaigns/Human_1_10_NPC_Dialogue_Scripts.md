@@ -1,6 +1,8 @@
 # Theia — Human Levels 1–10 NPC Dialogue Scripts, Pass 1
 
-**Status: Needs Review — authored dialogue, not recorded or implemented.** Based on [Human 1–80 Canonical Campaign](Human_1_80_Canonical_Campaign.md) and [Human 1–10 Quest Pack](Human_Levels_1_10_Playable_Quest_Pack.md). This expands the earlier [vertical slice dialogue brief](Human_1_10_Vertical_Slice_Implementation.md) into reusable quest-offer, progress, choice and turn-in dialogue. All lines are original first-pass text.
+**Status: Needs Review — authored dialogue, not recorded or implemented.** Based on [Human 1–80 Canonical Campaign](Human_1_80_Canonical_Campaign.md) and [Q001–Q017 working authoring review](Human_Q001_Q017_Rust_Authoring_Review.md). This expands the earlier [vertical slice dialogue brief](Human_1_10_Vertical_Slice_Implementation.md) into reusable quest-offer, progress, choice and turn-in dialogue. All lines are original first-pass text.
+
+**Coverage:** This first pass contains Q001–Q013. Dialogue for optional Q014–Q017 remains to be authored; their canonical quests and outcomes remain in the campaign and consolidated authoring review.
 
 ## Dialogue design constraints
 
@@ -190,7 +192,81 @@ The player is a new Human resident/traveler, not a chosen hero. Early speakers k
 
 **Player choice B:** “Why keep a copy?” → **Perrin:** “Because I knew someone would ask later. I didn't expect it to be you.”
 
-**Correspondent, completion:** “This belongs in Valecrown. Elara can introduce you to Mara Thorne. She'll know what to do with a record like this.”
+**Correspondent, referral handoff:** “This belongs in Valecrown. Elara can introduce you to Mara Thorne. She'll know what to do with a record like this.”
+
+**Q013 completion boundary:** Obtain Elara's introduction to Mara after the payment evidence and authorized interview. The correspondent's referral is not final completion.
+
+**Elara, completion (WORKING dialogue; after original evidence and authorised interview):** “You brought the instruction back, and Perrin answered under the reeve's authority. That's something Mara can examine, not just another rumour about Edric's office.”
+
+**Player:** “Will she believe us?”
+
+**Elara:** “She'll test the record. That's why I'm sending you to her. Take my introduction and the authenticated copy; keep the original with its lawful custodian.”
+
+**Completion evidence:** Elara issues the introduction to Mara only after payment-copy recovery and authorised Perrin interview; no accusation against Cassian is treated as proved at Q013.
+
+
+## Q014 — The Quarry Bell (optional)
+
+**Joss, offer:** “The Greyfall shift should have returned with the evening bell. The tally's missing too. I need the crew found before anyone starts calling this sabotage.”
+
+**Player:** “Where did they last work?”
+
+**Joss:** “The lower workface. The predators have been moving through the old cut. Follow the bell route and bring the people out first.”
+
+**In progress:** “The crew and shift tally are both still unaccounted for. Don't leave anyone behind for a piece of paper.”
+
+**Rescued worker:** “We took shelter when the predators came through. The tally is in the tool chest; it lists everyone who entered.”
+
+**Joss, completion:** “They're alive, and the count matches. Thank you. The quarry needs a safer route, not a conspiracy invented to explain every broken shift.”
+
+**Completion evidence:** Missing workers rescued, ordinary cave threat cleared or a separately approved safe alternative used, and shift tally returned. A proposed alternate route is not automatically executable.
+
+## Q015 — One Bridge, Two Claims (optional)
+
+**Stoneford reeve, offer:** “The crossing's damaged. The miller needs grain moved; the merchant needs supplies across. Each has a fair claim and neither can cross an unsafe bridge.”
+
+**Miller:** “If we wait, the flour waits with us. Families won't thank us for a tidy ledger.”
+
+**Merchant:** “And if the repair tools don't arrive, there won't be a bridge to argue over.”
+
+**Player choice A:** “Prioritise the mill's immediate needs.”
+**Player choice B:** “Prioritise delivery of repair supplies.”
+
+**Reeve, response:** “I'll record the order you chose. We still owe both sides a safe crossing.”
+
+**Reeve, completion:** “The supports have been checked and the crossing is open. Neither claim was forgotten. That's what a useful decision looks like.”
+
+**Completion evidence:** Inspect damage, hear both parties, record local work order, secure repair needs and reopen a safe ordinary crossing. Choice changes acknowledgement, not permanent denial of either service.
+
+## Q016 — The Warehouse Night Watch (optional)
+
+**Brenna, offer:** “Tools have gone missing from the warehouse. The watch saw movement after closing, but I won't accuse our own workers without proof.”
+
+**Player:** “What do you need?”
+
+**Brenna:** “Check the loss record, walk the perimeter and stop whoever returns tonight. Bring the tools back if you can.”
+
+**In progress:** “Keep to the agreed watch route. A missing crate isn't proof of a larger plot.”
+
+**Brenna, completion:** “Ordinary thieves, then. The tools are back, and the losses can be accounted for. Not every wrong in Stoneford belongs to the same enemy.”
+
+**Completion evidence:** Losses checked, patrol completed, thieves intercepted and stolen tools recovered. Retry after failed combat without resetting unrelated story evidence.
+
+## Q017 — The Long Way Home (optional)
+
+**Elara, offer:** “A section of the caravan has finally been recovered. Their usual road is still blocked. Can you help them bring the remaining supplies home?”
+
+**Caravan driver:** “We'll take the longer route. I'd rather arrive late with everyone than gamble on the old crossing.”
+
+**In progress:** “If the wagons stop, find the agreed safe point. Don't leave the drivers to face the obstruction alone.”
+
+**Elara, completion:** “The survivors are home and the supplies are accounted for. The road changed, but the people still needed to make it back.”
+
+**Player:** “There will be more journeys.”
+
+**Elara:** “Then we'll make them as safely as we can. That's enough work for today.”
+
+**Completion evidence:** Supplies prepared, route obstruction cleared, recovered caravan segment delivered to Millhaven. Rejoining at safe checkpoints remains a WORKING gameplay requirement, not an implemented escort system.
 
 ## Implementation requirements
 

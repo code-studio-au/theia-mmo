@@ -1,13 +1,13 @@
 ---
 type: topic
-source: "[[Sources/THEIA_WORLD_BIBLE]]"
+source: "../../THEIA_WORLD_BIBLE.md"
 ---
 # Peoples and Allegiances
 
-Read these section labels together with later dated amendments in [[Sources/THEIA_WORLD_BIBLE|World Bible]].
+Read the [World Bible](../../THEIA_WORLD_BIBLE.md) together with [later story decisions](../../DECISIONS.md). Later creator locks take precedence over historical wording.
 
-![[Sources/THEIA_WORLD_BIBLE#6. Playable races, allegiances and governments [CONFIRMED]]]
+[Read historical source section](../../THEIA_WORLD_BIBLE.md)
 
-[[Lore and World]] · [[Chronicles and History]] · [[Welcome|Home]]
+[Lore and World](Lore%20and%20World.md) · [Historical Timeline](../History/Historical%20Timeline.md) · [Home](../../README.md)
 
-[[Humans]] · [[Dwarves]] · [[Aelari]] · [[Korrath]] · [[Orcs]] · [[Halflings]] · [[Vaelari]] · [[Vorrath]] · [[Kel'vari]]
+[Humans](Peoples/Humans.md) · [Dwarves](Peoples/Dwarves.md) · [Aelari](Peoples/Aelari.md) · [Korrath](Peoples/Korrath.md) · [Orcs](Peoples/Orcs.md) · [Halflings](Peoples/Halflings.md) · [Vaelari](Peoples/Vaelari.md) · [Vorrath](Peoples/Vorrath.md) · [Kel'vari](Peoples/Kel'vari.md)

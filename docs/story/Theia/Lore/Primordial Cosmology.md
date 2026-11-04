@@ -1,13 +1,13 @@
 ---
 type: topic
-source: "[[Sources/THEIA_WORLD_BIBLE]]"
+source: "../../THEIA_WORLD_BIBLE.md"
 ---
 # Primordial Cosmology
 
-Read these section labels together with later dated amendments in [[Sources/THEIA_WORLD_BIBLE|World Bible]].
+Read the [World Bible](../../THEIA_WORLD_BIBLE.md) together with [later story decisions](../../DECISIONS.md). Historical wording does not override current canon.
 
-![[Sources/THEIA_WORLD_BIBLE#2. Primordial cosmology [CONFIRMED foundation; expanded creator draft 2026-10-12]]]
+[Read historical source section](../../THEIA_WORLD_BIBLE.md)
 
-[[Lore and World]] · [[Chronicles and History]] · [[Welcome|Home]]
+[Lore and World](Lore%20and%20World.md) · [Historical Timeline](../History/Historical%20Timeline.md) · [Home](../../README.md)
 
-[[Aethyr]] · [[Nhal]] · [[First Sundering]]
+Aethyr · Nhal · [First Sundering](../History/Events/First%20Sundering.md)

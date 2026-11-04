@@ -1,8 +1,8 @@
 ---
 type: location
 canon_status: source-specific
-source: "[[Sources/THEIA_WORLD_BIBLE]]"
-up: "[[Atlas]]"
+source: "../../../THEIA_WORLD_BIBLE.md"
+up: "../Atlas.md"
 ---
 # Thuma'rei
 
@@ -10,12 +10,12 @@ up: "[[Atlas]]"
 
 These are independent Kel'vari enclaves, not a single kingdom or the entire surviving population. The full context and approval boundaries are in the source.
 
-![[Sources/THEIA_WORLD_BIBLE#2026-10-13 creator LOCK — Kel'vari federation and authorised First Anchor project]]
+[Read historical source section](../../../THEIA_WORLD_BIBLE.md)
 
-[[Kel'vari]]
+[Kel'vari](../../Lore/Peoples/Kel%27vari.md)
 
-[[Atlas]] · [[Welcome|Home]]
+[Atlas](../Atlas.md) · [Story index](../../../README.md)
 
 ## Related notes
 
-[[Aru'ven]] — proposed campaign gate steward; Needs Review.
+[Aru'ven](../../Characters/Campaign%20Cast/Aru%27ven.md) — proposed campaign gate steward; Needs Review.

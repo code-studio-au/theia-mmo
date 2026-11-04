@@ -1,27 +1,27 @@
 ---
 type: people
 canon_status: confirmed-foundation; details-open
-source: "[[Sources/THEIA_WORLD_BIBLE]]"
-up: "[[Peoples and Allegiances]]"
+source: "../../../THEIA_WORLD_BIBLE.md"
+up: "../Peoples and Allegiances.md"
 ---
 # Dwarves
 
-Alliance: [[Covenant]].
+Alliance: [Covenant](../Institutions/Covenant.md).
 
 Shaper-created and worshipping; confederation of holds; ancient surviving mountain/subterranean racial capital.
 
 ## Notable characters
 
-- [[High Thane Bromund Stonevein]] — archive working name for a dwarf leader; Needs Review.
-- [[Rurik Anvilmark]] · [[Brynja Flintwake]] · [[Edda Flintwake]] — additional campaign cast; see their notes for approval scope.
+- [High Thane Bromund Stonevein](../../Characters/Campaign%20Cast/High%20Thane%20Bromund%20Stonevein.md) — archive working name for a dwarf leader; Needs Review.
+- [Rurik Anvilmark](../../Characters/Campaign%20Cast/Rurik%20Anvilmark.md) · [Brynja Flintwake](../../Characters/Campaign%20Cast/Brynja%20Flintwake.md) · [Edda Flintwake](../../Characters/Campaign%20Cast/Edda%20Flintwake.md) — additional campaign cast; see their notes for approval scope.
 
 ## Broader context
-![[Sources/THEIA_WORLD_BIBLE#6. Playable races, allegiances and governments [CONFIRMED]]]
+[Read historical source section](../../../THEIA_WORLD_BIBLE.md)
 
-[[Magic]] · [[The Seven Gods]]
+[Magic](../Magic.md) · [The Seven Gods](../The%20Seven%20Gods.md)
 
-[[Peoples and Allegiances]] · [[Welcome|Home]]
+[Peoples and Allegiances](../Peoples%20and%20Allegiances.md) · [Home](../../../README.md)
 
 ## Related notes
 
-[[The Shaper]]
+[The Shaper](../../Characters/Divine/The%20Shaper.md)

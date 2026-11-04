@@ -41,7 +41,7 @@
 ## Priority consistency corrections
 
 1. **Q155–Q156 atomicity:** Once Veilbreaker destroys the Veil, Binding dissolution and release of the Seven are immediate consequences. The player defeats Khor'vun but cannot reverse the already-completed activation. Never award a successful shutdown flag.
-2. **Q157 timing:** The stage description `Witness Shroud immediately begin dissipating` can imply the fade starts after the Q157 rescue. Rewrite as observing **ongoing** dissipation that started at Q156.
+2. **Q157 timing — resolved editorial correction:** The [canonical campaign](Human_1_80_Canonical_Campaign.md) describes Shroud dissipation already underway since Q156, and [current authoring status](CURRENT_HUMAN_CAMPAIGN.md) records the matching working-manifest correction. Preserve this ongoing-fade wording; no new correction or delayed start of the Shroud fade is proposed.
 3. **Q151 causal explanation:** The Veil and Binding are distinct. Anchors converge energies to strengthen the original tear and enable Nhal's release; they do not sustain the Seven's prison.
 4. **Q143 reveal gate:** Nhal's name is first authenticated here. Audit earlier dialogue, journal text, object names, map markers and UI metadata for premature disclosure.
 5. **Q138–Q145 Vaer'uun:** The First Voice's manipulation uses genuine evidence and withheld history. He knowingly serves Nhal, though corrupted; his death is permanent.
@@ -60,6 +60,17 @@
 - XP, currency, item rewards, exact stable NPC/creature IDs and failure/abandonment policy are not yet approved.
 - Solo boss checkpoints preserve verified evidence and prevent repeat rewards; no Luau required for ordinary quest objectives.
 - The future cross-pack registry and content-version migration rules must be qualified before production quest content is deployed.
+
+## Consolidated legacy context — 3 November 2026
+
+**ARCHIVED source evidence / WORKING authoring detail.** The [retired migration note](https://github.com/code-studio-au/theia-mmo/blob/90365d28de75c7596d5119c6a9595995ec15e495/docs/story/Theia/Campaigns/Human_Q129_Q157_Legacy_Pack_Migration.md) compared `Human_55_70_Playable_Quest_Pack.md` v0.1 and `Human_55_70_Implementation_Brief.md` v0.2. Each covered the same 29 Q129–Q157 references, with no additional quests. The matrix above preserves their distinct narrative and encounter constraints; location bands follow the [canonical campaign](Human_1_80_Canonical_Campaign.md), while distinct unapproved site/design details remain in the [retained historical site proposals](Human_Legacy_Sidequest_Zone_Character_Archive.md#retired-production-location-and-lore-proposals).
+
+- Preserve Kel'vari sovereignty as well as restricted Passage permission and capacity. Physical roads, ships and fixed flight paths remain ordinary travel; no ordinary teleport waypoints are inferred.
+- Classic explicit targeting, manual facing, range and weapon-timed autoattack remain the combat baseline. Critical story encounters stay solo-accessible, with no mandatory PvP, group, class or profession requirement.
+- Persist authenticated evidence and personal story facts across death/reconnect; reset only active hostile encounter state. Boss outcomes, device cutoffs, research copies, evacuation and irreversible world transitions are distinct evidence, not generic kill or conversation credit.
+- Historical level-55/60/65 assumptions, draft completion aliases and repetitive accept/inspect/report templates are not approved eligibility, runtime IDs or additional canonical objectives.
+- The old chapter-wide Veilbreaker/Binding/Shroud payoff is not knowledge available before its canonical revelation sequence. Q157 observes Shroud dissipation already begun at Q156; it does not start the event again.
+- Spawn geometry, world positions, localization, combat tuning, QA and actual client/World integration remain unresolved alongside the authoring inputs above. These historical plans do not establish implemented capabilities.
 
 ## Next pass
 
