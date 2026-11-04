@@ -11,6 +11,8 @@ pub const MAX_CATALOG_BYTES: usize = 32 * 1024;
 pub const MAX_DEFINITIONS: usize = 16;
 /// Bounded visible page; uncollected loot outside it remains durable.
 pub const MAX_VISIBLE_LIFE_CLAIMS: usize = 16;
+/// Initial personal-corpse presentation radius; pickup has its own authority check.
+pub const LOOT_INTEREST_METRES: f64 = 64.;
 /// Immutable source location, not proof of death or recipient entitlement.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct CorpseSource {

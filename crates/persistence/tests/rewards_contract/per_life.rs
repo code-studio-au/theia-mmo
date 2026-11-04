@@ -541,3 +541,143 @@ async fn accepted_loot_offers_drain_after_response_loss_and_full_bags_leave_loot
     drop(admin);
     driver.await.unwrap().unwrap();
 }
+
+#[tokio::test]
+#[ignore = "requires owned PostgreSQL; run tools/qualify_persistence.py"]
+async fn nearby_loot_follows_trusted_pose_and_distant_history_cannot_hide_fresh_drop() {
+    let (url, _admin, driver) = support::owned().await;
+    let realm = RealmId::random();
+    let mut store = Store::connect_loopback(&url, realm).await.unwrap();
+    let items = InventoryCatalog::from_json(ITEMS).unwrap();
+    let mut raw: serde_json::Value = serde_json::from_slice(DATA).unwrap();
+    raw["schema"] = 2.into();
+    let mut life = raw["rewards"][0].clone();
+    life["id"] = loot_id().as_str().into();
+    life["scope"] = "per_creature_life".into();
+    raw["rewards"].as_array_mut().unwrap().push(life);
+    let rewards = RewardCatalog::from_json(&serde_json::to_vec(&raw).unwrap(), &items).unwrap();
+    let who = character(&mut store, "Lootnear").await;
+    store
+        .ensure_inventory(who, WORLD, &items, &Bag::empty(items.catalog()))
+        .await
+        .unwrap();
+    let once_id = rewards
+        .catalog()
+        .definitions()
+        .find(|d| d.scope() == theia_core::rewards::Scope::OncePerCharacter)
+        .unwrap()
+        .id()
+        .clone();
+    let once = store
+        .offer_reward(who, WORLD, &rewards, &once_id)
+        .await
+        .unwrap();
+    let far = position();
+    let near = GlobalPosition::new([9000., 0., 9000.]).unwrap();
+    for n in 1..=34 {
+        let p = if n <= 17 {
+            far
+        } else {
+            GlobalPosition::new([9020., 0., 9000.]).unwrap()
+        };
+        store
+            .offer_reward_for_kill(who, WORLD, &rewards, &loot_id(), &kill(n), p)
+            .await
+            .unwrap();
+    }
+    let fresh = store
+        .offer_reward_for_kill(who, WORLD, &rewards, &loot_id(), &kill(35), near)
+        .await
+        .unwrap();
+    let boundary = GlobalPosition::new([10000., 0., 10000.]).unwrap();
+    let mut boundary_claim = None;
+    for (n, p) in [
+        (36, [10000., 64., 10000.]),
+        (37, [10000., 64.001, 10000.]),
+        (38, [10064., 64., 10000.]),
+    ] {
+        let offered = store
+            .offer_reward_for_kill(
+                who,
+                WORLD,
+                &rewards,
+                &loot_id(),
+                &kill(n),
+                GlobalPosition::new(p).unwrap(),
+            )
+            .await
+            .unwrap();
+        if n == 36 {
+            boundary_claim = Some(offered.id);
+        }
+    }
+    // The old global storage page contains only older distant drops.
+    assert!(
+        !store
+            .list_reward_claims(who, WORLD, &rewards)
+            .await
+            .unwrap()
+            .iter()
+            .any(|c| c.id == fresh.id)
+    );
+    let nearby = store
+        .list_reward_claims_nearby(who, WORLD, &rewards, near)
+        .await
+        .unwrap();
+    assert_eq!(nearby.len(), LIFE_CLAIM_PAGE_SIZE + 1);
+    assert!(nearby.iter().any(|c| c.id == fresh.id));
+    assert!(nearby.iter().any(|c| c.id == once.id));
+    assert!(
+        nearby
+            .iter()
+            .filter_map(|c| c.corpse)
+            .all(|c| c.position.metres()[0] >= 9000.)
+    );
+    let edge = store
+        .list_reward_claims_nearby(who, WORLD, &rewards, boundary)
+        .await
+        .unwrap();
+    assert_eq!(edge.len(), 2);
+    assert!(edge.iter().any(|c| Some(c.id) == boundary_claim));
+    assert!(edge.iter().any(|c| c.id == once.id));
+    let (publisher, worker) = Worker::start(store);
+    assert_eq!(
+        publisher
+            .list_reward_claims_nearby(who, WORLD, &rewards, near)
+            .await
+            .unwrap(),
+        nearby
+    );
+    publisher
+        .claim_reward(who, WORLD, &rewards, fresh.id, 0)
+        .await
+        .unwrap();
+    let after = publisher
+        .list_reward_claims_nearby(who, WORLD, &rewards, near)
+        .await
+        .unwrap();
+    assert_eq!(after.len(), LIFE_CLAIM_PAGE_SIZE + 1);
+    assert!(!after.iter().any(|c| c.id == fresh.id));
+    let restored_far = publisher
+        .list_reward_claims_nearby(who, WORLD, &rewards, far)
+        .await
+        .unwrap();
+    assert_eq!(restored_far.len(), LIFE_CLAIM_PAGE_SIZE + 1);
+    assert!(
+        restored_far
+            .iter()
+            .filter_map(|c| c.corpse)
+            .all(|c| c.position == far)
+    );
+    assert_eq!(
+        publisher
+            .load_inventory(who, WORLD, &items)
+            .await
+            .unwrap()
+            .revision(),
+        1
+    );
+    worker.shutdown().await.unwrap();
+    drop(_admin);
+    driver.await.unwrap().unwrap();
+}

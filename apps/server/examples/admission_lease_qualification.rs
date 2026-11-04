@@ -151,7 +151,9 @@ async fn main() -> theia_network::Result<()> {
     let vendors = std::env::var("THEIA_TEST_VENDORS").is_ok_and(|v| v == "1");
     let inventory =
         item_journal || vendors || std::env::var("THEIA_TEST_INVENTORY").is_ok_and(|v| v == "1");
-    let rewards_enabled = std::env::var("THEIA_TEST_REWARDS").is_ok_and(|v| v == "1");
+    let creature_loot = std::env::var("THEIA_TEST_CREATURE_LOOT").is_ok_and(|v| v == "1");
+    let rewards_enabled =
+        creature_loot || std::env::var("THEIA_TEST_REWARDS").is_ok_and(|v| v == "1");
     let item_bytes: &[u8] = if item_journal || rewards_enabled || vendors {
         include_bytes!("../../../content/gameplay/development-equipment-items.json")
     } else {
@@ -164,6 +166,11 @@ async fn main() -> theia_network::Result<()> {
     let mut second = recipe["rewards"][0].clone();
     second["id"] = "theia.dev.second-training-kill".into();
     recipe["rewards"].as_array_mut().unwrap().push(second);
+    if creature_loot {
+        recipe["schema"] = 2.into();
+        recipe["rewards"].as_array_mut().unwrap().truncate(1);
+        recipe["rewards"][0]["scope"] = "per_creature_life".into();
+    }
     let reward_bytes = serde_json::to_vec(&recipe)?;
     let rewards = if rewards_enabled {
         Some(theia_persistence::RewardCatalog::from_json(
@@ -176,10 +183,14 @@ async fn main() -> theia_network::Result<()> {
     let (publisher, worker) = Worker::start(store);
     let mut gate = if let Some(rewards) = &rewards {
         let items = net::inventory::Profile::from_json(item_bytes)?;
-        let wire = Arc::new(theia_network::reward_wire::Profile::from_json(
-            &reward_bytes,
-            &items,
-        )?);
+        let wire = Arc::new(if creature_loot {
+            theia_network::reward_wire::Profile::from_json_with_creature_loot(
+                &reward_bytes,
+                &items,
+            )?
+        } else {
+            theia_network::reward_wire::Profile::from_json(&reward_bytes, &items)?
+        });
         admissions::GameAdmissions::new_rewards(
             sessions.clone(),
             issuer,
@@ -1195,6 +1206,189 @@ async fn main() -> theia_network::Result<()> {
         driver.await??;
         emit(
             serde_json::json!({"passed":true,"actual_oidc_and_postgres":true,"encrypted_ticket_binding":true,"accepted_executing_and_distinct_queued_xp_survive_logout":true,"pose_commit_does_not_release_pending_xp":true,"no_xp_before_commit":true,"duplicate_old_event_no_extra_xp":true,"fresh_lease_restores_progression":true,"closed_generation_rejects_facts":true,"direct_lease_contract_not_native_game":true,"objective_enabled":quest_enabled,"accepted_objective_facts_survive_retirement":quest_enabled}),
+        );
+        return Ok(());
+    }
+    if creature_loot {
+        use theia_core::{
+            progression::{KillEvent, KillId},
+            rewards::ClaimCommand,
+        };
+        use theia_network::simulation::rewards::Opportunity;
+        let rewards = rewards.as_ref().unwrap();
+        let recipe = rewards.catalog().definitions().next().unwrap();
+        let ticket = gate
+            .reserve(context.clone(), binding)?
+            .issue(character.saved)?;
+        let data = connected_data(&mut transport, ticket.bytes()).await;
+        let lease = gate.clone().consume(1, &data)?.unwrap().lease;
+        let actor = EntityKey {
+            epoch: WorldEpoch::new(123).unwrap(),
+            entity: EntityId::new(1).unwrap(),
+        };
+        lease.record(actor, position, 1)?;
+        let mut port = lease.inventory()?.unwrap();
+        let initial = inventory_until(&mut port, |s| s.bag.is_some() && s.rewards.is_some()).await;
+        let baseline = initial.bag.unwrap();
+        assert!(initial.rewards.unwrap().available.is_empty());
+        let mut xyz = position.metres();
+        xyz[0] += 1000.;
+        let distant = GlobalPosition::new(xyz).unwrap();
+        let fact = |n, position| Opportunity {
+            actor,
+            reward: recipe.id().clone(),
+            position,
+            event: KillEvent {
+                id: KillId::from_victim(EntityKey {
+                    entity: EntityId::new(n).unwrap(),
+                    ..actor
+                }),
+                creature: recipe.creature().clone(),
+            },
+        };
+        for n in 100..117 {
+            port.opportunities
+                .as_ref()
+                .unwrap()
+                .send(fact(n, distant))
+                .await?;
+        }
+        port.opportunities
+            .as_ref()
+            .unwrap()
+            .send(fact(117, position))
+            .await?;
+        let offered = inventory_until(&mut port, |s| {
+            s.rewards.as_ref().is_some_and(|r| r.available.len() == 1)
+        })
+        .await;
+        assert_eq!(offered.bag.as_ref().unwrap(), &baseline);
+        let claim = offered.rewards.unwrap().available[0].clone();
+        assert_eq!(claim.corpse.unwrap().position, position);
+        lease.record(actor, distant, 2)?;
+        let far = inventory_until(&mut port, |s| {
+            s.rewards.as_ref().is_some_and(|r| r.available.len() == 16)
+        })
+        .await;
+        assert!(
+            far.rewards
+                .unwrap()
+                .available
+                .iter()
+                .all(|c| c.corpse.unwrap().position == distant)
+        );
+        assert_eq!(far.bag.as_ref().unwrap(), &baseline);
+        lease.record(actor, position, 3)?;
+        let back = inventory_until(&mut port, |s| {
+            s.rewards.as_ref().is_some_and(|r| r.available.len() == 1)
+        })
+        .await;
+        assert_eq!(back.rewards.unwrap().available[0].claim, claim.claim);
+        // Direct accepted owner command: World range/life checks are separately
+        // exercised by encrypted runtime tests, not bypassed in the product.
+        let guard = admin.transaction().await?;
+        guard.query_one("SELECT revision FROM theia.backpacks WHERE realm_id=$1 AND character_id=$2 FOR UPDATE",&[&realm.value(),&binding.character.value()]).await?;
+        port.requests
+            .send(net::inventory::Request {
+                sequence: 1,
+                command: ClaimCommand {
+                    claim: claim.claim,
+                    expected_revision: baseline.revision(),
+                }
+                .into(),
+            })
+            .await?;
+        wait_inventory_lock(&guard).await;
+        assert_eq!(port.state.borrow().bag.as_ref().unwrap(), &baseline);
+        drop(lease);
+        assert!(matches!(
+            gate.reserve(context.clone(), binding),
+            Err(admissions::Error::Conflict)
+        ));
+        guard.commit().await?;
+        tokio::time::timeout(Duration::from_secs(5), async {
+            while gate.flush(&publisher, &worker.status()).unwrap() != 0 {
+                tokio::time::sleep(Duration::from_millis(2)).await;
+            }
+        })
+        .await?;
+        let saved = publisher.select_character(binding, world).await?.saved;
+        assert_eq!(saved.position, position);
+        let ticket = gate.reserve(context.clone(), binding)?.issue(saved)?;
+        let data = connected_data(&mut transport, ticket.bytes()).await;
+        let lease = gate.clone().consume(1, &data)?.unwrap().lease;
+        let mut fresh = lease.inventory()?.unwrap();
+        let loaded = inventory_until(&mut fresh, |s| s.bag.is_some() && s.rewards.is_some()).await;
+        assert_eq!(loaded.bag.unwrap().revision(), baseline.revision() + 1);
+        assert!(loaded.rewards.unwrap().available.is_empty());
+        let next_actor = EntityKey {
+            entity: EntityId::new(2).unwrap(),
+            ..actor
+        };
+        lease.record(next_actor, distant, 1)?;
+        let recovered = inventory_until(&mut fresh, |s| {
+            s.rewards.as_ref().is_some_and(|r| r.available.len() == 16)
+        })
+        .await;
+        assert!(
+            recovered
+                .rewards
+                .unwrap()
+                .available
+                .iter()
+                .all(|c| c.corpse.unwrap().position == distant)
+        );
+        let all_far = publisher
+            .list_reward_claims_nearby(binding, world, rewards, distant)
+            .await?;
+        assert_eq!(all_far.len(), 16);
+        // Replaying an already collected fatal life does not restore loot.
+        lease.record(next_actor, position, 2)?;
+        inventory_until(&mut fresh, |s| {
+            s.rewards.as_ref().is_some_and(|r| r.available.is_empty())
+        })
+        .await;
+        let offered_before = worker.status().reward_offers;
+        fresh
+            .opportunities
+            .as_ref()
+            .unwrap()
+            .send(fact(117, position))
+            .await?;
+        tokio::time::timeout(Duration::from_secs(5), async {
+            while worker.status().reward_offers == offered_before {
+                tokio::time::sleep(Duration::from_millis(2)).await;
+            }
+        })
+        .await?;
+        drop(lease);
+        tokio::time::timeout(Duration::from_secs(5), async {
+            while gate.flush(&publisher, &worker.status()).unwrap() != 0 {
+                tokio::time::sleep(Duration::from_millis(2)).await;
+            }
+        })
+        .await?;
+        assert!(
+            publisher
+                .list_reward_claims_nearby(binding, world, rewards, position)
+                .await?
+                .is_empty()
+        );
+        assert_eq!(
+            publisher
+                .load_inventory(binding, world, &profile)
+                .await?
+                .revision(),
+            baseline.revision() + 1
+        );
+        let row=admin.query_one("SELECT count(*),count(*) FILTER(WHERE consumed_revision IS NULL) FROM theia.reward_claims WHERE realm_id=$1 AND character_id=$2",&[&realm.value(),&binding.character.value()]).await?;
+        assert_eq!(row.get::<_, i64>(0), 18);
+        assert_eq!(row.get::<_, i64>(1), 17);
+        worker.shutdown().await?;
+        drop(admin);
+        driver.await??;
+        emit(
+            serde_json::json!({"passed":true,"actual_oidc_and_postgres":true,"encrypted_ticket_binding":true,"creature_loot_enabled":true,"nearby_interest_follows_retained_pose":true,"pickup_survives_retirement":true,"distant_uncollected_loot_restores":true,"death_offer_does_not_grant_items":true,"consumed_life_replay_does_not_restore_loot":true,"direct_lease_contract_not_native_game":true}),
         );
         return Ok(());
     }

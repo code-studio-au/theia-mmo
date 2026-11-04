@@ -645,3 +645,51 @@ No rendering change or new native/Windows claim. Preserve
 `build/quest-loot-headless-qualified-v1-20261105`. Next: bounded nearby/selected
 corpse availability, normal client selection/pickup/loot UI, then live item-quest
 admission and native possession/reversal/turn-in/rejoin proof. Local commits only.
+
+
+## Nearby durable loot interest — 5 November 2026
+
+P3-02 / P3-05 / P3-09 / P3-11 / P3-15: the async item owner now loads nearest
+pending life claims within a 64m three-dimensional presentation radius around
+the server-retained character pose. It preserves complete bounded once-character
+history and at most 16 pending life rows. The old oldest-pending store API remains
+available for recovery/tests, but no longer selects the per-life owner's visible
+page. Consumed history and distant/unshown loot remain durable. Wire order stays
+canonical by recipe/claim after nearest-page selection.
+
+Owner interest checks run outside simulation on a 500ms skipped-missed-tick timer;
+SQL reload occurs after at least 8m displacement, on offers, on pickup or at rejoin.
+The centre comes from the retained generation-bound pose, never a client request.
+Availability generations advance only when the selected claim set changes.
+Viewing/moving changes neither the bag nor item-objective progress. The 64m radius,
+16-row page and refresh policy are explicit initial Theia presentation bounds,
+not verified Classic constants or production crowd capacity. A dense pile can
+exceed the visible page; pickup/closer interest reveals additional pending rows.
+No corpse expiry/cleanup policy or general spatial index is established here.
+
+The actual PostgreSQL qualification passes 54 contracts and a real restart with
+exact loot/bag/journal row hashes. A new mixed-profile fixture preserves 39 claims
+(38 pending/one consumed), checks nearest selection despite older remote claims,
+exact vertical radius vs diagonal/outside rejection, once-character history,
+worker parity, pickup and return to distant uncollected loot. Evidence:
+`build/quest-loot-nearby-postgres-v2-20261105/verification.json`. The first run found
+an SQL parameter-type ambiguity; explicit double-precision casts corrected it.
+
+Actual OIDC/encrypted-ticket/PostgreSQL owner qualification also passes: 17 remote
+old lives do not hide the fresh local drop; retained movement switches pages;
+returning restores the same claim; accepted pickup completes across logout;
+fresh admission restores the committed bag and remote pending loot; replaying a
+consumed life creates neither items nor availability. This drives the real owner
+through synthetic trusted facts/poses and bypasses the World request adapter, so
+it is not native pickup or end-to-end World-to-SQL proof. The old once-character
+reward-owner retirement qualification passes unchanged. Both owned test service
+sets stop and remove plaintext password files. Proofs:
+`build/quest-loot-nearby-owner-v1-20261105/verification.json` and
+`build/quest-loot-nearby-legacy-owner-v1-20261105/verification.json`.
+
+394 selected library tests (22 core, 361 network, three persistence and eight
+server), formatting, Python compilation and strict workspace/all-target Clippy
+pass. Preserve `build/quest-loot-nearby-qualified-v1-20261105`. No new rendering,
+native/Windows or capacity claim. Continue with normal client corpse selection,
+explicit loot UI and manifest adoption; live item quests remain gated until
+normal native possession/reversal/turn-in/rejoin succeeds. Local commits only.

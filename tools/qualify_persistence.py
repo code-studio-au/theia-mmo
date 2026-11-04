@@ -88,7 +88,7 @@ def run(output, sdk):
         loot_before = cluster.query(loot_query)
         assert loot_before.returncode == 0
         loot_counts = {r[0]: (int(r[1]), int(r[2])) for r in (line.split('|') for line in loot_before.stdout.splitlines())}
-        assert loot_counts == {'Lootlife': (2, 0), 'Lootother': (1, 1), 'Lootpages': (19, 0), 'Lootquest': (4, 0), 'Lootretained': (2, 1)}, loot_counts
+        assert loot_counts == {'Lootlife': (2, 0), 'Lootnear': (39, 38), 'Lootother': (1, 1), 'Lootpages': (19, 0), 'Lootquest': (4, 0), 'Lootretained': (2, 1)}, loot_counts
         (output/'creature-loot-before-restart.txt').write_text(loot_before.stdout)
         cluster.restart()
         loot_after = cluster.query(loot_query)

@@ -288,13 +288,18 @@ impl Owner {
                 .await?;
             self.publish_journal(applied)?;
         }
-        let mut claims = if let Some(profile) = &self.rewards {
-            self.publisher
-                .list_reward_claims(self.binding, self.world, profile)
-                .await?
+        let (mut claims, mut interest_center) = if let Some(profile) = &self.rewards {
+            self.load_claims(profile).await?
         } else {
-            Vec::new()
+            (Vec::new(), None)
         };
+        let has_life = self.rewards.as_ref().is_some_and(|p| {
+            p.catalog()
+                .definitions()
+                .any(|d| d.scope() == theia_core::rewards::Scope::PerCreatureLife)
+        });
+        let mut interest_timer = tokio::time::interval(std::time::Duration::from_millis(500));
+        interest_timer.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
         let mut reward_generation = 1;
         if self.rewards.is_some() {
             state.send_modify(|s| s.rewards = Some(owned_rewards(reward_generation, &claims)));
@@ -324,6 +329,21 @@ impl Owner {
             } else {
                 tokio::select! {biased;
                     _=stop.changed()=>{ retiring = true; continue; },
+                    _=interest_timer.tick(),if has_life=>{
+                        let position = self.loot_position()?;
+                        let changed = interest_center.is_none_or(|old| old.metres().into_iter().zip(position.metres()).map(|(a,b)|(a-b)*(a-b)).sum::<f64>() >= 64.);
+                        if changed {
+                            let profile = self.rewards.as_ref().ok_or("Loot profile missing")?;
+                            let (next, center) = self.load_claims(profile).await?;
+                            interest_center = center;
+                            if next != claims {
+                                claims = next;
+                                reward_generation = reward_generation.checked_add(1).ok_or("Reward generation exhausted")?;
+                                state.send_modify(|s| s.rewards=Some(owned_rewards(reward_generation,&claims)));
+                            }
+                        }
+                        continue;
+                    },
                     reward=earned.recv(),if self.rewards.is_some()=>{
                         if let Some(reward)=reward {
                             if self.offer(&reward, &mut claims).await? {
@@ -426,10 +446,7 @@ impl Owner {
             };
             if matches!(request.command, ItemCommand::RewardClaim(_)) {
                 let profile = self.rewards.as_ref().ok_or("Reward profile missing")?;
-                let next = self
-                    .publisher
-                    .list_reward_claims(self.binding, self.world, profile)
-                    .await?;
+                let (next, _) = self.load_claims(profile).await?;
                 if next != claims {
                     reward_generation = reward_generation
                         .checked_add(1)
@@ -511,6 +528,43 @@ impl Owner {
                 None,
             )
     }
+    fn loot_position(&self) -> Result<theia_core::coordinates::GlobalPosition> {
+        let gate = self.gate.upgrade().ok_or("Loot owner gate closed")?;
+        let state = gate.lock()?;
+        state.slots[self.slot]
+            .as_ref()
+            .filter(|e| e.generation == self.generation && e.binding == self.binding)
+            .and_then(|e| e.saved.as_ref().map(|s| s.position))
+            .ok_or_else(|| "Loot owner lost its retained pose".into())
+    }
+    async fn load_claims(
+        &self,
+        profile: &RewardCatalog,
+    ) -> Result<(
+        Vec<RewardClaim>,
+        Option<theia_core::coordinates::GlobalPosition>,
+    )> {
+        if profile
+            .catalog()
+            .definitions()
+            .any(|d| d.scope() == theia_core::rewards::Scope::PerCreatureLife)
+        {
+            let position = self.loot_position()?;
+            Ok((
+                self.publisher
+                    .list_reward_claims_nearby(self.binding, self.world, profile, position)
+                    .await?,
+                Some(position),
+            ))
+        } else {
+            Ok((
+                self.publisher
+                    .list_reward_claims(self.binding, self.world, profile)
+                    .await?,
+                None,
+            ))
+        }
+    }
     async fn offer(&self, fact: &Opportunity, claims: &mut Vec<RewardClaim>) -> Result<bool> {
         if !self.retained_authorized()? {
             return Err("Earned reward lost its character generation".into());
@@ -551,10 +605,7 @@ impl Owner {
             .await?;
         // The store owns the bounded pending page; never accumulate unbounded
         // life history in a resident owner or suppress a later life by recipe.
-        let next = self
-            .publisher
-            .list_reward_claims(self.binding, self.world, profile)
-            .await?;
+        let (next, _) = self.load_claims(profile).await?;
         let changed = next != *claims;
         *claims = next;
         Ok(changed)

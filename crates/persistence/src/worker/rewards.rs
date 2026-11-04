@@ -19,6 +19,7 @@ pub(super) enum Request {
         reply: oneshot::Sender<Result<RewardClaim>>,
     },
     List {
+        position: Option<GlobalPosition>,
         binding: Binding,
         world: [u8; 32],
         profile: RewardCatalog,
@@ -101,6 +102,29 @@ impl Publisher {
         let (reply, answer) = oneshot::channel();
         self.inventory_request(
             inventory::Request::Reward(Request::List {
+                position: None,
+                binding,
+                world,
+                profile: profile.clone(),
+                reply,
+            }),
+            answer,
+        )
+        .await
+    }
+    /// Trusted server-pose interest, independent from pickup permission.
+    pub async fn list_reward_claims_nearby(
+        &self,
+        binding: Binding,
+        world: [u8; 32],
+        profile: &RewardCatalog,
+        position: GlobalPosition,
+    ) -> Result<Vec<RewardClaim>> {
+        valid_world(world)?;
+        let (reply, answer) = oneshot::channel();
+        self.inventory_request(
+            inventory::Request::Reward(Request::List {
+                position: Some(position),
                 binding,
                 world,
                 profile: profile.clone(),
@@ -166,6 +190,7 @@ impl Request {
                 respond(result, reply, status)
             }
             Self::List {
+                position,
                 binding,
                 world,
                 profile,
@@ -174,7 +199,13 @@ impl Request {
                 if reply.is_closed() {
                     return Ok(());
                 }
-                let result = store.list_reward_claims(binding, world, &profile).await;
+                let result = if let Some(position) = position {
+                    store
+                        .list_reward_claims_nearby(binding, world, &profile, position)
+                        .await
+                } else {
+                    store.list_reward_claims(binding, world, &profile).await
+                };
                 status.reward_lists = status
                     .reward_lists
                     .saturating_add(u64::from(result.is_ok()));

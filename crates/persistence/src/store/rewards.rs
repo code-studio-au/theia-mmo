@@ -172,6 +172,29 @@ impl Store {
         world: [u8; 32],
         profile: &RewardCatalog,
     ) -> Result<Vec<RewardClaim>> {
+        self.list_reward_claims_inner(binding, world, profile, None)
+            .await
+    }
+    /// Bounded nearest pending loot within the initial personal-corpse radius.
+    /// The centre is a trusted server pose, never a client-supplied location.
+    /// Once-character history is unchanged; distant pending claims stay durable.
+    pub async fn list_reward_claims_nearby(
+        &mut self,
+        binding: Binding,
+        world: [u8; 32],
+        profile: &RewardCatalog,
+        position: GlobalPosition,
+    ) -> Result<Vec<RewardClaim>> {
+        self.list_reward_claims_inner(binding, world, profile, Some(position))
+            .await
+    }
+    async fn list_reward_claims_inner(
+        &mut self,
+        binding: Binding,
+        world: [u8; 32],
+        profile: &RewardCatalog,
+        position: Option<GlobalPosition>,
+    ) -> Result<Vec<RewardClaim>> {
         let transaction = bounded(self.client.as_mut().unwrap().transaction()).await?;
         authorize(&transaction, self.realm, binding, world).await?;
         validate_items(&transaction, self.realm, binding, profile).await?;
@@ -181,7 +204,15 @@ impl Store {
             return Err(Error::RewardData);
         }
         let page_limit = LIFE_CLAIM_PAGE_SIZE as i64;
-        rows.extend(bounded(transaction.query("SELECT claim_id,reward_id,world_id,profile_hash,consumed_revision,consumed_command,claim_scope,victim_life,corpse_x,corpse_y,corpse_z FROM theia.reward_claims WHERE realm_id=$1 AND character_id=$2 AND claim_scope=1 AND consumed_revision IS NULL ORDER BY created_at,claim_id LIMIT $3",&[&self.realm.value(),&binding.character.value(),&page_limit])).await?);
+        if let Some(position) = position {
+            let [x, y, z] = position.metres();
+            let radius = theia_core::rewards::LOOT_INTEREST_METRES;
+            // Axis bounds restrict candidates; exact 3D distance and a stable
+            // tie-break select the nearest bounded page, not the oldest globally.
+            rows.extend(bounded(transaction.query("SELECT claim_id,reward_id,world_id,profile_hash,consumed_revision,consumed_command,claim_scope,victim_life,corpse_x,corpse_y,corpse_z FROM theia.reward_claims WHERE realm_id=$1 AND character_id=$2 AND claim_scope=1 AND consumed_revision IS NULL AND corpse_x BETWEEN $4::double precision-$7::double precision AND $4::double precision+$7::double precision AND corpse_y BETWEEN $5::double precision-$7::double precision AND $5::double precision+$7::double precision AND corpse_z BETWEEN $6::double precision-$7::double precision AND $6::double precision+$7::double precision AND ((corpse_x-$4::double precision)^2+(corpse_y-$5::double precision)^2+(corpse_z-$6::double precision)^2) <= $7::double precision*$7::double precision ORDER BY ((corpse_x-$4::double precision)^2+(corpse_y-$5::double precision)^2+(corpse_z-$6::double precision)^2),created_at,claim_id LIMIT $3",&[&self.realm.value(),&binding.character.value(),&page_limit,&x,&y,&z,&radius])).await?);
+        } else {
+            rows.extend(bounded(transaction.query("SELECT claim_id,reward_id,world_id,profile_hash,consumed_revision,consumed_command,claim_scope,victim_life,corpse_x,corpse_y,corpse_z FROM theia.reward_claims WHERE realm_id=$1 AND character_id=$2 AND claim_scope=1 AND consumed_revision IS NULL ORDER BY created_at,claim_id LIMIT $3",&[&self.realm.value(),&binding.character.value(),&page_limit])).await?);
+        }
         let mut claims = rows
             .iter()
             .map(|row| checked(row, world, profile).map(|(claim, _)| claim))
