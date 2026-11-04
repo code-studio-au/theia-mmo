@@ -29,7 +29,7 @@ class UnitySceneTests(unittest.TestCase):
     def test_signed_ids_stripped_records_and_utf8_names(self):
         with tempfile.TemporaryDirectory() as directory:
             p = Path(directory) / 'scene.unity'
-            p.write_text('%YAML 1.1\n%TAG !u! tag:unity3d.com,2011:\n--- !u!4 &-7 stripped\nTransform:\n  m_Father: {fileID: 9}\n--- !u!1 &9\nGameObject:\n  m_Name: Elvén Hall\n')
+            p.write_text('%YAML 1.1\n%TAG !u! tag:unity3d.com,2011:\n--- !u!4 &-7 stripped\nTransform:\n  m_Father: {fileID: 9}\n--- !u!1 &9\nGameObject:\n  m_Name: Elvén Hall\n', encoding='utf-8')
             rr = records(p)
             self.assertTrue(rr[-7]['stripped'])
             self.assertEqual(rr[-7]['fields']['m_Father']['fileID'], 9)

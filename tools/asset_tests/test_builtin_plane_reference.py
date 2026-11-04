@@ -18,6 +18,9 @@ def report(project):
 
 
 class BuiltinPlaneTests(unittest.TestCase):
+    def setUp(self):
+        BUILD.mkdir(parents=True, exist_ok=True)
+
     def test_reference_hashes_version_identity_and_staged_collector_are_bound(self):
         with tempfile.TemporaryDirectory(dir=BUILD) as tmp:
             project=Path(tmp)/'project';stage(project,'6000.6.6f1');value=report(project)
