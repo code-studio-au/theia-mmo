@@ -61,7 +61,7 @@ The Markdown review recorded 184 campaign entries, 684 unique stage IDs and 684 
 ### Remaining semantic gates
 
 - **OPEN:** validate revelation, permission and world-phase order against the canonical campaign. Structural reference checks cannot establish these.
-- **WORKING:** optional access conditions remain `authoring_access_review` proposals. Approve them before runtime conversion; do not silently activate them. Q084 depends on Q082 rather than optional Q083; Q094 depends on Q092 rather than optional Q093. Preserve those independent mandatory paths.
+- **Approved authoring / OPEN runtime:** Q159/Q168 access and Q169's replacement journal quest follow the creator decision ledger and are reconciled in the non-executable manifest. Q169's death-event cutoff is approved; post-conversation unfinished custody handling remains unresolved. Do not infer runtime support or an unapproved late-completion solution. Q084 depends on Q082 rather than optional Q083; Q094 depends on Q092 rather than optional Q093. Preserve those independent mandatory paths.
 - Preserve Q029's civilian/evidence checkpoint before the Q030 Cassian encounter.
 - Keep Q128's early expedition staging distinct from Q154's final assault preparation. Any further rename remains a proposal.
 - Preserve the canonical Q156 transition and Q176–Q181 fatal-correction order. Exact events and revelation timing belong in the [canonical campaign](Human_1_80_Canonical_Campaign.md), not a second account here.

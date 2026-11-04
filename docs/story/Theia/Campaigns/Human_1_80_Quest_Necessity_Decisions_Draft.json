@@ -217,13 +217,13 @@
         128,
         154
       ],
-      "recommendation": "keep_rename_q128",
+      "recommendation": "keep_distinct_creator_approved_titles",
       "reason": "Q128 stages early expedition logistics while Q154 stages final Veilbreaker assault after the Keeper revelation.",
-      "risk": "Identical titles confuse players and content lookup. Proposed Q128 title: The Expedition Musters. Q154 remains Before the Veil Breaks.",
+      "risk": "SUPERSEDED: earlier duplicate titles and The Expedition Musters proposal. Creator-approved Q128 is The Warden's Preparations; Q154 remains Before the Veil Breaks. No objective or quest-ID change.",
       "quests": [
         {
           "campaign_reference": "Q128",
-          "title": "Before the Veil Breaks",
+          "title": "The Warden's Preparations",
           "track": "main_story",
           "objective": "Verify extraction, supply and instrument teams.",
           "prerequisites": [

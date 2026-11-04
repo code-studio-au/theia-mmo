@@ -12,7 +12,8 @@
     "Planning level bands do not impose eligibility gates.",
     "Item possession and consumption remain quest-specific unresolved fields.",
     "Current Rust P3-11 objective foundation is narrower than this manifest.",
-    "Editorial consistency corrections applied 2026-11-02: Q071/Q072/Q097 spoiler-safe contact labels; Q157 Shroud fade timing; Q181 explicit Oth'varen death fact. Optional region/phase requirements remain proposed metadata, not executable prerequisites."
+    "Historical 2026-11-02 editorial corrections: spoiler-safe Surveyor contacts, Q157 ongoing Shroud fade and Q181 explicit physical death. Later approved access and finale decisions are reconciled below without claiming executable readiness.",
+    "2026-11-04 reconciliation follows current canonical campaign and creator decision ledger: Q128 title; Q159/Q168 access; Q169 journal quest; Q174 level-80 cap; Sera turn-ins Q176/Q181; separate Q183 reports. Approved planning eligibility is not runtime implementation. Q169 has an approved Q181 physical-death cutoff; post-conversation custody and final turn-in edge cases remain OPEN for runtime design."
   ],
   "quests": [
     {
@@ -1816,9 +1817,9 @@
             {
               "objective_id": "q013.objective.03",
               "type": "npc_interacted",
-              "target_editorial_alias": "regional_official",
+              "target_editorial_alias": "elara",
               "target_stable_id": null,
-              "description": "Obtain Mara introduction",
+              "description": "Obtain Elara's introduction to Mara after payment evidence and the authorized Perrin interview",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -4370,11 +4371,11 @@
       "definition_status": "planning_not_importable",
       "narrative_source": "Human_1_80_Canonical_Campaign.md",
       "giver_npc": {
-        "editorial_contact": "Aldren / Elara",
+        "editorial_contact": "Aldren",
         "stable_id": null
       },
       "turn_in_npc": {
-        "editorial_contact": "Aldren / Elara",
+        "editorial_contact": "Elara",
         "stable_id": null,
         "requires_verification": true
       },
@@ -4398,7 +4399,7 @@
               "type": "npc_interacted",
               "target_editorial_alias": "aldren",
               "target_stable_id": null,
-              "description": "Confirm Cassian is held lawfully",
+              "description": "Confirm Cassian's lawful custody and removal from office",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -6200,7 +6201,7 @@
               "type": "object_inspected",
               "target_editorial_alias": "sample_risk",
               "target_stable_id": null,
-              "description": "Measure instability of damaged Resonator shard",
+              "description": "Measure instability and preserve an independent copy of the technical measurements before choosing sample preservation or destruction",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -6994,6 +6995,18 @@
               "completion_evidence": "trusted_rust_server_fact_required",
               "credit_scope": "character",
               "reset_on_failure": false
+            },
+            {
+              "objective_id": "q048.objective.ward_safety",
+              "type": "object_interacted",
+              "target_editorial_alias": "local_ward_safety",
+              "target_stable_id": null,
+              "description": "Make the local ward safe while documenting the real healing benefit",
+              "required_count": 1,
+              "progress_semantics": "historical_event",
+              "completion_evidence": "trusted_rust_server_fact_required",
+              "credit_scope": "character",
+              "reset_on_failure": false
             }
           ],
           "next_stage": "q048.stage.04"
@@ -7306,6 +7319,18 @@
               "completion_evidence": "trusted_rust_server_fact_required",
               "credit_scope": "character",
               "reset_on_failure": false
+            },
+            {
+              "objective_id": "q050.objective.hold_permission",
+              "type": "npc_interacted",
+              "target_editorial_alias": "hold_recovery_permission",
+              "target_stable_id": null,
+              "description": "Secure hold permission to recover the measuring assembly",
+              "required_count": 1,
+              "progress_semantics": "historical_event",
+              "completion_evidence": "trusted_rust_server_fact_required",
+              "credit_scope": "character",
+              "reset_on_failure": false
             }
           ],
           "next_stage": null
@@ -7592,7 +7617,7 @@
               "type": "npc_interacted",
               "target_editorial_alias": "brynja_trade",
               "target_stable_id": null,
-              "description": "Secure engineering cooperation",
+              "description": "Secure a limited engineering commission using verified shipment records",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -7612,7 +7637,7 @@
               "type": "npc_interacted",
               "target_editorial_alias": "hold_authority",
               "target_stable_id": null,
-              "description": "Close legitimate trade dispute",
+              "description": "Close the contested shipment and obtain the inspection report",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -7668,11 +7693,11 @@
       "definition_status": "planning_not_importable",
       "narrative_source": "Human_1_80_Canonical_Campaign.md",
       "giver_npc": {
-        "editorial_contact": "High King / Caelith",
+        "editorial_contact": "High King",
         "stable_id": null
       },
       "turn_in_npc": {
-        "editorial_contact": "High King / Caelith",
+        "editorial_contact": "Caelith",
         "stable_id": null,
         "requires_verification": true
       },
@@ -8987,7 +9012,7 @@
               "type": "object_inspected",
               "target_editorial_alias": "surviving_copy",
               "target_stable_id": null,
-              "description": "Recover surviving document fragment",
+              "description": "Recover the cached archive evidence while retaining redundancy through an already lodged duplicate",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -9007,7 +9032,7 @@
               "type": "npc_interacted",
               "target_editorial_alias": "field_agent_report",
               "target_stable_id": null,
-              "description": "Preserve chain of custody",
+              "description": "Report the interception and preserve chain of custody, including the already lodged duplicate",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -9258,10 +9283,10 @@
           "objectives": [
             {
               "objective_id": "q063.objective.01",
-              "type": "npc_interacted",
-              "target_editorial_alias": "urodan",
+              "type": "region_reached",
+              "target_editorial_alias": "dromkar_arrival",
               "target_stable_id": null,
-              "description": "Receive waterway work assignment",
+              "description": "Arrive at Drom Kar",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -9278,10 +9303,10 @@
           "objectives": [
             {
               "objective_id": "q063.objective.02",
-              "type": "region_reached",
-              "target_editorial_alias": "dromkar_waterway",
+              "type": "npc_interacted",
+              "target_editorial_alias": "urodan",
               "target_stable_id": null,
-              "description": "Reach damaged channel",
+              "description": "Hear Urodan's custodial limits",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -9298,10 +9323,10 @@
           "objectives": [
             {
               "objective_id": "q063.objective.03",
-              "type": "object_interacted",
-              "target_editorial_alias": "waterway_repair",
+              "type": "npc_interacted",
+              "target_editorial_alias": "urodan_assignment",
               "target_stable_id": null,
-              "description": "Secure water route",
+              "description": "Secure the water-route work assignment",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -9319,9 +9344,9 @@
             {
               "objective_id": "q063.objective.04",
               "type": "npc_interacted",
-              "target_editorial_alias": "urodan_archive",
+              "target_editorial_alias": "urodan_assignment_confirmation",
               "target_stable_id": null,
-              "description": "Obtain archive referral",
+              "description": "Confirm the assignment before archive access; maintenance-route work follows in Q064",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -9448,7 +9473,7 @@
               "type": "encounter_defended",
               "target_editorial_alias": "maintenance_workers",
               "target_stable_id": null,
-              "description": "Protect crew",
+              "description": "Secure the maintenance route and protect the crew",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -9468,7 +9493,7 @@
               "type": "object_inspected",
               "target_editorial_alias": "ancient_warning",
               "target_stable_id": null,
-              "description": "Recover warning",
+              "description": "Retrieve records from the endangered store and obtain the omitted warning",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -10326,7 +10351,7 @@
         "stable_id": null
       },
       "turn_in_npc": {
-        "editorial_contact": "Oth'varen / Brynja",
+        "editorial_contact": "Grey Surveyor / Brynja",
         "stable_id": null,
         "requires_verification": true
       },
@@ -10472,7 +10497,7 @@
         "stable_id": null
       },
       "turn_in_npc": {
-        "editorial_contact": "Oth'varen",
+        "editorial_contact": "Grey Surveyor",
         "stable_id": null,
         "requires_verification": true
       },
@@ -12069,7 +12094,27 @@
               "type": "object_inspected",
               "target_editorial_alias": "return_protocol",
               "target_stable_id": null,
-              "description": "Confirm safe return procedure",
+              "description": "Test the small-group return path and confirm safe return procedure",
+              "required_count": 1,
+              "progress_semantics": "historical_event",
+              "completion_evidence": "trusted_rust_server_fact_required",
+              "credit_scope": "character",
+              "reset_on_failure": false
+            }
+          ],
+          "next_stage": "q083.stage.04"
+        },
+        {
+          "stage_id": "q083.stage.04",
+          "order": 4,
+          "completion_rule": "all_required",
+          "objectives": [
+            {
+              "objective_id": "q083.objective.proposal_delivery",
+              "type": "npc_interacted",
+              "target_editorial_alias": "corven_expedition_proposal",
+              "target_stable_id": null,
+              "description": "Deliver the expedition proposal to Corven after testing the small-group return path",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -14267,7 +14312,7 @@
               "type": "npc_interacted",
               "target_editorial_alias": "selora_frontier",
               "target_stable_id": null,
-              "description": "Receive custodian protection request",
+              "description": "Receive the custodian protection request and authorized route disclosure",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -14287,7 +14332,7 @@
               "type": "region_reached",
               "target_editorial_alias": "archive_frontier",
               "target_stable_id": null,
-              "description": "Reach endangered store",
+              "description": "Reach the endangered custodians by the authorized route",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -14327,7 +14372,7 @@
               "type": "npc_interacted",
               "target_editorial_alias": "selora_report",
               "target_stable_id": null,
-              "description": "Report",
+              "description": "Report the rescue through restricted case access, preserving enclave security",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -16029,10 +16074,10 @@
             {
               "objective_id": "q113.objective.03",
               "type": "object_inspected",
-              "target_editorial_alias": "independent_route",
+              "target_editorial_alias": "independent_headquarters_trails",
               "target_stable_id": null,
-              "description": "Find genuine headquarters trail",
-              "required_count": 1,
+              "description": "Corroborate the genuine headquarters location using three independent trails",
+              "required_count": 3,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
               "credit_scope": "character",
@@ -17985,7 +18030,7 @@
     },
     {
       "campaign_reference": "Q128",
-      "title": "Before the Veil Breaks",
+      "title": "The Warden's Preparations",
       "provenance": {
         "editorial_ids_candidates": [],
         "mapping_status": "unreviewed",
@@ -22021,7 +22066,9 @@
       "eligibility": {
         "minimum_level": null,
         "level_gate_approved": false,
-        "prerequisite_quest_refs": [],
+        "prerequisite_quest_refs": [
+          "Q156"
+        ],
         "prerequisite_runtime_ids": null
       },
       "stages": [
@@ -22139,8 +22186,9 @@
         "inventory_and_choice_semantics_require_quest_specific_review"
       ],
       "authoring_access_review": {
-        "status": "proposed_not_executable",
-        "condition": "Requires post-Q156 Veilbreaker world phase and Kel'vari access."
+        "status": "creator_approved_not_executable",
+        "condition": "After Q156, with earlier legitimate Kel'vari contact. Aru'ven's evacuation request grants limited permission for the affected settlement, not general enclave access. No Q157/Q181 prerequisite or additional hard level gate.",
+        "decision_source": "../../DECISIONS.md"
       }
     },
     {
@@ -23303,7 +23351,9 @@
       "eligibility": {
         "minimum_level": null,
         "level_gate_approved": false,
-        "prerequisite_quest_refs": [],
+        "prerequisite_quest_refs": [
+          "Q156"
+        ],
         "prerequisite_runtime_ids": null
       },
       "stages": [
@@ -23441,13 +23491,14 @@
         "inventory_and_choice_semantics_require_quest_specific_review"
       ],
       "authoring_access_review": {
-        "status": "proposed_not_executable",
-        "condition": "Requires post-Q156 Shroud-fade phase and Aelari area access."
+        "status": "creator_approved_not_executable",
+        "condition": "After Q156 in the post-Veilbreaker environmental phase, with Caelith's survey assignment, normal regional access and local permission where restricted. No Q157/Q181 prerequisite or additional hard level gate.",
+        "decision_source": "../../DECISIONS.md"
       }
     },
     {
       "campaign_reference": "Q169",
-      "title": "The Route Between",
+      "title": "What the Shroud Concealed",
       "provenance": {
         "editorial_ids_candidates": [],
         "mapping_status": "unreviewed",
@@ -23461,7 +23512,7 @@
         "stable_id": null
       },
       "turn_in_npc": {
-        "editorial_contact": "Tarek",
+        "editorial_contact": "Oth'varen",
         "stable_id": null,
         "requires_verification": true
       },
@@ -23469,7 +23520,9 @@
       "eligibility": {
         "minimum_level": null,
         "level_gate_approved": false,
-        "prerequisite_quest_refs": [],
+        "prerequisite_quest_refs": [
+          "Q156"
+        ],
         "prerequisite_runtime_ids": null
       },
       "stages": [
@@ -23480,10 +23533,10 @@
           "objectives": [
             {
               "objective_id": "q169.objective.01",
-              "type": "npc_interacted",
-              "target_editorial_alias": "tarek",
+              "type": "region_reached",
+              "target_editorial_alias": "newly_exposed_historical_site",
               "target_stable_id": null,
-              "description": "Receive transport verification task",
+              "description": "Investigate the newly exposed historical site following Tarek's report after Q156",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -23500,10 +23553,10 @@
           "objectives": [
             {
               "objective_id": "q169.objective.02",
-              "type": "region_reached",
-              "target_editorial_alias": "ship_connection",
+              "type": "object_inspected",
+              "target_editorial_alias": "thesvar_personal_journal",
               "target_stable_id": null,
-              "description": "Verify scheduled ship connection",
+              "description": "Recover Thes'var's personal journal and independent authenticity evidence",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -23520,10 +23573,10 @@
           "objectives": [
             {
               "objective_id": "q169.objective.03",
-              "type": "region_reached",
-              "target_editorial_alias": "flight_connection",
+              "type": "object_inspected",
+              "target_editorial_alias": "journal_authenticity_and_chronology",
               "target_stable_id": null,
-              "description": "Verify fixed-route flight link",
+              "description": "Authenticate the surviving entries as pre-Second Sundering, ending before the catastrophe",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -23540,10 +23593,10 @@
           "objectives": [
             {
               "objective_id": "q169.objective.04",
-              "type": "object_inspected",
-              "target_editorial_alias": "passage_limit",
+              "type": "npc_interacted",
+              "target_editorial_alias": "othvaren_journal_interpretation",
               "target_stable_id": null,
-              "description": "Confirm restricted Guardian gate capacity",
+              "description": "Bring the authenticated journal to Oth'varen and record bounded personal recollection without future-finale revelations",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -23560,10 +23613,10 @@
           "objectives": [
             {
               "objective_id": "q169.objective.05",
-              "type": "npc_interacted",
-              "target_editorial_alias": "tarek_report",
+              "type": "object_interacted",
+              "target_editorial_alias": "journal_custodial_preservation",
               "target_stable_id": null,
-              "description": "Record logistics",
+              "description": "Preserve the original journal with appropriate custodians",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -23604,11 +23657,29 @@
         "stable_npc_target_ids_unassigned",
         "rewards_unbalanced",
         "evidence_provenance_needs_engine_binding",
-        "inventory_and_choice_semantics_require_quest_specific_review"
+        "inventory_and_choice_semantics_require_quest_specific_review",
+        "quest_expiry_runtime_support_required",
+        "post_conversation_unfinished_custody_policy_needs_review"
       ],
       "authoring_access_review": {
-        "status": "proposed_not_executable",
-        "condition": "Requires Guardian gate knowledge and custodial consent for restricted Passage checks."
+        "status": "canonical_story_direction_not_executable",
+        "condition": "After Q156; ordinary regional access and local custodian permission where restricted. No Q157/Q181 prerequisite or additional hard level gate. Exact site and dialogue remain WORKING.",
+        "decision_source": "../../DECISIONS.md"
+      },
+      "authoring_availability": {
+        "status": "creator_locked_not_executable",
+        "decision_source": "../../DECISIONS.md#2026-11-04--locked-q169-unavailability-at-othvarens-death",
+        "cutoff": {
+          "quest_reference": "Q181",
+          "objective_reference": "q181.objective.othvaren_death",
+          "story_fact": "othvaren_physical_death"
+        },
+        "new_acceptance_after_cutoff": "unavailable",
+        "accepted_before_cutoff_without_completed_conversation": "expire_with_clear_explanation",
+        "completed_quests": "preserve_completion_and_recorded_evidence",
+        "conversation_objective_reference": "q169.objective.04",
+        "completed_conversation_but_unfinished_custody": "requires_clarification_no_inferred_expiry",
+        "explanation_wording": "working_not_locked"
       }
     },
     {
@@ -24333,8 +24404,11 @@
         "inventory_and_choice_semantics_require_quest_specific_review"
       ],
       "authoring_eligibility_review": {
-        "status": "explicit_design_confirmation_required",
-        "proposal": "Level 80 finale eligibility; do not encode until Rust engine supports approved level condition"
+        "status": "canonical_finale_authorization_requirement_not_executable",
+        "condition": "Q174 may prepare readiness in its planning band; authorizing the level-80 finale requires reaching cap. This is not approval of an additional quest-acceptance gate.",
+        "minimum_level_at_finale_authorization": 80,
+        "approval_status": "canonical",
+        "runtime_representation": "unresolved"
       }
     },
     {
@@ -24497,9 +24571,10 @@
         "stable_id": null
       },
       "turn_in_npc": {
-        "editorial_contact": "Thes'var",
+        "editorial_contact": "Sera",
         "stable_id": null,
-        "requires_verification": true
+        "requires_verification": false,
+        "authoring_note": "Creator-approved Sera turn-in after all final objectives; stable actor binding remains unresolved."
       },
       "planning_level_band_start": 80,
       "eligibility": {
@@ -25139,9 +25214,10 @@
         "stable_id": null
       },
       "turn_in_npc": {
-        "editorial_contact": "Sera / Oth'varen",
+        "editorial_contact": "Sera",
         "stable_id": null,
-        "requires_verification": true
+        "requires_verification": false,
+        "authoring_note": "Creator-approved Sera turn-in after all final objectives; stable actor binding remains unresolved."
       },
       "planning_level_band_start": 80,
       "eligibility": {
@@ -25453,9 +25529,9 @@
             {
               "objective_id": "q183.objective.01",
               "type": "npc_interacted",
-              "target_editorial_alias": "kelvari_custodian",
+              "target_editorial_alias": "selora_historical_report",
               "target_stable_id": null,
-              "description": "Report outcome to Kel'vari authorities",
+              "description": "Deliver authenticated historical testimony to Sel'ora, with Aru'ven participating in the Kel'vari response without speaking for all enclaves",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -25473,9 +25549,9 @@
             {
               "objective_id": "q183.objective.02",
               "type": "npc_interacted",
-              "target_editorial_alias": "covenant_council",
+              "target_editorial_alias": "mara_corven_covenant_report",
               "target_stable_id": null,
-              "description": "Report to Covenant representatives",
+              "description": "Deliver a separate report to Mara and Corven; neither faction's acknowledgement substitutes for the other",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -25495,7 +25571,7 @@
               "type": "object_inspected",
               "target_editorial_alias": "shroud_history",
               "target_stable_id": null,
-              "description": "Confirm Shroud began dissipating at Veilbreaker",
+              "description": "Confirm the Shroud began dissipating at Q156, the Seven survived, Oth'varen died after alignment held, and Nhal's will and memory shattered without annihilating divine essence; fragment fate remains unknown",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
