@@ -1,5 +1,10 @@
 # Story decisions and maintenance
 
+## 2026-11-04 — LOCKED: Q168 Life at the Edges optional access
+
+**Creator approval:** Q168 unlocks after Q156 in the post-Veilbreaker environmental phase. Caelith gives the ecological survey assignment. The player uses established travel routes and ordinary regional access; obtain specific local permission only when entering restricted sites, respecting each people's sovereignty. Q157 and Q181 are not prerequisites and no additional hard level gate applies. Measurements and mitigation establish local effects only, not a universal ecological outcome. Preserve optional status, quest objectives and 184-quest count. JSON/runtime eligibility reconciliation remains separately scoped.
+
+
 ## 2026-11-04 — LOCKED: Q159 The Lands Revealed optional access
 
 **Creator approval:** Q159 becomes available after Q156 completes. The player must already have established legitimate Kel'vari contact through the earlier main story. Aru'ven's evacuation request grants limited, purpose-specific permission to enter the affected settlement and assist evacuees; it does not authorise general enclave access. Q157 and Q181 completion are **not** prerequisites, and there is no additional hard character-level gate. The Shroud is already beginning to recede after Q156; the quest may proceed alongside Q157's aftermath. Preserve existing objectives, optional status and the 184-quest count. JSON/runtime eligibility changes require separate authorisation under the current Markdown-only cleanup scope.
