@@ -220,9 +220,12 @@ async fn encrypted_competing_hitter_routes_only_tag_owner_to_xp_and_reward_queue
             .unwrap()
             .unwrap();
         assert_eq!(
-            reward,
+            reward.reward,
             rewards.catalog().definitions().next().unwrap().id().clone()
         );
+        assert_eq!(reward.actor, owner);
+        assert_eq!(reward.event, credit);
+        assert!(reward.position.metres().into_iter().all(f64::is_finite));
         assert!(xp_receivers[1].try_recv().is_err());
         assert!(reward_receivers[1].try_recv().is_err());
         // Queued work has not been committed by these synthetic owners.

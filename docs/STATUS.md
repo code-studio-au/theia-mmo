@@ -1,3 +1,10 @@
+Original fatal-life reward forwarding checked locally, 4 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: reward facts retain the exact victim life and death
+position through the bounded queue to the async owner. 357 network tests and
+actual OIDC/encrypted-ticket/PostgreSQL reward retirement qualification pass;
+formatting and strict all-target Clippy pass. [Scope and remaining pickup work](QUEST_ITEM_OBJECTIVES.md#original-fatal-life-forwarding--4-november-2026).
+Per-life runtime admission stays closed. Continue with local commits only.
+
 Loot availability codec prerequisite checked locally, 4 November 2026:
 P3-05 / P3-09 / P3-11 / P3-15: opt-in RW02 carries bounded victim/corpse metadata;
 legacy RW01/RC01 remain byte-compatible. 366 selected checks, formatting and

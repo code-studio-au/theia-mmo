@@ -545,3 +545,31 @@ nearby-corpse availability, authoritative recipient/range/session checks and
 explicit pickup UI are installed and qualified. Viewing availability grants no
 items or possession credit. Native destruction and durable storage checkpoints
 remain separately preserved.
+
+
+## Original fatal-life forwarding — 4 November 2026
+
+P3-05 / P3-09 / P3-11 / P3-15: the bounded reward opportunity queue now
+retains the authoritative recipient, original victim-life key, creature definition
+and checked global death position. Existing fatal/current-life/tag-owner checks
+still precede forwarding. The async character owner validates the creature,
+selects once-character versus victim-life deduplication and persists the original
+fact through the trusted kill-offer API. It reloads the bounded pending page
+instead of accumulating life history or suppressing later kills by recipe ID.
+Availability alone still changes neither inventory nor possession objectives.
+
+All 357 network-library tests pass, including encrypted two-peer competing-hitter
+routing at 20/30/60 Hz. Those encrypted fixtures still use once-character recipes;
+source-life metadata is asserted but no live repeatable-loot claim is made.
+The actual owned OIDC/encrypted-ticket/PostgreSQL reward-owner qualification
+passes: accepted executing and distinct queued offers survive logout, availability
+waits for commit, unclaimed offers restore and claims do not grant twice.
+Evidence: `build/quest-loot-fatal-network-v2-20261104.log` and
+`build/quest-loot-fatal-owner-v1-20261104/verification.json`. Formatting and strict
+workspace/all-target Clippy pass. No rendering change or new native check.
+
+Default runtime per-life admission remains closed. Next: explicit corpse-life
+pickup validation and selected/nearby availability, then corpse presentation and
+loot UI. The current oldest-pending storage page remains a storage primitive,
+not spatial corpse interest. This slice does not establish durable world-kill
+recording if the bounded fact queue fails before enqueue. Local commits only.

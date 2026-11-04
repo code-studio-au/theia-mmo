@@ -858,7 +858,7 @@ fn forward_reward_opportunity(
     port.opportunities
         .as_ref()
         .ok_or("Reward opportunity port missing")?
-        .try_send(fact.reward)
+        .try_send(fact)
         .map_err(|_| "Earned reward queue unavailable")?;
     stats.reward_opportunities_forwarded += 1;
     Ok(())

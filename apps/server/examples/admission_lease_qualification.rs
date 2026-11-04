@@ -1224,13 +1224,32 @@ async fn main() -> theia_network::Result<()> {
         let guard = admin.transaction().await?;
         guard.query_one("SELECT revision FROM theia.backpacks WHERE realm_id=$1 AND character_id=$2 FOR UPDATE",&[&realm.value(),&binding.character.value()]).await?;
         let earned = port.opportunities.as_ref().unwrap().clone();
-        earned.try_send(reward.clone())?;
+        let fact = |reward: theia_core::content::ContentId| {
+            theia_network::simulation::rewards::Opportunity {
+                actor,
+                event: theia_core::progression::KillEvent {
+                    id: theia_core::progression::KillId::from_victim(EntityKey {
+                        entity: EntityId::new(99).unwrap(),
+                        ..actor
+                    }),
+                    creature: rewards
+                        .catalog()
+                        .definition(&reward)
+                        .unwrap()
+                        .creature()
+                        .clone(),
+                },
+                reward,
+                position,
+            }
+        };
+        earned.try_send(fact(reward.clone()))?;
         wait_inventory_lock(&guard).await;
         // A distinct queued recipe must commit too; a duplicate alone could
         // conceal a broken drain behind the first executing transaction.
         let second = theia_core::content::ContentId::new("theia.dev.second-training-kill").unwrap();
-        earned.try_send(second.clone())?;
-        earned.try_send(reward.clone())?;
+        earned.try_send(fact(second.clone()))?;
+        earned.try_send(fact(reward.clone()))?;
         sessions.lock().unwrap().revoke(secret.expose_secret());
         drop(lease);
         assert_eq!(gate.flush(&publisher, &before)?, 1);
@@ -1253,7 +1272,7 @@ async fn main() -> theia_network::Result<()> {
         })
         .await?;
         assert!(
-            earned.try_send(reward.clone()).is_err(),
+            earned.try_send(fact(reward.clone())).is_err(),
             "Retired generation cannot accept new facts"
         );
         assert_eq!(

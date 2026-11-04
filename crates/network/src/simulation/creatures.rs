@@ -236,6 +236,10 @@ pub(super) struct Patrol {
     travelled: f64,
 }
 impl Patrol {
+    pub(super) fn position(&self) -> GlobalPosition {
+        self.position
+    }
+
     pub(super) fn profile(&self) -> &Profile {
         &self.profile
     }
@@ -1234,6 +1238,15 @@ pub(crate) mod tests {
         assert_eq!(credit.len(), 1);
         assert_eq!(credit[0].actor, key);
         assert_eq!(credit[0].reward.as_str(), "theia.dev.first-training-kill");
+        assert_eq!(
+            credit[0].event.id,
+            theia_core::progression::KillId::from_victim(target)
+        );
+        assert_eq!(credit[0].position, world.patrol.as_ref().unwrap().position);
+        assert_eq!(
+            credit[0].event.creature,
+            world.patrol.as_ref().unwrap().definition().clone()
+        );
         let fatal = events
             .iter()
             .find(|e| matches!(e, Event::Damage { remaining: 0, .. }))

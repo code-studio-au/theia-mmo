@@ -29,7 +29,7 @@ pub struct Port {
     pub vendor: Option<Arc<crate::vendor_wire::Profile>>,
     pub rewards: Option<Arc<crate::reward_wire::Profile>>,
     /// Trusted authority facts only. Never populated from a client request.
-    pub opportunities: Option<mpsc::Sender<theia_core::content::ContentId>>,
+    pub opportunities: Option<mpsc::Sender<crate::simulation::rewards::Opportunity>>,
     pub catalog: Arc<Catalog>,
     pub hash: [u8; 32],
     /// Bound to a server-owned character, never a client-supplied UUID.

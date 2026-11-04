@@ -3,17 +3,25 @@
 use super::{World, combat::Event};
 use crate::{Result, reward_wire::Profile};
 use std::sync::Arc;
-use theia_core::{content::ContentId, identity::EntityKey, rewards::MAX_DEFINITIONS};
+use theia_core::{
+    content::ContentId,
+    identity::EntityKey,
+    progression::{KillEvent, KillId},
+    rewards::MAX_DEFINITIONS,
+};
 pub fn profile_identity(base: [u8; 32], rewards: [u8; 32]) -> [u8; 32] {
     let mut bytes = b"theia-reward-world-v1\0".to_vec();
     bytes.extend(base);
     bytes.extend(rewards);
     crate::terrain::sha256(&bytes)
 }
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Opportunity {
     pub actor: EntityKey,
     pub reward: ContentId,
+    /// Original server-owned fatal life and position, never supplied by a client.
+    pub event: KillEvent,
+    pub position: theia_core::coordinates::GlobalPosition,
 }
 impl World {
     pub fn enable_rewards(&mut self, profile: Arc<Profile>) -> Result<()> {
@@ -74,6 +82,11 @@ impl World {
                 let opportunity = Opportunity {
                     actor,
                     reward: definition.id().clone(),
+                    event: KillEvent {
+                        id: KillId::from_victim(target),
+                        creature: patrol.definition().clone(),
+                    },
+                    position: patrol.position(),
                 };
                 if result.contains(&opportunity) {
                     continue;

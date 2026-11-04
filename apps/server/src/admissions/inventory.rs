@@ -13,6 +13,7 @@ use theia_network::{
     Result,
     inventory_wire::{Outcome, Reason, Reply},
     renet_runtime::inventory::{Observation, Port, Request},
+    simulation::rewards::Opportunity,
 };
 use theia_persistence::{Binding, Error, InventoryCatalog, Publisher, RewardCatalog, RewardClaim};
 use tokio::sync::{mpsc, watch};
@@ -265,7 +266,7 @@ impl Owner {
     async fn run(
         self,
         mut requests: mpsc::Receiver<Request>,
-        mut earned: mpsc::Receiver<ContentId>,
+        mut earned: mpsc::Receiver<Opportunity>,
         mut stop: watch::Receiver<bool>,
         state: &watch::Sender<Observation>,
     ) -> Result<()> {
@@ -510,7 +511,7 @@ impl Owner {
                 None,
             )
     }
-    async fn offer(&self, reward: &ContentId, claims: &mut Vec<RewardClaim>) -> Result<bool> {
+    async fn offer(&self, fact: &Opportunity, claims: &mut Vec<RewardClaim>) -> Result<bool> {
         if !self.retained_authorized()? {
             return Err("Earned reward lost its character generation".into());
         }
@@ -518,19 +519,45 @@ impl Owner {
             .rewards
             .as_ref()
             .ok_or("Reward opportunity without profile")?;
-        if profile.catalog().definition(reward).is_none() {
-            return Err("Unknown earned reward definition".into());
-        }
-        if claims.iter().any(|c| &c.reward == reward) {
+        let definition = profile
+            .catalog()
+            .definition(&fact.reward)
+            .ok_or("Unknown earned reward definition")?;
+        let occurrence = definition
+            .occurrence(&fact.event)
+            .map_err(|_| "Earned reward creature mismatch")?;
+        if claims.iter().any(|c| {
+            c.reward == fact.reward
+                && match occurrence {
+                    theia_core::rewards::Occurrence::OncePerCharacter => c.corpse.is_none(),
+                    theia_core::rewards::Occurrence::CreatureLife(life) => {
+                        c.corpse.is_some_and(|s| s.life == life)
+                    }
+                }
+        }) {
             return Ok(false);
         }
-        let claim = self
-            .publisher
-            .offer_reward(self.binding, self.world, profile, reward)
+        // Persist the original fatal fact. Offering never mutates the backpack
+        // or possession journal. SQL uniqueness retains consumed life receipts.
+        self.publisher
+            .offer_reward_for_kill(
+                self.binding,
+                self.world,
+                profile,
+                &fact.reward,
+                &fact.event,
+                fact.position,
+            )
             .await?;
-        claims.push(claim);
-        claims.sort_by(|a, b| a.reward.cmp(&b.reward));
-        Ok(true)
+        // The store owns the bounded pending page; never accumulate unbounded
+        // life history in a resident owner or suppress a later life by recipe.
+        let next = self
+            .publisher
+            .list_reward_claims(self.binding, self.world, profile)
+            .await?;
+        let changed = next != *claims;
+        *claims = next;
+        Ok(changed)
     }
 }
 fn owned_rewards(
