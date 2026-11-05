@@ -1085,3 +1085,156 @@ The road to Valecrown waited beyond Stoneford, and somewhere along it the names 
 For the first time, I was afraid not only of what I might find, but of how easily I might misunderstand it.
 
 I went anyway.
+
+
+### Chapter Three — The City of Other People's Certainties
+
+Before I left Stoneford behind, I learned how easily a village's troubles could become a city's footnotes.
+
+At Greyfall Quarry, a shift bell had rung without the workers returning. Joss showed me the lower workface on a rough sketch, his finger tracing the route from the bell to the cut where predators had begun to gather. He had already counted the missing twice. When I asked why he still carried the tally, he said that a count was the only promise he could make to the families waiting at home.
+
+We found the workers sheltering beyond the lower passage. I remember the sound of their voices before I remember the fight: one calling for quiet, another insisting someone should try the way out. The cave predators came at us in the narrow space where turning was difficult. When it was over, I helped bring the workers back through the cut and recovered the shift tally from a tool chest.
+
+Joss checked every name before he thanked me.
+
+“The quarry needs a safer route,” he said, “not a conspiracy invented to explain every broken shift.”
+
+I had come to Greyfall with a mind full of stolen crates and false dates. His words embarrassed me. I had nearly begun to see the same hidden hand behind every misfortune.
+
+At Stoneford's damaged bridge, two people were equally certain their need should come first. The miller spoke of flour that could not reach households; the merchant spoke of the repair materials without which there would be no safe crossing at all. The reeve made me inspect the supports before listening to either argument. I could feel the bridge move beneath my boots. It was easier to promise fairness from the bank than while standing over the water.
+
+I helped set the work in an order that could be defended to both sides. The choice did not make either need disappear. When the crossing reopened, the reeve said, “Neither claim was forgotten. That's what a useful decision looks like.”
+
+Brenna's warehouse watch brought a different lesson. Missing tools had frightened honest workers into suspecting one another. We examined the loss records, watched the perimeter and intercepted thieves who wanted the tools for their value, not for any grand design. Brenna was relieved, though not pleased.
+
+“Not every wrong in Stoneford belongs to the same enemy,” she told me.
+
+Then a recovered caravan segment needed bringing home by the longer road. I walked with the drivers past the obstruction that had closed their old route. When one wagon stopped, the others waited at an agreed safe place rather than pushing forward and leaving it behind. By the time we reached Millhaven, the survivors were exhausted, the supplies accounted for, and no one was interested in hearing a heroic version of the journey.
+
+Elara listened to the report.
+
+“The road changed,” she said, “but the people still needed to make it back.”
+
+I thought of those journeys later, when the roads beyond Millhaven began carrying me toward decisions made in halls I had never seen. A repaired bridge could be inspected. A returned worker could speak. A captured thief could be questioned. But how was I to measure a king's grief, or a court's loyalty, or the harm a confident accusation might do?
+
+I left with Elara's introduction to Mara Thorne, copies of the records and the uneasy conviction that I understood less than I had when I first entered Millhaven.
+
+***
+
+Valecrown announced itself through traffic before it appeared as a city. Wagons gathered at the approaches, their drivers watching one another for the first chance to move. People with letters and seals stood beside people carrying sacks or tools. Every queue seemed to contain another queue within it, and every answer depended upon someone elsewhere deciding that a question had been asked in the proper form.
+
+I had imagined a capital as a place where uncertainty was finally settled. Instead I found that it had been sorted into offices.
+
+Mara Thorne received me in a room that smelled of ink, worn bindings and the faint dampness of documents brought in from the road. She did not ask whether I had found the conspirators. She asked me to put the evidence down in the order I had obtained it.
+
+“You brought a sealed case from Stoneford,” she said. “That earns you a hearing, not a conclusion. Tell me which parts you witnessed and which came from someone else.”
+
+I began with the broken wagon, the empty fittings and the teamster. I told her what Rusk had admitted, what the damaged instruction said, and how Heddan had refused to identify its issuer from the metalwork alone. I described the three books and the impossible sequence of receipt and dispatch.
+
+She stopped me whenever I moved too quickly from one fact to the next.
+
+“You saw the empty fittings,” she said. “Did you see the marked crates taken?”
+
+“No. The teamster did.”
+
+“Then that is his account, not yours.”
+
+I felt the old impatience rise in me. “Does it matter, if his account matches what we recovered?”
+
+“It matters precisely because it matches. If we cannot tell the difference between an independent witness and a witness repeating our conclusion, the agreement proves less than you think.”
+
+She had me repeat the dates without consulting the copies. When I stumbled, she returned them to me.
+
+“A story that survives another set of eyes is worth keeping,” she said. “We will check the courier and warehouse testimony independently. After that, I can request the records we are not yet permitted to see.”
+
+I had thought Elara was sending me to someone who could name the guilty. Mara was teaching me how not to name them too soon.
+
+Lysa, who guarded the authorised office registers, had even less patience for speculation. She placed a volume before me and told me to copy the dates exactly as they appeared.
+
+“These registers survived a change of office and three different clerks,” she said. “Don't tidy them to fit a theory.”
+
+The entries concerned the reorganisation that followed Edric's death. Names shifted between columns; offices passed into new hands; duties were reassigned with a speed that could be read as efficiency or haste, depending on what a reader already believed.
+
+“Why were the offices reorganised?” I asked.
+
+“After Edric died, people wanted order restored quickly. Whether they achieved it is another question.”
+
+She authenticated the copy when I finished. I asked what the dates meant.
+
+“What they mean is Mara's question, not mine.”
+
+Outside the records room I watched a clerk try to restore a damaged public index while petitioners argued over which queue had been theirs first. I helped sort the surviving entries and match them to their proper references. The work was dull, painstaking and oddly reassuring. In the capital, too, there were people trying to make sure someone could find a document when it mattered.
+
+Not all of Valecrown's shortages came from deception. At the barracks, the quartermaster showed me ration counts that had fallen behind genuine need. Soldiers who had spent the day protecting the city were waiting for bread. The problem required honest accounting and another supply arrangement, not the discovery of a villain. I found myself glad of the distinction. If every problem was corruption, there would be no room left for ordinary mistakes—or ordinary repair.
+
+Mara later arranged an interview with a witness whose account touched the disputed movements of men and records. Before we entered, she warned me not to ask questions that carried their answers inside them.
+
+I had done exactly that with Perrin, I realised, when I asked who had authorised a payment before establishing what he had seen. He had answered anyway. Another witness might not.
+
+I listened more carefully this time. The testimony did not give us everything we wanted. Its value lay in the parts that could be checked against other records without teaching the witness what to remember.
+
+By the time Mara told me the king would grant an audience, I had learned to dread the phrase *we know*. It had begun to sound less like a conclusion and more like a responsibility.
+
+***
+
+Aldren did not look like the king I had imagined on the road.
+
+I had expected confidence, perhaps anger, perhaps a ruler too occupied with the war to care about the paperwork of a dead adviser. What I saw was a man who had learned to keep grief from interrupting the business of his court, but not from entering it.
+
+“Edric believed there was still a path to peace,” he told me. “I sent him to find it. He never came home.”
+
+There was no ceremony in the admission. He spoke as though the words had worn a channel through him.
+
+“You trusted him,” I said.
+
+“With my life.” His gaze did not leave mine. “I have never been certain whose hand struck first.”
+
+The Shattered Delegation had taken lives on both sides. I knew enough of the war to understand why the deaths had become proof of betrayal to people who had wanted proof already. But Aldren's uncertainty was harder to bear than certainty would have been. He had sent Edric to a meeting that might have changed the future, and the man had not returned.
+
+Cassian stood within the king's circle of confidence. He spoke carefully, without the nervous haste I had seen in lesser officials when their records were challenged. His suggestion that the inquiry examine military correspondence seemed reasonable. It offered a route forward without asking Aldren to condemn anyone he trusted.
+
+Aldren authorised the continuing inquiry and told me to accept Cassian's assistance. Then he warned me that doubt could do as much damage as a false accusation.
+
+I left the audience with a warrant and a new unease. The court had given me access, but it had also given me a direction in which to look. I wondered whether I would have recognised the difference if Mara had not taught me to ask.
+
+Garrick was not pleased to see me.
+
+“I opposed the talks in council,” he said before I had finished explaining why I had come. “I did not murder Edric.”
+
+His anger was plain. So was his refusal to soften his position on the negotiations merely to make himself more likeable.
+
+“Can your records prove that?” I asked.
+
+“They can show where I was and what orders I gave. They won't prove I liked the negotiations.”
+
+I examined the preserved logs. Their dates and instructions could be tested. They did not turn Garrick into an advocate for peace. They did something more important: they made it impossible to treat his opposition as sufficient evidence of participation in Edric's killing.
+
+I told him what I had found.
+
+“Then tell Mara,” he said. “Even if it makes an easier story harder to tell.”
+
+I had spent much of my journey trying to discover who had done wrong. Now I was being asked to preserve a truth about someone whose views I did not share. It should not have felt difficult. It did.
+
+Mara received the findings without triumph.
+
+“An accusation that fails a proper test must be allowed to fail,” she said.
+
+We set the military logs beside the reorganisation dates, the payment instruction and the witness accounts. Each had its own origin. Each could be challenged. Together they formed a pattern, but there were still gaps through which an accusation might fall.
+
+The next comparison concerned the time an authorisation had been recorded, the format in which it appeared, and a witness whose account had not been drawn from the same office. Mara made me check them separately.
+
+I wanted the answer to be immediate. I wanted Edric's death to acquire a single name and a single cause, something I could carry back to Aldren and Elara without qualification.
+
+Instead I found that the more closely I examined the records, the more deliberate some of their inconsistencies appeared. An office had changed hands. A request seemed to have existed before it could properly have been made. The shape of the record was familiar, but its place in the sequence was wrong.
+
+Mara stood beside me as I laid the final copy down.
+
+“Do we have enough?” I asked.
+
+“Enough to keep looking,” she said. “Not enough to accuse.”
+
+I stared at the pages. Somewhere between Millhaven and Valecrown I had begun to believe that every careful answer must lead to a final one. Mara's words reminded me of the teamster hiding beside the road, the healed wound Anwen could not explain, and Heddan refusing to make a royal order out of a familiar piece of metal.
+
+There was still a missing part of the story. Someone had paid for it to remain missing.
+
+And for the first time since I left home, I understood that finding it might place me against people the king trusted more than he trusted me.
