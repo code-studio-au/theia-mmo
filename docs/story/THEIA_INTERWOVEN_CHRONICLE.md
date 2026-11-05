@@ -1600,3 +1600,202 @@ I set out with the copied evidence secured against the weather, aware that I was
 I still believed a record should be tested before it was trusted.
 
 I was about to learn how difficult that rule could become when the thing being measured was itself unfamiliar.
+
+
+### Chapter Six — The Silent Signal
+
+The signal house stood above a stretch of coast where the wind seemed to find every crack in the stone.
+
+I reached it carrying copies of a depot ledger, a record of missing cargo and questions that had grown less ordinary with every mile. At Northwatch, I had watched soldiers defend roads and stores against an enemy they could name. Here the trouble had no such shape. It lay in a set of readings taken from instruments whose needles moved when nothing visible disturbed them.
+
+Sera was working beside a narrow window, comparing figures written on two separate sheets. She looked up only when I placed the evidence on the table.
+
+“You've brought equipment records that don't belong in an ordinary supply dispute,” she said. “This station has seen a similar disturbance.”
+
+“What is it?”
+
+“A resonance anomaly. That's a description, not an explanation.”
+
+She made room for the papers. I had grown accustomed to being asked where evidence came from; Sera wanted to know how it had been measured. She questioned the conditions under which the instruments had been used, whether anyone had repeated the readings and whether the equipment had behaved the same way before the disturbance began.
+
+I could answer some of those questions. Others made me painfully aware that I had carried a report across a hostile coast without knowing how to judge its most important numbers.
+
+“We need measurements before conclusions,” she said.
+
+Outside, the wind worried at the shutters. Inside, a small device rested within a protective housing. Its construction did not match the ordinary equipment I had seen in the depots. I could recognise the workmanship only in the broadest sense: metal joined to metal, fittings made to carry a load, surfaces shaped for a purpose. Whatever purpose this one served, it was not to hold a wagon wheel together.
+
+Sera showed me a preliminary note from Brynja in Kar Durn. The Dwarven engineer had not examined the device itself; she had been sent descriptions of its housing and the measurements available so far. Her response identified precautions and limits, not a final explanation.
+
+We moved to an observation position overlooking the apparatus. One of the supports had become unsafe. Sera would not permit further readings until it was secured, though every delay made her more restless.
+
+I helped steady the position and checked the access route while she reset the instruments. When the next readings came, she compared them with Brynja's note, then with the figures I had brought from the coast.
+
+“The readings match more closely than I expected,” she said.
+
+“Does that tell us what it is?”
+
+“It tells us the measurements deserve another witness. I want the Surveyor to see them.”
+
+She said the title as though it required no explanation. I had heard of the Grey Surveyor in scattered references, always at the edge of someone else's investigation. I knew only that the person behind the name was associated with difficult measurements and warnings that other people sometimes resented.
+
+I expected another official with a seal and a claim of authority.
+
+The Grey Surveyor arrived without offering either.
+
+He examined the apparatus from a distance before approaching the records. His attention moved first to the instruments, then to the structure holding them, and finally to the space between the two. I had the peculiar impression that he was studying not what the device did, but the conditions that allowed it to do anything at all.
+
+Sera explained our observations. He asked her to repeat the limits of the measurement, not the most dramatic result.
+
+When she finished, he looked at me.
+
+“You have seen it operate?”
+
+“Only from the observation position.”
+
+“And you have not opened the housing?”
+
+“No.”
+
+“Good.”
+
+It was not praise. It sounded like relief carefully kept out of his voice.
+
+He did not tell me what he thought the device truly was. He spoke instead of isolation, load, and the danger of disturbing a working whose behaviour had not been fully understood. I found the caution frustrating. Yet the apparatus stood before us, and I could not deny that it had already done something we were struggling to describe.
+
+Sera had recovered an unstable sample. She wanted it preserved because the material might answer questions the instruments could not. She also knew that keeping it could endanger the people responsible for it.
+
+“We can preserve it under strict isolation,” she told me, “or destroy it after copying its readings. Neither choice is without cost.”
+
+“What would you do?”
+
+“I would preserve the evidence if I could guarantee safety. I cannot guarantee that.”
+
+The Grey Surveyor listened without intervening. When I asked whether the measurements would survive the destruction of the sample, he explained the difference between the physical material and the record of its behaviour. We could retain the latter. We could not pretend it was identical to keeping the former.
+
+I chose to have the sample destroyed safely after its measurements were copied.
+
+I watched the procedure from behind the agreed boundary. Nothing spectacular happened. There was no burst of light to make the choice feel important, no sign that the world approved. When it was over, the sealed record remained and the sample did not.
+
+Sera wrote down my decision.
+
+“We have the measurements either way,” she said. “I won't pretend the risk was simple.”
+
+I wondered whether I would have made the same choice if I had understood more. The uncertainty stayed with me. I had learned to preserve evidence whenever possible; now I was learning that preservation could itself become a danger.
+
+***
+
+Brynja's instructions arrived as a set of carefully bounded procedures. Separate mechanical isolators were to be fitted. A physical cutoff had to remain accessible. No one was to treat a stable reading as proof that the apparatus would remain stable under every condition.
+
+Sera laid the instructions out on the worktable.
+
+“This isn't permission to improvise,” she said. “Fit the isolators exactly as instructed.”
+
+“Why hasn't Brynja come herself?”
+
+“She's responsible for work in her own hold. We can ask her to examine the originals when this site is secure.”
+
+I thought of Heddan at his bench in Millhaven, explaining how a fitting could be sound and still fail when used for the wrong load. The scale of the problem had changed. The need to respect what a structure could bear had not.
+
+The Grey Surveyor reviewed the shutdown sequence. He insisted that we know where to retreat if the readings exceeded their limits, and that the cutoff could be reached without passing through the most dangerous part of the installation.
+
+I asked whether the plan would work.
+
+“It is a plan for limiting what we do not yet control,” he said. “That is not the same as certainty.”
+
+We tested the supports, checked the isolators and walked the retreat route. I remember being impatient with the repetitions. Later, when the signal house shook beneath us, I would have given much to repeat them once more.
+
+Halvek controlled the apparatus deeper within the installation. Sera believed he was deliberately altering its resonance. We had to stop him and disable the Minor Resonator, but we could not destroy the essential observations or abandon people held within reach of the danger.
+
+The route inward passed through chambers where the sound of the device seemed to gather in the stone. At times I felt a pressure behind my ears, as though a distant noise were almost becoming a voice. I told myself that fear was finding patterns in the hum of machinery. I had no evidence for anything else.
+
+We met defenders before we reached Halvek. Some were armed and purposeful. Others moved with an unnatural urgency that made me hesitate before deciding how to respond. I had been told that the apparatus could alter behaviour; I had not been told that every person near it had chosen to be there.
+
+I fought to open the route, not to prove that everything inside was an enemy. Where people could be brought clear, we brought them clear. Where the structure threatened to fail, we withdrew and approached by the prepared way.
+
+Halvek did not surrender the apparatus. He fought to keep control of it, and the struggle carried us into the chamber where the Resonator's housing stood among its supports and instruments.
+
+The noise changed as the device responded. The readings climbed. For one terrible moment I could not tell whether the shaking came from the machinery or from my own hands.
+
+Sera called the limits aloud.
+
+“Use the physical cutoff,” she said. “Retreat if the instruments exceed them. There is no glory in an uncontrolled collapse.”
+
+I reached the prepared mechanism and followed the sequence we had rehearsed. The isolators took the load separately. The cutoff answered. The signal faltered, recovered for an instant, then fell silent.
+
+The sudden absence of the sound was more frightening than the noise had been.
+
+I stood waiting for it to return.
+
+It did not.
+
+Halvek had been defeated. The Minor Resonator was disabled. The essential measurements survived, along with those captives we had been able to bring to safety.
+
+Sera checked the instruments before she spoke.
+
+“What we recovered matters more than the machinery we broke.”
+
+I wanted to believe that meant the danger was over. Instead I looked at the empty space where the signal had been and wondered how many other places might contain something built to do the same work.
+
+The Grey Surveyor examined the final readings. He did not celebrate. He asked that the record include every limit we had encountered, every point at which our understanding had failed, and the fact that a controlled shutdown here proved nothing about the safety of other installations.
+
+When I left the chamber, I felt as though I had crossed a threshold I could not name.
+
+I had come to Northwatch following stolen cargo. I had found a machine that could disturb something deeper than a supply chain. I did not know who had conceived it, how far the design had travelled or what purpose its makers ultimately served.
+
+I knew only that someone had built it deliberately.
+
+***
+
+The coast did not fall quiet because the signal had stopped.
+
+At Northwatch, Nessa was already organising a defence. Dominion forces were attacking the landing, and the wounded needed to be moved before the fighting reached the supply stores.
+
+I asked whether the attackers were connected to the apparatus.
+
+“We have no evidence of that,” she said. “Sometimes an enemy patrol is simply an enemy patrol.”
+
+The words brought me back to the road outside Millhaven. I had been tempted then to make every misfortune part of the same plot. The temptation was stronger now that I had seen a device I could barely understand.
+
+But the Dominion attack was real on its own terms. Its soldiers fought for positions and supplies. Covenant defenders fought to keep the landing. Neither battle nor injury became less real because another hidden operation had taken place nearby.
+
+I helped carry the wounded clear, secured supplies and held the agreed defensive position until the immediate danger passed. When the evacuation was complete, Nessa looked across the damaged landing.
+
+“We can grieve the losses without inventing a hidden hand behind them,” she said.
+
+I had seen enough to know how difficult that would be.
+
+The report returned with me to Tidehold. Mara compared the recovered measurements with the cargo records, then had the technical evidence authenticated separately. The procurement trail pointed toward an Aelari material reference, but she refused to turn the reference into an accusation against the Aelari.
+
+“That's a lead,” she said, “not a verdict.”
+
+“Where do we go next?”
+
+“The engineering contract passed through Kar Durn. Start with the people who made the original drawings.”
+
+I thought of Brynja's instructions, precise enough to save us and limited enough to admit what she did not know. If the apparatus had been built from altered specifications, the original engineer might be the only person able to show where the change began.
+
+Before leaving again, I returned to Millhaven.
+
+Anwen had been comparing her patients' recovery records with observations from Oren. The unusual healing pattern I had seen months earlier had not vanished. It had been recorded carefully, and a local ward needed to be made safe while the investigation continued.
+
+“Is it related to the signal station?” I asked.
+
+“We don't know,” she said. “Healing isn't evidence of a conspiracy, and I won't frighten patients with guesses.”
+
+I helped secure the ward and carry the observations into order. There was a real benefit in what Anwen had seen. There was also deliberate interference at the signal house. I could not yet explain the relationship between them, and I refused to make one up merely because both involved things I did not understand.
+
+When the records were filed, Anwen closed her ledger.
+
+“Whatever this is, it deserves careful study.”
+
+Outside, Millhaven continued its work. Wagons arrived. Darian's patrol passed along the road. Brenna counted supplies. The village had survived my absence without waiting for me to explain the world.
+
+I had followed a theft to a court, a court to a harbour, a harbour to a hostile coast, and a hostile coast to a machine whose silence had frightened me more than its noise.
+
+Now the trail led into the mountains, toward the people who had designed the fittings that made such machinery possible.
+
+I set out for Kar Durn carrying the measurements, the authenticated procurement records and the memory of the Grey Surveyor's careful questions.
+
+There was something comforting in the thought that a structure, however strange, must still have been made by someone.
+
+There was something terrible in it, too.
