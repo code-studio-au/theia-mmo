@@ -1443,3 +1443,160 @@ It had seemed a small beginning.
 Now, as the last light left the road, I wondered how many more people I would have to listen to before I understood the shape of what we faced.
 
 I went inside to prepare for the journey.
+
+
+## Book II — Shadows of Conflict
+
+### Chapter Five — Four Peoples, One Harbour
+
+The commission Aldren had given me was folded so often that its edges began to soften. I had imagined a king's warrant would make the next part of my journey easier. In truth, it made my obligations harder to ignore. The document named what I was permitted to investigate, but it did not turn the roads ahead into royal property, or the people beyond them into subjects of Aldren's court.
+
+Mara met me before I left for Tidehold. Cassian's recovered ledger lay between us, open at two shipping references.
+
+“Tidehold,” she said, touching the first. Then the second. “Twice. I won't pretend a Human warrant gives us rights in an allied harbour.”
+
+“Who has authority there?”
+
+“The port council. Start with customs. Ask permission.”
+
+I had heard that word so often by then that it was beginning to sound like the hinge upon which every locked door turned. I also knew what happened when someone decided a worthy purpose was sufficient permission to do anything.
+
+The road carried me away from Millhaven's familiar fields and toward a coast that announced itself long before I could see the water. Salt settled on my lips. The air changed. The traffic thickened into a procession of carts, travellers and guarded cargo, all drawn toward the same place.
+
+Tidehold was not like Valecrown. In the Human capital, the offices of government had seemed to radiate from the king's authority, even when they argued over its limits. Tidehold belonged to an alliance. Its docks and streets were used by four peoples whose obligations overlapped without becoming identical.
+
+I watched a dispute over unloading space end not when one side yielded to the loudest voice, but when the workers found the official empowered to settle that particular claim. It took longer than shouting. It appeared to last longer, too.
+
+At customs, I presented the case from Stoneford, the records from Valecrown and Aldren's commission. The clerk examined the seal without bowing to it. I felt a foolish sting of embarrassment before I remembered that this was precisely what Mara had told me to expect.
+
+The harbour records confirmed the disputed shipping dates. Confirmation gave me another question, not a right to search wherever I pleased.
+
+Corven received the request in an alliance chamber where the noise of the harbour was faintly audible through the walls.
+
+“Tidehold serves four peoples, not one crown,” he said. “Tell me what you need and what you intend to do with it.”
+
+“I need access to the cargo records.”
+
+“Then you will receive limited access, with a clerk present. You will not seize a warehouse on a Human king's word.”
+
+He spoke without hostility. That made the limit feel firmer. I had come expecting to prove that I was trustworthy; he wanted to know whether I understood whose trust I was asking for.
+
+“I understand,” I said.
+
+“Good. Respect the terms, and the next request will be easier to hear.”
+
+The inspection led me to Ysra and the provision depot, where a shortage had become an argument among people who all believed they had done their work properly. The manifests said goods had arrived. The storehouses disagreed.
+
+Ysra spread the original tallies across a scarred table. She had the exhausted patience of someone who had counted the same crates three times and still been told the problem was her arithmetic.
+
+“Someone changed the requisitions after they were signed,” she said.
+
+“Could it be an accounting error?”
+
+“It could. That's why we'll compare the original tally before we accuse a dockworker.”
+
+We checked the figures. I had grown accustomed to finding lies in documents, but I tried not to be disappointed when some discrepancies turned out to be ordinary mistakes. A number copied into the wrong column was still a problem; it simply did not require an enemy to explain it.
+
+The altered requisitions were different. They selected particular cargo. Once again, someone had known what to remove.
+
+Ysra closed the last ledger with a sharp movement of her hand.
+
+“Whoever did this knew which goods to take.”
+
+I thought of the teamster's voice beside the broken wagon: *The buyer wouldn't pay for substitutions.*
+
+The same care had followed the cargo across more than one jurisdiction. It had crossed borders more easily than I had.
+
+***
+
+Northwatch Landing lay beyond the harbour, reached by ship rather than a convenient road. Nessa met the departing supply party and looked me over as though trying to decide which part of my equipment would fail first.
+
+“Northwatch is a military landing, not a sightseeing stop,” she said. “You can travel with us if you follow orders at the shore.”
+
+“What should I expect?”
+
+“Hostile patrols, bad weather, and soldiers who don't know your name. Stay alert.”
+
+The ship left Tidehold behind in slow degrees. I watched the harbour shrink until its separate quays became a single line against the coast. Out on the water, the distinctions that mattered so much in council chambers were harder to see. The wind did not care which people had signed the cargo manifest. The sea did not care whose king had authorised my journey.
+
+I found that comforting until the weather turned.
+
+The crossing was not a great storm, only enough wind and rough water to make every loose object a hazard and every step uncertain. The sailors moved with the confidence of people who had learned to respect conditions they could not command. I held where I was told to hold and tried not to think about how little use a royal commission would be if the ship foundered.
+
+At Northwatch, Nessa made me report to the quartermaster before leaving the defences. Beyond the landing lay a hostile coast. Dominion patrols held positions inland, and Covenant soldiers watched the approaches with the particular fatigue of people who knew a quiet morning could become a battle by afternoon.
+
+I found Darian among the support unit.
+
+For a moment I saw him as he had been at Millhaven's western bend, pointing out fresh tracks in the dirt. He recognised me before I spoke and smiled, though the expression faded when he explained why he had sent for help.
+
+“A supply party missed its signal,” he said. “I know what it's like to be the one who doesn't come back when expected.”
+
+“We'll find them.”
+
+“Find them alive if you can. Don't turn a rescue into a hunt.”
+
+We took the coastal route, keeping to the ground that offered the safest passage around the contested positions. It was not a secret road, and it did not make us invisible. More than once we waited while distant patrols passed, listening to the sounds of armed people who had every reason to regard us as enemies.
+
+The missing party had become stranded away from its planned return. Its members were alive, but frightened and short of safe options. I remember one of them trying to apologise for the delay before Darian stopped them.
+
+“Save the account for when we're back,” he said. “Right now, we're getting you home.”
+
+We returned with the survivors and their military route report. Darian read it carefully, then sent word that the watch procedures needed changing.
+
+I had thought that seeing him at Northwatch would make the world feel smaller. Instead it reminded me how far the concerns of Millhaven could travel. A missing worker at a western bend and a stranded supply party on a hostile coast were not the same event. But the obligation to bring someone home had survived the distance between them.
+
+***
+
+Nessa wanted reconnaissance of the Dominion positions beyond the landing. She showed me the military posts associated with Rukhan's coastal defence and marked the boundaries we were not to cross.
+
+“The Dominion is defending its coast,” she said. “I want their patrol routes, not a pile of bodies. Keep clear of civilian dwellings.”
+
+“Why not attack the lookout?”
+
+“Because an observation mission doesn't become a raid just because you have a weapon.”
+
+We approached by a guarded route, stopping where we could observe without entering the homes beyond the military line. I watched the defenders change positions and signal to one another. They were disciplined. They understood the terrain. They were not waiting to be exposed as secretly friendly, nor were they monsters whose existence excused anything done to them.
+
+I had been raised on stories in which the enemy was always most dangerous when hidden and least human when seen. Watching ordinary soldiers obey their watch rotations did not make the war less real. It made its costs harder to simplify.
+
+Nessa studied the reconnaissance when I returned.
+
+“Their defences are disciplined,” she said. “That tells us something.”
+
+She did not say it told us they were innocent. She did not say it made an attack impossible. She used the report for what it was: knowledge of a real opponent, gathered without turning a scouting assignment into an assault on civilians.
+
+The expedition clerk brought the next discrepancy while I was still thinking about those patrols.
+
+A military depot had reported cargo lost in an attack. Yet the records placed the disappearance before the attack had occurred.
+
+I almost laughed. The same impossibility again, dressed in another uniform.
+
+“We need a copy from inside,” the clerk said, “not another rumour.”
+
+“You want me to enter their depot?”
+
+“Quietly, if possible. Their guards will treat you as an enemy. No one there is expecting a friendly visitor.”
+
+I went because the records mattered, not because the danger made the task noble. The depot was guarded and its stores were military property. I kept to the evidence we had come to verify, copied the accounting and withdrew without mistaking a successful intrusion for ownership of the place.
+
+The dates were unmistakable. A private consignment had been removed before the reported attack. The comparison with Nemi's serial records gave the loss a more precise shape. Neither army could honestly explain that earlier removal by pointing to the later fighting.
+
+The clerk checked the copy twice.
+
+“Someone took the cargo before either army could blame the other.”
+
+I looked toward the coast, where the lines of the war ran through roads, watch posts and settlements that had existed before I came to investigate them. The Dominion's attack was real. The Covenant's defence was real. And beneath those events someone had been moving selected materials with an attention that did not belong to the ordinary disorder of battle.
+
+In Millhaven I had followed the absence of a few crates. At Tidehold I had followed their paperwork. At Northwatch I had followed the marks they left in military stores.
+
+Now I had a question that no ledger alone could answer.
+
+What were those materials meant to become?
+
+The answer waited farther along the coast, at a signal house where a surveyor had been recording disturbances that ordinary supply records could not explain.
+
+I set out with the copied evidence secured against the weather, aware that I was crossing into a kind of inquiry for which I had no training.
+
+I still believed a record should be tested before it was trusted.
+
+I was about to learn how difficult that rule could become when the thing being measured was itself unfamiliar.
