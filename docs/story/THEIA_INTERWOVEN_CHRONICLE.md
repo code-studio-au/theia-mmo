@@ -1799,3 +1799,168 @@ I set out for Kar Durn carrying the measurements, the authenticated procurement 
 There was something comforting in the thought that a structure, however strange, must still have been made by someone.
 
 There was something terrible in it, too.
+
+
+### Chapter Seven — No Fault in the Drawing
+
+I had imagined the mountains as a boundary, a place where the road would simply rise until the rest of the world fell away beneath it. Instead they seemed to gather the world into themselves. Roads followed narrow cuts between stone shoulders; caravans moved at the pace of their heaviest wagons; every bridge and retaining wall bore evidence of someone having calculated what the mountain might permit.
+
+I travelled with the engineering records wrapped against the weather. The papers were dry when I checked them, but the edges had begun to fray from my handling. I had read Brynja's preliminary safety instructions so often that I could almost recite them. They had helped us shut down the signal at Northwatch. Now I wanted to know whether their author could tell us who had altered the design and why.
+
+Garrick had given me the original contract docket before I left.
+
+“Brynja's name appears on the contract,” he had said. “That doesn't make her responsible for every alteration made after it left her workshop.”
+
+“Will she speak to an outsider?”
+
+“Bring the original docket and ask. Dwarven engineers tend to respect a well-kept record.”
+
+I remembered his words when Kar Durn first appeared ahead of me. It was a city shaped by labour as much as by stone: approaches strengthened against falling rock, entrances measured for heavy loads, and the persistent sound of work carried through passages where I could not see its source. I had come from a harbour shared by four peoples and a capital governed by a Human king. Here I was entering a hold whose people had their own duties, laws and reasons to distrust a stranger with questions about their craft.
+
+I was directed through the proper offices before I reached Brynja. By then I had learned not to resent the delay. Permission was not a ritual performed to inconvenience me. It was the way a community decided who could handle work that might injure its people.
+
+Brynja received the docket with little ceremony. She laid my copied specification beside her original drawings and looked at them for a long time.
+
+“That drawing is mine,” she said at last. She touched a line of measurements on the revised sheet. “The changed measurements are not.”
+
+I leaned closer. The alteration was so small that I would have missed it even after the signal house. The lines still met. The fittings still appeared capable of bearing their assigned load.
+
+“Someone copied my seal onto a revision I never approved,” she continued.
+
+“Can you prove the difference?”
+
+“Of course.”
+
+She opened a bound workshop record and showed me her calculations, the dated inspection marks and the original arrangement. It took her several explanations before I understood that the altered specification had not simply weakened a component. It had changed the conditions under which the component would be expected to work. A structure might survive ordinary use and still behave disastrously when placed within a different system.
+
+“Whoever altered it understood enough to make the change look ordinary,” she said.
+
+I thought of Rusk's insistence upon particular crates, the impossible dates in Stoneford, and the signal house whose strange workings had been assembled from things that could each be described in familiar terms.
+
+“Then it was deliberate?”
+
+“The revision was not mine. Its effect is not accidental. I won't name its author without evidence.”
+
+There it was again: the refusal to let a strong conclusion become a larger one merely because I wanted it to.
+
+Brynja explained that a measuring assembly could help establish the difference between the original specification and the substituted one. But the assembly lay within a part of the hold to which I had no independent right of entry. We would need the hold's permission and a safe route.
+
+I asked whether I could go at once.
+
+“You may ask,” she said. “That is not the same as being allowed.”
+
+***
+
+Rurik met me beside a maintenance passage, his expression dark with worry. A feeder gallery had been blocked and his crew was trapped beyond the obstruction. He did not seem interested in the records I carried.
+
+“I don't care whose grand investigation brought you here,” he said. “Those workers need help.”
+
+“I'll get them out.”
+
+“Follow the maintenance markings. Don't touch a load-bearing brace unless you know what it does.”
+
+The gallery was hot and close. I could hear water moving somewhere behind the stone and the uneven knocking of tools farther along the passage. The obstruction had made the route dangerous, but the evidence around it pointed to a neglected pressure fault and missed maintenance, not to the elaborate alterations Brynja had shown me.
+
+For a moment I was disappointed by that ordinary explanation. The feeling shamed me almost immediately. Workers were trapped. Whether the cause was a secret enemy or a failure to maintain a passage made no difference to the people waiting beyond it.
+
+I followed Rurik's markings, kept clear of the bracing he had warned me about and helped restore a route through which the crew could return. One worker emerged furious that the inspection had been delayed. Another said nothing until they were safely outside, then sat with their back against the wall and stared at their hands.
+
+Rurik counted them before speaking to me.
+
+“The crew is safe,” he said. “We can argue about the cause after they've had a meal.”
+
+I stayed long enough to help return the equipment and record the pressure fault accurately. The gallery needed repair. No amount of speculation about the signal house would repair it.
+
+The experience changed how I read Brynja's drawings. I had been looking at lines and numbers as clues in an investigation. Rurik had shown me what happened when a number became a support, a support became a passage, and people trusted that passage to carry them home.
+
+***
+
+The measuring assembly could not be released until another matter was settled. Grain had gone missing between two legitimate orders, and the hold's trade officer had little patience for outsiders who wanted technical equipment while ordinary deliveries remained disputed.
+
+“Brynja says you can read a ledger without blaming the nearest porter,” the officer told me.
+
+“I can try.”
+
+“Good. Trade disputes don't improve when everyone reaches for a sword.”
+
+The records were familiar in form, though not in detail. I compared the dockets, checked the receipt sequence and traced the shipment to the point at which two valid instructions had been treated as though they described a single delivery. No hidden enemy was needed to explain the shortage. The grain had not vanished into an Anchor network; it had been caught between competing claims that could be reconciled.
+
+The officer reviewed the corrected account.
+
+“The deliveries are reconciled,” they said. “The hold can release the engineering report.”
+
+Only then did Brynja receive the limited authority needed to recover and inspect the assembly. She made me read the permission carefully. It named the work to be done and the people responsible. It did not authorise me to explore every chamber I passed.
+
+When we compared the recovered measurements with the original drawing, the alteration became harder to dismiss. Brynja showed me where a broker's substituted specification diverged from the approved design. The change had been concealed within otherwise legitimate work.
+
+“Someone knew enough to borrow the appearance of safety,” I said.
+
+Brynja gave a short nod.
+
+“And enough to rely on other people trusting my seal.”
+
+I wondered how many hands the revised drawing had passed through. The people who cut the metal might have done exactly what they were instructed to do. The people who transported it might have seen nothing unusual. Even the people who installed it might have believed they were completing an ordinary contract.
+
+The danger lay not in a single dishonest craftsman, but in a chain of work whose parts could be individually respectable and collectively misused.
+
+I thought of the Grey Surveyor's insistence that a structure's limits mattered as much as its apparent success. Brynja had arrived at the same warning from another direction.
+
+She prepared an authenticated engineering report. It established the discrepancy without claiming knowledge we did not possess. When she finished, she closed the original drawings and rested her hands upon them for a moment.
+
+“People will ask whether my work caused this,” she said.
+
+“What will you tell them?”
+
+“That my work was changed. And that I intend to find out who benefited.”
+
+***
+
+The High King received the report through the hold's proper channels. I was nervous in a way I had not been before Aldren, perhaps because I had begun to understand how much could be lost when a ruler accepted a convenient explanation.
+
+The High King read Brynja's findings and listened to the account of the altered contract. He did not treat the evidence as permission to demand answers from another sovereign people.
+
+“Brynja's evidence warrants further inquiry,” he said, “but my word does not command Sylvaren. I can offer an introduction, nothing more.”
+
+“That is enough,” I replied.
+
+“Then carry my letter intact. Let the Aelari decide what they will share.”
+
+He placed his seal upon the introduction. It was a different sort of seal from the broken one I had recovered near Millhaven. Yet I had learned not to trust a mark simply because it was well made. Its value lay in the authority honestly exercised behind it and the limits openly stated upon the page.
+
+I left Kar Durn with the authenticated report, the introduction and a respect for its people that had little to do with the grandeur of their halls. Brynja's precision, Rurik's concern for his trapped crew and the trade officer's determination to settle an ordinary dispute had each taught me something about the responsibilities of a hold.
+
+The route to Sylvaren took me away from the hard edges of the mountains and toward a landscape whose care I did not yet understand. I had heard descriptions of the Aelari capital, but I distrusted them by then. Every city I had visited had proved more complicated than the stories told about it.
+
+Caelith received the High King's letter and Brynja's report. She examined both before speaking.
+
+“The High King's seal is genuine, and Brynja's findings deserve examination. Neither gives you authority over our wards or records.”
+
+“I'm asking you to review the evidence, not to surrender your archives.”
+
+“Then I will register the report and the letter. If you seek access beyond this audience, we will discuss its limits separately.”
+
+I felt relief at having reached the next part of the investigation. I also felt the familiar impatience of standing before another boundary.
+
+“Why do the ward records matter?” she asked.
+
+“We found altered designs elsewhere. We need to know whether the same materials were used here.”
+
+“Then show me the originals and the changes. I will grant limited access if the evidence warrants it.”
+
+I gave her the comparison Brynja had prepared. Caelith studied the lines with the same concentration the Dwarven engineer had shown, though she asked different questions: not only what the component had been designed to bear, but what it might disturb around it.
+
+At length she agreed that the specified wards could be examined under supervision.
+
+“Do not confuse permission with ownership,” she said.
+
+I promised that I would not.
+
+Outside the meeting place, I paused beneath the unfamiliar sounds of Sylvaren. I had followed the trail from a broken wagon to a royal court, from a harbour to a signal house, and from a signal house into the workshops of Kar Durn. Every step had shown me how a small alteration could travel through honest hands until it became part of something dangerous.
+
+Now I stood among people whose work concerned living boundaries as much as constructed ones.
+
+I wondered what might happen when a hidden design was carried into a place that had never consented to bear it.
+
+I had come to Sylvaren asking for records.
+
+Before long, I would have to learn what those records were meant to protect.
