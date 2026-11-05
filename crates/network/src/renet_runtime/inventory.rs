@@ -26,6 +26,7 @@ pub struct Request {
 }
 #[derive(Clone)]
 pub struct Port {
+    pub documents: Option<Arc<crate::documents::Profile>>,
     pub vendor: Option<Arc<crate::vendor_wire::Profile>>,
     pub rewards: Option<Arc<crate::reward_wire::Profile>>,
     /// Trusted authority facts only. Never populated from a client request.
@@ -42,6 +43,7 @@ pub struct Profile {
     hash: [u8; 32],
     rewards: Option<Arc<crate::reward_wire::Profile>>,
     vendor: Option<Arc<crate::vendor_wire::Profile>>,
+    documents: Option<Arc<crate::documents::Profile>>,
 }
 impl Profile {
     pub fn from_json(bytes: &[u8]) -> crate::Result<Self> {
@@ -51,6 +53,7 @@ impl Profile {
             hash: crate::terrain::sha256(bytes),
             rewards: None,
             vendor: None,
+            documents: None,
         })
     }
     pub fn catalog(&self) -> &Catalog {
@@ -58,6 +61,18 @@ impl Profile {
     }
     pub fn hash(&self) -> [u8; 32] {
         self.hash
+    }
+    pub fn with_documents(mut self, bytes: &[u8]) -> crate::Result<Self> {
+        if self.documents.is_some() {
+            return Err("Document profile already installed".into());
+        }
+        self.documents = Some(Arc::new(crate::documents::Profile::from_json(
+            bytes, &self,
+        )?));
+        Ok(self)
+    }
+    pub fn documents(&self) -> Option<&crate::documents::Profile> {
+        self.documents.as_deref()
     }
     pub fn with_rewards(mut self, bytes: &[u8]) -> crate::Result<Self> {
         self.rewards = Some(Arc::new(crate::reward_wire::Profile::from_json(
@@ -90,6 +105,11 @@ impl Profile {
         &self,
         journal: Option<&crate::quest_journal::Profile>,
     ) -> crate::Result<()> {
+        match (self.documents(), journal.and_then(|j| j.documents())) {
+            (None, None) => {}
+            (Some(a), Some(b)) if a.hash() == b.hash() && a.inventory_hash() == self.hash() => {}
+            _ => return Err("Document intents require the exact client document journal".into()),
+        }
         if journal
             .and_then(|j| j.inventory_hash())
             .is_some_and(|hash| hash != self.hash())
@@ -133,6 +153,7 @@ pub(super) struct ClientState {
     pub(super) appearance: Option<crate::appearance_wire::State>,
     pub(super) rewards: Option<crate::reward_wire::State>,
     sequence: u64,
+    pub(super) approved_document: Option<crate::document_wire::Approved>,
     pending: Option<(u64, ItemCommand, tokio::time::Instant)>,
 }
 impl ClientState {
@@ -151,6 +172,7 @@ impl ClientState {
             appearance: None,
             rewards: None,
             sequence: 0,
+            approved_document: None,
             pending: None,
         })
     }
@@ -227,11 +249,16 @@ impl ClientState {
         actor: theia_core::identity::EntityKey,
     ) -> crate::Result<()> {
         use crate::inventory_wire::Outcome;
-        let state = crate::inventory_wire::State::decode(
-            bytes,
-            &self.config.profile.catalog,
-            self.config.profile.hash,
-        )?;
+        let state = match self.config.profile.documents() {
+            Some(documents) => {
+                crate::inventory_wire::State::decode_with_documents(bytes, documents)?
+            }
+            None => crate::inventory_wire::State::decode(
+                bytes,
+                &self.config.profile.catalog,
+                self.config.profile.hash,
+            )?,
+        };
         if state.actor != actor || state.reply.is_some_and(|r| r.sequence > self.sequence) {
             return Err("Foreign or unsent inventory acknowledgement".into());
         }
@@ -241,11 +268,10 @@ impl ClientState {
             .and_then(|s| s.reply)
             .map_or(0, |r| r.sequence);
         let sequence = state.reply.map_or(0, |r| r.sequence);
-        if self
-            .view
-            .as_ref()
-            .is_some_and(|old| state.bag.revision() < old.bag.revision())
-            || sequence < prior_sequence
+        if self.view.as_ref().is_some_and(|old| {
+            state.bag.revision() < old.bag.revision()
+                || (state.bag.revision() == old.bag.revision() && state.bag != old.bag)
+        }) || sequence < prior_sequence
         {
             return Err("Authoritative inventory state regressed".into());
         }
@@ -259,12 +285,25 @@ impl ClientState {
             if matches!(
                 state.reply.unwrap().outcome,
                 Outcome::Applied | Outcome::Replayed
-            ) && command
-                .expected_revision()
-                .checked_add(1)
-                .is_none_or(|minimum| state.bag.revision() < minimum)
-            {
-                return Err("Inventory success precedes its required committed revision".into());
+            ) {
+                let minimum = command
+                    .expected_revision()
+                    .checked_add(u64::from(!matches!(command, ItemCommand::OpenDocument(_))));
+                if minimum.is_none_or(|minimum| state.bag.revision() < minimum) {
+                    return Err("Inventory success precedes its required committed revision".into());
+                }
+                if let ItemCommand::OpenDocument(command) = command {
+                    let profile = self
+                        .config
+                        .profile
+                        .documents()
+                        .ok_or("Unbound document success")?;
+                    profile.resolve(command)?;
+                    self.approved_document = Some(crate::document_wire::Approved {
+                        command,
+                        profile_hash: profile.hash(),
+                    });
+                }
             }
             self.pending = None;
         }
@@ -316,7 +355,21 @@ impl ClientState {
             .sequence
             .checked_add(1)
             .ok_or("Inventory sequence exhausted")?;
-        let bytes = if let ItemCommand::Vendor(command) = command {
+        let bytes = if let ItemCommand::OpenDocument(command) = command {
+            let profile = self
+                .config
+                .profile
+                .documents()
+                .ok_or("Document intent requires enabled profile")?;
+            let bytes = crate::document_wire::Request {
+                actor,
+                sequence,
+                command,
+            }
+            .encode(profile)?;
+            self.approved_document = None;
+            bytes
+        } else if let ItemCommand::Vendor(command) = command {
             self.config
                 .profile
                 .vendor()
@@ -398,6 +451,11 @@ impl Peer {
             })
     }
     pub(super) fn new(port: Port) -> crate::Result<Self> {
+        if port.documents.as_ref().is_some_and(|d| {
+            d.inventory_hash() != port.hash || d.catalog().inventory() != port.catalog.as_ref()
+        }) {
+            return Err("Document/item owner profile mismatch".into());
+        }
         if port.hash == [0; 32] || port.requests.max_capacity() != 1 {
             return Err("Invalid inventory owner port capacity/profile".into());
         }
@@ -459,7 +517,19 @@ impl Peer {
         world: Option<(&crate::simulation::World, u64)>,
     ) -> crate::Result<bool> {
         let mut pickup_life = None;
-        let message = if bytes.starts_with(crate::reward_wire::PICKUP_TAG) {
+        let message = if bytes.starts_with(crate::document_wire::REQUEST_TAG) {
+            let profile = self
+                .port
+                .documents
+                .as_ref()
+                .ok_or("Document request requires enabled profile")?;
+            let request = crate::document_wire::Request::decode(bytes, profile)?;
+            crate::inventory_wire::ItemRequest {
+                actor: request.actor,
+                sequence: request.sequence,
+                command: request.command.into(),
+            }
+        } else if bytes.starts_with(crate::reward_wire::PICKUP_TAG) {
             let profile = self
                 .port
                 .rewards
@@ -707,6 +777,7 @@ mod tests {
             ..Default::default()
         });
         let mut peer = Peer::new(Port {
+            documents: None,
             vendor: None,
             rewards: None,
             opportunities: None,
@@ -814,6 +885,7 @@ mod tests {
             ..Default::default()
         });
         let mut peer = Peer::new(Port {
+            documents: None,
             vendor: Some(vendor.clone()),
             rewards: None,
             opportunities: None,
@@ -1253,6 +1325,7 @@ mod tests {
             ..Default::default()
         });
         let mut peer = Peer::new(Port {
+            documents: None,
             vendor: None,
             rewards: None,
             opportunities: None,
@@ -1526,6 +1599,7 @@ mod tests {
             ..Observation::default()
         });
         let mut peer = Peer::new(Port {
+            documents: None,
             vendor: None,
             rewards: None,
             opportunities: None,
@@ -1607,6 +1681,7 @@ mod tests {
         let (_, state) = watch::channel(Observation::default());
         assert!(
             Peer::new(Port {
+                documents: None,
                 vendor: None,
                 rewards: None,
                 opportunities: None,
@@ -1627,3 +1702,7 @@ mod pickup_tests;
 #[cfg(test)]
 #[path = "inventory/quest_profile_tests.rs"]
 mod quest_profile_tests;
+
+#[cfg(test)]
+#[path = "inventory/document_tests.rs"]
+mod document_tests;

@@ -179,6 +179,7 @@ fn fixture(rate: TickRate) -> Fixture {
     let (requests, receiver) = mpsc::channel(1);
     let policy = Arc::new(Policy(
         net::inventory::Port {
+            documents: None,
             vendor: None,
             rewards: None,
             opportunities: None,

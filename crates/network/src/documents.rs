@@ -1,4 +1,4 @@
-//! Exact metadata identity only; this profile authorizes no document opening.
+//! Exact document identity and structural intent resolution; no open authority.
 use crate::{Result, renet_runtime::inventory::Profile as Items};
 use std::sync::Arc;
 #[derive(Clone, Debug)]
@@ -21,6 +21,20 @@ impl Profile {
             hash: crate::terrain::sha256(&bound),
             inventory: items.hash(),
         })
+    }
+    pub fn resolve(
+        &self,
+        command: theia_core::documents::OpenCommand,
+    ) -> Result<&theia_core::documents::Document> {
+        if command.expected_revision > theia_core::inventory::MAX_REVISION
+            || usize::from(command.slot) >= theia_core::inventory::SLOT_COUNT
+        {
+            return Err("Invalid document slot or revision".into());
+        }
+        self.catalog
+            .documents()
+            .nth(usize::from(command.document))
+            .ok_or_else(|| "Unknown document ordinal".into())
     }
     pub fn hash(&self) -> [u8; 32] {
         self.hash

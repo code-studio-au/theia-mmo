@@ -377,6 +377,7 @@ fn synthetic_items_with_options(
         ..Default::default()
     });
     let port = net::inventory::Port {
+        documents: None,
         vendor: None,
         rewards: None,
         opportunities: None,
@@ -1127,6 +1128,7 @@ async fn encrypted_vendor_rejects_closed_session_then_commits_accepted_trade_aft
         ledger.code = 1;
         ledger.position = world.development_player_spawn(1);
         ledger.inventory = Some(net::inventory::Port {
+            documents: None,
             vendor: Some(vendor.clone()),
             rewards: None,
             opportunities: None,

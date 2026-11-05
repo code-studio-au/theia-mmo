@@ -232,6 +232,45 @@ retained owner, encrypted document commands, World admission, normal manifests
 and Bevy UI remain pending. No native/Windows/capacity claim; qualified normal
 quest-loot playable remains `65977bd`.
 
+## Implemented prerequisite: bounded document transport bridge
+
+`DO01` carries an 86-byte actor-bound open intent: ordered item sequence, exact
+32-byte document hash, original nonzero 128-bit request ID, bag revision, slot and
+bounded document ordinal. Ordinals follow the catalogue's stable ID ordering and
+are resolved only against that exact profile. Legacy item frames refuse document
+commands; generic bag proposals/storage mutations require document authority.
+
+Explicit inventory profiles may attach documents without changing raw item,
+vendor or reward identities. Client preflight requires the exact document-bound
+journal. Owner ports check matching inventory; peer admission additionally checks
+the authoritative World's document hash. The existing bounded control channel,
+rate limit and inventory pending gate carry reads and mutations in one order.
+
+A document-aware `DS01` inventory response appends the exact document hash. It
+permits a successful read at bag revision zero; ordinary `IS01`/`IS02` responses
+retain their original positive-success revision checks. Client acknowledgement
+validation permits an unchanged bag only for a pending document command. Normal
+mutations still require at least the next bag revision. Foreign, unsent or
+unmatched replies cannot approve content; equal-revision conflicting bags refuse.
+A matching committed success publishes only the retained command/profile, never
+server-supplied note text. UI consumers must resolve exact local authored pages.
+
+Evidence: all 374 then-current network-library tests pass in
+`build/quest-document-bridge-network-tests-v2-20261105.log`, including three
+synthetic bridge cases. Four codec tests, including an additional document-response
+case, pass in `build/quest-document-bridge-wire-tests-v1-20261105.log`.
+Fifteen server-library regressions, formatting and denied-warning workspace /
+all-target Clippy pass in `build/quest-document-bridge-{server-tests,fmt}-v1-20261105.log`
+and `build/quest-document-bridge-clippy-v2-20261105.log`.
+The full core regression is recorded in
+`build/quest-document-bridge-core-full-tests-v1-20261105.log`.
+
+These acknowledgements use synthetic owner publications. The normal retained
+owner and World document installation remain explicitly closed, so this is not
+connected read-credit or native UI evidence. Next connect those qualified storage
+and transport boundaries, then adopt normal manifests and standard Bevy pages.
+No new GPU/Windows/capacity claim; playable checkpoint remains `65977bd`.
+
 ## Planned read-credit semantics
 
 An authenticated server must validate current ownership and exact item/document

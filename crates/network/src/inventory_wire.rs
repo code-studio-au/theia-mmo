@@ -10,6 +10,7 @@ use theia_core::{
 };
 pub const REQUEST_TAG: &[u8; 4] = b"IR01";
 pub const STATE_TAG: &[u8; 4] = b"IS01";
+pub const DOCUMENT_STATE_TAG: &[u8; 4] = b"DS01";
 pub const REQUEST_BYTES: usize = 43;
 pub const STATE_BYTES: usize = 117;
 pub const ITEM_REQUEST_TAG: &[u8; 4] = b"IR02";
@@ -267,12 +268,33 @@ pub struct State {
 }
 impl State {
     pub fn encode(&self, catalog: &Catalog, expected_hash: [u8; 32]) -> Result<Vec<u8>> {
+        self.encode_inner(catalog, expected_hash, false)
+    }
+    /// Explicit document mode permits a read receipt without a bag mutation.
+    /// Legacy encoders/decoders retain their positive-success revision rule.
+    pub fn encode_with_documents(&self, documents: &crate::documents::Profile) -> Result<Vec<u8>> {
+        let mut bytes = self.encode_inner(
+            documents.catalog().inventory(),
+            documents.inventory_hash(),
+            true,
+        )?;
+        bytes[..4].copy_from_slice(DOCUMENT_STATE_TAG);
+        bytes.extend(documents.hash());
+        Ok(bytes)
+    }
+    fn encode_inner(
+        &self,
+        catalog: &Catalog,
+        expected_hash: [u8; 32],
+        documents: bool,
+    ) -> Result<Vec<u8>> {
         if catalog.equipment_enabled() != self.bag.equipment_enabled()
             || expected_hash == [0; 32]
             || self.catalog_hash != expected_hash
             || self.bag.catalog() != catalog.id()
             || self.bag.revision() > MAX_REVISION
-            || (self.bag.revision() == 0
+            || (!documents
+                && self.bag.revision() == 0
                 && self
                     .reply
                     .is_some_and(|r| matches!(r.outcome, Outcome::Applied | Outcome::Replayed)))
@@ -345,6 +367,38 @@ impl State {
         Ok(bytes)
     }
     pub fn decode(bytes: &[u8], catalog: &Catalog, expected_hash: [u8; 32]) -> Result<Self> {
+        Self::decode_inner(bytes, catalog, expected_hash, false)
+    }
+    pub fn decode_with_documents(
+        bytes: &[u8],
+        documents: &crate::documents::Profile,
+    ) -> Result<Self> {
+        let catalog = documents.catalog().inventory();
+        let size = if catalog.equipment_enabled() {
+            ITEM_STATE_BYTES
+        } else {
+            STATE_BYTES
+        };
+        if bytes.len() != size + 32
+            || !bytes.starts_with(DOCUMENT_STATE_TAG)
+            || bytes[size..] != documents.hash()
+        {
+            return Err("Invalid document-bound inventory state".into());
+        }
+        let mut ordinary = bytes[..size].to_vec();
+        ordinary[..4].copy_from_slice(if catalog.equipment_enabled() {
+            ITEM_STATE_TAG
+        } else {
+            STATE_TAG
+        });
+        Self::decode_inner(&ordinary, catalog, documents.inventory_hash(), true)
+    }
+    fn decode_inner(
+        bytes: &[u8],
+        catalog: &Catalog,
+        expected_hash: [u8; 32],
+        documents: bool,
+    ) -> Result<Self> {
         let (tag, size) = if catalog.equipment_enabled() {
             (ITEM_STATE_TAG, ITEM_STATE_BYTES)
         } else {
@@ -391,7 +445,8 @@ impl State {
         }
         let bag = Bag::from_parts(catalog, word(bytes, 52), slots, main_hand)
             .map_err(|_| "Invalid inventory state revision/contents")?;
-        if bag.revision() == 0
+        if !documents
+            && bag.revision() == 0
             && reply.is_some_and(|r| matches!(r.outcome, Outcome::Applied | Outcome::Replayed))
         {
             return Err("Inventory success requires a committed revision".into());

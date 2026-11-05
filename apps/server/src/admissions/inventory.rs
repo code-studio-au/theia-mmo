@@ -192,6 +192,7 @@ impl Config {
         Session {
             publish: publication,
             port: Port {
+                documents: None,
                 vendor: self.vendor.as_ref().map(|v| v.1.clone()),
                 rewards: self.reward_wire.clone(),
                 opportunities: self.rewards.as_ref().map(|_| opportunities),
@@ -470,6 +471,9 @@ impl Owner {
                         self.publisher
                             .mutate_inventory(self.binding, self.world, &self.profile, command)
                             .await
+                    }
+                    ItemCommand::OpenDocument(_) => {
+                        return Err("Document owner is not installed".into());
                     }
                     ItemCommand::Equipment(command) => {
                         self.publisher

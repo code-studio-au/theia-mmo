@@ -503,6 +503,14 @@ fn admit_peer(
         .map(inventory::Peer::new)
         .transpose()?;
     match (
+        world.quest_journal_profile().and_then(|j| j.documents()),
+        inventory.as_ref().and_then(|p| p.port.documents.as_deref()),
+    ) {
+        (None, None) => {}
+        (Some(a), Some(b)) if a.hash() == b.hash() => {}
+        _ => return Err("Admitted document profile differs from authoritative world".into()),
+    }
+    match (
         world.reward_profile(),
         inventory.as_ref().and_then(|p| p.port.rewards.as_ref()),
     ) {
@@ -802,7 +810,10 @@ fn publish_inventory(
             inventory::View::Loading => {}
             inventory::View::Closed => retired.push(id),
             inventory::View::State(state) => {
-                let bytes = state.encode(&inventory.port.catalog, inventory.port.hash)?;
+                let bytes = match &inventory.port.documents {
+                    Some(documents) => state.encode_with_documents(documents)?,
+                    None => state.encode(&inventory.port.catalog, inventory.port.hash)?,
+                };
                 if !server.can_send_message(id, EVENT_CHANNEL, bytes.len()) {
                     stats.inventory_backpressure_disconnects += 1;
                     retired.push(id);
@@ -1410,7 +1421,7 @@ async fn run_server_inner(
                             }
                             continue;
                         }
-                        if bytes.starts_with(crate::inventory_wire::REQUEST_TAG) || bytes.starts_with(crate::inventory_wire::ITEM_REQUEST_TAG) || bytes.starts_with(crate::reward_wire::REQUEST_TAG) || bytes.starts_with(crate::reward_wire::PICKUP_TAG) || bytes.starts_with(crate::vendor_wire::REQUEST_TAG) {
+                        if bytes.starts_with(crate::inventory_wire::REQUEST_TAG) || bytes.starts_with(crate::inventory_wire::ITEM_REQUEST_TAG) || bytes.starts_with(crate::reward_wire::REQUEST_TAG) || bytes.starts_with(crate::reward_wire::PICKUP_TAG) || bytes.starts_with(crate::vendor_wire::REQUEST_TAG) || bytes.starts_with(crate::document_wire::REQUEST_TAG) {
                             peer.inventory_requests+=1;
                             if peer.inventory_requests>8 {invalid_control=true;break;}
                             let Some(inventory)=&mut peer.inventory else {invalid_control=true;break;};
@@ -1929,12 +1940,6 @@ async fn run_client_inner(
         quest,
         statuses,
     } = mode;
-    if journal
-        .as_ref()
-        .is_some_and(|j| j.profile.documents().is_some())
-    {
-        return Err("Document-read client runtime is not installed".into());
-    }
     if let Some(items) = &inventory {
         items
             .profile
@@ -2252,12 +2257,12 @@ async fn run_client_inner(
                             state.send_modify(|s|{s.appearance=mode.appearance.clone();s.transport=Some(stats.clone());});
                             continue;
                         }
-                        if bytes.starts_with(crate::inventory_wire::STATE_TAG) || bytes.starts_with(crate::inventory_wire::ITEM_STATE_TAG) {
+                        if bytes.starts_with(crate::inventory_wire::STATE_TAG) || bytes.starts_with(crate::inventory_wire::ITEM_STATE_TAG) || bytes.starts_with(crate::inventory_wire::DOCUMENT_STATE_TAG) {
                             let mode=inventory.as_mut().ok_or("Unexpected opt-in inventory state")?;
                             let welcome=admission.as_ref().unwrap();
                             let actor=theia_core::identity::EntityKey {epoch:theia_core::identity::WorldEpoch::new(welcome.epoch).unwrap(),entity:theia_core::identity::EntityId::new(welcome.id).unwrap()};
                             mode.receive(&bytes,actor)?;stats.inventory_states_received+=1;
-                            state.send_modify(|s|{s.inventory=mode.view.clone();s.inventory_pending=mode.pending();s.transport=Some(stats.clone());});
+                            state.send_modify(|s|{s.inventory=mode.view.clone();s.inventory_pending=mode.pending();s.approved_document=mode.approved_document;s.transport=Some(stats.clone());});
                             continue;
                         }
                         if bytes.starts_with(crate::combat_wire::melee::STATE_TAG) {
@@ -2405,7 +2410,7 @@ async fn run_client_inner(
                         stats.rtt_ms = info.rtt * 1000.; stats.packet_loss = info.packet_loss;
                         stats.bytes_sent_per_second = info.bytes_sent_per_second;
                         stats.bytes_received_per_second = info.bytes_received_per_second;
-                        let mut update=State { public_avatar_life:avatar_life_state.clone(), public_creature_attack:public_attack_state.clone(), quest_journal:None, quest_journal_reply:None, quest_journal_pending:false, player_life:player_life_state.clone(), quest_lifecycle:None, quest_lifecycle_reply:None, quest_lifecycle_pending:false, dialogue:None, guide:None, dialogue_reply:None, dialogue_pending:false, quest:quest_state.clone(), progression:progression_state.clone(), rewards:inventory.as_ref().and_then(|m|m.rewards.clone()), appearance:inventory.as_ref().and_then(|m|m.appearance.clone()), statuses:status_state.clone(), inventory:inventory.as_ref().and_then(|m|m.view.clone()), inventory_pending:inventory.as_ref().is_some_and(|m|m.pending()), combat:combat_state.clone(), autoattack:melee_state.clone(), targeting:targeting.clone(), id, snapshot: Some(snapshot), error: None, transport: Some(stats.clone()), welcome:admission.clone(), wire_rebases:rebases, chunk_report:last_report.clone(), chunk_ack:last_ack.clone(),chunk_offer:last_offer.clone(),correction,correction_received,correction_ready:correction_ready.clone() };
+                        let mut update=State { public_avatar_life:avatar_life_state.clone(), public_creature_attack:public_attack_state.clone(), quest_journal:None, quest_journal_reply:None, quest_journal_pending:false, player_life:player_life_state.clone(), quest_lifecycle:None, quest_lifecycle_reply:None, quest_lifecycle_pending:false, dialogue:None, guide:None, dialogue_reply:None, dialogue_pending:false, quest:quest_state.clone(), progression:progression_state.clone(), rewards:inventory.as_ref().and_then(|m|m.rewards.clone()), appearance:inventory.as_ref().and_then(|m|m.appearance.clone()), statuses:status_state.clone(), inventory:inventory.as_ref().and_then(|m|m.view.clone()), inventory_pending:inventory.as_ref().is_some_and(|m|m.pending()), approved_document:inventory.as_ref().and_then(|m|m.approved_document), combat:combat_state.clone(), autoattack:melee_state.clone(), targeting:targeting.clone(), id, snapshot: Some(snapshot), error: None, transport: Some(stats.clone()), welcome:admission.clone(), wire_rebases:rebases, chunk_report:last_report.clone(), chunk_ack:last_ack.clone(),chunk_offer:last_offer.clone(),correction,correction_received,correction_ready:correction_ready.clone() };
                         if let Some(mode)=&journal {mode.copy_to(&mut update);}
                         if let Some(mode)=&lifecycle {mode.copy_to(&mut update);}
                         if let Some(mode)=&dialogue {mode.copy_to(&mut update);}
@@ -2445,7 +2450,7 @@ async fn run_client_inner(
                     let actor=theia_core::identity::EntityKey {epoch:theia_core::identity::WorldEpoch::new(welcome.epoch).unwrap(),entity:theia_core::identity::EntityId::new(welcome.id).unwrap()};
                     if let Some(bytes)=mode.next(actor,current)? {
                         client.send_message(EVENT_CHANNEL,bytes);stats.inventory_requests_sent+=1;
-                        state.send_modify(|s|{s.inventory_pending=true;s.transport=Some(stats.clone());});
+                        state.send_modify(|s|{s.inventory_pending=true;s.approved_document=mode.approved_document;s.transport=Some(stats.clone());});
                     }
                 }
                 if let (Some(welcome),Some(mode))=(&admission,combat.as_mut().and_then(|m|m.melee.as_mut()))

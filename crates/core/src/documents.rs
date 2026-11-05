@@ -12,6 +12,16 @@ pub const MAX_TITLE_BYTES: usize = 96;
 pub const PROFILE_DOMAIN: &[u8] = b"theia-item-documents-v1\0";
 pub const JOURNAL_PROFILE_DOMAIN: &[u8] = b"theia-quest-journal-documents-v1\0";
 
+/// Selected-item intent only. The catalogue ordinal is meaningful only with
+/// the exact bound document profile; an authority must resolve the saved bag.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct OpenCommand {
+    pub request_id: std::num::NonZeroU128,
+    pub expected_revision: u64,
+    pub slot: u8,
+    pub document: u8,
+}
+
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct RawCatalog {

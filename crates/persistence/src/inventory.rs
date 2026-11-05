@@ -61,6 +61,11 @@ pub(crate) fn intent_hash(command: ItemCommand) -> crate::Result<[u8; 32]> {
             digest(&SHA256, &bytes).as_ref().try_into().unwrap()
         }
         ItemCommand::RewardClaim(c) => crate::rewards::command_hash(c.claim, c.expected_revision),
+        ItemCommand::OpenDocument(_) => {
+            return Err(crate::Error::InventoryCommand(
+                theia_core::inventory::Error::DocumentAuthorityRequired,
+            ));
+        }
         ItemCommand::Vendor(_) => {
             return Err(crate::Error::InventoryCommand(
                 theia_core::inventory::Error::VendorAuthorityRequired,

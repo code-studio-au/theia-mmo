@@ -111,6 +111,7 @@ fn fixture() -> Fixture {
     });
     let (requests, receiver) = mpsc::channel(1);
     let peer = Peer::new(Port {
+        documents: None,
         vendor: None,
         rewards: Some(reward),
         opportunities: Some(mpsc::channel(16).0),

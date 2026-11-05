@@ -1,3 +1,12 @@
+Bounded document transport bridge qualified locally, 5 November 2026:
+P3-05 / P3-11 / P3-15: exact-profile document intents share bounded inventory
+ordering. Matching read approval permits an unchanged bag; ordinary mutation
+revision checks and legacy codecs remain strict. Network, core and server
+regressions, formatting and strict Clippy pass. [Scope/evidence](QUEST_DOCUMENTS.md#implemented-prerequisite-bounded-document-transport-bridge).
+Owner publications in these bridge tests are synthetic. Continue retained owner
+and explicit World adoption, then normal manifest/Bevy reader. No push.
+Qualified playable remains `65977bd`; earlier entries are prior checkpoints.
+
 Durable document opening qualified locally, 5 November 2026:
 P3-05 / P3-11 / P3-15: bound Store/worker opens authorize the saved item and
 record original-stage read credit before success. Exact retries, item loss,

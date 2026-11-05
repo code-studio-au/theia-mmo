@@ -212,6 +212,7 @@ pub enum Error {
     EmptyHand,
     ClaimAuthorityRequired,
     VendorAuthorityRequired,
+    DocumentAuthorityRequired,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Operation {
@@ -246,6 +247,8 @@ pub enum ItemCommand {
     Equipment(EquipmentCommand),
     RewardClaim(crate::rewards::ClaimCommand),
     Vendor(crate::vendors::Command),
+    /// Read-only item use; shares ordering but does not advance bag revision.
+    OpenDocument(crate::documents::OpenCommand),
 }
 impl From<Command> for ItemCommand {
     fn from(value: Command) -> Self {
@@ -267,6 +270,11 @@ impl From<crate::vendors::Command> for ItemCommand {
         Self::Vendor(value)
     }
 }
+impl From<crate::documents::OpenCommand> for ItemCommand {
+    fn from(value: crate::documents::OpenCommand) -> Self {
+        Self::OpenDocument(value)
+    }
+}
 impl ItemCommand {
     pub fn expected_revision(self) -> u64 {
         match self {
@@ -274,6 +282,7 @@ impl ItemCommand {
             Self::Equipment(c) => c.expected_revision,
             Self::RewardClaim(c) => c.expected_revision,
             Self::Vendor(c) => c.expected_revision,
+            Self::OpenDocument(c) => c.expected_revision,
         }
     }
     pub fn propose(self, bag: &Bag, catalog: &Catalog) -> Result<Bag, Error> {
@@ -282,6 +291,7 @@ impl ItemCommand {
             Self::Equipment(c) => bag.propose_equipment(catalog, c),
             Self::RewardClaim(_) => Err(Error::ClaimAuthorityRequired),
             Self::Vendor(_) => Err(Error::VendorAuthorityRequired),
+            Self::OpenDocument(_) => Err(Error::DocumentAuthorityRequired),
         }
     }
 }
