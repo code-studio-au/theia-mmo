@@ -81,6 +81,7 @@ impl Store {
             .quest_journal()
             .filter(|_| profile.catalog().has_quest_required())
             .ok_or(Error::Invalid("Quest loot requires a bound journal"))?;
+        journal.check_runtime_admission()?;
         let tx = bounded(self.client.as_mut().unwrap().transaction()).await?;
         authorize(&tx, self.realm, binding, world).await?;
         let snapshot =

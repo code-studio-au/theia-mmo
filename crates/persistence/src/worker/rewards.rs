@@ -227,6 +227,9 @@ impl Publisher {
             })
     }
     fn quest_loot_profile(profile: &RewardCatalog) -> Result<()> {
+        if let Some(journal) = profile.quest_journal() {
+            journal.check_runtime_admission()?;
+        }
         if profile.quest_journal().is_none() || !profile.catalog().has_quest_required() {
             return Err(Error::Invalid(
                 "Quest loot requires the bound conditional profile",

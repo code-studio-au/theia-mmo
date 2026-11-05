@@ -1,3 +1,12 @@
+Document content binding prerequisite qualified, 5 November 2026:
+P3-05 / P3-11 / P3-15: explicit wire/storage profiles now bind exact document,
+inventory, journal, XP and optional area bytes; read-only quests still bind items.
+Legacy Store/Publisher/owner/World/client execution stays closed for documents.
+Fifteen server, seven persistence-library and 60 actual PostgreSQL regression
+contracts/restart, formatting and strict Clippy pass. [Scope/evidence](QUEST_DOCUMENTS.md#implemented-prerequisite-exact-documentitemjournal-binding).
+Continue durable authorized opening locally; no push. No document UI/runtime yet.
+Qualified normal quest-loot playable remains `65977bd`.
+
 Read-objective core prerequisite qualified, 5 November 2026:
 P3-05 / P3-11 / P3-15: schema-4 `read_document` objectives and opaque original-
 stage observations now preserve historical read credit separately from possession.

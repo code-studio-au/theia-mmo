@@ -13,6 +13,7 @@ pub mod content;
 pub mod creature_attack_wire;
 pub mod dialogue;
 pub mod dialogue_wire;
+pub mod documents;
 pub mod dodge_input;
 pub mod dodge_prediction;
 pub mod dodge_prediction_wire;

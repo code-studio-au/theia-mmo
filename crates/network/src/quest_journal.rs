@@ -25,11 +25,15 @@ pub struct Profile {
     xp: [u8; 32],
     areas: Option<Arc<theia_core::quests::areas::Catalog>>,
     inventory: Option<(Arc<theia_core::inventory::Catalog>, [u8; 32])>,
+    documents: Option<Arc<crate::documents::Profile>>,
 }
 impl Profile {
     pub fn from_json(bytes: &[u8], xp: &progression_wire::Profile) -> Result<Self> {
+        Self::parse(bytes, xp, false)
+    }
+    fn parse(bytes: &[u8], xp: &progression_wire::Profile, allow_documents: bool) -> Result<Self> {
         let catalog = Arc::new(Catalog::from_json(bytes)?);
-        if catalog.quests().any(|q| q.has_document_objectives()) {
+        if !allow_documents && catalog.quests().any(|q| q.has_document_objectives()) {
             return Err("Document-read journal runtime is not installed".into());
         }
         let mut bound = PROFILE_DOMAIN.to_vec();
@@ -41,6 +45,7 @@ impl Profile {
             xp: xp.hash(),
             areas: None,
             inventory: None,
+            documents: None,
         })
     }
     /// Explicit experimental area mode. The legacy constructor/hash is unchanged.
@@ -49,15 +54,71 @@ impl Profile {
         area_bytes: &[u8],
         xp: &progression_wire::Profile,
     ) -> Result<Self> {
-        let mut profile = Self::from_json(bytes, xp)?;
+        Self::from_json(bytes, xp)?.bind_areas(area_bytes)
+    }
+    fn bind_areas(mut self, area_bytes: &[u8]) -> Result<Self> {
         let areas = Arc::new(theia_core::quests::areas::Catalog::from_json(area_bytes)?);
-        areas.validate_quests(&profile.catalog)?;
+        areas.validate_quests(&self.catalog)?;
         let mut bound = theia_core::quests::areas::PROFILE_DOMAIN.to_vec();
-        bound.extend(profile.hash);
+        bound.extend(self.hash);
         bound.extend(area_bytes);
+        self.hash = crate::terrain::sha256(&bound);
+        self.areas = Some(areas);
+        Ok(self)
+    }
+    /// Exact content binding only; runtime document opening remains gated.
+    pub fn from_json_with_documents(
+        bytes: &[u8],
+        area_bytes: Option<&[u8]>,
+        xp: &progression_wire::Profile,
+        documents: &crate::documents::Profile,
+    ) -> Result<Self> {
+        let mut profile = Self::parse(bytes, xp, true)?;
+        if !profile
+            .catalog
+            .quests()
+            .any(|q| q.has_document_objectives())
+        {
+            return Err("Document binding requires read objectives".into());
+        }
+        let needs_areas = profile
+            .catalog
+            .quests()
+            .flat_map(|q| q.stages())
+            .flat_map(|s| s.objectives())
+            .any(|o| {
+                matches!(
+                    o.event(),
+                    theia_core::quests::catalog::EventKey::ReachArea(_)
+                )
+            });
+        if needs_areas != area_bytes.is_some() {
+            return Err("Document journal requires its exact area context".into());
+        }
+        if let Some(bytes) = area_bytes {
+            profile = profile.bind_areas(bytes)?;
+        }
+        documents.catalog().validate_quests(&profile.catalog)?;
+        if let Some(areas) = &profile.areas {
+            documents.catalog().validate_areas(areas)?;
+        }
+        let mut bound = theia_core::quests::journal::ITEM_PROFILE_DOMAIN.to_vec();
+        bound.extend(profile.hash);
+        bound.extend(documents.inventory_hash());
         profile.hash = crate::terrain::sha256(&bound);
-        profile.areas = Some(areas);
+        profile.inventory = Some((
+            Arc::new(documents.catalog().inventory().clone()),
+            documents.inventory_hash(),
+        ));
+        let mut bound = theia_core::documents::JOURNAL_PROFILE_DOMAIN.to_vec();
+        bound.extend(profile.hash);
+        bound.extend(documents.hash());
+        profile.hash = crate::terrain::sha256(&bound);
+        profile.documents = Some(Arc::new(documents.clone()));
         Ok(profile)
+    }
+    pub fn documents(&self) -> Option<&crate::documents::Profile> {
+        self.documents.as_deref()
     }
     /// Bind current-possession semantics to the exact inventory profile.
     /// A created profile is not World admission or durable ownership.

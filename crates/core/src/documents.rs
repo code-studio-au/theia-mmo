@@ -9,6 +9,8 @@ pub const MAX_DOCUMENTS: usize = 16;
 pub const MAX_PAGES: usize = 4;
 pub const MAX_PAGE_BYTES: usize = 2048;
 pub const MAX_TITLE_BYTES: usize = 96;
+pub const PROFILE_DOMAIN: &[u8] = b"theia-item-documents-v1\0";
+pub const JOURNAL_PROFILE_DOMAIN: &[u8] = b"theia-quest-journal-documents-v1\0";
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -146,6 +148,9 @@ impl Catalog {
     pub fn item_catalog(&self) -> &ContentId {
         self.items.id()
     }
+    pub fn inventory(&self) -> &inventory::Catalog {
+        &self.items
+    }
     pub fn documents(&self) -> impl ExactSizeIterator<Item = &Document> {
         self.documents.values()
     }
@@ -193,6 +198,18 @@ impl Catalog {
             return Err("Document definitions alias quest content");
         }
         quests.validate_possession_items(&self.items)
+    }
+    pub fn validate_areas(
+        &self,
+        areas: &crate::quests::areas::Catalog,
+    ) -> Result<(), &'static str> {
+        let ids: std::collections::BTreeSet<_> = std::iter::once(areas.id())
+            .chain(areas.areas().map(|a| a.id()))
+            .collect();
+        if ids.contains(self.id()) || self.documents().any(|d| ids.contains(d.id())) {
+            return Err("Document and area definition IDs alias");
+        }
+        Ok(())
     }
     /// Check the current stack and original selected bag revision. An authority
     /// must separately validate session/profile identity and lock the saved bag.

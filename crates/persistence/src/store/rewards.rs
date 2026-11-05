@@ -217,6 +217,7 @@ impl Store {
         journal: Option<&crate::QuestJournalCatalog>,
     ) -> Result<Option<RewardClaim>> {
         if let Some(journal) = journal {
+            journal.check_runtime_admission()?;
             if !profile.catalog().has_quest_required()
                 || profile.quest_journal().map(|j| j.hash()) != Some(journal.hash())
             {
@@ -454,6 +455,9 @@ impl Store {
         journal: Option<&crate::QuestJournalCatalog>,
         quest_loot: bool,
     ) -> Result<InventoryApplied> {
+        if let Some(journal) = journal {
+            journal.check_runtime_admission()?;
+        }
         if quest_loot {
             if !profile.catalog().has_quest_required()
                 || profile.quest_journal().map(|j| j.hash()) != journal.map(|j| j.hash())

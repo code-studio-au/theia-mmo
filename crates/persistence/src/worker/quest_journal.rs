@@ -223,6 +223,7 @@ impl Publisher {
         operation: Operation,
     ) -> Result<QuestJournalApplied> {
         valid_world(world)?;
+        catalog.check_runtime_admission()?;
         let (reply, answer) = oneshot::channel();
         self.inventory
             .send(inventory::Request::QuestJournal(Request {
@@ -246,6 +247,7 @@ impl Publisher {
         operation: Operation,
     ) -> Result<oneshot::Receiver<Result<QuestJournalApplied>>> {
         valid_world(world)?;
+        catalog.check_runtime_admission()?;
         let (reply, answer) = oneshot::channel();
         self.inventory
             .try_send(inventory::Request::QuestJournal(Request {

@@ -41,6 +41,9 @@ impl Store {
         purchase: &Purchase,
         journal: Option<&crate::QuestJournalCatalog>,
     ) -> Result<InventoryApplied> {
+        if let Some(journal) = journal {
+            journal.check_runtime_admission()?;
+        }
         if purchase.expected_revision > MAX_REVISION {
             return Err(Error::InventoryStale);
         }

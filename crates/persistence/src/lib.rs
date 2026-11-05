@@ -1,6 +1,7 @@
 //! Async PostgreSQL boundary. No renderer, transport or simulation dependencies.
 //! Queries and commit acknowledgements belong to an owner worker, never World::step.
 mod characters;
+mod documents;
 mod gameplay_profiles;
 mod inventory;
 mod progression;
@@ -12,6 +13,7 @@ mod store;
 mod vendors;
 mod worker;
 pub use characters::{Character, CharacterName, CharacterSummary, MAX_CHARACTERS_PER_OWNER};
+pub use documents::DocumentCatalog;
 pub use gameplay_profiles::{GameplayProfiles, ProfileCompatibility};
 pub use inventory::{InventoryApplied, InventoryCatalog};
 pub use progression::{ProgressionApplied, ProgressionCatalog};

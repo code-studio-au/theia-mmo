@@ -128,6 +128,65 @@ all-target Clippy pass at `build/quest-document-objective-fmt-v1-20261105.log` a
 `build/quest-document-objective-qualified-v1-20261105`. No new native/SQL claim;
 qualified quest-loot playable remains `65977bd`.
 
+## Implemented prerequisite: exact document/item/journal binding
+
+Network `documents::Profile` and persistence `DocumentCatalog` now bind the same
+raw document bytes to the exact raw inventory identity. Explicit journal
+`from_json_with_documents` constructors bind that profile and attach inventory
+for read-only quests as well as mixed possession/read quests. Old journal
+constructors continue refusing read objectives. Rebinding an already bound
+inventory or supplying an unused document context refuses.
+
+The canonical hash dependency is:
+
+```text
+raw inventory -> document profile
+raw quest + XP policy -> base journal
+base journal -> optional exact area bytes -> exact inventory -> document profile
+```
+
+Each arrow uses the documented versioned domain prefix. Existing base/area/item
+journal hash formulas stay unchanged. The new document suffix additionally binds
+note content. Read journals with reach-area objectives require their area context;
+read journals without them reject an unused area context. Document and area
+catalogue/definition IDs cannot alias, including unused definitions. Bound
+constructors validate known document/item references and the existing possession
+restrictions before producing metadata.
+
+Cross-layer tests change only whitespace in each of inventory, quest, XP,
+document and area inputs. Every resulting journal identity changes and wire /
+storage hashes agree; only inventory/document changes affect the document hash.
+Read-only journals still attach the expected inventory hash, and missing,
+foreign/unused or aliased contexts refuse.
+
+This remains **metadata-only adoption**. Legacy journal Store methods, compound
+item/vendor/reward transactions and conditional generation/view/pickup refuse
+read-bound profiles before SQL. Nonblocking and async Publisher paths refuse them
+before acceptance into the critical queue, so unsupported calls do not fail the
+shared worker. Exact binding also does not install the normal retained owner,
+World or gameplay client. Boundary tests prove those gates remain closed.
+No new opening command, document UI, read receipt or successful SQL read exists.
+
+Evidence: fifteen server-library tests at
+`build/quest-document-binding-server-tests-v3-20261105.log`; seven persistence
+library tests at `build/quest-document-binding-persistence-tests-v1-20261105.log`.
+The new disconnected Store check exercises twelve direct/compound entry points
+and would panic if it reached SQL. The producer check exercises nineteen sync /
+async paths and verifies the queue remains empty at its full sixteen-slot capacity.
+These are refusal checks, not durable-open proof.
+
+`build/quest-document-binding-postgres-v1-20261105/verification.json` passes all
+60 existing actual PostgreSQL 16.15 contracts, seven non-SQL library tests,
+reload examples and process restart. All 65 existing loot-roll rows preserve their
+aggregate hash across restart. This is regression evidence for existing gameplay,
+not successful read-document persistence. The validated area catalogue is retained
+in the persistence profile for combined-reference checks; existing hash domains
+and old profile behavior remain unchanged. Formatting and denied-warning
+workspace/all-target Clippy pass at `build/quest-document-binding-fmt-v1-20261105.log`
+and `build/quest-document-binding-clippy-v1-20261105.log`.
+Preserve `build/quest-document-binding-qualified-v1-20261105`. Normal/native
+quest-loot playable remains `65977bd`; no new native/Windows/capacity claim.
+
 ## Planned read-credit semantics
 
 An authenticated server must validate current ownership and exact item/document
@@ -147,11 +206,15 @@ generic unchecked client/NPC event paths.
 
 Remaining slices and concrete acceptance checks:
 
-1. Bind exact inventory/document/journal bytes on both sides. Resolve ownership
-   and stage eligibility under the existing async authority's bag/journal locks,
-   commit replay-safe original-open receipts and affected journal before success.
-   Test forged requests, moved/deleted items, concurrent changes, rollback,
-   response loss, retirement and actual database restart.
+1. Add explicit document-aware journal initialization and authorized opening on
+   the existing async owner/Store boundary. Under bag-then-journal locks, validate
+   original request/content/ownership and seal current-stage read credit, reconcile
+   possession and commit a replay-safe open receipt before success. Prefer the
+   existing quest-event receipt table with a separate open-request domain rather
+   than adding another storage system. Exact retries recover their original
+   authorization without becoming fresh reads; new requests must check current
+   ownership. Test forged requests, moved/deleted items, concurrent changes,
+   rollback, response loss, retirement and actual database restart.
 2. Add bounded wire commands and standard Bevy document presentation. Display
    only exact locally bound content after server approval; preserve current
    controls and UI input ownership. Qualify normal open/read, repeat open,

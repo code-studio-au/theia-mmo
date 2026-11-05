@@ -15,13 +15,17 @@ pub struct QuestJournalCatalog {
     catalog: Arc<Catalog>,
     hash: [u8; 32],
     progression: [u8; 32],
-    areas: bool,
+    areas: Option<Arc<theia_core::quests::areas::Catalog>>,
+    documents: Option<crate::DocumentCatalog>,
     inventory: Option<crate::InventoryCatalog>,
 }
 impl QuestJournalCatalog {
     pub fn from_json(bytes: &[u8], xp: &ProgressionCatalog) -> Result<Self> {
+        Self::parse(bytes, xp, false)
+    }
+    fn parse(bytes: &[u8], xp: &ProgressionCatalog, allow_documents: bool) -> Result<Self> {
         let catalog = Arc::new(Catalog::from_json(bytes).map_err(Error::Invalid)?);
-        if catalog.quests().any(|q| q.has_document_objectives()) {
+        if !allow_documents && catalog.quests().any(|q| q.has_document_objectives()) {
             return Err(Error::Invalid(
                 "Document-read journal storage is not installed",
             ));
@@ -33,7 +37,8 @@ impl QuestJournalCatalog {
             catalog,
             hash: hash(&bound),
             progression: xp.hash(),
-            areas: false,
+            areas: None,
+            documents: None,
             inventory: None,
         })
     }
@@ -42,18 +47,79 @@ impl QuestJournalCatalog {
         area_bytes: &[u8],
         xp: &ProgressionCatalog,
     ) -> Result<Self> {
-        let mut catalog = Self::from_json(bytes, xp)?;
+        Self::from_json(bytes, xp)?.bind_areas(area_bytes)
+    }
+    fn bind_areas(mut self, area_bytes: &[u8]) -> Result<Self> {
         let areas =
             theia_core::quests::areas::Catalog::from_json(area_bytes).map_err(Error::Invalid)?;
         areas
-            .validate_quests(&catalog.catalog)
+            .validate_quests(&self.catalog)
             .map_err(Error::Invalid)?;
         let mut bound = theia_core::quests::areas::PROFILE_DOMAIN.to_vec();
-        bound.extend(catalog.hash);
+        bound.extend(self.hash);
         bound.extend(area_bytes);
+        self.hash = hash(&bound);
+        self.areas = Some(Arc::new(areas));
+        Ok(self)
+    }
+    /// Exact metadata only; saved document opening is not yet installed.
+    pub fn from_json_with_documents(
+        bytes: &[u8],
+        area_bytes: Option<&[u8]>,
+        xp: &ProgressionCatalog,
+        documents: &crate::DocumentCatalog,
+    ) -> Result<Self> {
+        let mut catalog = Self::parse(bytes, xp, true)?;
+        if !catalog
+            .catalog
+            .quests()
+            .any(|q| q.has_document_objectives())
+        {
+            return Err(Error::Invalid("Document binding requires read objectives"));
+        }
+        let needs_areas = catalog
+            .catalog
+            .quests()
+            .flat_map(|q| q.stages())
+            .flat_map(|s| s.objectives())
+            .any(|o| {
+                matches!(
+                    o.event(),
+                    theia_core::quests::catalog::EventKey::ReachArea(_)
+                )
+            });
+        if needs_areas != area_bytes.is_some() {
+            return Err(Error::Invalid(
+                "Document journal requires its exact area context",
+            ));
+        }
+        if let Some(bytes) = area_bytes {
+            catalog = catalog.bind_areas(bytes)?;
+        }
+        documents
+            .catalog()
+            .validate_quests(&catalog.catalog)
+            .map_err(Error::Invalid)?;
+        if let Some(areas) = &catalog.areas {
+            documents
+                .catalog()
+                .validate_areas(areas)
+                .map_err(Error::Invalid)?;
+        }
+        let mut bound = theia_core::quests::journal::ITEM_PROFILE_DOMAIN.to_vec();
+        bound.extend(catalog.hash);
+        bound.extend(documents.inventory().hash());
         catalog.hash = hash(&bound);
-        catalog.areas = true;
+        catalog.inventory = Some(documents.inventory().clone());
+        let mut bound = theia_core::documents::JOURNAL_PROFILE_DOMAIN.to_vec();
+        bound.extend(catalog.hash);
+        bound.extend(documents.hash());
+        catalog.hash = hash(&bound);
+        catalog.documents = Some(documents.clone());
         Ok(catalog)
+    }
+    pub fn documents(&self) -> Option<&crate::DocumentCatalog> {
+        self.documents.as_ref()
     }
     pub fn with_inventory(mut self, inventory: &crate::InventoryCatalog) -> Result<Self> {
         if self.inventory.is_some() || !self.catalog.quests().any(|q| q.has_possession_objectives())
@@ -75,8 +141,19 @@ impl QuestJournalCatalog {
     pub fn inventory(&self) -> Option<&crate::InventoryCatalog> {
         self.inventory.as_ref()
     }
+    pub(crate) fn check_runtime_admission(&self) -> Result<()> {
+        self.check_inventory_binding()?;
+        if self.documents.is_some() {
+            return Err(Error::Invalid("Document journal runtime is not installed"));
+        }
+        Ok(())
+    }
     pub(crate) fn check_inventory_binding(&self) -> Result<()> {
-        if self.inventory.is_none() && self.catalog.quests().any(|q| q.has_possession_objectives())
+        if self.inventory.is_none()
+            && self
+                .catalog
+                .quests()
+                .any(|q| q.has_possession_objectives() || q.has_document_objectives())
         {
             return Err(Error::Invalid(
                 "Possession journal requires inventory binding",
@@ -88,7 +165,7 @@ impl QuestJournalCatalog {
         &self,
         observation: &theia_core::quests::journal::ReachedAreas,
     ) -> Result<()> {
-        if !self.areas
+        if self.areas.is_none()
             || observation.is_empty()
             || observation.catalog() != self.catalog.id()
             || observation.catalog_revision() != self.catalog.revision()

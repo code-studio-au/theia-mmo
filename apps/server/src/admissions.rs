@@ -186,6 +186,9 @@ impl GameAdmissions {
         gate: &mut Arc<Self>,
         profile: theia_persistence::QuestJournalCatalog,
     ) -> Result<()> {
+        if profile.documents().is_some() {
+            return Err("Document journal owner is not installed".into());
+        }
         let gate = Arc::get_mut(gate).ok_or("Journal configuration requires unshared gate")?;
         if let Some(items) = profile.inventory() {
             let inventory = gate

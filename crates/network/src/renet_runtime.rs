@@ -1929,6 +1929,12 @@ async fn run_client_inner(
         quest,
         statuses,
     } = mode;
+    if journal
+        .as_ref()
+        .is_some_and(|j| j.profile.documents().is_some())
+    {
+        return Err("Document-read client runtime is not installed".into());
+    }
     if let Some(items) = &inventory {
         items
             .profile

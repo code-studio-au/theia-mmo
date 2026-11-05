@@ -1,3 +1,10 @@
+Readable-document exact binding prerequisite, 5 November 2026:
+Wire/storage document and journal identities now bind exact items, note content,
+XP and optional area context, including read-only quests. Legacy Store/worker/
+owner/World/client paths refuse execution; successful opening and read receipts
+remain pending. [Evidence and next work](QUEST_DOCUMENTS.md#implemented-prerequisite-exact-documentitemjournal-binding).
+Qualified normal quest loot remains `65977bd`; changes stay local.
+
 Read-objective core prerequisite, 5 November 2026:
 Schema-4 quest catalogues can represent `read_document` and the pure journal can
 seal/apply original-stage read observations. Offline compiler/update review support

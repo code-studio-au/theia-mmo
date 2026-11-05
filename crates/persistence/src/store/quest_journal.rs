@@ -1,5 +1,8 @@
 //! Independent event receipts and atomic multi-quest completion. Trusted Store
 //! API only; no NPC, party or combat eligibility is inferred by SQL.
+#[cfg(test)]
+#[path = "quest_journal/document_tests.rs"]
+mod document_tests;
 mod items;
 use super::{Store, bounded, inventory::authorize, progression};
 use crate::{
@@ -173,7 +176,7 @@ impl Store {
         world: [u8; 32],
         catalog: &QuestJournalCatalog,
     ) -> Result<QuestJournalApplied> {
-        catalog.check_inventory_binding()?;
+        catalog.check_runtime_admission()?;
         let tx = bounded(self.client.as_mut().unwrap().transaction()).await?;
         authorize(&tx, self.realm, binding, world).await?;
         let bag = items::lock(&tx, self.realm, binding, catalog).await?;
@@ -192,7 +195,7 @@ impl Store {
         world: [u8; 32],
         catalog: &QuestJournalCatalog,
     ) -> Result<QuestJournalApplied> {
-        catalog.check_inventory_binding()?;
+        catalog.check_runtime_admission()?;
         let tx = bounded(self.client.as_mut().unwrap().transaction()).await?;
         authorize(&tx, self.realm, binding, world).await?;
         let bag = items::lock(&tx, self.realm, binding, catalog).await?;
@@ -215,7 +218,7 @@ impl Store {
         event_id: NonZeroU128,
         event: &EventKey,
     ) -> Result<QuestJournalApplied> {
-        catalog.check_inventory_binding()?;
+        catalog.check_runtime_admission()?;
         let tx = bounded(self.client.as_mut().unwrap().transaction()).await?;
         authorize(&tx, self.realm, binding, world).await?;
         let result = apply_event(
@@ -242,7 +245,7 @@ impl Store {
         event_id: NonZeroU128,
         observation: &theia_core::quests::journal::ReachedAreas,
     ) -> Result<QuestJournalApplied> {
-        catalog.check_inventory_binding()?;
+        catalog.check_runtime_admission()?;
         catalog.check_reached_areas(observation)?;
         let tx = bounded(self.client.as_mut().unwrap().transaction()).await?;
         authorize(&tx, self.realm, binding, world).await?;
@@ -270,7 +273,7 @@ impl Store {
         catalog: &QuestJournalCatalog,
         event: &theia_core::progression::KillEvent,
     ) -> Result<QuestJournalApplied> {
-        catalog.check_inventory_binding()?;
+        catalog.check_runtime_admission()?;
         catalog.check_progression(xp)?;
         let tx = bounded(self.client.as_mut().unwrap().transaction()).await?;
         authorize(&tx, self.realm, binding, world).await?;
@@ -320,7 +323,7 @@ impl Store {
         xp: &ProgressionCatalog,
         command: &QuestJournalCommand,
     ) -> Result<QuestJournalApplied> {
-        catalog.check_inventory_binding()?;
+        catalog.check_runtime_admission()?;
         catalog.check_progression(xp)?;
         if command.expected_revision > i64::MAX as u64 {
             return Err(Error::QuestJournalData);
@@ -499,7 +502,7 @@ pub(super) async fn reconcile_inventory(
     let Some(catalog) = catalog else {
         return Ok(None);
     };
-    catalog.check_inventory_binding()?;
+    catalog.check_runtime_admission()?;
     if catalog
         .inventory()
         .is_none_or(|items| items.hash() != profile.hash())

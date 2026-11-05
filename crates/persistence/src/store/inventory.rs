@@ -138,6 +138,9 @@ impl Store {
         command: ItemIntent,
         journal: Option<&crate::QuestJournalCatalog>,
     ) -> Result<InventoryApplied> {
+        if let Some(journal) = journal {
+            journal.check_runtime_admission()?;
+        }
         let transaction = bounded(self.client.as_mut().unwrap().transaction()).await?;
         authorize(&transaction, self.realm, binding, world).await?;
         let row = bounded(transaction.query_opt(

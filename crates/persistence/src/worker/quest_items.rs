@@ -119,7 +119,7 @@ impl Publisher {
         operation: Operation,
     ) -> Result<oneshot::Receiver<Result<InventoryApplied>>> {
         valid_world(world)?;
-        journal.check_inventory_binding()?;
+        journal.check_runtime_admission()?;
         let (reply, answer) = oneshot::channel();
         self.inventory
             .try_send(inventory::Request::QuestItems(Request {
@@ -145,7 +145,7 @@ impl Publisher {
         operation: Operation,
     ) -> Result<InventoryApplied> {
         valid_world(world)?;
-        journal.check_inventory_binding()?;
+        journal.check_runtime_admission()?;
         let (reply, answer) = oneshot::channel();
         self.inventory
             .send(inventory::Request::QuestItems(Request {
