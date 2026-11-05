@@ -1706,3 +1706,7 @@ mod quest_profile_tests;
 #[cfg(test)]
 #[path = "inventory/document_tests.rs"]
 mod document_tests;
+
+#[cfg(test)]
+#[path = "inventory/document_renet_tests.rs"]
+mod document_renet_tests;

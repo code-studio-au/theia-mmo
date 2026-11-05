@@ -317,6 +317,27 @@ Preserve `build/quest-document-owner-qualified-v1-20261105`.
 Normal manifests and the Bevy reader remain pending; no GPU/Windows/capacity
 claim. Qualified normal quest-loot playable remains `65977bd`.
 
+## Encrypted document bridge qualified
+
+The actual Renet/netcode runtime now passes a two-peer document fixture at
+20/30/60 Hz under 20 ms delay, 30 ms jitter, every eleventh packet dropped and
+every seventeenth duplicated. A held synthetic owner receives the exact original
+open and withholds approval; a queued bag move cannot overtake it. Approval at
+unchanged revision zero, the later bag move, fresh missing-slot refusal and an
+original successful retry carrying the newer bag all pass. The other peer keeps
+its own bag and receives no private reply or read approval. No client read event
+is sent to the quest-progression input. Relay queues stay bounded with no overflow.
+
+Evidence: `build/quest-document-encrypted-tests-v4-20261105.log`;
+formatting and strict workspace/all-target Clippy pass in
+`build/quest-document-encrypted-{fmt,clippy}-v2-20261105.log`.
+This adds one three-rate test to the previously passing 375 network-library tests.
+The fixture correctly opts into the existing journal prediction requirement and
+uses a schema-1-compatible bag move. Owner publications here are synthetic; actual
+login/SQL retirement and deletion are proved separately above. Normal combined
+native read-credit, reader UI, Windows and capacity remain unproved.
+Preserve `build/quest-document-encrypted-qualified-v1-20261105`.
+
 ## Planned read-credit semantics
 
 An authenticated server must validate current ownership and exact item/document
@@ -336,10 +357,7 @@ generic unchecked client/NPC event paths.
 
 Remaining slices and concrete acceptance checks:
 
-1. Qualify document intents and read approval through the actual encrypted game
-   runtime. Keep synthetic transport publications distinct from the real OIDC/SQL
-   retained-owner proof above, then qualify their normal combined path.
-2. Adopt opt-in normal manifests and standard Bevy document presentation. Display
+1. Adopt opt-in normal manifests and standard Bevy document presentation. Display
    only exact locally bound content after server approval; preserve current
    controls and UI input ownership. Qualify normal open/read, repeat open,
    later deletion, turn-in and save/rejoin through encrypted/native flows.

@@ -1,3 +1,12 @@
+Encrypted document bridge qualified locally, 5 November 2026:
+P3-05 / P3-11 / P3-15: two encrypted peers at 20/30/60 Hz pass held read approval,
+shared bag ordering, fresh missing-slot refusal and original retry under packet
+delay/loss/duplication. Private replies stay with their owner. Formatting and
+strict Clippy pass. [Scope/evidence](QUEST_DOCUMENTS.md#encrypted-document-bridge-qualified).
+This uses synthetic transport publications; real OIDC/SQL ownership is qualified
+separately. Continue normal manifest and Bevy reader, then combined native proof.
+No push; qualified normal playable remains `65977bd`.
+
 Retained document owner and World admission qualified locally, 5 November 2026:
 P3-05 / P3-11 / P3-15: explicit exact document context now connects the retained
 item owner to durable opening. Real login, encrypted ticket and PostgreSQL prove
