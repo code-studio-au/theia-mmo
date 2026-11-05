@@ -819,3 +819,88 @@ One working explanation is that a narrow chain of members preserved records and 
 The full dramatic scene **Memory I — The Six Reunited** is preserved in [Theia Memory Scenes](THEIA_MEMORY_SCENES.md). The Chronicle records its historical place and consequences without reproducing its dialogue.
 
 **Source and production status:** Recoverable decisions Q376–435 and earlier recovered material are documented in [Source Decision Recovery](THEIA_SOURCE_DECISION_RECOVERY.md). Q436–444 were not answered and must not be treated as approved. The ten capitals, regional city concepts, starting experiences, level bands, contested zones and raid concepts are planning scope, not a claim of implementation or final production approval.
+
+
+---
+
+# The Human Chronicle — A Road Out of Millhaven
+
+*First-person narrative adaptation of the canonical Human 1–80 campaign. Literary draft, not a separate canon authority. The canonical campaign governs events and outcomes; the quest manifest governs objective order and evidence; the level-range dialogue scripts provide the characters' first-pass voices. Narrative transitions, atmosphere and the unnamed protagonist's private thoughts are WORKING prose. This opening installment covers the beginning of the Millhaven storyline; later chapters remain to be written.*
+
+## Book I — The Crown and the Betrayal
+
+### Chapter One — Every Absence
+
+I came to Millhaven looking for work. At the time, that seemed an ordinary enough reason to enter a village. I had no commission, no letter bearing a royal seal, and no particular talent for knowing when a stranger was telling the truth. I knew only that the road had carried me there and that people needed help.
+
+Elara was not impressed by my arrival. She looked up from the work in front of her, measured me with a glance, and asked what I could do.
+
+“Whatever needs doing,” I said.
+
+“That's what everyone says before they know what needs doing.”
+
+She told me to find three people: Darian, who kept the road watch; Anwen, who tended the healing house; and Brenna, who handled the caravans. I had expected a task. Elara gave me questions.
+
+“Speak to all three,” she said. “Then come back and tell me what you found.”
+
+“Why does the village need another pair of hands?”
+
+“Because a small place notices every absence. And we've had one too many lately.”
+
+I carried those words with me through Millhaven. I found Darian concerned about the western bend, where predators had been moving close to the road. Anwen had patients waiting for supplies that had not arrived. Brenna's next caravan was overdue. Each spoke of a different problem, but the road ran through all of them.
+
+When I returned, Elara did not ask which problem seemed most important. She asked what each person had actually told me. I repeated their accounts as carefully as I could.
+
+“Good,” she said at last. “Start with Darian's patrol. If the road is unsafe, every other problem gets worse.”
+
+Darian took me to the western bend. There was little to see at first: disturbed earth, the movement of brush, a stretch of road that looked no different from any other. He showed me where the ground had been pressed down and how the tracks continued toward the place where a worker had failed to return.
+
+“Watch where you're standing, too,” he warned. “A beast won't wait for you to turn around.”
+
+We found the worker sheltering away from the road, frightened but alive. I helped bring them past the dangerous stretch while Darian kept watch. By the time we reached safety, I understood why he had insisted on finding the person rather than simply counting the predators. A patrol could report an empty road and still leave someone stranded beside it.
+
+Anwen's parcel was waiting at a roadside store, sealed and kept out of the damp. I brought it back to the healing house, expecting her to send me on my way. Instead she asked me to set it on the table and look at a patient whose wound had begun to close more quickly than she expected.
+
+“I thought I'd be laid up for weeks,” the patient said. “It barely aches now.”
+
+Anwen examined the healing tissue with the guarded attention of someone who did not want hope to outrun evidence.
+
+“The wound's closing faster than I expected,” she said quietly. “I can't explain it yet, and I won't pretend I can.”
+
+I could not explain it either. I remembered the moment because she refused to make more of it than she knew. There would be many people, in the years that followed, who spoke with far greater certainty about things they understood far less.
+
+Brenna had no patience for mysteries without witnesses. She gave me the caravan's last confirmed stop and told me to look for the missing wagon.
+
+“If you find anyone alive, listen before you act.”
+
+The wagon had been abandoned. Ordinary goods lay scattered, but other fittings stood empty where selected crates had been secured. The damage did not tell me who had done it. A surviving teamster, hidden nearby after the attack, told me more.
+
+“They took the crates with the marked seals,” the teamster said. “Left the rest.”
+
+“Did you see who led them?”
+
+“Not clearly. One of them said the buyer wouldn't pay for substitutions.”
+
+I went back over the wagon before leaving. The empty places mattered as much as the scattered cargo. Whoever had taken the crates had wanted something specific. That was not proof of a royal plot or a great enemy beyond the hills. It was proof that this had not been a random theft.
+
+Brenna listened without interrupting. When I finished, she asked me to repeat the teamster's words.
+
+“So they knew what they wanted,” she said. “Elara will want to hear this.”
+
+I had imagined that helping a village would mean fixing what was broken and then moving on. But a missing caravan did not end with a recovered survivor, any more than a safe road meant the next journey would be safe. There were still frightened workers, delayed medicine, missing crates and people whose livelihoods depended on the next wagon arriving.
+
+I told Elara what we had found. She asked where the evidence came from, what I had seen myself, and what the teamster could only remember hearing. I was beginning to understand the difference.
+
+The village still needed its fences mended, its seed counted and its carts repaired. Those things did not become less important because someone had stolen marked cargo. I helped where I could. At a broken pasture fence I learned how quickly an ordinary hazard could become a danger to a neighbour. In the seed stores, a duplicate requisition proved to be a matter for patient counting, not a sword. A wheel assembly needed iron and work, not a heroic speech.
+
+Each small task brought me back to the same lesson: people lived here, and they would still live here after I had gone.
+
+Anwen continued to watch her patients without declaring a cause for their unexpected recovery. Brenna kept asking after the missing cargo. Darian watched the road. Elara held their separate concerns together without pretending they were all one story.
+
+I did not yet know where the marked crates had gone. I did not know why anyone would pay for those particular goods, or what kind of authority might lie behind a seal.
+
+I knew the teamster was alive. I knew the parcel had reached the healing house. I knew the road was dangerous, and that somebody had chosen what to take from the wagon.
+
+It was not much to carry beyond Millhaven.
+
+It was enough to begin.
