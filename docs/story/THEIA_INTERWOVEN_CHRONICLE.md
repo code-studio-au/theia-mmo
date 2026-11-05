@@ -3111,3 +3111,220 @@ I had found someone whose greatest struggle was not to remember the past, but to
 Oth'varen looked down at the records.
 
 And he began to tell me what the six had tried to build.
+
+
+### Chapter Thirteen — The Six Reunited
+
+Oth'varen did not begin with the catastrophe.
+
+He began with a table.
+
+“There were six places,” he said. “And six people who believed that if we worked carefully enough, we might learn something no one had learned before.”
+
+The records lay between us in Sel'ora's archive. The room was quiet except for the small sounds of pages being turned and the measured movements of the custodians. I had imagined that a survivor of the First Anchor would speak in the language of divine power and lost civilisations. Instead he seemed to be remembering a room in which colleagues argued over where to put their instruments.
+
+“Was it always dangerous?” I asked.
+
+“All work that reaches beyond what is known carries danger. That is why we had procedures, independent verification and limits. We were not supposed to abandon those things when the results became interesting.”
+
+He touched the verifier's mark on the preserved image.
+
+“That was my work. Thes'var designed structures that made new arrangements possible. I tested whether those arrangements could remain stable. We disagreed often. It was useful to disagree.”
+
+“Did you trust him?”
+
+“I did.”
+
+He said it without qualification, and for a moment I saw the cost of the answer.
+
+Oth'varen spoke of Vaer'uun's ability to give difficult questions a shared purpose, of Thes'var's restless ingenuity, of Su'vareth's skill in guarding sensitive exchanges, of Oma'vira's study of consciousness and perception, and of Khor'vun's concern for safeguards. They had been scholars before their names became titles spoken with fear.
+
+I had seen Oma'vira die. I had seen what she made of other people's minds. Hearing that she had once tried to understand how perception could be tested safely did not soften what she had done. It made her choices harder to dismiss as the actions of a creature that had never been anything else.
+
+“What changed?” I asked.
+
+Oth'varen looked toward the instrument records.
+
+“The results began to exceed our explanations. We were attempting work whose stated purpose was communication with Ascendant. The six-field experiments produced effects that seemed to point beyond what we expected. We could repeat some of them. We could not account for them.”
+
+“And the others thought they had found something greater.”
+
+“Some came to believe that ordinary verification was an obstacle rather than a protection.”
+
+He told me how his objections grew more urgent. The five concealed changes to the First Anchor's working, persuaded that the apparent intelligence beyond their measurements offered knowledge worth the risk. He had challenged their assumptions, but he had not known the full extent of what they had altered before activation.
+
+I wanted to ask why he had not stopped them.
+
+I did ask.
+
+“I tried,” he said.
+
+“Was that enough?”
+
+“No.”
+
+There was no defence in the word.
+
+He described the rupture only within the bounds of what he could attest. The Anchor opened a breach it could not contain. The devastation that followed destroyed the world the scholars had known. The six were transformed by the forces released. Five surrendered to the corrupting influence that had reached through the breach. Oth'varen resisted, though the struggle did not leave him untouched.
+
+He did not describe resistance as purity.
+
+“I felt the pull,” he said. “I still remember how close I came to accepting it.”
+
+I looked at his hands resting beside the records. They were steady.
+
+“Does it ever leave you?”
+
+“No.”
+
+I had wanted the last uncorrupted scholar to be safe from what had taken the others. His answer made the years of his survival seem less like a miracle and more like an effort repeated each day.
+
+***
+
+Sel'ora brought another record, one whose preservation had required independent authentication. It concerned the years after the Binding, when the Shroud had enclosed the ruined homeland and Nhal's guidance had fallen silent.
+
+Oth'varen studied the record before speaking.
+
+“I found them again,” he said.
+
+“The five?”
+
+“Yes.”
+
+He did not ask me to imagine the reunion. The archive held a reconstruction prepared from surviving testimony and records, with its uncertainties documented. Sel'ora explained that the sequence could be viewed without treating every gesture as independently proven. Its purpose was to preserve an event, not to make a memory infallible.
+
+I agreed to witness it.
+
+The chamber darkened around the reconstruction. Ruined walls took shape, and a fractured sanctuary emerged from the archive's preserved account. I could see the outlines of instruments damaged beyond their original use. Five figures waited among them.
+
+Oth'varen stood beside me as the record unfolded. He was watching a younger version of himself enter a place he had once known.
+
+Vaer'uun spoke first.
+
+“You survived.”
+
+The Oth'varen in the reconstruction looked from one transformed colleague to another.
+
+“What have you done?”
+
+Vaer'uun answered as though survival itself justified everything that had followed. He spoke of powers the gods had not comprehended and of knowledge that ordinary limits could never have allowed.
+
+“Five,” Oth'varen said when Vaer'uun counted them together as six.
+
+The word seemed to divide the chamber.
+
+I watched Oma'vira step forward. I remembered the conditioning relays and the captives who had hesitated when told they were free. Here she spoke of the transformation as something chosen, a glimpse of truth that Oth'varen refused to accept.
+
+He answered that something had tried to claim them.
+
+Thes'var stood beside a broken instrument. Even in the damaged reconstruction, his attention returned to the machinery. He argued that the Anchor's catastrophe proved the failure of its structure, not the failure of the principle behind it.
+
+“The breach destroyed our civilisation,” Oth'varen told him.
+
+“Then the structure failed,” Thes'var replied. “Not the principle.”
+
+I felt the terrible familiarity of the argument. At Kar Durn, Brynja had shown me how a small change in a drawing could turn a trusted structure toward disaster. Thes'var had seen the greatest disaster in his people's history and concluded that the next structure must be made more capable of reaching the same forbidden end.
+
+Su'vareth spoke of records and accusations. She had already learned to describe concealment as protection and deception as necessary courage. Khor'vun remained near the entrance, guarding the people he had once been charged to keep safe. His loyalty had endured while the meaning of safety had been turned inside out.
+
+The figures were not strangers to one another. That was what made the reconstruction unbearable. They spoke with the intimacy of people who remembered old arguments, old work and old trust. Each had found a way to make the catastrophe support the conviction that had led toward it.
+
+Vaer'uun offered Oth'varen a place among them.
+
+The reconstruction showed the five drawing closer. Their altered power resonated with the corruption Oth'varen still carried. The invitation was more than speech. For a moment the pressure within the sanctuary seemed to turn upon him.
+
+The Oth'varen in the record resisted.
+
+I watched him force his working into a stable configuration despite the pain it caused. The five did not accept his refusal. Khor'vun moved to bar his departure.
+
+The reconstruction ended without offering reconciliation.
+
+The archive returned around me.
+
+I realised that my hands were clenched.
+
+***
+
+For a while neither of us spoke.
+
+I had seen a battle against the Harbinger. This had been worse in a different way. There were no captives to free and no relay to disable. There was only a meeting in which six people who had once trusted one another discovered that they no longer agreed on what the destruction of their world meant.
+
+“Did you believe you could bring them back?” I asked.
+
+“At first.”
+
+“And afterward?”
+
+“I knew I could not persuade them by repeating the warnings they had already rejected.”
+
+His gaze remained on the place where the reconstruction had stood.
+
+“I was not blameless because I resisted. I had trusted them. I had failed to understand what they were doing soon enough. And afterward I let fear teach me to keep too much knowledge in too few hands.”
+
+I thought of Halden's incomplete shutdown instructions, the threatened archive store, and the Guardians' secret gate. Oth'varen had spent centuries trying to prevent another catastrophe. Some of his caution had saved lives. Some had left people dangerously ignorant.
+
+“You told Sera to share the full safety instructions at Drom Kar,” I said.
+
+“Yes.”
+
+“Would you have done that before?”
+
+He considered the question.
+
+“I hope I would have. I am no longer certain.”
+
+It was the first answer he had given me that felt less like a scholar's correction than a confession.
+
+Sel'ora asked whether we wished to preserve the verified reconstruction with the independent records. Oth'varen agreed, but insisted that the reconstruction remain distinguishable from the original evidence and from his personal testimony.
+
+I helped lodge the account.
+
+It was not forgiveness. It was not a verdict on everything the six had done. It was a record that could be checked by people who had not been present, and whose right to question it did not depend upon Oth'varen's approval.
+
+***
+
+In the days that followed, the archive offered more than one history.
+
+I read an early account of the years after the Sundering, then another preserved independently. They agreed on the devastation and the collapse of the Passage network. They differed in what their authors had witnessed, what they had been told, and what they had chosen to emphasise.
+
+I had once been eager to find a single complete account and discard the rest. Sel'ora made me record the differences instead.
+
+“Two histories may both preserve truth,” she said, “without either possessing all of it.”
+
+One set of records led toward the Shattered Delegation, an event much closer to my own lifetime than the First Anchor. Its dates and dispatches did not agree cleanly. The official accounts had helped harden the Covenant–Dominion war, yet the evidence before us suggested that some messages and movements deserved a fresh inquiry.
+
+I remembered Aldren speaking of Edric.
+
+*I have never been certain whose hand struck first.*
+
+The uncertainty had followed me from Valecrown into a history older than the kingdoms themselves. I did not want to return to Aldren with another suspicion dressed as proof.
+
+Mara and Oth'varen reviewed the proposed inquiry separately. Oth'varen could explain the historical context of the records, but he would not claim to know every act committed during the Delegation. Mara insisted that any modern investigation would require its own witnesses and authorisations.
+
+Sera brought a request from custodians whose work had become vulnerable as our inquiries drew attention. We helped protect the archive frontier through an authorised route, without treating the need for security as permission to expose restricted records.
+
+When the immediate danger passed, Oth'varen asked to speak with me.
+
+“The Delegation's records may contain a trail worth following,” he said. “But I will not ask you to accept my conclusions in place of the evidence.”
+
+“What do you want me to do?”
+
+“Take the bounded inquiry to those who can authorise it. Let the Covenant examine its own records. Let the custodians decide what may be shared. And remember that the people across the war are not merely pieces of our history.”
+
+I thought of the Vaelari engineer whose rejected inspection had helped us, though she had never agreed to work with us. I thought of Garrick, who had opposed peace without murdering Edric. I thought of Cassian, who had used a position of trust to help destroy the possibility of that peace.
+
+“Do you think the war began because someone wanted it to?” I asked.
+
+“I think people made choices that helped it continue. We must learn which choices were theirs before we assign the blame.”
+
+It was not the answer I had wanted. It was the answer I could carry without betraying what Mara had taught me.
+
+I left the archive with authorised copies and an inquiry that would lead back toward the living politics of Theia.
+
+Behind me, Oth'varen remained among the records of the five people he had once called friends. I no longer believed that his survival made him wiser than everyone who had died. I knew only that he had lived long enough to see how much harm could be done by certainty, and how much courage it might take to share knowledge without controlling what others did with it.
+
+I had come to Oth'irun looking for the Sixth Scholar.
+
+I left knowing his name, but with more questions about him than before.
+
+That seemed, at last, like the beginning of trust.
