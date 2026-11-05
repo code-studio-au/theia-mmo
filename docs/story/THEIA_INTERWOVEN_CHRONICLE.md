@@ -2420,3 +2420,248 @@ It was also a matter of who had been permitted to know how they worked, who had 
 The water continued beneath the city.
 
 I listened until I could no longer distinguish its sound from the distant machinery, and then went back to the others.
+
+
+### Chapter Ten — The Harbinger's Design
+
+The first pattern appeared because I had stopped looking for one.
+
+For days we had been comparing the readings recovered from the signal house, the freight works and the smaller experiments conducted under the Grey Surveyor's supervision. Each set had its own uncertainties. Instruments had been built by different hands, measurements taken under different conditions, and the records had survived journeys that left their edges worn and their labels in need of careful checking.
+
+I had expected another discrepancy, another date that did not fit, another altered drawing whose purpose could be established only after someone found the original.
+
+Instead the readings began to agree.
+
+Not in their magnitude, nor in the ordinary rise and fall of the instruments. Their agreement lay in the spacing of disturbances, in relationships that became visible only when the measurements were aligned against the same interval. Three signatures formed the beginning of a repeated arrangement. When we compared the remaining records, the arrangement persisted.
+
+Sera stood beside the table while I shifted the last tracing into place.
+
+“That's six,” I said.
+
+“Six observed signatures,” she replied. “Don't give them a meaning we haven't established.”
+
+I looked at the aligned marks. They seemed deliberate. That was the most I could honestly say.
+
+The Grey Surveyor studied the comparison without speaking. His silence had become familiar, but this time it unsettled me. He had taught us to distinguish a useful result from a complete explanation. Now I wondered whether he was recognising something he had hoped never to see.
+
+“Do they belong to the same system?” I asked.
+
+“The readings support coordination,” he said. “They do not yet tell us the whole mechanism.”
+
+“Someone is building something larger than the machines we've found.”
+
+He did not contradict me.
+
+Outside, Drom Kar continued its work. Water moved beneath the stone. Freight passed along the established routes. I had come to trust those ordinary sounds, yet the pattern on the table made them seem suddenly fragile. The people carrying supplies through the city did not know what our instruments had found. Neither, in any complete sense, did we.
+
+Mara examined the report and authorised the next inquiry. The coordinated disturbances pointed toward the mainland Chainworks and an installation whose defences were associated with the Harbinger.
+
+I had heard that title before, always at a distance from the people who suffered its consequences. It belonged to someone whose orders moved through hidden facilities and guarded routes, someone who had learned to make others carry out a purpose they might not have chosen for themselves.
+
+The name beneath the title was Oma'vira.
+
+I did not yet understand how old that name was.
+
+***
+
+We approached the Chainworks as observers before we approached them as combatants.
+
+The perimeter had been chosen carefully. Patrols covered the most obvious routes, and the positions supporting the installation overlapped without leaving easy gaps. The defenders were not a disorderly band guarding stolen goods. Their movements showed planning, discipline and a willingness to sacrifice convenience for control.
+
+I watched from concealed ground while Sera recorded the patrol changes. We marked the defended approaches and identified the places where a retreat could be made without leading danger toward nearby workers.
+
+The orders we recovered carried the Harbinger's authority. They described security and movement in language that made people sound like components of a machine. A person might be transferred, isolated, reinforced or made compliant. I read the words twice before I could bear to read them aloud.
+
+“Are these soldiers?” I asked.
+
+“Some are willing,” Sera said. “Some have been altered. We cannot assume every person inside chose to serve.”
+
+The distinction troubled me more than the armed perimeter. I knew how to defend myself against someone trying to kill me. I did not know how to recognise the boundary between conviction and a will that had been forced into obedience.
+
+The Grey Surveyor asked us to preserve the orders with their context. The records might explain the installation's purpose, but they could not tell us what every captive or defender had experienced.
+
+We returned with the patrol map and the authenticated instructions. It was enough to plan a careful approach. It was not enough to decide that every life within the Chainworks had been forfeited.
+
+***
+
+The next records led us to a Passage schematic.
+
+I had heard of the ancient network in histories and half-remembered accounts, usually as something whose great routes had failed in the catastrophe that divided the world. The diagram before us showed a more specific connection: a route associated with Oma'vira's installation and a destination within the Shroud.
+
+I could scarcely believe what I was reading.
+
+“Someone used a Passage route into the Shroud?”
+
+Sera studied the authenticated markings.
+
+“That is what this evidence indicates.”
+
+“How? I thought the network was lost.”
+
+“The great network was broken,” she said. “That doesn't answer every question about what survived or what was attempted afterward.”
+
+She did not offer another route. She did not tell me that a gate remained available to us. The schematic established a destination, not a safe means of reaching it.
+
+We compared Oma'vira's signature with the recovered instructions and the destination record. The connections held. The Harbinger had not merely guarded an Anchor installation. Her work joined control of minds, control of movement and the concealment of a route that should not have been easy to use.
+
+I asked whether the Guardians had known.
+
+Sera's expression changed, but her answer remained narrow.
+
+“We will answer what the evidence permits us to answer. First we must stop what is happening here.”
+
+I did not like it. I had begun to recognise the sound of a door being kept closed. Yet people were still inside the facility, and every hour spent arguing over what Sera would not say was an hour in which the conditioning apparatus continued its work.
+
+We prepared to enter.
+
+***
+
+The first chamber was quieter than I expected.
+
+I had imagined screams, machinery roaring and guards shouting orders. Instead I heard measured footsteps and a voice repeating instructions from somewhere beyond a partition. The words were ordinary enough to be mistaken for training. Their repetition made them terrible.
+
+We found captives whose movements had been constrained by the workings around them. Some watched us with open fear. Others barely reacted when we approached. I could not tell whether their stillness was courage, exhaustion or something imposed upon them.
+
+Sera identified the conditioning relays. We had to disable them without making the people dependent upon the system suffer a sudden uncontrolled failure. The plan required care, and I felt the familiar impatience of knowing that danger was present while being told not to rush toward it.
+
+I followed the agreed sequence. We isolated the relays, cleared the route for the captives and protected them as the controls were disabled. Some could move immediately. Others needed help. No one demanded that they explain what had been done to them before being allowed to leave.
+
+I remember one captive looking at me as though waiting for permission to speak.
+
+“You can go,” I said.
+
+They did not move.
+
+Sera came beside me. Her voice was gentle, but she did not promise what she could not know.
+
+“The route is open. We will help you reach it.”
+
+The captive took a step. Then another.
+
+I had thought the greatest cruelty of the installation would be visible in its instruments. Instead it lay in the hesitation of someone who had been taught not to trust their own choice.
+
+We secured the evacuation before pressing deeper.
+
+Oma'vira waited within the defended heart of the facility. I knew her by the authority with which the remaining workings answered her, and by the terrible composure of someone who had spent centuries refining a purpose.
+
+She did not appear surprised that we had reached her.
+
+“You have broken the instruments,” she said, looking toward the silenced relays. “You do not understand what they preserved.”
+
+“I saw the people they held.”
+
+“You saw what they could not bear without guidance.”
+
+The words angered me. They also frightened me, because she spoke them without the hesitation of someone inventing an excuse. She believed her authority over other minds was justified by what she claimed to know.
+
+I thought of the Grey Surveyor's warnings, of Sera's refusal to promise safety, and of the captives waiting at the exit. Every person who had helped me understand the danger had admitted limits. Oma'vira treated limits as defects in those who resisted her.
+
+“You made their choices for them,” I said.
+
+“I gave them a purpose beyond their fear.”
+
+“They should have been allowed to refuse it.”
+
+Her expression hardened. Whatever she had once been, she would not yield the work before her.
+
+The confrontation was not clean or noble. The remaining defenders fought to protect the controls, and Oma'vira used the workings of the chamber to keep us from reaching her. I moved between the prepared safe positions, striking when an opening appeared and retreating when the apparatus threatened to turn the room itself against us.
+
+I remember the noise of failing relays and the effort of keeping my attention on the people still making their way out. I remember Sera calling a warning before a field changed. I remember the Grey Surveyor's instructions, precise enough to follow even when fear made every movement seem urgent.
+
+At last Oma'vira fell.
+
+I waited for her to rise.
+
+She did not.
+
+The Harbinger was dead, and the facility's conditioning controls were disabled. The captives who had escaped remained alive beyond the danger. We preserved the Passage records and the authenticated evidence of her work.
+
+I had expected to feel triumph at the death of someone who had caused so much suffering. Instead I felt the exhaustion of a struggle whose end could not return the stolen years to the people she had held.
+
+Sera stood beside the recovered records.
+
+“We will not let the account become simpler than what happened,” she said.
+
+I looked toward the evacuation route.
+
+“No,” I answered. “We won't.”
+
+***
+
+The captured Major Anchor remained a danger after Oma'vira's death.
+
+We had proved a brief reversal possible in a fully isolated Minor Resonator. That did not make the larger working safe. Brynja and Sera reviewed the safeguards with the qualified specialists, checking the supports, the reserve limits and the physical cutoff before authorising a bounded inversion.
+
+My task was not to perform the technical work. I helped defend the specialists and the cutoff while they carried out the procedure.
+
+It was an uncomfortable kind of responsibility. I could see the people doing the most important work, but I could not take their place. I had to trust them to make judgments I did not fully understand, and they had to trust me to keep the route clear if the situation changed.
+
+The inversion began.
+
+For a moment the readings rose in a way that made me think of the signal house at Northwatch. Then the specialists adjusted the sequence within its measured limits. The Major Anchor's behaviour changed. The bounded reversal held long enough to be recorded, and the team brought the apparatus back under control.
+
+No one declared the entire network defeated.
+
+Maintenance duties were assigned. The measurements were copied. The result was significant because it had been achieved without pretending that success at one installation guaranteed safety at another.
+
+Brynja studied the final figures.
+
+“A larger working,” she said, “and still only one measured result.”
+
+I smiled despite my exhaustion.
+
+“I'm beginning to think that's the only sort of result you'll ever accept.”
+
+“The sort we can defend,” she replied.
+
+The Grey Surveyor looked at the records for a long time. I wondered what he saw in them that I could not.
+
+***
+
+The Passage evidence remained.
+
+We copied the destination records and compared them with the surviving schematic. The route had pointed into the Shroud. Its associated gate was destroyed. We verified that state from independent evidence rather than treating the damaged structure as proof of everything that had happened to it.
+
+I asked when it had been destroyed.
+
+The records did not give us a complete account. We could establish that the gate no longer functioned; we could not honestly turn the evidence into a scene we had not witnessed.
+
+Sera accepted the report.
+
+“So Oma'vira had a way into the Shroud,” I said.
+
+“She had access to a route whose destination lay there,” Sera replied.
+
+“And now it's gone.”
+
+“That gate is destroyed.”
+
+I waited for her to say more.
+
+She did not.
+
+The silence between us felt different from the quiet after the Minor Resonator shut down. There, the absence of sound had marked a danger brought under control. Here it marked knowledge that someone was not yet prepared to share.
+
+I thought of the Guardians' charter and the Grey Surveyor's insistence that people at risk deserved complete instructions. I thought of the captives who had been denied the freedom to choose, and of the people who had risked their lives to release them.
+
+“Is there another way?” I asked.
+
+Sera looked toward the sealed records.
+
+“We need to talk about what the Guardians have kept.”
+
+I felt anger rise, sharp and immediate. Then I remembered how often my anger had made a difficult truth seem simpler than it was.
+
+I sat down opposite her.
+
+“Then tell me,” I said.
+
+Outside, the Chainworks had fallen quiet enough for the ordinary sounds of labour to return. Workers moved through the recovered approaches. The rescued captives were being cared for. The Major Anchor remained under guarded maintenance, its bounded reversal recorded but its future still uncertain.
+
+I had come to the installation believing that killing the Harbinger might end the danger. Instead her death had opened a question older than the facility itself.
+
+Someone had crossed into the Shroud.
+
+Someone else had known enough about that crossing to fear what its discovery would mean.
+
+And I was beginning to suspect that the Guardians' greatest secret was not what they had fought, but what they had preserved.
