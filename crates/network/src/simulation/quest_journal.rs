@@ -330,6 +330,9 @@ impl World {
             for stage in quest.stages() {
                 for objective in stage.objectives() {
                     match objective.event() {
+                        EventKey::ReadDocument(_) => {
+                            return Err("Document-read World admission is not installed".into());
+                        }
                         EventKey::PossessItem(_) if items.is_none() => {
                             return Err("Possession objectives require an explicitly installed inventory binding".into());
                         }

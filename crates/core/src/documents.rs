@@ -155,6 +155,45 @@ impl Catalog {
     pub fn for_item(&self, item: &ContentId) -> Option<&Document> {
         self.by_item.get(item).and_then(|id| self.document(id))
     }
+    pub fn validate_quests(
+        &self,
+        quests: &crate::quests::catalog::Catalog,
+    ) -> Result<(), &'static str> {
+        use crate::quests::catalog::EventKey;
+        let mut reserved = std::collections::BTreeSet::from([quests.id().clone()]);
+        for quest in quests.quests() {
+            reserved.extend([
+                quest.id().clone(),
+                quest.giver().clone(),
+                quest.turn_in().clone(),
+            ]);
+            for stage in quest.stages() {
+                reserved.insert(stage.id().clone());
+                for objective in stage.objectives() {
+                    reserved.insert(objective.id().clone());
+                    match objective.event() {
+                        EventKey::ReadDocument(document) => {
+                            if self.document(document).is_none() {
+                                return Err("Unknown quest document reference");
+                            }
+                        }
+                        EventKey::Kill(id)
+                        | EventKey::ReachArea(id)
+                        | EventKey::PossessItem(id) => {
+                            reserved.insert(id.clone());
+                        }
+                        EventKey::NpcInteraction { npc, interaction } => {
+                            reserved.extend([npc.clone(), interaction.clone()]);
+                        }
+                    }
+                }
+            }
+        }
+        if reserved.contains(self.id()) || self.documents().any(|d| reserved.contains(d.id())) {
+            return Err("Document definitions alias quest content");
+        }
+        quests.validate_possession_items(&self.items)
+    }
     /// Check the current stack and original selected bag revision. An authority
     /// must separately validate session/profile identity and lock the saved bag.
     pub fn resolve_owned(

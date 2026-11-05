@@ -119,6 +119,12 @@ impl Registry {
         let schema = if closure.iter().any(|q| {
             self.quest(q)
                 .expect("Validated closure")
+                .has_document_objectives()
+        }) {
+            4
+        } else if closure.iter().any(|q| {
+            self.quest(q)
+                .expect("Validated closure")
                 .has_possession_objectives()
         }) {
             3
@@ -187,6 +193,11 @@ fn definition(q: &Definition) -> RawQuest {
                         .objectives()
                         .iter()
                         .map(|o| match o.event() {
+                            EventKey::ReadDocument(document) => RawObjective::ReadDocument {
+                                id: o.id().as_str().into(),
+                                label: o.label().into(),
+                                document: document.as_str().into(),
+                            },
                             EventKey::PossessItem(item) => RawObjective::PossessItem {
                                 id: o.id().as_str().into(),
                                 label: o.label().into(),

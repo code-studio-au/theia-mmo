@@ -289,3 +289,15 @@ an executable read objective or normal quest-pack role. Do not substitute an NPC
 interaction or item-possession event for reading; historical read credit, exact
 profile binding, durable authorization and a document UI remain pending. No
 campaign IDs or story files are allocated by this prerequisite.
+
+
+## Experimental read-document objectives: core/offline only
+
+Quest schema 4 supports `read_document` with a stable `document` selector, fixed
+count one and no consumption flag. [Format, logical historical credit and gates](QUEST_DOCUMENTS.md#implemented-prerequisite-schema-4-logical-read-objectives).
+Subset compilation emits schema 4 only when needed; other selections retain
+minimum schema 1/2/3. Changing the document selector triggers gameplay version
+review. Actual document/item references require the separate known-document
+catalogue check. This is not normal manifest admission, read authorization, a
+save migration or document UI. Continue to keep story planning and executable
+runtime content separate; no campaign IDs are allocated by this prerequisite.

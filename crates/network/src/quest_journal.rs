@@ -29,6 +29,9 @@ pub struct Profile {
 impl Profile {
     pub fn from_json(bytes: &[u8], xp: &progression_wire::Profile) -> Result<Self> {
         let catalog = Arc::new(Catalog::from_json(bytes)?);
+        if catalog.quests().any(|q| q.has_document_objectives()) {
+            return Err("Document-read journal runtime is not installed".into());
+        }
         let mut bound = PROFILE_DOMAIN.to_vec();
         bound.extend(bytes);
         bound.extend(xp.hash());

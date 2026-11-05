@@ -350,6 +350,9 @@ fn check(
             }
             for objective in quest.stages().flat_map(|s| s.objectives()) {
                 match objective.event() {
+                    quests::catalog::EventKey::ReadDocument(_) => {
+                        return Err("Document-read manifest admission is not installed".into());
+                    }
                     quests::catalog::EventKey::PossessItem(_) if !quest_items => {
                         return Err(
                             "Possession objectives require explicit inventory/journal admission"
@@ -2056,6 +2059,19 @@ mod tests {
             f.edit("manifest", |m| m["schema"] = json!(schema));
             assert!(validate(&f.manifest()).is_err());
         }
+    }
+    #[test]
+    fn pure_document_objectives_do_not_gain_normal_manifest_admission() {
+        let f = item_quest_fixture();
+        f.edit("quest",|q| {
+            q["schema"]=json!(4);
+            q["quests"][0]["stages"][0]["objectives"].as_array_mut().unwrap().push(json!({"kind":"read_document","id":"theia.test.read","label":"Read","document":"theia.test.note"}));
+        });
+        let error = validate(&f.manifest()).err().unwrap().to_string();
+        assert!(
+            error.contains("Document-read manifest admission is not installed"),
+            "{error}"
+        );
     }
     #[test]
     fn item_quest_manifests_require_explicit_known_inventory_objectives() {

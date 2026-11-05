@@ -5,8 +5,10 @@ use crate::content::ContentId;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 mod areas;
+mod documents;
 mod items;
 pub use areas::{MAX_REACHED_AREA_GOALS, ReachedAreaGoal, ReachedAreas};
+pub use documents::{DocumentRead, DocumentReadGoal, MAX_DOCUMENT_READ_GOALS};
 pub use items::PossessionTurnIn;
 pub const ITEM_PROFILE_DOMAIN: &[u8] = b"theia-quest-journal-inventory-v1\0";
 pub const PROFILE_DOMAIN: &[u8] = b"theia-quest-journal-catalog-v1\0";
@@ -513,7 +515,10 @@ impl Journal {
         self.validate(catalog)?;
         // Occupancy needs eligibility sealed at observation. A raw selector
         // cannot be replayed against a newly accepted quest or later stage.
-        if matches!(event, EventKey::ReachArea(_) | EventKey::PossessItem(_)) {
+        if matches!(
+            event,
+            EventKey::ReachArea(_) | EventKey::PossessItem(_) | EventKey::ReadDocument(_)
+        ) {
             return Err(Error::InvalidProgress);
         }
         let mut journal = self.clone();

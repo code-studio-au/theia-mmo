@@ -102,6 +102,11 @@ enum RawObjective {
         label: String,
         area: String,
     },
+    ReadDocument {
+        id: String,
+        label: String,
+        document: String,
+    },
     PossessItem {
         id: String,
         label: String,
@@ -119,6 +124,7 @@ pub enum EventKey {
     },
     ReachArea(ContentId),
     PossessItem(ContentId),
+    ReadDocument(ContentId),
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Objective {
@@ -210,6 +216,13 @@ impl Definition {
     pub fn stage(&self, id: &ContentId) -> Option<&Stage> {
         self.stages.get(id)
     }
+    pub fn has_document_objectives(&self) -> bool {
+        self.stages().any(|s| {
+            s.objectives()
+                .iter()
+                .any(|o| matches!(o.event(), EventKey::ReadDocument(_)))
+        })
+    }
     pub fn has_possession_objectives(&self) -> bool {
         self.stages().any(|s| {
             s.objectives()
@@ -285,7 +298,7 @@ impl Catalog {
         }
         let raw: RawCatalog =
             serde_json::from_slice(bytes).map_err(|_| "Invalid quest catalogue")?;
-        if !matches!(raw.schema, 1..=3)
+        if !matches!(raw.schema, 1..=4)
             || raw.revision == 0
             || raw.quests.is_empty()
             || raw.quests.len() > MAX_QUESTS
@@ -372,6 +385,24 @@ impl Catalog {
                             }
                             (raw_id, label, EventKey::ReachArea(id(&area)?), 1, false)
                         }
+                        RawObjective::ReadDocument {
+                            id: raw_id,
+                            label,
+                            document,
+                        } => {
+                            if raw.schema < 4 {
+                                return Err(
+                                    "Document-read objectives require quest catalogue schema 4",
+                                );
+                            }
+                            (
+                                raw_id,
+                                label,
+                                EventKey::ReadDocument(id(&document)?),
+                                1,
+                                false,
+                            )
+                        }
                         RawObjective::PossessItem {
                             id: raw_id,
                             label,
@@ -379,7 +410,7 @@ impl Catalog {
                             required,
                             consume_on_turn_in,
                         } => {
-                            if raw.schema != 3
+                            if raw.schema < 3
                                 || stage.next.is_some()
                                 || completion != Completion::All
                             {
@@ -476,7 +507,9 @@ impl Catalog {
         for event in index.keys() {
             let alias = match event {
                 EventKey::Kill(creature) => ids.contains(creature),
-                EventKey::ReachArea(area) | EventKey::PossessItem(area) => ids.contains(area),
+                EventKey::ReachArea(area)
+                | EventKey::PossessItem(area)
+                | EventKey::ReadDocument(area) => ids.contains(area),
                 EventKey::NpcInteraction { npc, interaction } => {
                     ids.contains(npc) || ids.contains(interaction)
                 }
@@ -516,7 +549,9 @@ impl Catalog {
                         EventKey::PossessItem(item) => {
                             references.insert(item.clone());
                         }
-                        EventKey::Kill(id) | EventKey::ReachArea(id) => {
+                        EventKey::Kill(id)
+                        | EventKey::ReachArea(id)
+                        | EventKey::ReadDocument(id) => {
                             reserved.insert(id.clone());
                         }
                         EventKey::NpcInteraction { npc, interaction } => {

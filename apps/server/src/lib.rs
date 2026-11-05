@@ -9,3 +9,6 @@ mod quest_item_profiles;
 
 #[cfg(test)]
 mod quest_loot_profiles;
+
+#[cfg(test)]
+mod quest_document_profiles;

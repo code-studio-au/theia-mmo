@@ -41,7 +41,7 @@ fn schema_and_selector_validation_remain_strict() {
     let c = parse(&v);
     assert_eq!(c.schema(), 2);
     assert_eq!(c.matching(&EventKey::ReachArea(id("area0"))).len(), 1);
-    for schema in [1, 4] {
+    for schema in [1, 5] {
         let mut bad = v.clone();
         bad["schema"] = json!(schema);
         assert!(Catalog::from_json(&serde_json::to_vec(&bad).unwrap()).is_err());

@@ -217,3 +217,27 @@ fn possession_consumption_policy_is_gameplay_and_requires_version_review() {
     );
     assert!(!report.automatic_migration && !report.world_reference_validation);
 }
+#[test]
+fn document_selector_changes_require_gameplay_version_review() {
+    let mut old = raw();
+    old["schema"] = json!(4);
+    old["quests"][0]["stages"][0]["objectives"][0] = json!({"kind":"read_document","id":"theia.dev.quest-introduction.objective.road","label":"Read","document":"theia.test.first-note"});
+    let mut candidate = old.clone();
+    candidate["quests"][0]["stages"][0]["objectives"][0]["document"] =
+        json!("theia.test.second-note");
+    let report = compare(&input(&old), &input(&candidate));
+    let quest = report
+        .quests
+        .iter()
+        .find(|q| q.change == "gameplay")
+        .unwrap();
+    assert_eq!(
+        quest.version_review,
+        Some("definition_changed_without_version_bump")
+    );
+    assert_ne!(
+        quest.previous_gameplay_sha256,
+        quest.candidate_gameplay_sha256
+    );
+    assert!(!report.world_reference_validation && !report.automatic_migration);
+}

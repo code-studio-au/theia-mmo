@@ -21,6 +21,11 @@ pub struct QuestJournalCatalog {
 impl QuestJournalCatalog {
     pub fn from_json(bytes: &[u8], xp: &ProgressionCatalog) -> Result<Self> {
         let catalog = Arc::new(Catalog::from_json(bytes).map_err(Error::Invalid)?);
+        if catalog.quests().any(|q| q.has_document_objectives()) {
+            return Err(Error::Invalid(
+                "Document-read journal storage is not installed",
+            ));
+        }
         let mut bound = theia_core::quests::journal::PROFILE_DOMAIN.to_vec();
         bound.extend(bytes);
         bound.extend(xp.hash());
@@ -149,6 +154,10 @@ impl QuestJournalCatalog {
         let mut bytes = b"theia-quest-journal-event-v1\0".to_vec();
         bytes.extend(self.hash);
         match event {
+            EventKey::ReadDocument(document) => {
+                bytes.push(5);
+                push(&mut bytes, document);
+            }
             EventKey::PossessItem(item) => {
                 bytes.push(4);
                 push(&mut bytes, item);

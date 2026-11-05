@@ -1,3 +1,10 @@
+Read-objective core prerequisite, 5 November 2026:
+Schema-4 quest catalogues can represent `read_document` and the pure journal can
+seal/apply original-stage read observations. Offline compiler/update review support
+it. Legacy runtime and normal manifests remain closed pending exact content binding,
+durable ownership/open receipts and document UI. [Evidence and next work](QUEST_DOCUMENTS.md#implemented-prerequisite-schema-4-logical-read-objectives).
+Qualified quest-loot playable remains `65977bd`; commit locally only, no push.
+
 Readable-document metadata prerequisite, 5 November 2026:
 Core can validate bounded plain-text item documents and resolve a checked
 bag slot/revision. This does not add a supported quest objective kind or readable

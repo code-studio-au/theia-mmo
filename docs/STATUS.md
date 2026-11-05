@@ -1,3 +1,13 @@
+Read-objective core prerequisite qualified, 5 November 2026:
+P3-05 / P3-11 / P3-15: schema-4 `read_document` objectives and opaque original-
+stage observations now preserve historical read credit separately from possession.
+Registry compilation/version review support the selector; legacy runtime, World
+and normal manifest paths refuse it. 357 core, 368 network, twelve server and
+79 authoring/validation tests, formatting and strict Clippy pass.
+[Scope and next slices](QUEST_DOCUMENTS.md#implemented-prerequisite-schema-4-logical-read-objectives).
+Continue exact document/item/journal binding and durable opening locally; no push.
+No document UI/runtime adoption yet. Qualified playable remains `65977bd`.
+
 Readable-document catalogue prerequisite qualified, 5 November 2026:
 P3-05 / P3-11 / P3-15: bounded plain-text document definitions now map to known
 items. Pure bag-slot/revision checks reject missing, moved, deleted or wrong
