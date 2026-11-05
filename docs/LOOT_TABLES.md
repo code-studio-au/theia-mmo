@@ -391,3 +391,52 @@ when that adapter is installed. The normal schema-18 playable remains `85fd967`;
 no new native/Windows or capacity claim. Next: bounded worker operations, accepted
 request drain after lost replies, owner refresh after committed bag/journal changes,
 then explicit World/manifest/client adoption. Commit locally only; no push.
+
+
+## Quest-only worker prerequisite — 5 November 2026
+
+P3-05 / P3-09 / P3-11 / P3-15. Publisher mirrors the explicit Store generation,
+nearby view and pickup APIs on the existing 16-entry critical inventory FIFO.
+Bound profiles, checked world, creature selector and revision budgets validate
+before enqueue. Unsupported generic/old compound reward routes reject the
+conditional profile before queueing rather than failing the shared SQL worker.
+No new service, simulation I/O, wire message or source gameplay catalogue.
+
+Nonblocking enqueue helpers report full/closed queues without acceptance. Async
+critical producers reserve capacity in the same bounded queue before sending;
+only then does the five-second answer timeout begin. Cancellation before enqueue
+has accepted no work. Accepted generation and conditional pickup execute even if
+the answer receiver closes while queued, including during graceful shutdown drain.
+Read-only cancelled views may skip. Queue acceptance is neither inventory success
+nor a committed generation receipt. `RewardNotNeeded` is an ordinary nonfatal
+rejection and increments rejection counters; bad persistent data/backend failures
+retain the existing fail-closed handling.
+
+Owned PostgreSQL 16.15 proof:
+`build/quest-loot-worker-postgres-v3-20261105/verification.json` passes 60 SQL
+contracts, five non-SQL library tests, reload examples and actual process restart.
+All 65 full roll rows retain their hash across restart. The new worker contract
+blocks a backpack row, drops the first generation answer before execution,
+queues acceptance afterward and fills the remaining 15 FIFO slots. Seventeen
+additional nonblocking sends refuse immediately; an async producer waits for
+capacity. Once released, the original denied generation and dropped duplicate
+answers drain without changing its initial rights after acceptance.
+
+A winning generation is then blocked so pickup is accepted but cannot begin;
+its answer is dropped and shutdown starts before release. Pickup still commits
+bag/journal/claim before ownership release. Reconnect recovers the receipt; a new
+worker collects the next two pelts, rejects an unnecessary fourth without failing,
+answers another view and recovers the exact third-pickup retry while Ready.
+Deleting one afterward reveals the retained winning candidate. v1/v2 preserve
+successful queued-drain proof; v3 additionally proves bounded async backpressure.
+
+Eleven server-library tests, formatting and denied-warning workspace/all-target
+Clippy pass at `build/quest-loot-worker-server-tests-v2-20261105.log`,
+`build/quest-loot-worker-fmt-v2-20261105.log` and
+`build/quest-loot-worker-clippy-v2-20261105.log`. Preserve
+`build/quest-loot-worker-qualified-v1-20261105`. Retained generation authorization,
+stationary owner refresh after bag/journal changes, World installation, normal
+manifest/client admission and native conditional loot are still pending. This is
+trusted worker/SQL proof, not a live kill, encrypted owner, native/Windows or
+capacity claim. Normal schema-18 playable remains `85fd967`. Continue locally;
+no push.

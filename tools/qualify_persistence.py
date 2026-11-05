@@ -94,7 +94,7 @@ def run(output, sdk):
         (output/'creature-loot-before-restart.txt').write_text(loot_before.stdout)
         roll_query = "SELECT count(*),md5(string_agg(to_jsonb(r)::text,'|' ORDER BY realm_id,character_id,roll_key,victim_life)) FROM theia.loot_rolls r;"
         rolls_before = cluster.query(roll_query)
-        assert rolls_before.returncode == 0 and int(rolls_before.stdout.split('|')[0]) == 60, rolls_before.stdout
+        assert rolls_before.returncode == 0 and int(rolls_before.stdout.split('|')[0]) == 65, rolls_before.stdout
         (output/'loot-rolls-before-restart.txt').write_text(rolls_before.stdout)
         cluster.restart()
         rolls_after = cluster.query(roll_query)
@@ -170,6 +170,8 @@ def run(output, sdk):
                   quest_loot_need_filters_before_nearest_page_limit=True,
                   quest_loot_fresh_pickup_need_and_original_receipt_checked=True,
                   quest_loot_ready_replay_and_full_bag_rollback=True,
+                  quest_loot_worker_bounded_queued_lost_replies_and_shutdown_drain=True,
+                  quest_loot_worker_not_needed_rejection_nonfatal=True,
                   reward_full_bag_retains_claim_and_transaction_rollback=True,
                   reward_availability_consumption_and_items_survive_restart=True,
                   reward_cancelled_response_and_backend_loss_fail_closed=True,

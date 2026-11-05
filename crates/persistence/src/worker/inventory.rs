@@ -238,6 +238,7 @@ pub(super) fn respond<T>(
         Err(
             Error::RewardMissing
             | Error::RewardConsumed
+            | Error::RewardNotNeeded
             | Error::RewardCommand(
                 theia_core::rewards::Error::NoCapacity
                 | theia_core::rewards::Error::StaleRevision

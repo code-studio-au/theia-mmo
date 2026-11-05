@@ -1,3 +1,12 @@
+Quest-only worker prerequisite qualified, 5 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: explicit conditional generation/list/pickup now
+use the existing bounded critical FIFO. Accepted writes survive queued reply loss
+and drain on shutdown; async producers wait for capacity and stale need rejects
+without stopping the worker. 60 actual PostgreSQL contracts plus restart, eleven
+server-library tests, formatting and strict Clippy pass. [Scope/evidence](../LOOT_TABLES.md#quest-only-worker-prerequisite--5-november-2026).
+Retained owner, World and normal manifest/client adoption remain closed. Continue
+owner refresh and authorization locally; no push. Playable remains `85fd967`.
+
 Quest-only paging/pickup storage prerequisite qualified, 5 November 2026:
 P3-05 / P3-09 / P3-11 / P3-15: explicit Store views filter current item need
 before the nearest-16 page; pickup validates original generation and fresh locked

@@ -509,3 +509,6 @@ mod quest_generation;
 
 #[path = "rewards_contract/quest_pickup.rs"]
 mod quest_pickup;
+
+#[path = "rewards_contract/quest_worker.rs"]
+mod quest_worker;

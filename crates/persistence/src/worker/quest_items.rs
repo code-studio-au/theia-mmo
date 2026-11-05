@@ -79,6 +79,7 @@ impl Publisher {
         expected_revision: u64,
         journal: &QuestJournalCatalog,
     ) -> Result<InventoryApplied> {
+        profile.check_runtime_admission()?;
         self.wait_quest_items(
             binding,
             world,
