@@ -13,6 +13,8 @@ use bevy::{
 };
 use theia_core::{content::ContentId, identity::EntityKey};
 
+#[derive(SystemSet, Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub(crate) struct Interactions;
 #[derive(Resource)]
 struct Bindings {
     basic_attack: ContentId,
@@ -32,6 +34,7 @@ pub(crate) struct Selection {
 enum Actor {
     Enemy(EntityKey),
     Guide,
+    Corpse(theia_core::progression::KillId),
 }
 #[derive(Resource, Default)]
 struct Pending(Option<(Actor, PointerButton, Vec3)>);
@@ -70,12 +73,16 @@ type ActorNode<'a> = (
     Has<crate::dialogue::GuideVisual>,
     Option<&'a ChildOf>,
     Has<Node>,
+    Option<&'a crate::loot::CorpseVisual>,
 );
 fn actor(mut entity: Entity, nodes: &Query<ActorNode<'_>>) -> Option<Actor> {
     for _ in 0..32 {
-        let (target, guide, parent, ui) = nodes.get(entity).ok()?;
+        let (target, guide, parent, ui, corpse) = nodes.get(entity).ok()?;
         if ui {
             return None;
+        }
+        if let Some(corpse) = corpse {
+            return Some(Actor::Corpse(corpse.0.life));
         }
         if let Some(target) = target {
             return Some(Actor::Enemy(target.key));
@@ -127,16 +134,21 @@ fn clicked(
         pending.0 = Some((actor, event.button, point));
     }
 }
+type MeshForPicking = (Entity, Has<crate::loot::CorpsePick>);
 fn mark_meshes(
     mut commands: Commands,
     nodes: Query<ActorNode<'_>>,
-    meshes: Query<Entity, (With<Mesh3d>, Without<bevy::picking::Pickable>)>,
+    meshes: Query<MeshForPicking, (With<Mesh3d>, Without<bevy::picking::Pickable>)>,
 ) {
-    for entity in &meshes {
-        if actor(entity, &nodes).is_some() {
+    for (entity, surface) in &meshes {
+        if let Some(picked) = actor(entity, &nodes) {
             commands
                 .entity(entity)
-                .insert(bevy::picking::Pickable::default());
+                .insert(if matches!(picked, Actor::Corpse(_)) && !surface {
+                    bevy::picking::Pickable::IGNORE
+                } else {
+                    bevy::picking::Pickable::default()
+                });
         }
     }
 }
@@ -203,6 +215,7 @@ fn consume(
     cameras: Query<&GlobalTransform, With<Camera3d>>,
     spatial: SpatialQuery,
     classic: Option<Res<crate::classic_controls::Controller>>,
+    mut loot: Option<ResMut<crate::loot::Ui>>,
 ) {
     let state = network.state();
     if state.error.is_some() || !network.connected() {
@@ -273,6 +286,21 @@ fn consume(
         return;
     }
     match picked {
+        Actor::Corpse(life) => {
+            if state.rewards.as_ref().is_some_and(|r| {
+                r.available.iter().any(|r| {
+                    r.corpse
+                        .is_some_and(|c| c.life == life && resident(c.position))
+                })
+            }) {
+                selection.friendly = None;
+                if button == PointerButton::Secondary
+                    && let Some(ui) = loot.as_mut()
+                {
+                    ui.show(life);
+                }
+            }
+        }
         Actor::Enemy(key) => {
             if !state.targeting.as_ref().is_some_and(|v| {
                 v.targets
@@ -301,6 +329,9 @@ fn consume(
             }
         }
         Actor::Guide => {
+            if let Some(ui) = loot.as_mut() {
+                ui.close();
+            }
             let Some(guide) = guide else {
                 return;
             };
@@ -363,6 +394,7 @@ pub(crate) fn install(app: &mut App) {
     .add_systems(
         Update,
         consume
+            .in_set(Interactions)
             .after(crate::targeting::controls)
             .after(crate::network::present)
             .before(crate::targeting::Presentation)
@@ -376,6 +408,60 @@ mod tests {
     use bevy::picking::{backend::HitData, events::Pointer, pointer::Location};
     use std::time::Duration;
     use theia_core::identity::{EntityId, WorldEpoch};
+    #[test]
+    fn corpse_art_ignores_bind_pose_picking_and_uses_only_nonblocking_pick_surface() {
+        let mut app = App::new();
+        app.add_systems(Update, mark_meshes);
+        let key = EntityKey {
+            epoch: WorldEpoch::new(7).unwrap(),
+            entity: EntityId::new(9).unwrap(),
+        };
+        let owner = app
+            .world_mut()
+            .spawn(crate::loot::CorpseVisual(
+                theia_core::rewards::CorpseSource {
+                    life: theia_core::progression::KillId::from_victim(key),
+                    position: theia_core::coordinates::GlobalPosition::new([0.; 3]).unwrap(),
+                },
+            ))
+            .id();
+        let skin = app
+            .world_mut()
+            .spawn((Mesh3d::default(), ChildOf(owner)))
+            .id();
+        let surface = app
+            .world_mut()
+            .spawn((Mesh3d::default(), ChildOf(owner), crate::loot::CorpsePick))
+            .id();
+        let live = app
+            .world_mut()
+            .spawn((Mesh3d::default(), crate::targeting::TargetVisual { key }))
+            .id();
+        app.update();
+        assert!(
+            !app.world()
+                .get::<bevy::picking::Pickable>(skin)
+                .unwrap()
+                .is_hoverable
+        );
+        assert!(
+            app.world()
+                .get::<bevy::picking::Pickable>(surface)
+                .unwrap()
+                .is_hoverable
+        );
+        assert!(
+            app.world()
+                .get::<bevy::picking::Pickable>(live)
+                .unwrap()
+                .is_hoverable
+        );
+        assert!(
+            app.world()
+                .get::<avian3d::prelude::Collider>(surface)
+                .is_none()
+        );
+    }
     #[test]
     fn friendly_survives_missing_interest_but_not_a_known_replacement_or_world_change() {
         let key = EntityKey {

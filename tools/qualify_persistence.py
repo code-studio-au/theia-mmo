@@ -90,7 +90,14 @@ def run(output, sdk):
         loot_counts = {r[0]: (int(r[1]), int(r[2])) for r in (line.split('|') for line in loot_before.stdout.splitlines())}
         assert loot_counts == {'Lootlife': (2, 0), 'Lootnear': (39, 38), 'Lootother': (1, 1), 'Lootpages': (19, 0), 'Lootquest': (4, 0), 'Lootretained': (2, 1)}, loot_counts
         (output/'creature-loot-before-restart.txt').write_text(loot_before.stdout)
+        roll_query = "SELECT count(*),md5(string_agg(to_jsonb(r)::text,'|' ORDER BY realm_id,character_id,roll_key,victim_life)) FROM theia.loot_rolls r;"
+        rolls_before = cluster.query(roll_query)
+        assert rolls_before.returncode == 0 and int(rolls_before.stdout.split('|')[0]) == 32, rolls_before.stdout
+        (output/'loot-rolls-before-restart.txt').write_text(rolls_before.stdout)
         cluster.restart()
+        rolls_after = cluster.query(roll_query)
+        assert rolls_after.returncode == 0 and rolls_after.stdout == rolls_before.stdout
+        (output/'loot-rolls-after-restart.txt').write_text(rolls_after.stdout)
         loot_after = cluster.query(loot_query)
         assert loot_after.returncode == 0 and loot_after.stdout == loot_before.stdout, 'Per-life loot source/availability/receipts/items/journals changed across restart'
         (output/'creature-loot-after-restart.txt').write_text(loot_after.stdout)

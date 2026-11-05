@@ -594,7 +594,7 @@ impl Owner {
         // Persist the original fatal fact. Offering never mutates the backpack
         // or possession journal. SQL uniqueness retains consumed life receipts.
         self.publisher
-            .offer_reward_for_kill(
+            .roll_reward_for_kill(
                 self.binding,
                 self.world,
                 profile,

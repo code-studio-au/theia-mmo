@@ -112,8 +112,9 @@ impl Store {
                 "Repeatable loot requires a victim life and corpse position",
             ));
         }
-        self.offer_reward_source(binding, world, profile, reward, None)
-            .await
+        self.offer_reward_source(binding, world, profile, reward, None, false)
+            .await?
+            .ok_or(Error::RewardData)
     }
     /// Trusted authority fact only. Offer commits availability, never items or
     /// possession progress. Pickup must separately validate ownership and range.
@@ -130,12 +131,43 @@ impl Store {
             .catalog()
             .definition(reward)
             .ok_or(Error::RewardMissing)?;
+        if definition.requires_roll() {
+            return Err(Error::Invalid(
+                "Probabilistic loot requires the retained roll adapter",
+            ));
+        }
+        self.roll_reward_for_kill(binding, world, profile, reward, event, position)
+            .await?
+            .ok_or(Error::RewardData)
+    }
+    /// Server-owned, durable roll, including a receipt for an empty result.
+    /// This is not a client endpoint. The caller establishes kill and recipient.
+    pub async fn roll_reward_for_kill(
+        &mut self,
+        binding: Binding,
+        world: [u8; 32],
+        profile: &RewardCatalog,
+        reward: &ContentId,
+        event: &KillEvent,
+        position: GlobalPosition,
+    ) -> Result<Option<RewardClaim>> {
+        let definition = profile
+            .catalog()
+            .definition(reward)
+            .ok_or(Error::RewardMissing)?;
         let corpse = match definition.occurrence(event).map_err(Error::RewardCommand)? {
             Occurrence::OncePerCharacter => None,
             Occurrence::CreatureLife(life) => Some(CorpseSource { life, position }),
         };
-        self.offer_reward_source(binding, world, profile, reward, corpse)
-            .await
+        self.offer_reward_source(
+            binding,
+            world,
+            profile,
+            reward,
+            corpse,
+            definition.requires_roll(),
+        )
+        .await
     }
     async fn offer_reward_source(
         &mut self,
@@ -144,10 +176,46 @@ impl Store {
         profile: &RewardCatalog,
         reward: &ContentId,
         corpse: Option<CorpseSource>,
-    ) -> Result<RewardClaim> {
+        roll: bool,
+    ) -> Result<Option<RewardClaim>> {
         let transaction = bounded(self.client.as_mut().unwrap().transaction()).await?;
         authorize(&transaction, self.realm, binding, world).await?;
         validate_items(&transaction, self.realm, binding, profile).await?;
+        if roll {
+            let source = corpse.ok_or(Error::RewardData)?;
+            let definition = profile
+                .catalog()
+                .definition(reward)
+                .ok_or(Error::RewardMissing)?;
+            let key = if definition.drop_group() == 0 {
+                format!("entry:{}", reward.as_str())
+            } else {
+                format!(
+                    "group:{}:{}",
+                    definition.creature().as_str(),
+                    definition.drop_group()
+                )
+            };
+            let ticket = uniform_ticket()?;
+            let life = source.life.bytes().to_vec();
+            let [x, y, z] = source.position.metres();
+            bounded(transaction.execute("INSERT INTO theia.loot_rolls(realm_id,character_id,roll_key,victim_life,world_id,profile_hash,ticket,corpse_x,corpse_y,corpse_z) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) ON CONFLICT DO NOTHING", &[&self.realm.value(), &binding.character.value(), &key, &life, &world.as_slice(), &profile.hash().as_slice(), &ticket, &x, &y, &z])).await?;
+            let row = bounded(transaction.query_one("SELECT world_id,profile_hash,ticket,corpse_x,corpse_y,corpse_z FROM theia.loot_rolls WHERE realm_id=$1 AND character_id=$2 AND roll_key=$3 AND victim_life=$4 FOR UPDATE", &[&self.realm.value(), &binding.character.value(), &key, &life])).await?;
+            if row.get::<_, Vec<u8>>(0) != world {
+                return Err(Error::WorldMismatch);
+            }
+            if row.get::<_, Vec<u8>>(1) != profile.hash() {
+                return Err(Error::RewardCatalogMismatch);
+            }
+            if [row.get::<_, f64>(3), row.get(4), row.get(5)] != [x, y, z] {
+                return Err(Error::RewardData);
+            }
+            let ticket = u16::try_from(row.get::<_, i32>(2)).map_err(|_| Error::RewardData)?;
+            if !definition.wins_roll(profile.catalog(), ticket) {
+                bounded(transaction.commit()).await?;
+                return Ok(None);
+            }
+        }
         let claim = uuid::Uuid::new_v4();
         let scope = i16::from(corpse.is_some());
         let life = corpse.map(|c| c.life.bytes().to_vec());
@@ -161,7 +229,7 @@ impl Store {
             return Err(Error::RewardData);
         }
         bounded(transaction.commit()).await?;
-        Ok(claim)
+        Ok(Some(claim))
     }
     /// Complete bounded once-character history plus the oldest pending per-life
     /// page. Unshown pending loot and consumed life receipts remain durable;
@@ -347,4 +415,21 @@ impl Store {
             replayed: false,
         })
     }
+}
+
+/// Rejection sampling avoids modulo bias. Entropy never comes from the client.
+fn uniform_ticket() -> Result<i32> {
+    use ring::rand::{SecureRandom, SystemRandom};
+    let random = SystemRandom::new();
+    for _ in 0..16 {
+        let mut bytes = [0; 2];
+        random
+            .fill(&mut bytes)
+            .map_err(|_| Error::Invalid("Loot entropy unavailable"))?;
+        let sample = u16::from_le_bytes(bytes);
+        if sample < 60_000 {
+            return Ok(i32::from(sample % 10_000));
+        }
+    }
+    Err(Error::Invalid("Loot entropy rejection budget exceeded"))
 }

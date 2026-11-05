@@ -65,7 +65,7 @@ fn catalogs_reject_unbounded_unknown_duplicate_or_client_like_reward_definitions
     assert_eq!(reward.grants()[0].count(), 1);
     let original: Value = serde_json::from_slice(DATA).unwrap();
     for (key, value) in [
-        ("schema", json!(3)),
+        ("schema", json!(4)),
         ("id", json!("../rewards")),
         ("item_catalog", json!("theia.other.items")),
         ("rewards", json!([])),
@@ -396,4 +396,48 @@ fn trusted_kill_selectors_bind_repeatable_occurrences_to_the_exact_victim_life()
         old.definition(&reward_id()).unwrap().occurrence(&wrong),
         Err(Error::CreatureMismatch)
     );
+}
+
+#[test]
+fn independent_and_exclusive_drop_chances_have_exact_integer_boundaries() {
+    let items = Items::from_json(ITEMS).unwrap();
+    let mut raw: Value = serde_json::from_slice(DATA).unwrap();
+    raw["schema"] = json!(3);
+    raw["rewards"][0]["scope"] = json!("per_creature_life");
+    raw["rewards"][0]["chance_basis_points"] = json!(3500);
+    let independent = Catalog::from_json(&serde_json::to_vec(&raw).unwrap(), &items).unwrap();
+    let d = independent.definition(&reward_id()).unwrap();
+    assert_eq!(
+        (0..10_000)
+            .filter(|t| d.wins_roll(&independent, *t))
+            .count(),
+        3500
+    );
+    assert!(!d.wins_roll(&independent, 10_000));
+    raw["rewards"][0]["drop_group"] = json!(1);
+    let mut second = raw["rewards"][0].clone();
+    second["id"] = json!("theia.dev.second-drop");
+    second["chance_basis_points"] = json!(2500);
+    raw["rewards"].as_array_mut().unwrap().push(second);
+    let grouped = Catalog::from_json(&serde_json::to_vec(&raw).unwrap(), &items).unwrap();
+    let mut wins = [0, 0, 0];
+    for ticket in 0..10_000 {
+        let n = grouped
+            .definitions()
+            .filter(|d| d.wins_roll(&grouped, ticket))
+            .count();
+        wins[n] += 1;
+    }
+    assert_eq!(wins, [4000, 6000, 0]);
+    raw["rewards"][1]["chance_basis_points"] = json!(6501);
+    assert!(Catalog::from_json(&serde_json::to_vec(&raw).unwrap(), &items).is_err());
+    raw["rewards"][1]["chance_basis_points"] = json!(6500);
+    assert!(Catalog::from_json(&serde_json::to_vec(&raw).unwrap(), &items).is_ok());
+    for schema in [1, 2] {
+        raw["schema"] = json!(schema);
+        assert!(Catalog::from_json(&serde_json::to_vec(&raw).unwrap(), &items).is_err());
+    }
+    raw["schema"] = json!(3);
+    raw["rewards"][0]["scope"] = json!("once_per_character");
+    assert!(Catalog::from_json(&serde_json::to_vec(&raw).unwrap(), &items).is_err());
 }

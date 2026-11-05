@@ -681,3 +681,142 @@ async fn nearby_loot_follows_trusted_pose_and_distant_history_cannot_hide_fresh_
     drop(_admin);
     driver.await.unwrap().unwrap();
 }
+
+#[tokio::test]
+#[ignore = "requires owned PostgreSQL; run tools/qualify_persistence.py"]
+async fn probabilistic_loot_retains_misses_and_one_group_winner_without_rerolling() {
+    let (url, admin, driver) = support::owned().await;
+    let realm = RealmId::random();
+    let mut store = Store::connect_loopback(&url, realm).await.unwrap();
+    let (items, _) = loot_profiles();
+    let who = character(&mut store, "Rollprobe").await;
+    let empty = Bag::empty(items.catalog());
+    store
+        .ensure_inventory(who, WORLD, &items, &empty)
+        .await
+        .unwrap();
+    let mut raw: serde_json::Value = serde_json::from_slice(DATA).unwrap();
+    raw["schema"] = 3.into();
+    raw["rewards"][0]["scope"] = "per_creature_life".into();
+    raw["rewards"][0]["chance_basis_points"] = 3500.into();
+    raw["rewards"][0]["drop_group"] = 1.into();
+    let mut second = raw["rewards"][0].clone();
+    second["id"] = "theia.dev.second-drop".into();
+    second["chance_basis_points"] = 6500.into();
+    let mut miss = second.clone();
+    miss["id"] = "theia.dev.zero-drop".into();
+    miss["drop_group"] = 0.into();
+    miss["chance_basis_points"] = 0.into();
+    raw["rewards"]
+        .as_array_mut()
+        .unwrap()
+        .extend([second, miss]);
+    let profile = RewardCatalog::from_json(&serde_json::to_vec(&raw).unwrap(), &items).unwrap();
+    let ids: Vec<_> = profile
+        .catalog()
+        .definitions()
+        .map(|d| d.id().clone())
+        .collect();
+    let mut first = None;
+    for n in 1..=16 {
+        let event = kill(1000 + n);
+        let mut hits = 0;
+        for id in &ids {
+            assert!(
+                store
+                    .offer_reward_for_kill(who, WORLD, &profile, id, &event, position())
+                    .await
+                    .is_err()
+            );
+            let result = store
+                .roll_reward_for_kill(who, WORLD, &profile, id, &event, position())
+                .await
+                .unwrap();
+            for _ in 0..3 {
+                assert_eq!(
+                    store
+                        .roll_reward_for_kill(who, WORLD, &profile, id, &event, position())
+                        .await
+                        .unwrap(),
+                    result
+                );
+            }
+            let key = if profile.catalog().definition(id).unwrap().drop_group() == 0 {
+                format!("entry:{}", id.as_str())
+            } else {
+                "group:theia.dev.training-creature:1".into()
+            };
+            let ticket: i32 = admin.query_one("SELECT ticket FROM theia.loot_rolls WHERE realm_id=$1 AND character_id=$2 AND roll_key=$3 AND victim_life=$4", &[&realm.value(), &who.character.value(), &key, &event.id.bytes().as_slice()]).await.unwrap().get(0);
+            assert_eq!(
+                result.is_some(),
+                profile
+                    .catalog()
+                    .definition(id)
+                    .unwrap()
+                    .wins_roll(profile.catalog(), ticket as u16)
+            );
+            if let Some(claim) = result {
+                hits += 1;
+                first.get_or_insert((claim, event.clone()));
+            }
+        }
+        assert_eq!(hits, 1);
+    }
+    assert_eq!(
+        store.load_inventory(who, WORLD, &items).await.unwrap(),
+        empty
+    );
+    let (claim, event) = first.unwrap();
+    let applied = store
+        .claim_reward(who, WORLD, &profile, claim.id, 0)
+        .await
+        .unwrap();
+    assert_eq!(tokens(&applied.bag), 1);
+    assert!(
+        store
+            .roll_reward_for_kill(who, WORLD, &profile, &claim.reward, &event, position())
+            .await
+            .unwrap()
+            .unwrap()
+            .consumed_revision
+            .is_some()
+    );
+    let zero = ContentId::new("theia.dev.zero-drop").unwrap();
+    assert!(
+        store
+            .roll_reward_for_kill(
+                who,
+                WORLD,
+                &profile,
+                &zero,
+                &event,
+                GlobalPosition::new([8001., 0., 8000.]).unwrap()
+            )
+            .await
+            .is_err()
+    );
+    raw["rewards"][2]["chance_basis_points"] = 10_000.into();
+    let changed = RewardCatalog::from_json(&serde_json::to_vec(&raw).unwrap(), &items).unwrap();
+    assert!(matches!(
+        store
+            .roll_reward_for_kill(who, WORLD, &changed, &zero, &event, position())
+            .await,
+        Err(Error::RewardCatalogMismatch)
+    ));
+    drop(store);
+    let mut store = Store::connect_loopback(&url, realm).await.unwrap();
+    assert!(
+        store
+            .roll_reward_for_kill(who, WORLD, &profile, &zero, &event, position())
+            .await
+            .unwrap()
+            .is_none()
+    );
+    assert_eq!(
+        store.load_inventory(who, WORLD, &items).await.unwrap(),
+        applied.bag
+    );
+    drop(store);
+    drop(admin);
+    driver.await.unwrap().unwrap();
+}

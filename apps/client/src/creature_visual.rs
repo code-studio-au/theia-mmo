@@ -1,4 +1,5 @@
 //! Opt-in wolf art. Authority remains in the existing creature/combat protocols.
+mod loot;
 use bevy::{
     asset::{
         AssetApp, LoadState,
@@ -360,6 +361,7 @@ fn update(world: &mut World) {
         Ok(true) => (),
     }
     let state = world.resource::<crate::network::Network>().state();
+    loot::reconcile(world, &state);
     let targets = state
         .targeting
         .as_ref()
@@ -452,10 +454,14 @@ fn update(world: &mut World) {
     }
     for root in roots {
         let owner = world.get::<Visual>(root).unwrap().owner;
-        let Some(target) = world.get::<crate::targeting::TargetVisual>(owner) else {
+        let corpse = world.get::<crate::loot::CorpseVisual>(owner).copied();
+        let Some(key) = world
+            .get::<crate::targeting::TargetVisual>(owner)
+            .map(|t| t.key)
+            .or_else(|| corpse.map(|c| c.0.life.victim()))
+        else {
             continue;
         };
-        let key = target.key;
         if world.get::<Visual>(root).unwrap().players.is_empty() {
             let descendants = crate::reference_scene::descendants(world, root);
             let players: Vec<_> = descendants
@@ -490,7 +496,15 @@ fn update(world: &mut World) {
             world.get_mut::<Visual>(root).unwrap().players = players;
         }
         let pending = world.resource::<Pending>();
-        let cue = pending.cues.iter().find(|c| c.key == key).copied();
+        let cue = corpse
+            .map(|c| Cue {
+                key,
+                position: c.0.position,
+                dead: true,
+                serial: 0,
+                until: pending.now(),
+            })
+            .or_else(|| pending.cues.iter().find(|c| c.key == key).copied());
         let dead = cue.is_some_and(|c| c.dead);
         let position = targets
             .iter()
@@ -550,11 +564,17 @@ fn update(world: &mut World) {
         }
         if world.get::<Visual>(root).unwrap().active != Some((clip, serial)) {
             let node = world.resource::<Catalog>().nodes[clip];
+            let death_duration = world.resource::<Catalog>().durations[5];
             let players = world.get::<Visual>(root).unwrap().players.clone();
             for e in players {
                 let mut player = world.get_mut::<AnimationPlayer>(e).unwrap();
                 let active = player.stop_all().play(node);
                 active.set_speed(rate.clamp(0.1, 12.));
+                if corpse.is_some() {
+                    active
+                        .seek_to((death_duration - 0.001).max(0.))
+                        .set_speed(0.);
+                }
                 if clip < 3 {
                     active.repeat();
                 }

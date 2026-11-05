@@ -70,11 +70,13 @@ fn next_target(selected: Option<EntityId>, ids: &[EntityId]) -> Option<EntityId>
         .map_or(0, |i| (i + 1) % ids.len());
     Some(ids[next])
 }
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn controls(
     keys: Res<ButtonInput<KeyCode>>,
     network: Res<Network>,
     classic: Option<Res<crate::classic_controls::Controller>>,
     inventory: Option<Res<crate::inventory::Ui>>,
+    loot: Option<Res<crate::loot::Ui>>,
     dialogue: Option<Res<crate::dialogue::Ui>>,
     mut selection: ResMut<crate::world_input::Selection>,
     windows: Query<&Window>,
@@ -86,7 +88,8 @@ pub(crate) fn controls(
     let Some(targeting) = &state.targeting else {
         return;
     };
-    let panel = classic.as_ref().is_some_and(|c| c.escape_owned_by_panel)
+    let panel = loot.as_ref().is_some_and(|u| u.open || u.closed_this_frame)
+        || classic.as_ref().is_some_and(|c| c.escape_owned_by_panel)
         || inventory.as_ref().is_some_and(|u| u.open)
         || dialogue
             .as_ref()

@@ -245,7 +245,7 @@ fn relative(value: &str) -> bool {
             .all(|part| !part.is_empty() && !matches!(part, "." | ".."))
         && !Path::new(value).is_absolute()
 }
-fn check(bytes: &BTreeMap<&str, Vec<u8>>, journal: bool) -> Result<()> {
+fn check(bytes: &BTreeMap<&str, Vec<u8>>, journal: bool, creature_loot: bool) -> Result<()> {
     let items =
         inventory::Catalog::from_json(&bytes["items"]).map_err(|_| "Invalid items profile")?;
     let abilities = theia_core::abilities::Catalog::from_json(&bytes["abilities"])?;
@@ -275,6 +275,13 @@ fn check(bytes: &BTreeMap<&str, Vec<u8>>, journal: bool) -> Result<()> {
     }
     let rewards = rewards::Catalog::from_json(&bytes["rewards"], &items)
         .map_err(|_| "Invalid reward/item configuration")?;
+    if rewards
+        .definitions()
+        .any(|r| r.scope() == rewards::Scope::PerCreatureLife)
+        != creature_loot
+    {
+        return Err("Per-life loot requires schema 17 with a per-life recipe".into());
+    }
     if rewards.definitions().any(|r| r.creature() != creature.id()) {
         return Err("Reward references an undeclared creature".into());
     }
@@ -457,7 +464,7 @@ fn validate(path: &Path) -> Result<Report> {
     let raw = bounded(&path, MAX_MANIFEST_BYTES)?;
     let manifest: Manifest =
         serde_json::from_slice(&raw).map_err(|_| "Invalid gameplay manifest")?;
-    if !matches!(manifest.schema, 1..=16)
+    if !matches!(manifest.schema, 1..=17)
         || manifest.revision == 0
         || ContentId::new(&manifest.id).is_none()
         || (matches!(manifest.schema, 2..=11)) != manifest.quest_turn_in_xp.is_some()
@@ -474,7 +481,7 @@ fn validate(path: &Path) -> Result<Report> {
         || (manifest.schema >= 10) != manifest.creature_credit.is_some()
         || (manifest.schema >= 11) != manifest.creature_reset.is_some()
         || (manifest.schema >= 13) != manifest.creature_threat.is_some()
-        || (manifest.schema == 16) != manifest.quest_areas.is_some()
+        || (manifest.schema >= 16) != manifest.quest_areas.is_some()
     {
         return Err("Invalid gameplay manifest identity/version".into());
     }
@@ -505,7 +512,7 @@ fn validate(path: &Path) -> Result<Report> {
         });
         bytes.insert(kind, data);
     }
-    check(&bytes, manifest.schema >= 12)?;
+    check(&bytes, manifest.schema >= 12, manifest.schema >= 17)?;
     profiles.sort_by(|a, b| a.kind.cmp(&b.kind));
     let manifest_hash = sha256(&raw);
     let mut identity = b"theia-gameplay-validation-bundle-v1\0".to_vec();
@@ -1948,5 +1955,34 @@ mod tests {
             fs::write(f.path("quest"), compiled.as_bytes()).unwrap();
             assert_eq!(validate(&f.manifest()).is_ok(), installed);
         }
+    }
+    #[test]
+    fn random_creature_loot_manifest_validates_authored_rolls() {
+        let source = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../content/development-gameplay-classic-random-loot.json");
+        let report = validate(&source).unwrap();
+        assert_eq!((report.manifest_schema, report.profiles.len()), (17, 23));
+    }
+    #[test]
+    fn creature_loot_manifest_seals_pelt_recipe_and_refuses_legacy_admission() {
+        let source = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../content/development-gameplay-classic-creature-loot.json");
+        let report = validate(&source).unwrap();
+        assert_eq!((report.manifest_schema, report.profiles.len()), (17, 23));
+        let f = areas_fixture();
+        f.edit("manifest", |m| m["schema"] = json!(17));
+        assert!(
+            validate(&f.manifest()).is_err(),
+            "Schema 17 requires a per-life recipe"
+        );
+        let f = areas_fixture();
+        f.edit("rewards", |r| {
+            r["schema"] = json!(2);
+            r["rewards"][0]["scope"] = json!("per_creature_life");
+        });
+        assert!(
+            validate(&f.manifest()).is_err(),
+            "Legacy bundles cannot silently adopt repeatable loot"
+        );
     }
 }

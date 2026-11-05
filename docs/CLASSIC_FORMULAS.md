@@ -74,3 +74,13 @@ Classic implementations provide evidence for item-removal incompletion, bag
 rechecking and consumption at reward; emulator behavior is not Blizzard-server
 proof. Counts are dimensionless. Initial backpack-only possession and final-stage
 delivery scope are explicit Theia choices; live adoption remains in progress.
+
+
+## Loot chance policy — 5 November 2026
+
+[Creature loot tables](LOOT_TABLES.md) record the pinned CMaNGOS Classic source,
+independent chances, exclusive groups, quest-eligibility reference and explicit
+Theia choices. Drop probability is dimensionless; all corpse distances remain
+metric. Initial 60% pelt / 25% token values are provisional authored rates, not
+historical Classic data. Quest-only eligibility and live possession admission
+remain separate work; ordinary development pelts currently have neither gate.

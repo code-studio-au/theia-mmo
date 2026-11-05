@@ -55,7 +55,7 @@ pub enum Scope {
     /// calling a pure proposal repeatedly does not enforce nonrepeatability.
     OncePerCharacter,
     /// One durable entitlement per recipient and authoritative victim life.
-    /// Only schema 2 admits this policy; storage/runtime support is separate.
+    /// Schemas 2 and 3 admit this policy; storage/runtime support is separate.
     PerCreatureLife,
 }
 /// Scope discriminator for a trusted kill selector. This conveys no recipient
@@ -81,6 +81,8 @@ struct RawDefinition {
     scope: Scope,
     creature: String,
     grants: Vec<RawGrant>,
+    chance_basis_points: Option<u16>,
+    drop_group: Option<u8>,
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -109,6 +111,9 @@ pub struct Definition {
     creature: ContentId,
     item_catalog: ContentId,
     grants: Vec<Grant>,
+    chance_basis_points: u16,
+    drop_group: u8,
+    roll_policy: bool,
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Catalog {
@@ -123,7 +128,7 @@ impl Catalog {
         }
         let raw: RawCatalog =
             serde_json::from_slice(bytes).map_err(|_| "Invalid reward catalog")?;
-        if !matches!(raw.schema, 1 | 2) || !(1..=MAX_DEFINITIONS).contains(&raw.rewards.len()) {
+        if !matches!(raw.schema, 1..=3) || !(1..=MAX_DEFINITIONS).contains(&raw.rewards.len()) {
             return Err("Unsupported reward schema/count");
         }
         let id = ContentId::new(&raw.id).ok_or("Invalid reward catalog ID")?;
@@ -135,6 +140,17 @@ impl Catalog {
         for raw in raw.rewards {
             if schema == 1 && raw.scope == Scope::PerCreatureLife {
                 return Err("Per-creature-life rewards require schema 2");
+            }
+            if schema < 3 && (raw.chance_basis_points.is_some() || raw.drop_group.is_some()) {
+                return Err("Drop chances require schema 3");
+            }
+            let chance_basis_points = raw.chance_basis_points.unwrap_or(10_000);
+            let drop_group = raw.drop_group.unwrap_or(0);
+            if chance_basis_points > 10_000
+                || ((raw.chance_basis_points.is_some() || raw.drop_group.is_some())
+                    && raw.scope != Scope::PerCreatureLife)
+            {
+                return Err("Invalid per-life drop chance/scope");
             }
             let id = ContentId::new(&raw.id).ok_or("Invalid reward ID")?;
             let creature = ContentId::new(&raw.creature).ok_or("Invalid qualifying creature ID")?;
@@ -181,9 +197,22 @@ impl Catalog {
                 creature,
                 item_catalog: item_catalog.clone(),
                 grants: grants.into_values().collect(),
+                chance_basis_points,
+                drop_group,
+                roll_policy: schema >= 3 && raw.scope == Scope::PerCreatureLife,
             };
             if rewards.insert(id, definition).is_some() {
                 return Err("Duplicate reward ID");
+            }
+        }
+        let mut groups = BTreeMap::new();
+        for definition in rewards.values().filter(|d| d.drop_group != 0) {
+            let total = groups
+                .entry((definition.creature.clone(), definition.drop_group))
+                .or_insert(0_u32);
+            *total += u32::from(definition.chance_basis_points);
+            if *total > 10_000 {
+                return Err("Drop group chances exceed 100 percent");
             }
         }
         Ok(Self {
@@ -221,6 +250,37 @@ impl Definition {
     }
     pub fn name(&self) -> &str {
         &self.name
+    }
+    /// Independent percent chance when group is zero; otherwise an exclusive
+    /// interval in the creature's group. One basis point is 0.01 percent.
+    pub fn chance_basis_points(&self) -> u16 {
+        self.chance_basis_points
+    }
+    pub fn drop_group(&self) -> u8 {
+        self.drop_group
+    }
+    pub fn requires_roll(&self) -> bool {
+        self.roll_policy
+    }
+    /// Pure classification of a trusted uniform ticket in 0..10_000. It creates
+    /// no authority, entropy or durable receipt. Groups share ONE stored ticket;
+    /// sorted stable IDs define disjoint intervals and unused chance means no loot.
+    pub fn wins_roll(&self, catalog: &Catalog, ticket: u16) -> bool {
+        if ticket >= 10_000 || catalog.definition(&self.id) != Some(self) {
+            return false;
+        }
+        let lower: u32 = if self.drop_group == 0 {
+            0
+        } else {
+            catalog
+                .definitions()
+                .filter(|d| {
+                    d.creature == self.creature && d.drop_group == self.drop_group && d.id < self.id
+                })
+                .map(|d| u32::from(d.chance_basis_points))
+                .sum()
+        };
+        (lower..lower + u32::from(self.chance_basis_points)).contains(&u32::from(ticket))
     }
     pub fn scope(&self) -> Scope {
         self.scope

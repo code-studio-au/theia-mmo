@@ -1,3 +1,15 @@
+## 2026-11-05 — authored creature drop chances and explicit corpse pickup
+
+Use independent integer drop chances and optional exclusive groups in reward
+schema 3; preserve old guaranteed recipes. Persist misses and shared group tickets
+as well as winning availability, bound to recipient, victim life, content and
+original metric position. Use the retained async authority owner; opening a loot
+pane grants no inventory. Preserve guaranteed native-test content separately
+from provisional 60% pelt / 25% token gameplay content. [Reference, semantics and
+adoption limits](LOOT_TABLES.md). Quest-only eligibility and live possession quests
+remain gated until their inventory/journal integration is qualified. Standard
+Bevy corpse picking/UI now pass the documented Linux native pickup/rejoin flow.
+
 ## 2026-11-04 — separate durable loot availability from pickup
 
 A fatal creature life creates a recipient-bound loot entitlement at its original

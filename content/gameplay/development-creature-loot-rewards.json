@@ -1,0 +1,43 @@
+{
+  "schema": 2,
+  "id": "theia.dev.creature-loot-rewards",
+  "item_catalog": "theia.dev.equipment-items",
+  "rewards": [
+    {
+      "id": "theia.dev.first-training-kill",
+      "name": "First Training Kill",
+      "scope": "once_per_character",
+      "creature": "theia.dev.training-creature",
+      "grants": [
+        {
+          "item": "theia.dev.training-token",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "theia.dev.wolf-pelt-loot",
+      "name": "Wolf Pelt",
+      "scope": "per_creature_life",
+      "creature": "theia.dev.training-creature",
+      "grants": [
+        {
+          "item": "theia.dev.wolf-pelt",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "theia.dev.wolf-token-loot",
+      "name": "Wolf Spoils",
+      "scope": "per_creature_life",
+      "creature": "theia.dev.training-creature",
+      "grants": [
+        {
+          "item": "theia.dev.training-token",
+          "count": 1
+        }
+      ]
+    }
+  ]
+}

@@ -22,7 +22,7 @@ SECOND = 'theia.dev.quest-follow-up'
 WOLVES = SECOND + '.objective.wolves'
 
 
-def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False, minimap=False, reach_areas=False):
+def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False, minimap=False, reach_areas=False, corpse_loot=False):
     scale = state()['window'][2]
     base_head = 13 if repeat_interaction else 11
     expected_head = base_head + (3 if reach_areas else 0)
@@ -81,6 +81,15 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
         if not journal()['choices']:
             close_panels()
             speak()
+        # The small-window dialogue body scrolls. Its last choice can have a
+        # computed centre outside the clipping rectangle; expose it with real
+        # wheel input before reading/clicking the settled painted location.
+        width, height, _ = state()['window']
+        desktop.move(window, [width*.5, height*.42], scale)
+        for _ in range(4):
+            desktop.button(5 if name == 'training' else 4, True)
+            desktop.button(5 if name == 'training' else 4, False)
+        time.sleep(.2)
         wanted = 'theia.dev.interaction.'+name
         point = wait(lambda: next((c['point'] for c in journal()['choices'] if c['choice'] == wanted), None))
         desktop.click(window, point, scale, 1)
@@ -129,6 +138,9 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
         if reach_areas:
             assert quest('theia.dev.quest-overlook')['status'] == 'Completed'
         assert journal()['ui']['submitted'] == 0
+        if corpse_loot:
+            # Pickup legitimately changed the saved logout position.
+            approach(lambda: [8004., 0., 8000.])
         speak()
         assert not journal()['buttons'], 'Completed quests were offered again'
         assert not state()['quest_marker']['visible_now']
@@ -352,10 +364,12 @@ def check_minimap_walk(desktop, window, state, folder):
     return proof
 
 
-def run(output, binaries, sizes, production=False, repeat_interaction=False, gameplay_manifest=Path("content/development-gameplay-classic-journal.json"), minimap=False, minimap_traversal=False, reach_areas=False, destroy_items=False):
+def run(output, binaries, sizes, production=False, repeat_interaction=False, gameplay_manifest=Path("content/development-gameplay-classic-journal.json"), minimap=False, minimap_traversal=False, reach_areas=False, destroy_items=False, corpse_loot=False):
+    if corpse_loot and (not reach_areas or destroy_items or minimap or json.loads(gameplay_manifest.read_text())["schema"] != 17):
+        raise ValueError("Corpse loot requires schema 17, area regression and separate inventory checks")
     if minimap_traversal and not minimap:
         raise ValueError("Map traversal requires --minimap")
-    if reach_areas and (minimap or json.loads(gameplay_manifest.read_text())['schema'] != 16):
+    if reach_areas and (minimap or json.loads(gameplay_manifest.read_text())['schema'] not in ((16,17) if corpse_loot else (16,))):
         raise ValueError('Area flow requires schema 16 and its separate marker assertions')
     output = output.resolve()
     binaries = binaries.resolve()
@@ -416,6 +430,8 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
                         def state():
                             assert launcher.poll() is None, 'Owned launcher exited early'
                             return wait(lambda: json.loads((folder/'input-os.json').read_text()), 2)
+                        wait(lambda: (folder/'input-os.json').is_file() or launcher.poll() is not None, 60)
+                        assert launcher.poll() is None, 'Owned launcher exited before client telemetry; inspect launcher/server logs'
                         initial = wait(lambda: state() if state()['connected'] and state()['quest_journal'] and state()['guide_screen'] else None, 60)
                         assert initial['window'][:2] == [int(v) for v in size.split('x')]
                         status = Path(f'/proc/{initial["pid"]}/status').read_text()
@@ -423,11 +439,14 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
                         window = wait(lambda: owned_window(initial['pid']))
                         desktop.focus(window)
                         time.sleep(1)
-                        proof = flow(desktop, window, state, folder, resumed, repeat_interaction, minimap, reach_areas)
+                        proof = flow(desktop, window, state, folder, resumed, repeat_interaction, minimap, reach_areas, corpse_loot)
                         if minimap:
                             proof['minimap'] = check_minimap(desktop, window, state, folder)
                             if minimap_traversal and resumed:
                                 proof['minimap_walk'] = check_minimap_walk(desktop, window, state, folder)
+                        if corpse_loot:
+                            from quest_corpse_loot_os import flow as loot_flow
+                            proof['corpse_loot'] = loot_flow(desktop, window, state, folder, resumed)
                         if destroy_items:
                             from quest_item_destruction_os import flow as item_flow
                             proof['item_destruction'] = item_flow(desktop, window, state, folder, resumed)
@@ -439,6 +458,16 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
                         os.kill(servers[0], signal.SIGINT)
                         launcher.wait(timeout=30)
                         results[folder.name] = proof
+                    except Exception:
+                        # Preserve the actual painted layout before owned cleanup.
+                        if launcher.poll() is None and (folder/'input-os.json').is_file():
+                            (folder/'capture.request').write_text('failure.png\n')
+                            try:
+                                wait(lambda: capture_ready(folder/'input-os.png'), 5)
+                                (folder/'input-os.png').rename(folder/'failure.png')
+                            except (TimeoutError, OSError):
+                                pass
+                        raise
                     finally:
                         if launcher.poll() is None:
                             launcher.send_signal(signal.SIGINT)
@@ -477,7 +506,7 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
     result = dict(passed=True, results=results, owned_services_stopped=True, plaintext_password_files_removed=True,
                   scope='Normal launcher + actual local OIDC, owned PostgreSQL, PID-bound synthetic X11 input and Linux native GPU; no physical hardware/Windows claim',
                   private_combat_fixture=not production, unchanged_quest_catalogue=True, repeated_preaccept_interaction=repeat_interaction,
-                  database_process_restart=True, saved_completion_rejoin=True, reach_area=reach_areas, item_destruction=destroy_items)
+                  database_process_restart=True, saved_completion_rejoin=True, reach_area=reach_areas, item_destruction=destroy_items, corpse_loot=corpse_loot)
     (output/'verification.json').write_text(json.dumps(result, indent=2)+'\n')
     return result
 
@@ -491,8 +520,9 @@ if __name__ == '__main__':
     parser.add_argument('--minimap', action='store_true')
     parser.add_argument('--minimap-traversal', action='store_true', help='After restart/rejoin, walk across chunk and render-origin boundaries using normal keyboard movement')
     parser.add_argument('--repeat-interaction', action='store_true')
+    parser.add_argument('--corpse-loot',action='store_true',help='Normal corpse selection, view-only, single pickup, serial Loot-all and durable partial-loot rejoin')
     parser.add_argument('--destroy-items',action='store_true',help='Check normal split/confirm/cancel/destroy UI and persistence after the quest flow')
     parser.add_argument('--reach-areas', action='store_true', help='Complete the opt-in western overlook using normal movement')
     parser.add_argument('--gameplay-manifest', type=Path, default=Path('content/development-gameplay-classic-journal.json'))
     args = parser.parse_args()
-    print(json.dumps(run(args.output, args.binaries, args.sizes or ['1920x1200','3440x1440','1280x720'], args.production, args.repeat_interaction, args.gameplay_manifest, args.minimap, args.minimap_traversal, args.reach_areas, args.destroy_items), indent=2))
+    print(json.dumps(run(args.output, args.binaries, args.sizes or ['1920x1200','3440x1440','1280x720'], args.production, args.repeat_interaction, args.gameplay_manifest, args.minimap, args.minimap_traversal, args.reach_areas, args.destroy_items, args.corpse_loot), indent=2))

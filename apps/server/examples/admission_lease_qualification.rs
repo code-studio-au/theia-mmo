@@ -167,9 +167,14 @@ async fn main() -> theia_network::Result<()> {
     second["id"] = "theia.dev.second-training-kill".into();
     recipe["rewards"].as_array_mut().unwrap().push(second);
     if creature_loot {
-        recipe["schema"] = 2.into();
+        recipe["schema"] = 3.into();
         recipe["rewards"].as_array_mut().unwrap().truncate(1);
         recipe["rewards"][0]["scope"] = "per_creature_life".into();
+        recipe["rewards"][0]["chance_basis_points"] = 10_000.into();
+        let mut miss = recipe["rewards"][0].clone();
+        miss["id"] = "theia.dev.zero-drop".into();
+        miss["chance_basis_points"] = 0.into();
+        recipe["rewards"].as_array_mut().unwrap().push(miss);
     }
     let reward_bytes = serde_json::to_vec(&recipe)?;
     let rewards = if rewards_enabled {
@@ -1246,6 +1251,15 @@ async fn main() -> theia_network::Result<()> {
                 creature: recipe.creature().clone(),
             },
         };
+        let mut miss = fact(99, position);
+        miss.reward = theia_core::content::ContentId::new("theia.dev.zero-drop").unwrap();
+        for _ in 0..2 {
+            port.opportunities
+                .as_ref()
+                .unwrap()
+                .send(miss.clone())
+                .await?;
+        }
         for n in 100..117 {
             port.opportunities
                 .as_ref()
@@ -1384,11 +1398,22 @@ async fn main() -> theia_network::Result<()> {
         let row=admin.query_one("SELECT count(*),count(*) FILTER(WHERE consumed_revision IS NULL) FROM theia.reward_claims WHERE realm_id=$1 AND character_id=$2",&[&realm.value(),&binding.character.value()]).await?;
         assert_eq!(row.get::<_, i64>(0), 18);
         assert_eq!(row.get::<_, i64>(1), 17);
+        let rolls = admin
+            .query_one(
+                "SELECT count(*) FROM theia.loot_rolls WHERE realm_id=$1 AND character_id=$2",
+                &[&realm.value(), &binding.character.value()],
+            )
+            .await?;
+        assert_eq!(
+            rolls.get::<_, i64>(0),
+            19,
+            "Repeated miss must retain one roll without advertising loot"
+        );
         worker.shutdown().await?;
         drop(admin);
         driver.await??;
         emit(
-            serde_json::json!({"passed":true,"actual_oidc_and_postgres":true,"encrypted_ticket_binding":true,"creature_loot_enabled":true,"nearby_interest_follows_retained_pose":true,"pickup_survives_retirement":true,"distant_uncollected_loot_restores":true,"death_offer_does_not_grant_items":true,"consumed_life_replay_does_not_restore_loot":true,"direct_lease_contract_not_native_game":true}),
+            serde_json::json!({"passed":true,"actual_oidc_and_postgres":true,"encrypted_ticket_binding":true,"creature_loot_enabled":true,"persisted_rolls_including_miss":true,"nearby_interest_follows_retained_pose":true,"pickup_survives_retirement":true,"distant_uncollected_loot_restores":true,"death_offer_does_not_grant_items":true,"consumed_life_replay_does_not_restore_loot":true,"direct_lease_contract_not_native_game":true}),
         );
         return Ok(());
     }

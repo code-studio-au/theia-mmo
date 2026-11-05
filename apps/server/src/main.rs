@@ -47,6 +47,7 @@ async fn main() -> Result<()> {
     let mut navigation = None;
     let mut item_catalog = None;
     let mut reward_catalog = None;
+    let mut creature_loot = false;
     let mut progression_catalog = None;
     let mut quest_catalog = None;
     let mut quest_areas = None;
@@ -163,6 +164,7 @@ async fn main() -> Result<()> {
                 if progression_catalog.is_some() {return Err("Choose one progression catalog".into());}
                 progression_catalog=Some(PathBuf::from(args.next().ok_or("Missing progression catalog")?));
             }
+            "--creature-loot" => {creature_loot=true;}
             "--reward-catalog" => {
                 if reward_catalog.is_some() {return Err("Choose one reward catalog".into());}
                 reward_catalog=Some(PathBuf::from(args.next().ok_or("Missing reward catalog")?));
@@ -602,6 +604,9 @@ async fn main() -> Result<()> {
     if !bind.ip().is_loopback() {
         return Err("Local prototype only: bind must be loopback".into());
     }
+    if creature_loot && reward_catalog.is_none() {
+        return Err("Creature loot requires a reward catalog".into());
+    }
     if reward_catalog.is_some()
         && (!account_login
             || item_catalog.is_none()
@@ -665,9 +670,17 @@ async fn main() -> Result<()> {
             let inventory = inventory.as_ref().ok_or("Rewards require items")?;
             let profile = theia_persistence::RewardCatalog::from_json(&bytes, inventory)?;
             let wire = wire_items.as_ref().ok_or("Reward wire items missing")?;
-            world.enable_rewards(std::sync::Arc::new(
-                theia_network::reward_wire::Profile::from_json(&bytes, wire)?,
-            ))?;
+            if creature_loot {
+                world.enable_creature_loot(std::sync::Arc::new(
+                    theia_network::reward_wire::Profile::from_json_with_creature_loot(
+                        &bytes, wire,
+                    )?,
+                ))?;
+            } else {
+                world.enable_rewards(std::sync::Arc::new(
+                    theia_network::reward_wire::Profile::from_json(&bytes, wire)?,
+                ))?;
+            }
             Some(profile)
         } else {
             None

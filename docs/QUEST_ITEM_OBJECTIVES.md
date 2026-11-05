@@ -693,3 +693,54 @@ pass. Preserve `build/quest-loot-nearby-qualified-v1-20261105`. No new rendering
 native/Windows or capacity claim. Continue with normal client corpse selection,
 explicit loot UI and manifest adoption; live item quests remain gated until
 normal native possession/reversal/turn-in/rejoin succeeds. Local commits only.
+
+## Explicit corpse pickup UI — 5 November 2026
+
+P3-05 / P3-09 / P3-11 / P3-15: the normal opt-in schema-17 development manifest
+now installs recipient-private corpse visuals and a standard Bevy loot pane.
+Right-click a corpse to view; Take requests one displayed claim; Loot all sends
+serial pickup commands through the same acknowledgement stream as backpack
+operations. Merely killing, opening, closing or pressing Escape grants no items.
+Escape closes loot before the other open panes. Pending commands retain their
+identity; full-bag rejection stops Loot all and leaves availability intact.
+
+Private corpses use the original checked death position and frozen final death
+animation, independently of the public respawning creature life. Only resident,
+nearby committed loot is shown. A standard transparent mesh provides the body
+picking volume: Bevy's CPU mesh raycaster reads unskinned vertex positions, so
+picking the frozen skinned death pose directly missed visible bodies. This is a
+presentation/picking proxy, with no physics collider or combat-target authority.
+The bounded pane uses standard UI scrolling. Existing quest and vendor panes
+retain their own ownership; an obstructed body requires a normal camera orbit.
+
+Actual normal launcher/local OIDC/encrypted Renet/PostgreSQL/native Linux proof:
+`build/quest-loot-ui-native-v8-20261105/verification.json`. The 1280x720,
+1920x1200 and fullscreen 3440x1440 flows complete the unchanged three development
+quests and three ordinary wolf kills, then demonstrate read-only opening,
+Escape ownership, one-item pickup, serial Loot all and partial corpse retention.
+An actual database process restart/fresh login restores the same uncollected
+bodies and items; collecting them leaves no pending bodies. No inventory grant
+is inferred from a visual marker. Journal state/revision remain unchanged by
+these ordinary item pickups. All four runs report zero GPU diagnostics on
+AMD Radeon RX 7900 XTX / RADV Vulkan / Mesa 26.2.6, using PID-bound synthetic X11
+input. This is Linux native evidence, not physical input, Windows or capacity
+qualification. Owned services/input stop and plaintext password files are removed.
+
+The native binary is `build/quest-loot-ui-candidate-v4-20261105`; its client source
+hashes exactly match this UI implementation. It predates the separate authored
+random-roll storage change. The guaranteed schema-2 pelt/token recipe is an
+intentional repeatable test fixture. It is not evidence of probabilistic rates,
+quest-only eligibility or item-based quest progression. [Loot tables](LOOT_TABLES.md)
+define those separate semantics and the new random-profile/storage evidence.
+Earlier native v1–v7 failures remain negative evidence: CLI flag validation,
+saved-pose assumptions, clipped dialogue choices, bind-pose picking and body/
+guide occlusion were resolved through code fixes and real input, not direct
+state mutation. Screenshots at small and ultrawide sizes were inspected.
+
+Pre-roll UI checks pass 147 client tests, 53 validator checks, 37 bundle tests,
+formatting and strict workspace/all-target Clippy. Combined roll/UI checks pass 1,295 workspace/all-target tests (65 service
+skips), 55 actual PostgreSQL contracts, the retained-owner roll scenario,
+38 bundle tests, formatting and strict all-target Clippy; see [loot evidence](LOOT_TABLES.md). Live
+possession-quest admission remains gated pending its combined pickup, deletion,
+reacquisition, turn-in and restart/rejoin proof. Reading notes remains a distinct
+future authored objective. Commit locally only; no push.

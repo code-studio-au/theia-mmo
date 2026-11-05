@@ -18,6 +18,15 @@ pub(super) enum Request {
         source: Option<(KillEvent, GlobalPosition)>,
         reply: oneshot::Sender<Result<RewardClaim>>,
     },
+    Roll {
+        binding: Binding,
+        world: [u8; 32],
+        profile: RewardCatalog,
+        reward: ContentId,
+        event: KillEvent,
+        position: GlobalPosition,
+        reply: oneshot::Sender<Result<Option<RewardClaim>>>,
+    },
     List {
         position: Option<GlobalPosition>,
         binding: Binding,
@@ -86,6 +95,38 @@ impl Publisher {
                 profile: profile.clone(),
                 reward: reward.clone(),
                 source: Some((event.clone(), position)),
+                reply,
+            }),
+            answer,
+        )
+        .await
+    }
+    /// Accepted roll jobs retain empty receipts and drain after response loss.
+    pub async fn roll_reward_for_kill(
+        &self,
+        binding: Binding,
+        world: [u8; 32],
+        profile: &RewardCatalog,
+        reward: &ContentId,
+        event: &KillEvent,
+        position: GlobalPosition,
+    ) -> Result<Option<RewardClaim>> {
+        valid_world(world)?;
+        profile
+            .catalog()
+            .definition(reward)
+            .ok_or(Error::RewardMissing)?
+            .occurrence(event)
+            .map_err(Error::RewardCommand)?;
+        let (reply, answer) = oneshot::channel();
+        self.inventory_request(
+            inventory::Request::Reward(Request::Roll {
+                binding,
+                world,
+                profile: profile.clone(),
+                reward: reward.clone(),
+                event: event.clone(),
+                position,
                 reply,
             }),
             answer,
@@ -184,6 +225,23 @@ impl Request {
                     }
                     None => store.offer_reward(binding, world, &profile, &reward).await,
                 };
+                status.reward_offers = status
+                    .reward_offers
+                    .saturating_add(u64::from(result.is_ok()));
+                respond(result, reply, status)
+            }
+            Self::Roll {
+                binding,
+                world,
+                profile,
+                reward,
+                event,
+                position,
+                reply,
+            } => {
+                let result = store
+                    .roll_reward_for_kill(binding, world, &profile, &reward, &event, position)
+                    .await;
                 status.reward_offers = status
                     .reward_offers
                     .saturating_add(u64::from(result.is_ok()));

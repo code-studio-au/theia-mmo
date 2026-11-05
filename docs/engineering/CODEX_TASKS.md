@@ -1,3 +1,16 @@
+Corpse pickup and authored loot rolls qualified locally, 5 November 2026:
+P3-02 / P3-05 / P3-09 / P3-11 / P3-15: opt-in schema-17 corpse UI passes three
+native Linux sizes and database restart/rejoin. Reward schema 3 adds authored
+independent chances and exclusive groups with durable winning/missing rolls.
+1,295 workspace/all-target tests pass (65 service skips); 55 actual PostgreSQL
+contracts/restart, actual OIDC/SQL retained-owner rolls, formatting and strict
+all-target Clippy pass. [Pickup evidence](../QUEST_ITEM_OBJECTIVES.md#explicit-corpse-pickup-ui--5-november-2026)
+and [drop-table semantics, profiles and limits](../LOOT_TABLES.md).
+Guaranteed content remains the native UI fixture; random ordinary loot has a
+separate development manifest. Quest-only eligibility and live possession quests
+remain gated; continue those next. Local commits only, no push. Earlier pending/
+stop entries below are historical.
+
 Stopped safely at user request, 4 November 2026:
 Qualified retained inventory/quest owner work is preserved at
 `build/quest-item-owner-qualified-v1-20261104`: 1,271 workspace/all-target tests,

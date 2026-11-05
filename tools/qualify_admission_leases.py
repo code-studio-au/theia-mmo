@@ -43,7 +43,7 @@ def run(output,identity_sdk,postgres_sdk,inventory=False,rewards=False,progressi
                             child.stdin.write((json.dumps(callback)+'\n').encode());child.stdin.flush()
                         else:
                             assert message['passed']
-                            if creature_loot:assert message['creature_loot_enabled'] and message['nearby_interest_follows_retained_pose'] and message['pickup_survives_retirement'] and message['distant_uncollected_loot_restores']
+                            if creature_loot:assert message['persisted_rolls_including_miss'] and message['creature_loot_enabled'] and message['nearby_interest_follows_retained_pose'] and message['pickup_survives_retirement'] and message['distant_uncollected_loot_restores']
                             if item_journal:assert message['item_journal_enabled'] and message['current_possession_reversal'] and message['atomic_turn_in_after_retirement'] and message['rejoin_replay_does_not_consume_again']
                             if journal:assert message['expanded_journal_enabled'] and message['accepted_executing_and_queued_journal_work_survives_logout']
                             if vendors:assert message['vendor_enabled'] and message['accepted_executing_and_queued_purchases_survive_logout']

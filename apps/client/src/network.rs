@@ -32,6 +32,9 @@ pub struct Network {
         Option<tokio::sync::mpsc::Sender<theia_network::renet_runtime::quest_lifecycle::Intent>>,
     dialogue: Option<tokio::sync::mpsc::Sender<theia_network::renet_runtime::dialogue::Intent>>,
     items: Option<tokio::sync::mpsc::Sender<theia_core::inventory::ItemCommand>>,
+    pickups: Option<tokio::sync::mpsc::Sender<theia_network::renet_runtime::inventory::Pickup>>,
+    /// Reserves one UI intent across panels until a later item reply arrives.
+    item_reservation: std::sync::atomic::AtomicU64,
     input: watch::Sender<Intent>,
     chunk_ready: watch::Sender<Option<Vec<theia_core::coordinates::ChunkId>>>,
     state: watch::Receiver<State>,
@@ -170,14 +173,59 @@ impl Network {
                 .is_ok()
         })
     }
-    pub(crate) fn request_reward(&self, claim: theia_core::rewards::ClaimId) -> bool {
-        if !self
-            .state
-            .borrow()
-            .rewards
-            .as_ref()
-            .is_some_and(|s| s.available.iter().any(|r| r.claim == claim))
+    pub(crate) fn request_pickup(
+        &self,
+        claim: theia_core::rewards::ClaimId,
+        life: theia_core::progression::KillId,
+    ) -> bool {
+        let state = self.state.borrow();
+        let Some(view) = &state.inventory else {
+            return false;
+        };
+        if !self.connected()
+            || !state.rewards.as_ref().is_some_and(|r| {
+                r.available
+                    .iter()
+                    .any(|r| r.claim == claim && r.corpse.is_some_and(|c| c.life == life))
+            })
+            || !self.reserve_item(&state)
         {
+            return false;
+        }
+        let accepted = self.pickups.as_ref().is_some_and(|queue| {
+            queue
+                .try_send(theia_network::renet_runtime::inventory::Pickup {
+                    command: theia_core::rewards::ClaimCommand {
+                        claim,
+                        expected_revision: view.bag.revision(),
+                    },
+                    life,
+                })
+                .is_ok()
+        });
+        if !accepted {
+            self.item_reservation
+                .store(0, std::sync::atomic::Ordering::Release);
+        }
+        accepted
+    }
+    fn reserve_item(&self, state: &State) -> bool {
+        reserve_item_slot(
+            &self.item_reservation,
+            state.inventory_pending,
+            state
+                .inventory
+                .as_ref()
+                .and_then(|i| i.reply)
+                .map_or(0, |r| r.sequence),
+        )
+    }
+    pub(crate) fn request_reward(&self, claim: theia_core::rewards::ClaimId) -> bool {
+        if !self.state.borrow().rewards.as_ref().is_some_and(|s| {
+            s.available
+                .iter()
+                .any(|r| r.claim == claim && r.corpse.is_none())
+        }) {
             return false;
         }
         self.request_item(|revision| {
@@ -257,12 +305,18 @@ impl Network {
         let Some(view) = &state.inventory else {
             return false;
         };
-        if state.inventory_pending {
+        if !self.reserve_item(&state) {
             return false;
         }
-        self.items
+        let accepted = self
+            .items
             .as_ref()
-            .is_some_and(|sender| sender.try_send(command(view.bag.revision())).is_ok())
+            .is_some_and(|sender| sender.try_send(command(view.bag.revision())).is_ok());
+        if !accepted {
+            self.item_reservation
+                .store(0, std::sync::atomic::Ordering::Release);
+        }
+        accepted
     }
     pub(crate) fn white_profile(
         &self,
@@ -581,6 +635,15 @@ impl Network {
         let (quest_actions, quest_queue) = tokio::sync::mpsc::channel(4);
         let (dialogue_actions, dialogue_queue) = tokio::sync::mpsc::channel(4);
         let (items, item_queue) = tokio::sync::mpsc::channel(1);
+        let (pickups, pickup_queue) = tokio::sync::mpsc::channel(1);
+        let loot_enabled = inventory_profile
+            .as_ref()
+            .and_then(|p| p.rewards())
+            .is_some_and(|p| {
+                p.catalog()
+                    .definitions()
+                    .any(|d| d.scope() == theia_core::rewards::Scope::PerCreatureLife)
+            });
         let (states, state) = watch::channel(State::default());
         let (stop, shutdown) = watch::channel(false);
         let runtime = tokio::runtime::Builder::new_current_thread()
@@ -671,7 +734,7 @@ impl Network {
                                 statuses: status_catalog,
                                 inventory: inventory_profile.map(|profile| {
                                     theia_network::renet_runtime::inventory::Client {
-                                        pickups: None,
+                                        pickups: loot_enabled.then_some(pickup_queue),
                                         profile,
                                         commands: item_queue,
                                     }
@@ -765,6 +828,8 @@ impl Network {
             quest_actions: lifecycle_enabled.then_some(quest_actions),
             dialogue: dialogue_enabled.then_some(dialogue_actions),
             items: inventory_enabled.then_some(items),
+            pickups: loot_enabled.then_some(pickups),
+            item_reservation: std::sync::atomic::AtomicU64::new(0),
             input,
             chunk_ready,
             state,
@@ -1173,6 +1238,7 @@ pub struct SceneState<'w> {
     classic: Option<Res<'w, crate::classic_controls::Controller>>,
     camera_mode: Option<Res<'w, crate::camera::mode::Mode>>,
     inventory: Option<Res<'w, crate::inventory::Ui>>,
+    loot: Option<Res<'w, crate::loot::Ui>>,
     dialogue: Option<Res<'w, crate::dialogue::Ui>>,
     graybox: Option<Res<'w, crate::graybox::Graybox>>,
     frame: Res<'w, crate::floating_origin::Frame>,
@@ -1199,6 +1265,7 @@ pub fn present(
         classic,
         camera_mode,
         inventory,
+        loot,
         dialogue,
         graybox,
         frame,
@@ -1260,7 +1327,10 @@ pub fn present(
                 let controls = if let Some(classic) = classic.as_ref() {
                     classic.hint()
                 } else if let Some(mode) = camera_mode.as_ref() {
-                    let panel = inventory.as_ref().is_some_and(|ui| ui.open)
+                    let panel = loot
+                        .as_ref()
+                        .is_some_and(|ui| ui.open || ui.closed_this_frame)
+                        || inventory.as_ref().is_some_and(|ui| ui.open)
                         || dialogue
                             .as_ref()
                             .is_some_and(|ui| ui.open || ui.pending || ui.close_when_open);
@@ -1942,5 +2012,58 @@ mod smoothing_tests {
         assert!(track.global_in_frame(&frame, None).is_none());
         track.retarget(new, 1. / 30.);
         assert_eq!(track.global_in_frame(&frame, Some(old)), Some(new));
+    }
+}
+
+fn reserve_item_slot(
+    reservation: &std::sync::atomic::AtomicU64,
+    pending: bool,
+    sequence: u64,
+) -> bool {
+    use std::sync::atomic::Ordering;
+    if pending {
+        return false;
+    }
+    let reserved = reservation.load(Ordering::Acquire);
+    if reserved != 0 && sequence >= reserved {
+        let _ = reservation.compare_exchange(reserved, 0, Ordering::AcqRel, Ordering::Acquire);
+    }
+    sequence.checked_add(1).is_some_and(|next| {
+        reservation
+            .compare_exchange(0, next, Ordering::AcqRel, Ordering::Acquire)
+            .is_ok()
+    })
+}
+#[cfg(test)]
+mod item_reservation_tests {
+    use super::reserve_item_slot;
+    use std::sync::{Arc, atomic::AtomicU64};
+    #[test]
+    fn concurrent_panels_reserve_only_one_intent_and_wait_for_a_later_reply() {
+        let reservation = Arc::new(AtomicU64::new(0));
+        let start = Arc::new(std::sync::Barrier::new(9));
+        let handles: Vec<_> = (0..8)
+            .map(|_| {
+                let r = reservation.clone();
+                let start = start.clone();
+                std::thread::spawn(move || {
+                    start.wait();
+                    reserve_item_slot(&r, false, 7)
+                })
+            })
+            .collect();
+        start.wait();
+        assert_eq!(
+            handles
+                .into_iter()
+                .map(|h| usize::from(h.join().unwrap()))
+                .sum::<usize>(),
+            1
+        );
+        assert!(!reserve_item_slot(&reservation, false, 7));
+        assert!(!reserve_item_slot(&reservation, true, 8));
+        assert!(reserve_item_slot(&reservation, false, 8));
+        assert!(!reserve_item_slot(&reservation, false, 8));
+        assert!(!reserve_item_slot(&reservation, false, u64::MAX));
     }
 }

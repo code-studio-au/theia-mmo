@@ -1,3 +1,10 @@
+Loot-authoring clarification, 5 November 2026:
+Quest objectives name the items and quantities required; drop chances belong to
+separate creature loot content. [Loot-table format and adoption limits](LOOT_TABLES.md)
+document authored independent chances and exclusive groups. A kill or an item
+visible on a corpse grants no possession credit. Keep quest-only eligibility
+separate from ordinary item drops; live possession-quest admission remains gated.
+
 Experimental possession-item authoring prerequisite, 3 November 2026:
 Schema 3 supports explicit possess_item/count/consume_on_turn_in data in an
 all-required final stage. Registry/compiler/review preserve it and flag policy

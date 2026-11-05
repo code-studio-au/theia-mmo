@@ -76,6 +76,8 @@ fn activate(
         ui.pointer_actions += 1;
     }
 }
+#[derive(SystemSet, Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub(crate) struct InputControls;
 pub(crate) fn install(app: &mut App, profile: Arc<Profile>) {
     app.insert_resource(Config(profile))
         .init_resource::<Ui>()
@@ -87,7 +89,7 @@ pub(crate) fn install(app: &mut App, profile: Arc<Profile>) {
         )
         .add_systems(
             Update,
-            (controls, present, scroll)
+            (controls.in_set(InputControls), present, scroll)
                 .chain()
                 .after(crate::network::present),
         );
@@ -222,6 +224,7 @@ fn controls(
     mut pending: ResMut<Pending>,
     mut ui: ResMut<Ui>,
     classic: Option<Res<crate::classic_controls::Controller>>,
+    loot: Option<Res<crate::loot::Ui>>,
 ) {
     let state = network.state();
     let pointer_choice = pending.choice.take();
@@ -233,7 +236,8 @@ fn controls(
     let Some(view) = &state.dialogue else {
         return;
     };
-    let escape = keys.just_pressed(KeyCode::Escape);
+    let loot_owns = loot.as_ref().is_some_and(|u| u.open || u.closed_this_frame);
+    let escape = keys.just_pressed(KeyCode::Escape) && !loot_owns;
     if escape && state.dialogue_pending {
         ui.close_when_open = true;
     }
@@ -265,8 +269,9 @@ fn controls(
         }
     } else {
         ui.close_when_open = false;
-        if keys.just_pressed(KeyCode::KeyF)
-            || (classic.is_none() && keys.just_pressed(KeyCode::KeyE))
+        if !loot_owns
+            && (keys.just_pressed(KeyCode::KeyF)
+                || (classic.is_none() && keys.just_pressed(KeyCode::KeyE)))
         {
             ui.keyboard_actions += 1;
             state

@@ -134,6 +134,7 @@ pub(crate) fn install(app: &mut App, profile: Profile) {
         app.is_plugin_added::<bevy::ui::picking_backend::UiPickingPlugin>(),
         "Backpack requires Bevy UI picking"
     );
+    crate::loot::install(app, profile.clone());
     app.insert_resource(Config(profile))
         .init_resource::<Ui>()
         .init_resource::<Pending>()
@@ -353,6 +354,7 @@ fn reason(reason: Reason) -> &'static str {
 pub(crate) fn close_panel(
     keys: Res<ButtonInput<KeyCode>>,
     mut ui: ResMut<Ui>,
+    loot: Option<Res<crate::loot::Ui>>,
     dialogue: Option<Res<crate::dialogue::Ui>>,
     network: Option<Res<Network>>,
 ) {
@@ -367,7 +369,10 @@ pub(crate) fn close_panel(
                         .dialogue
                         .is_some_and(|dialogue| dialogue.open.is_some()))
         });
-    if keys.just_pressed(KeyCode::Escape) && !talking {
+    if keys.just_pressed(KeyCode::Escape)
+        && !talking
+        && !loot.as_ref().is_some_and(|u| u.open || u.closed_this_frame)
+    {
         ui.open = false;
     }
 }
@@ -536,7 +541,10 @@ fn present(
     }
     if input.claim {
         ui.reward_clicks += 1;
-        if let Some(reward) = state.rewards.as_ref().and_then(|s| s.available.first())
+        if let Some(reward) = state
+            .rewards
+            .as_ref()
+            .and_then(|s| s.available.iter().find(|r| r.corpse.is_none()))
             && network.request_reward(reward.claim)
         {
             ui.pending = true;
@@ -759,7 +767,8 @@ fn paint(
                     |state| {
                         state
                             .available
-                            .first()
+                            .iter()
+                            .find(|r| r.corpse.is_none())
                             .and_then(|r| config.0.rewards()?.catalog().definition(&r.reward))
                             .map_or_else(
                                 || "No rewards available".into(),

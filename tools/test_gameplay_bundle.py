@@ -86,6 +86,46 @@ class GameplayBundle(unittest.TestCase):
             play.main(['--gameplay-manifest', str(self.manifest), '--gameplay-validator', str(self.validator)])
         self.assertFalse(observed['quest_areas'].exists())
 
+    def test_loot_bundle_selects_explicit_pickup_mode_and_exact_new_content(self):
+        original = Path('content/development-gameplay-classic-creature-loot.json')
+        raw = json.loads(original.read_text())
+        self.manifest.write_bytes(original.read_bytes())
+        for role in bundle.AREA_ROLES:
+            dest = self.source / raw[role]
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(original.parent / raw[role], dest)
+        with bundle.snapshot(self.manifest, self.validator, self.session) as (paths, report):
+            self.assertEqual(report['manifest_schema'], 17)
+            self.assertEqual(paths['items'].read_bytes(), (original.parent / raw['items']).read_bytes())
+            self.assertEqual(paths['rewards'].read_bytes(), (original.parent / raw['rewards']).read_bytes())
+        def launch(*args):
+            observed = PLAY_SIGNATURE.bind(*args).arguments
+            self.assertTrue(observed['creature_loot'])
+            self.assertTrue(observed['public_avatar_life'])
+            self.assertTrue(observed['quest_areas'].is_file())
+        with patch.object(play, 'play', side_effect=launch), redirect_stdout(io.StringIO()):
+            play.main(['--gameplay-manifest', str(self.manifest), '--gameplay-validator', str(self.validator)])
+
+    def test_random_loot_bundle_preserves_authored_chances_and_pickup_mode(self):
+        original = Path('content/development-gameplay-classic-random-loot.json')
+        raw = json.loads(original.read_text())
+        self.manifest.write_bytes(original.read_bytes())
+        for role in bundle.AREA_ROLES:
+            dest = self.source / raw[role]
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(original.parent / raw[role], dest)
+        with bundle.snapshot(self.manifest, self.validator, self.session) as (paths, report):
+            self.assertEqual(report['manifest_schema'], 17)
+            self.assertEqual(paths['items'].read_bytes(), (original.parent / raw['items']).read_bytes())
+            self.assertEqual(paths['rewards'].read_bytes(), (original.parent / raw['rewards']).read_bytes())
+        def launch(*args):
+            observed = PLAY_SIGNATURE.bind(*args).arguments
+            self.assertTrue(observed['creature_loot'])
+            self.assertTrue(observed['public_avatar_life'])
+            self.assertTrue(observed['quest_areas'].is_file())
+        with patch.object(play, 'play', side_effect=launch), redirect_stdout(io.StringIO()):
+            play.main(['--gameplay-manifest', str(self.manifest), '--gameplay-validator', str(self.validator)])
+
     def test_avatar_bundle_selects_both_public_contracts_with_unchanged_roles(self):
         original = Path('content/development-gameplay-classic-public-life.json')
         raw = json.loads(original.read_text())

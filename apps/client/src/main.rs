@@ -14,6 +14,7 @@ mod equipment;
 mod floating_origin;
 mod graybox;
 mod inventory;
+mod loot;
 mod melee_qualification;
 mod minimap;
 mod movement;
@@ -633,6 +634,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Some((_, catalog)) = &combat_catalog {
         catalog.validate_equipment(inventory_profile.as_ref().map(|p| p.catalog()))?;
     }
+    let creature_loot = if let Some(i) = args.iter().position(|a| a == "--creature-loot") {
+        args.remove(i);
+        true
+    } else {
+        false
+    };
+    if creature_loot && !args.iter().any(|a| a == "--reward-catalog") {
+        return Err("Creature loot requires a reward catalog".into());
+    }
     if let Some(i) = args.iter().position(|a| a == "--reward-catalog") {
         use std::io::Read;
         args.remove(i);
@@ -647,7 +657,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .take(theia_core::rewards::MAX_CATALOG_BYTES as u64 + 1)
             .read_to_end(&mut bytes)?;
         let profile = inventory_profile.take().ok_or("Rewards require items")?;
-        inventory_profile = Some(profile.with_rewards(&bytes).map_err(|e| e.to_string())?);
+        inventory_profile = Some(
+            if creature_loot {
+                profile.with_creature_loot(&bytes)
+            } else {
+                profile.with_rewards(&bytes)
+            }
+            .map_err(|e| e.to_string())?,
+        );
     }
     if let Some(i) = args.iter().position(|a| a == "--vendor-catalog") {
         use std::io::Read;
@@ -1224,6 +1241,7 @@ fn toggle_fullscreen(
 struct InputMode<'w> {
     dialogue: Option<Res<'w, dialogue::Ui>>,
     inventory: Option<Res<'w, inventory::Ui>>,
+    loot: Option<Res<'w, loot::Ui>>,
     smoke: Option<Res<'w, smoke::Run>>,
     network: Option<Res<'w, network::Network>>,
     references: Option<Res<'w, reference_scene::Config>>,
@@ -1267,10 +1285,13 @@ fn input(
         });
     if let Some(classic) = classic.as_mut() {
         classic.escape_owned_by_panel = keys.just_pressed(KeyCode::Escape)
-            && (talking || mode.inventory.as_ref().is_some_and(|u| u.open));
+            && (talking
+                || mode.inventory.as_ref().is_some_and(|u| u.open)
+                || mode.loot.as_ref().is_some_and(|u| u.open));
     }
     if keys.just_pressed(KeyCode::Escape)
         && !talking
+        && !mode.loot.as_ref().is_some_and(|u| u.open)
         && !mode.inventory.as_ref().is_some_and(|ui| ui.open)
         && !camera_mode
             .as_ref()
@@ -1368,6 +1389,40 @@ fn input(
 #[cfg(test)]
 mod control_tests {
     use super::*;
+    #[test]
+    fn escape_closes_loot_before_backpack_without_quitting() {
+        let mut app = App::new();
+        app.init_resource::<ButtonInput<KeyCode>>()
+            .init_resource::<ButtonInput<MouseButton>>()
+            .init_resource::<Time>()
+            .init_resource::<MoveIntent>()
+            .init_resource::<camera::Orbit>()
+            .init_resource::<inventory::Ui>()
+            .init_resource::<loot::Ui>()
+            .add_message::<AppExit>()
+            .add_systems(
+                Update,
+                (input, loot::close_panel, inventory::close_panel).chain(),
+            );
+        app.world_mut().resource_mut::<inventory::Ui>().open = true;
+        app.world_mut().resource_mut::<loot::Ui>().open = true;
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .press(KeyCode::Escape);
+        app.update();
+        assert!(!app.world().resource::<loot::Ui>().open);
+        assert!(app.world().resource::<inventory::Ui>().open);
+        assert!(app.world().resource::<Messages<AppExit>>().is_empty());
+        {
+            let mut keys = app.world_mut().resource_mut::<ButtonInput<KeyCode>>();
+            keys.release(KeyCode::Escape);
+            keys.clear();
+            keys.press(KeyCode::Escape);
+        }
+        app.update();
+        assert!(!app.world().resource::<inventory::Ui>().open);
+        assert!(app.world().resource::<Messages<AppExit>>().is_empty());
+    }
     #[test]
     fn escape_closes_dialogue_then_backpack_before_allowing_quit() {
         let mut app = App::new();
