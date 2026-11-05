@@ -479,6 +479,12 @@ impl AccountService {
         if slot.is_some() {
             return Err(ApiError::internal());
         }
+        let (rewards, quest_loot) = match rewards {
+            Some((profile, wire)) if profile.quest_journal().is_some() => {
+                (None, Some((profile, wire)))
+            }
+            other => (other, None),
+        };
         let mut gate = if let Some((rewards, wire)) = rewards {
             if inventory
                 .as_ref()
@@ -530,6 +536,10 @@ impl AccountService {
         }
         if let Some(profile) = quest_journal {
             crate::admissions::GameAdmissions::with_quest_journal(&mut gate, profile)
+                .map_err(|_| ApiError::internal())?;
+        }
+        if let Some((profile, wire)) = quest_loot {
+            crate::admissions::GameAdmissions::with_quest_loot(&mut gate, profile, wire)
                 .map_err(|_| ApiError::internal())?;
         }
         if let Some((profile, wire)) = vendor {

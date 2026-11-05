@@ -315,6 +315,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         false
     };
+    let quest_loot = if let Some(i) = args.iter().position(|a| a == "--quest-loot") {
+        args.remove(i);
+        true
+    } else {
+        false
+    };
+    if quest_loot && !quest_items {
+        return Err("Quest loot requires explicit item-journal mode".into());
+    }
     if quest_items
         && (!journal_mode
             || !args.iter().any(|a| a == "--quest-catalog")
@@ -656,6 +665,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if creature_loot && !args.iter().any(|a| a == "--reward-catalog") {
         return Err("Creature loot requires a reward catalog".into());
     }
+    if quest_loot && !creature_loot {
+        return Err("Quest loot requires explicit creature loot".into());
+    }
+    let mut quest_loot_bytes = None;
     if let Some(i) = args.iter().position(|a| a == "--reward-catalog") {
         use std::io::Read;
         args.remove(i);
@@ -671,7 +684,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .read_to_end(&mut bytes)?;
         let profile = inventory_profile.take().ok_or("Rewards require items")?;
         inventory_profile = Some(
-            if creature_loot {
+            if quest_loot {
+                quest_loot_bytes = Some(bytes);
+                Ok(profile)
+            } else if creature_loot {
                 profile.with_creature_loot(&bytes)
             } else {
                 profile.with_rewards(&bytes)
@@ -722,6 +738,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 )
                 .map_err(|e| e.to_string())?,
         ));
+    }
+    if let Some(bytes) = quest_loot_bytes {
+        inventory_profile = Some(
+            inventory_profile
+                .take()
+                .ok_or("Quest loot requires inventory")?
+                .with_quest_loot(
+                    &bytes,
+                    journal_profile
+                        .as_ref()
+                        .ok_or("Quest loot requires journal")?,
+                )
+                .map_err(|e| e.to_string())?,
+        );
     }
     if inventory_profile.is_some() && (!graybox || !prediction) {
         return Err("Inventory requires predicted saved terrain".into());

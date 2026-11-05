@@ -14,7 +14,7 @@ import tempfile
 from launch_environment import client_environment
 
 
-def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk_world=None, camera_collision=None, graybox=False, dev_speed=1, dev_spawn="8000,8000", dev_tour=False, prediction=False, saved_terrain=None, targeting=False, combat_catalog=None, feedback=None, persistence=False, account_login=False, character_stats=None, item_catalog=None, status_catalog=None, creature_profile=None, navigation=None, reward_catalog=None, progression_catalog=None, window_size=None, fullscreen=False, quest_catalog=None, dialogue_catalog=None, guide_position=None, vendor_catalog=None, quest_lifecycle=False, quest_turn_in_xp=None, creature_retaliation=None, player_respawn=None, creature_asset=None, dodge_profile=None, classic=False, controls_file=None, melee_weapons=None, physical_definitions=None, physical_stats=None, white_melee=None, ability_starting=None, ability_damage=None, combat_membership=None, creature_credit=None, creature_reset=None, quest_journal=False, creature_threat=None, public_creature_attacks=False, public_avatar_life=False, quest_areas=None, creature_loot=False, quest_items=False):
+def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk_world=None, camera_collision=None, graybox=False, dev_speed=1, dev_spawn="8000,8000", dev_tour=False, prediction=False, saved_terrain=None, targeting=False, combat_catalog=None, feedback=None, persistence=False, account_login=False, character_stats=None, item_catalog=None, status_catalog=None, creature_profile=None, navigation=None, reward_catalog=None, progression_catalog=None, window_size=None, fullscreen=False, quest_catalog=None, dialogue_catalog=None, guide_position=None, vendor_catalog=None, quest_lifecycle=False, quest_turn_in_xp=None, creature_retaliation=None, player_respawn=None, creature_asset=None, dodge_profile=None, classic=False, controls_file=None, melee_weapons=None, physical_definitions=None, physical_stats=None, white_melee=None, ability_starting=None, ability_damage=None, combat_membership=None, creature_credit=None, creature_reset=None, quest_journal=False, creature_threat=None, public_creature_attacks=False, public_avatar_life=False, quest_areas=None, creature_loot=False, quest_items=False, quest_loot=False):
     window_size = window_size or os.environ.get('THEIA_WINDOW_SIZE', '1920x1200')
     match = re.fullmatch(r'(\d+)x(\d+)', window_size)
     if not match or not (640 <= int(match[1]) <= 7680 and 480 <= int(match[2]) <= 4320):
@@ -53,6 +53,8 @@ def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk
         raise ValueError('Retaliation and player respawn profiles must be selected together')
     if creature_retaliation and (not prediction or not creature_profile or not character_stats or not combat_catalog):
         raise ValueError('Player life requires predicted creature combat and character stats')
+    if quest_loot and (not quest_items or not creature_loot or not reward_catalog):
+        raise ValueError('Quest loot requires item journal, creature loot and rewards')
     if quest_items and (not quest_journal or not item_catalog or not quest_catalog):
         raise ValueError('Quest items require explicit inventory and journal catalogues')
     if quest_journal and (quest_lifecycle or quest_turn_in_xp or not quest_catalog or not dialogue_catalog or not account_login or not prediction):
@@ -186,6 +188,8 @@ def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk
         scene.append('--quest-journal')
     if quest_items:
         scene.append('--quest-items')
+    if quest_loot:
+        scene.append('--quest-loot')
     if quest_lifecycle:
         scene.append('--quest-lifecycle')
     if quest_turn_in_xp is not None:
@@ -318,6 +322,7 @@ def main(argv=None):
     parser.add_argument('--dialogue-catalog',type=Path,help='Informational dialogue profile; requires --dialogue')
     parser.add_argument('--guide-position',help='Fixed guide x,z metres; default 8004,8000, independent of player spawn')
     parser.add_argument('--quest-turn-in-xp', type=Path, help='Optional completion XP recipe; implies explicit quest/account setup')
+    parser.add_argument('--quest-loot',action='store_true',help='Explicit quest-required loot; requires item-journal and creature-loot modes')
     parser.add_argument('--quest-items',action='store_true',help='Explicit current-backpack quests; requires journal and inventory')
     parser.add_argument('--quest-areas', type=Path, help='Explicit static area catalogue for expanded quests')
     parser.add_argument('--quest-journal', action='store_true', help='Expanded multi-quest journal; implies quests/dialogue/account login')
@@ -392,6 +397,8 @@ def main(argv=None):
             args.creature_loot = bundle['manifest_schema'] >= 17
             if args.quest_items and bundle['manifest_schema'] < 18:parser.error('Quest items require a schema-18 bundle')
             args.quest_items = bundle['manifest_schema'] >= 18
+            if args.quest_loot and bundle['manifest_schema'] < 19:parser.error('Quest loot requires a schema-19 bundle')
+            args.quest_loot = bundle['manifest_schema'] >= 19
             if bundle['manifest_schema'] >= 12:
                 if args.quest_lifecycle or args.quest_turn_in_xp:
                     parser.error('Expanded journal bundle excludes legacy quest overrides')
@@ -468,7 +475,7 @@ def main(argv=None):
         prediction = graybox if args.prediction is None else args.prediction
         players = args.players or Path('build/synty-character-canonical-stage' if graybox else 'build/reference-scene')
         play(args.world.resolve() if args.world else None, players.resolve(), args.clients, args.binaries.resolve(), args.tick_hz, args.transport,
-             args.chunk_world.resolve() if args.chunk_world else None, args.camera_collision, graybox, args.dev_speed, args.dev_spawn, args.dev_tour, prediction, saved_terrain, args.targeting, combat_catalog, feedback, args.persistence, args.account_login, character_stats, item_catalog, status_catalog, creature_profile, navigation, reward_catalog, progression_catalog, args.window_size, args.fullscreen, quest_catalog, dialogue_catalog, guide_position, vendor_catalog, args.quest_lifecycle, args.quest_turn_in_xp.resolve() if args.quest_turn_in_xp else None, args.creature_retaliation.resolve() if args.creature_retaliation else None, args.player_respawn.resolve() if args.player_respawn else None, args.creature_asset.resolve() if args.creature_asset else None, args.dodge_profile.resolve() if args.dodge_profile else None, args.classic, args.controls_file, args.melee_weapons.resolve() if args.melee_weapons else None, args.physical_definitions.resolve() if args.physical_definitions else None, args.physical_stats.resolve() if args.physical_stats else None, args.white_melee.resolve() if args.white_melee else None, args.ability_starting.resolve() if args.ability_starting else None, args.ability_damage.resolve() if args.ability_damage else None, args.combat_membership.resolve() if args.combat_membership else None, args.creature_credit.resolve() if args.creature_credit else None, args.creature_reset.resolve() if args.creature_reset else None, args.quest_journal, args.creature_threat.resolve() if args.creature_threat else None, args.public_creature_attacks, args.public_avatar_life, args.quest_areas.resolve() if args.quest_areas else None, args.creature_loot, args.quest_items)
+             args.chunk_world.resolve() if args.chunk_world else None, args.camera_collision, graybox, args.dev_speed, args.dev_spawn, args.dev_tour, prediction, saved_terrain, args.targeting, combat_catalog, feedback, args.persistence, args.account_login, character_stats, item_catalog, status_catalog, creature_profile, navigation, reward_catalog, progression_catalog, args.window_size, args.fullscreen, quest_catalog, dialogue_catalog, guide_position, vendor_catalog, args.quest_lifecycle, args.quest_turn_in_xp.resolve() if args.quest_turn_in_xp else None, args.creature_retaliation.resolve() if args.creature_retaliation else None, args.player_respawn.resolve() if args.player_respawn else None, args.creature_asset.resolve() if args.creature_asset else None, args.dodge_profile.resolve() if args.dodge_profile else None, args.classic, args.controls_file, args.melee_weapons.resolve() if args.melee_weapons else None, args.physical_definitions.resolve() if args.physical_definitions else None, args.physical_stats.resolve() if args.physical_stats else None, args.white_melee.resolve() if args.white_melee else None, args.ability_starting.resolve() if args.ability_starting else None, args.ability_damage.resolve() if args.ability_damage else None, args.combat_membership.resolve() if args.combat_membership else None, args.creature_credit.resolve() if args.creature_credit else None, args.creature_reset.resolve() if args.creature_reset else None, args.quest_journal, args.creature_threat.resolve() if args.creature_threat else None, args.public_creature_attacks, args.public_avatar_life, args.quest_areas.resolve() if args.quest_areas else None, args.creature_loot, args.quest_items, args.quest_loot)
 
 
 if __name__ == '__main__':

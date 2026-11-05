@@ -1,3 +1,12 @@
+Quest-required loot adoption, 5 November 2026: opt-in manifest schema 19 now
+runs reward-schema-4 `quest_required` entries against the exact inventory-bound
+journal, preserving first-generation rights and rechecking current need before
+paging/pickup. Ordinary drops stay independent of quest state. Drop chances live
+in creature loot content; quest schema 3 continues to name possession item/count /
+consumption. [Format, qualified development flow and limits](LOOT_TABLES.md#normal-quest-only-loot-qualified--5-november-2026).
+Readable notes remain planned separately; campaign runtime/migration limits below
+still apply. Earlier quest-only gate entries describe historical checkpoints.
+
 Inventory-bound item quests qualified in opt-in development content, 5 November 2026:
 Manifest schema 18 selects the exact inventory-bound journal. Quest schema 3 can
 execute supported final-stage possess_item/count/consume_on_turn_in objectives;

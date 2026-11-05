@@ -1,3 +1,15 @@
+Normal quest-only loot qualified locally, 5 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: opt-in manifest schema 19 binds the exact item
+journal before conditional loot on client/server and selects the retained owner.
+Linux native pickup, split/delete reversal, replacement pickup, consumption and
+PostgreSQL restart/rejoin pass at 1280x720, 1920x1200 and 3440x1440. First three
+unaccepted lives stay denied; four later lives retain their original rights.
+57 validator, 41 bundle, 147 client and eleven server tests, formatting, strict
+Clippy and optimized builds pass. [Evidence and limits](LOOT_TABLES.md#normal-quest-only-loot-qualified--5-november-2026).
+The native fixture guarantees loot and uses low damage; ordinary random gameplay
+content remains 60% pelt / 25% token. Continue readable quest documents next;
+commit locally only, no push. Earlier gate/stop entries describe prior checkpoints.
+
 Current item-quest integration, 5 November 2026: opt-in manifest schema 18 now
 executes the inventory-bound pelt quest through normal pickup, deletion,
 reacquisition, consumption and restart/rejoin. [Evidence and fixture limits](QUEST_ITEM_OBJECTIVES.md#normal-item-quest-qualification-complete--5-november-2026).
@@ -563,3 +575,81 @@ rewards on both sides, select the explicit retained owner and update suitable
 pickup rejection text. Validate the exact launch snapshot and run the full
 native pickup/deletion/reacquisition/turn-in/rejoin flow. Ordinary schema-18
 playable `85fd967` remains the qualified reference. Commit locally only; no push.
+
+
+## Normal quest-only loot qualified — 5 November 2026
+
+P3-05 / P3-09 / P3-11 / P3-15. Opt-in manifest schema 19 selects `--quest-loot`
+alongside `--quest-items`, `--quest-journal` and `--creature-loot`. Both normal
+executables defer conditional reward construction until the exact inventory-bound
+journal exists. Server World installation and account service then select the
+already qualified explicit conditional paths. Old schema versions, constructors,
+ordinary hashes and gameplay content remain valid; schema 18 refuses conditional
+entries. Schema 19 requires at least one conditional entry referenced by a known
+possession objective. No new network messages or migration in this slice.
+
+Use `content/development-gameplay-classic-quest-loot.json` for provisional
+60% pelt / 25% ordinary-token gameplay; the pelt entry is quest-required and the
+token remains ordinary. `...quest-loot-fixture.json` uses explicitly guaranteed
+per-life chances for native checks. Their reward-schema-4 files are
+`content/gameplay/development-quest-required-loot[-fixture].json`. Existing
+schema-18 item quests with ordinary pelt drops remain available. Authoring
+bounds and conditional restrictions (independent single-item per-life entries)
+remain as documented above. The normal launcher validates and snapshots all 23
+exact-byte roles, deriving the modes from schema 19; older bundles reject an
+explicit conditional override. Loot Conflict feedback now mentions quest need
+as well as range instead of always instructing the player to move closer.
+
+Native Linux proofs:
+`build/quest-loot-client-native-v1-20261105/verification.json` passes fresh
+1920x1200 and a real PostgreSQL restart/fresh login at that size.
+`build/quest-loot-client-native-v3-20261105/verification.json` passes fresh
+1280x720, fullscreen 3440x1440 and PostgreSQL restart/fresh login at 1280x720.
+All five sessions use AMD Radeon RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6
+(kisak PPA), with zero GPU diagnostics. The tests use owned OIDC, encrypted game
+admission and PostgreSQL 16.15 through the normal launcher. Input is PID/focus-
+guarded XTEST pointer/keyboard plus a temporary uinput wheel; this is not physical
+hardware or native Windows evidence. Device removal, service shutdown and secret
+file cleanup pass. The display is restored to 2560x1080 at 60 Hz.
+
+Every fresh character completes the earlier three quests/area regression. Its
+first three wolf lives create no pelt rights before acceptance; ordinary tokens
+can be viewed/collected. Accepting the delivery quest never unlocks those old
+pelts. Three further kills only create available items; opening the corpse still
+grants no possession credit. Explicit pickup yields Ready 3/3. Split-one keeps
+Ready; confirmed deletion changes it to Active 2/3. A seventh kill creates the
+replacement, whose explicit pickup restores Ready. Turn-in consumes all three
+pelts. Prior quest records remain unchanged, all eight quest actions apply with
+zero rejections, seven deaths have no player death/event gaps, and the backpack
+ends with zero pelts and 106 tokens (99 seed plus seven repeatable token drops).
+The separate once-character reward remains uncollected by corpse UI.
+
+Each saved journal ends at head 27, four completed quests, eight actions and
+14 historical events. XP reaches the current development cap of 250; the final
+25-XP delivery therefore grants no additional XP. SQL records exactly three
+denied and four entitled pelt generations, all with observed bag/journal heads.
+Tickets, rights, heads, reward profile and original corpse positions match across
+actual process restart: 14 roll rows in v1 and 28 across the two v3 characters.
+Fresh login restores completion/consumption without offering the quests again.
+
+These tests guarantee loot and use copied, explicitly modified slow-wolf combat
+content: perception 1m, chase/patrol speed 0.1m/s, retaliation base damage 1 and
+creature physical damage range 1–1. Source gameplay balance is unchanged. They
+prove integration, not random-drop rates, combat balance, multiplayer capacity or
+all quest content. Backend random tickets and strict current-need/replay behavior
+retain the independent storage/worker/owner qualifications above. The first 720p
+v2 stopped after three kills when a lingering loot pane correctly blocked the
+guide's pointer hit. The qualifier now closes ordinary panels before reopening
+dialogue; v3 passes without any product input-blocking change. Frozen game source
+matches the candidate build; only that qualifier changed after candidate capture.
+
+57 Rust validator tests, 41 actual-validator bundle/launcher tests, 147 client
+and eleven server-library tests pass at `build/quest-loot-manifest-*-tests-v*-20261105.log`.
+Formatting and denied-warning workspace/all-target Clippy pass at
+`build/quest-loot-manifest-fmt-v1-20261105.log` and
+`build/quest-loot-manifest-clippy-v1-20261105.log`. Optimized executables/validator
+build at `build/quest-loot-manifest-release-v1-20261105.log`. Earlier 368 network
+checks include conditional impaired encrypted privacy/pickup; the actual normal
+native tests now connect the SQL owner and simulation as well. Preserve
+`build/quest-loot-client-qualified-v1-20261105` and its source, executables/art,
+proof references and hashes. Continue readable quest notes next; no push.

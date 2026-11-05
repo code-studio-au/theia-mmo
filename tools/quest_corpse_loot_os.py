@@ -8,7 +8,7 @@ PELT = 'theia.dev.wolf-pelt'
 TOKEN = 'theia.dev.training-token'
 
 
-def flow(desktop, window, state, folder, resumed=False, item_quest=False):
+def flow(desktop, window, state, folder, resumed=False, item_quest=False, quest_only=False):
     scale = state()['window'][2]
     def count(item):
         return sum(s['count'] for s in state()['inventory_bag']['slots'] if s and s['item'] == item)
@@ -136,14 +136,48 @@ def flow(desktop, window, state, folder, resumed=False, item_quest=False):
             point=wait(lambda:state()['inventory_layout'][name])
             if index is not None:point=point[index]
             desktop.click(window,point,scale,1)
+        final_tokens = 106 if quest_only else 103
+        final_revision = 27 if quest_only else 24
+        final_xp = 250 if quest_only else 200
+        def kill_wolf():
+            close_panels()
+            wait(lambda:state().get('enemy_health') is not None and state()['enemy_health']>0,15)
+            approach(lambda:state()['enemy_global'])
+            clicks=state()['controls']['enemy_clicks']
+            for dx,dy in [(20,-25),(-20,-25),(0,-30),(0,0)]:
+                point=wait(lambda:state()['enemy_screen'])
+                desktop.click(window,[point[0]+dx,point[1]+dy],scale,3)
+                try:
+                    wait(lambda:state()['controls']['enemy_clicks']>clicks,.75)
+                    break
+                except TimeoutError:pass
+            if state()['controls']['enemy_clicks']==clicks:
+                close_panels();desktop.key('Tab')
+                wait(lambda:state()['selected_hostile'] is not None)
+            deaths=state()['combat']['deaths'];deadline=time.monotonic()+60
+            while state()['combat']['deaths']==deaths:
+                assert time.monotonic()<deadline,'Conditional quest wolf fight timed out'
+                assert state()['combat']['player_deaths']==0
+                desktop.key('2');time.sleep(.25)
         if resumed:
             assert quest()['status']=='Completed' and progress()==3
-            assert count(PELT)==0 and count(TOKEN)==103 and not corpses()
+            assert count(PELT)==0 and count(TOKEN)==final_tokens and not corpses()
             assert state()['inventory_ui']['destroy_confirmation'] is None
             capture('resumed-completed-item-quest.png')
-            return dict(passed=True,resumed=True,final_revision=journal()['revision'],pelts=0,tokens=103,completion_and_consumption_restored=True)
+            return dict(passed=True,resumed=True,final_revision=journal()['revision'],pelts=0,tokens=final_tokens,completion_and_consumption_restored=True)
         assert quest() is None and count(PELT)==0 and count(TOKEN)==99
         historical={q['id']:q for q in journal()['quests']}
+        if quest_only:
+            # Old unaccepted lives carry only ordinary token rights. View and
+            # collect those before acceptance; SQL also verifies denied receipts.
+            wait(lambda:len(corpses())==3)
+            for n in range(3):
+                open_corpse(min(corpses(),key=lambda c:math.dist(c['position'],feet())))
+                wait(lambda:len(state()['loot']['layout']['take'])==1)
+                assert count(PELT)==0
+                take_all();wait(lambda:not ui()['open'] and count(TOKEN)==100+n)
+            wait(lambda:not corpses())
+            capture('quest-only-old-corpses-no-pelts.png')
         speak();action('Active')
         assert progress()==0 and count(PELT)==0
         capture('item-quest-accepted.png')
@@ -151,8 +185,14 @@ def flow(desktop, window, state, folder, resumed=False, item_quest=False):
             desktop.key('Escape');wait(lambda:not state()['dialogue_open'])
         if not state()['inventory_open']:
             desktop.key('i');wait(lambda:state()['inventory_open'])
-        wait(lambda:len(corpses())==3)
+        if not quest_only:wait(lambda:len(corpses())==3)
         for n in range(1,4):
+            if quest_only:
+                kill_wolf()
+                wait(lambda:len(corpses())==1)
+                assert count(PELT)==n-1 and progress()==n-1
+                if not state()['inventory_open']:
+                    desktop.key('i');wait(lambda:state()['inventory_open'])
             corpse=min(corpses(),key=lambda c:math.dist(c['position'],feet()))
             open_corpse(corpse)
             if n==1:
@@ -180,26 +220,29 @@ def flow(desktop, window, state, folder, resumed=False, item_quest=False):
         inventory_click('destroy')
         wait(lambda:count(PELT)==2 and progress()==2 and quest()['status']=='Active' and not state()['inventory_ui']['pending'])
         capture('item-quest-destroy-reverted.png')
-        close_panels()
-        wait(lambda:state().get('enemy_health') is not None and state()['enemy_health']>0,15)
-        approach(lambda:state()['enemy_global'])
-        clicks=state()['controls']['enemy_clicks']
-        for dx,dy in [(20,-25),(-20,-25),(0,-30),(0,0)]:
-            point=wait(lambda:state()['enemy_screen'])
-            desktop.click(window,[point[0]+dx,point[1]+dy],scale,3)
-            try:
-                wait(lambda:state()['controls']['enemy_clicks']>clicks,.75)
-                break
-            except TimeoutError:
-                pass
-        wait(lambda:state()['controls']['enemy_clicks']>clicks,1)
-        deaths=state()['combat']['deaths'];deadline=time.monotonic()+60
-        while state()['combat']['deaths']==deaths:
-            assert time.monotonic()<deadline,'Fourth normal wolf fight timed out'
-            assert state()['combat']['player_deaths']==0
-            desktop.key('2');time.sleep(.25)
+        if quest_only:
+            kill_wolf()
+        else:
+            close_panels()
+            wait(lambda:state().get('enemy_health') is not None and state()['enemy_health']>0,15)
+            approach(lambda:state()['enemy_global'])
+            clicks=state()['controls']['enemy_clicks']
+            for dx,dy in [(20,-25),(-20,-25),(0,-30),(0,0)]:
+                point=wait(lambda:state()['enemy_screen'])
+                desktop.click(window,[point[0]+dx,point[1]+dy],scale,3)
+                try:
+                    wait(lambda:state()['controls']['enemy_clicks']>clicks,.75)
+                    break
+                except TimeoutError:
+                    pass
+            wait(lambda:state()['controls']['enemy_clicks']>clicks,1)
+            deaths=state()['combat']['deaths'];deadline=time.monotonic()+60
+            while state()['combat']['deaths']==deaths:
+                assert time.monotonic()<deadline,'Fourth normal wolf fight timed out'
+                assert state()['combat']['player_deaths']==0
+                desktop.key('2');time.sleep(.25)
         wait(lambda:len(corpses())==1)
-        wait(lambda:journal()['xp']==175)
+        wait(lambda:journal()['xp']==(250 if quest_only else 175))
         assert count(PELT)==2 and progress()==2 and quest()['status']=='Active'
         capture('item-quest-new-kill-without-credit.png')
         desktop.key('i');wait(lambda:state()['inventory_open'])
@@ -209,14 +252,14 @@ def flow(desktop, window, state, folder, resumed=False, item_quest=False):
         wait(lambda:not ui()['open'] and count(PELT)==3 and progress()==3 and quest()['status']=='Ready')
         capture('item-quest-replacement-ready.png')
         speak();action('Completed')
-        wait(lambda:count(PELT)==0 and count(TOKEN)==103)
-        assert progress()==3 and journal()['xp']==200 and journal()['revision']==24
+        wait(lambda:count(PELT)==0 and count(TOKEN)==final_tokens)
+        assert progress()==3 and journal()['xp']==final_xp and journal()['revision']==final_revision
         assert {q['id']:q for q in journal()['quests'] if q['id']!=quest_id}==historical
         assert journal()['ui']['submitted']==8 and journal()['ui']['applied']==8 and journal()['ui']['rejected']==0
         assert ui()['rejected']==0 and state()['inventory_ui']['rejected']==0 and not corpses()
         assert state()['combat']['event_gaps']==0 and state()['combat']['player_deaths']==0
         capture('item-quest-completed-consumed.png')
-        result=dict(passed=True,resumed=False,final_revision=24,pelts=0,tokens=103,view_and_kill_without_credit=True,
+        result=dict(passed=True,resumed=False,final_revision=final_revision,pelts=0,tokens=final_tokens,quest_only=quest_only,view_and_kill_without_credit=True,
                     split_preserved_ready=True,destroy_reverted_to_two=True,replacement_pickup_restored_ready=True,
                     turn_in_consumed_three=True,historical_quests_unchanged=True)
         (folder/'item-quest-proof.json').write_text(json.dumps(result,indent=2)+'\n')

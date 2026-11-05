@@ -22,13 +22,13 @@ SECOND = 'theia.dev.quest-follow-up'
 WOLVES = SECOND + '.objective.wolves'
 
 
-def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False, minimap=False, reach_areas=False, corpse_loot=False, item_quest=False):
+def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False, minimap=False, reach_areas=False, corpse_loot=False, item_quest=False, quest_only=False):
     scale = state()['window'][2]
     base_head = 13 if repeat_interaction else 11
     expected_head = base_head + (3 if reach_areas else 0)
     if resumed and item_quest:
-        expected_head = 24
-    expected_xp = 200 if resumed and item_quest else (150 if reach_areas else 125)
+        expected_head = 27 if quest_only else 24
+    expected_xp = (250 if quest_only else 200) if resumed and item_quest else (150 if reach_areas else 125)
 
     def journal():
         return state()['quest_journal']
@@ -61,6 +61,9 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
         (folder/'input-os.png').rename(folder/name)
 
     def close_panels():
+        if state().get('loot',{}).get('ui',{}).get('open'):
+            desktop.key('Escape')
+            wait(lambda:not state()['loot']['ui']['open'])
         if state()['dialogue_open']:
             desktop.key('Escape')
             wait(lambda: not state()['dialogue_open'] and not state().get('dialogue_pending', False) and not any(state().get('dialogue_ui', {}).get(key, False) for key in ['open', 'pending', 'close_when_open']))
@@ -70,6 +73,7 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
 
     def speak():
         if not state()['dialogue_open']:
+            close_panels()
             desktop.click(window, wait(lambda: state()['guide_screen']), scale, 3)
             wait(lambda: state()['dialogue_open'])
 
@@ -386,15 +390,18 @@ def check_minimap_walk(desktop, window, state, folder):
 
 
 def run(output, binaries, sizes, production=False, repeat_interaction=False, gameplay_manifest=Path("content/development-gameplay-classic-journal.json"), minimap=False, minimap_traversal=False, reach_areas=False, destroy_items=False, corpse_loot=False, item_quest=False):
+    quest_only = item_quest and json.loads(gameplay_manifest.read_text())['schema']==19
     if item_quest:
         manifest=json.loads(gameplay_manifest.read_text())
-        if not reach_areas or corpse_loot or destroy_items or minimap or manifest['schema']!=18 or json.loads((gameplay_manifest.parent/manifest['rewards']).read_text())['schema']!=2:
-            raise ValueError('Item quest walkthrough requires a schema-18 guaranteed-loot fixture and area regression')
+        if not reach_areas or corpse_loot or destroy_items or minimap or manifest['schema'] not in (18,19) or json.loads((gameplay_manifest.parent/manifest['rewards']).read_text())['schema']!=(4 if quest_only else 2):
+            raise ValueError('Item quest walkthrough requires a schema-18/19 guaranteed-loot fixture and area regression')
+        if quest_only and any(r.get('chance_basis_points')!=10000 for r in json.loads((gameplay_manifest.parent/manifest['rewards']).read_text())['rewards'] if r['scope']=='per_creature_life'):
+            raise ValueError('Conditional walkthrough requires explicit guaranteed per-life fixture chances')
     if corpse_loot and (not reach_areas or destroy_items or minimap or json.loads(gameplay_manifest.read_text())["schema"] != 17):
         raise ValueError("Corpse loot requires schema 17, area regression and separate inventory checks")
     if minimap_traversal and not minimap:
         raise ValueError("Map traversal requires --minimap")
-    if reach_areas and (minimap or json.loads(gameplay_manifest.read_text())['schema'] not in ((18,) if item_quest else ((16,17) if corpse_loot else (16,)))):
+    if reach_areas and (minimap or json.loads(gameplay_manifest.read_text())['schema'] not in ((18,19) if item_quest else ((16,17) if corpse_loot else (16,)))):
         raise ValueError('Area flow requires schema 16 and its separate marker assertions')
     output = output.resolve()
     binaries = binaries.resolve()
@@ -413,6 +420,13 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
         policy = json.loads(path.read_text())
         policy['damage'] = 1
         path.write_text(json.dumps(policy)+'\n')
+        if quest_only:
+            path=bundle/'gameplay/development-physical-damage-definitions.json'
+            physical=json.loads(path.read_text())
+            for attack in physical['attacks']:
+                if attack['kind']=='creature':attack.update(minimum=1,maximum=1)
+            path.write_text(json.dumps(physical)+'\n')
+
     os.environ.setdefault('DISPLAY', ':0')
     desktop = Desktop()
     results = {}
@@ -423,6 +437,11 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
         (SELECT count(*) FROM theia.quest_journal_events e WHERE e.realm_id=n.realm_id AND e.character_id=n.character_id)
         FROM theia.character_names n JOIN theia.quest_journal_heads h USING(realm_id,character_id)
         JOIN theia.progression p USING(realm_id,character_id) ORDER BY n.display_name;'''
+    rolls_query = """SELECT n.display_name,r.roll_key,encode(r.victim_life,'hex'),r.ticket,
+        r.generation_eligible,r.generation_bag_revision,r.generation_journal_revision,
+        encode(r.profile_hash,'hex'),r.corpse_x,r.corpse_y,r.corpse_z
+        FROM theia.character_names n JOIN theia.loot_rolls r USING(realm_id,character_id)
+        ORDER BY n.display_name,r.roll_key,r.victim_life;"""
     try:
         with Identity(output/'provider', Path('build/identity-sdk'), token_seconds=300) as identity, Cluster(output/'cluster', Path('build/postgres-sdk')) as cluster:
             for index, size in enumerate([*sizes, sizes[0]]):
@@ -431,7 +450,15 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
                     before = cluster.query(query)
                     assert before.returncode == 0, before.stderr
                     (output/'before-restart.txt').write_text(before.stdout)
+                    if quest_only:
+                        rolls_before=cluster.query(rolls_query)
+                        assert rolls_before.returncode==0
+                        (output/'rolls-before-restart.txt').write_text(rolls_before.stdout)
                     cluster.restart()
+                    if quest_only:
+                        rolls_after=cluster.query(rolls_query)
+                        assert rolls_after.returncode==0 and rolls_after.stdout==rolls_before.stdout
+                        (output/'rolls-after-restart.txt').write_text(rolls_after.stdout)
                     after = cluster.query(query)
                     assert after.returncode == 0 and after.stdout == before.stdout
                     (output/'after-restart.txt').write_text(after.stdout)
@@ -476,7 +503,7 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
                         (folder/'window-geometry.txt').write_text(subprocess.check_output(['xwininfo','-id',hex(window)],text=True))
                         desktop.move(window,[initial['window'][0]*.5,initial['window'][1]*.5],initial['window'][2])
                         time.sleep(.2)
-                        proof = flow(desktop, window, state, folder, resumed, repeat_interaction, minimap, reach_areas, corpse_loot, item_quest)
+                        proof = flow(desktop, window, state, folder, resumed, repeat_interaction, minimap, reach_areas, corpse_loot, item_quest, quest_only)
                         if minimap:
                             proof['minimap'] = check_minimap(desktop, window, state, folder)
                             if minimap_traversal and resumed:
@@ -486,7 +513,7 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
                             proof['corpse_loot'] = loot_flow(desktop, window, state, folder, resumed)
                         if item_quest:
                             from quest_corpse_loot_os import flow as loot_flow
-                            proof['item_quest'] = loot_flow(desktop, window, state, folder, resumed, item_quest=True)
+                            proof['item_quest'] = loot_flow(desktop, window, state, folder, resumed, item_quest=True, quest_only=quest_only)
                             proof['baseline'] = {k: proof[k] for k in ['revision','xp','actions','kills','ui'] if k in proof}
                             proof['baseline_revision'] = proof['revision']
                             proof.update(revision=proof['item_quest']['final_revision'], xp=state()['quest_journal']['xp'])
@@ -530,7 +557,7 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
                     summaries = [json.loads(line)['creature_threat_summary'] for line in server_log.splitlines() if line.startswith('{"creature_threat_summary":')]
                     assert len(summaries) == 1
                     threat = summaries[0]
-                    kills = 4 if item_quest else 3
+                    kills = (7 if quest_only else 4) if item_quest else 3
                     assert resumed or (threat['damage_facts'] >= kills and threat['health_lost'] == kills*100 and threat['clears'] >= kills), threat
                     proof['threat'] = threat
                 proof['gpu_diagnostics'] = check_gpu_diagnostics((folder/'launcher.log').read_text(errors='replace'), allow_surface_resize=size == '3440x1440')
@@ -543,8 +570,18 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
                 rows = cluster.query(query)
                 assert rows.returncode == 0
                 expected = (['16','150','3','6','10'] if repeat_interaction else ['14','150','3','6','8']) if reach_areas else (['13','125','2','4','9'] if repeat_interaction else ['11','125','2','4','7'])
-                if item_quest:expected=['24','200','4','8','11']
+                if item_quest:expected=['27','250','4','8','14'] if quest_only else ['24','200','4','8','11']
                 assert all(row.split('|')[1:] == expected for row in rows.stdout.splitlines()), rows.stdout
+                if quest_only:
+                    audit=cluster.query("""SELECT n.display_name,
+                        count(*) FILTER(WHERE NOT r.generation_eligible),
+                        count(*) FILTER(WHERE r.generation_eligible),
+                        count(*) FILTER(WHERE r.generation_bag_revision IS NULL OR r.generation_journal_revision IS NULL)
+                        FROM theia.character_names n JOIN theia.loot_rolls r USING(realm_id,character_id)
+                        WHERE r.roll_key='entry:theia.dev.wolf-pelt-loot' GROUP BY n.display_name ORDER BY n.display_name;""")
+                    assert audit.returncode==0 and audit.stdout.strip()
+                    assert all(row.split('|')[1:]==['3','4','0'] for row in audit.stdout.splitlines()),audit.stdout
+                    (folder/'generation-rights-sql.txt').write_text(audit.stdout)
                 (folder/'sql.txt').write_text(rows.stdout)
     finally:
         desktop.close()
@@ -557,7 +594,7 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
                   scope='Normal launcher + actual local OIDC, owned PostgreSQL, PID-bound synthetic X11 input and Linux native GPU; no physical hardware/Windows claim',
                   wheel_input='temporary Linux uinput wheel axis; XTEST pointer/keyboard; all guarded by owned X11 focus and pointer checks', virtual_wheel_device_removed=True,
                   private_combat_fixture=not production, unchanged_quest_catalogue=True, repeated_preaccept_interaction=repeat_interaction,
-                  database_process_restart=True, saved_completion_rejoin=True, reach_area=reach_areas, item_destruction=destroy_items, corpse_loot=corpse_loot, item_quest=item_quest, guaranteed_loot_fixture=item_quest)
+                  database_process_restart=True, saved_completion_rejoin=True, reach_area=reach_areas, item_destruction=destroy_items, corpse_loot=corpse_loot, item_quest=item_quest, guaranteed_loot_fixture=item_quest, quest_only=quest_only)
     (output/'verification.json').write_text(json.dumps(result, indent=2)+'\n')
     return result
 

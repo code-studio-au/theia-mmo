@@ -1,3 +1,14 @@
+## 2026-11-05 — explicit quest-required development loot
+
+Adopt opt-in manifest schema 19 / `--quest-loot` with item-journal and per-life
+loot modes. Bind exact item/journal/reward identities before admission; retain
+first committed generation rights and separately check fresh current need before
+paging or pickup. Do not reclassify ordinary drops as quest-only. Keep the 60% /
+25% provisional random content separate from guaranteed low-damage native fixtures.
+[Qualified scope and limits](LOOT_TABLES.md#normal-quest-only-loot-qualified--5-november-2026).
+Reading a note remains a separate planned historical objective; item possession
+alone must not grant read credit.
+
 ## 2026-11-05 — first committed quest-loot generation rights
 
 For the initial async server, serialize conditional generation against a locked

@@ -49,6 +49,7 @@ async fn main() -> Result<()> {
     let mut reward_catalog = None;
     let mut creature_loot = false;
     let mut quest_items = false;
+    let mut quest_loot = false;
     let mut progression_catalog = None;
     let mut quest_catalog = None;
     let mut quest_areas = None;
@@ -150,6 +151,7 @@ async fn main() -> Result<()> {
             "--quest-lifecycle" => explicit_quest=true,
             "--quest-journal" => journal_mode=true,
             "--quest-items" => quest_items=true,
+            "--quest-loot" => quest_loot=true,
             "--quest-turn-in-xp" => {
                 if quest_turn_in_xp.is_some() {return Err("Choose one completion XP recipe".into());}
                 quest_turn_in_xp=Some(PathBuf::from(args.next().ok_or("Missing completion XP recipe")?));
@@ -552,6 +554,9 @@ async fn main() -> Result<()> {
     {
         return Err("Progression requires account login and authoritative creature combat".into());
     }
+    if quest_loot && (!quest_items || !creature_loot || reward_catalog.is_none()) {
+        return Err("Quest loot requires item journal, creature loot and rewards".into());
+    }
     if quest_items && (!journal_mode || quest_catalog.is_none() || item_catalog.is_none()) {
         return Err("Quest items require journal mode, quest and item catalogues".into());
     }
@@ -666,27 +671,33 @@ async fn main() -> Result<()> {
         } else {
             None
         };
-        let rewards = if let Some(path) = reward_catalog {
+        let mut quest_loot_bytes = None;
+        let mut rewards = if let Some(path) = reward_catalog {
             use std::io::Read;
             let mut bytes = Vec::new();
             std::fs::File::open(path)?
                 .take(theia_core::rewards::MAX_CATALOG_BYTES as u64 + 1)
                 .read_to_end(&mut bytes)?;
             let inventory = inventory.as_ref().ok_or("Rewards require items")?;
-            let profile = theia_persistence::RewardCatalog::from_json(&bytes, inventory)?;
-            let wire = wire_items.as_ref().ok_or("Reward wire items missing")?;
-            if creature_loot {
-                world.enable_creature_loot(std::sync::Arc::new(
-                    theia_network::reward_wire::Profile::from_json_with_creature_loot(
-                        &bytes, wire,
-                    )?,
-                ))?;
+            if quest_loot {
+                quest_loot_bytes = Some(bytes);
+                None
             } else {
-                world.enable_rewards(std::sync::Arc::new(
-                    theia_network::reward_wire::Profile::from_json(&bytes, wire)?,
-                ))?;
+                let profile = theia_persistence::RewardCatalog::from_json(&bytes, inventory)?;
+                let wire = wire_items.as_ref().ok_or("Reward wire items missing")?;
+                if creature_loot {
+                    world.enable_creature_loot(std::sync::Arc::new(
+                        theia_network::reward_wire::Profile::from_json_with_creature_loot(
+                            &bytes, wire,
+                        )?,
+                    ))?;
+                } else {
+                    world.enable_rewards(std::sync::Arc::new(
+                        theia_network::reward_wire::Profile::from_json(&bytes, wire)?,
+                    ))?;
+                }
+                Some(profile)
             }
-            Some(profile)
         } else {
             None
         };
@@ -817,6 +828,29 @@ async fn main() -> Result<()> {
         } else {
             (None, None, None)
         };
+        if let Some(bytes) = quest_loot_bytes {
+            let items = inventory.as_ref().ok_or("Quest loot requires items")?;
+            let journal = quest_journal
+                .as_ref()
+                .ok_or("Quest loot requires bound journal")?;
+            let profile = theia_persistence::RewardCatalog::from_json_with_quest_journal(
+                &bytes, items, journal,
+            )?;
+            let wire = theia_network::reward_wire::Profile::from_json_with_quest_journal(
+                &bytes,
+                wire_items
+                    .as_ref()
+                    .ok_or("Quest loot requires wire items")?,
+                world
+                    .quest_journal_profile()
+                    .ok_or("Quest loot requires installed journal")?,
+            )?;
+            if profile.hash() != wire.hash() {
+                return Err("Quest loot authority/persistence mismatch".into());
+            }
+            world.enable_quest_loot(std::sync::Arc::new(wire))?;
+            rewards = Some(profile);
+        }
         if tickets.is_some() || dev_persistence || chunk_stream || !graybox || !predicted {
             return Err("Account login requires saved predicted terrain and excludes development ticket/persistence overrides".into());
         }

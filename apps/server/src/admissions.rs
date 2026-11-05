@@ -202,8 +202,7 @@ impl GameAdmissions {
             .ok_or("Journal requires progression owner")?
             .set_journal(profile)
     }
-    /// Explicit headless adoption; normal World/manifest admission stays gated.
-    #[allow(dead_code)] // Explicit headless qualifier; normal runtime is gated.
+    /// Explicit conditional adoption after exact item-journal installation.
     pub(crate) fn with_quest_loot(
         gate: &mut Arc<Self>,
         profile: theia_persistence::RewardCatalog,

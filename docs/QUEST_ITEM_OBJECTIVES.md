@@ -1,4 +1,4 @@
-# Possession-based quest items — implementation in progress
+# Possession-based quest items
 
 User request, 3 November 2026: support quests requiring looted items, recalculate
 progress when an item is dropped/deleted, and permit turn-in only while the
@@ -910,3 +910,15 @@ scroll telemetry. Preserve `build/quest-item-client-qualified-v1-20261105` for
 source, binary/art references and combined evidence. Continue implementation
 locally with quest-only generation entitlement and fresh current-need checks;
 reading/viewing notes remains a separate authored objective. No push.
+
+
+## Quest-only loot integrated — 5 November 2026
+
+Opt-in schema-19 normal development content now connects possession objectives
+to conditional creature-loot availability. The native flow covers three denied
+pre-accept lives, three explicit pickups after acceptance, split/delete reversal,
+a fourth entitled replacement pickup, consumption and restart/rejoin at all three
+supported test sizes. [Exact evidence and restrictions](LOOT_TABLES.md#normal-quest-only-loot-qualified--5-november-2026).
+No new quest objective kind or campaign IDs. The earlier readable-document
+requirement remains the next P3-05 / P3-11 / P3-15 slice; historical read credit
+must stay separate from possession. Local commits only; no push.

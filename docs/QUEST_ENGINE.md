@@ -1,3 +1,15 @@
+Normal quest-only loot qualified locally, 5 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: opt-in manifest schema 19 binds the exact item
+journal before conditional loot on client/server and selects the retained owner.
+Linux native pickup, split/delete reversal, replacement pickup, consumption and
+PostgreSQL restart/rejoin pass at 1280x720, 1920x1200 and 3440x1440. First three
+unaccepted lives stay denied; four later lives retain their original rights.
+57 validator, 41 bundle, 147 client and eleven server tests, formatting, strict
+Clippy and optimized builds pass. [Evidence and limits](LOOT_TABLES.md#normal-quest-only-loot-qualified--5-november-2026).
+The native fixture guarantees loot and uses low damage; ordinary random gameplay
+content remains 60% pelt / 25% token. Continue readable quest documents next;
+commit locally only, no push. Earlier gate/stop entries describe prior checkpoints.
+
 Corpse pickup and authored loot rolls qualified locally, 5 November 2026:
 P3-02 / P3-05 / P3-09 / P3-11 / P3-15: opt-in schema-17 corpse UI passes three
 native Linux sizes and database restart/rejoin. Reward schema 3 adds authored

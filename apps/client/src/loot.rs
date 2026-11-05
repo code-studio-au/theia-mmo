@@ -230,7 +230,9 @@ fn update(
                 ui.all = false;
                 ui.status = match reason {
                     Reason::Full => "Not enough backpack space. Loot remains on the corpse.",
-                    Reason::Conflict => "Move closer to the corpse and try again.",
+                    Reason::Conflict => {
+                        "Loot is unavailable. Check your quest and move closer to try again."
+                    }
                     Reason::Stale => "Backpack changed. Try again.",
                     _ => "Pickup refused. Loot remains available.",
                 }

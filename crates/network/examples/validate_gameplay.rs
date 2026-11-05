@@ -250,6 +250,7 @@ fn check(
     journal: bool,
     creature_loot: bool,
     quest_items: bool,
+    quest_loot: bool,
 ) -> Result<()> {
     let items =
         inventory::Catalog::from_json(&bytes["items"]).map_err(|_| "Invalid items profile")?;
@@ -280,8 +281,11 @@ fn check(
     }
     let rewards = rewards::Catalog::from_json(&bytes["rewards"], &items)
         .map_err(|_| "Invalid reward/item configuration")?;
-    if rewards.has_quest_required() {
+    if rewards.has_quest_required() && !quest_loot {
         return Err("Quest-only loot requires generation and pickup admission".into());
+    }
+    if quest_loot && !rewards.has_quest_required() {
+        return Err("Quest-only loot schema requires conditional entries".into());
     }
     if rewards
         .definitions()
@@ -309,6 +313,9 @@ fn check(
         }
         if quest_items {
             catalog.validate_possession_items(&items)?;
+        }
+        if quest_loot {
+            rewards.validate_quest_items(&catalog)?;
         }
         let areas = bytes
             .get("quest_areas")
@@ -478,7 +485,7 @@ fn validate(path: &Path) -> Result<Report> {
     let raw = bounded(&path, MAX_MANIFEST_BYTES)?;
     let manifest: Manifest =
         serde_json::from_slice(&raw).map_err(|_| "Invalid gameplay manifest")?;
-    if !matches!(manifest.schema, 1..=18)
+    if !matches!(manifest.schema, 1..=19)
         || manifest.revision == 0
         || ContentId::new(&manifest.id).is_none()
         || (matches!(manifest.schema, 2..=11)) != manifest.quest_turn_in_xp.is_some()
@@ -531,6 +538,7 @@ fn validate(path: &Path) -> Result<Report> {
         manifest.schema >= 12,
         manifest.schema >= 17,
         manifest.schema >= 18,
+        manifest.schema >= 19,
     )?;
     profiles.sort_by(|a, b| a.kind.cmp(&b.kind));
     let manifest_hash = sha256(&raw);
@@ -2007,6 +2015,47 @@ mod tests {
             error.contains("Quest-only loot requires generation and pickup admission"),
             "{error}"
         );
+    }
+    #[test]
+    fn conditional_loot_manifests_require_explicit_schema_and_referenced_possession_item() {
+        for name in [
+            "development-gameplay-classic-quest-loot.json",
+            "development-gameplay-classic-quest-loot-fixture.json",
+        ] {
+            let report = validate(
+                &Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("../../content")
+                    .join(name),
+            )
+            .unwrap();
+            assert_eq!((report.manifest_schema, report.profiles.len()), (19, 23));
+        }
+        let f = item_quest_fixture();
+        f.edit("manifest", |m| m["schema"] = json!(19));
+        assert!(
+            validate(&f.manifest()).is_err(),
+            "Unused conditional mode refuses"
+        );
+        f.edit("rewards", |r| {
+            r["schema"] = json!(4);
+            r["rewards"][0]["quest_required"] = json!(true);
+            r["rewards"][0]["grants"] = json!([{"item":"theia.dev.training-stone","count":1}]);
+        });
+        validate(&f.manifest()).unwrap();
+        f.edit("rewards", |r| {
+            r["rewards"][0]["grants"][0]["item"] = json!("theia.dev.training-token")
+        });
+        assert!(
+            validate(&f.manifest()).is_err(),
+            "Conditional item must occur in a possession objective"
+        );
+        f.edit("rewards", |r| {
+            r["rewards"][0]["grants"][0]["item"] = json!("theia.dev.training-stone")
+        });
+        for schema in [17, 18, 20] {
+            f.edit("manifest", |m| m["schema"] = json!(schema));
+            assert!(validate(&f.manifest()).is_err());
+        }
     }
     #[test]
     fn item_quest_manifests_require_explicit_known_inventory_objectives() {
