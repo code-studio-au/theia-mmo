@@ -153,3 +153,28 @@ fn uninstalled_per_life_runtime_refuses_the_new_core_policy() {
 
 #[path = "reward_wire/per_life.rs"]
 mod per_life;
+
+#[test]
+fn quest_only_metadata_cannot_enter_unbound_reward_or_inventory_runtime_profiles() {
+    let mut value: serde_json::Value = serde_json::from_slice(include_bytes!(
+        "../../../content/gameplay/development-rewards.json"
+    ))
+    .unwrap();
+    value["schema"] = serde_json::json!(4);
+    value["rewards"][0]["scope"] = serde_json::json!("per_creature_life");
+    value["rewards"][0]["quest_required"] = serde_json::json!(true);
+    let bytes = serde_json::to_vec(&value).unwrap();
+    let items = theia_network::renet_runtime::inventory::Profile::from_json(include_bytes!(
+        "../../../content/gameplay/development-equipment-items.json"
+    ))
+    .unwrap();
+    assert!(
+        Catalog::from_json(&bytes, items.catalog())
+            .unwrap()
+            .has_quest_required()
+    );
+    assert!(wire::Profile::from_json(&bytes, &items).is_err());
+    assert!(wire::Profile::from_json_with_creature_loot(&bytes, &items).is_err());
+    assert!(items.clone().with_rewards(&bytes).is_err());
+    assert!(items.with_creature_loot(&bytes).is_err());
+}

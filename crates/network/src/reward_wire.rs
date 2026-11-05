@@ -60,6 +60,9 @@ impl Profile {
         allow_life: bool,
     ) -> Result<Self> {
         let catalog = Arc::new(Catalog::from_json(bytes, items.catalog())?);
+        if catalog.has_quest_required() {
+            return Err("Quest-only loot runtime is not installed".into());
+        }
         if has_life_rewards(&catalog) && !allow_life {
             return Err("Per-creature-life reward runtime is not installed".into());
         }

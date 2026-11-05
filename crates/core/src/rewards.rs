@@ -55,7 +55,7 @@ pub enum Scope {
     /// calling a pure proposal repeatedly does not enforce nonrepeatability.
     OncePerCharacter,
     /// One durable entitlement per recipient and authoritative victim life.
-    /// Schemas 2 and 3 admit this policy; storage/runtime support is separate.
+    /// Schemas 2–4 admit this policy; storage/runtime support is separate.
     PerCreatureLife,
 }
 /// Scope discriminator for a trusted kill selector. This conveys no recipient
@@ -83,6 +83,7 @@ struct RawDefinition {
     grants: Vec<RawGrant>,
     chance_basis_points: Option<u16>,
     drop_group: Option<u8>,
+    quest_required: Option<bool>,
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -114,6 +115,7 @@ pub struct Definition {
     chance_basis_points: u16,
     drop_group: u8,
     roll_policy: bool,
+    quest_required: bool,
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Catalog {
@@ -128,7 +130,7 @@ impl Catalog {
         }
         let raw: RawCatalog =
             serde_json::from_slice(bytes).map_err(|_| "Invalid reward catalog")?;
-        if !matches!(raw.schema, 1..=3) || !(1..=MAX_DEFINITIONS).contains(&raw.rewards.len()) {
+        if !matches!(raw.schema, 1..=4) || !(1..=MAX_DEFINITIONS).contains(&raw.rewards.len()) {
             return Err("Unsupported reward schema/count");
         }
         let id = ContentId::new(&raw.id).ok_or("Invalid reward catalog ID")?;
@@ -146,6 +148,15 @@ impl Catalog {
             }
             let chance_basis_points = raw.chance_basis_points.unwrap_or(10_000);
             let drop_group = raw.drop_group.unwrap_or(0);
+            if schema < 4 && raw.quest_required.is_some() {
+                return Err("Quest-required metadata requires schema 4");
+            }
+            let quest_required = raw.quest_required.unwrap_or(false);
+            if quest_required
+                && (raw.scope != Scope::PerCreatureLife || raw.grants.len() != 1 || drop_group != 0)
+            {
+                return Err("Quest-required loot requires one independent per-life item grant");
+            }
             if chance_basis_points > 10_000
                 || ((raw.chance_basis_points.is_some() || raw.drop_group.is_some())
                     && raw.scope != Scope::PerCreatureLife)
@@ -200,6 +211,7 @@ impl Catalog {
                 chance_basis_points,
                 drop_group,
                 roll_policy: schema >= 3 && raw.scope == Scope::PerCreatureLife,
+                quest_required,
             };
             if rewards.insert(id, definition).is_some() {
                 return Err("Duplicate reward ID");
@@ -233,6 +245,10 @@ impl Catalog {
     pub fn definitions(&self) -> impl ExactSizeIterator<Item = &Definition> {
         self.rewards.values()
     }
+    /// Metadata only. Runtime must bind generation rights and current need.
+    pub fn has_quest_required(&self) -> bool {
+        self.rewards.values().any(|d| d.quest_required)
+    }
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Error {
@@ -261,6 +277,11 @@ impl Definition {
     }
     pub fn requires_roll(&self) -> bool {
         self.roll_policy
+    }
+    /// The one conditional grant item, not proof of acceptance or entitlement.
+    /// Chance classification stays independent of quest/inventory observations.
+    pub fn quest_item(&self) -> Option<&ContentId> {
+        self.quest_required.then(|| self.grants[0].item())
     }
     /// Pure classification of a trusted uniform ticket in 0..10_000. It creates
     /// no authority, entropy or durable receipt. Groups share ONE stored ticket;

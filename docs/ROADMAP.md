@@ -1,3 +1,13 @@
+Quest-only loot metadata prerequisite, 5 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: reward schema 4 now describes quest-required
+independent single-item per-life entries. Ordinary chances stay separate from
+eligibility. Wire profiles, storage profiles and normal manifests refuse these
+entries until generation rights, exact journal binding and pickup checks exist.
+345 core, ten reward-wire, four persistence-library and 56 validator tests,
+formatting and strict all-target Clippy pass. [Scope and remaining work](LOOT_TABLES.md#quest-required-metadata-prerequisite--5-november-2026).
+No new SQL/native/runtime claim; normal item quests remain qualified at `85fd967`.
+Continue implementation locally; no push.
+
 Normal item quests qualified locally, 5 November 2026:
 P3-05 / P3-09 / P3-11 / P3-15: opt-in schema-18 inventory-bound quests now pass
 native Linux pickup, split/delete reversal, replacement pickup, atomic turn-in

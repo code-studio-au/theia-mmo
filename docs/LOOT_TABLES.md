@@ -199,3 +199,42 @@ emulator's stored corpse permission set. Current development pelts remain ordina
 loot. Validate commit ordering across the inventory and journal owners before
 admitting any quest-only profile; do not infer death-time eligibility merely from
 an asynchronous worker's later observation.
+
+
+## Quest-required metadata prerequisite — 5 November 2026
+
+P3-05 / P3-09 / P3-11 / P3-15: core reward schema 4 adds optional boolean
+`quest_required` (default false). A true entry must be per-creature-life, grant
+one known item type and use independent chance (`drop_group` zero). Initial
+single-item/independent restrictions are deliberate Theia scope, not a claim that
+Classic cannot use other configurations. Older schemas refuse the new metadata.
+Ordinary schema-1/2/3 recipes retain their previous behavior.
+
+`Definition::quest_item` exposes the one conditional item and
+`Catalog::has_quest_required` classifies the catalogue. These are metadata, not
+acceptance, current possession, generation rights or a grant. Ticket/chance
+classification remains identical for ordinary and conditional entries, including
+the exact 60% boundary; eligibility must not reroll it.
+
+Until the actual integration is complete, all wire/inventory reward profile
+constructors, storage reward profile construction and normal gameplay validation
+refuse quest-required entries. The core parser accepting schema 4 does not expose
+them to an ordinary corpse page or permit pickup. No catalogue on disk changes
+and no packet or database schema changes in this prerequisite.
+
+345 core tests, ten reward-wire tests, four non-SQL persistence-library tests and
+56 gameplay-validator tests pass. Formatting and denied-warning workspace/
+all-target Clippy pass. Logs:
+`build/quest-required-all-core-tests-v1-20261105.log`,
+`build/quest-required-wire-tests-v1-20261105.log`,
+`build/quest-required-persistence-lib-tests-v1-20261105.log`,
+`build/quest-required-validator-tests-v1-20261105.log`,
+`build/quest-required-fmt-v1-20261105.log` and
+`build/quest-required-clippy-v1-20261105.log`.
+Preserve `build/quest-required-core-qualified-v1-20261105`. No new actual SQL,
+owner, encrypted peer, native/Windows or capacity evidence is claimed.
+Normal inventory-bound item quests remain the separately qualified `85fd967`.
+Next: exact item/journal/reward binding, durable initial generation rights,
+eligibility before bounded nearest paging and a fresh locked pickup check. Keep
+server commit ordering explicit; a later async view is not a death-time snapshot.
+Commit locally only; no push.

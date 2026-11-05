@@ -280,6 +280,9 @@ fn check(
     }
     let rewards = rewards::Catalog::from_json(&bytes["rewards"], &items)
         .map_err(|_| "Invalid reward/item configuration")?;
+    if rewards.has_quest_required() {
+        return Err("Quest-only loot requires generation and pickup admission".into());
+    }
     if rewards
         .definitions()
         .any(|r| r.scope() == rewards::Scope::PerCreatureLife)
@@ -1991,6 +1994,19 @@ mod tests {
                 }));
         });
         f
+    }
+    #[test]
+    fn quest_only_loot_is_refused_even_by_item_quest_manifests() {
+        let f = item_quest_fixture();
+        f.edit("rewards", |r| {
+            r["schema"] = json!(4);
+            r["rewards"][0]["quest_required"] = json!(true);
+        });
+        let error = validate(&f.manifest()).err().unwrap().to_string();
+        assert!(
+            error.contains("Quest-only loot requires generation and pickup admission"),
+            "{error}"
+        );
     }
     #[test]
     fn item_quest_manifests_require_explicit_known_inventory_objectives() {
