@@ -147,14 +147,19 @@ async fn main() -> theia_network::Result<()> {
     let socket = UdpSocket::bind("127.0.0.1:0")?;
     let address = socket.local_addr()?;
     let (mut transport, issuer) = net::secure_issuer(socket, vec![address])?;
+    let quest_loot = std::env::var("THEIA_TEST_QUEST_LOOT").is_ok_and(|v| v == "1");
     let item_journal = std::env::var("THEIA_TEST_QUEST_ITEMS").is_ok_and(|v| v == "1");
     let vendors = std::env::var("THEIA_TEST_VENDORS").is_ok_and(|v| v == "1");
-    let inventory =
-        item_journal || vendors || std::env::var("THEIA_TEST_INVENTORY").is_ok_and(|v| v == "1");
+    let inventory = quest_loot
+        || item_journal
+        || vendors
+        || std::env::var("THEIA_TEST_INVENTORY").is_ok_and(|v| v == "1");
     let creature_loot = std::env::var("THEIA_TEST_CREATURE_LOOT").is_ok_and(|v| v == "1");
     let rewards_enabled =
         creature_loot || std::env::var("THEIA_TEST_REWARDS").is_ok_and(|v| v == "1");
-    let item_bytes: &[u8] = if item_journal || rewards_enabled || vendors {
+    let item_bytes: &[u8] = if quest_loot {
+        include_bytes!("../../../content/gameplay/development-loot-items.json")
+    } else if item_journal || rewards_enabled || vendors {
         include_bytes!("../../../content/gameplay/development-equipment-items.json")
     } else {
         include_bytes!("../../../content/gameplay/development-items.json")
@@ -215,6 +220,452 @@ async fn main() -> theia_network::Result<()> {
     } else {
         admissions::GameAdmissions::new(sessions.clone(), issuer, world)
     };
+    if quest_loot {
+        use net::progression::{Input, JournalInput, JournalOperation};
+        use theia_core::{
+            content::ContentId,
+            progression::{KillEvent, KillId},
+            quests::journal::{Action, Command, Status},
+            rewards::ClaimCommand,
+        };
+        use theia_network::simulation::rewards::Opportunity;
+        let id = |s: &str| ContentId::new(s).unwrap();
+        let xp_bytes = include_bytes!("../../../content/gameplay/development-progression.json");
+        let xp = theia_persistence::ProgressionCatalog::from_json(xp_bytes)?;
+        let data = serde_json::to_vec(
+            &serde_json::json!({"schema":3,"id":"catalog","revision":1,"quests":[{
+            "id":"quest","version":1,"title":"Pelts","description":"Owned conditional loot fixture","prerequisites":[],
+            "giver":"theia.dev.guide","turn_in":"theia.dev.guide","repeat_policy":"once","credit_scope":"character","experience":25,
+            "start_stage":"stage","stages":[{"id":"stage","completion":{"kind":"all"},"next":null,"objectives":[{
+            "kind":"possess_item","id":"goal","label":"Bring","item":"theia.dev.wolf-pelt","required":3,"consume_on_turn_in":true}]}]}]}),
+        )?;
+        let q = theia_persistence::QuestJournalCatalog::from_json(&data, &xp)?
+            .with_inventory(&profile)?;
+        let wi = net::inventory::Profile::from_json(item_bytes)?;
+        let wj = theia_network::quest_journal::Profile::from_json(
+            &data,
+            &theia_network::progression_wire::Profile::from_json(xp_bytes)?,
+        )?
+        .with_inventory(&wi)?;
+        let mut source: serde_json::Value = serde_json::from_slice(include_bytes!(
+            "../../../content/gameplay/development-random-creature-loot-rewards.json"
+        ))?;
+        source["schema"] = 4.into();
+        source["rewards"].as_array_mut().unwrap().remove(0);
+        source["rewards"][0]["quest_required"] = true.into();
+        for entry in source["rewards"].as_array_mut().unwrap() {
+            entry["chance_basis_points"] = 10_000.into();
+        }
+        let source = serde_json::to_vec(&source)?;
+        let rewards =
+            theia_persistence::RewardCatalog::from_json_with_quest_journal(&source, &profile, &q)?;
+        let wire = Arc::new(
+            theia_network::reward_wire::Profile::from_json_with_quest_journal(&source, &wi, &wj)?,
+        );
+        admissions::GameAdmissions::with_progression(
+            &mut gate,
+            xp,
+            Arc::new(theia_network::progression_wire::Profile::from_json(
+                xp_bytes,
+            )?),
+            publisher.clone(),
+        )?;
+        // Refuse before installing the bound journal, without partially adopting rewards.
+        assert!(
+            admissions::GameAdmissions::with_quest_loot(&mut gate, rewards.clone(), wire.clone())
+                .is_err()
+        );
+        admissions::GameAdmissions::with_quest_journal(&mut gate, q.clone())?;
+        let mut changed_source = source.clone();
+        changed_source.push(b' ');
+        let foreign_wire = Arc::new(
+            theia_network::reward_wire::Profile::from_json_with_quest_journal(
+                &changed_source,
+                &wi,
+                &wj,
+            )?,
+        );
+        assert!(
+            admissions::GameAdmissions::with_quest_loot(&mut gate, rewards.clone(), foreign_wire,)
+                .is_err()
+        );
+        admissions::GameAdmissions::with_quest_loot(&mut gate, rewards.clone(), wire.clone())?;
+        assert!(
+            admissions::GameAdmissions::with_quest_loot(&mut gate, rewards.clone(), wire,).is_err()
+        );
+        let actor = EntityKey {
+            epoch: WorldEpoch::new(195).unwrap(),
+            entity: EntityId::new(1).unwrap(),
+        };
+        let command = |request, action, revision| Command {
+            request_id: std::num::NonZeroU128::new(request).unwrap(),
+            quest: id("quest"),
+            npc: id("theia.dev.guide"),
+            action,
+            expected_revision: revision,
+        };
+        let input = |sequence, command| {
+            Input::Journal(JournalInput {
+                actor,
+                catalog: q.hash(),
+                sequence,
+                operation: JournalOperation::Command(command),
+            })
+        };
+        let ticket = gate
+            .reserve(context.clone(), binding)?
+            .issue(character.saved)?;
+        let data = connected_data(&mut transport, ticket.bytes()).await;
+        let lease = gate.clone().consume(1, &data)?.unwrap().lease;
+        lease.record(actor, position, 1)?;
+        let mut items = lease.inventory()?.unwrap();
+        let mut progress = lease.progression()?.unwrap();
+        inventory_until(&mut items, |s| s.bag.is_some() && s.rewards.is_some()).await;
+        progression_until(&mut progress, |s| {
+            s.journal.is_some() && s.progress.is_some()
+        })
+        .await;
+        let fact = |n, reward: &str| Opportunity {
+            actor,
+            reward: id(reward),
+            position,
+            event: KillEvent {
+                id: KillId::from_victim(EntityKey {
+                    entity: EntityId::new(n).unwrap(),
+                    ..actor
+                }),
+                creature: id("theia.dev.training-creature"),
+            },
+        };
+        let pelt = "theia.dev.wolf-pelt-loot";
+        let token = "theia.dev.wolf-token-loot";
+        items
+            .opportunities
+            .as_ref()
+            .unwrap()
+            .send(fact(100, pelt))
+            .await?;
+        items
+            .opportunities
+            .as_ref()
+            .unwrap()
+            .send(fact(100, token))
+            .await?;
+        let ordinary = inventory_until(&mut items, |s| {
+            s.rewards.as_ref().is_some_and(|r| r.available.len() == 1)
+        })
+        .await;
+        assert_eq!(ordinary.rewards.unwrap().available[0].reward, id(token));
+        progress
+            .input
+            .send(input(1, command(1, Action::Accept, 0)))
+            .await?;
+        progression_until(&mut progress, |s| {
+            s.journal
+                .as_ref()
+                .is_some_and(|j| j.reply.as_ref().is_some_and(|r| r.sequence == 1))
+        })
+        .await;
+        // Replay after acceptance cannot create rights on the old denied corpse.
+        let before = worker.status().reward_offers;
+        items
+            .opportunities
+            .as_ref()
+            .unwrap()
+            .send(fact(100, pelt))
+            .await?;
+        tokio::time::timeout(Duration::from_secs(5), async {
+            while worker.status().reward_offers == before {
+                tokio::time::sleep(Duration::from_millis(2)).await;
+            }
+        })
+        .await?;
+        assert!(
+            publisher
+                .list_quest_reward_claims_nearby(binding, world, &rewards, position)
+                .await?
+                .iter()
+                .all(|c| c.reward == id(token))
+        );
+        for n in 101..106 {
+            items
+                .opportunities
+                .as_ref()
+                .unwrap()
+                .send(fact(n, pelt))
+                .await?;
+        }
+        let offered = inventory_until(&mut items, |s| {
+            s.rewards.as_ref().is_some_and(|r| r.available.len() == 6)
+        })
+        .await;
+        let pelts: Vec<_> = offered
+            .rewards
+            .unwrap()
+            .available
+            .into_iter()
+            .filter(|r| r.reward == id(pelt))
+            .collect();
+        assert_eq!(pelts.len(), 5);
+        for (index, claim) in pelts.iter().take(3).enumerate() {
+            let revision = items.state.borrow().bag.as_ref().unwrap().revision();
+            items
+                .requests
+                .send(net::inventory::Request {
+                    sequence: index as u64 + 1,
+                    command: ClaimCommand {
+                        claim: claim.claim,
+                        expected_revision: revision,
+                    }
+                    .into(),
+                })
+                .await?;
+            inventory_until(&mut items, |s| {
+                s.reply.is_some_and(|r| r.sequence == index as u64 + 1)
+            })
+            .await;
+        }
+        progression_until(&mut progress, |s| {
+            s.journal.as_ref().is_some_and(|j| {
+                j.journal
+                    .progress(&id("quest"))
+                    .is_some_and(|q| q.status() == Status::Ready)
+            })
+        })
+        .await;
+        inventory_until(&mut items, |s| {
+            s.rewards
+                .as_ref()
+                .is_some_and(|r| r.available.len() == 1 && r.available[0].reward == id(token))
+        })
+        .await;
+        let ready_bag = items.state.borrow().bag.as_ref().unwrap().clone();
+        // Fresh stale-pane pickup is a normal rejection, not owner failure.
+        items
+            .requests
+            .send(net::inventory::Request {
+                sequence: 4,
+                command: ClaimCommand {
+                    claim: pelts[3].claim,
+                    expected_revision: ready_bag.revision(),
+                }
+                .into(),
+            })
+            .await?;
+        let rejected =
+            inventory_until(&mut items, |s| s.reply.is_some_and(|r| r.sequence == 4)).await;
+        assert_eq!(
+            rejected.reply.unwrap().outcome,
+            theia_network::inventory_wire::Outcome::Rejected(
+                theia_network::inventory_wire::Reason::Conflict
+            )
+        );
+        let slot = ready_bag
+            .slots()
+            .iter()
+            .position(|s| {
+                s.as_ref()
+                    .is_some_and(|s| s.item() == &id("theia.dev.wolf-pelt"))
+            })
+            .unwrap() as u8;
+        items
+            .requests
+            .send(net::inventory::Request {
+                sequence: 5,
+                command: ItemCommand {
+                    expected_revision: ready_bag.revision(),
+                    operation: ItemOperation::Destroy {
+                        from: slot,
+                        amount: 1,
+                    },
+                }
+                .into(),
+            })
+            .await?;
+        inventory_until(&mut items, |s| s.reply.is_some_and(|r| r.sequence == 5)).await;
+        progression_until(&mut progress, |s| {
+            s.journal.as_ref().is_some_and(|j| {
+                j.journal
+                    .progress(&id("quest"))
+                    .is_some_and(|q| q.status() == Status::Active)
+            })
+        })
+        .await;
+        // No lease.record after the first pose: this must refresh while stationary.
+        inventory_until(&mut items, |s| {
+            s.rewards
+                .as_ref()
+                .is_some_and(|r| r.available.iter().any(|r| r.claim == pelts[3].claim))
+        })
+        .await;
+        let revision = items.state.borrow().bag.as_ref().unwrap().revision();
+        let guard = admin.transaction().await?;
+        guard.query_one("SELECT revision FROM theia.backpacks WHERE realm_id=$1 AND character_id=$2 FOR UPDATE",&[&realm.value(),&binding.character.value()]).await?;
+        items
+            .requests
+            .send(net::inventory::Request {
+                sequence: 6,
+                command: ClaimCommand {
+                    claim: pelts[3].claim,
+                    expected_revision: revision,
+                }
+                .into(),
+            })
+            .await?;
+        wait_inventory_lock(&guard).await;
+        drop(lease);
+        assert!(gate.reserve(context.clone(), binding).is_err());
+        guard.commit().await?;
+        tokio::time::timeout(Duration::from_secs(5), async {
+            while gate.flush(&publisher, &worker.status()).unwrap() != 0 {
+                tokio::time::sleep(Duration::from_millis(2)).await;
+            }
+        })
+        .await?;
+        let saved = publisher.select_character(binding, world).await?.saved;
+        let reservation = gate.reserve(context.clone(), binding)?;
+        assert_eq!(
+            reservation.check_gameplay_profiles(&publisher).await?,
+            theia_persistence::ProfileCompatibility::Compatible
+        );
+        let ticket = reservation.issue(saved)?;
+        let data = connected_data(&mut transport, ticket.bytes()).await;
+        let lease = gate.clone().consume(1, &data)?.unwrap().lease;
+        let actor2 = EntityKey {
+            entity: EntityId::new(2).unwrap(),
+            ..actor
+        };
+        lease.record(actor2, position, 2)?;
+        let mut items = lease.inventory()?.unwrap();
+        let mut progress = lease.progression()?.unwrap();
+        let loaded = inventory_until(&mut items, |s| s.bag.is_some() && s.rewards.is_some()).await;
+        assert_eq!(loaded.bag.as_ref().unwrap().revision(), revision + 1);
+        assert_eq!(loaded.rewards.unwrap().available.len(), 1);
+        let restored = progression_until(&mut progress, |s| {
+            s.journal.as_ref().is_some_and(|j| {
+                j.journal
+                    .progress(&id("quest"))
+                    .is_some_and(|q| q.status() == Status::Ready)
+            })
+        })
+        .await;
+        // Latest committed retry succeeds despite reaching the required quantity.
+        items
+            .requests
+            .send(net::inventory::Request {
+                sequence: 1,
+                command: ClaimCommand {
+                    claim: pelts[3].claim,
+                    expected_revision: revision,
+                }
+                .into(),
+            })
+            .await?;
+        let replay =
+            inventory_until(&mut items, |s| s.reply.is_some_and(|r| r.sequence == 1)).await;
+        assert_eq!(
+            replay.reply.unwrap().outcome,
+            theia_network::inventory_wire::Outcome::Replayed
+        );
+        let turn = command(
+            2,
+            Action::TurnIn,
+            restored
+                .journal
+                .as_ref()
+                .unwrap()
+                .journal
+                .progress(&id("quest"))
+                .unwrap()
+                .revision(),
+        );
+        progress
+            .input
+            .send(Input::Journal(JournalInput {
+                actor: actor2,
+                catalog: q.hash(),
+                sequence: 1,
+                operation: JournalOperation::Command(turn),
+            }))
+            .await?;
+        let completed = progression_until(&mut progress, |s| {
+            s.journal.as_ref().is_some_and(|j| {
+                j.journal
+                    .progress(&id("quest"))
+                    .is_some_and(|q| q.status() == Status::Completed)
+            })
+        })
+        .await;
+        assert_eq!(completed.progress.unwrap().total(), 25);
+        let bag = inventory_until(&mut items, |s| {
+            s.bag.as_ref().is_some_and(|b| b.revision() == revision + 2)
+        })
+        .await
+        .bag
+        .unwrap();
+        assert!(
+            bag.slots()
+                .iter()
+                .flatten()
+                .all(|s| s.item() != &id("theia.dev.wolf-pelt"))
+        );
+        inventory_until(&mut items, |s| {
+            s.rewards
+                .as_ref()
+                .is_some_and(|r| r.available.len() == 1 && r.available[0].reward == id(token))
+        })
+        .await;
+        // Leave one entitled pelt uncollected: completion must keep it hidden.
+        assert_eq!(
+            publisher
+                .list_quest_reward_claims_nearby(binding, world, &rewards, position)
+                .await?
+                .len(),
+            1
+        );
+        let guard = admin.transaction().await?;
+        guard.query_one("SELECT revision FROM theia.backpacks WHERE realm_id=$1 AND character_id=$2 FOR UPDATE",&[&realm.value(),&binding.character.value()]).await?;
+        items
+            .opportunities
+            .as_ref()
+            .unwrap()
+            .send(fact(200, pelt))
+            .await?;
+        wait_inventory_lock(&guard).await;
+        items
+            .opportunities
+            .as_ref()
+            .unwrap()
+            .send(fact(201, pelt))
+            .await?;
+        drop(lease);
+        assert!(gate.reserve(context.clone(), binding).is_err());
+        guard.commit().await?;
+        tokio::time::timeout(Duration::from_secs(5), async {
+            while gate.flush(&publisher, &worker.status()).unwrap() != 0 {
+                tokio::time::sleep(Duration::from_millis(2)).await;
+            }
+        })
+        .await?;
+        let row=admin.query_one("SELECT count(*),count(*) FILTER (WHERE NOT generation_eligible) FROM theia.loot_rolls WHERE realm_id=$1 AND character_id=$2",&[&realm.value(),&binding.character.value()]).await?;
+        assert_eq!(row.get::<_, i64>(0), 9);
+        assert_eq!(row.get::<_, i64>(1), 3);
+        assert_eq!(
+            publisher
+                .list_quest_reward_claims_nearby(binding, world, &rewards, position)
+                .await?
+                .len(),
+            1
+        );
+        let status = worker.shutdown().await?;
+        assert!(!status.failed);
+        drop(admin);
+        driver.await??;
+        emit(
+            serde_json::json!({"passed":true,"quest_loot_enabled":true,"actual_oidc_and_postgres":true,"encrypted_ticket_binding":true,"denied_generation_stays_denied":true,"stationary_need_refresh":true,"stale_need_nonfatal":true,"pickup_survives_retirement":true,"latest_pickup_replay":true,"atomic_turn_in":true,"completed_leftovers_hidden":true,"queued_generation_survives_retirement":true,"direct_lease_contract_not_native_game":true}),
+        );
+        return Ok(());
+    }
     if item_journal {
         use net::progression::{Input, JournalInput, JournalOperation};
         use theia_core::{

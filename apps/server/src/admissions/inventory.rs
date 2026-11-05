@@ -113,6 +113,21 @@ impl Config {
         self.rewards = Some(rewards);
         Ok(self)
     }
+    pub(super) fn set_quest_loot(&mut self, rewards: RewardCatalog) -> Result<()> {
+        if self.rewards.is_some()
+            || !rewards.catalog().has_quest_required()
+            || rewards.items().hash() != self.profile.hash()
+            || rewards.quest_journal().is_none_or(|bound| {
+                self.journal
+                    .as_ref()
+                    .is_none_or(|j| j.hash() != bound.hash())
+            })
+        {
+            return Err("Quest loot requires the installed exact item journal".into());
+        }
+        self.rewards = Some(rewards);
+        Ok(())
+    }
     pub(super) fn set_reward_wire(
         &mut self,
         profile: Arc<theia_network::reward_wire::Profile>,
@@ -291,6 +306,7 @@ impl Owner {
                 .await?;
             self.publish_journal(applied)?;
         }
+        let mut interest_versions = self.loot_versions()?;
         let (mut claims, mut interest_center) = if let Some(profile) = &self.rewards {
             self.load_claims(profile).await?
         } else {
@@ -334,11 +350,14 @@ impl Owner {
                     _=stop.changed()=>{ retiring = true; continue; },
                     _=interest_timer.tick(),if has_life=>{
                         let position = self.loot_position()?;
-                        let changed = interest_center.is_none_or(|old| old.metres().into_iter().zip(position.metres()).map(|(a,b)|(a-b)*(a-b)).sum::<f64>() >= 64.);
+                        let versions = self.loot_versions()?;
+                        let changed = versions != interest_versions || interest_center.is_none_or(|old| old.metres().into_iter().zip(position.metres()).map(|(a,b)|(a-b)*(a-b)).sum::<f64>() >= 64.);
                         if changed {
                             let profile = self.rewards.as_ref().ok_or("Loot profile missing")?;
                             let (next, center) = self.load_claims(profile).await?;
                             interest_center = center;
+                            // Sample before the query: a concurrent commit must remain dirty.
+                            interest_versions = versions;
                             if next != claims {
                                 claims = next;
                                 reward_generation = reward_generation.checked_add(1).ok_or("Reward generation exhausted")?;
@@ -387,16 +406,28 @@ impl Owner {
                     }
                     ItemCommand::RewardClaim(command) => {
                         let profile = self.rewards.as_ref().ok_or("Reward profile missing")?;
-                        self.publisher
-                            .claim_reward_with_quest_journal(
-                                self.binding,
-                                self.world,
-                                profile,
-                                command.claim,
-                                command.expected_revision,
-                                journal,
-                            )
-                            .await
+                        if profile.quest_journal().is_some() {
+                            self.publisher
+                                .pickup_quest_reward(
+                                    self.binding,
+                                    self.world,
+                                    profile,
+                                    command.claim,
+                                    command.expected_revision,
+                                )
+                                .await
+                        } else {
+                            self.publisher
+                                .claim_reward_with_quest_journal(
+                                    self.binding,
+                                    self.world,
+                                    profile,
+                                    command.claim,
+                                    command.expected_revision,
+                                    journal,
+                                )
+                                .await
+                        }
                     }
                     command => {
                         self.publisher
@@ -540,6 +571,42 @@ impl Owner {
             .and_then(|e| e.saved.as_ref().map(|s| s.position))
             .ok_or_else(|| "Loot owner lost its retained pose".into())
     }
+    // Dirty hints only; Store queries still lock and derive authoritative need.
+    // Release the gate before borrowing either watch to avoid lock inversion.
+    fn loot_versions(&self) -> Result<(Option<u64>, Option<u64>)> {
+        if self
+            .rewards
+            .as_ref()
+            .is_none_or(|r| r.quest_journal().is_none())
+        {
+            return Ok((None, None));
+        }
+        let gate = self.gate.upgrade().ok_or("Loot owner gate closed")?;
+        let (items, journal) = {
+            let state = gate.lock()?;
+            let entry = state.slots[self.slot]
+                .as_ref()
+                .filter(|e| e.generation == self.generation && e.binding == self.binding)
+                .ok_or("Loot owner lost character generation")?;
+            (
+                entry
+                    .inventory
+                    .as_ref()
+                    .ok_or("Loot inventory missing")?
+                    .publish
+                    .clone(),
+                entry
+                    .progression
+                    .as_ref()
+                    .ok_or("Loot journal missing")?
+                    .publish
+                    .clone(),
+            )
+        };
+        let bag = items.borrow().bag.as_ref().map(|b| b.revision());
+        let head = journal.borrow().journal.as_ref().map(|j| j.revision);
+        Ok((bag, head))
+    }
     async fn load_claims(
         &self,
         profile: &RewardCatalog,
@@ -554,9 +621,20 @@ impl Owner {
         {
             let position = self.loot_position()?;
             Ok((
-                self.publisher
-                    .list_reward_claims_nearby(self.binding, self.world, profile, position)
-                    .await?,
+                if profile.quest_journal().is_some() {
+                    self.publisher
+                        .list_quest_reward_claims_nearby(
+                            self.binding,
+                            self.world,
+                            profile,
+                            position,
+                        )
+                        .await?
+                } else {
+                    self.publisher
+                        .list_reward_claims_nearby(self.binding, self.world, profile, position)
+                        .await?
+                },
                 Some(position),
             ))
         } else {
@@ -596,16 +674,29 @@ impl Owner {
         }
         // Persist the original fatal fact. Offering never mutates the backpack
         // or possession journal. SQL uniqueness retains consumed life receipts.
-        self.publisher
-            .roll_reward_for_kill(
-                self.binding,
-                self.world,
-                profile,
-                &fact.reward,
-                &fact.event,
-                fact.position,
-            )
-            .await?;
+        if profile.quest_journal().is_some() {
+            self.publisher
+                .generate_quest_loot_for_kill(
+                    self.binding,
+                    self.world,
+                    profile,
+                    &fact.reward,
+                    &fact.event,
+                    fact.position,
+                )
+                .await?;
+        } else {
+            self.publisher
+                .roll_reward_for_kill(
+                    self.binding,
+                    self.world,
+                    profile,
+                    &fact.reward,
+                    &fact.event,
+                    fact.position,
+                )
+                .await?;
+        }
         // The store owns the bounded pending page; never accumulate unbounded
         // life history in a resident owner or suppress a later life by recipe.
         let (next, _) = self.load_claims(profile).await?;
@@ -642,7 +733,7 @@ fn reason(error: &Error) -> Option<Reason> {
         Error::InventoryBusy => Reason::Busy,
         Error::InventoryStale | Error::InventoryCommand(Core::StaleRevision) => Reason::Stale,
         Error::InventoryConflict => Reason::Conflict,
-        Error::RewardMissing | Error::RewardConsumed => Reason::Conflict,
+        Error::RewardMissing | Error::RewardConsumed | Error::RewardNotNeeded => Reason::Conflict,
         Error::RewardCommand(theia_core::rewards::Error::NoCapacity) => Reason::Full,
         Error::RewardCommand(theia_core::rewards::Error::StaleRevision) => Reason::Stale,
         Error::RewardCommand(theia_core::rewards::Error::RevisionExhausted) => Reason::Exhausted,

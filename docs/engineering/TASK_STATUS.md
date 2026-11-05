@@ -1,3 +1,13 @@
+Quest-only retained owner qualified, 5 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: explicit exact-journal owner admission now uses
+conditional generation/view/pickup; stationary bag/journal changes refresh loot.
+Actual OIDC/encrypted-ticket/PostgreSQL checks cover denial replay, deletion,
+retained pickup/queued fatal facts, rejoin and atomic turn-in. Ordinary loot and
+item-journal regressions, eleven server tests, formatting and strict Clippy pass.
+[Scope/evidence](../LOOT_TABLES.md#quest-only-retained-owner--5-november-2026).
+World and normal manifest/client adoption remain pending. Continue locally with
+World validation and encrypted runtime coverage; no push. Playable: `85fd967`.
+
 Quest-only worker prerequisite qualified, 5 November 2026:
 P3-05 / P3-09 / P3-11 / P3-15: explicit conditional generation/list/pickup now
 use the existing bounded critical FIFO. Accepted writes survive queued reply loss

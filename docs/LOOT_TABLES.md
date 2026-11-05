@@ -440,3 +440,53 @@ manifest/client admission and native conditional loot are still pending. This is
 trusted worker/SQL proof, not a live kill, encrypted owner, native/Windows or
 capacity claim. Normal schema-18 playable remains `85fd967`. Continue locally;
 no push.
+
+
+## Quest-only retained owner — 5 November 2026
+
+P3-05 / P3-09 / P3-11 / P3-15. Explicit headless `with_quest_loot` now requires
+an installed exact inventory-bound journal in both owners, matching reward wire /
+storage identities and exclusive reward installation. Missing journals, mismatched
+source bytes and duplicate installation refuse before adoption. The ordinary
+constructor stays closed for conditional entries; no normal manifest changes.
+
+The retained async inventory owner routes generation, nearby views and pickup
+through the explicit conditional Publisher APIs. Accepted pickup and executing /
+queued fatal facts drain through logout before the character slot is released.
+`RewardNotNeeded` maps to the existing ordinary Conflict rejection; it does not
+fail the owner. Before normal UI adoption, replace the existing overly specific
+Conflict text with suitable pickup feedback. Latest successful pickup retries
+still recover while Ready. Ordinary rewards remain available independently.
+
+The 500ms interest timer also refreshes conditional views after committed bag or
+journal high-water changes, without requiring the existing eight-metre movement
+threshold. Revisions are dirty hints only; SQL rechecks locked current need. The
+owner releases the admission lock before borrowing watch projections and samples
+hints before the query so a concurrent publication remains dirty for the next
+refresh. This is bounded polling, not a new event or streaming system.
+
+`build/quest-loot-owner-oidc-v3-20261105/verification.json` passes actual local OIDC,
+encrypted ticket and PostgreSQL 16.15 lease checks: unaccepted death stays denied
+after acceptance/replay, five entitled candidates require explicit pickup, Ready
+hides leftovers, deleting one reveals loot while stationary, stale fresh pickup
+rejects normally, accepted pickup commits through logout, rejoin restores Ready,
+latest pickup retry replays, turn-in consumes three and awards 25 XP. Completion
+keeps the remaining entitled pelt hidden. Two further accepted fatal facts drain
+through logout with denied generation receipts. Nine unique rolls persist within
+this owner proof; this is not another database restart test. v1/v2 retain earlier
+passing checks; v3 adds source mismatch and duplicate-install refusal.
+
+Ordinary per-life loot and inventory-bound journal owner regressions pass at
+`build/quest-loot-owner-ordinary-regression-v1-20261105/verification.json` and
+`build/quest-loot-owner-items-regression-v1-20261105/verification.json`.
+Eleven server-library tests, formatting and denied-warning workspace/all-target
+Clippy pass (`build/quest-loot-owner-server-tests-v1-20261105.log`,
+`build/quest-loot-owner-fmt-v1-20261105.log`,
+`build/quest-loot-owner-clippy-v1-20261105.log`). Preserve
+`build/quest-loot-owner-qualified-v1-20261105`.
+
+These checks drive trusted owner facts/NPC authorization, not simulation kills or
+native interactions. World installation, normal schema/client adoption and native
+conditional loot remain pending. No rendering change or new Windows/capacity
+claim. Normal schema-18 playable remains `85fd967`. Continue locally with explicit
+World validation and encrypted runtime coverage; no push.

@@ -202,6 +202,27 @@ impl GameAdmissions {
             .ok_or("Journal requires progression owner")?
             .set_journal(profile)
     }
+    /// Explicit headless adoption; normal World/manifest admission stays gated.
+    #[allow(dead_code)] // Explicit headless qualifier; normal runtime is gated.
+    pub(crate) fn with_quest_loot(
+        gate: &mut Arc<Self>,
+        profile: theia_persistence::RewardCatalog,
+        wire: Arc<theia_network::reward_wire::Profile>,
+    ) -> Result<()> {
+        let gate = Arc::get_mut(gate).ok_or("Quest loot requires unshared gate")?;
+        if profile.hash() != wire.hash()
+            || wire.quest_journal_hash().is_none()
+            || gate.progression.as_ref().and_then(|p| p.journal_hash()) != wire.quest_journal_hash()
+        {
+            return Err("Quest loot store/wire/owner binding mismatch".into());
+        }
+        let inventory = gate
+            .inventory
+            .as_mut()
+            .ok_or("Quest loot requires inventory")?;
+        inventory.set_quest_loot(profile)?;
+        inventory.set_reward_wire(wire)
+    }
     pub(crate) fn with_quest_lifecycle(
         gate: &mut Arc<Self>,
         profile: theia_persistence::QuestLifecycleCatalog,
