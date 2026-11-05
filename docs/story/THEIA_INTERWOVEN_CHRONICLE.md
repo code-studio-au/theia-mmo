@@ -1238,3 +1238,208 @@ I stared at the pages. Somewhere between Millhaven and Valecrown I had begun to 
 There was still a missing part of the story. Someone had paid for it to remain missing.
 
 And for the first time since I left home, I understood that finding it might place me against people the king trusted more than he trusted me.
+
+
+### Chapter Four — The Price of an Office
+
+The first lie I recognised in Valecrown was not spoken aloud.
+
+It sat in a register, beneath a date that should not have existed. A request had been approved before the office claimed to have received it. The signature was properly formed. The paper had passed through the right hands. Every outward sign suggested the machinery of government had done precisely what it was meant to do, except that time itself refused to agree.
+
+Mara stood at the opposite side of the table while I compared the authorisation with the original office format.
+
+“Someone has the order of events wrong,” she said, “or wants us to.”
+
+“Could Cassian explain it?”
+
+“Perhaps. First we need the witness and the original format. Don't accuse a man because the paperwork is strange.”
+
+It was infuriating advice because I knew she was right. By then I had learned that I could make a convincing case against almost anyone if I began by deciding what their records ought to mean. Mara made me begin again whenever she caught me doing it.
+
+The witness had seen part of the transfer. Their memory was clear in places and uncertain in others. I asked what had happened before I asked who might have been responsible. When they hesitated, I waited. Silence felt longer in a room where everyone expected an answer.
+
+Afterward Mara read the account without changing a word.
+
+“That stands on its own,” she said. “Whether it supports our theory is a separate matter.”
+
+We compared it with the office format and the recorded authorisation time. Three independent details contradicted the official account. It was enough to follow the payments, though not yet enough to pronounce a verdict.
+
+The court continued around us as though nothing had changed. Clerks carried bundles between rooms. Petitioners argued over appointments. In the public records hall I helped Lysa restore an index whose damaged entries had sent people from one office to another for days. At the barracks I saw a quartermaster struggling to feed soldiers with supplies that had been honestly delayed. Neither problem concealed a grand design. The people suffering from them would not have cared whether their inconvenience was important to my investigation.
+
+I thought of that when Garrick asked me to inspect the western approach.
+
+“Raiders know the road is poorly watched,” he said. “Whatever you think of my politics, those roads still need protecting.”
+
+I had not expected to accept work from him. I still disliked the certainty with which he spoke about the failed peace. Yet the people travelling that road had no part in our disagreement. I went with the patrol, helped repel the raiders and returned with a clearer account of where the watch was thin.
+
+Garrick studied the report.
+
+“A road doesn't ask which side of a court argument you're on,” he said.
+
+He had opposed the delegation. He had not thereby confessed to killing Edric. That distinction was becoming the measure of whether I deserved the authority people were beginning to lend me.
+
+***
+
+The payment trail led to an intermediary who had survived long enough to be questioned. Mara insisted on securing the person and the independently stored records together. One without the other would leave room for the story to be reshaped by whoever spoke loudest.
+
+We found the records first. They showed money moving through an office whose authority had changed after Edric's death. Some payments were ordinary enough to vanish among legitimate entries. Others carried references that connected the office to the compromised security arrangements surrounding the delegation.
+
+The intermediary's account did not make the documents more dramatic. It made them harder to dismiss.
+
+When we returned, Mara spread the evidence across her table. There was no satisfaction in her face.
+
+“Are you saying Cassian ordered it?” I asked.
+
+“I'm saying the evidence now points toward him. I won't go further until we can prove the chain.”
+
+We checked it again. Dates, payments, authority, testimony. The links held. The records no longer supported a theory built only on Cassian's opportunity or his closeness to Aldren. They established a connection between his authority, the compromised security and the intended killing.
+
+I looked at the seal on the final instruction and remembered Heddan holding a similar fitting at his bench.
+
+*I didn't say that.*
+
+He had been right to refuse the easy conclusion. It made this harder one possible.
+
+“Aldren must see this privately,” Mara said.
+
+I dreaded that meeting more than I had dreaded Rusk's camp.
+
+A king could order an arrest. I did not know what a friend could bear.
+
+***
+
+Aldren listened without interrupting as Mara presented the records. Cassian stood before him, still composed, still able to speak in the measured language of duty and wartime necessity.
+
+For a moment I wanted the king to reject everything. It would have been easier to watch anger than the slow change in his face as each independent account was placed beside the next.
+
+“Cassian,” Aldren said at last, “these orders bear your authority. Mara has brought independent testimony. I am ordering your detention until this can be heard properly.”
+
+The room seemed to contract around the words.
+
+I watched Cassian's eyes move toward the guards.
+
+“He may try to run,” I said.
+
+“Then the guards will stop him,” Aldren replied. “No one will turn my court into a place of execution.”
+
+The order was lawful and unmistakable. It was not enough to keep Cassian in the room.
+
+The escape happened quickly. A movement toward an inner passage, a shouted warning, the confusion of guards trying to obey an arrest order without turning the audience chamber into a killing ground. By the time we reached the concealed entrance, Cassian had disappeared below the court.
+
+Aldren stood very still when Mara told him.
+
+“He escaped through a concealed passage,” she said.
+
+The king looked at the evidence on the table, then at the doorway through which his trusted adviser had fled.
+
+“Bring him back alive,” he said.
+
+It was not mercy in place of justice. It was a refusal to let the man who had betrayed his trust choose the manner in which the truth would end.
+
+***
+
+The passage beneath Valecrown had been built for movement without witnesses. Its corridors branched through storage rooms and service exits, narrow places where a person could vanish into the ordinary labour of a city. Cassian knew them. Mara knew enough to fear what a hurried pursuit might cost.
+
+“Before we follow,” she told me, “clear the civilian exits and copy the evidence. If the pursuit goes badly, the truth must survive us.”
+
+I wanted to argue. Every moment we spent securing an exit was another moment Cassian could use to escape.
+
+Mara saw the thought before I spoke it.
+
+“We don't risk innocent lives for a faster arrest.”
+
+So we checked the exits. We warned the people whose work brought them near the underground route. We lodged an independent copy of the dispatches beyond the reach of anyone waiting below. The preparations were slow, practical and humiliating to my impatience.
+
+Only when the civilians were safe and the copies secured did Mara allow the pursuit to begin.
+
+The air changed as we descended. It smelled of wet stone, old timber and the stale heat of lamps burning where daylight never reached. I could hear water somewhere beyond the walls. Every sound seemed to return from a direction different from the one in which it began.
+
+Sorn commanded the guards holding the passage. He did not offer a confession or a speech about the fate of kingdoms. He had orders, armed defenders and ground chosen to favour them. We fought through the narrow approaches, using each cleared chamber to recover our breath before pressing on.
+
+I remember the fear more clearly than the blows. I remember wondering whether the next turn would bring a dead end, whether a guard would strike from behind, whether Cassian had already escaped through some exit we had failed to find. The thought that I might kill him in the struggle frightened me almost as much as the thought that he would get away.
+
+Sorn fell. We secured the dispatch copy he had guarded. Beyond him, Cassian had nowhere left to run.
+
+He faced us with the same controlled expression he had worn in Aldren's court, though there was less room now for courtesy.
+
+“You've followed papers a long way,” he said.
+
+“People died because of what those papers conceal.”
+
+“People die in wars.”
+
+I thought of Edric, whom I had never met, and of the king who had sent him to seek peace. I thought of the teamster beside the broken wagon. Their lives were not equal in rank, but neither could be made into a line of acceptable losses by the person who had helped cause them.
+
+“You will answer in court,” I said.
+
+Cassian moved as though he might force another way through. I stopped him. When the struggle ended, he was alive.
+
+Mara took custody of the recovered dispatches. She checked that Cassian could be moved safely, then stood for a moment looking at the passage we had crossed.
+
+“Edric's death will not be explained away by a convenient corpse,” she said.
+
+I had once thought bringing a guilty man down would feel like the end of something. Instead I felt the weight of having kept him alive, and the greater weight of what his testimony might yet reveal.
+
+We brought him back to Valecrown under guard.
+
+***
+
+Aldren received the news without celebration.
+
+Cassian had been captured alive. His authority was removed, and lawful custody had been established. The evidence against him would not disappear into a rumour of betrayal or an unrecorded death beneath the palace.
+
+“You brought Cassian back alive,” Aldren said. “That matters. I cannot undo what happened to Edric, but I can make sure the inquiry continues.”
+
+“Where does the trail lead?”
+
+“The shipping references extend beyond our borders. This warrant permits you to pursue the evidence with the consent of our allies.”
+
+He placed the commission before me. It was less grand than I expected. There was no promise that the next city would open its archives, no authority to command another people, no guarantee that the truth beyond Valecrown would be easier to bear.
+
+I found that I trusted the warrant more for what it did not claim.
+
+“Report to Elara,” Aldren said. “Tell her what became of the case she sent you to investigate.”
+
+On the road home I passed the same crossings and fields that had once seemed to mark the whole of my world. I could not look at them without remembering the people who had kept them working while I was away. The bridge was open. Caravans moved again. Nothing about Cassian's capture had repaired a fence or delivered medicine, and yet I understood now how easily the decisions of distant offices could reach into every one of those ordinary lives.
+
+Elara listened as I told her what had happened. She asked whether Cassian had been brought back alive and whether the king had removed him from office.
+
+“Yes,” I said. “The inquiry continues under a limited commission. Edric's death is not the end of the evidence.”
+
+“Good. People here deserved an answer, not a convenient story.”
+
+She read the commission carefully.
+
+“The work may take you farther,” she said. “Bring back what can be proved.”
+
+We returned recovered goods to the households that had waited for them, careful not to expose witnesses whose accounts had helped make the arrest possible. Some families wanted to know every name. Others were simply relieved to have their possessions back. I learned to answer without turning protected testimony into village gossip.
+
+Darian asked me to join a patrol along the reopened road. He had adjusted the watch since the first time we walked the western bend together. The routes were better covered; the workers knew where to report danger. He seemed almost embarrassed when I noticed.
+
+“Mostly I've learned how much I didn't know,” he said.
+
+When the patrol ended, he looked toward Millhaven.
+
+“The watch has it from here. You don't have to keep solving our problems for us.”
+
+Brenna was loading another wagon when I found her. She needed supplies sent to the farms and the healing house. Both deliveries mattered; she wanted help deciding which should leave first. I chose the healing house, remembering Anwen's ledger and the patients who could not wait for an explanation before they needed care.
+
+“Anwen will appreciate it,” Brenna said. “The farmers will get their share on the next cart.”
+
+She lifted a crate into place and smiled at the sight of the work still waiting.
+
+“A royal investigation ended, and we're still loading wagons. That's how I like it.”
+
+That evening I stood outside Millhaven and watched the road darken. I had left the village believing that courage meant going toward danger. I returned knowing that sometimes it meant refusing to strike when striking would be easier, or admitting that a record did not prove what I wanted it to prove.
+
+Edric was still dead. Aldren had lost a friend and discovered a betrayal. Garrick remained opposed to the peace Edric had sought, but he had not been responsible for the murder. The Dominion remained an enemy in a war that would not be settled by Cassian's arrest.
+
+And I had a commission that led beyond the borders of the place I knew.
+
+I thought of the first task Elara had given me: speak to three people, listen carefully and come back with their accounts.
+
+It had seemed a small beginning.
+
+Now, as the last light left the road, I wondered how many more people I would have to listen to before I understood the shape of what we faced.
+
+I went inside to prepare for the journey.
