@@ -46,7 +46,7 @@ or rescale the world. This record does not itself adopt new speed/range numbers.
 
 | Rule | Source evidence and limits | Adoption gap |
 | --- | --- | --- |
-| Run reference | Vanilla character-frame UI declares base movement rate 7. This is a client reference, not the complete server movement algorithm. [Pinned extracted Blizzard UI source](https://github.com/Gethe/wow-ui-source/blob/4192ac60067fc55566182291bc67c85dd9b6794d/Interface/AddOns/Blizzard_CharacterFrame/Vanilla/PaperDollFrame.lua#L7) | Replace development 5/8 m/s and Shift-boost through a shared, version-bound metric movement slice; verify walking/backward/strafe rules too |
+| Run reference | Vanilla character-frame UI declares base movement rate 7. This is a client reference, not the complete server movement algorithm. [Pinned extracted Blizzard UI source](https://github.com/Gethe/wow-ui-source/blob/4192ac60067fc55566182291bc67c85dd9b6794d/Interface/AddOns/Blizzard_CharacterFrame/Vanilla/PaperDollFrame.lua#L7) | [Ground movement v3](CLASSIC_GROUND_MOVEMENT.md) is qualified for explicit metric mapping and shared walk/run/backward/strafe rates; complete parity and other movement modes remain open |
 | Creature avoidance and skill | Blizzard's reference comparison reports equal-level creature dodge 5%, +0.5 percentage points per higher creature level; +3-level parry 14% and base miss 8%. It separately explains first-1%-hit suppression above a 10-point defense/weapon-skill gap. Conditions matter; these are not universal PvP/low-level formulas. [Archived original Blizzard QA replies](https://www.bluetracker.gg/wow/topic/us-en/185675-bug-hit-tables/) | Replace generic hit/miss/deflect fixtures with skill/level/attack-type rules; passive dodge outcomes remain distinct from deferred active dodge |
 | Threat | Original Classic research reports 110%/130% melee/ranged transfer thresholds with tests/build context, damage at 1:1 threat and effective healing at 0.5 before relevant distribution/modifiers. [Original research](https://github.com/magey/classic-warrior/wiki/Threat-Mechanics) | Add bounded per-NPC threat and exact threshold tests; current acquired-target policy is not a threat table |
 | Attack tables | Original research separates confirmed observations from estimates and records build-dependent corrections. [Original attack-table research](https://github.com/magey/classic-warrior/wiki/Attack-table) | Carry white/special, single/dual weapon, skill, defender and positional distinctions explicitly |
@@ -66,3 +66,11 @@ The [damage-only threat arithmetic prerequisite](CREATURE_THREAT.md) now pins
 the original research revision and separates empirical thresholds from explicit
 Theia equality/tie/lifetime rules. It is inactive in normal World combat; no
 healing/class modifier, live target transfer or new distance formula is adopted.
+
+
+Quest item delivery research (3 November 2026) is recorded in
+[QUEST_ITEM_OBJECTIVES.md](QUEST_ITEM_OBJECTIVES.md). Pinned VMaNGOS/CMaNGOS
+Classic implementations provide evidence for item-removal incompletion, bag
+rechecking and consumption at reward; emulator behavior is not Blizzard-server
+proof. Counts are dimensionless. Initial backpack-only possession and final-stage
+delivery scope are explicit Theia choices; live adoption remains in progress.

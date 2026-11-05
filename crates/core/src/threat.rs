@@ -1,6 +1,6 @@
 //! Bounded authority-only damage threat arithmetic. Callers own exactly-once
 //! committed damage, encounter generations and eligibility; no wire input is
-//! accepted here. This prerequisite is not yet used by the live World.
+//! accepted here. The opt-in World adapter owns those committed-fact guards.
 use crate::{content::ContentId, identity::EntityKey, player_life::LifeKey};
 use serde::Deserialize;
 

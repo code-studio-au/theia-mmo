@@ -113,3 +113,122 @@ pub(crate) fn parse_reset(
     }
     Ok(Some(profile))
 }
+
+/// Identity/configuration only; the server owns threat arithmetic and victims.
+pub(crate) fn parse_threat(
+    args: &mut Vec<String>,
+    context: bool,
+) -> Result<Option<Vec<u8>>, Error> {
+    let Some(file) = path(args, "--creature-threat")? else {
+        return Ok(None);
+    };
+    if !context {
+        return Err("Creature threat requires explicit return reset".into());
+    }
+    let mut bytes = Vec::new();
+    std::fs::File::open(file)?
+        .take(theia_core::threat::MAX_PROFILE_BYTES as u64 + 1)
+        .read_to_end(&mut bytes)?;
+    theia_core::threat::Profile::from_json(&bytes)?;
+    Ok(Some(bytes))
+}
+
+/// Public timing is an explicit presentation contract, with unchanged authority.
+pub(crate) fn parse_public_attacks(
+    args: &mut Vec<String>,
+    classic: bool,
+    life: Option<&Arc<Profile>>,
+) -> Result<Option<Arc<theia_network::creature_attack_wire::Profile>>, Error> {
+    let Some(index) = args.iter().position(|a| a == "--public-creature-attacks") else {
+        return Ok(None);
+    };
+    args.remove(index);
+    if args.iter().any(|a| a == "--public-creature-attacks") {
+        return Err("Choose public creature attacks once".into());
+    }
+    let life = life
+        .filter(|_| classic)
+        .ok_or("Public creature attacks require Classic pursuit/player life")?;
+    Ok(Some(Arc::new(
+        theia_network::creature_attack_wire::Profile::new(life.clone()),
+    )))
+}
+
+pub(crate) fn parse_public_avatar(
+    args: &mut Vec<String>,
+    classic: bool,
+    life: Option<&Arc<Profile>>,
+) -> Result<Option<Arc<theia_network::avatar_life_wire::Profile>>, Error> {
+    let Some(index) = args.iter().position(|a| a == "--public-avatar-life") else {
+        return Ok(None);
+    };
+    args.remove(index);
+    if args.iter().any(|a| a == "--public-avatar-life") {
+        return Err("Choose public avatar life once".into());
+    }
+    let life = life
+        .filter(|_| classic)
+        .ok_or("Public avatar life requires Classic player life")?;
+    Ok(Some(Arc::new(
+        theia_network::avatar_life_wire::Profile::new(life.clone()),
+    )))
+}
+
+#[cfg(test)]
+mod public_tests {
+    use super::*;
+    #[test]
+    fn public_flag_is_exclusive_and_requires_matching_pursuit_life_context() {
+        let flag = "--public-creature-attacks".to_owned();
+        assert!(
+            parse_public_attacks(&mut vec![], false, None)
+                .unwrap()
+                .is_none()
+        );
+        assert!(parse_public_attacks(&mut vec![flag.clone()], false, None).is_err());
+        assert!(parse_public_attacks(&mut vec![flag.clone(), flag.clone()], true, None).is_err());
+        let life = Arc::new(
+            Profile::from_json(
+                include_bytes!("../../../content/gameplay/development-character-stats.json"),
+                include_bytes!(
+                    "../../../content/gameplay/development-creature-deflect-pursuit.json"
+                ),
+                include_bytes!("../../../content/gameplay/development-creature-retaliation.json"),
+                include_bytes!("../../../content/gameplay/development-player-respawn.json"),
+            )
+            .unwrap(),
+        );
+        assert!(parse_public_attacks(&mut vec![flag.clone()], false, Some(&life)).is_err());
+        let mut args = vec![flag, "--other".into()];
+        let public = parse_public_attacks(&mut args, true, Some(&life))
+            .unwrap()
+            .unwrap();
+        assert_eq!(args, vec!["--other"]);
+        assert_eq!(public.life().hash(), life.hash());
+        assert!(
+            parse_public_avatar(&mut vec![], false, None)
+                .unwrap()
+                .is_none()
+        );
+        assert!(
+            parse_public_avatar(&mut vec!["--public-avatar-life".into()], false, Some(&life))
+                .is_err()
+        );
+        assert!(
+            parse_public_avatar(
+                &mut vec!["--public-avatar-life".into(), "--public-avatar-life".into()],
+                true,
+                Some(&life)
+            )
+            .is_err()
+        );
+        assert_eq!(
+            parse_public_avatar(&mut vec!["--public-avatar-life".into()], true, Some(&life))
+                .unwrap()
+                .unwrap()
+                .life()
+                .hash(),
+            life.hash()
+        );
+    }
+}

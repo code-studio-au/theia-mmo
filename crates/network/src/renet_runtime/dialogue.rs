@@ -28,11 +28,21 @@ impl Peer {
         actor: u64,
         bytes: &[u8],
         stats: &mut ServerStats,
+        progression: Option<&mut super::progression::Peer>,
     ) -> Result<()> {
         let request = wire::decode_request(bytes, world.epoch()).inspect_err(|_| {
             stats.dialogue_requests_rejected += 1;
         })?;
-        let result = world.interact(actor, &request);
+        let result = if world.quest_journal_profile().is_some() {
+            let owner = progression.ok_or("Journal dialogue requires retained owner")?;
+            owner
+                .journal
+                .as_mut()
+                .ok_or("Journal dialogue router missing")?
+                .interact(world, &request, &owner.port)
+        } else {
+            world.interact(actor, &request)
+        };
         if result.is_ok() {
             stats.dialogue_requests_accepted += 1;
         } else {

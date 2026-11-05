@@ -33,6 +33,7 @@ pub struct Request {
 impl Request {
     fn valid(self) -> bool {
         let (from, to, amount) = match self.command.operation {
+            Operation::Destroy { .. } => return false,
             Operation::Move { from, to } => (from, to, 0),
             Operation::Split { from, to, amount } => (from, to, amount),
         };
@@ -52,6 +53,7 @@ impl Request {
         bytes.extend(self.sequence.to_le_bytes());
         bytes.extend(self.command.expected_revision.to_le_bytes());
         match self.command.operation {
+            Operation::Destroy { .. } => return Err("Destruction requires item profile 2".into()),
             Operation::Move { from, to } => {
                 bytes.extend([0, from, to]);
                 bytes.extend(0_u32.to_le_bytes());
@@ -99,6 +101,28 @@ pub struct ItemRequest {
 }
 impl ItemRequest {
     pub fn encode(self) -> Result<Vec<u8>> {
+        if let ItemCommand::Backpack(Command {
+            expected_revision,
+            operation: Operation::Destroy { from, amount },
+        }) = self.command
+        {
+            if self.sequence == 0
+                || expected_revision > MAX_REVISION
+                || usize::from(from) >= SLOT_COUNT
+                || amount == 0
+                || amount > MAX_STACK
+            {
+                return Err("Invalid item destruction request".into());
+            }
+            let mut bytes = ITEM_REQUEST_TAG.to_vec();
+            bytes.extend(self.actor.epoch.value().to_le_bytes());
+            bytes.extend(self.actor.entity.value().to_le_bytes());
+            bytes.extend(self.sequence.to_le_bytes());
+            bytes.extend(expected_revision.to_le_bytes());
+            bytes.extend([4, from, 0]);
+            bytes.extend(amount.to_le_bytes());
+            return Ok(bytes);
+        }
         if let ItemCommand::Backpack(command) = self.command {
             let mut bytes = Request {
                 actor: self.actor,
@@ -135,6 +159,25 @@ impl ItemRequest {
     pub fn decode(bytes: &[u8]) -> Result<Self> {
         if bytes.len() != REQUEST_BYTES || !bytes.starts_with(ITEM_REQUEST_TAG) {
             return Err("Invalid equipment-capable request frame".into());
+        }
+        if bytes[36] == 4 {
+            if bytes[38] != 0 {
+                return Err("Noncanonical destruction destination".into());
+            }
+            let value = Self {
+                actor: key(bytes)?,
+                sequence: word(bytes, 20),
+                command: Command {
+                    expected_revision: word(bytes, 28),
+                    operation: Operation::Destroy {
+                        from: bytes[37],
+                        amount: u32::from_le_bytes(bytes[39..43].try_into().unwrap()),
+                    },
+                }
+                .into(),
+            };
+            value.encode()?;
+            return Ok(value);
         }
         if bytes[36] <= 1 {
             let mut legacy = bytes.to_vec();

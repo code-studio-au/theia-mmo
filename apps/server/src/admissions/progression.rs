@@ -113,6 +113,7 @@ impl Config {
         generation: u64,
         binding: Binding,
         world: [u8; 32],
+        item_state: Option<watch::Receiver<theia_network::renet_runtime::inventory::Observation>>,
     ) -> Session {
         let (input, receiver) = mpsc::channel::<Input>(CAPACITY);
         let (publish, state) = watch::channel(Observation::default());
@@ -135,7 +136,9 @@ impl Config {
             lifecycle: self.lifecycle.as_ref().map(|q| q.0.clone()),
             publisher: self.publisher.clone(),
             sequence: 0,
+            item_state,
         };
+        let publication = publish.clone();
         tokio::spawn(async move {
             let mut guard = guard;
             let result = owner.run(receiver, stopping, &publish).await;
@@ -151,7 +154,9 @@ impl Config {
             guard.handled = true;
         });
         Session {
+            publish: publication,
             port: Port {
+                journal: self.journal.as_ref().map(|q| q.hash()),
                 lifecycle: self.lifecycle.as_ref().map(|q| q.1.clone()),
                 quest: self.quest.as_ref().map(|q| q.1.clone()),
                 profile: self.wire.clone(),
@@ -164,6 +169,7 @@ impl Config {
     }
 }
 struct Owner {
+    item_state: Option<watch::Receiver<theia_network::renet_runtime::inventory::Observation>>,
     gate: Weak<GameAdmissions>,
     slot: usize,
     generation: u64,
@@ -201,6 +207,23 @@ impl Owner {
         if !self.authorized(None)? {
             return Err("Progression character ownership lost".into());
         }
+        if self
+            .journal
+            .as_ref()
+            .is_some_and(|j| j.inventory().is_some())
+        {
+            let state = self
+                .item_state
+                .as_mut()
+                .ok_or("Item journal has no inventory initialization signal")?;
+            let ready = state
+                .wait_for(|s| s.bag.is_some() || s.failed || s.closed)
+                .await
+                .map_err(|_| "Inventory initialization closed")?;
+            if ready.bag.is_none() || ready.failed {
+                return Err("Inventory initialization failed".into());
+            }
+        }
         let initial = self
             .publisher
             .ensure_progression(self.binding, self.world, &self.profile)
@@ -224,27 +247,36 @@ impl Owner {
             None
         };
         let journal = if let Some(catalog) = &self.journal {
-            let saved = self
-                .publisher
-                .ensure_quest_journal(self.binding, self.world, catalog)
-                .await?;
             Some(
-                theia_network::renet_runtime::progression::JournalObservation {
-                    catalog: catalog.hash(),
-                    revision: saved.revision,
-                    journal: saved.journal,
-                    reply: None,
-                },
+                self.publisher
+                    .ensure_quest_journal(self.binding, self.world, catalog)
+                    .await?,
             )
         } else {
             None
         };
         publish.send_modify(|s| {
-            s.journal = journal;
-            s.progress = Some(initial);
+            if s.progress
+                .as_ref()
+                .is_none_or(|xp| xp.revision() <= initial.revision())
+            {
+                s.progress = Some(initial);
+            }
             s.quest = objective;
             s.lifecycle = lifecycle;
         });
+        if let Some(saved) = journal {
+            let catalog = self.journal.as_ref().unwrap();
+            if catalog.inventory().is_some() {
+                self.publish_items(saved, None)?;
+            } else {
+                let mut merged = Ok(());
+                publish.send_modify(|s| {
+                    merged = super::quest_items::merge_journal(s, catalog.hash(), saved, None)
+                });
+                merged?;
+            }
+        }
         loop {
             if *stopping.borrow() {
                 receiver.close();
@@ -306,27 +338,54 @@ impl Owner {
                     )
                     .await
             }
+            JournalOperation::Kill(event) => {
+                self.publisher
+                    .award_progression_and_quest_journal(
+                        self.binding,
+                        self.world,
+                        &self.profile,
+                        catalog,
+                        &event,
+                    )
+                    .await
+            }
+            JournalOperation::Areas { id, observation } => {
+                self.publisher
+                    .record_reached_areas(self.binding, self.world, catalog, id, observation)
+                    .await
+            }
             JournalOperation::Event { id, event } => {
+                if matches!(
+                    event,
+                    theia_core::quests::catalog::EventKey::Kill(_)
+                        | theia_core::quests::catalog::EventKey::ReachArea(_)
+                ) {
+                    return Err(
+                        "Journal kill/area requires its original typed authority input".into(),
+                    );
+                }
                 self.publisher
                     .record_quest_event(self.binding, self.world, catalog, id, event)
                     .await
             }
         };
         match result {
-            Ok(applied) => publish.send_modify(|s| {
-                if let Some(xp) = applied.experience {
-                    s.progress = Some(xp);
-                }
-                let observation = s.journal.as_mut().expect("Initialized journal owner");
-                observation.revision = applied.revision;
-                observation.journal = applied.journal;
-                if command {
-                    observation.reply = Some(JournalReply {
-                        sequence: request.sequence,
-                        rejection: None,
+            Ok(applied) => {
+                let reply = command.then_some(JournalReply {
+                    sequence: request.sequence,
+                    rejection: None,
+                });
+                if catalog.inventory().is_some() {
+                    self.publish_items(applied, reply)?;
+                } else {
+                    let mut merged = Ok(());
+                    publish.send_modify(|s| {
+                        merged =
+                            super::quest_items::merge_journal(s, catalog.hash(), applied, reply)
                     });
+                    merged?;
                 }
-            }),
+            }
             Err(error) => {
                 // Trusted occurrence conflicts/rule failures are authority errors,
                 // not replies to a player command. Preserve command acknowledgements.
@@ -338,6 +397,20 @@ impl Owner {
                     Error::QuestJournalConflict => JournalRejection::Conflict,
                     other => return Err(other.into()),
                 };
+                if catalog.inventory().is_some() {
+                    let saved = self
+                        .publisher
+                        .load_quest_journal(self.binding, self.world, catalog)
+                        .await?;
+                    self.publish_items(
+                        saved,
+                        Some(JournalReply {
+                            sequence: request.sequence,
+                            rejection: Some(rejection),
+                        }),
+                    )?;
+                    return Ok(());
+                }
                 publish.send_modify(|s| {
                     s.journal.as_mut().expect("Initialized journal owner").reply =
                         Some(JournalReply {
@@ -349,7 +422,30 @@ impl Owner {
         }
         Ok(())
     }
+    fn publish_items(
+        &self,
+        applied: theia_persistence::QuestJournalApplied,
+        reply: Option<theia_network::renet_runtime::progression::JournalReply>,
+    ) -> Result<()> {
+        let catalog = self.journal.as_ref().ok_or("Item journal not configured")?;
+        self.gate
+            .upgrade()
+            .ok_or("Item journal gate closed")?
+            .publish_quest_items(
+                self.slot,
+                self.generation,
+                self.binding,
+                catalog.hash(),
+                applied,
+                reply,
+            )
+    }
     async fn award(&self, event: KillEvent, publish: &watch::Sender<Observation>) -> Result<()> {
+        // Expanded journal kills must retain their shared producer sequence and
+        // combined transaction; refuse the legacy XP-only path in this mode.
+        if self.journal.is_some() {
+            return Err("Expanded journal requires sequenced atomic kill input".into());
+        }
         if let Some(quest) = &self.lifecycle {
             let applied = self
                 .publisher
@@ -465,6 +561,7 @@ fn normal_refusal(error: Error) -> Result<Rejection> {
     })
 }
 pub(super) struct Session {
+    pub(super) publish: watch::Sender<Observation>,
     pub(super) port: Port,
     stop: watch::Sender<bool>,
     done: Arc<AtomicBool>,

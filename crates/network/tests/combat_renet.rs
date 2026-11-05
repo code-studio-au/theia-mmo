@@ -103,6 +103,9 @@ impl Peer {
                 shutdown,
                 identity,
                 net::GameplayClient {
+                    avatar_life: None,
+                    public_attacks: None,
+                    journal: None,
                     classic_source: None,
                     dodge: None,
                     player_life: None,
@@ -675,6 +678,7 @@ struct Raw {
     state: Option<theia_network::combat_wire::State>,
     ready: bool,
     disconnected: bool,
+    connection_confirmed: bool,
 }
 impl Raw {
     fn new(address: SocketAddr, ticket: &[u8], identity: [u8; 32], catalog: Arc<Catalog>) -> Self {
@@ -694,6 +698,7 @@ impl Raw {
             state: None,
             ready: false,
             disconnected: false,
+            connection_confirmed: false,
         }
     }
     fn send(&mut self, bytes: Vec<u8>) {
@@ -724,6 +729,11 @@ impl Raw {
                     assert!(predicate(self), "Unexpected raw combat disconnect");
                     break;
                 }
+                theia_network::renet_transport::confirm_connection(
+                    &mut self.client,
+                    &mut self.connection_confirmed,
+                )
+                .unwrap();
                 while let Some(bytes) = self
                     .client
                     .receive_message(theia_network::renet_transport::EVENT_CHANNEL)

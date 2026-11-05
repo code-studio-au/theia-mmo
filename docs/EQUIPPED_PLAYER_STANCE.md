@@ -1,3 +1,8 @@
+Latest: [Classic directional locomotion](CLASSIC_DIRECTIONAL_LOCOMOTION.md)
+qualifies the optional 22-clip player, local/remote closed grip and directional
+lower-body strikes. Earlier dated asset/animation checkpoints below remain
+preserved; the existing four-weight preview limitation is unchanged.
+
 Update: The moving grip passes again in the new pursuit checkpoint. [Latest playable proof and command](CREATURE_PURSUIT_NATIVE.md).
 The dated checkpoint below remains preserved.
 

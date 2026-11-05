@@ -8,6 +8,8 @@ use std::{path::PathBuf, time::Instant};
 pub(crate) mod attack;
 #[path = "player_grip.rs"]
 pub(crate) mod grip;
+#[path = "player_locomotion.rs"]
+pub(crate) mod locomotion;
 
 #[derive(Resource)]
 pub struct Config {
@@ -79,22 +81,32 @@ struct Catalog {
     scenes: Vec<Handle<WorldAsset>>,
     graphs: Vec<Handle<AnimationGraph>>,
     indices: Vec<Vec<AnimationNodeIndex>>,
+    durations: Vec<Vec<f32>>,
     optional_slots: [Option<usize>; 2],
     attack_slot: Option<usize>,
     dodge_slots: [Option<usize>; 4],
     dodge_durations: [f32; 4],
+    locomotion_slots: [Option<usize>; locomotion::COUNT],
     grip: Option<grip::Graph>,
 }
 impl Catalog {
-    fn index(&self, kind: usize, pose: usize) -> AnimationNodeIndex {
-        let slot = if pose < 4 {
+    fn slot(&self, pose: usize) -> usize {
+        if pose < 4 {
             pose
         } else if pose < 6 {
             self.optional_slots[pose - 4].expect("Selected optional clip must be available")
-        } else {
+        } else if pose < locomotion::FIRST {
             self.dodge_slots[pose - 6].expect("Selected dodge clip must be available")
-        };
-        self.indices[kind][slot]
+        } else {
+            self.locomotion_slots[pose - locomotion::FIRST]
+                .expect("Selected direction must be available")
+        }
+    }
+    fn index(&self, kind: usize, pose: usize) -> AnimationNodeIndex {
+        self.indices[kind][self.slot(pose)]
+    }
+    fn duration(&self, kind: usize, pose: usize) -> f32 {
+        self.durations[kind][self.slot(pose)]
     }
 }
 fn optional_slots(names: &[&str]) -> [Option<usize>; 2] {
@@ -110,6 +122,10 @@ pub struct Ready;
 pub(crate) struct LifeAnimationMetrics {
     pub available: bool,
     pub death_starts: u64,
+    pub remote_death_starts: u64,
+    pub remote_dead_frames: u64,
+    pub remote_life_restarts: u64,
+    pub maximum_remote_death_pose_changes: usize,
     pub life_restarts: u64,
     pub dead_frames: u64,
     pub maximum_death_pose_changes: usize,
@@ -132,7 +148,7 @@ pub struct Visual {
     pub gait: Option<Gait>,
     clip: Option<usize>,
     pub pose_changes: [usize; 3],
-    samples: [Vec<(Entity, Transform)>; 10],
+    samples: [Vec<(Entity, Transform)>; locomotion::POSES],
     life_key: Option<theia_core::player_life::LifeKey>,
     grip_active: bool,
     layer_frames: u8,
@@ -157,6 +173,30 @@ impl Visual {
         changed
     }
 }
+/// Owner presentation stays on the private life barrier. Remote bodies use only
+/// the public visual identity/dead flag, with no access to another actor's HP.
+fn presentation_life(
+    state: Option<&theia_network::client::State>,
+    actor: Option<theia_core::identity::EntityKey>,
+    local: bool,
+) -> Option<(theia_core::player_life::LifeKey, bool)> {
+    let state = state?;
+    let actor = actor?;
+    if local {
+        return state
+            .player_life
+            .as_ref()?
+            .current()
+            .filter(|p| p.key.actor == actor)
+            .map(|p| (p.key, p.health == 0));
+    }
+    state
+        .public_avatar_life
+        .as_ref()?
+        .actor(actor)
+        .map(|p| (p.key, p.dead))
+}
+
 fn select_clip(
     polygon: bool,
     death_available: bool,
@@ -180,9 +220,11 @@ pub struct House;
 
 pub fn load(mut commands: Commands, server: Res<AssetServer>, config: Res<Config>) {
     commands.init_resource::<LifeAnimationMetrics>();
+    commands.init_resource::<locomotion::Metrics>();
     commands.insert_resource(grip::Metrics {
         capture: std::env::var_os("THEIA_EQUIPMENT_QUALIFY").is_some()
-            || std::env::var_os("THEIA_DODGE_ANIMATION_QUALIFY").is_some(),
+            || std::env::var_os("THEIA_DODGE_ANIMATION_QUALIFY").is_some()
+            || std::env::var_os("THEIA_DIRECTIONAL_LOCOMOTION_QUALIFY").is_some(),
         ..default()
     });
     commands.insert_resource(Loading {
@@ -224,6 +266,8 @@ fn catalog(world: &mut World) -> Result<Option<Catalog>, String> {
     }
     let mut scenes = Vec::new();
     let mut clips = Vec::new();
+    let mut durations = Vec::new();
+    let mut locomotion_slots = [None; locomotion::COUNT];
     let mut player_optional = [None; 2];
     let mut attack_slot = None;
     let mut dodge_slots = [None; 4];
@@ -286,24 +330,29 @@ fn catalog(world: &mut World) -> Result<Option<Catalog>, String> {
                         dodge_durations[slot] = duration;
                     }
                 }
+                locomotion_slots = locomotion::append_slots(&mut names, |name| {
+                    gltf.named_animations.contains_key(name)
+                })?;
             }
             let mut selected = Vec::new();
+            let mut selected_durations = Vec::new();
             for name in names {
                 let clip = gltf
                     .named_animations
                     .get(name)
                     .ok_or_else(|| format!("Missing clip {name}"))?
                     .clone();
-                if world
+                let duration = world
                     .resource::<Assets<AnimationClip>>()
                     .get(&clip)
-                    .is_none_or(|c| c.duration() <= 0.)
-                {
-                    return Err(format!("Empty clip {name}"));
-                }
+                    .map(|c| c.duration())
+                    .filter(|d| d.is_finite() && *d > 0.)
+                    .ok_or_else(|| format!("Empty clip {name}"))?;
                 selected.push(clip);
+                selected_durations.push(duration);
             }
             clips.push(selected);
+            durations.push(selected_durations);
         }
     }
     let mut graphs = Vec::new();
@@ -317,10 +366,12 @@ fn catalog(world: &mut World) -> Result<Option<Catalog>, String> {
         scenes,
         graphs,
         indices,
+        durations,
         optional_slots: player_optional,
         attack_slot,
         dodge_slots,
         dodge_durations,
+        locomotion_slots,
         grip: None,
     }))
 }
@@ -355,6 +406,8 @@ pub fn tick(world: &mut World) {
     if !world.contains_resource::<Catalog>() {
         match catalog(world) {
             Ok(Some(assets)) => {
+                world.resource_mut::<locomotion::Metrics>().available =
+                    assets.locomotion_slots.iter().all(Option::is_some);
                 if !world.resource::<Config>().players_only {
                     world.spawn((
                         House,
@@ -394,10 +447,7 @@ pub fn tick(world: &mut World) {
         .get_resource::<crate::network::Network>()
         .filter(|network| network.connected())
         .map(|network| network.state());
-    let own_life = network_state
-        .as_ref()
-        .and_then(|state| state.player_life.as_ref())
-        .and_then(|life| life.current().copied());
+
     let actors: Vec<_> = world
         .query_filtered::<Entity, (
             Or<(
@@ -463,7 +513,8 @@ pub fn tick(world: &mut World) {
                     || world
                         .resource::<LifeAnimationMetrics>()
                         .sword_stance_available
-                    || world.resource::<Catalog>().dodge_slots[0].is_some())
+                    || world.resource::<Catalog>().dodge_slots[0].is_some()
+                    || world.resource::<Catalog>().locomotion_slots[0].is_some())
             {
                 // Retained body bounds also cover the four inspected short
                 // dodges, with preview/interpolation margin and normal culling.
@@ -502,42 +553,6 @@ pub fn tick(world: &mut World) {
             let v = world.get::<Visual>(root).unwrap();
             (v.owner, v.kind)
         };
-        let life = if world.get::<LocalPawn>(owner).is_some() {
-            own_life
-        } else {
-            None
-        };
-        let life_changed = if let Some(life) = life {
-            let changed = world
-                .get_mut::<Visual>(root)
-                .unwrap()
-                .observe_life(life.key);
-            world.resource_mut::<LifeAnimationMetrics>().life_restarts += u64::from(changed);
-            changed
-        } else {
-            false
-        };
-        let dead = life.is_some_and(|life| life.health == 0);
-        world.resource_mut::<LifeAnimationMetrics>().dead_frames += u64::from(dead);
-        let gait = if kind == 0 {
-            Gait::from_speed(world.get::<Motion>(owner).map_or(0., |m| m.0))
-        } else {
-            Gait::Stand
-        };
-        let airborne = world
-            .get_resource::<crate::graybox::Graybox>()
-            .is_some_and(|g| {
-                world.get::<Transform>(owner).is_some_and(|t| {
-                    world
-                        .resource::<crate::floating_origin::Frame>()
-                        .render
-                        .to_global(
-                            theia_core::coordinates::LocalPosition::new(t.translation.to_array())
-                                .unwrap(),
-                        )
-                        .is_some_and(|p| g.airborne(p))
-                })
-            });
         let actor_key = network_state.as_ref().and_then(|state| {
             use theia_core::identity::{EntityId, EntityKey, WorldEpoch};
             let id = if world.get::<LocalPawn>(owner).is_some() {
@@ -556,6 +571,47 @@ pub fn tick(world: &mut World) {
                 )
                 .map(|(entity, epoch)| EntityKey { entity, epoch })
         });
+        let local = world.get::<LocalPawn>(owner).is_some();
+        let life = presentation_life(network_state.as_ref(), actor_key, local);
+        let life_changed = if let Some((key, _)) = life {
+            let changed = world.get_mut::<Visual>(root).unwrap().observe_life(key);
+            let mut metrics = world.resource_mut::<LifeAnimationMetrics>();
+            metrics.life_restarts += u64::from(changed);
+            metrics.remote_life_restarts += u64::from(changed && !local);
+            changed
+        } else {
+            false
+        };
+        let dead = life.is_some_and(|(_, dead)| dead);
+        world.resource_mut::<LifeAnimationMetrics>().dead_frames += u64::from(dead);
+        world
+            .resource_mut::<LifeAnimationMetrics>()
+            .remote_dead_frames += u64::from(dead && !local);
+        let directional = kind == 0
+            && world.resource::<locomotion::Metrics>().available
+            && network_state
+                .as_ref()
+                .and_then(|s| s.correction)
+                .is_some_and(|c| c.state.pose.facing.is_some());
+        let gait = if kind == 0 {
+            locomotion::gait(world.get::<Motion>(owner).map_or(0., |m| m.0), directional)
+        } else {
+            Gait::Stand
+        };
+        let airborne = world
+            .get_resource::<crate::graybox::Graybox>()
+            .is_some_and(|g| {
+                world.get::<Transform>(owner).is_some_and(|t| {
+                    world
+                        .resource::<crate::floating_origin::Frame>()
+                        .render
+                        .to_global(
+                            theia_core::coordinates::LocalPosition::new(t.translation.to_array())
+                                .unwrap(),
+                        )
+                        .is_some_and(|p| g.airborne(p))
+                })
+            });
         if (dead || life_changed)
             && let Some(key) = actor_key
             && let Some(mut cues) = world.get_resource_mut::<attack::Cues>()
@@ -599,7 +655,25 @@ pub fn tick(world: &mut World) {
         if attack.is_some() {
             clip = if airborne { 3 } else { gait.index() };
         }
-        let local = world.get::<LocalPawn>(owner).is_some();
+        if directional && !dead && locomotion::moving(clip) {
+            let segment = if local {
+                world
+                    .get_resource::<crate::network::Network>()
+                    .and_then(|n| n.local_motion_segment())
+            } else {
+                world
+                    .get::<crate::network::RemotePawn>(owner)
+                    .map(|p| p.global_endpoints())
+            };
+            if let Some(transform) = world.get::<Transform>(owner) {
+                clip = locomotion::choose(
+                    gait,
+                    segment,
+                    transform.rotation,
+                    world.get::<Visual>(root).unwrap().clip,
+                );
+            }
+        }
         // Existing critical sword cues keep priority over this local cosmetic pose.
         let dodge = (local && !dead && attack.is_none())
             .then(|| {
@@ -616,14 +690,23 @@ pub fn tick(world: &mut World) {
             metrics.sword_stance_local_frames += u64::from(local);
             metrics.sword_stance_remote_frames += u64::from(!local);
         }
-        let grip_active =
-            sword_stance && !dead && (clip < 4 || dodge.is_some()) && attack.is_none();
+        let grip_active = sword_stance
+            && !dead
+            && (locomotion::base_name(clip).is_some() || dodge.is_some())
+            && attack.is_none();
         if let Some(mut metrics) = world.get_resource_mut::<attack::Metrics>()
             && attack.is_some()
         {
             metrics.local_frames += u64::from(local);
             metrics.remote_frames += u64::from(!local);
             metrics.moving_frames += u64::from(gait != Gait::Stand);
+        }
+        let visual = world.get::<Visual>(root).unwrap();
+        let changed = visual.clip != Some(clip);
+        if directional {
+            world
+                .resource_mut::<locomotion::Metrics>()
+                .record(local, clip, changed);
         }
         let visual = world.get::<Visual>(root).unwrap();
         if visual.clip != Some(clip)
@@ -641,7 +724,7 @@ pub fn tick(world: &mut World) {
                     .attack
                     .as_ref()
                     .unwrap()
-                    .bases[clip]
+                    .base(clip)
             } else if grip_active {
                 catalog.grip.as_ref().unwrap().base(clip)
             } else {
@@ -668,12 +751,57 @@ pub fn tick(world: &mut World) {
             });
             let players = visual.players.clone();
             let owner = visual.owner;
+            let phase = if directional
+                && !life_changed
+                && visual.grip_active == grip_active
+                && visual.attack_sequence == attack.map(|a| a.0)
+                && visual.clip.is_some_and(locomotion::moving)
+                && locomotion::moving(clip)
+            {
+                let old = visual.clip.unwrap();
+                let old_index = if attack.is_some() {
+                    catalog
+                        .grip
+                        .as_ref()
+                        .unwrap()
+                        .attack
+                        .as_ref()
+                        .unwrap()
+                        .base(old)
+                } else if grip_active {
+                    catalog.grip.as_ref().unwrap().base(old)
+                } else {
+                    catalog.index(kind, old)
+                };
+                players.iter().find_map(|e| {
+                    world
+                        .get::<AnimationPlayer>(*e)
+                        .and_then(|p| p.animation(old_index))
+                        .and_then(|a| {
+                            locomotion::phase(
+                                a.seek_time(),
+                                catalog.duration(kind, old),
+                                catalog.duration(kind, clip),
+                            )
+                        })
+                })
+            } else {
+                None
+            };
+            if phase.is_some() {
+                world
+                    .resource_mut::<locomotion::Metrics>()
+                    .phase_preservations += 1;
+            }
             for player in players {
                 // Death plays once and holds its final pose; locomotion loops.
                 let mut player = world.get_mut::<AnimationPlayer>(player).unwrap();
                 let active = player.stop_all().play(index);
                 if clip != 4 && dodge.is_none() {
                     active.repeat();
+                }
+                if let Some(time) = phase {
+                    active.seek_to(time);
                 }
                 if let Some((speed, elapsed)) = dodge_playback {
                     active.set_speed(speed).seek_to(elapsed);
@@ -692,6 +820,9 @@ pub fn tick(world: &mut World) {
                 metrics.remote_starts += u64::from(!local);
             }
             world.resource_mut::<LifeAnimationMetrics>().death_starts += u64::from(clip == 4);
+            world
+                .resource_mut::<LifeAnimationMetrics>()
+                .remote_death_starts += u64::from(clip == 4 && !local);
             if leaving_stance {
                 let mut metrics = world.resource_mut::<LifeAnimationMetrics>();
                 metrics.sword_stance_local_exits += u64::from(local);
@@ -807,8 +938,13 @@ fn sample_poses(world: &mut World) {
                 .get::<LocalPawn>(world.get::<Visual>(root).unwrap().owner)
                 .is_some();
             let mut visual = world.get_mut::<Visual>(root).unwrap();
-            if gait < 3 {
-                visual.pose_changes[gait] = visual.pose_changes[gait].max(changes);
+            if let Some(index @ 0..3) = locomotion::gait_index(gait) {
+                visual.pose_changes[index] = visual.pose_changes[index].max(changes);
+            }
+            if gait == 4 && !local {
+                let mut metrics = world.resource_mut::<LifeAnimationMetrics>();
+                metrics.maximum_remote_death_pose_changes =
+                    metrics.maximum_remote_death_pose_changes.max(changes);
             }
             if gait == 4 && local {
                 let mut metrics = world.resource_mut::<LifeAnimationMetrics>();
@@ -827,10 +963,10 @@ fn sample_poses(world: &mut World) {
                 animation.maximum_pose_changes[gait - 6] =
                     animation.maximum_pose_changes[gait - 6].max(changes);
             }
-            if gait < 4
+            if let Some(index) = locomotion::gait_index(gait)
                 && let Some(mut gray) = world.get_resource_mut::<crate::graybox::Graybox>()
             {
-                gray.pose_changes[gait] = gray.pose_changes[gait].max(changes);
+                gray.pose_changes[index] = gray.pose_changes[index].max(changes);
             }
         }
     }
@@ -925,6 +1061,104 @@ mod tests {
             select_clip(true, false, true, false, Gait::Walk, false),
             Gait::Walk.index()
         );
+    }
+    #[test]
+    fn remote_visual_life_uses_public_generation_while_owner_keeps_private_barrier() {
+        use std::{num::NonZeroU64, sync::Arc};
+        use theia_core::{
+            identity::{EntityId, EntityKey, WorldEpoch},
+            player_life::LifeKey,
+            time::TickRate,
+        };
+        use theia_network::{
+            avatar_life_wire as avatar, client::State, player_life_wire as private,
+        };
+        let life = Arc::new(
+            private::Profile::from_json(
+                include_bytes!("../../../content/gameplay/development-character-stats.json"),
+                include_bytes!(
+                    "../../../content/gameplay/development-creature-deflect-pursuit.json"
+                ),
+                include_bytes!("../../../content/gameplay/development-creature-retaliation.json"),
+                include_bytes!("../../../content/gameplay/development-player-respawn.json"),
+            )
+            .unwrap(),
+        );
+        let key = |id| EntityKey {
+            epoch: WorldEpoch::new(7).unwrap(),
+            entity: EntityId::new(id).unwrap(),
+        };
+        let profile = Arc::new(avatar::Profile::new(life.clone()));
+        let mut public =
+            avatar::ClientState::new(profile.clone(), key(1), TickRate::Hz30, [9; 32]).unwrap();
+        let mut view = avatar::Observation {
+            profile: profile.hash(),
+            epoch: key(1).epoch,
+            tick: 10,
+            actors: vec![
+                avatar::Actor {
+                    key: LifeKey {
+                        actor: key(1),
+                        generation: NonZeroU64::MIN,
+                    },
+                    dead: true,
+                },
+                avatar::Actor {
+                    key: LifeKey {
+                        actor: key(2),
+                        generation: NonZeroU64::MIN,
+                    },
+                    dead: true,
+                },
+            ],
+        };
+        public
+            .apply(&avatar::encode(&profile, TickRate::Hz30, &view).unwrap())
+            .unwrap();
+        let mut state = State {
+            public_avatar_life: Some(public),
+            ..Default::default()
+        };
+        assert!(presentation_life(Some(&state), Some(key(1)), true).is_none());
+        assert_eq!(
+            presentation_life(Some(&state), Some(key(2)), false),
+            Some((view.actors[1].key, true))
+        );
+        assert!(presentation_life(Some(&state), Some(key(3)), false).is_none());
+        let private_view = theia_network::simulation::combat::player_life::Observation {
+            profile: life.hash(),
+            key: view.actors[0].key,
+            tick: 10,
+            movement_stream: 1,
+            health: 100,
+            maximum_health: 100,
+            respawn_at: None,
+            windup: None,
+            combat: None,
+        };
+        let mut own =
+            private::ClientState::new(life.clone(), key(1), TickRate::Hz30, [9; 32]).unwrap();
+        own.apply(&private::encode(&life, TickRate::Hz30, &private_view).unwrap())
+            .unwrap();
+        state.player_life = Some(own);
+        assert_eq!(
+            presentation_life(Some(&state), Some(key(1)), true),
+            Some((private_view.key, false))
+        );
+        view.tick += 1;
+        view.actors[1].key.generation = NonZeroU64::new(2).unwrap();
+        view.actors[1].dead = false;
+        state
+            .public_avatar_life
+            .as_mut()
+            .unwrap()
+            .apply(&avatar::encode(&profile, TickRate::Hz30, &view).unwrap())
+            .unwrap();
+        assert_eq!(
+            presentation_life(Some(&state), Some(key(2)), false),
+            Some((view.actors[1].key, false))
+        );
+        assert!(presentation_life(None, Some(key(2)), false).is_none());
     }
     #[test]
     fn fresh_life_resets_pose_and_phase_including_new_actor_in_same_generation() {

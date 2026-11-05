@@ -311,6 +311,27 @@ pub fn advance_development(
     )
 }
 
+/// Shared v3 Classic ground speeds; authority and prediction use this same solver.
+pub(crate) fn advance_classic(
+    scene: &StaticScene,
+    state: &mut Motion,
+    start: LocalPosition,
+    intent: Intent,
+    rate: TickRate,
+    boundary: Option<&dyn Boundary>,
+) -> Result<LocalPosition, &'static str> {
+    let speed = crate::classic::ground_speed(intent)?;
+    advance_kind(
+        scene,
+        state,
+        start,
+        intent,
+        rate,
+        boundary,
+        Horizontal::Classic(speed),
+    )
+}
+
 /// Apply one accepted dodge proposal through the ordinary static-world capsule
 /// solver. This replaces walking/sprint, preserves one gravity step and latches
 /// held jump without allowing a new jump. None is the accepted start tick hold.
@@ -338,6 +359,7 @@ pub fn advance_dodge(
 #[derive(Clone, Copy)]
 enum Horizontal {
     Walk(f32),
+    Classic(f32),
     Dodge(Option<theia_core::dodge::Step>),
 }
 fn advance_kind(
@@ -380,7 +402,7 @@ fn advance_kind(
             next.grounded = false;
         }
     }
-    if jump && !next.jump_held && next.grounded && matches!(horizontal, Horizontal::Walk(_)) {
+    if jump && !next.jump_held && next.grounded && !matches!(horizontal, Horizontal::Dodge(_)) {
         next.vertical_speed = JUMP_SPEED;
         next.grounded = false;
     }
@@ -394,6 +416,7 @@ fn advance_kind(
         Horizontal::Walk(speed) => {
             axes.clamp_length_max(1.) * if intent.sprint { 8. } else { 5. } * rate.seconds() * speed
         }
+        Horizontal::Classic(speed) => axes.clamp_length_max(1.) * speed * rate.seconds(),
         Horizontal::Dodge(Some(step)) => Vec3::new(
             step.horizontal_metres[0] as f32,
             0.,
@@ -462,6 +485,73 @@ fn advance_kind(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn classic_actual_capsule_distances_normalize_diagonals_and_keep_jump_all_rates() {
+        let scene = StaticScene::new(vec![crate::physics::PlacedCollider {
+            shape: Collider::cuboid(64., 0.5, 64.),
+            center: Vec3::new(0., -0.25, 0.),
+            layer: WORLD,
+        }]);
+        for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+            for units in [0, 9011, 16384, 32768, 49152] {
+                let facing = theia_core::facing::Facing::from_units(units);
+                for local in [
+                    [0, -1000],
+                    [1000, 0],
+                    [0, 1000],
+                    [1000, -1000],
+                    [1000, 1000],
+                ] {
+                    for running in [false, true] {
+                        let intent = Intent {
+                            facing: Some(facing),
+                            axes: facing.world_axes(local).unwrap(),
+                            sprint: running,
+                            ..Intent::default()
+                        };
+                        let mut state = Motion::default();
+                        let start =
+                            spawn(&scene, LocalPosition::new([0., 0.01, 0.]).unwrap()).unwrap();
+                        let mut feet = start;
+                        for _ in 0..rate.hz() {
+                            feet = advance_classic(&scene, &mut state, feet, intent, rate, None)
+                                .unwrap();
+                        }
+                        let metres =
+                            Vec3::from_array(feet.metres()) - Vec3::from_array(start.metres());
+                        let expected = if !running {
+                            2.5
+                        } else if local[1] > 0 {
+                            4.5
+                        } else {
+                            7.
+                        };
+                        // Integer direction quantization may shorten a diagonal by <0.1%.
+                        assert!(
+                            (metres.xz().length() - expected).abs() < 0.0071,
+                            "{rate:?} {local:?} {metres:?}"
+                        );
+                        assert!(state.grounded());
+                        let jumped = advance_classic(
+                            &scene,
+                            &mut state,
+                            feet,
+                            Intent {
+                                jump: true,
+                                ..intent
+                            },
+                            rate,
+                            None,
+                        )
+                        .unwrap();
+                        assert!(jumped.metres()[1] > feet.metres()[1]);
+                        assert!(!state.grounded());
+                    }
+                }
+            }
+        }
+    }
 
     #[test]
     fn upward_near_surface_motion_remains_airborne() {

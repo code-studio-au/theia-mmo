@@ -108,7 +108,7 @@ def checks(desktop,window,state,folder,remapped):
     proof['both_buttons_forward']={'before':before,'after':after}
     desktop.key('i');wait(lambda:state()['inventory_open']);yaw=state()['camera_angles'][0];heading=facing();before=feet()
     # Inventory's own button must retain mouse input even with both held.
-    desktop.move(window,[width-182,139],scale);desktop.button(1,True);desktop.button(3,True)
+    desktop.move(window,wait(lambda:state()['equip_screen']),scale);desktop.button(1,True);desktop.button(3,True)
     try:time.sleep(.3)
     finally:desktop.button(3,False);desktop.button(1,False)
     settled();stationary(before,feet());assert abs(turn(heading,facing()))<.002
@@ -151,7 +151,68 @@ def checks(desktop,window,state,folder,remapped):
     return proof
 
 
-def run(output,binaries,sizes=None):
+
+def check_ground_speeds(desktop,window,state,folder,remapped):
+    """Measure consecutive authority ticks while real OS movement is held."""
+    scale=state()['window'][2]
+    width,height,_=state()['window']
+    desktop.move(window,[width*.55,height*.42],scale)
+    if state()['inventory_open']:desktop.key('Escape');wait(lambda:not state()['inventory_open'])
+    if state()['dialogue_open']:desktop.key('Escape');wait(lambda:not state()['dialogue_open'])
+    results={}
+    strafe='d' if remapped else 'e'
+    opposite='a' if remapped else 'q'
+    def measure(name,keys,expected,running):
+        yaw=state()['classic_facing']*math.tau/65536
+        x=float(strafe in keys)-float(opposite in keys)
+        z=float('s' in keys)-float('w' in keys)
+        divisor=max(1.,math.hypot(x,z))
+        expected_axes=[round((math.cos(yaw)*x+math.sin(yaw)*z)/divisor*1000),
+                       round((-math.sin(yaw)*x+math.cos(yaw)*z)/divisor*1000)]
+        for key in keys:desktop.key_state(key,True)
+        try:
+            def moving():
+                desktop.owned_focus()
+                s=state();i=s['dodge']['input']
+                return s if all(abs(a-b)<=1 for a,b in zip(i['axes'],expected_axes)) and i['sprint']==running else None
+            start=wait(moving)
+            # Exclude command-start delay; both endpoints are authority poses
+            # whose commands already contain the requested gait.
+            start_tick=start['dodge']['tick']
+            end=wait(lambda:(s if s['dodge']['tick']-start_tick>=36 else None) if (s:=moving()) else None,6)
+        finally:
+            for key in reversed(keys):desktop.key_state(key,False)
+        a,b=start['dodge'],end['dodge']
+        elapsed=(b['tick']-a['tick'])/a['rate']
+        distance=math.hypot(b['authority_feet'][0]-a['authority_feet'][0],b['authority_feet'][2]-a['authority_feet'][2])
+        observed=distance/elapsed
+        assert abs(observed-expected)<.07,(name,observed,expected,a,b)
+        assert abs(turn(start['classic_facing'],end['classic_facing']))<.002
+        results[name]=dict(expected_mps=expected,observed_mps=observed,authority_seconds=elapsed,start=a,end=b)
+        (folder/'ground-speed-partial.json').write_text(json.dumps(results,indent=2)+'\n')
+        wait(lambda:state()['movement']['direction']==[0.,0.])
+        time.sleep(.3)
+    measure('run_forward',['w'],7.,True)
+    measure('run_backward',['s'],4.5,True)
+    measure('run_strafe',[strafe],7.,True)
+    measure('shift_forward',['Shift_L','w'],7.,True)
+    measure('run_forward_diagonal',['w',opposite],7.,True)
+    measure('run_backward_diagonal',['s',opposite],4.5,True)
+    desktop.key('KP_Divide')
+    wait(lambda:not state()['movement']['sprint'])
+    measure('walk_forward',['w'],2.5,False)
+    measure('walk_backward',['s'],2.5,False)
+    measure('walk_strafe',[strafe],2.5,False)
+    desktop.key('KP_Divide');wait(lambda:state()['movement']['sprint'])
+    (folder/'capture.request').write_text('classic-ground-speeds.png\n')
+    wait(lambda:capture_ready(folder/'input-os.png'))
+    (folder/'input-os.png').rename(folder/'classic-ground-speeds.png')
+    proof=dict(passed=True,authority_tick_measurements=True,shift_does_not_boost=True,running_restored=True,measurements=results)
+    (folder/'classic-ground-speeds.json').write_text(json.dumps(proof,indent=2)+'\n')
+    return proof
+
+
+def run(output,binaries,sizes=None,ground_speeds=False):
     output=output.resolve();binaries=binaries.resolve();output.mkdir(mode=0o700,parents=True,exist_ok=False)
     bundle=output/'gameplay';shutil.copytree('content/gameplay',bundle)
     creature=bundle/'development-creature-deflect-pursuit.json';data=json.loads(creature.read_text());data.pop('aggro',None);creature.write_text(json.dumps(data)+'\n')
@@ -174,12 +235,13 @@ def run(output,binaries,sizes=None):
                         launcher.stdin.write(('' if index==0 else 'n\n')+'ClassicArden'+chr(65+index)+'\n');launcher.stdin.flush()
                         def state():
                             assert launcher.poll() is None,'Owned launcher exited early'
-                            return json.loads((folder/'input-os.json').read_text())
+                            return wait(lambda:json.loads((folder/'input-os.json').read_text()),2)
                         initial=wait(lambda:state() if state()['connected'] and state()['guide_screen'] else None,40)
                         status=Path(f'/proc/{initial["pid"]}/status').read_text()
                         assert int(re.search(r'^PPid:\s+(\d+)',status,re.M)[1])==launcher.pid
                         window=wait(lambda:owned_window(initial['pid']));desktop.focus(window);time.sleep(2)
                         proof=checks(desktop,window,state,folder,remapped)
+                        if ground_speeds:proof["ground_speeds"]=check_ground_speeds(desktop,window,state,folder,remapped)
                         (folder/'capture.request').write_text('capture owned classic window\n');wait(lambda:capture_ready(folder/'input-os.png'))
                         final=state();launcher.send_signal(signal.SIGINT);assert launcher.wait(timeout=15)==0
                         gpu=check_gpu_diagnostics((folder/'launcher.log').read_text(),allow_surface_resize=size=='3440x1440')
@@ -199,4 +261,5 @@ def run(output,binaries,sizes=None):
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('output',type=Path);parser.add_argument('--binaries',type=Path,required=True)
     parser.add_argument('--sizes',nargs='+',choices=['1920x1200','3440x1440','1280x720'])
-    args=parser.parse_args();result=run(args.output,args.binaries,args.sizes);print(json.dumps({'passed':result['passed'],'sizes':list(result['results'])}))
+    parser.add_argument('--ground-speeds',action='store_true')
+    args=parser.parse_args();result=run(args.output,args.binaries,args.sizes,args.ground_speeds);print(json.dumps({'passed':result['passed'],'sizes':list(result['results'])}))

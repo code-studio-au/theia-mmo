@@ -95,6 +95,7 @@ async fn encrypted_movement_return_restores_same_npc_without_false_death_or_play
         b.until(|_, seen| seen.facts.len() == 1).await;
         a._input.send_replace(Intent {
             axes: [1000, 0],
+            sprint: true, // Escape at the bound run speed, rather than walking.
             facing: Some(Facing::from_units(0)),
             ..Default::default()
         });

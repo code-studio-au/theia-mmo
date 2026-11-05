@@ -194,6 +194,9 @@ impl Default for Orbit {
     }
 }
 impl Orbit {
+    pub(crate) fn distance(&self) -> f32 {
+        self.distance
+    }
     pub fn world_direction(&self, direction: Vec2) -> Vec2 {
         // Normalize before rotating: per-axis wire clamping would otherwise
         // distort diagonals whose rotated component exceeds one.

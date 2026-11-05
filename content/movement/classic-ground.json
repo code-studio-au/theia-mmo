@@ -1,0 +1,6 @@
+{
+  "schema": 1,
+  "walk_metres_per_second": 2.5,
+  "run_metres_per_second": 7.0,
+  "backward_run_metres_per_second": 4.5
+}

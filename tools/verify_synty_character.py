@@ -98,7 +98,7 @@ def deformed(document, data, matrices):
     return np.einsum('nk,nki->ni',weights,positions)[:,:3]
 
 
-def verify(directory, combat=False, dodge=False, include_dodge_rolls=False):
+def verify(directory, combat=False, dodge=False, include_dodge_rolls=False, directional=False):
     if dodge and not combat:raise ValueError("Dodge verification requires the combat socket contract")
     if include_dodge_rolls and not dodge:raise ValueError("Dodge roll verification requires dodge clips")
     proof=directory/'character-verification.json';proof.unlink(missing_ok=True)
@@ -152,6 +152,9 @@ def verify(directory, combat=False, dodge=False, include_dodge_rolls=False):
                        'four_weight_skin_within_5mm':skin_error<=.005,
                        'animated_bounds_metres':[low.tolist(),high.tolist()]}
     expected={'Idle','Walk','Run','Jump'}
+    if directional:
+        expected.update(gait+direction for gait in ['Walk','Run']
+                        for direction in ['Back','Left','Right','ForwardLeft','ForwardRight','BackLeft','BackRight'])
     if combat:expected.update({'SwordIdle','SwordAttack','SwordHit','Death'})
     if dodge:expected.update({'Dodge'+direction for direction in ['Forward','Back','Left','Right']})
     if include_dodge_rolls:expected.update({'DodgeRoll'+direction for direction in ['Forward','Back','Left','Right']})
@@ -167,5 +170,6 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('directory',type=Path);parser.add_argument('--combat',action='store_true')
     parser.add_argument('--dodge',action='store_true')
     parser.add_argument('--include-dodge-rolls',action='store_true')
+    parser.add_argument('--directional',action='store_true')
     args=parser.parse_args()
-    print(json.dumps(verify(args.directory,args.combat,args.dodge,args.include_dodge_rolls),indent=2))
+    print(json.dumps(verify(args.directory,args.combat,args.dodge,args.include_dodge_rolls,args.directional),indent=2))

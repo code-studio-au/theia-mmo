@@ -9,6 +9,7 @@ pub mod player_life;
 mod projectiles;
 pub mod reset;
 mod statuses;
+pub mod threat;
 pub mod white_melee;
 use super::World;
 pub use outcomes::Metrics as OutcomeMetrics;
@@ -414,6 +415,9 @@ pub(super) struct Authority {
     membership: Option<membership::Runtime>,
     credit: Option<credit::Runtime>,
     reset: Option<reset::Runtime>,
+    threat: Option<threat::Runtime>,
+    public_attack: Option<std::sync::Arc<crate::creature_attack_wire::Profile>>,
+    public_life: Option<std::sync::Arc<crate::avatar_life_wire::Profile>>,
     catalog_digest: [u8; 32],
     projectiles: Vec<projectiles::Active>,
     projectile_metrics: ProjectileMetrics,
@@ -574,6 +578,9 @@ impl Authority {
             membership: None,
             credit: None,
             reset: None,
+            threat: None,
+            public_attack: None,
+            public_life: None,
             catalog_digest: crate::terrain::sha256(bytes),
             projectiles: Vec::with_capacity(projectiles::MAX_ACTIVE),
             projectile_metrics: ProjectileMetrics::default(),
@@ -634,7 +641,13 @@ impl Authority {
             .map_or(base, |p| p.profile.identity(base));
         let base = self.membership.as_ref().map_or(base, |p| p.identity(base));
         let base = self.credit.as_ref().map_or(base, |p| p.identity(base));
-        self.reset.as_ref().map_or(base, |p| p.identity(base))
+        let base = self.reset.as_ref().map_or(base, |p| p.identity(base));
+        let base = self.threat.as_ref().map_or(base, |p| p.identity(base));
+        let base = self
+            .public_attack
+            .as_ref()
+            .map_or(base, |p| p.identity(base));
+        self.public_life.as_ref().map_or(base, |p| p.identity(base))
     }
     pub(super) fn leave(&mut self, id: u64, rate: theia_core::time::TickRate) {
         if let Some(credit) = &mut self.credit {
@@ -643,7 +656,9 @@ impl Authority {
         if let Some(membership) = &mut self.membership {
             membership.leave(id);
         }
-        if let Some(pve) = &mut self.pve {
+        if self.threat.is_none()
+            && let Some(pve) = &mut self.pve
+        {
             pve.retired_player(id, rate);
         }
         self.actors.remove(&id);

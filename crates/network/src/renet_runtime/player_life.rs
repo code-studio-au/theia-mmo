@@ -40,6 +40,9 @@ pub(super) fn publish(
     if let Some(error) = world.player_life_error() {
         return Err(error.to_owned().into());
     }
+    if let Some(error) = world.creature_threat_error() {
+        return Err(error.to_owned().into());
+    }
     if let Some(error) = world.creature_reset_error() {
         return Err(error.to_owned().into());
     }

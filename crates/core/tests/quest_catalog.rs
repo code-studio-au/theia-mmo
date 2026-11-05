@@ -43,7 +43,7 @@ fn catalogue_keeps_versions_prerequisites_and_exact_event_indexes() {
 #[test]
 fn strict_versions_fields_and_bounds_refuse_unsupported_capabilities() {
     for (field, value) in [
-        ("schema", json!(2)),
+        ("schema", json!(4)),
         ("revision", json!(0)),
         ("unknown", json!(true)),
         ("quests", json!([])),

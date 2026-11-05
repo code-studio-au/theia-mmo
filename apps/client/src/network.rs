@@ -14,6 +14,11 @@ use tokio::sync::watch;
 
 #[derive(Resource)]
 pub struct Network {
+    pub(crate) avatar_pose_resets: u64,
+    avatar_life_events:
+        Option<tokio::sync::mpsc::Receiver<theia_network::avatar_life_wire::Observation>>,
+    public_attack_events:
+        Option<tokio::sync::mpsc::Receiver<theia_network::creature_attack_wire::Observation>>,
     physical_profile: Option<std::sync::Arc<theia_network::simulation::combat::physical::Profile>>,
     white_profile: Option<std::sync::Arc<theia_network::simulation::combat::white_melee::Profile>>,
     pub(crate) dodge_input: Option<theia_network::dodge_input::Input>,
@@ -21,6 +26,8 @@ pub struct Network {
     life_events: Option<
         tokio::sync::mpsc::Receiver<theia_network::simulation::combat::player_life::Observation>,
     >,
+    journal_actions:
+        Option<tokio::sync::mpsc::Sender<theia_network::renet_runtime::quest_journal::Intent>>,
     quest_actions:
         Option<tokio::sync::mpsc::Sender<theia_network::renet_runtime::quest_lifecycle::Intent>>,
     dialogue: Option<tokio::sync::mpsc::Sender<theia_network::renet_runtime::dialogue::Intent>>,
@@ -92,10 +99,35 @@ impl Network {
                         .is_some_and(|correction| life.movement_allowed(&correction.state))
                 }))
     }
+    pub(crate) fn next_avatar_life_event(
+        &mut self,
+    ) -> Option<theia_network::avatar_life_wire::Observation> {
+        self.avatar_life_events.as_mut()?.try_recv().ok()
+    }
+    pub(crate) fn next_public_attack_event(
+        &mut self,
+    ) -> Option<theia_network::creature_attack_wire::Observation> {
+        self.public_attack_events.as_mut()?.try_recv().ok()
+    }
     pub(crate) fn next_life_event(
         &mut self,
     ) -> Option<theia_network::simulation::combat::player_life::Observation> {
         self.life_events.as_mut()?.try_recv().ok()
+    }
+    pub(crate) fn request_quest_journal(
+        &self,
+        intent: theia_network::renet_runtime::quest_journal::Intent,
+    ) -> bool {
+        if !self.can_act() {
+            return false;
+        }
+        let state = self.state.borrow();
+        if state.error.is_some() || state.quest_journal_pending || state.quest_journal.is_none() {
+            return false;
+        }
+        self.journal_actions
+            .as_ref()
+            .is_some_and(|queue| queue.try_send(intent).is_ok())
     }
     pub(crate) fn request_quest(
         &self,
@@ -173,6 +205,22 @@ impl Network {
             theia_core::inventory::Command {
                 expected_revision: revision,
                 operation,
+            }
+            .into()
+        })
+    }
+    /// Destruction stays bound to the stack/revision explicitly confirmed by
+    /// the player; never substitute a newer observed revision during enqueue.
+    pub(crate) fn request_destruction(
+        &self,
+        expected_revision: u64,
+        from: u8,
+        amount: u32,
+    ) -> bool {
+        self.request_item(|_| {
+            theia_core::inventory::Command {
+                expected_revision,
+                operation: theia_core::inventory::Operation::Destroy { from, amount },
             }
             .into()
         })
@@ -309,6 +357,9 @@ impl Network {
     pub(crate) fn rendered_global(&self) -> Option<GlobalPosition> {
         self.local_global
     }
+    pub(crate) fn local_motion_segment(&self) -> Option<[GlobalPosition; 2]> {
+        self.local_track.as_ref().map(RemotePawn::global_endpoints)
+    }
     pub(crate) fn state(&self) -> State {
         self.state.borrow().clone()
     }
@@ -330,12 +381,15 @@ impl Network {
         expected_world: [u8; 32],
         targeted: bool,
         player_life_profile: Option<std::sync::Arc<theia_network::player_life_wire::Profile>>,
+        public_attack_profile: Option<std::sync::Arc<theia_network::creature_attack_wire::Profile>>,
+        public_avatar_profile: Option<std::sync::Arc<theia_network::avatar_life_wire::Profile>>,
         combat_catalog: Option<std::sync::Arc<theia_core::abilities::Catalog>>,
         inventory_profile: Option<theia_network::renet_runtime::inventory::Profile>,
         status_catalog: Option<std::sync::Arc<theia_core::statuses::Catalog>>,
         progression_profile: Option<std::sync::Arc<theia_network::progression_wire::Profile>>,
         quest_profile: Option<std::sync::Arc<theia_network::quest_wire::Profile>>,
         lifecycle_profile: Option<std::sync::Arc<theia_network::quest_lifecycle_wire::Profile>>,
+        journal_profile: Option<std::sync::Arc<theia_network::quest_journal::Profile>>,
         dialogue_profile: Option<std::sync::Arc<theia_network::dialogue::Profile>>,
         dodge_profile: Option<std::sync::Arc<theia_network::dodging::Profile>>,
         classic: bool,
@@ -358,6 +412,17 @@ impl Network {
         }
         if player_life_profile.is_some() && (!prediction || combat_catalog.is_none()) {
             return Err("Player life requires predicted combat".into());
+        }
+        if journal_profile.is_some()
+            && (lifecycle_profile.is_some()
+                || quest_profile.is_some()
+                || progression_profile.is_none()
+                || dialogue_profile.is_none()
+                || !prediction)
+        {
+            return Err(
+                "Journal requires exclusive predicted quest mode, progression and dialogue".into(),
+            );
         }
         if lifecycle_profile.is_some()
             && (quest_profile.is_some()
@@ -499,9 +564,19 @@ impl Network {
             theia_network::renet_runtime::player_life::PRESENTATION_CAPACITY,
         );
         let life_enabled = player_life_profile.is_some();
+        let avatar_enabled = public_avatar_profile.is_some();
+        let (avatar_life_events, avatar_life_queue) = tokio::sync::mpsc::channel(
+            theia_network::renet_runtime::avatar_life::PRESENTATION_CAPACITY,
+        );
+        let public_attacks_enabled = public_attack_profile.is_some();
+        let (public_attack_events, public_attack_queue) = tokio::sync::mpsc::channel(
+            theia_network::renet_runtime::creature_attacks::PRESENTATION_CAPACITY,
+        );
         let combat_enabled = combat_catalog.is_some();
         let inventory_enabled = inventory_profile.is_some();
         let dialogue_enabled = dialogue_profile.is_some();
+        let journal_enabled = journal_profile.is_some();
+        let (journal_actions, journal_queue) = tokio::sync::mpsc::channel(4);
         let lifecycle_enabled = lifecycle_profile.is_some();
         let (quest_actions, quest_queue) = tokio::sync::mpsc::channel(4);
         let (dialogue_actions, dialogue_queue) = tokio::sync::mpsc::channel(4);
@@ -533,6 +608,24 @@ impl Network {
                             shutdown,
                             expected_world,
                             theia_network::renet_runtime::GameplayClient {
+                                avatar_life: public_avatar_profile.map(|profile| {
+                                    theia_network::renet_runtime::avatar_life::Client {
+                                        profile,
+                                        events: avatar_life_events,
+                                    }
+                                }),
+                                public_attacks: public_attack_profile.map(|profile| {
+                                    theia_network::renet_runtime::creature_attacks::Client {
+                                        profile,
+                                        events: public_attack_events,
+                                    }
+                                }),
+                                journal: journal_profile.map(|profile| {
+                                    theia_network::renet_runtime::quest_journal::Client {
+                                        profile,
+                                        actions: journal_queue,
+                                    }
+                                }),
                                 classic_source: classic.then_some(source_world),
                                 dodge: dodge_mode,
                                 player_life: player_life_profile.map(|profile| {
@@ -667,6 +760,7 @@ impl Network {
             white_profile: white_presentation,
             dodge_input,
             dodge_request: None,
+            journal_actions: journal_enabled.then_some(journal_actions),
             quest_actions: lifecycle_enabled.then_some(quest_actions),
             dialogue: dialogue_enabled.then_some(dialogue_actions),
             items: inventory_enabled.then_some(items),
@@ -708,6 +802,9 @@ impl Network {
             melee: melee_enabled.then_some(melee),
             combat_events: combat_enabled.then_some(combat_events),
             life_events: life_enabled.then_some(life_queue),
+            public_attack_events: public_attacks_enabled.then_some(public_attack_queue),
+            avatar_life_events: avatar_enabled.then_some(avatar_life_queue),
+            avatar_pose_resets: 0,
         })
     }
     pub fn configure_map_access(
@@ -743,6 +840,7 @@ impl Drop for Network {
 
 #[derive(Component)]
 pub struct RemotePawn {
+    life_key: Option<theia_core::player_life::LifeKey>,
     heading: Option<[f64; 2]>,
     id: u64,
     from: GlobalPosition,
@@ -754,6 +852,7 @@ pub struct RemotePawn {
 impl RemotePawn {
     pub(crate) fn stationary(id: u64, position: GlobalPosition) -> Self {
         Self {
+            life_key: None,
             heading: None,
             id,
             from: position,
@@ -761,6 +860,24 @@ impl RemotePawn {
             elapsed: 0.,
             duration: 1. / 30.,
         }
+    }
+    /// A new public life starts at its own authoritative pose, never at the
+    /// previous life's interpolation endpoints. Ordinary samples keep blending.
+    fn sync_life(
+        &mut self,
+        key: theia_core::player_life::LifeKey,
+        position: GlobalPosition,
+        facing: Option<theia_core::facing::Facing>,
+    ) -> bool {
+        if self.life_key == Some(key) {
+            return false;
+        }
+        self.life_key = Some(key);
+        self.from = position;
+        self.to = position;
+        self.elapsed = 0.;
+        self.heading = facing.map(|f| [f.radians(); 2]);
+        true
     }
     pub(crate) fn advance_presentation(&mut self, seconds: f32) {
         self.elapsed += seconds.clamp(0., 0.25);
@@ -1235,6 +1352,7 @@ pub fn present(
                         track.retarget(global, interval)
                     } else {
                         network.local_track = Some(RemotePawn {
+                            life_key: None,
                             heading: None,
                             id,
                             from: global,
@@ -1257,6 +1375,7 @@ pub fn present(
                 } else {
                     commands.spawn((
                         RemotePawn {
+                            life_key: None,
                             heading: player.facing.map(|f| [f.radians(); 2]),
                             id: player.id,
                             from: global,
@@ -1314,6 +1433,7 @@ pub fn present(
                 track.retarget(global, interval)
             } else {
                 network.local_track = Some(RemotePawn {
+                    life_key: None,
                     heading: None,
                     id: state.id.unwrap_or(0),
                     from: global,
@@ -1342,7 +1462,23 @@ pub fn present(
             network.local_global = Some(global);
         }
     }
-    for (_, mut remote, mut transform, _) in &mut remotes {
+    for (_, mut remote, mut transform, mut motion) in &mut remotes {
+        if let (Some(roster), Some(snapshot)) = (
+            raw.public_avatar_life.as_ref().and_then(|s| s.current()),
+            raw.snapshot.as_ref(),
+        ) && snapshot.tick >= roster.tick
+            && snapshot.epoch == roster.epoch.value()
+            && let Some(life) = roster
+                .actors
+                .iter()
+                .find(|a| a.key.actor.entity.value() == remote.id)
+            && let Some(player) = snapshot.players.iter().find(|p| p.id == remote.id)
+            && let Some(position) = snapshot.global_position(player)
+            && remote.sync_life(life.key, position, player.facing)
+        {
+            motion.0 = 0.;
+            network.avatar_pose_resets += 1;
+        }
         remote.elapsed += time.delta_secs();
         let position = remote.sample(&frame);
         if let Some(yaw) = remote.heading_sample() {
@@ -1620,6 +1756,41 @@ pub fn capture(
 mod rebase_tests {
     use super::*;
     #[test]
+    fn remote_fresh_life_resets_pose_without_resetting_ordinary_movement_samples() {
+        use std::num::NonZeroU64;
+        use theia_core::{
+            identity::{EntityId, EntityKey, WorldEpoch},
+            player_life::LifeKey,
+        };
+        let key = LifeKey {
+            actor: EntityKey {
+                epoch: WorldEpoch::new(1).unwrap(),
+                entity: EntityId::new(1).unwrap(),
+            },
+            generation: NonZeroU64::MIN,
+        };
+        let old = GlobalPosition::new([8000., 2., 8000.]).unwrap();
+        let moving = GlobalPosition::new([8004., 2., 8000.]).unwrap();
+        let fresh = GlobalPosition::new([8001., 2., 8001.]).unwrap();
+        let mut remote = RemotePawn::stationary(1, old);
+        assert!(remote.sync_life(key, old, None));
+        remote.retarget(moving, 0.1);
+        remote.advance_presentation(0.05);
+        let blended = remote.global_sample();
+        assert!(!remote.sync_life(key, moving, None));
+        assert_eq!(remote.global_sample(), blended);
+        assert!(remote.sync_life(
+            LifeKey {
+                generation: NonZeroU64::new(2).unwrap(),
+                ..key
+            },
+            fresh,
+            None
+        ));
+        assert_eq!(remote.global_endpoints(), [fresh; 2]);
+        assert_eq!(remote.global_sample(), fresh);
+    }
+    #[test]
     fn interpolation_preserves_global_path_and_camera_delta_across_rebases() {
         use crate::floating_origin::Frame;
         use theia_core::coordinates::LocalPosition;
@@ -1641,6 +1812,7 @@ mod rebase_tests {
             .to_global(LocalPosition::new([3.5, 0.9, -4.25]).unwrap())
             .unwrap();
         let remote = RemotePawn {
+            life_key: None,
             heading: None,
             id: 2,
             from,
@@ -1702,6 +1874,7 @@ mod smoothing_tests {
     #[test]
     fn thirty_hz_authority_is_presented_at_every_120_hz_render_frame() {
         let mut track = RemotePawn {
+            life_key: None,
             heading: None,
             id: 1,
             from: p(8000.),
@@ -1726,6 +1899,7 @@ mod smoothing_tests {
     #[test]
     fn skipped_snapshot_intervals_and_teleports_use_explicit_durations_and_snap() {
         let mut track = RemotePawn {
+            life_key: None,
             heading: None,
             id: 1,
             from: p(8000.),
@@ -1754,6 +1928,7 @@ mod smoothing_tests {
         let mut frame = crate::floating_origin::Frame::default();
         frame.focus_large(new);
         let mut track = RemotePawn {
+            life_key: None,
             heading: None,
             id: 1,
             from: old,

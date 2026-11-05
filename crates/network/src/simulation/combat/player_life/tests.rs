@@ -1044,3 +1044,74 @@ fn basic_weapon_hit_arms_real_retaliation_and_owner_death_respawn_never_resume_e
         );
     }
 }
+
+#[test]
+fn dead_player_cannot_supply_new_area_observations_but_original_live_batch_remains_logical() {
+    let (mut world, _) = fixture(TickRate::Hz30, true);
+    world
+        .spawn_development_guide(
+            Arc::new(
+                crate::dialogue::Profile::from_json(include_bytes!(
+                    "../../../../../../content/quests/development-journal-dialogue.json"
+                ))
+                .unwrap(),
+            ),
+            [8000., 8000.],
+        )
+        .unwrap();
+    let mut q: Value = serde_json::from_slice(include_bytes!(
+        "../../../../../../content/quests/development-journal.json"
+    ))
+    .unwrap();
+    q["schema"] = json!(2);
+    q["quests"].as_array_mut().unwrap().truncate(1);
+    q["quests"][0]["stages"].as_array_mut().unwrap().truncate(1);
+    q["quests"][0]["stages"][0]["next"] = Value::Null;
+    q["quests"][0]["stages"][0]["objectives"] = json!([{
+        "kind":"reach_area","id":"theia.dev.area-goal","label":"Reach","area":"theia.dev.area-test"}]);
+    let a = json!({"schema":1,"id":"theia.dev.area-catalog","revision":1,"areas":[{
+        "id":"theia.dev.area-test","name":"Test","min":[7990.,-64.,7990.],"max":[8010.,64.,8010.]}]});
+    let xp = crate::progression_wire::Profile::from_json(include_bytes!(
+        "../../../../../../content/gameplay/development-progression.json"
+    ))
+    .unwrap();
+    let p = crate::quest_journal::Profile::from_json_with_areas(
+        &serde_json::to_vec(&q).unwrap(),
+        &serde_json::to_vec(&a).unwrap(),
+        &xp,
+    )
+    .unwrap();
+    let prepared = world.prepare_quest_journal_profile(&p).unwrap();
+    let journal = theia_core::quests::journal::Journal::default()
+        .propose_accept(
+            p.catalog(),
+            &ContentId::new("theia.dev.quest-introduction").unwrap(),
+            &ContentId::new("theia.dev.guide").unwrap(),
+        )
+        .unwrap()
+        .journal;
+    let actor = join(&mut world, [8000., 8000.]);
+    let key = world.entity_key(actor).unwrap();
+    let live = world.observe_quest_areas(&prepared, key, &journal).unwrap();
+    assert_eq!(live.len(), 1);
+    let life = world.player_life_snapshot(actor).unwrap().key;
+    let mut combat = world.combat.take().unwrap();
+    assert!(
+        combat
+            .damage_player(&mut world, life, 100)
+            .unwrap()
+            .unwrap()
+            .died
+    );
+    world.combat = Some(combat);
+    assert!(world.observe_quest_areas(&prepared, key, &journal).is_err());
+    // Death after a real sample does not erase a historical live occurrence.
+    assert_eq!(
+        journal
+            .propose_reached_areas(p.catalog(), &live)
+            .unwrap()
+            .changed
+            .len(),
+        1
+    );
+}
