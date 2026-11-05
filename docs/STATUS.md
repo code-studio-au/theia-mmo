@@ -1,3 +1,12 @@
+Document manifest/CLI prerequisite qualified locally, 5 November 2026:
+P3-05 / P3-11 / P3-15: opt-in schema 20 snapshots 24 exact roles and binds notes
+with inventory/journal/XP/areas on both client and server. Five development quests
+include reading and delivering a note; ordinary note loot is 35%, fixture 100%.
+60 validator, 43 launcher and seventeen server tests, formatting and strict Clippy
+pass. [Scope/evidence](QUEST_DOCUMENTS.md#implemented-prerequisite-normal-manifest-and-cli-adoption).
+Reader action/panel and combined native proof remain pending. Continue those;
+no push. Qualified playable remains `65977bd`.
+
 Encrypted document bridge qualified locally, 5 November 2026:
 P3-05 / P3-11 / P3-15: two encrypted peers at 20/30/60 Hz pass held read approval,
 shared bag ordering, fresh missing-slot refusal and original retry under packet

@@ -53,6 +53,7 @@ async fn main() -> Result<()> {
     let mut progression_catalog = None;
     let mut quest_catalog = None;
     let mut quest_areas = None;
+    let mut document_catalog = None;
     let mut explicit_quest = false;
     let mut journal_mode = false;
     let mut quest_turn_in_xp = None;
@@ -152,6 +153,10 @@ async fn main() -> Result<()> {
             "--quest-journal" => journal_mode=true,
             "--quest-items" => quest_items=true,
             "--quest-loot" => quest_loot=true,
+            "--document-catalog" => {
+                if document_catalog.is_some() {return Err("Choose one document catalogue".into());}
+                document_catalog=Some(PathBuf::from(args.next().ok_or("Missing document catalogue")?));
+            }
             "--quest-turn-in-xp" => {
                 if quest_turn_in_xp.is_some() {return Err("Choose one completion XP recipe".into());}
                 quest_turn_in_xp=Some(PathBuf::from(args.next().ok_or("Missing completion XP recipe")?));
@@ -560,6 +565,11 @@ async fn main() -> Result<()> {
     if quest_items && (!journal_mode || quest_catalog.is_none() || item_catalog.is_none()) {
         return Err("Quest items require journal mode, quest and item catalogues".into());
     }
+    if document_catalog.is_some()
+        && (!journal_mode || quest_catalog.is_none() || item_catalog.is_none())
+    {
+        return Err("Documents require journal, quest and item catalogues".into());
+    }
     if quest_areas.is_some() && (!journal_mode || quest_catalog.is_none()) {
         return Err("Quest areas require expanded journal mode and a catalogue".into());
     }
@@ -645,6 +655,25 @@ async fn main() -> Result<()> {
                 &bytes,
             )?);
             Some(theia_persistence::InventoryCatalog::from_json(&bytes)?)
+        } else {
+            None
+        };
+        let documents = if let Some(path) = document_catalog {
+            use std::io::Read;
+            let mut bytes = Vec::new();
+            std::fs::File::open(path)?
+                .take(theia_core::documents::MAX_CATALOG_BYTES as u64 + 1)
+                .read_to_end(&mut bytes)?;
+            wire_items = Some(
+                wire_items
+                    .take()
+                    .ok_or("Documents require wire inventory")?
+                    .with_documents(&bytes)?,
+            );
+            Some(theia_persistence::DocumentCatalog::from_json(
+                &bytes,
+                inventory.as_ref().ok_or("Documents require inventory")?,
+            )?)
         } else {
             None
         };
@@ -738,17 +767,40 @@ async fn main() -> Result<()> {
                 let wire_xp = journal_progression
                     .take()
                     .ok_or("Journal requires world XP policy")?;
-                let (mut profile, mut wire) = if let Some(path) = &quest_areas {
-                    let mut areas = Vec::new();
+                let areas = if let Some(path) = &quest_areas {
+                    let mut bytes = Vec::new();
                     std::fs::File::open(path)?
                         .take(theia_core::quests::areas::MAX_CATALOG_BYTES as u64 + 1)
-                        .read_to_end(&mut areas)?;
+                        .read_to_end(&mut bytes)?;
+                    Some(bytes)
+                } else {
+                    None
+                };
+                let (mut profile, mut wire) = if let Some(documents) = &documents {
+                    (
+                        theia_persistence::QuestJournalCatalog::from_json_with_documents(
+                            &bytes,
+                            areas.as_deref(),
+                            xp,
+                            documents,
+                        )?,
+                        theia_network::quest_journal::Profile::from_json_with_documents(
+                            &bytes,
+                            areas.as_deref(),
+                            &wire_xp,
+                            wire_items
+                                .as_ref()
+                                .and_then(|i| i.documents())
+                                .ok_or("Document wire profile missing")?,
+                        )?,
+                    )
+                } else if let Some(areas) = &areas {
                     (
                         theia_persistence::QuestJournalCatalog::from_json_with_areas(
-                            &bytes, &areas, xp,
+                            &bytes, areas, xp,
                         )?,
                         theia_network::quest_journal::Profile::from_json_with_areas(
-                            &bytes, &areas, &wire_xp,
+                            &bytes, areas, &wire_xp,
                         )?,
                     )
                 } else {
@@ -757,7 +809,7 @@ async fn main() -> Result<()> {
                         theia_network::quest_journal::Profile::from_json(&bytes, &wire_xp)?,
                     )
                 };
-                if quest_items {
+                if quest_items && documents.is_none() {
                     profile = profile.with_inventory(
                         inventory.as_ref().ok_or("Quest items require inventory")?,
                     )?;
@@ -771,7 +823,15 @@ async fn main() -> Result<()> {
                 if profile.hash() != wire.hash() {
                     return Err("Journal authority/persistence identity mismatch".into());
                 }
-                if quest_items {
+                if documents.is_some() {
+                    world.enable_document_quest_journal(
+                        wire,
+                        wire_xp,
+                        wire_items
+                            .as_ref()
+                            .ok_or("Documents require wire inventory")?,
+                    )?;
+                } else if quest_items {
                     world.enable_item_quest_journal(
                         wire,
                         wire_xp,

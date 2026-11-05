@@ -365,6 +365,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         None
     };
+    let document_bytes = if let Some(i) = args.iter().position(|a| a == "--document-catalog") {
+        use std::io::Read;
+        args.remove(i);
+        if i >= args.len()
+            || !journal_mode
+            || !args.iter().any(|a| a == "--quest-catalog")
+            || !args.iter().any(|a| a == "--item-catalog")
+        {
+            return Err("Documents require journal, quest and item catalogues".into());
+        }
+        let mut bytes = Vec::new();
+        std::fs::File::open(args.remove(i))?
+            .take(theia_core::documents::MAX_CATALOG_BYTES as u64 + 1)
+            .read_to_end(&mut bytes)?;
+        Some(bytes)
+    } else {
+        None
+    };
+    let mut document_journal_bytes = None;
     let (quest_profile, lifecycle_profile, mut journal_profile) =
         if let Some(i) = args.iter().position(|a| a == "--quest-catalog") {
             use std::io::Read;
@@ -388,21 +407,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 if dialogue_profile.is_none() {
                     return Err("Journal requires guide dialogue".into());
                 }
-                (
-                    None,
-                    None,
-                    Some(std::sync::Arc::new(
-                        if let Some(areas) = &quest_area_bytes {
-                            theia_network::quest_journal::Profile::from_json_with_areas(
-                                &bytes, areas, xp,
-                            )
-                            .map_err(|e| e.to_string())?
-                        } else {
-                            theia_network::quest_journal::Profile::from_json(&bytes, xp)
+                if document_bytes.is_some() {
+                    document_journal_bytes = Some(bytes);
+                    (None, None, None)
+                } else {
+                    (
+                        None,
+                        None,
+                        Some(std::sync::Arc::new(
+                            if let Some(areas) = &quest_area_bytes {
+                                theia_network::quest_journal::Profile::from_json_with_areas(
+                                    &bytes, areas, xp,
+                                )
                                 .map_err(|e| e.to_string())?
-                        },
-                    )),
-                )
+                            } else {
+                                theia_network::quest_journal::Profile::from_json(&bytes, xp)
+                                    .map_err(|e| e.to_string())?
+                            },
+                        )),
+                    )
+                }
             } else if explicit_quest {
                 if dialogue_profile.is_none() {
                     return Err("Explicit quests require guide dialogue".into());
@@ -462,6 +486,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         None
     };
+    if let Some(bytes) = &document_bytes {
+        let items = inventory_profile
+            .take()
+            .ok_or("Documents require inventory")?
+            .with_documents(bytes)
+            .map_err(|e| e.to_string())?;
+        journal_profile = Some(std::sync::Arc::new(
+            theia_network::quest_journal::Profile::from_json_with_documents(
+                document_journal_bytes
+                    .as_deref()
+                    .ok_or("Documents require quest catalogue")?,
+                quest_area_bytes.as_deref(),
+                progression_profile
+                    .as_ref()
+                    .ok_or("Documents require progression")?,
+                items.documents().ok_or("Document profile missing")?,
+            )
+            .map_err(|e| e.to_string())?,
+        ));
+        inventory_profile = Some(items);
+    }
     let melee_profile = if let Some(i) = args.iter().position(|a| a == "--melee-weapons") {
         use std::io::Read;
         args.remove(i);
@@ -724,7 +769,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if has_possession != quest_items {
         return Err("Possession quests require explicit --quest-items mode".into());
     }
-    if quest_items {
+    if quest_items && document_bytes.is_none() {
         let profile = journal_profile
             .take()
             .ok_or("Quest items require a journal")?;

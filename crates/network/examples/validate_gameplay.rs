@@ -61,6 +61,8 @@ struct Manifest {
     creature_threat: Option<String>,
     #[serde(default, deserialize_with = "optional_profile")]
     quest_areas: Option<String>,
+    #[serde(default, deserialize_with = "optional_profile")]
+    documents: Option<String>,
 }
 fn optional_profile<'de, D: serde::Deserializer<'de>>(
     d: D,
@@ -180,6 +182,9 @@ impl Manifest {
         if let Some(path) = &self.creature_reset {
             roles.push(("creature_reset", path, combat::reset::MAX_PROFILE_BYTES));
         }
+        if let Some(path) = &self.documents {
+            roles.push(("documents", path, theia_core::documents::MAX_CATALOG_BYTES));
+        }
         if let Some(path) = &self.quest_areas {
             roles.push(("quest_areas", path, quests::areas::MAX_CATALOG_BYTES));
         }
@@ -251,6 +256,7 @@ fn check(
     creature_loot: bool,
     quest_items: bool,
     quest_loot: bool,
+    document_mode: bool,
 ) -> Result<()> {
     let items =
         inventory::Catalog::from_json(&bytes["items"]).map_err(|_| "Invalid items profile")?;
@@ -344,14 +350,41 @@ fn check(
                 return Err("Area outside supported continental bounds".into());
             }
         }
+        let documents = bytes
+            .get("documents")
+            .map(|raw| theia_core::documents::Catalog::from_json(raw, &items))
+            .transpose()?;
+        if catalog.quests().any(|q| q.has_document_objectives()) != document_mode {
+            return Err(
+                "Read objectives require an explicit document manifest with read objectives".into(),
+            );
+        }
+        if let Some(documents) = &documents {
+            documents.validate_quests(&catalog)?;
+            if let Some(areas) = &areas {
+                documents.validate_areas(areas)?;
+            }
+            let aliases = |id: &ContentId| {
+                id == guide.npc()
+                    || id == creature.id()
+                    || guide
+                        .nodes()
+                        .any(|n| n.choices().iter().any(|c| c.id() == id))
+            };
+            if aliases(documents.id()) || documents.documents().any(|d| aliases(d.id())) {
+                return Err("Document definitions alias declared World content".into());
+            }
+        }
         for quest in catalog.quests() {
             if quest.giver() != guide.npc() || quest.turn_in() != guide.npc() {
                 return Err("Journal contact differs from declared guide".into());
             }
             for objective in quest.stages().flat_map(|s| s.objectives()) {
                 match objective.event() {
-                    quests::catalog::EventKey::ReadDocument(_) => {
-                        return Err("Document-read manifest admission is not installed".into());
+                    quests::catalog::EventKey::ReadDocument(id)
+                        if documents.as_ref().is_none_or(|d| d.document(id).is_none()) =>
+                    {
+                        return Err("Read objective requires a declared document".into());
                     }
                     quests::catalog::EventKey::PossessItem(_) if !quest_items => {
                         return Err(
@@ -488,7 +521,7 @@ fn validate(path: &Path) -> Result<Report> {
     let raw = bounded(&path, MAX_MANIFEST_BYTES)?;
     let manifest: Manifest =
         serde_json::from_slice(&raw).map_err(|_| "Invalid gameplay manifest")?;
-    if !matches!(manifest.schema, 1..=19)
+    if !matches!(manifest.schema, 1..=20)
         || manifest.revision == 0
         || ContentId::new(&manifest.id).is_none()
         || (matches!(manifest.schema, 2..=11)) != manifest.quest_turn_in_xp.is_some()
@@ -506,6 +539,7 @@ fn validate(path: &Path) -> Result<Report> {
         || (manifest.schema >= 11) != manifest.creature_reset.is_some()
         || (manifest.schema >= 13) != manifest.creature_threat.is_some()
         || (manifest.schema >= 16) != manifest.quest_areas.is_some()
+        || (manifest.schema >= 20) != manifest.documents.is_some()
     {
         return Err("Invalid gameplay manifest identity/version".into());
     }
@@ -542,6 +576,7 @@ fn validate(path: &Path) -> Result<Report> {
         manifest.schema >= 17,
         manifest.schema >= 18,
         manifest.schema >= 19,
+        manifest.schema >= 20,
     )?;
     profiles.sort_by(|a, b| a.kind.cmp(&b.kind));
     let manifest_hash = sha256(&raw);
@@ -621,6 +656,94 @@ mod tests {
         fn drop(&mut self) {
             fs::remove_dir_all(&self.0).unwrap();
         }
+    }
+    fn document_fixture() -> Fixture {
+        let f = Fixture::new();
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
+        let raw = fs::read(root.join("development-gameplay-classic-documents.json")).unwrap();
+        let manifest: Manifest = serde_json::from_slice(&raw).unwrap();
+        for (_, name, _) in manifest.roles() {
+            let path = f.0.join(name);
+            fs::create_dir_all(path.parent().unwrap()).unwrap();
+            fs::copy(root.join(name), path).unwrap();
+        }
+        fs::write(f.manifest(), raw).unwrap();
+        f
+    }
+    #[test]
+    fn document_manifests_require_exact_known_item_text_and_quest_references() {
+        for name in [
+            "development-gameplay-classic-documents.json",
+            "development-gameplay-classic-documents-fixture.json",
+        ] {
+            let report = validate(
+                &Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("../../content")
+                    .join(name),
+            )
+            .unwrap();
+            assert_eq!((report.manifest_schema, report.profiles.len()), (20, 24));
+        }
+        let f = document_fixture();
+        f.edit("documents", |d| {
+            d["documents"][0]["item"] = json!("unknown")
+        });
+        assert!(validate(&f.manifest()).is_err());
+        let f = document_fixture();
+        f.edit("quest", |q| {
+            q["quests"].as_array_mut().unwrap().last_mut().unwrap()["stages"][0]["objectives"][0]
+                ["document"] = json!("unknown")
+        });
+        assert!(validate(&f.manifest()).is_err());
+        let f = document_fixture();
+        f.edit("quest", |q| {
+            q["quests"][0]["stages"][0]["objectives"]
+                .as_array_mut()
+                .unwrap()
+                .remove(0);
+        });
+        f.edit("documents",|d|d["documents"].as_array_mut().unwrap().push(json!({"id":"theia.dev.interaction.road","item":"theia.dev.training-stone","title":"Unused note","pages":["Text"]})));
+        assert!(
+            validate(&f.manifest())
+                .unwrap_err()
+                .to_string()
+                .contains("alias declared World")
+        );
+    }
+    #[test]
+    fn old_manifests_cannot_smuggle_read_objectives_and_document_context_is_not_optional_or_unused()
+    {
+        let f = document_fixture();
+        f.edit("manifest", |m| {
+            m["schema"] = json!(19);
+            m.as_object_mut().unwrap().remove("documents");
+        });
+        assert!(
+            validate(&f.manifest())
+                .unwrap_err()
+                .to_string()
+                .contains("Read objectives require")
+        );
+        let f = document_fixture();
+        f.edit("manifest", |m| {
+            m.as_object_mut().unwrap().remove("documents");
+        });
+        assert!(validate(&f.manifest()).is_err());
+        let f = document_fixture();
+        f.edit("quest", |q| {
+            q["quests"].as_array_mut().unwrap().pop();
+        });
+        assert!(
+            validate(&f.manifest())
+                .unwrap_err()
+                .to_string()
+                .contains("Read objectives require")
+        );
+        let f = document_fixture();
+        let mut bytes = fs::read(f.path("documents")).unwrap();
+        bytes.extend(vec![b' '; theia_core::documents::MAX_CATALOG_BYTES]);
+        fs::write(f.path("documents"), bytes).unwrap();
+        assert!(validate(&f.manifest()).is_err());
     }
     #[test]
     fn valid_development_bundle_reports_deterministically_without_changing_inputs() {
@@ -2061,17 +2184,14 @@ mod tests {
         }
     }
     #[test]
-    fn pure_document_objectives_do_not_gain_normal_manifest_admission() {
+    fn document_objectives_do_not_gain_legacy_manifest_admission() {
         let f = item_quest_fixture();
         f.edit("quest",|q| {
             q["schema"]=json!(4);
             q["quests"][0]["stages"][0]["objectives"].as_array_mut().unwrap().push(json!({"kind":"read_document","id":"theia.test.read","label":"Read","document":"theia.test.note"}));
         });
         let error = validate(&f.manifest()).err().unwrap().to_string();
-        assert!(
-            error.contains("Document-read manifest admission is not installed"),
-            "{error}"
-        );
+        assert!(error.contains("Read objectives require"), "{error}");
     }
     #[test]
     fn item_quest_manifests_require_explicit_known_inventory_objectives() {

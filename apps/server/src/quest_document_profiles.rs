@@ -415,3 +415,19 @@ fn explicit_document_world_installation_requires_exact_items_notes_and_inactive_
     );
     assert_eq!(active.identity(), before);
 }
+
+#[test]
+fn normal_document_manifest_sources_bind_identically_across_storage_and_transport() {
+    let items = include_bytes!("../../../content/gameplay/development-document-items.json");
+    let quests = include_bytes!("../../../content/quests/development-journal-documents.json");
+    let notes = include_bytes!("../../../content/quests/development-documents.json");
+    let areas = include_bytes!("../../../content/quests/development-quest-areas.json");
+    let bound = bind(items, quests, XP, notes, Some(areas));
+    assert_eq!(bound.wire.hash(), bound.stored.hash());
+    assert_eq!(
+        bound.wire.documents().unwrap().hash(),
+        bound.stored.documents().unwrap().hash()
+    );
+    assert_eq!(bound.wire.inventory_hash(), Some(bound.items.hash()));
+    assert_eq!(bound.wire.catalog().quests().count(), 5);
+}

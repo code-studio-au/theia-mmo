@@ -338,6 +338,38 @@ login/SQL retirement and deletion are proved separately above. Normal combined
 native read-credit, reader UI, Windows and capacity remain unproved.
 Preserve `build/quest-document-encrypted-qualified-v1-20261105`.
 
+## Implemented prerequisite: normal manifest and CLI adoption
+
+Opt-in manifest schema 20 adds the bounded `documents` role to the existing
+23-role Classic quest-loot development bundle. The exact-byte launcher snapshots
+all 24 roles and supplies `--document-catalog` to client/server. Both bind documents
+after parsing items and before constructing the journal, with optional exact area
+context. Already document-bound journals avoid a second inventory binding. Legacy
+manifests, missing/unused document context and unknown or aliased references refuse.
+
+`content/development-gameplay-classic-documents.json` adds a fifth development
+quest: read the roadside orders and possess one copy for delivery. Historical
+read credit and current possession remain separate; delivery consumes one copy.
+The note has two bounded plain-text pages. It drops as ordinary per-life loot at
+35% (provisional development content), independently of quest acceptance; the
+`-fixture` profile guarantees it. This permits owned pre-accept viewing while
+retaining the original-stage credit rule. Neither profile allocates campaign IDs.
+Existing manifests/items/loot bytes remain unchanged.
+
+60 actual validator and 43 launcher/snapshot tests pass in
+`build/quest-document-manifest-{validator-tests-v2,bundle-tests-v2}-20261105.log`.
+Seventeen server-library tests include identical storage/wire binding of the exact
+new source items, notes, quests, XP and areas; evidence is
+`build/quest-document-manifest-server-tests-v3-20261105.log`.
+Formatting and strict workspace/all-target Clippy pass in
+`build/quest-document-manifest-fmt-v2-20261105.log` and
+`build/quest-document-manifest-clippy-v3-20261105.log`.
+Preserve `build/quest-document-manifest-qualified-v1-20261105`.
+
+This qualifies parsing/content/launcher prerequisites. The reader action and
+native combined opening are still pending; the new opt-in quest is not a completed
+playable slice yet. Qualified normal playable remains `65977bd`.
+
 ## Planned read-credit semantics
 
 An authenticated server must validate current ownership and exact item/document
@@ -357,7 +389,7 @@ generic unchecked client/NPC event paths.
 
 Remaining slices and concrete acceptance checks:
 
-1. Adopt opt-in normal manifests and standard Bevy document presentation. Display
+1. Add standard Bevy document presentation to the opt-in document manifests. Display
    only exact locally bound content after server approval; preserve current
    controls and UI input ownership. Qualify normal open/read, repeat open,
    later deletion, turn-in and save/rejoin through encrypted/native flows.

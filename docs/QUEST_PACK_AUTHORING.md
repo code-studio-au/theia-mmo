@@ -1,3 +1,12 @@
+Readable-document development adoption, 5 November 2026:
+Quest schema 4 can name `read_document` with a stable `document` selector. Text
+lives in a separate known-item document catalogue, bound to exact inventory,
+journal, XP and optional area bytes. Historical reading is independent of a
+separate final-stage possession/delivery requirement. Opt-in manifest 20 and
+`--document-catalog` now bind this content; the native reader is pending.
+[Format, durable semantics and qualification limits](QUEST_DOCUMENTS.md).
+Do not infer campaign runtime/migration readiness from these development profiles.
+
 Quest-required loot adoption, 5 November 2026: opt-in manifest schema 19 now
 runs reward-schema-4 `quest_required` entries against the exact inventory-bound
 journal, preserving first-generation rights and rechecking current need before

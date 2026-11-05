@@ -662,6 +662,32 @@ class GameplayBundle(unittest.TestCase):
             play.play(None, Path('.'), 1, Path('.'), creature_reset=Path('reset.json'))
         child.assert_not_called()
 
+    def test_document_bundle_copies_exact_text_and_passes_bound_paths_to_both_children(self):
+        original = Path('content/development-gameplay-classic-documents.json')
+        raw = json.loads(original.read_text())
+        self.manifest.write_bytes(original.read_bytes())
+        for role in bundle.DOCUMENT_ROLES:
+            dest = self.source / raw[role]
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(original.parent / raw[role], dest)
+        with bundle.snapshot(self.manifest, self.validator, self.session) as (paths, report):
+            self.assertEqual((report['manifest_schema'], len(paths)), (20, 24))
+            self.assertEqual(paths['documents'].read_bytes(), (original.parent / raw['documents']).read_bytes())
+        observed = {}
+        def launch(*args):
+            observed.update(PLAY_SIGNATURE.bind(*args).arguments)
+            self.assertTrue(observed['quest_journal'] and observed['quest_items'] and observed['quest_loot'])
+            self.assertTrue(observed['document_catalog'].is_file())
+            self.assertNotEqual(observed['document_catalog'].parent, original.parent)
+        with patch.object(play, 'play', side_effect=launch), redirect_stdout(io.StringIO()):
+            play.main(['--gameplay-manifest', str(self.manifest), '--gameplay-validator', str(self.validator)])
+        self.assertFalse(observed['document_catalog'].exists())
+
+    def test_documents_without_bound_items_and_journal_refuse_before_child_start(self):
+        with patch.object(play.subprocess, 'Popen') as child, self.assertRaises(ValueError):
+            play.play(None, Path('.'), 1, Path('.'), document_catalog=Path('notes.json'))
+        child.assert_not_called()
+
 
 if __name__ == '__main__':
     unittest.main()
