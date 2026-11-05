@@ -1,3 +1,13 @@
+Durable document opening qualified locally, 5 November 2026:
+P3-05 / P3-11 / P3-15: bound Store/worker opens authorize the saved item and
+record original-stage read credit before success. Exact retries, item loss,
+concurrent mutation, rollback, lost replies and shutdown drain pass. 66 actual
+PostgreSQL contracts/restart, seven library and fifteen server tests, formatting
+and strict Clippy pass. [Scope/evidence](QUEST_DOCUMENTS.md#implemented-durable-authorized-document-opening).
+Retained owner, encrypted commands, normal manifest and Bevy reader remain pending;
+continue those locally. No push. Qualified playable remains `65977bd`.
+Earlier entries describe prior checkpoints.
+
 Document content binding prerequisite qualified, 5 November 2026:
 P3-05 / P3-11 / P3-15: explicit wire/storage profiles now bind exact document,
 inventory, journal, XP and optional area bytes; read-only quests still bind items.

@@ -144,9 +144,24 @@ impl QuestJournalCatalog {
     pub(crate) fn check_runtime_admission(&self) -> Result<()> {
         self.check_inventory_binding()?;
         if self.documents.is_some() {
-            return Err(Error::Invalid("Document journal runtime is not installed"));
+            self.check_document_binding()?;
         }
         Ok(())
+    }
+    pub(crate) fn check_document_binding(&self) -> Result<&crate::DocumentCatalog> {
+        self.check_inventory_binding()?;
+        let documents = self
+            .documents
+            .as_ref()
+            .ok_or(Error::Invalid("Document journal binding required"))?;
+        if self
+            .inventory
+            .as_ref()
+            .is_none_or(|i| i.hash() != documents.inventory().hash())
+        {
+            return Err(Error::InventoryCatalogMismatch);
+        }
+        Ok(documents)
     }
     pub(crate) fn check_inventory_binding(&self) -> Result<()> {
         if self.inventory.is_none()

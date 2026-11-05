@@ -5,7 +5,8 @@ P3-05 / P3-11 / P3-15, 5 November 2026.
 The user requested quest conditions for reading or viewing an item note/message.
 Keep that historical action separate from possessing or looting the item. The
 current playable quest-loot checkpoint is `65977bd`; readable document runtime
-adoption is still pending.
+adoption is still pending. Headless Store/worker opening is implemented below. Earlier
+prerequisite sections describe their own checkpoints.
 
 ## Implemented prerequisite: pure document catalogue
 
@@ -159,7 +160,7 @@ storage hashes agree; only inventory/document changes affect the document hash.
 Read-only journals still attach the expected inventory hash, and missing,
 foreign/unused or aliased contexts refuse.
 
-This remains **metadata-only adoption**. Legacy journal Store methods, compound
+At checkpoint `191d5e3`, this was **metadata-only adoption**. Legacy journal Store methods, compound
 item/vendor/reward transactions and conditional generation/view/pickup refuse
 read-bound profiles before SQL. Nonblocking and async Publisher paths refuse them
 before acceptance into the critical queue, so unsupported calls do not fail the
@@ -187,6 +188,50 @@ and `build/quest-document-binding-clippy-v1-20261105.log`.
 Preserve `build/quest-document-binding-qualified-v1-20261105`. Normal/native
 quest-loot playable remains `65977bd`; no new native/Windows/capacity claim.
 
+## Implemented: durable authorized document opening
+
+The explicit document-bound Store and shared critical worker now support
+`DocumentOpenCommand`: nonzero original request ID, exact document-profile hash,
+document ID, selected bag revision and slot. Structural and profile errors refuse
+before SQL or queue admission. The transaction authorizes owner/character/world,
+locks backpack before journal, resolves the currently owned item and seals only
+then-active eligible stages. Possession reconciliation and the original open
+receipt commit before success. Reads do not mutate items or grant XP.
+
+Existing quest-event receipts are reused with separate domain-separated request
+IDs and command hashes; no migration or parallel receipt system was added. Exact
+successful retries recover the original authorization even after item loss, without
+crediting a later accepted quest or stage. A changed original intent conflicts;
+a fresh open still checks current ownership. Read history survives loss, while a
+separate possession requirement can reverse Ready and block turn-in. Turn-in
+consumption and XP retain their existing atomic transaction.
+
+Bound document journals now use existing initialization, bag, reward, vendor and
+journal operations. Those operations cannot create historical read credit; the
+unchecked generic read-event path stays closed. Accepted opens remain in the
+bounded FIFO after reply loss and drain before shutdown. Missing/stale items are
+ordinary rejections and do not poison the worker.
+
+Evidence: `build/quest-document-open-postgres-v3-20261105/verification.json`
+passes 66 actual PostgreSQL 16.15 contracts (six document cases), seven library
+tests, seven document-character snapshots and an exact open replay across a real
+database restart. Coverage includes pre-accept reads, same-note sequential stages,
+wrong owner/world/profile/XP, changed slots, deletion, full backpacks, a mutation
+while an open waits for the bag lock, reacquisition, forced rollback, lost replies,
+and shutdown drain. All 65 existing loot-roll rows remain unchanged across restart.
+The first delayed-mutation fixture violated the backpack receipt constraint before
+exercising the scenario; its corrected valid update passes in this v3 run.
+
+Fifteen server-library regression tests preserve owner/World/client refusal.
+Formatting and denied-warning workspace/all-target Clippy pass in
+`build/quest-document-open-{fmt,clippy}-v1-20261105.log`;
+server evidence is `build/quest-document-open-server-tests-v1-20261105.log`.
+Preserve `build/quest-document-open-qualified-v1-20261105`.
+This proves headless storage/worker behavior, not a connected document reader:
+retained owner, encrypted document commands, World admission, normal manifests
+and Bevy UI remain pending. No native/Windows/capacity claim; qualified normal
+quest-loot playable remains `65977bd`.
+
 ## Planned read-credit semantics
 
 An authenticated server must validate current ownership and exact item/document
@@ -206,19 +251,13 @@ generic unchecked client/NPC event paths.
 
 Remaining slices and concrete acceptance checks:
 
-1. Add explicit document-aware journal initialization and authorized opening on
-   the existing async owner/Store boundary. Under bag-then-journal locks, validate
-   original request/content/ownership and seal current-stage read credit, reconcile
-   possession and commit a replay-safe open receipt before success. Prefer the
-   existing quest-event receipt table with a separate open-request domain rather
-   than adding another storage system. Exact retries recover their original
-   authorization without becoming fresh reads; new requests must check current
-   ownership. Test forged requests, moved/deleted items, concurrent changes,
-   rollback, response loss, retirement and actual database restart.
+1. Connect the existing authenticated retained owner to the qualified Store/worker
+   operation. Bind exact document context at admission and preserve original intent
+   through response loss, retirement and rejoin. Qualify against real OIDC/SQL.
 2. Add bounded wire commands and standard Bevy document presentation. Display
    only exact locally bound content after server approval; preserve current
    controls and UI input ownership. Qualify normal open/read, repeat open,
-   later deletion, turn-in and save/rejoin through actual OIDC/SQL/native flows.
+   later deletion, turn-in and save/rejoin through encrypted/native flows.
 
 No campaign IDs or story edits are allocated here. Explicit world-document
 interactions, arbitrary books/scroll scripting and quest-driven item usability

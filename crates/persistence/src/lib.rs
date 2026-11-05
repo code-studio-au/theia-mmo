@@ -13,7 +13,7 @@ mod store;
 mod vendors;
 mod worker;
 pub use characters::{Character, CharacterName, CharacterSummary, MAX_CHARACTERS_PER_OWNER};
-pub use documents::DocumentCatalog;
+pub use documents::{DocumentCatalog, DocumentOpenCommand};
 pub use gameplay_profiles::{GameplayProfiles, ProfileCompatibility};
 pub use inventory::{InventoryApplied, InventoryCatalog};
 pub use progression::{ProgressionApplied, ProgressionCatalog};
@@ -65,6 +65,8 @@ pub enum Error {
     QuestConflict,
     QuestCommand(theia_core::quests::Error),
     QuestLifecycleCommand(theia_core::quests::lifecycle::Error),
+    DocumentProfileMismatch,
+    DocumentCommand(theia_core::documents::OpenError),
     QuestJournalMissing,
     QuestJournalCatalogMismatch,
     QuestJournalData,
@@ -112,6 +114,8 @@ impl fmt::Display for Error {
             Self::QuestConflict => "Victim life belongs to a different objective award",
             Self::QuestCommand(_) => "Objective progress rejected",
             Self::QuestLifecycleCommand(_) => "Quest lifecycle action rejected",
+            Self::DocumentProfileMismatch => "Document content profile mismatch",
+            Self::DocumentCommand(_) => "Document opening rejected",
             Self::QuestJournalMissing => "Persistent quest journal unavailable",
             Self::QuestJournalCatalogMismatch => "Persistent quest journal catalogue mismatch",
             Self::QuestJournalData => "Invalid persistent quest journal",

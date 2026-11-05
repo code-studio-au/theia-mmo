@@ -1,20 +1,12 @@
 //! Metadata-bound fixtures only; not saved ownership or authorized item opens.
 use crate::*;
-use theia_core::{
-    content::ContentId,
-    progression::{KillEvent, KillId},
-    quests::journal::Journal,
-};
+use theia_core::content::ContentId;
 pub(crate) fn id(s: &str) -> ContentId {
     ContentId::new(s).unwrap()
 }
 pub(crate) struct Profiles {
-    pub(crate) items: InventoryCatalog,
-    pub(crate) xp: ProgressionCatalog,
     pub(crate) journal: QuestJournalCatalog,
-    pub(crate) conditional: RewardCatalog,
-    pub(crate) ordinary: RewardCatalog,
-    pub(crate) vendor: VendorCatalog,
+    pub(crate) legacy: QuestJournalCatalog,
 }
 pub(crate) fn profiles() -> Profiles {
     let items = InventoryCatalog::from_json(include_bytes!(
@@ -43,32 +35,12 @@ pub(crate) fn profiles() -> Profiles {
         &docs,
     )
     .unwrap();
-    let rewards = include_bytes!("../../../../content/gameplay/development-rewards.json");
-    let ordinary = RewardCatalog::from_json(rewards, &items).unwrap();
-    let mut raw: serde_json::Value = serde_json::from_slice(rewards).unwrap();
-    raw["schema"] = serde_json::json!(4);
-    raw["rewards"][0]["scope"] = serde_json::json!("per_creature_life");
-    raw["rewards"][0]["quest_required"] = serde_json::json!(true);
-    raw["rewards"][0]["grants"][0]["item"] = serde_json::json!("theia.dev.training-stone");
-    let conditional = RewardCatalog::from_json_with_quest_journal(
-        &serde_json::to_vec(&raw).unwrap(),
-        &items,
-        &journal,
+    let legacy = QuestJournalCatalog::from_json(
+        include_bytes!("../../../../content/quests/development-journal.json"),
+        &xp,
     )
     .unwrap();
-    let vendor = VendorCatalog::from_json(
-        include_bytes!("../../../../content/gameplay/development-vendor.json"),
-        &items,
-    )
-    .unwrap();
-    Profiles {
-        items,
-        xp,
-        journal,
-        conditional,
-        ordinary,
-        vendor,
-    }
+    Profiles { journal, legacy }
 }
 pub(crate) fn binding() -> Binding {
     Binding {
@@ -76,35 +48,24 @@ pub(crate) fn binding() -> Binding {
         character: CharacterId::new(uuid::Uuid::from_bytes([2; 16])).unwrap(),
     }
 }
-pub(crate) fn event() -> KillEvent {
-    KillEvent {
-        id: KillId::from_bytes([4; 16]).unwrap(),
-        creature: id("theia.dev.training-creature"),
-    }
-}
-pub(crate) fn command() -> QuestJournalCommand {
-    QuestJournalCommand {
+pub(crate) fn open(journal: &QuestJournalCatalog) -> DocumentOpenCommand {
+    DocumentOpenCommand {
         request_id: std::num::NonZeroU128::new(1).unwrap(),
-        quest: id("quest"),
-        npc: id("theia.dev.guide"),
+        profile_hash: journal.documents().unwrap().hash(),
+        document: id("note"),
         expected_revision: 0,
-        action: QuestJournalAction::Accept,
+        slot: 0,
     }
 }
-pub(crate) fn area(journal: &QuestJournalCatalog) -> theia_core::quests::journal::ReachedAreas {
-    Journal::default()
-        .propose_accept(journal.catalog(), &id("quest"), &id("theia.dev.guide"))
-        .unwrap()
-        .journal
-        .prepare_reached_areas(
-            journal.catalog(),
-            &std::collections::BTreeSet::from([id("theia.dev.area.western-overlook")]),
-        )
-        .unwrap()
-}
-pub(crate) fn refused<T>(result: Result<T>) {
-    assert!(matches!(
-        result,
-        Err(Error::Invalid("Document journal runtime is not installed"))
-    ));
+pub(crate) fn invalid(journal: &QuestJournalCatalog) -> Vec<DocumentOpenCommand> {
+    let valid = open(journal);
+    let mut wrong = valid.clone();
+    wrong.profile_hash[0] ^= 1;
+    let mut unknown = valid.clone();
+    unknown.document = id("unknown");
+    let mut slot = valid.clone();
+    slot.slot = 16;
+    let mut revision = valid;
+    revision.expected_revision = u64::MAX;
+    vec![wrong, unknown, slot, revision]
 }

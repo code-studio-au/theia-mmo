@@ -18,6 +18,7 @@ enum Operation {
         event: KillEvent,
     },
     Ensure,
+    OpenDocument(crate::DocumentOpenCommand),
     Load,
     Areas {
         id: NonZeroU128,
@@ -40,6 +41,29 @@ pub(super) struct Request {
     reply: oneshot::Sender<Result<QuestJournalApplied>>,
 }
 impl Publisher {
+    /// Critical original open intent; the Store commits ownership/read credit
+    /// before answering. Existing FIFO retention applies after reply loss.
+    pub fn enqueue_document_open(
+        &self,
+        binding: Binding,
+        world: [u8; 32],
+        catalog: &QuestJournalCatalog,
+        command: crate::DocumentOpenCommand,
+    ) -> Result<oneshot::Receiver<Result<QuestJournalApplied>>> {
+        catalog.check_document_binding()?.validate_open(&command)?;
+        self.queue_journal(binding, world, catalog, Operation::OpenDocument(command))
+    }
+    pub async fn open_quest_document(
+        &self,
+        binding: Binding,
+        world: [u8; 32],
+        catalog: &QuestJournalCatalog,
+        command: crate::DocumentOpenCommand,
+    ) -> Result<QuestJournalApplied> {
+        catalog.check_document_binding()?.validate_open(&command)?;
+        self.wait_journal(binding, world, catalog, Operation::OpenDocument(command))
+            .await
+    }
     /// Trusted admission initialization, outside the simulation step.
     pub async fn ensure_quest_journal(
         &self,
@@ -271,6 +295,12 @@ impl Request {
         // Intentionally no reply.is_closed check: accepted occurrences/actions
         // remain work even if a session disconnects before this job begins.
         let (kind, result) = match self.operation {
+            Operation::OpenDocument(command) => (
+                3,
+                store
+                    .open_quest_document(self.binding, self.world, &self.catalog, &command)
+                    .await,
+            ),
             Operation::Kill { xp, event } => (
                 3,
                 store

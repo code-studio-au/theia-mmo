@@ -3,6 +3,7 @@
 #[cfg(test)]
 #[path = "quest_journal/document_tests.rs"]
 mod document_tests;
+mod documents;
 mod items;
 use super::{Store, bounded, inventory::authorize, progression};
 use crate::{
@@ -458,6 +459,33 @@ async fn apply_event(
     >,
     hash: [u8; 32],
 ) -> Result<QuestJournalApplied> {
+    apply_event_with_bag(
+        tx,
+        realm,
+        binding,
+        world,
+        catalog,
+        event_id,
+        |journal, _| propose(journal).map_err(Error::QuestJournalCommand),
+        hash,
+    )
+    .await
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn apply_event_with_bag(
+    tx: &tokio_postgres::Transaction<'_>,
+    realm: RealmId,
+    binding: Binding,
+    world: [u8; 32],
+    catalog: &QuestJournalCatalog,
+    event_id: NonZeroU128,
+    propose: impl FnOnce(
+        &Journal,
+        Option<&theia_core::inventory::Bag>,
+    ) -> Result<theia_core::quests::journal::Proposal>,
+    hash: [u8; 32],
+) -> Result<QuestJournalApplied> {
     let bag = items::lock(tx, realm, binding, catalog).await?;
     let (revision, journal) = load(tx, realm, binding, world, catalog).await?;
     let bytes = event_id.get().to_le_bytes();
@@ -466,11 +494,7 @@ async fn apply_event(
             if stored<=0 || stored as u64>revision {return Err(Error::QuestJournalData);}
             return items::refresh(tx,realm,binding,catalog,revision,journal,bag,true).await;
         }
-    let proposal = items::reconcile(
-        catalog,
-        bag.as_ref(),
-        propose(&journal).map_err(Error::QuestJournalCommand)?,
-    )?;
+    let proposal = items::reconcile(catalog, bag.as_ref(), propose(&journal, bag.as_ref())?)?;
     let revision = save(
         tx,
         realm,

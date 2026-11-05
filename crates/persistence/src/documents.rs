@@ -1,7 +1,17 @@
-//! Exact known-item document content; no saved open or read receipt is installed.
+//! Exact known-item document content and validated original open intents.
 use crate::{Error, InventoryCatalog, Result};
 use ring::digest::{SHA256, digest};
 use std::sync::Arc;
+/// An original intent, not authority. The selected profile and saved slot must
+/// still match under the authorized transaction's backpack lock.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DocumentOpenCommand {
+    pub request_id: std::num::NonZeroU128,
+    pub profile_hash: [u8; 32],
+    pub document: theia_core::content::ContentId,
+    pub expected_revision: u64,
+    pub slot: u8,
+}
 #[derive(Clone, Debug)]
 pub struct DocumentCatalog {
     catalog: Arc<theia_core::documents::Catalog>,
@@ -31,6 +41,22 @@ impl DocumentCatalog {
     }
     pub fn catalog(&self) -> &theia_core::documents::Catalog {
         &self.catalog
+    }
+    pub(crate) fn validate_open(&self, command: &DocumentOpenCommand) -> Result<()> {
+        use theia_core::documents::OpenError;
+        if command.profile_hash != self.hash() {
+            return Err(Error::DocumentProfileMismatch);
+        }
+        if command.expected_revision > theia_core::inventory::MAX_REVISION {
+            return Err(Error::DocumentCommand(OpenError::StaleRevision));
+        }
+        if usize::from(command.slot) >= theia_core::inventory::SLOT_COUNT {
+            return Err(Error::DocumentCommand(OpenError::InvalidSlot));
+        }
+        if self.catalog.document(&command.document).is_none() {
+            return Err(Error::DocumentCommand(OpenError::UnknownDocument));
+        }
+        Ok(())
     }
 }
 

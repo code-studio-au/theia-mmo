@@ -1,3 +1,15 @@
+## 2026-11-05 — original document-open receipts
+
+Reuse existing quest-event receipts with distinct request/command hash domains
+for authorized item-document opens. Validate current bag revision, slot and item
+under bag-before-journal locks, and seal original active-stage eligibility before
+commit. Exact successful retries recover that original authorization without
+becoming fresh reads; new requests require current ownership. Keep historical
+read credit separate from item possession and allow existing bound bag/journal
+transactions to operate without granting read credit. No extra storage migration
+or parallel item transaction API is needed. [Implemented headless scope](QUEST_DOCUMENTS.md#implemented-durable-authorized-document-opening).
+Retained owner/wire/UI adoption remains the next slice.
+
 ## 2026-11-05 — explicit quest-required development loot
 
 Adopt opt-in manifest schema 19 / `--quest-loot` with item-journal and per-life

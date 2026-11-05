@@ -250,7 +250,9 @@ pub(super) fn respond<T>(
             false
         }
         Err(
-            Error::QuestJournalMissing
+            Error::DocumentProfileMismatch
+            | Error::DocumentCommand(_)
+            | Error::QuestJournalMissing
             | Error::QuestJournalConflict
             | Error::QuestJournalCommand(_)
             | Error::ProgressionMissing
