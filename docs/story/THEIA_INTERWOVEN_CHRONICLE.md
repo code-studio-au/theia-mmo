@@ -2199,3 +2199,224 @@ I gathered the sealed copies and went to find Mara.
 The next road would lead us to the Korrath, and to questions older than the contracts we had been following.
 
 For the first time, I wondered whether the danger we were uncovering had begun long before any of us had been born.
+
+
+### Chapter Nine — Water and Memory
+
+The first thing I heard in Drom Kar was water.
+
+Not the gentle sound of a stream passing through a valley, but a deep and patient movement beneath stone, carried through channels older than any road I had travelled. It was joined by the creak of freight tackle, the ring of tools and the calls of workers whose voices rose and fell between the walls. The city seemed to have learned to live with the weight of the mountains and the persistence of the water, neither pretending it could command the other.
+
+Mara had given me sealed copies of the Dwarven drawings, Aelari ward records and Vaelari inspection. They had travelled with me across roads and sea routes, protected from rain and curious hands. I had become so accustomed to their presence that I felt their weight even when I set them down.
+
+Urodan received me without treating the papers as a passport to the city's past.
+
+“You have brought an inquiry,” he said after examining the seals. “That does not make our archives yours.”
+
+“I came to ask what your people know about the methods in these drawings.”
+
+“Then you will begin by learning what we must protect.”
+
+He spoke of custodial duties, the maintenance routes that served the city and the records whose value depended upon their context. A damaged page could mislead as readily as a forged one. A diagram separated from the circumstances of its making could be turned into permission for work its authors had never intended.
+
+I had heard variations of this warning in every place I had visited. Here it seemed to be built into the city itself.
+
+Urodan gave me a work assignment connected to the existing water route. Completing it would allow us to recover records endangered in a maintenance store. It would not, he made clear, give me unrestricted archive access.
+
+I accepted.
+
+Tarek met me near the route entrance. He knew the channels and their service passages, and he spoke of them with the same practical concern Darian had once shown for the western bend outside Millhaven.
+
+“The water does not stop because a passage is inconvenient,” he told me. “Neither do the people whose work depends upon it.”
+
+We checked the maintenance markings, secured the route and reached the endangered store. A crew had been working to protect the records, and the danger to them was immediate enough that I stopped thinking about what the archive might reveal. We helped them withdraw safely before handling the material they had been trying to save.
+
+The records were damp at their edges. I watched Tarek and the custodians separate what could be moved from what needed support where it lay. It was careful, unglamorous work. I had seen people rush toward evidence as though the truth could be seized by force. Here, saving a page meant knowing when not to touch it.
+
+Among the recovered material was a warning whose significance had been obscured by omission. Its surviving context suggested that an earlier account had been copied without a crucial qualification.
+
+I thought of the altered drawings and the false sequence in Valecrown. There was something especially dangerous about a record that appeared complete.
+
+Dromak examined the warning with me. He required the original and the omitted margin to be authenticated independently before he would permit a restricted comparison.
+
+“Who removed it?” I asked.
+
+“That is a question,” he said. “Not an answer hidden in the damage.”
+
+I had been ready to imagine a name. The missing words invited suspicion. Yet the omission itself could be established without deciding who had caused it.
+
+When the evidence had been checked, Dromak granted the limited comparison. He did not offer a definitive judgment on the older grievances surrounding the Vorrath exile. The records before us could not carry such a verdict.
+
+I was beginning to understand how a people might protect its history without agreeing on every part of it.
+
+***
+
+Sera arrived after the archival work had begun. She read the recovered warning, then asked me to walk with her beyond the busiest part of the freight works.
+
+“There is something you should know about the people helping us,” she said.
+
+I waited. I had learned that Sera rarely began a conversation this way unless the next words mattered.
+
+She spoke of the Guardians: an order whose origins crossed the boundaries of the peoples now divided by alliances and war. Its work had been hidden, sometimes necessarily, sometimes at a cost that secrecy itself made difficult to measure.
+
+I had met people who offered assistance without telling me why they possessed such knowledge. I thought of the Grey Surveyor, of his insistence upon limits and his unwillingness to turn a successful experiment into a universal claim.
+
+“Why tell me now?” I asked.
+
+“Because you have been asked to trust our instructions,” Sera said. “You deserve to know that those instructions come from people with obligations, not from an authority beyond question.”
+
+She showed me what could be shared of the order's charter. I read it slowly. The words described cooperation and responsibilities that could not simply be imposed upon a stranger.
+
+“You can work with us as an associate,” she said. “That is not a demand that you join.”
+
+I thought of the Human warrant in my pack, the High King's introduction, and the limited access granted in Sylvaren. Each had been a means of doing necessary work without claiming another people's allegiance.
+
+“I'll help,” I said. “But I want to understand what I'm being asked to do.”
+
+Sera's expression softened.
+
+“So do I.”
+
+***
+
+The Grey Surveyor was waiting beside a set of plans when we returned.
+
+One drawing showed the arrangement of a Regional Anchor. Another contained Halden's proposed shutdown order. At first I could not understand why the Surveyor regarded the second with such unease. It appeared straightforward: remove the source of danger and the danger would end.
+
+He placed a finger beside a missing part of the instructions.
+
+“What happens to the load when the core is disconnected?”
+
+I studied the diagram.
+
+“It stops?”
+
+“That is what the order assumes.”
+
+“And what do you think happens?”
+
+“I think the order does not account for what the supports are carrying.”
+
+His answer frustrated me. I wanted him to tell me exactly what would fail. Instead he asked me to compare the plans, identify what had not been measured and find the missing stability material.
+
+I remembered Brynja's changed specifications. The failure of a structure was not always located where the break first appeared. Sometimes it began with an assumption made long before anyone touched the machinery.
+
+Sera read Halden's instructions and went still.
+
+“He's preparing to destroy the installation.”
+
+“Wouldn't that be safer?” I asked.
+
+“Not if the disconnection causes the failure we're trying to prevent.”
+
+We went to the freight works at once.
+
+I remember the urgency of the journey more than the route. The sound of water followed us through the passages. Every worker we passed seemed to be carrying out an ordinary task in a place that might soon become dangerous for reasons they could not see.
+
+Halden's team had prepared a charge. He was not a fool, and he was not indifferent to the lives around him. He believed destroying the Anchor was the responsible choice.
+
+Sera confronted him before the attempt could begin.
+
+“You haven't accounted for the supports,” she said.
+
+“I have accounted for what happens if we leave the core operating.”
+
+“And not for what happens when you break its connection.”
+
+Their disagreement was not between courage and cowardice. Both feared the consequences of inaction. Both had reasons to distrust the other approach. The problem was that one of them had reached the point of acting before the necessary measurement had been made.
+
+I showed Halden the missing stability information. The Grey Surveyor explained the untested load path without pretending the complete answer was already known.
+
+For a moment Halden looked at the charge as though it had become something unfamiliar.
+
+Then he ordered the premature attempt stopped.
+
+I felt relief so sharply that my knees seemed weak. It lasted only until Sera reminded us that stopping a dangerous plan was not the same as making the installation safe.
+
+We still had to enter.
+
+***
+
+The freight works were louder within than they had seemed from outside. Machinery passed its strain through the stone. The Regional Anchor stood at the centre of a system of supports and controls whose relationships I could barely follow even after studying the diagrams.
+
+Halden's people were inside. Some were trapped beyond a damaged section. Others were trying to keep the equipment stable long enough for the crew to withdraw.
+
+I had imagined the task as a confrontation with a machine. It became a series of decisions about people.
+
+We reached the researchers first, opening a safe route and helping them clear the threatened chambers. I could hear Sera calling measurements as the Grey Surveyor checked the isolation sequence. Halden worked beside the team he had nearly endangered, no longer arguing that the core could simply be destroyed.
+
+The apparatus shuddered when we began separating its supports. For an instant a change in the readings made me think the whole structure was failing. Sera ordered us to hold the sequence rather than improvise.
+
+I kept my hands where I had been told to keep them.
+
+That small act felt more difficult than any blow I had struck in the passage beneath Valecrown. There, an enemy had moved against me and I had moved in return. Here the danger invited action without telling me which action would make it worse.
+
+The isolation held. The supports were secured. Only then did we proceed to the core shutdown.
+
+When the machinery fell quiet, I did not cheer. I looked toward the passage through which the last of Halden's team had escaped and waited until someone confirmed that every person accounted for had reached safety.
+
+Halden stood near the inactive controls, staring at the place where his charge would have been set.
+
+“I thought I was preventing a disaster,” he said.
+
+Sera did not answer immediately.
+
+“You were trying to,” she said at last. “Next time, the warning has to reach everyone before the decision does.”
+
+I thought of the missing margin in Dromak's records. An omitted qualification had travelled across years. An incomplete instruction had nearly become an explosion. The past and the present were joined by more than the shape of the machinery.
+
+They were joined by the consequences of what people chose not to share.
+
+***
+
+The Grey Surveyor insisted that the full safety instructions be copied and given to the people who would continue working near the installation. A second set of measurements was lodged independently.
+
+“Why so many copies?” I asked.
+
+“Because the people at risk should not have to rely on one person remembering correctly.”
+
+I wondered whether he was speaking only about the Anchor.
+
+Brynja's experience at Kar Durn had taught me how a legitimate drawing could be altered after leaving its maker. Drom Kar taught me another danger: knowledge kept too narrowly could become useless at the moment someone most needed it.
+
+The next proposal was smaller and more cautious. Instead of attempting another large intervention, the Grey Surveyor and Brynja's technical guidance would support a fully isolated trial using a Minor Resonator. The instruments, reserve limits and physical cutoff had to be checked before anyone authorised the experiment.
+
+I helped prepare the apparatus. I had seen enough to distrust the words *small* and *safe* when spoken together, but the scale of the trial was deliberately bounded. Its purpose was to learn what a brief reversal might do, not to prove a solution to every Anchor.
+
+When the preparations were complete, Sera reviewed the limits and authorised the test.
+
+The reversal lasted only as long as the measured threshold allowed. The instruments recorded a change. At the agreed point we activated the cutoff, and the apparatus returned to its isolated state.
+
+I waited for someone to explain what we had accomplished.
+
+The Grey Surveyor studied the results.
+
+“We have shown that a controlled reversal is possible under these conditions,” he said. “We have not shown that it will remain safe at a greater scale.”
+
+“Then it might work?”
+
+“It might. That is why we measure.”
+
+The answer should have disappointed me. Instead I felt something like hope, though it was a cautious and uncomfortable kind.
+
+Halden remained unconvinced that reversal was the safer answer. He believed severance could still offer a more dependable way to remove a dangerous working. Sera argued that cutting a connection without understanding its load might reproduce the very failure we had narrowly avoided.
+
+They asked what I thought.
+
+I considered the people we had rescued, the incomplete shutdown order and the brief reversal that had ended within its limits. I told them I favoured continuing to investigate bounded inversion, provided every trial remained subject to a safe cutoff.
+
+Halden accepted that I had heard his argument. Sera recorded my preference as provisional, not as a binding choice for every decision to come.
+
+I was grateful. I had begun the journey believing that good judgment meant reaching certainty. Now I was learning that a decision could be responsible precisely because it remained open to better evidence.
+
+That evening I returned to the water channels. The city had resumed its work. Freight moved. Maintenance crews checked their routes. Somewhere beyond the public passages, custodians preserved records whose authors had never imagined that a stranger from Millhaven would one day need them.
+
+I stood beside the moving water and thought about the missing margin, the copied instructions and the Surveyor's insistence that knowledge should reach those who bore its risks.
+
+For the first time, I began to suspect that the danger we were following was not only a matter of machines altered in secret.
+
+It was also a matter of who had been permitted to know how they worked, who had been trusted to question them, and who had been left to face their consequences without warning.
+
+The water continued beneath the city.
+
+I listened until I could no longer distinguish its sound from the distant machinery, and then went back to the others.
