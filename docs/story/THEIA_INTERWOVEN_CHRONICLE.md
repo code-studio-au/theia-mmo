@@ -904,3 +904,184 @@ I knew the teamster was alive. I knew the parcel had reached the healing house. 
 It was not much to carry beyond Millhaven.
 
 It was enough to begin.
+
+
+### Chapter Two — The Weight of a Seal
+
+The first time I saw a royal seal, it was not attached to a proclamation or carried by a herald in polished colours. It lay in the palm of a frightened teamster, a fragment of damaged metal and wax he had pried from the wreck of a wagon because he could not bear to return with nothing.
+
+The morning had been wet. Rain gathered along the eaves of Brenna's storehouse, and every wheel that crossed the yard left a dark furrow in the mud. I had spent the previous day repairing a cart with Heddan, who taught me that iron could be perfectly sound and still be fitted badly enough to fail. He had let me hold a wheel steady while he worked, then made me try the same repair myself.
+
+“That's the trouble with doing a thing properly,” he said when I finally finished. “You have to know what it's meant to carry.”
+
+I remembered that as Brenna set the broken seal beside the teamster's account. It was a small thing to bear the weight of so many questions.
+
+Elara came before midday. She did not touch the fragment immediately. She asked Brenna where it had been found, who had handled it, and whether the teamster had described the marked crates before seeing it again.
+
+“You think he's lying?” I asked.
+
+“I think memory is a poor place to store something that matters,” she said. “Especially when someone is frightened.”
+
+The teamster had been frightened. I had seen it in the way he watched the road even after we brought him home. I also knew he had told us the same detail twice: the thieves had refused substitutes. Someone had ordered particular goods, and whoever collected them knew the difference.
+
+Elara unfolded a rough account of Iven Rusk, a buyer who moved stolen cargo through the hills. He was not a nobleman, nor a great commander. He was the sort of person who could make a living between other people's needs and other people's dishonesty.
+
+“The teamster's account gives us a place to start,” she said. “Find out what Rusk took and who paid for it. Bring back evidence, not a body.”
+
+“And if he attacks?”
+
+“Defend yourself. But I want the name behind the theft.”
+
+I left Millhaven before the rain had quite stopped.
+
+The path into the hills was narrower than the caravan road. In places the grass had been pressed flat by boots; in others, water had washed away every mark. I followed signs that might have belonged to smugglers or shepherds, and I disliked how readily I began to prefer the first explanation. Once I had been given a suspect, the whole landscape seemed eager to confirm him.
+
+Rusk's camp stood where the ground rose enough to overlook a winding approach. I watched it from a distance until I could distinguish ordinary stores from crates bearing the marks Brenna had described. The guards had weapons, but their attention wandered toward the fire and the damp bundles piled beneath canvas. These were people doing a job. That did not make the job harmless.
+
+I approached when I could no longer learn anything by watching.
+
+Rusk came forward with the expression of a man who had already decided what sort of visitor I was.
+
+“You came a long way for someone else's boxes,” he said. “Whoever sent you should have stayed home.”
+
+“Someone was left to die beside a broken wagon.”
+
+“That wasn't my instruction.”
+
+“Whose instruction was it?”
+
+His gaze moved toward the covered crates, then back to me.
+
+“You think I know every name behind a payment?”
+
+“I think you know who paid you.”
+
+A guard shifted at my side. I turned before he could come closer, and the movement was enough to make everyone suddenly aware of the weapons between us. The confrontation was brief and ugly, without any of the clean courage I had imagined in stories. When it ended, I was breathing too hard, and Rusk was looking at the ground rather than at me.
+
+“I moved what they asked me to move,” he said. “I didn't ask why. The payment was good.”
+
+That was an answer, though not the one I wanted.
+
+Among the cargo I found the selected crates and an instruction bearing the remains of an official-looking seal. The document was damaged, but its meaning survived: specific crates requested, no substitutions permitted. I copied the legible words and kept the original from further harm. I could not make the missing parts appear by wishing for them.
+
+On the walk home I considered what I had almost done. I had been angry at Rusk for the teamster's fear, angry at his guards for standing between me and the stolen goods, and angry that a person could speak so casually about a payment that had nearly cost another person their life. Anger had made the questions seem simple. The answers were not.
+
+Elara listened to my account with the same attention she had given the first report from the road. When I finished, she laid the recovered instruction beside the seal.
+
+“A buyer who knew the cargo,” she said, “and a seal that looks official. Heddan can tell us something about the workmanship.”
+
+“Do you think someone at court ordered it?”
+
+“I think someone wants us to think an official order exists. That's not the same thing.”
+
+Heddan examined the fitting at his bench. He turned it in the light, compared it with legitimate workshop stock and asked me to hold two pieces side by side. Their shapes were similar. Their histories were not.
+
+“The fitting resembles stock used by officials,” he said. “That's all I can prove. Someone could have copied it.”
+
+“So the order is royal?”
+
+He gave me a look I remembered better than the words that followed.
+
+“I didn't say that. That's exactly the mistake I'm warning you against.”
+
+It would have been easier if the metal had confessed. Instead Heddan wrapped it carefully and told me to take both fitting and shipment record to Stoneford, where a proper records office could examine them.
+
+“One without the other tells half a story.”
+
+That evening I returned to Anwen's healing house with a delivery from the village stores. She was making notes beside the patient whose wound had healed too quickly. I asked whether she had discovered why.
+
+“No,” she said.
+
+“Doesn't it trouble you?”
+
+“Of course. But if I write down what I hoped happened instead of what I saw, the next person who needs my notes will be worse off.”
+
+Her ledger was open beside the lamp. Names, dates, supplies, observations. Nothing grand. Yet the care with which she separated one kind of knowledge from another seemed more useful than all the certainty Rusk had offered.
+
+I slept badly. In my dreams I was holding a seal against a door, trying to decide whether it was a key or a warning.
+
+***
+
+Brenna's caravan left for Stoneford under a grey sky. I travelled with the drivers, partly to protect the recovered evidence and partly because Brenna had insisted that I see the regional warehouse for myself.
+
+“We travel together,” the caravan leader told me. “Stay close enough to hear the signal if trouble comes.”
+
+There were long stretches when nothing happened. The wheels complained over stones. Drivers called to one another across the road. At a crossing we waited while the wagons were brought through in order, and I watched people make small decisions that kept the journey from becoming a disaster. Someone checked a fastening before it failed. Someone shared water with a tired worker. Someone noticed a rut deep enough to turn a loaded cart.
+
+By then I had begun to understand that safety was rarely a single act. It was a hundred ordinary acts performed before danger became visible.
+
+Stoneford was larger than Millhaven and less inclined to trust a stranger carrying damaged paperwork. At the warehouse a clerk looked first at Brenna's introduction and then at the recovered records.
+
+“We'll need the original dates,” the clerk said.
+
+A local correspondent working with Mara Thorne met me among stacks of ledgers. The correspondent set three books on the table: Perrin's stock book, a courier docket and the warehouse tally.
+
+“One shipment appears in all three,” the correspondent explained. “But the dates and quantities don't agree. Find the contradiction.”
+
+I examined the entries until the figures began to swim. The stock book showed one movement; the docket another. The warehouse tally recorded the same goods under a date that should have made their journey impossible.
+
+“Could be a copying mistake,” I said.
+
+“Could be. That's why we compare all three.”
+
+I read them again, this time setting aside what I thought the records ought to say. Two agreed on the dispatch date. The third placed receipt after the goods had already been signed out.
+
+“There,” I said. “They left before the warehouse claims to have received them.”
+
+The correspondent leaned forward and checked the entries.
+
+“Now we have something that can be independently checked.”
+
+The discovery did not feel like victory. It felt like finding a loose stone beneath a wall and realising I could not yet see how far the weakness ran.
+
+Perrin had handled the transfer paperwork after Edric's death. That fact mattered because it gave us someone to question, not because it made him guilty. The correspondent obtained the proper regional authority before we approached him. I waited through the formalities with the recovered instruction folded safely away, trying not to imagine what Perrin would say.
+
+He was not the villain I had prepared myself to meet. He looked like a clerk who had spent too many hours remembering orders he had been paid to copy.
+
+“I copied the order as it was given,” he told us. “The office had changed hands after Edric died. I didn't choose who signed it.”
+
+“Who authorised the payment?”
+
+“The seal was on the instruction. The name wasn't mine to question.”
+
+“Then why keep a copy?”
+
+He looked at the document between us.
+
+“Because I knew someone would ask later. I didn't expect it to be you.”
+
+I wanted to ask why he had not spoken sooner. I wanted to tell him what the teamster had endured, and how close the theft had come to becoming a death. But the question before us was what he knew, what he had preserved, and what could be proved. He answered under the reeve's authority. His account did not repair the damaged record, but it gave the record a history.
+
+When the interview ended, the correspondent said the evidence belonged before someone who could examine the royal trail properly.
+
+“Elara can introduce you to Mara Thorne. She'll know what to do with a record like this.”
+
+The return to Millhaven felt longer than the journey out. I had crossed the same roads, seen the same fields, and heard the same wheels, but now every wagon seemed to carry an invisible chain of signatures and decisions. I had once thought a seal made an order trustworthy. I was learning that it only made the question of trust more urgent.
+
+Elara received me without ceremony. I laid out the authenticated copy, the comparison of the three books and Perrin's authorised testimony. She listened until I had finished.
+
+“You brought the instruction back,” she said, “and Perrin answered under the reeve's authority. That's something Mara can examine, not just another rumour about Edric's office.”
+
+“Will she believe us?”
+
+“She'll test the record. That's why I'm sending you to her.”
+
+She prepared an introduction and placed it beside the copies. The original remained with its lawful custodian. I found myself relieved by that small restraint. Nothing about the investigation had given me the right to own everything I touched.
+
+“Take this to Mara,” Elara said. “Tell her what you saw, what the witnesses said and what the records show. Don't improve the story for her.”
+
+I looked toward the village road. Darian would still be watching it. Brenna would still be counting arrivals. Anwen would still be writing what she could prove in her ledger. Millhaven had not become less ordinary because the evidence now pointed beyond it.
+
+“Do you think I'll come back?” I asked.
+
+Elara regarded me for a moment.
+
+“That's not something I can promise you.”
+
+I folded the introduction and put it away.
+
+The road to Valecrown waited beyond Stoneford, and somewhere along it the names behind the payments would have to become more than shadows on damaged paper. I had no idea how far those names might reach.
+
+For the first time, I was afraid not only of what I might find, but of how easily I might misunderstand it.
+
+I went anyway.
