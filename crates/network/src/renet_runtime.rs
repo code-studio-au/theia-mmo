@@ -1929,6 +1929,16 @@ async fn run_client_inner(
         quest,
         statuses,
     } = mode;
+    if let Some(items) = &inventory {
+        items
+            .profile
+            .check_quest_journal(journal.as_ref().map(|j| j.profile.as_ref()))?;
+    } else if journal
+        .as_ref()
+        .is_some_and(|j| j.profile.inventory_hash().is_some())
+    {
+        return Err("Item-bound journal requires client inventory".into());
+    }
     if let Some(source) = classic_source
         && (dodge.is_some()
             || commands.is_none()

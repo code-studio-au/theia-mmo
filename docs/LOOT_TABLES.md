@@ -524,3 +524,42 @@ proof, separate from the OIDC/SQL owner checkpoint. No combined conditional
 encrypted-runtime/native claim yet. Normal CLI/manifest/client adoption remains
 pending; preserve playable `85fd967`. Continue client binding and transport
 qualification locally; no push.
+
+
+## Quest-only client binding and encrypted bridge — 5 November 2026
+
+P3-05 / P3-09 / P3-11 / P3-15. Explicit inventory
+`Profile::with_quest_loot` binds reward bytes to the exact already inventory-bound
+journal. It preserves raw item identity/catalogue and an attached vendor identity,
+refuses replacing rewards and leaves ordinary constructors unchanged. Gameplay
+client startup checks the actual configured journal and inventory before reading
+its ticket: missing inventory for an item journal, a foreign inventory, or missing /
+foreign journal for conditional rewards refuse before connection.
+
+All 368 network-library tests pass at
+`build/quest-loot-client-binding-network-tests-v2-20261105.log`. New constructor
+and actual startup checks exercise missing/foreign bindings, preserved vendor
+identity and old constructor gates. The encrypted two-peer credit fixture now
+also runs conditional per-life loot at 20/30/60 Hz with 20ms delay, 30ms jitter,
+every-eleventh loss and every-seventeenth duplication. It installs the exact
+journal/guide/rewards on both sides and receives owner-private journal views.
+The original tag owner receives the fatal-life loot fact and journal kill;
+the competing final hitter receives neither. A synthetic committed available
+claim arrives without bag mutation; the other peer cannot collect it. Full-bag
+refusal preserves availability, later explicit pickup publishes a new bag and
+removes the offer, and a consumed-claim request cannot enqueue again. Existing
+ordinary/once variants remain in the same regression suite.
+
+These encrypted tests use synthetic owner publications, not database commits.
+The actual OIDC/SQL retained owner proof remains the separate `56b6a22` checkpoint;
+this does not yet establish one combined normal native conditional flow. No new
+wire format, renderer or UI behavior. Formatting and denied-warning workspace /
+all-target Clippy pass at `build/quest-loot-client-binding-fmt-v1-20261105.log` and
+`build/quest-loot-client-binding-clippy-v1-20261105.log`. Preserve
+`build/quest-loot-client-binding-qualified-v1-20261105`.
+
+Next: opt-in normal schema/CLI admission must bind journal before conditional
+rewards on both sides, select the explicit retained owner and update suitable
+pickup rejection text. Validate the exact launch snapshot and run the full
+native pickup/deletion/reacquisition/turn-in/rejoin flow. Ordinary schema-18
+playable `85fd967` remains the qualified reference. Commit locally only; no push.

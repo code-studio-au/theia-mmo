@@ -64,6 +64,8 @@ impl Drop for Stop {
 }
 #[derive(Clone)]
 struct Session {
+    journal: Option<Arc<crate::quest_journal::Profile>>,
+    dialogue: Option<Arc<crate::dialogue::Profile>>,
     public_avatar: Option<Arc<crate::avatar_life_wire::Profile>>,
     public_attacks: Option<Arc<crate::creature_attack_wire::Profile>>,
     source: [u8; 32],
@@ -231,6 +233,8 @@ fn fixture_mode(rate: TickRate, membership: bool) -> Fixture {
         position,
     ));
     let session = Session {
+        journal: None,
+        dialogue: None,
         public_avatar: None,
         public_attacks: None,
         source,
@@ -268,6 +272,8 @@ struct Seen {
     life: Vec<crate::simulation::combat::player_life::Observation>,
 }
 struct Peer {
+    _journal: mpsc::Sender<net::quest_journal::Intent>,
+    _talk: mpsc::Sender<net::dialogue::Intent>,
     avatars: JoinHandle<Vec<crate::avatar_life_wire::Observation>>,
     public_attacks: JoinHandle<Vec<crate::creature_attack_wire::Observation>>,
     state: watch::Receiver<State>,
@@ -317,6 +323,22 @@ impl Peer {
         let (melee, melee_rx) = watch::channel(None);
         let (casts, cast_rx) = mpsc::channel(8);
         let (events, event_rx) = mpsc::channel::<Batch>(if blocked { 1 } else { 16 });
+        let (journal_actions, journal_rx) = mpsc::channel(4);
+        let journal_mode = session
+            .journal
+            .clone()
+            .map(|profile| net::quest_journal::Client {
+                profile,
+                actions: journal_rx,
+            });
+        let (talk_actions, talk_rx) = mpsc::channel(4);
+        let dialogue_mode = session
+            .dialogue
+            .clone()
+            .map(|profile| net::dialogue::Client {
+                profile,
+                actions: talk_rx,
+            });
         let (item_commands, item_rx) = mpsc::channel(1);
         let (pickups, pickup_rx) = mpsc::channel(1);
         let (life_events, mut life_rx) = mpsc::channel(16);
@@ -406,8 +428,8 @@ impl Peer {
             let result=net::run_client_gameplay(address,&token,inputs,publish.clone(),shutdown,session.identity,net::GameplayClient {
                 avatar_life: avatar_mode,
                 public_attacks: public_mode,
-    journal: None,
-    classic_source:Some(session.source),dodge:None,player_life:Some(net::player_life::Client{profile:session.life,membership:session.membership,events:life_events}),lifecycle:None,dialogue:None,ready:readiness,commands:Some(command_rx),choices:Some(choice_rx),
+    journal: journal_mode,
+    classic_source:Some(session.source),dodge:None,player_life:Some(net::player_life::Client{profile:session.life,membership:session.membership,events:life_events}),lifecycle:None,dialogue:dialogue_mode,ready:readiness,commands:Some(command_rx),choices:Some(choice_rx),
     combat:Some(net::CombatActions{melee:Some(net::MeleeActions{catalog:Arc::new(melee::Catalog::from_json(include_bytes!("../../../../../../../content/gameplay/development-melee-weapons.json")).unwrap()),physical:Some(session.physical),white:Some(session.white),ability:Some(session.ability),choices:melee_rx}),catalog:session.abilities,casts:cast_rx,events}),quest:None,progression:session.progression,inventory:Some(net::inventory::Client{pickups:Some(pickup_rx),profile:session.items,commands:item_rx}),statuses:Some(Arc::new(theia_core::statuses::Catalog::from_json(STATUSES).unwrap())),
    }).await;
             if let Err(error) = &result {
@@ -416,6 +438,8 @@ impl Peer {
             result
         });
         Self {
+            _journal: journal_actions,
+            _talk: talk_actions,
             avatars,
             public_attacks,
             state,

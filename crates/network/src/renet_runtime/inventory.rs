@@ -72,6 +72,37 @@ impl Profile {
         ));
         Ok(self)
     }
+    /// Explicit headless conditional mode, retaining the raw inventory identity.
+    pub fn with_quest_loot(
+        mut self,
+        bytes: &[u8],
+        journal: &crate::quest_journal::Profile,
+    ) -> crate::Result<Self> {
+        if self.rewards.is_some() {
+            return Err("Quest loot cannot replace installed rewards".into());
+        }
+        self.rewards = Some(Arc::new(
+            crate::reward_wire::Profile::from_json_with_quest_journal(bytes, &self, journal)?,
+        ));
+        Ok(self)
+    }
+    pub(super) fn check_quest_journal(
+        &self,
+        journal: Option<&crate::quest_journal::Profile>,
+    ) -> crate::Result<()> {
+        if journal
+            .and_then(|j| j.inventory_hash())
+            .is_some_and(|hash| hash != self.hash())
+        {
+            return Err("Journal/inventory client profile mismatch".into());
+        }
+        if let Some(bound) = self.rewards().and_then(|r| r.quest_journal_hash())
+            && journal.is_none_or(|j| j.hash() != bound || j.inventory_hash() != Some(self.hash()))
+        {
+            return Err("Quest loot requires the exact client item journal".into());
+        }
+        Ok(())
+    }
     pub fn with_vendor(mut self, bytes: &[u8]) -> crate::Result<Self> {
         self.vendor = Some(Arc::new(crate::vendor_wire::Profile::from_json(
             bytes, &self,
@@ -1592,3 +1623,7 @@ mod tests {
 #[cfg(test)]
 #[path = "inventory/pickup_tests.rs"]
 mod pickup_tests;
+
+#[cfg(test)]
+#[path = "inventory/quest_profile_tests.rs"]
+mod quest_profile_tests;

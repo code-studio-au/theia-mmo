@@ -45,38 +45,86 @@ impl AccountAdmissions for CreditAdmissions {
 }
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn encrypted_competing_hitter_routes_only_tag_owner_to_xp_and_reward_queues_at_all_rates() {
-    exercise_credit(false).await;
+    exercise_credit(false, false).await;
 }
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn encrypted_per_life_loot_requires_private_pickup_and_preserves_full_bag_availability_at_all_rates()
  {
-    exercise_credit(true).await;
+    exercise_credit(true, false).await;
 }
-async fn exercise_credit(per_life: bool) {
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn encrypted_conditional_loot_routes_original_tag_life_and_private_pickup_at_all_rates() {
+    exercise_credit(true, true).await;
+}
+async fn exercise_credit(per_life: bool, conditional: bool) {
     for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
         let mut f = fixture_mode(rate, true);
         let npc = f.npc;
         f.world.enable_creature_credit(SOLO).unwrap();
-        f.session.items = if per_life {
+        let xp = Arc::new(crate::progression_wire::Profile::from_json(XP).unwrap());
+        let placement = [8008., 8002.];
+        if conditional {
+            let talk = Arc::new(
+                crate::dialogue::Profile::from_json(include_bytes!(
+                    "../../../../../../../../content/quests/development-journal-dialogue.json"
+                ))
+                .unwrap(),
+            );
+            f.world
+                .spawn_development_guide(talk.clone(), placement)
+                .unwrap();
+            let quest = serde_json::json!({"schema":3,"id":"catalog","revision":1,"quests":[{
+                "id":"quest","version":1,"title":"Tokens","description":"Encrypted fixture","prerequisites":[],
+                "giver":"theia.dev.guide","turn_in":"theia.dev.guide","repeat_policy":"once","credit_scope":"character","experience":25,
+                "start_stage":"stage","stages":[{"id":"stage","completion":{"kind":"all"},"next":null,"objectives":[{
+                "kind":"possess_item","id":"goal","label":"Bring","item":"theia.dev.training-token","required":3,"consume_on_turn_in":true}]}]}]});
+            let journal = Arc::new(
+                crate::quest_journal::Profile::from_json(&serde_json::to_vec(&quest).unwrap(), &xp)
+                    .unwrap()
+                    .with_inventory(&f.session.items)
+                    .unwrap(),
+            );
+            f.world
+                .enable_item_quest_journal(journal.clone(), xp.clone(), &f.session.items)
+                .unwrap();
             let mut value: serde_json::Value = serde_json::from_slice(REWARDS).unwrap();
-            value["schema"] = 2.into();
+            value["schema"] = 4.into();
             value["rewards"][0]["scope"] = "per_creature_life".into();
-            f.session
+            value["rewards"][0]["chance_basis_points"] = 10_000.into();
+            value["rewards"][0]["quest_required"] = true.into();
+            f.session.items = f
+                .session
                 .items
                 .clone()
-                .with_creature_loot(&serde_json::to_vec(&value).unwrap())
-                .unwrap()
+                .with_quest_loot(&serde_json::to_vec(&value).unwrap(), &journal)
+                .unwrap();
+            f.session.journal = Some(journal);
+            f.session.dialogue = Some(talk);
         } else {
-            f.session.items.clone().with_rewards(REWARDS).unwrap()
-        };
+            f.session.items = if per_life {
+                let mut value: serde_json::Value = serde_json::from_slice(REWARDS).unwrap();
+                value["schema"] = 2.into();
+                value["rewards"][0]["scope"] = "per_creature_life".into();
+                f.session
+                    .items
+                    .clone()
+                    .with_creature_loot(&serde_json::to_vec(&value).unwrap())
+                    .unwrap()
+            } else {
+                f.session.items.clone().with_rewards(REWARDS).unwrap()
+            };
+        }
         let rewards = Arc::new(f.session.items.rewards().unwrap().clone());
-        let xp = Arc::new(crate::progression_wire::Profile::from_json(XP).unwrap());
-        if per_life {
+        if conditional {
+            f.world.enable_quest_loot(rewards.clone()).unwrap();
+        } else if per_life {
             f.world.enable_creature_loot(rewards.clone()).unwrap();
         } else {
             f.world.enable_rewards(rewards.clone()).unwrap();
         }
-        f.world.enable_progression(xp.clone()).unwrap();
+        if !conditional {
+            f.world.enable_progression(xp.clone()).unwrap();
+        }
         f.session.progression = Some(xp.clone());
         f.session.identity = f.world.identity();
         let combat_source = f
@@ -89,6 +137,15 @@ async fn exercise_credit(per_life: bool) {
             crate::simulation::rewards::profile_identity(combat_source, rewards.hash()),
             xp.hash(),
         );
+        if let Some(journal) = &f.session.journal {
+            f.session.source =
+                crate::quest_journal::profile_identity(f.session.source, journal.hash());
+            f.session.source = crate::dialogue::profile_identity(
+                f.session.source,
+                f.session.dialogue.as_ref().unwrap().hash(),
+                placement,
+            );
+        }
         assert_eq!(
             f.session.identity,
             crate::classic::profile_identity(f.session.source)
@@ -115,6 +172,16 @@ async fn exercise_credit(per_life: bool) {
             let (input, xp_rx) = mpsc::channel(net::progression::CAPACITY);
             xp_receivers.push(xp_rx);
             let (publish, state) = watch::channel(net::progression::Observation {
+                journal: f
+                    .session
+                    .journal
+                    .as_ref()
+                    .map(|j| net::progression::JournalObservation {
+                        catalog: j.hash(),
+                        revision: 0,
+                        journal: Default::default(),
+                        reply: None,
+                    }),
                 progress: Some(theia_core::progression::State::new(xp.profile(), 0, 0).unwrap()),
                 ..Default::default()
             });
@@ -122,7 +189,7 @@ async fn exercise_credit(per_life: bool) {
             ports.push(Ports {
                 inventory,
                 progression: net::progression::Port {
-                    journal: None,
+                    journal: f.session.journal.as_ref().map(|j| j.hash()),
                     profile: xp.clone(),
                     quest: None,
                     lifecycle: None,
@@ -186,6 +253,7 @@ async fn exercise_credit(per_life: bool) {
                 .and_then(|life| life.current())
                 .and_then(|life| life.combat)
                 .is_some()
+                && (!conditional || s.quest_journal.is_some())
                 && s.progression.is_some()
                 && s.inventory.is_some()
                 && s.rewards.is_some()
@@ -233,8 +301,13 @@ async fn exercise_credit(per_life: bool) {
             .await
             .unwrap()
             .unwrap();
-        let net::progression::Input::Kill(credit) = credit else {
-            panic!("Unexpected quest action")
+        let credit = match credit {
+            net::progression::Input::Kill(credit) if !conditional => credit,
+            net::progression::Input::Journal(net::progression::JournalInput {
+                operation: net::progression::JournalOperation::Kill(credit),
+                ..
+            }) if conditional => credit,
+            _ => panic!("Unexpected quest action"),
         };
         assert_eq!(credit.id, theia_core::progression::KillId::from_victim(npc));
         assert_eq!(credit.creature.as_str(), "theia.dev.training-creature");
@@ -408,7 +481,11 @@ async fn exercise_credit(per_life: bool) {
         assert_ne!(seen_a.facts[1].actor, owner);
         assert_eq!(seen_a.facts[1].remaining, 0);
         let stats = server.await.unwrap().unwrap();
-        assert_eq!(stats.experience_opportunities_forwarded, 1);
+        assert_eq!(
+            stats.experience_opportunities_forwarded,
+            u64::from(!conditional)
+        );
+        assert_eq!(stats.journal_kills_forwarded, u64::from(conditional));
         assert_eq!(stats.reward_opportunities_forwarded, 1);
         assert!(xp_receivers.iter_mut().all(|r| r.try_recv().is_err()));
         assert!(reward_receivers.iter_mut().all(|r| r.try_recv().is_err()));

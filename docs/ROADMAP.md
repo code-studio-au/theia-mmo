@@ -1,3 +1,12 @@
+Quest-only client/transport prerequisite qualified, 5 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: explicit client loot profiles retain item/vendor
+identity and require the exact configured item journal before connection.
+Conditional encrypted two-peer tag/life/private pickup passes at 20/30/60 Hz with
+UDP impairment; its owner publications are synthetic. 368 network tests,
+formatting and strict Clippy pass. [Scope/evidence](LOOT_TABLES.md#quest-only-client-binding-and-encrypted-bridge--5-november-2026).
+Normal CLI/manifest/native conditional adoption remains pending. Continue that
+locally; no push. Qualified ordinary item-quest playable: `85fd967`.
+
 Quest-only World prerequisite qualified, 5 November 2026:
 P3-05 / P3-09 / P3-11 / P3-15: explicit simulation admission now requires the
 exact installed item journal and inactive matching combat/creature. Real fatal
