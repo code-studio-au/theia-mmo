@@ -6,6 +6,7 @@ pub mod coordinates;
 pub mod creature_credit;
 pub mod damage;
 pub mod dialogue;
+pub mod documents;
 pub mod dodge;
 pub mod facing;
 pub mod hit_outcomes;

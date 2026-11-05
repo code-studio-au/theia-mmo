@@ -279,3 +279,13 @@ migration remains future work. World/NPC/creature/action existence still require
 the normal gameplay validator. Review compiled closed subsets here; the much
 larger planning manifest and unlinked regional packs remain separate inputs for
 the planning/registry/compiler workflow. No runtime pack/history limit changes.
+
+
+## Readable notes: metadata prerequisite only
+
+[Document catalogue schema 1](QUEST_DOCUMENTS.md) now defines bounded plain-text
+pages tied to known items without changing existing item schemas. It is not yet
+an executable read objective or normal quest-pack role. Do not substitute an NPC
+interaction or item-possession event for reading; historical read credit, exact
+profile binding, durable authorization and a document UI remain pending. No
+campaign IDs or story files are allocated by this prerequisite.

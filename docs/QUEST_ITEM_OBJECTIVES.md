@@ -922,3 +922,14 @@ supported test sizes. [Exact evidence and restrictions](LOOT_TABLES.md#normal-qu
 No new quest objective kind or campaign IDs. The earlier readable-document
 requirement remains the next P3-05 / P3-11 / P3-15 slice; historical read credit
 must stay separate from possession. Local commits only; no push.
+
+
+## Readable-document catalogue prerequisite — 5 November 2026
+
+The first pure item-document catalogue and checked bag-slot/revision resolution
+are implemented, with 351 core tests and strict Clippy passing. No read objective,
+durable open receipt, wire or document UI is adopted yet. [Current authoring
+bounds and concrete next slices](QUEST_DOCUMENTS.md) refine the readable-note
+requirement above: an owned note can be displayed without an active quest, while
+read credit belongs only to an eligible active stage. Continue P3-05 / P3-11 /
+P3-15 locally; normal quest-only loot remains qualified at `65977bd`.

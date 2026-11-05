@@ -1,3 +1,11 @@
+Readable-document catalogue prerequisite qualified, 5 November 2026:
+P3-05 / P3-11 / P3-15: bounded plain-text document definitions now map to known
+items. Pure bag-slot/revision checks reject missing, moved, deleted or wrong
+items; they grant no authorization or read credit. All 351 core tests, formatting
+and strict workspace/all-target Clippy pass. [Scope and next slices](QUEST_DOCUMENTS.md).
+Read objective, exact runtime binding, durable open receipts and UI remain pending.
+Continue those locally; no push. Qualified quest-loot playable: `65977bd`.
+
 Normal quest-only loot qualified locally, 5 November 2026:
 P3-05 / P3-09 / P3-11 / P3-15: opt-in manifest schema 19 binds the exact item
 journal before conditional loot on client/server and selects the retained owner.

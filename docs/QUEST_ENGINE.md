@@ -1,3 +1,9 @@
+Readable-document metadata prerequisite, 5 November 2026:
+Core can validate bounded plain-text item documents and resolve a checked
+bag slot/revision. This does not add a supported quest objective kind or readable
+runtime UI yet. [Implemented scope and pending authorization/credit](QUEST_DOCUMENTS.md).
+Normal schema-19 quest loot below remains the qualified playable `65977bd`.
+
 Normal quest-only loot qualified locally, 5 November 2026:
 P3-05 / P3-09 / P3-11 / P3-15: opt-in manifest schema 19 binds the exact item
 journal before conditional loot on client/server and selects the retained owner.
