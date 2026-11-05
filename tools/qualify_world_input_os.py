@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""Inject X11 input only into owned Theia windows; synthetic OS, not hardware."""
+"""Guard X11 pointer/keys and Linux wheel input to owned windows; synthetic OS."""
 import argparse
 import ctypes as c
 import ctypes.util
 import json
+import fcntl
+import struct
 import math
 import os
 from pathlib import Path
@@ -46,6 +48,7 @@ class Desktop:
         self.held_keys=set()
         self.held_buttons=set()
         self.window=None
+        self.wheel_fd=None
         self.x=c.CDLL(ctypes.util.find_library('X11'))
         self.t=c.CDLL(ctypes.util.find_library('Xtst'))
         self.x.XOpenDisplay.argtypes=[c.c_char_p];self.x.XOpenDisplay.restype=c.c_void_p
@@ -117,6 +120,31 @@ class Desktop:
         self.t.XTestFakeButtonEvent(self.display,button,int(pressed),0);self.x.XFlush(self.display);time.sleep(.08)
     def click(self,window,point,scale,button):
         self.move(window,point,scale);self.button(button,True);self.button(button,False)
+    def scroll(self,lines):
+        """Guarded Linux wheel-axis input; XTEST wheel buttons may be ignored."""
+        self.owned_focus(pointer=True)
+        assert isinstance(lines,int) and 0<abs(lines)<=8
+        if self.wheel_fd is None:
+            descriptor=os.open('/dev/uinput',os.O_WRONLY|os.O_NONBLOCK|os.O_CLOEXEC)
+            try:
+                # linux/uinput.h: _IOW('U', nr, int), input-event-codes.h.
+                for event_type in [1,2]:fcntl.ioctl(descriptor,0x40045564,event_type)
+                for button in [0x110,0x111,0x112]:fcntl.ioctl(descriptor,0x40045565,button)
+                for axis in [0,1,8]:fcntl.ioctl(descriptor,0x40045566,axis)
+                name=f'Theia owned qualification wheel {os.getpid()}'
+                setup=struct.pack('HHHH80sI',3,0x1209,1,1,name.encode(),0)
+                fcntl.ioctl(descriptor,(1<<30)|(len(setup)<<16)|(0x55<<8)|3,setup)
+                fcntl.ioctl(descriptor,0x5501)
+                wait(lambda:name in subprocess.check_output(['xinput','list','--name-only'],text=True).splitlines(),5)
+            except BaseException:
+                os.close(descriptor)
+                raise
+            self.wheel_fd=descriptor
+        self.owned_focus(pointer=True)
+        # Native input_event: timeval, type, code, value; REL_WHEEL + SYN_REPORT.
+        payload=struct.pack('llHHi',0,0,2,8,lines)+struct.pack('llHHi',0,0,0,0,0)
+        assert os.write(self.wheel_fd,payload)==len(payload)
+        time.sleep(.12)
     def key_state(self,name,pressed):
         if pressed:self.owned_focus();self.held_keys.add(name)
         else:self.held_keys.discard(name)
@@ -137,6 +165,11 @@ class Desktop:
     def close(self):
         for key in list(self.held_keys):self.key_state(key,False)
         for button in list(self.held_buttons):self.button(button,False)
+        if self.wheel_fd is not None:
+            try:fcntl.ioctl(self.wheel_fd,0x5502)
+            finally:
+                os.close(self.wheel_fd)
+                self.wheel_fd=None
         self.x.XCloseDisplay(self.display)
 
 

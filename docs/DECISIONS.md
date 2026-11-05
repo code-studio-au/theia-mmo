@@ -1,3 +1,13 @@
+## 2026-11-05 — explicit normal inventory-bound item quests
+
+Adopt opt-in manifest schema 18 and `--quest-items` only with the exact bound
+inventory/journal profiles. Count current backpack holdings across stacks,
+reverse Ready after removal, and recheck/consume required items atomically with
+turn-in and XP. Keep the three-pelt development quest and guaranteed native
+fixture distinct from ordinary random-loot content. [Qualified scope](QUEST_ITEM_OBJECTIVES.md#normal-item-quest-qualification-complete--5-november-2026).
+Quest-only generation rights remain a separate prerequisite; ordinary item drops
+must not silently acquire quest restrictions. Preserve older profile versions.
+
 ## 2026-11-05 — authored creature drop chances and explicit corpse pickup
 
 Use independent integer drop chances and optional exclusive groups in reward

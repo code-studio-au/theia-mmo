@@ -95,8 +95,7 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
         width, height, _ = state()['window']
         desktop.move(window, [width*.5, height*.42], scale)
         for _ in range(4):
-            desktop.button(5 if name == 'training' else 4, True)
-            desktop.button(5 if name == 'training' else 4, False)
+            desktop.scroll(-1 if name == 'training' else 1)
         time.sleep(.2)
         if name=='training':(folder/'dialogue-training-after.json').write_text(json.dumps(journal(),indent=2)+'\n')
         point = wait(lambda: next((c['point'] for c in journal()['choices'] if c['choice'] == wanted), None))
@@ -550,9 +549,13 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
     finally:
         desktop.close()
     assert identity.server is None and cluster.server is None
+    assert desktop.wheel_fd is None
+    wheel_name=f'Theia owned qualification wheel {os.getpid()}'
+    wait(lambda:wheel_name not in subprocess.check_output(['xinput','list','--name-only'],text=True).splitlines(),5)
     assert not any((output/'cluster'/name).exists() for name in ['password','pgpass'])
     result = dict(passed=True, results=results, owned_services_stopped=True, plaintext_password_files_removed=True,
                   scope='Normal launcher + actual local OIDC, owned PostgreSQL, PID-bound synthetic X11 input and Linux native GPU; no physical hardware/Windows claim',
+                  wheel_input='temporary Linux uinput wheel axis; XTEST pointer/keyboard; all guarded by owned X11 focus and pointer checks', virtual_wheel_device_removed=True,
                   private_combat_fixture=not production, unchanged_quest_catalogue=True, repeated_preaccept_interaction=repeat_interaction,
                   database_process_restart=True, saved_completion_rejoin=True, reach_area=reach_areas, item_destruction=destroy_items, corpse_loot=corpse_loot, item_quest=item_quest, guaranteed_loot_fixture=item_quest)
     (output/'verification.json').write_text(json.dumps(result, indent=2)+'\n')

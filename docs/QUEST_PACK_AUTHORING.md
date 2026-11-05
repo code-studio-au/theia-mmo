@@ -1,9 +1,11 @@
-Item-quest integration checkpoint, 5 November 2026:
-Opt-in manifest schema 18 and normal client/server inventory binding are now
-implemented, with a development-only three-pelt quest. Native qualification is
-paused and incomplete; do not ship campaign item quests yet. Ordinary pelts are
-not quest-only drops. [Current behavior, partial evidence and remaining checks](QUEST_ITEM_OBJECTIVES.md#normal-item-quest-admission--5-november-2026).
-Earlier admission-gate entries below describe their historical prerequisites.
+Inventory-bound item quests qualified in opt-in development content, 5 November 2026:
+Manifest schema 18 selects the exact inventory-bound journal. Quest schema 3 can
+execute supported final-stage possess_item/count/consume_on_turn_in objectives;
+native pickup, split/delete reversal, consumption and restart/rejoin now pass.
+[Scope, profiles and evidence](QUEST_ITEM_OBJECTIVES.md#normal-item-quest-qualification-complete--5-november-2026).
+Ordinary pelts are not quest-only drops. Cross-pack campaign runtime loading and
+saved-version migration remain separate; do not infer campaign readiness from
+this development fixture. Earlier admission-gate entries below are historical.
 
 Loot-authoring clarification, 5 November 2026:
 Quest objectives name the items and quantities required; drop chances belong to

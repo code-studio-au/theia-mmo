@@ -1,3 +1,9 @@
+Current item-quest integration, 5 November 2026: opt-in manifest schema 18 now
+executes the inventory-bound pelt quest through normal pickup, deletion,
+reacquisition, consumption and restart/rejoin. [Evidence and fixture limits](QUEST_ITEM_OBJECTIVES.md#normal-item-quest-qualification-complete--5-november-2026).
+Pelts remain ordinary loot; quest-only generation/paging/pickup checks below are
+still planned. Earlier live-possession gate statements are historical.
+
 # Creature loot tables
 
 P3-02 / P3-05 / P3-09 / P3-11 / P3-15, 5 November 2026.

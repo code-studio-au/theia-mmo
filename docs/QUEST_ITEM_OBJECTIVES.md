@@ -854,3 +854,59 @@ Paused evidence and resume point:
 
 The desktop was restored to 2560x1080 at 60 Hz and owned game/provider/database
 processes are stopped. Preserve work locally; do not push or resume until asked.
+
+
+## Normal item-quest qualification complete — 5 November 2026
+
+The user resumed implementation. The preceding pause record and unresolved
+small-window diagnosis are historical. Opt-in schema 18 is now qualified for the
+normal inventory-bound journal flow described above, including live corpse
+pickup, Ready reversal after deletion, replacement pickup and consumption.
+Existing manifest versions remain unchanged; this does not install a campaign,
+perform save migration or make drops quest-only.
+
+The small-window failure was synthetic wheel input, not an overflowing-content
+calculation error: native v16 recorded zero MouseWheel messages while the dialogue
+had 231 px of content in a 194 px viewport. A temporary Linux uinput mouse now
+emits wheel-axis events instead of XTEST wheel-button clicks. The existing Bevy
+scroll code then moves 37 px, exposing the fourth choice at y=366 instead of the
+clipped y=403. The helper clicks that exposed ordinary choice; no dialogue intent,
+quest fact, inventory state or health is injected. Focus/pointer checks guard
+input to the owned X11 window. Device creation requires writable `/dev/uinput`;
+normal game input has no such requirement. Device destruction/descriptor closure
+and owned service cleanup run after qualification.
+
+Completed proofs using `build/quest-item-client-candidate-v5-20261105`:
+
+- `build/quest-item-client-native-v17-20261105/verification.json`: fresh 1280x720
+  flow and actual PostgreSQL process restart/fresh login at that size.
+- `build/quest-item-client-native-v18-20261105/verification.json`: fresh
+  3440x1440 fullscreen and 1920x1200 flows, then database restart/fresh login at
+  3440x1440. It also asserts descriptor closure and virtual-device removal.
+
+All five sessions report zero GPU diagnostics on Linux, AMD Radeon RX 7900 XTX,
+RADV Vulkan, Mesa 26.2.6. Small and ultrawide screenshots were inspected. Each
+fresh run ends at journal head 24, 200 XP, four completed quests, eight actions
+and eleven historical events in actual SQL; held pelts are zero and tokens 103.
+Rejoin restores completion and consumption without replaying rewards. Opening a
+corpse and the fourth kill leave possession at 2/3 until replacement pickup;
+split leaves 3/3 Ready, deletion restores Active 2/3, and turn-in consumes three.
+The original three completed quest states remain unchanged.
+
+Native proofs deliberately use guaranteed schema-2 loot and the existing
+low-damage/slow-creature test fixture. The earlier v10 1920x1200 proof separately
+passed unchanged normal combat; the completed multi-size checks are not a claim
+of native random-rate sampling, physical mouse hardware, Windows execution or MMO
+capacity. The normal schema-18 manifest retains independent 60% pelt / 25% token
+content; actual random-roll SQL/owner evidence remains in [loot tables](LOOT_TABLES.md).
+
+Current checks: 147 client tests (`build/quest-item-client-app-tests-v3-20261105.log`),
+55 validator tests and 40 actual-validator bundle tests (v2/v1 logs cited in the
+pause record), formatting (`build/quest-item-client-fmt-v5-20261105.log`), strict
+workspace/all-target Clippy (`build/quest-item-client-clippy-v8-20261105.log`),
+optimized build (`build/quest-dialogue-scroll-release-v1-20261105.log`) and Python
+compilation pass. The new client delta after the earlier checks is read-only
+scroll telemetry. Preserve `build/quest-item-client-qualified-v1-20261105` for
+source, binary/art references and combined evidence. Continue implementation
+locally with quest-only generation entitlement and fresh current-need checks;
+reading/viewing notes remains a separate authored objective. No push.

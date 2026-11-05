@@ -28,6 +28,9 @@ pub(crate) struct Ui {
     pub submitted: u64,
     pub visible_guide_frames: u64,
     pub open_frames: u64,
+    pub scroll_events: u64,
+    pub scroll_delta: f32,
+    pub scroll_maximum: f32,
 }
 #[derive(Resource, Default)]
 struct Pending {
@@ -446,12 +449,13 @@ fn present(
 }
 fn scroll(
     mut events: MessageReader<MouseWheel>,
-    ui: Res<Ui>,
+    mut ui: ResMut<Ui>,
     mut bodies: Query<(&mut ScrollPosition, &ComputedNode), With<Body>>,
 ) {
     let delta: f32 = events
         .read()
         .map(|event| {
+            ui.scroll_events += 1;
             -event.y
                 * if event.unit == MouseScrollUnit::Line {
                     24.
@@ -461,9 +465,11 @@ fn scroll(
         })
         .sum();
     if ui.open && delta != 0. {
+        ui.scroll_delta = delta;
         for (mut position, node) in &mut bodies {
             let maximum =
                 ((node.content_size().y - node.size().y) * node.inverse_scale_factor()).max(0.);
+            ui.scroll_maximum = maximum;
             position.y = (position.y + delta).clamp(0., maximum);
         }
     }

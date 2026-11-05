@@ -1,3 +1,14 @@
+Normal item quests qualified locally, 5 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: opt-in schema-18 inventory-bound quests now pass
+native Linux pickup, split/delete reversal, replacement pickup, atomic turn-in
+consumption and actual PostgreSQL restart/fresh login. 1280x720, 1920x1200 and
+3440x1440 pass on RX 7900 XTX / RADV Vulkan with zero GPU diagnostics. Guaranteed
+loot and low-damage combat are explicit native fixtures; the ordinary random-loot
+profile is separate. 147 client, 55 validator and 40 bundle tests, formatting,
+strict all-target Clippy and optimized builds pass. [Evidence and limits](../QUEST_ITEM_OBJECTIVES.md#normal-item-quest-qualification-complete--5-november-2026).
+Continue with quest-only generation rights and current-need checks before paging
+and pickup. Commit locally only; no push. Earlier stop/gate entries are historical.
+
 Corpse pickup and authored loot rolls qualified locally, 5 November 2026:
 P3-02 / P3-05 / P3-09 / P3-11 / P3-15: opt-in schema-17 corpse UI passes three
 native Linux sizes and database restart/rejoin. Reward schema 3 adds authored
