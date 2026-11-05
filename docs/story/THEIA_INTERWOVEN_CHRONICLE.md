@@ -1964,3 +1964,238 @@ I wondered what might happen when a hidden design was carried into a place that 
 I had come to Sylvaren asking for records.
 
 Before long, I would have to learn what those records were meant to protect.
+
+
+### Chapter Eight — What the Queen Will Share
+
+I had imagined Sylvaren's wards as walls.
+
+Perhaps that was because every other place I had visited had taught me to recognise protection in familiar forms: a gate at Millhaven, a guard at Valecrown, a reinforced gallery in Kar Durn. I knew how a wall could fail. I knew how a bridge could bear more weight than its makers intended. I knew how a seal could be copied and made to lend false authority to a dangerous order.
+
+Caelith took me along a woodland path and showed me that protection could be harder to recognise.
+
+There were no battlements where she stopped. A maintained boundary passed between living growth and carefully tended ground. Its purpose was not to forbid every crossing. It was to allow certain work to continue without exposing the people and places around it to risks they had not accepted.
+
+“The ward tenders know this route,” she said. “You do not. Listen before you decide what needs changing.”
+
+The first task she gave me had little to do with the altered designs I had carried from Kar Durn. A nursery route had been damaged, and workers were stranded beyond a stretch of neglected branch-ward where local fauna had become a danger.
+
+“Is this part of the sabotage?” I asked.
+
+“We have no reason to believe so. The forest has problems that exist without your investigation.”
+
+I heard a trace of impatience in her voice, though it might have been my own embarrassment reflected back at me. I had spent so long looking for a common hand behind the stolen cargo that I had begun to expect it everywhere.
+
+The route narrowed beneath branches that had grown across the maintenance markers. I followed the tenders' instructions, cleared the immediate danger and helped the workers return without disturbing the surrounding ward more than necessary. One of them insisted upon checking the nursery before accepting assistance for an injured arm. I waited while Caelith examined the boundary and confirmed that the workers' efforts had not been lost.
+
+“The tenders are safe,” she told me afterward. “The nursery can recover.”
+
+I watched the relief pass between the workers. No one asked whether their rescue would help uncover the mystery that had brought me to Sylvaren. It mattered because they were alive and their work could continue.
+
+Only then did Caelith permit me to accompany her to the abandoned research ward.
+
+***
+
+She placed two records before me. One showed the ward as it had been approved; the other documented what remained in the field.
+
+“Tell me what changed,” she said.
+
+At first the differences seemed slight. A position altered. A measure adjusted. A relationship between parts that would have appeared harmless to anyone unfamiliar with the whole. I had seen the same deceptive neatness in Brynja's substituted drawing.
+
+“The alterations resemble the other sites,” I said.
+
+“Resemblance is not proof. Check the maintenance register as well.”
+
+The register took longer to read than the design. Entries had been made by different hands at different times. Some recorded routine care, some repairs, and some the absence of work that ought to have been done. I had to separate neglect from intervention before I could identify what did not belong.
+
+We compared the approved baseline with the altered ward and the surviving record of its maintenance. The differences were deliberate. They had not been authorised by the people responsible for the site.
+
+Caelith read the conclusion twice.
+
+“The changes were deliberate and unauthorised,” she said. “That I can attest.”
+
+“Do you know who made them?”
+
+“No. And I will not turn the uncertainty into an accusation because the answer would be convenient.”
+
+She looked toward the living boundary beyond the research site.
+
+“People will hear of this and begin to suspect every damaged branch-ward, every failed nursery, every frightened animal. We cannot let one real interference make us careless about everything else.”
+
+I remembered Joss at Greyfall Quarry, counting workers while I searched for signs of a hidden enemy. I remembered Nessa refusing to call an ordinary Dominion attack part of the signal operation without evidence. The lesson had followed me across kingdoms and coasts. I wondered how many times I would need to learn it.
+
+Mara had arrived in Sylvaren to examine the correspondence surrounding the restricted observations. She found me bent over the maintenance records and asked what Caelith had established.
+
+“Unauthorised alteration,” I said. “Not a name.”
+
+“Good. Keep those separate.”
+
+The name we needed might lie with Veylan.
+
+***
+
+I expected Veylan to be defiant.
+
+His correspondence showed that restricted observations had been sold or passed beyond their proper custody. Some of the letters carried the bitterness of a person who believed his work had been overlooked. I had read them before meeting him, and by the time I entered the authorised interview I had already begun to imagine the words he would use to justify himself.
+
+Mara noticed.
+
+“Speak to him before you decide he sold them willingly,” she said.
+
+“What if he refuses?”
+
+“Then document the refusal. We don't manufacture testimony to improve a case.”
+
+Veylan was quieter than I expected. He did not deny the existence of the correspondence. He challenged the way it had been read.
+
+“You see a sale,” he said. “I see years of work judged by people who never had to prove what I proved.”
+
+“Did you release the observations?”
+
+He looked away.
+
+“I believed the work deserved to be seen.”
+
+“That isn't the same as permission.”
+
+“No.”
+
+For a moment I thought he might say more. I waited, remembering the witness in Valecrown and Mara's insistence that silence should not be filled by the investigator.
+
+Veylan spoke of resentment, of doors closed to him, of people who had praised his skill while refusing the conclusions he wanted them to accept. His grievance was real to him. So was the concealment shown by the letters.
+
+I could understand the first without excusing the second.
+
+Under Aelari authority, his statement was recorded and compared with the correspondence. Some details matched independently. Others remained his account alone. We did not need to decide whether he was a good man or a bad one to establish what he had done.
+
+When we left, Mara held the authenticated copy beside the original letters.
+
+“His account and the correspondence corroborate one another,” she said. “We can take this to the queen.”
+
+I looked back toward the room where Veylan remained.
+
+“Do you think he knew what his observations would be used for?”
+
+“I think we should write down what he knew, and leave the rest open until we can prove it.”
+
+I wanted a simpler answer. By then I no longer expected one.
+
+***
+
+Queen Seralyth received the findings in a chamber whose quiet made me more conscious of my own footsteps. I had carried a Human king's commission into Tidehold, a Dwarven High King's introduction into Sylvaren, and now an Aelari record before its sovereign. Each document had opened a conversation. None had granted me ownership of what I sought.
+
+Seralyth listened while Caelith presented the ward comparison and Mara explained the recovered correspondence. I described the signal house at Northwatch, the controlled shutdown and the engineering differences Brynja had authenticated.
+
+The queen asked about the limits of our measurements. She wanted to know which records were original, which were copies, and which conclusions depended upon testimony that could not be repeated.
+
+I was grateful for the questions. They meant she was treating the evidence as something to be tested rather than as a story designed to win her favour.
+
+At last she spoke.
+
+“You have brought evidence rather than demands. I will release a limited inspection reference.”
+
+She explained that the reference concerned a Dominion site. It did not authorise diplomacy with Dominion officers, nor did it open unrelated Aelari research to outsiders.
+
+“We can investigate without their cooperation,” I said.
+
+“Then understand the risk. They will see an intruder, not an invited scholar.”
+
+I thought of the disciplined defenders on Rukhan's coast. They had not known why I watched their posts. They had only known that an enemy was near.
+
+“Caelith will prepare the permitted copy,” Seralyth continued. “Do not expose our unrelated research.”
+
+I accepted the conditions. The sample and the limited reference were not trophies. They were entrusted evidence, given for a purpose the queen had defined.
+
+Outside the audience, Caelith secured the permitted material and checked the custody record.
+
+“Does this make you part of our investigation?” I asked.
+
+“It makes me responsible for what I have agreed to share,” she replied. “The rest of my work remains here.”
+
+I had wanted her help because she understood the wards. I was beginning to value it for another reason: she would not allow my urgency to become authority over her people.
+
+***
+
+The return to Tidehold felt shorter than the first journey, though I knew the roads had not changed. I had travelled them with uncertainty before; now I carried more evidence and a sharper awareness of what it did not prove.
+
+Nessa met us at the harbour. She read the coastal reference and the proposed extraction arrangements without showing surprise.
+
+“We're returning to Northwatch for one document,” she said. “This is a hostile infiltration, not an embassy.”
+
+“What's our extraction route?”
+
+“The coastal path and the next authorised ship. If you lose contact, return to the agreed rally point.”
+
+I asked whether there was any chance the Dominion engineers would speak with us.
+
+“Not across this frontier,” Sera answered. “Recover their written findings. Don't approach Dominion authorities as allies.”
+
+The inspection copy we needed had been prepared by Ilyss, a Vaelari engineer who had rejected a component before it was installed. The rejection mattered. It meant someone on the Dominion side had recognised that an alteration was dangerous, even if the two alliances had never shared the warning.
+
+We approached the military observation post by a guarded route, keeping clear of civilian dwellings. The defenders were not waiting to help us. Their orders and ours were opposed. I could not pretend that recovering a useful document made the intrusion friendly.
+
+Inside, I found the inspection copy among the post's records. The rejection was precise, its concerns technical rather than political. The engineer had identified a fault in the altered component and refused to approve it.
+
+I thought of Brynja's anger at the misuse of her seal. Here, across a hostile frontier, another engineer had refused to accept dangerous work. The similarity did not make our peoples allies. It made the evidence harder to dismiss.
+
+We withdrew by the agreed route and returned to the landing with the copy intact.
+
+Sera examined it beside the earlier measurements.
+
+“The report confirms the same pattern,” she said. “The people who rejected it may never know their evidence helped us.”
+
+I wondered whether Ilyss would have believed me if I had been able to tell her. Perhaps she would have regarded the report as proof that her warning had been justified. Perhaps she would have seen only an enemy holding a document taken from a military post. I had no right to decide what she would think.
+
+The next lead came from Mara's field agent. A courier was moving to destroy cached instructions that connected the altered materials to their route of distribution. We had already lodged a duplicate of the essential evidence, but the remaining archive might reveal more.
+
+“The courier is destroying the cache,” the agent told me. “Intercept them before the archive burns.”
+
+“Do we need the courier alive?”
+
+“If it can be done safely, yes. But the record is essential.”
+
+We reached the cache amid the smell of smoke and scorched paper. I had no time to save everything. I secured what could be recovered and made sure the surviving fragment was recorded against the duplicate already lodged elsewhere. The courier's attempt to erase the trail did not erase the evidence we had protected in advance.
+
+The agent studied the damaged material.
+
+“The fragment is enough to establish the route,” they said. “The rest must be corroborated.”
+
+I was tired of that word, *corroborated*, and ashamed of being tired of it. Each time we had preserved an independent copy, the truth had become a little harder for someone else to destroy.
+
+***
+
+Mara spread the Dwarven drawings, Aelari ward records and Vaelari inspection copy across a table at Tidehold.
+
+Three peoples. Different institutions. Different forms of authority. The same method of alteration.
+
+I watched her compare the records without allowing any one of them to explain more than it contained. The Dwarven evidence established a substituted specification. The Aelari records showed deliberate changes to a protected ward. The Vaelari inspection proved that an engineer on the opposing side had recognised and rejected a dangerous component.
+
+The courier's fragment helped connect the route by which the altered instructions had travelled.
+
+“Are the Korrath responsible?” I asked.
+
+Mara shook her head.
+
+“Not on this evidence. Their older engineering may be what someone is copying.”
+
+“Then we need to speak to them.”
+
+“Yes. And we will ask them to judge the methods themselves.”
+
+She prepared sealed copies for the next inquiry. We had found common suppression across different records, not proof that every office, every workshop or every people had been infiltrated. That distinction mattered. The world was already divided by war. We did not need to make every neighbour into a suspect as well.
+
+Drom Kar would be our next destination.
+
+I stood beside the table after Mara left, looking at the documents we had carried from one place to another. Each represented someone who had worked carefully enough for a record to survive: Brynja preserving her calculations, Caelith maintaining the ward baseline, Ilyss rejecting a dangerous component, the field agent lodging a duplicate before the cache could burn.
+
+None of them had seen the whole pattern. Neither had I.
+
+I had once believed the truth would be waiting at the end of the road, complete and unmistakable. Instead it seemed to be something people built together, one honest account at a time, while others tried to break the connections between them.
+
+Beyond Tidehold, the ships were preparing to sail. The war continued. The altered designs had not ceased to exist because we had discovered them. Somewhere, people were still putting those designs to work.
+
+I gathered the sealed copies and went to find Mara.
+
+The next road would lead us to the Korrath, and to questions older than the contracts we had been following.
+
+For the first time, I wondered whether the danger we were uncovering had begun long before any of us had been born.
