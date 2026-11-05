@@ -210,7 +210,7 @@ async fn real_postgres_migrations_ownership_monotonicity_atomicity_and_sql_bound
         .await
         .unwrap()
         .get(0);
-    assert_eq!(versions, 13);
+    assert_eq!(versions, 14);
     let upgraded_binding = store.development_binding(1).await.unwrap();
     store.close().await.unwrap();
     admin

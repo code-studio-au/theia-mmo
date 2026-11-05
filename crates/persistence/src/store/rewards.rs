@@ -112,7 +112,7 @@ impl Store {
                 "Repeatable loot requires a victim life and corpse position",
             ));
         }
-        self.offer_reward_source(binding, world, profile, reward, None, false)
+        self.offer_reward_source(binding, world, profile, reward, None, false, None)
             .await?
             .ok_or(Error::RewardData)
     }
@@ -166,9 +166,45 @@ impl Store {
             reward,
             corpse,
             definition.requires_roll(),
+            None,
         )
         .await
     }
+    /// Trusted first durable generation. Acceptance/need is serialized with bag
+    /// and journal transactions here, not sampled at the earlier simulation tick.
+    /// Replay recovers the original rights/ticket; current need cannot replace them.
+    pub async fn generate_quest_loot_for_kill(
+        &mut self,
+        binding: Binding,
+        world: [u8; 32],
+        profile: &RewardCatalog,
+        reward: &ContentId,
+        event: &KillEvent,
+        position: GlobalPosition,
+    ) -> Result<Option<RewardClaim>> {
+        let journal = profile
+            .quest_journal()
+            .ok_or(Error::Invalid("Quest loot requires a bound journal"))?;
+        let definition = profile
+            .catalog()
+            .definition(reward)
+            .ok_or(Error::RewardMissing)?;
+        let corpse = match definition.occurrence(event).map_err(Error::RewardCommand)? {
+            Occurrence::OncePerCharacter => None,
+            Occurrence::CreatureLife(life) => Some(CorpseSource { life, position }),
+        };
+        self.offer_reward_source(
+            binding,
+            world,
+            profile,
+            reward,
+            corpse,
+            definition.requires_roll(),
+            Some(journal),
+        )
+        .await
+    }
+    #[allow(clippy::too_many_arguments)]
     async fn offer_reward_source(
         &mut self,
         binding: Binding,
@@ -177,11 +213,40 @@ impl Store {
         reward: &ContentId,
         corpse: Option<CorpseSource>,
         roll: bool,
+        journal: Option<&crate::QuestJournalCatalog>,
     ) -> Result<Option<RewardClaim>> {
-        profile.check_runtime_admission()?;
+        if let Some(journal) = journal {
+            if !profile.catalog().has_quest_required()
+                || profile.quest_journal().map(|j| j.hash()) != Some(journal.hash())
+            {
+                return Err(Error::Invalid("Quest loot generation binding changed"));
+            }
+        } else {
+            profile.check_runtime_admission()?;
+        }
+        let definition = profile
+            .catalog()
+            .definition(reward)
+            .ok_or(Error::RewardMissing)?;
         let transaction = bounded(self.client.as_mut().unwrap().transaction()).await?;
         authorize(&transaction, self.realm, binding, world).await?;
-        validate_items(&transaction, self.realm, binding, profile).await?;
+        let snapshot = if definition.quest_item().is_some() {
+            let catalog =
+                journal.ok_or(Error::Invalid("Quest loot generation requires its journal"))?;
+            Some(
+                super::quest_journal::generation_needs(
+                    &transaction,
+                    self.realm,
+                    binding,
+                    world,
+                    catalog,
+                )
+                .await?,
+            )
+        } else {
+            validate_items(&transaction, self.realm, binding, profile).await?;
+            None
+        };
         if roll {
             let source = corpse.ok_or(Error::RewardData)?;
             let definition = profile
@@ -200,8 +265,13 @@ impl Store {
             let ticket = uniform_ticket()?;
             let life = source.life.bytes().to_vec();
             let [x, y, z] = source.position.metres();
-            bounded(transaction.execute("INSERT INTO theia.loot_rolls(realm_id,character_id,roll_key,victim_life,world_id,profile_hash,ticket,corpse_x,corpse_y,corpse_z) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) ON CONFLICT DO NOTHING", &[&self.realm.value(), &binding.character.value(), &key, &life, &world.as_slice(), &profile.hash().as_slice(), &ticket, &x, &y, &z])).await?;
-            let row = bounded(transaction.query_one("SELECT world_id,profile_hash,ticket,corpse_x,corpse_y,corpse_z FROM theia.loot_rolls WHERE realm_id=$1 AND character_id=$2 AND roll_key=$3 AND victim_life=$4 FOR UPDATE", &[&self.realm.value(), &binding.character.value(), &key, &life])).await?;
+            let eligible = definition
+                .quest_item()
+                .is_none_or(|item| snapshot.as_ref().is_some_and(|s| s.needed.contains(item)));
+            let bag_revision = snapshot.as_ref().map(|s| s.bag_revision);
+            let journal_revision = snapshot.as_ref().map(|s| s.journal_revision);
+            bounded(transaction.execute("INSERT INTO theia.loot_rolls(realm_id,character_id,roll_key,victim_life,world_id,profile_hash,ticket,corpse_x,corpse_y,corpse_z,generation_eligible,generation_bag_revision,generation_journal_revision) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) ON CONFLICT DO NOTHING", &[&self.realm.value(), &binding.character.value(), &key, &life, &world.as_slice(), &profile.hash().as_slice(), &ticket, &x, &y, &z, &eligible, &bag_revision, &journal_revision])).await?;
+            let row = bounded(transaction.query_one("SELECT world_id,profile_hash,ticket,corpse_x,corpse_y,corpse_z,generation_eligible,generation_bag_revision,generation_journal_revision FROM theia.loot_rolls WHERE realm_id=$1 AND character_id=$2 AND roll_key=$3 AND victim_life=$4 FOR UPDATE", &[&self.realm.value(), &binding.character.value(), &key, &life])).await?;
             if row.get::<_, Vec<u8>>(0) != world {
                 return Err(Error::WorldMismatch);
             }
@@ -212,7 +282,17 @@ impl Store {
                 return Err(Error::RewardData);
             }
             let ticket = u16::try_from(row.get::<_, i32>(2)).map_err(|_| Error::RewardData)?;
-            if !definition.wins_roll(profile.catalog(), ticket) {
+            let eligible: bool = row.get(6);
+            let heads: (Option<i64>, Option<i64>) = (row.get(7), row.get(8));
+            let valid = if definition.quest_item().is_some() {
+                matches!(heads,(Some(b),Some(j)) if b>=0 && j>=0)
+            } else {
+                heads == (None, None) && eligible
+            };
+            if !valid {
+                return Err(Error::RewardData);
+            }
+            if !eligible || !definition.wins_roll(profile.catalog(), ticket) {
                 bounded(transaction.commit()).await?;
                 return Ok(None);
             }

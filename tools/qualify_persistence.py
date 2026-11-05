@@ -35,6 +35,8 @@ def run(output, sdk):
                                      '-j', '2', '--', '--ignored', '--test-threads=1'])
         cargo('equipment-contract', ['test', '--locked', '-p', 'theia-persistence', '--test', 'equipment_contract',
                                      '-j', '2', '--', '--ignored', '--test-threads=1'])
+        cargo('quest-loot-migration-contract', ['test', '--locked', '-p', 'theia-persistence', '--test', 'quest_loot_migration_contract',
+                                               '-j', '2', '--', '--ignored', '--test-threads=1'])
         cargo('rewards-contract', ['test', '--locked', '-p', 'theia-persistence', '--test', 'rewards_contract',
                                    '-j', '2', '--', '--ignored', '--test-threads=1'])
         cargo('quests-contract', ['test', '--locked', '-p', 'theia-persistence', '--test', 'quests_contract', '-j', '2', '--', '--ignored', '--test-threads=1'])
@@ -92,7 +94,7 @@ def run(output, sdk):
         (output/'creature-loot-before-restart.txt').write_text(loot_before.stdout)
         roll_query = "SELECT count(*),md5(string_agg(to_jsonb(r)::text,'|' ORDER BY realm_id,character_id,roll_key,victim_life)) FROM theia.loot_rolls r;"
         rolls_before = cluster.query(roll_query)
-        assert rolls_before.returncode == 0 and int(rolls_before.stdout.split('|')[0]) == 32, rolls_before.stdout
+        assert rolls_before.returncode == 0 and int(rolls_before.stdout.split('|')[0]) == 38, rolls_before.stdout
         (output/'loot-rolls-before-restart.txt').write_text(rolls_before.stdout)
         cluster.restart()
         rolls_after = cluster.query(roll_query)
@@ -160,6 +162,11 @@ def run(output, sdk):
                   equipment_backpack_race_conserves_items=True, equipment_dropped_response_recovery=True,
                   equipment_backend_loss_never_acknowledged_as_commit=True,
                   nonrepeatable_reward_claims_and_latest_receipt=True,
+                  quest_loot_first_generation_need_and_audit_revisions=True,
+                  quest_loot_later_acceptance_or_removal_cannot_create_old_rights=True,
+                  ordinary_version_thirteen_roll_upgrade_preserves_result=True,
+                  quest_loot_generation_snapshot_survives_database_restart=True,
+                  quest_loot_runtime_admission=False,
                   reward_full_bag_retains_claim_and_transaction_rollback=True,
                   reward_availability_consumption_and_items_survive_restart=True,
                   reward_cancelled_response_and_backend_loss_fail_closed=True,

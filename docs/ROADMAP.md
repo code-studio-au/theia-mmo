@@ -1,3 +1,13 @@
+Quest-only generation storage prerequisite qualified, 5 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: explicit trusted Store generation now persists
+first-transaction eligibility, the single ticket and observed bag/journal revisions.
+Later acceptance/removal cannot create old rights; a failed winning claim rolls
+back the whole generation. 57 actual PostgreSQL contracts plus process restart,
+version-13 ordinary-roll upgrade, formatting and strict all-target Clippy pass.
+[Ordering policy, evidence and limits](LOOT_TABLES.md#quest-only-generation-storage-prerequisite--5-november-2026). Owner/World/manifest admission and
+conditional paging/pickup remain closed. Continue those locally; no push.
+Normal item-quest playable remains the separately qualified `85fd967`.
+
 Quest-only profile binding prerequisite, 5 November 2026:
 P3-05 / P3-09 / P3-11 / P3-15: explicit headless constructors now bind quest-only
 loot to the exact inventory-bound journal, including its XP/area/source identity.

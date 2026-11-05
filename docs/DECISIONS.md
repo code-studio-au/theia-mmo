@@ -1,3 +1,17 @@
+## 2026-11-05 — first committed quest-loot generation rights
+
+For the initial async server, serialize conditional generation against a locked
+backpack/journal pair at its first durable generation transaction. Persist that
+eligibility decision, ticket and observed revisions together with any winning
+claim. Later acceptance, removal or replay does not replace the original rights.
+This is an explicit Theia commit-order policy; it does not claim an exact
+simulation death-tick snapshot. The Classic-targeted source stores initial corpse
+permissions, but does not define our asynchronous transaction ordering.
+[Storage semantics and remaining runtime work](LOOT_TABLES.md#quest-only-generation-storage-prerequisite--5-november-2026).
+Preserve current-need checks before paging and pickup as separate requirements;
+generation grants availability only. No world-event log or whole-corpse atomic
+generation is established by these per-entry transactions.
+
 ## 2026-11-05 — explicit normal inventory-bound item quests
 
 Adopt opt-in manifest schema 18 and `--quest-items` only with the exact bound

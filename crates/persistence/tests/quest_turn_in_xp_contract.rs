@@ -624,7 +624,7 @@ async fn migration_nine_journal_rows_and_receipts_upgrade_without_completion_rew
         .await
         .unwrap()
         .get(0);
-    assert_eq!(count, 13);
+    assert_eq!(count, 14);
     assert_eq!(
         store.load_inventory(a, WORLD, &legacy_items).await.unwrap(),
         legacy_bag

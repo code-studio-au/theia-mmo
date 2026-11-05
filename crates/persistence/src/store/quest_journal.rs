@@ -120,6 +120,41 @@ fn applied(
         experience_granted: 0,
     }
 }
+pub(super) struct GenerationNeeds {
+    pub(super) bag_revision: i64,
+    pub(super) journal_revision: i64,
+    pub(super) needed: std::collections::BTreeSet<ContentId>,
+}
+/// One coherent committed pair, locked bag before journal. This is generation
+/// transaction order, not a claim that this state was sampled at the death tick.
+pub(super) async fn generation_needs(
+    tx: &Transaction<'_>,
+    realm: RealmId,
+    binding: Binding,
+    world: [u8; 32],
+    catalog: &QuestJournalCatalog,
+) -> Result<GenerationNeeds> {
+    let bag = items::lock(tx, realm, binding, catalog)
+        .await?
+        .ok_or(Error::QuestJournalData)?;
+    let (revision, journal) = load(tx, realm, binding, world, catalog).await?;
+    let needed = journal
+        .needed_possession_items(
+            catalog.catalog(),
+            catalog
+                .inventory()
+                .ok_or(Error::QuestJournalData)?
+                .catalog(),
+            &bag,
+        )
+        .map_err(Error::QuestJournalCommand)?;
+    Ok(GenerationNeeds {
+        bag_revision: i64::try_from(bag.revision()).map_err(|_| Error::QuestJournalData)?,
+        journal_revision: i64::try_from(revision).map_err(|_| Error::QuestJournalData)?,
+        needed,
+    })
+}
+
 impl Store {
     pub async fn ensure_quest_journal(
         &mut self,

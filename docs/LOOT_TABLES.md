@@ -279,3 +279,61 @@ remains `85fd967`. Next: durable first-generation eligibility, then eligibility
 before bounded paging and a fresh locked pickup check. Keep the generation
 ordering policy explicit rather than claiming an asynchronous observation was
 captured at the exact death tick. Commit locally only; no push.
+
+
+## Quest-only generation storage prerequisite — 5 November 2026
+
+P3-05 / P3-09 / P3-11 / P3-15. Explicit trusted
+`Store::generate_quest_loot_for_kill` now accepts the exact bound conditional
+profile. For a conditional entry, it locks the checked backpack before the
+journal, derives current accepted unfinished-quest shortfalls, and persists that
+first generation decision alongside the one roll. Generation itself changes
+neither items, quest counters nor XP. Winning eligibility creates only a claim.
+The generic Store offer/roll/list/pickup methods still refuse conditional
+profiles; worker, retained owner, World and normal manifest adoption stay closed.
+
+Theia ordering policy: this is the first committed generation transaction,
+serialized with bag/journal mutations, not a snapshot claimed to have been taken
+at the simulation's fatal tick. Acceptance committed before that transaction can
+qualify; acceptance afterward cannot unlock its denied result. A life generated
+while enough items are held remains ineligible after later deletion; the player
+must obtain a previously entitled winning candidate or a new qualifying kill.
+A missing/uninitialized journal is an error and creates no denied receipt.
+This policy follows the separation of initial corpse rights from need in the
+cited Classic-targeted source while explicitly adapting the async boundary.
+
+Migration 14 adds `generation_eligible` and nullable bag/journal audit revisions
+to loot rolls. Existing ordinary rows default to eligible with no quest snapshot;
+conditional rows require both nonnegative revisions, including denied results.
+The snapshot is recorded at initial insertion. Replay validates the original
+world/profile/life/metric source and recovers its stored rights and ticket rather
+than replacing them with current need. A denied generation or losing roll stays
+empty. Winning claim and roll/snapshot share a transaction; forced claim-insert
+failure rolls all of them back. Grouped ordinary rolls retain their earlier
+behavior; conditional entries remain independent single-item recipes.
+
+Actual owned PostgreSQL 16.15 proof:
+`build/quest-loot-generation-postgres-v3-20261105/verification.json` passes 57 SQL
+contracts, five non-SQL library tests, existing example reloads and actual database
+process restart. All 38 full roll rows retain their hash across restart, including
+five conditional snapshots and the ordinary migration fixture. The new tests
+cover empty/unaccepted, accepted/needed, already-held/Ready, deletion reversal,
+zero-chance miss, replay, source-position mismatch, missing journal, reconnect,
+rollback after claim-insert failure and rejected incomplete audit metadata.
+The migration fixture restores a real version-13 ordinary row, reapplies migration
+14 and recovers the identical ticket and claim. v1 is retained as negative
+fixture evidence: pre-held acceptance reconciles a second journal head, so its
+initial hard-coded audit expectation was corrected; v2 passes, and v3 adds the
+fault/constraint checks. The generation and migration tests use explicit 100%/0%
+fixtures, not native sampling of provisional drop percentages.
+
+Formatting and denied-warning workspace/all-target Clippy pass at
+`build/quest-loot-generation-fmt-v2-20261105.log` and
+`build/quest-loot-generation-clippy-v2-20261105.log`. Preserve
+`build/quest-loot-generation-qualified-v1-20261105`. No new worker/encrypted-owner,
+live death-to-generation, native/Windows or capacity claim. Accepted async
+opportunity durability before worker acceptance and whole-corpse generation
+atomicity remain outside this slice. The normal schema-18 playable remains
+`85fd967`; no source gameplay catalogue changes. Next: eligibility before bounded
+nearest paging and a fresh locked pickup check, then worker/owner/native adoption.
+Commit locally only; no push.

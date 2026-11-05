@@ -21,7 +21,7 @@ mod vendors;
 pub const MAX_BATCH: usize = 8;
 const TIMEOUT: Duration = Duration::from_secs(3);
 const MIGRATION_LOCK: i64 = -0x5448_4549_4100_0001;
-const MIGRATIONS: [&str; 13] = [
+const MIGRATIONS: [&str; 14] = [
     include_str!("../migrations/0001_characters.sql"),
     include_str!("../migrations/0002_development_bindings.sql"),
     include_str!("../migrations/0003_accounts.sql"),
@@ -35,6 +35,7 @@ const MIGRATIONS: [&str; 13] = [
     include_str!("../migrations/0011_quest_journals.sql"),
     include_str!("../migrations/0012_creature_loot.sql"),
     include_str!("../migrations/0013_loot_rolls.sql"),
+    include_str!("../migrations/0014_quest_loot_generation.sql"),
 ];
 async fn bounded<T>(
     future: impl Future<Output = std::result::Result<T, tokio_postgres::Error>>,

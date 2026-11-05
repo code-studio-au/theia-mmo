@@ -503,3 +503,6 @@ fn versioned_per_life_storage_profile_accepts_the_explicit_core_policy() {
 
 #[path = "rewards_contract/per_life.rs"]
 mod per_life;
+
+#[path = "rewards_contract/quest_generation.rs"]
+mod quest_generation;
