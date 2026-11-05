@@ -25,15 +25,34 @@ pub struct Opportunity {
 }
 impl World {
     pub fn enable_rewards(&mut self, profile: Arc<Profile>) -> Result<()> {
-        self.install_rewards(profile, false)
+        self.install_rewards(profile, false, false)
     }
     /// Explicit headless loot adoption. Default content/manifest admission stays
     /// unchanged until the normal client pickup flow is qualified.
     pub fn enable_creature_loot(&mut self, profile: Arc<Profile>) -> Result<()> {
-        self.install_rewards(profile, true)
+        self.install_rewards(profile, true, false)
     }
-    fn install_rewards(&mut self, profile: Arc<Profile>, allow_life: bool) -> Result<()> {
-        if profile.catalog().has_quest_required() {
+    /// Explicit headless conditional mode. Eligibility remains a locked durable
+    /// owner decision; the fixed step only forwards trusted fatal-life facts.
+    pub fn enable_quest_loot(&mut self, profile: Arc<Profile>) -> Result<()> {
+        if !profile.catalog().has_quest_required()
+            || profile.quest_journal_hash().is_none()
+            || self.quest_journal.as_ref().is_none_or(|j| {
+                Some(j.hash()) != profile.quest_journal_hash()
+                    || j.inventory_hash() != Some(profile.item_hash())
+            })
+        {
+            return Err("Quest loot requires the exact installed item journal".into());
+        }
+        self.install_rewards(profile, true, true)
+    }
+    fn install_rewards(
+        &mut self,
+        profile: Arc<Profile>,
+        allow_life: bool,
+        allow_quest: bool,
+    ) -> Result<()> {
+        if profile.catalog().has_quest_required() && !allow_quest {
             return Err("Quest-only loot simulation is not installed".into());
         }
         if self.tick != 0
@@ -136,6 +155,10 @@ impl World {
         Ok(result)
     }
 }
+
+#[cfg(test)]
+#[path = "rewards/quest_tests.rs"]
+mod quest_tests;
 
 #[cfg(test)]
 mod pickup_tests {

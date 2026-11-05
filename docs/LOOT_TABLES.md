@@ -490,3 +490,37 @@ native interactions. World installation, normal schema/client adoption and nativ
 conditional loot remain pending. No rendering change or new Windows/capacity
 claim. Normal schema-18 playable remains `85fd967`. Continue locally with explicit
 World validation and encrypted runtime coverage; no push.
+
+
+## Quest-only World admission — 5 November 2026
+
+P3-05 / P3-09 / P3-11 / P3-15. Explicit headless
+`World::enable_quest_loot` requires the exact installed inventory-bound journal,
+conditional reward metadata, inactive combat and matching installed creature.
+Legacy `enable_rewards` / `enable_creature_loot` continue rejecting conditional
+profiles. Refused admission leaves rewards and World identity unchanged. Accepted
+content participates in the existing reward/journal identity composition.
+
+The fixed step only produces original server fatal-life facts for the retained
+recipient. It does not evaluate saved quest need, roll tickets or grant items;
+those decisions stay in the already qualified async owner/SQL path. Existing
+pickup guards continue requiring a matching profile, alive loaded player and
+three-dimensional three-metre range. This interaction distance is Theia policy.
+
+All 365 network-library tests pass at
+`build/quest-loot-world-network-tests-v2-20261105.log`. Two new checks cover missing /
+foreign journal refusal, legacy gates, duplicate admission, joined or ticked
+World refusal and identity preservation. Real casts kill the current creature at
+20/30/60 Hz and emit the original actor, life, creature and position for each
+reward recipe, including conditional entries without any saved quest in World.
+Duplicate events deduplicate; nonfatal and respawn-stale facts produce no offers.
+Existing pickup profile/readiness/range logic works with the conditional profile.
+Formatting and denied-warning workspace/all-target Clippy pass at
+`build/quest-loot-world-fmt-v1-20261105.log` and
+`build/quest-loot-world-clippy-v1-20261105.log`.
+
+Preserve `build/quest-loot-world-qualified-v1-20261105`. This is headless simulation
+proof, separate from the OIDC/SQL owner checkpoint. No combined conditional
+encrypted-runtime/native claim yet. Normal CLI/manifest/client adoption remains
+pending; preserve playable `85fd967`. Continue client binding and transport
+qualification locally; no push.
