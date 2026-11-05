@@ -311,3 +311,151 @@ fn item_binding_refuses_unknown_and_unreachable_counts_before_journal_mutation()
     let c = parse(&v).unwrap();
     assert!(c.validate_possession_items(&i).is_err());
 }
+
+#[test]
+fn quest_loot_eligibility_uses_current_holdings_and_never_cached_ready_counters() {
+    use theia_core::inventory::{Command, Operation};
+    let c = parse(&raw()).unwrap();
+    let i = items();
+    let empty = bag(&i, 0);
+    assert!(
+        Journal::default()
+            .needed_possession_items(&c, &i, &empty)
+            .unwrap()
+            .is_empty()
+    );
+    let active = accepted(&c);
+    assert_eq!(
+        active.needed_possession_items(&c, &i, &empty).unwrap(),
+        BTreeSet::from([item()])
+    );
+    let ready = active
+        .propose_inventory(&c, &i, &bag(&i, 3))
+        .unwrap()
+        .journal;
+    let complete_bag = bag(&i, 3);
+    let split = complete_bag
+        .propose(
+            &i,
+            Command {
+                expected_revision: 0,
+                operation: Operation::Split {
+                    from: 0,
+                    to: 7,
+                    amount: 1,
+                },
+            },
+        )
+        .unwrap();
+    assert!(
+        ready
+            .needed_possession_items(&c, &i, &split)
+            .unwrap()
+            .is_empty()
+    );
+    let reduced = split
+        .propose(
+            &i,
+            Command {
+                expected_revision: split.revision(),
+                operation: Operation::Destroy { from: 7, amount: 1 },
+            },
+        )
+        .unwrap();
+    let before = ready.clone();
+    assert_eq!(
+        ready.needed_possession_items(&c, &i, &reduced).unwrap(),
+        BTreeSet::from([item()])
+    );
+    assert_eq!(
+        ready, before,
+        "Eligibility must not mutate or acknowledge a journal"
+    );
+    assert!(
+        ready
+            .needed_possession_items(&c, &i, &bag(&i, 4))
+            .unwrap()
+            .is_empty()
+    );
+    let completed = ready
+        .propose_possession_turn_in(&c, &i, &complete_bag, &id("delivery"), &id("guide"), 2)
+        .unwrap();
+    assert!(
+        completed
+            .quest
+            .journal
+            .needed_possession_items(&c, &i, &completed.bag)
+            .unwrap()
+            .is_empty()
+    );
+}
+
+#[test]
+fn quest_loot_eligibility_is_a_union_of_accepted_needs_and_allows_collection_before_final_stage() {
+    let mut v = raw();
+    let mut second = v["quests"][0].clone();
+    second["id"] = json!("delivery2");
+    second["start_stage"] = json!("bring2");
+    second["stages"][0]["id"] = json!("bring2");
+    second["stages"][0]["objectives"][0]["id"] = json!("pelts2");
+    second["stages"][0]["objectives"][0]["required"] = json!(5);
+    v["quests"].as_array_mut().unwrap().push(second);
+    v["quests"][0]["start_stage"] = json!("lead");
+    v["quests"][0]["stages"].as_array_mut().unwrap().insert(0, json!({"id":"lead","completion":{"kind":"all"},"next":"bring","objectives":[{"kind":"kill","id":"lead-kill","label":"Kill","creature":"wolf","required":1}]}));
+    let c = parse(&v).unwrap();
+    let i = items();
+    let first = accepted(&c);
+    assert_eq!(
+        first.progress(&id("delivery")).unwrap().stage(),
+        &id("lead")
+    );
+    assert_eq!(
+        first.needed_possession_items(&c, &i, &bag(&i, 0)).unwrap(),
+        BTreeSet::from([item()])
+    );
+    assert!(
+        first
+            .needed_possession_items(&c, &i, &bag(&i, 3))
+            .unwrap()
+            .is_empty(),
+        "An unaccepted second quest creates no need"
+    );
+    let both = first
+        .propose_accept(&c, &id("delivery2"), &id("guide"))
+        .unwrap()
+        .journal;
+    assert_eq!(
+        both.needed_possession_items(&c, &i, &bag(&i, 3)).unwrap(),
+        BTreeSet::from([item()])
+    );
+    assert!(
+        both.needed_possession_items(&c, &i, &bag(&i, 5))
+            .unwrap()
+            .is_empty(),
+        "Shared item requirements are not added together"
+    );
+}
+
+#[test]
+fn quest_loot_eligibility_refuses_unknown_items_and_foreign_backpacks() {
+    let i = items();
+    let c = parse(&raw()).unwrap();
+    let j = accepted(&c);
+    let mut raw_items: Value = serde_json::from_slice(include_bytes!(
+        "../../../content/gameplay/development-equipment-items.json"
+    ))
+    .unwrap();
+    raw_items["id"] = json!("foreign-items");
+    let foreign = Items::from_json(&serde_json::to_vec(&raw_items).unwrap()).unwrap();
+    assert_eq!(
+        j.needed_possession_items(&c, &foreign, &bag(&i, 0)),
+        Err(Error::InvalidProgress)
+    );
+    let mut v = raw();
+    v["quests"][0]["stages"][0]["objectives"][0]["item"] = json!("unknown");
+    let bad = parse(&v).unwrap();
+    assert_eq!(
+        accepted(&bad).needed_possession_items(&bad, &i, &bag(&i, 0)),
+        Err(Error::DefinitionMismatch)
+    );
+}

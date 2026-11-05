@@ -143,3 +143,31 @@ and evidence references. Its native presentation proof is the earlier guaranteed
 fixture with identical client source; the new ordinary random-loot path has
 math, actual SQL/owner and manifest validation evidence, not a claimed native
 random-drop walkthrough. Live quest-only eligibility remains the next slice.
+
+## Quest-only eligibility core prerequisite — 5 November 2026
+
+P3-05 / P3-09 / P3-11 / P3-15: `Journal::needed_possession_items` now derives a
+bounded, unique ordered item set from accepted unfinished quests and the supplied
+checked current backpack. It excludes unaccepted/completed quests, excludes
+satisfied quantities and never changes the journal, inventory, roll or receipt.
+Splitting/merging without changing holdings preserves eligibility; destruction
+can restore it even when supplied journal counters still say Ready. Several
+quests needing the same item share holdings rather than adding their quantities.
+Unknown item references and foreign backpacks refuse.
+
+Explicit Theia stage policy: accepted quests may collect their final-stage
+possession items before reaching that stage. Eligibility does not satisfy earlier
+kill, interaction or area stages. More restrictive staged drop conditions need
+separate authored support. Equipped items and future bank storage remain outside
+the current backpack predicate, consistently with possession reconciliation.
+
+343 core tests, formatting and strict workspace/all-target Clippy pass; logs are
+`build/quest-loot-eligibility-core-tests-v2-20261105.log`,
+`build/quest-loot-eligibility-fmt-v1-20261105.log` and
+`build/quest-loot-eligibility-clippy-v1-20261105.log`.
+These are pure checked proposals, not new SQL, encrypted or native evidence.
+No runtime gate, packet or content schema changes here: quest-only entries and
+live possession quests remain refused until exact profile binding, eligibility
+before nearby paging, pickup checks and committed refresh are installed together.
+Ordinary schema-17 corpse pickup and random drops remain the separately qualified
+`4dbeefd` checkpoint. Continue implementation with local commits only.

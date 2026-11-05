@@ -9,6 +9,46 @@ pub struct PossessionTurnIn {
     pub bag: Bag,
 }
 impl Journal {
+    /// Pure quest-only loot eligibility from CURRENT backpack holdings, never
+    /// cached objective counters or a client assertion. Any accepted unfinished
+    /// quest may need its final-stage items even before that stage is entered.
+    /// A caller must bind/authorize the journal and inventory and apply this
+    /// predicate to visibility AND pickup; it never rolls or grants loot.
+    pub fn needed_possession_items(
+        &self,
+        catalog: &Catalog,
+        items: &ItemCatalog,
+        bag: &Bag,
+    ) -> Result<std::collections::BTreeSet<ContentId>, Error> {
+        self.validate(catalog)?;
+        catalog
+            .validate_possession_items(items)
+            .map_err(|_| Error::DefinitionMismatch)?;
+        bag.validate(items).map_err(|_| Error::InvalidProgress)?;
+        let mut needed = std::collections::BTreeSet::new();
+        for (id, progress) in &self.quests {
+            if progress.status == Status::Completed {
+                continue;
+            }
+            let definition = catalog.quest(id).ok_or(Error::DefinitionMismatch)?;
+            if let Some(requirements) = definition
+                .possession_requirements(items)
+                .map_err(|_| Error::DefinitionMismatch)?
+            {
+                let observation = requirements
+                    .observe(items, bag)
+                    .map_err(|_| Error::InvalidProgress)?;
+                needed.extend(
+                    observation
+                        .holdings()
+                        .iter()
+                        .filter(|h| !h.satisfied())
+                        .map(|h| h.item().clone()),
+                );
+            }
+        }
+        Ok(needed)
+    }
     /// Recalculate active/ready final-stage quantities from current backpack
     /// holdings. Earlier historical facts and completed quests never regress.
     pub fn propose_inventory(

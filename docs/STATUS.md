@@ -1,3 +1,12 @@
+Quest-only loot eligibility core prerequisite, 5 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: current checked backpack holdings now derive the
+items needed by accepted unfinished quests, independently of cached Ready counts.
+343 core tests, formatting and strict all-target Clippy pass. [Exact scope and
+remaining adoption](LOOT_TABLES.md#quest-only-eligibility-core-prerequisite--5-november-2026).
+No new runtime/SQL/native claim; quest-only and live possession gates remain closed.
+Ordinary corpse pickup/random loot remain qualified at `4dbeefd`. Continue with
+joint profile binding, bounded eligible pages and pickup checks; local commits only.
+
 Corpse pickup and authored loot rolls qualified locally, 5 November 2026:
 P3-02 / P3-05 / P3-09 / P3-11 / P3-15: opt-in schema-17 corpse UI passes three
 native Linux sizes and database restart/rejoin. Reward schema 3 adds authored
