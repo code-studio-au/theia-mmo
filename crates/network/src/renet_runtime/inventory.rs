@@ -154,6 +154,7 @@ pub(super) struct ClientState {
     pub(super) rewards: Option<crate::reward_wire::State>,
     sequence: u64,
     pub(super) approved_document: Option<crate::document_wire::Approved>,
+    pub(super) document_reply: Option<crate::document_wire::Completion>,
     pending: Option<(u64, ItemCommand, tokio::time::Instant)>,
 }
 impl ClientState {
@@ -173,6 +174,7 @@ impl ClientState {
             rewards: None,
             sequence: 0,
             approved_document: None,
+            document_reply: None,
             pending: None,
         })
     }
@@ -305,6 +307,18 @@ impl ClientState {
                     });
                 }
             }
+            if let ItemCommand::OpenDocument(command) = command {
+                self.document_reply = Some(crate::document_wire::Completion {
+                    command,
+                    profile_hash: self
+                        .config
+                        .profile
+                        .documents()
+                        .ok_or("Unbound document reply")?
+                        .hash(),
+                    outcome: state.reply.unwrap().outcome,
+                });
+            }
             self.pending = None;
         }
         self.view = Some(state);
@@ -368,6 +382,7 @@ impl ClientState {
             }
             .encode(profile)?;
             self.approved_document = None;
+            self.document_reply = None;
             bytes
         } else if let ItemCommand::Vendor(command) = command {
             self.config

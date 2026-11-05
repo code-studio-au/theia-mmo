@@ -5,7 +5,8 @@ P3-05 / P3-11 / P3-15, 5 November 2026.
 The user requested quest conditions for reading or viewing an item note/message.
 Keep that historical action separate from possessing or looting the item. The
 current playable quest-loot checkpoint is `65977bd`; readable document runtime
-adoption through normal manifests and the native reader is still pending. Explicit
+adoption through normal manifests is implemented; the reader has a partial native
+checkpoint below and remains pending the remaining display checks. Explicit
 Store/worker, retained-owner and World support is implemented below. Earlier
 prerequisite sections describe their own checkpoints.
 
@@ -407,3 +408,47 @@ record in `build/quest-document-research-v1-20261104/source.json`. That handler
 does not establish a universal read-note quest objective. Server-validated
 opening follows that evidenced boundary; Theia's separately authored historical
 read objective is an explicit extension. No emulator code is copied.
+
+## Reader UI checkpoint (paused)
+
+Paused at the user's explicit stop on 5 November 2026. P3-05 / P3-11 / P3-15.
+The standard Bevy backpack offers **Read selected item** for a bound note.
+Only the matching original command and document profile approval display its
+local plain-text pages. Closing cancels local viewer interest so late replies
+cannot reopen the reader. Previous/Next are presentation only. Escape closes the
+reader before the underlying dialogue/backpack. Hidden reader buttons explicitly
+ignore picking: native hover evidence exposed an invisible Read button
+intercepting a note-slot click, which is corrected in this checkpoint.
+
+Verification:
+
+- All 150 client tests: `build/quest-document-ui-client-tests-v3-20261105.log`.
+- All 376 network tests: `build/quest-document-ui-network-tests-v1-20261105.log`.
+- Strict workspace/all-target Clippy and formatting: the UI `clippy-v3` and
+  `fmt-v3` logs for 20261105. Optimized build: `release-v2`.
+- Native combined proof: `build/quest-document-ui-native-v6-20261105/verification.json`.
+  Actual local OIDC, encrypted transport, owned PostgreSQL, normal launcher,
+  PID-guarded synthetic X11/uinput and RX 7900 XTX / RADV NAVI31 / Vulkan /
+  Mesa 26.2.6. At 1920×1200, two wolf kills require explicit corpse pickup;
+  pre-accept reading grants no later credit; both pages work; reading after
+  acceptance makes the quest ready; destruction reverses possession readiness
+  while retaining read history; a new pickup restores readiness without rereading;
+  turn-in consumes the note. Saved journal head 8, XP 75, one completion, two
+  actions and four event receipts survive an actual PostgreSQL process restart
+  and rejoin; saved loot rolls match. Zero GPU diagnostics.
+- Frozen optimized candidate: `build/quest-document-ui-candidate-v2-20261105`.
+  The native helper subsequently gained layout-settling waits; final checkpoint
+  source is in Git, candidate source records its earlier tool snapshot.
+
+Earlier native attempts failed and are not success evidence: v1 had reported
+mouse interference, the helper needed explicit sword equipment, and subsequent
+runs exposed the hidden-button picking defect and unsettled button geometry.
+The successful v6 result supersedes those attempts only for 1920×1200.
+`build/quest-document-ui-native-sizes-v1-20261105.log` failed at launcher startup
+before gameplay. 1280×720 and 3440×1440 reader checks remain unfinished. Desktop
+was observed at 3440×1440 at 60 Hz after cleanup; owned test processes stopped. No Windows,
+physical-input or MMO-capacity claim. Native fixture uses guaranteed loot and
+reduced wolf danger; it does not validate the normal 35% note drop balance.
+
+Resume with the remaining display-size startup failure and native reader checks
+before marking this slice complete. No push was authorized or performed.

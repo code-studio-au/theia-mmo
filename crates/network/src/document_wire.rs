@@ -20,6 +20,13 @@ pub struct Approved {
     pub command: OpenCommand,
     pub profile_hash: [u8; 32],
 }
+/// Client correlation of a matching owner answer, including ordinary refusal.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Completion {
+    pub command: OpenCommand,
+    pub profile_hash: [u8; 32],
+    pub outcome: crate::inventory_wire::Outcome,
+}
 fn word(bytes: &[u8], at: usize) -> u64 {
     u64::from_le_bytes(bytes[at..at + 8].try_into().unwrap())
 }

@@ -28,6 +28,7 @@ pub struct State {
     pub inventory: Option<crate::inventory_wire::State>,
     pub inventory_pending: bool,
     pub approved_document: Option<crate::document_wire::Approved>,
+    pub document_reply: Option<crate::document_wire::Completion>,
     pub combat: Option<crate::combat_wire::State>,
     pub autoattack: Option<crate::simulation::combat::autoattack::Snapshot>,
     pub targeting: Option<crate::targeting_wire::State>,

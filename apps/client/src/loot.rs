@@ -173,9 +173,18 @@ fn setup(mut commands: Commands) {
             panel.spawn((Status, text("")));
         });
 }
-pub(crate) fn close_panel(keys: Res<ButtonInput<KeyCode>>, mut ui: ResMut<Ui>) {
+pub(crate) fn close_panel(
+    keys: Res<ButtonInput<KeyCode>>,
+    mut ui: ResMut<Ui>,
+    documents: Option<Res<crate::documents::Ui>>,
+) {
     ui.closed_this_frame = false;
-    if ui.open && keys.just_pressed(KeyCode::Escape) {
+    if ui.open
+        && keys.just_pressed(KeyCode::Escape)
+        && !documents
+            .as_ref()
+            .is_some_and(|u| u.open || u.closed_this_frame)
+    {
         ui.close();
     }
 }

@@ -9,6 +9,7 @@ mod combat;
 mod combat_feedback;
 mod creature_visual;
 mod dialogue;
+mod documents;
 mod dodge;
 mod equipment;
 mod floating_origin;
@@ -1350,6 +1351,7 @@ fn toggle_fullscreen(
 struct InputMode<'w> {
     dialogue: Option<Res<'w, dialogue::Ui>>,
     inventory: Option<Res<'w, inventory::Ui>>,
+    documents: Option<Res<'w, documents::Ui>>,
     loot: Option<Res<'w, loot::Ui>>,
     smoke: Option<Res<'w, smoke::Run>>,
     network: Option<Res<'w, network::Network>>,
@@ -1395,11 +1397,19 @@ fn input(
     if let Some(classic) = classic.as_mut() {
         classic.escape_owned_by_panel = keys.just_pressed(KeyCode::Escape)
             && (talking
+                || mode
+                    .documents
+                    .as_ref()
+                    .is_some_and(|u| u.open || u.closed_this_frame)
                 || mode.inventory.as_ref().is_some_and(|u| u.open)
                 || mode.loot.as_ref().is_some_and(|u| u.open));
     }
     if keys.just_pressed(KeyCode::Escape)
         && !talking
+        && !mode
+            .documents
+            .as_ref()
+            .is_some_and(|u| u.open || u.closed_this_frame)
         && !mode.loot.as_ref().is_some_and(|u| u.open)
         && !mode.inventory.as_ref().is_some_and(|ui| ui.open)
         && !camera_mode

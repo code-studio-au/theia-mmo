@@ -228,6 +228,7 @@ fn controls(
     mut ui: ResMut<Ui>,
     classic: Option<Res<crate::classic_controls::Controller>>,
     loot: Option<Res<crate::loot::Ui>>,
+    documents: Option<Res<crate::documents::Ui>>,
 ) {
     let state = network.state();
     let pointer_choice = pending.choice.take();
@@ -239,7 +240,10 @@ fn controls(
     let Some(view) = &state.dialogue else {
         return;
     };
-    let loot_owns = loot.as_ref().is_some_and(|u| u.open || u.closed_this_frame);
+    let loot_owns = loot.as_ref().is_some_and(|u| u.open || u.closed_this_frame)
+        || documents
+            .as_ref()
+            .is_some_and(|u| u.open || u.closed_this_frame);
     let escape = keys.just_pressed(KeyCode::Escape) && !loot_owns;
     if escape && state.dialogue_pending {
         ui.close_when_open = true;

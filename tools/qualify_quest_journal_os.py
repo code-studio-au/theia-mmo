@@ -389,7 +389,13 @@ def check_minimap_walk(desktop, window, state, folder):
     return proof
 
 
-def run(output, binaries, sizes, production=False, repeat_interaction=False, gameplay_manifest=Path("content/development-gameplay-classic-journal.json"), minimap=False, minimap_traversal=False, reach_areas=False, destroy_items=False, corpse_loot=False, item_quest=False):
+def run(output, binaries, sizes, production=False, repeat_interaction=False, gameplay_manifest=Path("content/development-gameplay-classic-journal.json"), minimap=False, minimap_traversal=False, reach_areas=False, destroy_items=False, corpse_loot=False, item_quest=False, documents=False):
+    if documents:
+        manifest=json.loads(gameplay_manifest.read_text())
+        if any((production,repeat_interaction,minimap,minimap_traversal,reach_areas,destroy_items,corpse_loot,item_quest)) or manifest['schema']!=20:
+            raise ValueError('Choose the separate guaranteed document fixture')
+        if any(r.get('chance_basis_points')!=10000 for r in json.loads((gameplay_manifest.parent/manifest['rewards']).read_text())['rewards'] if r['scope']=='per_creature_life'):
+            raise ValueError('Document walkthrough requires guaranteed per-life fixture chances')
     quest_only = item_quest and json.loads(gameplay_manifest.read_text())['schema']==19
     if item_quest:
         manifest=json.loads(gameplay_manifest.read_text())
@@ -420,7 +426,7 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
         policy = json.loads(path.read_text())
         policy['damage'] = 1
         path.write_text(json.dumps(policy)+'\n')
-        if quest_only:
+        if quest_only or documents:
             path=bundle/'gameplay/development-physical-damage-definitions.json'
             physical=json.loads(path.read_text())
             for attack in physical['attacks']:
@@ -450,12 +456,12 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
                     before = cluster.query(query)
                     assert before.returncode == 0, before.stderr
                     (output/'before-restart.txt').write_text(before.stdout)
-                    if quest_only:
+                    if quest_only or documents:
                         rolls_before=cluster.query(rolls_query)
                         assert rolls_before.returncode==0
                         (output/'rolls-before-restart.txt').write_text(rolls_before.stdout)
                     cluster.restart()
-                    if quest_only:
+                    if quest_only or documents:
                         rolls_after=cluster.query(rolls_query)
                         assert rolls_after.returncode==0 and rolls_after.stdout==rolls_before.stdout
                         (output/'rolls-after-restart.txt').write_text(rolls_after.stdout)
@@ -503,7 +509,11 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
                         (folder/'window-geometry.txt').write_text(subprocess.check_output(['xwininfo','-id',hex(window)],text=True))
                         desktop.move(window,[initial['window'][0]*.5,initial['window'][1]*.5],initial['window'][2])
                         time.sleep(.2)
-                        proof = flow(desktop, window, state, folder, resumed, repeat_interaction, minimap, reach_areas, corpse_loot, item_quest, quest_only)
+                        if documents:
+                            from quest_document_os import flow as document_flow
+                            proof=document_flow(desktop,window,state,folder,resumed)
+                        else:
+                            proof = flow(desktop, window, state, folder, resumed, repeat_interaction, minimap, reach_areas, corpse_loot, item_quest, quest_only)
                         if minimap:
                             proof['minimap'] = check_minimap(desktop, window, state, folder)
                             if minimap_traversal and resumed:
@@ -557,7 +567,7 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
                     summaries = [json.loads(line)['creature_threat_summary'] for line in server_log.splitlines() if line.startswith('{"creature_threat_summary":')]
                     assert len(summaries) == 1
                     threat = summaries[0]
-                    kills = (7 if quest_only else 4) if item_quest else 3
+                    kills = 2 if documents else ((7 if quest_only else 4) if item_quest else 3)
                     assert resumed or (threat['damage_facts'] >= kills and threat['health_lost'] == kills*100 and threat['clears'] >= kills), threat
                     proof['threat'] = threat
                 proof['gpu_diagnostics'] = check_gpu_diagnostics((folder/'launcher.log').read_text(errors='replace'), allow_surface_resize=size == '3440x1440')
@@ -570,6 +580,7 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
                 rows = cluster.query(query)
                 assert rows.returncode == 0
                 expected = (['16','150','3','6','10'] if repeat_interaction else ['14','150','3','6','8']) if reach_areas else (['13','125','2','4','9'] if repeat_interaction else ['11','125','2','4','7'])
+                if documents:expected=['8','75','1','2','4']
                 if item_quest:expected=['27','250','4','8','14'] if quest_only else ['24','200','4','8','11']
                 assert all(row.split('|')[1:] == expected for row in rows.stdout.splitlines()), rows.stdout
                 if quest_only:
@@ -594,7 +605,7 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
                   scope='Normal launcher + actual local OIDC, owned PostgreSQL, PID-bound synthetic X11 input and Linux native GPU; no physical hardware/Windows claim',
                   wheel_input='temporary Linux uinput wheel axis; XTEST pointer/keyboard; all guarded by owned X11 focus and pointer checks', virtual_wheel_device_removed=True,
                   private_combat_fixture=not production, unchanged_quest_catalogue=True, repeated_preaccept_interaction=repeat_interaction,
-                  database_process_restart=True, saved_completion_rejoin=True, reach_area=reach_areas, item_destruction=destroy_items, corpse_loot=corpse_loot, item_quest=item_quest, guaranteed_loot_fixture=item_quest, quest_only=quest_only)
+                  database_process_restart=True, saved_completion_rejoin=True, reach_area=reach_areas, item_destruction=destroy_items, corpse_loot=corpse_loot, item_quest=item_quest, guaranteed_loot_fixture=item_quest or documents, quest_only=quest_only, documents=documents)
     (output/'verification.json').write_text(json.dumps(result, indent=2)+'\n')
     return result
 
@@ -608,10 +619,11 @@ if __name__ == '__main__':
     parser.add_argument('--minimap', action='store_true')
     parser.add_argument('--minimap-traversal', action='store_true', help='After restart/rejoin, walk across chunk and render-origin boundaries using normal keyboard movement')
     parser.add_argument('--repeat-interaction', action='store_true')
+    parser.add_argument('--documents',action='store_true',help='Normal note pickup, reader pages, historical credit, possession loss and delivery')
     parser.add_argument('--item-quest',action='store_true',help='Actual looted-item readiness, split/delete reversal, replacement pickup, turn-in consumption and rejoin')
     parser.add_argument('--corpse-loot',action='store_true',help='Normal corpse selection, view-only, single pickup, serial Loot-all and durable partial-loot rejoin')
     parser.add_argument('--destroy-items',action='store_true',help='Check normal split/confirm/cancel/destroy UI and persistence after the quest flow')
     parser.add_argument('--reach-areas', action='store_true', help='Complete the opt-in western overlook using normal movement')
     parser.add_argument('--gameplay-manifest', type=Path, default=Path('content/development-gameplay-classic-journal.json'))
     args = parser.parse_args()
-    print(json.dumps(run(args.output, args.binaries, args.sizes or ['1920x1200','3440x1440','1280x720'], args.production, args.repeat_interaction, args.gameplay_manifest, args.minimap, args.minimap_traversal, args.reach_areas, args.destroy_items, args.corpse_loot, args.item_quest), indent=2))
+    print(json.dumps(run(args.output, args.binaries, args.sizes or ['1920x1200','3440x1440','1280x720'], args.production, args.repeat_interaction, args.gameplay_manifest, args.minimap, args.minimap_traversal, args.reach_areas, args.destroy_items, args.corpse_loot, args.item_quest, args.documents), indent=2))

@@ -1,3 +1,14 @@
+Reader UI checkpoint, paused at user request, 5 November 2026:
+P3-05 / P3-11 / P3-15: the opt-in standard Bevy note reader now opens exact local
+pages after a matching server approval. 150 client and 376 network tests,
+formatting and strict workspace/all-target Clippy pass. A complete native
+1920×1200 login/pickup/read/loss/reacquisition/turn-in/PostgreSQL restart/rejoin
+passes on RX 7900 XTX Vulkan, with zero GPU diagnostics. The additional size run
+failed at launcher startup before gameplay; 1280×720 and 3440×1440 remain
+unqualified. Work is a local checkpoint, not a completed reader release.
+[Evidence and remaining checks](QUEST_DOCUMENTS.md#reader-ui-checkpoint-paused).
+No push. Development stopped; resume only on user instruction.
+
 Document manifest/CLI prerequisite qualified locally, 5 November 2026:
 P3-05 / P3-11 / P3-15: opt-in schema 20 snapshots 24 exact roles and binds notes
 with inventory/journal/XP/areas on both client and server. Five development quests

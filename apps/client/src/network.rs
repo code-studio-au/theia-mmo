@@ -248,6 +248,9 @@ impl Network {
         }
         self.request_item(|_| command.into())
     }
+    pub(crate) fn request_document(&self, command: theia_core::documents::OpenCommand) -> bool {
+        self.request_item(|_| command.into())
+    }
     pub(crate) fn request_inventory(&self, operation: theia_core::inventory::Operation) -> bool {
         self.request_item(|revision| {
             theia_core::inventory::Command {

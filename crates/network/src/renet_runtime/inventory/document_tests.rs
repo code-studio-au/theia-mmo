@@ -192,6 +192,14 @@ async fn rejected_or_unsent_open_never_approves_and_replays_do_not_become_new_in
     client.receive(&refused, actor()).unwrap();
     assert!(client.approved_document.is_none());
     assert!(!client.pending());
+    assert_eq!(
+        client.document_reply,
+        Some(crate::document_wire::Completion {
+            command: command(11),
+            profile_hash: profile.documents().unwrap().hash(),
+            outcome: Outcome::Rejected(Reason::Stale)
+        })
+    );
     // Repeated observation cannot flip the original decision for the same sequence.
     client.receive(&refused, actor()).unwrap();
     assert!(client.approved_document.is_none());

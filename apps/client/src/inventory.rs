@@ -54,7 +54,15 @@ pub(crate) struct BuyButton(pub u8);
 #[derive(Component)]
 struct OfferLabel(u8);
 #[derive(Component)]
-struct Pane;
+pub(crate) struct Pane;
+#[derive(Component)]
+pub(crate) struct DocumentActions;
+#[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub(crate) enum Phase {
+    Setup,
+    Present,
+    Paint,
+}
 #[derive(Component)]
 struct SlotLabel(u8);
 #[derive(Component)]
@@ -98,6 +106,7 @@ pub(crate) struct Ui {
     pub reward_clicks: u64,
     pub reward_pending: bool,
     pub vendor_pending: bool,
+    pub document_pending: bool,
     pub vendor_open: bool,
     pub vendor_clicks: u64,
     #[serde(skip)]
@@ -135,15 +144,22 @@ pub(crate) fn install(app: &mut App, profile: Profile) {
         "Backpack requires Bevy UI picking"
     );
     crate::loot::install(app, profile.clone());
+    if let Some(documents) = profile.documents() {
+        crate::documents::install(app, documents.clone());
+    }
     app.insert_resource(Config(profile))
         .init_resource::<Ui>()
         .init_resource::<Pending>()
         .add_observer(activate)
         .add_systems(Update, close_panel.before(present))
-        .add_systems(Startup, setup)
+        .add_systems(Startup, setup.in_set(Phase::Setup))
         .add_systems(
             Update,
-            (present, paint, scroll)
+            (
+                present.in_set(Phase::Present),
+                paint.in_set(Phase::Paint),
+                scroll,
+            )
                 .chain()
                 .after(crate::network::present),
         );
@@ -298,6 +314,15 @@ fn setup(mut commands: Commands, config: Res<Config>) {
                     ))
                     .with_child((DestroyLabel, text("Destroy selected stack", 14.)));
             }
+            if config.0.documents().is_some() {
+                panel.spawn((
+                    DocumentActions,
+                    Node {
+                        width: percent(100),
+                        ..default()
+                    },
+                ));
+            }
             panel.spawn((
                 StatusLabel,
                 text("Loading backpack...", 14.),
@@ -355,6 +380,7 @@ pub(crate) fn close_panel(
     keys: Res<ButtonInput<KeyCode>>,
     mut ui: ResMut<Ui>,
     loot: Option<Res<crate::loot::Ui>>,
+    documents: Option<Res<crate::documents::Ui>>,
     dialogue: Option<Res<crate::dialogue::Ui>>,
     network: Option<Res<Network>>,
 ) {
@@ -371,6 +397,9 @@ pub(crate) fn close_panel(
         });
     if keys.just_pressed(KeyCode::Escape)
         && !talking
+        && !documents
+            .as_ref()
+            .is_some_and(|u| u.open || u.closed_this_frame)
         && !loot.as_ref().is_some_and(|u| u.open || u.closed_this_frame)
     {
         ui.open = false;
@@ -425,7 +454,9 @@ fn present(
         ui.status = match reply.outcome {
             Outcome::Applied => {
                 ui.applied += 1;
-                if ui.vendor_pending {
+                if ui.document_pending {
+                    "Document opened."
+                } else if ui.vendor_pending {
                     "Purchase saved."
                 } else if ui.reward_pending {
                     "Reward claimed."
@@ -436,7 +467,9 @@ fn present(
             }
             Outcome::Replayed => {
                 ui.replayed += 1;
-                if ui.vendor_pending {
+                if ui.document_pending {
+                    "Document opened."
+                } else if ui.vendor_pending {
                     "Purchase saved."
                 } else if ui.reward_pending {
                     "Reward claimed."
@@ -461,10 +494,16 @@ fn present(
         };
         ui.reward_pending = false;
         ui.vendor_pending = false;
+        ui.document_pending = false;
     }
     if ui.pending || state.inventory_pending {
         ui.pending = true;
-        ui.status = "Saving backpack...".into();
+        ui.status = if ui.document_pending {
+            "Opening document..."
+        } else {
+            "Saving backpack..."
+        }
+        .into();
         ui.ignored_pending_clicks += u64::from(
             input.slot.is_some()
                 || input.destroy
@@ -834,6 +873,7 @@ fn paint(
 fn scroll(
     mut events: MessageReader<bevy::input::mouse::MouseWheel>,
     ui: Res<Ui>,
+    documents: Option<Res<crate::documents::Ui>>,
     mut panes: Query<(&mut ScrollPosition, &ComputedNode), With<Pane>>,
 ) {
     let delta: f32 = events
@@ -846,7 +886,7 @@ fn scroll(
             }
         })
         .sum();
-    if ui.open && delta != 0. {
+    if ui.open && !documents.as_ref().is_some_and(|u| u.open) && delta != 0. {
         for (mut position, node) in &mut panes {
             let maximum =
                 ((node.content_size().y - node.size().y) * node.inverse_scale_factor()).max(0.);

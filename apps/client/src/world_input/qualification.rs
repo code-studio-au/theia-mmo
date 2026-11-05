@@ -253,6 +253,11 @@ fn os_trace(world: &mut World) {
             .map(|v| serde_json::from_slice::<serde_json::Value>(&v.bag.to_json()).unwrap())
             .unwrap_or_default();
         data["inventory_layout"] = inventory_layout(world);
+        data["documents"] = world
+            .get_resource::<crate::documents::Ui>()
+            .map(|ui| serde_json::to_value(ui).unwrap())
+            .unwrap_or_default();
+        data["document_layout"] = serde_json::json!({"read":inventory_widget::<crate::documents::ReadButton>(world),"next":inventory_widget::<crate::documents::NextButton>(world),"previous":inventory_widget::<crate::documents::PreviousButton>(world),"close":inventory_widget::<crate::documents::CloseButton>(world),"note_slot":widget_position(world,false,"theia.dev.roadside-orders").map(|p|p.to_array())});
         let remote_centres: Vec<_> = world
             .query::<(&crate::network::RemotePawn, &GlobalTransform)>()
             .iter(world)
