@@ -31,9 +31,32 @@ impl World {
         profile: Arc<crate::quest_journal::Profile>,
         xp: Arc<crate::progression_wire::Profile>,
     ) -> crate::Result<()> {
+        self.install_quest_journal(profile, xp, None)
+    }
+    /// Explicit item-aware headless adoption, bound to the exact inventory
+    /// bytes used by the retained owner. Legacy admission remains unchanged.
+    pub fn enable_item_quest_journal(
+        &mut self,
+        profile: Arc<crate::quest_journal::Profile>,
+        xp: Arc<crate::progression_wire::Profile>,
+        inventory: &crate::renet_runtime::inventory::Profile,
+    ) -> crate::Result<()> {
+        if profile.inventory_hash().is_none() {
+            return Err("Item-aware journal requires inventory binding".into());
+        }
+        self.install_quest_journal(profile, xp, Some(inventory))
+    }
+    fn install_quest_journal(
+        &mut self,
+        profile: Arc<crate::quest_journal::Profile>,
+        xp: Arc<crate::progression_wire::Profile>,
+        inventory: Option<&crate::renet_runtime::inventory::Profile>,
+    ) -> crate::Result<()> {
+        let items = checked_inventory(&profile, inventory)?;
         self.validate_quest_journal_references_with_areas(
             profile.catalog(),
             profile.shared_areas().as_deref(),
+            items,
         )?;
         profile.check_progression(&xp)?;
         if self
@@ -89,8 +112,20 @@ impl World {
         &self,
         profile: &crate::quest_journal::Profile,
     ) -> crate::Result<Prepared> {
+        self.prepare_quest_journal_profile_with_inventory(profile, None)
+    }
+    pub(crate) fn prepare_quest_journal_profile_with_inventory(
+        &self,
+        profile: &crate::quest_journal::Profile,
+        inventory: Option<&crate::renet_runtime::inventory::Profile>,
+    ) -> crate::Result<Prepared> {
+        let items = checked_inventory(profile, inventory)?;
         let areas = profile.shared_areas();
-        self.validate_quest_journal_references_with_areas(profile.catalog(), areas.as_deref())?;
+        self.validate_quest_journal_references_with_areas(
+            profile.catalog(),
+            areas.as_deref(),
+            items,
+        )?;
         Ok(Prepared {
             catalog: profile.shared_catalog(),
             areas,
@@ -236,12 +271,13 @@ impl World {
     /// single-guide/single-creature World. No XP kill recipe is required here.
     /// A successful check grants no actor entitlement or persisted compatibility.
     pub fn validate_quest_journal_references(&self, catalog: &Catalog) -> crate::Result<()> {
-        self.validate_quest_journal_references_with_areas(catalog, None)
+        self.validate_quest_journal_references_with_areas(catalog, None, None)
     }
     fn validate_quest_journal_references_with_areas(
         &self,
         catalog: &Catalog,
         areas: Option<&theia_core::quests::areas::Catalog>,
+        items: Option<&theia_core::inventory::Catalog>,
     ) -> crate::Result<()> {
         if self.tick != 0
             || !self.players.is_empty()
@@ -265,6 +301,9 @@ impl World {
                     return Err("Quest area lies outside installed continental bounds".into());
                 }
             }
+        }
+        if let Some(items) = items {
+            catalog.validate_possession_items(items)?;
         }
         let guide = self
             .dialogue
@@ -291,7 +330,7 @@ impl World {
             for stage in quest.stages() {
                 for objective in stage.objectives() {
                     match objective.event() {
-                        EventKey::PossessItem(_) => {
+                        EventKey::PossessItem(_) if items.is_none() => {
                             return Err("Possession objectives require an explicitly installed inventory binding".into());
                         }
                         EventKey::ReachArea(id) => {
@@ -325,6 +364,17 @@ impl World {
             }
         }
         Ok(())
+    }
+}
+
+fn checked_inventory<'a>(
+    profile: &crate::quest_journal::Profile,
+    inventory: Option<&'a crate::renet_runtime::inventory::Profile>,
+) -> crate::Result<Option<&'a theia_core::inventory::Catalog>> {
+    match (profile.inventory_hash(), inventory) {
+        (None, None) => Ok(None),
+        (Some(expected), Some(items)) if expected == items.hash() => Ok(Some(items.catalog())),
+        _ => Err("Journal requires matching explicit inventory admission".into()),
     }
 }
 
@@ -365,6 +415,113 @@ mod tests {
             )
             .unwrap();
         world
+    }
+    fn item_profiles() -> (
+        Arc<crate::progression_wire::Profile>,
+        crate::renet_runtime::inventory::Profile,
+        Arc<crate::quest_journal::Profile>,
+    ) {
+        let xp = Arc::new(
+            crate::progression_wire::Profile::from_json(include_bytes!(
+                "../../../../content/gameplay/development-progression.json"
+            ))
+            .unwrap(),
+        );
+        let items = crate::renet_runtime::inventory::Profile::from_json(include_bytes!(
+            "../../../../content/gameplay/development-equipment-items.json"
+        ))
+        .unwrap();
+        let data = json!({"schema":3,"id":"theia.test.item-quests","revision":1,"quests":[{
+            "id":"delivery","version":1,"title":"Delivery","description":"Fixture","prerequisites":[],
+            "giver":"theia.dev.guide","turn_in":"theia.dev.guide","repeat_policy":"once","credit_scope":"character","experience":25,
+            "start_stage":"bring","stages":[{"id":"bring","next":null,"completion":{"kind":"all"},"objectives":[
+                {"id":"items","kind":"possess_item","label":"Bring three","item":"theia.dev.training-stone","required":3,"consume_on_turn_in":true}]}]}]});
+        let profile = Arc::new(
+            crate::quest_journal::Profile::from_json(&serde_json::to_vec(&data).unwrap(), &xp)
+                .unwrap(),
+        );
+        (xp, items, profile)
+    }
+    #[test]
+    fn item_journal_installation_requires_explicit_exact_inventory_and_preserves_legacy_gates() {
+        let (xp, items, unbound) = item_profiles();
+        let bound = Arc::new((*unbound).clone().with_inventory(&items).unwrap());
+        let mut changed =
+            include_bytes!("../../../../content/gameplay/development-equipment-items.json")
+                .to_vec();
+        changed.push(b' ');
+        let foreign = crate::renet_runtime::inventory::Profile::from_json(&changed).unwrap();
+        let mut world = combat_setup();
+        let before = world.identity();
+        assert!(
+            world
+                .enable_quest_journal(bound.clone(), xp.clone())
+                .is_err()
+        );
+        assert!(
+            world
+                .enable_quest_journal(unbound.clone(), xp.clone())
+                .is_err()
+        );
+        assert!(
+            world
+                .enable_item_quest_journal(unbound, xp.clone(), &items)
+                .is_err()
+        );
+        assert!(
+            world
+                .enable_item_quest_journal(bound.clone(), xp.clone(), &foreign)
+                .is_err()
+        );
+        assert_eq!(world.identity(), before);
+        assert!(world.progression.is_none() && world.quest_journal.is_none());
+        world
+            .enable_item_quest_journal(bound.clone(), xp.clone(), &items)
+            .unwrap();
+        assert_ne!(world.identity(), before);
+        assert_eq!(
+            world.quest_journal_profile().unwrap().inventory_hash(),
+            Some(items.hash())
+        );
+        let installed = world.identity();
+        assert!(
+            world
+                .enable_item_quest_journal(bound.clone(), xp.clone(), &items)
+                .is_err()
+        );
+        let actor = world.join().unwrap();
+        assert!(
+            world
+                .quest_journal_router(world.entity_key(actor).unwrap())
+                .is_ok()
+        );
+        assert!(world.enable_item_quest_journal(bound, xp, &items).is_err());
+        assert_eq!(world.identity(), installed);
+    }
+    #[test]
+    fn item_journal_preparation_requires_explicit_binding_while_raw_references_remain_closed() {
+        let (_, items, unbound) = item_profiles();
+        let bound = Arc::new((*unbound).clone().with_inventory(&items).unwrap());
+        let world = combat_setup();
+        assert!(bound.prepare(&world).is_err());
+        assert!(unbound.prepare_with_inventory(&world, &items).is_err());
+        assert!(bound.prepare_with_inventory(&world, &items).is_ok());
+        assert!(
+            world
+                .validate_quest_journal_references(bound.catalog())
+                .is_err()
+        );
+        assert!(
+            world
+                .prepare_quest_journal(Arc::new(bound.catalog().clone()))
+                .is_err()
+        );
+        let mut changed =
+            include_bytes!("../../../../content/gameplay/development-equipment-items.json")
+                .to_vec();
+        changed.push(b' ');
+        let foreign = crate::renet_runtime::inventory::Profile::from_json(&changed).unwrap();
+        assert!(bound.prepare_with_inventory(&world, &foreign).is_err());
     }
     #[test]
     fn installed_mode_binds_exact_catalogue_and_xp_and_refuses_legacy_or_live_replacement() {

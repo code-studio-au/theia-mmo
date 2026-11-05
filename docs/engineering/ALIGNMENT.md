@@ -1,3 +1,12 @@
+Explicit headless item-journal admission prerequisite, 5 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: opt-in World installation/preparation now requires
+the exact bound inventory profile; legacy/raw paths remain closed. 363 network
+library tests, nine wire checks, formatting and strict all-target Clippy pass.
+[Exact scope and remaining normal adoption](../QUEST_ITEM_OBJECTIVES.md#explicit-headless-item-journal-admission--5-november-2026).
+No new saved-player/native claim. Normal CLI/manifest item-quest admission and
+quest-only loot filtering remain pending. Continue implementation with local
+commits only; no push. Ordinary loot checkpoint remains `4dbeefd`.
+
 Quest-only loot eligibility core prerequisite, 5 November 2026:
 P3-05 / P3-09 / P3-11 / P3-15: current checked backpack holdings now derive the
 items needed by accepted unfinished quests, independently of cached Ready counts.

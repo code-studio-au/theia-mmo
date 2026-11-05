@@ -744,3 +744,34 @@ skips), 55 actual PostgreSQL contracts, the retained-owner roll scenario,
 possession-quest admission remains gated pending its combined pickup, deletion,
 reacquisition, turn-in and restart/rejoin proof. Reading notes remains a distinct
 future authored objective. Commit locally only; no push.
+
+## Explicit headless item-journal admission — 5 November 2026
+
+P3-05 / P3-09 / P3-11 / P3-15: new explicit
+`World::enable_item_quest_journal` and `Profile::prepare_with_inventory` paths
+validate possession references against the exact inventory profile already bound
+to the journal. Equal catalogue IDs/definitions with different source bytes do
+not substitute for that binding. Refused bindings leave World state/identity
+unchanged. A successful inactive installation retains the bound profile in World
+identity and creates normal generation-bound actor routers. Live/repeated
+replacement stays refused.
+
+The old enable, prepare and raw reference paths still refuse possession quests.
+The existing area and guide/creature reference checks, XP binding and inactive
+World requirements remain in force. This is an explicit headless/library
+prerequisite: it does not initialize SQL, prove a saved player, install a normal
+CLI flag/manifest, create item-quest content or implement quest-only loot filters.
+Normal client/server and manifest admission remain closed pending those slices.
+
+363 network-library tests and nine journal-wire tests pass, including existing
+World/Avian and impaired encrypted journal regressions. Formatting and denied-
+warning workspace/all-target Clippy pass. Evidence:
+`build/quest-item-admission-network-tests-v2-20261105.log`,
+`build/quest-item-admission-wire-tests-v1-20261105.log`,
+`build/quest-item-admission-fmt-v1-20261105.log` and
+`build/quest-item-admission-clippy-v1-20261105.log`.
+No new actual SQL, native/Windows or capacity claim. Next: explicit normal
+inventory/journal binding and development-only item quest, then native pickup,
+split/delete reversal, replacement pickup, atomic turn-in and restart/rejoin.
+Keep quest-only candidate filtering separate from rolling and perform it before
+bounded paging and again at pickup. Local commits only; no push.

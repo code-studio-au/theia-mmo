@@ -113,6 +113,20 @@ impl Profile {
             world: world.prepare_quest_journal_profile(self)?,
         })
     }
+    /// Explicit item-aware preparation; the normal constructor refuses it.
+    pub fn prepare_with_inventory(
+        self: &Arc<Self>,
+        world: &World,
+        inventory: &crate::renet_runtime::inventory::Profile,
+    ) -> Result<PreparedRouter> {
+        if self.inventory_hash().is_none() {
+            return Err("Item-aware preparation requires inventory binding".into());
+        }
+        Ok(PreparedRouter {
+            profile: self.clone(),
+            world: world.prepare_quest_journal_profile_with_inventory(self, Some(inventory))?,
+        })
+    }
 }
 pub struct PreparedRouter {
     profile: Arc<Profile>,
