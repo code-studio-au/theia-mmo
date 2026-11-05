@@ -1,3 +1,15 @@
+Paused safely at the user's request, 5 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: opt-in schema-18 item-quest admission and the
+three-pelt development quest are implemented as a local work-in-progress.
+1920x1200 normal-combat and fixture runs completed pickup, split/delete reversal,
+replacement pickup and atomic turn-in with actual SQL checks. Full qualification
+is incomplete: the fourth dialogue choice is clipped at 1280x720 despite wheel
+input; new read-only bounds/scroll telemetry is ready for diagnosis. The latest
+run stopped on its owned-focus guard. No all-size/restart claim for this slice.
+Display restored to 2560x1080; owned game/test services stopped. Do not resume
+until requested. Keep this checkpoint local; do not push.
+[Exact implementation, evidence and remaining checks](QUEST_ITEM_OBJECTIVES.md#normal-item-quest-admission--5-november-2026).
+
 Explicit headless item-journal admission prerequisite, 5 November 2026:
 P3-05 / P3-09 / P3-11 / P3-15: opt-in World installation/preparation now requires
 the exact bound inventory profile; legacy/raw paths remain closed. 363 network

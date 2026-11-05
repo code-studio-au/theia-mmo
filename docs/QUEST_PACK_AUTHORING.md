@@ -1,3 +1,10 @@
+Item-quest integration checkpoint, 5 November 2026:
+Opt-in manifest schema 18 and normal client/server inventory binding are now
+implemented, with a development-only three-pelt quest. Native qualification is
+paused and incomplete; do not ship campaign item quests yet. Ordinary pelts are
+not quest-only drops. [Current behavior, partial evidence and remaining checks](QUEST_ITEM_OBJECTIVES.md#normal-item-quest-admission--5-november-2026).
+Earlier admission-gate entries below describe their historical prerequisites.
+
 Loot-authoring clarification, 5 November 2026:
 Quest objectives name the items and quantities required; drop chances belong to
 separate creature loot content. [Loot-table format and adoption limits](LOOT_TABLES.md)

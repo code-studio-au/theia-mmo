@@ -469,6 +469,17 @@ fn scroll(
     }
 }
 
+/// Read-only bounds and scroll state for diagnosing clipped dialogue choices.
+pub(crate) fn qualification_body(world: &mut World) -> Option<serde_json::Value> {
+    world.query_filtered::<(&ComputedNode, &bevy::ui::UiGlobalTransform, &ScrollPosition), With<Body>>()
+        .iter(world).next().map(|(node, transform, scroll)| serde_json::json!({
+            "point": (transform.affine().translation * node.inverse_scale_factor()).to_array(),
+            "size": (node.size() * node.inverse_scale_factor()).to_array(),
+            "content": (node.content_size() * node.inverse_scale_factor()).to_array(),
+            "scroll": [scroll.x, scroll.y]
+        }))
+}
+
 /// Current painted choice locations for explicit read-only OS qualification.
 pub(crate) fn qualification_choices(world: &mut World) -> Vec<serde_json::Value> {
     let Some(ui) = world.get_resource::<Ui>() else {

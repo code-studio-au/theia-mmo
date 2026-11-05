@@ -175,10 +175,10 @@ fn os_trace(world: &mut World) {
             .get_resource::<crate::camera::mode::Mode>()
             .map(|m| serde_json::json!({"requested":m.requested,"active":m.active}));
         let cursor = world
-            .query::<&bevy::window::CursorOptions>()
+            .query::<(&bevy::window::CursorOptions, &Window)>()
             .single(world)
             .ok()
-            .map(|c| serde_json::json!({"visible":c.visible,"grab":format!("{:?}",c.grab_mode)}));
+            .map(|(c,w)| serde_json::json!({"visible":c.visible,"grab":format!("{:?}",c.grab_mode),"position":w.cursor_position().map(|p|p.to_array()),"focused":w.focused,"window_position":format!("{:?}",w.position)}));
         let intent = world.resource::<crate::movement::MoveIntent>();
         let movement =
             serde_json::json!({"direction":intent.direction.to_array(),"sprint":intent.sprint});
@@ -226,6 +226,17 @@ fn os_trace(world: &mut World) {
         let journal = crate::quest_journal::qualification(world, &state);
         let selection = world.resource::<super::Selection>();
         let mut data = serde_json::json!({"enemy_health":state.combat.as_ref().and_then(|c|c.targets.first()).map(|t|t.current),"quest_journal":journal,"quest_marker":world.get_resource::<crate::quest_marker::Metrics>(),"main_hand_item":state.inventory.as_ref().and_then(|i|i.bag.main_hand()).map(|stack|stack.item().as_str()),"wand_slot_screen":wand_slot.map(|p|p.to_array()),"ability_reply":state.combat.as_ref().and_then(|c|c.reply).map(|r|format!("{:?}",r.outcome)),"active_cast":state.combat.as_ref().and_then(|c|c.cast.as_ref()).map(|c|serde_json::json!({"started":c.started,"completes":c.completes,"ability":c.ability.as_str()})),"enemy_global":state.targeting.as_ref().and_then(|v|v.targets.first()).map(|t|t.position.metres()),"autoattack":autoattack,"combat":combat,"attack_animation":attack_animation,"melee_labels":melee_labels,"combat_ui":world.get_resource::<crate::combat::ui::Model>(),"combat_layout":world.get_resource::<crate::combat::ui::Metrics>(),"selected_hostile":state.targeting.as_ref().and_then(|v|v.selected).map(|id|id.value()),"classic_facing":state.correction.and_then(|c|c.state.pose.facing),"classic_enabled":world.contains_resource::<crate::classic_controls::Controller>(),"pawn_heading":pawn_heading,"sword_equipped":sword,"sword_slot_screen":sword_slot.map(|v|v.to_array()),"equip_screen":equip.map(|v|v.to_array()),"dodge_animation":dodge_animation,"grip":grip,"dodge":dodge,"rendered_body":rendered,"pid":std::process::id(),"connected":state.error.is_none()&&state.welcome.is_some(),"guide_screen":guide.map(|p|p.to_array()),"enemy_screen":enemy.map(|p|p.to_array()),"window":size,"camera_angles":angles.to_array(),"camera_mode":camera_mode,"cursor":cursor,"movement":movement,"inventory_open":inventory_open,"dialogue_open":state.dialogue.as_ref().is_some_and(|v|v.open.is_some()),"friendly_selected":selection.friendly.is_some(),"controls":selection,"adapter":adapter});
+        data["mouse_hover"] = world
+            .get_resource::<bevy::picking::hover::HoverMap>()
+            .and_then(|h| h.0.get(&bevy::picking::pointer::PointerId::Mouse))
+            .map(|hits| {
+                hits.keys().take(8).map(|entity| serde_json::json!({
+                "entity":format!("{entity:?}"),"ui":world.get::<Node>(*entity).is_some(),
+                "guide":world.get::<crate::dialogue::GuideVisual>(*entity).is_some(),
+                "name":world.get::<Name>(*entity).map(|n|n.as_str())
+            })).collect::<Vec<_>>()
+            })
+            .into();
         data["loot"] = crate::loot::qualification(world);
         data["dialogue_pending"] = serde_json::json!(state.dialogue_pending);
         data["dialogue_ui"] = world

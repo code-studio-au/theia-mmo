@@ -404,8 +404,9 @@ pub(crate) fn qualification(world: &mut World, state: &State) -> Option<serde_js
     let quests:Vec<_>=definitions.catalog().quests().filter_map(|q|journal.journal.progress(q.id()).map(|p|serde_json::json!({"id":q.id().as_str(),"revision":p.revision(),"status":format!("{:?}",p.status()),"counts":q.stages().flat_map(|s|s.objectives()).map(|o|(o.id().as_str(),p.count(o.id()).unwrap_or(0))).collect::<BTreeMap<_,_>>()}))).collect();
     let tracker=world.query_filtered::<(&Text,&ComputedNode,Option<&bevy::text::TextLayoutInfo>),With<Tracker>>().iter(world).next().map(|(text,node,glyphs)|serde_json::json!({"text":text.0,"size":(node.size()*node.inverse_scale_factor()).to_array(),"glyphs":glyphs.map_or(0,|g|g.glyphs.len())}));
     let choices = crate::dialogue::qualification_choices(world);
+    let dialogue_body = crate::dialogue::qualification_body(world);
     Some(
-        serde_json::json!({"revision":journal.revision,"quests":quests,"ui":ui,"buttons":buttons,"choices":choices,"tracker":tracker,"xp":state.progression.as_ref().map(|s|s.progress.total())}),
+        serde_json::json!({"revision":journal.revision,"quests":quests,"ui":ui,"buttons":buttons,"choices":choices,"dialogue_body":dialogue_body,"tracker":tracker,"xp":state.progression.as_ref().map(|s|s.progress.total())}),
     )
 }
 

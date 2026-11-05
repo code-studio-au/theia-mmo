@@ -775,3 +775,82 @@ inventory/journal binding and development-only item quest, then native pickup,
 split/delete reversal, replacement pickup, atomic turn-in and restart/rejoin.
 Keep quest-only candidate filtering separate from rolling and perform it before
 bounded paging and again at pickup. Local commits only; no push.
+
+## Normal item-quest admission — 5 November 2026
+
+P3-05 / P3-09 / P3-11 / P3-15. Prerequisites are the checked possession
+catalogue, atomic backpack/journal reconciliation and turn-in, explicit bound
+World admission, corpse pickup and durable loot rolls described above. Normal
+client and server now accept opt-in `--quest-items` with the exact inventory-bound
+journal. Gameplay manifest schema 18 selects that mode; earlier manifest versions
+continue to refuse possession objectives. Validation requires known item
+references and at least one possession objective, preserving existing guide,
+creature, area, progression and inventory checks.
+
+`content/development-gameplay-classic-quest-items.json` adds a development-only
+“Pelts for the guide” quest after the western overlook: bring three wolf pelts,
+consume them on turn-in and award 25 XP. It retains the three earlier quest
+definitions and uses the existing independent 60% pelt / 25% token loot profile.
+Those rates are provisional Theia content values. The explicitly named
+`development-gameplay-classic-quest-items-fixture.json` instead uses guaranteed
+schema-2 loot for repeatable native checks. Neither profile makes pelts quest-only:
+ordinary pelts can drop before acceptance or after completion.
+
+The normal flow counts committed backpack holdings across stacks. Opening a
+corpse and killing another wolf give no possession credit. Splitting three pelts
+into two plus one preserves Ready; confirmed deletion of the single pelt returns
+the quest to Active at 2/3. A replacement pickup restores Ready. Turn-in rechecks
+and consumes the three held pelts atomically with completion and XP; completed
+history remains complete after consumption. Earlier permanent quest facts remain
+unchanged. No banking, mail, trade or item-reading objective is added here.
+
+Native testing exposed a presentation bug: a loot button using ActivateOnPress
+could retain Bevy's Pressed component when the panel hid before pointer release.
+Hidden loot buttons now clear that transient state. Reopening a corpse must work
+with one normal click; the final qualification helper does not retry Loot all.
+Read-only input telemetry additionally reports window focus, cursor position and
+hovered UI/actor information; it cannot inject gameplay state.
+
+Qualification is paused at the user's request before completion. Acceptance checks cover normal OIDC/account entry,
+three existing quests, explicit corpse pickup, split/delete reversal, a fourth
+ordinary wolf kill without item credit, replacement pickup, consumption at turn-in,
+three native window sizes and actual PostgreSQL process restart/fresh login.
+The expected final journal head is 24: eight actions, eleven historical events
+(including the fourth kill), and five possession-changing reconciliations. Four
+quests complete at 200 total XP, with zero pelts and 103 training tokens held.
+Quest-only eligibility before paging and again at pickup remains the next slice.
+
+
+Paused evidence and resume point:
+
+- 147 client tests pass in `build/quest-item-client-app-tests-v2-20261105.log`;
+  55 validator tests and 40 actual-validator bundle tests pass in
+  `build/quest-item-client-validator-tests-v2-20261105.log` and
+  `build/quest-item-client-bundle-tests-v1-20261105.log`. The later additions are
+  read-only dialogue bounds/scroll telemetry; the latest optimized build and
+  strict Clippy include it. Formatting and Python compilation also pass.
+- `build/quest-item-client-native-v10-20261105/1920x1200/proof.json` and
+  `sql.txt` qualify that complete normal-combat size only: four completed quests,
+  journal head 24, 200 XP, eight actions and eleven historical events. The older
+  report's top-level XP/actions/kills describe the baseline flow; final results
+  are in its item proof, SQL and captured state. The report now preserves an
+  explicitly named baseline and reports final counters separately.
+- `build/quest-item-client-native-v11-20261105/1920x1200/proof.json` and
+  `sql.txt` repeat the complete flow with the explicitly marked low-damage,
+  slow-creature test fixture. Those overrides exist only in ignored test content;
+  shipping/development source profiles were not weakened. Both proofs use the
+  same gameplay client candidate v3. Current candidate v4 adds read-only dialogue
+  geometry telemetry; its first run v14 stopped on focus loss before qualification.
+- Native v1–v14 retain negative evidence for setup/input guards, layout timing,
+  the corrected hidden-button Pressed state, test-only assumptions about health
+  regeneration and the fourth kill's journal/threat counters, frontmost corpse
+  occlusion, and the still-unresolved clipped small-window training choice.
+  The helper uses supported Tab selection when an old corpse obscures the living
+  wolf; it does not select through the corpse or bypass gameplay authority.
+- Next: diagnose the 1280x720 dialogue body's measured bounds/content/scroll,
+  expose the fourth choice with ordinary wheel input, then complete small and
+  ultrawide flows plus actual database restart/rejoin. No new native Windows,
+  random-rate walkthrough or capacity claim. No final qualified checkpoint yet.
+
+The desktop was restored to 2560x1080 at 60 Hz and owned game/provider/database
+processes are stopped. Preserve work locally; do not push or resume until asked.

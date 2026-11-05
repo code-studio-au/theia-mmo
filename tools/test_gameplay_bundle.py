@@ -126,6 +126,31 @@ class GameplayBundle(unittest.TestCase):
         with patch.object(play, 'play', side_effect=launch), redirect_stdout(io.StringIO()):
             play.main(['--gameplay-manifest', str(self.manifest), '--gameplay-validator', str(self.validator)])
 
+    def test_item_quest_bundles_bind_exact_inventory_and_select_explicit_modes(self):
+        for filename in ['development-gameplay-classic-quest-items.json', 'development-gameplay-classic-quest-items-fixture.json']:
+            original = Path('content')/filename
+            raw = json.loads(original.read_text())
+            self.manifest.write_bytes(original.read_bytes())
+            for role in bundle.AREA_ROLES:
+                dest = self.source / raw[role]
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(original.parent / raw[role], dest)
+            with bundle.snapshot(self.manifest, self.validator, self.session) as (paths, report):
+                self.assertEqual(report['manifest_schema'], 18)
+                self.assertEqual(paths['quest'].read_bytes(), (original.parent / raw['quest']).read_bytes())
+                self.assertEqual(paths['items'].read_bytes(), (original.parent / raw['items']).read_bytes())
+            def launch(*args):
+                observed = PLAY_SIGNATURE.bind(*args).arguments
+                self.assertTrue(observed['quest_items'])
+                self.assertTrue(observed['quest_journal'])
+                self.assertTrue(observed['creature_loot'])
+            with patch.object(play, 'play', side_effect=launch), redirect_stdout(io.StringIO()):
+                play.main(['--gameplay-manifest', str(self.manifest), '--gameplay-validator', str(self.validator)])
+
+    def test_item_quest_override_refuses_legacy_bundle(self):
+        with self.assertRaises(SystemExit), redirect_stderr(io.StringIO()):
+            play.main(['--gameplay-manifest', str(self.manifest), '--gameplay-validator', str(self.validator), '--quest-items'])
+
     def test_avatar_bundle_selects_both_public_contracts_with_unchanged_roles(self):
         original = Path('content/development-gameplay-classic-public-life.json')
         raw = json.loads(original.read_text())

@@ -309,6 +309,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         false
     };
+    let quest_items = if let Some(i) = args.iter().position(|a| a == "--quest-items") {
+        args.remove(i);
+        true
+    } else {
+        false
+    };
+    if quest_items
+        && (!journal_mode
+            || !args.iter().any(|a| a == "--quest-catalog")
+            || !args.iter().any(|a| a == "--item-catalog"))
+    {
+        return Err("Quest items require journal mode, quest and item catalogues".into());
+    }
     if journal_mode && explicit_quest {
         return Err("Choose expanded journal or legacy quest mode".into());
     }
@@ -343,7 +356,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         None
     };
-    let (quest_profile, lifecycle_profile, journal_profile) =
+    let (quest_profile, lifecycle_profile, mut journal_profile) =
         if let Some(i) = args.iter().position(|a| a == "--quest-catalog") {
             use std::io::Read;
             args.remove(i);
@@ -688,6 +701,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             return Err("Vendor NPC differs from dialogue guide".into());
         }
         inventory_profile = Some(profile);
+    }
+    let has_possession = journal_profile
+        .as_ref()
+        .is_some_and(|p| p.catalog().quests().any(|q| q.has_possession_objectives()));
+    if has_possession != quest_items {
+        return Err("Possession quests require explicit --quest-items mode".into());
+    }
+    if quest_items {
+        let profile = journal_profile
+            .take()
+            .ok_or("Quest items require a journal")?;
+        journal_profile = Some(std::sync::Arc::new(
+            (*profile)
+                .clone()
+                .with_inventory(
+                    inventory_profile
+                        .as_ref()
+                        .ok_or("Quest items require inventory")?,
+                )
+                .map_err(|e| e.to_string())?,
+        ));
     }
     if inventory_profile.is_some() && (!graybox || !prediction) {
         return Err("Inventory requires predicted saved terrain".into());

@@ -245,7 +245,12 @@ fn relative(value: &str) -> bool {
             .all(|part| !part.is_empty() && !matches!(part, "." | ".."))
         && !Path::new(value).is_absolute()
 }
-fn check(bytes: &BTreeMap<&str, Vec<u8>>, journal: bool, creature_loot: bool) -> Result<()> {
+fn check(
+    bytes: &BTreeMap<&str, Vec<u8>>,
+    journal: bool,
+    creature_loot: bool,
+    quest_items: bool,
+) -> Result<()> {
     let items =
         inventory::Catalog::from_json(&bytes["items"]).map_err(|_| "Invalid items profile")?;
     let abilities = theia_core::abilities::Catalog::from_json(&bytes["abilities"])?;
@@ -296,6 +301,12 @@ fn check(bytes: &BTreeMap<&str, Vec<u8>>, journal: bool, creature_loot: bool) ->
     if journal {
         let catalog = quests::catalog::Catalog::from_json(&bytes["quest"])
             .map_err(|_| "Invalid expanded quest catalogue")?;
+        if catalog.quests().any(|q| q.has_possession_objectives()) != quest_items {
+            return Err("Possession quests require explicit inventory/journal admission in schema 18 with item objectives".into());
+        }
+        if quest_items {
+            catalog.validate_possession_items(&items)?;
+        }
         let areas = bytes
             .get("quest_areas")
             .map(|b| quests::areas::Catalog::from_json(b))
@@ -329,7 +340,7 @@ fn check(bytes: &BTreeMap<&str, Vec<u8>>, journal: bool, creature_loot: bool) ->
             }
             for objective in quest.stages().flat_map(|s| s.objectives()) {
                 match objective.event() {
-                    quests::catalog::EventKey::PossessItem(_) => {
+                    quests::catalog::EventKey::PossessItem(_) if !quest_items => {
                         return Err(
                             "Possession objectives require explicit inventory/journal admission"
                                 .into(),
@@ -464,7 +475,7 @@ fn validate(path: &Path) -> Result<Report> {
     let raw = bounded(&path, MAX_MANIFEST_BYTES)?;
     let manifest: Manifest =
         serde_json::from_slice(&raw).map_err(|_| "Invalid gameplay manifest")?;
-    if !matches!(manifest.schema, 1..=17)
+    if !matches!(manifest.schema, 1..=18)
         || manifest.revision == 0
         || ContentId::new(&manifest.id).is_none()
         || (matches!(manifest.schema, 2..=11)) != manifest.quest_turn_in_xp.is_some()
@@ -512,7 +523,12 @@ fn validate(path: &Path) -> Result<Report> {
         });
         bytes.insert(kind, data);
     }
-    check(&bytes, manifest.schema >= 12, manifest.schema >= 17)?;
+    check(
+        &bytes,
+        manifest.schema >= 12,
+        manifest.schema >= 17,
+        manifest.schema >= 18,
+    )?;
     profiles.sort_by(|a, b| a.kind.cmp(&b.kind));
     let manifest_hash = sha256(&raw);
     let mut identity = b"theia-gameplay-validation-bundle-v1\0".to_vec();
@@ -1955,6 +1971,69 @@ mod tests {
             fs::write(f.path("quest"), compiled.as_bytes()).unwrap();
             assert_eq!(validate(&f.manifest()).is_ok(), installed);
         }
+    }
+    fn item_quest_fixture() -> Fixture {
+        let f = areas_fixture();
+        f.edit("manifest", |m| m["schema"] = json!(18));
+        f.edit("rewards", |r| {
+            r["schema"] = json!(2);
+            r["rewards"][0]["scope"] = json!("per_creature_life");
+        });
+        f.edit("quest", |q| {
+            q["schema"] = json!(3);
+            let stages = q["quests"][0]["stages"].as_array_mut().unwrap();
+            stages.last_mut().unwrap()["objectives"]
+                .as_array_mut()
+                .unwrap()
+                .push(json!({
+                    "id":"theia.test.possession","kind":"possess_item","label":"Bring three stones",
+                    "item":"theia.dev.training-stone","required":3,"consume_on_turn_in":true
+                }));
+        });
+        f
+    }
+    #[test]
+    fn item_quest_manifests_require_explicit_known_inventory_objectives() {
+        for name in [
+            "development-gameplay-classic-quest-items.json",
+            "development-gameplay-classic-quest-items-fixture.json",
+        ] {
+            let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../../content")
+                .join(name);
+            let report = validate(&path).unwrap();
+            assert_eq!((report.manifest_schema, report.profiles.len()), (18, 23));
+        }
+        let f = item_quest_fixture();
+        validate(&f.manifest()).unwrap();
+        f.edit("manifest", |m| m["schema"] = json!(17));
+        assert!(
+            validate(&f.manifest()).is_err(),
+            "Legacy loot does not admit item quests"
+        );
+        f.edit("manifest", |m| m["schema"] = json!(18));
+        f.edit("quest", |q| {
+            q["quests"][0]["stages"]
+                .as_array_mut()
+                .unwrap()
+                .last_mut()
+                .unwrap()["objectives"]
+                .as_array_mut()
+                .unwrap()
+                .last_mut()
+                .unwrap()["item"] = json!("theia.test.unknown-item");
+        });
+        assert!(validate(&f.manifest()).is_err());
+        let f = areas_fixture();
+        f.edit("manifest", |m| m["schema"] = json!(18));
+        f.edit("rewards", |r| {
+            r["schema"] = json!(2);
+            r["rewards"][0]["scope"] = json!("per_creature_life");
+        });
+        assert!(
+            validate(&f.manifest()).is_err(),
+            "Item mode requires item objectives"
+        );
     }
     #[test]
     fn random_creature_loot_manifest_validates_authored_rolls() {

@@ -181,12 +181,13 @@ pub(crate) fn close_panel(keys: Res<ButtonInput<KeyCode>>, mut ui: ResMut<Ui>) {
 }
 #[allow(clippy::too_many_arguments)]
 fn update(
+    mut commands: Commands,
     network: Res<crate::network::Network>,
     config: Res<Config>,
     mut ui: ResMut<Ui>,
     mut pending: ResMut<Pending>,
     mut panels: Query<&mut Node, With<Pane>>,
-    mut buttons: Query<(&Action, &mut Node), Without<Pane>>,
+    mut buttons: Query<(Entity, &Action, &mut Node, Has<bevy::ui::Pressed>), Without<Pane>>,
     mut labels: Query<(&Row, &mut Text), Without<Status>>,
     mut status: Query<&mut Text, With<Status>>,
 ) {
@@ -283,7 +284,12 @@ fn update(
             Display::None
         };
     }
-    for (action, mut node) in &mut buttons {
+    for (entity, action, mut node, pressed) in &mut buttons {
+        // ActivateOnPress can hide the panel before pointer release reaches its
+        // button. A hidden button must not retain Pressed across the next open.
+        if !ui.open && pressed {
+            commands.entity(entity).remove::<bevy::ui::Pressed>();
+        }
         if let Action::Take(n) = action {
             node.display = if *n < rows.len() {
                 Display::Flex

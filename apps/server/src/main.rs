@@ -48,6 +48,7 @@ async fn main() -> Result<()> {
     let mut item_catalog = None;
     let mut reward_catalog = None;
     let mut creature_loot = false;
+    let mut quest_items = false;
     let mut progression_catalog = None;
     let mut quest_catalog = None;
     let mut quest_areas = None;
@@ -148,6 +149,7 @@ async fn main() -> Result<()> {
             }
             "--quest-lifecycle" => explicit_quest=true,
             "--quest-journal" => journal_mode=true,
+            "--quest-items" => quest_items=true,
             "--quest-turn-in-xp" => {
                 if quest_turn_in_xp.is_some() {return Err("Choose one completion XP recipe".into());}
                 quest_turn_in_xp=Some(PathBuf::from(args.next().ok_or("Missing completion XP recipe")?));
@@ -550,6 +552,9 @@ async fn main() -> Result<()> {
     {
         return Err("Progression requires account login and authoritative creature combat".into());
     }
+    if quest_items && (!journal_mode || quest_catalog.is_none() || item_catalog.is_none()) {
+        return Err("Quest items require journal mode, quest and item catalogues".into());
+    }
     if quest_areas.is_some() && (!journal_mode || quest_catalog.is_none()) {
         return Err("Quest areas require expanded journal mode and a catalogue".into());
     }
@@ -722,7 +727,7 @@ async fn main() -> Result<()> {
                 let wire_xp = journal_progression
                     .take()
                     .ok_or("Journal requires world XP policy")?;
-                let (profile, wire) = if let Some(path) = &quest_areas {
+                let (mut profile, mut wire) = if let Some(path) = &quest_areas {
                     let mut areas = Vec::new();
                     std::fs::File::open(path)?
                         .take(theia_core::quests::areas::MAX_CATALOG_BYTES as u64 + 1)
@@ -741,11 +746,31 @@ async fn main() -> Result<()> {
                         theia_network::quest_journal::Profile::from_json(&bytes, &wire_xp)?,
                     )
                 };
+                if quest_items {
+                    profile = profile.with_inventory(
+                        inventory.as_ref().ok_or("Quest items require inventory")?,
+                    )?;
+                    wire = wire.with_inventory(
+                        wire_items
+                            .as_ref()
+                            .ok_or("Quest items require wire inventory")?,
+                    )?;
+                }
                 let wire = std::sync::Arc::new(wire);
                 if profile.hash() != wire.hash() {
                     return Err("Journal authority/persistence identity mismatch".into());
                 }
-                world.enable_quest_journal(wire, wire_xp)?;
+                if quest_items {
+                    world.enable_item_quest_journal(
+                        wire,
+                        wire_xp,
+                        wire_items
+                            .as_ref()
+                            .ok_or("Quest items require wire inventory")?,
+                    )?;
+                } else {
+                    world.enable_quest_journal(wire, wire_xp)?;
+                }
                 (None, None, Some(profile))
             } else if explicit_quest {
                 let recipe = if let Some(path) = &quest_turn_in_xp {

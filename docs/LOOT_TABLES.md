@@ -171,3 +171,25 @@ live possession quests remain refused until exact profile binding, eligibility
 before nearby paging, pickup checks and committed refresh are installed together.
 Ordinary schema-17 corpse pickup and random drops remain the separately qualified
 `4dbeefd` checkpoint. Continue implementation with local commits only.
+
+### Quest-only generation rights require a separate decision
+
+The pinned CMaNGOS source distinguishes more than the chance roll and current
+item need. `Loot::FillLoot` assigns each generated non-chest item's allowed-player
+set using `AllowedForPlayer`; `LootItem::IsAllowed` subsequently consults that
+stored set for corpses. See [LootMgr.cpp at ec18be31](https://github.com/cmangos/mangos-classic/blob/ec18be310645042d085032e276454b36ecef6269/src/game/Loot/LootMgr.cpp)
+(`FillLoot`, approximately lines 960–1000; `IsAllowed`, approximately 600–607).
+This does not establish that accepting a quest later should unlock an old corpse.
+The current pure needed-items helper establishes no generation rights.
+
+Recommended next integration policy, not implemented: require an accepted quest
+and a quantity shortfall when the trusted generation opportunity is first
+committed; persist that decision alongside its single roll. Then recheck current
+need before visible paging and pickup. A previously entitled winning candidate
+may become visible again after deletion, but an ineligible generation or losing
+roll cannot become a new entitlement on replay, opening or later acceptance.
+Theia's strict current-need pickup guard is an explicit policy beyond the cited
+emulator's stored corpse permission set. Current development pelts remain ordinary
+loot. Validate commit ordering across the inventory and journal owners before
+admitting any quest-only profile; do not infer death-time eligibility merely from
+an asynchronous worker's later observation.

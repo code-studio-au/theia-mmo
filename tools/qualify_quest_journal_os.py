@@ -22,11 +22,13 @@ SECOND = 'theia.dev.quest-follow-up'
 WOLVES = SECOND + '.objective.wolves'
 
 
-def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False, minimap=False, reach_areas=False, corpse_loot=False):
+def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False, minimap=False, reach_areas=False, corpse_loot=False, item_quest=False):
     scale = state()['window'][2]
     base_head = 13 if repeat_interaction else 11
     expected_head = base_head + (3 if reach_areas else 0)
-    expected_xp = 150 if reach_areas else 125
+    if resumed and item_quest:
+        expected_head = 24
+    expected_xp = 200 if resumed and item_quest else (150 if reach_areas else 125)
 
     def journal():
         return state()['quest_journal']
@@ -84,13 +86,19 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
         # The small-window dialogue body scrolls. Its last choice can have a
         # computed centre outside the clipping rectangle; expose it with real
         # wheel input before reading/clicking the settled painted location.
+        wanted = 'theia.dev.interaction.'+name
+        # Wait for this reopened dialogue's actual branch before scrolling;
+        # its presentation resets scroll when the branch arrives.
+        wait(lambda: any(c['choice']==wanted for c in journal()['choices']))
+        time.sleep(.2)
+        if name=='training':(folder/'dialogue-training-before.json').write_text(json.dumps(journal(),indent=2)+'\n')
         width, height, _ = state()['window']
         desktop.move(window, [width*.5, height*.42], scale)
         for _ in range(4):
             desktop.button(5 if name == 'training' else 4, True)
             desktop.button(5 if name == 'training' else 4, False)
         time.sleep(.2)
-        wanted = 'theia.dev.interaction.'+name
+        if name=='training':(folder/'dialogue-training-after.json').write_text(json.dumps(journal(),indent=2)+'\n')
         point = wait(lambda: next((c['point'] for c in journal()['choices'] if c['choice'] == wanted), None))
         desktop.click(window, point, scale, 1)
         wait(lambda: not journal()['choices'])
@@ -138,7 +146,7 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
         if reach_areas:
             assert quest('theia.dev.quest-overlook')['status'] == 'Completed'
         assert journal()['ui']['submitted'] == 0
-        if corpse_loot:
+        if corpse_loot or item_quest:
             # Pickup legitimately changed the saved logout position.
             approach(lambda: [8004., 0., 8000.])
         speak()
@@ -168,6 +176,8 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
     wait(lambda: journal()['xp'] == 25)
     action(SECOND, 'Active')
     capture('follow-up-accepted.png')
+    if item_quest:
+        ask('training')
     close_panels()
 
     if not state()['sword_equipped']:
@@ -185,9 +195,20 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
         for dx, dy in [(20, -25), (-20, -25), (0, -30), (0, 0)]:
             point = wait(lambda: state()['enemy_screen'])
             desktop.click(window, [point[0]+dx, point[1]+dy], scale, 3)
-            if state()['controls']['enemy_clicks'] > clicks:
+            try:
+                wait(lambda:state()['controls']['enemy_clicks']>clicks,.75)
                 break
-        assert state()['controls']['enemy_clicks'] > clicks
+            except TimeoutError:
+                pass
+        if state()['controls']['enemy_clicks']==clicks:
+            # An earlier corpse can be the actual frontmost pointer hit.
+            # Close that ordinary pane and use the supported Tab target cycle.
+            if state().get('loot',{}).get('ui',{}).get('open'):
+                desktop.key('Escape');wait(lambda:not state()['loot']['ui']['open'])
+            if state()['dialogue_open']:
+                close_panels()
+            desktop.key('Tab')
+            wait(lambda:state()['selected_hostile'] is not None)
         deadline = time.monotonic()+60
         while quest(SECOND)['counts'][WOLVES] < count:
             assert time.monotonic() < deadline, 'Normal wolf fight timed out'
@@ -199,7 +220,8 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
     capture('three-kills.png')
     approach(lambda: [8004., 0., 8000.])
     speak()
-    ask('training')
+    if not item_quest:
+        ask('training')
     wait(lambda: quest(SECOND)['status'] == 'Ready')
     capture('follow-up-ready.png')
     action(SECOND, 'Completed')
@@ -364,12 +386,16 @@ def check_minimap_walk(desktop, window, state, folder):
     return proof
 
 
-def run(output, binaries, sizes, production=False, repeat_interaction=False, gameplay_manifest=Path("content/development-gameplay-classic-journal.json"), minimap=False, minimap_traversal=False, reach_areas=False, destroy_items=False, corpse_loot=False):
+def run(output, binaries, sizes, production=False, repeat_interaction=False, gameplay_manifest=Path("content/development-gameplay-classic-journal.json"), minimap=False, minimap_traversal=False, reach_areas=False, destroy_items=False, corpse_loot=False, item_quest=False):
+    if item_quest:
+        manifest=json.loads(gameplay_manifest.read_text())
+        if not reach_areas or corpse_loot or destroy_items or minimap or manifest['schema']!=18 or json.loads((gameplay_manifest.parent/manifest['rewards']).read_text())['schema']!=2:
+            raise ValueError('Item quest walkthrough requires a schema-18 guaranteed-loot fixture and area regression')
     if corpse_loot and (not reach_areas or destroy_items or minimap or json.loads(gameplay_manifest.read_text())["schema"] != 17):
         raise ValueError("Corpse loot requires schema 17, area regression and separate inventory checks")
     if minimap_traversal and not minimap:
         raise ValueError("Map traversal requires --minimap")
-    if reach_areas and (minimap or json.loads(gameplay_manifest.read_text())['schema'] not in ((16,17) if corpse_loot else (16,))):
+    if reach_areas and (minimap or json.loads(gameplay_manifest.read_text())['schema'] not in ((18,) if item_quest else ((16,17) if corpse_loot else (16,)))):
         raise ValueError('Area flow requires schema 16 and its separate marker assertions')
     output = output.resolve()
     binaries = binaries.resolve()
@@ -433,13 +459,25 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
                         wait(lambda: (folder/'input-os.json').is_file() or launcher.poll() is not None, 60)
                         assert launcher.poll() is None, 'Owned launcher exited before client telemetry; inspect launcher/server logs'
                         initial = wait(lambda: state() if state()['connected'] and state()['quest_journal'] and state()['guide_screen'] else None, 60)
-                        assert initial['window'][:2] == [int(v) for v in size.split('x')]
                         status = Path(f'/proc/{initial["pid"]}/status').read_text()
                         assert int(re.search(r'^PPid:\s+(\d+)', status, re.M)[1]) == launcher.pid
                         window = wait(lambda: owned_window(initial['pid']))
                         desktop.focus(window)
+                        if size != '3440x1440':
+                            # A WM can restore a partially off-screen decorated
+                            # frame. Place only this PID-verified client fully
+                            # within the desktop before any synthetic input.
+                            subprocess.run(['wmctrl','-i','-r',hex(window),'-b','remove,maximized_vert,maximized_horz'],check=True,timeout=3)
+                            width,height=[int(v) for v in size.split('x')]
+                            subprocess.run(['wmctrl','-i','-r',hex(window),'-e',f'0,40,40,{width},{height}'],check=True,timeout=3)
                         time.sleep(1)
-                        proof = flow(desktop, window, state, folder, resumed, repeat_interaction, minimap, reach_areas, corpse_loot)
+                        wanted=[int(v) for v in size.split('x')]
+                        initial=wait(lambda:state() if state()['window'][:2]==wanted else None,20)
+                        wait(lambda:state()['cursor'].get('focused',True),20)
+                        (folder/'window-geometry.txt').write_text(subprocess.check_output(['xwininfo','-id',hex(window)],text=True))
+                        desktop.move(window,[initial['window'][0]*.5,initial['window'][1]*.5],initial['window'][2])
+                        time.sleep(.2)
+                        proof = flow(desktop, window, state, folder, resumed, repeat_interaction, minimap, reach_areas, corpse_loot, item_quest)
                         if minimap:
                             proof['minimap'] = check_minimap(desktop, window, state, folder)
                             if minimap_traversal and resumed:
@@ -447,6 +485,14 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
                         if corpse_loot:
                             from quest_corpse_loot_os import flow as loot_flow
                             proof['corpse_loot'] = loot_flow(desktop, window, state, folder, resumed)
+                        if item_quest:
+                            from quest_corpse_loot_os import flow as loot_flow
+                            proof['item_quest'] = loot_flow(desktop, window, state, folder, resumed, item_quest=True)
+                            proof['baseline'] = {k: proof[k] for k in ['revision','xp','actions','kills','ui'] if k in proof}
+                            proof['baseline_revision'] = proof['revision']
+                            proof.update(revision=proof['item_quest']['final_revision'], xp=state()['quest_journal']['xp'])
+                            if not resumed:
+                                proof.update(actions=state()['quest_journal']['ui']['applied'], kills=state()['combat']['deaths'], ui=state()['quest_journal']['ui'])
                         if destroy_items:
                             from quest_item_destruction_os import flow as item_flow
                             proof['item_destruction'] = item_flow(desktop, window, state, folder, resumed)
@@ -485,7 +531,8 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
                     summaries = [json.loads(line)['creature_threat_summary'] for line in server_log.splitlines() if line.startswith('{"creature_threat_summary":')]
                     assert len(summaries) == 1
                     threat = summaries[0]
-                    assert resumed or (threat['damage_facts'] >= 3 and threat['health_lost'] == 300 and threat['clears'] >= 3), threat
+                    kills = 4 if item_quest else 3
+                    assert resumed or (threat['damage_facts'] >= kills and threat['health_lost'] == kills*100 and threat['clears'] >= kills), threat
                     proof['threat'] = threat
                 proof['gpu_diagnostics'] = check_gpu_diagnostics((folder/'launcher.log').read_text(errors='replace'), allow_surface_resize=size == '3440x1440')
                 (folder/'proof.json').write_text(json.dumps(proof, indent=2)+'\n')
@@ -497,6 +544,7 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
                 rows = cluster.query(query)
                 assert rows.returncode == 0
                 expected = (['16','150','3','6','10'] if repeat_interaction else ['14','150','3','6','8']) if reach_areas else (['13','125','2','4','9'] if repeat_interaction else ['11','125','2','4','7'])
+                if item_quest:expected=['24','200','4','8','11']
                 assert all(row.split('|')[1:] == expected for row in rows.stdout.splitlines()), rows.stdout
                 (folder/'sql.txt').write_text(rows.stdout)
     finally:
@@ -506,7 +554,7 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
     result = dict(passed=True, results=results, owned_services_stopped=True, plaintext_password_files_removed=True,
                   scope='Normal launcher + actual local OIDC, owned PostgreSQL, PID-bound synthetic X11 input and Linux native GPU; no physical hardware/Windows claim',
                   private_combat_fixture=not production, unchanged_quest_catalogue=True, repeated_preaccept_interaction=repeat_interaction,
-                  database_process_restart=True, saved_completion_rejoin=True, reach_area=reach_areas, item_destruction=destroy_items, corpse_loot=corpse_loot)
+                  database_process_restart=True, saved_completion_rejoin=True, reach_area=reach_areas, item_destruction=destroy_items, corpse_loot=corpse_loot, item_quest=item_quest, guaranteed_loot_fixture=item_quest)
     (output/'verification.json').write_text(json.dumps(result, indent=2)+'\n')
     return result
 
@@ -520,9 +568,10 @@ if __name__ == '__main__':
     parser.add_argument('--minimap', action='store_true')
     parser.add_argument('--minimap-traversal', action='store_true', help='After restart/rejoin, walk across chunk and render-origin boundaries using normal keyboard movement')
     parser.add_argument('--repeat-interaction', action='store_true')
+    parser.add_argument('--item-quest',action='store_true',help='Actual looted-item readiness, split/delete reversal, replacement pickup, turn-in consumption and rejoin')
     parser.add_argument('--corpse-loot',action='store_true',help='Normal corpse selection, view-only, single pickup, serial Loot-all and durable partial-loot rejoin')
     parser.add_argument('--destroy-items',action='store_true',help='Check normal split/confirm/cancel/destroy UI and persistence after the quest flow')
     parser.add_argument('--reach-areas', action='store_true', help='Complete the opt-in western overlook using normal movement')
     parser.add_argument('--gameplay-manifest', type=Path, default=Path('content/development-gameplay-classic-journal.json'))
     args = parser.parse_args()
-    print(json.dumps(run(args.output, args.binaries, args.sizes or ['1920x1200','3440x1440','1280x720'], args.production, args.repeat_interaction, args.gameplay_manifest, args.minimap, args.minimap_traversal, args.reach_areas, args.destroy_items, args.corpse_loot), indent=2))
+    print(json.dumps(run(args.output, args.binaries, args.sizes or ['1920x1200','3440x1440','1280x720'], args.production, args.repeat_interaction, args.gameplay_manifest, args.minimap, args.minimap_traversal, args.reach_areas, args.destroy_items, args.corpse_loot, args.item_quest), indent=2))
