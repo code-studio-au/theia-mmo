@@ -238,3 +238,44 @@ Next: exact item/journal/reward binding, durable initial generation rights,
 eligibility before bounded nearest paging and a fresh locked pickup check. Keep
 server commit ordering explicit; a later async view is not a death-time snapshot.
 Commit locally only; no push.
+
+
+## Quest-only profile binding prerequisite — 5 November 2026
+
+P3-05 / P3-09 / P3-11 / P3-15. Explicit wire and persistence
+`from_json_with_quest_journal` constructors now check a conditional recipe against
+the exact inventory-bound journal. Every conditional grant item must occur in a
+possession objective. Unbound/foreign item profiles, unreferenced conditional
+items and unused bindings on ordinary recipes refuse. These are immutable data
+constructors, not runtime installation.
+
+Identity is acyclic: raw items → inventory-bound journal (including quest, XP and
+optional area source identity) → conditional reward profile. The final reward
+hash uses `theia-quest-loot-profile-v1\0`, its existing item/reward byte hash and
+the exact journal hash. Wire/storage hashes agree. Changing even whitespace in
+items, quests, XP, areas or rewards changes the bound identity; old ordinary
+hashes remain unchanged. No mutable quest state enters the content identity.
+
+Creating a bound profile does not bypass the integration gates. Both World reward
+installation paths and the retained inventory owner refuse conditional content.
+All legacy Store offer/roll/list/pickup paths refuse before database access;
+a disconnected Store test covers those public paths, including compound journal
+pickup. Normal manifests and old profile constructors remain closed. This slice
+adds no SQL, packet, source catalogue or native behavior.
+
+Eleven server-library tests, five non-SQL persistence-library tests, ten reward-
+wire tests, 56 gameplay-validator tests and 13 focused reward-core tests pass.
+Formatting and denied-warning workspace/all-target Clippy pass. Evidence:
+`build/quest-loot-binding-server-tests-v1-20261105.log`,
+`build/quest-loot-binding-persistence-lib-tests-v1-20261105.log`,
+`build/quest-loot-binding-wire-tests-v1-20261105.log`,
+`build/quest-loot-binding-validator-tests-v1-20261105.log`,
+`build/quest-loot-binding-core-tests-v1-20261105.log`,
+`build/quest-loot-binding-fmt-v1-20261105.log` and
+`build/quest-loot-binding-clippy-v1-20261105.log`.
+Preserve `build/quest-loot-binding-qualified-v1-20261105`. No new actual SQL,
+encrypted-owner, native/Windows or capacity claim. The normal schema-18 playable
+remains `85fd967`. Next: durable first-generation eligibility, then eligibility
+before bounded paging and a fresh locked pickup check. Keep the generation
+ordering policy explicit rather than claiming an asynchronous observation was
+captured at the exact death tick. Commit locally only; no push.

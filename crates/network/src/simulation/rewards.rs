@@ -33,6 +33,9 @@ impl World {
         self.install_rewards(profile, true)
     }
     fn install_rewards(&mut self, profile: Arc<Profile>, allow_life: bool) -> Result<()> {
+        if profile.catalog().has_quest_required() {
+            return Err("Quest-only loot simulation is not installed".into());
+        }
         if self.tick != 0
             || !self.players.is_empty()
             || self.combat.is_none()

@@ -1,3 +1,14 @@
+Quest-only profile binding prerequisite, 5 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: explicit headless constructors now bind quest-only
+loot to the exact inventory-bound journal, including its XP/area/source identity.
+Legacy constructors, owner/World admission, ordinary Store paths and normal
+manifests stay closed for this content. Eleven server, five non-SQL persistence,
+ten reward-wire, 56 validator and 13 focused core tests, formatting and strict
+all-target Clippy pass. [Scope and remaining work](../LOOT_TABLES.md#quest-only-profile-binding-prerequisite--5-november-2026).
+No new SQL/native/runtime-adoption claim. Normal item quests remain qualified at
+`85fd967`. Continue durable generation rights and filtered paging/pickup locally;
+no push. Earlier metadata-only gate statements describe their checkpoints.
+
 Quest-only loot metadata prerequisite, 5 November 2026:
 P3-05 / P3-09 / P3-11 / P3-15: reward schema 4 now describes quest-required
 independent single-item per-life entries. Ordinary chances stay separate from

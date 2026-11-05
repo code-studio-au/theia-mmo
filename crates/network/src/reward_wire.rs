@@ -38,13 +38,14 @@ pub struct Profile {
     catalog: Arc<Catalog>,
     hash: [u8; 32],
     item_hash: [u8; 32],
+    quest_journal: Option<[u8; 32]>,
 }
 impl Profile {
     pub fn from_json(
         bytes: &[u8],
         items: &crate::renet_runtime::inventory::Profile,
     ) -> Result<Self> {
-        Self::parse(bytes, items, false)
+        Self::parse(bytes, items, false, false)
     }
     /// Explicit opt-in for headless per-life pickup. Default content admission
     /// remains unchanged until normal client interaction is qualified.
@@ -52,15 +53,34 @@ impl Profile {
         bytes: &[u8],
         items: &crate::renet_runtime::inventory::Profile,
     ) -> Result<Self> {
-        Self::parse(bytes, items, true)
+        Self::parse(bytes, items, true, false)
+    }
+    /// Exact immutable binding only; not simulation/client/owner admission.
+    pub fn from_json_with_quest_journal(
+        bytes: &[u8],
+        items: &crate::renet_runtime::inventory::Profile,
+        journal: &crate::quest_journal::Profile,
+    ) -> Result<Self> {
+        let mut profile = Self::parse(bytes, items, true, true)?;
+        if !profile.catalog.has_quest_required() || journal.inventory_hash() != Some(items.hash()) {
+            return Err("Quest-only loot requires the exact inventory-bound journal".into());
+        }
+        profile.catalog.validate_quest_items(journal.catalog())?;
+        let mut bound = theia_core::rewards::QUEST_PROFILE_DOMAIN.to_vec();
+        bound.extend(profile.hash);
+        bound.extend(journal.hash());
+        profile.hash = crate::terrain::sha256(&bound);
+        profile.quest_journal = Some(journal.hash());
+        Ok(profile)
     }
     fn parse(
         bytes: &[u8],
         items: &crate::renet_runtime::inventory::Profile,
         allow_life: bool,
+        allow_quest: bool,
     ) -> Result<Self> {
         let catalog = Arc::new(Catalog::from_json(bytes, items.catalog())?);
-        if catalog.has_quest_required() {
+        if catalog.has_quest_required() && !allow_quest {
             return Err("Quest-only loot runtime is not installed".into());
         }
         if has_life_rewards(&catalog) && !allow_life {
@@ -73,6 +93,7 @@ impl Profile {
             catalog,
             hash: crate::terrain::sha256(&bound),
             item_hash: items.hash(),
+            quest_journal: None,
         })
     }
     pub fn catalog(&self) -> &Catalog {
@@ -83,6 +104,9 @@ impl Profile {
     }
     pub fn item_hash(&self) -> [u8; 32] {
         self.item_hash
+    }
+    pub fn quest_journal_hash(&self) -> Option<[u8; 32]> {
+        self.quest_journal
     }
 }
 fn word(bytes: &[u8], at: usize) -> u64 {

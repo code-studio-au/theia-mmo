@@ -104,6 +104,9 @@ impl Config {
         Ok(())
     }
     pub(super) fn with_rewards(mut self, rewards: RewardCatalog) -> Result<Self> {
+        if rewards.catalog().has_quest_required() {
+            return Err("Quest-only loot owner is not installed".into());
+        }
         if rewards.items().hash() != self.profile.hash() {
             return Err("Reward/item admission profile mismatch".into());
         }

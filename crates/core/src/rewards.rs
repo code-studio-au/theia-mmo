@@ -6,7 +6,7 @@ use crate::{
     inventory::{self, Bag, Stack},
 };
 use serde::Deserialize;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 pub const MAX_CATALOG_BYTES: usize = 32 * 1024;
 pub const MAX_DEFINITIONS: usize = 16;
 /// Bounded visible page; uncollected loot outside it remains durable.
@@ -22,6 +22,7 @@ pub struct CorpseSource {
 pub const MAX_GRANTS: usize = 8;
 pub const MAX_GRANT_UNITS: u32 = 10_000;
 pub const PROFILE_DOMAIN: &[u8] = b"theia-reward-profile-v1\0";
+pub const QUEST_PROFILE_DOMAIN: &[u8] = b"theia-quest-loot-profile-v1\0";
 pub const CLAIM_DOMAIN: &[u8] = b"theia-reward-claim-v1\0";
 /// Opaque server-generated persistent claim key. It conveys no recipient
 /// authority; the owning character/world must still be checked by the store.
@@ -248,6 +249,29 @@ impl Catalog {
     /// Metadata only. Runtime must bind generation rights and current need.
     pub fn has_quest_required(&self) -> bool {
         self.rewards.values().any(|d| d.quest_required)
+    }
+    /// Cross-reference metadata only; does not inspect an accepted journal or bag.
+    pub fn validate_quest_items(
+        &self,
+        quests: &crate::quests::catalog::Catalog,
+    ) -> Result<(), &'static str> {
+        let required: BTreeSet<_> = quests
+            .quests()
+            .flat_map(|q| q.stages())
+            .flat_map(|s| s.objectives())
+            .filter_map(|o| match o.event() {
+                crate::quests::catalog::EventKey::PossessItem(item) => Some(item),
+                _ => None,
+            })
+            .collect();
+        if self
+            .definitions()
+            .filter_map(Definition::quest_item)
+            .any(|item| !required.contains(item))
+        {
+            return Err("Quest-only item has no possession objective");
+        }
+        Ok(())
     }
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

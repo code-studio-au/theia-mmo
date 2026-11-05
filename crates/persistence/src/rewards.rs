@@ -9,11 +9,40 @@ pub struct RewardCatalog {
     catalog: Arc<Catalog>,
     items: InventoryCatalog,
     hash: [u8; 32],
+    journal: Option<crate::QuestJournalCatalog>,
 }
 impl RewardCatalog {
     pub fn from_json(bytes: &[u8], items: &InventoryCatalog) -> Result<Self> {
+        Self::parse(bytes, items, false)
+    }
+    /// Exact immutable binding only. Existing Store entry points remain closed.
+    pub fn from_json_with_quest_journal(
+        bytes: &[u8],
+        items: &InventoryCatalog,
+        journal: &crate::QuestJournalCatalog,
+    ) -> Result<Self> {
+        let mut profile = Self::parse(bytes, items, true)?;
+        if !profile.catalog.has_quest_required()
+            || journal.inventory().map(InventoryCatalog::hash) != Some(items.hash())
+        {
+            return Err(Error::Invalid(
+                "Quest-only loot requires the exact inventory-bound journal",
+            ));
+        }
+        profile
+            .catalog
+            .validate_quest_items(journal.catalog())
+            .map_err(Error::Invalid)?;
+        let mut bound = theia_core::rewards::QUEST_PROFILE_DOMAIN.to_vec();
+        bound.extend(profile.hash);
+        bound.extend(journal.hash());
+        profile.hash = digest(&SHA256, &bound).as_ref().try_into().unwrap();
+        profile.journal = Some(journal.clone());
+        Ok(profile)
+    }
+    fn parse(bytes: &[u8], items: &InventoryCatalog, allow_quest: bool) -> Result<Self> {
         let catalog = Arc::new(Catalog::from_json(bytes, items.catalog()).map_err(Error::Invalid)?);
-        if catalog.has_quest_required() {
+        if catalog.has_quest_required() && !allow_quest {
             return Err(Error::Invalid("Quest-only loot storage is not installed"));
         }
         let mut bound = theia_core::rewards::PROFILE_DOMAIN.to_vec();
@@ -23,6 +52,7 @@ impl RewardCatalog {
             catalog,
             items: items.clone(),
             hash: digest(&SHA256, &bound).as_ref().try_into().unwrap(),
+            journal: None,
         })
     }
     pub fn catalog(&self) -> &Catalog {
@@ -33,6 +63,15 @@ impl RewardCatalog {
     }
     pub fn hash(&self) -> [u8; 32] {
         self.hash
+    }
+    pub fn quest_journal(&self) -> Option<&crate::QuestJournalCatalog> {
+        self.journal.as_ref()
+    }
+    pub(crate) fn check_runtime_admission(&self) -> Result<()> {
+        if self.catalog.has_quest_required() {
+            return Err(Error::Invalid("Quest-only loot storage is not installed"));
+        }
+        Ok(())
     }
 }
 pub use theia_core::rewards::CorpseSource;

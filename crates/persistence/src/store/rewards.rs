@@ -178,6 +178,7 @@ impl Store {
         corpse: Option<CorpseSource>,
         roll: bool,
     ) -> Result<Option<RewardClaim>> {
+        profile.check_runtime_admission()?;
         let transaction = bounded(self.client.as_mut().unwrap().transaction()).await?;
         authorize(&transaction, self.realm, binding, world).await?;
         validate_items(&transaction, self.realm, binding, profile).await?;
@@ -263,6 +264,7 @@ impl Store {
         profile: &RewardCatalog,
         position: Option<GlobalPosition>,
     ) -> Result<Vec<RewardClaim>> {
+        profile.check_runtime_admission()?;
         let transaction = bounded(self.client.as_mut().unwrap().transaction()).await?;
         authorize(&transaction, self.realm, binding, world).await?;
         validate_items(&transaction, self.realm, binding, profile).await?;
@@ -337,6 +339,7 @@ impl Store {
         expected_revision: u64,
         journal: Option<&crate::QuestJournalCatalog>,
     ) -> Result<InventoryApplied> {
+        profile.check_runtime_admission()?;
         if expected_revision > MAX_REVISION {
             return Err(Error::InventoryStale);
         }
@@ -432,4 +435,101 @@ fn uniform_ticket() -> Result<i32> {
         }
     }
     Err(Error::Invalid("Loot entropy rejection budget exceeded"))
+}
+
+#[cfg(test)]
+mod closed_quest_loot_tests {
+    use super::*;
+    #[tokio::test]
+    async fn bound_quest_loot_cannot_reach_legacy_store_io_or_mutation() {
+        let items = crate::InventoryCatalog::from_json(include_bytes!(
+            "../../../../content/gameplay/development-loot-items.json"
+        ))
+        .unwrap();
+        let xp = crate::ProgressionCatalog::from_json(include_bytes!(
+            "../../../../content/gameplay/development-progression.json"
+        ))
+        .unwrap();
+        let journal = crate::QuestJournalCatalog::from_json(
+            include_bytes!("../../../../content/quests/development-journal-items.json"),
+            &xp,
+        )
+        .unwrap()
+        .with_inventory(&items)
+        .unwrap();
+        let mut source: serde_json::Value = serde_json::from_slice(include_bytes!(
+            "../../../../content/gameplay/development-random-creature-loot-rewards.json"
+        ))
+        .unwrap();
+        source["schema"] = serde_json::json!(4);
+        source["rewards"][1]["quest_required"] = serde_json::json!(true);
+        let profile = RewardCatalog::from_json_with_quest_journal(
+            &serde_json::to_vec(&source).unwrap(),
+            &items,
+            &journal,
+        )
+        .unwrap();
+        // Any attempt to reach a transaction on this disconnected fixture panics.
+        let mut store = Store {
+            client: None,
+            driver: None,
+            realm: RealmId::random(),
+            session: uuid::Uuid::new_v4(),
+        };
+        let binding = Binding {
+            owner: crate::OwnerId::new(uuid::Uuid::from_bytes([1; 16])).unwrap(),
+            character: crate::CharacterId::new(uuid::Uuid::from_bytes([2; 16])).unwrap(),
+        };
+        let world = [3; 32];
+        let position = GlobalPosition::new([0.; 3]).unwrap();
+        let reward = ContentId::new("theia.dev.wolf-pelt-loot").unwrap();
+        let once = ContentId::new("theia.dev.first-training-kill").unwrap();
+        let event = KillEvent {
+            id: KillId::from_bytes([4; 16]).unwrap(),
+            creature: ContentId::new("theia.dev.training-creature").unwrap(),
+        };
+        let claim = ClaimId::new([5; 16]).unwrap();
+        assert!(
+            store
+                .offer_reward(binding, world, &profile, &once)
+                .await
+                .is_err()
+        );
+        assert!(
+            store
+                .offer_reward_for_kill(binding, world, &profile, &reward, &event, position)
+                .await
+                .is_err()
+        );
+        assert!(
+            store
+                .roll_reward_for_kill(binding, world, &profile, &reward, &event, position)
+                .await
+                .is_err()
+        );
+        assert!(
+            store
+                .list_reward_claims(binding, world, &profile)
+                .await
+                .is_err()
+        );
+        assert!(
+            store
+                .list_reward_claims_nearby(binding, world, &profile, position)
+                .await
+                .is_err()
+        );
+        assert!(
+            store
+                .claim_reward(binding, world, &profile, claim, 0)
+                .await
+                .is_err()
+        );
+        assert!(
+            store
+                .claim_reward_with_quest_journal(binding, world, &profile, claim, 0, &journal)
+                .await
+                .is_err()
+        );
+    }
 }
