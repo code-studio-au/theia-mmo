@@ -2882,3 +2882,232 @@ I had crossed the Shroud's boundary and found a living people where I had expect
 For the first time, the great mystery before me was not how to enter a hidden place.
 
 It was how to be worthy of being allowed to remain.
+
+
+### Chapter Twelve — The Names Beneath the Dust
+
+I had expected the ruins to be silent.
+
+They were not.
+
+Wind moved through the broken stones of the old Passage approach, and water found its way through channels whose builders had long since abandoned them. Somewhere beyond the permitted path, a bird called from cover. The sounds were ordinary. That was what unsettled me. I had crossed a guarded gate into a land almost erased from the histories I knew, and the world had not stopped living while the records of it were lost.
+
+Aru'ven met our party at the edge of the authorised route. He reviewed the boundary markers with the patience of someone who had explained them to visitors before and did not expect curiosity to make them less necessary.
+
+“The remains are unstable,” he said. “You may examine the marked approach. You may not attempt to restore the gate.”
+
+“I only want to know how Oma'vira reached it.”
+
+“Then look for evidence of her passage. Do not make a second intrusion in the name of understanding the first.”
+
+The distinction struck harder than I expected. At the Chainworks I had found captives whose choices had been taken from them. Here I was being asked to respect the choices of people who had spent generations protecting what remained of their homeland.
+
+We followed the marked approach.
+
+The ancient stones bore traces of work that had once been carefully maintained. Some channels had collapsed. Others ended in broken fittings that no longer carried any useful load. The Passage itself was not merely dormant, waiting for a clever hand to wake it. Its failure was part of the history we had come to investigate.
+
+I found marks that did not belong to the original construction. Their placement matched details from the records recovered at Oma'vira's facility. We copied their positions, compared them with the authenticated schematic and recorded the intrusion without disturbing the ruined gate.
+
+Sera examined the result.
+
+“Her route reached this place,” she said.
+
+“And the gate is still broken.”
+
+“Yes.”
+
+I looked at the stonework, trying to imagine the movement of people through a passage that no longer existed. I thought of the caravans I had followed from Millhaven and the ships that had carried me to Northwatch. Every road I knew could fail in a storm or be closed by war. The old Passage had failed on a scale that had changed the lives of entire peoples.
+
+Aru'ven watched me study the ruins.
+
+“You're wondering what it was like before,” he said.
+
+“I am.”
+
+“So are we, sometimes. But we live with what remains, not only with what was lost.”
+
+He led us back by the authorised path. I did not ask to go farther.
+
+***
+
+The damaged warning came from a protected store whose custodians had been trying to stabilise records threatened by age and neglect. I had seen paper burned, ledgers falsified and instructions stripped of their essential qualifications. This record was different. Its damage had not been made to deceive. Time and exposure had done their work without intention.
+
+The surviving text was fragile enough that I was afraid to breathe too close to it.
+
+A custodian showed me how to support the material before copying it. We worked slowly, preserving the words that remained and leaving gaps where the surface had been lost. I wanted to supply the missing phrases. Some seemed obvious from the lines around them. The custodian stopped me before I could turn a guess into ink.
+
+“Copy what survives,” they said. “If you have an interpretation, place it beside the record, not inside it.”
+
+I remembered Lysa's instruction in Valecrown: *Don't tidy the entries to fit a theory.*
+
+The warning was copied and deposited under the proper authority. It did not explain the entire catastrophe that had broken the Passage network. It preserved one more piece of the caution that earlier generations had tried to leave behind.
+
+That evening I read the copy again. I could not shake the thought that the people who wrote it had expected someone to listen.
+
+***
+
+The first reference to the Sixth Scholar appeared among records I had been permitted to review.
+
+I had heard of the ancient project before, in fragments of history and in the guarded language of the Grey Surveyor. I knew that the First Anchor had involved work whose consequences reached far beyond its makers. I did not yet know enough to separate every name in the surviving accounts from the titles that later generations had attached to them.
+
+The reference described a verifier whose role had been to test the stability of a combined working. The surviving notation was distinctive, but the identity behind it was not supplied in the material before me.
+
+I brought the reference to Sera.
+
+“There was a sixth?” I asked.
+
+“There was,” she said.
+
+“Someone who checked the others?”
+
+“Someone whose work mattered to the project. The surviving records deserve a proper comparison before you draw more from that.”
+
+I wanted to ask whether the Grey Surveyor knew the name. I almost did. Instead I asked how I could see the records that might answer the question.
+
+Sera told me that an audience would require permission from the custodians of a more restricted archive. We could petition for a supervised meeting. We could not demand one.
+
+The request took us toward Oth'irun.
+
+I had begun to recognise the rhythm of this journey: a discovery, a boundary, a request to those who bore responsibility for what lay beyond it. Yet each boundary was different. At Valecrown, Mara had protected the integrity of testimony. At Kar Durn, Brynja had protected the meaning of a design. Here the custodians protected a history that outsiders had nearly forgotten existed.
+
+I wondered whether they would regard my questions as useful, dangerous or merely tiresome.
+
+***
+
+Sel'ora met us at a protected approach to the archive.
+
+She did not begin by asking what I wished to know. She began by explaining what I was permitted to do.
+
+“The records here are not prizes for whoever reaches them first,” she said. “Some concern people still living. Some preserve testimony whose meaning can be damaged by careless copying. You will work under supervision.”
+
+“I understand.”
+
+“Then show me that you do.”
+
+A copyist had failed to return from an assigned route near the archive stores. Sel'ora asked us to help recover the missing person before we proceeded with the inquiry. The request was not a bargain in which a life was exchanged for access. It was work that needed doing, and we were present with the means to help.
+
+We followed the authorised approach, found the copyist and brought them back with the records they had been protecting. Sel'ora checked the person's condition before examining the material.
+
+“Thank you,” she said. “Now we can speak about the limits of your request.”
+
+I had expected her to be impressed by the evidence I carried from the Covenant. Instead she was interested in whether I could distinguish a source from an interpretation, and whether I understood that a record might remain restricted even after I had helped preserve it.
+
+I told her about the damaged warning, the altered drawings and the independent copies that had survived attempts to destroy them.
+
+She listened carefully.
+
+“You have learned why records matter,” she said. “That is a beginning.”
+
+***
+
+One of the archive stores had been exposed to danger, and Sel'ora permitted us to help rehouse the threatened material. We worked beside custodians who knew which records could be moved together and which had to remain separate. I carried cases, checked labels and followed instructions. The labour was less dramatic than fighting through the Chainworks. It felt no less important.
+
+When the work was complete, Sel'ora authorised a bounded comparison of records concerning the ancient project.
+
+The first document was a list of six names associated with the First Anchor. The second was a preserved image of the verifier's notation. The third contained a stability sequence whose structure reminded me of the Grey Surveyor's corrections during the inversion trials.
+
+I set them side by side.
+
+The names belonged to a world I had not known existed when I first came to Millhaven. Vaer'uun. Thes'var. Su'vareth. Oma'vira. Khor'vun. And a sixth whose place in the records had not been explained to me.
+
+I knew Oma'vira now as the Harbinger we had defeated. Seeing her name among the original scholars made the past feel suddenly close. She had not always been a title spoken with fear. She had once worked beside others on a project whose legitimate purpose had been presented to their people as worthy of approval.
+
+I looked at the verifier's mark again.
+
+“Someone here understood how the working could fail,” I said.
+
+Sel'ora did not answer for the record.
+
+“Compare the sequence,” she said. “Then ask the person who can speak to it.”
+
+The stability notation matched features I had seen in the Grey Surveyor's instructions. I had watched him correct measurements at Drom Kar, refuse unsafe assumptions and insist that people at risk receive complete information. The resemblance was too precise to ignore.
+
+Yet I had been wrong before when I allowed resemblance to become identity.
+
+I asked Sel'ora for an independent comparison.
+
+She directed us to Leth'ari, who held instrument records preserved apart from the project list. We checked the signature against those records without relying upon the Surveyor's own account. The agreement was real.
+
+I felt the answer approaching and resisted the urge to name it before the evidence did.
+
+***
+
+The Grey Surveyor received the authenticated comparisons without surprise.
+
+That unsettled me more than a denial would have.
+
+I placed the project list before him, then the verifier image and the independently preserved instrument sequence.
+
+“These are the same corrections you taught us to make,” I said.
+
+“They are related.”
+
+“Related how?”
+
+He looked at the records for a long time. I had seen him silent beside dangerous machinery and incomplete instructions. This silence was different. It seemed to belong to memory rather than calculation.
+
+“I have asked you to trust measurements,” he said at last. “You have done the work to test them without trusting me.”
+
+“Then tell me who made the original mark.”
+
+He raised his eyes to mine.
+
+“I did.”
+
+The words were quiet. For a moment I thought I had misunderstood them.
+
+“You were there?”
+
+“Yes.”
+
+I looked again at the six names. The final one seemed to stand apart from the others, though the ink was no different.
+
+“Oth'varen,” I said.
+
+He did not deny it.
+
+“I am Oth'varen.”
+
+I had imagined the Sixth Scholar as a figure preserved in stone, perhaps dead for centuries, perhaps remembered only through arguments about what he had known. I had travelled beside him, followed his instructions and argued with his caution. I had asked him questions he had answered only in part.
+
+Anger came first.
+
+“You knew what I was looking for.”
+
+“Yes.”
+
+“And you let me search for someone standing in front of me.”
+
+“I did.”
+
+“Why?”
+
+He looked toward the archive records.
+
+“Because I feared what the knowledge would bring. Because I believed concealment could protect people who had already lost too much. And because I was wrong to let that fear decide everything.”
+
+I wanted to accuse him of making me a fool. I wanted to ask how many people had suffered while he kept his name hidden. I also remembered the lives saved by his warnings, the careful experiments and the insistence that the truth survive any single witness.
+
+“You could have told us,” I said.
+
+“I could have.”
+
+He did not ask me to forgive him.
+
+Instead he invited me to compare his account with the independent records once more. He would speak of what he had witnessed, but he would not claim that memory alone was sufficient proof of every event.
+
+I sat opposite him.
+
+For the first time, the history of the First Anchor was not merely a set of names and damaged instructions. One of the people who had worked upon it was alive, carrying centuries of knowledge and the consequences of having kept so much of it to himself.
+
+I thought of the captives at Oma'vira's facility, of the workers saved from the freight works, of the ruined Passage and the living Kel'vari who had endured beyond the world's knowledge.
+
+I had come seeking the Sixth Scholar.
+
+I had found someone whose greatest struggle was not to remember the past, but to decide how much of it he could bear to share.
+
+“Then begin,” I said.
+
+Oth'varen looked down at the records.
+
+And he began to tell me what the six had tried to build.
