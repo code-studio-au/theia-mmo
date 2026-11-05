@@ -5,7 +5,8 @@ P3-05 / P3-11 / P3-15, 5 November 2026.
 The user requested quest conditions for reading or viewing an item note/message.
 Keep that historical action separate from possessing or looting the item. The
 current playable quest-loot checkpoint is `65977bd`; readable document runtime
-adoption is still pending. Headless Store/worker opening is implemented below. Earlier
+adoption through normal manifests and the native reader is still pending. Explicit
+Store/worker, retained-owner and World support is implemented below. Earlier
 prerequisite sections describe their own checkpoints.
 
 ## Implemented prerequisite: pure document catalogue
@@ -265,11 +266,56 @@ and `build/quest-document-bridge-clippy-v2-20261105.log`.
 The full core regression is recorded in
 `build/quest-document-bridge-core-full-tests-v1-20261105.log`.
 
-These acknowledgements use synthetic owner publications. The normal retained
-owner and World document installation remain explicitly closed, so this is not
-connected read-credit or native UI evidence. Next connect those qualified storage
+At checkpoint `6cc009e`, these acknowledgements used synthetic owner publications
+while retained-owner and World installation remained closed. The following slice
+opens those explicit boundaries; these bridge tests still establish no connected
+read-credit or native UI evidence. Next connect those qualified storage
 and transport boundaries, then adopt normal manifests and standard Bevy pages.
 No new GPU/Windows/capacity claim; playable checkpoint remains `65977bd`.
+
+## Implemented: retained document owner and explicit World admission
+
+`GameAdmissions::with_document_quest_journal` and the account service accept only
+the exact wire/storage document context attached to the inventory-bound journal.
+Legacy journal configuration still refuses documents. Authenticated gameplay
+derives the wire context from the installed matching World journal, so a caller
+cannot select unrelated text. The item owner maps bounded ordinals to stable
+IDs and calls the qualified async Store operation; its resulting bag and journal
+use the existing generation-bound monotonic publications.
+
+Reads retain original intent while waiting for queue space or SQL. Already
+accepted queued/executing work drains before character ownership is released.
+Retired sessions receive no new successful answer; rejoining and replaying the
+original intent recovers its committed authorization. Stale, wrong or missing
+items are ordinary nonfatal rejections. Profile/data/backend failures retain the
+existing closed admission policy.
+
+`World::enable_document_quest_journal` requires explicit exact item/document
+context, matching XP, installed contacts/creatures/semantic references and an
+inactive exclusive World. Even unused note definitions cannot alias installed
+NPC/creature/choice IDs. Failed installation preserves identity. Legacy raw/item
+installation remains closed. World identity already includes the document-bound
+journal hash; simulation performs no document SQL or read-credit mutation.
+
+`build/quest-document-owner-oidc-v4-20261105/verification.json` passes against
+actual Keycloak login, an encrypted ticket handshake and PostgreSQL. Direct lease
+requests prove pre-accept replay exclusion, same-note sequential stages, an open
+waiting under the bag lock followed by queued deletion during retirement,
+retained history, fresh-missing rejection, original retry after rejoin and normal
+turn-in/retry with XP remaining 25. There are four unique open receipts for six
+successful processed opens (two retries); repeated turn-in creates no second
+reward. The owned services stop on exit. This fixture does not send document
+messages through the game transport and does not establish native UI behavior.
+
+375 network-library and sixteen server-library tests pass in
+`build/quest-document-owner-{network-tests-v1,server-tests-v2}-20261105.log`.
+Formatting and strict workspace/all-target Clippy pass in
+`build/quest-document-owner-{fmt,clippy}-v2-20261105.log`.
+The actual OIDC/SQL conditional-loot owner regression also passes at
+`build/quest-document-owner-loot-regression-v1-20261105/verification.json`.
+Preserve `build/quest-document-owner-qualified-v1-20261105`.
+Normal manifests and the Bevy reader remain pending; no GPU/Windows/capacity
+claim. Qualified normal quest-loot playable remains `65977bd`.
 
 ## Planned read-credit semantics
 
@@ -290,10 +336,10 @@ generic unchecked client/NPC event paths.
 
 Remaining slices and concrete acceptance checks:
 
-1. Connect the existing authenticated retained owner to the qualified Store/worker
-   operation. Bind exact document context at admission and preserve original intent
-   through response loss, retirement and rejoin. Qualify against real OIDC/SQL.
-2. Add bounded wire commands and standard Bevy document presentation. Display
+1. Qualify document intents and read approval through the actual encrypted game
+   runtime. Keep synthetic transport publications distinct from the real OIDC/SQL
+   retained-owner proof above, then qualify their normal combined path.
+2. Adopt opt-in normal manifests and standard Bevy document presentation. Display
    only exact locally bound content after server approval; preserve current
    controls and UI input ownership. Qualify normal open/read, repeat open,
    later deletion, turn-in and save/rejoin through encrypted/native flows.

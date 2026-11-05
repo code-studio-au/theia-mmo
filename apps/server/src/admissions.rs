@@ -189,6 +189,26 @@ impl GameAdmissions {
         if profile.documents().is_some() {
             return Err("Document journal owner is not installed".into());
         }
+        Self::install_quest_journal(gate, profile, None)
+    }
+    pub(crate) fn with_document_quest_journal(
+        gate: &mut Arc<Self>,
+        profile: theia_persistence::QuestJournalCatalog,
+        documents: Arc<theia_network::documents::Profile>,
+    ) -> Result<()> {
+        if profile
+            .documents()
+            .is_none_or(|d| d.hash() != documents.hash())
+        {
+            return Err("Document owner profile mismatch".into());
+        }
+        Self::install_quest_journal(gate, profile, Some(documents))
+    }
+    fn install_quest_journal(
+        gate: &mut Arc<Self>,
+        profile: theia_persistence::QuestJournalCatalog,
+        documents: Option<Arc<theia_network::documents::Profile>>,
+    ) -> Result<()> {
         let gate = Arc::get_mut(gate).ok_or("Journal configuration requires unshared gate")?;
         if let Some(items) = profile.inventory() {
             let inventory = gate
@@ -198,7 +218,7 @@ impl GameAdmissions {
             if inventory.profile_hash() != items.hash() {
                 return Err("Item journal/inventory profile mismatch".into());
             }
-            inventory.set_journal(profile.clone())?;
+            inventory.set_journal(profile.clone(), documents)?;
         }
         gate.progression
             .as_mut()

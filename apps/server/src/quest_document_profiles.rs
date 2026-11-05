@@ -336,3 +336,82 @@ async fn exact_metadata_does_not_admit_legacy_owner_world_or_gameplay_client() {
     .to_string();
     assert!(error.contains("Document intents require"), "{error}");
 }
+
+#[test]
+fn explicit_document_world_installation_requires_exact_items_notes_and_inactive_world() {
+    let bound = bind(ITEMS, &source(), XP, &documents(), None);
+    let items = bound.items.clone().with_documents(&documents()).unwrap();
+    let xp = Arc::new(theia_network::progression_wire::Profile::from_json(XP).unwrap());
+    let setup = || {
+        let mut world =
+            theia_network::simulation::World::with_procedural([8000., 8000.], 1.).unwrap();
+        world
+            .spawn_development_guide(
+                Arc::new(
+                    theia_network::dialogue::Profile::from_json(include_bytes!(
+                        "../../../content/quests/development-journal-dialogue.json"
+                    ))
+                    .unwrap(),
+                ),
+                [8004., 8000.],
+            )
+            .unwrap();
+        world
+    };
+    let mut world = setup();
+    let before = world.identity();
+    assert!(
+        world
+            .enable_document_quest_journal(Arc::new(bound.wire.clone()), xp.clone(), &bound.items)
+            .is_err()
+    );
+    assert!(
+        world
+            .enable_item_quest_journal(Arc::new(bound.wire.clone()), xp.clone(), &items)
+            .is_err()
+    );
+    let mut changed = documents();
+    changed.push(b' ');
+    let foreign = bound.items.clone().with_documents(&changed).unwrap();
+    assert!(
+        world
+            .enable_document_quest_journal(Arc::new(bound.wire.clone()), xp.clone(), &foreign)
+            .is_err()
+    );
+    assert_eq!(world.identity(), before);
+    let mut alias: serde_json::Value = serde_json::from_slice(&documents()).unwrap();
+    alias["documents"].as_array_mut().unwrap().push(serde_json::json!({"id":"theia.dev.interaction.road","item":"theia.dev.training-token","title":"Unused note","pages":["Text"]}));
+    let alias_bytes = serde_json::to_vec(&alias).unwrap();
+    let alias_bound = bind(ITEMS, &source(), XP, &alias_bytes, None);
+    let alias_items = bound.items.clone().with_documents(&alias_bytes).unwrap();
+    assert!(
+        world
+            .enable_document_quest_journal(Arc::new(alias_bound.wire), xp.clone(), &alias_items)
+            .unwrap_err()
+            .to_string()
+            .contains("alias installed World")
+    );
+    assert_eq!(world.identity(), before);
+    world
+        .enable_document_quest_journal(Arc::new(bound.wire.clone()), xp.clone(), &items)
+        .unwrap();
+    assert_ne!(world.identity(), before);
+    assert_eq!(
+        world.quest_journal_profile().unwrap().hash(),
+        bound.wire.hash()
+    );
+    assert!(
+        world
+            .enable_document_quest_journal(Arc::new(bound.wire.clone()), xp.clone(), &items)
+            .is_err()
+    );
+    let mut active = setup();
+    assert!(active.join().is_some());
+    let before = active.identity();
+    assert!(
+        active
+            .enable_document_quest_journal(Arc::new(bound.wire), xp, &items)
+            .is_err()
+    );
+    assert_eq!(active.identity(), before);
+}

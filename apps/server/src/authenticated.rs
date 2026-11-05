@@ -188,6 +188,10 @@ pub async fn run_with_profiles(
     let gate = service.enable_game_with_profiles(
         issuer,
         crate::accounts::GameProfiles {
+            documents: world
+                .quest_journal_profile()
+                .and_then(|j| j.documents())
+                .map(|d| Arc::new(d.clone())),
             quest_journal,
             inventory,
             rewards,

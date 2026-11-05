@@ -31,7 +31,7 @@ impl World {
         profile: Arc<crate::quest_journal::Profile>,
         xp: Arc<crate::progression_wire::Profile>,
     ) -> crate::Result<()> {
-        self.install_quest_journal(profile, xp, None)
+        self.install_quest_journal(profile, xp, None, false)
     }
     /// Explicit item-aware headless adoption, bound to the exact inventory
     /// bytes used by the retained owner. Legacy admission remains unchanged.
@@ -44,19 +44,37 @@ impl World {
         if profile.inventory_hash().is_none() {
             return Err("Item-aware journal requires inventory binding".into());
         }
-        self.install_quest_journal(profile, xp, Some(inventory))
+        self.install_quest_journal(profile, xp, Some(inventory), false)
+    }
+    /// Explicit document adoption after exact item/document binding. Historical
+    /// read eligibility stays in the asynchronous owner, never the simulation.
+    pub fn enable_document_quest_journal(
+        &mut self,
+        profile: Arc<crate::quest_journal::Profile>,
+        xp: Arc<crate::progression_wire::Profile>,
+        inventory: &crate::renet_runtime::inventory::Profile,
+    ) -> crate::Result<()> {
+        if profile.documents().is_none() {
+            return Err("Document journal requires document context".into());
+        }
+        self.install_quest_journal(profile, xp, Some(inventory), true)
     }
     fn install_quest_journal(
         &mut self,
         profile: Arc<crate::quest_journal::Profile>,
         xp: Arc<crate::progression_wire::Profile>,
         inventory: Option<&crate::renet_runtime::inventory::Profile>,
+        document_mode: bool,
     ) -> crate::Result<()> {
+        if profile.documents().is_some() != document_mode {
+            return Err("Document journal requires explicit World admission".into());
+        }
         let items = checked_inventory(&profile, inventory)?;
         self.validate_quest_journal_references_with_areas(
             profile.catalog(),
             profile.shared_areas().as_deref(),
             items,
+            profile.documents().map(|d| d.catalog()),
         )?;
         profile.check_progression(&xp)?;
         if self
@@ -125,6 +143,7 @@ impl World {
             profile.catalog(),
             areas.as_deref(),
             items,
+            profile.documents().map(|d| d.catalog()),
         )?;
         Ok(Prepared {
             catalog: profile.shared_catalog(),
@@ -271,13 +290,14 @@ impl World {
     /// single-guide/single-creature World. No XP kill recipe is required here.
     /// A successful check grants no actor entitlement or persisted compatibility.
     pub fn validate_quest_journal_references(&self, catalog: &Catalog) -> crate::Result<()> {
-        self.validate_quest_journal_references_with_areas(catalog, None, None)
+        self.validate_quest_journal_references_with_areas(catalog, None, None, None)
     }
     fn validate_quest_journal_references_with_areas(
         &self,
         catalog: &Catalog,
         areas: Option<&theia_core::quests::areas::Catalog>,
         items: Option<&theia_core::inventory::Catalog>,
+        documents: Option<&theia_core::documents::Catalog>,
     ) -> crate::Result<()> {
         if self.tick != 0
             || !self.players.is_empty()
@@ -311,6 +331,23 @@ impl World {
             .filter(|d| d.available())
             .ok_or("Quest contacts require an installed available guide")?;
         let dialogue = guide.profile.profile();
+        if let Some(documents) = documents {
+            documents.validate_quests(catalog)?;
+            if let Some(areas) = areas {
+                documents.validate_areas(areas)?;
+            }
+            let aliases_world = |id: &theia_core::content::ContentId| {
+                id == dialogue.npc()
+                    || self.patrol.as_ref().is_some_and(|p| p.definition() == id)
+                    || dialogue
+                        .nodes()
+                        .any(|n| n.choices().iter().any(|c| c.id() == id))
+            };
+            if aliases_world(documents.id()) || documents.documents().any(|d| aliases_world(d.id()))
+            {
+                return Err("Document definitions alias installed World content".into());
+            }
+        }
         if let Some(areas) = areas {
             let aliases_world = |id: &theia_core::content::ContentId| {
                 id == dialogue.npc()
@@ -330,8 +367,13 @@ impl World {
             for stage in quest.stages() {
                 for objective in stage.objectives() {
                     match objective.event() {
-                        EventKey::ReadDocument(_) => {
-                            return Err("Document-read World admission is not installed".into());
+                        EventKey::ReadDocument(id)
+                            if documents.is_none_or(|d| d.document(id).is_none()) =>
+                        {
+                            return Err(
+                                "Document-read World admission requires exact installed documents"
+                                    .into(),
+                            );
                         }
                         EventKey::PossessItem(_) if items.is_none() => {
                             return Err("Possession objectives require an explicitly installed inventory binding".into());
@@ -374,6 +416,11 @@ fn checked_inventory<'a>(
     profile: &crate::quest_journal::Profile,
     inventory: Option<&'a crate::renet_runtime::inventory::Profile>,
 ) -> crate::Result<Option<&'a theia_core::inventory::Catalog>> {
+    match (profile.documents(), inventory.and_then(|i| i.documents())) {
+        (None, None) => {}
+        (Some(a), Some(b)) if a.hash() == b.hash() => {}
+        _ => return Err("Journal requires matching explicit document admission".into()),
+    }
     match (profile.inventory_hash(), inventory) {
         (None, None) => Ok(None),
         (Some(expected), Some(items)) if expected == items.hash() => Ok(Some(items.catalog())),

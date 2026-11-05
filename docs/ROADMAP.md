@@ -1,3 +1,13 @@
+Retained document owner and World admission qualified locally, 5 November 2026:
+P3-05 / P3-11 / P3-15: explicit exact document context now connects the retained
+item owner to durable opening. Real login, encrypted ticket and PostgreSQL prove
+original-stage credit, queued retirement/deletion, rejoin and one-time turn-in XP.
+375 network and sixteen server tests, formatting and strict Clippy pass.
+[Scope/evidence](QUEST_DOCUMENTS.md#implemented-retained-document-owner-and-explicit-world-admission).
+The owner fixture drives leases directly; document-wire/native combined proof
+and normal manifest/Bevy reader remain next. No push; playable remains `65977bd`.
+Earlier entries describe prior checkpoints.
+
 Durable document opening qualified locally, 5 November 2026:
 P3-05 / P3-11 / P3-15: bound Store/worker opens authorize the saved item and
 record original-stage read credit before success. Exact retries, item loss,

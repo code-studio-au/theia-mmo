@@ -266,6 +266,7 @@ fn random(bytes: usize) -> Result<String> {
 /// Store/wire pairs validated before the account service starts accepting entry.
 #[derive(Default)]
 pub struct GameProfiles {
+    pub documents: Option<Arc<theia_network::documents::Profile>>,
     pub quest_journal: Option<theia_persistence::QuestJournalCatalog>,
     pub inventory: Option<theia_persistence::InventoryCatalog>,
     pub rewards: Option<(
@@ -444,6 +445,7 @@ impl AccountService {
         self.enable_game_with_profiles(
             issuer,
             GameProfiles {
+                documents: None,
                 quest_journal: None,
                 inventory,
                 rewards,
@@ -460,6 +462,7 @@ impl AccountService {
         profiles: GameProfiles,
     ) -> Result<Arc<crate::admissions::GameAdmissions>> {
         let GameProfiles {
+            documents,
             quest_journal,
             inventory,
             rewards,
@@ -468,6 +471,14 @@ impl AccountService {
             vendor,
             quest_lifecycle,
         } = profiles;
+        if documents.as_ref().is_some_and(|d| {
+            quest_journal
+                .as_ref()
+                .and_then(|j| j.documents())
+                .is_none_or(|bound| bound.hash() != d.hash())
+        }) {
+            return Err(ApiError::internal());
+        }
         if usize::from(quest.is_some())
             + usize::from(quest_lifecycle.is_some())
             + usize::from(quest_journal.is_some())
@@ -535,8 +546,13 @@ impl AccountService {
                 .map_err(|_| ApiError::internal())?;
         }
         if let Some(profile) = quest_journal {
-            crate::admissions::GameAdmissions::with_quest_journal(&mut gate, profile)
-                .map_err(|_| ApiError::internal())?;
+            match documents {
+                Some(documents) => crate::admissions::GameAdmissions::with_document_quest_journal(
+                    &mut gate, profile, documents,
+                ),
+                None => crate::admissions::GameAdmissions::with_quest_journal(&mut gate, profile),
+            }
+            .map_err(|_| ApiError::internal())?;
         }
         if let Some((profile, wire)) = quest_loot {
             crate::admissions::GameAdmissions::with_quest_loot(&mut gate, profile, wire)

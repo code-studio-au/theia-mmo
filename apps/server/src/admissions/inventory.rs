@@ -18,6 +18,7 @@ use theia_network::{
 use theia_persistence::{Binding, Error, InventoryCatalog, Publisher, RewardCatalog, RewardClaim};
 use tokio::sync::{mpsc, watch};
 pub(super) struct Config {
+    documents: Option<Arc<theia_network::documents::Profile>>,
     journal: Option<theia_persistence::QuestJournalCatalog>,
     vendor: Option<(
         theia_persistence::VendorCatalog,
@@ -34,6 +35,7 @@ impl Config {
     pub(super) fn set_journal(
         &mut self,
         journal: theia_persistence::QuestJournalCatalog,
+        documents: Option<Arc<theia_network::documents::Profile>>,
     ) -> Result<()> {
         if self.journal.is_some()
             || journal
@@ -42,6 +44,15 @@ impl Config {
         {
             return Err("Invalid inventory journal binding".into());
         }
+        match (journal.documents(), documents.as_deref()) {
+            (None, None) => {}
+            (Some(a), Some(b))
+                if a.hash() == b.hash()
+                    && b.inventory_hash() == self.profile.hash()
+                    && b.catalog().inventory() == self.profile.catalog() => {}
+            _ => return Err("Document owner requires exact stored/wire/item context".into()),
+        }
+        self.documents = documents;
         self.journal = Some(journal);
         Ok(())
     }
@@ -78,6 +89,7 @@ impl Config {
         let seed = Bag::from_slots(profile.catalog(), 0, slots)
             .map_err(|_| "Invalid development inventory seed")?;
         Ok(Self {
+            documents: None,
             journal: None,
             vendor: None,
             rewards: None,
@@ -169,6 +181,7 @@ impl Config {
             world,
             profile: self.profile.clone(),
             journal: self.journal.clone(),
+            documents: self.documents.clone(),
             publisher: self.publisher.clone(),
             seed: self.seed.clone(),
             rewards: self.rewards.clone(),
@@ -192,7 +205,7 @@ impl Config {
         Session {
             publish: publication,
             port: Port {
-                documents: None,
+                documents: self.documents.clone(),
                 vendor: self.vendor.as_ref().map(|v| v.1.clone()),
                 rewards: self.reward_wire.clone(),
                 opportunities: self.rewards.as_ref().map(|_| opportunities),
@@ -243,6 +256,7 @@ impl Drop for Finished {
     }
 }
 struct Owner {
+    documents: Option<Arc<theia_network::documents::Profile>>,
     vendor: Option<(
         theia_persistence::VendorCatalog,
         Arc<theia_network::vendor_wire::Profile>,
@@ -259,6 +273,39 @@ struct Owner {
     seed: Bag,
 }
 impl Owner {
+    async fn open_document(
+        &self,
+        journal: &theia_persistence::QuestJournalCatalog,
+        command: theia_core::documents::OpenCommand,
+    ) -> theia_persistence::Result<theia_persistence::InventoryApplied> {
+        let wire = self
+            .documents
+            .as_ref()
+            .ok_or(Error::QuestJournalCatalogMismatch)?;
+        let document = wire.resolve(command).map_err(|_| {
+            Error::DocumentCommand(theia_core::documents::OpenError::UnknownDocument)
+        })?;
+        let applied = self
+            .publisher
+            .open_quest_document(
+                self.binding,
+                self.world,
+                journal,
+                theia_persistence::DocumentOpenCommand {
+                    request_id: command.request_id,
+                    profile_hash: wire.hash(),
+                    document: document.id().clone(),
+                    expected_revision: command.expected_revision,
+                    slot: command.slot,
+                },
+            )
+            .await?;
+        Ok(theia_persistence::InventoryApplied {
+            bag: applied.inventory.clone().ok_or(Error::QuestJournalData)?,
+            replayed: applied.replayed,
+            journal: Some(Box::new(applied)),
+        })
+    }
     fn retained_authorized(&self) -> Result<bool> {
         let Some(gate) = self.gate.upgrade() else {
             return Ok(false);
@@ -392,6 +439,9 @@ impl Owner {
             // finishes before Finished permits character ownership release.
             let applied = if let Some(journal) = &self.journal {
                 match request.command {
+                    ItemCommand::OpenDocument(command) => {
+                        self.open_document(journal, command).await
+                    }
                     ItemCommand::Vendor(command) => {
                         let (profile, wire) =
                             self.vendor.as_ref().ok_or("Vendor owner profile missing")?;
@@ -729,6 +779,16 @@ fn owned_rewards(
 fn reason(error: &Error) -> Option<Reason> {
     use theia_core::inventory::Error as Core;
     Some(match error {
+        Error::DocumentCommand(theia_core::documents::OpenError::StaleRevision) => Reason::Stale,
+        Error::DocumentCommand(theia_core::documents::OpenError::InvalidSlot) => Reason::Slot,
+        Error::DocumentCommand(theia_core::documents::OpenError::MissingItem) => {
+            Reason::EmptySource
+        }
+        Error::DocumentCommand(
+            theia_core::documents::OpenError::WrongItem
+            | theia_core::documents::OpenError::UnknownDocument,
+        ) => Reason::Conflict,
+        Error::QuestJournalConflict => Reason::Conflict,
         Error::VendorCommand(theia_core::vendors::Error::InsufficientCost) => Reason::EmptySource,
         Error::VendorCommand(theia_core::vendors::Error::NoCapacity) => Reason::Full,
         Error::VendorCommand(theia_core::vendors::Error::StaleRevision) => Reason::Stale,
