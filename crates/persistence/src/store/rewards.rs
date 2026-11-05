@@ -1,5 +1,6 @@
 //! Durable once-character and per-victim-life loot entitlements. Authority creates offers; clients may only ask
 //! their admitted character to consume a known claim through the later adapter.
+mod quest_loot;
 use super::{
     Store, bounded,
     inventory::{authorize, checked as checked_bag},
@@ -386,8 +387,16 @@ impl Store {
         claim: ClaimId,
         expected_revision: u64,
     ) -> Result<InventoryApplied> {
-        self.claim_reward_inner(binding, world, profile, claim, expected_revision, None)
-            .await
+        self.claim_reward_inner(
+            binding,
+            world,
+            profile,
+            claim,
+            expected_revision,
+            None,
+            false,
+        )
+        .await
     }
     /// Commit the item mutation and all resulting possession projections together.
     pub async fn claim_reward_with_quest_journal(
@@ -406,6 +415,31 @@ impl Store {
             claim,
             expected_revision,
             Some(journal),
+            false,
+        )
+        .await
+    }
+    /// Exact bound profile; fresh need is checked under the item/journal locks.
+    /// The latest successful retry recovers its receipt even after becoming Ready.
+    pub async fn pickup_quest_reward(
+        &mut self,
+        binding: Binding,
+        world: [u8; 32],
+        profile: &RewardCatalog,
+        claim: ClaimId,
+        expected_revision: u64,
+    ) -> Result<InventoryApplied> {
+        let journal = profile
+            .quest_journal()
+            .ok_or(Error::Invalid("Quest loot requires a bound journal"))?;
+        self.claim_reward_inner(
+            binding,
+            world,
+            profile,
+            claim,
+            expected_revision,
+            Some(journal),
+            true,
         )
         .await
     }
@@ -418,8 +452,18 @@ impl Store {
         claim: ClaimId,
         expected_revision: u64,
         journal: Option<&crate::QuestJournalCatalog>,
+        quest_loot: bool,
     ) -> Result<InventoryApplied> {
-        profile.check_runtime_admission()?;
+        if quest_loot {
+            if !profile.catalog().has_quest_required()
+                || profile.quest_journal().map(|j| j.hash()) != journal.map(|j| j.hash())
+                || journal.is_none()
+            {
+                return Err(Error::Invalid("Quest loot pickup binding changed"));
+            }
+        } else {
+            profile.check_runtime_admission()?;
+        }
         if expected_revision > MAX_REVISION {
             return Err(Error::InventoryStale);
         }
@@ -431,6 +475,10 @@ impl Store {
         let receipt: Option<Vec<u8>> = row.get(3);
         let row=bounded(transaction.query_opt("SELECT claim_id,reward_id,world_id,profile_hash,consumed_revision,consumed_command,claim_scope,victim_life,corpse_x,corpse_y,corpse_z FROM theia.reward_claims WHERE realm_id=$1 AND character_id=$2 AND claim_id=$3 FOR UPDATE",&[&self.realm.value(),&binding.character.value(),&uuid::Uuid::from_bytes(claim.bytes())])).await?.ok_or(Error::RewardMissing)?;
         let (saved, consumed_receipt) = checked(&row, world, profile)?;
+        if quest_loot {
+            quest_loot::check_generation(&transaction, self.realm, binding, world, profile, &saved)
+                .await?;
+        }
         let hash = command_hash(claim, expected_revision);
         if expected_revision.checked_add(1) == Some(bag.revision()) {
             if receipt.as_deref() != Some(hash.as_slice()) {
@@ -467,6 +515,22 @@ impl Store {
             .catalog()
             .definition(&saved.reward)
             .ok_or(Error::RewardData)?;
+        if let Some(item) = definition.quest_item() {
+            let catalog =
+                journal.ok_or(Error::Invalid("Quest loot pickup requires its journal"))?;
+            let need = super::quest_journal::needs_for_locked_bag(
+                &transaction,
+                self.realm,
+                binding,
+                world,
+                catalog,
+                &bag,
+            )
+            .await?;
+            if !need.needed.contains(item) {
+                return Err(Error::RewardNotNeeded);
+            }
+        }
         let next = definition
             .propose(&bag, profile.items().catalog(), expected_revision)
             .map_err(Error::RewardCommand)?;

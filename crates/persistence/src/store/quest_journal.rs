@@ -137,6 +137,17 @@ pub(super) async fn generation_needs(
     let bag = items::lock(tx, realm, binding, catalog)
         .await?
         .ok_or(Error::QuestJournalData)?;
+    needs_for_locked_bag(tx, realm, binding, world, catalog, &bag).await
+}
+/// Caller holds the checked backpack row FOR UPDATE before taking the journal.
+pub(super) async fn needs_for_locked_bag(
+    tx: &Transaction<'_>,
+    realm: RealmId,
+    binding: Binding,
+    world: [u8; 32],
+    catalog: &QuestJournalCatalog,
+    bag: &theia_core::inventory::Bag,
+) -> Result<GenerationNeeds> {
     let (revision, journal) = load(tx, realm, binding, world, catalog).await?;
     let needed = journal
         .needed_possession_items(
@@ -145,7 +156,7 @@ pub(super) async fn generation_needs(
                 .inventory()
                 .ok_or(Error::QuestJournalData)?
                 .catalog(),
-            &bag,
+            bag,
         )
         .map_err(Error::QuestJournalCommand)?;
     Ok(GenerationNeeds {

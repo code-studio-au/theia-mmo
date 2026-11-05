@@ -506,3 +506,6 @@ mod per_life;
 
 #[path = "rewards_contract/quest_generation.rs"]
 mod quest_generation;
+
+#[path = "rewards_contract/quest_pickup.rs"]
+mod quest_pickup;

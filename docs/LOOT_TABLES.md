@@ -337,3 +337,57 @@ atomicity remain outside this slice. The normal schema-18 playable remains
 `85fd967`; no source gameplay catalogue changes. Next: eligibility before bounded
 nearest paging and a fresh locked pickup check, then worker/owner/native adoption.
 Commit locally only; no push.
+
+
+## Quest-only paging and pickup storage prerequisite — 5 November 2026
+
+P3-05 / P3-09 / P3-11 / P3-15. New explicit trusted Store operations
+`list_quest_reward_claims_nearby` and `pickup_quest_reward` use the exact bound
+conditional profile. The generic Store operations remain closed. Worker, retained
+owner, World and normal manifest admission are not installed for conditional loot.
+No source gameplay catalogue, wire format or renderer changes in this slice.
+
+The view locks one checked bag/journal pair and compiles at most 16 catalogue IDs
+into allowed ordinary/currently-needed conditional entries. SQL applies that
+filter before the exact 3D nearest-16 pending-life limit. Once-character history
+stays separately bounded and includes consumed receipts. Unknown IDs deliberately
+reach checked decoding rather than disappearing in the filter. A single joined
+query retrieves each selected conditional claim's generation receipt; its world,
+profile, life, metric source, winning ticket, eligibility and audit revisions must
+validate. Ordinary repeatable and once-character entries retain their semantics.
+
+Pickup locks the checked backpack and claim, validates original conditional
+rights/ticket, and checks current accepted unfinished-quest need before applying a
+fresh grant. `RewardNotNeeded` rejects an outdated visible intent without changing
+the bag, journal or receipt. A winning candidate generated while eligible can
+reappear after deletion; denied generations do not gain rights. Completion hides
+leftovers even after turn-in consumes all pelts. The exact latest successful
+pickup retry is recovered before the fresh-need guard: becoming Ready must not
+invalidate acknowledgement of the third successful pickup. Older superseded
+retries remain stale. Bag, claim receipt and journal reconciliation commit together;
+no capacity leaves all three unchanged and the candidate remains available.
+
+Owned PostgreSQL 16.15 proof:
+`build/quest-loot-pickup-postgres-v2-20261105/verification.json` passes 59 SQL
+contracts and five non-SQL library tests, existing reload examples and actual
+process restart. All 60 full roll rows retain their hash across restart. New
+contracts generate 20 entitled nearby pelt candidates, collect three, then prove
+that 17 hidden nearer claims cannot hide a farther ordinary token. They cover a
+refused fourth pickup, exact Ready retry, stale older retry, deletion/reveal,
+replacement pickup, turn-in consumption/completion, preserved ordinary once and
+repeatable rewards, reconnect, full-bag rollback/freeing space, invalid original
+rights and unknown-ID refusal. The one-time reward recovers the same claim across
+different kill lives and its consumed history remains after pickup. v1 passes;
+v2 adds the mixed ordinary/once-history coverage. A preliminary build failed only
+a malformed decimal literal in the new test fixture, fixed before SQL execution.
+
+Formatting and denied-warning workspace/all-target Clippy pass at
+`build/quest-loot-pickup-fmt-v1-20261105.log` and
+`build/quest-loot-pickup-clippy-v1-20261105.log`.
+Preserve `build/quest-loot-pickup-qualified-v1-20261105`. These are trusted storage
+calls with synthetic kill/NPC authorization, not live actor range, encrypted-owner
+or native proof. `RewardNotNeeded` still needs an ordinary owner rejection mapping
+when that adapter is installed. The normal schema-18 playable remains `85fd967`;
+no new native/Windows or capacity claim. Next: bounded worker operations, accepted
+request drain after lost replies, owner refresh after committed bag/journal changes,
+then explicit World/manifest/client adoption. Commit locally only; no push.

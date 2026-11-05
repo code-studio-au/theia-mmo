@@ -9,10 +9,10 @@ use theia_core::{
 use theia_persistence::{
     ProgressionCatalog, QuestJournalAction, QuestJournalCatalog, QuestJournalCommand,
 };
-fn cid(s: &str) -> ContentId {
+pub(super) fn cid(s: &str) -> ContentId {
     ContentId::new(s).unwrap()
 }
-fn life(n: u64) -> KillEvent {
+pub(super) fn life(n: u64) -> KillEvent {
     KillEvent {
         id: KillId::from_victim(EntityKey {
             epoch: WorldEpoch::new(707).unwrap(),
@@ -21,7 +21,7 @@ fn life(n: u64) -> KillEvent {
         creature: cid("theia.dev.training-creature"),
     }
 }
-fn profiles() -> (
+pub(super) fn profiles() -> (
     InventoryCatalog,
     ProgressionCatalog,
     QuestJournalCatalog,
@@ -46,12 +46,14 @@ fn profiles() -> (
         .unwrap();
     let source=serde_json::to_vec(&json!({"schema":4,"id":"theia.test.quest-loot","item_catalog":items.catalog().id().as_str(),"rewards":[
         {"id":"theia.test.pelt","name":"Pelt","scope":"per_creature_life","creature":"theia.dev.training-creature","grants":[{"item":"theia.dev.wolf-pelt","count":1}],"chance_basis_points":10000,"quest_required":true},
-        {"id":"theia.test.miss","name":"Miss","scope":"per_creature_life","creature":"theia.dev.training-creature","grants":[{"item":"theia.dev.wolf-pelt","count":1}],"chance_basis_points":0,"quest_required":true}
+        {"id":"theia.test.miss","name":"Miss","scope":"per_creature_life","creature":"theia.dev.training-creature","grants":[{"item":"theia.dev.wolf-pelt","count":1}],"chance_basis_points":0,"quest_required":true},
+        {"id":"theia.test.token","name":"Token","scope":"per_creature_life","creature":"theia.dev.training-creature","grants":[{"item":"theia.dev.training-token","count":1}],"chance_basis_points":10000},
+        {"id":"theia.test.once","name":"Once","scope":"once_per_character","creature":"theia.dev.training-creature","grants":[{"item":"theia.dev.training-token","count":1}]}
     ]})).unwrap();
     let rewards = RewardCatalog::from_json_with_quest_journal(&source, &items, &journal).unwrap();
     (items, xp, journal, rewards)
 }
-async fn initialize(
+pub(super) async fn initialize(
     store: &mut Store,
     name: &str,
     count: u32,
@@ -76,7 +78,7 @@ async fn initialize(
         .unwrap();
     who
 }
-async fn accept(
+pub(super) async fn accept(
     store: &mut Store,
     who: Binding,
     journal: &QuestJournalCatalog,

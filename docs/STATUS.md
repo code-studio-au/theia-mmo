@@ -1,3 +1,12 @@
+Quest-only paging/pickup storage prerequisite qualified, 5 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: explicit Store views filter current item need
+before the nearest-16 page; pickup validates original generation and fresh locked
+need. Ready replay, deletion/reacquisition, completion, ordinary rewards and full-
+bag rollback pass 59 actual PostgreSQL contracts plus restart. [Evidence/limits](LOOT_TABLES.md#quest-only-paging-and-pickup-storage-prerequisite--5-november-2026).
+Formatting and strict all-target Clippy pass. Generic APIs, worker/owner/World
+and normal manifests remain closed for quest-only content. Continue worker and
+retained-owner adoption locally; no push. Normal playable remains `85fd967`.
+
 Quest-only generation storage prerequisite qualified, 5 November 2026:
 P3-05 / P3-09 / P3-11 / P3-15: explicit trusted Store generation now persists
 first-transaction eligibility, the single ticket and observed bag/journal revisions.
