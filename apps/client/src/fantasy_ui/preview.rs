@@ -364,6 +364,7 @@ fn capture(
     server: Res<AssetServer>,
     layout: Layout,
     adapter: Res<RenderAdapterInfo>,
+    map_metrics: Res<crate::minimap::Metrics>,
 ) {
     assert!(
         layout.windows.is_empty(),
@@ -749,6 +750,9 @@ fn capture(
     } else {
         serde_json::Value::Null
     };
+    assert_eq!(map_metrics.objective_regions, 1);
+    assert!(map_metrics.objective_pixels > 0);
+    let map_objectives = serde_json::json!({"fixture":true,"regions":map_metrics.objective_regions,"tinted_pixels":map_metrics.objective_pixels});
     let directory = run.directory.clone();
     let size = run.size;
     let ui_scale = run.ui_scale;
@@ -758,7 +762,7 @@ fn capture(
         assert_eq!([event.image.width(), event.image.height()], [size.x,size.y]);
         event.image.clone().try_into_dynamic().unwrap().save(directory.join("hud.png")).unwrap();
         std::fs::write(directory.join("report.json"),serde_json::to_vec_pretty(&serde_json::json!({
-                "completed":true,"ui_scale":ui_scale,"preferred_ui_scale":preferred_scale,"geometry_units":"physical_pixels","offscreen":true,"windows":0,"fixture":true,"extent":[size.x,size.y],"gpu":gpu,"buttons":buttons,"glyphs":glyphs,"feedback":feedback,"minimap":minimap,"header":header,"unit_frames":unit_frames,"xp":xp,"backpack_dock":dock,"backpack":backpack,"reward_icons":reward_icons,"reader":reader,"nameplates":nameplates,"projected_anchor":{"actual":projected_anchor.to_array(),"expected":expected_anchor.to_array()},
+                "completed":true,"ui_scale":ui_scale,"preferred_ui_scale":preferred_scale,"geometry_units":"physical_pixels","offscreen":true,"windows":0,"fixture":true,"extent":[size.x,size.y],"gpu":gpu,"buttons":buttons,"glyphs":glyphs,"feedback":feedback,"minimap":minimap,"header":header,"unit_frames":unit_frames,"xp":xp,"backpack_dock":dock,"backpack":backpack,"reward_icons":reward_icons,"reader":reader,"map_objectives":map_objectives,"nameplates":nameplates,"projected_anchor":{"actual":projected_anchor.to_array(),"expected":expected_anchor.to_array()},
             "scope":"Actual Bevy combat HUD widgets with fixture values; no desktop input, account, network, world or live gameplay qualification"
         })).unwrap()).unwrap();
         exit.write(AppExit::Success);

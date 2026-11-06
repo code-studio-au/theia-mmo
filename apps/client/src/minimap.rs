@@ -1,4 +1,5 @@
 //! Bounded standard Bevy map presentation; never requests terrain or gameplay.
+mod guidance;
 mod projection;
 use bevy::{
     asset::RenderAssetUsages,
@@ -19,6 +20,8 @@ pub(crate) struct Metrics {
     pub visible: bool,
     pub raster_updates: u64,
     pub known_pixels: usize,
+    pub objective_regions: usize,
+    pub objective_pixels: usize,
     pub resident_tiles_read: usize,
     pub max_raster_us: u64,
     pub max_present_us: u64,
@@ -188,12 +191,14 @@ fn setup(
 /// Same widgets as the live map, with an explicitly synthetic raster. No World,
 /// terrain, network or map-present system is installed by the developer preview.
 pub(crate) fn install_preview(app: &mut App) {
-    app.add_systems(Startup, setup)
+    app.init_resource::<Metrics>()
+        .add_systems(Startup, setup)
         .add_systems(PostStartup, seed_preview);
 }
 type PreviewNode<'a> = (&'a mut Node, Has<Root>, Has<Arrow>, Has<Guide>);
 fn seed_preview(
     map: Res<Map>,
+    mut metrics: ResMut<Metrics>,
     mut images: ResMut<Assets<Image>>,
     mut nodes: Query<PreviewNode<'_>>,
     mut captions: Query<(&mut Text, Option<&MapCaption>, Has<Guide>)>,
@@ -210,6 +215,21 @@ fn seed_preview(
             ]);
         }
     }
+    // Explicit metadata-only search-area sample; no quest/player observation.
+    let areas = theia_core::quests::areas::Catalog::from_json(br#"{
+        "schema":1,"id":"theia.test.map-preview-areas","revision":1,"areas":[
+            {"id":"theia.test.map-preview-area","name":"Fixture search area","min":[-90,-10,-45],"max":[-15,10,45]}
+        ]}"#).unwrap();
+    let regions: Vec<_> = areas.areas().collect();
+    metrics.objective_regions = regions.len();
+    metrics.objective_pixels = guidance::shade(
+        &mut pixels,
+        View {
+            centre: GlobalPosition::new([0., 0., 0.]).unwrap(),
+        },
+        &regions,
+        true,
+    );
     images.get_mut(&map.image).unwrap().data = Some(pixels);
     for (mut node, root, arrow, guide) in &mut nodes {
         if root {
@@ -364,6 +384,8 @@ fn present_inner(world: &mut World) {
     }
     world.resource_mut::<Metrics>().visible = visible;
     let Some(position) = position else {
+        world.resource_mut::<Metrics>().objective_regions = 0;
+        world.resource_mut::<Metrics>().objective_pixels = 0;
         world.resource_mut::<Metrics>().player_point = None;
         world.resource_mut::<Metrics>().guide_phase = None;
         world.resource_mut::<Metrics>().guide_point = None;
@@ -376,7 +398,19 @@ fn present_inner(world: &mut World) {
     if update {
         let started = Instant::now();
         let view = View { centre: position };
-        let (data, known, tiles) = raster(world, view);
+        let (mut data, known, tiles) = raster(world, view);
+        let (objective_regions, objective_pixels) = world
+            .get_resource::<crate::quest_journal::Definitions>()
+            .map_or((0, 0), |definitions| {
+                let regions = guidance::regions(&state, &definitions.0);
+                let pixels = guidance::shade(
+                    &mut data,
+                    view,
+                    &regions,
+                    world.contains_resource::<crate::fantasy_ui::Skin>(),
+                );
+                (regions.len(), pixels)
+            });
         world
             .resource_mut::<Assets<Image>>()
             .get_mut(&map.image)
@@ -388,6 +422,8 @@ fn present_inner(world: &mut World) {
         let mut metrics = world.resource_mut::<Metrics>();
         metrics.raster_updates += 1;
         metrics.known_pixels = known;
+        metrics.objective_regions = objective_regions;
+        metrics.objective_pixels = objective_pixels;
         metrics.resident_tiles_read = tiles;
         metrics.texture_bytes = (PIXELS * PIXELS + 16 * 16) * 4;
         metrics.max_raster_us = metrics

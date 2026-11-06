@@ -188,6 +188,11 @@ impl Profile {
     pub fn inventory_catalog(&self) -> Option<&theia_core::inventory::Catalog> {
         self.inventory.as_ref().map(|(catalog, _)| catalog.as_ref())
     }
+    /// Bound static quest geography for read-only presentation. This exposes no
+    /// observed actors, credit, command admission or terrain loading authority.
+    pub fn area_catalog(&self) -> Option<&theia_core::quests::areas::Catalog> {
+        self.areas.as_deref()
+    }
     pub(crate) fn shared_areas(&self) -> Option<Arc<theia_core::quests::areas::Catalog>> {
         self.areas.clone()
     }

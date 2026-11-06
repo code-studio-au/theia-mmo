@@ -17,9 +17,10 @@ P2-14 / P3-11 / P5-13 / P5-19. The user's local 3440×1440 captures at
   a spawn/drop. Preserve checked global metre projection, circular clipping,
   bounded image/node work and the existing terrain streaming/request budgets.
 
-The current implementation below already supports the single known guide's
-available/ready state mapping; it does **not** implement general objective-region
-shading or a general multi-NPC marker catalogue. Current static quest-area data
+The current implementation below supports the single known guide's
+available/ready state mapping and now has initial reach-volume shading, described
+below. Kill/collection search mappings and a general multi-NPC marker catalogue
+remain separate work. Current static quest-area data
 provides reach volumes; spawn/collection guidance needs explicit validated
 mapping to objectives and authored source areas. Reuse existing bound content
 where it describes the actual region; do not invent locations from screenshots
@@ -188,3 +189,51 @@ sampled coverage and checks a >15-km observed span. Both earlier failed check
 logs and the corrected v2 captured-data analysis remain; final v3 passes the
 complete executable check. No game rule, speed limit or alignment tolerance was
 relaxed to hide an engine failure.
+
+
+## Initial active quest-area overlay — 6 November 2026
+
+P2-14 / P3-11 / P5-13 / P5-19. The existing bound quest-area catalogue now has
+an immutable presentation accessor. The client selects regions only from a
+validated current-owner journal, active quests, their current stages and
+unfinished `reach_area` objectives. Unaccepted, ready/completed, disconnected,
+foreign-owner/epoch/hash and invalid-revision contexts produce no search region.
+This is static quest geography; it does not need or reveal a live guide/creature.
+
+A restrained blue wash is composited into the fresh existing 64×64 terrain
+raster at its existing 250-ms refresh schedule. Overlaps tint once. X/Z projection
+uses f64 global differences; a circular skin clips samples to its round map, and
+the legacy square keeps rectangular coverage. Vertical reach conditions remain
+authoritative gameplay; the map is a 2D search aid. Off-map regions produce no
+pixels. No camera, image, node, worker, network command, terrain load or saved-tile
+request is added; existing terrain/arrow payload remains 17,408 RGBA bytes.
+Region completion clears on the next scheduled raster refresh. Metrics report
+selected region count and tinted pixels, not live creature counts or visible
+NPC capacity. Hidden maps clear the current objective metrics.
+
+Four new headless cases cover accepted/ready/completed and invalid contexts,
+absence of live guide data, circular corners/alpha, empty/malformed buffers,
+world-edge clipping and identical shading around 0 and 1,000,000,000 metres.
+All **180 client cases** including local art and **15 focused network/quest-profile
+cases** pass, along with formatting, strict workspace/all-target Clippy and build.
+A 32-region/200-sample colour-pass test on **AMD Ryzen 7 7800X3D**, development test
+binary, measures p95 **400 us**, maximum **498 us**. It excludes active-goal
+selection, terrain raster work, image upload and frame rendering; it is not a
+full-map/FPS/MMO capacity guarantee. Exact log:
+`build/ui-reference-20261106/map-guidance-cost-v1.log`.
+
+Six `map-guidance-v1-*` windowless Linux GPU cases render a labelled metadata-only
+search region over the existing checker map. The exporter asserts a selected
+region and nonzero tinted pixels while retaining the preceding HUD/reader-free
+layout gates. The reader branch also passes once. Evidence:
+`build/ui-reference-20261106/map-guidance-verification-v1.json` and
+`map-guidance-reader-v1/report.json`. Device remains RX 7900 XTX / RADV Vulkan /
+Mesa 26.2.6. There is no OS window, mouse/keyboard input, live quest credit or
+connected region-render proof in those exports. Desktop testing remains paused.
+
+This first mapping uses actual reach volumes. It does **not** guess a creature's
+spawn/search territory from its instantaneous position or mark where quest loot
+is guaranteed. Explicit validated objective-to-area metadata for kill/collection
+and related goals is next. The existing `!`/`?` mapping remains single-guide
+support; general known-NPC locations, hover descriptions, tracking preferences,
+map layers, native interaction, Windows and broader combined timing remain open.

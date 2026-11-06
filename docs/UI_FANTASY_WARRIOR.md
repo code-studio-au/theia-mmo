@@ -933,3 +933,15 @@ Device: Linux RX 7900 XTX / RADV Vulkan / Mesa 26.2.6; OS windows/input are abse
 Earlier `reader-v1-*` results precede the compact-height fix. Native interaction,
 long-text wheel ownership, nondefault-scale/DPI input and Windows remain pending.
 Desktop/mouse testing remains paused at the user's request. The skin stays opt-in.
+
+
+## Minimap objective geography follow-up — 6 November 2026
+
+The requested search-area overlay now starts with existing bound reach volumes:
+only active, unfinished goals select a region. Six windowless GPU layouts retain
+the preceding UI gates and show a labelled blue fixture region. The reader branch
+passes once. This adds no terrain requests or live actor disclosure. 180 client
+and 15 focused network/profile cases, formatting, strict Clippy and build pass.
+[Data, cost evidence and remaining kill/collection mappings](MINIMAP.md#initial-active-quest-area-overlay--6-november-2026).
+Desktop/input checks remain paused. Existing single-guide `!`/`?` support remains;
+no general NPC registry or spawn/collection authoring mapping is claimed yet.
