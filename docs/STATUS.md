@@ -1,3 +1,11 @@
+Fixed quest reward metadata prerequisite, 6 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: a bounded separate catalogue validates known
+quest/item fixed grants and rejects bundles impossible even in an empty bag.
+Six new checks / 363 core tests, formatting and strict Clippy pass.
+[Implemented scope and next steps](QUEST_ITEM_REWARDS.md#implemented-metadata-prerequisite).
+No item grant proposal, durable turn-in or live admission yet. Continue locally;
+no push. Earlier checkpoints retain their stated scope.
+
 Readable quest documents qualified locally, 6 November 2026:
 P3-05 / P3-11 / P3-15: opt-in manifest 20 now has a standard Bevy note reader
 with exact server approval, local page navigation and contextual Escape. Native

@@ -98,6 +98,10 @@ pub struct Grant {
     count: u32,
 }
 impl Grant {
+    pub(crate) fn checked(items: &inventory::Catalog, item: ContentId, count: u32) -> Option<Self> {
+        (items.definition(&item).is_some() && (1..=MAX_GRANT_UNITS).contains(&count))
+            .then_some(Self { item, count })
+    }
     pub fn item(&self) -> &ContentId {
         &self.item
     }

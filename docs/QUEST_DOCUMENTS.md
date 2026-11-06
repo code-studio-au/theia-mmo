@@ -475,3 +475,10 @@ guaranteed low-danger content, not physical-input, Windows or random-balance pro
 The earlier paused checkpoint remains historical. This completes readable owned
 item notes in opt-in manifest 20; it does not add arbitrary world books, scripting,
 campaign pack switching, saved-version migration or production quest content.
+
+The reader-baseline full workspace/all-target gate also passes: 1,351 tests,
+76 explicit service/asset skips, 168 result groups, in
+`build/quest-document-ui-workspace-tests-v1-20261106.log`. These skips are not
+service success evidence; actual OIDC/SQL/native proofs are recorded separately.
+The new offline authoring example has its own focused tests and strict Clippy
+qualification in [the authoring guide](QUEST_PACK_AUTHORING.md#check-authored-note-references-together).

@@ -4,6 +4,7 @@ use crate::content::ContentId;
 use serde::{Deserialize, Serialize};
 pub mod areas;
 pub mod catalog;
+pub mod item_rewards;
 pub mod journal;
 pub mod lifecycle;
 pub mod turn_in_xp;
