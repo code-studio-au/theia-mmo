@@ -226,3 +226,92 @@ fn pointer_activation_retains_painted_quest_revision_and_original_identity() {
     assert_eq!(app.world().resource::<Ui>().pointer_actions, 1);
     assert_eq!(app.world().resource::<Ui>().ignored_pending_clicks, 1);
 }
+
+#[test]
+fn fixed_items_are_named_on_offers_and_unfinished_journal_but_not_promised_again() {
+    let (mut state, legacy) = fixture();
+    let inventory = theia_network::renet_runtime::inventory::Profile::from_json(include_bytes!(
+        "../../../../content/gameplay/development-document-items.json"
+    ))
+    .unwrap();
+    let rewards = serde_json::to_vec(&serde_json::json!({
+        "schema":1,"id":"theia.test.ui-rewards","revision":1,
+        "quest_catalog":legacy.catalog().id().as_str(),
+        "item_catalog":inventory.catalog().id().as_str(),
+        "rewards":[{"quest":"theia.dev.quest-introduction","grants":[
+            {"item":"theia.dev.training-token","count":3},
+            {"item":"theia.dev.training-sword","count":1}
+        ]}]
+    }))
+    .unwrap();
+    let profile = legacy
+        .as_ref()
+        .clone()
+        .with_item_rewards(&rewards, &inventory)
+        .unwrap();
+    state.quest_journal.as_mut().unwrap().profile_hash = profile.hash();
+    let quest = profile
+        .catalog()
+        .quest(&id("theia.dev.quest-introduction"))
+        .unwrap();
+    for verb in [Action::Accept, Action::TurnIn] {
+        let label = action_text(&profile, quest, verb);
+        assert!(label.contains("(25 XP)"));
+        assert!(label.contains("3 x Training Token"));
+        assert!(label.contains("1 x Training Sword"));
+        assert!(!label.contains("theia.dev.training"));
+    }
+    let journal = Journal::default()
+        .propose_accept(profile.catalog(), quest.id(), quest.giver())
+        .unwrap()
+        .journal;
+    set_journal(&mut state, journal);
+    let tracker = journal_text(&profile, &state);
+    assert!(tracker.contains("Completion reward: 25 XP (level cap applies)"));
+    assert!(tracker.contains("3 x Training Token") && tracker.contains("1 x Training Sword"));
+    set_journal(&mut state, completed_introduction(&profile));
+    let tracker = journal_text(&profile, &state);
+    assert!(tracker.contains("Completed"));
+    assert!(!tracker.contains("Completion reward") && !tracker.contains("Items:"));
+    let other = profile
+        .catalog()
+        .quest(&id("theia.dev.quest-follow-up"))
+        .unwrap();
+    assert_eq!(
+        action_text(&profile, other, Action::Accept),
+        action_text(&legacy, other, Action::Accept)
+    );
+    assert_eq!(
+        action_text(&legacy, quest, Action::Accept),
+        "Accept: Meet the guide (25 XP)"
+    );
+}
+
+#[test]
+fn backpack_refusal_explains_retry_without_confusing_journal_capacity_or_pending() {
+    use theia_network::quest_journal_wire::{Rejection, Reply};
+    let (mut state, profile) = fixture();
+    state.quest_journal_reply = Some(Reply {
+        actor: state.quest_journal.as_ref().unwrap().actor,
+        profile_hash: profile.hash(),
+        sequence: 1,
+        request_id: NonZeroU128::new(1).unwrap(),
+        revision: 0,
+        quest: id("theia.dev.quest-introduction"),
+        quest_revision: 0,
+        rejection: Some(Rejection::InventoryFull),
+    });
+    assert!(status_text(&state, false).contains("Free some space"));
+    assert!(status_text(&state, false).contains("try completing the quest again"));
+    assert_eq!(status_text(&state, true), "Waiting for confirmation...");
+    state.error = Some("disconnected".into());
+    assert_eq!(
+        status_text(&state, true),
+        "Connection lost. Rejoin to refresh your journal."
+    );
+    state.error = None;
+    state.quest_journal_reply.as_mut().unwrap().rejection = Some(Rejection::Capacity);
+    assert!(!status_text(&state, false).contains("backpack"));
+    state.quest_journal_reply.as_mut().unwrap().rejection = None;
+    assert_eq!(status_text(&state, false), "");
+}

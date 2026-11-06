@@ -233,7 +233,15 @@ fn os_trace(world: &mut World) {
                 hits.keys().take(8).map(|entity| serde_json::json!({
                 "entity":format!("{entity:?}"),"ui":world.get::<Node>(*entity).is_some(),
                 "guide":world.get::<crate::dialogue::GuideVisual>(*entity).is_some(),
-                "name":world.get::<Name>(*entity).map(|n|n.as_str())
+                "name":world.get::<Name>(*entity).map(|n|n.as_str()),
+                "text":world.get::<Text>(*entity).map(|t|t.0.as_str()),
+                "inventory_destroy":world.get::<crate::inventory::DestroyButton>(*entity).is_some(),
+                "pressed":world.get::<bevy::ui::Pressed>(*entity).is_some(),
+                "parent_pressed":world.get::<ChildOf>(*entity).is_some_and(|p|world.get::<bevy::ui::Pressed>(p.parent()).is_some()),
+                "document_actions":world.get::<crate::inventory::DocumentActions>(*entity).is_some(),
+                "document_read":world.get::<crate::documents::ReadButton>(*entity).is_some(),
+                "inventory_pane":world.get::<crate::inventory::Pane>(*entity).is_some(),
+                "size":world.get::<ComputedNode>(*entity).map(|n|n.size().to_array())
             })).collect::<Vec<_>>()
             })
             .into();

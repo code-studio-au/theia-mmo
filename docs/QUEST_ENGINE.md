@@ -1,3 +1,10 @@
+Fixed quest reward UI/native checkpoint, 6 November 2026:
+Opt-in schema 21 now has named fixed reward offers, unfinished tracker details,
+backpack-full refusal guidance and native free-space retry/whole-bundle turn-in.
+All three Linux window anchors and actual SQL restart/rejoin pass, with a scoped
+backpack stale-press fix and 153 client tests. [Exact scope and fixtures](QUEST_ITEM_REWARDS.md#fixed-reward-ui-qualified--6-november-2026).
+Earlier UI/runtime gates below are historical. Commits remain local; no push.
+
 Fixed quest reward configuration prerequisite, 6 November 2026:
 Explicit fixed bundles now have Core, durable Store/owner, World, encrypted bridge
 and opt-in manifest-21/CLI support. Completion consumes required items and grants

@@ -11,7 +11,7 @@ QUEST = 'theia.dev.quest-roadside-orders'
 READ = QUEST + '.objective.read'
 BRING = QUEST + '.objective.bring'
 
-def flow(desktop, window, state, folder, resumed=False):
+def flow(desktop, window, state, folder, resumed=False, item_rewards=False, reward_capacity=False):
     scale = state()['window'][2]
     def count(item):
         return sum(s['count'] for s in state()['inventory_bag']['slots'] if s and s['item'] == item)
@@ -208,12 +208,76 @@ def flow(desktop, window, state, folder, resumed=False):
             assert state()['combat']['player_deaths']==0
             desktop.key('2');time.sleep(.25)
 
+    def reward_label(verb):
+        label=wait(lambda:next((label for label in state()['quest_journal']['action_labels'] if label['quest']==QUEST and label['text'].startswith(verb+':')),None))
+        assert '2 x Training Token' in label['text'] and label['glyphs']>0, label
+        assert label['size'][0]<state()['window'][0], label
+        if reward_capacity:assert '2 x Training Sword' in label['text'], label
+        return label
+
+    def inventory_click(name,index=None):
+        point=wait(lambda:state()['inventory_layout'][name])
+        if index is not None:point=point[index]
+        # Selection/status text can change the backpack's height. Wait for its
+        # actual painted geometry instead of clicking the previous frame's row.
+        deadline=time.monotonic()+3
+        while True:
+            time.sleep(.2)
+            current=state()['inventory_layout'][name]
+            if index is not None:current=current[index]
+            if current==point and current and min(current)>0:break
+            assert time.monotonic()<deadline, ('Backpack layout did not settle',name)
+            point=current
+        if name=='destroy':
+            desktop.move(window,point,scale)
+            time.sleep(.35)
+            observed=state()
+            (folder/'before-capacity-destroy.json').write_text(json.dumps(observed,indent=2)+'\n')
+            assert not any(h.get('inventory_destroy') and h.get('pressed') for h in observed['mouse_hover']), 'Destroy retained Pressed after all pointer buttons were released'
+        desktop.click(window,point,scale,1)
+
+    def capacity_check():
+        while None in state()['inventory_bag']['slots']:
+            slots=state()['inventory_bag']['slots']
+            source=next(i for i,s in enumerate(slots) if s and s['item']=='theia.dev.training-stone' and s['count']>1)
+            target=slots.index(None)
+            if state()['inventory_ui']['selected'] is not None:
+                inventory_click('cancel');wait(lambda:state()['inventory_ui']['selected'] is None)
+            inventory_click('slots',source);wait(lambda:state()['inventory_ui']['selected']==source)
+            inventory_click('split');wait(lambda:state()['inventory_ui']['split'])
+            revision=state()['inventory_bag']['revision']
+            inventory_click('slots',target)
+            wait(lambda:state()['inventory_bag']['revision']==revision+1 and not state()['inventory_ui']['pending'])
+        before=json.loads(json.dumps(state()['inventory_bag']))
+        journal=state()['quest_journal'];head=journal['revision'];xp=journal['xp'];rejected=journal['ui']['rejected']
+        point=wait(lambda:next((b['point'] for b in state()['quest_journal']['buttons'] if b['quest']==QUEST),None))
+        desktop.click(window,point,scale,1)
+        wait(lambda:state()['quest_journal']['ui']['rejected']==rejected+1 and not state()['quest_journal']['ui']['pending'])
+        status=wait(lambda:state()['quest_journal']['status'] if 'Free some space' in state()['quest_journal']['status']['text'] and state()['quest_journal']['status']['glyphs']>0 else None)
+        assert state()['inventory_bag']==before and quest()['status']=='Ready'
+        assert state()['quest_journal']['revision']==head and state()['quest_journal']['xp']==xp
+        capture('fixed-reward-backpack-full.png')
+        target=next(i for i,s in enumerate(before['slots']) if s and s['item']=='theia.dev.training-stone' and s['count']==1)
+        if state()['inventory_ui']['selected'] is not None:
+            inventory_click('cancel');wait(lambda:state()['inventory_ui']['selected'] is None)
+        inventory_click('slots',target);wait(lambda:state()['inventory_ui']['selected']==target)
+        inventory_click('destroy');wait(lambda:state()['inventory_ui']['destroy_confirmation'] is not None)
+        inventory_click('destroy')
+        wait(lambda:state()['inventory_bag']['slots'][target] is None and not state()['inventory_ui']['pending'])
+        assert quest()['status']=='Ready'
+        return dict(refusal=status,unchanged_bag_revision=before['revision'],unchanged_journal_revision=head,unchanged_xp=xp,freed_slot=target,normal_splits_and_confirmed_destruction=True)
+
     if resumed:
         wait(lambda:quest() and quest()['status']=='Completed')
         assert quest()['counts'][READ]==1 and quest()['counts'][BRING]==1
         assert count(NOTE)==0 and not state()['documents']['open']
+        if item_rewards:
+            assert count('theia.dev.training-token')==103, 'Fixed reward must survive rejoin without another grant'
+            assert not any(label['quest']==QUEST for label in state()['quest_journal']['action_labels'])
+            assert 'Items:' not in state()['quest_journal']['tracker']['text']
+            if reward_capacity:assert count('theia.dev.training-sword')==2
         capture('resumed-document-completed.png')
-        return dict(passed=True,resumed=True,revision=state()['quest_journal']['revision'],xp=state()['quest_journal']['xp'],completion_and_consumption_restored=True)
+        return dict(passed=True,resumed=True,revision=state()['quest_journal']['revision'],xp=state()['quest_journal']['xp'],completion_and_consumption_restored=True,fixed_reward_tokens=count('theia.dev.training-token') if item_rewards else None)
     assert quest() is None and count(NOTE)==0
     if not state()['sword_equipped']:
         desktop.key('i');wait(lambda:state()['inventory_open'])
@@ -228,10 +292,16 @@ def flow(desktop, window, state, folder, resumed=False):
     capture('document-page-two.png')
     document_click('next');time.sleep(.2);assert state()['documents']['page']==1
     document_click('previous');wait(lambda:state()['documents']['page']==0)
-    close_reader();speak();action('Active')
+    close_reader();speak()
+    offer=reward_label('Accept') if item_rewards else None
+    if item_rewards:capture('fixed-reward-offer.png')
+    action('Active')
     assert quest()['counts'][READ]==0 and quest()['counts'][BRING]==1, 'Pre-accept reading must not grant later credit'
     open_note();wait(lambda:quest()['status']=='Ready')
     assert quest()['counts'][READ]==1 and quest()['counts'][BRING]==1
+    if item_rewards:
+        wait(lambda:'2 x Training Token' in state()['quest_journal']['tracker']['text'])
+        reward_label('Complete')
     capture('document-ready.png')
     close_reader();assert state()['dialogue_open'], 'Reader Escape must retain guide dialogue'
     desktop.key('Escape');wait(lambda:not state()['dialogue_open'])
@@ -242,8 +312,19 @@ def flow(desktop, window, state, folder, resumed=False):
     assert quest()['status']=='Active' and quest()['counts'][BRING]==0
     take_note();wait(lambda:quest()['status']=='Ready')
     assert quest()['counts'][READ]==1, 'Reacquisition must retain historical reading without another open'
-    speak();action('Completed');wait(lambda:count(NOTE)==0)
+    speak()
+    turn_in=reward_label('Complete') if item_rewards else None
+    tokens=count('theia.dev.training-token')
+    assert not item_rewards or tokens==101, 'Only two explicit corpse pickups should precede fixed rewards'
+    capacity=capacity_check() if reward_capacity else None
+    action('Completed');wait(lambda:count(NOTE)==0)
+    if item_rewards:
+        wait(lambda:count('theia.dev.training-token')==tokens+2)
+        assert 'Items:' not in state()['quest_journal']['tracker']['text']
+        if reward_capacity:
+            assert count('theia.dev.training-sword')==2
+            wait(lambda:state()['quest_journal']['status']['text']=='')
     assert quest()['counts'][READ]==1 and quest()['counts'][BRING]==1
     capture('document-completed.png')
     assert state()['combat']['deaths']==2 and state()['combat']['player_deaths']==0 and state()['combat']['event_gaps']==0
-    return dict(passed=True,resumed=False,revision=state()['quest_journal']['revision'],xp=state()['quest_journal']['xp'],actions=state()['quest_journal']['ui']['applied'],kills=2,preaccept_read_excluded=True,page_navigation_local=True,history_survives_loss=True,possession_reverses=True,explicit_pickup_required=True,delivery_consumed=True,documents=state()['documents'])
+    return dict(passed=True,resumed=False,revision=state()['quest_journal']['revision'],xp=state()['quest_journal']['xp'],actions=state()['quest_journal']['ui']['applied'],kills=2,preaccept_read_excluded=True,page_navigation_local=True,history_survives_loss=True,possession_reverses=True,explicit_pickup_required=True,delivery_consumed=True,documents=state()['documents'],fixed_rewards=dict(offer=offer,turn_in=turn_in,tokens_before=tokens,tokens_after=count('theia.dev.training-token'),capacity=capacity) if item_rewards else None)

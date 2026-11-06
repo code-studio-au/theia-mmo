@@ -389,10 +389,14 @@ def check_minimap_walk(desktop, window, state, folder):
     return proof
 
 
-def run(output, binaries, sizes, production=False, repeat_interaction=False, gameplay_manifest=Path("content/development-gameplay-classic-journal.json"), minimap=False, minimap_traversal=False, reach_areas=False, destroy_items=False, corpse_loot=False, item_quest=False, documents=False):
+def run(output, binaries, sizes, production=False, repeat_interaction=False, gameplay_manifest=Path("content/development-gameplay-classic-journal.json"), minimap=False, minimap_traversal=False, reach_areas=False, destroy_items=False, corpse_loot=False, item_quest=False, documents=False, item_rewards=False, reward_capacity=False):
+    if reward_capacity and not item_rewards:
+        raise ValueError('Capacity fixture requires fixed rewards')
+    if item_rewards and not documents:
+        raise ValueError('Fixed reward walkthrough requires the document flow')
     if documents:
         manifest=json.loads(gameplay_manifest.read_text())
-        if any((production,repeat_interaction,minimap,minimap_traversal,reach_areas,destroy_items,corpse_loot,item_quest)) or manifest['schema']!=20:
+        if any((production,repeat_interaction,minimap,minimap_traversal,reach_areas,destroy_items,corpse_loot,item_quest)) or manifest['schema']!=(21 if item_rewards else 20):
             raise ValueError('Choose the separate guaranteed document fixture')
         if any(r.get('chance_basis_points')!=10000 for r in json.loads((gameplay_manifest.parent/manifest['rewards']).read_text())['rewards'] if r['scope']=='per_creature_life'):
             raise ValueError('Document walkthrough requires guaranteed per-life fixture chances')
@@ -416,6 +420,15 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
     shutil.copytree('content/gameplay', bundle/'gameplay')
     shutil.copytree('content/quests', bundle/'quests')
     shutil.copy2(gameplay_manifest, bundle)
+    if reward_capacity:
+        # Deliberately add two nonstackable rewards to this owned fixture only.
+        # Normal UI splitting will fill the backpack; consuming one note cannot
+        # make both swords fit. No database or client state is injected.
+        reward_path=bundle/json.loads(gameplay_manifest.read_text())['quest_item_rewards']
+        rewards=json.loads(reward_path.read_text())
+        recipe=next(r for r in rewards['rewards'] if r['quest']=='theia.dev.quest-roadside-orders')
+        recipe['grants'].append(dict(item='theia.dev.training-sword',count=2))
+        reward_path.write_text(json.dumps(rewards)+'\n')
     if not production:
         path = bundle/'gameplay/development-creature-deflect-pursuit.json'
         creature = json.loads(path.read_text())
@@ -443,6 +456,9 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
         (SELECT count(*) FROM theia.quest_journal_events e WHERE e.realm_id=n.realm_id AND e.character_id=n.character_id)
         FROM theia.character_names n JOIN theia.quest_journal_heads h USING(realm_id,character_id)
         JOIN theia.progression p USING(realm_id,character_id) ORDER BY n.display_name;'''
+    inventory_query = """SELECT n.display_name,b.revision,encode(b.state,'hex')
+        FROM theia.character_names n JOIN theia.backpacks b USING(realm_id,character_id)
+        ORDER BY n.display_name;"""
     rolls_query = """SELECT n.display_name,r.roll_key,encode(r.victim_life,'hex'),r.ticket,
         r.generation_eligible,r.generation_bag_revision,r.generation_journal_revision,
         encode(r.profile_hash,'hex'),r.corpse_x,r.corpse_y,r.corpse_z
@@ -460,7 +476,15 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
                         rolls_before=cluster.query(rolls_query)
                         assert rolls_before.returncode==0
                         (output/'rolls-before-restart.txt').write_text(rolls_before.stdout)
+                    if item_rewards:
+                        bags_before=cluster.query(inventory_query)
+                        assert bags_before.returncode==0
+                        (output/'bags-before-restart.txt').write_text(bags_before.stdout)
                     cluster.restart()
+                    if item_rewards:
+                        bags_after=cluster.query(inventory_query)
+                        assert bags_after.returncode==0 and bags_after.stdout==bags_before.stdout
+                        (output/'bags-after-restart.txt').write_text(bags_after.stdout)
                     if quest_only or documents:
                         rolls_after=cluster.query(rolls_query)
                         assert rolls_after.returncode==0 and rolls_after.stdout==rolls_before.stdout
@@ -511,7 +535,7 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
                         time.sleep(.2)
                         if documents:
                             from quest_document_os import flow as document_flow
-                            proof=document_flow(desktop,window,state,folder,resumed)
+                            proof=document_flow(desktop,window,state,folder,resumed,item_rewards=item_rewards,reward_capacity=reward_capacity)
                         else:
                             proof = flow(desktop, window, state, folder, resumed, repeat_interaction, minimap, reach_areas, corpse_loot, item_quest, quest_only)
                         if minimap:
@@ -593,6 +617,18 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
                     assert audit.returncode==0 and audit.stdout.strip()
                     assert all(row.split('|')[1:]==['3','4','0'] for row in audit.stdout.splitlines()),audit.stdout
                     (folder/'generation-rights-sql.txt').write_text(audit.stdout)
+                if item_rewards:
+                    saved=cluster.query(inventory_query)
+                    assert saved.returncode==0 and saved.stdout.strip()
+                    for row in saved.stdout.splitlines():
+                        name,revision,raw=row.split('|')
+                        bag=json.loads(bytes.fromhex(raw))
+                        assert bag['revision']==int(revision), name
+                        assert sum(slot['count'] for slot in bag['slots'] if slot and slot['item']=='theia.dev.training-token')==103, name
+                        assert not any(slot and slot['item']=='theia.dev.roadside-orders' for slot in bag['slots']), name
+                        if reward_capacity:
+                            assert sum(slot['count'] for slot in bag['slots'] if slot and slot['item']=='theia.dev.training-sword')==2, name
+                    (folder/'saved-reward-bags.txt').write_text(saved.stdout)
                 (folder/'sql.txt').write_text(rows.stdout)
     finally:
         desktop.close()
@@ -605,7 +641,7 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
                   scope='Normal launcher + actual local OIDC, owned PostgreSQL, PID-bound synthetic X11 input and Linux native GPU; no physical hardware/Windows claim',
                   wheel_input='temporary Linux uinput wheel axis; XTEST pointer/keyboard; all guarded by owned X11 focus and pointer checks', virtual_wheel_device_removed=True,
                   private_combat_fixture=not production, unchanged_quest_catalogue=True, repeated_preaccept_interaction=repeat_interaction,
-                  database_process_restart=True, saved_completion_rejoin=True, reach_area=reach_areas, item_destruction=destroy_items, corpse_loot=corpse_loot, item_quest=item_quest, guaranteed_loot_fixture=item_quest or documents, quest_only=quest_only, documents=documents)
+                  database_process_restart=True, saved_completion_rejoin=True, reach_area=reach_areas, item_destruction=destroy_items, corpse_loot=corpse_loot, item_quest=item_quest, guaranteed_loot_fixture=item_quest or documents, quest_only=quest_only, documents=documents, fixed_quest_rewards=item_rewards, fixed_reward_capacity_fixture=reward_capacity)
     (output/'verification.json').write_text(json.dumps(result, indent=2)+'\n')
     return result
 
@@ -619,6 +655,8 @@ if __name__ == '__main__':
     parser.add_argument('--minimap', action='store_true')
     parser.add_argument('--minimap-traversal', action='store_true', help='After restart/rejoin, walk across chunk and render-origin boundaries using normal keyboard movement')
     parser.add_argument('--repeat-interaction', action='store_true')
+    parser.add_argument('--reward-capacity',action='store_true',help='Owned extra-sword reward fixture: fill backpack through split UI, refuse turn-in, free space and retry')
+    parser.add_argument('--item-rewards',action='store_true',help='Verify configured fixed rewards on offers, turn-in and rejoin with --documents')
     parser.add_argument('--documents',action='store_true',help='Normal note pickup, reader pages, historical credit, possession loss and delivery')
     parser.add_argument('--item-quest',action='store_true',help='Actual looted-item readiness, split/delete reversal, replacement pickup, turn-in consumption and rejoin')
     parser.add_argument('--corpse-loot',action='store_true',help='Normal corpse selection, view-only, single pickup, serial Loot-all and durable partial-loot rejoin')
@@ -626,4 +664,4 @@ if __name__ == '__main__':
     parser.add_argument('--reach-areas', action='store_true', help='Complete the opt-in western overlook using normal movement')
     parser.add_argument('--gameplay-manifest', type=Path, default=Path('content/development-gameplay-classic-journal.json'))
     args = parser.parse_args()
-    print(json.dumps(run(args.output, args.binaries, args.sizes or ['1920x1200','3440x1440','1280x720'], args.production, args.repeat_interaction, args.gameplay_manifest, args.minimap, args.minimap_traversal, args.reach_areas, args.destroy_items, args.corpse_loot, args.item_quest, args.documents), indent=2))
+    print(json.dumps(run(args.output, args.binaries, args.sizes or ['1920x1200','3440x1440','1280x720'], args.production, args.repeat_interaction, args.gameplay_manifest, args.minimap, args.minimap_traversal, args.reach_areas, args.destroy_items, args.corpse_loot, args.item_quest, args.documents, args.item_rewards, args.reward_capacity), indent=2))

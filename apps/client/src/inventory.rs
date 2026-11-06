@@ -6,7 +6,7 @@ mod vendor_qualification;
 mod zone_qualification;
 use crate::network::Network;
 use bevy::{
-    picking::hover::Hovered,
+    picking::{Pickable, hover::Hovered},
     prelude::*,
     text::FontSize,
     ui::Pressed,
@@ -152,6 +152,7 @@ pub(crate) fn install(app: &mut App, profile: Profile) {
         .init_resource::<Pending>()
         .add_observer(activate)
         .add_systems(Update, close_panel.before(present))
+        .add_systems(Update, clear_released_presses.after(Phase::Paint))
         .add_systems(Startup, setup.in_set(Phase::Setup))
         .add_systems(
             Update,
@@ -168,6 +169,23 @@ pub(crate) fn install(app: &mut App, profile: Profile) {
     zone_qualification::install(app);
     lifecycle_qualification::install(app);
 }
+fn clear_released_presses(
+    mut commands: Commands,
+    mouse: Res<ButtonInput<MouseButton>>,
+    touches: Option<Res<bevy::input::touch::Touches>>,
+    buttons: Query<Entity, (With<Widget>, With<Pressed>)>,
+) {
+    // A confirmation or committed bag can reflow the panel between down/up.
+    // Bevy 0.20 releases the hovered widget; the original may retain Pressed.
+    // Retain normal holds, including touch, but never suppress a later click.
+    if mouse.get_pressed().next().is_none()
+        && !touches.is_some_and(|touches| touches.iter().next().is_some())
+    {
+        for button in &buttons {
+            commands.entity(button).remove::<Pressed>();
+        }
+    }
+}
 fn text(value: &str, size: f32) -> impl Bundle {
     (
         Text::new(value),
@@ -176,6 +194,7 @@ fn text(value: &str, size: f32) -> impl Bundle {
             ..default()
         },
         TextColor(Color::WHITE),
+        Pickable::IGNORE,
     )
 }
 fn button(widget: Widget, label: &str, width: f32, height: f32) -> impl Bundle {
@@ -898,6 +917,76 @@ fn scroll(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn releasing_over_another_widget_cannot_suppress_the_next_backpack_activation() {
+        use bevy::picking::{
+            backend::HitData,
+            events::{Pointer, PointerPress, PointerRelease},
+            pointer::{Location, PointerButton, PointerId},
+        };
+        let mut app = App::new();
+        app.init_resource::<ButtonInput<MouseButton>>()
+            .init_resource::<Ui>()
+            .init_resource::<Pending>()
+            .add_plugins(bevy::ui_widgets::ButtonPlugin)
+            .add_observer(activate)
+            .add_systems(Update, clear_released_presses);
+        let window = app.world_mut().spawn_empty().id();
+        let button = app
+            .world_mut()
+            .spawn((Button, ActivateOnPress, Widget::Destroy))
+            .id();
+        let elsewhere = app.world_mut().spawn_empty().id();
+        let pointer = Pointer::new(
+            PointerId::Mouse,
+            Location {
+                target: bevy::camera::RenderTarget::Window(bevy::window::WindowRef::Entity(window))
+                    .normalize(Some(window))
+                    .unwrap(),
+                position: Vec2::ZERO,
+            },
+        );
+        let press = PointerPress {
+            entity: button,
+            pointer: pointer.clone(),
+            button: PointerButton::Primary,
+            hit: HitData::new(window, 0., None, None),
+            count: 1,
+        };
+        app.world_mut()
+            .resource_mut::<ButtonInput<MouseButton>>()
+            .press(MouseButton::Left);
+        app.world_mut().trigger(press.clone());
+        app.update();
+        assert!(
+            app.world().get::<Pressed>(button).is_some(),
+            "A held press must be retained"
+        );
+        assert!(app.world().resource::<Pending>().destroy);
+        app.world_mut().resource_mut::<Pending>().destroy = false;
+        app.world_mut()
+            .resource_mut::<ButtonInput<MouseButton>>()
+            .release(MouseButton::Left);
+        // Panel reflow puts another widget under the released pointer. This is
+        // the actual Bevy event shape observed during native item destruction.
+        app.world_mut().trigger(PointerRelease {
+            entity: elsewhere,
+            pointer,
+            button: PointerButton::Primary,
+            hit: HitData::new(window, 0., None, None),
+        });
+        app.update();
+        assert!(app.world().get::<Pressed>(button).is_none());
+        app.world_mut()
+            .resource_mut::<ButtonInput<MouseButton>>()
+            .press(MouseButton::Left);
+        app.world_mut().trigger(press);
+        app.update();
+        assert!(
+            app.world().resource::<Pending>().destroy,
+            "The next click must activate immediately"
+        );
+    }
     #[test]
     fn purchase_activation_keeps_displayed_bag_session_npc_and_offer_binding() {
         use theia_core::identity::{EntityId, EntityKey, WorldEpoch};

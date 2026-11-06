@@ -98,8 +98,8 @@ fn setup(
         ))
         .with_children(|root| {
             root.spawn(text("Quests"));
-            root.spawn((Tracker, text("Waiting for your journal...")));
             root.spawn((StatusLabel, text("")));
+            root.spawn((Tracker, text("Waiting for your journal...")));
         });
     for pane in &panes {
         commands.entity(pane).with_children(|panel| {
@@ -126,7 +126,14 @@ fn setup(
                             },
                             BackgroundColor(Color::srgb(0.08, 0.25, 0.3)),
                         ))
-                        .with_child((ActionLabel(quest.id().clone()), text(quest.title())));
+                        .with_child((
+                            ActionLabel(quest.id().clone()),
+                            text(quest.title()),
+                            Node {
+                                max_width: percent(100),
+                                ..default()
+                            },
+                        ));
                     }
                 });
         });
@@ -273,6 +280,9 @@ fn journal_text(profile: &Profile, state: &State) -> String {
                 "Completion reward: {} XP (level cap applies)",
                 quest.experience()
             ));
+            if let Some(items) = reward_items(profile, quest) {
+                lines.push(format!("Items: {items}"));
+            }
         }
         lines.push(String::new());
     }
@@ -280,6 +290,50 @@ fn journal_text(profile: &Profile, state: &State) -> String {
         "No accepted quests. Speak to a quest giver.".into()
     } else {
         lines.join("\n")
+    }
+}
+fn reward_items(profile: &Profile, quest: &Definition) -> Option<String> {
+    let grants = profile.item_rewards()?.grants(quest.id())?;
+    let inventory = profile.inventory_catalog()?;
+    Some(
+        grants
+            .iter()
+            .map(|grant| {
+                // Profile construction validates every grant against this catalogue.
+                let item = inventory
+                    .definition(grant.item())
+                    .expect("validated reward item");
+                format!("{} x {}", grant.count(), item.name())
+            })
+            .collect::<Vec<_>>()
+            .join(", "),
+    )
+}
+fn action_text(profile: &Profile, quest: &Definition, action: Action) -> String {
+    let verb = match action {
+        Action::Accept => "Accept",
+        Action::TurnIn => "Complete",
+    };
+    let mut label = format!("{verb}: {} ({} XP)", quest.title(), quest.experience());
+    if let Some(items) = reward_items(profile, quest) {
+        label.push_str(&format!("\nItems: {items}"));
+    }
+    label
+}
+fn status_text(state: &State, pending: bool) -> &'static str {
+    use theia_network::quest_journal_wire::Rejection;
+    if state.error.is_some() {
+        "Connection lost. Rejoin to refresh your journal."
+    } else if pending {
+        "Waiting for confirmation..."
+    } else {
+        match state.quest_journal_reply.as_ref().and_then(|r| r.rejection) {
+            Some(Rejection::InventoryFull) => {
+                "Not enough backpack space for the quest reward. Free some space, then try completing the quest again."
+            }
+            Some(_) => "Quest unavailable or updated. Speak to your contact and try again.",
+            None => "",
+        }
     }
 }
 type LabelFilter = Or<(With<ActionLabel>, With<Tracker>, With<StatusLabel>)>;
@@ -317,32 +371,11 @@ fn present(
         let next = if tracker {
             journal_text(profile, &state)
         } else if status {
-            if state.error.is_some() {
-                "Connection lost. Rejoin to refresh your journal.".into()
-            } else if ui.pending {
-                "Waiting for confirmation...".into()
-            } else if state
-                .quest_journal_reply
-                .as_ref()
-                .is_some_and(|r| r.rejection.is_some())
-            {
-                "Quest unavailable or updated. Speak to your contact and try again.".into()
-            } else {
-                String::new()
-            }
+            status_text(&state, ui.pending).into()
         } else if let Some(label) = quest {
             let definition = profile.catalog().quest(&label.0).unwrap();
             match ui.intents.get(&label.0).map(|i| i.command.action) {
-                Some(Action::Accept) => format!(
-                    "Accept: {} ({} XP)",
-                    definition.title(),
-                    definition.experience()
-                ),
-                Some(Action::TurnIn) => format!(
-                    "Complete: {} ({} XP)",
-                    definition.title(),
-                    definition.experience()
-                ),
+                Some(action) => action_text(profile, definition, action),
                 None => String::new(),
             }
         } else {
@@ -403,10 +436,29 @@ pub(crate) fn qualification(world: &mut World, state: &State) -> Option<serde_js
         .map(|(button,node,t,pressed)|serde_json::json!({"pressed":pressed,"quest":button.0.as_str(),"point":(t.affine().translation*node.inverse_scale_factor()).to_array(),"size":(node.size()*node.inverse_scale_factor()).to_array()})).collect();
     let quests:Vec<_>=definitions.catalog().quests().filter_map(|q|journal.journal.progress(q.id()).map(|p|serde_json::json!({"id":q.id().as_str(),"revision":p.revision(),"status":format!("{:?}",p.status()),"counts":q.stages().flat_map(|s|s.objectives()).map(|o|(o.id().as_str(),p.count(o.id()).unwrap_or(0))).collect::<BTreeMap<_,_>>()}))).collect();
     let tracker=world.query_filtered::<(&Text,&ComputedNode,Option<&bevy::text::TextLayoutInfo>),With<Tracker>>().iter(world).next().map(|(text,node,glyphs)|serde_json::json!({"text":text.0,"size":(node.size()*node.inverse_scale_factor()).to_array(),"glyphs":glyphs.map_or(0,|g|g.glyphs.len())}));
+    let action_labels: Vec<_> = world
+        .query::<(
+            &ActionLabel,
+            &Text,
+            &ComputedNode,
+            Option<&bevy::text::TextLayoutInfo>,
+        )>()
+        .iter(world)
+        .filter(|(_, _, node, _)| node.size().min_element() > 0.)
+        .map(|(label, text, node, glyphs)| {
+            serde_json::json!({
+                "quest":label.0.as_str(),"text":text.0,
+                "size":(node.size()*node.inverse_scale_factor()).to_array(),
+                "glyphs":glyphs.map_or(0,|g|g.glyphs.len())
+            })
+        })
+        .collect();
+    let status = world.query_filtered::<(&Text, Option<&bevy::text::TextLayoutInfo>), With<StatusLabel>>()
+        .iter(world).next().map(|(text, glyphs)|serde_json::json!({"text":text.0,"glyphs":glyphs.map_or(0,|g|g.glyphs.len())}));
     let choices = crate::dialogue::qualification_choices(world);
     let dialogue_body = crate::dialogue::qualification_body(world);
     Some(
-        serde_json::json!({"revision":journal.revision,"quests":quests,"ui":ui,"buttons":buttons,"choices":choices,"dialogue_body":dialogue_body,"tracker":tracker,"xp":state.progression.as_ref().map(|s|s.progress.total())}),
+        serde_json::json!({"revision":journal.revision,"quests":quests,"ui":ui,"buttons":buttons,"action_labels":action_labels,"status":status,"choices":choices,"dialogue_body":dialogue_body,"tracker":tracker,"xp":state.progression.as_ref().map(|s|s.progress.total())}),
     )
 }
 

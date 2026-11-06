@@ -1,3 +1,14 @@
+Fixed quest reward UI qualified locally, 6 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: offers and unfinished journals show fixed item
+names/counts; full bags retain Ready/holdings/XP and give clear retry guidance.
+Native refusal, free-space retry, atomic whole bundles and SQL restart/rejoin
+pass at 1280×720, 1920×1200 and 3440×1440. A discovered stale backpack press after
+panel reflow is fixed with a ButtonPlugin event regression. 153 client tests,
+formatting, strict workspace/all-target Clippy and optimized builds pass.
+[Exact fixtures/evidence/limits](QUEST_ITEM_REWARDS.md#fixed-reward-ui-qualified--6-november-2026).
+The user restored desktop/mouse authorization while away. Local commits, no push;
+earlier headless-only entries describe historical permission/checkpoints.
+
 Actual client/server reward configuration identities match, 6 November 2026:
 The client now has an explicit CLI configuration report that returns before
 networking or renderer/window creation. Its content identity matches the real

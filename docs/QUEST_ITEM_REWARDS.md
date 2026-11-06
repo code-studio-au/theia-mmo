@@ -4,7 +4,8 @@ P3-05 / P3-09 / P3-11 / P3-15, staged implementation, 6 November 2026.
 Core proposals, exact content binding, atomic Store/worker turn-in and explicit
 retained ownership, explicit World admission and the encrypted bridge are now
 qualified. Opt-in manifest/CLI configuration is now implemented as a prerequisite;
-reward/capacity UI and combined native qualification remain pending.
+reward/capacity UI and combined native qualification are now implemented. Earlier
+sections retain their historical checkpoint scope.
 
 Use an explicit bounded catalogue associating a quest with fixed grants of known
 items. Keep the existing quest schemas and legacy profiles intact. Bind exact
@@ -446,3 +447,74 @@ and pure identity expression placement changed; no Bevy presentation was edited.
 There is no native or Windows execution claim. Actual encrypted reward gameplay
 with owned identity/storage, and reward UI/native qualification, remain distinct
 next steps. Desktop/mouse use stays paused; keep commits local.
+
+## Fixed reward UI qualified — 6 November 2026
+
+P3-05 / P3-09 / P3-11 / P3-15. Prerequisites are the exact schema-21
+client/server configuration, atomic retained-owner turn-in and the qualified
+note reader above. Standard Bevy quest offers and completion buttons now list
+the configured item names and quantities. The unfinished journal repeats those
+rewards beside its XP-cap guidance; completed quests stop advertising them.
+Legacy quests without item rewards retain their existing offer labels.
+
+The explicit `InventoryFull` refusal asks the player to free backpack space and
+retry completion. Journal-capacity refusals remain distinct. Connection loss
+and pending confirmation take precedence; the server still decides whether any
+reward fits. Feedback appears above the journal contents so it is reachable in
+the small scrollable tracker. Read-only qualification telemetry reports painted
+labels and status glyphs; it grants no gameplay authority.
+
+Native acceptance passes at 1280×720, 1920×1200 and 3440×1440: note
+acquisition/read/loss/reacquisition, fixed reward offers/ready/completion, actual
+PostgreSQL restart and fresh login. The unmodified fixed bundle grants two
+training tokens only at turn-in: 99 seeded + two explicitly looted + two fixed =
+103 saved tokens, no remaining note, journal head 8 and 75 total XP. One completed
+quest, two successful action receipts and four event receipts survive restart;
+backpack bytes and loot rolls remain identical across the database restart.
+
+A separate owned content copy adds two nonstackable swords to the fixed note
+reward. Normal stone splitting fills all 16 slots. Turn-in refuses with the
+painted backpack guidance, retaining bag revision 16, journal head 7, Ready state
+and 50 XP. Confirmed destruction of one filler frees a slot; retry consumes the
+note and grants both swords plus two tokens together. Final bag revision 18,
+103 tokens, two backpack swords and 75 XP survive restart/rejoin. This fixture
+changes reward metadata only in the ignored test copy; ordinary content keeps
+its token-only recipe. No SQL/player-state injection makes the bag full.
+
+The native check exposed a real backpack button defect: confirmation/commit
+reflow could move Destroy before pointer release, leaving Bevy's `Pressed`
+component on the old button and suppressing its next click. The explicit
+before-click capture in `build/qir-cap-v5-20261106/1920x1200/` proves that stale
+state with all pointer buttons released. Pinned Bevy 0.20.0's
+`bevy_picking/src/events.rs` sends release to previously hovered entities;
+`bevy_ui_widgets/src/button.rs` clears the released button. Backpack presentation
+now clears owned widget presses when no mouse button or touch is held, retaining
+normal holds. Its text labels ignore picking. A real ButtonPlugin event regression
+covers release over another widget and immediate activation on the next press.
+Read-only pointer telemetry identifies the widget and pressed state.
+
+Verification:
+
+- 153 client tests: `build/quest-item-reward-ui-client-tests-v6-20261106.log`.
+- Formatting and strict workspace/all-target Clippy: UI `fmt-v4` / `clippy-v4`
+  logs for 20261106. Optimized client: `release-v6`.
+- Normal bundle, all three sizes:
+  `build/qir-ui-v2-20261106/verification.json` (candidate v2, before the backpack
+  press fix); final-client normal bundle regression:
+  `build/qir-ui-v3-20261106/verification.json` (1920×1200 plus restart/rejoin).
+- Final-client capacity/refusal/free-space/retry, all three sizes:
+  `build/qir-cap-v6-20261106/verification.json`. Earlier capacity attempts remain
+  failed evidence, not successful qualifications. Waiting for settled layout and
+  ignoring text picking alone did not resolve the stale-press defect.
+- Matching final code/binaries:
+  `build/quest-item-reward-ui-candidate-v4-20261106`; final source/evidence:
+  `build/quest-item-reward-ui-qualified-v1-20261106`.
+
+Actual local OIDC, encrypted game transport, owned PostgreSQL and normal launcher;
+PID-bound synthetic X11/uinput on Linux RX 7900 XTX / RADV NAVI31 / Vulkan /
+Mesa 26.2.6 (kisak PPA), zero GPU diagnostics. Screenshots verify the normal
+1280/1920 offers and full-bag/completed presentation. Guaranteed loot and low
+creature damage are explicit fixtures, not ordinary drop probabilities. No
+physical-input, Windows execution, FPS benchmark, MMO capacity, reward choice,
+save migration or campaign-content claim. The user restored desktop/mouse
+authorization while away; commits stay local, no push.
