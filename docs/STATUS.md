@@ -1,3 +1,14 @@
+Fixed quest reward World/encrypted bridge qualified locally, 6 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: explicit reward World installation now checks
+exact inventory/XP context, inactive exclusive setup and installed namespaces.
+Real encrypted two-peer game commands at 20/30/60 Hz pass under packet impairment:
+capacity refusal, held success, deletion after completion, original retry and
+private projections. [Scope/evidence](QUEST_ITEM_REWARDS.md#implemented-explicit-world-and-encrypted-bridge). 379 network library, nine wire and
+22 server library tests, formatting and strict Clippy pass. Transport commit
+publications are synthetic; real SQL/retained ownership is qualified separately.
+Normal manifest/CLI and reward UI remain next. Continue headless only while the
+user uses the desktop; local commits, no push.
+
 Fixed quest reward retained owner qualified locally, 6 November 2026:
 P3-05 / P3-09 / P3-11 / P3-15: explicit exact stored/wire reward context now
 connects the retained item/progression owners to atomic turn-in. Real OIDC,

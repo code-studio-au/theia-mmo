@@ -493,3 +493,6 @@ async fn encrypted_impaired_document_approval_shares_order_and_preserves_owner_p
         }
     }
 }
+
+#[path = "item_reward_renet_tests.rs"]
+mod item_rewards;

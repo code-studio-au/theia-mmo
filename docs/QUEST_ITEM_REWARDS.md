@@ -2,8 +2,9 @@
 
 P3-05 / P3-09 / P3-11 / P3-15, staged implementation, 6 November 2026.
 Core proposals, exact content binding, atomic Store/worker turn-in and explicit
-retained ownership are now qualified. Fixed bundles remain unavailable in normal
-gameplay until World/network admission and presentation are qualified.
+retained ownership, explicit World admission and the encrypted bridge are now
+qualified. Fixed bundles remain unavailable through normal launch configuration
+until manifest/CLI and presentation adoption are qualified.
 
 Use an explicit bounded catalogue associating a quest with fixed grants of known
 items. Keep the existing quest schemas and legacy profiles intact. Bind exact
@@ -255,3 +256,53 @@ they do not exercise encrypted game commands, World-authorized NPC range, the
 normal client, native display, Windows or MMO capacity. Next qualify explicit
 World and encrypted bridge adoption at 20/30/60 Hz, preserving all legacy gates.
 Desktop/mouse tests remain paused at the user's request. No push.
+
+
+## Implemented explicit World and encrypted bridge
+
+`World::enable_item_reward_quest_journal` is an explicit opt-in requiring a
+reward-bound profile, matching inventory and XP, all installed quest references,
+optional exact documents and an inactive exclusive World. It also checks reward
+catalogue/grant IDs against installed guide, creature and dialogue-choice
+namespaces, including unused choices. Prepared routers use the same namespace
+checks. Ordinary, item-only and document-only World constructors still refuse
+reward-bearing profiles. Successful installation binds the existing World
+identity to the exact reward-bearing journal; it creates no inventory or XP.
+
+The runtime client can now validate the explicitly reward-bound journal against
+its exact XP and inventory. It retains normal prediction/dialogue, private owner
+state and pending-command constraints. No new client ability to grant items,
+claim completion or upload counters is added. This is library/runtime adoption;
+normal flags, sealed manifests and Bevy reward/capacity presentation are pending.
+
+Two new tests pass in
+`build/quest-item-reward-world-bridge-tests-v2-20261106.log`. The first checks
+20/30/60 Hz explicit installation, foreign inventory/XP, missing reward policy,
+legacy gate refusals, installed choice aliases, repeated/live installation and
+router creation. Refusals preserve World identity and installed mode.
+
+The second runs two actual encrypted Renet peers through the normal gameplay
+client/server loops at 20/30/60 Hz with 20 ms delay, 30 ms jitter, every eleventh
+packet dropped and every seventeenth duplicated. Explicit synthetic owner
+publications hold a valid full-bag refusal and later successful completion. The
+client receives inventory-full code 10, frees space, retries its original intent
+and keeps success pending until the held projection is published. Core proposals
+produce the whole consumed/rewarded bag and completion/XP. After deleting the
+reward, retrying the original successful request retains the deleted state and
+XP 25. The other peer retains its original bag, empty journal and XP 0, with no
+private replies. Queues remain bounded without overflow; impairment is observed.
+
+The v1 encrypted fixture selected inventory schema 1, which deliberately does
+not support destruction, so it failed before forwarding its deletion command.
+The corrected v2 fixture explicitly selects existing equipment/item schema 2;
+no legacy inventory capability or production mutation rule changed.
+
+379 network-library tests, nine journal-wire tests and 22 server-library tests
+pass in the World `network-tests-v1` and `server-tests-v1` logs for 20261106.
+Formatting and strict workspace/all-target Clippy pass in World `fmt-v1` and
+`clippy-v1`. These transport tests use synthetic identity/commit projections;
+the actual OIDC, SQL, restart and retained-lease proofs above remain separate.
+They are not a combined normal-launch or native game qualification. Desktop and
+mouse tests remain paused. Next adopt exact normal manifest/CLI content, then
+honest reward/capacity UI and native qualification when desktop use is available.
+No push or Windows/MMO-capacity claim.

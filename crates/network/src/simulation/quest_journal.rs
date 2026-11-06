@@ -31,7 +31,7 @@ impl World {
         profile: Arc<crate::quest_journal::Profile>,
         xp: Arc<crate::progression_wire::Profile>,
     ) -> crate::Result<()> {
-        self.install_quest_journal(profile, xp, None, false)
+        self.install_quest_journal(profile, xp, None, false, false)
     }
     /// Explicit item-aware headless adoption, bound to the exact inventory
     /// bytes used by the retained owner. Legacy admission remains unchanged.
@@ -44,7 +44,7 @@ impl World {
         if profile.inventory_hash().is_none() {
             return Err("Item-aware journal requires inventory binding".into());
         }
-        self.install_quest_journal(profile, xp, Some(inventory), false)
+        self.install_quest_journal(profile, xp, Some(inventory), false, false)
     }
     /// Explicit document adoption after exact item/document binding. Historical
     /// read eligibility stays in the asynchronous owner, never the simulation.
@@ -57,7 +57,21 @@ impl World {
         if profile.documents().is_none() {
             return Err("Document journal requires document context".into());
         }
-        self.install_quest_journal(profile, xp, Some(inventory), true)
+        self.install_quest_journal(profile, xp, Some(inventory), true, false)
+    }
+    /// Explicit fixed reward adoption. The async owner retains all grants and
+    /// economy authority; World only validates content and routes NPC commands.
+    pub fn enable_item_reward_quest_journal(
+        &mut self,
+        profile: Arc<crate::quest_journal::Profile>,
+        xp: Arc<crate::progression_wire::Profile>,
+        inventory: &crate::renet_runtime::inventory::Profile,
+    ) -> crate::Result<()> {
+        if profile.item_rewards().is_none() {
+            return Err("Fixed quest rewards require an explicit reward policy".into());
+        }
+        let document_mode = profile.documents().is_some();
+        self.install_quest_journal(profile, xp, Some(inventory), document_mode, true)
     }
     fn install_quest_journal(
         &mut self,
@@ -65,8 +79,9 @@ impl World {
         xp: Arc<crate::progression_wire::Profile>,
         inventory: Option<&crate::renet_runtime::inventory::Profile>,
         document_mode: bool,
+        item_reward_mode: bool,
     ) -> crate::Result<()> {
-        if profile.item_rewards().is_some() {
+        if profile.item_rewards().is_some() != item_reward_mode {
             return Err("Quest item reward World admission is not installed".into());
         }
         if profile.documents().is_some() != document_mode {
@@ -79,6 +94,7 @@ impl World {
             items,
             profile.documents().map(|d| d.catalog()),
         )?;
+        self.validate_quest_reward_references(&profile)?;
         profile.check_progression(&xp)?;
         if self
             .progression
@@ -148,12 +164,43 @@ impl World {
             items,
             profile.documents().map(|d| d.catalog()),
         )?;
+        self.validate_quest_reward_references(profile)?;
         Ok(Prepared {
             catalog: profile.shared_catalog(),
             areas,
             epoch: self.epoch(),
             world: self.identity(),
         })
+    }
+    fn validate_quest_reward_references(
+        &self,
+        profile: &crate::quest_journal::Profile,
+    ) -> crate::Result<()> {
+        let Some(rewards) = profile.item_rewards() else {
+            return Ok(());
+        };
+        let dialogue = self
+            .dialogue
+            .as_ref()
+            .ok_or("Reward quests require a guide")?
+            .profile
+            .profile();
+        let aliases = |id: &theia_core::content::ContentId| {
+            id == dialogue.npc()
+                || self.patrol.as_ref().is_some_and(|p| p.definition() == id)
+                || dialogue
+                    .nodes()
+                    .any(|n| n.choices().iter().any(|c| c.id() == id))
+        };
+        if aliases(rewards.id())
+            || rewards
+                .rewards()
+                .flat_map(|(_, g)| g)
+                .any(|g| aliases(g.item()))
+        {
+            return Err("Quest rewards alias installed World content".into());
+        }
+        Ok(())
     }
     /// Trusted sampled occupancy only. No caller-supplied coordinates, disk I/O,
     /// collision generation, durable credit or client acknowledgement.
@@ -494,6 +541,109 @@ mod tests {
                 .unwrap(),
         );
         (xp, items, profile)
+    }
+    #[test]
+    fn fixed_reward_world_requires_explicit_exact_inactive_context_at_all_rates() {
+        let (xp, items, base) = item_profiles();
+        let reward = json!({"schema":1,"id":"theia.test.fixed-rewards","revision":1,"quest_catalog":base.catalog().id().as_str(),"item_catalog":items.catalog().id().as_str(),"rewards":[{"quest":"delivery","grants":[{"item":"theia.dev.training-token","count":3}]}]});
+        let raw = serde_json::to_vec(&reward).unwrap();
+        let profile = Arc::new((*base).clone().with_item_rewards(&raw, &items).unwrap());
+        let mut changed =
+            include_bytes!("../../../../content/gameplay/development-equipment-items.json")
+                .to_vec();
+        changed.push(b' ');
+        let foreign = crate::renet_runtime::inventory::Profile::from_json(&changed).unwrap();
+        let mut changed_xp =
+            include_bytes!("../../../../content/gameplay/development-progression.json").to_vec();
+        changed_xp.push(b' ');
+        let wrong_xp = Arc::new(crate::progression_wire::Profile::from_json(&changed_xp).unwrap());
+        for rate in [20, 30, 60] {
+            let mut world = setup_at(rate);
+            let identity = world.identity();
+            assert!(
+                world
+                    .enable_item_reward_quest_journal(base.clone(), xp.clone(), &items)
+                    .is_err()
+            );
+            assert!(
+                world
+                    .enable_quest_journal(profile.clone(), xp.clone())
+                    .is_err()
+            );
+            assert!(
+                world
+                    .enable_item_quest_journal(profile.clone(), xp.clone(), &items)
+                    .is_err()
+            );
+            assert!(
+                world
+                    .enable_document_quest_journal(profile.clone(), xp.clone(), &items)
+                    .is_err()
+            );
+            assert!(
+                world
+                    .enable_item_reward_quest_journal(profile.clone(), xp.clone(), &foreign)
+                    .is_err()
+            );
+            assert!(
+                world
+                    .enable_item_reward_quest_journal(profile.clone(), wrong_xp.clone(), &items)
+                    .is_err()
+            );
+            assert_eq!(world.identity(), identity);
+            assert!(world.quest_journal_profile().is_none());
+            let mut alias = reward.clone();
+            alias["id"] = "theia.dev.interaction.road".into();
+            let alias = Arc::new(
+                (*base)
+                    .clone()
+                    .with_item_rewards(&serde_json::to_vec(&alias).unwrap(), &items)
+                    .unwrap(),
+            );
+            assert!(
+                world
+                    .enable_item_reward_quest_journal(alias, xp.clone(), &items)
+                    .unwrap_err()
+                    .to_string()
+                    .contains("alias installed World")
+            );
+            assert_eq!(world.identity(), identity);
+            world
+                .enable_item_reward_quest_journal(profile.clone(), xp.clone(), &items)
+                .unwrap();
+            assert_ne!(world.identity(), identity);
+            assert_eq!(
+                world.quest_journal_profile().unwrap().hash(),
+                profile.hash()
+            );
+            let installed = world.identity();
+            assert!(
+                world
+                    .enable_item_reward_quest_journal(profile.clone(), xp.clone(), &items)
+                    .is_err()
+            );
+            let actor = world.join().unwrap();
+            assert!(
+                world
+                    .quest_journal_router(world.entity_key(actor).unwrap())
+                    .is_ok()
+            );
+            assert!(
+                world
+                    .enable_item_reward_quest_journal(profile.clone(), xp.clone(), &items)
+                    .is_err()
+            );
+            assert_eq!(world.identity(), installed);
+            let mut active = setup_at(rate);
+            active.join().unwrap();
+            let old = active.identity();
+            assert!(
+                active
+                    .enable_item_reward_quest_journal(profile.clone(), xp.clone(), &items)
+                    .is_err()
+            );
+            assert_eq!(active.identity(), old);
+        }
     }
     #[test]
     fn item_journal_installation_requires_explicit_exact_inventory_and_preserves_legacy_gates() {

@@ -198,9 +198,6 @@ impl Profile {
         &self.catalog
     }
     pub(crate) fn check_progression(&self, xp: &progression_wire::Profile) -> Result<()> {
-        if self.item_rewards.is_some() {
-            return Err("Quest item reward runtime is not installed".into());
-        }
         if self.xp != xp.hash() {
             return Err("Journal/progression policy mismatch".into());
         }
@@ -523,7 +520,7 @@ impl Router {
 mod item_reward_binding_tests {
     use super::*;
     #[test]
-    fn exact_item_reward_metadata_stays_out_of_normal_client_progression_admission() {
+    fn exact_item_reward_profile_retains_progression_binding_after_explicit_world_adoption() {
         let xp = progression_wire::Profile::from_json(include_bytes!(
             "../../../content/gameplay/development-progression.json"
         ))
@@ -540,12 +537,11 @@ mod item_reward_binding_tests {
         let raw=serde_json::to_vec(&serde_json::json!({"schema":1,"id":"theia.test.fixed-rewards","revision":1,"quest_catalog":base.catalog().id().as_str(),"item_catalog":items.catalog().id().as_str(),"rewards":[{"quest":base.catalog().quests().next().unwrap().id().as_str(),"grants":[{"item":"theia.dev.training-token","count":1}]}]})).unwrap();
         assert!(base.check_progression(&xp).is_ok());
         let bound = base.with_item_rewards(&raw, &items).unwrap();
-        assert!(
-            bound
-                .check_progression(&xp)
-                .unwrap_err()
-                .to_string()
-                .contains("Quest item reward runtime")
-        );
+        assert!(bound.check_progression(&xp).is_ok());
+        let mut changed =
+            include_bytes!("../../../content/gameplay/development-progression.json").to_vec();
+        changed.push(b' ');
+        let other = progression_wire::Profile::from_json(&changed).unwrap();
+        assert!(bound.check_progression(&other).is_err());
     }
 }

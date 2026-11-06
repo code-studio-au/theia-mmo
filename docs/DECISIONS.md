@@ -1,3 +1,13 @@
+## 2026-11-06 — explicit fixed reward World admission
+
+Require explicit reward mode rather than broadening legacy World constructors.
+Validate exact inventory/XP, installed quest and reward namespaces, and inactive
+exclusive setup before changing World identity. The existing runtime client may
+then consume the reward-bound private journal under normal exact context and
+pending-command checks. All items, completion and XP still originate in the
+retained SQL owner. [Headless World/encrypted proof and limits](QUEST_ITEM_REWARDS.md#implemented-explicit-world-and-encrypted-bridge).
+Normal manifest/CLI/UI and combined native qualification remain separate.
+
 ## 2026-11-06 — explicit fixed reward owner and capacity refusal
 
 Require identical stored/wire reward-bound journal hashes before installing the
