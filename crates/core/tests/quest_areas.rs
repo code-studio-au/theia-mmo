@@ -174,3 +174,83 @@ fn development_fixture_is_geometry_only_and_not_loaded_by_normal_quest_catalogue
         .is_err()
     );
 }
+
+#[test]
+fn map_links_are_optional_bounded_unique_and_resolve_only_objective_ids() {
+    let quests = theia_core::quests::catalog::Catalog::from_json(include_bytes!(
+        "../../../content/quests/development-journal.json"
+    ))
+    .unwrap();
+    let objective = "theia.dev.quest-introduction.objective.road";
+    let mut data = raw();
+    assert!(
+        parse(&data)
+            .unwrap()
+            .areas()
+            .next()
+            .unwrap()
+            .map_objectives()
+            .is_empty()
+    );
+    assert!(parse(&data).unwrap().validate_quests(&quests).is_err());
+    data["areas"][0]["map_objectives"] = json!([objective]);
+    let catalog = parse(&data).unwrap();
+    assert!(catalog.validate_quests(&quests).is_ok());
+    assert!(
+        catalog
+            .areas()
+            .next()
+            .unwrap()
+            .map_objectives()
+            .contains(&ContentId::new(objective).unwrap())
+    );
+    for selector in [
+        "theia.dev.quest-introduction",
+        "theia.dev.guide",
+        "theia.dev.interaction.road",
+        "test.missing",
+    ] {
+        data["areas"][0]["map_objectives"] = json!([selector]);
+        assert!(
+            parse(&data).unwrap().validate_quests(&quests).is_err(),
+            "{selector}"
+        );
+    }
+    for links in [
+        json!([objective, objective]),
+        json!(["INVALID ID"]),
+        Value::Null,
+        json!("bad"),
+    ] {
+        data["areas"][0]["map_objectives"] = links;
+        assert!(parse(&data).is_err());
+    }
+    let links: Vec<_> = (0..areas::MAX_MAP_OBJECTIVES_PER_AREA)
+        .map(|i| format!("t.o-{i}"))
+        .collect();
+    data["areas"][0]["map_objectives"] = json!(links);
+    assert!(parse(&data).is_ok());
+    data["areas"][0]["map_objectives"]
+        .as_array_mut()
+        .unwrap()
+        .push(json!("t.extra"));
+    assert!(parse(&data).is_err());
+    data["areas"][0]["map_objectives"] = json!(links);
+    let template = data["areas"][0].clone();
+    let count = areas::MAX_MAP_OBJECTIVE_LINKS / areas::MAX_MAP_OBJECTIVES_PER_AREA;
+    data["areas"] = json!(
+        (0..count)
+            .map(|i| {
+                let mut a = template.clone();
+                a["id"] = json!(format!("t.a-{i}"));
+                a
+            })
+            .collect::<Vec<_>>()
+    );
+    assert!(parse(&data).is_ok());
+    let mut extra = template;
+    extra["id"] = json!("t.extra");
+    extra["map_objectives"] = json!(["t.one"]);
+    data["areas"].as_array_mut().unwrap().push(extra);
+    assert!(parse(&data).is_err());
+}

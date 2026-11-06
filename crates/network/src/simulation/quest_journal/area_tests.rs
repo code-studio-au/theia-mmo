@@ -283,3 +283,54 @@ fn router_reserves_capacity_retries_and_does_not_publish_or_repeat_uncommitted_o
     });
     assert!(router.observe_areas(&w, &port).is_err());
 }
+
+#[test]
+fn map_only_region_binds_exactly_but_occupancy_cannot_credit_a_kill() {
+    let (q, a) = data();
+    let mut q: Value = serde_json::from_slice(&q).unwrap();
+    q["quests"][0]["stages"][0]["objectives"] = json!([{
+        "kind":"kill", "id":"theia.dev.goal.wolf", "label":"Defeat wolves",
+        "creature":"theia.dev.training-creature", "required":1
+    }]);
+    let mut a: Value = serde_json::from_slice(&a).unwrap();
+    a["areas"][0]["map_objectives"] = json!(["theia.dev.goal.wolf"]);
+    let q = serde_json::to_vec(&q).unwrap();
+    let a = serde_json::to_vec(&a).unwrap();
+    let p = profile(&q, &a);
+    assert_ne!(
+        p.hash(),
+        crate::quest_journal::Profile::from_json(&q, &xp())
+            .unwrap()
+            .hash()
+    );
+    let mut changed = a.clone();
+    changed.push(b' ');
+    assert_ne!(p.hash(), profile(&q, &changed).hash());
+    let j = journal(&p);
+    let mut w = fixture(30);
+    w.enable_quest_journal(p.clone(), xp()).unwrap();
+    let mut w = fixture(30);
+    let prepared = w.prepare_quest_journal_profile(&p).unwrap();
+    let actor = w.join().unwrap();
+    let key = w.entity_key(actor).unwrap();
+    let ready = w
+        .procedural
+        .as_ref()
+        .unwrap()
+        .patches
+        .values()
+        .flat_map(|p| p.ids.iter().copied())
+        .collect();
+    w.players.get_mut(&actor).unwrap().ready = Some(ready);
+    assert!(
+        w.observe_quest_areas(&prepared, key, &j)
+            .unwrap()
+            .is_empty()
+    );
+    assert_eq!(
+        j.progress(&id("theia.dev.quest-introduction"))
+            .unwrap()
+            .count(&id("theia.dev.goal.wolf")),
+        Some(0)
+    );
+}

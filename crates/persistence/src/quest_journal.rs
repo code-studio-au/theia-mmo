@@ -90,7 +90,7 @@ impl QuestJournalCatalog {
                     theia_core::quests::catalog::EventKey::ReachArea(_)
                 )
             });
-        if needs_areas != area_bytes.is_some() {
+        if needs_areas && area_bytes.is_none() {
             return Err(Error::Invalid(
                 "Document journal requires its exact area context",
             ));

@@ -7,6 +7,8 @@ use std::collections::BTreeMap;
 pub const PROFILE_DOMAIN: &[u8] = b"theia-quest-journal-areas-v1\0";
 pub const MAX_CATALOG_BYTES: usize = 16 * 1024;
 pub const MAX_AREAS: usize = 32;
+pub const MAX_MAP_OBJECTIVES_PER_AREA: usize = 32;
+pub const MAX_MAP_OBJECTIVE_LINKS: usize = 512;
 pub const MIN_EXTENT_METRES: f64 = 1.;
 pub const MAX_EXTENT_METRES: f64 = 1024.;
 
@@ -25,6 +27,8 @@ struct RawArea {
     name: String,
     min: [f64; 3],
     max: [f64; 3],
+    #[serde(default)]
+    map_objectives: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq)]
 pub struct Area {
@@ -32,6 +36,7 @@ pub struct Area {
     name: String,
     min: GlobalPosition,
     max: GlobalPosition,
+    map_objectives: std::collections::BTreeSet<ContentId>,
 }
 impl Area {
     pub fn id(&self) -> &ContentId {
@@ -45,6 +50,10 @@ impl Area {
     }
     pub fn max(&self) -> GlobalPosition {
         self.max
+    }
+    /// Presentation-only links to executable objective IDs, never credit triggers.
+    pub fn map_objectives(&self) -> &std::collections::BTreeSet<ContentId> {
+        &self.map_objectives
     }
     /// Inclusive faces. This observes occupancy at an authoritative sample;
     /// it does not approximate a swept path or inspect rendered geometry.
@@ -77,7 +86,22 @@ impl Catalog {
         }
         let id = ContentId::new(&raw.id).ok_or("Invalid quest area catalogue ID")?;
         let mut areas = BTreeMap::new();
+        let mut total_links = 0;
         for entry in raw.areas {
+            total_links += entry.map_objectives.len();
+            if entry.map_objectives.len() > MAX_MAP_OBJECTIVES_PER_AREA
+                || total_links > MAX_MAP_OBJECTIVE_LINKS
+            {
+                return Err("Quest map objective links exceed development bounds");
+            }
+            let mut map_objectives = std::collections::BTreeSet::new();
+            for selector in entry.map_objectives {
+                let objective =
+                    ContentId::new(&selector).ok_or("Invalid quest map objective ID")?;
+                if !map_objectives.insert(objective) {
+                    return Err("Duplicate quest map objective link");
+                }
+            }
             let area_id = ContentId::new(&entry.id).ok_or("Invalid quest area ID")?;
             if area_id == id || areas.contains_key(&area_id) {
                 return Err("Quest area definition IDs alias");
@@ -104,6 +128,7 @@ impl Catalog {
                     name: entry.name,
                     min,
                     max,
+                    map_objectives,
                 },
             );
         }
@@ -119,12 +144,14 @@ impl Catalog {
         let mut namespace = std::collections::BTreeSet::new();
         namespace.insert(quests.id().clone());
         let mut referenced = false;
+        let mut objectives = std::collections::BTreeSet::new();
         for q in quests.quests() {
             namespace.extend([q.id().clone(), q.giver().clone(), q.turn_in().clone()]);
             for stage in q.stages() {
                 namespace.insert(stage.id().clone());
                 for objective in stage.objectives() {
                     namespace.insert(objective.id().clone());
+                    objectives.insert(objective.id().clone());
                     match objective.event() {
                         super::catalog::EventKey::ReachArea(id) => {
                             if self.area(id).is_none() {
@@ -142,6 +169,14 @@ impl Catalog {
                         }
                     }
                 }
+            }
+        }
+        for area in self.areas() {
+            for objective in area.map_objectives() {
+                if !objectives.contains(objective) {
+                    return Err("Quest map objective is not installed");
+                }
+                referenced = true;
             }
         }
         if !referenced

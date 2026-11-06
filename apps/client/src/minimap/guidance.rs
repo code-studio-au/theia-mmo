@@ -5,8 +5,8 @@ use theia_core::quests::{areas::Area, catalog::EventKey, journal::Status};
 use theia_network::{client::State, quest_journal::Profile};
 
 /// Only current owner-bound, validated progress can select authored regions.
-/// Reach volumes provide the initial mapping. Kill/collection objectives need
-/// explicit authored search geography; current creature positions are not it.
+/// Reach volumes and explicit objective links provide authored search geography;
+/// current creature positions are not spawn territories or loot guarantees.
 pub(super) fn regions<'a>(state: &State, profile: &'a Profile) -> Vec<&'a Area> {
     let (Some(welcome), Some(view), Some(areas)) =
         (&state.welcome, &state.quest_journal, profile.area_catalog())
@@ -35,10 +35,16 @@ pub(super) fn regions<'a>(state: &State, profile: &'a Profile) -> Vec<&'a Area> 
             continue;
         };
         for objective in stage.objectives() {
-            if progress.count(objective.id()).unwrap_or(0) < objective.required()
-                && let EventKey::ReachArea(area) = objective.event()
-            {
+            if progress.count(objective.id()).unwrap_or(0) >= objective.required() {
+                continue;
+            }
+            if let EventKey::ReachArea(area) = objective.event() {
                 ids.insert(area);
+            }
+            for area in areas.areas() {
+                if area.map_objectives().contains(objective.id()) {
+                    ids.insert(area.id());
+                }
             }
         }
     }
@@ -189,6 +195,73 @@ mod tests {
             .journal;
         view.revision = 3;
         assert!(regions(&ready, &profile).is_empty());
+    }
+    #[test]
+    fn collection_search_regions_reappear_after_confirmed_item_loss() {
+        use theia_core::inventory::{Bag, Stack};
+        let xp = theia_network::progression_wire::Profile::from_json(include_bytes!(
+            "../../../../content/gameplay/development-progression.json"
+        ))
+        .unwrap();
+        let inventory = theia_network::renet_runtime::inventory::Profile::from_json(
+            include_bytes!("../../../../content/gameplay/development-document-items.json"),
+        )
+        .unwrap();
+        let mut q: serde_json::Value = serde_json::from_slice(include_bytes!(
+            "../../../../content/quests/development-journal-items.json"
+        ))
+        .unwrap();
+        let mut quest = q["quests"].as_array_mut().unwrap().pop().unwrap();
+        quest["prerequisites"] = serde_json::json!([]);
+        q["quests"] = serde_json::json!([quest]);
+        let a = serde_json::json!({"schema":1,"id":"theia.test.collection-map","revision":1,"areas":[
+            {"id":"theia.test.collection-region","name":"Collection search","min":[7900.,-10.,7900.],"max":[7950.,10.,7950.],
+             "map_objectives":["theia.dev.quest-wolf-pelts.objective.pelts"]},
+            {"id":"theia.test.collection-region-two","name":"Second search","min":[7960.,-10.,7900.],"max":[7980.,10.,7950.],
+             "map_objectives":["theia.dev.quest-wolf-pelts.objective.pelts"]}
+        ]});
+        let profile = Profile::from_json_with_areas(
+            &serde_json::to_vec(&q).unwrap(),
+            &serde_json::to_vec(&a).unwrap(),
+            &xp,
+        )
+        .unwrap()
+        .with_inventory(&inventory)
+        .unwrap();
+        let (mut state, _) = crate::quest_journal::tests::fixture();
+        let view = state.quest_journal.as_mut().unwrap();
+        view.profile_hash = profile.hash();
+        view.journal = Journal::default()
+            .propose_accept(
+                profile.catalog(),
+                &id("theia.dev.quest-wolf-pelts"),
+                &id("theia.dev.guide"),
+            )
+            .unwrap()
+            .journal;
+        view.revision = 1;
+        assert_eq!(regions(&state, &profile).len(), 2);
+        for (count, expected) in [(3, 0), (2, 2), (3, 0)] {
+            let mut slots = std::array::from_fn(|_| None);
+            slots[0] = Stack::new(inventory.catalog(), id("theia.dev.wolf-pelt"), count);
+            let bag = Bag::from_slots(inventory.catalog(), 0, slots).unwrap();
+            let view = state.quest_journal.as_mut().unwrap();
+            view.journal = view
+                .journal
+                .propose_inventory(profile.catalog(), inventory.catalog(), &bag)
+                .unwrap()
+                .journal;
+            view.revision = view
+                .journal
+                .progress(&id("theia.dev.quest-wolf-pelts"))
+                .unwrap()
+                .revision();
+            assert_eq!(
+                regions(&state, &profile).len(),
+                expected,
+                "confirmed holdings {count}"
+            );
+        }
     }
     #[test]
     fn shade_is_bounded_circular_and_independent_of_global_origin() {

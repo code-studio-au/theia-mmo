@@ -667,3 +667,70 @@ async fn a_full_backpack_can_read_an_owned_split_note_without_item_mutation() {
     drop(admin);
     driver.await.unwrap().unwrap();
 }
+
+#[test]
+fn document_search_metadata_is_exactly_bound_without_changing_existing_profiles() {
+    let p = profiles(false);
+    let mut a = serde_json::json!({"schema":1,"id":"map.areas","revision":1,"areas":[{
+        "id":"map.search","name":"Orders search","min":[7990.,-64.,7990.],"max":[8010.,64.,8010.],"map_objectives":["read-first"]
+    }]});
+    let bytes = serde_json::to_vec(&a).unwrap();
+    let bound = QuestJournalCatalog::from_json_with_documents(
+        &p.quest_bytes,
+        Some(&bytes),
+        &p.xp,
+        &p.documents,
+    )
+    .unwrap();
+    assert_ne!(bound.hash(), p.journal.hash());
+    let mut changed = bytes.clone();
+    changed.push(b' ');
+    assert_ne!(
+        bound.hash(),
+        QuestJournalCatalog::from_json_with_documents(
+            &p.quest_bytes,
+            Some(&changed),
+            &p.xp,
+            &p.documents
+        )
+        .unwrap()
+        .hash()
+    );
+    let mut expected = theia_core::quests::journal::PROFILE_DOMAIN.to_vec();
+    expected.extend(&p.quest_bytes);
+    expected.extend(p.xp.hash());
+    let hash = |bytes: &[u8]| -> [u8; 32] {
+        ring::digest::digest(&ring::digest::SHA256, bytes)
+            .as_ref()
+            .try_into()
+            .unwrap()
+    };
+    let mut areas = theia_core::quests::areas::PROFILE_DOMAIN.to_vec();
+    areas.extend(hash(&expected));
+    areas.extend(&bytes);
+    let mut items = theia_core::quests::journal::ITEM_PROFILE_DOMAIN.to_vec();
+    items.extend(hash(&areas));
+    items.extend(p.items.hash());
+    let mut documents = theia_core::documents::JOURNAL_PROFILE_DOMAIN.to_vec();
+    documents.extend(hash(&items));
+    documents.extend(p.documents.hash());
+    assert_eq!(bound.hash(), hash(&documents));
+    for links in [serde_json::json!(["unknown"]), serde_json::json!([])] {
+        a["areas"][0]["map_objectives"] = links;
+        assert!(
+            QuestJournalCatalog::from_json_with_documents(
+                &p.quest_bytes,
+                Some(&serde_json::to_vec(&a).unwrap()),
+                &p.xp,
+                &p.documents
+            )
+            .is_err()
+        );
+    }
+    assert_eq!(
+        p.journal.hash(),
+        QuestJournalCatalog::from_json_with_documents(&p.quest_bytes, None, &p.xp, &p.documents)
+            .unwrap()
+            .hash()
+    );
+}

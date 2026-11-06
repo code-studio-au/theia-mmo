@@ -945,3 +945,13 @@ and 15 focused network/profile cases, formatting, strict Clippy and build pass.
 [Data, cost evidence and remaining kill/collection mappings](MINIMAP.md#initial-active-quest-area-overlay--6-november-2026).
 Desktop/input checks remain paused. Existing single-guide `!`/`?` support remains;
 no general NPC registry or spawn/collection authoring mapping is claimed yet.
+
+
+Explicit quest search mappings — 6 November 2026: optional area metadata now
+links executable objectives to reviewed search regions, including kill/collection
+and document/interaction goals. Confirmed item loss restores collection regions;
+occupancy cannot grant kill credit. Existing content/profile hashes are unchanged.
+181 client, 385 core/persistence and 27 focused network cases pass; 73 SQL-dependent
+cases remain ignored. [Format and exact scope](MINIMAP.md#explicit-objective-search-regions--6-november-2026).
+General multi-NPC `!`/`?` locations and native overlay interaction remain pending;
+existing support is for the single known guide. No desktop input tests were run.

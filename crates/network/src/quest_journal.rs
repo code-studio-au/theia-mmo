@@ -94,7 +94,7 @@ impl Profile {
                     theia_core::quests::catalog::EventKey::ReachArea(_)
                 )
             });
-        if needs_areas != area_bytes.is_some() {
+        if needs_areas && area_bytes.is_none() {
             return Err("Document journal requires its exact area context".into());
         }
         if let Some(bytes) = area_bytes {

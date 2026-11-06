@@ -18,11 +18,10 @@ P2-14 / P3-11 / P5-13 / P5-19. The user's local 3440×1440 captures at
   bounded image/node work and the existing terrain streaming/request budgets.
 
 The current implementation below supports the single known guide's
-available/ready state mapping and now has initial reach-volume shading, described
-below. Kill/collection search mappings and a general multi-NPC marker catalogue
-remain separate work. Current static quest-area data
-provides reach volumes; spawn/collection guidance needs explicit validated
-mapping to objectives and authored source areas. Reuse existing bound content
+available/ready state mapping, reach-volume shading and explicit objective-to-area
+metadata, described below. A general multi-NPC marker catalogue remains separate
+work. Existing development content retains its reach volumes; creature/collection
+regions must be authored and reviewed before binding a changed saved profile. Reuse existing bound content
 where it describes the actual region; do not invent locations from screenshots
 or reveal unknown actors. Finish the current reader presentation slice, then
 implement this in bounded guidance/data/UI slices with headless checks. Native
@@ -237,3 +236,72 @@ is guaranteed. Explicit validated objective-to-area metadata for kill/collection
 and related goals is next. The existing `!`/`?` mapping remains single-guide
 support; general known-NPC locations, hover descriptions, tracking preferences,
 map layers, native interaction, Windows and broader combined timing remain open.
+
+
+## Explicit objective search regions — 6 November 2026
+
+P2-14 / P3-11 / P5-13 / P5-19. An area catalogue can now include optional
+`map_objectives` on each region. These are **executable objective IDs**, never
+quest, creature or item IDs. The following isolated example requires the selected
+quest catalogue to define `example.collect-pelts`:
+
+```json
+{
+  "schema": 1,
+  "id": "example.quest-areas",
+  "revision": 2,
+  "areas": [
+    {
+      "id": "example.wolf-territory",
+      "name": "Wolf territory",
+      "min": [7900, -10, 7900],
+      "max": [7950, 10, 7950],
+      "map_objectives": ["example.collect-pelts"]
+    }
+  ]
+}
+```
+
+Coordinates above are illustrative, not an installed spawn definition. Authors
+must use reviewed creature spawn/patrol or collectible-placement territory for
+real content. Multiple regions may link to the same objective, and multiple
+objectives may share a region. Links are optional, unique within each region,
+limited to 32 per region and 512 per catalogue. Existing 32-region / 16-KiB / 1-to-
+1024-metre extent development limits still apply. Unknown objective IDs, invalid
+IDs, duplicate links, malformed fields and oversized inputs refuse. A map-only
+catalogue requires a valid objective link; reach catalogues still require every
+`reach_area` selector to resolve. Existing namespace collision checks remain.
+
+Selection uses only validated current-owner, active, current-stage, unfinished
+objectives. Explicit mappings work for kill, possession, document and interaction
+objectives as well as reach goals. Regions are deduplicated, then use the same
+bounded blue raster pass. Confirmed inventory reconciliation from three pelts to
+two restores collection guidance. Optimistic backpack edits never select regions.
+A search hint neither grants a kill/read/interaction nor promises a spawn/drop.
+The headless World fixture verifies that standing inside a kill-search region
+emits no reach observation and leaves its kill count at zero.
+
+This additive schema-1 field is a Theia presentation extension. Exact area bytes
+remain part of the existing profile hash on network and persistence paths;
+metadata changes therefore need catalogue revision/review and explicit saved-
+profile migration decisions. Omitted metadata preserves existing bytes/hashes.
+Document-only profiles can explicitly bind validated search metadata without a
+reach objective; they still reject unrelated/empty context. No schema migration,
+protocol field, terrain request, NPC observation or gameplay mutation is added.
+Existing development/campaign files and manifests were deliberately not changed;
+new creature/collection geography is supported and tested, not silently installed
+into a saved development world.
+
+Validation: **181 client cases** including local art; **385 core/persistence
+cases** (73 database-dependent cases remain ignored); **26 quest-journal network
+cases**, including encrypted reach-area routing, plus the new document-only
+binding case. Formatting, strict workspace/all-target Clippy and client build
+pass. Exact logs are under `build/ui-reference-20261106/map-links-*`.
+The prior six overlay GPU layouts remain the raster evidence; this follow-up
+changes metadata and region selection, not projection or widget geometry.
+An additional 3440×1440 / UI scale 1.25 windowless regression passes on RX 7900
+XTX / RADV Vulkan / Mesa 26.2.6: zero windows, one fixture region, 418 tinted
+pixels (`map-links-gpu-v1/report.json`). This is a synthetic layout, not a live
+quest/creature scene.
+Native connected overlay/input and Windows evidence remain pending. Desktop
+and mouse tests remain prohibited while the user uses the machine.

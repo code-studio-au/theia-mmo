@@ -1,3 +1,12 @@
+Quest search-region authoring, 6 November 2026:
+Optional `map_objectives` on a bound area references executable objective IDs,
+including kill/collection goals. It is presentation guidance, not quest credit,
+a creature spawn definition or guaranteed loot. Keep quest definitions unchanged;
+use reviewed spawn/patrol/collectible geography. Exact area bytes change the
+saved profile hash, so revision/review and migration decisions still apply.
+[Format, development limits and validation](MINIMAP.md#explicit-objective-search-regions--6-november-2026).
+Existing development/campaign content has not been rebound to new regions.
+
 Fixed item reward configuration prerequisite, 6 November 2026:
 Keep fixed turn-in grants in a separate schema-1 reward catalogue referencing
 known item IDs and the selected closed quest catalogue. Do not add reward fields

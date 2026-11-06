@@ -496,3 +496,46 @@ async fn encrypted_impaired_document_approval_shares_order_and_preserves_owner_p
 
 #[path = "item_reward_renet_tests.rs"]
 mod item_rewards;
+
+#[test]
+fn document_only_journal_can_bind_search_metadata_without_a_reach_objective() {
+    let p = profiles();
+    let q = serde_json::to_vec(&serde_json::json!({"schema":4,"id":"catalog","revision":1,"quests":[{
+        "id":"quest","version":1,"title":"Orders","description":"Read orders","prerequisites":[],
+        "giver":"theia.dev.guide","turn_in":"theia.dev.guide","repeat_policy":"once","credit_scope":"character","experience":25,
+        "start_stage":"first","stages":[{"id":"first","completion":{"kind":"all"},"next":null,
+        "objectives":[{"id":"read","kind":"read_document","label":"Read","document":"note"}]}]}]})).unwrap();
+    let mut a = serde_json::json!({"schema":1,"id":"map.areas","revision":1,"areas":[{
+        "id":"map.search","name":"Orders search","min":[7990.,-64.,7990.],"max":[8010.,64.,8010.],"map_objectives":["read"]
+    }]});
+    let bytes = serde_json::to_vec(&a).unwrap();
+    let bound = crate::quest_journal::Profile::from_json_with_documents(
+        &q,
+        Some(&bytes),
+        &p.xp,
+        p.items.documents().unwrap(),
+    )
+    .unwrap();
+    assert_ne!(bound.hash(), p.journal.hash());
+    assert!(bound.area_catalog().is_some());
+    a["areas"][0]["map_objectives"] = serde_json::json!(["unknown"]);
+    assert!(
+        crate::quest_journal::Profile::from_json_with_documents(
+            &q,
+            Some(&serde_json::to_vec(&a).unwrap()),
+            &p.xp,
+            p.items.documents().unwrap()
+        )
+        .is_err()
+    );
+    a["areas"][0]["map_objectives"] = serde_json::json!([]);
+    assert!(
+        crate::quest_journal::Profile::from_json_with_documents(
+            &q,
+            Some(&serde_json::to_vec(&a).unwrap()),
+            &p.xp,
+            p.items.documents().unwrap()
+        )
+        .is_err()
+    );
+}
