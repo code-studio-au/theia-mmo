@@ -21,23 +21,24 @@ tooltips. The inventory/document/reward flow passes all three native sizes plus
 restart; final tooltip placement has six GPU cases and a 1280×720 native replay.
 Read-only UI coordinate exports now preserve UI enlargement while removing
 window DPI; headless geometry/scroll checks pass. Native enlarged-UI input
-remains pending until desktop tests are authorized again.
+now passes the 1920×1200 / 125% document/reward/32-offer flow and restart.
 Backpack action colours now match the dark red theme. Six windowless cases
-include the five shared inventory actions; native follow-up remains pending.
+include the five shared inventory actions; the 125% native panel flow now passes.
 Fixed quest offers now include decorative icons/counts from their bound reward
 metadata. Headless binding/legacy checks and six narrow-cell GPU layouts pass;
-normal offer-list interaction with the taller rows remains pending.
+normal offer-list interaction with the taller rows now passes at 125% UI scale.
 The reader now uses a compact left parchment panel with top page controls;
-six windowless cases verify text, controls and clear lower combat frames.
+six windowless cases verify text, controls and clear lower combat frames;
+the current reader also passes the 125% native panel/rejoin flow.
 Minimap shading follows validated active goals, with explicit objective-to-area
 metadata for kill/collection and related goals. 385 core/persistence and 27 focused
 network cases pass; the prior six overlay GPU layouts remain raster evidence.
 Existing content is unchanged; authored spawn/collection regions and native
 replay remain separate. Minimap hover descriptions now have six windowless
-GPU layouts and a 1280×720 connected hover/rejoin pass; enlarged UI and
-native search-region hovering remain pending.
+GPU layouts and a 1280×720 connected hover/rejoin pass; native search-region
+hovering remains pending. Enlarged panels pass at 1920×1200 / 125%.
 The skin remains opt-in; clickable plates, portrait art, chat/menu systems,
-nondefault-scale OS traces and complete-theme qualification
+broader scale/DPI/resize traces and complete-theme qualification
 remain separate work. [Scope, reference, assets and evidence](../UI_FANTASY_WARRIOR.md).
 **Current permission: desktop/mouse tests restored by the latest user instruction.**
 Commit locally only; no push. Earlier permission restrictions below are historical.

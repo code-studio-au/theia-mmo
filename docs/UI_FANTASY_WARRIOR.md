@@ -965,3 +965,33 @@ XP 125 with zero GPU diagnostics; services and temporary input devices stop.
 [Implementation, evidence and limits](MINIMAP.md#read-only-hover-descriptions--6-november-2026).
 Desktop testing is authorized again by the user's latest instruction. Enlarged UI
 and native search-region hovering remain separate checks. Local commits, no push.
+
+
+## Enlarged native panel replay — 6 November 2026
+
+P2-14 / P3-11 / P3-12 / P3-15 / P5-13. With desktop permission restored, the
+current client passes the actual normal launcher/OIDC/Renet/PostgreSQL fixed-
+reward/document/32-offer flow at **1920×1200 with `--ui-scale 1.25`**, then after
+an actual database process restart and fresh login. Window telemetry reports
+DPI 1; that value is not UI scale. The explicit launcher flag and screenshots
+record 125% UI enlargement (the 420-logical-pixel reader is 525 window pixels).
+
+The compact left reader opens with one click, both pages work, Escape retains
+the expected sibling panel, the last of 32 offers is reached using the bounded
+wheel area, and complete reward labels fit their clickable rows. Decorative
+bound reward icons/counts render on the real offers. The bag's dark red actions,
+confirmed item destruction, possession reversal, replacement pickup, consumption
+and fixed grants retain their original transaction semantics. Final journal
+revision 9, XP 75 and 103 tokens survive restart without another grant. This is a
+guaranteed-loot, low-damage development fixture, not an ordinary drop-rate or
+human feel/performance claim.
+
+Both native passes report zero GPU diagnostics on RX 7900 XTX / RADV Vulkan /
+Mesa 26.2.6. Owned services stop, the temporary wheel device is removed and
+plaintext password files are removed. Evidence:
+`build/ui-reference-20261106/native-scaled-paper-v1/verification.json`, the exact
+launcher wrapper `native-scaled-paper-v1.py`, and page/reward/offer screenshots in
+its `1920x1200` folder. This qualifies the current compact reader/reward-row
+geometry and 125% pointer exports for this flow. Native 75%/150%, DPI scaling,
+resize/restoration, broader resolutions, search-region hover and Windows remain
+separate. Earlier pending entries above describe prior checkpoints.
