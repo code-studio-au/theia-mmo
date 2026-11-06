@@ -1,3 +1,9 @@
+Positive schema-21 server configuration, 6 November 2026:
+The real normal server starts both fixed-reward bundles and passes real OIDC/SQL
+HTTP ticket preflight headlessly. No game client or desktop window is launched;
+no item/quest/XP state is created. [Evidence and limits](QUEST_ITEM_REWARDS.md#normal-server-startup-and-ticket-preflight-qualified-headlessly).
+Combined native gameplay and reward UI remain pending while desktop testing is paused.
+
 Schema-21 fixed quest reward configuration prerequisite, 6 November 2026:
 `development-gameplay-classic-item-rewards.json` and its guaranteed development
 fixture add exact `quest_item_rewards` to the schema-20 document bundle (25 roles).

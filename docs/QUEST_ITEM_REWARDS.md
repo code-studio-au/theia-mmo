@@ -384,3 +384,34 @@ binding or saved admission. [Command, constraints and nine-test/CLI evidence](QU
 No desktop interaction or UI changes are needed for this tool. Normal reward UI
 and combined native checks remain pending; continue positive server configuration
 qualification headlessly while desktop access remains paused.
+
+
+## Normal server startup and ticket preflight qualified headlessly
+
+`tools/qualify_reward_server_config.py` runs the real normal server executable
+with all 25 exact sealed schema-21 roles, prepared saved terrain/navigation and
+the existing Classic gameplay options. It uses an owned Keycloak provider and
+PostgreSQL cluster, removes display access and never starts a game client or
+desktop browser. Verified OIDC creates a fresh character, and the actual HTTP
+entry route checks its configured gameplay policy before issuing a private
+20-second admission ticket. Unauthenticated entry returns 401; another entry
+while the first reservation is issued returns 409. Source snapshot hashes stay
+unchanged, and shutdown stops the normal server and owned services.
+
+The guaranteed low-danger fixture passes at
+`build/qir-srv-v1-20261106/verification.json`. The ordinary bundle also passes,
+with stronger secret/worker/SQL assertions, at
+`build/qir-srv-normal-v2-20261106/verification.json`. Both use server SHA-256
+`3ccf6849c07e9d6322fd745eeacf2e700419d702d9c051666b26e5253c14da6d`, preserved
+with the configuration checkpoint. One account, one character and one gameplay
+profile preflight are recorded. No backpacks, progression rows, journal heads or
+quest action receipts are created. Logs contain no private callback code,
+login proof/session or serialised ticket. Snapshot directories and temporary
+credentials are removed, and service processes are stopped.
+
+This closes the positive normal CLI/service configuration check omitted by the
+invalid-option smoke tests. It does **not** consume the game ticket, establish a
+Renet player, execute a quest, grant an item or verify the Bevy UI. Actual SQL
+turn-in, real retained ownership and encrypted command behavior remain the
+separate proofs above. Combined owned gameplay and UI/native qualification remain
+pending. No Windows or MMO capacity claim; desktop/mouse tests stay paused.

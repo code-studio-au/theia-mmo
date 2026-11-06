@@ -1,3 +1,11 @@
+Positive normal reward server configuration qualified, 6 November 2026:
+Both schema-21 bundles start the actual headless server with sealed 25-role
+content, real OIDC/PostgreSQL and HTTP admission preflight. Unauthenticated and
+duplicate ticket requests refuse; a fresh authorised character receives a private
+ticket. No game client consumes it or creates economy/quest state. Owned services
+and snapshots clean up. [Exact scope/evidence](../QUEST_ITEM_REWARDS.md#normal-server-startup-and-ticket-preflight-qualified-headlessly). UI/native work remains
+pending; continue headless only, local commits and no push.
+
 Fixed reward authoring handoff, 6 November 2026 (P3-11 / P3-15):
 The read-only document/quest checker now accepts optional fixed reward references,
 with known quest/item, bounded file and area/document namespace checks. Nine Linux
