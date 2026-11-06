@@ -4,9 +4,9 @@ P3-05 / P3-11 / P3-15, 5 November 2026.
 
 The user requested quest conditions for reading or viewing an item note/message.
 Keep that historical action separate from possessing or looting the item. The
-current playable quest-loot checkpoint is `65977bd`; readable document runtime
-adoption through normal manifests is implemented; the reader has a partial native
-checkpoint below and remains pending the remaining display checks. Explicit
+prior playable quest-loot checkpoint is `65977bd`; readable document runtime
+adoption and the native reader are now qualified for the opt-in development
+profiles at the three display sizes recorded below. Explicit
 Store/worker, retained-owner and World support is implemented below. Earlier
 prerequisite sections describe their own checkpoints.
 
@@ -452,3 +452,26 @@ reduced wolf danger; it does not validate the normal 35% note drop balance.
 
 Resume with the remaining display-size startup failure and native reader checks
 before marking this slice complete. No push was authorized or performed.
+
+## Reader native qualification complete — 6 November 2026
+
+The unchanged reader source at `1dcbec3` passes the two remaining display sizes.
+`build/quest-document-ui-native-sizes-v2-20261106/verification.json` records
+1280×720, 3440×1440 fullscreen and an actual PostgreSQL process restart/rejoin.
+Together with the 1920×1200 v6 proof above, this closes the pending native reader
+slice. Both page captures were visually reviewed, including the smaller window.
+The previous size-run launcher exit was not reproduced; no startup fix is claimed.
+
+Each fresh character finishes with journal head 8, XP 75, one completed note quest,
+two quest actions and four event receipts. Reading before acceptance grants no
+later credit. Destroying a required copy preserves read history but reverses
+readiness; explicit pickup of another copy restores readiness without rereading.
+Turn-in consumes the note. Exact loot-roll snapshots match across database
+restart. Owned services stop, credentials are removed and the temporary wheel
+device is removed. All native checks use RX 7900 XTX / RADV NAVI31 / Vulkan /
+Mesa 26.2.6, with zero GPU diagnostics. They use guarded synthetic OS input and
+guaranteed low-danger content, not physical-input, Windows or random-balance proof.
+
+The earlier paused checkpoint remains historical. This completes readable owned
+item notes in opt-in manifest 20; it does not add arbitrary world books, scripting,
+campaign pack switching, saved-version migration or production quest content.

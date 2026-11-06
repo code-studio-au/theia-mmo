@@ -3,7 +3,8 @@ Quest schema 4 can name `read_document` with a stable `document` selector. Text
 lives in a separate known-item document catalogue, bound to exact inventory,
 journal, XP and optional area bytes. Historical reading is independent of a
 separate final-stage possession/delivery requirement. Opt-in manifest 20 and
-`--document-catalog` now bind this content; the native reader is pending.
+`--document-catalog` now bind this content; the native reader is qualified at
+1280×720, 1920×1200 and 3440×1440 for the opt-in development fixture.
 [Format, durable semantics and qualification limits](QUEST_DOCUMENTS.md).
 Do not infer campaign runtime/migration readiness from these development profiles.
 
@@ -13,7 +14,7 @@ journal, preserving first-generation rights and rechecking current need before
 paging/pickup. Ordinary drops stay independent of quest state. Drop chances live
 in creature loot content; quest schema 3 continues to name possession item/count /
 consumption. [Format, qualified development flow and limits](LOOT_TABLES.md#normal-quest-only-loot-qualified--5-november-2026).
-Readable notes remain planned separately; campaign runtime/migration limits below
+Readable notes have a separate qualified opt-in profile; campaign runtime/migration limits below
 still apply. Earlier quest-only gate entries describe historical checkpoints.
 
 Inventory-bound item quests qualified in opt-in development content, 5 November 2026:

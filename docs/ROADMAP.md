@@ -1,3 +1,15 @@
+Readable quest documents qualified locally, 6 November 2026:
+P3-05 / P3-11 / P3-15: opt-in manifest 20 now has a standard Bevy note reader
+with exact server approval, local page navigation and contextual Escape. Native
+1280×720, 1920×1200 and 3440×1440 pass pickup, pre-accept read exclusion,
+read/possession readiness, destruction reversal, replacement pickup, consumed
+turn-in and actual PostgreSQL restart/rejoin. RX 7900 XTX / RADV Vulkan reports
+zero GPU diagnostics. [Scope and evidence](QUEST_DOCUMENTS.md#reader-native-qualification-complete--6-november-2026).
+The fixture guarantees loot and reduces wolf danger; normal note loot remains
+35%. Campaign loading, save migration and broader document interactions remain
+separate. Work resumed by the user; commit locally only, no push. Earlier pause
+and prerequisite entries below describe historical checkpoints.
+
 Retained document owner and World admission qualified locally, 5 November 2026:
 P3-05 / P3-11 / P3-15: explicit exact document context now connects the retained
 item owner to durable opening. Real login, encrypted ticket and PostgreSQL prove
