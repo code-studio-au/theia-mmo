@@ -1,3 +1,13 @@
+Bounded quest offers/wheel ownership qualified, 6 November 2026:
+P3-11 / P3-12 / P3-15: the last of 32 guide offers is reachable through a bounded
+standard Bevy scroll area. Wheel input belongs to the hovered panel. All three
+Linux sizes pass last-offer acceptance, normal note/fixed rewards and SQL restart/
+rejoin; the older two-quest dialogue flow also passes at 1280×720 and after restart.
+154 client tests, formatting, strict workspace/all-target Clippy and optimized
+build pass. [Fixtures and exact scope](../QUEST_ENGINE.md#bounded-quest-offers-and-wheel-ownership--6-november-2026).
+Catalogue limits and canonical content remain unchanged. Local commits, no push;
+desktop use remains authorized while the user is away.
+
 Single-click reader/shared UI recovery qualified, 6 November 2026:
 P2-14 / P3-05 / P3-11 / P3-12: the reader's ignored second-open click is fixed
 by one shared standard-Bevy button release recovery. Two opens now require two

@@ -196,6 +196,7 @@ fn setup(
                 panel
                     .spawn((
                         Body,
+                        Hovered::default(),
                         ScrollPosition::default(),
                         Node {
                             width: percent(100),
@@ -454,7 +455,7 @@ fn present(
 fn scroll(
     mut events: MessageReader<MouseWheel>,
     mut ui: ResMut<Ui>,
-    mut bodies: Query<(&mut ScrollPosition, &ComputedNode), With<Body>>,
+    mut bodies: Query<(&Hovered, &mut ScrollPosition, &ComputedNode), With<Body>>,
 ) {
     let delta: f32 = events
         .read()
@@ -470,7 +471,10 @@ fn scroll(
         .sum();
     if ui.open && delta != 0. {
         ui.scroll_delta = delta;
-        for (mut position, node) in &mut bodies {
+        for (hovered, mut position, node) in &mut bodies {
+            if !hovered.0 {
+                continue;
+            }
             let maximum =
                 ((node.content_size().y - node.size().y) * node.inverse_scale_factor()).max(0.);
             ui.scroll_maximum = maximum;

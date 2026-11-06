@@ -1049,3 +1049,66 @@ not runtime pack loading, 1,024-quest active journals or saved-version migration
 Compiled metadata/definition changes can still cause exact-byte save-profile
 incompatibility; the compiler never rewrites character progress or installs a
 new normal bundle automatically.
+
+
+## Bounded quest offers and wheel ownership — 6 November 2026
+
+P3-11 / P3-12 / P3-15. Prerequisites are the exact bounded quest profiles, normal
+private-journal actions, fixed reward UI and shared Bevy button recovery. The
+catalogue still supports at most 32 definitions. The guide's former unbounded
+column put the last of 32 offers at Y=1539 in a 1280×720 window, making it
+inaccessible. This is demonstrated in
+`build/qoffer-v1-20261106/1280x720/quest-offers-initial.json` and its screenshot.
+
+Offers now use standard Bevy vertical clipping/scrolling, bounded to 45% of the
+guide pane's content height. The dialogue and Close button remain separate.
+Removing an accepted/completed offer clamps the remaining scroll range. Wheel
+input moves only the hovered offers, tracker, dialogue, backpack or reader body;
+open sibling panels no longer scroll just because they received the same wheel
+message. Read-only offer bounds and backpack offsets support the native check.
+No gameplay command, journal limit, content schema, default bundle or saved-profile
+hash changes. Existing buttons retain their painted authoritative intent checks.
+
+The owned schema-21 UI fixture exposes all 32 offers by clearing prerequisites
+and adding short development definitions in its private content copy. It scrolls
+to the last offer with real PID-bound wheel input, accepts it, and completes the
+normal note/read/loss/reacquisition/fixed-reward flow. The dialogue/backpack scroll
+offsets must remain unchanged while the offers scroll. It accepts two quests;
+it does not demonstrate 32 simultaneously active/completed quests or campaign
+capacity. Canonical story and ordinary development catalogues are untouched.
+
+All three Linux anchors pass (1280×720, 1920×1200, 3440×1440), followed by actual
+PostgreSQL restart/fresh login. Saved state is head 9, 75 XP, one completion,
+three successful action receipts and four event receipts; the last fixture quest
+remains accepted, and the note quest is completed with 103 tokens and no note.
+The older two-quest/schema-13 flow also passes at 1280×720 plus restart/rejoin:
+head 11, 125 XP, two completions, four action receipts and seven event receipts.
+Its dialogue checks now put the pointer inside the actual body rectangle before
+scrolling, matching the new ownership rule.
+
+Verification:
+
+- 154 client tests: `build/quest-offer-list-client-tests-v1-20261106.log`;
+  formatting/strict workspace-all-target Clippy: `fmt-v2` / `clippy-v2` logs;
+  optimized client: `build/quest-offer-list-release-v1-20261106.log`.
+- 32-offer/normal-note combined qualification:
+  `build/qoffer-v3-20261106/verification.json`.
+- Original journal/dialogue regression:
+  `build/qoffer-reg-v2-20261106/verification.json`.
+- Owned-fixture role containment: two actual CLI refusals leave sentinel files
+  unchanged before desktop/services start,
+  `build/quest-offer-fixture-guards-v1-20261106/verification.json`.
+- Frozen runtime: `build/quest-offer-list-candidate-v1-20261106`;
+  final source/evidence: `build/quest-offer-list-qualified-v1-20261106`.
+
+The v2 combined attempt correctly blocked a helper trying to scroll the guide
+behind an open reader; the helper now exposes that row only with the reader
+closed. The first legacy attempt stopped on the helper's assumption that optional
+loot telemetry was always an object; handling its legitimate null value fixes
+that test path. Neither failed attempt is counted as successful qualification.
+
+Actual local OIDC, encrypted game commands, owned PostgreSQL, PID-bound synthetic
+X11/uinput and Linux RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6 kisak PPA:
+zero GPU diagnostics. No physical-input, native Windows, FPS or MMO capacity
+claim. Documentation and changes stay local; no push. Quest descriptions/detail
+presentation and broader authoring UI remain future slices.

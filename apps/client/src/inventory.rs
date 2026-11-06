@@ -214,6 +214,7 @@ fn setup(mut commands: Commands, config: Res<Config>) {
     commands
         .spawn((
             Pane,
+            Hovered::default(),
             ScrollPosition::default(),
             Node {
                 position_type: PositionType::Absolute,
@@ -875,7 +876,7 @@ fn scroll(
     mut events: MessageReader<bevy::input::mouse::MouseWheel>,
     ui: Res<Ui>,
     documents: Option<Res<crate::documents::Ui>>,
-    mut panes: Query<(&mut ScrollPosition, &ComputedNode), With<Pane>>,
+    mut panes: Query<(&Hovered, &mut ScrollPosition, &ComputedNode), With<Pane>>,
 ) {
     let delta: f32 = events
         .read()
@@ -888,7 +889,10 @@ fn scroll(
         })
         .sum();
     if ui.open && !documents.as_ref().is_some_and(|u| u.open) && delta != 0. {
-        for (mut position, node) in &mut panes {
+        for (hovered, mut position, node) in &mut panes {
+            if !hovered.0 {
+                continue;
+            }
             let maximum =
                 ((node.content_size().y - node.size().y) * node.inverse_scale_factor()).max(0.);
             position.y = (position.y + delta).clamp(0., maximum);

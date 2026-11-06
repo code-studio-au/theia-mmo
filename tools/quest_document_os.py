@@ -11,7 +11,7 @@ QUEST = 'theia.dev.quest-roadside-orders'
 READ = QUEST + '.objective.read'
 BRING = QUEST + '.objective.bring'
 
-def flow(desktop, window, state, folder, resumed=False, item_rewards=False, reward_capacity=False):
+def flow(desktop, window, state, folder, resumed=False, item_rewards=False, reward_capacity=False, quest_offers=False):
     scale = state()['window'][2]
     read_pointer_attempts = 0
     def count(item):
@@ -122,7 +122,7 @@ def flow(desktop, window, state, folder, resumed=False, item_rewards=False, rewa
         wait(lambda:state()['dialogue_open'] and state()['inventory_open'])
     def action(status):
         before=state()['quest_journal']['ui']['applied']
-        point=wait(lambda:next((b['point'] for b in state()['quest_journal']['buttons'] if b['quest']==QUEST),None))
+        point=expose_offer(QUEST) if quest_offers else wait(lambda:next((b['point'] for b in state()['quest_journal']['buttons'] if b['quest']==QUEST),None))
         desktop.click(window,point,scale,1)
         wait(lambda:quest() and quest()['status']==status and state()['quest_journal']['ui']['applied']==before+1 and not state()['quest_journal']['ui']['pending'])
     def document_click(name):
@@ -213,7 +213,34 @@ def flow(desktop, window, state, folder, resumed=False, item_rewards=False, rewa
             assert state()['combat']['player_deaths']==0
             desktop.key('2');time.sleep(.25)
 
+    def expose_offer(wanted):
+        for _ in range(16):
+            journal=state()['quest_journal']
+            viewport=wait(lambda:state()['quest_journal'].get('offer_scroll'))
+            button=wait(lambda:next((b for b in state()['quest_journal']['buttons'] if b['quest']==wanted),None))
+            cx,cy=viewport['point'];width,height=viewport['size']
+            assert width>0 and height>0 and height<=state()['window'][1]*.5, viewport
+            top,bottom=cy-height/2,cy+height/2
+            if top-.5<=button['point'][1]-button['size'][1]/2 and button['point'][1]+button['size'][1]/2<=bottom+.5:
+                # Reflow after an accepted offer can move a row. Require a settled
+                # clipped native target before sending the actual pointer event.
+                time.sleep(.25)
+                current=next((b for b in state()['quest_journal']['buttons'] if b['quest']==wanted),None)
+                if current and current['point']==button['point']:return current['point']
+                continue
+            body_before=journal['dialogue_body']['scroll']
+            bag_before=state()['inventory_layout']['scroll']
+            offset=viewport['scroll'][1]
+            desktop.move(window,viewport['point'],scale)
+            desktop.scroll(8 if button['point'][1]<top else -8)
+            wait(lambda:state()['quest_journal']['offer_scroll']['scroll'][1]!=offset)
+            time.sleep(.15)
+            assert state()['quest_journal']['dialogue_body']['scroll']==body_before, 'Quest wheel scrolled the dialogue sibling'
+            assert state()['inventory_layout']['scroll']==bag_before, 'Quest wheel scrolled the backpack sibling'
+        raise AssertionError(('Bounded offer list did not expose requested quest',wanted))
+
     def reward_label(verb):
+        if quest_offers and not state()['documents']['open']:expose_offer(QUEST)
         label=wait(lambda:next((label for label in state()['quest_journal']['action_labels'] if label['quest']==QUEST and label['text'].startswith(verb+':')),None))
         assert '2 x Training Token' in label['text'] and label['glyphs']>0, label
         assert label['size'][0]<state()['window'][0], label
@@ -298,6 +325,18 @@ def flow(desktop, window, state, folder, resumed=False, item_rewards=False, rewa
     document_click('next');time.sleep(.2);assert state()['documents']['page']==1
     document_click('previous');wait(lambda:state()['documents']['page']==0)
     close_reader();speak()
+    offer_fixture=None
+    if quest_offers:
+        journal=state()['quest_journal']
+        assert len(journal['buttons'])==32, journal['buttons']
+        (folder/'quest-offers-initial.json').write_text(json.dumps(journal,indent=2)+'\n')
+        capture('quest-offers-initial.png')
+        point=expose_offer('theia.dev.zz-offer-tail')
+        capture('quest-offers-last.png')
+        before=state()['quest_journal']['ui']['applied']
+        desktop.click(window,point,scale,1)
+        wait(lambda:any(q['id']=='theia.dev.zz-offer-tail' and q['status']=='Active' for q in state()['quest_journal']['quests']) and state()['quest_journal']['ui']['applied']==before+1 and not state()['quest_journal']['ui']['pending'])
+        offer_fixture=dict(count=32,last_offer_accepted=True,initial=journal['offer_scroll'],final=wait(lambda:state()['quest_journal']['offer_scroll']))
     offer=reward_label('Accept') if item_rewards else None
     if item_rewards:capture('fixed-reward-offer.png')
     action('Active')
@@ -333,4 +372,4 @@ def flow(desktop, window, state, folder, resumed=False, item_rewards=False, rewa
     capture('document-completed.png')
     assert read_pointer_attempts==2, 'Each note open must take exactly one pointer click'
     assert state()['combat']['deaths']==2 and state()['combat']['player_deaths']==0 and state()['combat']['event_gaps']==0
-    return dict(passed=True,resumed=False,revision=state()['quest_journal']['revision'],xp=state()['quest_journal']['xp'],actions=state()['quest_journal']['ui']['applied'],kills=2,preaccept_read_excluded=True,page_navigation_local=True,history_survives_loss=True,possession_reverses=True,explicit_pickup_required=True,delivery_consumed=True,documents=state()['documents'],read_pointer_attempts=read_pointer_attempts,fixed_rewards=dict(offer=offer,turn_in=turn_in,tokens_before=tokens,tokens_after=count('theia.dev.training-token'),capacity=capacity) if item_rewards else None)
+    return dict(passed=True,resumed=False,revision=state()['quest_journal']['revision'],xp=state()['quest_journal']['xp'],actions=state()['quest_journal']['ui']['applied'],kills=2,preaccept_read_excluded=True,page_navigation_local=True,history_survives_loss=True,possession_reverses=True,explicit_pickup_required=True,delivery_consumed=True,documents=state()['documents'],read_pointer_attempts=read_pointer_attempts,offer_fixture=offer_fixture,fixed_rewards=dict(offer=offer,turn_in=turn_in,tokens_before=tokens,tokens_after=count('theia.dev.training-token'),capacity=capacity) if item_rewards else None)

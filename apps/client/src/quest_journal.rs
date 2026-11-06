@@ -41,6 +41,8 @@ struct Tracker;
 #[derive(Component)]
 struct Scroll;
 #[derive(Component)]
+struct Offers;
+#[derive(Component)]
 struct StatusLabel;
 #[derive(Component)]
 struct ActionButton(ContentId);
@@ -104,12 +106,20 @@ fn setup(
     for pane in &panes {
         commands.entity(pane).with_children(|panel| {
             panel
-                .spawn(Node {
-                    width: percent(100),
-                    flex_direction: FlexDirection::Column,
-                    row_gap: px(6),
-                    ..default()
-                })
+                .spawn((
+                    Offers,
+                    Hovered::default(),
+                    ScrollPosition::default(),
+                    Node {
+                        width: percent(100),
+                        min_height: px(0),
+                        max_height: percent(45),
+                        flex_direction: FlexDirection::Column,
+                        row_gap: px(6),
+                        overflow: Overflow::scroll_y(),
+                        ..default()
+                    },
+                ))
                 .with_children(|root| {
                     for quest in definitions.0.catalog().quests() {
                         root.spawn((
@@ -398,10 +408,19 @@ fn present(
         };
     }
 }
+type ScrollFilter = Or<(With<Scroll>, With<Offers>)>;
+type ScrollView<'a> = (
+    &'a Hovered,
+    &'a ComputedNode,
+    &'a mut ScrollPosition,
+    &'a mut Node,
+    Has<Offers>,
+);
 fn scroll(
     mut events: MessageReader<MouseWheel>,
     windows: Query<&Window>,
-    mut roots: Query<(&Hovered, &ComputedNode, &mut ScrollPosition, &mut Node), With<Scroll>>,
+    ui: Res<Ui>,
+    mut roots: Query<ScrollView<'_>, ScrollFilter>,
 ) {
     let delta: f32 = events
         .read()
@@ -415,11 +434,17 @@ fn scroll(
         .sum();
     let height = windows.single().map_or(720., |w| w.height());
     // Keep the tracker above the existing lower-left target/status panels.
-    for (hovered, node, mut position, mut style) in &mut roots {
-        style.max_height = px((height - 526.).max(80.).min(height * 0.38));
+    for (hovered, node, mut position, mut style, offers) in &mut roots {
+        if !offers {
+            style.max_height = px((height - 526.).max(80.).min(height * 0.38));
+        }
+        let max = ((node.content_size().y - node.size().y) * node.inverse_scale_factor()).max(0.);
+        // Removing an accepted/completed offer must not leave the remaining
+        // rows outside the viewport. Preserve offset during transient waiting.
+        if offers && !ui.pending {
+            position.y = position.y.clamp(0., max);
+        }
         if hovered.0 && delta != 0. {
-            let max =
-                ((node.content_size().y - node.size().y) * node.inverse_scale_factor()).max(0.);
             position.y = (position.y + delta).clamp(0., max);
         }
     }
@@ -457,8 +482,16 @@ pub(crate) fn qualification(world: &mut World, state: &State) -> Option<serde_js
         .iter(world).next().map(|(text, glyphs)|serde_json::json!({"text":text.0,"glyphs":glyphs.map_or(0,|g|g.glyphs.len())}));
     let choices = crate::dialogue::qualification_choices(world);
     let dialogue_body = crate::dialogue::qualification_body(world);
+    let offer_scroll=world.query_filtered::<(&ComputedNode,&bevy::ui::UiGlobalTransform,&ScrollPosition),With<Offers>>()
+        .iter(world).find(|(node,_,_)|node.size().min_element()>0.)
+        .map(|(node,t,scroll)|serde_json::json!({
+            "point":(t.affine().translation*node.inverse_scale_factor()).to_array(),
+            "size":(node.size()*node.inverse_scale_factor()).to_array(),
+            "content":(node.content_size()*node.inverse_scale_factor()).to_array(),
+            "scroll":[scroll.x,scroll.y]
+        }));
     Some(
-        serde_json::json!({"revision":journal.revision,"quests":quests,"ui":ui,"buttons":buttons,"action_labels":action_labels,"status":status,"choices":choices,"dialogue_body":dialogue_body,"tracker":tracker,"xp":state.progression.as_ref().map(|s|s.progress.total())}),
+        serde_json::json!({"revision":journal.revision,"quests":quests,"ui":ui,"buttons":buttons,"action_labels":action_labels,"status":status,"choices":choices,"dialogue_body":dialogue_body,"offer_scroll":offer_scroll,"tracker":tracker,"xp":state.progression.as_ref().map(|s|s.progress.total())}),
     )
 }
 

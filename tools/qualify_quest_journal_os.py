@@ -61,7 +61,7 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
         (folder/'input-os.png').rename(folder/name)
 
     def close_panels():
-        if state().get('loot',{}).get('ui',{}).get('open'):
+        if (state().get('loot') or {}).get('ui',{}).get('open'):
             desktop.key('Escape')
             wait(lambda:not state()['loot']['ui']['open'])
         if state()['dialogue_open']:
@@ -97,7 +97,7 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
         time.sleep(.2)
         if name=='training':(folder/'dialogue-training-before.json').write_text(json.dumps(journal(),indent=2)+'\n')
         width, height, _ = state()['window']
-        desktop.move(window, [width*.5, height*.42], scale)
+        desktop.move(window, wait(lambda:journal()['dialogue_body']['point']), scale)
         for _ in range(4):
             desktop.scroll(-1 if name == 'training' else 1)
         time.sleep(.2)
@@ -206,7 +206,7 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
         if state()['controls']['enemy_clicks']==clicks:
             # An earlier corpse can be the actual frontmost pointer hit.
             # Close that ordinary pane and use the supported Tab target cycle.
-            if state().get('loot',{}).get('ui',{}).get('open'):
+            if (state().get('loot') or {}).get('ui',{}).get('open'):
                 desktop.key('Escape');wait(lambda:not state()['loot']['ui']['open'])
             if state()['dialogue_open']:
                 close_panels()
@@ -389,7 +389,9 @@ def check_minimap_walk(desktop, window, state, folder):
     return proof
 
 
-def run(output, binaries, sizes, production=False, repeat_interaction=False, gameplay_manifest=Path("content/development-gameplay-classic-journal.json"), minimap=False, minimap_traversal=False, reach_areas=False, destroy_items=False, corpse_loot=False, item_quest=False, documents=False, item_rewards=False, reward_capacity=False):
+def run(output, binaries, sizes, production=False, repeat_interaction=False, gameplay_manifest=Path("content/development-gameplay-classic-journal.json"), minimap=False, minimap_traversal=False, reach_areas=False, destroy_items=False, corpse_loot=False, item_quest=False, documents=False, item_rewards=False, reward_capacity=False, quest_offers=False):
+    if quest_offers and (not documents or not item_rewards or reward_capacity):
+        raise ValueError('Quest offer fixture requires the separate normal fixed-reward document flow')
     if reward_capacity and not item_rewards:
         raise ValueError('Capacity fixture requires fixed rewards')
     if item_rewards and not documents:
@@ -420,11 +422,29 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
     shutil.copytree('content/gameplay', bundle/'gameplay')
     shutil.copytree('content/quests', bundle/'quests')
     shutil.copy2(gameplay_manifest, bundle)
+    if quest_offers:
+        # Only this owned UI fixture changes prerequisites and adds offers.
+        path=bundle/json.loads(gameplay_manifest.read_text())['quest']
+        if not path.resolve().is_relative_to(bundle.resolve()):
+            raise ValueError('Quest fixture must stay inside its owned content copy')
+        quests=json.loads(path.read_text())
+        for quest in quests['quests']:quest['prerequisites']=[]
+        remaining=32-len(quests['quests'])
+        assert remaining>0
+        for index in range(remaining):
+            key='theia.dev.zz-offer-tail' if index==remaining-1 else f'theia.dev.offer-fixture-{index:02}'
+            quests['quests'].append(dict(id=key,version=1,title=f'Offer fixture {index:02}',description='Owned bounded-menu fixture; ordinary quest content is unchanged.',
+                prerequisites=[],giver='theia.dev.guide',turn_in='theia.dev.guide',repeat_policy='once',credit_scope='character',experience=1,
+                start_stage=key+'.stage',stages=[dict(id=key+'.stage',completion=dict(kind='all'),next=None,
+                objectives=[dict(kind='npc_interaction',id=key+'.objective',label='Ask about the road',npc='theia.dev.guide',interaction='theia.dev.interaction.road')])]))
+        path.write_text(json.dumps(quests)+'\n')
     if reward_capacity:
         # Deliberately add two nonstackable rewards to this owned fixture only.
         # Normal UI splitting will fill the backpack; consuming one note cannot
         # make both swords fit. No database or client state is injected.
         reward_path=bundle/json.loads(gameplay_manifest.read_text())['quest_item_rewards']
+        if not reward_path.resolve().is_relative_to(bundle.resolve()):
+            raise ValueError('Reward fixture must stay inside its owned content copy')
         rewards=json.loads(reward_path.read_text())
         recipe=next(r for r in rewards['rewards'] if r['quest']=='theia.dev.quest-roadside-orders')
         recipe['grants'].append(dict(item='theia.dev.training-sword',count=2))
@@ -535,7 +555,7 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
                         time.sleep(.2)
                         if documents:
                             from quest_document_os import flow as document_flow
-                            proof=document_flow(desktop,window,state,folder,resumed,item_rewards=item_rewards,reward_capacity=reward_capacity)
+                            proof=document_flow(desktop,window,state,folder,resumed,item_rewards=item_rewards,reward_capacity=reward_capacity,quest_offers=quest_offers)
                         else:
                             proof = flow(desktop, window, state, folder, resumed, repeat_interaction, minimap, reach_areas, corpse_loot, item_quest, quest_only)
                         if minimap:
@@ -604,7 +624,7 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
                 rows = cluster.query(query)
                 assert rows.returncode == 0
                 expected = (['16','150','3','6','10'] if repeat_interaction else ['14','150','3','6','8']) if reach_areas else (['13','125','2','4','9'] if repeat_interaction else ['11','125','2','4','7'])
-                if documents:expected=['8','75','1','2','4']
+                if documents:expected=['9','75','1','3','4'] if quest_offers else ['8','75','1','2','4']
                 if item_quest:expected=['27','250','4','8','14'] if quest_only else ['24','200','4','8','11']
                 assert all(row.split('|')[1:] == expected for row in rows.stdout.splitlines()), rows.stdout
                 if quest_only:
@@ -641,7 +661,7 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
                   scope='Normal launcher + actual local OIDC, owned PostgreSQL, PID-bound synthetic X11 input and Linux native GPU; no physical hardware/Windows claim',
                   wheel_input='temporary Linux uinput wheel axis; XTEST pointer/keyboard; all guarded by owned X11 focus and pointer checks', virtual_wheel_device_removed=True,
                   private_combat_fixture=not production, unchanged_quest_catalogue=True, repeated_preaccept_interaction=repeat_interaction,
-                  database_process_restart=True, saved_completion_rejoin=True, reach_area=reach_areas, item_destruction=destroy_items, corpse_loot=corpse_loot, item_quest=item_quest, guaranteed_loot_fixture=item_quest or documents, quest_only=quest_only, documents=documents, fixed_quest_rewards=item_rewards, fixed_reward_capacity_fixture=reward_capacity)
+                  database_process_restart=True, saved_completion_rejoin=True, reach_area=reach_areas, item_destruction=destroy_items, corpse_loot=corpse_loot, item_quest=item_quest, guaranteed_loot_fixture=item_quest or documents, quest_only=quest_only, documents=documents, fixed_quest_rewards=item_rewards, fixed_reward_capacity_fixture=reward_capacity, bounded_quest_offers=quest_offers)
     (output/'verification.json').write_text(json.dumps(result, indent=2)+'\n')
     return result
 
@@ -655,6 +675,7 @@ if __name__ == '__main__':
     parser.add_argument('--minimap', action='store_true')
     parser.add_argument('--minimap-traversal', action='store_true', help='After restart/rejoin, walk across chunk and render-origin boundaries using normal keyboard movement')
     parser.add_argument('--repeat-interaction', action='store_true')
+    parser.add_argument('--quest-offers',action='store_true',help='Owned 32-offer catalogue: reach the last offer and accept it before completing the note quest')
     parser.add_argument('--reward-capacity',action='store_true',help='Owned extra-sword reward fixture: fill backpack through split UI, refuse turn-in, free space and retry')
     parser.add_argument('--item-rewards',action='store_true',help='Verify configured fixed rewards on offers, turn-in and rejoin with --documents')
     parser.add_argument('--documents',action='store_true',help='Normal note pickup, reader pages, historical credit, possession loss and delivery')
@@ -664,4 +685,4 @@ if __name__ == '__main__':
     parser.add_argument('--reach-areas', action='store_true', help='Complete the opt-in western overlook using normal movement')
     parser.add_argument('--gameplay-manifest', type=Path, default=Path('content/development-gameplay-classic-journal.json'))
     args = parser.parse_args()
-    print(json.dumps(run(args.output, args.binaries, args.sizes or ['1920x1200','3440x1440','1280x720'], args.production, args.repeat_interaction, args.gameplay_manifest, args.minimap, args.minimap_traversal, args.reach_areas, args.destroy_items, args.corpse_loot, args.item_quest, args.documents, args.item_rewards, args.reward_capacity), indent=2))
+    print(json.dumps(run(args.output, args.binaries, args.sizes or ['1920x1200','3440x1440','1280x720'], args.production, args.repeat_interaction, args.gameplay_manifest, args.minimap, args.minimap_traversal, args.reach_areas, args.destroy_items, args.corpse_loot, args.item_quest, args.documents, args.item_rewards, args.reward_capacity, args.quest_offers), indent=2))

@@ -456,7 +456,7 @@ fn paint(
 fn scroll(
     mut events: MessageReader<bevy::input::mouse::MouseWheel>,
     ui: Res<Ui>,
-    mut panes: Query<(&mut ScrollPosition, &ComputedNode), With<BodyScroll>>,
+    mut panes: Query<(&Hovered, &mut ScrollPosition, &ComputedNode), With<BodyScroll>>,
 ) {
     let delta: f32 = events
         .read()
@@ -469,7 +469,10 @@ fn scroll(
         })
         .sum();
     if ui.open && delta != 0. {
-        for (mut position, node) in &mut panes {
+        for (hovered, mut position, node) in &mut panes {
+            if !hovered.0 {
+                continue;
+            }
             let maximum =
                 ((node.content_size().y - node.size().y) * node.inverse_scale_factor()).max(0.);
             position.y = (position.y + delta).clamp(0., maximum);

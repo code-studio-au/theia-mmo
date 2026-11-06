@@ -156,7 +156,12 @@ fn inventory_layout(world: &mut World) -> serde_json::Value {
         slots[usize::from(button.0)] =
             Some((t.affine().translation * node.inverse_scale_factor()).to_array());
     }
-    serde_json::json!({"slots":slots,"split":inventory_widget::<crate::inventory::SplitButton>(world),
+    let scroll = world
+        .query_filtered::<&ScrollPosition, With<crate::inventory::Pane>>()
+        .iter(world)
+        .next()
+        .map(|s| [s.x, s.y]);
+    serde_json::json!({"slots":slots,"scroll":scroll,"split":inventory_widget::<crate::inventory::SplitButton>(world),
         "destroy":inventory_widget::<crate::inventory::DestroyButton>(world),"cancel":inventory_widget::<crate::inventory::CancelButton>(world)})
 }
 fn os_trace(world: &mut World) {
