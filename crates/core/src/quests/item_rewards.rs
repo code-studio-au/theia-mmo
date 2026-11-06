@@ -152,3 +152,6 @@ impl Catalog {
 }
 #[cfg(test)]
 mod tests;
+
+mod proposal;
+pub use proposal::{TurnIn, TurnInError};

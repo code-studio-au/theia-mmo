@@ -135,6 +135,40 @@ impl Journal {
         npc: &ContentId,
         expected_revision: u64,
     ) -> Result<PossessionTurnIn, Error> {
+        let prepared =
+            self.prepare_possession_turn_in(catalog, items, bag, quest, npc, expected_revision)?;
+        let proposal = prepared.quest;
+        let next = prepared.bag;
+        // Consuming this quest's materials may invalidate another ready quest.
+        // Completed delivery counts remain historical proof and are untouched.
+        let after = proposal.journal.propose_inventory(catalog, items, &next)?;
+        let changed = proposal
+            .changed
+            .into_iter()
+            .chain(after.changed)
+            .collect::<std::collections::BTreeSet<_>>()
+            .into_iter()
+            .collect();
+        Ok(PossessionTurnIn {
+            quest: Proposal {
+                journal: after.journal,
+                changed,
+                reward: proposal.reward,
+            },
+            bag: next,
+        })
+    }
+    /// Prepare completion/consumption without reconciling other quests yet.
+    /// Compound rewards reconcile once against their final tentative bag.
+    pub(crate) fn prepare_possession_turn_in(
+        &self,
+        catalog: &Catalog,
+        items: &ItemCatalog,
+        bag: &Bag,
+        quest: &ContentId,
+        npc: &ContentId,
+        expected_revision: u64,
+    ) -> Result<PossessionTurnIn, Error> {
         self.validate(catalog)?;
         let definition = catalog.quest(quest).ok_or(Error::UnknownQuest)?;
         let requirements = definition
@@ -164,22 +198,8 @@ impl Journal {
                 crate::inventory::requirements::Error::MissingItems => Error::NotReady,
                 _ => Error::InvalidProgress,
             })?;
-        // Consuming this quest's materials may invalidate another ready quest.
-        // Completed delivery counts remain historical proof and are untouched.
-        let after = proposal.journal.propose_inventory(catalog, items, &next)?;
-        let changed = proposal
-            .changed
-            .into_iter()
-            .chain(after.changed)
-            .collect::<std::collections::BTreeSet<_>>()
-            .into_iter()
-            .collect();
         Ok(PossessionTurnIn {
-            quest: Proposal {
-                journal: after.journal,
-                changed,
-                reward: proposal.reward,
-            },
+            quest: proposal,
             bag: next,
         })
     }

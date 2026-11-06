@@ -1,3 +1,12 @@
+Fixed quest reward pure proposal qualified, 6 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: completion, delivery consumption and fixed grants
+now form one pure candidate with one final bag revision and final-holdings quest
+reconciliation. Full bags/stale/missing inputs refuse atomically. Eight new cases,
+371 core and 376 network regression tests, formatting and strict Clippy pass.
+[Scope and next prerequisites](QUEST_ITEM_REWARDS.md#implemented-pure-turn-in-proposal).
+No durable item reward or runtime admission yet; continue exact content binding
+and authorized storage locally. No push. Earlier entries retain their scope.
+
 Fixed quest reward metadata prerequisite, 6 November 2026:
 P3-05 / P3-09 / P3-11 / P3-15: a bounded separate catalogue validates known
 quest/item fixed grants and rejects bundles impossible even in an empty bag.

@@ -96,3 +96,34 @@ This headless metadata change requires no new GPU claim. No persistence, live
 admission, authoring-CLI support or playable item reward is established here.
 Next implement and test the combined pure consumption/reward proposal, then
 qualify durable ownership and the runtime sequence above.
+
+## Implemented pure turn-in proposal
+
+`Catalog::propose_turn_in` accepts the checked journal, current bag and a `TurnIn`
+containing quest/NPC IDs plus expected quest and bag revisions. It rechecks
+readiness/current delivery holdings, tentatively consumes required materials,
+merges the fixed bundle into the remaining bag and returns completion, the final
+bag and the existing completion-XP proposal together. The final bag advances once,
+including when the old revision is the last usable value before exhaustion.
+An error returns no partial candidate and leaves every input unchanged.
+
+The loot recipe's existing merge algorithm is factored into a crate-private
+shared helper without changing its policy. Existing possession turn-in retains
+its behavior; a private preparation step allows the reward path to reconcile
+other quests only against final holdings. A consumed item immediately replaced
+by its reward therefore does not temporarily invalidate another quest or bump
+its revision. Rewards can independently make another accepted item quest ready.
+Equipment remains unchanged; an unknown reward quest, stale intent, wrong NPC,
+missing delivery items, completed quest, full bundle or exhausted revision refuses.
+
+Eight new proposal tests and all 371 core tests pass at
+`build/quest-item-reward-proposal-core-tests-v3-20261106.log`. The initial v2
+ordinary-quest fixture used an invalid Ready revision; corrected valid progress
+passes v3. All 376 network-library regression tests, including existing encrypted
+item/document flows, pass at `build/quest-item-reward-proposal-network-tests-v1-20261106.log`.
+Formatting and strict workspace/all-target Clippy pass in the proposal `fmt-v1`
+and `clippy-v1` logs for 20261106. These are regression checks, not new reward-wire
+or saved item reward evidence. The pure proposal grants no items or XP itself,
+checks no live NPC distance/owner and creates no durable retry receipt. Exact
+profile binding, authorized SQL, retained owner and playable reward adoption
+remain pending; the qualified note reader stays available unchanged.

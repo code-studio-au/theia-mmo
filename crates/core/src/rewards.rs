@@ -365,51 +365,60 @@ impl Definition {
         if &self.item_catalog != items.id() {
             return Err(Error::CatalogMismatch);
         }
-        bag.validate(items).map_err(Error::ItemState)?;
-        if bag.revision() != expected_revision {
-            return Err(Error::StaleRevision);
-        }
-        let revision = bag
-            .revision()
-            .checked_add(1)
-            .filter(|r| *r <= inventory::MAX_REVISION)
-            .ok_or(Error::RevisionExhausted)?;
-        let mut slots = bag.slots().clone();
-        for grant in &self.grants {
-            let limit = items
-                .definition(&grant.item)
-                .ok_or(Error::InvalidGrant)?
-                .maximum_stack();
-            let mut remaining = grant.count;
-            for slot in &mut slots {
-                if let Some(stack) = slot.as_ref().filter(|s| s.item() == &grant.item) {
-                    let count = stack.count();
-                    let amount = remaining.min(limit - count);
-                    if amount > 0 {
-                        *slot = Some(
-                            Stack::new(items, grant.item.clone(), count + amount)
-                                .ok_or(Error::InvalidGrant)?,
-                        );
-                        remaining -= amount;
-                    }
-                }
-            }
-            for slot in &mut slots {
-                if remaining == 0 {
-                    break;
-                }
-                if slot.is_none() {
-                    let amount = remaining.min(limit);
+        propose_grants(&self.grants, bag, items, expected_revision)
+    }
+}
+
+/// Shared bounded fixed grants; caller owns recipe binding and entitlement.
+pub(crate) fn propose_grants(
+    grants: &[Grant],
+    bag: &Bag,
+    items: &inventory::Catalog,
+    expected_revision: u64,
+) -> Result<Bag, Error> {
+    bag.validate(items).map_err(Error::ItemState)?;
+    if bag.revision() != expected_revision {
+        return Err(Error::StaleRevision);
+    }
+    let revision = bag
+        .revision()
+        .checked_add(1)
+        .filter(|r| *r <= inventory::MAX_REVISION)
+        .ok_or(Error::RevisionExhausted)?;
+    let mut slots = bag.slots().clone();
+    for grant in grants {
+        let limit = items
+            .definition(&grant.item)
+            .ok_or(Error::InvalidGrant)?
+            .maximum_stack();
+        let mut remaining = grant.count;
+        for slot in &mut slots {
+            if let Some(stack) = slot.as_ref().filter(|s| s.item() == &grant.item) {
+                let count = stack.count();
+                let amount = remaining.min(limit - count);
+                if amount > 0 {
                     *slot = Some(
-                        Stack::new(items, grant.item.clone(), amount).ok_or(Error::InvalidGrant)?,
+                        Stack::new(items, grant.item.clone(), count + amount)
+                            .ok_or(Error::InvalidGrant)?,
                     );
                     remaining -= amount;
                 }
             }
-            if remaining > 0 {
-                return Err(Error::NoCapacity);
+        }
+        for slot in &mut slots {
+            if remaining == 0 {
+                break;
+            }
+            if slot.is_none() {
+                let amount = remaining.min(limit);
+                *slot =
+                    Some(Stack::new(items, grant.item.clone(), amount).ok_or(Error::InvalidGrant)?);
+                remaining -= amount;
             }
         }
-        Bag::from_parts(items, revision, slots, bag.main_hand().cloned()).map_err(Error::ItemState)
+        if remaining > 0 {
+            return Err(Error::NoCapacity);
+        }
     }
+    Bag::from_parts(items, revision, slots, bag.main_hand().cloned()).map_err(Error::ItemState)
 }
