@@ -1173,6 +1173,20 @@ mod tests {
         let reply = router.take_reply(&world, &port).unwrap().unwrap();
         assert_eq!(reply.sequence, 3);
         assert_eq!(reply.rejection, Some(Refusal::NotReady));
+        command.sequence = 4;
+        router.command(&world, &command, &port).unwrap();
+        let Input::Journal(queued) = receiver.try_recv().unwrap() else {
+            panic!("Wrong input")
+        };
+        publish.send_modify(|s| {
+            s.journal.as_mut().unwrap().reply = Some(JournalReply {
+                sequence: queued.sequence,
+                rejection: Some(JournalRejection::InventoryFull),
+            })
+        });
+        let reply = router.take_reply(&world, &port).unwrap().unwrap();
+        assert_eq!(reply.sequence, 4);
+        assert_eq!(reply.rejection, Some(Refusal::InventoryFull));
     }
 }
 

@@ -368,6 +368,7 @@ fn accept_turn_in_and_bound_refusals_round_trip_without_credit_uploads() {
             Rejection::Capacity,
             Rejection::Conflict,
             Rejection::Exhausted,
+            Rejection::InventoryFull,
         ] {
             let refused = Reply {
                 revision: 0,

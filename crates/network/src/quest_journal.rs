@@ -450,6 +450,7 @@ impl Router {
         }
         let rejection = match result.rejection {
             None => None,
+            Some(JournalRejection::InventoryFull) => Some(Refusal::InventoryFull),
             Some(JournalRejection::Busy) => Some(Refusal::Busy),
             Some(JournalRejection::Conflict) => Some(Refusal::Conflict),
             Some(JournalRejection::Rule(rule)) => Some(match rule {

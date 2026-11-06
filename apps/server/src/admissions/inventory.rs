@@ -36,6 +36,7 @@ impl Config {
         &mut self,
         journal: theia_persistence::QuestJournalCatalog,
         documents: Option<Arc<theia_network::documents::Profile>>,
+        item_reward_mode: bool,
     ) -> Result<()> {
         if self.journal.is_some()
             || journal
@@ -44,7 +45,7 @@ impl Config {
         {
             return Err("Invalid inventory journal binding".into());
         }
-        if journal.item_rewards().is_some() {
+        if journal.item_rewards().is_some() != item_reward_mode {
             return Err("Quest item reward owner is not installed".into());
         }
         match (journal.documents(), documents.as_deref()) {

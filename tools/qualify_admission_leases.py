@@ -11,7 +11,8 @@ from private_identity import Identity
 from private_postgres import Cluster
 
 
-def run(output,identity_sdk,postgres_sdk,inventory=False,rewards=False,progression=False,quests=False,vendors=False,lifecycle=False,completion_xp=False,journal=False,item_journal=False,creature_loot=False,quest_loot=False,documents=False):
+def run(output,identity_sdk,postgres_sdk,inventory=False,rewards=False,progression=False,quests=False,vendors=False,lifecycle=False,completion_xp=False,journal=False,item_journal=False,creature_loot=False,quest_loot=False,documents=False,item_rewards=False):
+    if item_rewards and any((inventory,rewards,progression,quests,vendors,lifecycle,completion_xp,journal,item_journal,creature_loot,quest_loot,documents)):raise ValueError("Choose fixed reward fixture separately")
     if documents and any((inventory,rewards,progression,quests,vendors,lifecycle,completion_xp,journal,item_journal,creature_loot,quest_loot)):raise ValueError("Choose document fixture separately")
     if quest_loot and any((inventory,rewards,progression,quests,vendors,lifecycle,completion_xp,journal,item_journal,creature_loot)):raise ValueError("Choose quest loot fixture separately")
     if creature_loot:rewards=True
@@ -26,7 +27,7 @@ def run(output,identity_sdk,postgres_sdk,inventory=False,rewards=False,progressi
     binary=Path('target/debug/examples/admission_lease_qualification').resolve()
     child=None
     with Identity(output/'provider',identity_sdk) as identity, Cluster(output/'cluster',postgres_sdk) as cluster:
-        env=dict(cluster.test_environment(),THEIA_TEST_QUEST_DOCUMENTS="1" if documents else "0",THEIA_TEST_QUEST_LOOT="1" if quest_loot else "0",THEIA_TEST_OIDC_ISSUER=identity.issuer,THEIA_TEST_OIDC_CLIENT=identity.client_id,THEIA_TEST_OIDC_REDIRECT=identity.redirect,THEIA_TEST_VENDORS="1" if vendors else "0",THEIA_TEST_INVENTORY="1" if inventory else "0",THEIA_TEST_REWARDS="1" if rewards else "0",THEIA_TEST_CREATURE_LOOT="1" if creature_loot else "0",THEIA_TEST_PROGRESSION="1" if progression else "0",THEIA_TEST_QUESTS="1" if quests else "0",THEIA_TEST_QUEST_LIFECYCLE="1" if lifecycle else "0",THEIA_TEST_QUEST_TURN_IN_XP="1" if completion_xp else "0",THEIA_TEST_QUEST_JOURNAL="1" if journal else "0",THEIA_TEST_QUEST_ITEMS="1" if item_journal else "0")
+        env=dict(cluster.test_environment(),THEIA_TEST_QUEST_ITEM_REWARDS="1" if item_rewards else "0",THEIA_TEST_QUEST_DOCUMENTS="1" if documents else "0",THEIA_TEST_QUEST_LOOT="1" if quest_loot else "0",THEIA_TEST_OIDC_ISSUER=identity.issuer,THEIA_TEST_OIDC_CLIENT=identity.client_id,THEIA_TEST_OIDC_REDIRECT=identity.redirect,THEIA_TEST_VENDORS="1" if vendors else "0",THEIA_TEST_INVENTORY="1" if inventory else "0",THEIA_TEST_REWARDS="1" if rewards else "0",THEIA_TEST_CREATURE_LOOT="1" if creature_loot else "0",THEIA_TEST_PROGRESSION="1" if progression else "0",THEIA_TEST_QUESTS="1" if quests else "0",THEIA_TEST_QUEST_LIFECYCLE="1" if lifecycle else "0",THEIA_TEST_QUEST_TURN_IN_XP="1" if completion_xp else "0",THEIA_TEST_QUEST_JOURNAL="1" if journal else "0",THEIA_TEST_QUEST_ITEMS="1" if item_journal else "0")
         with (output/'rust-errors.log').open('w') as log:
             try:
                 child=subprocess.Popen([str(binary)],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=log,env=env,bufsize=0)
@@ -45,6 +46,7 @@ def run(output,identity_sdk,postgres_sdk,inventory=False,rewards=False,progressi
                             child.stdin.write((json.dumps(callback)+'\n').encode());child.stdin.flush()
                         else:
                             assert message['passed']
+                            if item_rewards:assert all(message[key] for key in ("fixed_quest_reward_owner_enabled","actual_oidc_and_postgres","encrypted_ticket_binding","no_reward_before_commit","capacity_refusal_nonfatal_and_same_intent_retried","accepted_turn_in_and_item_move_survive_retirement","original_retry_after_rejoin_no_extra_grant","exact_reward_policy_required"))
                             if documents:assert all(message[key] for key in ('document_owner_enabled','actual_oidc_and_postgres','encrypted_ticket_binding','original_read_stage_and_preaccept_replay','read_survives_retirement_and_item_loss','fresh_missing_rejected_nonfatal','rejoin_original_authorization','atomic_turn_in_once'))
                             if quest_loot:assert all(message[key] for key in ('quest_loot_enabled','actual_oidc_and_postgres','encrypted_ticket_binding','denied_generation_stays_denied','stationary_need_refresh','stale_need_nonfatal','pickup_survives_retirement','latest_pickup_replay','atomic_turn_in','completed_leftovers_hidden','queued_generation_survives_retirement'))
                             if creature_loot:assert message['persisted_rolls_including_miss'] and message['creature_loot_enabled'] and message['nearby_interest_follows_retained_pose'] and message['pickup_survives_retirement'] and message['distant_uncollected_loot_restores']
@@ -73,6 +75,7 @@ def run(output,identity_sdk,postgres_sdk,inventory=False,rewards=False,progressi
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('output',type=Path)
+    parser.add_argument('--item-rewards',action='store_true',help='Exercise fixed quest rewards, capacity, shared item ordering and retirement/rejoin')
     parser.add_argument('--documents',action='store_true',help='Exercise original-stage document opening, item loss, retirement and rejoin')
     parser.add_argument('--quest-loot',action='store_true',help='Exercise conditional loot generation, stationary need refresh, retained pickup and turn-in')
     parser.add_argument('--item-journal',action='store_true',help='Exercise inventory-bound journal initialization, destruction, turn-in and rejoin')
@@ -88,4 +91,4 @@ if __name__=='__main__':
     parser.add_argument('--identity-sdk',type=Path,default=Path('build/identity-sdk'))
     parser.add_argument('--postgres-sdk',type=Path,default=Path('build/postgres-sdk'))
     args=parser.parse_args()
-    print(json.dumps(run(args.output,args.identity_sdk.resolve(),args.postgres_sdk.resolve(),inventory=args.inventory,rewards=args.rewards,progression=args.progression,quests=args.quests,vendors=args.vendors,lifecycle=args.lifecycle,completion_xp=args.completion_xp,journal=args.journal,item_journal=args.item_journal,creature_loot=args.creature_loot,quest_loot=args.quest_loot,documents=args.documents),indent=2))
+    print(json.dumps(run(args.output,args.identity_sdk.resolve(),args.postgres_sdk.resolve(),inventory=args.inventory,rewards=args.rewards,progression=args.progression,quests=args.quests,vendors=args.vendors,lifecycle=args.lifecycle,completion_xp=args.completion_xp,journal=args.journal,item_journal=args.item_journal,creature_loot=args.creature_loot,quest_loot=args.quest_loot,documents=args.documents,item_rewards=args.item_rewards),indent=2))

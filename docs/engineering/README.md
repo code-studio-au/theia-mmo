@@ -1,3 +1,14 @@
+Fixed quest reward retained owner qualified locally, 6 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: explicit exact stored/wire reward context now
+connects the retained item/progression owners to atomic turn-in. Real OIDC,
+encrypted ticket and PostgreSQL prove nonfatal full-bag refusal, same-intent retry,
+COMMIT-before-publication, queued item movement during retirement and rejoin
+without another grant. Existing document-owner regression also passes.
+[Scope/evidence](../QUEST_ITEM_REWARDS.md#implemented-retained-owner-adoption). 377 network library, nine wire and 22 server library tests,
+formatting and strict Clippy pass. World/client/normal manifest adoption is next;
+this direct-lease fixture does not exercise game command transport or UI.
+Continue headless only; desktop/mouse tests paused by user, local commits, no push.
+
 Fixed quest item reward storage qualified locally, 6 November 2026:
 P3-05 / P3-09 / P3-11 / P3-15: explicit reward-bound Store/worker turn-in now
 commits delivery consumption, the whole fixed bundle, final-holdings quest state,

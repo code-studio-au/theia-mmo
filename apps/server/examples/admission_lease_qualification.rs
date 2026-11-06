@@ -5,6 +5,8 @@
 mod admissions;
 #[path = "admission_lease/documents.rs"]
 mod document_owner;
+#[path = "admission_lease/item_rewards.rs"]
+mod item_reward_owner;
 #[path = "../../../crates/persistence/tests/support/mod.rs"]
 mod support;
 use std::{
@@ -149,11 +151,13 @@ async fn main() -> theia_network::Result<()> {
     let socket = UdpSocket::bind("127.0.0.1:0")?;
     let address = socket.local_addr()?;
     let (mut transport, issuer) = net::secure_issuer(socket, vec![address])?;
+    let item_rewards = std::env::var("THEIA_TEST_QUEST_ITEM_REWARDS").is_ok_and(|v| v == "1");
     let document_journal = std::env::var("THEIA_TEST_QUEST_DOCUMENTS").is_ok_and(|v| v == "1");
     let quest_loot = std::env::var("THEIA_TEST_QUEST_LOOT").is_ok_and(|v| v == "1");
     let item_journal = std::env::var("THEIA_TEST_QUEST_ITEMS").is_ok_and(|v| v == "1");
     let vendors = std::env::var("THEIA_TEST_VENDORS").is_ok_and(|v| v == "1");
-    let inventory = document_journal
+    let inventory = item_rewards
+        || document_journal
         || quest_loot
         || item_journal
         || vendors
@@ -163,7 +167,7 @@ async fn main() -> theia_network::Result<()> {
         creature_loot || std::env::var("THEIA_TEST_REWARDS").is_ok_and(|v| v == "1");
     let item_bytes: &[u8] = if quest_loot {
         include_bytes!("../../../content/gameplay/development-loot-items.json")
-    } else if document_journal || item_journal || rewards_enabled || vendors {
+    } else if item_rewards || document_journal || item_journal || rewards_enabled || vendors {
         include_bytes!("../../../content/gameplay/development-equipment-items.json")
     } else {
         include_bytes!("../../../content/gameplay/development-items.json")
@@ -224,8 +228,8 @@ async fn main() -> theia_network::Result<()> {
     } else {
         admissions::GameAdmissions::new(sessions.clone(), issuer, world)
     };
-    if document_journal {
-        return document_owner::run(document_owner::Fixture {
+    if document_journal || item_rewards {
+        let fixture = document_owner::Fixture {
             gate,
             publisher,
             worker,
@@ -238,8 +242,12 @@ async fn main() -> theia_network::Result<()> {
             url,
             realm,
             world,
-        })
-        .await;
+        };
+        return if item_rewards {
+            item_reward_owner::run(fixture).await
+        } else {
+            document_owner::run(fixture).await
+        };
     }
     if quest_loot {
         use net::progression::{Input, JournalInput, JournalOperation};

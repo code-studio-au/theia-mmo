@@ -344,6 +344,7 @@ impl Request {
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Rejection {
+    InventoryFull,
     Busy,
     NotEntitled,
     StaleSequence,
@@ -357,6 +358,7 @@ pub enum Rejection {
 impl Rejection {
     fn code(self) -> u8 {
         match self {
+            Self::InventoryFull => 10,
             Self::Busy => 1,
             Self::NotEntitled => 2,
             Self::StaleSequence => 3,
@@ -380,6 +382,7 @@ impl Rejection {
             7 => Some(Self::Capacity),
             8 => Some(Self::Conflict),
             9 => Some(Self::Exhausted),
+            10 => Some(Self::InventoryFull),
             _ => return Err("Unsupported quest refusal".into()),
         })
     }

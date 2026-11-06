@@ -1,3 +1,13 @@
+## 2026-11-06 — explicit fixed reward owner and capacity refusal
+
+Require identical stored/wire reward-bound journal hashes before installing the
+retained inventory/progression owner. Keep ordinary owner constructors closed to
+reward-bearing profiles. Treat a full reward bag as a nonfatal inventory-full
+journal refusal and append code 10 without changing existing codes/frame sizes.
+Accepted SQL work and queued item operations retain the current logout drain;
+only committed projections can acknowledge success. [Qualified headless scope](QUEST_ITEM_REWARDS.md#implemented-retained-owner-adoption).
+World/client/manifest adoption remains separate, and desktop tests are paused.
+
 ## 2026-11-06 — atomic fixed quest reward storage
 
 Adopt the existing quest action API and original receipt for fixed bundles.

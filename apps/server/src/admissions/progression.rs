@@ -395,6 +395,14 @@ impl Owner {
                 let rejection = match error {
                     Error::QuestJournalCommand(rule) => JournalRejection::Rule(rule),
                     Error::QuestJournalConflict => JournalRejection::Conflict,
+                    Error::RewardCommand(theia_core::rewards::Error::NoCapacity) => {
+                        JournalRejection::InventoryFull
+                    }
+                    Error::RewardCommand(theia_core::rewards::Error::RevisionExhausted) => {
+                        JournalRejection::Rule(
+                            theia_core::quests::journal::Error::RevisionExhausted,
+                        )
+                    }
                     other => return Err(other.into()),
                 };
                 if catalog.inventory().is_some() {

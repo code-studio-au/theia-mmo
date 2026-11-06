@@ -189,7 +189,7 @@ impl GameAdmissions {
         if profile.documents().is_some() {
             return Err("Document journal owner is not installed".into());
         }
-        Self::install_quest_journal(gate, profile, None)
+        Self::install_quest_journal(gate, profile, None, false)
     }
     pub(crate) fn with_document_quest_journal(
         gate: &mut Arc<Self>,
@@ -202,14 +202,32 @@ impl GameAdmissions {
         {
             return Err("Document owner profile mismatch".into());
         }
-        Self::install_quest_journal(gate, profile, Some(documents))
+        Self::install_quest_journal(gate, profile, Some(documents), false)
+    }
+    /// Explicit fixed-reward ownership after exact stored/wire policy agreement.
+    /// Normal journal constructors remain closed to reward-bearing profiles.
+    #[allow(dead_code)] // Headless qualification prerequisite; normal CLI adoption follows.
+    pub(crate) fn with_item_reward_quest_journal(
+        gate: &mut Arc<Self>,
+        profile: theia_persistence::QuestJournalCatalog,
+        wire: Arc<theia_network::quest_journal::Profile>,
+    ) -> Result<()> {
+        if profile.item_rewards().is_none()
+            || wire.item_rewards().is_none()
+            || profile.hash() != wire.hash()
+        {
+            return Err("Quest item reward owner requires exact stored/wire policy".into());
+        }
+        let documents = wire.documents().cloned().map(Arc::new);
+        Self::install_quest_journal(gate, profile, documents, true)
     }
     fn install_quest_journal(
         gate: &mut Arc<Self>,
         profile: theia_persistence::QuestJournalCatalog,
         documents: Option<Arc<theia_network::documents::Profile>>,
+        item_reward_mode: bool,
     ) -> Result<()> {
-        if profile.item_rewards().is_some() {
+        if profile.item_rewards().is_some() != item_reward_mode {
             return Err("Quest item reward owner is not installed".into());
         }
         let gate = Arc::get_mut(gate).ok_or("Journal configuration requires unshared gate")?;
@@ -221,7 +239,7 @@ impl GameAdmissions {
             if inventory.profile_hash() != items.hash() {
                 return Err("Item journal/inventory profile mismatch".into());
             }
-            inventory.set_journal(profile.clone(), documents)?;
+            inventory.set_journal(profile.clone(), documents, item_reward_mode)?;
         }
         gate.progression
             .as_mut()

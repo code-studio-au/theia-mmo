@@ -1,9 +1,9 @@
 # Fixed item rewards at quest turn-in
 
 P3-05 / P3-09 / P3-11 / P3-15, staged implementation, 6 November 2026.
-Core proposals, exact content binding and atomic Store/worker turn-in are now
-qualified. Fixed bundles remain unavailable in normal gameplay until retained
-ownership, World/network admission and presentation are qualified.
+Core proposals, exact content binding, atomic Store/worker turn-in and explicit
+retained ownership are now qualified. Fixed bundles remain unavailable in normal
+gameplay until World/network admission and presentation are qualified.
 
 Use an explicit bounded catalogue associating a quest with fixed grants of known
 items. Keep the existing quest schemas and legacy profiles intact. Bind exact
@@ -208,3 +208,50 @@ checks do not establish live NPC range, session ownership, encrypted transport,
 client presentation or Windows execution. Continue retained-owner/World and
 headless bridge qualification next; desktop/mouse tests are paused at the user's
 request. Keep commits local and retain the working note-reader path.
+
+
+## Implemented retained owner adoption
+
+`GameAdmissions::with_item_reward_quest_journal` is an explicit internal opt-in:
+it requires reward-bearing stored and wire profiles with identical exact hashes,
+then binds the existing inventory and progression owners. Optional documents use
+the same checked wire context. Existing ordinary/document owner constructors
+continue to reject reward-bearing profiles. Normal executable configuration,
+World installation and client progression admission remain closed.
+
+The progression owner now treats reward capacity as `InventoryFull`, reloads the
+current saved projection and continues serving commands. Reward bag revision
+exhaustion maps to the existing exhausted refusal. Unexpected policy/storage
+errors still fail closed. The journal reply appends `InventoryFull` at code 10;
+codes 1–9 and frame sizes remain unchanged. Router and wire tests cover that
+specific refusal separately from the existing journal capacity rule. The normal
+client UI has not yet adopted reward text or inventory-full guidance.
+
+Actual headless qualification passes at
+`build/quest-item-reward-owner-leases-v2-20261106/verification.json` using verified
+OIDC, real encrypted admission tickets and owned PostgreSQL. Its deliberately
+full seed bag cannot hold the reward after consuming thirteen stones. Refusal
+leaves XP/bag unchanged and the owner healthy. Two ordinary filler deletions free
+space; the same quest request then waits on a held SQL bag lock. No reward or XP
+is published before COMMIT. A queued item move and turn-in drain through session
+retirement. Rejoining and retrying the original request retain 102 total tokens,
+bag revision 4, moved reward slot 15 and XP 25 without another grant. Reopening
+the Store confirms original receipt replay. A changed reward file is refused
+before owner setup. Services and temporary credentials are cleaned up.
+
+The initial owner v1 fixture tried a 100-token stack although this catalogue's
+maximum is 99; `Stack::new` returned None, so that qualification failed. Corrected
+v2 uses valid 99-token input and explicitly asserts every seed slot is populated.
+No production stack rule changed. The unchanged document-owner regression passes
+at `build/qir-doc-v2-20261106/verification.json`. Its first attempted output path
+was too long for PostgreSQL's Unix socket; the cluster refused startup and was
+cleaned up. The shorter v2 path runs the full regression successfully.
+
+377 network-library tests, nine journal-wire integration tests and 22 server
+library tests pass in the owner `network-tests-v1` and `server-tests-v1` logs.
+Formatting and strict workspace/all-target Clippy pass in owner `fmt-v1` and
+`clippy-v1`. These proofs drive direct retained leases after a ticket handshake;
+they do not exercise encrypted game commands, World-authorized NPC range, the
+normal client, native display, Windows or MMO capacity. Next qualify explicit
+World and encrypted bridge adoption at 20/30/60 Hz, preserving all legacy gates.
+Desktop/mouse tests remain paused at the user's request. No push.

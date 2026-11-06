@@ -49,6 +49,7 @@ pub struct JournalReply {
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum JournalRejection {
+    InventoryFull,
     Rule(theia_core::quests::journal::Error),
     Conflict,
     Busy,
