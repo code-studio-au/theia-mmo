@@ -348,3 +348,29 @@ wheel device is removed and plaintext password files are removed. Evidence:
 `build/ui-reference-20261106/native-map-hover-v1/verification.json`. This does not
 qualify native search-region hovering, enlarged UI, Windows or physical hardware
 input. Earlier paused entries record permission at those checkpoints.
+
+
+## Native objective-area walk and hover — 6 November 2026
+
+P2-14 / P3-11 / P5-13 / P5-19. The normal Linux launcher/OIDC/Renet/PostgreSQL
+reach-area fixture now passes at 1280×720 / UI scale 1, including actual movement,
+hover and database restart/rejoin. It accepts the existing western-overlook goal,
+walks west using camera facing and W, pauses outside the target volume, and
+hovers the visible blue search region. The tooltip shows the exact bound label
+and `0/1`; hovering leaves the committed journal revision unchanged. At the sample
+there is one region / 32 tinted pixels and the payload remains 17,408 bytes.
+On authoritative entry the goal becomes ready and both selected/tinted region
+counts return to zero; the tooltip clears. Turning in and restarting retains
+revision 14 / XP 150. No production catalogue, coordinate or saved-policy change
+was needed. New read-only surface bounds use the same scale-aware conversion as
+pin/root/tooltip bounds, enabling the test to point at real painted geometry.
+
+Evidence: `build/ui-reference-20261106/native-map-area-v1/verification.json`,
+`1280x720/area-hover.json`, `area-hover.png` and the normal reach-area proof.
+RX 7900 XTX / RADV Vulkan / Mesa 26.2.6; zero GPU diagnostics. Owned services stop,
+temporary wheel device and plaintext password files are removed. Formatting,
+strict workspace/all-target Clippy and client build pass for the surface-metric
+addition. Existing 185 client cases remain the behavioral evidence; no gameplay
+logic changed in this follow-up. Kill/collection mapping has headless coverage
+but no newly installed spawn-region content/native collection-region trace.
+Windows, general multiple NPC contacts and broader scale/DPI/resize remain open.

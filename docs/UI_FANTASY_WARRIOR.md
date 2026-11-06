@@ -995,3 +995,10 @@ its `1920x1200` folder. This qualifies the current compact reader/reward-row
 geometry and 125% pointer exports for this flow. Native 75%/150%, DPI scaling,
 resize/restoration, broader resolutions, search-region hover and Windows remain
 separate. Earlier pending entries above describe prior checkpoints.
+
+
+Native reach-area guidance — 6 November 2026: the actual 1280×720 Linux area
+quest walk/hover/turn-in/restart trace passes. Hovering outside the authored volume
+shows `0/1` without credit; entry clears shading and completion survives rejoin
+at revision 14 / XP 150. Zero GPU diagnostics; owned services/input device stop.
+[Exact evidence and limits](MINIMAP.md#native-objective-area-walk-and-hover--6-november-2026).

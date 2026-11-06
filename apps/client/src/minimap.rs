@@ -38,6 +38,7 @@ pub(crate) struct Metrics {
     pub heading_radians: f32,
     pub centre: Option<[f64; 3]>,
     pub bounds: Option<[f32; 4]>,
+    pub surface_bounds: Option<[f32; 4]>,
     pub arrow_forward: Option<[f32; 2]>,
 }
 #[derive(Resource)]
@@ -541,6 +542,7 @@ fn present_inner(world: &mut World) {
 fn observe(
     roots: Query<(&ComputedNode, &bevy::ui::UiGlobalTransform), With<Root>>,
     arrows: Query<&bevy::ui::UiGlobalTransform, With<Arrow>>,
+    surfaces: Query<(&ComputedNode, &bevy::ui::UiGlobalTransform), With<Surface>>,
     guides: Query<(&ComputedNode, &bevy::ui::UiGlobalTransform), With<Guide>>,
     tooltips: Query<(&ComputedNode, &bevy::ui::UiGlobalTransform), With<hints::Tooltip>>,
     ui_scale: Option<Res<bevy::ui::UiScale>>,
@@ -558,6 +560,13 @@ fn observe(
             size.y,
         ]
     };
+    metrics.surface_bounds = metrics
+        .visible
+        .then(|| {
+            let (node, transform) = surfaces.single().ok()?;
+            Some(bounds(node, transform))
+        })
+        .flatten();
     metrics.guide_bounds = (metrics.visible && metrics.guide_point.is_some())
         .then(|| {
             let (node, transform) = guides.single().ok()?;

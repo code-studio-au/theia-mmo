@@ -35,8 +35,9 @@ metadata for kill/collection and related goals. 385 core/persistence and 27 focu
 network cases pass; the prior six overlay GPU layouts remain raster evidence.
 Existing content is unchanged; authored spawn/collection regions and native
 replay remain separate. Minimap hover descriptions now have six windowless
-GPU layouts and a 1280×720 connected hover/rejoin pass; native search-region
-hovering remains pending. Enlarged panels pass at 1920×1200 / 125%.
+GPU layouts and 1280×720 connected contact and reach-area hover/rejoin passes.
+Walking into the region clears shading; turn-in/rejoin retains revision 14 /
+XP 150. Enlarged panels pass at 1920×1200 / 125%.
 The skin remains opt-in; clickable plates, portrait art, chat/menu systems,
 broader scale/DPI/resize traces and complete-theme qualification
 remain separate work. [Scope, reference, assets and evidence](UI_FANTASY_WARRIOR.md).
