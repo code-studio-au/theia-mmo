@@ -1,5 +1,33 @@
 # Local minimap — initial Classic playable qualified
 
+## Requested quest guidance — 6 November 2026
+
+P2-14 / P3-11 / P5-13 / P5-19. The user's local 3440×1440 captures at
+18-50-31 and 18-52-27 add these requirements to the UI direction:
+
+- Show quest objective/search regions, including relevant creature spawn areas
+  and areas where required items can be collected. Associate guidance with the
+  player's active, unfinished objectives and update it from committed progress.
+- Show `!` at known NPCs offering a quest the player can currently obtain, and
+  `?` at the correct NPC when an accepted quest is ready to turn in. Revert ready
+  guidance if required holdings are lost; completed quests do not reappear.
+- Keep area guidance distinct from live creature/item locations. Static authored
+  search regions can be known from a quest; individual live pins require actual
+  permitted observations. Marking a region does not grant progress or guarantee
+  a spawn/drop. Preserve checked global metre projection, circular clipping,
+  bounded image/node work and the existing terrain streaming/request budgets.
+
+The current implementation below already supports the single known guide's
+available/ready state mapping; it does **not** implement general objective-region
+shading or a general multi-NPC marker catalogue. Current static quest-area data
+provides reach volumes; spawn/collection guidance needs explicit validated
+mapping to objectives and authored source areas. Reuse existing bound content
+where it describes the actual region; do not invent locations from screenshots
+or reveal unknown actors. Finish the current reader presentation slice, then
+implement this in bounded guidance/data/UI slices with headless checks. Native
+input checks remain paused while the user uses the desktop. The supplied game
+screenshots and their chat/player artwork remain local references outside Git.
+
 P2-14 / P3-13, presentation prerequisite for later P4-02 work. This does not
 complete predictive streaming or change terrain residency.
 

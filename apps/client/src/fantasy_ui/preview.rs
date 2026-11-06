@@ -24,6 +24,7 @@ struct Capture {
     size: UVec2,
     ui_scale: f32,
     preferred_scale: f32,
+    reader: bool,
     target: Handle<Image>,
     started: Instant,
     ready_frames: u32,
@@ -51,6 +52,12 @@ type UnitGeometry<'a> = (
     &'a ComputedNode,
     &'a bevy::ui::UiGlobalTransform,
 );
+type PaperSample = Or<(With<HeaderFixture>, With<crate::documents::Pane>)>;
+type ReaderButtons = Or<(
+    With<crate::documents::NextButton>,
+    With<crate::documents::PreviousButton>,
+    With<crate::documents::CloseButton>,
+)>;
 type BagActions = Or<(
     With<crate::inventory::EquipButton>,
     With<crate::inventory::UnequipButton>,
@@ -67,7 +74,7 @@ struct Layout<'w, 's> {
     anchor: Query<'w, 's, AnchorGeometry<'static>, With<ProjectedAnchor>>,
     minimap: Query<'w, 's, AnchorGeometry<'static>, With<crate::minimap::Root>>,
     map_surface: Query<'w, 's, AnchorGeometry<'static>, With<crate::minimap::Surface>>,
-    header: Query<'w, 's, AnchorGeometry<'static>, With<HeaderFixture>>,
+    header: Query<'w, 's, AnchorGeometry<'static>, PaperSample>,
     units: Query<'w, 's, UnitGeometry<'static>>,
     xp: Query<'w, 's, AnchorGeometry<'static>, With<crate::progression::Root>>,
     dock: Query<'w, 's, AnchorGeometry<'static>, With<crate::inventory::BackpackDock>>,
@@ -90,6 +97,18 @@ struct Layout<'w, 's> {
             &'static Text,
         ),
     >,
+    reader_body: Query<'w, 's, AnchorGeometry<'static>, With<crate::documents::BodyScroll>>,
+    reader_text: Query<
+        'w,
+        's,
+        (
+            &'static Text,
+            &'static bevy::text::TextLayoutInfo,
+            &'static TextColor,
+        ),
+        With<crate::documents::BodyText>,
+    >,
+    reader_buttons: Query<'w, 's, AnchorGeometry<'static>, ReaderButtons>,
     bag_actions: Query<'w, 's, AnchorGeometry<'static>, BagActions>,
     bag_slots: Query<'w, 's, AnchorGeometry<'static>, With<crate::inventory::SlotButton>>,
     bag_icons:
@@ -107,9 +126,9 @@ struct Layout<'w, 's> {
     >,
 }
 pub(crate) fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
-    if !(6..=8).contains(&args.len()) || args[2] != "--output" || args[4] != "--size" {
+    if !(6..=9).contains(&args.len()) || args[2] != "--output" || args[4] != "--size" {
         return Err(
-            "Expected --preview-fantasy-ui HUD_DIRECTORY --output DIRECTORY --size WIDTHxHEIGHT [--ui-scale FACTOR]"
+            "Expected --preview-fantasy-ui HUD_DIRECTORY --output DIRECTORY --size WIDTHxHEIGHT [--ui-scale FACTOR] [--reader]"
                 .into(),
         );
     }
@@ -121,6 +140,15 @@ pub(crate) fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
         return Err("Preview size outside 640x480 to 3840x2160".into());
     }
     let mut scale_args = args[6..].to_vec();
+    let reader_flags = scale_args
+        .iter()
+        .filter(|arg| arg.as_str() == "--reader")
+        .count();
+    if reader_flags > 1 {
+        return Err("Duplicate --reader preview flag".into());
+    }
+    let reader = reader_flags == 1;
+    scale_args.retain(|arg| arg != "--reader");
     let preferred_scale = super::parse_scale(&mut scale_args, true)?;
     let ui_scale = super::fit_scale(preferred_scale, size.as_vec2());
     if !scale_args.is_empty() {
@@ -199,12 +227,16 @@ pub(crate) fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
             size,
             ui_scale,
             preferred_scale,
+            reader,
             target,
             started: Instant::now(),
             ready_frames: 0,
             requested: false,
         });
     crate::inventory::skin::install_preview(&mut app);
+    if reader {
+        crate::documents::install_preview(&mut app);
+    }
     crate::combat::ui::install_preview(&mut app);
     crate::minimap::install_preview(&mut app);
     crate::progression::install_preview(&mut app);
@@ -224,63 +256,67 @@ fn label(value: &str, size: f32) -> impl Bundle {
     )
 }
 fn labels(mut commands: Commands, run: Res<Capture>, skin: Res<super::Skin>) {
-    // Validated metadata for a labelled UI sample; never a live quest/reward.
-    let items = theia_core::inventory::Catalog::from_json(include_bytes!(
-        "../../../../content/gameplay/development-document-items.json"
-    ))
-    .unwrap();
-    let mut metadata: serde_json::Value = serde_json::from_slice(include_bytes!(
-        "../../../../content/gameplay/development-rewards.json"
-    ))
-    .unwrap();
-    metadata["rewards"][0]["grants"] = serde_json::json!([
-        {"item":"theia.dev.training-token","count":3},
-        {"item":"theia.dev.training-sword","count":1}
-    ]);
-    let rewards =
-        theia_core::rewards::Catalog::from_json(&serde_json::to_vec(&metadata).unwrap(), &items)
-            .unwrap();
-    let grants = rewards.definitions().next().unwrap().grants();
-    commands
-        .spawn((
-            HeaderFixture,
-            super::Panel::Paper,
-            Node {
-                position_type: PositionType::Absolute,
-                left: px(12),
-                top: px(220),
-                width: px(276),
-                padding: UiRect::all(px(12)),
-                row_gap: px(6),
-                flex_direction: FlexDirection::Column,
-                ..default()
-            },
-            BackgroundColor(super::PANEL),
+    if !run.reader {
+        // Validated metadata for a labelled UI sample; never a live quest/reward.
+        let items = theia_core::inventory::Catalog::from_json(include_bytes!(
+            "../../../../content/gameplay/development-document-items.json"
         ))
-        .with_children(|panel| {
-            super::window_header(
-                panel,
-                label("Window header (fixture)", 18.),
-                (
-                    bevy::ui_widgets::Button,
-                    bevy::picking::hover::Hovered::default(),
-                    BackgroundColor(Color::srgb(0.08, 0.12, 0.16)),
-                ),
-                "Close fixture window",
-            );
-            panel.spawn(label(
-                "Rewards (fixture)\n3 x Training Token, 1 x Training Sword",
-                14.,
-            ));
-            // Deliberately narrow: exercise wrapping as well as the normal
-            // full-width offer layout, without inventing extra rewards.
-            panel
-                .spawn(Node {
-                    width: px(140),
+        .unwrap();
+        let mut metadata: serde_json::Value = serde_json::from_slice(include_bytes!(
+            "../../../../content/gameplay/development-rewards.json"
+        ))
+        .unwrap();
+        metadata["rewards"][0]["grants"] = serde_json::json!([
+            {"item":"theia.dev.training-token","count":3},
+            {"item":"theia.dev.training-sword","count":1}
+        ]);
+        let rewards = theia_core::rewards::Catalog::from_json(
+            &serde_json::to_vec(&metadata).unwrap(),
+            &items,
+        )
+        .unwrap();
+        let grants = rewards.definitions().next().unwrap().grants();
+        commands
+            .spawn((
+                HeaderFixture,
+                super::Panel::Paper,
+                Node {
+                    position_type: PositionType::Absolute,
+                    left: px(12),
+                    top: px(220),
+                    width: px(276),
+                    padding: UiRect::all(px(12)),
+                    row_gap: px(6),
+                    flex_direction: FlexDirection::Column,
                     ..default()
-                })
-                .with_children(|row| super::reward_icons(row, &skin, grants));
-        });
+                },
+                BackgroundColor(super::PANEL),
+            ))
+            .with_children(|panel| {
+                super::window_header(
+                    panel,
+                    label("Window header (fixture)", 18.),
+                    (
+                        bevy::ui_widgets::Button,
+                        bevy::picking::hover::Hovered::default(),
+                        BackgroundColor(Color::srgb(0.08, 0.12, 0.16)),
+                    ),
+                    "Close fixture window",
+                );
+                panel.spawn(label(
+                    "Rewards (fixture)\n3 x Training Token, 1 x Training Sword",
+                    14.,
+                ));
+                // Deliberately narrow: exercise wrapping as well as the normal
+                // full-width offer layout, without inventing extra rewards.
+                panel
+                    .spawn(Node {
+                        width: px(140),
+                        ..default()
+                    })
+                    .with_children(|row| super::reward_icons(row, &skin, grants));
+            });
+    }
     let point = super::projected_ui_point(run.size.as_vec2() * ANCHOR_RATIO, run.ui_scale).unwrap();
     commands
         .spawn((
@@ -651,12 +687,68 @@ fn capture(
         assert!(text_seen);
         serde_json::json!({"item":reward.item.as_str(),"count":reward.count,"rect":[rect.min.to_array(),rect.max.to_array()]})
     }).collect();
-    assert_eq!(reward_icons.len(), 2);
+    assert_eq!(reward_icons.len(), if run.reader { 0 } else { 2 });
     assert_eq!(
         reward_rows.len(),
-        2,
+        if run.reader { 0 } else { 2 },
         "Reward cells must wrap in the narrow fixture"
     );
+    let reader = if run.reader {
+        let pane_rect = Rect::from_center_size(header_centre, header_size);
+        assert!(
+            header_size.x <= 420. * run.ui_scale + 1.
+                && header_size.y <= super::PAPER_MAX_HEIGHT * run.ui_scale + 1.
+        );
+        for (_, node, transform) in &layout.units {
+            assert!(
+                pane_rect
+                    .intersect(Rect::from_center_size(
+                        transform.affine().translation,
+                        node.size()
+                    ))
+                    .is_empty(),
+                "Reader must leave the lower combat frames visible"
+            );
+        }
+        let (body_node, body_transform) = layout.reader_body.single().unwrap();
+        let body_rect =
+            Rect::from_center_size(body_transform.affine().translation, body_node.size());
+        assert!(
+            body_node.size().min_element() > 0.
+                && pane_rect.contains(body_rect.min)
+                && pane_rect.contains(body_rect.max)
+        );
+        let (body_text, glyphs, color) = layout.reader_text.single().unwrap();
+        assert!(
+            body_text.0.starts_with("Keep watch on the eastern road.") && !glyphs.glyphs.is_empty()
+        );
+        assert_eq!(color.0, super::INK);
+        assert!(
+            glyphs.size.y <= body_node.size().y + 1.,
+            "The short first-page fixture should fit without scrolling"
+        );
+        let controls: Vec<_> = layout
+            .reader_buttons
+            .iter()
+            .map(|(node, transform)| {
+                let rect = Rect::from_center_size(transform.affine().translation, node.size());
+                assert!(
+                    node.size().min_element() > 0.
+                        && pane_rect.contains(rect.min)
+                        && pane_rect.contains(rect.max)
+                );
+                assert!(
+                    rect.intersect(body_rect).is_empty(),
+                    "Page/close controls must stay outside document scrolling"
+                );
+                serde_json::json!([rect.min.to_array(), rect.max.to_array()])
+            })
+            .collect();
+        assert_eq!(controls.len(), 3);
+        serde_json::json!({"fixture":true,"body":[body_rect.min.to_array(),body_rect.max.to_array()],"controls":controls,"glyphs":glyphs.glyphs.len()})
+    } else {
+        serde_json::Value::Null
+    };
     let directory = run.directory.clone();
     let size = run.size;
     let ui_scale = run.ui_scale;
@@ -666,7 +758,7 @@ fn capture(
         assert_eq!([event.image.width(), event.image.height()], [size.x,size.y]);
         event.image.clone().try_into_dynamic().unwrap().save(directory.join("hud.png")).unwrap();
         std::fs::write(directory.join("report.json"),serde_json::to_vec_pretty(&serde_json::json!({
-                "completed":true,"ui_scale":ui_scale,"preferred_ui_scale":preferred_scale,"geometry_units":"physical_pixels","offscreen":true,"windows":0,"fixture":true,"extent":[size.x,size.y],"gpu":gpu,"buttons":buttons,"glyphs":glyphs,"feedback":feedback,"minimap":minimap,"header":header,"unit_frames":unit_frames,"xp":xp,"backpack_dock":dock,"backpack":backpack,"reward_icons":reward_icons,"nameplates":nameplates,"projected_anchor":{"actual":projected_anchor.to_array(),"expected":expected_anchor.to_array()},
+                "completed":true,"ui_scale":ui_scale,"preferred_ui_scale":preferred_scale,"geometry_units":"physical_pixels","offscreen":true,"windows":0,"fixture":true,"extent":[size.x,size.y],"gpu":gpu,"buttons":buttons,"glyphs":glyphs,"feedback":feedback,"minimap":minimap,"header":header,"unit_frames":unit_frames,"xp":xp,"backpack_dock":dock,"backpack":backpack,"reward_icons":reward_icons,"reader":reader,"nameplates":nameplates,"projected_anchor":{"actual":projected_anchor.to_array(),"expected":expected_anchor.to_array()},
             "scope":"Actual Bevy combat HUD widgets with fixture values; no desktop input, account, network, world or live gameplay qualification"
         })).unwrap()).unwrap();
         exit.write(AppExit::Success);

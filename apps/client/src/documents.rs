@@ -88,9 +88,11 @@ pub(crate) struct PreviousButton;
 #[derive(Component)]
 pub(crate) struct CloseButton;
 #[derive(Component)]
-struct Pane;
+pub(crate) struct Pane;
 #[derive(Component)]
-struct BodyScroll;
+pub(crate) struct BodyScroll;
+#[derive(Component)]
+pub(crate) struct BodyText;
 #[derive(Component)]
 enum Label {
     Title,
@@ -144,6 +146,7 @@ fn button(action: Action, label: &str) -> impl Bundle {
         },
         BackgroundColor(Color::srgb(0.08, 0.2, 0.25)),
         Name::new(label.to_string()),
+        AccessibleLabel::new(label),
     )
 }
 fn setup(
@@ -170,20 +173,29 @@ fn setup(
     commands
         .spawn((
             Pane,
-            crate::fantasy_ui::Panel::Standard,
+            if skin.is_some() {
+                crate::fantasy_ui::Panel::Paper
+            } else {
+                crate::fantasy_ui::Panel::Standard
+            },
             Hovered::default(),
             GlobalZIndex(60),
             Node {
                 position_type: PositionType::Absolute,
-                left: percent(8),
-                top: percent(12),
-                width: px(560),
-                max_width: percent(65),
-                height: percent(68),
-                padding: UiRect::all(px(16)),
+                left: if skin.is_some() { px(12) } else { percent(8) },
+                top: if skin.is_some() { px(64) } else { percent(12) },
+                width: px(if skin.is_some() { 420. } else { 560. }),
+                max_width: percent(if skin.is_some() { 45. } else { 65. }),
+                height: percent(if skin.is_some() { 45. } else { 68. }),
+                max_height: if skin.is_some() {
+                    px(crate::fantasy_ui::PAPER_MAX_HEIGHT)
+                } else {
+                    Val::Auto
+                },
+                padding: UiRect::all(px(if skin.is_some() { 14. } else { 16. })),
                 display: Display::None,
                 flex_direction: FlexDirection::Column,
-                row_gap: px(12),
+                row_gap: px(if skin.is_some() { 10. } else { 12. }),
                 ..default()
             },
             BackgroundColor(Color::srgba(0.035, 0.04, 0.06, 0.99)),
@@ -198,6 +210,33 @@ fn setup(
                 );
             } else {
                 panel.spawn((Label::Title, text("", 20.)));
+            }
+            if skin.is_some() {
+                panel
+                    .spawn((
+                        crate::fantasy_ui::DarkSurface,
+                        Node {
+                            width: percent(100),
+                            padding: UiRect::all(px(4)),
+                            column_gap: px(8),
+                            align_items: AlignItems::Center,
+                            flex_shrink: 0.,
+                            ..default()
+                        },
+                        BackgroundColor(crate::fantasy_ui::PANEL),
+                    ))
+                    .with_children(|row| {
+                        row.spawn((PreviousButton, button(Action::Previous, "Previous page")))
+                            .with_child(text("Prev", 14.));
+                        row.spawn(Node {
+                            flex_grow: 1.,
+                            justify_content: JustifyContent::Center,
+                            ..default()
+                        })
+                        .with_child((Label::Page, text("", 14.)));
+                        row.spawn((NextButton, button(Action::Next, "Next page")))
+                            .with_child(text("Next", 14.));
+                    });
             }
             panel
                 .spawn((
@@ -214,13 +253,16 @@ fn setup(
                 ))
                 .with_child((
                     Label::Body,
+                    BodyText,
                     text("", 16.),
                     Node {
                         width: percent(100),
                         ..default()
                     },
                 ));
-            panel.spawn((Label::Page, text("", 14.)));
+            if skin.is_none() {
+                panel.spawn((Label::Page, text("", 14.)));
+            }
             panel
                 .spawn(Node {
                     width: percent(100),
@@ -228,14 +270,37 @@ fn setup(
                     ..default()
                 })
                 .with_children(|row| {
-                    row.spawn((PreviousButton, button(Action::Previous, "Previous page")))
-                        .with_child(text("Previous", 14.));
-                    row.spawn((NextButton, button(Action::Next, "Next page")))
-                        .with_child(text("Next", 14.));
+                    if skin.is_none() {
+                        row.spawn((PreviousButton, button(Action::Previous, "Previous page")))
+                            .with_child(text("Previous", 14.));
+                        row.spawn((NextButton, button(Action::Next, "Next page")))
+                            .with_child(text("Next", 14.));
+                    }
                     row.spawn((CloseButton, button(Action::Close, "Close document")))
                         .with_child(text("Close [Esc]", 14.));
                 });
         });
+}
+/// Actual reader widgets with explicit local fixture state only. No network,
+/// open command, completion answer, observer or read credit is installed.
+pub(crate) fn install_preview(app: &mut App) {
+    let items = theia_network::renet_runtime::inventory::Profile::from_json(include_bytes!(
+        "../../../content/gameplay/development-document-items.json"
+    ))
+    .unwrap();
+    let profile = Profile::from_json(
+        include_bytes!("../../../content/quests/development-documents.json"),
+        &items,
+    )
+    .unwrap();
+    app.insert_resource(Config(profile))
+        .insert_resource(Ui {
+            open: true,
+            document: Some(0),
+            ..default()
+        })
+        .add_systems(Startup, setup)
+        .add_systems(Update, paint);
 }
 fn selected(profile: &Profile, bag: &Bag, slot: u8) -> Option<u8> {
     let stack = bag.slots().get(usize::from(slot))?.as_ref()?;
@@ -383,6 +448,7 @@ type PanelQuery<'w, 's> = Query<
     Or<(With<Pane>, With<ReadButton>)>,
 >;
 fn paint(
+    skin: Option<Res<crate::fantasy_ui::Skin>>,
     config: Res<Config>,
     ui: Res<Ui>,
     inventory: Res<inventory::Ui>,
@@ -458,7 +524,9 @@ fn paint(
             Action::Next => document.is_none_or(|d| ui.page + 1 >= d.pages().len()),
             Action::Close => false,
         };
-        color.0 = if disabled {
+        color.0 = if skin.is_some() {
+            crate::fantasy_ui::button_color(disabled, hovered.0, pressed)
+        } else if disabled {
             Color::srgb(0.07, 0.08, 0.1)
         } else if pressed || hovered.0 {
             Color::srgb(0.15, 0.3, 0.36)
@@ -497,6 +565,20 @@ fn scroll(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn windowless_reader_fixture_paints_without_authority_or_read_credit() {
+        let mut app = App::new();
+        app.insert_resource(crate::fantasy_ui::Skin::fixture())
+            .init_resource::<inventory::Ui>();
+        install_preview(&mut app);
+        app.update();
+        let ui = app.world().resource::<Ui>();
+        assert!(ui.open && ui.document.is_some());
+        assert_eq!((ui.approved, ui.submitted, ui.read_clicks), (0, 0, 0));
+        assert!(ui.waiting.is_none());
+        assert!(!app.world().contains_resource::<Network>());
+        assert!(!app.world().contains_resource::<Pending>());
+    }
     fn profile() -> Profile {
         let items = theia_network::renet_runtime::inventory::Profile::from_json(include_bytes!(
             "../../../content/gameplay/development-document-items.json"

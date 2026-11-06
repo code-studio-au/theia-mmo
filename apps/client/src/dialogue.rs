@@ -178,6 +178,11 @@ fn setup(
                 },
                 top: if skin.is_some() { px(64) } else { percent(20) },
                 height: percent(if skin.is_some() { 70. } else { 50. }),
+                max_height: if skin.is_some() {
+                    px(crate::fantasy_ui::PAPER_MAX_HEIGHT)
+                } else {
+                    Val::Auto
+                },
                 justify_content: if skin.is_some() {
                     JustifyContent::FlexStart
                 } else {

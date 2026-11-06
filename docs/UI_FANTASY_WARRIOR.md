@@ -75,8 +75,8 @@ Use licensed Synty parchment, frames and icons where appropriate, and Bevy's
 standard UI for layout and interaction. Preserve contrast on both pale parchment
 and dark panels. Portrait sourcing and the portrait/character rendering method
 still need assessment; no placeholder portrait should claim to show the actual
-player or NPC appearance. The immediately following presentation work is the
-existing quest/dialogue window, after the nameplate/damage-label check finishes.
+player or NPC appearance. At that checkpoint the next presentation slice was the existing quest/dialogue
+window; later sections record its implementation.
 
 ## User ultrawide captures — 6 November 2026, 18:30–18:32
 
@@ -110,6 +110,23 @@ systems to fill the reference strip. Continue the current reward-icon work, then
 refine density/spacing and confirmed-data displays in bounded UI slices.
 The latest instruction still prohibits desktop/mouse testing while the user
 uses the machine; these supplied image files can be reviewed without desktop input.
+
+## Reader, gossip and reward-detail captures — 6 November 2026, 18:34–18:37
+
+The user supplied five more 3440×1440 Pictures-directory references, at 18-37-35,
+18-36-54, 18-34-37, 18-34-28 and 18-34-20. They show a compact left parchment
+reader with page controls under its title, a concise NPC greeting/quest list,
+and a dedicated completion detail with item cards and an explicit completion
+button. Use their proportions and hierarchy together with the preceding HUD
+references. Keep a bounded left panel rather than stretching prose over the world.
+
+The reward-choice highlight is a future choice-reward requirement to assess,
+not implemented by the current fixed reward icons. Those grants remain a whole
+fixed bundle. Portraits, NPC speech captions, voice playback/Stop controls and
+addon-specific behaviour in these pictures likewise need separate real support;
+do not add inert controls or infer gameplay from them. The current reader's
+page navigation stays local and grants no extra read credit. These references
+and their chat/player artwork stay outside Git; no story text is imported.
 
 ## Asset assessment
 
@@ -875,3 +892,44 @@ offer list. Actual taller-row scrolling, clipping, click ownership, pending and
 capacity behavior with these new cells still need the normal native replay.
 Desktop/mouse testing remains paused at the user's request. Prior native proof
 belongs to the exact earlier text-only offer rows; the skin remains opt-in.
+
+
+## Compact parchment reader — 6 November 2026
+
+P2-14 / P3-11 / P5-13 / P5-19. The optional reader now sits at the left with a
+420-pixel logical width, dark title/navigation rows, light parchment and dark
+body text. Prev/Page/Next sit directly below the title; the existing close and
+Escape actions remain. It uses 45% of viewport height, capped at 600 logical
+pixels. The earlier 70% candidate obscured part of the player frame at 1280×720;
+the shorter reader keeps both lower combat frames visible in the qualified
+fixtures and still fits the short first page. Longer prose retains its existing
+scroll area. The themed dialogue also gains the 600-pixel height cap; its
+current multi-offer composition and scroll behaviour remain separate from a
+future dedicated quest detail screen.
+
+Reader buttons use the shared dark red palette and explicit accessible labels.
+Unskinned geometry/navigation is retained. Opening, exact document identity,
+server-confirmed read credit, local page changes, pending guards and Escape
+priority are unchanged. No voice/Stop, portrait, speech-caption or choice-reward
+control was added from the new references.
+
+Append `--reader` to the existing exclusive windowless preview command to render
+the actual reader setup and painter with the validated local two-page document.
+The fixture installs no Network, read-command Pending resource or observer, and
+produces zero approved reads, submissions or read clicks. It is not normal
+server-open evidence. A headless case checks that isolation. All **176 client
+cases** including local art, formatting, strict workspace/all-target Clippy and
+development build pass.
+
+Six `reader-v2-*` windowless GPU cases pass through 3840×2160 with the existing
+scale settings. They check reader bounds/cap, dark ink and actual nonempty text,
+page/footer controls inside the pane and outside the scroll body, the short page
+fitting without scrolling, and no overlap with either lower combat frame. The
+ordinary HUD preview branch also passes once; three malformed reader CLI cases
+refuse before GPU/window creation and leave no output directory. Evidence:
+`build/ui-reference-20261106/reader-verification-v2.json`,
+`reader-default-regression-v1/report.json` and `reader-cli-refusals-v1.json`.
+Device: Linux RX 7900 XTX / RADV Vulkan / Mesa 26.2.6; OS windows/input are absent.
+Earlier `reader-v1-*` results precede the compact-height fix. Native interaction,
+long-text wheel ownership, nondefault-scale/DPI input and Windows remain pending.
+Desktop/mouse testing remains paused at the user's request. The skin stays opt-in.

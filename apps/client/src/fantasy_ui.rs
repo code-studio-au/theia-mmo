@@ -56,7 +56,7 @@ pub(crate) const PANEL: Color = Color::srgba(0.055, 0.045, 0.035, 0.96);
 const PAPER: Color = Color::srgb(0.82, 0.70, 0.49);
 const INK: Color = Color::srgb(0.18, 0.11, 0.05);
 #[derive(Component)]
-struct DarkSurface;
+pub(crate) struct DarkSurface;
 pub(crate) fn button_color(disabled: bool, hovered: bool, pressed: bool) -> Color {
     if disabled {
         Color::srgb(0.16, 0.14, 0.12)
@@ -147,6 +147,7 @@ pub(crate) fn reward_icons(
             }
         });
 }
+pub(crate) const PAPER_MAX_HEIGHT: f32 = 600.;
 pub(crate) const SLOT: f32 = 44.;
 pub(crate) const SLOTS: usize = 12;
 pub(crate) const ACTION_WIDTH: f32 = SLOT * SLOTS as f32 + 4. * (SLOTS - 1) as f32 + 18.;
