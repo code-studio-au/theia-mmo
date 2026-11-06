@@ -101,6 +101,8 @@ struct Ui {
 }
 #[derive(Component)]
 struct Hud;
+#[derive(Component)]
+pub(crate) struct TargetVitals;
 #[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) struct Presentation;
 pub fn load_catalog(path: &Path) -> Result<(Vec<u8>, Arc<Catalog>), Box<dyn std::error::Error>> {
@@ -187,6 +189,7 @@ fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
         })
         .with_child((
             Hud,
+            TargetVitals,
             Text::new("Preparing abilities..."),
             TextFont {
                 font_size: FontSize::Px(if skin.is_some() { 14. } else { 18. }),
@@ -197,6 +200,7 @@ fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
         .with_children(|panel| {
             panel
                 .spawn((
+                    TargetVitals,
                     Node {
                         width: percent(100),
                         height: px(if skin.is_some() { 12. } else { 10. }),
@@ -602,7 +606,16 @@ fn present(
             metrics.selected_health_frames += 1;
             metrics.last_health = Some(health.current);
             metrics.max_health = metrics.max_health.max(health.maximum);
-            format!("Training target: {} / {}", health.current, health.maximum)
+            format!(
+                "{}: {} / {}",
+                if skin.is_some() {
+                    "Health"
+                } else {
+                    "Training target"
+                },
+                health.current,
+                health.maximum
+            )
         } else if let Some(dead) = combat.targets.iter().find(|h| h.current == 0) {
             metrics.defeated_frames += 1;
             metrics.last_health = Some(0);

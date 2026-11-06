@@ -14,6 +14,8 @@ controlled fixture. Passive enemy nameplates now pass six GPU layouts and a
 1280×720 connected health/death/rejoin check, including separated damage text.
 Left-side parchment dialogue and full-height reward rows now also pass the
 32-offer/note/item-reward walkthrough at all three sizes plus restart/rejoin.
+Themed target/status/quest-marker hints are now contextual and compact, with
+an additional 1280×720 connected health/death/rejoin check.
 The skin remains opt-in; clickable plates, portrait art, chat/menu systems,
 nondefault-scale OS traces and complete-theme qualification
 remain separate work. [Scope, reference, assets and evidence](UI_FANTASY_WARRIOR.md).

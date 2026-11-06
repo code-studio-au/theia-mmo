@@ -182,13 +182,26 @@ type VisualComponents<'a> = (
     &'a mut MeshMaterial3d<StandardMaterial>,
     &'a mut Visibility,
 );
+type ContextNode<'a> = (
+    Option<&'a crate::fantasy_ui::UnitFrame>,
+    Has<crate::combat::TargetVitals>,
+    &'a mut Node,
+);
+type ContextFilter = Or<(
+    With<crate::fantasy_ui::UnitFrame>,
+    With<crate::combat::TargetVitals>,
+)>;
 fn present(
     mut commands: Commands,
     scene: motion::Presentation,
     mut visuals: Query<VisualComponents<'_>>,
     mut hud: Query<&mut Text, With<TargetHud>>,
-    selection: Res<crate::world_input::Selection>,
-    classic: Option<Res<crate::classic_controls::Controller>>,
+    (selection, classic, skin): (
+        Res<crate::world_input::Selection>,
+        Option<Res<crate::classic_controls::Controller>>,
+        Option<Res<crate::fantasy_ui::Skin>>,
+    ),
+    mut context_nodes: Query<ContextNode<'_>, ContextFilter>,
 ) {
     let motion::Presentation {
         network,
@@ -310,26 +323,62 @@ fn present(
     } else {
         "Tab"
     };
-    if let Ok(mut text) = hud.single_mut() {
-        if selection.friendly.is_some() && state.error.is_none() {
-            **text = "Target: Guide\nF / right-click: interact".into();
-            return;
-        }
-        **text = match view {
-            Some(v) if v.selected.is_some() => {
-                if creatures.is_some() {
-                    format!("Target: Wolf\n{cycle_hint} | Backspace: clear")
-                } else {
-                    format!("Target: Training target\n{cycle_hint} | Backspace: clear")
+    if skin.is_some() {
+        let friendly = selection.friendly.is_some() && state.error.is_none();
+        let hostile = view.is_some_and(|v| v.selected.is_some()) && !friendly;
+        for (frame, vitals, mut node) in &mut context_nodes {
+            let visible = if let Some(frame) = frame {
+                if frame.0 {
+                    continue;
                 }
+                friendly || hostile
+            } else {
+                vitals && hostile
+            };
+            let display = if visible {
+                Display::Flex
+            } else {
+                Display::None
+            };
+            if node.display != display {
+                node.display = display;
             }
-            Some(v) => format!(
-                "No target | {} known\n{cycle_hint} | Backspace: clear",
-                v.targets.len()
-            ),
-            None if state.error.is_some() => "Disconnected".into(),
-            None => "Targets loading...".into(),
+        }
+    }
+    if let Ok(mut text) = hud.single_mut() {
+        let value = if selection.friendly.is_some() && state.error.is_none() {
+            "Target: Guide\nF / right-click: interact".to_owned()
+        } else {
+            match view {
+                Some(v) if v.selected.is_some() => {
+                    if creatures.is_some() {
+                        format!("Target: Wolf\n{cycle_hint} | Backspace: clear")
+                    } else {
+                        format!("Target: Training target\n{cycle_hint} | Backspace: clear")
+                    }
+                }
+                Some(v) => format!(
+                    "No target | {} known\n{cycle_hint} | Backspace: clear",
+                    v.targets.len()
+                ),
+                None if state.error.is_some() => "Disconnected".into(),
+                None => "Targets loading...".into(),
+            }
         };
+        let value = if skin.is_some() {
+            value
+                .strip_prefix("Target: ")
+                .unwrap_or(&value)
+                .lines()
+                .next()
+                .unwrap_or("")
+                .to_owned()
+        } else {
+            value
+        };
+        if text.0 != value {
+            **text = value;
+        }
     }
 }
 #[cfg(test)]

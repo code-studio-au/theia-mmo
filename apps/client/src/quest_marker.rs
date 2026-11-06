@@ -215,6 +215,7 @@ fn present(
         With<Marker>,
     >,
     mut metrics: ResMut<Metrics>,
+    skin: Option<Res<crate::fantasy_ui::Skin>>,
 ) {
     metrics.visible_now = false;
     metrics.phase_now = None;
@@ -234,6 +235,16 @@ fn present(
     let Some((index, caption, tint)) = appearance(phase) else {
         return;
     };
+    let caption = if skin.is_some() {
+        caption.lines().next().unwrap_or(caption)
+    } else {
+        caption
+    };
+    let (width, height) = if skin.is_some() {
+        (40., 36.)
+    } else {
+        (WIDTH, HEIGHT)
+    };
     metrics.phase_frames[index] += 1;
     let (Some(point), Ok((camera, transform))) = (anchor(guide, &frame), cameras.single()) else {
         return;
@@ -251,9 +262,9 @@ fn present(
     ) else {
         return;
     };
-    if screen.x < WIDTH * 0.5
-        || screen.x > viewport.x - WIDTH * 0.5
-        || screen.y < HEIGHT
+    if screen.x < width * 0.5
+        || screen.x > viewport.x - width * 0.5
+        || screen.y < height
         || screen.y > viewport.y
     {
         return;
@@ -274,8 +285,10 @@ fn present(
         font.font_size = FontSize::Px(size);
     }
     metrics.last_font_px = size;
-    node.left = px(screen.x - WIDTH * 0.5);
-    node.top = px(screen.y - HEIGHT);
+    node.width = px(width);
+    node.height = px(height);
+    node.left = px(screen.x - width * 0.5);
+    node.top = px(screen.y - height);
     *visibility = Visibility::Inherited;
     metrics.visible_now = true;
     metrics.phase_now = Some(index);

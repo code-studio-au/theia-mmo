@@ -670,3 +670,31 @@ loot, every pending/full-capacity state, actual header-X clicks, native Windows,
 DPI/nondefault-scale OS tracing and human feel remain outside this fixture.
 The skin stays opt-in. Portraits, item icons, a dedicated quest-detail/reward
 composition and the other reference screens remain follow-on work.
+
+
+## Contextual HUD cleanup — 6 November 2026
+
+P2-14 / P5-13 / P5-19. In the skin, the target frame hides while no explicit
+friendly/hostile target is selected. Friendly NPCs show their existing name
+without hostile health or a combat-selection prompt. Hostiles retain the short
+name and server-derived Health line; repeating Tab/clear/interact hints are
+removed from that header. Selection, target retention, attacks and facing remain
+unchanged. Header text no longer writes the same string every frame.
+
+The selected-status pane hides when there are no observed effects to show.
+Existing active-effect text/timers and metrics remain available. World quest
+markers retain the same eligibility, phases, tints, scale and occlusion checks,
+but use their existing leading glyph in a 40×36 logical box rather than a large
+two-line caption. The current active-phase glyph remains `...`; this does not
+claim exact Classic marker semantics. The legacy diagnostic presentation keeps
+its headings, prompts, status descriptions and full quest captions.
+
+Formatting, strict workspace/all-target Clippy, 172 client cases including local
+art, and build pass. `build/ui-reference-20261106/native-context-v1/verification.json`
+passes the controlled 1280×720 quest/minimap flow plus genuine PostgreSQL
+restart/fresh login at revision 11 / XP 125. Owned screenshots show the compact
+hostile frame, glyph-only quest marker and absent empty status block. The live
+nameplate/death checks still pass; both native stages have zero GPU diagnostics
+on RX 7900 XTX / RADV Vulkan / Mesa 26.2.6. All owned services stop and plaintext
+password files are removed. This follow-on has 1280×720 native evidence; it does
+not expand prior Windows, scale/DPI, crowd or full-theme qualification claims.

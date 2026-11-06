@@ -7,6 +7,8 @@ use theia_core::statuses::Catalog;
 struct Definitions(Arc<Catalog>);
 #[derive(Component)]
 struct Label;
+#[derive(Component)]
+struct Root;
 #[derive(Resource, Default, serde::Serialize)]
 pub(crate) struct Metrics {
     pub active_frames: u64,
@@ -24,6 +26,7 @@ pub(crate) fn install(app: &mut App, catalog: Arc<Catalog>) {
 fn setup(mut commands: Commands) {
     commands
         .spawn((
+            Root,
             crate::fantasy_ui::Panel::Statuses,
             Node {
                 position_type: PositionType::Absolute,
@@ -52,9 +55,25 @@ fn present(
     definitions: Res<Definitions>,
     mut metrics: ResMut<Metrics>,
     mut labels: Query<&mut Text, With<Label>>,
+    skin: Option<Res<crate::fantasy_ui::Skin>>,
+    mut roots: Query<&mut Node, With<Root>>,
 ) {
     let state = network.state();
     let selected = state.targeting.as_ref().and_then(|v| v.selected);
+    if skin.is_some() {
+        let active = state.error.is_none()
+            && state.statuses.as_ref().is_some_and(|view| {
+                view.statuses
+                    .iter()
+                    .any(|s| Some(s.target.entity) == selected)
+            });
+        for mut root in &mut roots {
+            let display = if active { Display::Flex } else { Display::None };
+            if root.display != display {
+                root.display = display;
+            }
+        }
+    }
     let text = if state.error.is_some() {
         "Statuses: disconnected".to_owned()
     } else if let Some(view) = &state.statuses {
