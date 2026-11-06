@@ -168,6 +168,40 @@ pub(crate) fn unit_frame(player: bool) -> Node {
         ..default()
     }
 }
+/// Widen only when the viewport has at least 1920 logical UI pixels. Scaling
+/// the interface up reduces that space; smaller layouts retain their anchors.
+fn unit_margin(player: bool, logical_width: f32) -> f32 {
+    let extra = if logical_width.is_finite() {
+        ((logical_width - 1920.) * 0.25).clamp(0., 240.)
+    } else {
+        0.
+    };
+    if player { -340. - extra } else { 120. + extra }
+}
+fn responsive_units(
+    windows: Query<&Window>,
+    cameras: Query<&Camera>,
+    scale: Res<bevy::ui::UiScale>,
+    mut frames: Query<(&UnitFrame, &mut Node)>,
+) {
+    let viewport = windows
+        .single()
+        .ok()
+        .map(|w| Vec2::new(w.width(), w.height()))
+        .or_else(|| cameras.iter().find_map(Camera::logical_viewport_size));
+    let Some(viewport) = viewport.filter(|v| v.is_finite() && v.min_element() > 0.) else {
+        return;
+    };
+    if !scale.0.is_finite() || scale.0 <= 0. {
+        return;
+    }
+    for (side, mut node) in &mut frames {
+        let margin = px(unit_margin(side.0, viewport.x / scale.0));
+        if node.margin.left != margin {
+            node.margin.left = margin;
+        }
+    }
+}
 #[derive(Component)]
 pub(crate) struct HeaderClose;
 /// Ordinary Bevy title row; callers supply their existing close action bundle.
@@ -418,7 +452,11 @@ pub(crate) fn load(app: &mut App) {
     };
     app.insert_resource(skin);
     app.add_systems(PostStartup, style_panels)
-        .add_systems(PostUpdate, style_text.before(bevy::ui::UiSystems::Content));
+        .add_systems(PostUpdate, style_text.before(bevy::ui::UiSystems::Content))
+        .add_systems(
+            PostUpdate,
+            responsive_units.before(bevy::ui::UiSystems::Layout),
+        );
 }
 type Surface<'a> = (
     Option<&'a ChildOf>,
@@ -684,6 +722,65 @@ mod tests {
             );
             assert_eq!(args, ["--classic"]);
         }
+    }
+    #[test]
+    fn unit_frames_spread_on_ultrawide_and_restore_with_window_and_ui_scale() {
+        let mut app = App::new();
+        app.insert_resource(bevy::ui::UiScale(1.25));
+        app.add_systems(Update, responsive_units);
+        let window = app
+            .world_mut()
+            .spawn(Window {
+                resolution: (3440, 1440).into(),
+                ..default()
+            })
+            .id();
+        let player = app
+            .world_mut()
+            .spawn((UnitFrame(true), unit_frame(true)))
+            .id();
+        let target = app
+            .world_mut()
+            .spawn((UnitFrame(false), unit_frame(false)))
+            .id();
+        app.update();
+        assert_eq!(
+            app.world().get::<Node>(player).unwrap().margin.left,
+            px(-548.)
+        );
+        assert_eq!(
+            app.world().get::<Node>(target).unwrap().margin.left,
+            px(328.)
+        );
+        app.world_mut()
+            .get_mut::<Window>(window)
+            .unwrap()
+            .resolution
+            .set(1920., 1200.);
+        app.update();
+        assert_eq!(
+            app.world().get::<Node>(player).unwrap().margin.left,
+            px(-340.)
+        );
+        assert_eq!(
+            app.world().get::<Node>(target).unwrap().margin.left,
+            px(120.)
+        );
+        app.world_mut()
+            .get_mut::<Window>(window)
+            .unwrap()
+            .resolution
+            .set(3440., 1440.);
+        app.world_mut().resource_mut::<bevy::ui::UiScale>().0 = 1.5;
+        app.update();
+        let expected = unit_margin(true, 3440. / 1.5);
+        assert_eq!(
+            app.world().get::<Node>(player).unwrap().margin.left,
+            px(expected)
+        );
+        assert!(expected > -548. && expected < -340.);
+        assert_eq!(unit_margin(true, 10000.), -580.);
+        assert_eq!(unit_margin(false, f32::NAN), 120.);
     }
     #[test]
     fn preferred_scale_fits_a_smaller_window_then_restores_on_resize_without_changing_it() {

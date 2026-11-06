@@ -1002,3 +1002,36 @@ quest walk/hover/turn-in/restart trace passes. Hovering outside the authored vol
 shows `0/1` without credit; entry clears shading and completion survives rejoin
 at revision 14 / XP 150. Zero GPU diagnostics; owned services/input device stop.
 [Exact evidence and limits](MINIMAP.md#native-objective-area-walk-and-hover--6-november-2026).
+
+
+## Responsive wide-screen combat frames — 6 November 2026
+
+P2-14 / P5-13 / P5-19. The local 3440×1440 reference captures put the player and
+target frames farther apart than the earlier fixed centre offsets. The opt-in
+skin now computes available width in logical UI pixels: viewport width divided
+by current UI scale. Above 1920 logical pixels each frame moves outward by one
+quarter of the excess, capped at 240 logical pixels. Smaller layouts keep their
+previous anchors. Widths, vertical placement, unit data and interaction remain
+unchanged. Standard Bevy Window/Camera viewport data and Node margins are used;
+this does not change camera projection, gameplay coordinates or targeting.
+
+The headless resize/scale case checks 3440 / 125%, shrink to 1920, re-enlargement
+at 150%, the maximum shift and invalid-width fallback. All **186 client cases**
+including local art, formatting, strict workspace/all-target Clippy and build
+pass. Six `wide-frames-v1-*` windowless Linux GPU layouts retain the HUD, tooltip,
+reader-free, map and bag gates. At 3440×1440 / 125%, actual rasterized frame centres
+are x=1172.5 (player) and x=2267.5 (target), close to the user's supplied composition.
+No additional texture, camera, actor or image asset is introduced. Device: RX 7900
+XTX / RADV Vulkan / Mesa 26.2.6. Exact evidence:
+`build/ui-reference-20261106/wide-frames-verification-v1.json` and the corresponding
+client/Clippy/build logs.
+
+Native Linux 3440×1440 / 125% UI scale passes contact hovering, the two-quest
+combat/completion flow and actual PostgreSQL restart/fresh login: revision 11 /
+XP 125, zero GPU diagnostics. The trace also passes minimap pointer/wheel
+ownership, unchanged idle streaming and the existing image budget. Native
+screenshots show the wider lower frames; the numeric centre measurements above
+come from the windowless geometry report. Evidence:
+`build/ui-reference-20261106/native-wide-frames-v1/verification.json`.
+Owned services stop, temporary wheel device and plaintext password files are
+removed. Windows, native DPI and interactive resize/restoration remain separate.
