@@ -239,3 +239,34 @@ and zero windows on the recorded Vulkan device. No WARN/ERROR diagnostics appear
 Formatting, strict workspace/all-target Clippy, **162 client tests including the
 local art case**, and build pass. Existing activation/hover/feedback checks also
 pass. No desktop or mouse test ran; full connected interaction remains pending.
+
+
+## Scaled world-projected labels and newly spawned fonts
+
+NPC quest markers and floating combat text now convert camera/window projection
+coordinates into logical UI coordinates before assigning absolute Node offsets.
+Marker clipping converts the viewport into that same coordinate frame. Without
+this division, applying UI scale would move the label away from its world anchor.
+Scale 1.0 preserves the original placement; marker eligibility, occlusion,
+combat facts, label lifetimes and world-coordinate/origin conversion are unchanged.
+Invalid/nonfinite projection inputs refuse presentation rather than publishing
+invalid UI positions. This is UI integration, not additional quest mechanics.
+
+Theme fonts now apply to newly added UI text before Bevy's UI content/layout
+stage, including text spawned after startup. A headless test checks initial and
+later-created labels with distinct heading/body font handles. Existing text is
+not restyled every frame.
+
+The six `projection-v1-*` windowless exports add an explicitly marked projected
+anchor fixture. Actual rendered anchor centres remain within **0.6 physical
+pixels** of their requested window points across the tested scales/resolutions;
+the check allows 1.5 px for layout rounding. This exercises the conversion and
+real Bevy layout, not a live NPC camera/occlusion scene. The upper HUD and lower
+action/feedback bands remain pixel-identical to the corresponding `idle-v1-*`
+references; the new middle fixture is intentional. All six retain zero windows,
+valid actions/glyphs, feedback separation and no WARN/ERROR diagnostics on the
+same Vulkan adapter. Formatting, strict workspace/all-target Clippy,
+**164 client cases including local art decoding**, and build pass.
+
+Real moving-NPC markers, floating combat text under gameplay, complete panels
+and scaled OS pointer checks remain pending while desktop testing is prohibited.

@@ -373,6 +373,7 @@ fn paint(
     mut labels: Query<(Entity, &Label, &mut Node, &mut TextColor, &mut Visibility)>,
     cameras: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
     frame: Res<crate::floating_origin::Frame>,
+    ui_scale: Option<Res<bevy::ui::UiScale>>,
     mut pending: ResMut<Pending>,
 ) {
     let camera = cameras.single().ok();
@@ -394,7 +395,12 @@ fn paint(
             (position.x >= 0. && position.y >= 0. && position.x <= size.x && position.y <= size.y)
                 .then_some(position)
         });
-        if let Some(position) = projection {
+        if let Some(position) = projection.and_then(|position| {
+            crate::fantasy_ui::projected_ui_point(
+                position,
+                ui_scale.as_ref().map_or(1., |scale| scale.0),
+            )
+        }) {
             pending.metrics.projected_frames += 1;
             node.left = px(position.x - 30.);
             node.top = px(position.y - age.as_secs_f32() * 28.);

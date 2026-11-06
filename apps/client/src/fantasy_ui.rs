@@ -115,6 +115,15 @@ pub(crate) fn fit_scale(preferred: f32, viewport: Vec2) -> f32 {
     }
     preferred.min(viewport.x / 1280.).min(viewport.y / 720.)
 }
+/// Camera projection returns window coordinates; absolute UI Nodes use logical
+/// UI coordinates before UiScale. Keep projected labels on their world anchor.
+pub(crate) fn projected_ui_point(window_point: Vec2, scale: f32) -> Option<Vec2> {
+    if !scale.is_finite() || scale <= 0. || !window_point.is_finite() {
+        return None;
+    }
+    let point = window_point / scale;
+    point.is_finite().then_some(point)
+}
 pub(crate) fn install_scale(app: &mut App, preferred: f32) {
     app.insert_resource(PreferredScale(preferred))
         .insert_resource(bevy::ui::UiScale(preferred))
@@ -192,9 +201,10 @@ pub(crate) fn load(app: &mut App) {
         body_font: server.load(format!("fantasy-ui://{BODY_FONT}")),
     };
     app.insert_resource(skin);
-    app.add_systems(PostStartup, (style_panels, style_text));
+    app.add_systems(PostStartup, style_panels)
+        .add_systems(PostUpdate, style_text.before(bevy::ui::UiSystems::Content));
 }
-fn style_text(skin: Res<Skin>, mut text: Query<&mut TextFont, With<Text>>) {
+fn style_text(skin: Res<Skin>, mut text: Query<&mut TextFont, (With<Text>, Added<TextFont>)>) {
     for mut font in &mut text {
         font.font = if matches!(font.font_size, bevy::text::FontSize::Px(size) if size >= 18.) {
             skin.title_font.clone().into()
@@ -260,6 +270,63 @@ pub(crate) fn decoration(image: Handle<Image>) -> impl Bundle {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn projected_world_labels_keep_the_same_window_anchor_at_each_ui_scale() {
+        let window_point = Vec2::new(960., 540.);
+        for scale in [0.5, 0.75, 1., 1.25, 1.5] {
+            let ui = projected_ui_point(window_point, scale).unwrap();
+            assert_eq!(ui * scale, window_point);
+            // Marker clipping uses the same logical coordinate frame as placement.
+            let viewport = projected_ui_point(Vec2::new(1920., 1080.), scale).unwrap();
+            assert_eq!(ui / viewport, Vec2::splat(0.5));
+        }
+        for scale in [0., -1., f32::NAN, f32::INFINITY] {
+            assert!(projected_ui_point(window_point, scale).is_none());
+        }
+        assert!(projected_ui_point(Vec2::new(f32::NAN, 1.), 1.).is_none());
+    }
+    #[test]
+    fn theme_fonts_apply_to_later_spawned_text_as_well_as_initial_panels() {
+        use bevy::text::FontSource;
+        let mut app = App::new();
+        let mut fonts = Assets::<Font>::default();
+        let title = fonts.add(Font::from_bytes(Vec::new()));
+        let body = fonts.add(Font::from_bytes(Vec::new()));
+        let mut skin = Skin::fixture();
+        skin.title_font = title.clone();
+        skin.body_font = body.clone();
+        app.insert_resource(skin)
+            .add_systems(PostUpdate, style_text);
+        let initial = app
+            .world_mut()
+            .spawn((
+                Text::new("Initial title"),
+                TextFont {
+                    font_size: bevy::text::FontSize::Px(20.),
+                    ..default()
+                },
+            ))
+            .id();
+        app.update();
+        assert!(
+            matches!(&app.world().get::<TextFont>(initial).unwrap().font,FontSource::Handle(font) if font == &title)
+        );
+        let late = app
+            .world_mut()
+            .spawn((
+                Text::new("Later label"),
+                TextFont {
+                    font_size: bevy::text::FontSize::Px(16.),
+                    ..default()
+                },
+            ))
+            .id();
+        app.update();
+        assert!(
+            matches!(&app.world().get::<TextFont>(late).unwrap().font,FontSource::Handle(font) if font == &body)
+        );
+        assert_eq!(app.world().get::<Text>(late).unwrap().0, "Later label");
+    }
     #[test]
     fn scale_is_optional_finite_bounded_and_cannot_enable_a_skin_implicitly() {
         assert_eq!(parse_scale(&mut Vec::new(), false).unwrap(), 1.);

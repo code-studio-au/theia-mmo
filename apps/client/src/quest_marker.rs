@@ -201,6 +201,7 @@ fn present(
     definitions: Option<Res<crate::quest_lifecycle::Definitions>>,
     journal: Option<Res<crate::quest_journal::Definitions>>,
     frame: Res<crate::floating_origin::Frame>,
+    ui_scale: Option<Res<bevy::ui::UiScale>>,
     cameras: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
     spatial: SpatialQuery,
     mut labels: Query<
@@ -241,6 +242,13 @@ fn present(
         return;
     };
     let Some(viewport) = camera.logical_viewport_size() else {
+        return;
+    };
+    let scale = ui_scale.map_or(1., |scale| scale.0);
+    let (Some(screen), Some(viewport)) = (
+        crate::fantasy_ui::projected_ui_point(screen, scale),
+        crate::fantasy_ui::projected_ui_point(viewport, scale),
+    ) else {
         return;
     };
     if screen.x < WIDTH * 0.5

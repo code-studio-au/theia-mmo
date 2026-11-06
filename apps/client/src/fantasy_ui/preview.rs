@@ -29,6 +29,10 @@ struct Capture {
     ready_frames: u32,
     requested: bool,
 }
+#[derive(Component)]
+struct ProjectedAnchor;
+const ANCHOR_RATIO: Vec2 = Vec2::new(0.73, 0.35);
+type AnchorGeometry<'a> = (&'a ComputedNode, &'a bevy::ui::UiGlobalTransform);
 type FeedbackGeometry<'a> = (
     &'a ComputedNode,
     &'a bevy::ui::UiGlobalTransform,
@@ -46,6 +50,7 @@ struct Layout<'w, 's> {
     buttons: Query<'w, 's, ButtonGeometry<'static>>,
     text: Query<'w, 's, &'static bevy::text::TextLayoutInfo>,
     feedback: Query<'w, 's, FeedbackGeometry<'static>>,
+    anchor: Query<'w, 's, AnchorGeometry<'static>, With<ProjectedAnchor>>,
 }
 pub(crate) fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     if !(6..=8).contains(&args.len()) || args[2] != "--output" || args[4] != "--size" {
@@ -160,7 +165,33 @@ fn label(value: &str, size: f32) -> impl Bundle {
         TextColor(Color::srgb(0.92, 0.85, 0.70)),
     )
 }
-fn labels(mut commands: Commands) {
+fn labels(mut commands: Commands, run: Res<Capture>) {
+    let point = super::projected_ui_point(run.size.as_vec2() * ANCHOR_RATIO, run.ui_scale).unwrap();
+    commands
+        .spawn((
+            ProjectedAnchor,
+            Node {
+                position_type: PositionType::Absolute,
+                left: px(point.x - 5.),
+                top: px(point.y - 5.),
+                width: px(10),
+                height: px(10),
+                ..default()
+            },
+            BackgroundColor(super::GOLD),
+            bevy::picking::Pickable::IGNORE,
+        ))
+        .with_child((
+            label("Projected anchor (fixture)", 14.),
+            Node {
+                position_type: PositionType::Absolute,
+                left: px(16),
+                top: px(-4),
+                width: px(220),
+                ..default()
+            },
+            bevy::picking::Pickable::IGNORE,
+        ));
     commands
         .spawn((Node {
             position_type: PositionType::Absolute,
@@ -242,6 +273,14 @@ fn capture(
         glyphs > 40,
         "Offscreen UI must have real laid-out text glyphs"
     );
+    let (anchor_node, anchor_transform) = layout.anchor.single().expect("Projected anchor fixture");
+    assert!(anchor_node.size().min_element() > 0.);
+    let projected_anchor = anchor_transform.affine().translation;
+    let expected_anchor = run.size.as_vec2() * ANCHOR_RATIO;
+    assert!(
+        projected_anchor.distance(expected_anchor) <= 1.5,
+        "Scaled label must retain its window-space world anchor"
+    );
     let mut cast = None;
     let mut tooltips = Vec::new();
     for (node, transform, tooltip, is_cast) in &layout.feedback {
@@ -280,7 +319,7 @@ fn capture(
         assert_eq!([event.image.width(), event.image.height()], [size.x,size.y]);
         event.image.clone().try_into_dynamic().unwrap().save(directory.join("hud.png")).unwrap();
         std::fs::write(directory.join("report.json"),serde_json::to_vec_pretty(&serde_json::json!({
-                "completed":true,"ui_scale":ui_scale,"preferred_ui_scale":preferred_scale,"geometry_units":"physical_pixels","offscreen":true,"windows":0,"fixture":true,"extent":[size.x,size.y],"gpu":gpu,"buttons":buttons,"glyphs":glyphs,"feedback":feedback,
+                "completed":true,"ui_scale":ui_scale,"preferred_ui_scale":preferred_scale,"geometry_units":"physical_pixels","offscreen":true,"windows":0,"fixture":true,"extent":[size.x,size.y],"gpu":gpu,"buttons":buttons,"glyphs":glyphs,"feedback":feedback,"projected_anchor":{"actual":projected_anchor.to_array(),"expected":expected_anchor.to_array()},
             "scope":"Actual Bevy combat HUD widgets with fixture values; no desktop input, account, network, world or live gameplay qualification"
         })).unwrap()).unwrap();
         exit.write(AppExit::Success);
