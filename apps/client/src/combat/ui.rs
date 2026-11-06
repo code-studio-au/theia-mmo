@@ -544,10 +544,13 @@ fn paint(
         } else {
             continue;
         };
-        node.width = percent(ratio * 100.);
+        let width = percent(ratio * 100.);
+        if node.width != width {
+            node.width = width;
+        }
     }
     for (mut label, action, cast, player_health, mana, life) in &mut labels {
-        if let Some(action) = action {
+        let value = if let Some(action) = action {
             let ability = &config.0.abilities()[action.0];
             let name = ability
                 .id()
@@ -570,42 +573,50 @@ fn paint(
                     .map_or(model.action.as_str(), |a| a.status.as_str())
             };
             let cost = ability.mana_cost();
-            **label = if cost > 0 {
+            if cost > 0 {
                 format!("[{key}] {name}\n{cost} mana | {state}")
             } else {
                 format!("[{key}] {name}\n{state}")
-            };
+            }
         } else if cast.is_some() {
-            **label = model.status.clone();
+            model.status.clone()
         } else if player_health.is_some() {
-            **label = if model.vitals_ready {
+            if model.vitals_ready {
                 model.player_health_text.clone()
             } else {
                 "Waiting for health".into()
-            };
+            }
         } else if mana.is_some() {
-            **label = if model.vitals_ready {
+            if model.vitals_ready {
                 model.mana_text.clone()
             } else {
                 "Waiting for mana".into()
-            };
+            }
         } else if life.is_some() {
-            **label = model.life_status.clone();
+            model.life_status.clone()
+        } else {
+            continue;
+        };
+        if label.0 != value {
+            **label = value;
         }
     }
     for (pressed, hovered, mut colour, action) in &mut buttons {
         if skin.is_some() {
             for (label, mut node) in &mut tooltips {
                 if label.0 == action.0 {
-                    node.display = if hovered.is_some_and(|h| h.0) {
+                    let display = if hovered.is_some_and(|h| h.0) {
                         Display::Flex
                     } else {
                         Display::None
                     };
+                    if node.display != display {
+                        node.display = display;
+                    }
                 }
             }
         }
-        colour.0 = if !model.connected || !model.has_target || model.life_blocked {
+        let value = if !model.connected || !model.has_target || model.life_blocked {
             Color::srgb(0.13, 0.14, 0.16)
         } else {
             if pressed {
@@ -620,6 +631,9 @@ fn paint(
                 }
             }
         };
+        if colour.0 != value {
+            colour.0 = value;
+        }
     }
 }
 type FillLayout<'a> = (
@@ -701,8 +715,7 @@ fn observe(
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test]
-    fn compact_skin_keeps_authoritative_feedback_and_only_configured_actions_activate() {
+    fn widget_app(skin: bool) -> App {
         let mut app = App::new();
         let catalog = theia_core::abilities::Catalog::from_json(include_bytes!(
             "../../../../content/gameplay/development-classic-abilities.json"
@@ -713,7 +726,6 @@ mod tests {
         ))
         .unwrap();
         app.insert_resource(Config(std::sync::Arc::new(catalog), Some(stats), true))
-            .insert_resource(crate::fantasy_ui::Skin::fixture())
             .init_resource::<Model>()
             .init_resource::<Input>()
             .init_resource::<WidgetPending>()
@@ -721,6 +733,67 @@ mod tests {
             .add_observer(activate)
             .add_systems(Startup, setup)
             .add_systems(Update, (collect, paint).chain());
+        if skin {
+            app.insert_resource(crate::fantasy_ui::Skin::fixture());
+        }
+        app
+    }
+    #[derive(Resource, Default, Clone, Copy, Debug)]
+    struct DirtyFrame(usize, usize, usize);
+    fn dirty_frame(
+        text: Query<(), Changed<Text>>,
+        nodes: Query<(), Changed<Node>>,
+        colours: Query<(), Changed<BackgroundColor>>,
+        mut dirty: ResMut<DirtyFrame>,
+    ) {
+        *dirty = DirtyFrame(
+            text.iter().count(),
+            nodes.iter().count(),
+            colours.iter().count(),
+        );
+    }
+    #[test]
+    fn steady_hud_avoids_dirty_widgets_but_real_state_changes_still_paint() {
+        let mut samples = Vec::new();
+        for skin in [false, true] {
+            let mut app = widget_app(skin);
+            app.init_resource::<DirtyFrame>()
+                .add_systems(Last, dirty_frame);
+            app.update();
+            app.update();
+            let idle = *app.world().resource::<DirtyFrame>();
+            samples.push((skin, idle.0, idle.1, idle.2));
+            {
+                let mut model = app.world_mut().resource_mut::<Model>();
+                model.connected = true;
+                model.has_target = true;
+                model.vitals_ready = true;
+                model.player_health = 0.45;
+                model.player_health_text = "Health 45 / 100".into();
+            }
+            app.update();
+            let changed = *app.world().resource::<DirtyFrame>();
+            assert!(changed.0 > 0 && changed.1 > 0 && changed.2 > 0);
+            let world = app.world_mut();
+            let mut health = world.query_filtered::<(&Text,), With<PlayerHealthLabel>>();
+            assert_eq!(health.single(world).unwrap().0.0, "Health 45 / 100");
+            app.update();
+            let settled = *app.world().resource::<DirtyFrame>();
+            samples.push((skin, settled.0, settled.1, settled.2));
+        }
+        assert_eq!(
+            samples,
+            [
+                (false, 0, 0, 0),
+                (false, 0, 0, 0),
+                (true, 0, 0, 0),
+                (true, 0, 0, 0)
+            ]
+        );
+    }
+    #[test]
+    fn compact_skin_keeps_authoritative_feedback_and_only_configured_actions_activate() {
+        let mut app = widget_app(true);
         app.update(); // Also detects invalid bundles and conflicting query access.
         let world = app.world_mut();
         let buttons: Vec<_> = world

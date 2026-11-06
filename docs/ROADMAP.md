@@ -4,7 +4,9 @@ Fantasy Warrior skin now provides compact icon actions, a unified target frame,
 fantasy fonts, shared pane styling and an optional client-only launcher flag.
 Baseline and six scaled windowless Vulkan cases through 3840×2160 prove
 button bounds, tooltip/feedback separation and preferred-scale fitting.
-161 client and 51 launcher cases, formatting, strict Clippy and build pass. [Scope, assets and remaining gates](UI_FANTASY_WARRIOR.md).
+162 client and 51 launcher cases, formatting, strict Clippy and build pass.
+Unchanged combat widgets no longer issue change notifications; six windowless
+reference comparisons retain exactly the same pixels. [Scope, assets and remaining gates](UI_FANTASY_WARRIOR.md).
 Normal connected/pane/input qualification and default adoption remain pending.
 **No desktop/mouse tests while the user works. Local commits only; no push.**
 Earlier desktop authorizations below are historical and superseded.

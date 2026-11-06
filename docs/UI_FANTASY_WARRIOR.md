@@ -216,3 +216,26 @@ without installing Winit or creating an OS window. It is not a native window/
 monitor/DPI test. Full connected pane layout and scaled pointer interactions
 remain pending. Existing OS-test traces assumed UI scale 1.0; their UI-to-window
 coordinate conversion must be updated before nondefault-scale pointer checks.
+
+
+## Avoid unchanged combat-widget writes
+
+A headless change-detection probe of `combat::ui::paint` found **six Text,
+five Node and two BackgroundColor changes on each steady legacy frame**, and
+**six Text, seven Node and two BackgroundColor changes** with the compact skin.
+The extra two compact Nodes were unchanged tooltip display states. The before
+failure is retained in `idle-widgets-before-v1.log`.
+
+The painter now compares label contents, fill widths, tooltip display and button
+colours before assigning. The same probe reports **zero changes in all three
+categories** for both skins after settling, while a new health/connection state
+still changes the expected widgets and displays the new value. This measures
+Bevy change notifications for this painter; other HUD writers, CPU/GPU timings,
+frame-rate improvement and crowded gameplay performance are not measured here.
+
+The six `idle-v1-*` offscreen images are **RGBA-pixel-identical** to their
+`scaled-v2-*` references, retaining scaled geometry, feedback separation, fonts
+and zero windows on the recorded Vulkan device. No WARN/ERROR diagnostics appear.
+Formatting, strict workspace/all-target Clippy, **162 client tests including the
+local art case**, and build pass. Existing activation/hover/feedback checks also
+pass. No desktop or mouse test ran; full connected interaction remains pending.
