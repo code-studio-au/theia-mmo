@@ -13,6 +13,9 @@ fixture raster within all six scaled preview extents. The compact bar now
 supports twelve default primary keys; canonical content remains two abilities.
 Four panes share title/X rows backed by their existing close handlers; the
 shared header also passes bounded windowless rendering and headless event checks. [Scope, assets and remaining gates](UI_FANTASY_WARRIOR.md).
+The user subsequently adopted an AntonilzUI screenshot as the visual target;
+lower-centre unit frames, restrained bars, world nameplates and a circular
+minimap remain planned refinements, not features proven by these previews.
 Normal connected/pane/input qualification and default adoption remain pending.
 **No desktop/mouse tests while the user works. Local commits only; no push.**
 Earlier desktop authorizations below are historical and superseded.

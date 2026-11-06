@@ -7,6 +7,52 @@ This first slice is an **opt-in presentation candidate**. The existing playable
 configuration remains available while desktop/mouse testing is paused. The
 unfinished optional full quest-log draft is parked locally; it is outside this UI slice.
 
+## Adopted visual reference — 6 November 2026
+
+The user supplied [this AntonilzUI WoW Classic screenshot](https://www.warcrafttavern.com/wp-content/uploads/2019/08/AntonilzUI-WoW-Classic-UI-Addon-Enemy-Nameplates-10.jpg)
+as the interface direction. This is a particular addon layout, rather than a
+requirement to reproduce the stock Classic interface. The screenshot is a visual
+reference, not supplied artwork to redistribute or evidence of implementation.
+
+Target composition:
+
+- Keep the centre and most of the world view unobstructed. Place compact player
+  and selected-target frames to the lower left and lower right of the character,
+  above the bottom action area. Anchor these around the screen centre so an
+  ultrawide display does not push combat information to distant edges.
+- Put a narrow primary action bar at bottom centre, with clear ability images,
+  key labels and cooldowns. Place the cast bar immediately above it. Show XP as
+  a slim strip near the bar rather than a large permanent information panel.
+- Use a circular minimap at top right and compact quest objectives below it;
+  keep tracker backgrounds unobtrusive. Reserve bottom left for eventual chat
+  and bottom right for eventual bag/menu controls as those systems are built.
+- Show readable enemy names and health above creatures, with an obvious selected
+  target treatment. Keep world nameplates distinct from the persistent target
+  frame and from floating quest markers. They do not imply camera lock-on or
+  automatic facing.
+- Prefer thin dark frames, restrained gold accents, readable light text and
+  clear health/resource colours. Use Synty icons and decorative pieces only where
+  they support this composition. The existing ornate square bezel is a candidate,
+  not a requirement to theme every element around it.
+
+**Implementation gap:** the current opt-in draft still uses upper-left unit
+frames, a square minimap, a separate progression panel and heavier framed action
+slots. Its windowless previews prove their existing layout only; they do not
+show the newly adopted composition. General enemy health nameplates, circular
+map masking, portraits, chat and a bag/menu strip are not established by those
+previews. Do not add illustrative controls that appear functional before their
+underlying systems exist.
+
+Next presentation slice (P2-14 / P5-13 / P5-19): move and compact the existing
+server-derived unit frames, reduce bar decoration and integrate the existing
+cast/XP information into the lower HUD. Preserve target selection, manual facing,
+ability requests, pending transactions and UI/world input ownership. Then handle
+nameplates and the circular minimap as separate bounded slices. Compare actual
+widgets at 1280×720, 1920×1200, 3440×1440 and 3840×2160 with the existing scale
+preferences; check clipping, unit-frame/feedback separation and a clear central
+view. Native connected/input qualification remains pending while desktop tests
+are prohibited. This records design direction, not completion of those changes.
+
 ## Asset assessment
 
 The supplied folder is `/home/steven/Downloads/Synty Models/HUDs`, rather than

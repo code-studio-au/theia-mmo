@@ -1,3 +1,13 @@
+## 2026-11-06 — AntonilzUI screenshot guides the general HUD
+
+Adopt the user's supplied WoW Classic addon screenshot as the visual composition
+reference: compact lower-centre player/target frames, bottom actions/cast/XP,
+upper-right circular minimap and objectives, readable world nameplates and an
+unobstructed centre. Use restrained local Synty art selectively. This refines
+UI-001 presentation; it does not change strict Classic controls or gameplay
+truth. The current opt-in skin is an earlier draft, not an implementation of the
+new reference. [Reference, exact gaps and next acceptance checks](UI_FANTASY_WARRIOR.md#adopted-visual-reference--6-november-2026).
+
 ## 2026-11-06 — preferred UI scale with bounded layout fitting
 
 Use ordinary Bevy `UiScale` for the opt-in fantasy skin. Accept a 75–150% client
