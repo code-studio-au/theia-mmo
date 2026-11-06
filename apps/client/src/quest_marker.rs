@@ -178,7 +178,7 @@ fn anchor(position: GlobalPosition, frame: &crate::floating_origin::Frame) -> Op
 fn font_size(distance: f64) -> f32 {
     (25. - distance as f32 * 0.18).round().clamp(15., 24.)
 }
-fn occluded(spatial: &SpatialQuery, eye: Vec3, point: Vec3) -> bool {
+pub(crate) fn occluded(spatial: &SpatialQuery, eye: Vec3, point: Vec3) -> bool {
     let ray = point - eye;
     let Ok(direction) = Dir3::new(ray) else {
         return true;

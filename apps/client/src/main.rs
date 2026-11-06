@@ -21,6 +21,7 @@ mod melee_qualification;
 mod minimap;
 mod movement;
 mod movement_metrics;
+mod nameplates;
 mod network;
 mod physics;
 mod player_life;
@@ -1296,6 +1297,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if fantasy_skin {
         fantasy_ui::install_scale(&mut app, ui_scale);
         fantasy_ui::load(&mut app);
+        nameplates::install(&mut app);
     }
     if let Some(controller) = classic_controller {
         app.insert_resource(controller);

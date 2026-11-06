@@ -56,6 +56,27 @@ preferences; check clipping, unit-frame/feedback separation and a clear central
 view. Native connected/input qualification remains pending; desktop testing is
 authorized again. This section records design direction, not completion of those changes.
 
+## Additional panel and character-screen references — 6 November 2026
+
+The user supplied four further inline images during implementation. They refine
+visual targets; they do not supply distributable artwork or change the adopted
+combat controls. Use the earlier AntonilzUI/lower-HUD composition together with
+these screen-specific details:
+
+| Reference | Adopted direction | Implementation scope |
+| --- | --- | --- |
+| Quest reward and backpack | Parchment quest body, dark portrait/title header, clear reward icons and compact dark bag grid | Restyle existing dialogue/reward and inventory controls; retain authoritative offers, item counts, capacity checks and pending states |
+| NPC service/equipment window | Dark framed equipment slots, consistent NPC portrait header, legible service actions and money | Guide presentation styling; repair, durability and currencies require their own implemented gameplay before controls appear |
+| Character/faction selection | Prominent character preview, framed portrait choices and coherent faction theming | Future character-screen presentation; no extra races, factions, classes or creation features are adopted from the picture |
+| In-world combat HUD | Compact player/target frames, thin action slots, circular minimap, readable objective tracker and clear world view | Refine the current lower HUD; chat, extra bars and other systems in the image remain separate features |
+
+Use licensed Synty parchment, frames and icons where appropriate, and Bevy's
+standard UI for layout and interaction. Preserve contrast on both pale parchment
+and dark panels. Portrait sourcing and the portrait/character rendering method
+still need assessment; no placeholder portrait should claim to show the actual
+player or NPC appearance. The immediately following presentation work is the
+existing quest/dialogue window, after the nameplate/damage-label check finishes.
+
 ## Asset assessment
 
 The supplied folder is `/home/steven/Downloads/Synty Models/HUDs`, rather than
@@ -129,6 +150,8 @@ Bevy asset source. Existing terrain/player/creature asset roots are preserved.
 - Quest tracker below the existing upper-right minimap, progression above the
   action bar, selected statuses in the retained upper-left status pane and a compact lower-left
   connection indicator. Loading/disconnection details remain available.
+- Passive enemy name/health plates use existing server health and rendered creature
+  anchors, with residency/epoch/death/projection and static-geometry checks.
 - Standard Bevy widgets, picking, image/font loaders and rendering; no custom UI
   renderer, Unity runtime or new server component.
 
@@ -527,3 +550,64 @@ text and passive labels behind dialogue. They do not qualify every reader/loot/
 pending-capacity state, header-X click, remapped or nondefault-scale OS input,
 Windows or subjective performance. The skin remains opt-in while those broader
 checks and the remaining reference features are outstanding.
+
+
+## Passive enemy nameplates and separated combat text — 6 November 2026
+
+P2-14 / P5-13 / P5-19. The skin now installs a standard Bevy UI pool of sixteen
+name/health labels, matching the existing targeting limit. It consumes existing
+combat health and target observations without a new packet, authority rule,
+health prediction or gameplay command. Missing/disconnected observations,
+foreign epochs, unknown targets, unloaded chunks, dead/respawning creatures and
+invalid health suppress the label. Unused slots are hidden every frame.
+
+Labels project the current rendered target-proxy position, keeping interpolation
+and floating-origin conversion in the existing presenter. The anchor is 0.9 m
+above the current body-centre root: an explicit Theia art-presentation offset,
+not a hitbox or claimed Classic formula. Bevy UI scale conversion, viewport
+bounds and the existing Avian solid/ground occlusion helper apply. Occlusion
+shares the already tested actual-wall/terrain/nonblocking-character query.
+No new maximum-distance formula is adopted; eligibility is bounded by existing
+replicated/resident targets. A hidden plate never clears the persistent target.
+
+White text with a black shadow and a red health bar remain readable against the
+greybox. The selected health outline is gold. Names retain the current prototype
+presenter's Wolf/Training target mapping; general authored NPC names, levels and
+reaction colours require their own presentation data. Plates are passive and
+ignore picking; existing model clicks and Tab remain the targeting paths.
+Clickable plates, friendly/player plates, crowd stacking and toggle settings
+are not implemented by this slice. Sixteen constructed widgets are not evidence
+of MMO-scale NPC throughput.
+
+The first connected capture showed an outgoing damage number over the name.
+The themed combat-feedback presenter now starts its 160-pixel text column beside
+the nameplate, choosing the left side near the viewport's right edge. This fixes
+the measured stationary-target collision; moving/crowded label stacking remains
+future work. The legacy floating-text layout and all damage/lifetime facts remain
+unchanged. A boundary test checks the two lanes stay inside the viewport and
+clear of the initial name column.
+
+Formatting, strict workspace/all-target Clippy, **171 client cases including
+local art**, and the development build pass. Health guards and bounded hide/
+reuse have dedicated headless checks. All six `nameplates-v2-*` windowless cases
+render the actual plate widget with clearly synthetic health and retain all
+existing HUD/map/dock bounds. Aggregate:
+`build/ui-reference-20261106/nameplates-verification-v2.json`. These exports do
+not run the world-space combat-feedback presenter.
+
+The separate native check passes the controlled 1280×720 quest/minimap flow and
+PostgreSQL restart/fresh login, ending at journal revision 11 / XP 125:
+`build/ui-reference-20261106/native-nameplates-v2/verification.json`. A selected
+live wolf is captured at **87/100**, with the matching authority/UI health in
+`1280x720/nameplate-selected-state.json`; the image shows the damage number
+beside the name. Read-only observation confirms a living visible plate and a
+hidden plate during death. Actual UI layout/selected-frame counters are
+positive. These counters supplement the captured game/authority observations;
+they do not prove pixel visibility through every overlapping window.
+
+Both native stages have zero GPU diagnostics on the recorded RX 7900 XTX /
+RADV Vulkan / Mesa 26.2.6 adapter. Owned services stop and private plaintext
+password files are removed. The earlier `native-nameplates-v1` diagnostic
+captures the resolved text collision. The prior three-size native integration
+pass predates this addition; nameplates additionally have six scaled GPU cases
+and this 1280×720 connected check, not native Windows/DPI/crowd qualification.

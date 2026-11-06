@@ -374,6 +374,7 @@ fn paint(
     cameras: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
     frame: Res<crate::floating_origin::Frame>,
     ui_scale: Option<Res<bevy::ui::UiScale>>,
+    skin: Option<Res<crate::fantasy_ui::Skin>>,
     mut pending: ResMut<Pending>,
 ) {
     let camera = cameras.single().ok();
@@ -402,7 +403,20 @@ fn paint(
             )
         }) {
             pending.metrics.projected_frames += 1;
-            node.left = px(position.x - 30.);
+            let viewport_width = camera
+                .and_then(|(c, _)| c.logical_viewport_size())
+                .and_then(|p| {
+                    crate::fantasy_ui::projected_ui_point(p, ui_scale.as_ref().map_or(1., |s| s.0))
+                })
+                .map(|p| p.x);
+            if skin.is_some()
+                && let Some(width) = viewport_width
+            {
+                node.width = px(160);
+                node.left = px(crate::nameplates::feedback_left(position.x, width, 160.));
+            } else {
+                node.left = px(position.x - 30.);
+            }
             node.top = px(position.y - age.as_secs_f32() * 28.);
             *visibility = Visibility::Inherited;
             color.0 = color.0.with_alpha((1. - age.as_secs_f32()).clamp(0., 1.));

@@ -285,6 +285,7 @@ fn os_trace(world: &mut World) {
         data["player_life_animation"] =
             serde_json::json!(world.get_resource::<crate::reference_scene::LifeAnimationMetrics>());
         data["minimap"] = serde_json::json!(world.get_resource::<crate::minimap::Metrics>());
+        data["nameplates"] = serde_json::json!(world.get_resource::<crate::nameplates::Metrics>());
         data["player_locomotion"] = crate::reference_scene::locomotion::qualification(world);
         data["render_frame"] = serde_json::json!({
             "revision":world.resource::<crate::floating_origin::Frame>().revision,

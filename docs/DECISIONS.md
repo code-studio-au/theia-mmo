@@ -1,3 +1,13 @@
+## 2026-11-06 — additional UI references refine panels and character screens
+
+Keep the adopted lower-HUD composition. Use the user's four new inline images
+for parchment quest/dialogue bodies, dark portrait headers and icon-grid bags,
+framed equipment/service windows, and future character-selection presentation.
+They guide appearance; visible repair, currency, faction/class or chat controls
+need their own working systems before being exposed. Assess licensed local art
+and portrait sourcing rather than treating reference pictures as runtime assets.
+[Reference mapping and immediate work](UI_FANTASY_WARRIOR.md#additional-panel-and-character-screen-references--6-november-2026).
+
 ## 2026-11-06 — AntonilzUI screenshot guides the general HUD
 
 Adopt the user's supplied WoW Classic addon screenshot as the visual composition
