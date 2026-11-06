@@ -43,6 +43,8 @@ struct Map {
 #[derive(Component)]
 pub(crate) struct Root;
 #[derive(Component)]
+pub(crate) struct Surface;
+#[derive(Component)]
 struct Arrow;
 #[derive(Component)]
 struct Guide;
@@ -115,7 +117,6 @@ fn setup(
     commands
         .spawn((
             Root,
-            crate::fantasy_ui::Panel::Standard,
             Node {
                 position_type: PositionType::Absolute,
                 right: px(12),
@@ -127,19 +128,34 @@ fn setup(
                 display: Display::None,
                 ..default()
             },
-            BackgroundColor(Color::srgba(0.02, 0.03, 0.05, 0.96)),
+            BackgroundColor(if skin.is_some() {
+                Color::NONE
+            } else {
+                Color::srgba(0.02, 0.03, 0.05, 0.96)
+            }),
         ))
         .with_children(|root| {
             root.spawn((MapCaption::Heading, label("N  |  Local area", 14.)));
             root.spawn((
+                Surface,
                 Node {
                     width: px(DISPLAY),
                     height: px(DISPLAY),
                     overflow: Overflow::clip(),
+                    border_radius: if skin.is_some() {
+                        BorderRadius::MAX
+                    } else {
+                        BorderRadius::ZERO
+                    },
                     ..default()
                 },
                 ImageNode::new(handle),
                 Pickable::IGNORE,
+                Outline::new(
+                    px(if skin.is_some() { 2. } else { 0. }),
+                    px(-1),
+                    crate::fantasy_ui::GOLD,
+                ),
             ))
             .with_children(|map| {
                 map.spawn((
@@ -165,9 +181,6 @@ fn setup(
                         ..default()
                     },
                 ));
-                if let Some(skin) = &skin {
-                    map.spawn(crate::fantasy_ui::decoration(skin.frame.clone()));
-                }
             });
             root.spawn((MapCaption::Extent, label("256 m across", 12.)));
         });
@@ -424,7 +437,11 @@ fn present_inner(world: &mut World) {
             .get_resource::<crate::quest_journal::Definitions>()
             .map(|d| d.0.as_ref()),
     )
-    .and_then(|(phase, position, _)| Some((phase, view.project(position)?)));
+    .and_then(|(phase, position, _)| Some((phase, view.project(position)?)))
+    .filter(|(_, point)| {
+        !world.contains_resource::<crate::fantasy_ui::Skin>()
+            || projection::circle_contains(*point, 15.)
+    });
     for (mut node, mut text, mut color) in world
         .query_filtered::<(&mut Node, &mut Text, &mut TextColor), With<Guide>>()
         .iter_mut(world)

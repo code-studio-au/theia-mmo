@@ -4,7 +4,7 @@ Fantasy Warrior skin now provides compact icon actions, a unified target frame,
 fantasy fonts, shared pane styling and an optional client-only launcher flag.
 Baseline and six scaled windowless Vulkan cases through 3840×2160 prove
 button bounds, tooltip/feedback separation and preferred-scale fitting.
-167 client and 51 launcher cases, formatting, strict Clippy and build pass.
+168 client and 51 launcher cases, formatting, strict Clippy and build pass.
 Unchanged combat widgets no longer issue change notifications; six windowless
 reference comparisons retain exactly the same pixels. Scaled projected-label
 anchors and later-spawned theme fonts also pass isolated layout/headless checks.
@@ -16,7 +16,8 @@ shared header also passes bounded windowless rendering and headless event checks
 The adopted AntonilzUI reference now guides lower-centre unit frames, 44-pixel
 outlined actions and a centred XP strip. Six further windowless captures verify
 centre-relative anchoring and unit/tooltip/cast/XP separation. General enemy
-nameplates and a circular minimap remain planned refinements.
+nameplates remain planned. The circular minimap now uses standard Bevy UI;
+six additional captures verify clipped corners and preserved inner raster pixels.
 Normal connected/pane/input qualification and default adoption remain pending.
 **Current permission: desktop/mouse use is authorized again by the user.**
 Commit locally only; no push. Earlier permission restrictions below are historical.

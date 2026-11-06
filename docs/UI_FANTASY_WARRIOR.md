@@ -40,7 +40,7 @@ Target composition:
 **Gap at reference adoption:** the earlier opt-in draft used upper-left unit
 frames, a square minimap, a separate progression panel and heavier framed action
 slots. The lower-HUD refinement below replaces the unit/action/XP arrangement;
-the square minimap remains. Its windowless previews prove their existing layout only; they do not
+the circular-map refinement below also replaces the square minimap. Its windowless previews prove their existing layout only; they do not
 show the newly adopted composition. General enemy health nameplates, circular
 map masking, portraits, chat and a bag/menu strip are not established by those
 previews. Do not add illustrative controls that appear functional before their
@@ -73,16 +73,17 @@ materials are reference designs, not directly executable Bevy widgets. The pack'
 radial menus, reticles and controller prompts do not change the adopted Classic
 controls. No Unity Editor is required for this slice.
 
-Selected PNGs total **143,415 encoded bytes**, with **2,097,152 bytes of RGBA8
-base-level pixel payload**. This is a source/pixel accounting result, not measured
-GPU allocation, frame-rate or batching performance. The four images use original
-aspect ratios; square frames remain square. Missing Unity border metadata is not
+The current three selected PNGs total **24,728 encoded bytes**, with
+**1,048,576 bytes of RGBA8 base-level pixel payload**. The initial four-image
+candidate included an ornamental square frame; the reference-aligned skin no
+longer loads or requires it. This is a source/pixel accounting result, not measured
+GPU allocation, frame-rate or batching performance. The three images retain their original
+aspect ratios. Thin frames and the circular map use standard Bevy UI styling. Missing Unity border metadata is not
 reconstructed as guessed nine-slice settings. No atlas is needed for this small
 subset; the manual's atlas suggestion can be reconsidered against measured demand.
 
 | Role | Source path relative to HUDs | Dimensions | SHA-256 |
 | --- | --- | --- | --- |
-| slot_frame | `Sprites/FantasyWarrior/SPR_FantasyWarrior_Frame_Box04.png` | 512 × 512 | `0b5364d52614b58b5a7394362f7363b1f398fa00992d273049f51add64e6a3ed` |
 | sword_slash | `Sprites/Icons_Weapons/ICON_SM_Wep_Sword_07_Clean.png` | 512 × 256 | `88282f72dce6c3602baea8ffd2cb518c49c899580913512baaac5774fc3c046c` |
 | arcane_bolt | `Sprites/Icons_Elements/ICON_FantasyWarrior_Element_Air02_Clean.png` | 256 × 256 | `58814b493756cb134599003e3759eafb21cfa3498f5a6dafc8a2743e435443b7` |
 | fallback | `Sprites/Icons_Inventory/ICON_FantasyWarrior_Inventory_Spellbooks01_Clean.png` | 256 × 256 | `59a771b91ee76e9ac4c817bb4dc2c21e2d9a35bcba8c9dd7618071321b12ff8b` |
@@ -107,7 +108,7 @@ files and source paths escaping the selected directory before creating the App.
 The preflight checks headers and font signatures; actual loaders/rendering are
 separate evidence. It does not cryptographically seal mutable local art.
 
-The candidate loads four images and two fonts through a separate `fantasy-ui://`
+The candidate loads three images and two fonts through a separate `fantasy-ui://`
 Bevy asset source. Existing terrain/player/creature asset roots are preserved.
 
 - Player health/mana/life and selected-target heading/health occupy compact
@@ -439,3 +440,55 @@ No server, protocol, asset-source file or gameplay catalogue changed. Desktop
 use is authorized again, but this slice has not yet run native connected/pane/
 input qualification. Square minimap, general enemy nameplates, portrait art and
 chat/menu systems remain separate work. The skin remains opt-in.
+
+
+## Circular minimap using standard Bevy UI — 6 November 2026
+
+P2-14 / P5-13 / P5-19. The skin now draws the existing 176×176 minimap image
+with `Node.border_radius = BorderRadius::MAX` and a thin rounded outline. Its
+heading and metric extent remain readable without an opaque rectangular pane.
+The legacy square presentation remains available without the skin. No shader,
+Unity material, custom renderer, additional map texture or terrain request was
+introduced. The existing 64×64 raster, north-up global projection, 256 m diameter,
+player heading and update cadence are unchanged.
+
+Guide markers whose complete 18×22 bounds could extend outside the circular
+surface are hidden for this skin using a conservative 15-pixel inset. This is
+presentation filtering after the existing checked global projection; it grants
+no quest visibility, interaction range or new authority. A boundary test covers
+centre, rim, excluded corners, invalid insets and nonfinite coordinates. Marker
+edge arrows are not implemented. The minimap remains a read-only display.
+
+Removing the final square-frame overlay also removes its image handle, loader
+requirement and unused overlay helper. Three existing icon PNGs and two fonts
+remain; no source asset files were changed or committed. The current asset
+accounting above reflects that smaller subset.
+
+All six `round-v1-*` windowless GPU cases pass on the same Linux Vulkan adapter,
+with actual map-surface bounds and circular corner radii in each report. Pixel
+checks confirm all four map corners match the unobstructed background and an
+inner raster sample remains visible. The aggregate is
+`build/ui-reference-20261106/round-verification-v1.json`; each case also retains
+its lower HUD, XP, feedback, header and projection-anchor checks. Zero windows
+and no WARN/ERROR diagnostics. Formatting, strict workspace/all-target Clippy,
+168 client tests including local art, and the development build pass. These are
+fixture exports; connected/native evidence is recorded separately when complete.
+
+
+### First connected reference-layout check
+
+`build/ui-reference-20261106/native-round-v1/verification.json` passes the
+existing native journal/minimap walkthrough at 1280×720 and after a genuine
+PostgreSQL process restart/fresh login. It uses the new client, retained matching
+server/validator/art checkpoint, a private OIDC provider and the normal launcher
+with the optional skin appended. Input is synthetic OS mouse/keyboard to the
+PID-verified owned Linux window. The fixture's combat/quest data is explicitly
+controlled; this is not ordinary random-loot or full-campaign qualification.
+Both passes end at journal revision 11 / XP 125, with saved completion restored.
+All owned services stop and private plaintext password files are removed.
+
+This first live scene exposes remaining integration defects: the old wide bag
+toggle overlaps the lower action area, the terrain diagnostic HUD clutters the
+same corner, and passive world/status labels can paint over dialogue. Fix and
+recheck those before complete-theme adoption. The native pass proves its stated
+flow, not that the whole UI is visually or interactively qualified at every size.

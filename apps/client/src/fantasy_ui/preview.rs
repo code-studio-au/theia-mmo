@@ -59,6 +59,7 @@ struct Layout<'w, 's> {
     feedback: Query<'w, 's, FeedbackGeometry<'static>>,
     anchor: Query<'w, 's, AnchorGeometry<'static>, With<ProjectedAnchor>>,
     minimap: Query<'w, 's, AnchorGeometry<'static>, With<crate::minimap::Root>>,
+    map_surface: Query<'w, 's, AnchorGeometry<'static>, With<crate::minimap::Surface>>,
     header: Query<'w, 's, AnchorGeometry<'static>, With<HeaderFixture>>,
     units: Query<'w, 's, UnitGeometry<'static>>,
     xp: Query<'w, 's, AnchorGeometry<'static>, With<crate::progression::Root>>,
@@ -264,7 +265,7 @@ fn capture(
         run.started.elapsed() < Duration::from_secs(90),
         "Offscreen UI preview timed out"
     );
-    for handle in [&skin.frame, &skin.sword, &skin.arcane, &skin.fallback] {
+    for handle in [&skin.sword, &skin.arcane, &skin.fallback] {
         if let Some(LoadState::Failed(error)) = server.get_load_state(handle.id()) {
             panic!("UI image failed: {error}");
         }
@@ -337,7 +338,18 @@ fn capture(
             && map_centre.y + map_size.y * 0.5 <= run.size.y as f32,
         "Minimap must remain within the rendered viewport"
     );
-    let minimap = serde_json::json!({"centre":map_centre.to_array(),"size":map_size.to_array(),"raster":"synthetic checker fixture; no world data"});
+    let (surface_node, surface_transform) = layout.map_surface.single().expect("Map image surface");
+    let surface_size = surface_node.size();
+    let surface_centre = surface_transform.affine().translation;
+    assert!(
+        surface_node
+            .border_radius()
+            .top_left
+            .distance(Vec2::splat(surface_size.x * 0.5))
+            <= 1.,
+        "Map image must use standard Bevy circular corners"
+    );
+    let minimap = serde_json::json!({"centre":map_centre.to_array(),"size":map_size.to_array(),"surface":{"centre":surface_centre.to_array(),"size":surface_size.to_array(),"shape":"circle"},"raster":"synthetic checker fixture; no world data"});
     let (header_node, header_transform) = layout
         .header
         .single()

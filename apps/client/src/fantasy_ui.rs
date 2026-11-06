@@ -14,13 +14,12 @@ use std::{
     path::{Path, PathBuf},
 };
 
-pub(crate) const FRAME: &str = "Sprites/FantasyWarrior/SPR_FantasyWarrior_Frame_Box04.png";
 pub(crate) const SWORD: &str = "Sprites/Icons_Weapons/ICON_SM_Wep_Sword_07_Clean.png";
 pub(crate) const ARCANE: &str =
     "Sprites/Icons_Elements/ICON_FantasyWarrior_Element_Air02_Clean.png";
 pub(crate) const FALLBACK: &str =
     "Sprites/Icons_Inventory/ICON_FantasyWarrior_Inventory_Spellbooks01_Clean.png";
-pub(crate) const FILES: [&str; 4] = [FRAME, SWORD, ARCANE, FALLBACK];
+pub(crate) const FILES: [&str; 3] = [SWORD, ARCANE, FALLBACK];
 pub(crate) const TITLE_FONT: &str = "Fonts/Grenze/Grenze-SemiBold.ttf";
 pub(crate) const BODY_FONT: &str = "Fonts/Texturina/Texturina_18pt-SemiBold.ttf";
 pub(crate) const GOLD: Color = Color::srgb(0.64, 0.48, 0.26);
@@ -115,7 +114,6 @@ pub(crate) enum Panel {
 
 #[derive(Resource)]
 pub(crate) struct Skin {
-    pub frame: Handle<Image>,
     sword: Handle<Image>,
     arcane: Handle<Image>,
     fallback: Handle<Image>,
@@ -126,7 +124,6 @@ impl Skin {
     #[cfg(test)]
     pub(crate) fn fixture() -> Self {
         Self {
-            frame: default(),
             sword: default(),
             arcane: default(),
             fallback: default(),
@@ -223,10 +220,7 @@ fn fit_window(
     }
 }
 fn validate(root: &Path) -> Result<(), Box<dyn std::error::Error>> {
-    for (name, expected) in FILES
-        .into_iter()
-        .zip([(512, 512), (512, 256), (256, 256), (256, 256)])
-    {
+    for (name, expected) in FILES.into_iter().zip([(512, 256), (256, 256), (256, 256)]) {
         let path = root.join(name).canonicalize()?;
         if !path.starts_with(root) || !path.is_file() || path.metadata()?.len() > 4 * 1024 * 1024 {
             return Err(format!("UI image outside local pack or larger than 4 MiB: {name}").into());
@@ -269,7 +263,6 @@ pub(crate) fn load(app: &mut App) {
     let server = app.world().resource::<AssetServer>();
     let image = |name| server.load(format!("fantasy-ui://{name}"));
     let skin = Skin {
-        frame: image(FRAME),
         sword: image(SWORD),
         arcane: image(ARCANE),
         fallback: image(FALLBACK),
@@ -332,22 +325,6 @@ fn style_panels(
         }
     }
 }
-/// Square overlays use the original aspect. No inferred Unity nine-slice borders.
-pub(crate) fn decoration(image: Handle<Image>) -> impl Bundle {
-    (
-        Node {
-            position_type: PositionType::Absolute,
-            left: px(0),
-            top: px(0),
-            width: percent(100),
-            height: percent(100),
-            ..default()
-        },
-        ImageNode::new(image),
-        Pickable::IGNORE,
-    )
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -507,7 +484,7 @@ mod tests {
     #[test]
     fn lfs_pointer_and_wrong_source_dimensions_are_not_ui_images() {
         let root = std::env::temp_dir().join(format!("theia-ui-header-{}", std::process::id()));
-        let path = root.join(FRAME);
+        let path = root.join(SWORD);
         std::fs::create_dir_all(path.parent().unwrap()).unwrap();
         std::fs::write(
             &path,

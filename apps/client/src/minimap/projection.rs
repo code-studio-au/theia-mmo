@@ -4,6 +4,15 @@ use theia_core::coordinates::{ChunkId, GlobalPosition};
 pub(super) const RADIUS: f64 = 128.;
 pub(super) const PIXELS: usize = 64;
 pub(super) const DISPLAY: f32 = 176.;
+/// Keep the complete guide glyph inside the round skin's visible map surface.
+/// This filters presentation only; the rectangular world projection is unchanged.
+pub(super) fn circle_contains(point: [f32; 2], inset: f32) -> bool {
+    let radius = DISPLAY * 0.5;
+    point.into_iter().all(f32::is_finite)
+        && inset.is_finite()
+        && (0. ..=radius).contains(&inset)
+        && (point[0] - radius).hypot(point[1] - radius) <= radius - inset
+}
 
 #[derive(Clone, Copy)]
 pub(super) struct View {
@@ -79,6 +88,16 @@ impl HeightTile<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn round_map_keeps_marker_extents_inside_the_circle() {
+        assert!(circle_contains([88., 88.], 15.));
+        assert!(circle_contains([161., 88.], 15.));
+        assert!(!circle_contains([162., 88.], 15.));
+        assert!(!circle_contains([0., 0.], 0.));
+        assert!(!circle_contains([f32::NAN, 88.], 11.));
+        assert!(!circle_contains([88., 88.], -1.));
+        assert!(!circle_contains([88., 88.], 89.));
+    }
     fn p(x: f64, z: f64) -> GlobalPosition {
         GlobalPosition::new([x, 0., z]).unwrap()
     }
