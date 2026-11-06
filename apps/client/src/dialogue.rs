@@ -509,17 +509,23 @@ fn scroll(
 
 /// Read-only bounds and scroll state for diagnosing clipped dialogue choices.
 pub(crate) fn qualification_body(world: &mut World) -> Option<serde_json::Value> {
+    let ui_scale = world
+        .get_resource::<bevy::ui::UiScale>()
+        .map_or(1., |scale| scale.0);
     world.query_filtered::<(&ComputedNode, &bevy::ui::UiGlobalTransform, &ScrollPosition), With<Body>>()
         .iter(world).next().map(|(node, transform, scroll)| serde_json::json!({
-            "point": (transform.affine().translation * node.inverse_scale_factor()).to_array(),
-            "size": (node.size() * node.inverse_scale_factor()).to_array(),
-            "content": (node.content_size() * node.inverse_scale_factor()).to_array(),
+            "point": (transform.affine().translation * crate::fantasy_ui::window_factor(node, ui_scale)).to_array(),
+            "size": (node.size() * crate::fantasy_ui::window_factor(node, ui_scale)).to_array(),
+            "content": (node.content_size() * crate::fantasy_ui::window_factor(node, ui_scale)).to_array(),
             "scroll": [scroll.x, scroll.y]
         }))
 }
 
 /// Current painted choice locations for explicit read-only OS qualification.
 pub(crate) fn qualification_choices(world: &mut World) -> Vec<serde_json::Value> {
+    let ui_scale = world
+        .get_resource::<bevy::ui::UiScale>()
+        .map_or(1., |scale| scale.0);
     let Some(ui) = world.get_resource::<Ui>() else {
         return Vec::new();
     };
@@ -532,12 +538,35 @@ pub(crate) fn qualification_choices(world: &mut World) -> Vec<serde_json::Value>
             let Widget::Choice(index)=widget else {return None};
             if node.size().min_element()<=0. {return None;}
             let (_,id)=choices.get(*index)?;
-            Some(serde_json::json!({"choice":id.as_str(),"point":(t.affine().translation*node.inverse_scale_factor()).to_array()}))
+            Some(serde_json::json!({"choice":id.as_str(),"point":(t.affine().translation*crate::fantasy_ui::window_factor(node, ui_scale)).to_array()}))
         }).collect()
 }
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn exported_dialogue_bounds_use_window_pixels_without_rescaling_scroll_offsets() {
+        let mut app = App::new();
+        app.insert_resource(bevy::ui::UiScale(1.25));
+        app.world_mut().spawn((
+            Body,
+            ComputedNode {
+                size: Vec2::new(400., 200.),
+                content_size: Vec2::new(600., 1200.),
+                inverse_scale_factor: 0.4,
+                ..default()
+            },
+            bevy::ui::UiGlobalTransform::from_xy(1200., 900.),
+            ScrollPosition(Vec2::new(0., 17.)),
+        ));
+        let value = qualification_body(app.world_mut()).unwrap();
+        assert_eq!(value["point"], serde_json::json!([600., 450.]));
+        assert_eq!(value["size"], serde_json::json!([200., 100.]));
+        assert_eq!(value["content"], serde_json::json!([300., 600.]));
+        assert_eq!(value["scroll"], serde_json::json!([0., 17.]));
+        assert_eq!(app.world().resource::<bevy::ui::UiScale>().0, 1.25);
+    }
+
     #[test]
     fn header_close_retains_revision_and_pending_guards_of_the_existing_action() {
         use bevy::ecs::system::RunSystemOnce;

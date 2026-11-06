@@ -5,8 +5,9 @@
 The user moved development beyond quest mechanics to a general WoW-like UI.
 This first slice is an **opt-in presentation candidate**. The existing playable
 configuration remains available pending complete-theme qualification. The user
-restored desktop/mouse permission after supplying the visual reference; earlier
-paused-test statements below describe historical checkpoints. The
+authorized desktop/mouse checks for the completed native evidence below, then
+paused desktop/mouse tests again while using the machine. Continue headless only;
+prior permission statements below describe their historical checkpoints. The
 unfinished optional full quest-log draft is parked locally; it is outside this UI slice.
 
 ## Adopted visual reference — 6 November 2026
@@ -751,3 +752,30 @@ plaintext password files are removed. The native hover screenshots and confirmed
 stack/tooltip JSON are retained per stage. These are controlled UI fixtures,
 not native Windows, nondefault-scale/DPI input, human feel, random-loot balance
 or performance evidence. The skin remains opt-in.
+
+
+## Window-coordinate diagnostic correction — 6 November 2026
+
+P2-14 / P5-19. Read-only native test exports for backpack/equipment, reader,
+loot, dialogue and quest controls previously multiplied physical UI geometry by
+`ComputedNode.inverse_scale_factor()` alone. In the pinned Bevy 0.20 source,
+`propagate_ui_target_cameras` (`bevy_ui/src/update.rs`) combines render-target DPI
+with `UiScale`; the inverse removes both. That produced UI logical coordinates,
+while the native pointer helper expects window logical coordinates and applies
+window DPI itself. At UI scale 1.25 the exported click targets would be too small
+and too near the origin. Earlier native runs used UI scale 1 and are unaffected.
+
+A shared factor now removes window DPI while retaining UI enlargement for those
+read-only positions, sizes and glyph bounds. ScrollPosition values and runtime
+scroll/clipping clamps remain in their existing UI logical units. The OS trace
+records active UI scale and explicit geometry/scroll unit labels. This changes
+diagnostics, not Bevy picking, gameplay commands, world coordinates or rendering.
+Other older specialized qualifiers are still qualified only at their original
+scale; this does not promote them to general scale/DPI evidence.
+
+Headless fixtures check scale 1/1.25/1.5 with distinct window DPI, and check the
+actual dialogue exporter gives window geometry while retaining a scroll offset
+of 17 UI pixels. The 175-client-case run includes local PNG decoding. Formatting
+and strict workspace/all-target Clippy pass. No new desktop/input test
+has been launched: the user paused desktop/mouse tests while using the machine.
+Real enlarged-UI interaction, native DPI and Windows checks remain pending.

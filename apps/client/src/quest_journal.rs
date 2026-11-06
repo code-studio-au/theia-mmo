@@ -459,14 +459,17 @@ fn scroll(
 /// Read-only presentation telemetry for the existing explicit owned-X11 check.
 /// This writes no intent, quest state, counter or permission.
 pub(crate) fn qualification(world: &mut World, state: &State) -> Option<serde_json::Value> {
+    let ui_scale = world
+        .get_resource::<bevy::ui::UiScale>()
+        .map_or(1., |scale| scale.0);
     let definitions = world.get_resource::<Definitions>()?.0.clone();
     let journal = state.quest_journal.as_ref()?;
     let ui = serde_json::to_value(world.resource::<Ui>()).ok()?;
     let buttons:Vec<_>=world.query::<(&ActionButton,&ComputedNode,&bevy::ui::UiGlobalTransform,Has<Pressed>)>().iter(world)
         .filter(|(_,node,_,_)|node.size().min_element()>0.)
-        .map(|(button,node,t,pressed)|serde_json::json!({"pressed":pressed,"quest":button.0.as_str(),"point":(t.affine().translation*node.inverse_scale_factor()).to_array(),"size":(node.size()*node.inverse_scale_factor()).to_array(),"content_box_size":(node.content_box().size()*node.inverse_scale_factor()).to_array()})).collect();
+        .map(|(button,node,t,pressed)|serde_json::json!({"pressed":pressed,"quest":button.0.as_str(),"point":(t.affine().translation*crate::fantasy_ui::window_factor(node, ui_scale)).to_array(),"size":(node.size()*crate::fantasy_ui::window_factor(node, ui_scale)).to_array(),"content_box_size":(node.content_box().size()*crate::fantasy_ui::window_factor(node, ui_scale)).to_array()})).collect();
     let quests:Vec<_>=definitions.catalog().quests().filter_map(|q|journal.journal.progress(q.id()).map(|p|serde_json::json!({"id":q.id().as_str(),"revision":p.revision(),"status":format!("{:?}",p.status()),"counts":q.stages().flat_map(|s|s.objectives()).map(|o|(o.id().as_str(),p.count(o.id()).unwrap_or(0))).collect::<BTreeMap<_,_>>()}))).collect();
-    let tracker=world.query_filtered::<(&Text,&ComputedNode,Option<&bevy::text::TextLayoutInfo>),With<Tracker>>().iter(world).next().map(|(text,node,glyphs)|serde_json::json!({"text":text.0,"size":(node.size()*node.inverse_scale_factor()).to_array(),"glyphs":glyphs.map_or(0,|g|g.glyphs.len())}));
+    let tracker=world.query_filtered::<(&Text,&ComputedNode,Option<&bevy::text::TextLayoutInfo>),With<Tracker>>().iter(world).next().map(|(text,node,glyphs)|serde_json::json!({"text":text.0,"size":(node.size()*crate::fantasy_ui::window_factor(node, ui_scale)).to_array(),"glyphs":glyphs.map_or(0,|g|g.glyphs.len())}));
     let action_labels: Vec<_> = world
         .query::<(
             &ActionLabel,
@@ -479,8 +482,8 @@ pub(crate) fn qualification(world: &mut World, state: &State) -> Option<serde_js
         .map(|(label, text, node, glyphs)| {
             serde_json::json!({
                 "quest":label.0.as_str(),"text":text.0,
-                "size":(node.size()*node.inverse_scale_factor()).to_array(),
-                "layout_size":glyphs.map_or(Vec2::ZERO,|g|g.size*node.inverse_scale_factor()).to_array(),
+                "size":(node.size()*crate::fantasy_ui::window_factor(node, ui_scale)).to_array(),
+                "layout_size":glyphs.map_or(Vec2::ZERO,|g|g.size*crate::fantasy_ui::window_factor(node, ui_scale)).to_array(),
                 "glyphs":glyphs.map_or(0,|g|g.glyphs.len())
             })
         })
@@ -492,9 +495,9 @@ pub(crate) fn qualification(world: &mut World, state: &State) -> Option<serde_js
     let offer_scroll=world.query_filtered::<(&ComputedNode,&bevy::ui::UiGlobalTransform,&ScrollPosition),With<Offers>>()
         .iter(world).find(|(node,_,_)|node.size().min_element()>0.)
         .map(|(node,t,scroll)|serde_json::json!({
-            "point":(t.affine().translation*node.inverse_scale_factor()).to_array(),
-            "size":(node.size()*node.inverse_scale_factor()).to_array(),
-            "content":(node.content_size()*node.inverse_scale_factor()).to_array(),
+            "point":(t.affine().translation*crate::fantasy_ui::window_factor(node, ui_scale)).to_array(),
+            "size":(node.size()*crate::fantasy_ui::window_factor(node, ui_scale)).to_array(),
+            "content":(node.content_size()*crate::fantasy_ui::window_factor(node, ui_scale)).to_array(),
             "scroll":[scroll.x,scroll.y]
         }));
     Some(

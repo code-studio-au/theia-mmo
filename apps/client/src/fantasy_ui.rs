@@ -68,6 +68,13 @@ pub(crate) fn button_color(disabled: bool, hovered: bool, pressed: bool) -> Colo
         Color::srgb(0.28, 0.08, 0.04)
     }
 }
+/// Computed UI coordinates are physical target pixels; inverse_scale_factor
+/// removes BOTH target DPI and UiScale (Bevy 0.20 propagate_ui_target_cameras).
+/// OS pointer telemetry needs window logical pixels, so retain UI enlargement.
+/// ScrollPosition remains in UI logical pixels and must not use this factor.
+pub(crate) fn window_factor(node: &ComputedNode, ui_scale: f32) -> f32 {
+    node.inverse_scale_factor() * ui_scale
+}
 pub(crate) const SLOT: f32 = 44.;
 pub(crate) const SLOTS: usize = 12;
 pub(crate) const ACTION_WIDTH: f32 = SLOT * SLOTS as f32 + 4. * (SLOTS - 1) as f32 + 18.;
@@ -441,6 +448,27 @@ fn style_panels(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn widget_coordinates_retain_ui_enlargement_and_only_remove_window_dpi() {
+        let physical = Vec2::new(1200., 900.);
+        // Same physical coordinate at DPI 2 and UI 1.5: the OS point is
+        // (600,450), whereas an uncorrected inverse gives (400,300).
+        let node = ComputedNode {
+            inverse_scale_factor: 1. / 3.,
+            ..default()
+        };
+        assert_eq!(physical * window_factor(&node, 1.5), Vec2::new(600., 450.));
+        let node = ComputedNode {
+            inverse_scale_factor: 0.8,
+            ..default()
+        };
+        assert_eq!(physical * window_factor(&node, 1.25), physical);
+        let node = ComputedNode {
+            inverse_scale_factor: 1.,
+            ..default()
+        };
+        assert_eq!(physical * window_factor(&node, 1.), physical);
+    }
     #[test]
     fn parchment_uses_ink_for_body_and_later_labels_but_preserves_header_and_buttons() {
         let mut app = App::new();

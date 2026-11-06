@@ -97,6 +97,9 @@ pub(crate) fn install(app: &mut App) {
     }
 }
 fn widget_position(world: &mut World, equip: bool, item: &str) -> Option<Vec2> {
+    let ui_scale = world
+        .get_resource::<bevy::ui::UiScale>()
+        .map_or(1., |scale| scale.0);
     if !world
         .get_resource::<crate::inventory::Ui>()
         .is_some_and(|ui| ui.open)
@@ -105,7 +108,7 @@ fn widget_position(world: &mut World, equip: bool, item: &str) -> Option<Vec2> {
     }
     if equip {
         world.query_filtered::<(&ComputedNode,&bevy::ui::UiGlobalTransform),With<crate::inventory::EquipButton>>()
-            .iter(world).next().map(|(node,t)|t.affine().translation*node.inverse_scale_factor())
+            .iter(world).next().map(|(node,t)|t.affine().translation*crate::fantasy_ui::window_factor(node, ui_scale))
     } else {
         let state = world.resource::<crate::network::Network>().state();
         let slot = state
@@ -127,17 +130,27 @@ fn widget_position(world: &mut World, equip: bool, item: &str) -> Option<Vec2> {
             )>()
             .iter(world)
             .find(|(button, _, _)| usize::from(button.0) == slot)
-            .map(|(_, node, t)| t.affine().translation * node.inverse_scale_factor())
+            .map(|(_, node, t)| {
+                t.affine().translation * crate::fantasy_ui::window_factor(node, ui_scale)
+            })
     }
 }
 fn inventory_widget<C: Component>(world: &mut World) -> Option<[f32; 2]> {
+    let ui_scale = world
+        .get_resource::<bevy::ui::UiScale>()
+        .map_or(1., |scale| scale.0);
     world
         .query_filtered::<(&ComputedNode, &bevy::ui::UiGlobalTransform), With<C>>()
         .iter(world)
         .next()
-        .map(|(node, t)| (t.affine().translation * node.inverse_scale_factor()).to_array())
+        .map(|(node, t)| {
+            (t.affine().translation * crate::fantasy_ui::window_factor(node, ui_scale)).to_array()
+        })
 }
 fn inventory_layout(world: &mut World) -> serde_json::Value {
+    let ui_scale = world
+        .get_resource::<bevy::ui::UiScale>()
+        .map_or(1., |scale| scale.0);
     if !world
         .get_resource::<crate::inventory::Ui>()
         .is_some_and(|ui| ui.open)
@@ -153,8 +166,9 @@ fn inventory_layout(world: &mut World) -> serde_json::Value {
         )>()
         .iter(world)
     {
-        slots[usize::from(button.0)] =
-            Some((t.affine().translation * node.inverse_scale_factor()).to_array());
+        slots[usize::from(button.0)] = Some(
+            (t.affine().translation * crate::fantasy_ui::window_factor(node, ui_scale)).to_array(),
+        );
     }
     let scroll = world
         .query_filtered::<&ScrollPosition, With<crate::inventory::Pane>>()
@@ -266,6 +280,13 @@ fn os_trace(world: &mut World) {
             .as_ref()
             .map(|v| serde_json::from_slice::<serde_json::Value>(&v.bag.to_json()).unwrap())
             .unwrap_or_default();
+        data["ui_scale"] = serde_json::json!(
+            world
+                .get_resource::<bevy::ui::UiScale>()
+                .map_or(1., |scale| scale.0)
+        );
+        data["ui_geometry_units"] = serde_json::json!("window_logical_pixels");
+        data["ui_scroll_units"] = serde_json::json!("ui_logical_pixels");
         data["inventory_layout"] = inventory_layout(world);
         data["documents"] = world
             .get_resource::<crate::documents::Ui>()

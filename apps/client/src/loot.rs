@@ -345,6 +345,9 @@ fn update(
 
 /// Read-only native qualification telemetry; never accepts input or grants loot.
 pub(crate) fn qualification(world: &mut World) -> serde_json::Value {
+    let ui_scale = world
+        .get_resource::<bevy::ui::UiScale>()
+        .map_or(1., |scale| scale.0);
     let Some(ui) = world.get_resource::<Ui>() else {
         return serde_json::Value::Null;
     };
@@ -363,7 +366,9 @@ pub(crate) fn qualification(world: &mut World) -> serde_json::Value {
             if node.size().min_element() <= 0. {
                 continue;
             }
-            let point = (transform.affine().translation * node.inverse_scale_factor()).to_array();
+            let point = (transform.affine().translation
+                * crate::fantasy_ui::window_factor(node, ui_scale))
+            .to_array();
             match action {
                 Action::Take(n) if *n < count => take[*n] = Some(point),
                 Action::All => all = Some(point),
