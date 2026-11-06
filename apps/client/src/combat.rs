@@ -276,7 +276,11 @@ fn stale_own_life(event: &Event, owner: Option<u64>, generation: u64) -> bool {
 fn present(
     mut network: ResMut<Network>,
     config: Res<Config>,
-    (input, selection): (Res<ui::Input>, Option<Res<crate::world_input::Selection>>),
+    (input, selection, skin): (
+        Res<ui::Input>,
+        Option<Res<crate::world_input::Selection>>,
+        Option<Res<crate::fantasy_ui::Skin>>,
+    ),
     mut metrics: ResMut<Metrics>,
     mut ui: ResMut<Ui>,
     (mut hud, mut panel): (Query<&mut Text, With<Hud>>, ResMut<ui::Model>),
@@ -289,6 +293,7 @@ fn present(
         mut projectiles,
     ): PresentationFeedback<'_>,
 ) {
+    let action_limit = ui::action_limit(skin.is_some());
     let state = network.state();
     *panel = ui::Model::default();
     panel.connected = network.connected();
@@ -551,7 +556,7 @@ fn present(
                 .0
                 .abilities()
                 .get(slot)
-                .filter(|_| slot < ui::VISIBLE_ACTIONS)
+                .filter(|_| slot < action_limit)
         {
             match source {
                 ui::Source::Keyboard => metrics.keyboard_requests += 1,
@@ -607,7 +612,7 @@ fn present(
         };
         let rate =
             theia_core::time::TickRate::from_hz(hz as u32).expect("Validated server tick rate");
-        for ability in config.0.abilities().iter().take(ui::VISIBLE_ACTIONS) {
+        for ability in config.0.abilities().iter().take(action_limit) {
             let ready_at = combat
                 .cooldowns
                 .iter()
@@ -665,13 +670,7 @@ fn present(
             .as_ref()
             .and_then(|cast| config.0.ability(cast.ability.as_str()))
             .unwrap_or(ability);
-        let name = active_ability
-            .id()
-            .as_str()
-            .rsplit('.')
-            .next()
-            .unwrap()
-            .replace('-', " ");
+        let name = ui::ability_name(active_ability.id().as_str());
         panel.action = action.clone();
         panel.status = if combat.cast.as_ref().is_some_and(|c| c.completes > now) {
             format!("{name} | {action}")

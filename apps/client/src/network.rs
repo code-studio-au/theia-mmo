@@ -1299,8 +1299,11 @@ pub fn present(
     }
     if let Some(error) = &state.error {
         if let Ok(mut text) = hud.single_mut() {
-            **text =
+            let value =
                 format!("THEIA\nDisconnected: {error}\nEsc: quit; restart client to reconnect");
+            if text.0 != value {
+                **text = value;
+            }
         }
         for (entity, _, _, _) in &remotes {
             commands.entity(entity).despawn();
@@ -1321,19 +1324,19 @@ pub fn present(
     if let Some(snapshot) = &state.snapshot {
         let id = state.id.expect("Snapshot requires welcome");
         if let Ok(mut text) = hud.single_mut() {
-            **text = if (terrain.is_some() && terrain_ready.is_none())
+            let value = if (terrain.is_some() && terrain_ready.is_none())
                 || (chunks.is_some() && chunks_ready.is_none())
                 || (references.is_some() && ready.is_none())
             {
-                format!(
-                    "THEIA\nPlayer {id} | connected\nLoading world and characters...\nEsc: quit"
-                )
+                if fantasy_skin.is_some() {
+                    "Loading world and characters...".into()
+                } else {
+                    format!(
+                        "THEIA\nPlayer {id} | connected\nLoading world and characters...\nEsc: quit"
+                    )
+                }
             } else if fantasy_skin.is_some() {
-                format!(
-                    "THEIA | connected\n{} players | {} Hz",
-                    snapshot.players.len(),
-                    snapshot.tick_hz
-                )
+                "Connected".into()
             } else {
                 let controls = if let Some(classic) = classic.as_ref() {
                     classic.hint()
@@ -1382,6 +1385,9 @@ pub fn present(
                     snapshot.tick
                 )
             };
+            if text.0 != value {
+                **text = value;
+            }
         }
         if snapshot.tick > network.latest_tick {
             network.tick_hz = snapshot.tick_hz;

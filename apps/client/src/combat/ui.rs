@@ -38,6 +38,45 @@ pub(super) enum Source {
 #[derive(Resource, Default)]
 pub(super) struct Input(pub Option<(usize, Source)>);
 pub(super) const VISIBLE_ACTIONS: usize = 5;
+const PRIMARY_KEYS: [KeyCode; 12] = [
+    KeyCode::Digit1,
+    KeyCode::Digit2,
+    KeyCode::Digit3,
+    KeyCode::Digit4,
+    KeyCode::Digit5,
+    KeyCode::Digit6,
+    KeyCode::Digit7,
+    KeyCode::Digit8,
+    KeyCode::Digit9,
+    KeyCode::Digit0,
+    KeyCode::Minus,
+    KeyCode::Equal,
+];
+const KEY_LABELS: [&str; 12] = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "="];
+pub(super) fn action_limit(skin: bool) -> usize {
+    if skin {
+        PRIMARY_KEYS.len()
+    } else {
+        VISIBLE_ACTIONS
+    }
+}
+fn key_label(slot: usize) -> &'static str {
+    KEY_LABELS[slot]
+}
+pub(super) fn ability_name(id: &str) -> String {
+    id.rsplit('.')
+        .next()
+        .unwrap_or(id)
+        .split('-')
+        .filter(|word| !word.is_empty())
+        .map(|word| {
+            let mut chars = word.chars();
+            chars.next().unwrap().to_ascii_uppercase().to_string() + chars.as_str()
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
 #[derive(Default, serde::Serialize)]
 pub(crate) struct Action {
     pub cooldown: f32,
@@ -140,20 +179,16 @@ fn collect(
     keys: Res<ButtonInput<KeyCode>>,
     mut pending: ResMut<WidgetPending>,
     mut input: ResMut<Input>,
+    skin: Option<Res<crate::fantasy_ui::Skin>>,
 ) {
     input.0 = if let Some(slot) = pending.0.take() {
         Some((slot, Source::Widget))
     } else {
-        [
-            KeyCode::Digit1,
-            KeyCode::Digit2,
-            KeyCode::Digit3,
-            KeyCode::Digit4,
-            KeyCode::Digit5,
-        ]
-        .iter()
-        .position(|key| keys.just_pressed(*key))
-        .map(|slot| (slot, Source::Keyboard))
+        PRIMARY_KEYS
+            .iter()
+            .take(action_limit(skin.is_some()))
+            .position(|key| keys.just_pressed(*key))
+            .map(|slot| (slot, Source::Keyboard))
     };
 }
 fn text(value: &str, size: f32) -> impl Bundle {
@@ -274,14 +309,8 @@ fn setup(
                     .take(VISIBLE_ACTIONS)
                     .enumerate()
                 {
-                    let name = ability
-                        .id()
-                        .as_str()
-                        .rsplit('.')
-                        .next()
-                        .unwrap()
-                        .replace('-', " ");
-                    let key = slot + 1;
+                    let name = ability_name(ability.id().as_str());
+                    let key = key_label(slot);
                     parent
                         .spawn((
                             Button,
@@ -364,8 +393,8 @@ fn setup(
                 });
         });
 }
-/// Twelve familiar positions; only existing configured actions issue commands.
-/// Empty positions are decoration, with no new bindings or invented abilities.
+/// Twelve Classic primary bindings; only configured actions issue commands.
+/// Empty positions are decoration and never invent abilities.
 fn compact_actions(commands: &mut Commands, config: &Config, skin: &crate::fantasy_ui::Skin) {
     use crate::fantasy_ui::{GOLD, PANEL, SLOT, SLOTS};
     use bevy::picking::Pickable;
@@ -406,32 +435,35 @@ fn compact_actions(commands: &mut Commands, config: &Config, skin: &crate::fanta
                         align_items: AlignItems::Center,
                         ..default()
                     };
-                    let Some(ability) = config
-                        .0
-                        .abilities()
-                        .get(slot)
-                        .filter(|_| slot < VISIBLE_ACTIONS)
-                    else {
+                    let Some(ability) = config.0.abilities().get(slot) else {
                         bar.spawn((
                             node,
                             BackgroundColor(Color::srgba(0.025, 0.022, 0.02, 0.96)),
                         ))
-                        .with_child(crate::fantasy_ui::decoration(skin.frame.clone()));
+                        .with_children(|empty| {
+                            empty.spawn(crate::fantasy_ui::decoration(skin.frame.clone()));
+                            empty
+                                .spawn((
+                                    text(key_label(slot), 12.),
+                                    Pickable::IGNORE,
+                                    Node {
+                                        position_type: PositionType::Absolute,
+                                        left: px(5),
+                                        top: px(2),
+                                        ..default()
+                                    },
+                                ))
+                                .insert(TextColor(GOLD));
+                        });
                         continue;
                     };
-                    let name = ability
-                        .id()
-                        .as_str()
-                        .rsplit('.')
-                        .next()
-                        .unwrap()
-                        .replace('-', " ");
+                    let name = ability_name(ability.id().as_str());
                     bar.spawn((
                         Button,
                         ActivateOnPress,
                         Hovered::default(),
                         ActionButton(slot),
-                        AccessibleLabel::new(format!("Cast {name} ({})", slot + 1)),
+                        AccessibleLabel::new(format!("Cast {name} ({})", key_label(slot))),
                         node,
                         BackgroundColor(PANEL),
                     ))
@@ -464,7 +496,7 @@ fn compact_actions(commands: &mut Commands, config: &Config, skin: &crate::fanta
                         ));
                         button.spawn(crate::fantasy_ui::decoration(skin.frame.clone()));
                         button.spawn((
-                            text(&format!("{}", slot + 1), 14.),
+                            text(key_label(slot), 14.),
                             Pickable::IGNORE,
                             Node {
                                 position_type: PositionType::Absolute,
@@ -552,14 +584,8 @@ fn paint(
     for (mut label, action, cast, player_health, mana, life) in &mut labels {
         let value = if let Some(action) = action {
             let ability = &config.0.abilities()[action.0];
-            let name = ability
-                .id()
-                .as_str()
-                .rsplit('.')
-                .next()
-                .unwrap()
-                .replace('-', " ");
-            let key = action.0 + 1;
+            let name = ability_name(ability.id().as_str());
+            let key = key_label(action.0);
             let state = if !model.connected {
                 "Disconnected / loading"
             } else if model.life_blocked {
@@ -715,6 +741,86 @@ fn observe(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn compact_bar_supports_all_twelve_default_keys_without_repeating_held_input() {
+        let mut app = widget_app(true);
+        let mut raw: serde_json::Value = serde_json::from_slice(include_bytes!(
+            "../../../../content/gameplay/development-classic-abilities.json"
+        ))
+        .unwrap();
+        let template = raw["abilities"][0].clone();
+        raw["abilities"] = serde_json::Value::Array(
+            (0..12)
+                .map(|slot| {
+                    let mut ability = template.clone();
+                    ability["id"] = format!("theia.fixture.action-{slot}").into();
+                    ability
+                })
+                .collect(),
+        );
+        app.world_mut().resource_mut::<Config>().0 = std::sync::Arc::new(
+            theia_core::abilities::Catalog::from_json(&serde_json::to_vec(&raw).unwrap()).unwrap(),
+        );
+        app.update();
+        assert_eq!(
+            app.world_mut()
+                .query::<&ActionButton>()
+                .iter(app.world())
+                .count(),
+            12
+        );
+        for (key, slot) in [
+            (KeyCode::Digit6, 5),
+            (KeyCode::Digit0, 9),
+            (KeyCode::Minus, 10),
+            (KeyCode::Equal, 11),
+        ] {
+            app.world_mut()
+                .resource_mut::<ButtonInput<KeyCode>>()
+                .press(key);
+            app.update();
+            assert_eq!(
+                app.world().resource::<Input>().0,
+                Some((slot, Source::Keyboard))
+            );
+            app.world_mut()
+                .resource_mut::<ButtonInput<KeyCode>>()
+                .clear();
+            app.update();
+            assert_eq!(
+                app.world().resource::<Input>().0,
+                None,
+                "Held keys do not repeat"
+            );
+            app.world_mut()
+                .resource_mut::<ButtonInput<KeyCode>>()
+                .release(key);
+            app.world_mut()
+                .resource_mut::<ButtonInput<KeyCode>>()
+                .clear();
+        }
+        let world = app.world_mut();
+        let mut labels = world.query::<(&ActionLabel, &Text)>();
+        for (slot, key) in [(9, "0"), (10, "-"), (11, "=")] {
+            let (_, label) = labels
+                .iter(world)
+                .find(|(action, _)| action.0 == slot)
+                .unwrap();
+            assert!(label.0.starts_with(&format!("[{key}] Action {slot}")));
+        }
+        let mut legacy = widget_app(false);
+        legacy.update();
+        legacy
+            .world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .press(KeyCode::Equal);
+        legacy.update();
+        assert_eq!(
+            legacy.world().resource::<Input>().0,
+            None,
+            "Retained legacy presentation keeps five keys"
+        );
+    }
     fn widget_app(skin: bool) -> App {
         let mut app = App::new();
         let catalog = theia_core::abilities::Catalog::from_json(include_bytes!(

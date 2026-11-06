@@ -67,10 +67,11 @@ Bevy asset source. Existing terrain/player/creature asset roots are preserved.
 - Twelve familiar bottom action positions with compact 56 logical-pixel square framed icons,
   existing hotkey labels, bounded cooldown strips and hover descriptions/costs/
   authoritative rejection messages. Tooltip geometry stays clear of cast/rejection
-  feedback; the windowless exporter checks their separation. Only the existing first five supported action
-  bindings can activate configured abilities; unused positions are noninteractive
-  decoration inside a pointer-blocking bar. This does **not** implement 1–= binding
-  configuration, drag/drop actions or ten new abilities.
+  feedback; the windowless exporter checks their separation. The compact skin
+  supports the default twelve primary keys `1–0`, `-`, `=`; only configured
+  abilities activate, and unused positions retain key labels inside the
+  pointer-blocking bar. The retained legacy UI keeps its five-key limit.
+  Rebinding, drag/drop actions and additional gameplay abilities remain separate.
 - Cast/autoattack feedback above the action bar. No attack range, facing, cast,
   cooldown, manual autoattack or keyboard behavior is changed.
 - Shared charcoal/bronze pane styling for backpack, dialogue, loot, note reader and
@@ -295,3 +296,35 @@ appear on the same RX 7900 XTX Vulkan device. Formatting, strict workspace/
 all-target Clippy, 164 client cases including local art and the build pass.
 Live terrain/heading/input and the complete normal connected theme remain for
 the desktop gate. The image preview is not additional terrain-streaming evidence.
+
+
+## Twelve default primary keys and readable labels
+
+The compact skin now collects all twelve default primary keys (`1` through `0`,
+then `-` and `=`), and the normal combat presenter applies the same twelve-slot
+limit when dispatching configured abilities and deriving their server cooldowns.
+Empty slots do not invent or send an ability. Widget activation still coalesces
+with keyboard input without buffering repeated presses. The retained legacy
+presentation continues to collect/display at most five actions.
+
+A detached twelve-entry catalogue fixture checks construction, `6`/`0`/`-`/`=`
+slot mapping, no repeats while held, the correct late-slot tooltip labels and
+legacy exclusion of the extra keys. This is headless `ButtonInput` state, not
+physical keyboard input or an encrypted game command test. The server's existing
+stable-ID cast authority/protocol is unchanged. The canonical gameplay catalogue
+still contains its two original abilities; no content catalogue was expanded.
+
+Display names now humanize stable IDs as title-case words (for example Arcane
+Bolt), while authoritative IDs remain exact. Authored/localized display-name
+metadata and configurable action bindings remain future work. The compact normal
+connection indicator shows Online/Loading-style player information rather than
+tick/player-count diagnostics; detailed disconnection errors and the legacy
+full diagnostic HUD are retained. Unchanged connection text is no longer assigned
+every frame.
+
+All six `primary-bar-v1-*` windowless exports pass with the canonical **two**
+configured buttons, labelled empty slots, bounded minimap/actions, valid glyphs,
+separate hover/feedback rectangles and a stable projection anchor. No windows or
+WARN/ERROR diagnostics appear on the recorded Vulkan adapter. Formatting, strict
+workspace/all-target Clippy, **165 client cases including local art**, and build
+pass. Physical keyboard, mouse and the complete connected theme remain pending.
