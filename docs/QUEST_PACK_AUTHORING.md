@@ -311,3 +311,42 @@ review. Actual document/item references require the separate known-document
 catalogue check. This is not normal manifest admission, read authorization, a
 save migration or document UI. Continue to keep story planning and executable
 runtime content separate; no campaign IDs are allocated by this prerequisite.
+
+## Check authored note references together
+
+`validate_quest_documents` checks a closed quest catalogue against its item and
+plain-text document catalogues, plus area definitions when the selected quests
+need them. Use a compiled closed subset from the registry, rather than a planning
+manifest or an open pack with unresolved prerequisites.
+
+```bash
+cargo run --locked -p theia-network --example validate_quest_documents -- \
+  content/gameplay/development-document-items.json \
+  content/quests/development-documents.json \
+  content/quests/development-journal-documents.json \
+  content/quests/development-quest-areas.json
+```
+
+The positional arguments are items, documents, quests and optional areas. Omit
+areas only for a closed subset without `reach_area` objectives; unrelated area
+context refuses. At least one `read_document` objective is required. The existing
+validators check note-to-item links, quest-to-note selectors, possession items
+and namespace collisions. Each source must be a regular bounded file; symlinks
+refuse. The read-only JSON report includes raw input hashes and the exact bound
+item/document profile hash, without echoing note pages.
+
+This check grants no credit, changes no file, installs no catalogue and migrates
+no save. It does not validate NPC/creature existence, loot probability, XP binding,
+transport admission or gameplay balance. Validate the full gameplay manifest
+before installing content in the game. The compiled catalogue remains subject
+to the existing 32-quest runtime development limit.
+
+Authoring-check qualification, 6 November 2026 (P3-11 / P3-15): five focused
+Linux tests pass at `build/quest-document-authoring-tests-v2-20261106.log`.
+Formatting and strict workspace/all-target Clippy pass in the authoring `fmt-v1`
+and `clippy-v1` logs. The actual CLI report is
+`build/quest-document-authoring-cli-v1-20261106.json`; missing area context exits
+with empty stdout in `build/quest-document-authoring-cli-refusal-v1-20261106.json`.
+The earlier v1 compile used a definition helper at the catalogue level and is not
+success evidence. CI now explicitly includes this example on Linux and Windows;
+only local Linux execution is established here. No gameplay or renderer changes.
