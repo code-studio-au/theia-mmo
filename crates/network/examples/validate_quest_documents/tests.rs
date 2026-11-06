@@ -28,6 +28,11 @@ impl Fixture {
                     .as_slice(),
             ),
             (
+                "rewards",
+                include_bytes!("../../../../content/quests/development-quest-item-rewards.json")
+                    .as_slice(),
+            ),
+            (
                 "areas",
                 include_bytes!("../../../../content/quests/development-quest-areas.json")
                     .as_slice(),
@@ -46,6 +51,16 @@ impl Fixture {
             &self.path("documents"),
             &self.path("quests"),
             areas.then(|| self.path("areas")).as_deref(),
+            None,
+        )
+    }
+    fn inspect_rewards(&self) -> Result<Value> {
+        inspect(
+            &self.path("items"),
+            &self.path("documents"),
+            &self.path("quests"),
+            Some(&self.path("areas")),
+            Some(&self.path("rewards")),
         )
     }
     fn edit(&self, name: &str, edit: impl FnOnce(&mut Value)) {
@@ -175,4 +190,102 @@ fn symlinked_document_input_is_refused() {
     fs::rename(f.path("documents"), f.path("target")).unwrap();
     std::os::unix::fs::symlink(f.path("target"), f.path("documents")).unwrap();
     assert!(f.inspect(true).is_err());
+}
+
+#[test]
+fn fixed_reward_authoring_reports_exact_known_grants_without_runtime_claims() {
+    let f = Fixture::new();
+    let raw = fs::read(f.path("rewards")).unwrap();
+    let first = f.inspect_rewards().unwrap();
+    assert_eq!(first["fixed_rewards"]["sha256"], hex(&sha256(&raw)));
+    assert_eq!(first["fixed_rewards"]["quests"], 2);
+    assert_eq!(first["fixed_rewards"]["grants"], 2);
+    assert_eq!(first["quest_journal_profile_bound"], false);
+    assert_eq!(first["saved_state_admitted"], false);
+    assert_eq!(fs::read(f.path("rewards")).unwrap(), raw);
+    assert!(f.inspect(true).unwrap().get("fixed_rewards").is_none());
+    let mut changed = raw;
+    changed.push(b' ');
+    fs::write(f.path("rewards"), changed).unwrap();
+    let second = f.inspect_rewards().unwrap();
+    assert_ne!(
+        first["fixed_rewards"]["sha256"],
+        second["fixed_rewards"]["sha256"]
+    );
+    assert_eq!(first["quests"], second["quests"]);
+    assert_eq!(first["documents"], second["documents"]);
+}
+#[test]
+fn fixed_reward_authoring_refuses_dangling_context_namespace_and_unbounded_files() {
+    for field in ["quest_catalog", "item_catalog"] {
+        let f = Fixture::new();
+        f.edit("rewards", |r| r[field] = json!("unknown"));
+        assert!(f.inspect_rewards().is_err());
+    }
+    let f = Fixture::new();
+    f.edit("rewards", |r| r["rewards"][0]["quest"] = json!("unknown"));
+    assert!(f.inspect_rewards().is_err());
+    let f = Fixture::new();
+    f.edit("rewards", |r| {
+        r["rewards"][0]["grants"][0]["item"] = json!("unknown")
+    });
+    assert!(f.inspect_rewards().is_err());
+    for role in ["documents", "areas"] {
+        let f = Fixture::new();
+        let other: Value = serde_json::from_slice(&fs::read(f.path(role)).unwrap()).unwrap();
+        f.edit("rewards", |r| r["id"] = other["id"].clone());
+        assert!(f.inspect_rewards().is_err());
+    }
+    let f = Fixture::new();
+    fs::write(
+        f.path("rewards"),
+        vec![b' '; item_rewards::MAX_CATALOG_BYTES + 1],
+    )
+    .unwrap();
+    assert!(f.inspect_rewards().is_err());
+    let f = Fixture::new();
+    fs::remove_file(f.path("rewards")).unwrap();
+    fs::create_dir(f.path("rewards")).unwrap();
+    assert!(f.inspect_rewards().is_err());
+}
+#[test]
+fn optional_reward_arguments_preserve_area_usage_and_refuse_ambiguous_flags() {
+    for raw in [
+        vec!["areas.json", "--item-rewards", "rewards.json"],
+        vec!["--item-rewards", "rewards.json", "areas.json"],
+    ] {
+        let args: Vec<_> = raw.into_iter().map(PathBuf::from).collect();
+        assert_eq!(
+            optional_inputs(&args).unwrap(),
+            (
+                Some(Path::new("areas.json")),
+                Some(Path::new("rewards.json"))
+            )
+        );
+    }
+    let args = vec![
+        PathBuf::from("--item-rewards"),
+        PathBuf::from("rewards.json"),
+    ];
+    assert_eq!(
+        optional_inputs(&args).unwrap(),
+        (None, Some(Path::new("rewards.json")))
+    );
+    for raw in [
+        vec!["--item-rewards"],
+        vec!["--unknown"],
+        vec!["areas.json", "more.json"],
+        vec!["--item-rewards", "a", "--item-rewards", "b"],
+        vec!["--item-rewards", "--unknown"],
+    ] {
+        assert!(optional_inputs(&raw.into_iter().map(PathBuf::from).collect::<Vec<_>>()).is_err());
+    }
+}
+#[cfg(unix)]
+#[test]
+fn symlinked_reward_input_is_refused() {
+    let f = Fixture::new();
+    fs::rename(f.path("rewards"), f.path("target")).unwrap();
+    std::os::unix::fs::symlink(f.path("target"), f.path("rewards")).unwrap();
+    assert!(f.inspect_rewards().is_err());
 }

@@ -359,3 +359,40 @@ with empty stdout in `build/quest-document-authoring-cli-refusal-v1-20261106.jso
 The earlier v1 compile used a definition helper at the catalogue level and is not
 success evidence. CI now explicitly includes this example on Linux and Windows;
 only local Linux execution is established here. No gameplay or renderer changes.
+
+
+### Optional fixed turn-in reward references
+
+The same read-only checker accepts an optional fixed-reward catalogue:
+
+```bash
+cargo run --locked -p theia-network --example validate_quest_documents -- \
+  content/gameplay/development-document-items.json \
+  content/quests/development-documents.json \
+  content/quests/development-journal-documents.json \
+  content/quests/development-quest-areas.json \
+  --item-rewards content/quests/development-quest-item-rewards.json
+```
+
+The optional area path and `--item-rewards FILE` may appear in either order after
+the three required inputs. Duplicate/unknown/missing options refuse. Reward
+recipes must name the exact supplied quest/item catalogue IDs and only quests
+included in this closed selection. The existing Core checker validates known
+items, grant/count/empty-bag bounds and all supplied area/document namespaces.
+The reward file has its own 32 KiB limit and the same regular-file/no-symlink rule.
+
+Only the opt-in report gains `fixed_rewards` with catalogue ID, byte count, raw
+SHA-256 and quest/grant-entry counts. It does not claim a journal profile digest:
+XP and World references are absent from this authoring command. Omitting the
+option preserves the earlier output exactly. This checker still requires at
+least one read objective; it is not an arbitrary planning manifest importer.
+Full manifest validation, configured saved-policy compatibility and actual
+turn-in/native qualification remain separate.
+
+Nine Linux tests pass at `build/quest-item-reward-authoring-tests-v2-20261106.log`.
+Actual CLI optional ordering, empty stdout on refusal, unchanged source hashes
+and comparison with the original no-reward report pass at
+`build/quest-item-reward-authoring-cli-v1-20261106/verification.json`.
+Formatting and strict workspace/all-target Clippy pass in reward authoring
+`fmt-v1` and `clippy-v1`. Existing CI includes the example on Linux and Windows;
+no native Windows execution or renderer/gameplay change is claimed.

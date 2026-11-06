@@ -370,3 +370,17 @@ inside document-argument parsing. It has been moved after all arguments, and
 permanent CLI cases cover all three flag orders. That failed smoke's headless
 server was killed/reaped and its temporary public certificate removed. These
 failed attempts are not successful qualification evidence.
+
+
+## Implemented read-only authoring handoff
+
+The existing note/item/quest reference checker now accepts optional
+`--item-rewards FILE`, validating the fixed recipe against the supplied closed
+catalogue, known inventory and optional area/document context. It refuses
+unknown quests/items, context mismatches, namespace aliases and nonregular or
+oversized reward files. No reward option preserves the old report exactly;
+with it, the report adds only raw hash/count metadata. There is no XP/World
+binding or saved admission. [Command, constraints and nine-test/CLI evidence](QUEST_PACK_AUTHORING.md#optional-fixed-turn-in-reward-references).
+No desktop interaction or UI changes are needed for this tool. Normal reward UI
+and combined native checks remain pending; continue positive server configuration
+qualification headlessly while desktop access remains paused.
