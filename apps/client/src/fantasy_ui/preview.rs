@@ -64,6 +64,10 @@ struct Layout<'w, 's> {
     units: Query<'w, 's, UnitGeometry<'static>>,
     xp: Query<'w, 's, AnchorGeometry<'static>, With<crate::progression::Root>>,
     dock: Query<'w, 's, AnchorGeometry<'static>, With<crate::inventory::BackpackDock>>,
+    bag_slots: Query<'w, 's, AnchorGeometry<'static>, With<crate::inventory::SlotButton>>,
+    bag_icons:
+        Query<'w, 's, (&'static Node, &'static ComputedNode), With<crate::inventory::skin::Icon>>,
+    bag_tooltip: Query<'w, 's, AnchorGeometry<'static>, With<crate::inventory::skin::Tooltip>>,
     plates: Query<
         'w,
         's,
@@ -173,6 +177,7 @@ pub(crate) fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
             ready_frames: 0,
             requested: false,
         });
+    crate::inventory::skin::install_preview(&mut app);
     crate::combat::ui::install_preview(&mut app);
     crate::minimap::install_preview(&mut app);
     crate::progression::install_preview(&mut app);
@@ -192,7 +197,6 @@ fn label(value: &str, size: f32) -> impl Bundle {
     )
 }
 fn labels(mut commands: Commands, run: Res<Capture>) {
-    crate::inventory::spawn_toggle(&mut commands, true);
     commands
         .spawn((
             HeaderFixture,
@@ -278,7 +282,10 @@ fn capture(
         run.started.elapsed() < Duration::from_secs(90),
         "Offscreen UI preview timed out"
     );
-    for handle in [&skin.sword, &skin.arcane, &skin.fallback] {
+    for handle in [&skin.sword, &skin.arcane, &skin.fallback]
+        .into_iter()
+        .chain(skin.item_icons.iter())
+    {
         if let Some(LoadState::Failed(error)) = server.get_load_state(handle.id()) {
             panic!("UI image failed: {error}");
         }
@@ -490,6 +497,72 @@ fn capture(
         "One real nameplate widget with fixture data"
     );
     run.requested = true;
+    let bag_slots: Vec<_> = layout
+        .bag_slots
+        .iter()
+        .map(|(node, transform)| {
+            let size = node.size();
+            let centre = transform.affine().translation;
+            assert!(size.min_element() > 0.);
+            assert!(
+                centre.x - size.x / 2. >= 0.
+                    && centre.y - size.y / 2. >= 0.
+                    && centre.x + size.x / 2. <= run.size.x as f32
+                    && centre.y + size.y / 2. <= run.size.y as f32
+            );
+            serde_json::json!({"centre":centre.to_array(), "size":size.to_array()})
+        })
+        .collect();
+    assert_eq!(bag_slots.len(), 16);
+    let visible_icons = layout
+        .bag_icons
+        .iter()
+        .filter(|(node, computed)| {
+            node.display != Display::None && computed.size().min_element() > 0.
+        })
+        .count();
+    assert_eq!(visible_icons, 6, "Only occupied fixture slots show art");
+    let (tooltip_node, tooltip_transform) = layout.bag_tooltip.single().unwrap();
+    let tooltip_size = tooltip_node.size();
+    let tooltip_centre = tooltip_transform.affine().translation;
+    let tooltip_rect = Rect::from_center_size(tooltip_centre, tooltip_size);
+    assert!(
+        tooltip_size.min_element() > 0.
+            && tooltip_rect.min.min_element() >= 0.
+            && tooltip_rect.max.x <= run.size.x as f32
+            && tooltip_rect.max.y <= run.size.y as f32
+    );
+    assert!(
+        tooltip_rect.intersect(xp_rect).is_empty(),
+        "Item tooltip must not cover XP"
+    );
+    assert!(
+        tooltip_rect.intersect(cast).is_empty(),
+        "Item tooltip must not cover cast feedback"
+    );
+    for (_, node, transform) in &layout.buttons {
+        assert!(
+            tooltip_rect
+                .intersect(Rect::from_center_size(
+                    transform.affine().translation,
+                    node.size()
+                ))
+                .is_empty(),
+            "Item tooltip must not cover combat actions"
+        );
+    }
+    for (node, transform) in &layout.bag_slots {
+        assert!(
+            tooltip_rect
+                .intersect(Rect::from_center_size(
+                    transform.affine().translation,
+                    node.size()
+                ))
+                .is_empty(),
+            "Item tooltip must not cover bag slots"
+        );
+    }
+    let backpack = serde_json::json!({"fixture":true, "slots":bag_slots,"visible_icons":visible_icons,"tooltip":{"centre":tooltip_centre.to_array(),"size":tooltip_size.to_array()}});
     let directory = run.directory.clone();
     let size = run.size;
     let ui_scale = run.ui_scale;
@@ -499,7 +572,7 @@ fn capture(
         assert_eq!([event.image.width(), event.image.height()], [size.x,size.y]);
         event.image.clone().try_into_dynamic().unwrap().save(directory.join("hud.png")).unwrap();
         std::fs::write(directory.join("report.json"),serde_json::to_vec_pretty(&serde_json::json!({
-                "completed":true,"ui_scale":ui_scale,"preferred_ui_scale":preferred_scale,"geometry_units":"physical_pixels","offscreen":true,"windows":0,"fixture":true,"extent":[size.x,size.y],"gpu":gpu,"buttons":buttons,"glyphs":glyphs,"feedback":feedback,"minimap":minimap,"header":header,"unit_frames":unit_frames,"xp":xp,"backpack_dock":dock,"nameplates":nameplates,"projected_anchor":{"actual":projected_anchor.to_array(),"expected":expected_anchor.to_array()},
+                "completed":true,"ui_scale":ui_scale,"preferred_ui_scale":preferred_scale,"geometry_units":"physical_pixels","offscreen":true,"windows":0,"fixture":true,"extent":[size.x,size.y],"gpu":gpu,"buttons":buttons,"glyphs":glyphs,"feedback":feedback,"minimap":minimap,"header":header,"unit_frames":unit_frames,"xp":xp,"backpack_dock":dock,"backpack":backpack,"nameplates":nameplates,"projected_anchor":{"actual":projected_anchor.to_array(),"expected":expected_anchor.to_array()},
             "scope":"Actual Bevy combat HUD widgets with fixture values; no desktop input, account, network, world or live gameplay qualification"
         })).unwrap()).unwrap();
         exit.write(AppExit::Success);

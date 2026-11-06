@@ -94,25 +94,31 @@ materials are reference designs, not directly executable Bevy widgets. The pack'
 radial menus, reticles and controller prompts do not change the adopted Classic
 controls. No Unity Editor is required for this slice.
 
-The current three selected PNGs total **24,728 encoded bytes**, with
-**1,048,576 bytes of RGBA8 base-level pixel payload**. The initial four-image
-candidate included an ornamental square frame; the reference-aligned skin no
-longer loads or requires it. This is a source/pixel accounting result, not measured
-GPU allocation, frame-rate or batching performance. The three images retain their original
-aspect ratios. Thin frames and the circular map use standard Bevy UI styling. Missing Unity border metadata is not
-reconstructed as guessed nine-slice settings. No atlas is needed for this small
-subset; the manual's atlas suggestion can be reconsidered against measured demand.
+The current nine selected PNGs total **954,838 encoded bytes**, with
+**18,350,080 bytes of RGBA8 base-level pixel payload**. Four item illustrations
+are 1024-square source images; this accounts for most of that payload. This is
+source/pixel accounting, not measured GPU allocation, frame rate or batching
+performance. The initial ornamental square frame is no longer loaded or required.
+Thin frames and the circular map use standard Bevy UI styling. Missing Unity
+border metadata is not reconstructed as guessed nine-slice settings. Asset
+resampling/atlasing can follow measured need; the rest of the pack is not loaded.
 
 | Role | Source path relative to HUDs | Dimensions | SHA-256 |
 | --- | --- | --- | --- |
 | sword_slash | `Sprites/Icons_Weapons/ICON_SM_Wep_Sword_07_Clean.png` | 512 × 256 | `88282f72dce6c3602baea8ffd2cb518c49c899580913512baaac5774fc3c046c` |
 | arcane_bolt | `Sprites/Icons_Elements/ICON_FantasyWarrior_Element_Air02_Clean.png` | 256 × 256 | `58814b493756cb134599003e3759eafb21cfa3498f5a6dafc8a2743e435443b7` |
 | fallback | `Sprites/Icons_Inventory/ICON_FantasyWarrior_Inventory_Spellbooks01_Clean.png` | 256 × 256 | `59a771b91ee76e9ac4c817bb4dc2c21e2d9a35bcba8c9dd7618071321b12ff8b` |
+| training-stone | `Sprites/Icons_Resources/ICON_SM_Item_Rock_01.png` | 1024 × 1024 | `1413b9a56fa96fb910e04c1b261e26a1d9118e219b5799dd3476ac93a5473c57` |
+| training-token | `Sprites/Icons_Inventory/ICON_FantasyWarrior_Inventory_Currency01_Clean.png` | 256 × 256 | `903bf21c0bfdee50c2534d6acdfc0ac35e7a13770e91b89dfd1a9bc1f8bd5483` |
+| training-sword | `Sprites/Icons_Weapons/ICON_SM_Wep_Sword_07.png` | 1024 × 1024 | `d5802f4c836ba38d74d56e9ba72589f3c445c99eabae0091310e3dadd7ebee30` |
+| training-wand (provisional sceptre) | `Sprites/Icons_Weapons/ICON_SM_Wep_Sceptre_01.png` | 1024 × 1024 | `85e1f856bc7166a604e09cdd0b1c1f73c4670c98bf3e4bd6815225d91c426ab1` |
+| wolf-pelt (provisional material) | `Sprites/Icons_Inventory/ICON_FantasyWarrior_Inventory_Crafting01_Clean.png` | 256 × 256 | `de97ec98a3da49b430b704cc3eb7042108fbbd946d43b5d400f37596803b85ab` |
+| roadside-orders | `Sprites/Icons_Resources/ICON_SM_Item_Parchment_01.png` | 1024 × 1024 | `a056c4c7e4aab6c4037b12d765a6ba2b4426151883085e05097c52e67ed99c20` |
 
 `Fonts/Grenze/Grenze-SemiBold.ttf` supplies headings at 18 px and above;
 `Fonts/Texturina/Texturina_18pt-SemiBold.ttf` supplies smaller interface text.
 Both stay in the user's local source directory with their OFL notices. Assets,
-fonts and the manual have not been copied into Git. The source PNGs are stylized
+fonts and the manual have not been copied into Git. The ability PNGs are stylized
 white silhouettes; arcane bolt's air/swirl icon is an explicit provisional Theia
 mapping, sword slash uses the sword icon, and unknown abilities use a spellbook.
 
@@ -129,7 +135,7 @@ files and source paths escaping the selected directory before creating the App.
 The preflight checks headers and font signatures; actual loaders/rendering are
 separate evidence. It does not cryptographically seal mutable local art.
 
-The candidate loads three images and two fonts through a separate `fantasy-ui://`
+The candidate loads nine images and two fonts through a separate `fantasy-ui://`
 Bevy asset source. Existing terrain/player/creature asset roots are preserved.
 
 - Player health/mana/life and selected-target heading/health occupy compact
@@ -698,3 +704,50 @@ nameplate/death checks still pass; both native stages have zero GPU diagnostics
 on RX 7900 XTX / RADV Vulkan / Mesa 26.2.6. All owned services stop and plaintext
 password files are removed. This follow-on has 1280×720 native evidence; it does
 not expand prior Windows, scale/DPI, crowd or full-theme qualification claims.
+
+
+## Backpack icons and confirmed-count tooltips — 6 November 2026
+
+P2-14 / P3-05 / P5-13 / P5-19. Prerequisites are the existing confirmed bag,
+slot actions, input ownership and optional skin. The themed backpack retains its
+16 slots and 340-pixel panel, with dark thin-gold frames, 32-pixel item art and
+stack counts above one. Real mouse hover shows the catalogue name, confirmed
+count and maximum stack in a separate read-only tooltip beside the bag. Accessible
+slot labels retain the full item description. Empty/loading slots have no stale
+art, count or tooltip. Unknown item IDs use a generic icon. Pelt/crafting and
+wand/sceptre art are provisional mappings, not new item properties or appearance
+rules. No invented rarity, durability, price or quest classification is displayed.
+
+Split, destroy confirmation, equip, purchase, reward and document operations use
+the existing widgets and command/receipt guards. No inventory mutation or
+optimistic holding is introduced. The unskinned text-grid presentation remains.
+The windowless fixture uses those same slot widgets and visual projector with a
+clearly synthetic six-item bag and explicit fixture-only hover resource. It
+installs no inventory observer, network or command producer; normal clients use
+Bevy's actual hover component. The first GPU check exposed the invalid assumption
+that a manually set hover flag would survive Bevy picking without a pointer;
+that failed preview is retained as `bag-v1-*`, not accepted evidence.
+
+Acceptance: counts/art/descriptions follow a newer confirmed bag and clear on
+projection loss; all 16 slots and the hovered tooltip fit the viewport; the tooltip
+does not cover bag slots; actual pointer hover and existing operations still work.
+The 173-client-case run including local art, strict workspace/all-target Clippy,
+formatting and development build pass. Six final `bag-v4-*` windowless
+GPU cases through 3840×2160 pass the previous HUD gates plus 16-slot containment,
+six occupied icons and tooltip bounds/separation. Source hashes/budget are in
+`build/ui-reference-20261106/bag-source-sha256.json`; layout reports are in
+`bag-verification-v4.json`. Screenshot review found that the first placement
+covered XP; the final tooltip clears XP, cast feedback and action buttons, with
+explicit geometry assertions. Earlier `bag-v2-*` exports precede that fix;
+`bag-v3-*` preserves the intermediate failed separation assertion.
+
+`native-bag-v1/verification.json` passes real owned-X11 mouse hover, empty-slot
+hiding, equipment, 32 offers, note use, item-loss reversal, fixed rewards and
+PostgreSQL restart/rejoin at 1280×720, 1920×1200 and 3440×1440. The final tooltip
+placement passes `native-bag-v2/verification.json` at 1280×720 plus restart/rejoin.
+All stages end at journal revision 9 / XP 75, with zero GPU diagnostics on Linux
+RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6. All owned services stop and
+plaintext password files are removed. The native hover screenshots and confirmed
+stack/tooltip JSON are retained per stage. These are controlled UI fixtures,
+not native Windows, nondefault-scale/DPI input, human feel, random-loot balance
+or performance evidence. The skin remains opt-in.

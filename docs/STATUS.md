@@ -2,9 +2,9 @@ General UI reference candidate, 6 November 2026 (P2-14 / P5-13 / P5-19):
 The optional Fantasy Warrior skin now follows the user's AntonilzUI reference:
 compact lower-centre player/target frames, twelve 44-pixel primary slots,
 cast feedback, a centred XP strip, circular minimap and shared pane headers.
-It uses standard Bevy UI with three local PNG icons and two fonts; source assets
+It uses standard Bevy UI with nine local PNG icons and two fonts; source assets
 remain outside Git. Preferred UI scale fits/restores the 1280×720 logical layout.
-172 client cases, formatting, strict workspace/all-target Clippy and build pass.
+173 client cases, formatting, strict workspace/all-target Clippy and build pass.
 Six latest windowless cases through 3840×2160 check combat/XP/dock separation,
 projected anchors and circular map pixels. Earlier 51 launcher cases remain valid.
 Connected OIDC/Renet/PostgreSQL quest/minimap walkthroughs now pass at
@@ -16,6 +16,9 @@ Left-side parchment dialogue and full-height reward rows now also pass the
 32-offer/note/item-reward walkthrough at all three sizes plus restart/rejoin.
 Themed target/status/quest-marker hints are now contextual and compact, with
 an additional 1280×720 connected health/death/rejoin check.
+Backpack slots now show item icons, confirmed stack counts and real hover
+tooltips. The inventory/document/reward flow passes all three native sizes plus
+restart; final tooltip placement has six GPU cases and a 1280×720 native replay.
 The skin remains opt-in; clickable plates, portrait art, chat/menu systems,
 nondefault-scale OS traces and complete-theme qualification
 remain separate work. [Scope, reference, assets and evidence](UI_FANTASY_WARRIOR.md).

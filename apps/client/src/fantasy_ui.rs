@@ -19,7 +19,36 @@ pub(crate) const ARCANE: &str =
     "Sprites/Icons_Elements/ICON_FantasyWarrior_Element_Air02_Clean.png";
 pub(crate) const FALLBACK: &str =
     "Sprites/Icons_Inventory/ICON_FantasyWarrior_Inventory_Spellbooks01_Clean.png";
-pub(crate) const FILES: [&str; 3] = [SWORD, ARCANE, FALLBACK];
+const ITEM_ICONS: [&str; 6] = [
+    "Sprites/Icons_Resources/ICON_SM_Item_Rock_01.png",
+    "Sprites/Icons_Inventory/ICON_FantasyWarrior_Inventory_Currency01_Clean.png",
+    "Sprites/Icons_Weapons/ICON_SM_Wep_Sword_07.png",
+    "Sprites/Icons_Weapons/ICON_SM_Wep_Sceptre_01.png",
+    "Sprites/Icons_Inventory/ICON_FantasyWarrior_Inventory_Crafting01_Clean.png",
+    "Sprites/Icons_Resources/ICON_SM_Item_Parchment_01.png",
+];
+pub(crate) const FILES: [&str; 9] = [
+    SWORD,
+    ARCANE,
+    FALLBACK,
+    ITEM_ICONS[0],
+    ITEM_ICONS[1],
+    ITEM_ICONS[2],
+    ITEM_ICONS[3],
+    ITEM_ICONS[4],
+    ITEM_ICONS[5],
+];
+const IMAGE_DIMENSIONS: [(u32, u32); FILES.len()] = [
+    (512, 256),
+    (256, 256),
+    (256, 256),
+    (1024, 1024),
+    (256, 256),
+    (1024, 1024),
+    (1024, 1024),
+    (256, 256),
+    (1024, 1024),
+];
 pub(crate) const TITLE_FONT: &str = "Fonts/Grenze/Grenze-SemiBold.ttf";
 pub(crate) const BODY_FONT: &str = "Fonts/Texturina/Texturina_18pt-SemiBold.ttf";
 pub(crate) const GOLD: Color = Color::srgb(0.64, 0.48, 0.26);
@@ -138,6 +167,7 @@ pub(crate) struct Skin {
     sword: Handle<Image>,
     arcane: Handle<Image>,
     fallback: Handle<Image>,
+    item_icons: [Handle<Image>; 6],
     title_font: Handle<Font>,
     body_font: Handle<Font>,
 }
@@ -148,9 +178,24 @@ impl Skin {
             sword: default(),
             arcane: default(),
             fallback: default(),
+            item_icons: default(),
             title_font: default(),
             body_font: default(),
         }
+    }
+    /// Presentation mapping only. Unknown authored items keep a generic icon.
+    /// The pelt material and wand sceptre are provisional art, not item metadata.
+    pub(crate) fn item_icon(&self, id: &str) -> Handle<Image> {
+        let index = match id {
+            "theia.dev.training-stone" => 0,
+            "theia.dev.training-token" => 1,
+            "theia.dev.training-sword" => 2,
+            "theia.dev.training-wand" => 3,
+            "theia.dev.wolf-pelt" => 4,
+            "theia.dev.roadside-orders" => 5,
+            _ => return self.fallback.clone(),
+        };
+        self.item_icons[index].clone()
     }
     pub(crate) fn icon(&self, id: &str) -> Handle<Image> {
         match id {
@@ -241,7 +286,7 @@ fn fit_window(
     }
 }
 fn validate(root: &Path) -> Result<(), Box<dyn std::error::Error>> {
-    for (name, expected) in FILES.into_iter().zip([(512, 256), (256, 256), (256, 256)]) {
+    for (name, expected) in FILES.into_iter().zip(IMAGE_DIMENSIONS) {
         let path = root.join(name).canonicalize()?;
         if !path.starts_with(root) || !path.is_file() || path.metadata()?.len() > 4 * 1024 * 1024 {
             return Err(format!("UI image outside local pack or larger than 4 MiB: {name}").into());
@@ -287,6 +332,7 @@ pub(crate) fn load(app: &mut App) {
         sword: image(SWORD),
         arcane: image(ARCANE),
         fallback: image(FALLBACK),
+        item_icons: ITEM_ICONS.map(image),
         title_font: server.load(format!("fantasy-ui://{TITLE_FONT}")),
         body_font: server.load(format!("fantasy-ui://{BODY_FONT}")),
     };

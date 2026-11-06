@@ -161,7 +161,8 @@ fn inventory_layout(world: &mut World) -> serde_json::Value {
         .iter(world)
         .next()
         .map(|s| [s.x, s.y]);
-    serde_json::json!({"slots":slots,"scroll":scroll,"split":inventory_widget::<crate::inventory::SplitButton>(world),
+    let tooltip = crate::inventory::skin::tooltip_state(world);
+    serde_json::json!({"slots":slots,"scroll":scroll,"tooltip":tooltip,"split":inventory_widget::<crate::inventory::SplitButton>(world),
         "destroy":inventory_widget::<crate::inventory::DestroyButton>(world),"cancel":inventory_widget::<crate::inventory::CancelButton>(world)})
 }
 fn os_trace(world: &mut World) {

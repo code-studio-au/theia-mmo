@@ -2,6 +2,7 @@
 //! selecting slots never changes the displayed bag optimistically.
 mod lifecycle_qualification;
 mod qualification;
+pub(crate) mod skin;
 mod vendor_qualification;
 mod zone_qualification;
 use crate::network::Network;
@@ -157,7 +158,7 @@ pub(crate) fn install(app: &mut App, profile: Profile) {
             Update,
             (
                 present.in_set(Phase::Present),
-                paint.in_set(Phase::Paint),
+                (paint, skin::present).chain().in_set(Phase::Paint),
                 scroll,
             )
                 .chain()
@@ -219,8 +220,46 @@ pub(crate) fn spawn_toggle(commands: &mut Commands, skinned: bool) {
         })
         .with_child(text("Backpack [I]", 16.));
 }
+fn spawn_slots(grid: &mut ChildSpawnerCommands, profile: &Profile, skinned: bool) {
+    for slot in 0..16 {
+        let height = if profile.vendor().is_some() {
+            40.
+        } else if profile.rewards().is_some() {
+            52.
+        } else if profile.catalog().equipment_enabled() {
+            64.
+        } else {
+            72.
+        };
+        let mut entity = grid.spawn((
+            SlotButton(slot),
+            button(
+                Widget::Slot(slot),
+                &format!("Backpack slot {}", slot + 1),
+                76.,
+                height,
+            ),
+        ));
+        if skinned {
+            entity.insert((
+                Outline::new(px(1), px(-1), crate::fantasy_ui::GOLD),
+                BackgroundColor(crate::fantasy_ui::PANEL),
+            ));
+        }
+        entity.with_children(|button| {
+            if skinned {
+                skin::slot_children(button, slot);
+            } else {
+                button.spawn((SlotLabel(slot), text("Loading", 12.)));
+            }
+        });
+    }
+}
 fn setup(mut commands: Commands, config: Res<Config>, skin: Option<Res<crate::fantasy_ui::Skin>>) {
     spawn_toggle(&mut commands, skin.is_some());
+    if skin.is_some() {
+        skin::spawn_tooltip(&mut commands);
+    }
     commands
         .spawn((
             Pane,
@@ -263,26 +302,7 @@ fn setup(mut commands: Commands, config: Res<Config>, skin: Option<Res<crate::fa
                     ..default()
                 },))
                 .with_children(|grid| {
-                    for slot in 0..16 {
-                        grid.spawn((
-                            SlotButton(slot),
-                            button(
-                                Widget::Slot(slot),
-                                &format!("Backpack slot {}", slot + 1),
-                                76.,
-                                if config.0.vendor().is_some() {
-                                    40.
-                                } else if config.0.rewards().is_some() {
-                                    52.
-                                } else if config.0.catalog().equipment_enabled() {
-                                    64.
-                                } else {
-                                    72.
-                                },
-                            ),
-                        ))
-                        .with_child((SlotLabel(slot), text("Loading", 12.)));
-                    }
+                    spawn_slots(grid, &config.0, skin.is_some());
                 });
             if config.0.catalog().equipment_enabled() {
                 panel
@@ -726,6 +746,7 @@ type ButtonView<'a> = (
     &'a mut BackgroundColor,
 );
 fn paint(
+    skin: Option<Res<crate::fantasy_ui::Skin>>,
     config: Res<Config>,
     network: Res<Network>,
     mut ui: ResMut<Ui>,
@@ -884,6 +905,19 @@ fn paint(
             Color::srgb(0.14, 0.24, 0.3)
         } else {
             Color::srgb(0.08, 0.12, 0.16)
+        };
+        let color = if skin.is_some() && matches!(widget, Widget::Slot(_)) {
+            if selected {
+                Color::srgb(0.30, 0.22, 0.10)
+            } else if ui.pending {
+                Color::srgb(0.08, 0.07, 0.06)
+            } else if pressed || hovered.is_some_and(|h| h.0) {
+                Color::srgb(0.22, 0.18, 0.12)
+            } else {
+                crate::fantasy_ui::PANEL
+            }
+        } else {
+            color
         };
         if background.0 != color {
             background.0 = color;
