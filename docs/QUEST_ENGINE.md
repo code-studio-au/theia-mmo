@@ -1,3 +1,11 @@
+Fixed quest reward configuration prerequisite, 6 November 2026:
+Explicit fixed bundles now have Core, durable Store/owner, World, encrypted bridge
+and opt-in manifest-21/CLI support. Completion consumes required items and grants
+the whole bundle with XP and the original receipt atomically. Normal reward UI
+and combined native checks remain pending; do not promote the headless/config
+proofs to a playable reward release. [Current scope and evidence](QUEST_ITEM_REWARDS.md).
+The qualified note-reader path remains preserved; desktop/mouse tests are paused.
+
 Readable quest documents qualified locally, 6 November 2026:
 P3-05 / P3-11 / P3-15: opt-in manifest 20 now has a standard Bevy note reader
 with exact server approval, local page navigation and contextual Escape. Native

@@ -54,6 +54,7 @@ async fn main() -> Result<()> {
     let mut quest_catalog = None;
     let mut quest_areas = None;
     let mut document_catalog = None;
+    let mut quest_item_rewards = None;
     let mut explicit_quest = false;
     let mut journal_mode = false;
     let mut quest_turn_in_xp = None;
@@ -153,6 +154,10 @@ async fn main() -> Result<()> {
             "--quest-journal" => journal_mode=true,
             "--quest-items" => quest_items=true,
             "--quest-loot" => quest_loot=true,
+            "--quest-item-rewards" => {
+                if quest_item_rewards.is_some() {return Err("Choose one fixed quest reward catalogue".into());}
+                quest_item_rewards=Some(PathBuf::from(args.next().ok_or("Missing fixed quest reward catalogue")?));
+            }
             "--document-catalog" => {
                 if document_catalog.is_some() {return Err("Choose one document catalogue".into());}
                 document_catalog=Some(PathBuf::from(args.next().ok_or("Missing document catalogue")?));
@@ -254,6 +259,11 @@ async fn main() -> Result<()> {
             }
             _ => return Err("Expected --terrain-world or --chunk-world <directory>, --tick-hz <20|30|60> or --renet-tickets <fresh-directory>".into()),
         }
+    }
+    if quest_item_rewards.is_some()
+        && (!journal_mode || quest_catalog.is_none() || item_catalog.is_none())
+    {
+        return Err("Fixed quest rewards require journal, quest and item catalogues".into());
     }
     if status_catalog.is_some() && (character_stats.is_none() || combat_catalog.is_none()) {
         return Err("Statuses require combat and character stats".into());
@@ -819,11 +829,37 @@ async fn main() -> Result<()> {
                             .ok_or("Quest items require wire inventory")?,
                     )?;
                 }
+                if let Some(path) = &quest_item_rewards {
+                    let mut raw = Vec::new();
+                    std::fs::File::open(path)?
+                        .take(theia_core::quests::item_rewards::MAX_CATALOG_BYTES as u64 + 1)
+                        .read_to_end(&mut raw)?;
+                    profile = profile.with_item_rewards(
+                        &raw,
+                        inventory
+                            .as_ref()
+                            .ok_or("Fixed rewards require inventory")?,
+                    )?;
+                    wire = wire.with_item_rewards(
+                        &raw,
+                        wire_items
+                            .as_ref()
+                            .ok_or("Fixed rewards require wire inventory")?,
+                    )?;
+                }
                 let wire = std::sync::Arc::new(wire);
                 if profile.hash() != wire.hash() {
                     return Err("Journal authority/persistence identity mismatch".into());
                 }
-                if documents.is_some() {
+                if quest_item_rewards.is_some() {
+                    world.enable_item_reward_quest_journal(
+                        wire,
+                        wire_xp,
+                        wire_items
+                            .as_ref()
+                            .ok_or("Fixed rewards require wire inventory")?,
+                    )?;
+                } else if documents.is_some() {
                     world.enable_document_quest_journal(
                         wire,
                         wire_xp,

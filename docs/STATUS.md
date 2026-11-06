@@ -1,3 +1,14 @@
+Fixed quest reward normal configuration prerequisite, 6 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: opt-in schema 21 seals 25 exact roles, adding
+`quest_item_rewards` to the document bundle. Both binaries accept the bounded
+`--quest-item-rewards` catalogue; server World, stored policy and retained owner
+bind the same bytes before quest-only loot. 62 validator, 45 bundle, three Linux
+CLI tests (eight cases), 24 server and 150 client tests, formatting and strict Clippy pass.
+[Scope/evidence](QUEST_ITEM_REWARDS.md#implemented-normal-configuration-prerequisite). Four legacy manifest reports exactly match the preserved
+reader validator. Reward/capacity UI and combined native qualification remain
+pending; the qualified note-reader binary remains available. No desktop/mouse
+tests while the user works. Continue headless and commit locally only; no push.
+
 Fixed quest reward World/encrypted bridge qualified locally, 6 November 2026:
 P3-05 / P3-09 / P3-11 / P3-15: explicit reward World installation now checks
 exact inventory/XP context, inactive exclusive setup and installed namespaces.

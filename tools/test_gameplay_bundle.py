@@ -683,6 +683,40 @@ class GameplayBundle(unittest.TestCase):
             play.main(['--gameplay-manifest', str(self.manifest), '--gameplay-validator', str(self.validator)])
         self.assertFalse(observed['document_catalog'].exists())
 
+    def test_fixed_reward_bundle_retains_exact_policy_and_passes_sealed_path(self):
+        original = Path('content/development-gameplay-classic-item-rewards.json')
+        raw = json.loads(original.read_text())
+        self.manifest.write_bytes(original.read_bytes())
+        for role in bundle.ITEM_REWARD_ROLES:
+            dest = self.source / raw[role]
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(original.parent / raw[role], dest)
+        reward_file = self.source / raw['quest_item_rewards']
+        before = reward_file.read_bytes()
+        with bundle.snapshot(self.manifest, self.validator, self.session) as (paths, report):
+            self.assertEqual((report['manifest_schema'], len(paths)), (21, 25))
+            self.assertEqual(set(paths), bundle.ITEM_REWARD_ROLES)
+            reward_file.write_bytes(b'later author edit')
+            self.assertEqual(paths['quest_item_rewards'].read_bytes(), before)
+        reward_file.write_bytes(before)
+        observed = {}
+        def launch(*args):
+            observed.update(PLAY_SIGNATURE.bind(*args).arguments)
+            self.assertTrue(observed['quest_journal'] and observed['quest_items'] and observed['quest_loot'])
+            self.assertEqual(observed['quest_item_rewards'].read_bytes(), before)
+            self.assertNotEqual(observed['quest_item_rewards'], reward_file)
+        with patch.object(play, 'play', side_effect=launch), redirect_stdout(io.StringIO()):
+            play.main(['--gameplay-manifest', str(self.manifest), '--gameplay-validator', str(self.validator)])
+        self.assertFalse(observed['quest_item_rewards'].exists())
+
+    def test_fixed_rewards_require_inventory_journal_and_cannot_override_sealed_content(self):
+        with patch.object(play.subprocess, 'Popen') as child, self.assertRaisesRegex(ValueError, 'Fixed quest rewards'):
+            play.play(None, Path('.'), 1, Path('.'), quest_item_rewards=Path('rewards.json'))
+        child.assert_not_called()
+        with patch.object(play, 'play') as child, redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            play.main(['--gameplay-manifest', str(self.manifest), '--quest-item-rewards', 'rewards.json'])
+        child.assert_not_called()
+
     def test_documents_without_bound_items_and_journal_refuse_before_child_start(self):
         with patch.object(play.subprocess, 'Popen') as child, self.assertRaises(ValueError):
             play.play(None, Path('.'), 1, Path('.'), document_catalog=Path('notes.json'))

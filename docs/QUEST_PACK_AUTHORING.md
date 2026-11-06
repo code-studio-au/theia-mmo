@@ -1,3 +1,12 @@
+Fixed item reward configuration prerequisite, 6 November 2026:
+Keep fixed turn-in grants in a separate schema-1 reward catalogue referencing
+known item IDs and the selected closed quest catalogue. Do not add reward fields
+to executable quest definitions, planning prose or creature loot entries. Opt-in
+manifest 21 validates/seals this additional role; choice rewards and currencies
+remain separate. [Format, bounds, headless proof and pending UI/native work](QUEST_ITEM_REWARDS.md).
+This does not make the campaign or arbitrary planning manifest executable, and
+changed saved profiles still require a separate migration decision.
+
 Readable-document development adoption, 5 November 2026:
 Quest schema 4 can name `read_document` with a stable `document` selector. Text
 lives in a separate known-item document catalogue, bound to exact inventory,

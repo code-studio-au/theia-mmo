@@ -206,7 +206,6 @@ impl GameAdmissions {
     }
     /// Explicit fixed-reward ownership after exact stored/wire policy agreement.
     /// Normal journal constructors remain closed to reward-bearing profiles.
-    #[allow(dead_code)] // Headless qualification prerequisite; normal CLI adoption follows.
     pub(crate) fn with_item_reward_quest_journal(
         gate: &mut Arc<Self>,
         profile: theia_persistence::QuestJournalCatalog,

@@ -63,6 +63,8 @@ struct Manifest {
     quest_areas: Option<String>,
     #[serde(default, deserialize_with = "optional_profile")]
     documents: Option<String>,
+    #[serde(default, deserialize_with = "optional_profile")]
+    quest_item_rewards: Option<String>,
 }
 fn optional_profile<'de, D: serde::Deserializer<'de>>(
     d: D,
@@ -181,6 +183,13 @@ impl Manifest {
         }
         if let Some(path) = &self.creature_reset {
             roles.push(("creature_reset", path, combat::reset::MAX_PROFILE_BYTES));
+        }
+        if let Some(path) = &self.quest_item_rewards {
+            roles.push((
+                "quest_item_rewards",
+                path,
+                quests::item_rewards::MAX_CATALOG_BYTES,
+            ));
         }
         if let Some(path) = &self.documents {
             roles.push(("documents", path, theia_core::documents::MAX_CATALOG_BYTES));
@@ -375,6 +384,25 @@ fn check(
                 return Err("Document definitions alias declared World content".into());
             }
         }
+        if let Some(raw) = bytes.get("quest_item_rewards") {
+            let fixed = quests::item_rewards::Catalog::from_json(raw, &catalog, &items)?;
+            fixed.validate_context(areas.as_ref(), documents.as_ref())?;
+            let aliases = |id: &ContentId| {
+                id == guide.npc()
+                    || id == creature.id()
+                    || guide
+                        .nodes()
+                        .any(|n| n.choices().iter().any(|c| c.id() == id))
+            };
+            if aliases(fixed.id())
+                || fixed
+                    .rewards()
+                    .flat_map(|(_, g)| g)
+                    .any(|g| aliases(g.item()))
+            {
+                return Err("Fixed quest rewards alias declared World content".into());
+            }
+        }
         for quest in catalog.quests() {
             if quest.giver() != guide.npc() || quest.turn_in() != guide.npc() {
                 return Err("Journal contact differs from declared guide".into());
@@ -521,7 +549,7 @@ fn validate(path: &Path) -> Result<Report> {
     let raw = bounded(&path, MAX_MANIFEST_BYTES)?;
     let manifest: Manifest =
         serde_json::from_slice(&raw).map_err(|_| "Invalid gameplay manifest")?;
-    if !matches!(manifest.schema, 1..=20)
+    if !matches!(manifest.schema, 1..=21)
         || manifest.revision == 0
         || ContentId::new(&manifest.id).is_none()
         || (matches!(manifest.schema, 2..=11)) != manifest.quest_turn_in_xp.is_some()
@@ -540,6 +568,7 @@ fn validate(path: &Path) -> Result<Report> {
         || (manifest.schema >= 13) != manifest.creature_threat.is_some()
         || (manifest.schema >= 16) != manifest.quest_areas.is_some()
         || (manifest.schema >= 20) != manifest.documents.is_some()
+        || (manifest.schema >= 21) != manifest.quest_item_rewards.is_some()
     {
         return Err("Invalid gameplay manifest identity/version".into());
     }
@@ -669,6 +698,105 @@ mod tests {
         }
         fs::write(f.manifest(), raw).unwrap();
         f
+    }
+    fn item_reward_fixture() -> Fixture {
+        let f = document_fixture();
+        fs::copy(
+            Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../../content/quests/development-quest-item-rewards.json"),
+            f.0.join("quest-item-rewards.json"),
+        )
+        .unwrap();
+        f.edit("manifest", |m| {
+            m["schema"] = json!(21);
+            m["quest_item_rewards"] = json!("quest-item-rewards.json");
+        });
+        f
+    }
+    #[test]
+    fn fixed_reward_bundles_bind_exact_known_quest_item_and_document_context() {
+        for name in [
+            "development-gameplay-classic-item-rewards.json",
+            "development-gameplay-classic-item-rewards-fixture.json",
+        ] {
+            let report = validate(
+                &Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("../../content")
+                    .join(name),
+            )
+            .unwrap();
+            assert_eq!((report.manifest_schema, report.profiles.len()), (21, 25));
+        }
+        let f = item_reward_fixture();
+        let first = validate(&f.manifest()).unwrap();
+        let mut raw = fs::read(f.path("quest_item_rewards")).unwrap();
+        raw.push(b' ');
+        fs::write(f.path("quest_item_rewards"), raw).unwrap();
+        let second = validate(&f.manifest()).unwrap();
+        assert_ne!(
+            first.validation_bundle_sha256,
+            second.validation_bundle_sha256
+        );
+        for field in ["quest_catalog", "item_catalog"] {
+            let f = item_reward_fixture();
+            f.edit("quest_item_rewards", |r| r[field] = json!("unknown"));
+            assert!(validate(&f.manifest()).is_err());
+        }
+        let f = item_reward_fixture();
+        f.edit("quest_item_rewards", |r| {
+            r["rewards"][0]["quest"] = json!("unknown")
+        });
+        assert!(validate(&f.manifest()).is_err());
+        let f = item_reward_fixture();
+        f.edit("quest_item_rewards", |r| {
+            r["rewards"][0]["grants"][0]["item"] = json!("unknown")
+        });
+        assert!(validate(&f.manifest()).is_err());
+        let f = item_reward_fixture();
+        f.edit("quest", |q| {
+            q["quests"][0]["stages"][0]["objectives"]
+                .as_array_mut()
+                .unwrap()
+                .remove(0);
+        });
+        f.edit("quest_item_rewards", |r| {
+            r["id"] = json!("theia.dev.interaction.road")
+        });
+        assert!(
+            validate(&f.manifest())
+                .unwrap_err()
+                .to_string()
+                .contains("alias declared World")
+        );
+    }
+    #[test]
+    fn fixed_reward_manifest_version_missing_null_oversized_and_aliased_roles_refuse() {
+        for schema in [1, 12, 19, 20] {
+            let f = item_reward_fixture();
+            f.edit("manifest", |m| m["schema"] = json!(schema));
+            assert!(validate(&f.manifest()).is_err());
+        }
+        let f = item_reward_fixture();
+        f.edit("manifest", |m| {
+            m.as_object_mut().unwrap().remove("quest_item_rewards");
+        });
+        assert!(validate(&f.manifest()).is_err());
+        let f = item_reward_fixture();
+        f.edit("manifest", |m| m["quest_item_rewards"] = Value::Null);
+        assert!(validate(&f.manifest()).is_err());
+        let f = item_reward_fixture();
+        f.edit("manifest", |m| m["quest_item_rewards"] = m["quest"].clone());
+        assert!(validate(&f.manifest()).is_err());
+        let f = item_reward_fixture();
+        fs::write(
+            f.path("quest_item_rewards"),
+            vec![b' '; quests::item_rewards::MAX_CATALOG_BYTES + 1],
+        )
+        .unwrap();
+        assert!(validate(&f.manifest()).is_err());
+        let f = item_reward_fixture();
+        f.edit("quest_item_rewards", |r| r["unexpected"] = json!(true));
+        assert!(validate(&f.manifest()).is_err());
     }
     #[test]
     fn document_manifests_require_exact_known_item_text_and_quest_references() {

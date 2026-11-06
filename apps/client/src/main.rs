@@ -384,6 +384,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         None
     };
+    let quest_item_reward_bytes = if let Some(i) =
+        args.iter().position(|a| a == "--quest-item-rewards")
+    {
+        use std::io::Read;
+        args.remove(i);
+        if i >= args.len()
+            || !journal_mode
+            || !args.iter().any(|a| a == "--quest-catalog")
+            || !args.iter().any(|a| a == "--item-catalog")
+        {
+            return Err("Fixed quest rewards require journal, quest and item catalogues".into());
+        }
+        let mut bytes = Vec::new();
+        std::fs::File::open(args.remove(i))?
+            .take(theia_core::quests::item_rewards::MAX_CATALOG_BYTES as u64 + 1)
+            .read_to_end(&mut bytes)?;
+        Some(bytes)
+    } else {
+        None
+    };
     let mut document_journal_bytes = None;
     let (quest_profile, lifecycle_profile, mut journal_profile) =
         if let Some(i) = args.iter().position(|a| a == "--quest-catalog") {
@@ -781,6 +801,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     inventory_profile
                         .as_ref()
                         .ok_or("Quest items require inventory")?,
+                )
+                .map_err(|e| e.to_string())?,
+        ));
+    }
+    if let Some(bytes) = quest_item_reward_bytes {
+        let profile = journal_profile
+            .take()
+            .ok_or("Fixed rewards require journal")?;
+        journal_profile = Some(std::sync::Arc::new(
+            (*profile)
+                .clone()
+                .with_item_rewards(
+                    &bytes,
+                    inventory_profile
+                        .as_ref()
+                        .ok_or("Fixed rewards require inventory")?,
                 )
                 .map_err(|e| e.to_string())?,
         ));

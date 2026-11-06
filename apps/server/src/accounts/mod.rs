@@ -266,6 +266,8 @@ fn random(bytes: usize) -> Result<String> {
 /// Store/wire pairs validated before the account service starts accepting entry.
 #[derive(Default)]
 pub struct GameProfiles {
+    /// Explicit wire agreement for reward-bearing journals only.
+    pub reward_journal: Option<Arc<theia_network::quest_journal::Profile>>,
     pub documents: Option<Arc<theia_network::documents::Profile>>,
     pub quest_journal: Option<theia_persistence::QuestJournalCatalog>,
     pub inventory: Option<theia_persistence::InventoryCatalog>,
@@ -290,6 +292,25 @@ pub struct GameProfiles {
         Arc<theia_network::vendor_wire::Profile>,
     )>,
 }
+impl GameProfiles {
+    pub(crate) fn check_reward_context(&self) -> Result<()> {
+        let reward_journal = &self.reward_journal;
+        let quest_journal = &self.quest_journal;
+        if reward_journal.is_some()
+            != quest_journal
+                .as_ref()
+                .is_some_and(|j| j.item_rewards().is_some())
+            || reward_journal.as_ref().is_some_and(|w| {
+                w.item_rewards().is_none()
+                    || quest_journal.as_ref().is_none_or(|j| j.hash() != w.hash())
+            })
+        {
+            return Err(ApiError::internal());
+        }
+        Ok(())
+    }
+}
+
 pub struct AccountService {
     listener: TcpListener,
     router: Router,
@@ -445,6 +466,7 @@ impl AccountService {
         self.enable_game_with_profiles(
             issuer,
             GameProfiles {
+                reward_journal: None,
                 documents: None,
                 quest_journal: None,
                 inventory,
@@ -461,7 +483,9 @@ impl AccountService {
         issuer: theia_network::renet_runtime::TicketIssuer,
         profiles: GameProfiles,
     ) -> Result<Arc<crate::admissions::GameAdmissions>> {
+        profiles.check_reward_context()?;
         let GameProfiles {
+            reward_journal,
             documents,
             quest_journal,
             inventory,
@@ -546,11 +570,20 @@ impl AccountService {
                 .map_err(|_| ApiError::internal())?;
         }
         if let Some(profile) = quest_journal {
-            match documents {
-                Some(documents) => crate::admissions::GameAdmissions::with_document_quest_journal(
-                    &mut gate, profile, documents,
-                ),
-                None => crate::admissions::GameAdmissions::with_quest_journal(&mut gate, profile),
+            match (reward_journal, documents) {
+                (Some(wire), _) => {
+                    crate::admissions::GameAdmissions::with_item_reward_quest_journal(
+                        &mut gate, profile, wire,
+                    )
+                }
+                (None, Some(documents)) => {
+                    crate::admissions::GameAdmissions::with_document_quest_journal(
+                        &mut gate, profile, documents,
+                    )
+                }
+                (None, None) => {
+                    crate::admissions::GameAdmissions::with_quest_journal(&mut gate, profile)
+                }
             }
             .map_err(|_| ApiError::internal())?;
         }

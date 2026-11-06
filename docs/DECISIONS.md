@@ -1,3 +1,13 @@
+## 2026-11-06 — opt-in exact fixed reward manifest role
+
+Use cumulative manifest schema 21 with one additional `quest_item_rewards` role
+and matching client/server `--quest-item-rewards` paths. Keep schema 20 and all
+older roles/hashes unchanged. Bind exact fixed reward bytes before conditional
+quest loot, and require the account service's stored/wire journal agreement
+before selecting reward ownership. Check prerequisite flags after parsing all
+arguments. [Configuration proof and limits](QUEST_ITEM_REWARDS.md#implemented-normal-configuration-prerequisite).
+Reward UI and combined native proof remain pending while desktop testing is paused.
+
 ## 2026-11-06 — explicit fixed reward World admission
 
 Require explicit reward mode rather than broadening legacy World constructors.

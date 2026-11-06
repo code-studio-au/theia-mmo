@@ -3,8 +3,8 @@
 P3-05 / P3-09 / P3-11 / P3-15, staged implementation, 6 November 2026.
 Core proposals, exact content binding, atomic Store/worker turn-in and explicit
 retained ownership, explicit World admission and the encrypted bridge are now
-qualified. Fixed bundles remain unavailable through normal launch configuration
-until manifest/CLI and presentation adoption are qualified.
+qualified. Opt-in manifest/CLI configuration is now implemented as a prerequisite;
+reward/capacity UI and combined native qualification remain pending.
 
 Use an explicit bounded catalogue associating a quest with fixed grants of known
 items. Keep the existing quest schemas and legacy profiles intact. Bind exact
@@ -306,3 +306,67 @@ They are not a combined normal-launch or native game qualification. Desktop and
 mouse tests remain paused. Next adopt exact normal manifest/CLI content, then
 honest reward/capacity UI and native qualification when desktop use is available.
 No push or Windows/MMO-capacity claim.
+
+
+## Implemented normal configuration prerequisite
+
+Opt-in manifest schema 21 adds the bounded `quest_item_rewards` role to all 24
+schema-20 roles. The separate catalogue maps the existing development pelt quest
+to three training tokens and roadside orders to two. Earlier manifests, quest
+XP, ordinary drop chances and guaranteed low-danger fixture loot are unchanged.
+Both new manifests are checked in:
+
+- `content/development-gameplay-classic-item-rewards.json`
+- `content/development-gameplay-classic-item-rewards-fixture.json`
+
+This cumulative manifest requires the document/item/area context; the underlying
+runtime library also supports reward-only quests without notes. The recipe lives
+at `content/quests/development-quest-item-rewards.json`. Fixed rewards belong to
+this separate role, not extra fields in quest definitions or creature drop tables.
+Choice rewards, currency, campaign exports and saved-profile migration are absent.
+
+The Rust validator checks the complete quest/item/document/area context, unused
+installed World namespaces, strict version/role presence, paths and the role's
+32 KiB bound. The sealed launcher hashes/copies/revalidates all 25 roles and passes
+`--quest-item-rewards` with its retained snapshot path to both normal binaries.
+Individual profile overrides cannot be mixed with a sealed manifest. Both
+binaries read bounded bytes and bind the reward policy after document/item-aware
+journal setup, before attaching conditional quest loot. Server World installation
+uses explicit reward mode. The account service requires exact stored/wire
+reward-journal agreement before choosing the retained fixed-reward owner.
+No default catalogue or legacy profile hash changes, and no automatic adoption
+of a different saved policy.
+
+**This is a configuration prerequisite, not a qualified playable reward release.**
+The Bevy journal still lacks configured reward lines and specific inventory-full
+guidance. No normal native reward completion/save/rejoin run has been performed;
+the user has paused all desktop/mouse tests. The preserved note-reader candidate
+remains the most recent fully qualified native path. New UI and combined native
+checks must be completed before promoting this reward candidate.
+
+Headless evidence for 20261106:
+
+- 62 Rust validator tests pass in manifest `validator-tests-v2`; 45 actual-validator
+  Python snapshot/handoff tests pass in `bundle-tests-v2`.
+- 24 server library tests pass in `server-tests-v2`, including missing, unexpected
+  and foreign exact wire policies at the normal service boundary, plus the exact
+  normal document/fixed-reward/conditional-loot context. All 150 client unit tests
+  pass in `client-tests-v1`; these headless units create no game window.
+- Current debug client/server binaries build (`binaries-v1`, with server corrected
+  in `server-binary-v2`). Three Linux CLI tests cover eight missing/unbound,
+  duplicate and reordered-option cases in `cli-v2`. Display variables and service
+  configuration are removed from child environments; no window is created.
+- Four reports (schema 1/12/19/20) match the frozen reader validator byte-for-byte
+  as parsed JSON in `build/quest-item-reward-manifest-legacy-reports-v1-20261106.json`.
+  Both new manifest reports contain schema 21 and exactly 25 roles.
+- Formatting and strict workspace/all-target Clippy pass in manifest `fmt-v3` and
+  `clippy-v3`. Workspace/all-target compilation also passes (`check-v1`).
+
+The first validator test expected a World-alias error for a choice already
+referenced by the quest catalogue; Core correctly refused it earlier. The v2 test
+removes that reference and verifies refusal of an unused installed choice. The
+first ad-hoc CLI smoke also caught a prerequisite check accidentally inserted
+inside document-argument parsing. It has been moved after all arguments, and
+permanent CLI cases cover all three flag orders. That failed smoke's headless
+server was killed/reaped and its temporary public certificate removed. These
+failed attempts are not successful qualification evidence.

@@ -1,4 +1,4 @@
-//! Cross-layer metadata agreement and closed-admission proof, not saved rewards.
+//! Exact profile/service context and legacy admission gates; no live SQL proof.
 use serde_json::json;
 use std::sync::Arc;
 use theia_network::{
@@ -188,4 +188,68 @@ async fn exact_reward_metadata_cannot_enter_existing_world_or_owner_admission() 
             .check_progression(&ProgressionCatalog::from_json(XP).unwrap())
             .is_ok()
     );
+}
+
+#[test]
+fn fixed_reward_account_service_requires_exact_explicit_wire_context() {
+    use crate::accounts::GameProfiles;
+    let q = source();
+    let raw = rewards(&q);
+    let (wire, stored) = pair(&q, ITEMS, XP, &raw, None, None).unwrap();
+    let mut profiles = GameProfiles::default();
+    assert!(profiles.check_reward_context().is_ok());
+    profiles.quest_journal = Some(stored.clone());
+    assert!(profiles.check_reward_context().is_err());
+    profiles.reward_journal = Some(Arc::new(wire.clone()));
+    assert!(profiles.check_reward_context().is_ok());
+    let mut changed = raw.clone();
+    changed.push(b' ');
+    profiles.reward_journal = Some(Arc::new(
+        pair(&q, ITEMS, XP, &changed, None, None).unwrap().0,
+    ));
+    assert!(profiles.check_reward_context().is_err());
+    profiles.quest_journal = None;
+    assert!(profiles.check_reward_context().is_err());
+    let wx = theia_network::progression_wire::Profile::from_json(XP).unwrap();
+    profiles.reward_journal = Some(Arc::new(Wire::from_json(&q, &wx).unwrap()));
+    assert!(profiles.check_reward_context().is_err());
+}
+
+#[test]
+fn normal_fixed_reward_document_bundle_binds_before_quest_only_loot_on_both_sides() {
+    let fixed = include_bytes!("../../../content/quests/development-quest-item-rewards.json");
+    let loot = include_bytes!("../../../content/gameplay/development-document-loot.json");
+    let (wire, stored) = pair(QUESTS, ITEMS, XP, fixed, Some(AREAS), Some(DOCS)).unwrap();
+    assert_eq!(wire.item_rewards().unwrap().rewards().len(), 2);
+    let items = WireItems::from_json(ITEMS)
+        .unwrap()
+        .with_documents(DOCS)
+        .unwrap();
+    let wire_loot =
+        theia_network::reward_wire::Profile::from_json_with_quest_journal(loot, &items, &wire)
+            .unwrap();
+    let stored_loot = theia_persistence::RewardCatalog::from_json_with_quest_journal(
+        loot,
+        &InventoryCatalog::from_json(ITEMS).unwrap(),
+        &stored,
+    )
+    .unwrap();
+    assert_eq!(wire_loot.hash(), stored_loot.hash());
+    assert_eq!(wire_loot.quest_journal_hash(), Some(wire.hash()));
+    let mut profiles = crate::accounts::GameProfiles {
+        documents: Some(Arc::new(items.documents().unwrap().clone())),
+        reward_journal: Some(Arc::new(wire)),
+        quest_journal: Some(stored),
+        ..Default::default()
+    };
+    assert!(profiles.check_reward_context().is_ok());
+    let xp = ProgressionCatalog::from_json(XP).unwrap();
+    let documents = theia_persistence::DocumentCatalog::from_json(
+        DOCS,
+        &InventoryCatalog::from_json(ITEMS).unwrap(),
+    )
+    .unwrap();
+    profiles.quest_journal =
+        Some(Stored::from_json_with_documents(QUESTS, Some(AREAS), &xp, &documents).unwrap());
+    assert!(profiles.check_reward_context().is_err());
 }

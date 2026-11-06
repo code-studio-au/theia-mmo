@@ -1,3 +1,12 @@
+Schema-21 fixed quest reward configuration prerequisite, 6 November 2026:
+`development-gameplay-classic-item-rewards.json` and its guaranteed development
+fixture add exact `quest_item_rewards` to the schema-20 document bundle (25 roles).
+Rust validates the bounded recipe/context; the launcher seals it and passes
+`--quest-item-rewards` to both binaries. Older schema 1/12/19/20 reports exactly
+match the preserved reader validator. 62 validator / 45 bundle / three Linux CLI
+and 24 server / 150 client tests pass. [Current scope and pending reward UI/native work](QUEST_ITEM_REWARDS.md#implemented-normal-configuration-prerequisite).
+No desktop/mouse tests or combined native reward qualification; local only.
+
 Schema-15 public avatar-life bundle qualified, 3 November 2026:
 `content/development-gameplay-classic-public-life.json` retains all 22 exact
 schema-14 inputs, explicitly selecting both public NPC timing and avatar life

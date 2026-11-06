@@ -26,6 +26,7 @@ JOURNAL_ROLES = RESET_ROLES - {'quest_turn_in_xp'}
 THREAT_ROLES = JOURNAL_ROLES | {'creature_threat'}
 AREA_ROLES = THREAT_ROLES | {'quest_areas'}
 DOCUMENT_ROLES = AREA_ROLES | {'documents'}
+ITEM_REWARD_ROLES = DOCUMENT_ROLES | {'quest_item_rewards'}
 MAX_PROFILE_BYTES = 64 * 1024  # Outer copy bound; Rust enforces each smaller role budget.
 MAX_MANIFEST_BYTES = 8192
 MAX_REPORT_BYTES = 16384
@@ -61,9 +62,9 @@ def _validate(validator, manifest):
         report = json.loads(raw)
         records = report['profiles']
         manifest_schema = report.get('manifest_schema', 1)
-        roles = {1: ROLES, 2: REWARDED_ROLES, 3: LIFE_ROLES, 4: DODGE_ROLES, 5: MELEE_ROLES, 6: PHYSICAL_ROLES, 7: WHITE_ROLES, 8: ABILITY_ROLES, 9: MEMBERSHIP_ROLES, 10: CREDIT_ROLES, 11: RESET_ROLES, 12: JOURNAL_ROLES, 13: THREAT_ROLES, 14: THREAT_ROLES, 15: THREAT_ROLES, 16: AREA_ROLES, 17: AREA_ROLES, 18: AREA_ROLES, 19: AREA_ROLES, 20: DOCUMENT_ROLES}.get(manifest_schema, ())
+        roles = {1: ROLES, 2: REWARDED_ROLES, 3: LIFE_ROLES, 4: DODGE_ROLES, 5: MELEE_ROLES, 6: PHYSICAL_ROLES, 7: WHITE_ROLES, 8: ABILITY_ROLES, 9: MEMBERSHIP_ROLES, 10: CREDIT_ROLES, 11: RESET_ROLES, 12: JOURNAL_ROLES, 13: THREAT_ROLES, 14: THREAT_ROLES, 15: THREAT_ROLES, 16: AREA_ROLES, 17: AREA_ROLES, 18: AREA_ROLES, 19: AREA_ROLES, 20: DOCUMENT_ROLES, 21: ITEM_REWARD_ROLES}.get(manifest_schema, ())
         if (report['validated'] is not True or report['schema'] != 1
-                or type(manifest_schema) is not int or manifest_schema not in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20)
+                or type(manifest_schema) is not int or manifest_schema not in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21)
                 or len(records) != len(roles)
                 or {r['kind'] for r in records} != roles
                 or not re.fullmatch('[0-9a-f]{64}', report['manifest_sha256'])):
