@@ -24,6 +24,21 @@ pub(crate) const TITLE_FONT: &str = "Fonts/Grenze/Grenze-SemiBold.ttf";
 pub(crate) const BODY_FONT: &str = "Fonts/Texturina/Texturina_18pt-SemiBold.ttf";
 pub(crate) const GOLD: Color = Color::srgb(0.64, 0.48, 0.26);
 pub(crate) const PANEL: Color = Color::srgba(0.055, 0.045, 0.035, 0.96);
+const PAPER: Color = Color::srgb(0.82, 0.70, 0.49);
+const INK: Color = Color::srgb(0.18, 0.11, 0.05);
+#[derive(Component)]
+struct HeaderSurface;
+pub(crate) fn button_color(disabled: bool, hovered: bool, pressed: bool) -> Color {
+    if disabled {
+        Color::srgb(0.16, 0.14, 0.12)
+    } else if pressed {
+        Color::srgb(0.52, 0.20, 0.09)
+    } else if hovered {
+        Color::srgb(0.42, 0.14, 0.08)
+    } else {
+        Color::srgb(0.28, 0.08, 0.04)
+    }
+}
 pub(crate) const SLOT: f32 = 44.;
 pub(crate) const SLOTS: usize = 12;
 pub(crate) const ACTION_WIDTH: f32 = SLOT * SLOTS as f32 + 4. * (SLOTS - 1) as f32 + 18.;
@@ -56,13 +71,18 @@ pub(crate) fn window_header(
     label: &str,
 ) {
     title_row
-        .spawn(Node {
-            width: percent(100),
-            column_gap: px(8),
-            align_items: AlignItems::Center,
-            flex_shrink: 0.,
-            ..default()
-        })
+        .spawn((
+            HeaderSurface,
+            Node {
+                width: percent(100),
+                column_gap: px(8),
+                padding: UiRect::axes(px(8), px(4)),
+                align_items: AlignItems::Center,
+                flex_shrink: 0.,
+                ..default()
+            },
+            BackgroundColor(PANEL),
+        ))
         .with_children(|row| {
             row.spawn(title).insert((
                 Node {
@@ -106,6 +126,7 @@ pub(crate) fn window_header(
 #[derive(Component)]
 pub(crate) enum Panel {
     Standard,
+    Paper,
     QuestTracker,
     Progression,
     Connection,
@@ -273,13 +294,46 @@ pub(crate) fn load(app: &mut App) {
     app.add_systems(PostStartup, style_panels)
         .add_systems(PostUpdate, style_text.before(bevy::ui::UiSystems::Content));
 }
-fn style_text(skin: Res<Skin>, mut text: Query<&mut TextFont, (With<Text>, Added<TextFont>)>) {
-    for mut font in &mut text {
+type Surface<'a> = (
+    Option<&'a ChildOf>,
+    Option<&'a Panel>,
+    Has<HeaderSurface>,
+    Has<bevy::ui_widgets::Button>,
+);
+fn paper_text(mut entity: Entity, surfaces: &Query<Surface<'_>>) -> bool {
+    for _ in 0..32 {
+        let Ok((parent, panel, header, button)) = surfaces.get(entity) else {
+            return false;
+        };
+        if header || button {
+            return false;
+        }
+        if let Some(panel) = panel {
+            return matches!(panel, Panel::Paper);
+        }
+        let Some(parent) = parent else {
+            return false;
+        };
+        entity = parent.parent();
+    }
+    false
+}
+type ThemeText<'a> = (Entity, &'a mut TextFont, &'a mut TextColor);
+type NewText = (With<Text>, Added<TextFont>);
+fn style_text(
+    skin: Res<Skin>,
+    surfaces: Query<Surface<'_>>,
+    mut text: Query<ThemeText<'_>, NewText>,
+) {
+    for (entity, mut font, mut color) in &mut text {
         font.font = if matches!(font.font_size, bevy::text::FontSize::Px(size) if size >= 18.) {
             skin.title_font.clone().into()
         } else {
             skin.body_font.clone().into()
         };
+        if paper_text(entity, &surfaces) {
+            color.0 = INK;
+        }
     }
 }
 fn style_panels(
@@ -299,7 +353,10 @@ fn style_panels(
             .entity(entity)
             .insert(Outline::new(px(1), px(-1), GOLD));
         match panel {
-            Panel::Standard => {
+            Panel::Standard | Panel::Paper => {
+                if matches!(panel, Panel::Paper) {
+                    background.0 = PAPER;
+                }
                 if layer.is_none() {
                     commands.entity(entity).insert(GlobalZIndex(20));
                 }
@@ -338,6 +395,51 @@ fn style_panels(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn parchment_uses_ink_for_body_and_later_labels_but_preserves_header_and_buttons() {
+        let mut app = App::new();
+        app.insert_resource(Skin::fixture())
+            .add_systems(PostUpdate, style_text);
+        let pane = app.world_mut().spawn(Panel::Paper).id();
+        let body = app
+            .world_mut()
+            .spawn((
+                Text::new("Quest text"),
+                TextColor(Color::WHITE),
+                ChildOf(pane),
+            ))
+            .id();
+        let header = app.world_mut().spawn((HeaderSurface, ChildOf(pane))).id();
+        let title = app
+            .world_mut()
+            .spawn((Text::new("Guide"), TextColor(GOLD), ChildOf(header)))
+            .id();
+        let button = app
+            .world_mut()
+            .spawn((bevy::ui_widgets::Button, ChildOf(pane)))
+            .id();
+        let action = app
+            .world_mut()
+            .spawn((
+                Text::new("Complete quest"),
+                TextColor(Color::WHITE),
+                ChildOf(button),
+            ))
+            .id();
+        app.update();
+        assert_eq!(app.world().get::<TextColor>(body), Some(&TextColor(INK)));
+        assert_eq!(app.world().get::<TextColor>(title), Some(&TextColor(GOLD)));
+        assert_eq!(
+            app.world().get::<TextColor>(action),
+            Some(&TextColor(Color::WHITE))
+        );
+        let late = app
+            .world_mut()
+            .spawn((Text::new("Reward description"), ChildOf(pane)))
+            .id();
+        app.update();
+        assert_eq!(app.world().get::<TextColor>(late), Some(&TextColor(INK)));
+    }
     #[test]
     fn projected_world_labels_keep_the_same_window_anchor_at_each_ui_scale() {
         let window_point = Vec2::new(960., 540.);

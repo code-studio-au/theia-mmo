@@ -131,6 +131,7 @@ fn setup(
                             Node {
                                 width: percent(100),
                                 min_height: px(34),
+                                flex_shrink: 0.,
                                 padding: UiRect::all(px(5)),
                                 display: Display::None,
                                 ..default()
@@ -142,6 +143,7 @@ fn setup(
                             text(quest.title()),
                             Node {
                                 max_width: percent(100),
+                                flex_shrink: 0.,
                                 ..default()
                             },
                         ));
@@ -367,6 +369,7 @@ fn present(
     mut ui: ResMut<Ui>,
     mut labels: Query<LabelView<'_>, LabelFilter>,
     mut buttons: Query<ButtonView<'_>>,
+    skin: Option<Res<crate::fantasy_ui::Skin>>,
 ) {
     let state = network.state();
     let profile = &definitions.0;
@@ -402,7 +405,9 @@ fn present(
         } else {
             Display::None
         };
-        color.0 = if pressed || hovered.is_some_and(|h| h.0) {
+        color.0 = if skin.is_some() {
+            crate::fantasy_ui::button_color(false, hovered.is_some_and(|h| h.0), pressed)
+        } else if pressed || hovered.is_some_and(|h| h.0) {
             Color::srgb(0.12, 0.38, 0.42)
         } else {
             Color::srgb(0.08, 0.25, 0.3)
@@ -459,7 +464,7 @@ pub(crate) fn qualification(world: &mut World, state: &State) -> Option<serde_js
     let ui = serde_json::to_value(world.resource::<Ui>()).ok()?;
     let buttons:Vec<_>=world.query::<(&ActionButton,&ComputedNode,&bevy::ui::UiGlobalTransform,Has<Pressed>)>().iter(world)
         .filter(|(_,node,_,_)|node.size().min_element()>0.)
-        .map(|(button,node,t,pressed)|serde_json::json!({"pressed":pressed,"quest":button.0.as_str(),"point":(t.affine().translation*node.inverse_scale_factor()).to_array(),"size":(node.size()*node.inverse_scale_factor()).to_array()})).collect();
+        .map(|(button,node,t,pressed)|serde_json::json!({"pressed":pressed,"quest":button.0.as_str(),"point":(t.affine().translation*node.inverse_scale_factor()).to_array(),"size":(node.size()*node.inverse_scale_factor()).to_array(),"content_box_size":(node.content_box().size()*node.inverse_scale_factor()).to_array()})).collect();
     let quests:Vec<_>=definitions.catalog().quests().filter_map(|q|journal.journal.progress(q.id()).map(|p|serde_json::json!({"id":q.id().as_str(),"revision":p.revision(),"status":format!("{:?}",p.status()),"counts":q.stages().flat_map(|s|s.objectives()).map(|o|(o.id().as_str(),p.count(o.id()).unwrap_or(0))).collect::<BTreeMap<_,_>>()}))).collect();
     let tracker=world.query_filtered::<(&Text,&ComputedNode,Option<&bevy::text::TextLayoutInfo>),With<Tracker>>().iter(world).next().map(|(text,node,glyphs)|serde_json::json!({"text":text.0,"size":(node.size()*node.inverse_scale_factor()).to_array(),"glyphs":glyphs.map_or(0,|g|g.glyphs.len())}));
     let action_labels: Vec<_> = world
@@ -475,6 +480,7 @@ pub(crate) fn qualification(world: &mut World, state: &State) -> Option<serde_js
             serde_json::json!({
                 "quest":label.0.as_str(),"text":text.0,
                 "size":(node.size()*node.inverse_scale_factor()).to_array(),
+                "layout_size":glyphs.map_or(Vec2::ZERO,|g|g.size*node.inverse_scale_factor()).to_array(),
                 "glyphs":glyphs.map_or(0,|g|g.glyphs.len())
             })
         })

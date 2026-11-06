@@ -232,8 +232,18 @@ def flow(desktop, window, state, folder, resumed=False, item_rewards=False, rewa
             bag_before=state()['inventory_layout']['scroll']
             offset=viewport['scroll'][1]
             desktop.move(window,viewport['point'],scale)
-            desktop.scroll(8 if button['point'][1]<top else -8)
-            wait(lambda:state()['quest_journal']['offer_scroll']['scroll'][1]!=offset)
+            lines=8 if button['point'][1]<top else -8
+            first_wheel=desktop.wheel_fd is None
+            desktop.scroll(lines)
+            try:
+                wait(lambda:state()['quest_journal']['offer_scroll']['scroll'][1]!=offset,1 if first_wheel else 20)
+            except TimeoutError:
+                if not first_wheel:raise
+                # The virtual device was just created; the window backend may
+                # still be registering it. One more real gesture is bounded;
+                # a nonfunctional scroll still fails the unchanged offset check.
+                desktop.scroll(lines)
+                wait(lambda:state()['quest_journal']['offer_scroll']['scroll'][1]!=offset)
             time.sleep(.15)
             assert state()['quest_journal']['dialogue_body']['scroll']==body_before, 'Quest wheel scrolled the dialogue sibling'
             assert state()['inventory_layout']['scroll']==bag_before, 'Quest wheel scrolled the backpack sibling'
@@ -243,6 +253,9 @@ def flow(desktop, window, state, folder, resumed=False, item_rewards=False, rewa
         if quest_offers and not state()['documents']['open']:expose_offer(QUEST)
         label=wait(lambda:next((label for label in state()['quest_journal']['action_labels'] if label['quest']==QUEST and label['text'].startswith(verb+':')),None))
         assert '2 x Training Token' in label['text'] and label['glyphs']>0, label
+        row=next(b for b in state()['quest_journal']['buttons'] if b['quest']==QUEST)
+        assert all(measured<=allocated+1 for measured,allocated in zip(label['layout_size'],label['size'])),('Reward glyphs exceed their label',label)
+        assert all(measured<=allocated+1 for measured,allocated in zip(label['layout_size'],row['content_box_size'])),('Reward text exceeds its clickable row',label,row)
         assert label['size'][0]<state()['window'][0], label
         if reward_capacity:assert '2 x Training Sword' in label['text'], label
         return label

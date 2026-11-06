@@ -168,11 +168,21 @@ fn setup(
             Panel,
             Node {
                 position_type: PositionType::Absolute,
-                left: px(0),
-                right: px(0),
-                top: percent(20),
-                height: percent(50),
-                justify_content: JustifyContent::Center,
+                left: px(if skin.is_some() { 12. } else { 0. }),
+                right: if skin.is_some() { Val::Auto } else { px(0) },
+                width: if skin.is_some() { px(420) } else { Val::Auto },
+                max_width: if skin.is_some() {
+                    percent(45)
+                } else {
+                    Val::Auto
+                },
+                top: if skin.is_some() { px(64) } else { percent(20) },
+                height: percent(if skin.is_some() { 70. } else { 50. }),
+                justify_content: if skin.is_some() {
+                    JustifyContent::FlexStart
+                } else {
+                    JustifyContent::Center
+                },
                 ..default()
             },
             Visibility::Hidden,
@@ -181,10 +191,10 @@ fn setup(
         .with_children(|root| {
             root.spawn((
                 Pane,
-                crate::fantasy_ui::Panel::Standard,
+                crate::fantasy_ui::Panel::Paper,
                 Node {
-                    width: px(480),
-                    max_width: percent(90),
+                    width: px(if skin.is_some() { 420. } else { 480. }),
+                    max_width: percent(if skin.is_some() { 100. } else { 90. }),
                     height: percent(100),
                     padding: UiRect::all(px(14)),
                     flex_direction: FlexDirection::Column,
@@ -346,6 +356,7 @@ fn present(
     mut labels: Query<Label<'_>>,
     mut buttons: Query<ButtonView<'_>>,
     mut bodies: Query<&mut ScrollPosition, With<Body>>,
+    skin: Option<Res<crate::fantasy_ui::Skin>>,
 ) {
     let state = network.state();
     let view = state.dialogue.as_ref().filter(|_| state.error.is_none());
@@ -454,7 +465,9 @@ fn present(
         } else {
             Display::Flex
         };
-        color.0 = if ui.pending {
+        color.0 = if skin.is_some() {
+            crate::fantasy_ui::button_color(ui.pending, hovered.is_some_and(|h| h.0), pressed)
+        } else if ui.pending {
             Color::srgb(0.07, 0.08, 0.1)
         } else if pressed || hovered.is_some_and(|h| h.0) {
             Color::srgb(0.12, 0.3, 0.38)

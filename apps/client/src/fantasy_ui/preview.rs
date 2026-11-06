@@ -196,7 +196,7 @@ fn labels(mut commands: Commands, run: Res<Capture>) {
     commands
         .spawn((
             HeaderFixture,
-            super::Panel::Standard,
+            super::Panel::Paper,
             Node {
                 position_type: PositionType::Absolute,
                 left: px(12),

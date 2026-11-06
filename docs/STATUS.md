@@ -4,7 +4,7 @@ compact lower-centre player/target frames, twelve 44-pixel primary slots,
 cast feedback, a centred XP strip, circular minimap and shared pane headers.
 It uses standard Bevy UI with three local PNG icons and two fonts; source assets
 remain outside Git. Preferred UI scale fits/restores the 1280×720 logical layout.
-171 client cases, formatting, strict workspace/all-target Clippy and build pass.
+172 client cases, formatting, strict workspace/all-target Clippy and build pass.
 Six latest windowless cases through 3840×2160 check combat/XP/dock separation,
 projected anchors and circular map pixels. Earlier 51 launcher cases remain valid.
 Connected OIDC/Renet/PostgreSQL quest/minimap walkthroughs now pass at
@@ -12,6 +12,8 @@ Connected OIDC/Renet/PostgreSQL quest/minimap walkthroughs now pass at
 fixed panel layering, bag dock and hidden themed terrain diagnostics in a
 controlled fixture. Passive enemy nameplates now pass six GPU layouts and a
 1280×720 connected health/death/rejoin check, including separated damage text.
+Left-side parchment dialogue and full-height reward rows now also pass the
+32-offer/note/item-reward walkthrough at all three sizes plus restart/rejoin.
 The skin remains opt-in; clickable plates, portrait art, chat/menu systems,
 nondefault-scale OS traces and complete-theme qualification
 remain separate work. [Scope, reference, assets and evidence](UI_FANTASY_WARRIOR.md).

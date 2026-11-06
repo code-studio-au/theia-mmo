@@ -611,3 +611,62 @@ password files are removed. The earlier `native-nameplates-v1` diagnostic
 captures the resolved text collision. The prior three-size native integration
 pass predates this addition; nameplates additionally have six scaled GPU cases
 and this 1280×720 connected check, not native Windows/DPI/crowd qualification.
+
+
+## Parchment dialogue and readable reward rows — 6 November 2026
+
+P2-14 / P5-13 / P5-19, following the additional inline references. The skin's
+existing dialogue pane now sits at the left: 12 logical pixels inset, 64 down,
+420 wide and 70% of viewport height, with a bounded width. Its body uses a warm
+opaque paper colour and dark ink. The shared header has a padded charcoal strip;
+headers and button labels retain their light text. Later-added labels receive
+the same body contrast. Dialogue and quest action buttons use dark rust/brown
+normal, hover, pressed and pending colours. Legacy no-skin layout/palette remain
+available.
+
+This is a flat parchment-style colour treatment using ordinary Bevy UI, not a
+new paper texture. Inspected local HUD parchment images are mostly tint masks;
+no additional PNG or material was needed. The same three icons/two fonts remain.
+The header shows the existing NPC name; portrait sourcing/rendering remains
+future work. This does not implement equipment repair, money or a new quest
+reward type from the reference pictures.
+
+Native review exposed squeezed multi-line reward labels: a 34-pixel row left
+only 24 pixels for a 34-pixel text layout. Offer rows and their text now retain
+intrinsic height instead of shrinking inside the scroll list. The same two-line
+case measures **44-pixel row / 34-pixel content / 34-pixel text**. Read-only
+telemetry exports real content/text bounds; the existing native reward check
+asserts the rendered text fits both its label and clickable row. No quest,
+receipt, pending, capacity, authority or item-count behavior changed.
+
+A virtual-wheel startup issue in the first owned test left the offset unchanged.
+The qualifier now allows one additional actual wheel gesture only when the
+virtual device was just created and the first gesture produced no observed
+scroll. Later gestures retain their normal failure check. This changes test
+readiness, not the game's scroll ownership or offset. The sibling dialogue and
+backpack scroll positions must still remain unchanged while scrolling offers.
+
+Formatting, strict workspace/all-target Clippy, **172 client cases including
+local art**, Python syntax and the development build pass. A new headless style
+check covers dark body/late text while preserving header/button contrast. Six
+`paper-v1-*` windowless cases retain the shared paper/header sample and preceding
+HUD/map/nameplate/dock gates through 3840×2160 with scale preferences; these are
+not full quest-window exports.
+
+The actual paper window, 32 offers, last-offer acceptance, note pages/close,
+fixed item rewards, item-loss reversal, turn-in and database restart/fresh login
+pass at **1280×720, 1920×1200 and 3440×1440** in the controlled schema-21 fixture.
+Final evidence: `build/ui-reference-20261106/native-paper-v4/verification.json`,
+including the repository's real first-wheel helper and reward containment checks.
+All four stages finish at journal revision 9 / XP 75; saved rewards/completion
+survive the PostgreSQL process restart. Each GPU diagnostic count is zero on
+RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6. Input is synthetic owned-X11
+mouse/keyboard/wheel; all owned services stop and plaintext password files are
+removed. This adds UI evidence, not new quest mechanics or catalogue capacity.
+
+Earlier v1 failed the first virtual-wheel gesture; v2/v3 passed scrolling but
+precede the visual reward-row fix. v4 is the current acceptance. Normal random
+loot, every pending/full-capacity state, actual header-X clicks, native Windows,
+DPI/nondefault-scale OS tracing and human feel remain outside this fixture.
+The skin stays opt-in. Portraits, item icons, a dedicated quest-detail/reward
+composition and the other reference screens remain follow-on work.
