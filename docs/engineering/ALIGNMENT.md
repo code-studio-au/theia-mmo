@@ -4,7 +4,7 @@ compact lower-centre player/target frames, twelve 44-pixel primary slots,
 cast feedback, a centred XP strip, circular minimap and shared pane headers.
 It uses standard Bevy UI with nine local PNG icons and two fonts; source assets
 remain outside Git. Preferred UI scale fits/restores the 1280×720 logical layout.
-181 client cases, formatting, strict workspace/all-target Clippy and build pass.
+185 client cases, formatting, strict workspace/all-target Clippy and build pass.
 Windowless cases through 3840×2160 check combat/XP/dock separation and
 projected anchors; earlier circle-corner pixel checks remain valid. Earlier 51 launcher cases remain valid.
 Connected OIDC/Renet/PostgreSQL quest/minimap walkthroughs now pass at
@@ -33,11 +33,13 @@ Minimap shading follows validated active goals, with explicit objective-to-area
 metadata for kill/collection and related goals. 385 core/persistence and 27 focused
 network cases pass; the prior six overlay GPU layouts remain raster evidence.
 Existing content is unchanged; authored spawn/collection regions and native
-replay remain separate. Desktop tests stay paused.
+replay remain separate. Minimap hover descriptions now have six windowless
+GPU layouts and a 1280×720 connected hover/rejoin pass; enlarged UI and
+native search-region hovering remain pending.
 The skin remains opt-in; clickable plates, portrait art, chat/menu systems,
 nondefault-scale OS traces and complete-theme qualification
 remain separate work. [Scope, reference, assets and evidence](../UI_FANTASY_WARRIOR.md).
-**Current permission: no desktop/mouse tests while the user uses the machine.**
+**Current permission: desktop/mouse tests restored by the latest user instruction.**
 Commit locally only; no push. Earlier permission restrictions below are historical.
 
 Bounded quest offers/wheel ownership qualified, 6 November 2026:

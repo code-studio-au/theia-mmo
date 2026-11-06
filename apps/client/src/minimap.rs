@@ -1,5 +1,6 @@
 //! Bounded standard Bevy map presentation; never requests terrain or gameplay.
 mod guidance;
+pub(crate) mod hints;
 mod projection;
 use bevy::{
     asset::RenderAssetUsages,
@@ -18,6 +19,7 @@ pub(crate) const VITALS_RIGHT: f32 = DISPLAY + 40.;
 #[derive(Resource, Default, serde::Serialize)]
 pub(crate) struct Metrics {
     pub visible: bool,
+    pub hover_text: Option<String>,
     pub raster_updates: u64,
     pub known_pixels: usize,
     pub objective_regions: usize,
@@ -31,6 +33,8 @@ pub(crate) struct Metrics {
     pub guide_phase: Option<usize>,
     pub player_point: Option<[f32; 2]>,
     pub guide_point: Option<[f32; 2]>,
+    pub guide_bounds: Option<[f32; 4]>,
+    pub tooltip_bounds: Option<[f32; 4]>,
     pub heading_radians: f32,
     pub centre: Option<[f64; 3]>,
     pub bounds: Option<[f32; 4]>,
@@ -59,7 +63,7 @@ enum MapCaption {
 
 pub(crate) fn install(app: &mut App) {
     app.init_resource::<Metrics>()
-        .add_systems(Startup, setup)
+        .add_systems(Startup, (setup, hints::setup))
         .add_systems(Last, observe)
         .add_systems(
             PostUpdate,
@@ -141,6 +145,7 @@ fn setup(
             root.spawn((MapCaption::Heading, label("N  |  Local area", 14.)));
             root.spawn((
                 Surface,
+                bevy::ui::RelativeCursorPosition::default(),
                 Node {
                     width: px(DISPLAY),
                     height: px(DISPLAY),
@@ -192,8 +197,8 @@ fn setup(
 /// terrain, network or map-present system is installed by the developer preview.
 pub(crate) fn install_preview(app: &mut App) {
     app.init_resource::<Metrics>()
-        .add_systems(Startup, setup)
-        .add_systems(PostStartup, seed_preview);
+        .add_systems(Startup, (setup, hints::setup))
+        .add_systems(PostStartup, (seed_preview, seed_hover_preview).chain());
 }
 type PreviewNode<'a> = (&'a mut Node, Has<Root>, Has<Arrow>, Has<Guide>);
 fn seed_preview(
@@ -254,6 +259,12 @@ fn seed_preview(
             **text = "!".into();
         }
     }
+}
+fn seed_hover_preview(world: &mut World) {
+    hints::set(
+        world,
+        Some("Quest contact (fixture)\nAvailable quests\nMeet the guide".into()),
+    );
 }
 fn raster(world: &mut World, view: View) -> (Vec<u8>, usize, usize) {
     let mut query = world.query::<&crate::graybox::Tile>();
@@ -356,6 +367,7 @@ fn player_heading(world: &mut World, state: &theia_network::client::State) -> f3
 fn present(world: &mut World) {
     let started = Instant::now();
     present_inner(world);
+    hints::present(world);
     let micros = started.elapsed().as_micros() as u64;
     let mut metrics = world.resource_mut::<Metrics>();
     metrics.max_present_us = metrics.max_present_us.max(micros);
@@ -529,8 +541,37 @@ fn present_inner(world: &mut World) {
 fn observe(
     roots: Query<(&ComputedNode, &bevy::ui::UiGlobalTransform), With<Root>>,
     arrows: Query<&bevy::ui::UiGlobalTransform, With<Arrow>>,
+    guides: Query<(&ComputedNode, &bevy::ui::UiGlobalTransform), With<Guide>>,
+    tooltips: Query<(&ComputedNode, &bevy::ui::UiGlobalTransform), With<hints::Tooltip>>,
+    ui_scale: Option<Res<bevy::ui::UiScale>>,
     mut metrics: ResMut<Metrics>,
 ) {
+    let bounds = |node: &ComputedNode, transform: &bevy::ui::UiGlobalTransform| {
+        let factor =
+            crate::fantasy_ui::window_factor(node, ui_scale.as_deref().map_or(1., |s| s.0));
+        let centre = transform.affine().translation * factor;
+        let size = node.size() * factor;
+        [
+            centre.x - size.x * 0.5,
+            centre.y - size.y * 0.5,
+            size.x,
+            size.y,
+        ]
+    };
+    metrics.guide_bounds = (metrics.visible && metrics.guide_point.is_some())
+        .then(|| {
+            let (node, transform) = guides.single().ok()?;
+            Some(bounds(node, transform))
+        })
+        .flatten();
+    metrics.tooltip_bounds = metrics
+        .hover_text
+        .is_some()
+        .then(|| {
+            let (node, transform) = tooltips.single().ok()?;
+            Some(bounds(node, transform))
+        })
+        .flatten();
     metrics.arrow_forward = metrics
         .visible
         .then(|| {
@@ -544,14 +585,7 @@ fn observe(
         .visible
         .then(|| {
             let (node, transform) = roots.single().ok()?;
-            let centre = transform.affine().translation * node.inverse_scale_factor();
-            let size = node.size() * node.inverse_scale_factor();
-            Some([
-                centre.x - size.x * 0.5,
-                centre.y - size.y * 0.5,
-                size.x,
-                size.y,
-            ])
+            Some(bounds(node, transform))
         })
         .flatten();
 }

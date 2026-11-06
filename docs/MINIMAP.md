@@ -305,3 +305,46 @@ pixels (`map-links-gpu-v1/report.json`). This is a synthetic layout, not a live
 quest/creature scene.
 Native connected overlay/input and Windows evidence remain pending. Desktop
 and mouse tests remain prohibited while the user uses the machine.
+
+
+## Read-only hover descriptions — 6 November 2026
+
+P2-14 / P3-11 / P5-13 / P5-19. Hovering the observed guide pin shows its
+available, active or ready quest titles; ready turn-ins keep priority over offers.
+Unavailable prerequisite quests are omitted. Hovering a shaded search region
+shows its active unfinished objective labels and confirmed counts. Overlapping
+regions deduplicate each objective, descriptions show at most six entries plus
+a continuation hint, and the full catalogue remains in the journal/dialogue.
+Search regions remain authored hints rather than live spawn/drop observations.
+
+One standard Bevy tooltip sits left of the minimap. It is noninteractive and
+never queues selection, dialogue, movement or quest actions. It clears on pointer
+exit, circular-map corner, hidden map or invalid/foreign progress. Bevy's relative
+cursor position handles node scale/DPI; read-only guide/tooltip bounds now preserve
+preferred UI scale while removing window DPI. The previous map-root bounds export
+has the same conversion fix. Existing terrain raster, request and image budgets
+remain unchanged. The guide is still the sole observed NPC contact; this does not
+add a general multi-NPC registry, map clicks, tracking controls or live loot pins.
+
+Four new headless cases cover relative/circular cursor projection, active bound
+search geometry and foreign-owner refusal, contact offer filtering, and clearing
+a noninteractive tooltip. **185 client cases** including local art, formatting,
+strict workspace/all-target Clippy and build pass. Six `map-hover-v1-*` windowless
+Linux GPU layouts show an explicitly labelled contact fixture, assert that its
+tooltip fits and leaves the map clear, and retain the HUD/backpack/area gates.
+Device: RX 7900 XTX / RADV Vulkan / Mesa 26.2.6. Evidence:
+`build/ui-reference-20261106/map-hover-verification-v1.json` and the corresponding
+client/Clippy/build logs. No native scale/DPI inference follows from those exports.
+
+Desktop testing is authorized again by the user's latest continuation request.
+Connected Linux qualification passes at 1280×720 / scale 1, with actual local
+OIDC, encrypted Renet, owned PostgreSQL, PID-bound X11 pointer/keyboard and
+restart/rejoin. Real `!`/`?` hovers show the correct title without changing the
+committed quest revision, and pointer exit clears text. The completed guide
+remains generic after rejoin. The unchanged two-quest flow finishes at journal
+revision 11 / XP 125, with zero GPU diagnostics; pointer/wheel ownership, 17,408
+image bytes and unchanged idle streaming pass. Owned services stop, temporary
+wheel device is removed and plaintext password files are removed. Evidence:
+`build/ui-reference-20261106/native-map-hover-v1/verification.json`. This does not
+qualify native search-region hovering, enlarged UI, Windows or physical hardware
+input. Earlier paused entries record permission at those checkpoints.

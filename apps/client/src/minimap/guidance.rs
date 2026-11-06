@@ -104,7 +104,7 @@ pub(super) fn shade(data: &mut [u8], view: View, regions: &[&Area], circular: bo
 }
 
 #[cfg(test)]
-mod tests {
+pub(super) mod tests {
     use super::*;
     use theia_core::{
         content::ContentId,
@@ -114,7 +114,7 @@ mod tests {
     fn id(s: &str) -> ContentId {
         ContentId::new(s).unwrap()
     }
-    fn fixture() -> (State, Profile) {
+    pub(crate) fn fixture() -> (State, Profile) {
         let xp = theia_network::progression_wire::Profile::from_json(include_bytes!(
             "../../../../content/gameplay/development-progression.json"
         ))

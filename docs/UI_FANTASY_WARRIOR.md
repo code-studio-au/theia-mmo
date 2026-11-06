@@ -955,3 +955,13 @@ occupancy cannot grant kill credit. Existing content/profile hashes are unchange
 cases remain ignored. [Format and exact scope](MINIMAP.md#explicit-objective-search-regions--6-november-2026).
 General multi-NPC `!`/`?` locations and native overlay interaction remain pending;
 existing support is for the single known guide. No desktop input tests were run.
+
+
+Minimap hover descriptions — 6 November 2026: actual guide `!`/`?` pins now list
+available/ready quest titles, while authored region hovers show active objective
+counts. 185 client cases and six windowless layouts pass. A 1280×720 connected
+OIDC/Renet/PostgreSQL hover/completion/rejoin trace passes, ending at revision 11 /
+XP 125 with zero GPU diagnostics; services and temporary input devices stop.
+[Implementation, evidence and limits](MINIMAP.md#read-only-hover-descriptions--6-november-2026).
+Desktop testing is authorized again by the user's latest instruction. Enlarged UI
+and native search-region hovering remain separate checks. Local commits, no push.

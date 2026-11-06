@@ -73,6 +73,7 @@ struct Layout<'w, 's> {
     feedback: Query<'w, 's, FeedbackGeometry<'static>>,
     anchor: Query<'w, 's, AnchorGeometry<'static>, With<ProjectedAnchor>>,
     minimap: Query<'w, 's, AnchorGeometry<'static>, With<crate::minimap::Root>>,
+    map_tooltip: Query<'w, 's, AnchorGeometry<'static>, With<crate::minimap::hints::Tooltip>>,
     map_surface: Query<'w, 's, AnchorGeometry<'static>, With<crate::minimap::Surface>>,
     header: Query<'w, 's, AnchorGeometry<'static>, PaperSample>,
     units: Query<'w, 's, UnitGeometry<'static>>,
@@ -461,7 +462,22 @@ fn capture(
             <= 1.,
         "Map image must use standard Bevy circular corners"
     );
-    let minimap = serde_json::json!({"centre":map_centre.to_array(),"size":map_size.to_array(),"surface":{"centre":surface_centre.to_array(),"size":surface_size.to_array(),"shape":"circle"},"raster":"synthetic checker fixture; no world data"});
+    let (tip_node, tip_transform) = layout.map_tooltip.single().expect("Map tooltip fixture");
+    let tip_size = tip_node.size();
+    let tip_centre = tip_transform.affine().translation;
+    assert!(
+        tip_size.min_element() > 0.
+            && tip_centre.x - tip_size.x * 0.5 >= 0.
+            && tip_centre.y - tip_size.y * 0.5 >= 0.
+            && tip_centre.x + tip_size.x * 0.5 <= run.size.x as f32
+            && tip_centre.y + tip_size.y * 0.5 <= run.size.y as f32,
+        "Map tooltip stays inside viewport"
+    );
+    assert!(
+        tip_centre.x + tip_size.x * 0.5 <= map_centre.x - map_size.x * 0.5,
+        "Tooltip leaves map visible"
+    );
+    let minimap = serde_json::json!({"centre":map_centre.to_array(),"size":map_size.to_array(),"surface":{"centre":surface_centre.to_array(),"size":surface_size.to_array(),"shape":"circle"},"tooltip":{"centre":tip_centre.to_array(),"size":tip_size.to_array(),"text":map_metrics.hover_text},"raster":"synthetic checker fixture; no world data"});
     let (header_node, header_transform) = layout
         .header
         .single()
