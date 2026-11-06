@@ -1,3 +1,12 @@
+Single-click reader/shared UI recovery qualified, 6 November 2026:
+P2-14 / P3-05 / P3-11 / P3-12: the reader's ignored second-open click is fixed
+by one shared standard-Bevy button release recovery. Two opens now require two
+pointer clicks at all three Linux sizes; completion survives SQL restart/rejoin.
+The small-window full-bag refusal/free-space retry remains qualified. 154 client tests,
+formatting, strict workspace/all-target Clippy and optimized build pass.
+[Measured defect, fixtures and limits](../QUEST_DOCUMENTS.md#single-click-reader-and-shared-button-release--6-november-2026).
+Local commits only, no push; desktop remains authorized while the user is away.
+
 Fixed quest reward UI qualified locally, 6 November 2026:
 P3-05 / P3-09 / P3-11 / P3-15: offers and unfinished journals show fixed item
 names/counts; full bags retain Ready/holdings/XP and give clear retry guidance.

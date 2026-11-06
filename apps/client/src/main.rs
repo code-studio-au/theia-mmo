@@ -42,6 +42,7 @@ mod status_effects;
 mod targeting;
 mod terrain_scene;
 mod triplanar;
+mod ui_buttons;
 mod world_input;
 
 use bevy::{app::AppExit, prelude::*, time::TimeUpdateStrategy, window::WindowResolution};
@@ -1273,6 +1274,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             runtime_materials::RuntimeMaterialsPlugin,
         ))
         .add_systems(Startup, scene::setup)
+        .add_systems(PostUpdate, ui_buttons::clear_released_presses)
         .add_systems(
             PreUpdate,
             (camera::controls, input)

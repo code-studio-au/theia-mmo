@@ -482,3 +482,49 @@ The reader-baseline full workspace/all-target gate also passes: 1,351 tests,
 service success evidence; actual OIDC/SQL/native proofs are recorded separately.
 The new offline authoring example has its own focused tests and strict Clippy
 qualification in [the authoring guide](QUEST_PACK_AUTHORING.md#check-authored-note-references-together).
+
+
+## Single-click reader and shared button release — 6 November 2026
+
+P2-14 / P3-05 / P3-11 / P3-12. The fixed-reward native work exposed a
+backpack button retaining `Pressed` after panel reflow. An additional reader
+check found the same defect outside the backpack widget set: two note opens
+needed three pointer attempts. In
+`build/qdoc-click-v1-20261106/1920x1200/read-1-before-click.json`, Read is still
+pressed before the second open despite released input. The old helper retried
+that ignored click; the gameplay flow passed but single-click interaction did not.
+
+`ui_buttons` now runs one small PostUpdate recovery for standard Bevy `Button`
+components. It removes stale `Pressed` only when no mouse button or touch remains
+held. The earlier backpack-only helper is replaced, its ButtonPlugin regression
+is retained, and a generic non-inventory ButtonPlugin regression covers release
+over another widget and immediate subsequent activation. Existing loot hidden-
+button cleanup stays intact. No command, read-credit, camera or saved-content
+identity rule changes. The OS helper no longer retries Read: two opens must
+require exactly two pointer attempts.
+
+All three window anchors (1280×720, 1920×1200, 3440×1440) pass the stricter note
+flow, fixed rewards and actual PostgreSQL restart/rejoin. Each live flow uses two
+Read attempts, with released Read state before each; pre-accept reading still
+excludes future credit and replacement possession retains read history.
+A 1280×720 capacity regression also passes refusal, confirmed space release,
+complete bundle turn-in and restart/rejoin. Guaranteed loot/low-danger and extra
+sword rewards remain explicit private fixtures as described in
+[fixed rewards](QUEST_ITEM_REWARDS.md#fixed-reward-ui-qualified--6-november-2026).
+
+Evidence:
+
+- 154 client tests: `build/quest-document-button-client-tests-v1-20261106.log`.
+- Formatting, strict workspace/all-target Clippy and optimized build: the
+  `quest-document-button-{fmt,clippy,release}-v1-20261106.log` files.
+- Single-click normal flow and rejoin:
+  `build/qdoc-click-v2-20261106/verification.json`.
+- Capacity regression: `build/qdoc-cap-v1-20261106/verification.json`.
+- Frozen binaries/code: `build/quest-document-button-candidate-v1-20261106`;
+  final source/evidence: `build/quest-document-button-qualified-v1-20261106`.
+
+Actual local OIDC, encrypted gameplay, owned PostgreSQL and PID-bound synthetic
+X11/uinput; Linux RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6 kisak PPA,
+zero GPU diagnostics. Physical mouse/touch hardware, native Windows, FPS and MMO
+capacity are not qualified by these checks. User-authorized desktop checks only;
+local commits, no push. Earlier reader checkpoints retain their original scope.

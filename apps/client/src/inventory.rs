@@ -152,7 +152,6 @@ pub(crate) fn install(app: &mut App, profile: Profile) {
         .init_resource::<Pending>()
         .add_observer(activate)
         .add_systems(Update, close_panel.before(present))
-        .add_systems(Update, clear_released_presses.after(Phase::Paint))
         .add_systems(Startup, setup.in_set(Phase::Setup))
         .add_systems(
             Update,
@@ -168,23 +167,6 @@ pub(crate) fn install(app: &mut App, profile: Profile) {
     vendor_qualification::install(app);
     zone_qualification::install(app);
     lifecycle_qualification::install(app);
-}
-fn clear_released_presses(
-    mut commands: Commands,
-    mouse: Res<ButtonInput<MouseButton>>,
-    touches: Option<Res<bevy::input::touch::Touches>>,
-    buttons: Query<Entity, (With<Widget>, With<Pressed>)>,
-) {
-    // A confirmation or committed bag can reflow the panel between down/up.
-    // Bevy 0.20 releases the hovered widget; the original may retain Pressed.
-    // Retain normal holds, including touch, but never suppress a later click.
-    if mouse.get_pressed().next().is_none()
-        && !touches.is_some_and(|touches| touches.iter().next().is_some())
-    {
-        for button in &buttons {
-            commands.entity(button).remove::<Pressed>();
-        }
-    }
 }
 fn text(value: &str, size: f32) -> impl Bundle {
     (
@@ -930,7 +912,7 @@ mod tests {
             .init_resource::<Pending>()
             .add_plugins(bevy::ui_widgets::ButtonPlugin)
             .add_observer(activate)
-            .add_systems(Update, clear_released_presses);
+            .add_systems(PostUpdate, crate::ui_buttons::clear_released_presses);
         let window = app.world_mut().spawn_empty().id();
         let button = app
             .world_mut()

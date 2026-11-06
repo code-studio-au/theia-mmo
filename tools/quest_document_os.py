@@ -13,6 +13,7 @@ BRING = QUEST + '.objective.bring'
 
 def flow(desktop, window, state, folder, resumed=False, item_rewards=False, reward_capacity=False):
     scale = state()['window'][2]
+    read_pointer_attempts = 0
     def count(item):
         return sum(s['count'] for s in state()['inventory_bag']['slots'] if s and s['item'] == item)
     def ui(): return state()['loot']['ui']
@@ -125,6 +126,7 @@ def flow(desktop, window, state, folder, resumed=False, item_rewards=False, rewa
         desktop.click(window,point,scale,1)
         wait(lambda:quest() and quest()['status']==status and state()['quest_journal']['ui']['applied']==before+1 and not state()['quest_journal']['ui']['pending'])
     def document_click(name):
+        nonlocal read_pointer_attempts
         point=wait(lambda:state()['document_layout'][name])
         deadline=time.monotonic()+3
         while True:
@@ -135,6 +137,11 @@ def flow(desktop, window, state, folder, resumed=False, item_rewards=False, rewa
             assert time.monotonic()<deadline, ('Document control layout did not settle',name)
             point=current
         width,height,_=state()['window']; assert 0<point[0]<width and 0<point[1]<height, (name,point)
+        if name=='read':
+            desktop.move(window,point,scale)
+            time.sleep(.2)
+            (folder/f'read-{read_pointer_attempts}-before-click.json').write_text(json.dumps(state(),indent=2)+'\n')
+            read_pointer_attempts += 1
         desktop.click(window,point,scale,1)
     def select_note():
         # Quest acceptance can expose/reflow the backpack before the next
@@ -169,8 +176,6 @@ def flow(desktop, window, state, folder, resumed=False, item_rewards=False, rewa
         clicks=state()['documents']['read_clicks']
         document_click('read')
         time.sleep(.4)
-        if state()['documents']['read_clicks']==clicks:
-            document_click('read')
         wait(lambda:state()['documents']['open'] and state()['documents']['approved']==before+1)
         assert state()['documents']['page']==0
     def take_note():
@@ -326,5 +331,6 @@ def flow(desktop, window, state, folder, resumed=False, item_rewards=False, rewa
             wait(lambda:state()['quest_journal']['status']['text']=='')
     assert quest()['counts'][READ]==1 and quest()['counts'][BRING]==1
     capture('document-completed.png')
+    assert read_pointer_attempts==2, 'Each note open must take exactly one pointer click'
     assert state()['combat']['deaths']==2 and state()['combat']['player_deaths']==0 and state()['combat']['event_gaps']==0
-    return dict(passed=True,resumed=False,revision=state()['quest_journal']['revision'],xp=state()['quest_journal']['xp'],actions=state()['quest_journal']['ui']['applied'],kills=2,preaccept_read_excluded=True,page_navigation_local=True,history_survives_loss=True,possession_reverses=True,explicit_pickup_required=True,delivery_consumed=True,documents=state()['documents'],fixed_rewards=dict(offer=offer,turn_in=turn_in,tokens_before=tokens,tokens_after=count('theia.dev.training-token'),capacity=capacity) if item_rewards else None)
+    return dict(passed=True,resumed=False,revision=state()['quest_journal']['revision'],xp=state()['quest_journal']['xp'],actions=state()['quest_journal']['ui']['applied'],kills=2,preaccept_read_excluded=True,page_navigation_local=True,history_survives_loss=True,possession_reverses=True,explicit_pickup_required=True,delivery_consumed=True,documents=state()['documents'],read_pointer_attempts=read_pointer_attempts,fixed_rewards=dict(offer=offer,turn_in=turn_in,tokens_before=tokens,tokens_after=count('theia.dev.training-token'),capacity=capacity) if item_rewards else None)
