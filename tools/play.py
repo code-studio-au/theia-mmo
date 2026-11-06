@@ -14,22 +14,26 @@ import tempfile
 from launch_environment import client_environment
 
 
-def fantasy_ui_options(directory, classic, combat_catalog):
+def fantasy_ui_options(directory, classic, combat_catalog, ui_scale=None):
     """Client-only presentation arguments; no gameplay-manifest role or child I/O."""
     if directory is None:
+        if ui_scale is not None:
+            raise ValueError("UI scale requires --fantasy-ui")
         return []
     if not classic or combat_catalog is None:
         raise ValueError('Fantasy UI requires Classic combat')
     directory = Path(directory).resolve()
     if not directory.is_dir():
         raise ValueError(f'Missing fantasy UI directory: {directory}')
-    return ['--fantasy-ui', str(directory)]
+    if ui_scale is not None and (not math.isfinite(ui_scale) or not 0.75 <= ui_scale <= 1.5):
+        raise ValueError('UI scale must be finite and from 0.75 to 1.5')
+    return ['--fantasy-ui', str(directory), *(['--ui-scale', str(ui_scale)] if ui_scale is not None else [])]
 
 
-def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk_world=None, camera_collision=None, graybox=False, dev_speed=1, dev_spawn="8000,8000", dev_tour=False, prediction=False, saved_terrain=None, targeting=False, combat_catalog=None, feedback=None, persistence=False, account_login=False, character_stats=None, item_catalog=None, status_catalog=None, creature_profile=None, navigation=None, reward_catalog=None, progression_catalog=None, window_size=None, fullscreen=False, quest_catalog=None, dialogue_catalog=None, guide_position=None, vendor_catalog=None, quest_lifecycle=False, quest_turn_in_xp=None, creature_retaliation=None, player_respawn=None, creature_asset=None, dodge_profile=None, classic=False, controls_file=None, melee_weapons=None, physical_definitions=None, physical_stats=None, white_melee=None, ability_starting=None, ability_damage=None, combat_membership=None, creature_credit=None, creature_reset=None, quest_journal=False, creature_threat=None, public_creature_attacks=False, public_avatar_life=False, quest_areas=None, creature_loot=False, quest_items=False, quest_loot=False, document_catalog=None, quest_item_rewards=None, fantasy_ui=None):
+def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk_world=None, camera_collision=None, graybox=False, dev_speed=1, dev_spawn="8000,8000", dev_tour=False, prediction=False, saved_terrain=None, targeting=False, combat_catalog=None, feedback=None, persistence=False, account_login=False, character_stats=None, item_catalog=None, status_catalog=None, creature_profile=None, navigation=None, reward_catalog=None, progression_catalog=None, window_size=None, fullscreen=False, quest_catalog=None, dialogue_catalog=None, guide_position=None, vendor_catalog=None, quest_lifecycle=False, quest_turn_in_xp=None, creature_retaliation=None, player_respawn=None, creature_asset=None, dodge_profile=None, classic=False, controls_file=None, melee_weapons=None, physical_definitions=None, physical_stats=None, white_melee=None, ability_starting=None, ability_damage=None, combat_membership=None, creature_credit=None, creature_reset=None, quest_journal=False, creature_threat=None, public_creature_attacks=False, public_avatar_life=False, quest_areas=None, creature_loot=False, quest_items=False, quest_loot=False, document_catalog=None, quest_item_rewards=None, fantasy_ui=None, ui_scale=None):
     if document_catalog is not None and (not quest_journal or quest_catalog is None or item_catalog is None):
         raise ValueError('Documents require journal, quest and inventory catalogues')
-    ui_options = fantasy_ui_options(fantasy_ui, classic, combat_catalog)
+    ui_options = fantasy_ui_options(fantasy_ui, classic, combat_catalog, ui_scale)
     window_size = window_size or os.environ.get('THEIA_WINDOW_SIZE', '1920x1200')
     match = re.fullmatch(r'(\d+)x(\d+)', window_size)
     if not match or not (640 <= int(match[1]) <= 7680 and 480 <= int(match[2]) <= 4320):
@@ -333,6 +337,7 @@ def main(argv=None):
     parser.add_argument('--fullscreen', action='store_true', help='Borderless fullscreen on the current monitor; F11 toggles in game')
     parser.add_argument('--window-size', help='Client window WIDTHxHEIGHT (default 1920x1200, or THEIA_WINDOW_SIZE)')
     parser.add_argument('--fantasy-ui', type=Path, help='Opt-in local Fantasy Warrior HUD directory; Classic combat only; presentation candidate')
+    parser.add_argument('--ui-scale', type=float, help='Optional Bevy UI scale, 0.75 to 1.5; requires --fantasy-ui')
     parser.add_argument('--players', type=Path, help='Player assets; defaults to POLYGON for graybox')
     parser.add_argument('--prediction', action=argparse.BooleanOptionalAction, default=None, help='Movement prediction (default for graybox; --no-prediction retains server-pose interpolation)')
     parser.add_argument('--account-login', action='store_true', help='System-browser OIDC and owned character entry; requires configured loopback provider/database')
@@ -503,7 +508,7 @@ def main(argv=None):
         prediction = graybox if args.prediction is None else args.prediction
         players = args.players or Path('build/synty-character-canonical-stage' if graybox else 'build/reference-scene')
         play(args.world.resolve() if args.world else None, players.resolve(), args.clients, args.binaries.resolve(), args.tick_hz, args.transport,
-             args.chunk_world.resolve() if args.chunk_world else None, args.camera_collision, graybox, args.dev_speed, args.dev_spawn, args.dev_tour, prediction, saved_terrain, args.targeting, combat_catalog, feedback, args.persistence, args.account_login, character_stats, item_catalog, status_catalog, creature_profile, navigation, reward_catalog, progression_catalog, args.window_size, args.fullscreen, quest_catalog, dialogue_catalog, guide_position, vendor_catalog, args.quest_lifecycle, args.quest_turn_in_xp.resolve() if args.quest_turn_in_xp else None, args.creature_retaliation.resolve() if args.creature_retaliation else None, args.player_respawn.resolve() if args.player_respawn else None, args.creature_asset.resolve() if args.creature_asset else None, args.dodge_profile.resolve() if args.dodge_profile else None, args.classic, args.controls_file, args.melee_weapons.resolve() if args.melee_weapons else None, args.physical_definitions.resolve() if args.physical_definitions else None, args.physical_stats.resolve() if args.physical_stats else None, args.white_melee.resolve() if args.white_melee else None, args.ability_starting.resolve() if args.ability_starting else None, args.ability_damage.resolve() if args.ability_damage else None, args.combat_membership.resolve() if args.combat_membership else None, args.creature_credit.resolve() if args.creature_credit else None, args.creature_reset.resolve() if args.creature_reset else None, args.quest_journal, args.creature_threat.resolve() if args.creature_threat else None, args.public_creature_attacks, args.public_avatar_life, args.quest_areas.resolve() if args.quest_areas else None, args.creature_loot, args.quest_items, args.quest_loot, args.document_catalog.resolve() if args.document_catalog else None, args.quest_item_rewards.resolve() if args.quest_item_rewards else None, args.fantasy_ui)
+             args.chunk_world.resolve() if args.chunk_world else None, args.camera_collision, graybox, args.dev_speed, args.dev_spawn, args.dev_tour, prediction, saved_terrain, args.targeting, combat_catalog, feedback, args.persistence, args.account_login, character_stats, item_catalog, status_catalog, creature_profile, navigation, reward_catalog, progression_catalog, args.window_size, args.fullscreen, quest_catalog, dialogue_catalog, guide_position, vendor_catalog, args.quest_lifecycle, args.quest_turn_in_xp.resolve() if args.quest_turn_in_xp else None, args.creature_retaliation.resolve() if args.creature_retaliation else None, args.player_respawn.resolve() if args.player_respawn else None, args.creature_asset.resolve() if args.creature_asset else None, args.dodge_profile.resolve() if args.dodge_profile else None, args.classic, args.controls_file, args.melee_weapons.resolve() if args.melee_weapons else None, args.physical_definitions.resolve() if args.physical_definitions else None, args.physical_stats.resolve() if args.physical_stats else None, args.white_melee.resolve() if args.white_melee else None, args.ability_starting.resolve() if args.ability_starting else None, args.ability_damage.resolve() if args.ability_damage else None, args.combat_membership.resolve() if args.combat_membership else None, args.creature_credit.resolve() if args.creature_credit else None, args.creature_reset.resolve() if args.creature_reset else None, args.quest_journal, args.creature_threat.resolve() if args.creature_threat else None, args.public_creature_attacks, args.public_avatar_life, args.quest_areas.resolve() if args.quest_areas else None, args.creature_loot, args.quest_items, args.quest_loot, args.document_catalog.resolve() if args.document_catalog else None, args.quest_item_rewards.resolve() if args.quest_item_rewards else None, args.fantasy_ui, args.ui_scale)
 
 
 if __name__ == '__main__':

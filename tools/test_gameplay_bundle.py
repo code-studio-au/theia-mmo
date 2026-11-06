@@ -578,6 +578,21 @@ class GameplayBundle(unittest.TestCase):
         self.assertEqual(play.fantasy_ui_options(None, False, None), [])
         self.assertIsNone(args['dodge_profile'])
 
+    def test_fantasy_ui_scale_handoff_and_refusal_remain_headless(self):
+        directory = self.root / 'scaled HUD'
+        directory.mkdir()
+        with patch.object(play, 'play') as launch, redirect_stdout(io.StringIO()):
+            play.main(['--gameplay-manifest', str(self.manifest), '--gameplay-validator', str(self.validator), '--classic', '--fantasy-ui', str(directory), '--ui-scale', '1.25'])
+        args = PLAY_SIGNATURE.bind(*launch.call_args.args).arguments
+        self.assertEqual(args['ui_scale'], 1.25)
+        self.assertEqual(play.fantasy_ui_options(directory, True, args['combat_catalog'], args['ui_scale']), ['--fantasy-ui', str(directory.resolve()), '--ui-scale', '1.25'])
+        with self.assertRaisesRegex(ValueError, 'requires --fantasy-ui'):
+            play.fantasy_ui_options(None, True, args['combat_catalog'], 1.25)
+        for value in [float('nan'), float('inf'), .74, 1.51]:
+            with self.subTest(value=value), patch.object(play.subprocess, 'Popen') as child, self.assertRaisesRegex(ValueError, 'UI scale'):
+                play.play(None, Path('.'), 1, Path('.'), classic=True, combat_catalog=Path('abilities.json'), fantasy_ui=directory, ui_scale=value)
+            child.assert_not_called()
+
     def test_fantasy_ui_refuses_bad_mode_or_missing_directory_without_children(self):
         base = dict(world=None, players=Path('.'), clients=1, binaries=Path('.'), fantasy_ui=self.root / 'missing HUD')
         for change in [dict(), dict(classic=True), dict(classic=True, combat_catalog=Path('abilities.json'))]:

@@ -1,3 +1,13 @@
+## 2026-11-06 — preferred UI scale with bounded layout fitting
+
+Use ordinary Bevy `UiScale` for the opt-in fantasy skin. Accept a 75–150% client
+preference, default 100%; fit down when the current window cannot retain the
+1280×720 logical layout and restore the preference as space returns. Keep world
+coordinates, camera and window dimensions independent. Windowless physical-pixel
+exports and a headless Window-component test establish rendering/fit behavior;
+live pointer, native resize, DPI and complete-pane checks remain pending while
+the user uses the desktop. [Implementation and exact scope](UI_FANTASY_WARRIOR.md#preferred-ui-scale-and-resize-fitting).
+
 ## 2026-11-06 — general UI with local Fantasy Warrior art
 
 Move beyond quest mechanics to general Classic-style UI, following the user's

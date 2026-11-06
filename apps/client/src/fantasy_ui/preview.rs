@@ -22,6 +22,8 @@ use std::{
 struct Capture {
     directory: PathBuf,
     size: UVec2,
+    ui_scale: f32,
+    preferred_scale: f32,
     target: Handle<Image>,
     started: Instant,
     ready_frames: u32,
@@ -46,9 +48,9 @@ struct Layout<'w, 's> {
     feedback: Query<'w, 's, FeedbackGeometry<'static>>,
 }
 pub(crate) fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
-    if args.len() != 6 || args[2] != "--output" || args[4] != "--size" {
+    if !(6..=8).contains(&args.len()) || args[2] != "--output" || args[4] != "--size" {
         return Err(
-            "Expected --preview-fantasy-ui HUD_DIRECTORY --output DIRECTORY --size WIDTHxHEIGHT"
+            "Expected --preview-fantasy-ui HUD_DIRECTORY --output DIRECTORY --size WIDTHxHEIGHT [--ui-scale FACTOR]"
                 .into(),
         );
     }
@@ -58,6 +60,12 @@ pub(crate) fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     let size = UVec2::new(w.parse()?, h.parse()?);
     if !(640..=3840).contains(&size.x) || !(480..=2160).contains(&size.y) {
         return Err("Preview size outside 640x480 to 3840x2160".into());
+    }
+    let mut scale_args = args[6..].to_vec();
+    let preferred_scale = super::parse_scale(&mut scale_args, true)?;
+    let ui_scale = super::fit_scale(preferred_scale, size.as_vec2());
+    if !scale_args.is_empty() {
+        return Err("Unexpected preview arguments".into());
     }
     let output = PathBuf::from(&args[3]);
     if output.join("hud.png").exists() || output.join("report.json").exists() {
@@ -80,6 +88,7 @@ pub(crate) fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
         1. / 60.,
     )))
     .insert_resource(ClearColor(Color::srgb(0.10, 0.12, 0.14)));
+    app.insert_resource(bevy::ui::UiScale(ui_scale));
     super::load(&mut app);
     let target = app
         .world_mut()
@@ -129,6 +138,8 @@ pub(crate) fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
         .insert_resource(Capture {
             directory: output,
             size,
+            ui_scale,
+            preferred_scale,
             target,
             started: Instant::now(),
             ready_frames: 0,
@@ -204,8 +215,8 @@ fn capture(
         .buttons
         .iter()
         .map(|(slot, node, transform)| {
-            let point = transform.affine().translation * node.inverse_scale_factor();
-            let size = node.size() * node.inverse_scale_factor();
+            let point = transform.affine().translation;
+            let size = node.size();
             assert!(
                 size.x > 0. && size.y > 0.,
                 "UI must actually lay out on the offscreen camera"
@@ -216,6 +227,11 @@ fn capture(
                     && point.x + size.x / 2. <= run.size.x as f32
                     && point.y + size.y / 2. <= run.size.y as f32,
                 "Action outside offscreen extent"
+            );
+            assert!(
+                (size.x - super::SLOT * run.ui_scale).abs() <= 1.
+                    && (size.y - super::SLOT * run.ui_scale).abs() <= 1.,
+                "Action must use the selected Bevy UI scale"
             );
             serde_json::json!({"slot":slot.0,"centre":point.to_array(),"size":size.to_array()})
         })
@@ -229,11 +245,11 @@ fn capture(
     let mut cast = None;
     let mut tooltips = Vec::new();
     for (node, transform, tooltip, is_cast) in &layout.feedback {
-        let size = node.size() * node.inverse_scale_factor();
+        let size = node.size();
         if size.min_element() <= 0. {
             continue;
         }
-        let centre = transform.affine().translation * node.inverse_scale_factor();
+        let centre = transform.affine().translation;
         let rect = Rect::from_center_size(centre, size);
         if is_cast {
             cast = Some(rect);
@@ -257,12 +273,14 @@ fn capture(
     run.requested = true;
     let directory = run.directory.clone();
     let size = run.size;
+    let ui_scale = run.ui_scale;
+    let preferred_scale = run.preferred_scale;
     let gpu = serde_json::json!({"name":adapter.name,"backend":format!("{:?}",adapter.backend),"device_id":adapter.device});
     commands.spawn(Screenshot::image(run.target.clone())).observe(move |event: On<ScreenshotCaptured>, mut exit: MessageWriter<AppExit>| {
         assert_eq!([event.image.width(), event.image.height()], [size.x,size.y]);
         event.image.clone().try_into_dynamic().unwrap().save(directory.join("hud.png")).unwrap();
         std::fs::write(directory.join("report.json"),serde_json::to_vec_pretty(&serde_json::json!({
-                "completed":true,"offscreen":true,"windows":0,"fixture":true,"extent":[size.x,size.y],"gpu":gpu,"buttons":buttons,"glyphs":glyphs,"feedback":feedback,
+                "completed":true,"ui_scale":ui_scale,"preferred_ui_scale":preferred_scale,"geometry_units":"physical_pixels","offscreen":true,"windows":0,"fixture":true,"extent":[size.x,size.y],"gpu":gpu,"buttons":buttons,"glyphs":glyphs,"feedback":feedback,
             "scope":"Actual Bevy combat HUD widgets with fixture values; no desktop input, account, network, world or live gameplay qualification"
         })).unwrap()).unwrap();
         exit.write(AppExit::Success);

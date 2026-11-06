@@ -2,9 +2,9 @@ General UI candidate, 6 November 2026 (P2-14 / P5-13 / P5-19):
 The user moved beyond quests to a WoW-like interface. An opt-in standard Bevy
 Fantasy Warrior skin now provides compact icon actions, a unified target frame,
 fantasy fonts, shared pane styling and an optional client-only launcher flag.
-Four windowless Vulkan exports through 3840×2160 also prove tooltip/feedback
-separation; 159 client and 50 launcher cases, formatting, strict Clippy and build
-pass. [Scope, assets and remaining gates](../UI_FANTASY_WARRIOR.md).
+Baseline and six scaled windowless Vulkan cases through 3840×2160 prove
+button bounds, tooltip/feedback separation and preferred-scale fitting.
+161 client and 51 launcher cases, formatting, strict Clippy and build pass. [Scope, assets and remaining gates](../UI_FANTASY_WARRIOR.md).
 Normal connected/pane/input qualification and default adoption remain pending.
 **No desktop/mouse tests while the user works. Local commits only; no push.**
 Earlier desktop authorizations below are historical and superseded.

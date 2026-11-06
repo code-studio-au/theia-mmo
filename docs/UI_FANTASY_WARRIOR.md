@@ -64,7 +64,7 @@ Bevy asset source. Existing terrain/player/creature asset roots are preserved.
 - Player health/mana/life at upper left; the selected-target heading and health
   share one frame alongside it. The heading still comes from the existing
   authoritative-selection presenter; the skin does not resolve a new target.
-- Twelve familiar bottom action positions with compact 56 px square framed icons,
+- Twelve familiar bottom action positions with compact 56 logical-pixel square framed icons,
   existing hotkey labels, bounded cooldown strips and hover descriptions/costs/
   authoritative rejection messages. Tooltip geometry stays clear of cast/rejection
   feedback; the windowless exporter checks their separation. Only the existing first five supported action
@@ -129,8 +129,9 @@ Before default adoption, qualify the complete normal connected HUD and panels at
 1280×720, 1920×1200 and 3440×1440, including actual hover/click/camera ownership,
 panel/Escape priority, long authored text, item capacity, reader and disconnect
 states. **Desktop/mouse checks remain prohibited by the user**; windowless GPU
-exports do not replace that gate. Native Windows, arbitrary DPI/accessibility
-scaling, performance and full-theme integration are not established by this slice.
+exports do not replace that gate. Native Windows, OS DPI/accessibility certification, performance and full-theme
+integration are not established by this slice. Controlled UI scale checks below
+cover GPU fixture layout, not live pointer behavior.
 
 Subsequent general UI slices can improve backpack item icons and tooltips,
 add a consistent window header/
@@ -170,3 +171,48 @@ strict workspace/all-target Clippy, 159 client cases and build pass again after
 the refinement. The real launcher CLI also refuses a missing source directory
 before any child startup. Earlier v3 evidence belongs to the first local skin
 checkpoint. No desktop, account or live gameplay qualification is claimed.
+
+
+## Preferred UI scale and resize fitting
+
+The client and normal launcher accept optional `--ui-scale FACTOR` beside
+`--fantasy-ui`, with a default preference of 1.0 and accepted preferences from
+0.75 to 1.5. Nonfinite, out-of-range, missing/repeated client values and a scale
+without the skin refuse before client App creation; launcher validation rejects
+invalid factors before child startup. The same option works at the end of the
+windowless preview command.
+
+The implementation uses Bevy's `UiScale`, with a preferred value kept separate
+from the applied value. The applied scale is the lesser of the preference,
+window width / 1280 and window height / 720. Resizing/fullscreen can therefore
+reduce the interface to retain the established logical layout; it restores the
+preference when room returns. It never resizes a window, moves the camera or
+changes world/gameplay units. A minimized/zero-sized window does not set a zero
+UI scale. Very small windows can reduce below the requested 75% minimum; normal
+1280×720 and larger review sizes remain the supported readability targets.
+This is a client CLI preference, not a saved in-game settings screen.
+
+| Windowless extent | Preferred scale | Applied scale | Actual action size |
+| --- | --- | --- | --- |
+| 1280×720 | Default 1.0 | 1.0 | 56×56 px |
+| 1280×720 | 0.75 | 0.75 | 42×42 px |
+| 1280×720 | 1.5 | 1.0 (fit) | 56×56 px |
+| 1920×1200 | 1.25 | 1.25 | 70×70 px |
+| 3440×1440 | 1.25 | 1.25 | 70×70 px |
+| 3840×2160 | 1.5 | 1.5 | 84×84 px |
+
+All six final `scaled-v2-*` exports pass on the recorded RX 7900 XTX Vulkan
+device, with actual physical-pixel bounds, visible glyphs, separated tooltip/
+feedback rectangles, zero OS windows and no WARN/ERROR diagnostics. Reports now
+record preferred/applied scale and declare geometry units as physical pixels.
+The preliminary `scaled-v1-*` captures predate resize fitting and are diagnostic
+iterations. The 1280×720 / 150% case motivated retaining the logical layout for
+other panes as well as the combat preview.
+
+Formatting, strict workspace/all-target Clippy, **161 client tests including the
+local licensed-art case**, **51 launcher/bundle/environment tests** and the client
+build pass. A headless ECS Window-component test proves shrink/restore behavior
+without installing Winit or creating an OS window. It is not a native window/
+monitor/DPI test. Full connected pane layout and scaled pointer interactions
+remain pending. Existing OS-test traces assumed UI scale 1.0; their UI-to-window
+coordinate conversion must be updated before nondefault-scale pointer checks.

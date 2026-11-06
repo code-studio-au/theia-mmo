@@ -85,6 +85,58 @@ pub(crate) fn parse(
     validate(&root)?;
     Ok(Some(root))
 }
+pub(crate) fn parse_scale(
+    args: &mut Vec<String>,
+    enabled: bool,
+) -> Result<f32, Box<dyn std::error::Error>> {
+    let Some(i) = args.iter().position(|arg| arg == "--ui-scale") else {
+        return Ok(1.);
+    };
+    args.remove(i);
+    if !enabled || i >= args.len() || args[i].starts_with("--") {
+        return Err("--ui-scale requires --fantasy-ui and a factor from 0.75 to 1.5".into());
+    }
+    let scale: f32 = args.remove(i).parse()?;
+    if !scale.is_finite()
+        || !(0.75..=1.5).contains(&scale)
+        || args.iter().any(|arg| arg == "--ui-scale")
+    {
+        return Err("Choose --ui-scale once, from 0.75 to 1.5".into());
+    }
+    Ok(scale)
+}
+#[derive(Resource)]
+struct PreferredScale(f32);
+/// Retain a 1280x720 logical layout when resizing/fullscreen reduces space.
+/// This changes only Bevy's UI scale, never the window, camera or world frame.
+pub(crate) fn fit_scale(preferred: f32, viewport: Vec2) -> f32 {
+    if !viewport.is_finite() || viewport.min_element() <= 0. {
+        return preferred;
+    }
+    preferred.min(viewport.x / 1280.).min(viewport.y / 720.)
+}
+pub(crate) fn install_scale(app: &mut App, preferred: f32) {
+    app.insert_resource(PreferredScale(preferred))
+        .insert_resource(bevy::ui::UiScale(preferred))
+        .add_systems(Update, fit_window);
+}
+fn fit_window(
+    preferred: Res<PreferredScale>,
+    windows: Query<&Window>,
+    mut scale: ResMut<bevy::ui::UiScale>,
+) {
+    let Ok(window) = windows.single() else {
+        return;
+    };
+    let viewport = Vec2::new(window.width(), window.height());
+    if viewport.min_element() <= 0. {
+        return;
+    }
+    let value = fit_scale(preferred.0, viewport);
+    if scale.0 != value {
+        scale.0 = value;
+    }
+}
 fn validate(root: &Path) -> Result<(), Box<dyn std::error::Error>> {
     for (name, expected) in FILES
         .into_iter()
@@ -208,6 +260,80 @@ pub(crate) fn decoration(image: Handle<Image>) -> impl Bundle {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn scale_is_optional_finite_bounded_and_cannot_enable_a_skin_implicitly() {
+        assert_eq!(parse_scale(&mut Vec::new(), false).unwrap(), 1.);
+        assert!(parse_scale(&mut vec!["--ui-scale".into(), "1.25".into()], false).is_err());
+        for value in [
+            "NaN",
+            "inf",
+            "-inf",
+            "0",
+            "0.74",
+            "1.51",
+            "200",
+            "--classic",
+        ] {
+            assert!(
+                parse_scale(&mut vec!["--ui-scale".into(), value.into()], true).is_err(),
+                "{value}"
+            );
+        }
+        assert!(parse_scale(&mut vec!["--ui-scale".into()], true).is_err());
+        assert!(
+            parse_scale(
+                &mut vec![
+                    "--ui-scale".into(),
+                    "1".into(),
+                    "--ui-scale".into(),
+                    "1.25".into()
+                ],
+                true
+            )
+            .is_err()
+        );
+        for value in ["0.75", "1", "1.25", "1.5"] {
+            let mut args = vec!["--classic".into(), "--ui-scale".into(), value.into()];
+            assert_eq!(
+                parse_scale(&mut args, true).unwrap(),
+                value.parse::<f32>().unwrap()
+            );
+            assert_eq!(args, ["--classic"]);
+        }
+    }
+    #[test]
+    fn preferred_scale_fits_a_smaller_window_then_restores_on_resize_without_changing_it() {
+        let mut app = App::new();
+        install_scale(&mut app, 1.5);
+        let window = app
+            .world_mut()
+            .spawn(Window {
+                resolution: bevy::window::WindowResolution::new(1280, 720)
+                    .with_scale_factor_override(1.),
+                ..default()
+            })
+            .id();
+        app.update();
+        assert_eq!(app.world().resource::<bevy::ui::UiScale>().0, 1.);
+        assert_eq!(app.world().get::<Window>(window).unwrap().width(), 1280.);
+        app.world_mut()
+            .get_mut::<Window>(window)
+            .unwrap()
+            .resolution
+            .set(3840., 2160.);
+        app.update();
+        assert_eq!(app.world().resource::<bevy::ui::UiScale>().0, 1.5);
+        app.world_mut()
+            .get_mut::<Window>(window)
+            .unwrap()
+            .resolution
+            .set(960., 540.);
+        app.update();
+        assert_eq!(app.world().resource::<bevy::ui::UiScale>().0, 0.75);
+        assert_eq!(fit_scale(1.25, Vec2::new(3440., 1440.)), 1.25);
+        assert_eq!(fit_scale(1.5, Vec2::ZERO), 1.5);
+        assert_eq!(fit_scale(1.5, Vec2::new(f32::NAN, 720.)), 1.5);
+    }
     #[test]
     fn absent_skin_preserves_arguments_and_invalid_requests_fail_before_app_creation() {
         let mut args = vec!["--classic".into()];

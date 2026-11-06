@@ -239,6 +239,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     let creature_asset = creature_visual::parse(&mut args, patrol_binding.is_some())?;
     let fantasy_ui = fantasy_ui::parse(&mut args, classic && combat_catalog.is_some())?;
+    let ui_scale = fantasy_ui::parse_scale(&mut args, fantasy_ui.is_some())?;
     let player_life_profile = player_life::parse(
         &mut args,
         character_stats.as_ref().map(|(bytes, _)| bytes.as_slice()),
@@ -1293,6 +1294,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .add_systems(FixedUpdate, movement::move_local_pawn);
     if fantasy_skin {
+        fantasy_ui::install_scale(&mut app, ui_scale);
         fantasy_ui::load(&mut app);
     }
     if let Some(controller) = classic_controller {
