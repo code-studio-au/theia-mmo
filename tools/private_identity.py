@@ -32,7 +32,7 @@ class _NoRedirect(urllib.request.HTTPRedirectHandler):
 
 
 class Identity:
-    def __init__(self, output, sdk, *, users=1, token_seconds=60):
+    def __init__(self, output, sdk, *, users=1, token_seconds=60, interactive=False):
         self.output = Path(output).resolve()
         self.sdk = Path(sdk).resolve()
         self.server = None
@@ -40,8 +40,9 @@ class Identity:
         self.password = secrets.token_urlsafe(32)
         if not 1 <= users <= 4:
             raise ValueError('Owned identity fixture supports 1..4 synthetic users')
-        if type(token_seconds) is not int or not 60 <= token_seconds <= 300:
-            raise ValueError('Owned identity token lifetime must be 60..300 seconds')
+        maximum = 43200 if interactive else 300
+        if type(interactive) is not bool or type(token_seconds) is not int or not 60 <= token_seconds <= maximum:
+            raise ValueError('Owned identity token lifetime outside its explicit test/play policy')
         self.token_seconds = token_seconds
         self.username = 'theia-synthetic-user'
         self.users = [(self.username, self.password)]+[(f'theia-synthetic-user-{i+1}', secrets.token_urlsafe(32)) for i in range(1, users)]

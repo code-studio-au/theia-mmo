@@ -40,7 +40,13 @@ pub struct Config {
     pub listen: SocketAddr,
     pub issuer: String,
     pub client_id: String,
+    #[serde(default = "default_session_seconds")]
+    pub session_seconds: u64,
 }
+pub const fn default_session_seconds() -> u64 {
+    300
+}
+
 /// Static/redacted errors only. Never format provider/SQL errors, bearer headers,
 /// raw callback queries or request bodies in responses/diagnostics.
 #[derive(Clone, Copy)]
@@ -329,6 +335,8 @@ impl AccountService {
         if !config.listen.ip().is_loopback() || world == [0; 32] {
             return Err(ApiError::bad());
         }
+        let sessions = Sessions::with_max_age(Duration::from_secs(config.session_seconds))
+            .map_err(|_| ApiError::bad())?;
         let listener = TcpListener::bind(config.listen)
             .await
             .map_err(|_| ApiError::internal())?;
@@ -346,7 +354,7 @@ impl AccountService {
         let state = Arc::new(Inner {
             provider,
             publisher,
-            sessions: Arc::new(Mutex::new(Sessions::default())),
+            sessions: Arc::new(Mutex::new(sessions)),
             game: Mutex::new(None),
             flows: Mutex::new(Flows::default()),
             request_slots: Arc::new(Semaphore::new(16)),
@@ -607,5 +615,31 @@ impl AccountService {
         database: watch::Receiver<WorkerStatus>,
     ) -> Result<Stats> {
         transport::run(self, shutdown, database).await
+    }
+}
+
+#[cfg(test)]
+mod session_config_tests {
+    use super::*;
+    #[test]
+    fn old_account_configuration_retains_default_and_explicit_lifetimes_are_checked() {
+        let mut raw = serde_json::json!({"listen":"127.0.0.1:0","issuer":"http://127.0.0.1:123/realm","client_id":"native"});
+        let config: Config = serde_json::from_value(raw.clone()).unwrap();
+        assert_eq!(config.session_seconds, 300);
+        for seconds in [60, 3600, 43200] {
+            raw["session_seconds"] = serde_json::json!(seconds);
+            let config: Config = serde_json::from_value(raw.clone()).unwrap();
+            assert!(
+                Sessions::<u64>::with_max_age(Duration::from_secs(config.session_seconds)).is_ok()
+            );
+        }
+        for value in [
+            serde_json::json!(-1),
+            serde_json::json!(1.5),
+            serde_json::json!("3600"),
+        ] {
+            raw["session_seconds"] = value;
+            assert!(serde_json::from_value::<Config>(raw.clone()).is_err());
+        }
     }
 }

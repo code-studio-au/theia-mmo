@@ -1,3 +1,11 @@
+## 2026-11-06 — explicit bounded local playtest session lifetime
+
+Keep the existing five-minute default. Permit an explicit server session policy
+of 60 seconds to 12 hours, always capped by signed identity expiry and retaining
+immediate revocation. Use a one-hour policy only for an intentionally configured
+local playtest issuer/session. Keep automatic renewal separate; don't bypass
+expiry in the game client. [Implementation and checks](AUTHENTICATED_ADMISSION.md).
+
 ## 2026-11-06 — session-only interface size controls
 
 Use ordinary Bevy buttons to adjust the existing preferred UI scale in game.

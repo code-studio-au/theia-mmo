@@ -13,6 +13,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let (publisher, worker) = Worker::start(store);
     let status = worker.subscribe_status();
     let config = Config {
+        session_seconds: std::env::var("THEIA_TEST_ACCOUNT_SESSION_SECONDS")
+            .ok()
+            .map(|v| v.parse())
+            .transpose()?
+            .unwrap_or_else(theia_server::accounts::default_session_seconds),
         listen: std::env::var("THEIA_TEST_ACCOUNT_BIND")?.parse()?,
         issuer: std::env::var("THEIA_TEST_OIDC_ISSUER")?,
         client_id: std::env::var("THEIA_TEST_OIDC_CLIENT")?,

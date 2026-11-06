@@ -1,3 +1,12 @@
+Longer local playtest sessions, 6 November 2026 (P2-02 / P3-01 / P3-03):
+An explicit bounded server lifetime can now extend an intentionally configured
+local session beyond five minutes, capped by signed identity expiry. The default
+remains 300 seconds; renewal is separate. 40 auth/server Rust cases, 14 focused
+Python checks and actual Keycloak/PostgreSQL HTTP login/logout pass; strict
+workspace/all-target Clippy and builds pass. No desktop input was sent.
+[Policy and exact evidence](../AUTHENTICATED_ADMISSION.md).
+Local commits only, no push. The user's earlier frozen play session has closed.
+
 General UI reference candidate, 6 November 2026 (P2-14 / P5-13 / P5-19):
 The optional Fantasy Warrior skin now follows the user's AntonilzUI reference:
 compact lower-centre player/target frames, twelve 44-pixel primary slots,

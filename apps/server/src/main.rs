@@ -959,6 +959,12 @@ async fn main() -> Result<()> {
             .map_err(|_| "Account login requires THEIA_DATABASE_URL")?;
         let store = theia_persistence::Store::connect_loopback(&url, realm).await?;
         let config = theia_server::accounts::Config {
+            session_seconds: std::env::var("THEIA_ACCOUNT_SESSION_SECONDS")
+                .ok()
+                .map(|value| value.parse::<u64>())
+                .transpose()
+                .map_err(|_| "Invalid THEIA_ACCOUNT_SESSION_SECONDS")?
+                .unwrap_or_else(theia_server::accounts::default_session_seconds),
             listen: std::env::var("THEIA_ACCOUNT_BIND")
                 .unwrap_or_else(|_| "127.0.0.1:5050".into())
                 .parse()?,

@@ -45,6 +45,7 @@ async fn main() -> theia_network::Result<()> {
     )
     .await?;
     let config = Config {
+        session_seconds: theia_server::accounts::default_session_seconds(),
         listen: std::env::var("THEIA_TEST_ACCOUNT_BIND")?.parse()?,
         issuer: std::env::var("THEIA_TEST_OIDC_ISSUER")?,
         client_id: std::env::var("THEIA_TEST_OIDC_CLIENT")?,

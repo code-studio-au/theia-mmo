@@ -57,16 +57,30 @@ struct Entry<Owner> {
 pub struct Sessions<Owner> {
     entries: BTreeMap<[u8; 32], Entry<Owner>>,
     stats: SessionStats,
+    max_age: Duration,
 }
 impl<Owner: Clone + Eq> Default for Sessions<Owner> {
     fn default() -> Self {
         Self {
             entries: BTreeMap::new(),
             stats: SessionStats::default(),
+            max_age: MAX_AGE,
         }
     }
 }
 impl<Owner: Clone + Eq> Sessions<Owner> {
+    /// Explicit server policy; defaults remain five minutes. Identity expiry is
+    /// still an independent upper bound, and revocation applies immediately.
+    pub fn with_max_age(max_age: Duration) -> Result<Self> {
+        if !(Duration::from_secs(60)..=Duration::from_secs(12 * 60 * 60)).contains(&max_age) {
+            return Err(Error::Configuration);
+        }
+        Ok(Self {
+            max_age,
+            ..Self::default()
+        })
+    }
+
     pub fn stats(&self) -> &SessionStats {
         &self.stats
     }
@@ -115,7 +129,7 @@ impl<Owner: Clone + Eq> Sessions<Owner> {
             return Err(Error::Session);
         }
         self.revoke_owner(&owner);
-        let deadline = now + MAX_AGE.min(Duration::from_secs(remaining));
+        let deadline = now + self.max_age.min(Duration::from_secs(remaining));
         self.entries.insert(key, Entry { owner, deadline });
         self.stats.issued = self.stats.issued.saturating_add(1);
         Ok(SessionSecret(
@@ -206,6 +220,46 @@ mod tests {
             subject: "unit-subject".into(),
             expires_unix,
         }
+    }
+    #[test]
+    fn explicit_longer_sessions_still_obey_verified_expiry_and_revocation() {
+        let now = Instant::now();
+        let mut sessions = Sessions::with_max_age(Duration::from_secs(3600)).unwrap();
+        let credential = sessions.issue_at(&identity(4100), 7u64, now, 100).unwrap();
+        assert_eq!(
+            sessions
+                .authenticate_at(credential.expose_secret(), now + Duration::from_secs(301))
+                .unwrap(),
+            7
+        );
+        assert!(
+            sessions
+                .authenticate_at(credential.expose_secret(), now + Duration::from_secs(3600))
+                .is_err()
+        );
+        let short = sessions.issue_at(&identity(110), 8, now, 100).unwrap();
+        assert!(
+            sessions
+                .authenticate_at(short.expose_secret(), now + Duration::from_secs(10))
+                .is_err()
+        );
+        let revoked = sessions.issue_at(&identity(4100), 9, now, 100).unwrap();
+        sessions.revoke_owner(&9);
+        assert!(
+            sessions
+                .authenticate_at(revoked.expose_secret(), now)
+                .is_err()
+        );
+    }
+    #[test]
+    fn server_session_policy_has_explicit_finite_bounds_and_legacy_default() {
+        for seconds in [0, 59, 43201, u64::MAX] {
+            assert!(Sessions::<u64>::with_max_age(Duration::from_secs(seconds)).is_err());
+        }
+        for seconds in [60, 300, 3600, 43200] {
+            assert!(Sessions::<u64>::with_max_age(Duration::from_secs(seconds)).is_ok());
+        }
+        assert_eq!(Sessions::<u64>::default().max_age, Duration::from_secs(300));
     }
     #[test]
     fn credentials_expire_revoke_and_supersede_without_leaking_secrets() {

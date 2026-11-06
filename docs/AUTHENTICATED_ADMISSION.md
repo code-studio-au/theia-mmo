@@ -1,3 +1,43 @@
+# Explicit session lifetime for local playtests — 6 November 2026
+
+P2-02 / P3-01 / P3-03. The default account session still lasts at most five
+minutes. A server operator can now explicitly choose 60–43,200 seconds with
+`THEIA_ACCOUNT_SESSION_SECONDS`, or `session_seconds` in account-service JSON
+configuration. Missing configuration retains 300 seconds; malformed/out-of-bound
+values refuse. Use 3600 seconds for an intentional one-hour local playtest.
+The chosen limit **never extends past the verified identity token's expiry**.
+Revocation, owner replacement, logout, capacity and ticket/lease checks remain
+unchanged. This is an absolute lifetime setting, not refresh-token support,
+sliding expiry or automatic renewal.
+
+The owned Keycloak helper retains its 60–300 second qualification bounds by
+default. Only explicit `interactive=True` permits a signed token lasting up to
+43,200 seconds. A longer local playtest needs **both** the server policy and the
+owned issuer's token lifetime configured; changing only one cannot extend the
+other. No production provider/account or gameplay catalogue is changed.
+
+Two new deterministic auth cases cover default/bounds, acceptance after 301
+seconds under a one-hour policy, expiry at 3600 seconds, shorter signed-token
+expiry and immediate revocation. A server configuration case checks old JSON and
+explicit values. **40 auth/server all-target Rust cases**, **12 launcher cases**
+and **2 helper lifetime cases** pass; formatting, strict workspace/all-target
+Clippy, server and account-service example builds pass. Existing 189 client cases
+and six settings GPU layouts remain the UI evidence.
+
+`build/ui-reference-20261106/session-policy-http-v2/verification.json` records an
+actual owned Keycloak 26.8.1 / PostgreSQL 16.15 / HTTP login using a 3600-second
+signed identity and server lifetime, successful character-list access, then
+logout and rejection of the same credential. The HTTP check did not wait an hour;
+long expiry boundaries are the deterministic monotonic-clock tests above. It
+opens no window and sends no desktop input. Its service/provider/database stop
+and private password files are removed. The first attempt timed out during
+PostgreSQL initial data synchronization while builds were active; after builds
+finished, the unchanged bounded fixture passed. No fsync/deadline was disabled.
+
+This does not replace the user's earlier frozen play build or migrate its test
+account. The earlier play session closed and its private database files remain
+outside Git. A separately launched longer session can use the new policy.
+
 # Read-only admission profile check — qualified 2026-10-31
 
 The selecting reservation now covers a bounded read-only exact-profile check
@@ -123,8 +163,9 @@ Build with the documented native SDK environment and
 `cargo build --release --locked --workspace`, then run
 `python3 tools/play.py --account-login` (optionally `--spell-feedback`). Signing
 keys remain in memory; session/token/ticket data must not be printed or committed.
-The initial session expires within five minutes or the earlier verified identity
-expiry; renewal is not implemented yet. Without these variables, ordinary
+By default the session expires within five minutes or the earlier verified
+identity expiry. An explicit bounded lifetime policy is now available as described
+above; renewal is not implemented yet. Without these variables, ordinary
 `python3 tools/play.py` continues to work as before.
 
 ## Original slice contract
