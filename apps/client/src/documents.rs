@@ -146,7 +146,11 @@ fn button(action: Action, label: &str) -> impl Bundle {
         Name::new(label.to_string()),
     )
 }
-fn setup(mut commands: Commands, panes: Query<Entity, With<inventory::DocumentActions>>) {
+fn setup(
+    mut commands: Commands,
+    panes: Query<Entity, With<inventory::DocumentActions>>,
+    skin: Option<Res<crate::fantasy_ui::Skin>>,
+) {
     for pane in &panes {
         commands.entity(pane).with_children(|parent| {
             parent
@@ -185,7 +189,16 @@ fn setup(mut commands: Commands, panes: Query<Entity, With<inventory::DocumentAc
             BackgroundColor(Color::srgba(0.035, 0.04, 0.06, 0.99)),
         ))
         .with_children(|panel| {
-            panel.spawn((Label::Title, text("", 20.)));
+            if skin.is_some() {
+                crate::fantasy_ui::window_header(
+                    panel,
+                    (Label::Title, text("", 20.)),
+                    button(Action::Close, "Close document"),
+                    "Close document",
+                );
+            } else {
+                panel.spawn((Label::Title, text("", 20.)));
+            }
             panel
                 .spawn((
                     BodyScroll,

@@ -136,7 +136,7 @@ fn button(action: Action, label: &str) -> impl Bundle {
         BackgroundColor(Color::srgb(0.08, 0.12, 0.16)),
     )
 }
-fn setup(mut commands: Commands) {
+fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
     commands
         .spawn((
             Pane,
@@ -159,7 +159,16 @@ fn setup(mut commands: Commands) {
             BackgroundColor(Color::srgba(0.02, 0.03, 0.05, 0.97)),
         ))
         .with_children(|panel| {
-            panel.spawn(text("Wolf loot"));
+            if skin.is_some() {
+                crate::fantasy_ui::window_header(
+                    panel,
+                    text("Wolf loot"),
+                    button(Action::Close, "Close loot"),
+                    "Close loot",
+                );
+            } else {
+                panel.spawn(text("Wolf loot"));
+            }
             for n in 0..MAX_VISIBLE_LIFE_CLAIMS {
                 panel
                     .spawn(button(Action::Take(n), "Take loot item"))

@@ -31,6 +31,8 @@ struct Capture {
 }
 #[derive(Component)]
 struct ProjectedAnchor;
+#[derive(Component)]
+struct HeaderFixture;
 const ANCHOR_RATIO: Vec2 = Vec2::new(0.73, 0.35);
 type AnchorGeometry<'a> = (&'a ComputedNode, &'a bevy::ui::UiGlobalTransform);
 type FeedbackGeometry<'a> = (
@@ -52,6 +54,7 @@ struct Layout<'w, 's> {
     feedback: Query<'w, 's, FeedbackGeometry<'static>>,
     anchor: Query<'w, 's, AnchorGeometry<'static>, With<ProjectedAnchor>>,
     minimap: Query<'w, 's, AnchorGeometry<'static>, With<crate::minimap::Root>>,
+    header: Query<'w, 's, AnchorGeometry<'static>, With<HeaderFixture>>,
 }
 pub(crate) fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     if !(6..=8).contains(&args.len()) || args[2] != "--output" || args[4] != "--size" {
@@ -168,6 +171,35 @@ fn label(value: &str, size: f32) -> impl Bundle {
     )
 }
 fn labels(mut commands: Commands, run: Res<Capture>) {
+    commands
+        .spawn((
+            HeaderFixture,
+            super::Panel::Standard,
+            Node {
+                position_type: PositionType::Absolute,
+                left: px(12),
+                top: px(220),
+                width: px(276),
+                padding: UiRect::all(px(12)),
+                row_gap: px(6),
+                flex_direction: FlexDirection::Column,
+                ..default()
+            },
+            BackgroundColor(super::PANEL),
+        ))
+        .with_children(|panel| {
+            super::window_header(
+                panel,
+                label("Window header (fixture)", 18.),
+                (
+                    bevy::ui_widgets::Button,
+                    bevy::picking::hover::Hovered::default(),
+                    BackgroundColor(Color::srgb(0.08, 0.12, 0.16)),
+                ),
+                "Close fixture window",
+            );
+            panel.spawn(label("Preview only", 14.));
+        });
     let point = super::projected_ui_point(run.size.as_vec2() * ANCHOR_RATIO, run.ui_scale).unwrap();
     commands
         .spawn((
@@ -298,6 +330,21 @@ fn capture(
         "Minimap must remain within the rendered viewport"
     );
     let minimap = serde_json::json!({"centre":map_centre.to_array(),"size":map_size.to_array(),"raster":"synthetic checker fixture; no world data"});
+    let (header_node, header_transform) = layout
+        .header
+        .single()
+        .expect("Actual shared title-row fixture");
+    let header_size = header_node.size();
+    let header_centre = header_transform.affine().translation;
+    assert!(
+        header_size.min_element() > 0.
+            && header_centre.x - header_size.x * 0.5 >= 0.
+            && header_centre.y - header_size.y * 0.5 >= 0.
+            && header_centre.x + header_size.x * 0.5 <= run.size.x as f32
+            && header_centre.y + header_size.y * 0.5 <= run.size.y as f32,
+        "Shared window header must remain in the viewport"
+    );
+    let header = serde_json::json!({"centre":header_centre.to_array(),"size":header_size.to_array(),"fixture":true});
     let mut cast = None;
     let mut tooltips = Vec::new();
     for (node, transform, tooltip, is_cast) in &layout.feedback {
@@ -336,7 +383,7 @@ fn capture(
         assert_eq!([event.image.width(), event.image.height()], [size.x,size.y]);
         event.image.clone().try_into_dynamic().unwrap().save(directory.join("hud.png")).unwrap();
         std::fs::write(directory.join("report.json"),serde_json::to_vec_pretty(&serde_json::json!({
-                "completed":true,"ui_scale":ui_scale,"preferred_ui_scale":preferred_scale,"geometry_units":"physical_pixels","offscreen":true,"windows":0,"fixture":true,"extent":[size.x,size.y],"gpu":gpu,"buttons":buttons,"glyphs":glyphs,"feedback":feedback,"minimap":minimap,"projected_anchor":{"actual":projected_anchor.to_array(),"expected":expected_anchor.to_array()},
+                "completed":true,"ui_scale":ui_scale,"preferred_ui_scale":preferred_scale,"geometry_units":"physical_pixels","offscreen":true,"windows":0,"fixture":true,"extent":[size.x,size.y],"gpu":gpu,"buttons":buttons,"glyphs":glyphs,"feedback":feedback,"minimap":minimap,"header":header,"projected_anchor":{"actual":projected_anchor.to_array(),"expected":expected_anchor.to_array()},
             "scope":"Actual Bevy combat HUD widgets with fixture values; no desktop input, account, network, world or live gameplay qualification"
         })).unwrap()).unwrap();
         exit.write(AppExit::Success);

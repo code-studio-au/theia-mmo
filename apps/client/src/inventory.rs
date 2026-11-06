@@ -197,7 +197,7 @@ fn button(widget: Widget, label: &str, width: f32, height: f32) -> impl Bundle {
         BackgroundColor(Color::srgb(0.08, 0.12, 0.16)),
     )
 }
-fn setup(mut commands: Commands, config: Res<Config>) {
+fn setup(mut commands: Commands, config: Res<Config>, skin: Option<Res<crate::fantasy_ui::Skin>>) {
     commands
         .spawn(button(Widget::Toggle, "Open backpack", 340., 30.))
         .insert(Node {
@@ -233,6 +233,14 @@ fn setup(mut commands: Commands, config: Res<Config>) {
             BackgroundColor(Color::srgba(0.02, 0.03, 0.05, 0.96)),
         ))
         .with_children(|panel| {
+            if skin.is_some() {
+                crate::fantasy_ui::window_header(
+                    panel,
+                    text("Backpack", 18.),
+                    button(Widget::Toggle, "Close backpack", 28., 28.),
+                    "Close backpack",
+                );
+            }
             if config.0.catalog().equipment_enabled() {
                 panel.spawn((EquipmentLabel, text("Main hand: loading...", 14.)));
             }
@@ -903,6 +911,45 @@ fn scroll(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn header_close_queues_only_the_existing_toggle_while_a_save_is_pending() {
+        use bevy::ecs::system::RunSystemOnce;
+        let mut app = App::new();
+        app.insert_resource(Ui {
+            open: true,
+            pending: true,
+            ..default()
+        })
+        .init_resource::<Pending>()
+        .add_observer(activate);
+        app.world_mut()
+            .run_system_once(|mut commands: Commands| {
+                commands.spawn(Node::default()).with_children(|panel| {
+                    crate::fantasy_ui::window_header(
+                        panel,
+                        text("Backpack", 18.),
+                        button(Widget::Toggle, "Close backpack", 28., 28.),
+                        "Close backpack",
+                    );
+                });
+            })
+            .unwrap();
+        let world = app.world_mut();
+        let close = world
+            .query_filtered::<Entity, With<crate::fantasy_ui::HeaderClose>>()
+            .single(world)
+            .unwrap();
+        world.trigger(Activate { entity: close });
+        let pending = world.resource::<Pending>();
+        assert!(pending.toggle);
+        assert!(!pending.destroy && !pending.equip && !pending.claim && pending.slot.is_none());
+        assert!(
+            world.resource::<Ui>().pending,
+            "Closing a panel must not cancel the saving state"
+        );
+        assert_eq!(world.resource::<Ui>().submitted, 0);
+    }
+
     use super::*;
     #[test]
     fn releasing_over_another_widget_cannot_suppress_the_next_backpack_activation() {

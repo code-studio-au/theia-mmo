@@ -328,3 +328,28 @@ separate hover/feedback rectangles and a stable projection anchor. No windows or
 WARN/ERROR diagnostics appear on the recorded Vulkan adapter. Formatting, strict
 workspace/all-target Clippy, **165 client cases including local art**, and build
 pass. Physical keyboard, mouse and the complete connected theme remain pending.
+
+
+## Shared panel headers and existing close actions
+
+In the opt-in skin, backpack, guide dialogue, loot and the item reader now share
+a standard Bevy title row and 28×28 logical-pixel `X` control. Title text can
+shrink/wrap beside the fixed close control. The helper replaces Node/font style
+after spawning existing bundles, avoiding duplicate-component bundles. Original
+footer controls and the legacy layout remain available.
+
+Each header uses the pane's **existing** action: backpack Toggle, dialogue Close,
+loot Close or document Close. No alternate save, cancellation, quest, purchase
+or reading path is introduced. Headless activation checks prove the backpack
+header queues only its ordinary toggle while keeping a pending save, and the
+dialogue header keeps its displayed revision and existing pending-request guard.
+These are event/queue checks, not a complete connected transaction test.
+
+The exporter adds a clearly labelled header-only fixture using the same helper;
+it is not a live backpack or dialogue. All six `headers-v1-*` GPU exports retain
+that fixture within the target alongside action, map, anchor, scale and feedback
+checks. They create zero windows and have no WARN/ERROR diagnostics on the same
+Vulkan adapter. Formatting, strict workspace/all-target Clippy, **167 client
+cases including local art**, and build pass. Native connected close/Escape,
+long-title reflow, scrolling and pending-transaction panel checks remain for the
+complete-theme gate after desktop use is permitted.

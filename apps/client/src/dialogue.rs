@@ -136,6 +136,7 @@ fn setup(
     config: Res<Config>,
     journal: Option<Res<crate::quest_journal::Definitions>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    skin: Option<Res<crate::fantasy_ui::Skin>>,
 ) {
     commands.spawn((
         GuideVisual,
@@ -193,7 +194,16 @@ fn setup(
                 BackgroundColor(Color::srgba(0.02, 0.05, 0.08, 0.98)),
             ))
             .with_children(|panel| {
-                panel.spawn((Title, text(config.0.profile().name(), 20.)));
+                if skin.is_some() {
+                    crate::fantasy_ui::window_header(
+                        panel,
+                        (Title, text(config.0.profile().name(), 20.)),
+                        button(Widget::Close),
+                        "Close dialogue",
+                    );
+                } else {
+                    panel.spawn((Title, text(config.0.profile().name(), 20.)));
+                }
                 panel
                     .spawn((
                         Body,
@@ -515,6 +525,44 @@ pub(crate) fn qualification_choices(world: &mut World) -> Vec<serde_json::Value>
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn header_close_retains_revision_and_pending_guards_of_the_existing_action() {
+        use bevy::ecs::system::RunSystemOnce;
+        let mut app = App::new();
+        app.insert_resource(Ui {
+            open: true,
+            displayed_revision: Some(7),
+            ..default()
+        })
+        .init_resource::<Pending>()
+        .add_observer(activate);
+        app.world_mut()
+            .run_system_once(|mut commands: Commands| {
+                commands.spawn(Node::default()).with_children(|panel| {
+                    crate::fantasy_ui::window_header(
+                        panel,
+                        (Title, text("Dialogue", 20.)),
+                        button(Widget::Close),
+                        "Close dialogue",
+                    );
+                });
+            })
+            .unwrap();
+        let world = app.world_mut();
+        let close = world
+            .query_filtered::<Entity, With<crate::fantasy_ui::HeaderClose>>()
+            .single(world)
+            .unwrap();
+        world.trigger(Activate { entity: close });
+        assert_eq!(world.resource::<Pending>().close, Some(7));
+        assert!(world.resource::<Pending>().choice.is_none());
+        world.resource_mut::<Pending>().close = None;
+        world.resource_mut::<Ui>().pending = true;
+        world.trigger(Activate { entity: close });
+        assert!(world.resource::<Pending>().close.is_none());
+        assert_eq!(world.resource::<Ui>().pointer_actions, 1);
+    }
+
     use super::*;
     #[test]
     fn widget_activation_keeps_the_displayed_branch_identity_and_revision() {

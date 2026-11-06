@@ -27,6 +27,64 @@ pub(crate) const GOLD: Color = Color::srgb(0.64, 0.48, 0.26);
 pub(crate) const PANEL: Color = Color::srgba(0.055, 0.045, 0.035, 0.96);
 pub(crate) const SLOT: f32 = 56.;
 pub(crate) const SLOTS: usize = 12;
+#[derive(Component)]
+pub(crate) struct HeaderClose;
+/// Ordinary Bevy title row; callers supply their existing close action bundle.
+/// Insert Node replacements after spawning to support title/button bundles that
+/// already contain Node without duplicate-component bundle panics.
+pub(crate) fn window_header(
+    title_row: &mut ChildSpawnerCommands,
+    title: impl Bundle,
+    close: impl Bundle,
+    label: &str,
+) {
+    title_row
+        .spawn(Node {
+            width: percent(100),
+            column_gap: px(8),
+            align_items: AlignItems::Center,
+            flex_shrink: 0.,
+            ..default()
+        })
+        .with_children(|row| {
+            row.spawn(title).insert((
+                Node {
+                    flex_grow: 1.,
+                    min_width: px(0),
+                    ..default()
+                },
+                TextFont {
+                    font_size: bevy::text::FontSize::Px(18.),
+                    ..default()
+                },
+                TextColor(Color::srgb(0.92, 0.85, 0.70)),
+            ));
+            row.spawn((HeaderClose, close))
+                .insert((
+                    AccessibleLabel::new(label),
+                    Node {
+                        width: px(28),
+                        min_width: px(28),
+                        height: px(28),
+                        padding: UiRect::all(px(4)),
+                        flex_shrink: 0.,
+                        justify_content: JustifyContent::Center,
+                        align_items: AlignItems::Center,
+                        ..default()
+                    },
+                    Outline::new(px(1), px(-1), GOLD),
+                ))
+                .with_child((
+                    Text::new("X"),
+                    TextFont {
+                        font_size: bevy::text::FontSize::Px(16.),
+                        ..default()
+                    },
+                    TextColor(Color::WHITE),
+                    Pickable::IGNORE,
+                ));
+        });
+}
 
 #[derive(Component)]
 pub(crate) enum Panel {
