@@ -567,6 +567,24 @@ class GameplayBundle(unittest.TestCase):
         self.assertEqual(args['controls_file'],controls)
         self.assertIsNone(args['dodge_profile'])
 
+    def test_fantasy_ui_remains_a_client_presentation_option_beside_sealed_gameplay(self):
+        directory = self.root / 'licensed HUD'
+        directory.mkdir()
+        with patch.object(play, 'play') as launch, redirect_stdout(io.StringIO()):
+            play.main(['--gameplay-manifest', str(self.manifest), '--gameplay-validator', str(self.validator), '--classic', '--fantasy-ui', str(directory)])
+        args = PLAY_SIGNATURE.bind(*launch.call_args.args).arguments
+        self.assertEqual(args['fantasy_ui'], directory)
+        self.assertEqual(play.fantasy_ui_options(directory, args['classic'], args['combat_catalog']), ['--fantasy-ui', str(directory.resolve())])
+        self.assertEqual(play.fantasy_ui_options(None, False, None), [])
+        self.assertIsNone(args['dodge_profile'])
+
+    def test_fantasy_ui_refuses_bad_mode_or_missing_directory_without_children(self):
+        base = dict(world=None, players=Path('.'), clients=1, binaries=Path('.'), fantasy_ui=self.root / 'missing HUD')
+        for change in [dict(), dict(classic=True), dict(classic=True, combat_catalog=Path('abilities.json'))]:
+            with self.subTest(change=change), patch.object(play.subprocess, 'Popen') as child, self.assertRaisesRegex(ValueError, 'Fantasy UI|Missing fantasy UI'):
+                play.play(**(base | change))
+            child.assert_not_called()
+
     def test_classic_launcher_refuses_mixed_or_unqualified_movement_before_starting_children(self):
         base=dict(world=None,players=Path('.'),clients=1,binaries=Path('.'),graybox=True,prediction=True,classic=True)
         for change in [dict(prediction=False),dict(graybox=False),dict(transport='quinn'),dict(dev_tour=True),dict(dev_speed=8),dict(dodge_profile=Path('dodge.json'))]:

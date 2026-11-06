@@ -153,7 +153,7 @@ fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
             Node {
                 position_type: PositionType::Absolute,
                 left: px(if skin.is_some() { 304. } else { 12. }),
-                top: if skin.is_some() { px(86) } else { Val::Auto },
+                top: if skin.is_some() { px(12) } else { Val::Auto },
                 bottom: if skin.is_some() { Val::Auto } else { px(186) },
                 border: UiRect::all(px(if skin.is_some() { 1. } else { 0. })),
                 width: px(if skin.is_some() { 276. } else { 348. }),
@@ -169,11 +169,24 @@ fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
             }),
             BorderColor::all(crate::fantasy_ui::GOLD),
         ))
+        .with_children(|panel| {
+            if skin.is_some() {
+                panel.spawn((
+                    crate::targeting::TargetHud,
+                    Text::new("Targets loading..."),
+                    TextFont {
+                        font_size: FontSize::Px(20.),
+                        ..default()
+                    },
+                    TextColor(Color::srgb(0.92, 0.85, 0.70)),
+                ));
+            }
+        })
         .with_child((
             Hud,
             Text::new("Preparing abilities..."),
             TextFont {
-                font_size: FontSize::Px(18.),
+                font_size: FontSize::Px(if skin.is_some() { 16. } else { 18. }),
                 ..default()
             },
             TextColor(Color::WHITE),
@@ -183,7 +196,7 @@ fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
                 .spawn((
                     Node {
                         width: percent(100),
-                        height: px(10),
+                        height: px(if skin.is_some() { 16. } else { 10. }),
                         ..default()
                     },
                     BackgroundColor(Color::srgb(0.17, 0.08, 0.1)),

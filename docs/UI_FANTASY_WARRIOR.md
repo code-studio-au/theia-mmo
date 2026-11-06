@@ -49,8 +49,10 @@ mapping, sword slash uses the sword icon, and unknown abilities use a spellbook.
 
 Append `--fantasy-ui HUD_DIRECTORY` to an existing valid predicted Classic combat
 client command. The flag is presentation-only and is not a new gameplay manifest
-role, content identity, protocol, authority or equipment/ability rule. It is not
-yet offered by the normal launcher or enabled by default. Refuse missing/repeated
+role, content identity, protocol, authority or equipment/ability rule. The normal `tools/play.py` launcher accepts the same optional flag, passes it
+only to the client and keeps it separate from sealed gameplay profiles. It is
+not enabled by default. A missing directory or incompatible mode refuses before
+starting children; the Rust client performs complete selected-art preflight. Refuse missing/repeated
 flags, incomplete source packs, LFS pointers, wrong PNG dimensions, oversized
 files and source paths escaping the selected directory before creating the App.
 The preflight checks headers and font signatures; actual loaders/rendering are
@@ -59,11 +61,13 @@ separate evidence. It does not cryptographically seal mutable local art.
 The candidate loads four images and two fonts through a separate `fantasy-ui://`
 Bevy asset source. Existing terrain/player/creature asset roots are preserved.
 
-- Player health/mana/life at upper left; selected-target information alongside it.
-  The current target heading and health remain separate existing widgets.
+- Player health/mana/life at upper left; the selected-target heading and health
+  share one frame alongside it. The heading still comes from the existing
+  authoritative-selection presenter; the skin does not resolve a new target.
 - Twelve familiar bottom action positions with compact 56 px square framed icons,
   existing hotkey labels, bounded cooldown strips and hover descriptions/costs/
-  authoritative rejection messages. Only the existing first five supported action
+  authoritative rejection messages. Tooltip geometry stays clear of cast/rejection
+  feedback; the windowless exporter checks their separation. Only the existing first five supported action
   bindings can activate configured abilities; unused positions are noninteractive
   decoration inside a pointer-blocking bar. This does **not** implement 1–= binding
   configuration, drag/drop actions or ten new abilities.
@@ -128,8 +132,41 @@ states. **Desktop/mouse checks remain prohibited by the user**; windowless GPU
 exports do not replace that gate. Native Windows, arbitrary DPI/accessibility
 scaling, performance and full-theme integration are not established by this slice.
 
-Subsequent general UI slices can combine the target heading/health into one unit
-frame, improve backpack item icons and tooltips, add a consistent window header/
+Subsequent general UI slices can improve backpack item icons and tooltips,
+add a consistent window header/
 close treatment, and replace debug status rows with readable contextual feedback.
 Retain the qualified gameplay behavior and expose no placeholder chat, party,
 character, currency or equipment controls as working systems.
+
+
+## Unified frame and launcher refinement
+
+The next local refinement combines the previously separate target heading and
+health into one standard Bevy frame. The normal targeting presenter writes the
+same heading marker under the combat frame; the legacy skin retains its original
+standalone heading. The exporter now previews that actual shared frame rather
+than a separate illustrative heading box.
+
+`tools/play.py --help` advertises `--fantasy-ui`. Append the following to an
+existing valid Classic gameplay launch command, using rebuilt binaries:
+
+```text
+--fantasy-ui '/home/steven/Downloads/Synty Models/HUDs'
+```
+
+It stays out of server arguments and gameplay manifest roles/hashes. Fifty
+headless launcher/bundle/environment tests pass, including actual Rust manifest
+validation, option handoff through the ordinary launcher parser, paths with
+spaces and refusals before child startup. The accepted launcher call is observed
+with a substituted launch function; no real server, browser, client window or
+mouse is started by these tests. A live launcher/game interaction gate remains.
+
+The v4 visual review exposed a tooltip overlapping cast/rejection text. The
+refinement moves the tooltip above that feedback and makes the image export
+refuse overlap using the actual laid-out rectangles. All four **v5** exports (1280×720, 1920×1200, 3440×1440, 3840×2160)
+pass the actual feedback-separation, button-bound, glyph and zero-window checks
+on the same RX 7900 XTX Vulkan device, with no WARN/ERROR diagnostics. Formatting,
+strict workspace/all-target Clippy, 159 client cases and build pass again after
+the refinement. The real launcher CLI also refuses a missing source directory
+before any child startup. Earlier v3 evidence belongs to the first local skin
+checkpoint. No desktop, account or live gameplay qualification is claimed.

@@ -27,6 +27,12 @@ struct Capture {
     ready_frames: u32,
     requested: bool,
 }
+type FeedbackGeometry<'a> = (
+    &'a ComputedNode,
+    &'a bevy::ui::UiGlobalTransform,
+    Option<&'a crate::combat::ui::ActionLabel>,
+    Has<crate::combat::ui::CastLabel>,
+);
 type ButtonGeometry<'a> = (
     &'a crate::combat::ui::ActionButton,
     &'a ComputedNode,
@@ -37,6 +43,7 @@ struct Layout<'w, 's> {
     windows: Query<'w, 's, &'static Window>,
     buttons: Query<'w, 's, ButtonGeometry<'static>>,
     text: Query<'w, 's, &'static bevy::text::TextLayoutInfo>,
+    feedback: Query<'w, 's, FeedbackGeometry<'static>>,
 }
 pub(crate) fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     if args.len() != 6 || args[2] != "--output" || args[4] != "--size" {
@@ -144,22 +151,6 @@ fn label(value: &str, size: f32) -> impl Bundle {
 }
 fn labels(mut commands: Commands) {
     commands
-        .spawn((
-            Node {
-                position_type: PositionType::Absolute,
-                left: px(304),
-                top: px(12),
-                width: px(276),
-                min_height: px(68),
-                padding: UiRect::all(px(12)),
-                border: UiRect::all(px(1)),
-                ..default()
-            },
-            BackgroundColor(super::PANEL),
-            BorderColor::all(super::GOLD),
-        ))
-        .with_child(label("Target: Wolf\n57 / 100 health", 18.));
-    commands
         .spawn((Node {
             position_type: PositionType::Absolute,
             left: percent(0),
@@ -235,6 +226,34 @@ fn capture(
         glyphs > 40,
         "Offscreen UI must have real laid-out text glyphs"
     );
+    let mut cast = None;
+    let mut tooltips = Vec::new();
+    for (node, transform, tooltip, is_cast) in &layout.feedback {
+        let size = node.size() * node.inverse_scale_factor();
+        if size.min_element() <= 0. {
+            continue;
+        }
+        let centre = transform.affine().translation * node.inverse_scale_factor();
+        let rect = Rect::from_center_size(centre, size);
+        if is_cast {
+            cast = Some(rect);
+        }
+        if tooltip.is_some() {
+            tooltips.push(rect);
+        }
+    }
+    let cast = cast.expect("Cast/rejection feedback must be laid out");
+    assert!(
+        !tooltips.is_empty(),
+        "The preview must display the hover description fixture"
+    );
+    for tooltip in &tooltips {
+        assert!(
+            tooltip.intersect(cast).is_empty(),
+            "Tooltip must not obscure cast/rejection feedback"
+        );
+    }
+    let feedback = serde_json::json!({"cast":[cast.min.to_array(),cast.max.to_array()],"tooltips":tooltips.iter().map(|r| [r.min.to_array(),r.max.to_array()]).collect::<Vec<_>>()});
     run.requested = true;
     let directory = run.directory.clone();
     let size = run.size;
@@ -243,7 +262,7 @@ fn capture(
         assert_eq!([event.image.width(), event.image.height()], [size.x,size.y]);
         event.image.clone().try_into_dynamic().unwrap().save(directory.join("hud.png")).unwrap();
         std::fs::write(directory.join("report.json"),serde_json::to_vec_pretty(&serde_json::json!({
-                "completed":true,"offscreen":true,"windows":0,"fixture":true,"extent":[size.x,size.y],"gpu":gpu,"buttons":buttons,"glyphs":glyphs,
+                "completed":true,"offscreen":true,"windows":0,"fixture":true,"extent":[size.x,size.y],"gpu":gpu,"buttons":buttons,"glyphs":glyphs,"feedback":feedback,
             "scope":"Actual Bevy combat HUD widgets with fixture values; no desktop input, account, network, world or live gameplay qualification"
         })).unwrap()).unwrap();
         exit.write(AppExit::Success);

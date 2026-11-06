@@ -9,7 +9,7 @@ pub(crate) struct TargetVisual {
     pub key: EntityKey,
 }
 #[derive(Component)]
-struct TargetHud;
+pub(crate) struct TargetHud;
 #[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) struct Presentation;
 #[derive(Resource)]
@@ -41,25 +41,20 @@ fn setup(
         normal: materials.add(Color::srgb(0.55, 0.24, 0.65)),
         selected: materials.add(Color::srgb(1., 0.8, 0.1)),
     });
+    // The skinned combat frame owns the heading and health together.
+    if skin.is_some() {
+        return;
+    }
     commands
         .spawn((
             Node {
                 position_type: PositionType::Absolute,
-                left: px(if skin.is_some() { 304. } else { 12. }),
-                top: if skin.is_some() { px(12) } else { Val::Auto },
-                bottom: if skin.is_some() { Val::Auto } else { px(108) },
-                width: if skin.is_some() { px(276) } else { Val::Auto },
-                min_height: px(if skin.is_some() { 68. } else { 0. }),
-                border: UiRect::all(px(if skin.is_some() { 1. } else { 0. })),
+                left: px(12),
+                bottom: px(108),
                 padding: UiRect::all(px(12)),
                 ..default()
             },
-            BackgroundColor(if skin.is_some() {
-                crate::fantasy_ui::PANEL
-            } else {
-                Color::srgba(0.02, 0.03, 0.05, 0.9)
-            }),
-            BorderColor::all(crate::fantasy_ui::GOLD),
+            BackgroundColor(Color::srgba(0.02, 0.03, 0.05, 0.9)),
         ))
         .with_child((
             TargetHud,

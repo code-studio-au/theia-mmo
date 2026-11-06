@@ -11,7 +11,7 @@ use bevy::{
 #[derive(Component)]
 pub(crate) struct ActionButton(pub(crate) usize);
 #[derive(Component)]
-struct ActionLabel(usize);
+pub(crate) struct ActionLabel(pub(crate) usize);
 #[derive(Component)]
 pub(super) struct HealthFill;
 #[derive(Component)]
@@ -19,7 +19,7 @@ struct CastFill;
 #[derive(Component)]
 struct CooldownFill(usize);
 #[derive(Component)]
-struct CastLabel;
+pub(crate) struct CastLabel;
 #[derive(Component)]
 struct PlayerHealthFill;
 #[derive(Component)]
@@ -116,9 +116,14 @@ pub(crate) fn install_preview(app: &mut App) {
         .add_systems(Update, (preview_hover, paint).chain())
         .add_systems(
             PostStartup,
-            |mut labels: Query<&mut Text, With<super::Hud>>| {
-                for mut label in &mut labels {
-                    **label = "Health 57 / 100".into();
+            |mut labels: Query<(&mut Text, Has<super::Hud>, Has<crate::targeting::TargetHud>)>| {
+                for (mut label, health, heading) in &mut labels {
+                    if health {
+                        **label = "Health 57 / 100".into();
+                    }
+                    if heading {
+                        **label = "Target: Wolf".into();
+                    }
                 }
             },
         );
@@ -474,7 +479,7 @@ fn compact_actions(commands: &mut Commands, config: &Config, skin: &crate::fanta
                             Pickable::IGNORE,
                             Node {
                                 position_type: PositionType::Absolute,
-                                bottom: px(68),
+                                bottom: px(132),
                                 left: px(0),
                                 width: px(280),
                                 padding: UiRect::all(px(10)),
