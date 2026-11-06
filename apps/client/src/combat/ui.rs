@@ -522,7 +522,7 @@ fn compact_actions(commands: &mut Commands, config: &Config, skin: &crate::fanta
                             Pickable::IGNORE,
                             Node {
                                 position_type: PositionType::Absolute,
-                                bottom: px(0),
+                                bottom: px(44),
                                 left: px(ACTION_WIDTH + 12. - slot as f32 * (SLOT + 4.)),
                                 width: px(280),
                                 padding: UiRect::all(px(10)),

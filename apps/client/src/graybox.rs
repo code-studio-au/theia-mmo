@@ -222,6 +222,7 @@ fn setup(
     mut commands: Commands,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut gray: ResMut<Graybox>,
+    skin: Option<Res<crate::fantasy_ui::Skin>>,
 ) {
     gray.material = Some(materials.add(StandardMaterial {
         base_color: Color::WHITE,
@@ -241,6 +242,11 @@ fn setup(
             ..default()
         },
         Node {
+            display: if skin.is_some() {
+                Display::None
+            } else {
+                Display::Flex
+            },
             position_type: PositionType::Absolute,
             left: px(12),
             bottom: px(12),

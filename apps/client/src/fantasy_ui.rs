@@ -284,16 +284,26 @@ fn style_text(skin: Res<Skin>, mut text: Query<&mut TextFont, (With<Text>, Added
 }
 fn style_panels(
     mut commands: Commands,
-    mut panels: Query<(Entity, &Panel, &mut Node, &mut BackgroundColor)>,
+    mut panels: Query<(
+        Entity,
+        &Panel,
+        &mut Node,
+        &mut BackgroundColor,
+        Option<&GlobalZIndex>,
+    )>,
 ) {
-    for (entity, panel, mut node, mut background) in &mut panels {
+    for (entity, panel, mut node, mut background, layer) in &mut panels {
         background.0 = PANEL;
         // An outline decorates existing panes without shrinking scroll/map content.
         commands
             .entity(entity)
             .insert(Outline::new(px(1), px(-1), GOLD));
         match panel {
-            Panel::Standard => {}
+            Panel::Standard => {
+                if layer.is_none() {
+                    commands.entity(entity).insert(GlobalZIndex(20));
+                }
+            }
             Panel::QuestTracker => {
                 node.left = Val::Auto;
                 node.right = px(12);
@@ -525,6 +535,7 @@ mod tests {
                 ScrollPosition::from(Vec2::new(0., 51.)),
                 Visibility::Hidden,
                 BackgroundColor(Color::BLACK),
+                GlobalZIndex(60),
             ))
             .id();
         app.add_systems(Update, style_panels);
@@ -543,6 +554,11 @@ mod tests {
         );
         assert_eq!(app.world().get::<ScrollPosition>(pane).unwrap().y, 51.);
         assert!(app.world().get::<Outline>(pane).is_some());
+        assert_eq!(
+            app.world().get::<GlobalZIndex>(pane),
+            Some(&GlobalZIndex(60)),
+            "Retain the document reader's existing priority"
+        );
     }
     #[test]
     #[ignore = "Requires the user's local licensed SYNTY HUD directory"]

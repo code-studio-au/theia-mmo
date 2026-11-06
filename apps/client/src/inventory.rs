@@ -197,20 +197,30 @@ fn button(widget: Widget, label: &str, width: f32, height: f32) -> impl Bundle {
         BackgroundColor(Color::srgb(0.08, 0.12, 0.16)),
     )
 }
-fn setup(mut commands: Commands, config: Res<Config>, skin: Option<Res<crate::fantasy_ui::Skin>>) {
+#[derive(Component)]
+pub(crate) struct BackpackDock;
+/// Shared real toggle widget, also rendered by the labelled developer fixture.
+pub(crate) fn spawn_toggle(commands: &mut Commands, skinned: bool) {
+    let width = if skinned { 140. } else { 340. };
     commands
-        .spawn(button(Widget::Toggle, "Open backpack", 340., 30.))
+        .spawn((
+            BackpackDock,
+            button(Widget::Toggle, "Open backpack", width, 30.),
+        ))
         .insert(Node {
             position_type: PositionType::Absolute,
             right: px(12),
             bottom: px(12),
-            width: px(340),
+            width: px(width),
             min_height: px(30),
             justify_content: JustifyContent::Center,
             align_items: AlignItems::Center,
             ..default()
         })
         .with_child(text("Backpack [I]", 16.));
+}
+fn setup(mut commands: Commands, config: Res<Config>, skin: Option<Res<crate::fantasy_ui::Skin>>) {
+    spawn_toggle(&mut commands, skin.is_some());
     commands
         .spawn((
             Pane,

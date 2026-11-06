@@ -63,6 +63,7 @@ struct Layout<'w, 's> {
     header: Query<'w, 's, AnchorGeometry<'static>, With<HeaderFixture>>,
     units: Query<'w, 's, UnitGeometry<'static>>,
     xp: Query<'w, 's, AnchorGeometry<'static>, With<crate::progression::Root>>,
+    dock: Query<'w, 's, AnchorGeometry<'static>, With<crate::inventory::BackpackDock>>,
 }
 pub(crate) fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     if !(6..=8).contains(&args.len()) || args[2] != "--output" || args[4] != "--size" {
@@ -180,6 +181,7 @@ fn label(value: &str, size: f32) -> impl Bundle {
     )
 }
 fn labels(mut commands: Commands, run: Res<Capture>) {
+    crate::inventory::spawn_toggle(&mut commands, true);
     commands
         .spawn((
             HeaderFixture,
@@ -440,6 +442,23 @@ fn capture(
     );
     let xp =
         serde_json::json!({"rect":[xp_rect.min.to_array(),xp_rect.max.to_array()],"fixture":true});
+    let (dock_node, dock_transform) = layout.dock.single().expect("Actual backpack toggle widget");
+    let dock_rect = Rect::from_center_size(dock_transform.affine().translation, dock_node.size());
+    assert!(viewport.contains(dock_rect.min) && viewport.contains(dock_rect.max));
+    for tooltip in &tooltips {
+        assert!(
+            dock_rect.intersect(*tooltip).is_empty(),
+            "Tooltip must not cover backpack access"
+        );
+    }
+    for (_, node, transform) in &layout.buttons {
+        let button_rect = Rect::from_center_size(transform.affine().translation, node.size());
+        assert!(
+            dock_rect.intersect(button_rect).is_empty(),
+            "Backpack access must not cover actions"
+        );
+    }
+    let dock = serde_json::json!({"rect":[dock_rect.min.to_array(),dock_rect.max.to_array()],"fixture":true});
     run.requested = true;
     let directory = run.directory.clone();
     let size = run.size;
@@ -450,7 +469,7 @@ fn capture(
         assert_eq!([event.image.width(), event.image.height()], [size.x,size.y]);
         event.image.clone().try_into_dynamic().unwrap().save(directory.join("hud.png")).unwrap();
         std::fs::write(directory.join("report.json"),serde_json::to_vec_pretty(&serde_json::json!({
-                "completed":true,"ui_scale":ui_scale,"preferred_ui_scale":preferred_scale,"geometry_units":"physical_pixels","offscreen":true,"windows":0,"fixture":true,"extent":[size.x,size.y],"gpu":gpu,"buttons":buttons,"glyphs":glyphs,"feedback":feedback,"minimap":minimap,"header":header,"unit_frames":unit_frames,"xp":xp,"projected_anchor":{"actual":projected_anchor.to_array(),"expected":expected_anchor.to_array()},
+                "completed":true,"ui_scale":ui_scale,"preferred_ui_scale":preferred_scale,"geometry_units":"physical_pixels","offscreen":true,"windows":0,"fixture":true,"extent":[size.x,size.y],"gpu":gpu,"buttons":buttons,"glyphs":glyphs,"feedback":feedback,"minimap":minimap,"header":header,"unit_frames":unit_frames,"xp":xp,"backpack_dock":dock,"projected_anchor":{"actual":projected_anchor.to_array(),"expected":expected_anchor.to_array()},
             "scope":"Actual Bevy combat HUD widgets with fixture values; no desktop input, account, network, world or live gameplay qualification"
         })).unwrap()).unwrap();
         exit.write(AppExit::Success);

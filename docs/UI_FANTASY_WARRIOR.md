@@ -492,3 +492,38 @@ toggle overlaps the lower action area, the terrain diagnostic HUD clutters the
 same corner, and passive world/status labels can paint over dialogue. Fix and
 recheck those before complete-theme adoption. The native pass proves its stated
 flow, not that the whole UI is visually or interactively qualified at every size.
+
+
+## Native integration cleanup — 6 November 2026
+
+The first connected scene identified three presentation defects not covered by
+the original widget-only fixture. The optional skin now uses a 140-pixel backpack
+toggle rather than the legacy 340-pixel control, and positions action hover
+information above that dock. The actual shared toggle widget is included in the
+windowless fixture; all six `integration-v1-*` cases check it against actions,
+tooltips and viewport bounds alongside the existing lower HUD/map assertions.
+
+Standard panes without an explicit layer receive `GlobalZIndex(20)`, placing
+interactive windows above passive status/quest/world labels. Existing loot (25)
+and document-reader (60) priorities are preserved; the headless preservation test
+covers the latter. This uses Bevy's normal stacking/picking. It adds no alternate
+close/transaction/Escape path. The themed graybox view hides its terrain debug
+text; existing telemetry and the legacy diagnostic display remain available.
+
+Formatting, strict workspace/all-target Clippy, 168 client cases including local
+art, the development build and six windowless GPU cases pass. Connected Linux
+rechecks now pass at **1280×720, 1920×1200 and 3440×1440**, plus a fresh login
+after PostgreSQL process restart. Evidence:
+`build/ui-reference-20261106/native-integration-v1/verification.json`. Every
+initial flow ends at journal revision 11 / XP 125; rejoin restores the same saved
+completion. Each recorded native GPU diagnostic count is zero on RX 7900 XTX /
+RADV NAVI31 / Vulkan / Mesa 26.2.6. The owned X11 windows receive synthetic OS
+input; all owned services stop and private plaintext password files are removed.
+
+These are the existing controlled two-quest/minimap walkthroughs using the new
+client and retained matching server/validator/art, not a new persistence or
+content-capacity result. Screenshots confirm the compact dock, removed terrain
+text and passive labels behind dialogue. They do not qualify every reader/loot/
+pending-capacity state, header-X click, remapped or nondefault-scale OS input,
+Windows or subjective performance. The skin remains opt-in while those broader
+checks and the remaining reference features are outstanding.

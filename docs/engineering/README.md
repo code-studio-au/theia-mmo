@@ -1,24 +1,18 @@
-General UI candidate, 6 November 2026 (P2-14 / P5-13 / P5-19):
-The user moved beyond quests to a WoW-like interface. An opt-in standard Bevy
-Fantasy Warrior skin now provides compact icon actions, a unified target frame,
-fantasy fonts, shared pane styling and an optional client-only launcher flag.
-Baseline and six scaled windowless Vulkan cases through 3840×2160 prove
-button bounds, tooltip/feedback separation and preferred-scale fitting.
-168 client and 51 launcher cases, formatting, strict Clippy and build pass.
-Unchanged combat widgets no longer issue change notifications; six windowless
-reference comparisons retain exactly the same pixels. Scaled projected-label
-anchors and later-spawned theme fonts also pass isolated layout/headless checks.
-The live minimap shares the frame art; its actual widget renders a labelled
-fixture raster within all six scaled preview extents. The compact bar now
-supports twelve default primary keys; canonical content remains two abilities.
-Four panes share title/X rows backed by their existing close handlers; the
-shared header also passes bounded windowless rendering and headless event checks. [Scope, assets and remaining gates](../UI_FANTASY_WARRIOR.md).
-The adopted AntonilzUI reference now guides lower-centre unit frames, 44-pixel
-outlined actions and a centred XP strip. Six further windowless captures verify
-centre-relative anchoring and unit/tooltip/cast/XP separation. General enemy
-nameplates remain planned. The circular minimap now uses standard Bevy UI;
-six additional captures verify clipped corners and preserved inner raster pixels.
-Normal connected/pane/input qualification and default adoption remain pending.
+General UI reference candidate, 6 November 2026 (P2-14 / P5-13 / P5-19):
+The optional Fantasy Warrior skin now follows the user's AntonilzUI reference:
+compact lower-centre player/target frames, twelve 44-pixel primary slots,
+cast feedback, a centred XP strip, circular minimap and shared pane headers.
+It uses standard Bevy UI with three local PNG icons and two fonts; source assets
+remain outside Git. Preferred UI scale fits/restores the 1280×720 logical layout.
+168 client cases, formatting, strict workspace/all-target Clippy and build pass.
+Six latest windowless cases through 3840×2160 check combat/XP/dock separation,
+projected anchors and circular map pixels. Earlier 51 launcher cases remain valid.
+Connected OIDC/Renet/PostgreSQL quest/minimap walkthroughs now pass at
+1280×720, 1920×1200 and 3440×1440 plus genuine restart/rejoin. They confirm the
+fixed panel layering, bag dock and hidden themed terrain diagnostics in a
+controlled fixture. The skin remains opt-in; general enemy nameplates, portrait art,
+chat/menu systems, nondefault-scale OS traces and complete-theme qualification
+remain separate work. [Scope, reference, assets and evidence](../UI_FANTASY_WARRIOR.md).
 **Current permission: desktop/mouse use is authorized again by the user.**
 Commit locally only; no push. Earlier permission restrictions below are historical.
 
