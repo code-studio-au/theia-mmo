@@ -1,3 +1,15 @@
+## 2026-11-06 — atomic fixed quest reward storage
+
+Adopt the existing quest action API and original receipt for fixed bundles.
+Under the existing XP → backpack → journal lock order, use current locked bag
+holdings and capacity, then commit consumption, grants, final quest state, XP and
+receipt together. The quest command carries its expected quest revision; no new
+bag revision is added to the wire intent. Successful retries recover the original
+receipt before fresh holdings checks and return current saved bag/journal state.
+No migration or parallel inventory API is needed. Store/worker support is now
+qualified; keep World, client and retained-owner admission closed until their
+separate ordering/ownership proofs pass. [Scope/evidence](QUEST_ITEM_REWARDS.md#implemented-atomic-storeworker-turn-in).
+
 ## 2026-11-06 — explicit fixed quest item reward policy
 
 Use a separate bounded fixed-reward catalogue against known quest and item

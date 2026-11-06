@@ -1,9 +1,9 @@
 # Fixed item rewards at quest turn-in
 
-P3-05 / P3-09 / P3-11 / P3-15, planned slice, 6 November 2026.
-This design is not runtime support. Existing quest completion awards XP; item
-consumption is already coordinated with journal updates. Item reward bundles
-remain unavailable until the following prerequisites are qualified.
+P3-05 / P3-09 / P3-11 / P3-15, staged implementation, 6 November 2026.
+Core proposals, exact content binding and atomic Store/worker turn-in are now
+qualified. Fixed bundles remain unavailable in normal gameplay until retained
+ownership, World/network admission and presentation are qualified.
 
 Use an explicit bounded catalogue associating a quest with fixed grants of known
 items. Keep the existing quest schemas and legacy profiles intact. Bind exact
@@ -160,3 +160,51 @@ and eight persistence-library tests pass. Logs are
 Formatting and strict workspace/all-target Clippy pass in the binding `fmt-v1`
 and `clippy-v1` logs. The new private guards are exercised directly; actual SQL
 reward/profile compatibility remains unqualified. No new native or Windows claim.
+
+
+## Implemented atomic Store/worker turn-in
+
+`Store::command_quest_journal` now selects the fixed-reward proposal only for
+explicitly bound quests with a configured bundle. Other quests and legacy
+profiles retain their existing path. Store context checks admit the checked
+reward policy; World, ordinary client and server retained-owner gates remain
+closed. This slice adds no migration, live flag or manifest role.
+
+The existing transaction locks XP, backpack and journal in that order and checks
+owner/world/content. It looks up the original action receipt before attempting
+fresh capacity or delivery validation. A new turn-in uses the current locked bag,
+then persists consumption and the complete reward bundle with one bag revision,
+final-holdings reconciliation, completion, XP and the action receipt before
+COMMIT. The existing quest intent has an expected quest revision, not a captured
+bag revision; stack placement uses current saved inventory. A successful retry
+returns current saved journal/bag state and grants nothing further, including
+when its reward has since moved. Failed capacity attempts save no receipt, so the
+same intent can succeed after space is freed. Accepted worker commands drain on
+shutdown even after their first response receiver is dropped.
+
+Seven new real SQL contracts cover injected rollback, whole-bundle/full-bag
+refusal, freed delivery slots, ownership/world/exact-content mismatch, stale or
+wrong-NPC intent, lost replies, queued duplicates followed by inventory movement,
+nonfatal worker capacity refusal, historical read receipts after note consumption
+and item rewards at the XP cap. Together with existing regression contracts,
+**73 PostgreSQL contracts and eight library tests pass** in
+`build/quest-item-reward-storage-postgres-v2-20261106/verification.json` and its
+individual logs. The owned PostgreSQL cluster uses fsync, synchronous commit and
+full-page writes, rejects an incorrect password, and performs a real restart.
+The restart probe retains three tokens in moved slot 15, bag revision 2, journal
+head 3 and XP 25. SQL fingerprints remain identical after restart and original
+turn-in replay. The server library's 22 tests also pass in the storage
+`server-tests-v1` log. Formatting and denied-warning workspace/all-target Clippy
+pass in the storage `fmt-v2` and `clippy-v2` logs.
+
+The initial storage v1 restart probe incorrectly expected journal head 2; ready
+quest revision 2 advances to completed revision 3. Its seven SQL contracts passed,
+but that overall run failed. Correcting only the probe and matching SQL
+expectation produces the successful v2 run. No production revision rule changed.
+Owned cluster processes are stopped and temporary password files removed.
+
+SQL NPC entitlement in these tests is synthetic trusted fixture scope. These
+checks do not establish live NPC range, session ownership, encrypted transport,
+client presentation or Windows execution. Continue retained-owner/World and
+headless bridge qualification next; desktop/mouse tests are paused at the user's
+request. Keep commits local and retain the working note-reader path.

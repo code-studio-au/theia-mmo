@@ -1,3 +1,14 @@
+Fixed quest item reward storage qualified locally, 6 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: explicit reward-bound Store/worker turn-in now
+commits delivery consumption, the whole fixed bundle, final-holdings quest state,
+XP and the original receipt together. Full bags refuse without partial effects;
+old successful retries retain later item moves without granting again. 73 actual
+PostgreSQL contracts and process/database restart pass, plus eight persistence
+and 22 server library tests. [Scope and next retained-owner slice](QUEST_ITEM_REWARDS.md#implemented-atomic-storeworker-turn-in).
+World/client/server-owner admission remains closed. Continue headless work;
+no desktop/mouse tests while the user works, and no push. Earlier entries retain
+their checkpoint scope.
+
 Readable quest documents qualified locally, 6 November 2026:
 P3-05 / P3-11 / P3-15: opt-in manifest 20 now has a standard Bevy note reader
 with exact server approval, local page navigation and contextual Escape. Native

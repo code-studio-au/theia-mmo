@@ -356,45 +356,81 @@ impl Store {
             bounded(tx.commit()).await?;result.experience=experience;return Ok(result);
         }
         let mut next_bag = bag.clone();
-        let proposal = match command.action {
-            Action::Accept => {
-                if command.expected_revision != 0 {
-                    return Err(Error::QuestJournalCommand(
-                        theia_core::quests::journal::Error::StaleRevision,
-                    ));
+        let proposal = if command.action == Action::TurnIn
+            && catalog
+                .item_rewards()
+                .is_some_and(|r| r.grants(&command.quest).is_some())
+        {
+            let rewards = catalog.item_rewards().ok_or(Error::QuestJournalData)?;
+            let before = bag.as_ref().ok_or(Error::InventoryMissing)?;
+            // Existing quest intent means complete this quest under its captured
+            // policy. Placement uses the current locked bag; retries use the
+            // original action receipt before any fresh capacity/holdings check.
+            let result = rewards
+                .propose_turn_in(
+                    &journal,
+                    before,
+                    theia_core::quests::item_rewards::TurnIn {
+                        quest: &command.quest,
+                        npc: &command.npc,
+                        quest_revision: command.expected_revision,
+                        inventory_revision: before.revision(),
+                    },
+                )
+                .map_err(|e| match e {
+                    theia_core::quests::item_rewards::TurnInError::Quest(e) => {
+                        Error::QuestJournalCommand(e)
+                    }
+                    theia_core::quests::item_rewards::TurnInError::Inventory(e) => {
+                        Error::RewardCommand(e)
+                    }
+                    theia_core::quests::item_rewards::TurnInError::NoReward => {
+                        Error::QuestJournalData
+                    }
+                })?;
+            next_bag = Some(result.bag);
+            result.quest
+        } else {
+            match command.action {
+                Action::Accept => {
+                    if command.expected_revision != 0 {
+                        return Err(Error::QuestJournalCommand(
+                            theia_core::quests::journal::Error::StaleRevision,
+                        ));
+                    }
+                    journal.propose_accept(catalog.catalog(), &command.quest, &command.npc)
                 }
-                journal.propose_accept(catalog.catalog(), &command.quest, &command.npc)
+                Action::TurnIn
+                    if catalog
+                        .catalog()
+                        .quest(&command.quest)
+                        .is_some_and(|q| q.has_possession_objectives()) =>
+                {
+                    let items = catalog.inventory().ok_or(Error::QuestJournalData)?;
+                    let before = bag.as_ref().ok_or(Error::InventoryMissing)?;
+                    journal
+                        .propose_possession_turn_in(
+                            catalog.catalog(),
+                            items.catalog(),
+                            before,
+                            &command.quest,
+                            &command.npc,
+                            command.expected_revision,
+                        )
+                        .map(|result| {
+                            next_bag = Some(result.bag);
+                            result.quest
+                        })
+                }
+                Action::TurnIn => journal.propose_turn_in(
+                    catalog.catalog(),
+                    &command.quest,
+                    &command.npc,
+                    command.expected_revision,
+                ),
             }
-            Action::TurnIn
-                if catalog
-                    .catalog()
-                    .quest(&command.quest)
-                    .is_some_and(|q| q.has_possession_objectives()) =>
-            {
-                let items = catalog.inventory().ok_or(Error::QuestJournalData)?;
-                let before = bag.as_ref().ok_or(Error::InventoryMissing)?;
-                journal
-                    .propose_possession_turn_in(
-                        catalog.catalog(),
-                        items.catalog(),
-                        before,
-                        &command.quest,
-                        &command.npc,
-                        command.expected_revision,
-                    )
-                    .map(|result| {
-                        next_bag = Some(result.bag);
-                        result.quest
-                    })
-            }
-            Action::TurnIn => journal.propose_turn_in(
-                catalog.catalog(),
-                &command.quest,
-                &command.npc,
-                command.expected_revision,
-            ),
-        }
-        .map_err(Error::QuestJournalCommand)?;
+            .map_err(Error::QuestJournalCommand)?
+        };
         let proposal = items::reconcile(catalog, next_bag.as_ref(), proposal)?;
         let (next_experience, granted) = if let Some(before) = &experience {
             let reward = proposal.reward.as_ref().ok_or(Error::QuestJournalData)?;

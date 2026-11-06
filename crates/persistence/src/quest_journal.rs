@@ -140,7 +140,7 @@ impl QuestJournalCatalog {
         self.inventory = Some(inventory.clone());
         Ok(self)
     }
-    /// Exact metadata binding only; the Store/worker still refuses this policy.
+    /// Explicit exact fixed reward policy; live owner/World adoption is separate.
     pub fn with_item_rewards(
         mut self,
         bytes: &[u8],
@@ -211,8 +211,16 @@ impl QuestJournalCatalog {
         Ok(documents)
     }
     pub(crate) fn check_inventory_binding(&self) -> Result<()> {
-        if self.item_rewards.is_some() {
-            return Err(Error::Invalid("Quest item reward storage is not installed"));
+        if let Some(rewards) = &self.item_rewards {
+            let items = self
+                .inventory
+                .as_ref()
+                .ok_or(Error::InventoryCatalogMismatch)?;
+            if rewards.item_catalog() != items.catalog()
+                || rewards.quest_catalog() != self.catalog.as_ref()
+            {
+                return Err(Error::Invalid("Quest item reward context mismatch"));
+            }
         }
         if self.inventory.is_none()
             && self
@@ -263,9 +271,6 @@ impl QuestJournalCatalog {
         self.hash
     }
     pub fn check_progression(&self, xp: &ProgressionCatalog) -> Result<()> {
-        if self.item_rewards.is_some() {
-            return Err(Error::Invalid("Quest item reward storage is not installed"));
-        }
         if self.progression != xp.hash() {
             return Err(Error::ProgressionCatalogMismatch);
         }
@@ -359,7 +364,7 @@ pub struct QuestJournalApplied {
 mod item_reward_binding_tests {
     use super::*;
     #[test]
-    fn metadata_cannot_reach_generic_store_worker_or_document_runtime_admission() {
+    fn bound_reward_policy_admits_store_context_and_retains_document_requirements() {
         let xp = ProgressionCatalog::from_json(include_bytes!(
             "../../../content/gameplay/development-progression.json"
         ))
@@ -376,13 +381,9 @@ mod item_reward_binding_tests {
         let raw=serde_json::to_vec(&serde_json::json!({"schema":1,"id":"theia.test.fixed-rewards","revision":1,"quest_catalog":base.catalog().id().as_str(),"item_catalog":items.catalog().id().as_str(),"rewards":[{"quest":base.catalog().quests().next().unwrap().id().as_str(),"grants":[{"item":"theia.dev.training-token","count":1}]}]})).unwrap();
         assert!(base.check_runtime_admission().is_ok());
         let bound = base.with_item_rewards(&raw, &items).unwrap();
-        for error in [
-            bound.check_runtime_admission().unwrap_err(),
-            bound.check_inventory_binding().unwrap_err(),
-            bound.check_progression(&xp).unwrap_err(),
-            bound.check_document_binding().unwrap_err(),
-        ] {
-            assert!(error.to_string().contains("Quest item reward storage"));
-        }
+        assert!(bound.check_runtime_admission().is_ok());
+        assert!(bound.check_inventory_binding().is_ok());
+        assert!(bound.check_progression(&xp).is_ok());
+        assert!(bound.check_document_binding().is_err());
     }
 }
