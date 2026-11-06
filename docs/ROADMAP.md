@@ -13,12 +13,13 @@ fixture raster within all six scaled preview extents. The compact bar now
 supports twelve default primary keys; canonical content remains two abilities.
 Four panes share title/X rows backed by their existing close handlers; the
 shared header also passes bounded windowless rendering and headless event checks. [Scope, assets and remaining gates](UI_FANTASY_WARRIOR.md).
-The user subsequently adopted an AntonilzUI screenshot as the visual target;
-lower-centre unit frames, restrained bars, world nameplates and a circular
-minimap remain planned refinements, not features proven by these previews.
+The adopted AntonilzUI reference now guides lower-centre unit frames, 44-pixel
+outlined actions and a centred XP strip. Six further windowless captures verify
+centre-relative anchoring and unit/tooltip/cast/XP separation. General enemy
+nameplates and a circular minimap remain planned refinements.
 Normal connected/pane/input qualification and default adoption remain pending.
-**No desktop/mouse tests while the user works. Local commits only; no push.**
-Earlier desktop authorizations below are historical and superseded.
+**Current permission: desktop/mouse use is authorized again by the user.**
+Commit locally only; no push. Earlier permission restrictions below are historical.
 
 Bounded quest offers/wheel ownership qualified, 6 November 2026:
 P3-11 / P3-12 / P3-15: the last of 32 guide offers is reachable through a bounded

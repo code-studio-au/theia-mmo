@@ -210,26 +210,25 @@ fn setup(
     if config.1.is_some() {
         commands
             .spawn((
-                Node {
-                    position_type: PositionType::Absolute,
-                    left: if skin.is_some() { px(12) } else { Val::Auto },
-                    border: UiRect::all(px(if skin.is_some() { 1. } else { 0. })),
-                    right: if skin.is_some() {
-                        Val::Auto
-                    } else {
-                        px(if graybox.is_some() {
+                if skin.is_some() {
+                    crate::fantasy_ui::unit_frame(true)
+                } else {
+                    Node {
+                        position_type: PositionType::Absolute,
+                        right: px(if graybox.is_some() {
                             crate::minimap::VITALS_RIGHT
                         } else {
                             12.
-                        })
-                    },
-                    top: px(12),
-                    width: px(if skin.is_some() { 276. } else { 300. }),
-                    padding: UiRect::all(px(10)),
-                    row_gap: px(6),
-                    flex_direction: FlexDirection::Column,
-                    ..default()
+                        }),
+                        top: px(12),
+                        width: px(300),
+                        padding: UiRect::all(px(10)),
+                        row_gap: px(6),
+                        flex_direction: FlexDirection::Column,
+                        ..default()
+                    }
                 },
+                crate::fantasy_ui::UnitFrame(true),
                 BackgroundColor(if skin.is_some() {
                     crate::fantasy_ui::PANEL
                 } else {
@@ -241,12 +240,15 @@ fn setup(
                 if skin.is_some() {
                     panel.spawn(text("Player", 16.));
                 }
-                panel.spawn((PlayerHealthLabel, text("Waiting for health", 16.)));
+                panel.spawn((
+                    PlayerHealthLabel,
+                    text("Waiting for health", if skin.is_some() { 14. } else { 16. }),
+                ));
                 panel
                     .spawn((
                         Node {
                             width: percent(100),
-                            height: px(if skin.is_some() { 16. } else { 10. }),
+                            height: px(if skin.is_some() { 12. } else { 10. }),
                             ..default()
                         },
                         BackgroundColor(Color::srgb(0.12, 0.16, 0.12)),
@@ -260,12 +262,15 @@ fn setup(
                         },
                         BackgroundColor(Color::srgb(0.2, 0.68, 0.37)),
                     ));
-                panel.spawn((ManaLabel, text("Waiting for mana", 16.)));
+                panel.spawn((
+                    ManaLabel,
+                    text("Waiting for mana", if skin.is_some() { 14. } else { 16. }),
+                ));
                 panel
                     .spawn((
                         Node {
                             width: percent(100),
-                            height: px(if skin.is_some() { 16. } else { 10. }),
+                            height: px(if skin.is_some() { 8. } else { 10. }),
                             ..default()
                         },
                         BackgroundColor(Color::srgb(0.08, 0.12, 0.18)),
@@ -280,7 +285,13 @@ fn setup(
                         BackgroundColor(Color::srgb(0.18, 0.42, 0.92)),
                     ));
                 if config.2 {
-                    panel.spawn((LifeLabel, text("Waiting for player life", 16.)));
+                    panel.spawn((
+                        LifeLabel,
+                        text(
+                            "Waiting for player life",
+                            if skin.is_some() { 14. } else { 16. },
+                        ),
+                    ));
                 }
             });
     }
@@ -396,14 +407,14 @@ fn setup(
 /// Twelve Classic primary bindings; only configured actions issue commands.
 /// Empty positions are decoration and never invent abilities.
 fn compact_actions(commands: &mut Commands, config: &Config, skin: &crate::fantasy_ui::Skin) {
-    use crate::fantasy_ui::{GOLD, PANEL, SLOT, SLOTS};
+    use crate::fantasy_ui::{ACTION_WIDTH, GOLD, PANEL, SLOT, SLOTS};
     use bevy::picking::Pickable;
     commands
         .spawn((
             Node {
                 position_type: PositionType::Absolute,
                 left: px(0),
-                bottom: px(24),
+                bottom: px(12),
                 width: percent(100),
                 justify_content: JustifyContent::Center,
                 ..default()
@@ -439,9 +450,9 @@ fn compact_actions(commands: &mut Commands, config: &Config, skin: &crate::fanta
                         bar.spawn((
                             node,
                             BackgroundColor(Color::srgba(0.025, 0.022, 0.02, 0.96)),
+                            Outline::new(px(1), px(-1), GOLD),
                         ))
                         .with_children(|empty| {
-                            empty.spawn(crate::fantasy_ui::decoration(skin.frame.clone()));
                             empty
                                 .spawn((
                                     text(key_label(slot), 12.),
@@ -466,6 +477,7 @@ fn compact_actions(commands: &mut Commands, config: &Config, skin: &crate::fanta
                         AccessibleLabel::new(format!("Cast {name} ({})", key_label(slot))),
                         node,
                         BackgroundColor(PANEL),
+                        Outline::new(px(1), px(-1), GOLD),
                     ))
                     .with_children(|button| {
                         button.spawn((
@@ -494,7 +506,6 @@ fn compact_actions(commands: &mut Commands, config: &Config, skin: &crate::fanta
                             BackgroundColor(Color::srgb(0.92, 0.68, 0.2)),
                             Pickable::IGNORE,
                         ));
-                        button.spawn(crate::fantasy_ui::decoration(skin.frame.clone()));
                         button.spawn((
                             text(key_label(slot), 14.),
                             Pickable::IGNORE,
@@ -511,8 +522,8 @@ fn compact_actions(commands: &mut Commands, config: &Config, skin: &crate::fanta
                             Pickable::IGNORE,
                             Node {
                                 position_type: PositionType::Absolute,
-                                bottom: px(132),
-                                left: px(0),
+                                bottom: px(0),
+                                left: px(ACTION_WIDTH + 12. - slot as f32 * (SLOT + 4.)),
                                 width: px(280),
                                 padding: UiRect::all(px(10)),
                                 border: UiRect::all(px(1)),
@@ -910,8 +921,8 @@ mod tests {
         assert_eq!(buttons.len(), 2);
         let frames = world.query::<&ImageNode>().iter(world).count();
         assert_eq!(
-            frames, 14,
-            "Twelve frame overlays and two configured ability icons"
+            frames, 2,
+            "Only configured ability icons require image nodes"
         );
         let first = buttons.iter().find(|(_, slot)| *slot == 0).unwrap().0;
         world.entity_mut(first).insert(Hovered(true));

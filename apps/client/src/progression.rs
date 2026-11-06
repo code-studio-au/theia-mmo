@@ -8,6 +8,22 @@ pub(crate) struct Profile(pub Arc<theia_network::progression_wire::Profile>);
 pub(crate) struct Label;
 #[derive(Component)]
 struct Fill;
+#[derive(Component)]
+pub(crate) struct Root;
+/// Actual progression widgets with clearly synthetic values; no Network/owner.
+pub(crate) fn install_preview(app: &mut App) {
+    app.add_systems(Startup, setup).add_systems(
+        PostStartup,
+        |mut labels: Query<&mut Text, With<Label>>, mut fills: Query<&mut Node, With<Fill>>| {
+            for mut label in &mut labels {
+                **label = "Level 2 | XP 240 / 600 (fixture)".into();
+            }
+            for mut fill in &mut fills {
+                fill.width = percent(40);
+            }
+        },
+    );
+}
 pub(crate) fn install(app: &mut App, profile: Arc<theia_network::progression_wire::Profile>) {
     qualification::install(app);
     app.insert_resource(Profile(profile))
@@ -17,6 +33,7 @@ pub(crate) fn install(app: &mut App, profile: Arc<theia_network::progression_wir
 fn setup(mut commands: Commands) {
     commands
         .spawn((
+            Root,
             crate::fantasy_ui::Panel::Progression,
             Node {
                 position_type: PositionType::Absolute,

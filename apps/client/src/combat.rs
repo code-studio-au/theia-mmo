@@ -150,18 +150,21 @@ pub fn install(
 fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
     commands
         .spawn((
-            Node {
-                position_type: PositionType::Absolute,
-                left: px(if skin.is_some() { 304. } else { 12. }),
-                top: if skin.is_some() { px(12) } else { Val::Auto },
-                bottom: if skin.is_some() { Val::Auto } else { px(186) },
-                border: UiRect::all(px(if skin.is_some() { 1. } else { 0. })),
-                width: px(if skin.is_some() { 276. } else { 348. }),
-                flex_direction: FlexDirection::Column,
-                row_gap: px(8),
-                padding: UiRect::all(px(12)),
-                ..default()
+            if skin.is_some() {
+                crate::fantasy_ui::unit_frame(false)
+            } else {
+                Node {
+                    position_type: PositionType::Absolute,
+                    left: px(12),
+                    bottom: px(186),
+                    width: px(348),
+                    flex_direction: FlexDirection::Column,
+                    row_gap: px(8),
+                    padding: UiRect::all(px(12)),
+                    ..default()
+                }
             },
+            crate::fantasy_ui::UnitFrame(false),
             BackgroundColor(if skin.is_some() {
                 crate::fantasy_ui::PANEL
             } else {
@@ -175,7 +178,7 @@ fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
                     crate::targeting::TargetHud,
                     Text::new("Targets loading..."),
                     TextFont {
-                        font_size: FontSize::Px(20.),
+                        font_size: FontSize::Px(16.),
                         ..default()
                     },
                     TextColor(Color::srgb(0.92, 0.85, 0.70)),
@@ -186,7 +189,7 @@ fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
             Hud,
             Text::new("Preparing abilities..."),
             TextFont {
-                font_size: FontSize::Px(if skin.is_some() { 16. } else { 18. }),
+                font_size: FontSize::Px(if skin.is_some() { 14. } else { 18. }),
                 ..default()
             },
             TextColor(Color::WHITE),
@@ -196,7 +199,7 @@ fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
                 .spawn((
                     Node {
                         width: percent(100),
-                        height: px(if skin.is_some() { 16. } else { 10. }),
+                        height: px(if skin.is_some() { 12. } else { 10. }),
                         ..default()
                     },
                     BackgroundColor(Color::srgb(0.17, 0.08, 0.1)),

@@ -4,7 +4,9 @@
 
 The user moved development beyond quest mechanics to a general WoW-like UI.
 This first slice is an **opt-in presentation candidate**. The existing playable
-configuration remains available while desktop/mouse testing is paused. The
+configuration remains available pending complete-theme qualification. The user
+restored desktop/mouse permission after supplying the visual reference; earlier
+paused-test statements below describe historical checkpoints. The
 unfinished optional full quest-log draft is parked locally; it is outside this UI slice.
 
 ## Adopted visual reference — 6 November 2026
@@ -35,9 +37,10 @@ Target composition:
   they support this composition. The existing ornate square bezel is a candidate,
   not a requirement to theme every element around it.
 
-**Implementation gap:** the current opt-in draft still uses upper-left unit
+**Gap at reference adoption:** the earlier opt-in draft used upper-left unit
 frames, a square minimap, a separate progression panel and heavier framed action
-slots. Its windowless previews prove their existing layout only; they do not
+slots. The lower-HUD refinement below replaces the unit/action/XP arrangement;
+the square minimap remains. Its windowless previews prove their existing layout only; they do not
 show the newly adopted composition. General enemy health nameplates, circular
 map masking, portraits, chat and a bag/menu strip are not established by those
 previews. Do not add illustrative controls that appear functional before their
@@ -50,8 +53,8 @@ ability requests, pending transactions and UI/world input ownership. Then handle
 nameplates and the circular minimap as separate bounded slices. Compare actual
 widgets at 1280×720, 1920×1200, 3440×1440 and 3840×2160 with the existing scale
 preferences; check clipping, unit-frame/feedback separation and a clear central
-view. Native connected/input qualification remains pending while desktop tests
-are prohibited. This records design direction, not completion of those changes.
+view. Native connected/input qualification remains pending; desktop testing is
+authorized again. This section records design direction, not completion of those changes.
 
 ## Asset assessment
 
@@ -107,10 +110,10 @@ separate evidence. It does not cryptographically seal mutable local art.
 The candidate loads four images and two fonts through a separate `fantasy-ui://`
 Bevy asset source. Existing terrain/player/creature asset roots are preserved.
 
-- Player health/mana/life at upper left; the selected-target heading and health
-  share one frame alongside it. The heading still comes from the existing
+- Player health/mana/life and selected-target heading/health occupy compact
+  frames either side of the lower central world view. The heading still comes from the existing
   authoritative-selection presenter; the skin does not resolve a new target.
-- Twelve familiar bottom action positions with compact 56 logical-pixel square framed icons,
+- Twelve familiar bottom action positions with compact 44 logical-pixel square outlined icons,
   existing hotkey labels, bounded cooldown strips and hover descriptions/costs/
   authoritative rejection messages. Tooltip geometry stays clear of cast/rejection
   feedback; the windowless exporter checks their separation. The compact skin
@@ -122,8 +125,8 @@ Bevy asset source. Existing terrain/player/creature asset roots are preserved.
   cooldown, manual autoattack or keyboard behavior is changed.
 - Shared charcoal/bronze pane styling for backpack, dialogue, loot, note reader and
   minimap. Inset outlines preserve existing content dimensions and scroll state.
-- Quest tracker below the existing upper-right minimap, progression below player
-  vitals, selected statuses below target information and a compact lower-left
+- Quest tracker below the existing upper-right minimap, progression above the
+  action bar, selected statuses in the retained upper-left status pane and a compact lower-left
   connection indicator. Loading/disconnection details remain available.
 - Standard Bevy widgets, picking, image/font loaders and rendering; no custom UI
   renderer, Unity runtime or new server component.
@@ -175,7 +178,7 @@ The normal live game/pane checks below remain pending.
 Before default adoption, qualify the complete normal connected HUD and panels at
 1280×720, 1920×1200 and 3440×1440, including actual hover/click/camera ownership,
 panel/Escape priority, long authored text, item capacity, reader and disconnect
-states. **Desktop/mouse checks remain prohibited by the user**; windowless GPU
+states. Desktop/mouse checks are authorized again; windowless GPU
 exports do not replace that gate. Native Windows, OS DPI/accessibility certification, performance and full-theme
 integration are not established by this slice. Controlled UI scale checks below
 cover GPU fixture layout, not live pointer behavior.
@@ -399,3 +402,40 @@ Vulkan adapter. Formatting, strict workspace/all-target Clippy, **167 client
 cases including local art**, and build pass. Native connected close/Escape,
 long-title reflow, scrolling and pending-transaction panel checks remain for the
 complete-theme gate after desktop use is permitted.
+
+
+## Reference-aligned lower HUD — 6 November 2026
+
+P2-14 / P5-13 / P5-19. The opt-in skin now anchors two 220-logical-pixel unit
+frames relative to the horizontal screen centre, with left offsets −340 and
++120 and a shared bottom offset of 190. This keeps a 240-pixel gap between the
+frames as ultrawide space grows. Smaller label/bar spacing reduces their height;
+the existing server-derived vitals, life and target presenters remain in use.
+These are text/bar frames; portraits are not implemented by this change.
+
+The twelve primary slots are now 44×44 with thin ordinary Bevy outlines, rather
+than ornamental PNG frame overlays. Original aspect ratios and the existing two
+ability icons remain. A 590-pixel-wide action container sits 12 pixels above the
+bottom edge; existing progression widgets are centred above it at bottom 78.
+Cast/rejection feedback remains above XP at bottom 112. The same bounded scale
+fitting applies to the entire composition. Hover descriptions share a position
+beside the right edge of the action bar so they do not cover unit frames or the
+cast bar. Empty slots still block world clicks without issuing abilities.
+
+The windowless exporter now includes the actual progression widgets with a
+clearly labelled synthetic XP value, plus the actual unit frames. All six
+`build/ui-reference-20261106/lower-v1-*` cases pass through 3840×2160, including
+75%, 125%, 150% preferences and small-window fitting. Reports verify physical
+unit-frame bounds, centre-relative anchors, clear central separation, no
+unit/tooltip/cast overlap and XP above the configured action buttons. Rendering
+uses RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6 with zero OS windows and no
+WARN/ERROR diagnostics. These are synthetic-widget exports, not live game captures.
+
+All 167 client cases, formatting, strict workspace/all-target Clippy and the
+development build pass. The initial test run found an obsolete assertion for
+twelve decorative image overlays; it now expects only configured ability images.
+The six-case aggregate is `lower-verification-v1.json` in the same ignored folder.
+No server, protocol, asset-source file or gameplay catalogue changed. Desktop
+use is authorized again, but this slice has not yet run native connected/pane/
+input qualification. Square minimap, general enemy nameplates, portrait art and
+chat/menu systems remain separate work. The skin remains opt-in.

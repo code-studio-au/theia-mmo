@@ -25,8 +25,26 @@ pub(crate) const TITLE_FONT: &str = "Fonts/Grenze/Grenze-SemiBold.ttf";
 pub(crate) const BODY_FONT: &str = "Fonts/Texturina/Texturina_18pt-SemiBold.ttf";
 pub(crate) const GOLD: Color = Color::srgb(0.64, 0.48, 0.26);
 pub(crate) const PANEL: Color = Color::srgba(0.055, 0.045, 0.035, 0.96);
-pub(crate) const SLOT: f32 = 56.;
+pub(crate) const SLOT: f32 = 44.;
 pub(crate) const SLOTS: usize = 12;
+pub(crate) const ACTION_WIDTH: f32 = SLOT * SLOTS as f32 + 4. * (SLOTS - 1) as f32 + 18.;
+#[derive(Component)]
+pub(crate) struct UnitFrame(pub bool);
+/// Centre-relative anchors keep combat information near the character on ultrawide.
+pub(crate) fn unit_frame(player: bool) -> Node {
+    Node {
+        position_type: PositionType::Absolute,
+        left: percent(50),
+        margin: UiRect::left(px(if player { -340. } else { 120. })),
+        bottom: px(190),
+        width: px(220),
+        padding: UiRect::all(px(6)),
+        row_gap: px(3),
+        border: UiRect::all(px(1)),
+        flex_direction: FlexDirection::Column,
+        ..default()
+    }
+}
 #[derive(Component)]
 pub(crate) struct HeaderClose;
 /// Ordinary Bevy title row; callers supply their existing close action bundle.
@@ -291,8 +309,13 @@ fn style_panels(
                 node.max_height = percent(34);
             }
             Panel::Progression => {
-                node.top = px(184);
-                node.width = px(276);
+                node.left = percent(50);
+                node.margin.left = px(-ACTION_WIDTH * 0.5);
+                node.top = Val::Auto;
+                node.bottom = px(78);
+                node.width = px(ACTION_WIDTH);
+                node.padding = UiRect::all(px(4));
+                node.row_gap = px(2);
             }
             Panel::Connection => {
                 node.top = Val::Auto;
