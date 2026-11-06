@@ -27,7 +27,10 @@ and six settings GPU layouts remain the UI evidence.
 `build/ui-reference-20261106/session-policy-http-v2/verification.json` records an
 actual owned Keycloak 26.8.1 / PostgreSQL 16.15 / HTTP login using a 3600-second
 signed identity and server lifetime, successful character-list access, then
-logout and rejection of the same credential. The HTTP check did not wait an hour;
+logout and rejection of the same credential. A follow-up actual HTTP login remains authorized **310 seconds** after its first
+authenticated request, then rejects the same credential after logout:
+`build/ui-reference-20261106/session-policy-http-v3/verification.json`. This
+crosses the legacy five-minute boundary. Neither HTTP check waited an hour;
 long expiry boundaries are the deterministic monotonic-clock tests above. It
 opens no window and sends no desktop input. Its service/provider/database stop
 and private password files are removed. The first attempt timed out during

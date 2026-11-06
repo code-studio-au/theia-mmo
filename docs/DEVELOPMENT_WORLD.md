@@ -1,3 +1,62 @@
+# Isolated local playtest launcher — 6 November 2026
+
+P2-02 / P2-14. `tools/play_local.py` prepares a **fresh disposable Linux playtest**
+with the ordinary authenticated Classic launcher, a local synthetic Keycloak
+identity and owned PostgreSQL. It defaults to a one-hour bounded session,
+1920×1200 and 125% UI scale. It does not log in to a real account or resume an
+older disposable identity/database. Existing saved test directories are retained.
+
+After preparing binaries/art and the baked terrain/navigation described below:
+
+```bash
+python3 tools/play_local.py \
+  --binaries build/playable \
+  --client target/debug/theia-client \
+  --server target/debug/theia-server \
+  --output build/local-play-fresh \
+  --fantasy-ui "/path/to/FantasyWarriorHUD"
+```
+
+`build/playable` stands for an existing prepared directory containing
+`theia-client`, `theia-server`, `validate_gameplay`, `art/player/character.glb` and
+`art/wolf/wolf.glb`. Client/server overrides are optional; use them to play the
+current build with an existing prepared validator/art pack. The current local
+qualified pack is `build/quest-offer-list-candidate-v1-20261106`. This wrapper does
+not bake missing assets or certify arbitrary mixed binary versions.
+
+The chosen output must be new and under ignored `build/`. Binaries, JSON content
+and model art are copied before services start. The ordinary launcher runs from
+that private directory, so its temporary validated bundle, tickets, certificates
+and logs cannot overwrite another run's `build/development-session`. Baked
+terrain/navigation remain shared immutable sources; the licensed HUD directory
+remains external. Keep those sources unchanged during a playtest. Subsequent
+Rust builds and source JSON edits do not replace the frozen copies.
+
+Closing the game or interrupting the wrapper stops its game/server first, then
+PostgreSQL and Keycloak. PostgreSQL uses a separate process group so a terminal
+interrupt cannot stop it ahead of the game. Private credential files are removed
+by the existing owned fixtures; retained database/log files remain under the
+private output directory. Status and SHA-256 build metadata contain no credentials.
+Startup failures are reported in the private `game.log`. The wrapper does not
+send mouse/keyboard input, read arbitrary windows or claim native game readiness
+from the mere existence of its launcher process.
+
+`--session-seconds` accepts 60–43,200 and explicitly sets both issuer token and
+server limits; it is an absolute duration, not renewal. `--character` chooses a
+fresh ASCII test name; window size and scale have the same bounded options as the
+ordinary launcher. Linux fixture SDKs remain prerequisites; no Windows execution
+is claimed by this helper. [Lifetime policy](AUTHENTICATED_ADMISSION.md).
+
+Validation: 20 selected Python cases pass, including frozen build/content
+isolation, invalid-input refusal and child-before-service cleanup. A real
+PostgreSQL check confirms the separate process group, SELECT access and cleanup
+(`build/ui-reference-20261106/play-local-db-v1/verification.json`). A complete
+owned OIDC/SQL/game-server launch/close smoke passes from the private working
+directory (`play-local-headless-v1/verification.json` in the same evidence root).
+That smoke uses an explicit no-window client stub: it proves the launcher/content/
+account/cleanup path, not native rendering, transport join or playable input.
+No desktop input was sent; native use of this wrapper remains separate.
+
 # Current development bundle — 2026-10-31: player melee and terrain-specific readiness
 
 The [qualified sword bundle](PLAYER_MELEE.md) combines the existing world/pursuit
