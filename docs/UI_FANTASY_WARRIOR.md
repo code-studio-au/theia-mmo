@@ -78,6 +78,39 @@ still need assessment; no placeholder portrait should claim to show the actual
 player or NPC appearance. The immediately following presentation work is the
 existing quest/dialogue window, after the nameplate/damage-label check finishes.
 
+## User ultrawide captures — 6 November 2026, 18:30–18:32
+
+Three further local reference captures are 3440×1440:
+`Screenshot from 2026-11-06 18-32-19.png`, `18-31-01.png` and `18-30-32.png`
+under the user's Pictures directory. They remain local visual references; do not
+copy their game artwork, player names or chat into distributed assets or fixtures.
+
+These refine the earlier AntonilzUI composition:
+
+- Keep a broad unobstructed central view. Compact lower player/target frames sit
+  farther apart on ultrawide, with clear health/resources and eventual real
+  portraits/level badges. The current fixed centre-relative frame gap is a
+  candidate to refine, not a claimed match to this reference.
+- Use a small legible cast bar immediately above the bottom action strip, thin
+  XP treatment, compact square ability/utility/bag icons and restrained gold/bronze
+  borders. Decorative ends are optional; avoid making the entire HUD ornate.
+- Keep the circular map and compact objectives at top right, eventual chat at
+  bottom left, and a compact combined backpack above the bottom-right controls.
+  Tooltip backgrounds should be dark, readable and separate from core combat data.
+- Retain clear floating damage/XP feedback, distinct selected-target treatment and
+  readable world names. Friendly/hostile colour and level data require actual
+  authority metadata; do not infer new gameplay facts from screenshot colours.
+
+The pictures include chat, party frames, search, locked bag slots, currency and
+other addon controls. They guide future presentation after the corresponding
+systems exist; no placeholder control should appear functional in the meantime.
+Keep Theia range labels metric. Do not change Classic controls, combat formulas,
+item capacity or add unimplemented
+systems to fill the reference strip. Continue the current reward-icon work, then
+refine density/spacing and confirmed-data displays in bounded UI slices.
+The latest instruction still prohibits desktop/mouse testing while the user
+uses the machine; these supplied image files can be reviewed without desktop input.
+
 ## Asset assessment
 
 The supplied folder is `/home/steven/Downloads/Synty Models/HUDs`, rather than
@@ -806,3 +839,39 @@ window, Winit, mouse, keyboard or desktop input. Evidence is
 175 client cases including local art, formatting and strict Clippy pass. No new desktop check has run after the user's pause; native input
 qualification of this presentation-only extraction remains pending. Earlier
 backpack native evidence belongs to its exact pre-palette sources. No push.
+
+
+## Fixed reward icon cells — 6 November 2026
+
+P2-14 / P3-05 / P3-11 / P5-13 / P5-19. The themed quest offer/turn-in buttons now
+include decorative item cells below their unchanged full text names, counts and
+XP description. Only the validated grants in the bound quest reward profile
+supply item IDs/counts. Quests with no fixed grants and the unskinned UI gain no
+cells. The same item art mapping is used as the backpack; no new assets are
+loaded, and the wand/pelt/unknown mappings retain their stated limitations.
+
+Each cell uses standard Bevy image/text/outline primitives and shows a 28-pixel
+icon plus count in an 80×36 logical area. The row wraps, and the offer retains
+intrinsic height. All decorative nodes ignore pointer picking; the existing
+offer button, pending guard, revision, receipt and server transaction remain the
+only action. This adds no item selection, claim, currency or reward mechanism.
+The contrast marker is generalized from headers to dark surfaces so count text
+stays light on dark item cells inside parchment.
+
+The existing fixed-reward headless case now also constructs the actual themed
+and unthemed offer trees, checking exact bound items/counts, absent art for the
+legacy/other quest and ignored picking. All **175 client cases**, formatting,
+strict workspace/all-target Clippy and development build pass. Six
+`reward-icons-v1-*` windowless GPU cases through 3840×2160 render a validated,
+explicitly labelled two-item metadata fixture in a deliberately narrow parent.
+Both cells wrap into separate rows, remain inside the paper sample and render
+counts whose glyph bounds fit their text nodes. These checks retain the other
+HUD/backpack/action/tooltip gates. Evidence:
+`build/ui-reference-20261106/reward-icons-verification-v1.json`, on Linux RX 7900
+XTX / RADV Vulkan / Mesa 26.2.6, without any OS window or desktop input.
+
+The paper sample exercises the shared decorative renderer, not a connected quest
+offer list. Actual taller-row scrolling, clipping, click ownership, pending and
+capacity behavior with these new cells still need the normal native replay.
+Desktop/mouse testing remains paused at the user's request. Prior native proof
+belongs to the exact earlier text-only offer rows; the skin remains opt-in.

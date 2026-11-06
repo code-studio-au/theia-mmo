@@ -71,6 +71,25 @@ struct Layout<'w, 's> {
     units: Query<'w, 's, UnitGeometry<'static>>,
     xp: Query<'w, 's, AnchorGeometry<'static>, With<crate::progression::Root>>,
     dock: Query<'w, 's, AnchorGeometry<'static>, With<crate::inventory::BackpackDock>>,
+    reward_icons: Query<
+        'w,
+        's,
+        (
+            &'static super::RewardIcon,
+            &'static ComputedNode,
+            &'static bevy::ui::UiGlobalTransform,
+            &'static Children,
+        ),
+    >,
+    reward_text: Query<
+        'w,
+        's,
+        (
+            &'static ComputedNode,
+            &'static bevy::text::TextLayoutInfo,
+            &'static Text,
+        ),
+    >,
     bag_actions: Query<'w, 's, AnchorGeometry<'static>, BagActions>,
     bag_slots: Query<'w, 's, AnchorGeometry<'static>, With<crate::inventory::SlotButton>>,
     bag_icons:
@@ -204,7 +223,24 @@ fn label(value: &str, size: f32) -> impl Bundle {
         TextColor(Color::srgb(0.92, 0.85, 0.70)),
     )
 }
-fn labels(mut commands: Commands, run: Res<Capture>) {
+fn labels(mut commands: Commands, run: Res<Capture>, skin: Res<super::Skin>) {
+    // Validated metadata for a labelled UI sample; never a live quest/reward.
+    let items = theia_core::inventory::Catalog::from_json(include_bytes!(
+        "../../../../content/gameplay/development-document-items.json"
+    ))
+    .unwrap();
+    let mut metadata: serde_json::Value = serde_json::from_slice(include_bytes!(
+        "../../../../content/gameplay/development-rewards.json"
+    ))
+    .unwrap();
+    metadata["rewards"][0]["grants"] = serde_json::json!([
+        {"item":"theia.dev.training-token","count":3},
+        {"item":"theia.dev.training-sword","count":1}
+    ]);
+    let rewards =
+        theia_core::rewards::Catalog::from_json(&serde_json::to_vec(&metadata).unwrap(), &items)
+            .unwrap();
+    let grants = rewards.definitions().next().unwrap().grants();
     commands
         .spawn((
             HeaderFixture,
@@ -232,7 +268,18 @@ fn labels(mut commands: Commands, run: Res<Capture>) {
                 ),
                 "Close fixture window",
             );
-            panel.spawn(label("Preview only", 14.));
+            panel.spawn(label(
+                "Rewards (fixture)\n3 x Training Token, 1 x Training Sword",
+                14.,
+            ));
+            // Deliberately narrow: exercise wrapping as well as the normal
+            // full-width offer layout, without inventing extra rewards.
+            panel
+                .spawn(Node {
+                    width: px(140),
+                    ..default()
+                })
+                .with_children(|row| super::reward_icons(row, &skin, grants));
         });
     let point = super::projected_ui_point(run.size.as_vec2() * ANCHOR_RATIO, run.ui_scale).unwrap();
     commands
@@ -587,6 +634,29 @@ fn capture(
         .collect();
     assert_eq!(bag_actions.len(), 5);
     let backpack = serde_json::json!({"fixture":true, "slots":bag_slots,"actions":bag_actions,"visible_icons":visible_icons,"tooltip":{"centre":tooltip_centre.to_array(),"size":tooltip_size.to_array()}});
+    let mut reward_rows = Vec::<f32>::new();
+    let reward_icons: Vec<_> = layout.reward_icons.iter().map(|(reward, node, transform, children)| {
+        let rect = Rect::from_center_size(transform.affine().translation, node.size());
+        if !reward_rows.iter().any(|y| (*y - rect.min.y).abs() < 1.) { reward_rows.push(rect.min.y); }
+        let header_rect = Rect::from_center_size(header_centre, header_size);
+        assert!(node.size().min_element() > 0. && header_rect.contains(rect.min) && header_rect.contains(rect.max));
+        let mut text_seen = false;
+        for child in children.iter() {
+            if let Ok((node, glyphs, text)) = layout.reward_text.get(child) {
+                assert_eq!(text.0, reward.count.to_string());
+                assert!(glyphs.size.x <= node.size().x + 1. && glyphs.size.y <= node.size().y + 1., "Reward count must fit its rendered cell");
+                text_seen = true;
+            }
+        }
+        assert!(text_seen);
+        serde_json::json!({"item":reward.item.as_str(),"count":reward.count,"rect":[rect.min.to_array(),rect.max.to_array()]})
+    }).collect();
+    assert_eq!(reward_icons.len(), 2);
+    assert_eq!(
+        reward_rows.len(),
+        2,
+        "Reward cells must wrap in the narrow fixture"
+    );
     let directory = run.directory.clone();
     let size = run.size;
     let ui_scale = run.ui_scale;
@@ -596,7 +666,7 @@ fn capture(
         assert_eq!([event.image.width(), event.image.height()], [size.x,size.y]);
         event.image.clone().try_into_dynamic().unwrap().save(directory.join("hud.png")).unwrap();
         std::fs::write(directory.join("report.json"),serde_json::to_vec_pretty(&serde_json::json!({
-                "completed":true,"ui_scale":ui_scale,"preferred_ui_scale":preferred_scale,"geometry_units":"physical_pixels","offscreen":true,"windows":0,"fixture":true,"extent":[size.x,size.y],"gpu":gpu,"buttons":buttons,"glyphs":glyphs,"feedback":feedback,"minimap":minimap,"header":header,"unit_frames":unit_frames,"xp":xp,"backpack_dock":dock,"backpack":backpack,"nameplates":nameplates,"projected_anchor":{"actual":projected_anchor.to_array(),"expected":expected_anchor.to_array()},
+                "completed":true,"ui_scale":ui_scale,"preferred_ui_scale":preferred_scale,"geometry_units":"physical_pixels","offscreen":true,"windows":0,"fixture":true,"extent":[size.x,size.y],"gpu":gpu,"buttons":buttons,"glyphs":glyphs,"feedback":feedback,"minimap":minimap,"header":header,"unit_frames":unit_frames,"xp":xp,"backpack_dock":dock,"backpack":backpack,"reward_icons":reward_icons,"nameplates":nameplates,"projected_anchor":{"actual":projected_anchor.to_array(),"expected":expected_anchor.to_array()},
             "scope":"Actual Bevy combat HUD widgets with fixture values; no desktop input, account, network, world or live gameplay qualification"
         })).unwrap()).unwrap();
         exit.write(AppExit::Success);

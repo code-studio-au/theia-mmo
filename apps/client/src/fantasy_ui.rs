@@ -56,7 +56,7 @@ pub(crate) const PANEL: Color = Color::srgba(0.055, 0.045, 0.035, 0.96);
 const PAPER: Color = Color::srgb(0.82, 0.70, 0.49);
 const INK: Color = Color::srgb(0.18, 0.11, 0.05);
 #[derive(Component)]
-struct HeaderSurface;
+struct DarkSurface;
 pub(crate) fn button_color(disabled: bool, hovered: bool, pressed: bool) -> Color {
     if disabled {
         Color::srgb(0.16, 0.14, 0.12)
@@ -74,6 +74,78 @@ pub(crate) fn button_color(disabled: bool, hovered: bool, pressed: bool) -> Colo
 /// ScrollPosition remains in UI logical pixels and must not use this factor.
 pub(crate) fn window_factor(node: &ComputedNode, ui_scale: f32) -> f32 {
     node.inverse_scale_factor() * ui_scale
+}
+#[derive(Component)]
+pub(crate) struct RewardIcon {
+    pub item: theia_core::content::ContentId,
+    pub count: u32,
+}
+/// Decorative companions to the existing full reward names/counts. No widget,
+/// item choice or command is installed; the enclosing offer retains its action.
+pub(crate) fn reward_icons(
+    parent: &mut ChildSpawnerCommands,
+    skin: &Skin,
+    grants: &[theia_core::rewards::Grant],
+) {
+    if grants.is_empty() {
+        return;
+    }
+    parent
+        .spawn((
+            Pickable::IGNORE,
+            Node {
+                width: percent(100),
+                flex_wrap: FlexWrap::Wrap,
+                column_gap: px(6),
+                row_gap: px(6),
+                flex_shrink: 0.,
+                ..default()
+            },
+        ))
+        .with_children(|row| {
+            for grant in grants {
+                row.spawn((
+                    RewardIcon {
+                        item: grant.item().clone(),
+                        count: grant.count(),
+                    },
+                    DarkSurface,
+                    Pickable::IGNORE,
+                    Node {
+                        width: px(80),
+                        height: px(36),
+                        flex_shrink: 0.,
+                        padding: UiRect::all(px(2)),
+                        column_gap: px(4),
+                        align_items: AlignItems::Center,
+                        ..default()
+                    },
+                    BackgroundColor(PANEL),
+                    Outline::new(px(1), px(-1), GOLD),
+                ))
+                .with_children(|cell| {
+                    cell.spawn((
+                        ImageNode::new(skin.item_icon(grant.item().as_str())),
+                        Pickable::IGNORE,
+                        Node {
+                            width: px(28),
+                            height: px(28),
+                            flex_shrink: 0.,
+                            ..default()
+                        },
+                    ));
+                    cell.spawn((
+                        Text::new(grant.count().to_string()),
+                        Pickable::IGNORE,
+                        TextFont {
+                            font_size: bevy::text::FontSize::Px(13.),
+                            ..default()
+                        },
+                        TextColor(Color::WHITE),
+                    ));
+                });
+            }
+        });
 }
 pub(crate) const SLOT: f32 = 44.;
 pub(crate) const SLOTS: usize = 12;
@@ -108,7 +180,7 @@ pub(crate) fn window_header(
 ) {
     title_row
         .spawn((
-            HeaderSurface,
+            DarkSurface,
             Node {
                 width: percent(100),
                 column_gap: px(8),
@@ -350,7 +422,7 @@ pub(crate) fn load(app: &mut App) {
 type Surface<'a> = (
     Option<&'a ChildOf>,
     Option<&'a Panel>,
-    Has<HeaderSurface>,
+    Has<DarkSurface>,
     Has<bevy::ui_widgets::Button>,
 );
 fn paper_text(mut entity: Entity, surfaces: &Query<Surface<'_>>) -> bool {
@@ -483,7 +555,7 @@ mod tests {
                 ChildOf(pane),
             ))
             .id();
-        let header = app.world_mut().spawn((HeaderSurface, ChildOf(pane))).id();
+        let header = app.world_mut().spawn((DarkSurface, ChildOf(pane))).id();
         let title = app
             .world_mut()
             .spawn((Text::new("Guide"), TextColor(GOLD), ChildOf(header)))

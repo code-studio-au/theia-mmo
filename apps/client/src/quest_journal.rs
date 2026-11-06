@@ -78,6 +78,7 @@ fn setup(
     mut commands: Commands,
     panes: Query<Entity, With<crate::dialogue::Pane>>,
     definitions: Res<Definitions>,
+    skin: Option<Res<crate::fantasy_ui::Skin>>,
 ) {
     commands
         .spawn((
@@ -131,6 +132,12 @@ fn setup(
                             Node {
                                 width: percent(100),
                                 min_height: px(34),
+                                flex_direction: if skin.is_some() {
+                                    FlexDirection::Column
+                                } else {
+                                    FlexDirection::Row
+                                },
+                                row_gap: px(6),
                                 flex_shrink: 0.,
                                 padding: UiRect::all(px(5)),
                                 display: Display::None,
@@ -138,15 +145,25 @@ fn setup(
                             },
                             BackgroundColor(Color::srgb(0.08, 0.25, 0.3)),
                         ))
-                        .with_child((
-                            ActionLabel(quest.id().clone()),
-                            text(quest.title()),
-                            Node {
-                                max_width: percent(100),
-                                flex_shrink: 0.,
-                                ..default()
-                            },
-                        ));
+                        .with_children(|label| {
+                            label.spawn((
+                                ActionLabel(quest.id().clone()),
+                                text(quest.title()),
+                                Node {
+                                    max_width: percent(100),
+                                    flex_shrink: 0.,
+                                    ..default()
+                                },
+                            ));
+                            if let Some(skin) = &skin
+                                && let Some(grants) = definitions
+                                    .0
+                                    .item_rewards()
+                                    .and_then(|rewards| rewards.grants(quest.id()))
+                            {
+                                crate::fantasy_ui::reward_icons(label, skin, grants);
+                            }
+                        });
                     }
                 });
         });

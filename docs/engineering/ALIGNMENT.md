@@ -24,6 +24,9 @@ window DPI; headless geometry/scroll checks pass. Native enlarged-UI input
 remains pending until desktop tests are authorized again.
 Backpack action colours now match the dark red theme. Six windowless cases
 include the five shared inventory actions; native follow-up remains pending.
+Fixed quest offers now include decorative icons/counts from their bound reward
+metadata. Headless binding/legacy checks and six narrow-cell GPU layouts pass;
+normal offer-list interaction with the taller rows remains pending.
 The skin remains opt-in; clickable plates, portrait art, chat/menu systems,
 nondefault-scale OS traces and complete-theme qualification
 remain separate work. [Scope, reference, assets and evidence](../UI_FANTASY_WARRIOR.md).

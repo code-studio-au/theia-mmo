@@ -261,6 +261,40 @@ fn fixed_items_are_named_on_offers_and_unfinished_journal_but_not_promised_again
         assert!(label.contains("1 x Training Sword"));
         assert!(!label.contains("theia.dev.training"));
     }
+    // Actual offer construction uses only the bound fixed-reward metadata.
+    // The unskinned grid and quests without grants acquire no extra artwork.
+    for skinned in [false, true] {
+        let mut app = App::new();
+        app.insert_resource(Definitions(Arc::new(profile.clone())))
+            .add_systems(Startup, setup);
+        if skinned {
+            app.insert_resource(crate::fantasy_ui::Skin::fixture());
+        }
+        app.world_mut().spawn(crate::dialogue::Pane);
+        app.update();
+        let world = app.world_mut();
+        let mut icons = world.query::<(&crate::fantasy_ui::RewardIcon, &Pickable)>();
+        let rendered: BTreeMap<_, _> = icons
+            .iter(world)
+            .map(|(icon, pickable)| {
+                assert_eq!(*pickable, Pickable::IGNORE);
+                (icon.item.as_str().to_owned(), icon.count)
+            })
+            .collect();
+        let expected = if skinned {
+            BTreeMap::from([
+                ("theia.dev.training-token".to_owned(), 3),
+                ("theia.dev.training-sword".to_owned(), 1),
+            ])
+        } else {
+            BTreeMap::new()
+        };
+        assert_eq!(rendered, expected);
+        assert!(
+            !world.contains_resource::<Pending>(),
+            "Decoration installs no quest command producer"
+        );
+    }
     let journal = Journal::default()
         .propose_accept(profile.catalog(), quest.id(), quest.giver())
         .unwrap()
