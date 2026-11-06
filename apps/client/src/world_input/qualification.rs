@@ -285,6 +285,7 @@ fn os_trace(world: &mut World) {
                 .get_resource::<bevy::ui::UiScale>()
                 .map_or(1., |scale| scale.0)
         );
+        data["interface"] = crate::fantasy_ui::settings::snapshot(world);
         data["ui_geometry_units"] = serde_json::json!("window_logical_pixels");
         data["ui_scroll_units"] = serde_json::json!("ui_logical_pixels");
         data["inventory_layout"] = inventory_layout(world);

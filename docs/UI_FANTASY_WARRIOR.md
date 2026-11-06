@@ -1035,3 +1035,35 @@ come from the windowless geometry report. Evidence:
 `build/ui-reference-20261106/native-wide-frames-v1/verification.json`.
 Owned services stop, temporary wheel device and plaintext password files are
 removed. Windows, native DPI and interactive resize/restoration remain separate.
+
+
+## In-game session UI scale — 6 November 2026
+
+P2-14 / P5-13 / P5-19. The opt-in skin now has an **Interface [F10]** dock button
+beside the backpack. F10 toggles a standard Bevy panel with 75%, 100%, 125% and
+150% presets. The panel reports both preferred and currently fitted size. Changes
+apply immediately to the existing UI-scale resource and responsive anchors;
+small windows fit down and later restore the preferred value. Preferences last
+for this client session; no saved settings file or account setting is claimed.
+The world continues simulating while the panel is open.
+
+Escape closes Interface first and retains its ownership for the rest of that
+frame. It preserves an underlying reader, loot panel, dialogue, backpack and
+Classic target; subsequent presses use the existing priority. Unfocused windows
+do not toggle the interface. Hidden presets cannot edit the preference, and
+out-of-range preset values refuse. Widgets send no network/gameplay commands.
+Read-only native qualification exports identify the actual toggle/preset/close
+positions and preferred/displayed scales. No engine, protocol or asset changes.
+
+Three new headless cases exercise preset bounds/fit restoration, keyboard focus
+and the actual multi-panel Escape chain including Classic target-clear ownership.
+All **189 client cases** including local art pass. Formatting, strict workspace/
+all-target Clippy and client build pass. Six `interface-v1-*` windowless Linux GPU
+layouts through 3840×2160 render the shared settings panel, check viewport fit and
+clear combat feedback, and retain existing HUD/map/bag gates. Device: RX 7900 XTX /
+RADV Vulkan / Mesa 26.2.6. The `--interface` developer preview uses synthetic
+resources and no action observer/network; it is mutually exclusive with `--reader`.
+Evidence: `build/ui-reference-20261106/interface-verification-v1.json` and the
+corresponding client/Clippy/build logs. Native pointer interaction with these
+new controls and interactive resize/DPI/Windows remain pending. The user's running
+playtest keeps its frozen earlier binary and has not been interrupted or replaced.

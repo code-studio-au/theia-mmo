@@ -187,10 +187,12 @@ pub(crate) fn close_panel(
     keys: Res<ButtonInput<KeyCode>>,
     mut ui: ResMut<Ui>,
     documents: Option<Res<crate::documents::Ui>>,
+    interface: Option<Res<crate::fantasy_ui::settings::Ui>>,
 ) {
     ui.closed_this_frame = false;
     if ui.open
         && keys.just_pressed(KeyCode::Escape)
+        && !crate::fantasy_ui::settings::owns_escape(interface.as_deref())
         && !documents
             .as_ref()
             .is_some_and(|u| u.open || u.closed_this_frame)

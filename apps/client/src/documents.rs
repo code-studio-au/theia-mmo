@@ -375,9 +375,16 @@ fn activate(
         Action::Previous => pending.previous = true,
     }
 }
-pub(crate) fn close_panel(keys: Res<ButtonInput<KeyCode>>, mut ui: ResMut<Ui>) {
+pub(crate) fn close_panel(
+    keys: Res<ButtonInput<KeyCode>>,
+    mut ui: ResMut<Ui>,
+    interface: Option<Res<crate::fantasy_ui::settings::Ui>>,
+) {
     ui.closed_this_frame = false;
-    if keys.just_pressed(KeyCode::Escape) && (ui.open || ui.waiting.is_some()) {
+    if keys.just_pressed(KeyCode::Escape)
+        && !crate::fantasy_ui::settings::owns_escape(interface.as_deref())
+        && (ui.open || ui.waiting.is_some())
+    {
         ui.close();
     }
 }

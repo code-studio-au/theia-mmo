@@ -1,3 +1,12 @@
+## 2026-11-06 — session-only interface size controls
+
+Use ordinary Bevy buttons to adjust the existing preferred UI scale in game.
+Expose 75/100/125/150% and both preferred/fitted sizes in Interface [F10]. Preserve
+current small-window fitting, Classic controls and the existing panel/target
+Escape chain by giving Interface first close priority. Keep the setting local to
+the current session until a separate saved-preference slice; opening it does not
+pause an authoritative world. [Implementation and evidence](UI_FANTASY_WARRIOR.md#in-game-session-ui-scale--6-november-2026).
+
 ## 2026-11-06 — additional UI references refine panels and character screens
 
 Keep the adopted lower-HUD composition. Use the user's four new inline images

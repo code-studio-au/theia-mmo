@@ -248,6 +248,7 @@ fn setup(
             });
         });
 }
+#[allow(clippy::too_many_arguments)]
 fn controls(
     keys: Res<ButtonInput<KeyCode>>,
     network: Res<Network>,
@@ -256,6 +257,7 @@ fn controls(
     classic: Option<Res<crate::classic_controls::Controller>>,
     loot: Option<Res<crate::loot::Ui>>,
     documents: Option<Res<crate::documents::Ui>>,
+    interface: Option<Res<crate::fantasy_ui::settings::Ui>>,
 ) {
     let state = network.state();
     let pointer_choice = pending.choice.take();
@@ -267,7 +269,8 @@ fn controls(
     let Some(view) = &state.dialogue else {
         return;
     };
-    let loot_owns = loot.as_ref().is_some_and(|u| u.open || u.closed_this_frame)
+    let loot_owns = crate::fantasy_ui::settings::owns_escape(interface.as_deref())
+        || loot.as_ref().is_some_and(|u| u.open || u.closed_this_frame)
         || documents
             .as_ref()
             .is_some_and(|u| u.open || u.closed_this_frame);

@@ -73,6 +73,7 @@ struct Layout<'w, 's> {
     feedback: Query<'w, 's, FeedbackGeometry<'static>>,
     anchor: Query<'w, 's, AnchorGeometry<'static>, With<ProjectedAnchor>>,
     minimap: Query<'w, 's, AnchorGeometry<'static>, With<crate::minimap::Root>>,
+    interface: Query<'w, 's, AnchorGeometry<'static>, With<super::settings::Pane>>,
     map_tooltip: Query<'w, 's, AnchorGeometry<'static>, With<crate::minimap::hints::Tooltip>>,
     map_surface: Query<'w, 's, AnchorGeometry<'static>, With<crate::minimap::Surface>>,
     header: Query<'w, 's, AnchorGeometry<'static>, PaperSample>,
@@ -129,7 +130,7 @@ struct Layout<'w, 's> {
 pub(crate) fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     if !(6..=9).contains(&args.len()) || args[2] != "--output" || args[4] != "--size" {
         return Err(
-            "Expected --preview-fantasy-ui HUD_DIRECTORY --output DIRECTORY --size WIDTHxHEIGHT [--ui-scale FACTOR] [--reader]"
+            "Expected --preview-fantasy-ui HUD_DIRECTORY --output DIRECTORY --size WIDTHxHEIGHT [--ui-scale FACTOR] [--reader | --interface]"
                 .into(),
         );
     }
@@ -145,11 +146,16 @@ pub(crate) fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
         .iter()
         .filter(|arg| arg.as_str() == "--reader")
         .count();
-    if reader_flags > 1 {
-        return Err("Duplicate --reader preview flag".into());
+    let interface_flags = scale_args
+        .iter()
+        .filter(|a| a.as_str() == "--interface")
+        .count();
+    if reader_flags + interface_flags > 1 {
+        return Err("Choose at most one --reader or --interface preview flag".into());
     }
     let reader = reader_flags == 1;
-    scale_args.retain(|arg| arg != "--reader");
+    let interface = interface_flags == 1;
+    scale_args.retain(|arg| arg != "--reader" && arg != "--interface");
     let preferred_scale = super::parse_scale(&mut scale_args, true)?;
     let ui_scale = super::fit_scale(preferred_scale, size.as_vec2());
     if !scale_args.is_empty() {
@@ -237,6 +243,9 @@ pub(crate) fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     crate::inventory::skin::install_preview(&mut app);
     if reader {
         crate::documents::install_preview(&mut app);
+    }
+    if interface {
+        super::settings::install_preview(&mut app, preferred_scale);
     }
     crate::combat::ui::install_preview(&mut app);
     crate::minimap::install_preview(&mut app);
@@ -523,6 +532,24 @@ fn capture(
     let feedback = serde_json::json!({"cast":[cast.min.to_array(),cast.max.to_array()],"tooltips":tooltips.iter().map(|r| [r.min.to_array(),r.max.to_array()]).collect::<Vec<_>>()});
     let viewport = Rect::from_corners(Vec2::ZERO, run.size.as_vec2());
     let centre_x = run.size.x as f32 * 0.5;
+    let interface: Vec<_> = layout
+        .interface
+        .iter()
+        .map(|(node, transform)| {
+            let rect = Rect::from_center_size(transform.affine().translation, node.size());
+            assert!(
+                node.size().min_element() > 0.
+                    && viewport.contains(rect.min)
+                    && viewport.contains(rect.max),
+                "Interface settings stays in viewport"
+            );
+            assert!(
+                rect.intersect(cast).is_empty(),
+                "Settings leaves combat feedback visible"
+            );
+            serde_json::json!({"fixture":true,"rect":[rect.min.to_array(),rect.max.to_array()]})
+        })
+        .collect();
     let unit_frames: Vec<_> = layout
         .units
         .iter()
@@ -778,7 +805,7 @@ fn capture(
         assert_eq!([event.image.width(), event.image.height()], [size.x,size.y]);
         event.image.clone().try_into_dynamic().unwrap().save(directory.join("hud.png")).unwrap();
         std::fs::write(directory.join("report.json"),serde_json::to_vec_pretty(&serde_json::json!({
-                "completed":true,"ui_scale":ui_scale,"preferred_ui_scale":preferred_scale,"geometry_units":"physical_pixels","offscreen":true,"windows":0,"fixture":true,"extent":[size.x,size.y],"gpu":gpu,"buttons":buttons,"glyphs":glyphs,"feedback":feedback,"minimap":minimap,"header":header,"unit_frames":unit_frames,"xp":xp,"backpack_dock":dock,"backpack":backpack,"reward_icons":reward_icons,"reader":reader,"map_objectives":map_objectives,"nameplates":nameplates,"projected_anchor":{"actual":projected_anchor.to_array(),"expected":expected_anchor.to_array()},
+                "completed":true,"ui_scale":ui_scale,"preferred_ui_scale":preferred_scale,"geometry_units":"physical_pixels","offscreen":true,"windows":0,"fixture":true,"extent":[size.x,size.y],"gpu":gpu,"buttons":buttons,"glyphs":glyphs,"feedback":feedback,"minimap":minimap,"header":header,"unit_frames":unit_frames,"xp":xp,"backpack_dock":dock,"backpack":backpack,"reward_icons":reward_icons,"reader":reader,"map_objectives":map_objectives,"interface":interface,"nameplates":nameplates,"projected_anchor":{"actual":projected_anchor.to_array(),"expected":expected_anchor.to_array()},
             "scope":"Actual Bevy combat HUD widgets with fixture values; no desktop input, account, network, world or live gameplay qualification"
         })).unwrap()).unwrap();
         exit.write(AppExit::Success);

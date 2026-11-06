@@ -429,6 +429,7 @@ pub(crate) fn close_panel(
     documents: Option<Res<crate::documents::Ui>>,
     dialogue: Option<Res<crate::dialogue::Ui>>,
     network: Option<Res<Network>>,
+    interface: Option<Res<crate::fantasy_ui::settings::Ui>>,
 ) {
     let talking = dialogue
         .as_ref()
@@ -442,6 +443,7 @@ pub(crate) fn close_panel(
                         .is_some_and(|dialogue| dialogue.open.is_some()))
         });
     if keys.just_pressed(KeyCode::Escape)
+        && !crate::fantasy_ui::settings::owns_escape(interface.as_deref())
         && !talking
         && !documents
             .as_ref()

@@ -1,6 +1,7 @@
 //! Optional presentation-only skin from the user's local Fantasy Warrior HUD.
 //! PNGs load through a separate Bevy source; terrain/art roots stay unchanged.
 pub(crate) mod preview;
+pub(crate) mod settings;
 use bevy::{
     asset::{
         AssetApp,
@@ -381,6 +382,7 @@ pub(crate) fn install_scale(app: &mut App, preferred: f32) {
     app.insert_resource(PreferredScale(preferred))
         .insert_resource(bevy::ui::UiScale(preferred))
         .add_systems(Update, fit_window);
+    settings::install(app);
 }
 fn fit_window(
     preferred: Res<PreferredScale>,
