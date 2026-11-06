@@ -12,6 +12,7 @@ mod dialogue;
 mod documents;
 mod dodge;
 mod equipment;
+mod fantasy_ui;
 mod floating_origin;
 mod graybox;
 mod inventory;
@@ -51,6 +52,9 @@ use std::time::Duration;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut args: Vec<_> = std::env::args().skip(1).collect();
+    if args.first().is_some_and(|a| a == "--preview-fantasy-ui") {
+        return fantasy_ui::preview::run(&args);
+    }
     if args.first().is_some_and(|a| a == "--inspect-asset") {
         return asset_preview::run(&args);
     }
@@ -234,6 +238,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         None
     };
     let creature_asset = creature_visual::parse(&mut args, patrol_binding.is_some())?;
+    let fantasy_ui = fantasy_ui::parse(&mut args, classic && combat_catalog.is_some())?;
     let player_life_profile = player_life::parse(
         &mut args,
         character_stats.as_ref().map(|(bytes, _)| bytes.as_slice()),
@@ -1114,7 +1119,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         smoke::Run::from_args(args.into_iter())?
     };
     let scripted = smoke.is_some();
+    let fantasy_skin = fantasy_ui.is_some();
     let mut app = App::new();
+    if let Some(directory) = fantasy_ui {
+        fantasy_ui::register(&mut app, directory);
+    }
     pursuit_qualification::install(&mut app)?;
     melee_qualification::install(&mut app)?;
     projectile_qualification::install(&mut app)?;
@@ -1283,6 +1292,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .after(bevy::picking::PickingSystems::Last),
         )
         .add_systems(FixedUpdate, movement::move_local_pawn);
+    if fantasy_skin {
+        fantasy_ui::load(&mut app);
+    }
     if let Some(controller) = classic_controller {
         app.insert_resource(controller);
     }

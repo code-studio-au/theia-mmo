@@ -109,6 +109,28 @@ pub(super) fn install(app: &mut App) {
         .add_systems(Update, paint.after(super::present))
         .add_systems(Last, observe);
 }
+/// Developer offscreen preview of the same widgets/painter, with explicit fixture
+/// values. No Network resource, game command collection, server or account.
+pub(crate) fn install_preview(app: &mut App) {
+    app.add_systems(Startup, (setup, super::setup))
+        .add_systems(Update, (preview_hover, paint).chain())
+        .add_systems(
+            PostStartup,
+            |mut labels: Query<&mut Text, With<super::Hud>>| {
+                for mut label in &mut labels {
+                    **label = "Health 57 / 100".into();
+                }
+            },
+        );
+}
+fn preview_hover(mut commands: Commands, actions: Query<(Entity, &ActionButton)>) {
+    // A visual fixture, not OS input or a gameplay command.
+    for (entity, action) in &actions {
+        if action.0 == 0 {
+            commands.entity(entity).insert(Hovered(true));
+        }
+    }
+}
 fn collect(
     keys: Res<ButtonInput<KeyCode>>,
     mut pending: ResMut<WidgetPending>,
@@ -143,33 +165,48 @@ fn setup(
     mut commands: Commands,
     config: Res<Config>,
     graybox: Option<Res<crate::graybox::Graybox>>,
+    skin: Option<Res<crate::fantasy_ui::Skin>>,
 ) {
     if config.1.is_some() {
         commands
             .spawn((
                 Node {
                     position_type: PositionType::Absolute,
-                    right: px(if graybox.is_some() {
-                        crate::minimap::VITALS_RIGHT
+                    left: if skin.is_some() { px(12) } else { Val::Auto },
+                    border: UiRect::all(px(if skin.is_some() { 1. } else { 0. })),
+                    right: if skin.is_some() {
+                        Val::Auto
                     } else {
-                        12.
-                    }),
+                        px(if graybox.is_some() {
+                            crate::minimap::VITALS_RIGHT
+                        } else {
+                            12.
+                        })
+                    },
                     top: px(12),
-                    width: px(300),
+                    width: px(if skin.is_some() { 276. } else { 300. }),
                     padding: UiRect::all(px(10)),
                     row_gap: px(6),
                     flex_direction: FlexDirection::Column,
                     ..default()
                 },
-                BackgroundColor(Color::srgba(0.02, 0.03, 0.05, 0.9)),
+                BackgroundColor(if skin.is_some() {
+                    crate::fantasy_ui::PANEL
+                } else {
+                    Color::srgba(0.02, 0.03, 0.05, 0.9)
+                }),
+                BorderColor::all(crate::fantasy_ui::GOLD),
             ))
             .with_children(|panel| {
+                if skin.is_some() {
+                    panel.spawn(text("Player", 16.));
+                }
                 panel.spawn((PlayerHealthLabel, text("Waiting for health", 16.)));
                 panel
                     .spawn((
                         Node {
                             width: percent(100),
-                            height: px(10),
+                            height: px(if skin.is_some() { 16. } else { 10. }),
                             ..default()
                         },
                         BackgroundColor(Color::srgb(0.12, 0.16, 0.12)),
@@ -188,7 +225,7 @@ fn setup(
                     .spawn((
                         Node {
                             width: percent(100),
-                            height: px(10),
+                            height: px(if skin.is_some() { 16. } else { 10. }),
                             ..default()
                         },
                         BackgroundColor(Color::srgb(0.08, 0.12, 0.18)),
@@ -208,82 +245,86 @@ fn setup(
             });
     }
 
-    commands
-        .spawn((
-            Node {
-                position_type: PositionType::Absolute,
-                left: percent(0),
-                bottom: px(108),
-                width: percent(100),
-                justify_content: JustifyContent::Center,
-                column_gap: px(8),
-                ..default()
-            },
-            bevy::picking::Pickable::IGNORE,
-        ))
-        .with_children(|parent| {
-            for (slot, ability) in config
-                .0
-                .abilities()
-                .iter()
-                .take(VISIBLE_ACTIONS)
-                .enumerate()
-            {
-                let name = ability
-                    .id()
-                    .as_str()
-                    .rsplit('.')
-                    .next()
-                    .unwrap()
-                    .replace('-', " ");
-                let key = slot + 1;
-                parent
-                    .spawn((
-                        Button,
-                        ActivateOnPress,
-                        Hovered::default(),
-                        ActionButton(slot),
-                        AccessibleLabel::new(format!("Cast {name} ({key})")),
-                        Node {
-                            width: px(if config.0.abilities().len() == 1 {
-                                272.
-                            } else {
-                                224.
-                            }),
-                            min_height: px(88),
-                            padding: UiRect::all(px(12)),
-                            justify_content: JustifyContent::Center,
-                            align_items: AlignItems::Center,
-                            ..default()
-                        },
-                        BackgroundColor(Color::srgb(0.07, 0.12, 0.19)),
-                    ))
-                    .with_children(|button| {
-                        button.spawn((
-                            ActionLabel(slot),
-                            text(&format!("[{key}] {name}\nWaiting for server"), 18.),
-                        ));
-                        button.spawn((
-                            CooldownFill(slot),
+    if let Some(skin) = skin.as_deref() {
+        compact_actions(&mut commands, &config, skin);
+    } else {
+        commands
+            .spawn((
+                Node {
+                    position_type: PositionType::Absolute,
+                    left: percent(0),
+                    bottom: px(108),
+                    width: percent(100),
+                    justify_content: JustifyContent::Center,
+                    column_gap: px(8),
+                    ..default()
+                },
+                bevy::picking::Pickable::IGNORE,
+            ))
+            .with_children(|parent| {
+                for (slot, ability) in config
+                    .0
+                    .abilities()
+                    .iter()
+                    .take(VISIBLE_ACTIONS)
+                    .enumerate()
+                {
+                    let name = ability
+                        .id()
+                        .as_str()
+                        .rsplit('.')
+                        .next()
+                        .unwrap()
+                        .replace('-', " ");
+                    let key = slot + 1;
+                    parent
+                        .spawn((
+                            Button,
+                            ActivateOnPress,
+                            Hovered::default(),
+                            ActionButton(slot),
+                            AccessibleLabel::new(format!("Cast {name} ({key})")),
                             Node {
-                                position_type: PositionType::Absolute,
-                                left: px(0),
-                                bottom: px(0),
-                                width: percent(0),
-                                height: px(6),
+                                width: px(if config.0.abilities().len() == 1 {
+                                    272.
+                                } else {
+                                    224.
+                                }),
+                                min_height: px(88),
+                                padding: UiRect::all(px(12)),
+                                justify_content: JustifyContent::Center,
+                                align_items: AlignItems::Center,
                                 ..default()
                             },
-                            BackgroundColor(Color::srgb(0.92, 0.68, 0.2)),
-                        ));
-                    });
-            }
-        });
+                            BackgroundColor(Color::srgb(0.07, 0.12, 0.19)),
+                        ))
+                        .with_children(|button| {
+                            button.spawn((
+                                ActionLabel(slot),
+                                text(&format!("[{key}] {name}\nWaiting for server"), 18.),
+                            ));
+                            button.spawn((
+                                CooldownFill(slot),
+                                Node {
+                                    position_type: PositionType::Absolute,
+                                    left: px(0),
+                                    bottom: px(0),
+                                    width: percent(0),
+                                    height: px(6),
+                                    ..default()
+                                },
+                                BackgroundColor(Color::srgb(0.92, 0.68, 0.2)),
+                            ));
+                        });
+                }
+            });
+    }
     commands
         .spawn((
             Node {
                 position_type: PositionType::Absolute,
                 left: percent(0),
-                bottom: px(208),
+                bottom: px(if skin.is_some() { 112. } else { 208. }),
                 width: percent(100),
                 justify_content: JustifyContent::Center,
                 ..default()
@@ -318,6 +359,138 @@ fn setup(
                 });
         });
 }
+/// Twelve familiar positions; only existing configured actions issue commands.
+/// Empty positions are decoration, with no new bindings or invented abilities.
+fn compact_actions(commands: &mut Commands, config: &Config, skin: &crate::fantasy_ui::Skin) {
+    use crate::fantasy_ui::{GOLD, PANEL, SLOT, SLOTS};
+    use bevy::picking::Pickable;
+    commands
+        .spawn((
+            Node {
+                position_type: PositionType::Absolute,
+                left: px(0),
+                bottom: px(24),
+                width: percent(100),
+                justify_content: JustifyContent::Center,
+                ..default()
+            },
+            Pickable::IGNORE,
+        ))
+        .with_children(|root| {
+            root.spawn((
+                Node {
+                    max_width: percent(96),
+                    padding: UiRect::all(px(8)),
+                    border: UiRect::all(px(1)),
+                    column_gap: px(4),
+                    row_gap: px(4),
+                    flex_wrap: FlexWrap::Wrap,
+                    justify_content: JustifyContent::Center,
+                    ..default()
+                },
+                BackgroundColor(PANEL),
+                BorderColor::all(GOLD),
+            ))
+            .with_children(|bar| {
+                for slot in 0..SLOTS {
+                    let node = Node {
+                        width: px(SLOT),
+                        height: px(SLOT),
+                        min_width: px(SLOT),
+                        justify_content: JustifyContent::Center,
+                        align_items: AlignItems::Center,
+                        ..default()
+                    };
+                    let Some(ability) = config
+                        .0
+                        .abilities()
+                        .get(slot)
+                        .filter(|_| slot < VISIBLE_ACTIONS)
+                    else {
+                        bar.spawn((
+                            node,
+                            BackgroundColor(Color::srgba(0.025, 0.022, 0.02, 0.96)),
+                        ))
+                        .with_child(crate::fantasy_ui::decoration(skin.frame.clone()));
+                        continue;
+                    };
+                    let name = ability
+                        .id()
+                        .as_str()
+                        .rsplit('.')
+                        .next()
+                        .unwrap()
+                        .replace('-', " ");
+                    bar.spawn((
+                        Button,
+                        ActivateOnPress,
+                        Hovered::default(),
+                        ActionButton(slot),
+                        AccessibleLabel::new(format!("Cast {name} ({})", slot + 1)),
+                        node,
+                        BackgroundColor(PANEL),
+                    ))
+                    .with_children(|button| {
+                        button.spawn((
+                            Node {
+                                width: px(36),
+                                height: px(if ability.id().as_str() == "theia.dev.sword-slash" {
+                                    18.
+                                } else {
+                                    36.
+                                }),
+                                ..default()
+                            },
+                            ImageNode::new(skin.icon(ability.id().as_str())),
+                            Pickable::IGNORE,
+                        ));
+                        button.spawn((
+                            CooldownFill(slot),
+                            Node {
+                                position_type: PositionType::Absolute,
+                                left: px(0),
+                                bottom: px(4),
+                                width: percent(0),
+                                height: px(5),
+                                ..default()
+                            },
+                            BackgroundColor(Color::srgb(0.92, 0.68, 0.2)),
+                            Pickable::IGNORE,
+                        ));
+                        button.spawn(crate::fantasy_ui::decoration(skin.frame.clone()));
+                        button.spawn((
+                            text(&format!("{}", slot + 1), 14.),
+                            Pickable::IGNORE,
+                            Node {
+                                position_type: PositionType::Absolute,
+                                left: px(5),
+                                top: px(2),
+                                ..default()
+                            },
+                        ));
+                        button.spawn((
+                            ActionLabel(slot),
+                            text("Waiting for server", 16.),
+                            Pickable::IGNORE,
+                            Node {
+                                position_type: PositionType::Absolute,
+                                bottom: px(68),
+                                left: px(0),
+                                width: px(280),
+                                padding: UiRect::all(px(10)),
+                                border: UiRect::all(px(1)),
+                                display: Display::None,
+                                ..default()
+                            },
+                            BackgroundColor(PANEL),
+                            BorderColor::all(GOLD),
+                            GlobalZIndex(15),
+                        ));
+                    });
+                }
+            });
+        });
+}
 type FillComponents<'a> = (
     &'a mut Node,
     Option<&'a HealthFill>,
@@ -334,13 +507,20 @@ type LabelComponents<'a> = (
     Option<&'a ManaLabel>,
     Option<&'a LifeLabel>,
 );
-type ButtonComponents<'a> = (Has<Pressed>, Option<&'a Hovered>, &'a mut BackgroundColor);
+type ButtonComponents<'a> = (
+    Has<Pressed>,
+    Option<&'a Hovered>,
+    &'a mut BackgroundColor,
+    &'a ActionButton,
+);
 fn paint(
     model: Res<Model>,
     config: Res<Config>,
-    mut fills: Query<FillComponents<'_>>,
+    mut fills: Query<FillComponents<'_>, Without<ActionLabel>>,
     mut labels: Query<LabelComponents<'_>>,
     mut buttons: Query<ButtonComponents<'_>, With<ActionButton>>,
+    skin: Option<Res<crate::fantasy_ui::Skin>>,
+    mut tooltips: Query<(&ActionLabel, &mut Node), With<ActionLabel>>,
 ) {
     for (mut node, health, cast, cooldown, player_health, mana) in &mut fills {
         let ratio = if health.is_some() {
@@ -408,7 +588,18 @@ fn paint(
             **label = model.life_status.clone();
         }
     }
-    for (pressed, hovered, mut colour) in &mut buttons {
+    for (pressed, hovered, mut colour, action) in &mut buttons {
+        if skin.is_some() {
+            for (label, mut node) in &mut tooltips {
+                if label.0 == action.0 {
+                    node.display = if hovered.is_some_and(|h| h.0) {
+                        Display::Flex
+                    } else {
+                        Display::None
+                    };
+                }
+            }
+        }
         colour.0 = if !model.connected || !model.has_target || model.life_blocked {
             Color::srgb(0.13, 0.14, 0.16)
         } else {
@@ -417,7 +608,11 @@ fn paint(
             } else if hovered.is_some_and(|h| h.0) {
                 Color::srgb(0.1, 0.24, 0.34)
             } else {
-                Color::srgb(0.07, 0.12, 0.19)
+                if skin.is_some() {
+                    crate::fantasy_ui::PANEL
+                } else {
+                    Color::srgb(0.07, 0.12, 0.19)
+                }
             }
         };
     }
@@ -501,6 +696,97 @@ fn observe(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn compact_skin_keeps_authoritative_feedback_and_only_configured_actions_activate() {
+        let mut app = App::new();
+        let catalog = theia_core::abilities::Catalog::from_json(include_bytes!(
+            "../../../../content/gameplay/development-classic-abilities.json"
+        ))
+        .unwrap();
+        let stats = theia_core::resources::Profile::from_json(include_bytes!(
+            "../../../../content/gameplay/development-character-stats.json"
+        ))
+        .unwrap();
+        app.insert_resource(Config(std::sync::Arc::new(catalog), Some(stats), true))
+            .insert_resource(crate::fantasy_ui::Skin::fixture())
+            .init_resource::<Model>()
+            .init_resource::<Input>()
+            .init_resource::<WidgetPending>()
+            .init_resource::<ButtonInput<KeyCode>>()
+            .add_observer(activate)
+            .add_systems(Startup, setup)
+            .add_systems(Update, (collect, paint).chain());
+        app.update(); // Also detects invalid bundles and conflicting query access.
+        let world = app.world_mut();
+        let buttons: Vec<_> = world
+            .query::<(Entity, &ActionButton)>()
+            .iter(world)
+            .map(|(e, a)| (e, a.0))
+            .collect();
+        assert_eq!(buttons.len(), 2);
+        let frames = world.query::<&ImageNode>().iter(world).count();
+        assert_eq!(
+            frames, 14,
+            "Twelve frame overlays and two configured ability icons"
+        );
+        let first = buttons.iter().find(|(_, slot)| *slot == 0).unwrap().0;
+        world.entity_mut(first).insert(Hovered(true));
+        *world.resource_mut::<Model>() = Model {
+            connected: true,
+            has_target: true,
+            vitals_ready: true,
+            player_health: 0.37,
+            mana: 0.4,
+            player_health_text: "Health 37 / 100".into(),
+            mana_text: "Mana 40 / 100".into(),
+            actions: vec![Action {
+                cooldown: 0.75,
+                status: "Face the target".into(),
+            }],
+            ..default()
+        };
+        world.trigger(Activate { entity: first });
+        app.update();
+        assert_eq!(app.world().resource::<Input>().0, Some((0, Source::Widget)));
+        let world = app.world_mut();
+        let mut labels = world.query::<(&ActionLabel, &Text, &Node)>();
+        for (action, text, node) in labels.iter(world) {
+            if action.0 == 0 {
+                assert!(text.0.contains("Face the target"));
+                assert_eq!(node.display, Display::Flex);
+            } else {
+                assert_eq!(node.display, Display::None);
+            }
+        }
+        let mut health = world.query_filtered::<&Node, With<PlayerHealthFill>>();
+        assert_eq!(health.single(world).unwrap().width, percent(37));
+        let mut cooldown = world.query::<(&CooldownFill, &Node)>();
+        assert_eq!(
+            cooldown
+                .iter(world)
+                .find(|(a, _)| a.0 == 0)
+                .unwrap()
+                .1
+                .width,
+            percent(75)
+        );
+        world.entity_mut(first).insert(Hovered(false));
+        world.resource_mut::<Model>().connected = false;
+        app.update();
+        assert_eq!(
+            app.world().resource::<Input>().0,
+            None,
+            "No repeated action from painting or hover"
+        );
+        let world = app.world_mut();
+        let mut labels = world.query::<(&Text, &Node, &ActionLabel)>();
+        assert!(
+            labels
+                .iter(world)
+                .all(|(text, node, _)| text.0.contains("Disconnected / loading")
+                    && node.display == Display::None)
+        );
+    }
     #[test]
     fn widget_activations_and_keyboard_coalesce_without_repeating_or_buffering_clicks() {
         let mut app = App::new();

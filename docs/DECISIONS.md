@@ -1,3 +1,13 @@
+## 2026-11-06 — general UI with local Fantasy Warrior art
+
+Move beyond quest mechanics to general Classic-style UI, following the user's
+new direction. Reuse selected local PNGs and TrueType fonts with ordinary Bevy
+widgets and a separate asset source. Rebuild behavior rather than importing
+Unity prefabs. Keep the first skin opt-in pending normal connected and input
+qualification. Windowless GPU exports may proceed without desktop/mouse use;
+they are fixture previews and do not establish live interaction correctness.
+[Asset assessment, implementation and acceptance](UI_FANTASY_WARRIOR.md).
+
 ## 2026-11-06 — explicit client content configuration report
 
 Expose a developer CLI-only report using the same identity expression as normal

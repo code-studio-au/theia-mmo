@@ -140,6 +140,7 @@ fn setup(mut commands: Commands) {
     commands
         .spawn((
             Pane,
+            crate::fantasy_ui::Panel::Standard,
             GlobalZIndex(25),
             bevy::ui_widgets::ScrollArea,
             Node {

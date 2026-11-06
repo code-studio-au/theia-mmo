@@ -214,6 +214,7 @@ fn setup(mut commands: Commands, config: Res<Config>) {
     commands
         .spawn((
             Pane,
+            crate::fantasy_ui::Panel::Standard,
             Hovered::default(),
             ScrollPosition::default(),
             Node {

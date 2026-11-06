@@ -82,6 +82,7 @@ fn setup(
     commands
         .spawn((
             Scroll,
+            crate::fantasy_ui::Panel::QuestTracker,
             Hovered::default(),
             ScrollPosition::default(),
             Node {

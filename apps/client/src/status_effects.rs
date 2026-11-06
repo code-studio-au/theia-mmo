@@ -24,6 +24,7 @@ pub(crate) fn install(app: &mut App, catalog: Arc<Catalog>) {
 fn setup(mut commands: Commands) {
     commands
         .spawn((
+            crate::fantasy_ui::Panel::Statuses,
             Node {
                 position_type: PositionType::Absolute,
                 left: px(12),

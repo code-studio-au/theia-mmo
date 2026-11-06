@@ -180,6 +180,7 @@ fn setup(
         .with_children(|root| {
             root.spawn((
                 Pane,
+                crate::fantasy_ui::Panel::Standard,
                 Node {
                     width: px(480),
                     max_width: percent(90),

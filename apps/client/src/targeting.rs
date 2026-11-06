@@ -33,6 +33,7 @@ pub fn install(app: &mut App, moving_speed: Option<f32>) {
 fn setup(
     mut commands: Commands,
     pawns: Res<PawnAssets>,
+    skin: Option<Res<crate::fantasy_ui::Skin>>,
     mut materials: ResMut<bevy::asset::Assets<StandardMaterial>>,
 ) {
     commands.insert_resource(Assets {
@@ -44,12 +45,21 @@ fn setup(
         .spawn((
             Node {
                 position_type: PositionType::Absolute,
-                left: px(12),
-                bottom: px(108),
+                left: px(if skin.is_some() { 304. } else { 12. }),
+                top: if skin.is_some() { px(12) } else { Val::Auto },
+                bottom: if skin.is_some() { Val::Auto } else { px(108) },
+                width: if skin.is_some() { px(276) } else { Val::Auto },
+                min_height: px(if skin.is_some() { 68. } else { 0. }),
+                border: UiRect::all(px(if skin.is_some() { 1. } else { 0. })),
                 padding: UiRect::all(px(12)),
                 ..default()
             },
-            BackgroundColor(Color::srgba(0.02, 0.03, 0.05, 0.9)),
+            BackgroundColor(if skin.is_some() {
+                crate::fantasy_ui::PANEL
+            } else {
+                Color::srgba(0.02, 0.03, 0.05, 0.9)
+            }),
+            BorderColor::all(crate::fantasy_ui::GOLD),
         ))
         .with_child((
             TargetHud,

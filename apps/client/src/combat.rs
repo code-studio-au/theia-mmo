@@ -147,20 +147,27 @@ pub fn install(
             present.after(crate::network::present).in_set(Presentation),
         );
 }
-fn setup(mut commands: Commands) {
+fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
     commands
         .spawn((
             Node {
                 position_type: PositionType::Absolute,
-                left: px(12),
-                bottom: px(186),
-                width: px(348),
+                left: px(if skin.is_some() { 304. } else { 12. }),
+                top: if skin.is_some() { px(86) } else { Val::Auto },
+                bottom: if skin.is_some() { Val::Auto } else { px(186) },
+                border: UiRect::all(px(if skin.is_some() { 1. } else { 0. })),
+                width: px(if skin.is_some() { 276. } else { 348. }),
                 flex_direction: FlexDirection::Column,
                 row_gap: px(8),
                 padding: UiRect::all(px(12)),
                 ..default()
             },
-            BackgroundColor(Color::srgba(0.02, 0.03, 0.05, 0.9)),
+            BackgroundColor(if skin.is_some() {
+                crate::fantasy_ui::PANEL
+            } else {
+                Color::srgba(0.02, 0.03, 0.05, 0.9)
+            }),
+            BorderColor::all(crate::fantasy_ui::GOLD),
         ))
         .with_child((
             Hud,

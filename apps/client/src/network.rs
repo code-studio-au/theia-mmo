@@ -1239,6 +1239,7 @@ impl Smoke {
 #[derive(bevy::ecs::system::SystemParam)]
 pub struct SceneState<'w> {
     classic: Option<Res<'w, crate::classic_controls::Controller>>,
+    fantasy_skin: Option<Res<'w, crate::fantasy_ui::Skin>>,
     camera_mode: Option<Res<'w, crate::camera::mode::Mode>>,
     inventory: Option<Res<'w, crate::inventory::Ui>>,
     loot: Option<Res<'w, crate::loot::Ui>>,
@@ -1266,6 +1267,7 @@ pub fn present(
 ) {
     let SceneState {
         classic,
+        fantasy_skin,
         camera_mode,
         inventory,
         loot,
@@ -1325,6 +1327,12 @@ pub fn present(
             {
                 format!(
                     "THEIA\nPlayer {id} | connected\nLoading world and characters...\nEsc: quit"
+                )
+            } else if fantasy_skin.is_some() {
+                format!(
+                    "THEIA | connected\n{} players | {} Hz",
+                    snapshot.players.len(),
+                    snapshot.tick_hz
                 )
             } else {
                 let controls = if let Some(classic) = classic.as_ref() {

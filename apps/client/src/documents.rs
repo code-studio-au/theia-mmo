@@ -166,6 +166,7 @@ fn setup(mut commands: Commands, panes: Query<Entity, With<inventory::DocumentAc
     commands
         .spawn((
             Pane,
+            crate::fantasy_ui::Panel::Standard,
             Hovered::default(),
             GlobalZIndex(60),
             Node {

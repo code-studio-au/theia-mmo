@@ -114,6 +114,7 @@ pub fn setup(
         Transform::from_xyz(0., 7.9, 12.).looking_at(START, Vec3::Y),
     ));
     commands.spawn((
+        crate::fantasy_ui::Panel::Connection,
         Node { position_type: PositionType::Absolute, left: px(12), top: px(12),
             padding: UiRect::all(px(12)), ..default() },
         BackgroundColor(Color::srgba(0.02, 0.03, 0.05, 0.9)),

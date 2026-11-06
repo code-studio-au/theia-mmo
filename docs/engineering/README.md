@@ -1,3 +1,13 @@
+General UI candidate, 6 November 2026 (P2-14 / P5-13 / P5-19):
+The user moved beyond quests to a WoW-like interface. An opt-in standard Bevy
+Fantasy Warrior skin now provides compact icon actions, player/target layout,
+fantasy fonts and shared pane styling. Four actual windowless Vulkan exports
+pass through 3840×2160; 159 client cases including local PNG decoding, formatting,
+strict Clippy and build pass. [Scope, assets and remaining gates](../UI_FANTASY_WARRIOR.md).
+Normal connected/pane/input qualification and default adoption remain pending.
+**No desktop/mouse tests while the user works. Local commits only; no push.**
+Earlier desktop authorizations below are historical and superseded.
+
 Bounded quest offers/wheel ownership qualified, 6 November 2026:
 P3-11 / P3-12 / P3-15: the last of 32 guide offers is reachable through a bounded
 standard Bevy scroll area. Wheel input belongs to the hovered panel. All three

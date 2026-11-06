@@ -17,6 +17,7 @@ pub(crate) fn install(app: &mut App, profile: Arc<theia_network::progression_wir
 fn setup(mut commands: Commands) {
     commands
         .spawn((
+            crate::fantasy_ui::Panel::Progression,
             Node {
                 position_type: PositionType::Absolute,
                 left: px(12),

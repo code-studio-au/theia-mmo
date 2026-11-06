@@ -106,6 +106,7 @@ fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
     commands
         .spawn((
             Root,
+            crate::fantasy_ui::Panel::Standard,
             Node {
                 position_type: PositionType::Absolute,
                 right: px(12),
