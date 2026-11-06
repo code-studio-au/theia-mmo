@@ -127,3 +127,36 @@ or saved item reward evidence. The pure proposal grants no items or XP itself,
 checks no live NPC distance/owner and creates no durable retry receipt. Exact
 profile binding, authorized SQL, retained owner and playable reward adoption
 remain pending; the qualified note reader stays available unchanged.
+
+## Implemented exact profile binding (runtime still closed)
+
+Wire `quest_journal::Profile` and stored `QuestJournalCatalog` now expose explicit
+`with_item_rewards(raw_reward_bytes, inventory)` metadata binding. Both retain
+the checked fixed-reward catalogue and produce the same digest. Reward-only
+quests still bind inventory even without a possession objective. An already
+bound inventory must have the same exact hash; repeated reward binding refuses.
+
+Let J be the existing journal digest, including its exact quest/XP and any
+area/document context. If inventory is not already bound, first calculate
+`J_items = SHA256(existing_item_domain || J || inventory_hash)`; otherwise retain
+the existing item-bound J. The new digest is
+`SHA256(reward_domain || J_items || raw_reward_bytes)`. The reward domain is
+UTF-8 `theia-quest-item-rewards-v1` followed by one zero byte. No legacy hash changes when rewards are absent.
+The six raw contexts (quest, inventory, XP, area, document, fixed rewards) each
+change the resulting exact identity. Additional area/document definitions,
+including unused definitions, cannot alias the reward catalogue or grant items.
+
+This is metadata only. Existing World installation, normal client progression
+admission, retained-owner setup and generic Store/worker/document admission refuse
+reward-bearing profiles. These gates prevent a policy from being admitted while
+completion could still omit its item grants. No schema migration, SQL reward
+transaction, new wire message, executable flag or normal manifest role is added.
+
+Five cross-layer server cases (22 server tests total), 371 core tests, 377 network
+and eight persistence-library tests pass. Logs are
+`build/quest-item-reward-binding-server-tests-v1-20261106.log`,
+`build/quest-item-reward-binding-core-tests-v1-20261106.log` and
+`build/quest-item-reward-binding-library-tests-v1-20261106.log`.
+Formatting and strict workspace/all-target Clippy pass in the binding `fmt-v1`
+and `clippy-v1` logs. The new private guards are exercised directly; actual SQL
+reward/profile compatibility remains unqualified. No new native or Windows claim.

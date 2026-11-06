@@ -1,3 +1,15 @@
+## 2026-11-06 — explicit fixed quest item reward policy
+
+Use a separate bounded fixed-reward catalogue against known quest and item
+catalogues. Preserve existing quest schemas and legacy profile hashes. Bind the
+exact reward bytes after the item-bound journal/XP/area/document digest; reward-
+only quests still bind inventory. The pure proposal consumes delivery items,
+checks the whole grant bundle and reconciles other quests against final holdings
+with one bag revision. Consume-before-capacity is an explicit Theia policy;
+choice rewards, currency, overflow mail and automatic equipment remain separate.
+Keep reward-bearing runtime/Store/owner admission closed until durable completion,
+items, XP and original receipts commit together. [Scope and evidence](QUEST_ITEM_REWARDS.md).
+
 ## 2026-11-05 — original document-open receipts
 
 Reuse existing quest-event receipts with distinct request/command hash domains

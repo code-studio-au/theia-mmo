@@ -209,6 +209,9 @@ impl GameAdmissions {
         profile: theia_persistence::QuestJournalCatalog,
         documents: Option<Arc<theia_network::documents::Profile>>,
     ) -> Result<()> {
+        if profile.item_rewards().is_some() {
+            return Err("Quest item reward owner is not installed".into());
+        }
         let gate = Arc::get_mut(gate).ok_or("Journal configuration requires unshared gate")?;
         if let Some(items) = profile.inventory() {
             let inventory = gate

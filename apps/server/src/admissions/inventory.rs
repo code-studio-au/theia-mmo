@@ -44,6 +44,9 @@ impl Config {
         {
             return Err("Invalid inventory journal binding".into());
         }
+        if journal.item_rewards().is_some() {
+            return Err("Quest item reward owner is not installed".into());
+        }
         match (journal.documents(), documents.as_deref()) {
             (None, None) => {}
             (Some(a), Some(b))

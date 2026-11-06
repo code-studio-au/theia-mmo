@@ -131,6 +131,40 @@ impl Catalog {
             rewards,
         })
     }
+    /// Check additional installed metadata; this still establishes no runtime admission.
+    pub fn validate_context(
+        &self,
+        areas: Option<&super::areas::Catalog>,
+        documents: Option<&crate::documents::Catalog>,
+    ) -> Result<(), &'static str> {
+        let mut reserved = BTreeSet::new();
+        if let Some(areas) = areas {
+            areas.validate_quests(&self.quests)?;
+            reserved.insert(areas.id());
+            reserved.extend(areas.areas().map(|a| a.id()));
+        }
+        if let Some(documents) = documents {
+            if documents.inventory() != &self.items {
+                return Err("Quest reward document inventory mismatch");
+            }
+            documents.validate_quests(&self.quests)?;
+            if let Some(areas) = areas {
+                documents.validate_areas(areas)?;
+            }
+            reserved.insert(documents.id());
+            reserved.extend(documents.documents().map(|d| d.id()));
+        }
+        if reserved.contains(&self.id)
+            || self
+                .rewards
+                .values()
+                .flatten()
+                .any(|g| reserved.contains(g.item()))
+        {
+            return Err("Quest item rewards alias area or document content");
+        }
+        Ok(())
+    }
     pub fn id(&self) -> &ContentId {
         &self.id
     }

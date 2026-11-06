@@ -1,3 +1,12 @@
+Fixed quest reward exact binding prerequisite qualified, 6 November 2026:
+P3-05 / P3-09 / P3-11 / P3-15: wire/storage profiles agree on exact reward,
+inventory, quest, XP and optional area/document bytes; reward-only quests still
+bind items. Legacy hashes remain unchanged. Existing runtime/owner/Store/client
+admission stays closed for reward-bearing profiles. 371 core, 377 network,
+eight persistence-library and 22 server tests, formatting and strict Clippy pass.
+[Scope and next storage slice](QUEST_ITEM_REWARDS.md#implemented-exact-profile-binding-runtime-still-closed).
+Continue authorized atomic reward storage locally; no push. No SQL reward proof.
+
 Fixed quest reward pure proposal qualified, 6 November 2026:
 P3-05 / P3-09 / P3-11 / P3-15: completion, delivery consumption and fixed grants
 now form one pure candidate with one final bag revision and final-holdings quest

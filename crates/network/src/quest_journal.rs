@@ -26,6 +26,7 @@ pub struct Profile {
     areas: Option<Arc<theia_core::quests::areas::Catalog>>,
     inventory: Option<(Arc<theia_core::inventory::Catalog>, [u8; 32])>,
     documents: Option<Arc<crate::documents::Profile>>,
+    item_rewards: Option<Arc<theia_core::quests::item_rewards::Catalog>>,
 }
 impl Profile {
     pub fn from_json(bytes: &[u8], xp: &progression_wire::Profile) -> Result<Self> {
@@ -45,6 +46,7 @@ impl Profile {
             xp: xp.hash(),
             areas: None,
             inventory: None,
+            item_rewards: None,
             documents: None,
         })
     }
@@ -139,6 +141,47 @@ impl Profile {
         self.inventory = Some((Arc::new(inventory.catalog().clone()), inventory.hash()));
         Ok(self)
     }
+    /// Exact metadata binding only. Fixed item reward runtime remains closed.
+    pub fn with_item_rewards(
+        mut self,
+        bytes: &[u8],
+        inventory: &crate::renet_runtime::inventory::Profile,
+    ) -> Result<Self> {
+        if self.item_rewards.is_some() {
+            return Err("Quest item rewards are already bound".into());
+        }
+        if self
+            .inventory_hash()
+            .is_some_and(|hash| hash != inventory.hash())
+        {
+            return Err("Quest item reward inventory mismatch".into());
+        }
+        let rewards = theia_core::quests::item_rewards::Catalog::from_json(
+            bytes,
+            &self.catalog,
+            inventory.catalog(),
+        )?;
+        rewards.validate_context(
+            self.areas.as_deref(),
+            self.documents.as_ref().map(|d| d.catalog()),
+        )?;
+        if self.inventory.is_none() {
+            let mut bound = theia_core::quests::journal::ITEM_PROFILE_DOMAIN.to_vec();
+            bound.extend(self.hash);
+            bound.extend(inventory.hash());
+            self.hash = crate::terrain::sha256(&bound);
+            self.inventory = Some((Arc::new(inventory.catalog().clone()), inventory.hash()));
+        }
+        let mut bound = theia_core::quests::item_rewards::PROFILE_DOMAIN.to_vec();
+        bound.extend(self.hash);
+        bound.extend(bytes);
+        self.hash = crate::terrain::sha256(&bound);
+        self.item_rewards = Some(Arc::new(rewards));
+        Ok(self)
+    }
+    pub fn item_rewards(&self) -> Option<&theia_core::quests::item_rewards::Catalog> {
+        self.item_rewards.as_deref()
+    }
     pub fn inventory_hash(&self) -> Option<[u8; 32]> {
         self.inventory.as_ref().map(|(_, hash)| *hash)
     }
@@ -155,6 +198,9 @@ impl Profile {
         &self.catalog
     }
     pub(crate) fn check_progression(&self, xp: &progression_wire::Profile) -> Result<()> {
+        if self.item_rewards.is_some() {
+            return Err("Quest item reward runtime is not installed".into());
+        }
         if self.xp != xp.hash() {
             return Err("Journal/progression policy mismatch".into());
         }
@@ -469,5 +515,36 @@ impl Router {
         }
         self.sequence = end;
         Ok(count)
+    }
+}
+
+#[cfg(test)]
+mod item_reward_binding_tests {
+    use super::*;
+    #[test]
+    fn exact_item_reward_metadata_stays_out_of_normal_client_progression_admission() {
+        let xp = progression_wire::Profile::from_json(include_bytes!(
+            "../../../content/gameplay/development-progression.json"
+        ))
+        .unwrap();
+        let items = crate::renet_runtime::inventory::Profile::from_json(include_bytes!(
+            "../../../content/gameplay/development-document-items.json"
+        ))
+        .unwrap();
+        let base = Profile::from_json(
+            include_bytes!("../../../content/quests/development-journal.json"),
+            &xp,
+        )
+        .unwrap();
+        let raw=serde_json::to_vec(&serde_json::json!({"schema":1,"id":"theia.test.fixed-rewards","revision":1,"quest_catalog":base.catalog().id().as_str(),"item_catalog":items.catalog().id().as_str(),"rewards":[{"quest":base.catalog().quests().next().unwrap().id().as_str(),"grants":[{"item":"theia.dev.training-token","count":1}]}]})).unwrap();
+        assert!(base.check_progression(&xp).is_ok());
+        let bound = base.with_item_rewards(&raw, &items).unwrap();
+        assert!(
+            bound
+                .check_progression(&xp)
+                .unwrap_err()
+                .to_string()
+                .contains("Quest item reward runtime")
+        );
     }
 }

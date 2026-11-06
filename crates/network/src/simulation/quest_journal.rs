@@ -66,6 +66,9 @@ impl World {
         inventory: Option<&crate::renet_runtime::inventory::Profile>,
         document_mode: bool,
     ) -> crate::Result<()> {
+        if profile.item_rewards().is_some() {
+            return Err("Quest item reward World admission is not installed".into());
+        }
         if profile.documents().is_some() != document_mode {
             return Err("Document journal requires explicit World admission".into());
         }
