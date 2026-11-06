@@ -270,3 +270,28 @@ same Vulkan adapter. Formatting, strict workspace/all-target Clippy,
 
 Real moving-NPC markers, floating combat text under gameplay, complete panels
 and scaled OS pointer checks remain pending while desktop testing is prohibited.
+
+
+## Shared minimap bezel and actual widget preview
+
+The opt-in skin now places the existing square slot frame over the live map
+surface, sharing the already loaded PNG rather than adding a texture. The
+176×176 logical raster, north/heading arrow, guide indicator, resident-terrain
+sampling and world extent retain their existing implementation. The decoration
+ignores picking and does not resize the raster. This is a square fantasy bezel,
+not a circular/masked map implementation.
+
+The developer exporter installs the **same minimap setup** and seeds an explicitly
+labelled checker raster, centered arrow and guide marker. This preview-only
+function is never installed by normal gameplay; it installs no World, terrain
+streaming, map-present logic or networking. Reports label the synthetic raster
+and include the actual laid-out minimap bounds.
+
+All six `minimap-v1-*` windowless cases retain the complete map inside the target
+through 3840×2160 / 150%, alongside the previously qualified scale/anchor/feedback
+checks. Existing player/target and lower action/feedback image regions remain
+pixel-identical to their `projection-v1-*` references. No WARN/ERROR diagnostics
+appear on the same RX 7900 XTX Vulkan device. Formatting, strict workspace/
+all-target Clippy, 164 client cases including local art and the build pass.
+Live terrain/heading/input and the complete normal connected theme remain for
+the desktop gate. The image preview is not additional terrain-streaming evidence.

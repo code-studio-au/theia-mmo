@@ -41,11 +41,16 @@ struct Map {
     updated: f64,
 }
 #[derive(Component)]
-struct Root;
+pub(crate) struct Root;
 #[derive(Component)]
 struct Arrow;
 #[derive(Component)]
 struct Guide;
+#[derive(Component)]
+enum MapCaption {
+    Heading,
+    Extent,
+}
 
 pub(crate) fn install(app: &mut App) {
     app.init_resource::<Metrics>()
@@ -84,7 +89,11 @@ fn label(value: &str, size: f32) -> impl Bundle {
         Pickable::IGNORE,
     )
 }
-fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
+fn setup(
+    mut commands: Commands,
+    mut images: ResMut<Assets<Image>>,
+    skin: Option<Res<crate::fantasy_ui::Skin>>,
+) {
     let handle = images.add(image(PIXELS, vec![0; PIXELS * PIXELS * 4]));
     let mut arrow = vec![0; 16 * 16 * 4];
     for y in 0..16usize {
@@ -121,7 +130,7 @@ fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
             BackgroundColor(Color::srgba(0.02, 0.03, 0.05, 0.96)),
         ))
         .with_children(|root| {
-            root.spawn(label("N  |  Local area", 14.));
+            root.spawn((MapCaption::Heading, label("N  |  Local area", 14.)));
             root.spawn((
                 Node {
                     width: px(DISPLAY),
@@ -156,9 +165,62 @@ fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
                         ..default()
                     },
                 ));
+                if let Some(skin) = &skin {
+                    map.spawn(crate::fantasy_ui::decoration(skin.frame.clone()));
+                }
             });
-            root.spawn(label("256 m across", 12.));
+            root.spawn((MapCaption::Extent, label("256 m across", 12.)));
         });
+}
+/// Same widgets as the live map, with an explicitly synthetic raster. No World,
+/// terrain, network or map-present system is installed by the developer preview.
+pub(crate) fn install_preview(app: &mut App) {
+    app.add_systems(Startup, setup)
+        .add_systems(PostStartup, seed_preview);
+}
+type PreviewNode<'a> = (&'a mut Node, Has<Root>, Has<Arrow>, Has<Guide>);
+fn seed_preview(
+    map: Res<Map>,
+    mut images: ResMut<Assets<Image>>,
+    mut nodes: Query<PreviewNode<'_>>,
+    mut captions: Query<(&mut Text, Option<&MapCaption>, Has<Guide>)>,
+) {
+    let mut pixels = vec![0; PIXELS * PIXELS * 4];
+    for y in 0..PIXELS {
+        for x in 0..PIXELS {
+            let shade = if (x / 8 + y / 8) % 2 == 0 { 0 } else { 12 };
+            pixels[(y * PIXELS + x) * 4..(y * PIXELS + x) * 4 + 4].copy_from_slice(&[
+                44 + shade,
+                62 + shade,
+                42 + shade,
+                255,
+            ]);
+        }
+    }
+    images.get_mut(&map.image).unwrap().data = Some(pixels);
+    for (mut node, root, arrow, guide) in &mut nodes {
+        if root {
+            node.display = Display::Flex;
+        } else if arrow {
+            node.left = px(DISPLAY * 0.5 - 9.);
+            node.top = px(DISPLAY * 0.5 - 9.);
+        } else if guide {
+            node.display = Display::Flex;
+            node.left = px(DISPLAY * 0.75 - 9.);
+            node.top = px(DISPLAY * 0.25 - 11.);
+        }
+    }
+    for (mut text, caption, guide) in &mut captions {
+        if let Some(caption) = caption {
+            **text = match caption {
+                MapCaption::Heading => "N | Fixture map",
+                MapCaption::Extent => "256 m fixture raster",
+            }
+            .into();
+        } else if guide {
+            **text = "!".into();
+        }
+    }
 }
 fn raster(world: &mut World, view: View) -> (Vec<u8>, usize, usize) {
     let mut query = world.query::<&crate::graybox::Tile>();

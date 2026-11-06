@@ -51,6 +51,7 @@ struct Layout<'w, 's> {
     text: Query<'w, 's, &'static bevy::text::TextLayoutInfo>,
     feedback: Query<'w, 's, FeedbackGeometry<'static>>,
     anchor: Query<'w, 's, AnchorGeometry<'static>, With<ProjectedAnchor>>,
+    minimap: Query<'w, 's, AnchorGeometry<'static>, With<crate::minimap::Root>>,
 }
 pub(crate) fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     if !(6..=8).contains(&args.len()) || args[2] != "--output" || args[4] != "--size" {
@@ -151,6 +152,7 @@ pub(crate) fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
             requested: false,
         });
     crate::combat::ui::install_preview(&mut app);
+    crate::minimap::install_preview(&mut app);
     app.add_systems(Startup, labels).add_systems(Last, capture);
     app.run();
     Ok(())
@@ -281,6 +283,21 @@ fn capture(
         projected_anchor.distance(expected_anchor) <= 1.5,
         "Scaled label must retain its window-space world anchor"
     );
+    let (map_node, map_transform) = layout
+        .minimap
+        .single()
+        .expect("Actual minimap widget fixture");
+    let map_size = map_node.size();
+    let map_centre = map_transform.affine().translation;
+    assert!(map_size.min_element() > 0.);
+    assert!(
+        map_centre.x - map_size.x * 0.5 >= 0.
+            && map_centre.y - map_size.y * 0.5 >= 0.
+            && map_centre.x + map_size.x * 0.5 <= run.size.x as f32
+            && map_centre.y + map_size.y * 0.5 <= run.size.y as f32,
+        "Minimap must remain within the rendered viewport"
+    );
+    let minimap = serde_json::json!({"centre":map_centre.to_array(),"size":map_size.to_array(),"raster":"synthetic checker fixture; no world data"});
     let mut cast = None;
     let mut tooltips = Vec::new();
     for (node, transform, tooltip, is_cast) in &layout.feedback {
@@ -319,7 +336,7 @@ fn capture(
         assert_eq!([event.image.width(), event.image.height()], [size.x,size.y]);
         event.image.clone().try_into_dynamic().unwrap().save(directory.join("hud.png")).unwrap();
         std::fs::write(directory.join("report.json"),serde_json::to_vec_pretty(&serde_json::json!({
-                "completed":true,"ui_scale":ui_scale,"preferred_ui_scale":preferred_scale,"geometry_units":"physical_pixels","offscreen":true,"windows":0,"fixture":true,"extent":[size.x,size.y],"gpu":gpu,"buttons":buttons,"glyphs":glyphs,"feedback":feedback,"projected_anchor":{"actual":projected_anchor.to_array(),"expected":expected_anchor.to_array()},
+                "completed":true,"ui_scale":ui_scale,"preferred_ui_scale":preferred_scale,"geometry_units":"physical_pixels","offscreen":true,"windows":0,"fixture":true,"extent":[size.x,size.y],"gpu":gpu,"buttons":buttons,"glyphs":glyphs,"feedback":feedback,"minimap":minimap,"projected_anchor":{"actual":projected_anchor.to_array(),"expected":expected_anchor.to_array()},
             "scope":"Actual Bevy combat HUD widgets with fixture values; no desktop input, account, network, world or live gameplay qualification"
         })).unwrap()).unwrap();
         exit.write(AppExit::Success);
