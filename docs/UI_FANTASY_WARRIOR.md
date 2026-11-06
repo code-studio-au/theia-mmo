@@ -1067,3 +1067,32 @@ Evidence: `build/ui-reference-20261106/interface-verification-v1.json` and the
 corresponding client/Clippy/build logs. Native pointer interaction with these
 new controls and interactive resize/DPI/Windows remain pending. The user's running
 playtest keeps its frozen earlier binary and has not been interrupted or replaced.
+
+
+## Floating committed XP feedback — 6 November 2026
+
+P2-14 / P5-13 / P5-19. The client now reuses one noninteractive standard Bevy
+Text/Node label above the authoritative player position. Positive committed XP
+deltas appear in purple, coalesce while visible, rise and fade over 1.5 seconds.
+Checked global/local projection and UI-scale conversion keep the label inside
+the viewport. The observer validates owner, epoch, World, profile and monotonic
+progression snapshots. Saved login/rejoin progress establishes a baseline;
+duplicates produce no extra cue. Invalid regressions clear the cue while retaining
+the valid high-water mark. This presentation never awards XP and does not promise
+one popup per kill: multiple server awards can arrive in one observed delta.
+
+Four new cases cover gain coalescing/expiry, reconnect/context resets, replay
+rejection and viewport-edge placement. All 193 client cases including local art
+pass, as do formatting, denied-warning workspace/all-target Clippy and client
+build. Six windowless Linux GPU layouts (1280×720 through 3840×2160, preferred
+scales 75–150%) render the shared static `XP +25 (fixture)` widget and check its
+bounds and separation from cast/XP-bar feedback. Device: AMD RX 7900 XTX,
+RADV NAVI31 / Vulkan / Mesa 26.2.6. The fixture can overlap its diagnostic preview
+title; it does not simulate a live award. Live connected XP presentation, native
+DPI/resize and Windows remain unverified. No desktop input was used.
+
+Evidence (ignored): `build/ui-reference-20261106/xp-popup-client-v3.log`,
+`xp-popup-clippy-v2.log`, `xp-popup-build-v1.log`, `xp-popup-fmt-v1.log` and
+`xp-popup-verification-v1.json`. Earlier parser-failure logs are not passing
+evidence. Work stopped here at the user's request; no further play session was
+launched. The separately frozen release playtest pack predates this XP change.

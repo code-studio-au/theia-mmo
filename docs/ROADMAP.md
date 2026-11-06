@@ -1,3 +1,13 @@
+Safe stop checkpoint, 6 November 2026 (P2-14 / P5-13 / P5-19):
+Stopped at the user's request after completing floating XP feedback. One reusable
+standard Bevy label presents positive committed owner XP deltas, coalesces nearby
+gains and fades after 1.5 seconds. Login/rejoin progress is a baseline, not an
+award. Invalid/replayed snapshots cannot create duplicate feedback. No gameplay
+or protocol changes. 193 client cases, formatting, strict workspace/all-target
+Clippy and client build pass. Six windowless Linux GPU fixture layouts through
+3840×2160 pass; live connected XP presentation remains unverified. No desktop
+input or new play session. Local commit only; no push. No play session running.
+
 Longer local playtest sessions, 6 November 2026 (P2-02 / P3-01 / P3-03):
 An explicit bounded server lifetime can now extend an intentionally configured
 local session beyond five minutes, capped by signed identity expiry. The default
@@ -13,7 +23,7 @@ compact lower-centre player/target frames, twelve 44-pixel primary slots,
 cast feedback, a centred XP strip, circular minimap and shared pane headers.
 It uses standard Bevy UI with nine local PNG icons and two fonts; source assets
 remain outside Git. Preferred UI scale fits/restores the 1280×720 logical layout.
-189 client cases, formatting, strict workspace/all-target Clippy and build pass.
+193 client cases, formatting, strict workspace/all-target Clippy and build pass.
 Windowless cases through 3840×2160 check combat/XP/dock separation and
 projected anchors; earlier circle-corner pixel checks remain valid. Earlier 51 launcher cases remain valid.
 Connected OIDC/Renet/PostgreSQL quest/minimap walkthroughs now pass at

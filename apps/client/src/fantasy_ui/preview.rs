@@ -78,6 +78,7 @@ struct Layout<'w, 's> {
     map_surface: Query<'w, 's, AnchorGeometry<'static>, With<crate::minimap::Surface>>,
     header: Query<'w, 's, AnchorGeometry<'static>, PaperSample>,
     units: Query<'w, 's, UnitGeometry<'static>>,
+    xp_popup: Query<'w, 's, AnchorGeometry<'static>, With<crate::progression::feedback::Label>>,
     xp: Query<'w, 's, AnchorGeometry<'static>, With<crate::progression::Root>>,
     dock: Query<'w, 's, AnchorGeometry<'static>, With<crate::inventory::BackpackDock>>,
     reward_icons: Query<
@@ -250,6 +251,10 @@ pub(crate) fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     crate::combat::ui::install_preview(&mut app);
     crate::minimap::install_preview(&mut app);
     crate::progression::install_preview(&mut app);
+    crate::progression::feedback::install_preview(
+        &mut app,
+        size.as_vec2() * Vec2::new(0.5, 0.45) / ui_scale,
+    );
     crate::nameplates::install_preview(&mut app, size.as_vec2() * Vec2::new(0.5, 0.55) / ui_scale);
     app.add_systems(Startup, labels).add_systems(Last, capture);
     app.run();
@@ -584,6 +589,21 @@ fn capture(
     assert_eq!(unit_frames.len(), 2);
     let (xp_node, xp_transform) = layout.xp.single().expect("Actual progression widgets");
     let xp_rect = Rect::from_center_size(xp_transform.affine().translation, xp_node.size());
+    let (popup_node, popup_transform) = layout.xp_popup.single().expect("Shared XP popup fixture");
+    let popup_rect =
+        Rect::from_center_size(popup_transform.affine().translation, popup_node.size());
+    assert!(
+        popup_node.size().min_element() > 0.
+            && viewport.contains(popup_rect.min)
+            && viewport.contains(popup_rect.max),
+        "XP popup stays inside viewport"
+    );
+    assert!(
+        popup_rect.intersect(cast).is_empty() && popup_rect.intersect(xp_rect).is_empty(),
+        "XP popup leaves feedback and experience bar clear"
+    );
+    let xp_popup = serde_json::json!({"fixture":true,"rect":[popup_rect.min.to_array(),popup_rect.max.to_array()],"amount":25});
+
     assert!(
         xp_node.size().min_element() > 0.
             && viewport.contains(xp_rect.min)
@@ -805,7 +825,7 @@ fn capture(
         assert_eq!([event.image.width(), event.image.height()], [size.x,size.y]);
         event.image.clone().try_into_dynamic().unwrap().save(directory.join("hud.png")).unwrap();
         std::fs::write(directory.join("report.json"),serde_json::to_vec_pretty(&serde_json::json!({
-                "completed":true,"ui_scale":ui_scale,"preferred_ui_scale":preferred_scale,"geometry_units":"physical_pixels","offscreen":true,"windows":0,"fixture":true,"extent":[size.x,size.y],"gpu":gpu,"buttons":buttons,"glyphs":glyphs,"feedback":feedback,"minimap":minimap,"header":header,"unit_frames":unit_frames,"xp":xp,"backpack_dock":dock,"backpack":backpack,"reward_icons":reward_icons,"reader":reader,"map_objectives":map_objectives,"interface":interface,"nameplates":nameplates,"projected_anchor":{"actual":projected_anchor.to_array(),"expected":expected_anchor.to_array()},
+                "completed":true,"ui_scale":ui_scale,"preferred_ui_scale":preferred_scale,"geometry_units":"physical_pixels","offscreen":true,"windows":0,"fixture":true,"extent":[size.x,size.y],"gpu":gpu,"buttons":buttons,"glyphs":glyphs,"feedback":feedback,"minimap":minimap,"header":header,"unit_frames":unit_frames,"xp":xp,"xp_popup":xp_popup,"backpack_dock":dock,"backpack":backpack,"reward_icons":reward_icons,"reader":reader,"map_objectives":map_objectives,"interface":interface,"nameplates":nameplates,"projected_anchor":{"actual":projected_anchor.to_array(),"expected":expected_anchor.to_array()},
             "scope":"Actual Bevy combat HUD widgets with fixture values; no desktop input, account, network, world or live gameplay qualification"
         })).unwrap()).unwrap();
         exit.write(AppExit::Success);

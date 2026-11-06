@@ -1,4 +1,5 @@
 //! Committed own-character progression using standard Bevy UI.
+pub(crate) mod feedback;
 use crate::network::Network;
 use bevy::{prelude::*, text::FontSize};
 use std::sync::Arc;
@@ -26,6 +27,7 @@ pub(crate) fn install_preview(app: &mut App) {
 }
 pub(crate) fn install(app: &mut App, profile: Arc<theia_network::progression_wire::Profile>) {
     qualification::install(app);
+    feedback::install(app);
     app.insert_resource(Profile(profile))
         .add_systems(Startup, setup)
         .add_systems(Update, present.after(crate::network::present));
