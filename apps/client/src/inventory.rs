@@ -158,7 +158,9 @@ pub(crate) fn install(app: &mut App, profile: Profile) {
             Update,
             (
                 present.in_set(Phase::Present),
-                (paint, skin::present).chain().in_set(Phase::Paint),
+                (paint, paint_buttons, skin::present)
+                    .chain()
+                    .in_set(Phase::Paint),
                 scroll,
             )
                 .chain()
@@ -304,102 +306,105 @@ fn setup(mut commands: Commands, config: Res<Config>, skin: Option<Res<crate::fa
                 .with_children(|grid| {
                     spawn_slots(grid, &config.0, skin.is_some());
                 });
-            if config.0.catalog().equipment_enabled() {
-                panel
-                    .spawn(Node {
-                        width: percent(100),
-                        column_gap: px(6),
-                        ..default()
-                    })
-                    .with_children(|row| {
-                        row.spawn((
-                            EquipButton,
-                            button(Widget::Equip, "Equip selected item", 150., 30.),
-                        ))
-                        .with_child(text("Equip selected", 14.));
-                        row.spawn((
-                            UnequipButton,
-                            button(Widget::Unequip, "Choose unequip destination", 150., 30.),
-                        ))
-                        .with_child(text("Unequip", 14.));
-                    });
-            }
-            panel
-                .spawn((Node {
-                    width: percent(100),
-                    column_gap: px(6),
-                    ..default()
-                },))
-                .with_children(|row| {
-                    row.spawn((
-                        SplitButton,
-                        button(Widget::Split, "Split one item", 150., 30.),
-                    ))
-                    .with_child((SplitLabel, text("Split one", 14.)));
-                    row.spawn((
-                        CancelButton,
-                        button(Widget::Cancel, "Cancel item selection", 150., 30.),
-                    ))
-                    .with_child(text("Cancel", 14.));
-                });
-            if config.0.catalog().equipment_enabled() {
-                panel
-                    .spawn((
-                        DestroyButton,
-                        button(
-                            Widget::Destroy,
-                            "Destroy selected stack with confirmation",
-                            306.,
-                            30.,
-                        ),
-                    ))
-                    .with_child((DestroyLabel, text("Destroy selected stack", 14.)));
-            }
-            if config.0.documents().is_some() {
-                panel.spawn((
-                    DocumentActions,
-                    Node {
-                        width: percent(100),
-                        ..default()
-                    },
-                ));
-            }
-            panel.spawn((
-                StatusLabel,
-                text("Loading backpack...", 14.),
-                Node {
-                    width: percent(100),
-                    min_height: px(40),
-                    ..default()
-                },
-            ));
-            if let Some(vendor) = config.0.vendor() {
-                for (index, offer) in vendor.catalog().offers().enumerate() {
-                    panel
-                        .spawn((
-                            BuyButton(index as u8),
-                            button(
-                                Widget::Buy(index as u8),
-                                &format!("Buy {}", offer.name()),
-                                316.,
-                                58.,
-                            ),
-                        ))
-                        .with_child((
-                            OfferLabel(index as u8),
-                            text("Talk to the guide to trade.", 13.),
-                        ));
-                }
-            }
-            if config.0.rewards().is_some() {
-                panel
-                    .spawn((
-                        ClaimButton,
-                        button(Widget::Claim, "Claim available reward", 316., 30.),
-                    ))
-                    .with_child((RewardLabel, text("Loading rewards...", 14.)));
-            }
+            spawn_actions(panel, &config.0, "Loading backpack...");
         });
+}
+fn spawn_actions(panel: &mut ChildSpawnerCommands, profile: &Profile, status: &str) {
+    if profile.catalog().equipment_enabled() {
+        panel
+            .spawn(Node {
+                width: percent(100),
+                column_gap: px(6),
+                ..default()
+            })
+            .with_children(|row| {
+                row.spawn((
+                    EquipButton,
+                    button(Widget::Equip, "Equip selected item", 150., 30.),
+                ))
+                .with_child(text("Equip selected", 14.));
+                row.spawn((
+                    UnequipButton,
+                    button(Widget::Unequip, "Choose unequip destination", 150., 30.),
+                ))
+                .with_child(text("Unequip", 14.));
+            });
+    }
+    panel
+        .spawn((Node {
+            width: percent(100),
+            column_gap: px(6),
+            ..default()
+        },))
+        .with_children(|row| {
+            row.spawn((
+                SplitButton,
+                button(Widget::Split, "Split one item", 150., 30.),
+            ))
+            .with_child((SplitLabel, text("Split one", 14.)));
+            row.spawn((
+                CancelButton,
+                button(Widget::Cancel, "Cancel item selection", 150., 30.),
+            ))
+            .with_child(text("Cancel", 14.));
+        });
+    if profile.catalog().equipment_enabled() {
+        panel
+            .spawn((
+                DestroyButton,
+                button(
+                    Widget::Destroy,
+                    "Destroy selected stack with confirmation",
+                    306.,
+                    30.,
+                ),
+            ))
+            .with_child((DestroyLabel, text("Destroy selected stack", 14.)));
+    }
+    if profile.documents().is_some() {
+        panel.spawn((
+            DocumentActions,
+            Node {
+                width: percent(100),
+                ..default()
+            },
+        ));
+    }
+    panel.spawn((
+        StatusLabel,
+        text(status, 14.),
+        Node {
+            width: percent(100),
+            min_height: px(40),
+            ..default()
+        },
+    ));
+    if let Some(vendor) = profile.vendor() {
+        for (index, offer) in vendor.catalog().offers().enumerate() {
+            panel
+                .spawn((
+                    BuyButton(index as u8),
+                    button(
+                        Widget::Buy(index as u8),
+                        &format!("Buy {}", offer.name()),
+                        316.,
+                        58.,
+                    ),
+                ))
+                .with_child((
+                    OfferLabel(index as u8),
+                    text("Talk to the guide to trade.", 13.),
+                ));
+        }
+    }
+    if profile.rewards().is_some() {
+        panel
+            .spawn((
+                ClaimButton,
+                button(Widget::Claim, "Claim available reward", 316., 30.),
+            ))
+            .with_child((RewardLabel, text("Loading rewards...", 14.)));
+    }
 }
 fn reason(reason: Reason) -> &'static str {
     match reason {
@@ -746,13 +751,11 @@ type ButtonView<'a> = (
     &'a mut BackgroundColor,
 );
 fn paint(
-    skin: Option<Res<crate::fantasy_ui::Skin>>,
     config: Res<Config>,
     network: Res<Network>,
     mut ui: ResMut<Ui>,
     mut panels: Query<&mut Node, With<Pane>>,
     mut labels: Query<Label<'_>>,
-    mut buttons: Query<ButtonView<'_>>,
 ) {
     let state = network.state();
     ui.offers.clear();
@@ -892,6 +895,13 @@ fn paint(
             label.0 = value;
         }
     }
+}
+
+fn paint_buttons(
+    skin: Option<Res<crate::fantasy_ui::Skin>>,
+    ui: Res<Ui>,
+    mut buttons: Query<ButtonView<'_>>,
+) {
     for (widget, pressed, hovered, mut background) in &mut buttons {
         let selected = matches!(widget,Widget::Slot(slot) if Some(*slot)==ui.selected)
             || matches!(widget, Widget::Unequip) && ui.unequip;
@@ -915,6 +925,15 @@ fn paint(
                 Color::srgb(0.22, 0.18, 0.12)
             } else {
                 crate::fantasy_ui::PANEL
+            }
+        } else if skin.is_some() {
+            if !ui.pending && matches!(widget, Widget::Destroy) && ui.destroy_confirmation.is_some()
+            {
+                Color::srgb(0.45, 0.08, 0.06)
+            } else if selected && !ui.pending {
+                Color::srgb(0.30, 0.22, 0.10)
+            } else {
+                crate::fantasy_ui::button_color(ui.pending, hovered.is_some_and(|h| h.0), pressed)
             }
         } else {
             color

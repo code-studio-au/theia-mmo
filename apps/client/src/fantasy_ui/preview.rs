@@ -51,6 +51,13 @@ type UnitGeometry<'a> = (
     &'a ComputedNode,
     &'a bevy::ui::UiGlobalTransform,
 );
+type BagActions = Or<(
+    With<crate::inventory::EquipButton>,
+    With<crate::inventory::UnequipButton>,
+    With<crate::inventory::SplitButton>,
+    With<crate::inventory::CancelButton>,
+    With<crate::inventory::DestroyButton>,
+)>;
 #[derive(bevy::ecs::system::SystemParam)]
 struct Layout<'w, 's> {
     windows: Query<'w, 's, &'static Window>,
@@ -64,6 +71,7 @@ struct Layout<'w, 's> {
     units: Query<'w, 's, UnitGeometry<'static>>,
     xp: Query<'w, 's, AnchorGeometry<'static>, With<crate::progression::Root>>,
     dock: Query<'w, 's, AnchorGeometry<'static>, With<crate::inventory::BackpackDock>>,
+    bag_actions: Query<'w, 's, AnchorGeometry<'static>, BagActions>,
     bag_slots: Query<'w, 's, AnchorGeometry<'static>, With<crate::inventory::SlotButton>>,
     bag_icons:
         Query<'w, 's, (&'static Node, &'static ComputedNode), With<crate::inventory::skin::Icon>>,
@@ -562,7 +570,23 @@ fn capture(
             "Item tooltip must not cover bag slots"
         );
     }
-    let backpack = serde_json::json!({"fixture":true, "slots":bag_slots,"visible_icons":visible_icons,"tooltip":{"centre":tooltip_centre.to_array(),"size":tooltip_size.to_array()}});
+    let bag_actions: Vec<_> = layout
+        .bag_actions
+        .iter()
+        .map(|(node, transform)| {
+            let rect = Rect::from_center_size(transform.affine().translation, node.size());
+            assert!(
+                node.size().min_element() > 0.
+                    && rect.min.min_element() >= 0.
+                    && rect.max.x <= run.size.x as f32
+                    && rect.max.y <= run.size.y as f32,
+                "Backpack actions must fit the windowless fixture"
+            );
+            serde_json::json!([rect.min.to_array(), rect.max.to_array()])
+        })
+        .collect();
+    assert_eq!(bag_actions.len(), 5);
+    let backpack = serde_json::json!({"fixture":true, "slots":bag_slots,"actions":bag_actions,"visible_icons":visible_icons,"tooltip":{"centre":tooltip_centre.to_array(),"size":tooltip_size.to_array()}});
     let directory = run.directory.clone();
     let size = run.size;
     let ui_scale = run.ui_scale;

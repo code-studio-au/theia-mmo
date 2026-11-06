@@ -5,8 +5,8 @@ cast feedback, a centred XP strip, circular minimap and shared pane headers.
 It uses standard Bevy UI with nine local PNG icons and two fonts; source assets
 remain outside Git. Preferred UI scale fits/restores the 1280×720 logical layout.
 175 client cases, formatting, strict workspace/all-target Clippy and build pass.
-Six latest windowless cases through 3840×2160 check combat/XP/dock separation,
-projected anchors and circular map pixels. Earlier 51 launcher cases remain valid.
+Windowless cases through 3840×2160 check combat/XP/dock separation and
+projected anchors; earlier circle-corner pixel checks remain valid. Earlier 51 launcher cases remain valid.
 Connected OIDC/Renet/PostgreSQL quest/minimap walkthroughs now pass at
 1280×720, 1920×1200 and 3440×1440 plus genuine restart/rejoin. They confirm the
 fixed panel layering, bag dock and hidden themed terrain diagnostics in a
@@ -22,6 +22,8 @@ restart; final tooltip placement has six GPU cases and a 1280×720 native replay
 Read-only UI coordinate exports now preserve UI enlargement while removing
 window DPI; headless geometry/scroll checks pass. Native enlarged-UI input
 remains pending until desktop tests are authorized again.
+Backpack action colours now match the dark red theme. Six windowless cases
+include the five shared inventory actions; native follow-up remains pending.
 The skin remains opt-in; clickable plates, portrait art, chat/menu systems,
 nondefault-scale OS traces and complete-theme qualification
 remain separate work. [Scope, reference, assets and evidence](../UI_FANTASY_WARRIOR.md).

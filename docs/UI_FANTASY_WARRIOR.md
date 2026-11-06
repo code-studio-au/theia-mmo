@@ -779,3 +779,30 @@ of 17 UI pixels. The 175-client-case run includes local PNG decoding. Formatting
 and strict workspace/all-target Clippy pass. No new desktop/input test
 has been launched: the user paused desktop/mouse tests while using the machine.
 Real enlarged-UI interaction, native DPI and Windows checks remain pending.
+
+
+## Backpack action palette and shared preview — 6 November 2026
+
+P2-14 / P3-05 / P5-13 / P5-19. The optional backpack's existing action buttons,
+header close and dock now use the shared dark red palette, with selected actions,
+pending dimming and the original red destruction confirmation retained. Slots
+keep their dark/gold treatment. Unskinned colours remain unchanged.
+
+The original button painter is now a separate presentation system after the
+existing network/label preparation. Footer construction is shared between the
+normal backpack and the labelled windowless fixture; action IDs, widget types,
+observers, sizes, order, labels and command handlers are preserved. The fixture
+renders the real equip, unequip, split, cancel and destruction widgets but
+installs no action observer, Pending resource or network. Its fixed status text
+explicitly says it cannot issue item commands. The fixture deliberately forces
+hover descriptions alongside other HUD samples; it is a layout/palette test,
+not a complete live-screen composition or simultaneous-panel visibility claim.
+
+All six `bag-actions-v1-*` windowless GPU cases pass the previous layout gates
+plus five real action rectangles contained in the viewport. The selected local
+PNGs/fonts render on Linux RX 7900 XTX / RADV Vulkan / Mesa 26.2.6 with no OS
+window, Winit, mouse, keyboard or desktop input. Evidence is
+`build/ui-reference-20261106/bag-actions-verification-v1.json`. Development build,
+175 client cases including local art, formatting and strict Clippy pass. No new desktop check has run after the user's pause; native input
+qualification of this presentation-only extraction remains pending. Earlier
+backpack native evidence belongs to its exact pre-palette sources. No push.

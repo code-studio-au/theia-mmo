@@ -202,7 +202,7 @@ pub(crate) fn install_preview(app: &mut App) {
             ..default()
         })
         .add_systems(Startup, preview_setup)
-        .add_systems(Update, present);
+        .add_systems(Update, (paint_buttons, present).chain());
 }
 fn preview_setup(mut commands: Commands, config: Res<Config>) {
     spawn_toggle(&mut commands, true);
@@ -238,6 +238,7 @@ fn preview_setup(mut commands: Commands, config: Res<Config>) {
                     ..default()
                 })
                 .with_children(|grid| spawn_slots(grid, &config.0, true));
+            spawn_actions(panel, &config.0, "Fixture only; no item commands");
         });
 }
 
