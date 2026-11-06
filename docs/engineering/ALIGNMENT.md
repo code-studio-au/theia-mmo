@@ -1,3 +1,11 @@
+Actual client/server reward configuration identities match, 6 November 2026:
+The client now has an explicit CLI configuration report that returns before
+networking or renderer/window creation. Its content identity matches the real
+headless server for both sealed schema-21 bundles, with real OIDC/SQL HTTP ticket
+preflight. 150 client tests, four Linux CLI groups (twelve cases), formatting and
+strict Clippy pass. [Scope/evidence](../QUEST_ITEM_REWARDS.md#actual-clientserver-configuration-identities-agree-headlessly). No game ticket is consumed and no
+reward UI/native proof is claimed. Continue headless only; local commits, no push.
+
 Positive normal reward server configuration qualified, 6 November 2026:
 Both schema-21 bundles start the actual headless server with sealed 25-role
 content, real OIDC/PostgreSQL and HTTP admission preflight. Unauthenticated and

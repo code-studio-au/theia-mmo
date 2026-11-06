@@ -1,3 +1,12 @@
+## 2026-11-06 — explicit client content configuration report
+
+Expose a developer CLI-only report using the same identity expression as normal
+network setup, returning before any network worker, App, window or renderer.
+Require exclusive predicted Classic graybox configuration and reject connection
+arguments. This permits exact normal client/server configuration comparisons while
+desktop testing is unavailable, without adding gameplay authority or duplicating
+the identity algorithm. [Headless proof and limits](QUEST_ITEM_REWARDS.md#actual-clientserver-configuration-identities-agree-headlessly).
+
 ## 2026-11-06 — opt-in exact fixed reward manifest role
 
 Use cumulative manifest schema 21 with one additional `quest_item_rewards` role

@@ -415,3 +415,34 @@ Renet player, execute a quest, grant an item or verify the Bevy UI. Actual SQL
 turn-in, real retained ownership and encrypted command behavior remain the
 separate proofs above. Combined owned gameplay and UI/native qualification remain
 pending. No Windows or MMO capacity claim; desktop/mouse tests stay paused.
+
+
+## Actual client/server configuration identities agree headlessly
+
+The normal client now accepts `--configuration-report` for exclusive predicted
+Classic graybox content without connection arguments. Its existing complete
+content identity calculation is shared by the report and ordinary networking.
+The diagnostic returns before `Network::from_args`, `App` construction, winit,
+renderer/device creation or any saved/network admission. It reports only world
+and profile digests, the fixed-reward catalogue ID and explicit scope flags.
+Duplicate mode flags, missing context, unknown leftover arguments and connection
+arguments refuse before a window can be created. This is a developer CLI path,
+not a new product UI or authority input.
+
+`tools/qualify_reward_server_config.py` now invokes this actual client mode on
+its sealed role paths before starting the normal headless server. It compares
+the independently calculated client world identity with the actual server's
+ready identity, then runs the real OIDC/SQL HTTP ticket checks above. Both pass:
+`build/qir-pair-v3-20261106/verification.json` (fixture) and
+`build/qir-pair-normal-v4-20261106/verification.json` (ordinary bundle). Neither
+client diagnostic initializes networking or rendering; the game tickets remain
+unconsumed. All provider, database, server and snapshot resources are cleaned up.
+
+150 client unit tests pass in the configuration-report `client-tests-v1` log.
+Four Linux CLI test groups cover twelve invalid/duplicate/reordered/mixed-mode
+cases in `cli-v1`. Formatting and strict workspace/all-target Clippy pass in
+configuration-report `fmt-v1` and `clippy-v1` for 20261106. Only the client CLI
+and pure identity expression placement changed; no Bevy presentation was edited.
+There is no native or Windows execution claim. Actual encrypted reward gameplay
+with owned identity/storage, and reward UI/native qualification, remain distinct
+next steps. Desktop/mouse use stays paused; keep commits local.

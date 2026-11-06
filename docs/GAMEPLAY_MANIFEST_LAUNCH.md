@@ -1,3 +1,10 @@
+Headless normal client/server identity comparison, 6 November 2026:
+The client's explicit `--configuration-report` returns before networking or
+window/renderer startup. The existing configuration qualifier now compares its
+actual schema-21 identity with the real server, then checks OIDC/SQL HTTP ticket
+preflight. Both fixture and ordinary bundles pass. [Command scope and evidence](QUEST_ITEM_REWARDS.md#actual-clientserver-configuration-identities-agree-headlessly).
+Desktop testing remains paused; encrypted owned gameplay and native UI are separate.
+
 Positive schema-21 server configuration, 6 November 2026:
 The real normal server starts both fixed-reward bundles and passes real OIDC/SQL
 HTTP ticket preflight headlessly. No game client or desktop window is launched;

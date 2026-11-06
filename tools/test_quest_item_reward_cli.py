@@ -41,6 +41,16 @@ class QuestItemRewardCli(unittest.TestCase):
             with self.subTest(arguments=arguments):
                 self.refusal(self.client, arguments, 'Fixed quest rewards require journal, quest and item catalogues')
 
+    def test_client_configuration_report_is_exclusive_and_has_no_fallback_window(self):
+        for arguments, expected in [
+            (['--configuration-report'], 'Configuration report requires exclusive'),
+            (['--configuration-report', '--configuration-report'], 'Choose configuration report once'),
+            (['--configuration-report', '--unknown'], 'Configuration report requires exclusive'),
+            (['--configuration-report', '--renet-connect', '127.0.0.1:1', 'unused.token'], 'Configuration report requires exclusive'),
+        ]:
+            with self.subTest(arguments=arguments):
+                self.refusal(self.client, arguments, expected)
+
     def test_server_missing_unbound_or_duplicate_reward_policy_refuses_before_endpoint(self):
         for arguments, expected in [
             (['--quest-item-rewards'], 'Missing fixed quest reward catalogue'),

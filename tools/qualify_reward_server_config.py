@@ -45,6 +45,25 @@ def run(args):
     with snapshot(args.manifest, args.validator, output/'snapshot') as (paths, report):
         assert report['manifest_schema'] == 21 and set(paths) == set(ROLE_FLAGS)
         sealed_hashes = {role: hashlib.sha256(path.read_bytes()).hexdigest() for role, path in paths.items()}
+        # Run the actual normal client parser and identity calculation, returning
+        # before Network::from_args, App construction, winit or GPU startup.
+        client_env = {k: v for k, v in os.environ.items()
+                      if k.upper() not in ('DISPLAY', 'WAYLAND_DISPLAY', 'XDG_RUNTIME_DIR')
+                      and not k.upper().startswith(('THEIA_', 'PG'))}
+        client_env['LD_LIBRARY_PATH'] = str(Path('build/native-sdk/usr/lib/x86_64-linux-gnu').resolve())+':'+client_env.get('LD_LIBRARY_PATH', '')
+        client_command = [str(args.client.resolve()), '--configuration-report',
+                          '--saved-terrain', str(args.terrain.resolve()), '--navigation', str(args.navigation.resolve()),
+                          '--prediction', '--classic', '--quest-journal', '--quest-items', '--quest-loot',
+                          '--creature-loot', '--public-creature-attacks', '--public-avatar-life', '--guide-position', '8004,8000']
+        for role, flag in ROLE_FLAGS.items():
+            client_command += [flag, str(paths[role])]
+        inspected = subprocess.run(client_command, env=client_env, capture_output=True, text=True, timeout=30)
+        (output/'client-config-errors.log').write_text(inspected.stderr)
+        assert inspected.returncode == 0, 'Client configuration preflight failed; inspect owned error log'
+        client_report = json.loads(inspected.stdout)
+        assert client_report['schema'] == 1 and not any(client_report[k] for k in ('renderer_started', 'network_started', 'saved_state_admitted'))
+        assert client_report['fixed_reward_catalog'] == json.loads(paths['quest_item_rewards'].read_text())['id']
+        (output/'client-config.json').write_text(inspected.stdout)
         with Identity(output/'provider', args.identity_sdk) as identity, Cluster(output/'cluster', args.postgres_sdk) as cluster:
             env = {k: v for k, v in cluster.env.items()
                    if k.upper() not in ('DISPLAY', 'WAYLAND_DISPLAY', 'XDG_RUNTIME_DIR')
@@ -75,6 +94,7 @@ def run(args):
                         time.sleep(.05)
                     else:
                         raise TimeoutError('Normal headless server configuration timed out')
+                    assert ready['world'] == client_report['world'], 'Normal client/server content identities disagree'
                     base = ready['account_address']
                     assert urllib.parse.urlsplit(base).netloc == urllib.parse.urlsplit(identity.redirect).netloc
                     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirect())
@@ -134,6 +154,8 @@ def run(args):
         result = dict(passed=True, scope='normal server configuration and HTTP ticket preflight only',
                       manifest_schema=21, exact_roles=len(paths), bundle_sha256=report['validation_bundle_sha256'],
                       real_oidc_and_postgres=True, normal_cli_and_reward_owner_configuration=True,
+                      actual_client_configuration_only=True, client_server_world_identities_match=True,
+                      client_sha256=hashlib.sha256(args.client.read_bytes()).hexdigest(),
                       unauthorized_ticket_refused=True, issued_reservation_blocks_duplicate=True,
                       private_ticket_not_written=True, gameplay_ticket_consumed=False,
                       economic_state_created=False, item_reward_or_native_gameplay_qualified=False,
@@ -148,6 +170,7 @@ def run(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('output', type=Path)
+    parser.add_argument('--client', type=Path, default=Path('target/debug/theia-client'))
     parser.add_argument('--server', type=Path, default=Path('target/debug/theia-server'))
     parser.add_argument('--validator', type=Path, default=Path('target/debug/examples/validate_gameplay'))
     parser.add_argument('--manifest', type=Path, default=Path('content/development-gameplay-classic-item-rewards-fixture.json'))

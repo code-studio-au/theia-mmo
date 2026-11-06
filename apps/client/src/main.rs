@@ -56,6 +56,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if args.first().is_some_and(|a| a == "--chunk-smoke") {
         return chunk_scene::run(&args);
     }
+    let configuration_report =
+        if let Some(i) = args.iter().position(|a| a == "--configuration-report") {
+            args.remove(i);
+            if args.iter().any(|a| a == "--configuration-report") {
+                return Err("Choose configuration report once".into());
+            }
+            true
+        } else {
+            false
+        };
     let fullscreen = if let Some(i) = args.iter().position(|a| a == "--fullscreen") {
         args.remove(i);
         true
@@ -891,156 +901,166 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "--connect" | "--network-smoke" | "--renet-connect" | "--renet-smoke"
         )
     });
-    if inventory_profile.is_some() && !connected {
+    if inventory_profile.is_some() && !connected && !configuration_report {
         return Err("Inventory requires a network connection".into());
     }
-    if content_world && !connected {
+    if content_world && !connected && !configuration_report {
         return Err(
             "World walking requires --connect, --renet-connect or a network smoke mode".into(),
         );
     }
-    if graybox && args.first().is_none_or(|a| !a.starts_with("--renet-")) {
+    if graybox && !configuration_report && args.first().is_none_or(|a| !a.starts_with("--renet-")) {
         return Err("Graybox requires secure Renet".into());
+    }
+    let content_identity = if graybox {
+        let base = if targeted {
+            theia_network::targeting::profile_identity(source.identity())
+        } else {
+            source.identity()
+        };
+        let base = patrol_binding
+            .as_ref()
+            .map_or(base, |(profile, navigation, _)| {
+                theia_network::simulation::creatures::profile_identity(base, profile, *navigation)
+            });
+        let base = if let Some((bytes, _)) = &combat_catalog {
+            use theia_network::simulation::combat::{
+                self, DEVELOPMENT_HEALTH, DEVELOPMENT_RESPAWN_MS,
+            };
+            if let Some((stats, _)) = &character_stats {
+                if let Some((statuses, _)) = &status_catalog {
+                    combat::status_profile_identity(
+                        base,
+                        bytes,
+                        DEVELOPMENT_HEALTH,
+                        DEVELOPMENT_RESPAWN_MS,
+                        stats,
+                        statuses,
+                    )
+                } else {
+                    combat::resource_profile_identity(
+                        base,
+                        bytes,
+                        DEVELOPMENT_HEALTH,
+                        DEVELOPMENT_RESPAWN_MS,
+                        stats,
+                    )
+                }
+            } else {
+                combat::profile_identity(base, bytes, DEVELOPMENT_HEALTH, DEVELOPMENT_RESPAWN_MS)
+            }
+            .map_err(|e| e.to_string())?
+        } else {
+            base
+        };
+        let base = player_life_profile.as_ref().map_or(base, |profile| {
+            theia_network::player_life_wire::profile_identity(base, profile)
+        });
+        let base = if let Some((weapons, _)) = &melee_profile {
+            theia_network::simulation::combat::autoattack::profile_identity(
+                base,
+                weapons,
+                item_bytes.as_deref().ok_or("Missing melee item bytes")?,
+            )
+            .map_err(|e| e.to_string())?
+        } else {
+            base
+        };
+        let base = physical_profile
+            .as_ref()
+            .map_or(base, |profile| profile.identity(base));
+        let base = white_profile
+            .as_ref()
+            .map_or(base, |profile| profile.identity(base));
+        let base = ability_profile
+            .as_ref()
+            .map_or(base, |profile| profile.identity(base));
+        let base = membership_profile.as_ref().map_or(base, |profile| {
+            theia_network::simulation::combat::membership::identity_for_profile(base, profile)
+        });
+        let base = if let Some(bytes) = &credit_bytes {
+            theia_network::simulation::combat::credit::profile_identity(base, bytes)
+                .map_err(|error| error.to_string())?
+        } else {
+            base
+        };
+        let base = reset_profile
+            .as_ref()
+            .map_or(base, |profile| profile.identity(base));
+        let base = if let Some(bytes) = &threat_bytes {
+            theia_network::simulation::combat::threat::profile_identity(base, bytes)
+                .map_err(|error| error.to_string())?
+        } else {
+            base
+        };
+        let base = public_attack_profile
+            .as_ref()
+            .map_or(base, |profile| profile.identity(base));
+        let base = public_avatar_profile
+            .as_ref()
+            .map_or(base, |p| p.identity(base));
+        let base = inventory_profile
+            .as_ref()
+            .and_then(|p| p.rewards())
+            .map_or(base, |r| {
+                theia_network::simulation::rewards::profile_identity(base, r.hash())
+            });
+        let base = progression_profile.as_ref().map_or(base, |p| {
+            theia_network::progression_wire::profile_identity(base, p.hash())
+        });
+        let base = quest_profile.as_ref().map_or(base, |p| {
+            theia_network::quest_wire::profile_identity(base, p.hash())
+        });
+        let base = lifecycle_profile.as_ref().map_or(base, |p| {
+            theia_network::quest_lifecycle_wire::profile_identity(base, p.hash())
+        });
+        let base = journal_profile.as_ref().map_or(base, |p| {
+            theia_network::quest_journal::profile_identity(base, p.hash())
+        });
+        let base = dialogue_profile.as_ref().map_or(base, |(profile, xz)| {
+            theia_network::dialogue::profile_identity(base, profile.hash(), *xz)
+        });
+        inventory_profile
+            .as_ref()
+            .and_then(|p| p.vendor())
+            .map_or(base, |v| {
+                theia_network::vendor_wire::profile_identity(base, v.hash())
+            })
+    } else {
+        chunks.as_ref().map_or_else(
+            || {
+                terrain
+                    .as_ref()
+                    .map_or(theia_network::terrain::GRAYBOX_ID, |t| t.terrain.identity)
+            },
+            |chunks| chunks.data.identity(),
+        )
+    };
+    if configuration_report {
+        if connected || !args.is_empty() || !graybox || !prediction || !classic {
+            return Err("Configuration report requires exclusive predicted Classic graybox content without connection arguments".into());
+        }
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&serde_json::json!({
+                "schema": 1,
+                "scope": "Client content configuration only; no network, renderer or saved admission",
+                "world": theia_network::classic::profile_identity(content_identity),
+                "classic_source": content_identity,
+                "inventory_profile": inventory_profile.as_ref().map(|p|p.hash()),
+                "journal_profile": journal_profile.as_ref().map(|p|p.hash()),
+                "progression_profile": progression_profile.as_ref().map(|p|p.hash()),
+                "fixed_reward_catalog": journal_profile.as_ref().and_then(|p|p.item_rewards()).map(|r|r.id().as_str()),
+                "renderer_started": false, "network_started": false, "saved_state_admitted": false
+            }))?
+        );
+        return Ok(());
     }
     let mut net = if connected {
         Some(network::Network::from_args(
             &args,
             prediction,
-            if graybox {
-                let base = if targeted {
-                    theia_network::targeting::profile_identity(source.identity())
-                } else {
-                    source.identity()
-                };
-                let base = patrol_binding
-                    .as_ref()
-                    .map_or(base, |(profile, navigation, _)| {
-                        theia_network::simulation::creatures::profile_identity(
-                            base,
-                            profile,
-                            *navigation,
-                        )
-                    });
-                let base = if let Some((bytes, _)) = &combat_catalog {
-                    use theia_network::simulation::combat::{
-                        self, DEVELOPMENT_HEALTH, DEVELOPMENT_RESPAWN_MS,
-                    };
-                    if let Some((stats, _)) = &character_stats {
-                        if let Some((statuses, _)) = &status_catalog {
-                            combat::status_profile_identity(
-                                base,
-                                bytes,
-                                DEVELOPMENT_HEALTH,
-                                DEVELOPMENT_RESPAWN_MS,
-                                stats,
-                                statuses,
-                            )
-                        } else {
-                            combat::resource_profile_identity(
-                                base,
-                                bytes,
-                                DEVELOPMENT_HEALTH,
-                                DEVELOPMENT_RESPAWN_MS,
-                                stats,
-                            )
-                        }
-                    } else {
-                        combat::profile_identity(
-                            base,
-                            bytes,
-                            DEVELOPMENT_HEALTH,
-                            DEVELOPMENT_RESPAWN_MS,
-                        )
-                    }
-                    .map_err(|e| e.to_string())?
-                } else {
-                    base
-                };
-                let base = player_life_profile.as_ref().map_or(base, |profile| {
-                    theia_network::player_life_wire::profile_identity(base, profile)
-                });
-                let base = if let Some((weapons, _)) = &melee_profile {
-                    theia_network::simulation::combat::autoattack::profile_identity(
-                        base,
-                        weapons,
-                        item_bytes.as_deref().ok_or("Missing melee item bytes")?,
-                    )
-                    .map_err(|e| e.to_string())?
-                } else {
-                    base
-                };
-                let base = physical_profile
-                    .as_ref()
-                    .map_or(base, |profile| profile.identity(base));
-                let base = white_profile
-                    .as_ref()
-                    .map_or(base, |profile| profile.identity(base));
-                let base = ability_profile
-                    .as_ref()
-                    .map_or(base, |profile| profile.identity(base));
-                let base = membership_profile.as_ref().map_or(base, |profile| {
-                    theia_network::simulation::combat::membership::identity_for_profile(
-                        base, profile,
-                    )
-                });
-                let base = if let Some(bytes) = &credit_bytes {
-                    theia_network::simulation::combat::credit::profile_identity(base, bytes)
-                        .map_err(|error| error.to_string())?
-                } else {
-                    base
-                };
-                let base = reset_profile
-                    .as_ref()
-                    .map_or(base, |profile| profile.identity(base));
-                let base = if let Some(bytes) = &threat_bytes {
-                    theia_network::simulation::combat::threat::profile_identity(base, bytes)
-                        .map_err(|error| error.to_string())?
-                } else {
-                    base
-                };
-                let base = public_attack_profile
-                    .as_ref()
-                    .map_or(base, |profile| profile.identity(base));
-                let base = public_avatar_profile
-                    .as_ref()
-                    .map_or(base, |p| p.identity(base));
-                let base = inventory_profile
-                    .as_ref()
-                    .and_then(|p| p.rewards())
-                    .map_or(base, |r| {
-                        theia_network::simulation::rewards::profile_identity(base, r.hash())
-                    });
-                let base = progression_profile.as_ref().map_or(base, |p| {
-                    theia_network::progression_wire::profile_identity(base, p.hash())
-                });
-                let base = quest_profile.as_ref().map_or(base, |p| {
-                    theia_network::quest_wire::profile_identity(base, p.hash())
-                });
-                let base = lifecycle_profile.as_ref().map_or(base, |p| {
-                    theia_network::quest_lifecycle_wire::profile_identity(base, p.hash())
-                });
-                let base = journal_profile.as_ref().map_or(base, |p| {
-                    theia_network::quest_journal::profile_identity(base, p.hash())
-                });
-                let base = dialogue_profile.as_ref().map_or(base, |(profile, xz)| {
-                    theia_network::dialogue::profile_identity(base, profile.hash(), *xz)
-                });
-                inventory_profile
-                    .as_ref()
-                    .and_then(|p| p.vendor())
-                    .map_or(base, |v| {
-                        theia_network::vendor_wire::profile_identity(base, v.hash())
-                    })
-            } else {
-                chunks.as_ref().map_or_else(
-                    || {
-                        terrain
-                            .as_ref()
-                            .map_or(theia_network::terrain::GRAYBOX_ID, |t| t.terrain.identity)
-                    },
-                    |chunks| chunks.data.identity(),
-                )
-            },
+            content_identity,
             targeted,
             player_life_profile.clone(),
             public_attack_profile.clone(),
