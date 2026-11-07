@@ -74,3 +74,27 @@ combat-stat calculation or player-authoritative identity is required.
 Unicode/name-policy expansion, renaming, character-selection UI, public class or
 level metadata, party/chat systems and NPC naming remain separate scopes. NPC
 authored display names must not be constrained by the player-name parser.
+
+
+## Shared name value qualified — 7 November 2026
+
+Slice1 is implemented. `theia_core::character_name::CharacterName` now owns the
+existing parser and its original accepted/rejected corpus. Persistence re-exports
+the value and converts parse failures into its existing Invalid error category
+for database operations. Spelling, byte limits, punctuation, SQL schema and
+owner/realm checks are unchanged. This direction lets a future codec use the
+same validated value without a network-to-database dependency.
+
+`cargo test --locked -p theia-core -p theia-persistence -j2` passes 385 cases with
+73 service cases explicitly skipped. The actual PostgreSQL
+`owned_characters_names_quotas_selection_and_rejections_are_transactional`
+contract additionally passes in an owned temporary cluster. Formatting and
+strict workspace/all-target Clippy pass. Evidence:
+`build/player-identity-20261107/{name-value-tests-v1.log,
+clippy-name-value-v1.log,fmt-name-value-v1.log}` and
+`name-sql-v1/characters-contract.log`. The SQL contract is one executed test,
+not qualification of the other skipped service suites.
+
+No name frame is sent or received yet. Gameplay wire version remains12 and the
+frozen v5 UI checkpoint remains available. Codec and runtime integration are the
+next actual prerequisites.

@@ -1,3 +1,11 @@
+Player-identity prerequisite, 7 November 2026 (P2-03 / P3-01 / P2-14):
+The existing player-name validator is now a pure core value re-exported by
+persistence. 385 core/persistence cases pass (73 service skips); the actual
+PostgreSQL name/quota/ownership/selection contract additionally passes. Formatting
+and strict workspace/all-target Clippy pass. No gameplay name metadata or protocol
+change is implemented yet. [Scope and next acceptance](../PLAYER_DISPLAY_IDENTITY.md).
+The qualified v5 UI pack remains available. Continue locally; no push.
+
 General UI checkpoint, 7 November 2026 (P2-02/05/11/14 / P3-06 / P5-13/19):
 Saved Interface size and failed-save retry, configured metric ability tooltips,
 bounded combat history, focused fresh input and live committed XP cues are

@@ -78,6 +78,11 @@ pub enum Error {
     ProgressionConflict,
     ProgressionCommand(theia_core::progression::Error),
 }
+impl From<theia_core::character_name::Error> for Error {
+    fn from(_: theia_core::character_name::Error) -> Self {
+        Self::Invalid(theia_core::character_name::RULES)
+    }
+}
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // Connection strings/passwords and SQL parameters are never formatted.

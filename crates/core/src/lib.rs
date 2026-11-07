@@ -1,5 +1,6 @@
 //! Renderer- and transport-independent simulation contracts.
 pub mod abilities;
+pub mod character_name;
 pub mod combat_membership;
 pub mod content;
 pub mod coordinates;
