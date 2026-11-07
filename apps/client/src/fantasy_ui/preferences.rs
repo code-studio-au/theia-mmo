@@ -65,6 +65,7 @@ impl Config {
             path: self.path,
             requested: self.scale,
             pending: None,
+            retry_requested: false,
             status: Status::Unchanged,
         })
         .add_systems(Update, save);
@@ -141,15 +142,23 @@ pub(super) struct Store {
     path: PathBuf,
     requested: f32,
     pending: Option<Task<Result<(), String>>>,
+    retry_requested: bool,
     status: Status,
 }
 impl Store {
+    pub(super) fn retry_failed(&mut self) {
+        if matches!(self.status, Status::Failed) && self.pending.is_none() {
+            self.retry_requested = true;
+        }
+    }
     pub(super) fn hint(&self) -> &'static str {
         match self.status {
             Status::Unchanged => "Local preferences enabled. The world continues running.",
             Status::Saving => "Saving UI size on this device. The world continues running.",
             Status::Saved => "UI size saved on this device. The world continues running.",
-            Status::Failed => "Could not save UI size; current session still uses it.",
+            Status::Failed => {
+                "Could not save UI size. Select a size to retry; this session still uses it."
+            }
         }
     }
 }
@@ -165,7 +174,8 @@ fn save(preferred: Res<PreferredScale>, mut store: ResMut<Store>) {
             Status::Saved
         };
     }
-    if store.pending.is_none() && store.requested != preferred.0 {
+    if store.pending.is_none() && (store.requested != preferred.0 || store.retry_requested) {
+        store.retry_requested = false;
         store.requested = preferred.0;
         let scale = preferred.0;
         let path = store.path.clone();
@@ -355,6 +365,95 @@ mod tests {
                 .query::<&Text>()
                 .iter(world)
                 .any(|text| text.0 == "UI size: 125% preferred · 125% displayed")
+        );
+    }
+    #[test]
+    fn focused_same_preset_retries_failed_save_without_automatic_or_background_retries() {
+        let scratch = Scratch::new();
+        let path = scratch.file();
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins);
+        super::super::install_scale(&mut app, 1.);
+        Config {
+            path: path.clone(),
+            scale: 1.,
+        }
+        .install(&mut app);
+        let window = app
+            .world_mut()
+            .spawn(Window {
+                focused: true,
+                resolution: bevy::window::WindowResolution::new(1920, 1200),
+                ..default()
+            })
+            .id();
+        app.update();
+        let button = |world: &mut World, title: &str| {
+            world
+                .query::<(Entity, &AccessibleLabel)>()
+                .iter(world)
+                .find(|(_, label)| label.0 == title)
+                .unwrap()
+                .0
+        };
+        let toggle = button(app.world_mut(), "Interface settings [F10]");
+        let preset = button(app.world_mut(), "UI size 125%");
+        app.world_mut()
+            .trigger(bevy::ui_widgets::Activate { entity: toggle });
+        fs::create_dir(&path).unwrap();
+        app.world_mut()
+            .trigger(bevy::ui_widgets::Activate { entity: preset });
+        let wait_status = |app: &mut App, expected: fn(Status) -> bool| {
+            let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+            loop {
+                app.update();
+                let store = app.world().resource::<Store>();
+                if store.pending.is_none() && expected(store.status) {
+                    break;
+                }
+                assert!(std::time::Instant::now() < deadline);
+                std::thread::yield_now();
+            }
+            app.update();
+        };
+        wait_status(&mut app, |status| matches!(status, Status::Failed));
+        assert_eq!(app.world().resource::<PreferredScale>().0, 1.25);
+        let world = app.world_mut();
+        assert!(
+            world
+                .query::<&Text>()
+                .iter(world)
+                .any(|text| text.0.contains("Select a size to retry"))
+        );
+        fs::remove_dir(&path).unwrap();
+        for _ in 0..20 {
+            app.update();
+        }
+        assert!(
+            !path.exists(),
+            "Fixing the path alone must not retry a failed write"
+        );
+        app.world_mut().get_mut::<Window>(window).unwrap().focused = false;
+        app.world_mut()
+            .trigger(bevy::ui_widgets::Activate { entity: preset });
+        app.update();
+        assert!(!app.world().resource::<Store>().retry_requested);
+        assert!(!path.exists());
+        app.world_mut().get_mut::<Window>(window).unwrap().focused = true;
+        for _ in 0..2 {
+            app.world_mut()
+                .trigger(bevy::ui_widgets::Activate { entity: preset });
+        }
+        wait_status(&mut app, |status| matches!(status, Status::Saved));
+        assert_eq!(read(&path).unwrap(), Some(1.25));
+        assert_eq!(app.world().resource::<PreferredScale>().0, 1.25);
+        assert!(!app.world().resource::<Store>().retry_requested);
+        app.world_mut()
+            .trigger(bevy::ui_widgets::Activate { entity: preset });
+        app.update();
+        assert!(
+            app.world().resource::<Store>().pending.is_none(),
+            "A saved preset needs no rewrite"
         );
     }
     #[test]

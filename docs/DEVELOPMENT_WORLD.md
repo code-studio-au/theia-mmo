@@ -1,3 +1,13 @@
+# Qualified optimized UI checkpoint — 7 November 2026
+
+`build/local-play-release-20261107-v2` preserves source `c05ac56`, with release
+client/server/validator, copied qualified model art and SHA-256 metadata. It
+includes panel focus guards and the brighter-terrain combat-log contrast fix.
+Connected controlled Linux UI evidence is linked in `build.json`; Windows, monitor
+DPI and FPS benchmarks remain separate. The newer failed-save retry is qualified
+with a debug client and is not included in this frozen pack. Earlier packs remain
+unchanged. Local commits only; no push.
+
 Current permission, updated 7 November 2026: the user restored desktop input
 and display access. Connected native UI qualification is in progress. Continue
 with local commits only; no push. Restrictions in older records below are historical.

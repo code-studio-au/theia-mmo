@@ -1471,3 +1471,36 @@ passes and the optimized client builds. Exact logs are under
 This is controlled Linux UI qualification, not a frame-rate benchmark, native
 Windows/non-unit DPI result, broader inventory/document transaction replay or
 live XP-popup visibility proof. The optional skin remains a candidate.
+
+
+## Failed preference save retry — 7 November 2026
+
+P2-14. A failed opt-in save now says: “Could not save UI size. Select a size to
+retry; this session still uses it.” Choosing any preset, including the currently
+selected size, requests one new background write after a failure. Pending work
+still coalesces to the latest preferred size; neither a successful unchanged
+selection nor a repaired filesystem alone rewrites the file. Source activation
+requires the existing single focused window and open Interface panel.
+
+A real widget/worker regression fails a write to a directory, retains session
+size, verifies no automatic retry after repair, rejects unfocused activation,
+then saves by reselecting the same focused preset. All **219 client tests**
+including local art, formatting, denied-warning workspace/all-target Clippy and
+debug build pass. Logs: `build/ui-native-20261107/{client-retry-v1.log,
+clippy-retry-v1.log,build-retry-v1.log,fmt-retry-v1.log}`.
+
+`build/ui-native-20261107/connected-v4/verification.json` passes actual OS clicks
+at 1280×720 and again after PostgreSQL restart/fresh login. The test temporarily
+turns its own preference target into a directory after startup, observes the
+failed hint, repairs it, reselects the same 100% preset and observes a saved
+100% file/hint. It restores 125% preferred / 100% fitted before continuing the
+ordinary journal, combat and minimap checks. Captures show readable failed/saved
+messages within the pane. Both starts have zero GPU diagnostics on the recorded
+RX 7900 XTX / RADV Vulkan adapter. The telemetry adds only the existing hint text;
+no preference path, credentials or gameplay commands are exposed.
+
+The frozen optimized `build/local-play-release-20261107-v2` is preserved at
+`c05ac56` with copied art and binary hashes. It includes the qualified panel focus
+and darker combat log, and predates this retry change. Seven accepted native
+starts now cover these consecutive slices; they remain controlled Linux UI
+proof, not a single-source full-theme, Windows, monitor-DPI or FPS benchmark.

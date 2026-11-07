@@ -84,13 +84,16 @@ pub(crate) fn snapshot(world: &mut World) -> serde_json::Value {
     let open = ui.open;
     let preferred = world.resource::<PreferredScale>().0;
     let scale = world.resource::<bevy::ui::UiScale>().0;
+    let persistence = world
+        .get_resource::<super::preferences::Store>()
+        .map(|store| store.hint());
     let buttons:Vec<_>=world.query::<(&Control,&ComputedNode,&bevy::ui::UiGlobalTransform)>().iter(world)
         .filter(|(action,_,_)|open || matches!(action,Control::Toggle))
         .map(|(action,node,transform)|{
             let name=match action {Control::Toggle=>"toggle".to_owned(),Control::Close=>"close".to_owned(),Control::Scale(value)=>format!("scale-{value}")};
             serde_json::json!({"action":name,"point":(transform.affine().translation*super::window_factor(node,scale)).to_array()})
         }).collect();
-    serde_json::json!({"open":open,"preferred":preferred,"displayed":scale,"buttons":buttons})
+    serde_json::json!({"open":open,"preferred":preferred,"displayed":scale,"buttons":buttons,"persistence":persistence})
 }
 fn setup(mut commands: Commands) {
     commands
@@ -146,6 +149,7 @@ fn activate(
     mut ui: ResMut<Ui>,
     mut preferred: ResMut<PreferredScale>,
     windows: Query<&Window>,
+    store: Option<ResMut<super::preferences::Store>>,
 ) {
     let Ok(control) = controls.get(event.entity) else {
         return;
@@ -159,6 +163,9 @@ fn activate(
             ui.open = false;
         }
         Control::Scale(value) if ui.open && matches!(value, 75 | 100 | 125 | 150) => {
+            if let Some(mut store) = store {
+                store.retry_failed();
+            }
             preferred.0 = f32::from(value) / 100.
         }
         _ => {}

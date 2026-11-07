@@ -6,6 +6,10 @@ window causes no game action or replay after refocusing. Five native starts
 across three sizes now have zero RX 7900 XTX / RADV Vulkan diagnostics.
 [Exact scope and pending checks](UI_FANTASY_WARRIOR.md#optimized-small-window-and-focus-follow-up).
 Continue locally; no push. Desktop input/display remain authorized.
+Same-size preference-save retry also passes the actual failed-file/repaired-file
+widget flow and PostgreSQL rejoin at 1280×720 (two further zero-diagnostic starts).
+219 client tests, formatting, strict Clippy and build pass. The preserved optimized
+v2 pack at c05ac56 predates retry; the current retry native run uses a debug client.
 
 Connected general UI checks, 7 November 2026 (P2-05/11/14 / P3-06 / P5-13):
 Desktop access was restored by the user. Saved Interface size, ability tooltip,
