@@ -271,6 +271,93 @@ mod tests {
         );
     }
     #[test]
+    fn actual_interface_buttons_save_preference_while_resize_only_changes_fitted_size() {
+        let scratch = Scratch::new();
+        let path = scratch.file();
+        let mut args = vec![
+            "--ui-preferences".into(),
+            path.to_string_lossy().into_owned(),
+        ];
+        let config = Config::parse(&mut args, true, 1., false).unwrap().unwrap();
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins);
+        super::super::install_scale(&mut app, config.scale);
+        config.install(&mut app);
+        let window = app
+            .world_mut()
+            .spawn(Window {
+                focused: true,
+                resolution: bevy::window::WindowResolution::new(1920, 1200),
+                ..default()
+            })
+            .id();
+        app.update();
+        assert!(!path.exists());
+        let button = |world: &mut World, title: &str| {
+            world
+                .query::<(Entity, &AccessibleLabel)>()
+                .iter(world)
+                .find(|(_, label)| label.0 == title)
+                .unwrap()
+                .0
+        };
+        let toggle = button(app.world_mut(), "Interface settings [F10]");
+        app.world_mut()
+            .trigger(bevy::ui_widgets::Activate { entity: toggle });
+        let preset = button(app.world_mut(), "UI size 125%");
+        app.world_mut()
+            .trigger(bevy::ui_widgets::Activate { entity: preset });
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+        loop {
+            app.update();
+            if matches!(app.world().resource::<Store>().status, Status::Saved) {
+                break;
+            }
+            assert!(std::time::Instant::now() < deadline);
+            std::thread::yield_now();
+        }
+        // The painter sees the completed status on its following PostUpdate.
+        app.update();
+        assert_eq!(read(&path).unwrap(), Some(1.25));
+        assert_eq!(app.world().resource::<bevy::ui::UiScale>().0, 1.25);
+        let world = app.world_mut();
+        assert!(
+            world
+                .query::<&Text>()
+                .iter(world)
+                .any(|text| text.0 == "UI size saved on this device. The world continues running.")
+        );
+        let saved = fs::read(&path).unwrap();
+        app.world_mut()
+            .get_mut::<Window>(window)
+            .unwrap()
+            .resolution
+            .set(1280., 720.);
+        app.update();
+        assert_eq!(app.world().resource::<PreferredScale>().0, 1.25);
+        assert_eq!(app.world().resource::<bevy::ui::UiScale>().0, 1.);
+        assert!(app.world().resource::<Store>().pending.is_none());
+        assert_eq!(
+            fs::read(&path).unwrap(),
+            saved,
+            "Viewport fitting must never overwrite the user's size"
+        );
+        app.world_mut()
+            .get_mut::<Window>(window)
+            .unwrap()
+            .resolution
+            .set(1920., 1200.);
+        app.update();
+        assert_eq!(app.world().resource::<bevy::ui::UiScale>().0, 1.25);
+        let world = app.world_mut();
+        assert!(
+            world
+                .query::<&Text>()
+                .iter(world)
+                .any(|text| text.0 == "UI size: 125% preferred · 125% displayed")
+        );
+    }
+    #[test]
     fn failed_background_save_keeps_session_value_and_recovers_on_a_later_change() {
         let scratch = Scratch::new();
         let path = scratch.file();

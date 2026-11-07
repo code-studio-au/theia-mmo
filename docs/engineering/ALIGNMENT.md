@@ -16,6 +16,8 @@ regressions bring the client suite to 208. Native focus switching remains pendin
 World clicks now recheck focus at collection/consumption without cancelling
 selection/autoattack on focus loss; two more headless cases bring the suite to
 210. Native/connected focus event ordering remains unverified.
+The real Interface button/painter/I/O save/resize flow now also passes headlessly
+in the 211-case client suite. No OS input, native window or renderer was used.
 
 Headless development resumed, 7 November 2026 (P2-14):
 The user has resumed implementation with local commits only and explicitly

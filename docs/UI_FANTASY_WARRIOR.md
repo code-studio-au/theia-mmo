@@ -1,3 +1,7 @@
+Current work permission, 7 November 2026: continue implementation and local
+commits only. **Do not use mouse, keyboard or display.** Native interaction and
+visual checks remain deferred; earlier desktop authorizations below are historical.
+
 # General UI: Fantasy Warrior assets and Classic layout
 
 6 November 2026. P2-14 / P5-13 / P5-19, under UI-001.
@@ -1279,3 +1283,22 @@ fmt-v1.log}`. The consumer-boundary test exercises the production pending-choice
 method; it does not open Renet or submit a live attack. Native focus switching,
 platform event ordering and connected pointer replay remain pending. This does
 not claim every dialogue/inventory/quest widget has a new focus policy.
+
+
+## Integrated Interface save/fit flow — 7 November 2026
+
+P2-14. One additional headless cross-module case installs the normal Interface
+observers/painter and real Bevy I/O task. It activates the actual toggle and 125%
+preset by their accessible labels, waits for the actual saved file/status, changes
+a virtual Window from 1920×1200 to 1280×720 and back, and verifies that fitting
+never schedules a save or changes the file. Preferred 125% survives the fitted
+100% view and the painter restores the correct preferred/displayed summary.
+This uses virtual Window components and programmatic Bevy Activate events;
+it creates no OS window or input, renderer, account or network.
+
+All 211 client cases including local art, formatting and strict workspace/all-
+target Clippy pass. Evidence (ignored):
+`build/interface-save-flow-20261107/{client-v1.log,clippy-v1.log,fmt-v1.log}`.
+Only test code changed; the previously passing runtime build remains applicable.
+Actual pointer navigation, physical resize/DPI and visual qualification remain
+pending under the current restriction.
