@@ -9,6 +9,8 @@ Optimized full replay and rejoin pass at 1920×1200; frozen v3 contains runtime
 source 16b57ec. The newer v4/c6a51e8 pack includes visible Interface Exit and
 optimized timeout-to-Exit proof. Windows/DPI/performance and complete theme
 adoption remain open. Local commits only; desktop input/display authorized.
+The newer owner-level frame passes committed gain/rejoin/disconnect at 1280×720;
+222 client tests pass. Gameplay name replication remains a bounded follow-up.
 Numbered source-task statuses below retain their imported baseline meaning.
 
 Normal quest-only loot qualified locally, 5 November 2026:

@@ -1685,3 +1685,41 @@ The next frame slice will use authoritative progression levels. Character displa
 names are stored by the account/persistence service but are not yet replicated
 in admitted gameplay snapshots. Proper bounded identity replication remains a
 separate follow-up; UI must not invent names or trust a local launcher argument.
+
+
+## Authoritative owner-level frame — 7 November 2026
+
+P2-03 / P2-14 / P5-13. The opt-in player frame now displays `Player · Level N`
+from the current owner's committed progression snapshot and matching configured
+profile. It checks admitted world, owner ID, actor epoch, profile hash and valid
+progression before deriving the displayed level. Missing/invalid metadata and
+disconnect remove the level instead of retaining another context's value. The
+existing generic Player label remains where no level is available. This is a
+progression display; combat-stat derivation and all server gameplay are unchanged.
+
+Character names currently remain in account/persistence responses and are not
+replicated into gameplay snapshots. They are not taken from launcher input or
+invented. Bounded server-owned display-identity replication remains a separate
+follow-up. The offscreen UI preview uses its explicitly synthetic level-2 model.
+
+All **222 client tests**, formatting, strict workspace/all-target Clippy and
+debug build pass. Two new cases cover owner/epoch/profile/missing-data rejection
+and the actual widget's 1→2→unavailable presentation without commands. The first
+Clippy run found an overlong resource tuple; its existing system-parameter tuple
+is now named `PresentationInput`, and the accepted rerun passes. Logs:
+`build/ui-native-20261107/{client-level-v1.log,clippy-level-v2.log,
+build-level-v1.log,fmt-level-v1.log}`.
+
+`connected-v12/verification.json` passes the actual 1280×720 / preferred125%
+(fitted100%) journal/XP/combat/minimap flow. Telemetry observes the real heading
+as level1 then level2 after committed gains; fresh login after PostgreSQL restart
+restores level2. A real owned-server timeout clears the model level and renders
+Player without stale level text, and the Interface Exit still succeeds. The
+capture shows matching player-frame and XP-bar level2. Both starts have zero GPU
+diagnostics on RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa26.2.6. Read-only telemetry
+shares the existing text/bounds helper for connection and player labels.
+
+Twenty-six accepted native starts cover consecutive UI slices. The preserved
+optimized v4/c6a51e8 pack remains available and predates this owner-level label;
+this addition is currently qualified with the debug client at the smallest
+native size. Wider/optimized level presentation remains to be checked.

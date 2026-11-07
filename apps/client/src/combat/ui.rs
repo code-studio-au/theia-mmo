@@ -1,5 +1,6 @@
 //! Standard Bevy widgets and bounded, server-derived progress. No gameplay authority.
 mod tooltip;
+mod unit_frame;
 use super::Config;
 use bevy::{
     picking::hover::Hovered,
@@ -8,6 +9,7 @@ use bevy::{
     ui::Pressed,
     ui_widgets::{Activate, ActivateOnPress, Button},
 };
+pub(super) use unit_frame::owner_level;
 
 #[derive(Component)]
 pub(crate) struct ActionButton(pub(crate) usize);
@@ -27,6 +29,8 @@ struct PlayerHealthFill;
 struct ManaFill;
 #[derive(Component)]
 struct PlayerHealthLabel;
+#[derive(Component)]
+pub(crate) struct PlayerHeading;
 #[derive(Component)]
 struct ManaLabel;
 #[derive(Component)]
@@ -85,6 +89,7 @@ pub(crate) struct Action {
 }
 #[derive(Resource, Default, serde::Serialize)]
 pub(crate) struct Model {
+    pub player_level: Option<u8>,
     pub life_blocked: bool,
     pub life_status: String,
     pub membership: Option<bool>,
@@ -245,7 +250,7 @@ fn setup(
             ))
             .with_children(|panel| {
                 if skin.is_some() {
-                    panel.spawn(text("Player", 16.));
+                    panel.spawn((PlayerHeading, text("Player", 16.)));
                 }
                 panel.spawn((
                     PlayerHealthLabel,
@@ -561,6 +566,7 @@ type LabelComponents<'a> = (
     Option<&'a PlayerHealthLabel>,
     Option<&'a ManaLabel>,
     Option<&'a LifeLabel>,
+    Option<&'a PlayerHeading>,
 );
 type ButtonComponents<'a> = (
     Has<Pressed>,
@@ -599,7 +605,7 @@ fn paint(
             node.width = width;
         }
     }
-    for (mut label, action, cast, player_health, mana, life) in &mut labels {
+    for (mut label, action, cast, player_health, mana, life, heading) in &mut labels {
         let value = if let Some(action) = action {
             let ability = &config.0.abilities()[action.0];
             let state = if !model.connected {
@@ -642,6 +648,11 @@ fn paint(
             }
         } else if life.is_some() {
             model.life_status.clone()
+        } else if heading.is_some() {
+            model.player_level.map_or_else(
+                || "Player".into(),
+                |level| format!("Player · Level {level}"),
+            )
         } else {
             continue;
         };
@@ -763,6 +774,26 @@ fn observe(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn player_heading_updates_with_level_and_drops_unavailable_progression() {
+        let mut app = widget_app(true);
+        app.update();
+        for (level, expected) in [
+            (Some(1), "Player · Level 1"),
+            (Some(2), "Player · Level 2"),
+            (None, "Player"),
+        ] {
+            app.world_mut().resource_mut::<Model>().player_level = level;
+            app.update();
+            let world = app.world_mut();
+            let heading = world
+                .query_filtered::<&Text, With<PlayerHeading>>()
+                .single(world)
+                .unwrap();
+            assert_eq!(heading.0, expected);
+            assert_eq!(world.resource::<Input>().0, None);
+        }
+    }
     #[test]
     fn compact_bar_supports_all_twelve_default_keys_without_repeating_held_input() {
         let mut app = widget_app(true);

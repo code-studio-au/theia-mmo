@@ -208,6 +208,7 @@ pub(crate) fn run(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     ))?;
     app.insert_resource(crate::combat::Config(Arc::new(catalog), Some(stats), true))
         .insert_resource(crate::combat::ui::Model {
+            player_level: Some(2),
             connected: true,
             has_target: true,
             vitals_ready: true,

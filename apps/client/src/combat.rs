@@ -282,14 +282,16 @@ fn stale_own_life(event: &Event, owner: Option<u64>, generation: u64) -> bool {
     };
     life.is_some_and(|value| value.get() != generation)
 }
+type PresentationInput<'w> = (
+    Res<'w, ui::Input>,
+    Option<Res<'w, crate::world_input::Selection>>,
+    Option<Res<'w, crate::fantasy_ui::Skin>>,
+    Option<Res<'w, crate::progression::Profile>>,
+);
 fn present(
     mut network: ResMut<Network>,
     config: Res<Config>,
-    (input, selection, skin): (
-        Res<ui::Input>,
-        Option<Res<crate::world_input::Selection>>,
-        Option<Res<crate::fantasy_ui::Skin>>,
-    ),
+    (input, selection, skin, progression): PresentationInput<'_>,
     (mut metrics, mut history): (ResMut<Metrics>, Option<ResMut<log::History>>),
     mut ui: ResMut<Ui>,
     (mut hud, mut panel): (Query<&mut Text, With<Hud>>, ResMut<ui::Model>),
@@ -306,6 +308,11 @@ fn present(
     let state = network.state();
     *panel = ui::Model::default();
     panel.connected = network.connected();
+    if panel.connected {
+        panel.player_level = progression
+            .as_ref()
+            .and_then(|profile| ui::owner_level(&state, &profile.0));
+    }
     panel.status = "Waiting for server".into();
     for _ in 0..theia_network::renet_runtime::avatar_life::PRESENTATION_CAPACITY {
         if network.next_avatar_life_event().is_none() {
