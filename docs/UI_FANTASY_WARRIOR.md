@@ -1231,3 +1231,24 @@ input. All 206 client cases including local art, formatting, strict workspace/
 all-target Clippy and client build pass. Evidence (ignored):
 `build/combat-log-20261107/{client-v4.log,clippy-v4.log,build-v3.log,fmt-v1.log}`.
 No window, renderer, game services or desktop input were started for this slice.
+
+
+## Ability input focus guard — 7 November 2026
+
+P2-05 / P2-14 / P3-06. Action input collection now requires one focused Window
+component, matching the normal single-window client. Losing focus clears the
+current ability input and discards any pending widget activation before the
+keyboard/widget coalescer runs. Returning focus does not replay the pending
+activation or a held key; a new focused action works normally. Missing/ambiguous
+windows also refuse collection. Existing authoritative readiness/life/target
+checks, default keys and background simulation remain unchanged. This affects
+both skinned and retained unskinned combat widgets; previews do not collect input.
+
+Two headless regressions cover focus loss, pending-click/held-key discard, fresh
+focused input and absent/multiple windows. Existing tests now explicitly provide
+virtual Window components where focused input is intended. All 208 client cases
+including local art, formatting, strict workspace/all-target Clippy and client
+build pass. Evidence: ignored `build/ability-focus-20261107/{client-v1.log,
+clippy-v1.log,build-v1.log,fmt-v1.log}`. These are Bevy components and synthetic
+input, with no native window, display or OS input. Native focus switching and
+platform event ordering remain pending under the user's restriction.

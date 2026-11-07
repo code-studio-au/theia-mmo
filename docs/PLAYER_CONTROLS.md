@@ -1,3 +1,11 @@
+Ability focus guard, 7 November 2026 (P2-05 / P2-14 / P3-06):
+Ability keyboard/widget collection now requires one focused game Window and
+clears pending input when unfocused. Headless focus-loss/recovery and absent/
+ambiguous-window cases pass in the 208-case client suite. Normal movement,
+persistent selection and server checks remain unchanged. Native focus/event
+ordering is pending; no desktop/display or OS input was used. Local commits only.
+[Exact scope and evidence](UI_FANTASY_WARRIOR.md#ability-input-focus-guard--7-november-2026).
+
 Current implementation: the [qualified `--classic` profile](CLASSIC_MOVEMENT.md)
 now supplies the manual movement/camera controls below, disables action camera
 and dodge, and supports movement-key remapping. [Persistent Tab targeting](CLASSIC_TARGETING.md) is qualified;

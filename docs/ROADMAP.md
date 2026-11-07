@@ -11,6 +11,8 @@ A bounded six-message owner combat-log candidate now records received damage,
 avoidance/cancellation and reported overkill. Five new headless cases bring the
 client suite to 206; strict Clippy and build pass. Native layout/event-flow checks
 remain deferred under the current no-display/input restriction. No game launched.
+Ability collection now discards unfocused keyboard/widget input; two headless
+regressions bring the client suite to 208. Native focus switching remains pending.
 
 Headless development resumed, 7 November 2026 (P2-14):
 The user has resumed implementation with local commits only and explicitly

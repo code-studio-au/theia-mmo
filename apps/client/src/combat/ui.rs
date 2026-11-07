@@ -181,8 +181,14 @@ fn collect(
     mut pending: ResMut<WidgetPending>,
     mut input: ResMut<Input>,
     skin: Option<Res<crate::fantasy_ui::Skin>>,
+    windows: Query<&Window>,
 ) {
-    input.0 = if let Some(slot) = pending.0.take() {
+    let widget = pending.0.take();
+    input.0 = None;
+    if !windows.single().is_ok_and(|window| window.focused) {
+        return;
+    }
+    input.0 = if let Some(slot) = widget {
         Some((slot, Source::Widget))
     } else {
         PRIMARY_KEYS
@@ -891,6 +897,10 @@ mod tests {
     }
     fn widget_app(skin: bool) -> App {
         let mut app = App::new();
+        app.world_mut().spawn(Window {
+            focused: true,
+            ..default()
+        });
         let catalog = theia_core::abilities::Catalog::from_json(include_bytes!(
             "../../../../content/gameplay/development-classic-abilities.json"
         ))
@@ -1042,6 +1052,10 @@ mod tests {
     #[test]
     fn widget_activations_and_keyboard_coalesce_without_repeating_or_buffering_clicks() {
         let mut app = App::new();
+        app.world_mut().spawn(Window {
+            focused: true,
+            ..default()
+        });
         app.init_resource::<Input>()
             .init_resource::<WidgetPending>()
             .init_resource::<ButtonInput<KeyCode>>()
@@ -1098,6 +1112,75 @@ mod tests {
             app.world().resource::<Input>().0,
             Some((1, Source::Keyboard))
         );
+    }
+    #[test]
+    fn unfocused_ability_input_is_discarded_including_pending_widgets_and_held_keys() {
+        let mut app = widget_app(true);
+        app.update();
+        let world = app.world_mut();
+        let window = world
+            .query_filtered::<Entity, With<Window>>()
+            .single(world)
+            .unwrap();
+        let action = world
+            .query::<(Entity, &ActionButton)>()
+            .iter(world)
+            .find(|(_, a)| a.0 == 0)
+            .unwrap()
+            .0;
+        world
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .press(KeyCode::Digit1);
+        app.update();
+        assert_eq!(
+            app.world().resource::<Input>().0,
+            Some((0, Source::Keyboard))
+        );
+        app.world_mut().get_mut::<Window>(window).unwrap().focused = false;
+        app.world_mut().trigger(Activate { entity: action });
+        app.update();
+        assert!(app.world().resource::<Input>().0.is_none());
+        assert!(app.world().resource::<WidgetPending>().0.is_none());
+        // Simulate the input plugin's next-frame edge clearing without touching OS input.
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .clear();
+        app.world_mut().get_mut::<Window>(window).unwrap().focused = true;
+        app.update();
+        assert!(
+            app.world().resource::<Input>().0.is_none(),
+            "No deferred click or held-key cast after focus returns"
+        );
+        app.world_mut().trigger(Activate { entity: action });
+        app.update();
+        assert_eq!(
+            app.world().resource::<Input>().0,
+            Some((0, Source::Widget)),
+            "A fresh focused action still works"
+        );
+    }
+    #[test]
+    fn absent_or_ambiguous_windows_do_not_collect_ability_commands() {
+        for count in [0, 2] {
+            let mut app = App::new();
+            app.init_resource::<Input>()
+                .init_resource::<WidgetPending>()
+                .init_resource::<ButtonInput<KeyCode>>()
+                .add_systems(Update, collect);
+            for _ in 0..count {
+                app.world_mut().spawn(Window {
+                    focused: true,
+                    ..default()
+                });
+            }
+            app.world_mut().resource_mut::<WidgetPending>().0 = Some(1);
+            app.world_mut()
+                .resource_mut::<ButtonInput<KeyCode>>()
+                .press(KeyCode::Digit1);
+            app.update();
+            assert!(app.world().resource::<Input>().0.is_none());
+            assert!(app.world().resource::<WidgetPending>().0.is_none());
+        }
     }
     #[test]
     fn server_tick_progress_is_bounded_for_expired_zero_length_and_far_future_deadlines() {
