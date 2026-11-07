@@ -1315,3 +1315,31 @@ debug preflights. The prior pack's three binary hashes are unchanged. Evidence:
 pack `build.json`. [Later launch example and exact limitations](DEVELOPMENT_WORLD.md).
 No new play session, window, renderer, game services or desktop input was started.
 This does not close the native visual/input or performance gates above.
+
+
+## Backpack focus handling — 7 November 2026
+
+P2-05 / P2-14 / P3-05. Backpack widget activation, I-key collection, Escape close
+and queued-input consumption require one focused Window. Focus loss drops local
+unsubmitted toggle/slot/split/destroy/cancel/equip/unequip/reward/vendor choices.
+Returning focus does not replay a held I key or a discarded choice. Existing
+selection, open panel and transaction-wait state are retained. The confirmed bag,
+reply and pending-request reconciliation path continues running while unfocused;
+only local input becomes empty. No accepted network operation is cancelled and
+no inventory, quest, reward, SQL or authority schema changes.
+
+Two headless cases cover actual inventory activation/collection/Escape with
+focus loss and retained local wait/selection, plus keyboard edges and missing/
+ambiguous windows. Old focused-widget tests and two existing multi-panel Escape
+fixtures now explicitly create virtual focused Windows; their prior omission
+caused the initial v1 test failure, not a qualified runtime regression. The
+consumer's background network/reply path is unchanged code; these new tests do
+not claim live SQL transaction or OS focus-ordering proof.
+
+All 213 client cases including local art, formatting, strict workspace/all-target
+Clippy and client build pass. Evidence (ignored):
+`build/backpack-focus-20261107/{client-v2.log,clippy-v2.log,build-v1.log,fmt-v1.log}`.
+No native window, renderer, display or OS input was used. Native focus switching
+and connected backpack replay remain pending. The frozen optimized `d9df562`
+pack predates this follow-up and remains unchanged. Document, loot, dialogue and
+quest-specific command collectors retain their separate existing behavior.

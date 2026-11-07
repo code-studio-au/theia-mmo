@@ -120,8 +120,13 @@ fn activate(
     widgets: Query<&Widget>,
     mut pending: ResMut<Pending>,
     ui: Res<Ui>,
+    windows: Query<&Window>,
 ) {
     if let Ok(widget) = widgets.get(event.entity) {
+        if !windows.single().is_ok_and(|window| window.focused) {
+            *pending = Pending::default();
+            return;
+        }
         match widget {
             Widget::Toggle => pending.toggle = true,
             Widget::Slot(slot) => pending.slot = Some(*slot),
@@ -152,6 +157,7 @@ pub(crate) fn install(app: &mut App, profile: Profile) {
         .init_resource::<Ui>()
         .init_resource::<Pending>()
         .add_observer(activate)
+        .add_systems(Update, collect.before(present))
         .add_systems(Update, close_panel.before(present))
         .add_systems(Startup, setup.in_set(Phase::Setup))
         .add_systems(
@@ -422,6 +428,14 @@ fn reason(reason: Reason) -> &'static str {
         Reason::EmptyHand => "No main-hand item is equipped.",
     }
 }
+fn collect(keys: Res<ButtonInput<KeyCode>>, windows: Query<&Window>, mut pending: ResMut<Pending>) {
+    if !windows.single().is_ok_and(|window| window.focused) {
+        *pending = Pending::default();
+        return;
+    }
+    pending.toggle |= keys.just_pressed(KeyCode::KeyI);
+}
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn close_panel(
     keys: Res<ButtonInput<KeyCode>>,
     mut ui: ResMut<Ui>,
@@ -430,6 +444,7 @@ pub(crate) fn close_panel(
     dialogue: Option<Res<crate::dialogue::Ui>>,
     network: Option<Res<Network>>,
     interface: Option<Res<crate::fantasy_ui::settings::Ui>>,
+    windows: Query<&Window>,
 ) {
     let talking = dialogue
         .as_ref()
@@ -442,7 +457,8 @@ pub(crate) fn close_panel(
                         .dialogue
                         .is_some_and(|dialogue| dialogue.open.is_some()))
         });
-    if keys.just_pressed(KeyCode::Escape)
+    if windows.single().is_ok_and(|window| window.focused)
+        && keys.just_pressed(KeyCode::Escape)
         && !crate::fantasy_ui::settings::owns_escape(interface.as_deref())
         && !talking
         && !documents
@@ -456,13 +472,18 @@ pub(crate) fn close_panel(
 
 fn present(
     network: Res<Network>,
-    keys: Res<ButtonInput<KeyCode>>,
+    windows: Query<&Window>,
     mut pending: ResMut<Pending>,
     mut ui: ResMut<Ui>,
     config: Res<Config>,
 ) {
     let input = std::mem::take(&mut *pending);
-    if input.toggle || keys.just_pressed(KeyCode::KeyI) {
+    let input = if windows.single().is_ok_and(|window| window.focused) {
+        input
+    } else {
+        Pending::default()
+    };
+    if input.toggle {
         ui.open = !ui.open;
     }
     let state = network.state();
@@ -977,9 +998,100 @@ fn scroll(
 #[cfg(test)]
 mod tests {
     #[test]
+    fn unfocused_inventory_actions_drop_without_cancelling_existing_wait_state() {
+        let mut app = App::new();
+        app.init_resource::<Pending>()
+            .init_resource::<ButtonInput<KeyCode>>()
+            .insert_resource(Ui {
+                open: true,
+                pending: true,
+                selected: Some(2),
+                ..default()
+            })
+            .add_observer(activate)
+            .add_systems(Update, (collect, close_panel).chain());
+        let window = app
+            .world_mut()
+            .spawn(Window {
+                focused: false,
+                ..default()
+            })
+            .id();
+        let destroy = app.world_mut().spawn(Widget::Destroy).id();
+        app.world_mut().trigger(Activate { entity: destroy });
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .press(KeyCode::KeyI);
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .press(KeyCode::Escape);
+        app.update();
+        assert!(
+            !app.world().resource::<Pending>().destroy && !app.world().resource::<Pending>().toggle
+        );
+        let ui = app.world().resource::<Ui>();
+        assert!(ui.open && ui.pending);
+        assert_eq!(ui.selected, Some(2));
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .clear();
+        app.world_mut().get_mut::<Window>(window).unwrap().focused = true;
+        app.update();
+        assert!(
+            !app.world().resource::<Pending>().toggle,
+            "Held I does not reopen after refocus"
+        );
+        let equip = app.world_mut().spawn(Widget::Equip).id();
+        app.world_mut().trigger(Activate { entity: equip });
+        assert!(
+            app.world().resource::<Pending>().equip,
+            "Fresh focused widgets still collect"
+        );
+        app.world_mut().get_mut::<Window>(window).unwrap().focused = false;
+        app.update();
+        assert!(
+            !app.world().resource::<Pending>().equip,
+            "Focus loss before consumption drops a queued widget"
+        );
+        assert!(
+            app.world().resource::<Ui>().pending,
+            "Existing transaction wait state is not cancelled"
+        );
+    }
+    #[test]
+    fn backpack_keyboard_requires_a_fresh_edge_in_one_focused_window() {
+        for count in [0, 1, 2] {
+            let mut app = App::new();
+            app.init_resource::<Pending>()
+                .init_resource::<ButtonInput<KeyCode>>()
+                .add_systems(Update, collect);
+            for _ in 0..count {
+                app.world_mut().spawn(Window {
+                    focused: true,
+                    ..default()
+                });
+            }
+            app.world_mut()
+                .resource_mut::<ButtonInput<KeyCode>>()
+                .press(KeyCode::KeyI);
+            app.update();
+            assert_eq!(app.world().resource::<Pending>().toggle, count == 1);
+            *app.world_mut().resource_mut::<Pending>() = Pending::default();
+            app.world_mut()
+                .resource_mut::<ButtonInput<KeyCode>>()
+                .clear();
+            app.update();
+            assert!(!app.world().resource::<Pending>().toggle);
+        }
+    }
+    #[test]
     fn header_close_queues_only_the_existing_toggle_while_a_save_is_pending() {
         use bevy::ecs::system::RunSystemOnce;
         let mut app = App::new();
+        app.world_mut().spawn(Window {
+            focused: true,
+            ..default()
+        });
         app.insert_resource(Ui {
             open: true,
             pending: true,
@@ -1024,6 +1136,10 @@ mod tests {
             pointer::{Location, PointerButton, PointerId},
         };
         let mut app = App::new();
+        app.world_mut().spawn(Window {
+            focused: true,
+            ..default()
+        });
         app.init_resource::<ButtonInput<MouseButton>>()
             .init_resource::<Ui>()
             .init_resource::<Pending>()
@@ -1099,6 +1215,10 @@ mod tests {
             offer: 0,
         };
         let mut app = App::new();
+        app.world_mut().spawn(Window {
+            focused: true,
+            ..default()
+        });
         app.insert_resource(Ui {
             open: true,
             offers: vec![old],

@@ -1,3 +1,11 @@
+Backpack focus handling, 7 November 2026 (P2-05 / P2-14 / P3-05):
+Backpack inputs now require one focused Window and drop unsubmitted choices on
+focus loss while retaining local wait/selection and receiving confirmed state.
+213 client cases, strict Clippy, formatting and build pass. Native/connected
+focus ordering remains pending; no desktop/display or OS input was used.
+[Exact scope and tests](UI_FANTASY_WARRIOR.md#backpack-focus-handling--7-november-2026).
+The prepared optimized d9df562 pack predates this change. Local commits only.
+
 World click focus boundary, 7 November 2026 (P2-05 / P2-11 / P3-06):
 World clicks require one focused Window at collection and consumption. Focus
 loss discards pending click actions without cancelling persistent selection or

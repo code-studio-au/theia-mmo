@@ -1662,6 +1662,10 @@ mod control_tests {
     #[test]
     fn escape_closes_loot_before_backpack_without_quitting() {
         let mut app = App::new();
+        app.world_mut().spawn(Window {
+            focused: true,
+            ..default()
+        });
         app.init_resource::<ButtonInput<KeyCode>>()
             .init_resource::<ButtonInput<MouseButton>>()
             .init_resource::<Time>()
@@ -1696,6 +1700,10 @@ mod control_tests {
     #[test]
     fn escape_closes_dialogue_then_backpack_before_allowing_quit() {
         let mut app = App::new();
+        app.world_mut().spawn(Window {
+            focused: true,
+            ..default()
+        });
         app.init_resource::<ButtonInput<KeyCode>>()
             .init_resource::<ButtonInput<MouseButton>>()
             .init_resource::<Time>()
