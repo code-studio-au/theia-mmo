@@ -1252,3 +1252,30 @@ build pass. Evidence: ignored `build/ability-focus-20261107/{client-v1.log,
 clippy-v1.log,build-v1.log,fmt-v1.log}`. These are Bevy components and synthetic
 input, with no native window, display or OS input. Native focus switching and
 platform event ordering remain pending under the user's restriction.
+
+
+## World-click focus boundary — 7 November 2026
+
+P2-05 / P2-11 / P3-06. Enemy/friendly/corpse pointer click collection now requires
+one focused game Window. Ignored unfocused/missing/ambiguous-window clicks discard
+pending choices and stop propagation. Consumption checks focus again, closing the
+between-click-and-command gap; refocusing does not replay the discarded choice.
+Friendly keyboard clearing is also focus-gated. Existing selection and autoattack
+intent are not cancelled simply because focus is lost. Normal disconnect/known
+entity invalidation handling continues independently. Resident-target, occlusion,
+server interaction/attack validation and drag suppression remain unchanged.
+
+Two new headless regressions cover observer refusal/selection retention and the
+pending-choice focus boundary. Older pointer fixtures now use real virtual Window
+components rather than an NPC/mesh as their window target. That fixture correction
+was needed to terminate Bevy pointer traversal once Window metadata was registered;
+the first two runs were stopped after their synthetic event loops and are not
+passing evidence. No engine patch, OS input or desktop action was involved.
+
+All 210 client cases including local art, formatting, strict workspace/all-target
+Clippy and client build pass. Accepted evidence (ignored):
+`build/world-click-focus-20261107/{client-v3.log,clippy-v3.log,build-v1.log,
+fmt-v1.log}`. The consumer-boundary test exercises the production pending-choice
+method; it does not open Renet or submit a live attack. Native focus switching,
+platform event ordering and connected pointer replay remain pending. This does
+not claim every dialogue/inventory/quest widget has a new focus policy.

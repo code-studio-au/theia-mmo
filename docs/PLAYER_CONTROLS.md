@@ -1,3 +1,11 @@
+World click focus boundary, 7 November 2026 (P2-05 / P2-11 / P3-06):
+World clicks require one focused Window at collection and consumption. Focus
+loss discards pending click actions without cancelling persistent selection or
+autoattack intent. Two new headless cases bring the client suite to 210; strict
+Clippy, formatting and build pass. Native event ordering remains pending.
+[Scope and fixture corrections](UI_FANTASY_WARRIOR.md#world-click-focus-boundary--7-november-2026).
+No desktop/display or OS input was used. Local commits only; no push.
+
 Ability focus guard, 7 November 2026 (P2-05 / P2-14 / P3-06):
 Ability keyboard/widget collection now requires one focused game Window and
 clears pending input when unfocused. Headless focus-loss/recovery and absent/

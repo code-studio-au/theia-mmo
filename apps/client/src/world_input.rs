@@ -38,6 +38,11 @@ enum Actor {
 }
 #[derive(Resource, Default)]
 struct Pending(Option<(Actor, PointerButton, Vec3)>);
+impl Pending {
+    fn take_focused(&mut self, focused: bool) -> Option<(Actor, PointerButton, Vec3)> {
+        self.0.take().filter(|_| focused)
+    }
+}
 #[derive(Resource, Default)]
 pub(crate) struct Gesture {
     travel: f32,
@@ -112,7 +117,13 @@ fn clicked(
     mut pending: ResMut<Pending>,
     mut selection: ResMut<Selection>,
     mode: Option<Res<crate::camera::mode::Mode>>,
+    windows: Query<&Window>,
 ) {
+    if !windows.single().is_ok_and(|window| window.focused) {
+        pending.0 = None;
+        event.propagate(false);
+        return;
+    }
     if mode.as_ref().is_some_and(|mode| mode.active)
         || event.pointer.id != PointerId::Mouse
         || !matches!(
@@ -216,17 +227,20 @@ fn consume(
     spatial: SpatialQuery,
     classic: Option<Res<crate::classic_controls::Controller>>,
     mut loot: Option<ResMut<crate::loot::Ui>>,
+    windows: Query<&Window>,
 ) {
+    let focused = windows.single().is_ok_and(|window| window.focused);
     let state = network.state();
     if state.error.is_some() || !network.connected() {
         selection.friendly = None;
         pending.0 = None;
         return;
     }
-    if (classic.is_none() && keys.just_pressed(KeyCode::Tab))
-        || keys.just_pressed(KeyCode::Backspace)
-        || (keys.just_pressed(KeyCode::Escape)
-            && classic.as_ref().is_some_and(|c| !c.escape_owned_by_panel))
+    if focused
+        && ((classic.is_none() && keys.just_pressed(KeyCode::Tab))
+            || keys.just_pressed(KeyCode::Backspace)
+            || (keys.just_pressed(KeyCode::Escape)
+                && classic.as_ref().is_some_and(|c| !c.escape_owned_by_panel)))
     {
         selection.friendly = None;
     }
@@ -260,7 +274,7 @@ fn consume(
     }) {
         selection.friendly = None;
     }
-    let Some((picked, button, point)) = pending.0.take() else {
+    let Some((picked, button, point)) = pending.take_focused(focused) else {
         return;
     };
     let Ok(camera) = cameras.single() else {
@@ -496,16 +510,12 @@ mod tests {
             .init_resource::<AccumulatedMouseScroll>()
             .add_systems(Update, crate::camera::controls);
         app.world_mut().resource_mut::<crate::inventory::Ui>().open = true;
-        let window = app
-            .world_mut()
-            .spawn((
-                Window {
-                    focused: true,
-                    ..default()
-                },
-                CursorOptions::default(),
-            ))
-            .id();
+        let world = app.world_mut();
+        let window = world
+            .query_filtered::<Entity, With<Window>>()
+            .single(world)
+            .unwrap();
+        world.entity_mut(window).insert(CursorOptions::default());
         let original = app.world().resource::<crate::camera::Orbit>().angles();
         app.world_mut()
             .resource_mut::<ButtonInput<MouseButton>>()
@@ -564,9 +574,14 @@ mod tests {
         )
     }
     fn click(world: &mut World, entity: Entity, button: PointerButton) {
+        let window = world
+            .query_filtered::<Entity, With<Window>>()
+            .iter(world)
+            .next()
+            .unwrap_or(entity);
         world.trigger(PointerClick {
             entity,
-            pointer: pointer(entity),
+            pointer: pointer(window),
             button,
             hit: HitData::new(entity, 3., Some(Vec3::new(0., 1., 3.)), None),
             duration: Duration::from_millis(100),
@@ -575,6 +590,10 @@ mod tests {
     }
     fn app() -> App {
         let mut app = App::new();
+        app.world_mut().spawn(Window {
+            focused: true,
+            ..default()
+        });
         app.init_resource::<Pending>()
             .init_resource::<Gesture>()
             .init_resource::<Selection>()
@@ -582,6 +601,68 @@ mod tests {
             .add_observer(pressed)
             .add_observer(dragged);
         app
+    }
+    #[test]
+    fn unfocused_or_missing_window_clicks_discard_pending_actions_but_keep_selection() {
+        for mode in 0..3 {
+            let mut app = app();
+            let guide = app.world_mut().spawn(crate::dialogue::GuideVisual).id();
+            let key = EntityKey {
+                entity: EntityId::new(2).unwrap(),
+                epoch: WorldEpoch::new(7).unwrap(),
+            };
+            app.world_mut().resource_mut::<Selection>().friendly = Some(key);
+            click(app.world_mut(), guide, PointerButton::Secondary);
+            assert!(app.world().resource::<Pending>().0.is_some());
+            let world = app.world_mut();
+            let window = world
+                .query_filtered::<Entity, With<Window>>()
+                .single(world)
+                .unwrap();
+            match mode {
+                0 => world.get_mut::<Window>(window).unwrap().focused = false,
+                1 => {
+                    world.despawn(window);
+                }
+                _ => {
+                    world.spawn(Window {
+                        focused: true,
+                        ..default()
+                    });
+                }
+            }
+            click(app.world_mut(), guide, PointerButton::Secondary);
+            assert!(app.world().resource::<Pending>().0.is_none());
+            assert_eq!(app.world().resource::<Selection>().friendly, Some(key));
+            assert_eq!(app.world().resource::<Selection>().interaction_requests, 0);
+        }
+    }
+    #[test]
+    fn focus_loss_between_click_and_consumption_does_not_replay_after_refocus() {
+        let mut app = app();
+        let guide = app.world_mut().spawn(crate::dialogue::GuideVisual).id();
+        click(app.world_mut(), guide, PointerButton::Secondary);
+        assert!(app.world().resource::<Pending>().0.is_some());
+        assert!(
+            app.world_mut()
+                .resource_mut::<Pending>()
+                .take_focused(false)
+                .is_none()
+        );
+        assert!(
+            app.world_mut()
+                .resource_mut::<Pending>()
+                .take_focused(true)
+                .is_none()
+        );
+        click(app.world_mut(), guide, PointerButton::Primary);
+        let choice = app
+            .world_mut()
+            .resource_mut::<Pending>()
+            .take_focused(true)
+            .unwrap();
+        assert!(matches!(choice.0, Actor::Guide));
+        assert_eq!(choice.1, PointerButton::Primary);
     }
     #[test]
     fn child_mesh_click_keeps_exact_enemy_key_and_coalesces_pending_commands() {
@@ -629,10 +710,15 @@ mod tests {
     #[test]
     fn right_drag_suppresses_attack_and_next_press_starts_a_fresh_click() {
         let mut app = app();
+        let world = app.world_mut();
+        let window = world
+            .query_filtered::<Entity, With<Window>>()
+            .single(world)
+            .unwrap();
         let guide = app.world_mut().spawn(crate::dialogue::GuideVisual).id();
         app.world_mut().trigger(PointerDrag {
             entity: guide,
-            pointer: pointer(guide),
+            pointer: pointer(window),
             button: PointerButton::Secondary,
             distance: Vec2::new(8., 0.),
             delta: Vec2::new(8., 0.),
@@ -642,7 +728,7 @@ mod tests {
         assert_eq!(app.world().resource::<Selection>().drag_suppressed, 1);
         app.world_mut().trigger(PointerPress {
             entity: guide,
-            pointer: pointer(guide),
+            pointer: pointer(window),
             button: PointerButton::Secondary,
             hit: HitData::new(guide, 3., Some(Vec3::ZERO), None),
             count: 1,
