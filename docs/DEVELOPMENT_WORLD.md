@@ -5,6 +5,9 @@ with the ordinary authenticated Classic launcher, a local synthetic Keycloak
 identity and owned PostgreSQL. It defaults to a one-hour bounded session,
 1920×1200 and 125% UI scale. It does not log in to a real account or resume an
 older disposable identity/database. Existing saved test directories are retained.
+Optional current-client `--ui-preferences build/local-interface.json` shares a
+local UI size across runs; omit `--ui-scale` to use it. Without either argument
+the existing 125% default remains. An explicit scale overrides the saved value.
 
 After preparing binaries/art and the baked terrain/navigation described below:
 

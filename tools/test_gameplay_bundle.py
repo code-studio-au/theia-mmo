@@ -578,6 +578,22 @@ class GameplayBundle(unittest.TestCase):
         self.assertEqual(play.fantasy_ui_options(None, False, None), [])
         self.assertIsNone(args['dodge_profile'])
 
+    def test_fantasy_ui_preferences_handoff_never_touches_the_file(self):
+        import play
+        directory = Path(self.temp.name) / 'hud'
+        directory.mkdir()
+        preferences = Path(self.temp.name) / 'preferences.json'
+        with patch.object(play, 'play') as launch:
+            play.main(['--gameplay-manifest', str(self.manifest), '--gameplay-validator', str(self.validator), '--classic', '--fantasy-ui', str(directory), '--ui-preferences', str(preferences)])
+        args = PLAY_SIGNATURE.bind(*launch.call_args.args).arguments
+        self.assertEqual(args['ui_preferences'], preferences)
+        options = play.fantasy_ui_options(directory, True, args['combat_catalog'], None, preferences)
+        self.assertEqual(options[-2:], ['--ui-preferences', str(preferences.resolve())])
+        self.assertNotIn('--ui-scale', options)
+        self.assertFalse(preferences.exists())
+        with self.assertRaises(ValueError):
+            play.fantasy_ui_options(None, True, args['combat_catalog'], None, preferences)
+
     def test_fantasy_ui_scale_handoff_and_refusal_remain_headless(self):
         directory = self.root / 'scaled HUD'
         directory.mkdir()

@@ -240,7 +240,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     let creature_asset = creature_visual::parse(&mut args, patrol_binding.is_some())?;
     let fantasy_ui = fantasy_ui::parse(&mut args, classic && combat_catalog.is_some())?;
+    let explicit_ui_scale = args.iter().any(|arg| arg == "--ui-scale");
     let ui_scale = fantasy_ui::parse_scale(&mut args, fantasy_ui.is_some())?;
+    let ui_preferences = fantasy_ui::preferences::Config::parse(
+        &mut args,
+        fantasy_ui.is_some(),
+        ui_scale,
+        explicit_ui_scale,
+    )?;
+    let ui_scale = ui_preferences
+        .as_ref()
+        .map_or(ui_scale, |config| config.scale);
     let player_life_profile = player_life::parse(
         &mut args,
         character_stats.as_ref().map(|(bytes, _)| bytes.as_slice()),
@@ -1296,6 +1306,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .add_systems(FixedUpdate, movement::move_local_pawn);
     if fantasy_skin {
         fantasy_ui::install_scale(&mut app, ui_scale);
+        if let Some(preferences) = ui_preferences {
+            preferences.install(&mut app);
+        }
         fantasy_ui::load(&mut app);
         nameplates::install(&mut app);
     }

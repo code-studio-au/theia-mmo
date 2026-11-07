@@ -1,3 +1,12 @@
+Headless development resumed, 7 November 2026 (P2-14):
+The user has resumed implementation with local commits only and explicitly
+forbidden mouse, keyboard and display use. This supersedes earlier desktop
+permission/stop entries. Optional `--ui-preferences FILE` now loads a bounded,
+versioned local scale preference. In-game changes save off-thread; explicit
+`--ui-scale` overrides the saved value on launch. Five persistence/error cases
+pass in the 198-case client suite; 53 launcher checks and strict all-target
+workspace Clippy pass. UI/native visual checks remain deferred. No game launched.
+
 Safe stop checkpoint, 6 November 2026 (P2-14 / P5-13 / P5-19):
 Stopped at the user's request after completing floating XP feedback. One reusable
 standard Bevy label presents positive committed owner XP deltas, coalesces nearby
@@ -65,7 +74,7 @@ six windowless settings layouts pass; native pointer/resize checks remain pendin
 The skin remains opt-in; clickable plates, portrait art, chat/game-menu systems,
 broader scale/DPI/resize traces and complete-theme qualification
 remain separate work. [Scope, reference, assets and evidence](../UI_FANTASY_WARRIOR.md).
-**Current permission: desktop/mouse tests restored by the latest user instruction.**
+**Historical permission (6 November): desktop/mouse tests were authorized.**
 Commit locally only; no push. Earlier permission restrictions below are historical.
 
 Bounded quest offers/wheel ownership qualified, 6 November 2026:

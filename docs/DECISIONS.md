@@ -1,3 +1,15 @@
+## 2026-11-07 — explicit local interface preference persistence
+
+Extend the session-only scale panel with an optional `--ui-preferences FILE`.
+Keep normal launches without this argument session-only. Validate schema 1,
+finite 75–150% scale and a 4 KiB bound before creating the App. Reject malformed
+files without rewriting them. An explicit launch scale overrides the saved value;
+opening the client alone never saves that override. Save actual preferred-size
+changes through one bounded Bevy I/O task at a time, replacing a complete temporary
+file; fitted viewport size is never persisted. Report save failure while retaining
+session behavior. This is a device-local preference, not account persistence.
+Desktop/keyboard/display checks are forbidden by the current user instruction.
+
 ## 2026-11-06 — explicit bounded local playtest session lifetime
 
 Keep the existing five-minute default. Permit an explicit server session policy

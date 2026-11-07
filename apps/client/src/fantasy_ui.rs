@@ -1,5 +1,6 @@
 //! Optional presentation-only skin from the user's local Fantasy Warrior HUD.
 //! PNGs load through a separate Bevy source; terrain/art roots stay unchanged.
+pub(crate) mod preferences;
 pub(crate) mod preview;
 pub(crate) mod settings;
 use bevy::{

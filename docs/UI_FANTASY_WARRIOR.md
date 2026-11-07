@@ -1096,3 +1096,42 @@ Evidence (ignored): `build/ui-reference-20261106/xp-popup-client-v3.log`,
 `xp-popup-verification-v1.json`. Earlier parser-failure logs are not passing
 evidence. Work stopped here at the user's request; no further play session was
 launched. The separately frozen release playtest pack predates this XP change.
+
+
+## Saved local interface size — 7 November 2026
+
+P2-14, prerequisite: existing Interface presets and preferred/fitted-scale policy.
+Optional client/`tools/play.py` argument `--ui-preferences FILE` enables JSON
+schema 1: `{"schema":1,"ui_scale":1.25}`. A missing file uses the usual launch
+size. Existing files must be regular, at most 4 KiB, have no unknown fields and
+contain a finite scale in 0.75–1.5. Invalid files refuse startup without rewriting.
+`--ui-scale` takes precedence for this launch; neither loading nor that override
+writes a file. Only a later in-game preferred-size change requests a save.
+
+One Bevy I/O task writes at a time; subsequent changes coalesce into the latest
+preferred size. A complete, synced temporary candidate in the same directory is
+renamed over the prior file. Normal failures clean the candidate and preserve
+the previous file. Directory durability across power loss is not claimed. Fitted
+viewport reductions never change the preference file. The existing panel reports
+saving/saved/failure text. Failures keep the session size and do not retry every
+frame; a later size change retries. Wait for the saved message before exiting;
+abrupt shutdown during a pending task is not a save guarantee. Simultaneous
+clients sharing a file have last-completed-write semantics, not synchronization.
+No network/account setting or gameplay command is added.
+
+`tools/play_local.py --ui-preferences /absolute/local/file.json` can share a size
+across otherwise disposable test accounts. Without an explicit scale it lets the
+saved value apply; without a preference file it retains its old 125% default.
+This option needs the current client; older frozen packs do not support it.
+Use an ignored path such as `build/local-interface.json` for development.
+
+Five new headless cases cover strict loading/CLI precedence, complete replacement
+and failed-candidate cleanup, actual background-write coalescing/new-client reload,
+and failure/session retention/recovery. All 198 client cases with local art and
+53 launcher checks pass. Formatting, strict workspace/all-target Clippy and client
+build pass. Evidence: ignored `build/ui-preferences-20261107/{client-v3.log,
+clippy-v3.log,build-v1.log,launcher-v3.log,fmt-v1.log}`. Python byte compilation
+passes. Earlier v1 failures were corrected and are not accepted evidence.
+No window, display, mouse or keyboard was used. Native text/layout/input, Windows
+execution and abrupt-exit behavior remain unverified. This extends the earlier
+session-only decision; it does not promote the opt-in skin to fully qualified.

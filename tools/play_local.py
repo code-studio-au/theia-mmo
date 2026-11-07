@@ -34,7 +34,7 @@ def validate(args, root=ROOT):
     match = re.fullmatch(r'(\d+)x(\d+)', args.window_size)
     if not match or not (640 <= int(match[1]) <= 7680 and 480 <= int(match[2]) <= 4320):
         raise ValueError('Invalid playtest window size')
-    if not .75 <= args.ui_scale <= 1.5:
+    if args.ui_scale is not None and not .75 <= args.ui_scale <= 1.5:
         raise ValueError('UI scale must be .75..1.5')
     output = args.output.resolve()
     if not output.is_relative_to((root/'build').resolve()) or output.exists():
@@ -72,7 +72,7 @@ def freeze(args, root=ROOT):
     shutil.copytree(root/'content', output/'content')
     (output/'build.json').write_text(json.dumps(dict(
         binary_sha256=hashes, manifest=str(manifest), session_seconds=args.session_seconds,
-        ui_scale=args.ui_scale, window=args.window_size, fresh_synthetic_account=True,
+        ui_scale=args.ui_scale, ui_preferences=str(args.ui_preferences.resolve()) if args.ui_preferences else None, window=args.window_size, fresh_synthetic_account=True,
         terrain_and_navigation='shared immutable baked sources',
         ui_art='external licensed local source'), indent=2)+'\n')
     command = [sys.executable, str(root/'tools/play.py'), '--account-login', '--classic',
@@ -80,8 +80,12 @@ def freeze(args, root=ROOT):
                '--players', str(binaries/'art/player'), '--creature-asset', str(binaries/'art/wolf/wolf.glb'),
                '--saved-terrain', str(root/'build/graybox-terrain-v1'),
                '--navigation', str(root/'build/navigation-terrain-v1'),
-               '--fantasy-ui', str(args.fantasy_ui.resolve()), '--ui-scale', str(args.ui_scale),
+               '--fantasy-ui', str(args.fantasy_ui.resolve()),
                '--window-size', args.window_size, '--dev-spawn', '8002,8002']
+    if args.ui_preferences:
+        command += ['--ui-preferences', str(args.ui_preferences.resolve())]
+    if args.ui_scale is not None or args.ui_preferences is None:
+        command += ['--ui-scale', str(args.ui_scale if args.ui_scale is not None else 1.25)]
     return output, command
 
 
@@ -166,7 +170,8 @@ def main():
     parser.add_argument('--session-seconds', type=int, default=3600)
     parser.add_argument('--character', default='Arden')
     parser.add_argument('--window-size', default='1920x1200')
-    parser.add_argument('--ui-scale', type=float, default=1.25)
+    parser.add_argument('--ui-scale', type=float, help='Explicit launch override; default 1.25 without a preference file')
+    parser.add_argument('--ui-preferences', type=Path, help='Local UI preference file shared across runs; requires a compatible current client')
     run(parser.parse_args())
 
 

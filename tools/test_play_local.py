@@ -28,7 +28,7 @@ class LocalPlay(unittest.TestCase):
         return argparse.Namespace(binaries=source, client=None, server=None,
                                   output=root/'build/playtest', manifest=root/'content/test.json',
                                   fantasy_ui=hud, session_seconds=3600, character='Arden',
-                                  ui_scale=1.25, window_size='1920x1200')
+                                  ui_scale=1.25, ui_preferences=None, window_size='1920x1200')
 
     def test_frozen_build_and_content_survive_source_edits_and_use_isolated_cwd(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -45,6 +45,17 @@ class LocalPlay(unittest.TestCase):
             self.assertNotIn('--world-input-os-qualify', command)
             with self.assertRaises(ValueError):
                 play.freeze(args, root)
+
+    def test_saved_preferences_can_survive_disposable_accounts_without_an_implicit_scale_override(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            args = self.fixture(root)
+            args.ui_scale = None
+            args.ui_preferences = root/'build/local-ui.json'
+            _, command = play.freeze(args, root)
+            self.assertNotIn('--ui-scale', command)
+            self.assertEqual(command[command.index('--ui-preferences')+1], str(args.ui_preferences.resolve()))
+            self.assertFalse(args.ui_preferences.exists())
 
     def test_invalid_inputs_fail_before_creating_private_services_or_output(self):
         with tempfile.TemporaryDirectory() as directory:

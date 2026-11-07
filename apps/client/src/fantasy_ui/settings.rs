@@ -1,4 +1,4 @@
-//! Local, session-only interface preferences. Never sends gameplay commands.
+//! Local interface preferences. Never sends gameplay commands.
 use super::{PreferredScale, button_color};
 use bevy::{
     picking::{Pickable, hover::Hovered},
@@ -19,6 +19,8 @@ pub(crate) fn owns_escape(ui: Option<&Ui>) -> bool {
 pub(crate) struct Pane;
 #[derive(Component)]
 struct Summary;
+#[derive(Component)]
+struct PersistenceHint;
 #[derive(Component, Clone, Copy)]
 enum Control {
     Toggle,
@@ -115,7 +117,7 @@ fn setup(mut commands: Commands) {
                 for value in [75,100,125,150] {row.spawn(button(Control::Scale(value),&format!("UI size {value}%"))).with_child(label(&format!("{value}%")));}
             });
             pane.spawn(label("The interface fits smaller windows and restores your preferred size when space returns."));
-            pane.spawn(label("Applies to this session. The world continues running."));
+            pane.spawn((PersistenceHint, label("Applies to this session. The world continues running.")));
             pane.spawn(button(Control::Close,"Close interface settings")).with_child(label("Close [Esc]"));
         });
 }
@@ -158,12 +160,15 @@ fn activate(
         _ => {}
     }
 }
+#[allow(clippy::too_many_arguments)]
 fn present(
     ui: Res<Ui>,
     preferred: Res<PreferredScale>,
     scale: Res<bevy::ui::UiScale>,
     mut panes: Query<&mut Node, With<Pane>>,
     mut summaries: Query<&mut Text, With<Summary>>,
+    store: Option<Res<super::preferences::Store>>,
+    mut hints: Query<&mut Text, (With<PersistenceHint>, Without<Summary>)>,
     mut buttons: Query<(&Control, &Hovered, Has<Pressed>, &mut BackgroundColor)>,
 ) {
     for mut node in &mut panes {
@@ -184,6 +189,15 @@ fn present(
     for mut label in &mut summaries {
         if label.0 != text {
             label.0 = text.clone();
+        }
+    }
+    let hint = store.as_ref().map_or(
+        "Applies to this session. The world continues running.",
+        |store| store.hint(),
+    );
+    for mut text in &mut hints {
+        if text.0 != hint {
+            text.0 = hint.to_owned();
         }
     }
     for (control, hovered, pressed, mut color) in &mut buttons {
