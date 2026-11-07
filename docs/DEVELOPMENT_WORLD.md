@@ -1,3 +1,39 @@
+# Prepared optimized UI candidate — 7 November 2026
+
+An ignored frozen Linux pack is ready at `build/local-play-release-20261107-v1`,
+from source `d9df562`. It contains release-profile client/server/validator
+executables, binary SHA-256 metadata and copied existing qualified player/wolf
+art. It includes optional saved UI size, committed XP feedback, configured
+ability tooltips, bounded combat history and ability/world-click focus guards.
+The older `build/local-play-release-20261106-v1` remains byte-for-byte unchanged.
+
+All nine actual optimized-client preference/configuration checks pass with
+unchanged gameplay identity. Evidence:
+`build/ui-release-20261107/preferences-cli-v1/verification.json` and the pack's
+`build.json`. Optimized client/server compilation took 1m56s and validator build
+28.39s; these are build times, not gameplay performance measurements. Source
+checks include 211 client cases, 53 launcher checks, ten core ability cases,
+formatting and strict all-target workspace Clippy. No native window, renderer,
+services or game were launched. Current permission forbids mouse/keyboard/display.
+Native new-UI layout/input/focus, GPU performance and Windows remain pending.
+The skin remains opt-in and this pack is a candidate, not fully native-qualified.
+
+For a later user-authorized play session (not run while display is forbidden):
+
+```bash
+python3 tools/play_local.py \
+  --binaries build/local-play-release-20261107-v1 \
+  --output build/local-play-fresh-20261107 \
+  --fantasy-ui "/path/to/FantasyWarriorHUD" \
+  --ui-preferences build/local-interface.json
+```
+
+This still creates a fresh disposable account/database. The launcher freezes
+current repository JSON at launch; the binary pack does not pin future content
+changes. A missing preference file uses the client's 100% size, then an actual
+preset change saves it; omit the preference option for the launcher's old 125%
+default. An explicit `--ui-scale` overrides saved size for that launch.
+
 # Isolated local playtest launcher — 6 November 2026
 
 P2-02 / P2-14. `tools/play_local.py` prepares a **fresh disposable Linux playtest**

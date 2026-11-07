@@ -1302,3 +1302,16 @@ target Clippy pass. Evidence (ignored):
 Only test code changed; the previously passing runtime build remains applicable.
 Actual pointer navigation, physical resize/DPI and visual qualification remain
 pending under the current restriction.
+
+
+## Optimized candidate prepared without desktop use — 7 November 2026
+
+The current source through `d9df562` is frozen locally in ignored
+`build/local-play-release-20261107-v1` with optimized client/server/validator,
+SHA-256 metadata and copied prior qualified local model art. Nine real optimized
+client configuration preflights pass with the same gameplay identity as the
+debug preflights. The prior pack's three binary hashes are unchanged. Evidence:
+`build/ui-release-20261107/preferences-cli-v1/verification.json`, build logs and
+pack `build.json`. [Later launch example and exact limitations](DEVELOPMENT_WORLD.md).
+No new play session, window, renderer, game services or desktop input was started.
+This does not close the native visual/input or performance gates above.

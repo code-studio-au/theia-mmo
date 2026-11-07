@@ -1,23 +1,20 @@
-Headless general UI continuation, 7 November 2026 (P2-14 / P3-06 / P5-13):
-Opt-in action-bar hover text now shows configured metric range, mana, authored
-cast/cooldown time and casting/facing requirements. Three new headless checks
-include actual widget/model integration and no hover commands. 201 client and
-ten core ability cases, formatting, strict all-target workspace Clippy and client
-build pass. Expanded native/GPU text layout remains deferred; no display or OS
-input was used. Continue implementation with local commits only; no push.
-Nine actual client configuration preflights now also verify saved UI preferences,
-refusals and unchanged gameplay identity without starting App/network/rendering.
-A bounded six-message owner combat-log candidate now records received damage,
-avoidance/cancellation and reported overkill. Five new headless cases bring the
-client suite to 206; strict Clippy and build pass. Native layout/event-flow checks
-remain deferred under the current no-display/input restriction. No game launched.
-Ability collection now discards unfocused keyboard/widget input; two headless
-regressions bring the client suite to 208. Native focus switching remains pending.
-World clicks now recheck focus at collection/consumption without cancelling
-selection/autoattack on focus loss; two more headless cases bring the suite to
-210. Native/connected focus event ordering remains unverified.
-The real Interface button/painter/I/O save/resize flow now also passes headlessly
-in the 211-case client suite. No OS input, native window or renderer was used.
+Headless general UI continuation, 7 November 2026 (P2-05/11/14 / P3-06 / P5-13):
+Implemented optional saved interface size, configured metric ability tooltips,
+a six-message received combat log and focused-window guards for ability/world
+click input. The actual Interface buttons/painter/I/O save-and-fit flow passes
+headlessly. 211 client cases, 53 launcher checks, ten core ability cases,
+formatting, strict workspace/all-target Clippy and builds pass. Nine actual
+client configuration preflights pass with unchanged gameplay identity and no
+App/network/renderer startup.
+An optimized Linux candidate is frozen at `build/local-play-release-20261107-v1`
+(source `d9df562`), including copied qualified local model art and binary hashes.
+Its nine real CLI preflights also pass; the previous pack remains unchanged.
+This is a prepared build, not native UI/playability or FPS evidence. Native
+expanded tooltip/combat-log layout, input/focus/DPI/resize and Windows checks
+remain pending. The skin stays opt-in.
+**Current permission: continue implementation, commit locally only; no push. Do
+not use mouse, keyboard or display.** No game or services were launched. Earlier
+permission and safe-stop entries below describe their historical checkpoints.
 
 Headless development resumed, 7 November 2026 (P2-14):
 The user has resumed implementation with local commits only and explicitly
