@@ -1723,3 +1723,20 @@ Twenty-six accepted native starts cover consecutive UI slices. The preserved
 optimized v4/c6a51e8 pack remains available and predates this owner-level label;
 this addition is currently qualified with the debug client at the smallest
 native size. Wider/optimized level presentation remains to be checked.
+
+
+### Optimized ultrawide level and frozen v5 checkpoint
+
+`build/ui-native-20261107/connected-v13/verification.json` passes the optimized
+3440×1440 fullscreen / 125% UI flow. The actual player heading follows committed
+level1→2, PostgreSQL restart/fresh login restores2, and real timeout clears the
+level before Interface Exit. Saved-size and XP/minimap checks continue to pass.
+Both starts have zero diagnostics on RX7900XTX / RADV NAVI31 / Vulkan / Mesa26.2.6.
+
+`build/local-play-release-20261107-v5` freezes client runtime source `b412e74`,
+release server/validator, copied qualified local art and SHA-256 metadata. It
+includes the owner-level heading and predates gameplay name replication. The
+optimized compilation is recorded in `release-level-v1.log` (1m04s). Earlier
+packs remain intact. Twenty-eight accepted native starts cover these consecutive
+slices, with exact per-source scope retained. The next bounded identity work is
+specified in [player display identity](PLAYER_DISPLAY_IDENTITY.md).

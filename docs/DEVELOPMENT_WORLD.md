@@ -1,13 +1,14 @@
 # Current optimized UI playtest pack — 7 November 2026
 
-Use `build/local-play-release-20261107-v4` for the current preserved checkpoint.
+Use `build/local-play-release-20261107-v5` for the current preserved checkpoint.
 It contains saved UI-size/error retry, focus guards, ability tooltips, readable
 combat history, XP feedback, corrected connection hints and a visible Interface
 Exit game control. Release binaries and copied player/wolf art are frozen with
-SHA-256 metadata; client runtime source is `c6a51e8`. Optimized saved-size,
+SHA-256 metadata; client runtime source is `b412e74`, including the owner-level header. Optimized saved-size,
 journal/XP/minimap, database rejoin, actual timeout and Interface Exit pass at
 1280×720. Full panel checks retain their separately recorded exact sources.
-See [UI evidence](UI_FANTASY_WARRIOR.md#optimized-exit-and-frozen-v4-checkpoint).
+Optimized ultrawide owner-level/rejoin/timeout checks pass too.
+See [UI evidence](UI_FANTASY_WARRIOR.md#optimized-ultrawide-level-and-frozen-v5-checkpoint).
 The launcher reads selected repository content at launch. Existing packs remain
 intact. Local commits only; no push. Desktop input/display use is authorized.
 
