@@ -4,7 +4,7 @@ one focused game
 Window. New unfocused choices are discarded; focus loss alone does not cancel
 persistent selection/autoattack or already accepted transaction work. Existing
 Loot All intent can continue serial pickups; matching read replies still open.
-219 client cases, formatting, strict Clippy and builds pass. Native background
+220 client cases, formatting, strict Clippy and builds pass. Native background
 I/F10/1 delivery to a second test-owned window causes no action or replay; broader
 pointer/focus ordering remains pending. Desktop access is restored. Local commits
 only; no push. The earlier headless-only qualification is retained in dated records.
@@ -21,6 +21,9 @@ Classic Escape quits; on disconnect close the window and relaunch to reconnect.
 Actual timeout/disabled ability-input presentation passes at 1280×720. The dated notes
 below retain their historical implementation and qualification scope; use STATUS
 for the current repository checkpoint.
+F10/Interface now offers Exit game through the normal Bevy shutdown path. It
+requires a focused open pane; native small/ultrawide exit and database rejoin pass.
+The preserved optimized v3 pack predates this Exit control.
 
 Historical implementation checkpoint, 1 November 2026: the [qualified `--classic` profile](CLASSIC_MOVEMENT.md)
 now supplies the manual movement/camera controls below, disables action camera

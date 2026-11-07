@@ -7,12 +7,13 @@ implemented. Current-source reader/loot/backpack/32-offer/reward flows pass at
 these consecutive slices have zero RX 7900 XTX / RADV Vulkan GPU diagnostics.
 The preserved optimized `build/local-play-release-20261107-v3` contains client
 runtime source `16b57ec`, copied qualified local model art and binary hashes.
-219 full client cases, 53 launcher checks, ten core ability cases, formatting,
+220 full client cases, 53 launcher checks, ten core ability cases, formatting,
 strict Clippy and builds are the recorded source prerequisites; later focused
 native/XP checks retain their exact scope. [Evidence and limits](UI_FANTASY_WARRIOR.md#optimized-playtest-checkpoint--7-november-2026).
 Windows, non-unit monitor DPI, capacity/crowd/FPS qualification and complete theme
-adoption remain open; the skin stays opt-in. A visible Interface Exit control is
-a subsequent slice in progress and is not included in this frozen v3 pack.
+adoption remain open; the skin stays opt-in. A visible Interface Exit control now
+passes native three-size shutdown and durable rejoin checks; it is not included
+in the frozen v3 pack. Twenty-two native starts cover the consecutive slices.
 **Continue implementation and local commits only; no push. Mouse, keyboard and
 display access are authorized by the latest user instruction.**
 

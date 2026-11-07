@@ -1594,8 +1594,8 @@ Fifteen accepted native starts cover the consecutive 7 November slices so far.
 client's full existing reader/loot/backpack/32-offer/fixed-reward flow at
 1920×1200 / 125% UI and PostgreSQL restart/fresh login. Both starts have zero GPU
 diagnostics on the recorded RX 7900 XTX / RADV Vulkan device. This supplements
-the three-size current-source debug replay; all four earlier qualified packs
-remain intact. The same controlled guaranteed-loot/low-damage fixture is used.
+the three-size current-source debug replay. Earlier retained packs remain
+intact. The same controlled guaranteed-loot/low-damage fixture is used.
 
 `build/local-play-release-20261107-v3` freezes those release binaries, copied
 qualified player/wolf art, source identity and SHA-256 metadata. Its client
@@ -1612,3 +1612,50 @@ current-source debug/release panel proof is in v7/v8, feature-specific checks
 are scoped in v2–v6, and diagnostic v1 remains unaccepted. Native Windows,
 non-unit monitor DPI, capacity/crowd/FPS qualification and full theme adoption
 remain separate. No push or deployment was performed.
+
+
+## Visible Interface exit — 7 November 2026
+
+P2-02 / P2-14. The opt-in Interface pane includes **Exit game**, using ordinary
+Bevy `AppExit::Success`. It requires an open pane and exactly one focused game
+window. The first accepted click closes/disarms the pane; repeated activation
+cannot emit another exit. It uses the existing client shutdown and owned-launcher
+cleanup path; network/logout/economy semantics remain unchanged. F10/settings
+remain local and available after a connection loss; the Classic Escape contract
+is unchanged. Save completion still uses its existing saved/saving hint rather
+than a new exit-time preference durability promise.
+
+All **220 client tests**, including local art, formatting, strict workspace/
+all-target Clippy and debug build pass. A new real-observer matrix covers missing,
+ambiguous and unfocused windows, a hidden pane and repeated activation. Logs are
+`build/ui-native-20261107/{client-exit-v1.log,clippy-exit-v1.log,build-exit-v1.log,
+fmt-exit-v1.log}`.
+
+`connected-v9/verification.json` passes real Exit clicks at 1280×720 and
+3440×1440 fullscreen, followed by PostgreSQL restart/fresh login at 1280×720 and
+another Exit. Each client and launcher exits with code zero; SQL-backed quest
+completion, consumed delivery items and 103 reward tokens survive. The full
+reader/loot/backpack/32-offer flow precedes exit. Three starts have zero GPU
+diagnostics. `connected-v10/verification.json` passes the same complete flow and
+Exit at 1920×1200 / 125% plus database restart/rejoin through the new direct CLI;
+both starts also have zero diagnostics on RX 7900 XTX / RADV Vulkan. These runs
+bring the accepted consecutive native starts to 22. Real disconnect presentation
+retains v6's separate proof; these Exit clicks follow connected completed flows.
+The frozen optimized v3 pack predates this Exit control.
+
+The checked-in native qualifier now accepts `--fantasy-ui`, `--ui-scale`,
+`--ui-preferences` and `--interface-exit`. It reuses normal launcher option
+validation. The last option clicks the actual UI and observes clean launcher
+shutdown instead of terminating the server to end a successful case. Other
+profiles retain their previous teardown. Missing UI for CLI exit and nonfinite
+scale are refused before output/service setup (`qualifier-invalid-v1.json`);
+syntax/help checks pass. For a prepared compatible binary pack, a new ignored
+output and the locally licensed HUD directory:
+
+```bash
+python3 tools/qualify_quest_journal_os.py build/fresh-ui-exit-check \
+  --binaries build/ui-native-20261107/binaries-v9 --size 1920x1200 \
+  --fantasy-ui '/home/steven/Downloads/Synty Models/HUDs' --ui-scale 1.25 \
+  --documents --item-rewards --quest-offers --interface-exit \
+  --gameplay-manifest content/development-gameplay-classic-item-rewards-fixture.json
+```

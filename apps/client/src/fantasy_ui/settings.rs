@@ -26,6 +26,7 @@ enum Control {
     Toggle,
     Close,
     Scale(u8),
+    Exit,
 }
 fn label(value: &str) -> impl Bundle {
     (
@@ -90,7 +91,7 @@ pub(crate) fn snapshot(world: &mut World) -> serde_json::Value {
     let buttons:Vec<_>=world.query::<(&Control,&ComputedNode,&bevy::ui::UiGlobalTransform)>().iter(world)
         .filter(|(action,_,_)|open || matches!(action,Control::Toggle))
         .map(|(action,node,transform)|{
-            let name=match action {Control::Toggle=>"toggle".to_owned(),Control::Close=>"close".to_owned(),Control::Scale(value)=>format!("scale-{value}")};
+            let name=match action {Control::Toggle=>"toggle".to_owned(),Control::Close=>"close".to_owned(),Control::Scale(value)=>format!("scale-{value}"),Control::Exit=>"exit".to_owned()};
             serde_json::json!({"action":name,"point":(transform.affine().translation*super::window_factor(node,scale)).to_array()})
         }).collect();
     serde_json::json!({"open":open,"preferred":preferred,"displayed":scale,"buttons":buttons,"persistence":persistence})
@@ -122,6 +123,7 @@ fn setup(mut commands: Commands) {
             pane.spawn(label("The interface fits smaller windows and restores your preferred size when space returns."));
             pane.spawn((PersistenceHint, label("Applies to this session. The world continues running.")));
             pane.spawn(button(Control::Close,"Close interface settings")).with_child(label("Close [Esc]"));
+            pane.spawn(button(Control::Exit,"Exit game")).with_child(label("Exit game"));
         });
 }
 pub(crate) fn keyboard(
@@ -150,6 +152,7 @@ fn activate(
     mut preferred: ResMut<PreferredScale>,
     windows: Query<&Window>,
     store: Option<ResMut<super::preferences::Store>>,
+    mut exit: MessageWriter<bevy::app::AppExit>,
 ) {
     let Ok(control) = controls.get(event.entity) else {
         return;
@@ -167,6 +170,11 @@ fn activate(
                 store.retry_failed();
             }
             preferred.0 = f32::from(value) / 100.
+        }
+        Control::Exit if ui.open => {
+            ui.open = false;
+            ui.closed_this_frame = true;
+            exit.write(bevy::app::AppExit::Success);
         }
         _ => {}
     }
@@ -309,6 +317,42 @@ mod tests {
         app.world_mut().get_mut::<Window>(window).unwrap().focused = true;
         app.world_mut().trigger(Activate { entity: preset });
         assert_eq!(app.world().resource::<PreferredScale>().0, 1.5);
+    }
+    #[test]
+    fn exit_requires_an_open_pane_and_one_focused_window_and_is_not_repeated() {
+        for (count, focused, open) in [
+            (0, true, true),
+            (2, true, true),
+            (1, false, true),
+            (1, true, false),
+            (1, true, true),
+        ] {
+            let mut app = App::new();
+            app.insert_resource(Ui {
+                open,
+                closed_this_frame: false,
+            })
+            .insert_resource(PreferredScale(1.))
+            .add_observer(activate);
+            for _ in 0..count {
+                app.world_mut().spawn(Window {
+                    focused,
+                    ..default()
+                });
+            }
+            let button = app.world_mut().spawn(Control::Exit).id();
+            for _ in 0..2 {
+                app.world_mut().trigger(Activate { entity: button });
+            }
+            let accepted = count == 1 && focused && open;
+            assert_eq!(
+                app.world().resource::<Messages<bevy::app::AppExit>>().len(),
+                usize::from(accepted)
+            );
+            assert_eq!(app.world().resource::<Ui>().open, open && !accepted);
+            assert_eq!(app.world().resource::<Ui>().closed_this_frame, accepted);
+            assert_eq!(app.world().resource::<PreferredScale>().0, 1.);
+        }
     }
     #[test]
     fn keyboard_does_not_open_settings_when_the_window_lacks_focus() {

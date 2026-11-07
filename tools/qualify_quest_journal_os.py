@@ -15,6 +15,7 @@ import urllib.parse
 from gpu_validation import check_gpu_diagnostics
 from private_identity import Identity
 from private_postgres import Cluster
+from play import fantasy_ui_options
 from qualify_world_input_os import Desktop, wait, owned_window, capture_ready
 
 FIRST = 'theia.dev.quest-introduction'
@@ -391,7 +392,9 @@ def check_minimap_walk(desktop, window, state, folder):
     return proof
 
 
-def run(output, binaries, sizes, production=False, repeat_interaction=False, gameplay_manifest=Path("content/development-gameplay-classic-journal.json"), minimap=False, minimap_traversal=False, reach_areas=False, destroy_items=False, corpse_loot=False, item_quest=False, documents=False, item_rewards=False, reward_capacity=False, quest_offers=False):
+def run(output, binaries, sizes, production=False, repeat_interaction=False, gameplay_manifest=Path("content/development-gameplay-classic-journal.json"), minimap=False, minimap_traversal=False, reach_areas=False, destroy_items=False, corpse_loot=False, item_quest=False, documents=False, item_rewards=False, reward_capacity=False, quest_offers=False, interface_exit=False, fantasy_ui=None, ui_scale=None, ui_preferences=None):
+    abilities = gameplay_manifest.parent/json.loads(gameplay_manifest.read_text())['abilities'] if fantasy_ui else None
+    ui_options = fantasy_ui_options(fantasy_ui, True, abilities, ui_scale, ui_preferences)
     if quest_offers and (not documents or not item_rewards or reward_capacity):
         raise ValueError('Quest offer fixture requires the separate normal fixed-reward document flow')
     if reward_capacity and not item_rewards:
@@ -527,6 +530,7 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
                                '--players', str(binaries/'art/player'), '--creature-asset', str(binaries/'art/wolf/wolf.glb'), '--dev-spawn', '8002,8002', '--guide-position','8004,8000', '--window-size',size]
                     if size == '3440x1440':
                         command.append('--fullscreen')
+                    command += ui_options
                     launcher = subprocess.Popen(command, env=env, stdin=subprocess.PIPE, stdout=log, stderr=subprocess.STDOUT, text=True)
                     try:
                         launcher.stdin.write('1\n' if resumed else (('' if index == 0 else 'n\n')+'JournalArden'+chr(65+index)+'\n'))
@@ -579,12 +583,27 @@ def run(output, binaries, sizes, production=False, repeat_interaction=False, gam
                             from quest_item_destruction_os import flow as item_flow
                             proof['item_destruction'] = item_flow(desktop, window, state, folder, resumed)
                         proof.update(window=initial['window'], fixture=not production)
+                        if fantasy_ui:
+                            proof['interface_scale'] = dict(preferred=initial['interface']['preferred'], displayed=initial['interface']['displayed'])
                         (folder/'proof.json').write_text(json.dumps(proof, indent=2)+'\n')
                         children = Path(f'/proc/{launcher.pid}/task/{launcher.pid}/children').read_text().split()
                         servers = [int(pid) for pid in children if b'theia-server' in Path(f'/proc/{pid}/cmdline').read_bytes()]
                         assert len(servers) == 1
-                        os.kill(servers[0], signal.SIGINT)
-                        launcher.wait(timeout=30)
+                        if interface_exit:
+                            assert state().get('interface'), 'Interface exit requires the opt-in UI'
+                            if not state()['interface']['open']:
+                                desktop.key('F10')
+                            point = wait(lambda: next((b['point'] for b in state()['interface']['buttons']
+                                if b['action'] == 'exit' and min(b['point']) > 0), None))
+                            (folder/'capture.request').write_text('interface-exit.png\n')
+                            wait(lambda: capture_ready(folder/'input-os.png'))
+                            (folder/'input-os.png').rename(folder/'interface-exit.png')
+                            desktop.click(window, point, state()['window'][2], 1)
+                            assert launcher.wait(timeout=30) == 0, 'Interface exit did not cleanly stop the owned launcher'
+                            proof['interface_exit'] = dict(clicked=True, launcher_exit_code=0)
+                        else:
+                            os.kill(servers[0], signal.SIGINT)
+                            launcher.wait(timeout=30)
                         results[folder.name] = proof
                     except Exception:
                         # Preserve the actual painted layout before owned cleanup.
@@ -673,6 +692,10 @@ if __name__ == '__main__':
     parser.add_argument('output', type=Path)
     parser.add_argument('--binaries', type=Path, required=True)
     parser.add_argument('--size', action='append', dest='sizes')
+    parser.add_argument('--fantasy-ui', type=Path, help='Local licensed HUD directory for the normal launcher')
+    parser.add_argument('--ui-scale', type=float, help='Preferred UI size, .75 to 1.5; requires --fantasy-ui')
+    parser.add_argument('--ui-preferences', type=Path, help='Opt-in local preference file; requires --fantasy-ui')
+    parser.add_argument('--interface-exit', action='store_true', help='Click the actual Interface Exit game button after each flow; requires an enabled UI')
     parser.add_argument('--production', action='store_true')
     parser.add_argument('--minimap', action='store_true')
     parser.add_argument('--minimap-traversal', action='store_true', help='After restart/rejoin, walk across chunk and render-origin boundaries using normal keyboard movement')
@@ -687,4 +710,6 @@ if __name__ == '__main__':
     parser.add_argument('--reach-areas', action='store_true', help='Complete the opt-in western overlook using normal movement')
     parser.add_argument('--gameplay-manifest', type=Path, default=Path('content/development-gameplay-classic-journal.json'))
     args = parser.parse_args()
-    print(json.dumps(run(args.output, args.binaries, args.sizes or ['1920x1200','3440x1440','1280x720'], args.production, args.repeat_interaction, args.gameplay_manifest, args.minimap, args.minimap_traversal, args.reach_areas, args.destroy_items, args.corpse_loot, args.item_quest, args.documents, args.item_rewards, args.reward_capacity, args.quest_offers), indent=2))
+    if args.interface_exit and args.fantasy_ui is None:
+        parser.error('--interface-exit requires --fantasy-ui')
+    print(json.dumps(run(args.output, args.binaries, args.sizes or ['1920x1200','3440x1440','1280x720'], args.production, args.repeat_interaction, args.gameplay_manifest, args.minimap, args.minimap_traversal, args.reach_areas, args.destroy_items, args.corpse_loot, args.item_quest, args.documents, args.item_rewards, args.reward_capacity, args.quest_offers, interface_exit=args.interface_exit, fantasy_ui=args.fantasy_ui, ui_scale=args.ui_scale, ui_preferences=args.ui_preferences), indent=2))
