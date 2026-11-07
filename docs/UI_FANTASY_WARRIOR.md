@@ -1586,3 +1586,29 @@ separate earlier fixture; native Windows, monitor DPI and frame-rate/crowd
 benchmarks remain distinct. The current optimized binary is being checked with
 the same full panel walkthrough before the next frozen playable checkpoint.
 Fifteen accepted native starts cover the consecutive 7 November slices so far.
+
+
+## Optimized playtest checkpoint — 7 November 2026
+
+`build/ui-native-20261107/connected-v8/verification.json` passes the optimized
+client's full existing reader/loot/backpack/32-offer/fixed-reward flow at
+1920×1200 / 125% UI and PostgreSQL restart/fresh login. Both starts have zero GPU
+diagnostics on the recorded RX 7900 XTX / RADV Vulkan device. This supplements
+the three-size current-source debug replay; all four earlier qualified packs
+remain intact. The same controlled guaranteed-loot/low-damage fixture is used.
+
+`build/local-play-release-20261107-v3` freezes those release binaries, copied
+qualified player/wolf art, source identity and SHA-256 metadata. Its client
+runtime source is `16b57ec`; later documentation-only commits do not change the
+binary. The pack includes saved size/error retry, focus guards, readable combat
+history, expanded tooltips, XP feedback and corrected connection hints. It
+predates the subsequent visible Interface Exit control. The normal launcher
+still reads selected repository content at launch; this pack freezes binaries
+and copied art, and does not claim to freeze a later content edit.
+
+The build completes in 1m11s (`release-final-v1.log`); this is compilation time.
+Seventeen accepted native starts now cover the consecutive UI slices. Exact
+current-source debug/release panel proof is in v7/v8, feature-specific checks
+are scoped in v2–v6, and diagnostic v1 remains unaccepted. Native Windows,
+non-unit monitor DPI, capacity/crowd/FPS qualification and full theme adoption
+remain separate. No push or deployment was performed.

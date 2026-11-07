@@ -1,3 +1,15 @@
+# Current optimized UI playtest pack — 7 November 2026
+
+Use `build/local-play-release-20261107-v3` for the current preserved checkpoint.
+It includes saved UI-size/error retry, focus guards, expanded ability tooltips,
+readable combat history, floating XP and corrected connection hints. Release
+binaries and copied player/wolf art are frozen with SHA-256 metadata; client
+runtime source is `16b57ec`. Full controlled native panel/rejoin replay passes
+with the optimized client at 1920×1200 and the debug client at three sizes.
+See [UI qualification](UI_FANTASY_WARRIOR.md#optimized-playtest-checkpoint--7-november-2026).
+The separate Interface Exit control is in progress and is not in this pack.
+Existing packs remain intact. Local commits only; no push. Desktop use authorized.
+
 # Qualified optimized UI checkpoint — 7 November 2026
 
 `build/local-play-release-20261107-v2` preserves source `c05ac56`, with release

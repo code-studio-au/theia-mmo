@@ -1,21 +1,21 @@
-Optimized UI follow-up, 7 November 2026 (P2-05/11/14 / P5-13):
-The 1280×720 optimized journal flow and PostgreSQL restart/fresh login pass.
-Darker combat-history background improves bright-terrain readability; the
-metric tooltip fits. Background I/F10/1 delivered to a separate test-owned
-window causes no game action or replay after refocusing. Five native starts
-across three sizes now have zero RX 7900 XTX / RADV Vulkan diagnostics.
-[Exact scope and pending checks](../UI_FANTASY_WARRIOR.md#optimized-small-window-and-focus-follow-up).
-Continue locally; no push. Desktop input/display remain authorized.
-Same-size preference-save retry also passes the actual failed-file/repaired-file
-widget flow and PostgreSQL rejoin at 1280×720 (two further zero-diagnostic starts).
-219 client tests, formatting, strict Clippy and build pass. The preserved optimized
-v2 pack at c05ac56 predates retry; the current retry native run uses a debug client.
-Live committed quest/kill XP cues, expiry and no-award-on-rejoin now pass at
-1920×1200 / 125% UI in connected-v5; two more starts have zero GPU diagnostics.
-Only opt-in read-only label telemetry changed; progression behavior is unchanged.
-Connection hints now respect Classic Escape behavior; real owned-server timeout
-HUD/input checks pass at 1280×720. The full reader/loot/backpack/32-offer/reward panel replay now passes at all three
-sizes and after PostgreSQL restart/fresh login; optimized replay is in progress.
+General UI checkpoint, 7 November 2026 (P2-02/05/11/14 / P3-06 / P5-13/19):
+Saved Interface size and failed-save retry, configured metric ability tooltips,
+bounded combat history, focused fresh input and live committed XP cues are
+implemented. Current-source reader/loot/backpack/32-offer/reward flows pass at
+1280×720, 1920×1200 and 3440×1440 with PostgreSQL restart/fresh login. The optimized
+1920×1200 replay/rejoin also passes. Seventeen accepted native starts across
+these consecutive slices have zero RX 7900 XTX / RADV Vulkan GPU diagnostics.
+The preserved optimized `build/local-play-release-20261107-v3` contains client
+runtime source `16b57ec`, copied qualified local model art and binary hashes.
+219 full client cases, 53 launcher checks, ten core ability cases, formatting,
+strict Clippy and builds are the recorded source prerequisites; later focused
+native/XP checks retain their exact scope. [Evidence and limits](../UI_FANTASY_WARRIOR.md#optimized-playtest-checkpoint--7-november-2026).
+Windows, non-unit monitor DPI, capacity/crowd/FPS qualification and complete theme
+adoption remain open; the skin stays opt-in. A visible Interface Exit control is
+a subsequent slice in progress and is not included in this frozen v3 pack.
+**Continue implementation and local commits only; no push. Mouse, keyboard and
+display access are authorized by the latest user instruction.**
+
 
 Connected general UI checks, 7 November 2026 (P2-05/11/14 / P3-06 / P5-13):
 Desktop access was restored by the user. Saved Interface size, ability tooltip,
