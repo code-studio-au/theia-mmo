@@ -115,6 +115,13 @@ impl Ability {
     pub fn range_metres(&self) -> f64 {
         self.range_metres
     }
+    /// Authored time for presentation; simulation uses tick-rounded Catalog::timing.
+    pub fn cast_duration(&self) -> Duration {
+        Duration::from_millis(u64::from(self.cast_ms))
+    }
+    pub fn cooldown_duration(&self) -> Duration {
+        Duration::from_millis(u64::from(self.cooldown_ms))
+    }
     pub fn cast_while_moving(&self) -> bool {
         self.cast_while_moving
     }

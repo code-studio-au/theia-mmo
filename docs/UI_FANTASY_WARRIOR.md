@@ -1135,3 +1135,34 @@ passes. Earlier v1 failures were corrected and are not accepted evidence.
 No window, display, mouse or keyboard was used. Native text/layout/input, Windows
 execution and abrupt-exit behavior remain unverified. This extends the earlier
 session-only decision; it does not promote the opt-in skin to fully qualified.
+
+
+## Ability requirement tooltips — 7 November 2026
+
+P2-14 / P3-06, prerequisite: validated selected ability catalogue and existing
+hover/state presentation. The opt-in action-bar tooltips now include mana when
+nonzero, metric maximum/minimum range, authored cast time, nonzero ability
+cooldown, global-cooldown participation, stationary-cast and frontal-facing
+requirements. Dynamic loading/target/life/cooldown status remains the final line.
+Instant abilities say Instant. Legacy unskinned action labels are unchanged.
+No damage estimate is shown: additional server damage profiles and defences can
+change the authored base effect. Eligibility text never guarantees a hit or
+readiness, and hover never submits an action.
+
+Two read-only core duration accessors expose the authored millisecond values;
+simulation continues using the existing rounded tick timing. The fractional
+1,001-ms test remains 1.001 seconds in the tooltip and 31 ticks at 30 Hz. Common
+metric values retain their precision; sub-millimetre hints use compact scientific
+notation. This does not adopt a new Classic formula, balance value or unit mapping.
+
+Three new headless cases exercise spell/melee requirements, nonzero minimum
+range and timing/movement/facing alternatives, plus the actual hovered Bevy widget
+and live-model status replacement without command input. All 201 client cases
+including local art and ten core ability cases pass; formatting, denied-warning
+workspace/all-target Clippy and client build pass. Evidence (ignored):
+`build/ability-tooltips-20261107/{client-v3.log,abilities-v1.log,clippy-v3.log,
+build-v1.log,fmt-v1.log}`. An initial test used the wrong TickRate constructor;
+it was corrected before accepted checks. No display/window or OS input was used.
+The larger text's native layout/hover, DPI, Windows and GPU checks are deferred
+under the user's current restriction. Earlier shorter-tooltip GPU evidence does
+not qualify the expanded tooltip. The skin remains opt-in.

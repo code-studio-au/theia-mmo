@@ -1,4 +1,5 @@
 //! Standard Bevy widgets and bounded, server-derived progress. No gameplay authority.
+mod tooltip;
 use super::Config;
 use bevy::{
     picking::hover::Hovered,
@@ -595,8 +596,6 @@ fn paint(
     for (mut label, action, cast, player_health, mana, life) in &mut labels {
         let value = if let Some(action) = action {
             let ability = &config.0.abilities()[action.0];
-            let name = ability_name(ability.id().as_str());
-            let key = key_label(action.0);
             let state = if !model.connected {
                 "Disconnected / loading"
             } else if model.life_blocked {
@@ -609,11 +608,17 @@ fn paint(
                     .get(action.0)
                     .map_or(model.action.as_str(), |a| a.status.as_str())
             };
-            let cost = ability.mana_cost();
-            if cost > 0 {
-                format!("[{key}] {name}\n{cost} mana | {state}")
+            if skin.is_some() {
+                tooltip::describe(ability, key_label(action.0), state)
             } else {
-                format!("[{key}] {name}\n{state}")
+                let name = ability_name(ability.id().as_str());
+                let key = key_label(action.0);
+                let cost = ability.mana_cost();
+                if cost > 0 {
+                    format!("[{key}] {name}\n{cost} mana | {state}")
+                } else {
+                    format!("[{key}] {name}\n{state}")
+                }
             }
         } else if cast.is_some() {
             model.status.clone()
@@ -831,6 +836,58 @@ mod tests {
             None,
             "Retained legacy presentation keeps five keys"
         );
+    }
+    #[test]
+    fn actual_hovered_widget_updates_tooltip_status_without_submitting_an_ability() {
+        let mut app = widget_app(true);
+        app.update();
+        let button = app
+            .world_mut()
+            .query::<(Entity, &ActionButton)>()
+            .iter(app.world())
+            .find(|(_, action)| action.0 == 0)
+            .unwrap()
+            .0;
+        app.world_mut().entity_mut(button).insert(Hovered(true));
+        app.update();
+        {
+            let world = app.world_mut();
+            let (_, text, node) = world
+                .query::<(&ActionLabel, &Text, &Node)>()
+                .iter(world)
+                .find(|(label, _, _)| label.0 == 0)
+                .unwrap();
+            assert!(text.0.contains("30 m range") && text.0.ends_with("Disconnected / loading"));
+            assert_eq!(node.display, Display::Flex);
+        }
+        {
+            let mut model = app.world_mut().resource_mut::<Model>();
+            model.connected = true;
+            model.has_target = true;
+            model.actions = vec![Action {
+                cooldown: 0.5,
+                status: "Cooldown 1.0s".into(),
+            }];
+        }
+        app.update();
+        let world = app.world_mut();
+        let (_, text) = world
+            .query::<(&ActionLabel, &Text)>()
+            .iter(world)
+            .find(|(label, _)| label.0 == 0)
+            .unwrap();
+        assert!(text.0.ends_with("Cooldown 1.0s"));
+        assert!(world.resource::<Input>().0.is_none());
+        assert!(world.resource::<WidgetPending>().0.is_none());
+        let mut legacy = widget_app(false);
+        legacy.update();
+        let world = legacy.world_mut();
+        let (_, text) = world
+            .query::<(&ActionLabel, &Text)>()
+            .iter(world)
+            .find(|(label, _)| label.0 == 0)
+            .unwrap();
+        assert_eq!(text.0, "[1] Arcane Bolt\n25 mana | Disconnected / loading");
     }
     fn widget_app(skin: bool) -> App {
         let mut app = App::new();

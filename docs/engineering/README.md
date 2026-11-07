@@ -1,3 +1,11 @@
+Headless ability tooltip candidate, 7 November 2026 (P2-14 / P3-06):
+Opt-in action-bar hover text now shows configured metric range, mana, authored
+cast/cooldown time and casting/facing requirements. Three new headless checks
+include actual widget/model integration and no hover commands. 201 client and
+ten core ability cases, formatting, strict all-target workspace Clippy and client
+build pass. Expanded native/GPU text layout remains deferred; no display or OS
+input was used. Continue implementation with local commits only; no push.
+
 Headless development resumed, 7 November 2026 (P2-14):
 The user has resumed implementation with local commits only and explicitly
 forbidden mouse, keyboard and display use. This supersedes earlier desktop
