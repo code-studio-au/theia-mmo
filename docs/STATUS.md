@@ -3,17 +3,17 @@ Saved Interface size and failed-save retry, configured metric ability tooltips,
 bounded combat history, focused fresh input and live committed XP cues are
 implemented. Current-source reader/loot/backpack/32-offer/reward flows pass at
 1280×720, 1920×1200 and 3440×1440 with PostgreSQL restart/fresh login. The optimized
-1920×1200 replay/rejoin also passes. Seventeen accepted native starts across
+1920×1200 replay/rejoin also passes. Twenty-four accepted native starts across
 these consecutive slices have zero RX 7900 XTX / RADV Vulkan GPU diagnostics.
-The preserved optimized `build/local-play-release-20261107-v3` contains client
-runtime source `16b57ec`, copied qualified local model art and binary hashes.
+The preserved optimized `build/local-play-release-20261107-v4` contains client
+runtime source `c6a51e8`, copied qualified local model art and binary hashes.
 220 full client cases, 53 launcher checks, ten core ability cases, formatting,
 strict Clippy and builds are the recorded source prerequisites; later focused
 native/XP checks retain their exact scope. [Evidence and limits](UI_FANTASY_WARRIOR.md#optimized-playtest-checkpoint--7-november-2026).
 Windows, non-unit monitor DPI, capacity/crowd/FPS qualification and complete theme
 adoption remain open; the skin stays opt-in. A visible Interface Exit control now
-passes native three-size shutdown and durable rejoin checks; it is not included
-in the frozen v3 pack. Twenty-two native starts cover the consecutive slices.
+passes native three-size shutdown and durable rejoin checks, and optimized
+1280×720 saved-size, real-timeout and Exit checks. It is included in frozen v4.
 **Continue implementation and local commits only; no push. Mouse, keyboard and
 display access are authorized by the latest user instruction.**
 

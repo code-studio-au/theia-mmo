@@ -23,7 +23,8 @@ below retain their historical implementation and qualification scope; use STATUS
 for the current repository checkpoint.
 F10/Interface now offers Exit game through the normal Bevy shutdown path. It
 requires a focused open pane; native small/ultrawide exit and database rejoin pass.
-The preserved optimized v3 pack predates this Exit control.
+The preserved optimized v4 pack includes Exit, with an actual timeout-to-Exit
+check after database rejoin at 1280×720.
 
 Historical implementation checkpoint, 1 November 2026: the [qualified `--classic` profile](CLASSIC_MOVEMENT.md)
 now supplies the manual movement/camera controls below, disables action camera

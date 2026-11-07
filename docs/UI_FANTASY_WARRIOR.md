@@ -1659,3 +1659,29 @@ python3 tools/qualify_quest_journal_os.py build/fresh-ui-exit-check \
   --documents --item-rewards --quest-offers --interface-exit \
   --gameplay-manifest content/development-gameplay-classic-item-rewards-fixture.json
 ```
+
+
+### Optimized Exit and frozen v4 checkpoint
+
+`build/ui-native-20261107/connected-v11/verification.json` passes the optimized
+client at 1280×720 / 125% preferred (100% fitted), followed by PostgreSQL restart
+and fresh login. Actual Interface changes save 100%, then 125%, through the
+checked-in preference option. Live XP/quest/combat/minimap checks pass. After
+rejoin the test pauses its owned server until actual timeout, resumes it in
+`finally`, opens Interface while disconnected and clicks Exit. Both launchers
+exit with code zero and both starts have zero RX 7900 XTX / RADV Vulkan GPU
+diagnostics. This closes the real-timeout-to-Exit check on the optimized client.
+
+The preserved `build/local-play-release-20261107-v4` contains client runtime
+source `c6a51e8`, release server/validator, copied qualified local art and SHA-256
+metadata. It includes the visible Exit control. Earlier packs remain unchanged;
+selected repository content is still read at launch. Twenty-four accepted native
+starts cover the consecutive slices; current-source full-panel debug, earlier
+full-panel optimized and optimized timeout/Exit proofs retain their exact scope.
+`release-exit-v1.log` records the 1m04s optimized compilation. Native Windows,
+monitor DPI, performance/crowd and production logout behavior remain separate.
+
+The next frame slice will use authoritative progression levels. Character display
+names are stored by the account/persistence service but are not yet replicated
+in admitted gameplay snapshots. Proper bounded identity replication remains a
+separate follow-up; UI must not invent names or trust a local launcher argument.

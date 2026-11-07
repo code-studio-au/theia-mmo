@@ -6,7 +6,9 @@ loot, backpack, 32-offer/reward and PostgreSQL rejoin replay passes at 1280×720
 1920×1200 and 3440×1440. Exact checkpoints, fixtures and limitations:
 [general UI record](../UI_FANTASY_WARRIOR.md#current-source-panel-replay--7-november-2026).
 Optimized full replay and rejoin pass at 1920×1200; frozen v3 contains runtime
-source 16b57ec. Windows/DPI/performance and complete theme adoption remain open. Local commits only; desktop input/display authorized.
+source 16b57ec. The newer v4/c6a51e8 pack includes visible Interface Exit and
+optimized timeout-to-Exit proof. Windows/DPI/performance and complete theme
+adoption remain open. Local commits only; desktop input/display authorized.
 Numbered source-task statuses below retain their imported baseline meaning.
 
 Normal quest-only loot qualified locally, 5 November 2026:
