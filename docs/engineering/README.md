@@ -1,8 +1,8 @@
 Headless general UI continuation, 7 November 2026 (P2-05/11/14 / P3-06 / P5-13):
 Implemented optional saved interface size, configured metric ability tooltips,
 a six-message received combat log and focused-window guards for ability, world-
-click, backpack, corpse-loot and reader input. The actual Interface buttons/painter/I/O save-and-fit flow passes
-headlessly. 217 client cases, 53 launcher checks, ten core ability cases,
+click, backpack, corpse-loot, reader and Interface input. The actual Interface buttons/painter/I/O save-and-fit flow passes
+headlessly. 218 client cases, 53 launcher checks, ten core ability cases,
 formatting, strict workspace/all-target Clippy and builds pass. Nine actual
 client configuration preflights pass with unchanged gameplay identity and no
 App/network/renderer startup.

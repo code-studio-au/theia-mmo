@@ -1,16 +1,18 @@
 Focus handling, 7 November 2026 (P2-05 / P2-11/14 / P3-05/06/09):
-Ability, world-click, backpack, corpse-loot and reader input require one focused game
+Ability, world-click, backpack, corpse-loot, reader and Interface input require
+one focused game
 Window. New unfocused choices are discarded; focus loss alone does not cancel
 persistent selection/autoattack or already accepted transaction work. Existing
 Loot All intent can continue serial pickups; matching read replies still open.
-217 client cases, formatting,
+218 client cases, formatting,
 strict Clippy and build pass. Native/connected focus-ordering remains pending.
 No desktop/display or OS input was used. Local commits only; no push.
 [Ability](UI_FANTASY_WARRIOR.md#ability-input-focus-guard--7-november-2026),
 [world clicks](UI_FANTASY_WARRIOR.md#world-click-focus-boundary--7-november-2026),
 [backpack](UI_FANTASY_WARRIOR.md#backpack-focus-handling--7-november-2026),
 [loot](UI_FANTASY_WARRIOR.md#corpse-loot-focus-handling--7-november-2026),
-[reader](UI_FANTASY_WARRIOR.md#reader-focus-handling--7-november-2026).
+[reader](UI_FANTASY_WARRIOR.md#reader-focus-handling--7-november-2026),
+[Interface](UI_FANTASY_WARRIOR.md#interface-widget-focus-handling--7-november-2026).
 The optimized d9df562 pack predates the later panel-focus follow-ups. The dated notes
 below retain their historical implementation and qualification scope; use STATUS
 for the current repository checkpoint.

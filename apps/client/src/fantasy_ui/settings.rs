@@ -145,10 +145,14 @@ fn activate(
     controls: Query<&Control>,
     mut ui: ResMut<Ui>,
     mut preferred: ResMut<PreferredScale>,
+    windows: Query<&Window>,
 ) {
     let Ok(control) = controls.get(event.entity) else {
         return;
     };
+    if !windows.single().is_ok_and(|window| window.focused) {
+        return;
+    }
     match *control {
         Control::Toggle => ui.open = !ui.open,
         Control::Close if ui.open => {
@@ -219,6 +223,10 @@ mod tests {
     #[test]
     fn local_presets_require_an_open_panel_and_leave_preferences_in_bounds() {
         let mut app = App::new();
+        app.world_mut().spawn(Window {
+            focused: true,
+            ..default()
+        });
         app.init_resource::<Ui>()
             .insert_resource(PreferredScale(1.));
         app.add_observer(activate);
@@ -247,6 +255,53 @@ mod tests {
             ),
             1.25
         );
+    }
+    #[test]
+    fn interface_widgets_require_one_focused_window_before_editing_preferences_or_panels() {
+        for count in [0, 1, 2] {
+            let mut app = App::new();
+            app.insert_resource(Ui {
+                open: true,
+                closed_this_frame: false,
+            })
+            .insert_resource(PreferredScale(1.))
+            .add_observer(activate);
+            for _ in 0..count {
+                app.world_mut().spawn(Window {
+                    focused: true,
+                    ..default()
+                });
+            }
+            let preset = app.world_mut().spawn(Control::Scale(125)).id();
+            let close = app.world_mut().spawn(Control::Close).id();
+            app.world_mut().trigger(Activate { entity: preset });
+            app.world_mut().trigger(Activate { entity: close });
+            assert_eq!(
+                app.world().resource::<PreferredScale>().0,
+                if count == 1 { 1.25 } else { 1. }
+            );
+            assert_eq!(app.world().resource::<Ui>().open, count != 1);
+        }
+        let mut app = App::new();
+        app.insert_resource(Ui {
+            open: true,
+            closed_this_frame: false,
+        })
+        .insert_resource(PreferredScale(1.))
+        .add_observer(activate);
+        let window = app
+            .world_mut()
+            .spawn(Window {
+                focused: false,
+                ..default()
+            })
+            .id();
+        let preset = app.world_mut().spawn(Control::Scale(150)).id();
+        app.world_mut().trigger(Activate { entity: preset });
+        assert_eq!(app.world().resource::<PreferredScale>().0, 1.);
+        app.world_mut().get_mut::<Window>(window).unwrap().focused = true;
+        app.world_mut().trigger(Activate { entity: preset });
+        assert_eq!(app.world().resource::<PreferredScale>().0, 1.5);
     }
     #[test]
     fn keyboard_does_not_open_settings_when_the_window_lacks_focus() {

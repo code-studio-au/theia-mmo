@@ -1,3 +1,13 @@
+## 2026-11-07 — focus gates fresh input, not accepted work
+
+Require one focused game Window for new ability/world/backpack/loot/reader/
+Interface input. Discard unsubmitted local choices on focus loss and do not
+replay them on return. Preserve persistent targets and autoattack, accepted
+transaction/reply processing, matching read completions and prior Loot All intent.
+Do not pause authoritative state receipt or reset gameplay just because focus
+changes. These current guards have headless regression coverage; actual native
+focus/event ordering remains pending while the user forbids desktop/input/display.
+
 ## 2026-11-07 — bounded received combat history in the opt-in HUD
 
 Use ordinary Bevy UI and a six-message local history to make received owner combat

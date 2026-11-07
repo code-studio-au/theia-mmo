@@ -1387,3 +1387,21 @@ build-v1.log,fmt-v1.log}`. The tests use virtual Windows and supplied completion
 facts, not live Renet/SQL or OS focus events. No display, native window, renderer
 or OS input was used. Native wheel/focus ordering and connected reader replay
 remain pending. The optimized d9df562 pack predates the later panel-focus changes.
+
+
+## Interface widget focus handling — 7 November 2026
+
+P2-05 / P2-14. Interface Toggle/Close/Scale widget activation now requires one
+focused Window, extending the existing F10/Escape keyboard rule. Ignored inactive
+clicks leave panel visibility and preferred size unchanged, so they cannot request
+a preference write. A fresh focused preset still applies. One new headless case
+covers absent/ambiguous/inactive windows and focused recovery; the earlier preset
+fixture now explicitly supplies its focused Window. The actual button/save/fit
+integration remains passing.
+
+All 218 client cases including local art, formatting, strict workspace/all-target
+Clippy and client build pass. Evidence (ignored):
+`build/interface-focus-20261107/{client-v1.log,clippy-v1.log,build-v1.log,
+fmt-v1.log}`. No native window, renderer, display or OS input was used. Native
+pointer/focus ordering remains pending; the optimized d9df562 pack predates this
+widget guard. Dialogue/quest-specific activation retains its separate behavior.
