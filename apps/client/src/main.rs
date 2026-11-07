@@ -1068,6 +1068,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "inventory_profile": inventory_profile.as_ref().map(|p|p.hash()),
                 "journal_profile": journal_profile.as_ref().map(|p|p.hash()),
                 "progression_profile": progression_profile.as_ref().map(|p|p.hash()),
+                "interface": {"enabled": fantasy_ui.is_some(), "preferred_scale": ui_scale, "saved_preferences": ui_preferences.is_some()},
                 "fixed_reward_catalog": journal_profile.as_ref().and_then(|p|p.item_rewards()).map(|r|r.id().as_str()),
                 "renderer_started": false, "network_started": false, "saved_state_admitted": false
             }))?

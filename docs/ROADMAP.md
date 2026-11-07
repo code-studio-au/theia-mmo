@@ -5,6 +5,8 @@ include actual widget/model integration and no hover commands. 201 client and
 ten core ability cases, formatting, strict all-target workspace Clippy and client
 build pass. Expanded native/GPU text layout remains deferred; no display or OS
 input was used. Continue implementation with local commits only; no push.
+Nine actual client configuration preflights now also verify saved UI preferences,
+refusals and unchanged gameplay identity without starting App/network/rendering.
 
 Headless development resumed, 7 November 2026 (P2-14):
 The user has resumed implementation with local commits only and explicitly

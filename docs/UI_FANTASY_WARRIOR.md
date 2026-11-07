@@ -1166,3 +1166,31 @@ it was corrected before accepted checks. No display/window or OS input was used.
 The larger text's native layout/hover, DPI, Windows and GPU checks are deferred
 under the user's current restriction. Earlier shorter-tooltip GPU evidence does
 not qualify the expanded tooltip. The skin remains opt-in.
+
+
+## Actual client preference preflight — 7 November 2026
+
+P2-14 / P5-20. Configuration-report mode now includes read-only interface enabled,
+preferred scale and preference-file-enabled values. They remain outside gameplay
+identity. The reusable `tools/qualify_ui_preferences.py` seals the normal schema-21
+bundle and invokes the actual built client parser nine times with display/service
+environment removed. It checks default/missing/saved/explicit-override precedence,
+duplicate flags, absent skin, unsupported version, invalid scale and oversized
+files. Every case leaves the preference file unchanged; positive cases report the
+same World identity and no renderer, networking or saved-state admission.
+
+All nine cases pass in ignored
+`build/ui-preferences-cli-20261107/actual-v2/verification.json`, including the
+client binary SHA-256. The tool requires an explicit prepared validator, built
+client, external HUD directory and existing baked terrain/navigation. Formatting,
+strict workspace/all-target Clippy, client build and Python byte compilation pass.
+No game, provider/database, window, renderer or desktop input was started. This
+is parser/configuration evidence; earlier actual I/O-pool tests establish saving,
+and native visual/interaction qualification remains pending.
+
+```bash
+python3 tools/qualify_ui_preferences.py \
+  --validator /path/to/validate_gameplay \
+  --fantasy-ui /path/to/FantasyWarriorHUD \
+  --output build/ui-preferences-fresh-check
+```
