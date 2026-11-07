@@ -1,3 +1,7 @@
+Current permission, updated 7 November 2026: the user restored desktop input
+and display access. Connected native UI qualification is in progress. Continue
+with local commits only; no push. Restrictions in older records below are historical.
+
 # Prepared optimized UI candidate — 7 November 2026
 
 An ignored frozen Linux pack is ready at `build/local-play-release-20261107-v1`,

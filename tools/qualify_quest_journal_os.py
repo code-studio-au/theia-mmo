@@ -300,10 +300,12 @@ def check_minimap(desktop, window, state, folder):
     old = state()['classic_facing']
     try:
         desktop.key_state('a', True)
-        time.sleep(.3)
+        # Keep the real key held until an authoritative turn is observed. A
+        # fixed short tap can fall between input samples during a debug/GPU
+        # hitch; waiting only after release cannot recover that missed sample.
+        turned = wait(lambda: state() if abs((state()['classic_facing']-old+32768)%65536-32768) > 1000 else None, 3)
     finally:
         desktop.key_state('a', False)
-    turned = wait(lambda: state() if abs((state()['classic_facing']-old+32768)%65536-32768) > 1000 else None)
     def agrees():
         s = state()
         radians = s['classic_facing']*math.tau/65536

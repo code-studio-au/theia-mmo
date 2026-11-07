@@ -1,3 +1,12 @@
+Connected general UI checks, 7 November 2026 (P2-05/11/14 / P3-06 / P5-13):
+Desktop access was restored by the user. Saved Interface size, ability tooltip,
+resize fitting, combat/quest flow and PostgreSQL restart/fresh login pass at
+1920×1200 and 3440×1440, with three native starts and zero GPU diagnostics.
+This qualifies the copied `9957e7d` debug client in a controlled journal fixture;
+optimized contrast and background-input checks are in progress. Windows and DPI
+remain pending. [Evidence and scope](UI_FANTASY_WARRIOR.md#connected-ui-qualification--7-november-2026).
+Continue implementation and local commits only; no push.
+
 Headless general UI continuation, 7 November 2026 (P2-05/11/14 / P3-06 / P5-13):
 Implemented optional saved interface size, configured metric ability tooltips,
 a six-message received combat log and focused-window guards for ability, world-
@@ -13,9 +22,10 @@ Its nine real CLI preflights also pass; the previous pack remains unchanged.
 This is a prepared build, not native UI/playability or FPS evidence. Native
 expanded tooltip/combat-log layout, input/focus/DPI/resize and Windows checks
 remain pending. The skin stays opt-in.
-**Current permission: continue implementation, commit locally only; no push. Do
-not use mouse, keyboard or display.** No game or services were launched. Earlier
-permission and safe-stop entries below describe their historical checkpoints.
+**Current permission, updated 7 November 2026: continue implementation and commit
+locally only; no push. The user restored mouse, keyboard and display access.**
+Connected native UI qualification is in progress; the headless checkpoint above
+did not launch a game or services. Earlier restrictions below are historical.
 
 Headless development resumed, 7 November 2026 (P2-14):
 The user has resumed implementation with local commits only and explicitly

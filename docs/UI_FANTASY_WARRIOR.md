@@ -1,6 +1,7 @@
-Current work permission, 7 November 2026: continue implementation and local
-commits only. **Do not use mouse, keyboard or display.** Native interaction and
-visual checks remain deferred; earlier desktop authorizations below are historical.
+Current work permission, updated 7 November 2026: continue implementation and
+local commits only; no push. The user restored mouse, keyboard and display access.
+Connected native checks of the new UI are in progress; earlier restrictions
+below describe their historical checkpoints.
 
 # General UI: Fantasy Warrior assets and Classic layout
 
@@ -10,8 +11,8 @@ The user moved development beyond quest mechanics to a general WoW-like UI.
 This first slice is an **opt-in presentation candidate**. The existing playable
 configuration remains available pending complete-theme qualification. The user
 authorized desktop/mouse checks for the completed native evidence below, then
-paused desktop/mouse tests again while using the machine. Continue headless only;
-prior permission statements below describe their historical checkpoints. The
+paused desktop/mouse tests again while using the machine. That restriction was lifted on 7 November; prior permission statements below
+describe their historical checkpoints. The
 unfinished optional full quest-log draft is parked locally; it is outside this UI slice.
 
 ## Adopted visual reference — 6 November 2026
@@ -1405,3 +1406,41 @@ Clippy and client build pass. Evidence (ignored):
 fmt-v1.log}`. No native window, renderer, display or OS input was used. Native
 pointer/focus ordering remains pending; the optimized d9df562 pack predates this
 widget guard. Dialogue/quest-specific activation retains its separate behavior.
+
+
+## Connected UI qualification — 7 November 2026
+
+P2-05 / P2-11 / P2-14 / P3-06 / P5-13. The user restored keyboard, mouse and
+display access. `build/ui-native-20261107/connected-v2/verification.json` passes
+actual local OIDC/PostgreSQL/Renet journal sessions at 1920×1200 and 3440×1440,
+then PostgreSQL restart and fresh login at 1920×1200. Both characters complete
+the two-quest flow and three wolf kills at journal revision 11 / XP 125. The
+returning character retains completion without fresh quest actions.
+
+The actual Interface widgets save 100%, then 125%, to the same opt-in preferences
+file. Every subsequent launch loads 125%. Resizing the 1920 window to 1280×720
+fits the display scale without changing saved preference bytes; restoring the
+window restores 125%. Captures show the saved hint and expanded Sword Slash
+metric range/cooldown/facing tooltip within the viewport. The combat history
+is visible during actual server combat; its pale background against bright
+terrain prompted a separate opacity improvement, not included in this run.
+
+Minimap pointer/wheel ownership, backpack accessibility, stable stationary tile
+counts, bounded raster updates and correspondence to authoritative keyboard
+turning pass. Three starts use AMD Radeon RX 7900 XTX / RADV NAVI31 / Vulkan /
+Mesa 26.2.6 kisak and have zero GPU diagnostics. This is a copied debug client at
+`9957e7d`, release server/validator from the retained candidate and a controlled
+low-damage/slow-pursuit journal fixture; it is not FPS or ordinary difficulty
+qualification. Binary hashes and fixture scope are retained in `source.json`.
+
+The preceding `connected-v1` is a diagnostic failure: the flow completed, but a
+fixed 0.3-second A-key turn tap was not observed. The native qualifier now holds
+the real key until authoritative heading changes, bounded to three seconds, and
+always releases it in `finally`. It retains the heading/arrow assertions and
+fails if no turn arrives. The subsequent complete v2 run passes. No gameplay
+movement or camera code changed to accommodate this check.
+
+The optimized small-window, darker combat log and background-keyboard checks
+remain in progress. Native Windows, non-unit monitor DPI, broader panel-focus
+ordering and full theme parity remain pending. Earlier headless-only restrictions
+in dated records describe their original checkpoint, not current permission.
