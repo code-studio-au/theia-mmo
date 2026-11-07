@@ -1,3 +1,13 @@
+## 2026-11-07 — bounded received combat history in the opt-in HUD
+
+Use ordinary Bevy UI and a six-message local history to make received owner combat
+outcomes readable in the bottom-left reference area. Filter unrelated actors,
+suppress duplicate/older batches and reuse existing own-life validation. Show
+server-resolved damage and reported overkill without recalculating a hit or
+calling resolved damage health lost. Keep chat and social systems separate.
+This presentation remains a candidate until native layout and event-flow checks
+are permitted; no display/input testing is authorized now.
+
 ## 2026-11-07 — explicit local interface preference persistence
 
 Extend the session-only scale panel with an optional `--ui-preferences FILE`.

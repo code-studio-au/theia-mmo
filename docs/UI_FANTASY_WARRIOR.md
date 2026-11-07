@@ -1194,3 +1194,40 @@ python3 tools/qualify_ui_preferences.py \
   --fantasy-ui /path/to/FantasyWarriorHUD \
   --output build/ui-preferences-fresh-check
 ```
+
+
+## Bounded local combat history candidate — 7 November 2026
+
+P2-14 / P3-06 / P5-13. The opt-in skin now has one small, noninteractive
+bottom-left Combat Log with the last six received owner-related damage,
+avoidance and cancellation messages. It starts hidden and clears on disconnected,
+invalid, changed-owner/epoch or changed-World context. It rejects duplicate/older
+batch sequences, and the existing own-life filter runs before history records.
+Only facts involving the owner are described. It does not claim a complete server
+combat archive or persist the history across reconnects; skipped batches remain
+absent. It adds no chat channel, input field, social feature or command producer.
+
+Modern facts show server-resolved damage, including separately reported overkill;
+legacy events show their reported damage amount. Neither is labelled health lost.
+For example, a received 100 starting / 50 resolved / 17 health-lost fact renders
+`You deal 50 damage (33 overkill).` Critical/block/glancing/crushing, avoidance and
+incoming/outgoing direction use the received outcome. Spell landing failures use
+the existing Resisted presentation; this does not add a school-resistance model.
+No RNG, damage arithmetic, mitigation, credit, XP or authority rules are changed.
+Projectile launches, cast starts, queues and unrelated actors do not flood history.
+
+The standard Bevy Node/Text uses the existing font pass, no new assets, one
+fixed-width 278-logical-pixel panel, at most six bounded messages and a 240-pixel
+height cap. It ignores picking so it does not acquire mouse/camera ownership.
+The unskinned HUD has no new visible panel. This is a candidate: native wrapping,
+visibility/overlap, scale/DPI, live event flow, GPU and Windows checks remain
+pending because the user forbids display/mouse/keyboard use. Prior HUD GPU checks
+do not qualify this new widget.
+
+Five new headless cases cover history bounds/batch replay/unrelated actors,
+context clearing, supplied outcome wording, actual resolved damage/overkill and
+owner cancellations, and shared Bevy widget update/hide without networking or
+input. All 206 client cases including local art, formatting, strict workspace/
+all-target Clippy and client build pass. Evidence (ignored):
+`build/combat-log-20261107/{client-v4.log,clippy-v4.log,build-v3.log,fmt-v1.log}`.
+No window, renderer, game services or desktop input were started for this slice.

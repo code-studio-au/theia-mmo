@@ -1,4 +1,4 @@
-Headless ability tooltip candidate, 7 November 2026 (P2-14 / P3-06):
+Headless general UI continuation, 7 November 2026 (P2-14 / P3-06 / P5-13):
 Opt-in action-bar hover text now shows configured metric range, mana, authored
 cast/cooldown time and casting/facing requirements. Three new headless checks
 include actual widget/model integration and no hover commands. 201 client and
@@ -7,6 +7,10 @@ build pass. Expanded native/GPU text layout remains deferred; no display or OS
 input was used. Continue implementation with local commits only; no push.
 Nine actual client configuration preflights now also verify saved UI preferences,
 refusals and unchanged gameplay identity without starting App/network/rendering.
+A bounded six-message owner combat-log candidate now records received damage,
+avoidance/cancellation and reported overkill. Five new headless cases bring the
+client suite to 206; strict Clippy and build pass. Native layout/event-flow checks
+remain deferred under the current no-display/input restriction. No game launched.
 
 Headless development resumed, 7 November 2026 (P2-14):
 The user has resumed implementation with local commits only and explicitly

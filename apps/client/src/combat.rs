@@ -1,4 +1,5 @@
 //! Small standard Bevy presentation of server combat; never computes damage.
+mod log;
 pub(crate) mod ui;
 use crate::network::Network;
 use bevy::{prelude::*, text::FontSize};
@@ -130,6 +131,7 @@ pub fn install(
     player_life: bool,
 ) {
     ui::install(app);
+    log::install(app);
     crate::combat_feedback::install(app);
     if catalog.abilities().iter().any(|a| a.projectile().is_some()) {
         crate::projectile_visual::install(app);
@@ -288,7 +290,7 @@ fn present(
         Option<Res<crate::world_input::Selection>>,
         Option<Res<crate::fantasy_ui::Skin>>,
     ),
-    mut metrics: ResMut<Metrics>,
+    (mut metrics, mut history): (ResMut<Metrics>, Option<ResMut<log::History>>),
     mut ui: ResMut<Ui>,
     (mut hud, mut panel): (Query<&mut Text, With<Hud>>, ResMut<ui::Model>),
     (
@@ -347,12 +349,18 @@ fn present(
     if input.0.is_some() && !network.can_act() {
         metrics.blocked_life_casts += 1;
     }
+    if let Some(history) = &mut history {
+        history.begin(&state);
+    }
     for _ in 0..16 {
         let Some(batch) = network.next_combat_events() else {
             break;
         };
         if batch.sequence != metrics.last_batch + 1 {
             metrics.event_gaps += 1;
+        }
+        if let Some(history) = &mut history {
+            history.batch(batch.sequence);
         }
         metrics.last_batch = batch.sequence;
         metrics.event_batches += 1;
@@ -364,6 +372,9 @@ fn present(
                     metrics.stale_physical_cosmetics += 1;
                 }
                 continue;
+            }
+            if let Some(history) = &mut history {
+                history.offer(&event);
             }
             if let Some(attacks) = &mut attacks {
                 match &event {
