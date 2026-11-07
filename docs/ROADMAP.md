@@ -1,3 +1,12 @@
+Optimized UI follow-up, 7 November 2026 (P2-05/11/14 / P5-13):
+The 1280×720 optimized journal flow and PostgreSQL restart/fresh login pass.
+Darker combat-history background improves bright-terrain readability; the
+metric tooltip fits. Background I/F10/1 delivered to a separate test-owned
+window causes no game action or replay after refocusing. Five native starts
+across three sizes now have zero RX 7900 XTX / RADV Vulkan diagnostics.
+[Exact scope and pending checks](UI_FANTASY_WARRIOR.md#optimized-small-window-and-focus-follow-up).
+Continue locally; no push. Desktop input/display remain authorized.
+
 Connected general UI checks, 7 November 2026 (P2-05/11/14 / P3-06 / P5-13):
 Desktop access was restored by the user. Saved Interface size, ability tooltip,
 resize fitting, combat/quest flow and PostgreSQL restart/fresh login pass at

@@ -1444,3 +1444,30 @@ The optimized small-window, darker combat log and background-keyboard checks
 remain in progress. Native Windows, non-unit monitor DPI, broader panel-focus
 ordering and full theme parity remain pending. Earlier headless-only restrictions
 in dated records describe their original checkpoint, not current permission.
+
+
+### Optimized small-window and focus follow-up
+
+`build/ui-native-20261107/connected-v3/verification.json` passes the optimized
+client at 1280×720 and fresh login after PostgreSQL restart. The saved 125%
+preference fits to 100% without rewriting the preferred value. Actual range/
+facing tooltip and combat-log captures remain inside the viewport. The combat
+log now uses 85% background opacity, raised from 35% after bright-terrain review;
+its six received messages and click-through behavior are unchanged.
+
+A second X11 window created and destroyed by the test receives I, F10 and 1 while
+the actual game reports unfocused. The backpack/Interface stay closed and ability
+keyboard-request counts stay unchanged. Restoring game focus produces no replay.
+This verifies background keyboard delivery at the OS boundary, not every possible
+focus transition or background pointer activation. Both starts have zero GPU
+diagnostics on the same RX 7900 XTX / RADV Vulkan device. Together v2/v3 provide
+five connected native starts across 1280×720, 1920×1200 and 3440×1440.
+
+Five existing combat-history regressions pass after the opacity adjustment,
+formatting and denied-warning workspace/all-target Clippy pass, Python syntax
+passes and the optimized client builds. Exact logs are under
+`build/ui-native-20261107/`: `combat-history-tests-v1.log`, `clippy-contrast-v1.log`,
+`release-contrast-v1.log`; binary identity is recorded in each run's `source.json`.
+This is controlled Linux UI qualification, not a frame-rate benchmark, native
+Windows/non-unit DPI result, broader inventory/document transaction replay or
+live XP-popup visibility proof. The optional skin remains a candidate.

@@ -255,7 +255,7 @@ fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
                 display: Display::None,
                 ..default()
             },
-            BackgroundColor(Color::srgba(0.02, 0.02, 0.02, 0.35)),
+            BackgroundColor(Color::srgba(0.02, 0.02, 0.02, 0.85)),
             GlobalZIndex(10),
         ))
         .with_child((
