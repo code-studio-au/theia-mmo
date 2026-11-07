@@ -1300,7 +1300,7 @@ pub fn present(
     if let Some(error) = &state.error {
         if let Ok(mut text) = hud.single_mut() {
             let value =
-                format!("THEIA\nDisconnected: {error}\nEsc: quit; restart client to reconnect");
+                format!("Disconnected: {error}\nClose this window and relaunch to reconnect.");
             if text.0 != value {
                 **text = value;
             }
@@ -1331,9 +1331,7 @@ pub fn present(
                 if fantasy_skin.is_some() {
                     "Loading world and characters...".into()
                 } else {
-                    format!(
-                        "THEIA\nPlayer {id} | connected\nLoading world and characters...\nEsc: quit"
-                    )
+                    format!("THEIA\nPlayer {id} | connected\nLoading world and characters...")
                 }
             } else if fantasy_skin.is_some() {
                 "Connected".into()

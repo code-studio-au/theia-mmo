@@ -1529,3 +1529,32 @@ regressions, formatting, denied-warning workspace/all-target Clippy and debug
 build pass. Exact logs: `build/ui-native-20261107/{xp-tests-v1.log,clippy-xp-v1.log,
 build-xp-v1.log,fmt-xp-v1.log}`. The prior 219-case full client result remains
 separate; nine accepted native starts cover the consecutive UI slices so far.
+
+
+## Connection-state instructions — 7 November 2026
+
+P2-02 / P2-14. Network startup/loading no longer advertise Escape as quit.
+Disconnected HUD text now tells the player to close the window and relaunch to
+reconnect; normal Classic Escape still closes panels or clears selection. The
+local offline sandbox retains its own actual quit hint. No automatic reconnect,
+new connection control or transport/gameplay behavior was added.
+
+`build/ui-native-20261107/connected-v6/verification.json` passes the controlled
+1280×720 journal/XP/combat flow, PostgreSQL restart and fresh login. After the
+resumed minimap checks, the qualifier pauses only its PID-verified owned server
+with SIGSTOP until the real transport reports timeout, and resumes it in
+`finally`. No firewall, shared networking or other process is changed. The actual
+HUD contains the relaunch instruction within 228×87 window pixels; the image
+shows the disconnected world/quest/vitals state. A new ability key produces no
+request; Escape keeps the Classic client open. Both starts have zero GPU
+diagnostics on the recorded RX 7900 XTX / RADV Vulkan adapter, and all owned
+services stop. Native Windows and reconnection UX remain separate.
+
+The opt-in telemetry now reads actual connection-HUD text and bounds. Formatting,
+strict workspace/all-target Clippy and debug build pass; logs are
+`build/ui-native-20261107/{fmt-disconnect-v1.log,clippy-disconnect-v2.log,
+build-disconnect-v1.log}`. The earlier full 219-case client pass remains the
+source prerequisite; this text/instrumentation slice is qualified through real
+native startup, connected and disconnected presentation. Eleven accepted native
+starts span the consecutive UI slices. The separate full panel replay on the
+current client is in progress.

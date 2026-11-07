@@ -120,7 +120,7 @@ pub fn setup(
         BackgroundColor(Color::srgba(0.02, 0.03, 0.05, 0.9)),
     )).with_child((
         NetworkHud,
-        Text::new(if network.is_some() { "THEIA\nConnecting to local server...\nEsc: quit" } else { "THEIA\nLocal movement sandbox\nWASD / arrows: move | Shift: run | Space: jump\nR: reset | Esc: quit\nHold RMB: orbit | Wheel: zoom | Home: camera reset" }),
+        Text::new(if network.is_some() { "Connecting to server..." } else { "THEIA\nLocal movement sandbox\nWASD / arrows: move | Shift: run | Space: jump\nR: reset | Esc: quit\nHold RMB: orbit | Wheel: zoom | Home: camera reset" }),
         TextFont { font_size: FontSize::Px(18.), ..default() },
         TextColor(Color::WHITE),
     ));

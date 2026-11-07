@@ -286,6 +286,23 @@ fn os_trace(world: &mut World) {
                 .map_or(1., |scale| scale.0)
         );
         data["interface"] = crate::fantasy_ui::settings::snapshot(world);
+        data["connection_hud"] = world
+            .query_filtered::<
+                (&Text, &ComputedNode, &bevy::ui::UiGlobalTransform),
+                With<crate::scene::NetworkHud>,
+            >()
+            .iter(world)
+            .map(|(text, node, transform)| {
+                let factor = crate::fantasy_ui::window_factor(
+                    node,
+                    world.resource::<bevy::ui::UiScale>().0,
+                );
+                let centre = transform.affine().translation * factor;
+                let size = node.size() * factor;
+                serde_json::json!({"text":text.0,"bounds":[centre.x-size.x/2.,centre.y-size.y/2.,size.x,size.y]})
+            })
+            .collect::<Vec<_>>()
+            .into();
         // Read the actual reusable label, not a manufactured progression cue.
         // This path runs only in the explicit OS-input qualification mode.
         let ui_scale = world.resource::<bevy::ui::UiScale>().0;

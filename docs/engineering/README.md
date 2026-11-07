@@ -13,6 +13,8 @@ v2 pack at c05ac56 predates retry; the current retry native run uses a debug cli
 Live committed quest/kill XP cues, expiry and no-award-on-rejoin now pass at
 1920×1200 / 125% UI in connected-v5; two more starts have zero GPU diagnostics.
 Only opt-in read-only label telemetry changed; progression behavior is unchanged.
+Connection hints now respect Classic Escape behavior; real owned-server timeout
+HUD/input checks pass at 1280×720. Full three-resolution panel replay is running.
 
 Connected general UI checks, 7 November 2026 (P2-05/11/14 / P3-06 / P5-13):
 Desktop access was restored by the user. Saved Interface size, ability tooltip,
