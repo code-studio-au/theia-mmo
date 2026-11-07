@@ -195,3 +195,12 @@ The small fixtures and debug/optimized starts are functional UI evidence, not
 MMO population/FPS, native Windows or non-unit monitor DPI qualification. Name
 policy remains 3–20 ASCII characters, and gameplay names are not yet shown as
 other-player nameplates or target labels.
+
+
+The optimized paired protocol13 build is preserved at
+`build/local-play-release-20261108-v1` (runtime source `2930fa4`). Its build.json
+records SHA256 hashes for client/server/validator, copied qualified local art and
+the exact debug/optimized native evidence. Launch with an explicit `--binaries`
+path through the existing local launcher. Repository-selected content is still
+read at launch; this freezes binaries/art, not an entire world/content release.
+The previous v5 pack is unchanged.

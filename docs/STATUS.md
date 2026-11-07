@@ -1,3 +1,10 @@
+Optimized identity checkpoint, 8 November 2026:
+Preserved `build/local-play-release-20261108-v1`, runtime `2930fa4`, paired
+protocol13 client/server/validator and copied private qualified art. Build hashes
+and six final native starts are recorded in [the identity record](PLAYER_DISPLAY_IDENTITY.md#integrated-qualification--8-november-2026).
+Next bounded UI work is the ability book/action-bar workflow; current configured
+development abilities are not a persistent learned-skill/class-unlock system.
+
 Implementation resumed, 8 November 2026 (P2-03 / P3-01 / P2-14 / P5-13):
 The user restored ongoing implementation, local commits and desktop access.
 SQL-selected player names now cross the authorized lease and reliable Renet view;
