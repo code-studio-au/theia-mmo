@@ -72,6 +72,12 @@ struct Pending {
     previous: bool,
     close: bool,
 }
+impl Pending {
+    fn take_focused(&mut self, focused: bool) -> Self {
+        let input = std::mem::take(self);
+        if focused { input } else { Self::default() }
+    }
+}
 #[derive(Component, Clone, Copy)]
 enum Action {
     Read,
@@ -311,6 +317,7 @@ fn selected(profile: &Profile, bag: &Bag, slot: u8) -> Option<u8> {
         .position(|d| d.id() == document.id())
         .and_then(|i| u8::try_from(i).ok())
 }
+#[allow(clippy::too_many_arguments)]
 fn activate(
     event: On<Activate>,
     actions: Query<&Action>,
@@ -319,10 +326,15 @@ fn activate(
     inventory: Res<inventory::Ui>,
     network: Res<Network>,
     config: Res<Config>,
+    windows: Query<&Window>,
 ) {
     let Ok(action) = actions.get(event.entity) else {
         return;
     };
+    if !windows.single().is_ok_and(|window| window.focused) {
+        *pending = Pending::default();
+        return;
+    }
     match action {
         Action::Read => {
             if !inventory.open
@@ -379,9 +391,11 @@ pub(crate) fn close_panel(
     keys: Res<ButtonInput<KeyCode>>,
     mut ui: ResMut<Ui>,
     interface: Option<Res<crate::fantasy_ui::settings::Ui>>,
+    windows: Query<&Window>,
 ) {
     ui.closed_this_frame = false;
-    if keys.just_pressed(KeyCode::Escape)
+    if windows.single().is_ok_and(|window| window.focused)
+        && keys.just_pressed(KeyCode::Escape)
         && !crate::fantasy_ui::settings::owns_escape(interface.as_deref())
         && (ui.open || ui.waiting.is_some())
     {
@@ -395,8 +409,9 @@ fn present(
     mut pending: ResMut<Pending>,
     mut ui: ResMut<Ui>,
     mut scrolls: Query<&mut ScrollPosition, With<BodyScroll>>,
+    windows: Query<&Window>,
 ) {
-    let input = std::mem::take(&mut *pending);
+    let input = pending.take_focused(windows.single().is_ok_and(|window| window.focused));
     if !network.connected() || !inventory.open {
         ui.close();
         return;
@@ -546,6 +561,7 @@ fn scroll(
     mut events: MessageReader<bevy::input::mouse::MouseWheel>,
     ui: Res<Ui>,
     mut panes: Query<(&Hovered, &mut ScrollPosition, &ComputedNode), With<BodyScroll>>,
+    windows: Query<&Window>,
 ) {
     let delta: f32 = events
         .read()
@@ -557,7 +573,7 @@ fn scroll(
             }
         })
         .sum();
-    if ui.open && delta != 0. {
+    if windows.single().is_ok_and(|window| window.focused) && ui.open && delta != 0. {
         for (hovered, mut position, node) in &mut panes {
             if !hovered.0 {
                 continue;
@@ -661,6 +677,69 @@ mod tests {
         assert!(!ui.open);
         assert_eq!(ui.rejected, 1);
         assert_eq!(ui.approved, 0);
+    }
+    #[test]
+    fn unfocused_escape_retains_accepted_read_and_matching_answer_still_opens_it() {
+        let mut app = App::new();
+        app.insert_resource(Ui {
+            waiting: Some(command()),
+            ..default()
+        })
+        .init_resource::<ButtonInput<KeyCode>>()
+        .add_systems(Update, close_panel);
+        let window = app
+            .world_mut()
+            .spawn(Window {
+                focused: false,
+                ..default()
+            })
+            .id();
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .press(KeyCode::Escape);
+        app.update();
+        assert_eq!(app.world().resource::<Ui>().waiting, Some(command()));
+        assert!(!app.world().resource::<Ui>().closed_this_frame);
+        let profile = profile();
+        let answer = Completion {
+            command: command(),
+            profile_hash: profile.hash(),
+            outcome: Outcome::Applied,
+        };
+        assert!(
+            app.world_mut()
+                .resource_mut::<Ui>()
+                .answer(&profile, answer)
+        );
+        app.update();
+        assert!(app.world().resource::<Ui>().open);
+        assert_eq!(app.world().resource::<Ui>().approved, 1);
+        app.world_mut().get_mut::<Window>(window).unwrap().focused = true;
+        {
+            let mut keys = app.world_mut().resource_mut::<ButtonInput<KeyCode>>();
+            keys.release(KeyCode::Escape);
+            keys.clear();
+            keys.press(KeyCode::Escape);
+        }
+        app.update();
+        assert!(!app.world().resource::<Ui>().open);
+        assert!(app.world().resource::<Ui>().closed_this_frame);
+    }
+    #[test]
+    fn reader_pending_input_is_discarded_on_focus_loss_without_later_read_or_page_replay() {
+        let mut pending = Pending {
+            read: Some(command()),
+            next: true,
+            previous: true,
+            close: true,
+        };
+        let dropped = pending.take_focused(false);
+        assert!(dropped.read.is_none() && !dropped.next && !dropped.previous && !dropped.close);
+        let later = pending.take_focused(true);
+        assert!(later.read.is_none() && !later.next && !later.previous && !later.close);
+        pending.next = true;
+        assert!(pending.take_focused(true).next);
+        assert!(!pending.take_focused(true).next);
     }
     #[test]
     fn escape_closes_reader_before_loot_or_backpack() {

@@ -1,14 +1,14 @@
 Headless general UI continuation, 7 November 2026 (P2-05/11/14 / P3-06 / P5-13):
 Implemented optional saved interface size, configured metric ability tooltips,
 a six-message received combat log and focused-window guards for ability, world-
-click, backpack and corpse-loot input. The actual Interface buttons/painter/I/O save-and-fit flow passes
-headlessly. 215 client cases, 53 launcher checks, ten core ability cases,
+click, backpack, corpse-loot and reader input. The actual Interface buttons/painter/I/O save-and-fit flow passes
+headlessly. 217 client cases, 53 launcher checks, ten core ability cases,
 formatting, strict workspace/all-target Clippy and builds pass. Nine actual
 client configuration preflights pass with unchanged gameplay identity and no
 App/network/renderer startup.
 An optimized Linux candidate is frozen at `build/local-play-release-20261107-v1`
 (source `d9df562`), including copied qualified local model art and binary hashes.
-That frozen pack predates the later backpack/loot focus guards; its source is retained.
+That frozen pack predates later panel-focus guards; its source is retained.
 Its nine real CLI preflights also pass; the previous pack remains unchanged.
 This is a prepared build, not native UI/playability or FPS evidence. Native
 expanded tooltip/combat-log layout, input/focus/DPI/resize and Windows checks

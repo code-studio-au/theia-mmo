@@ -1366,3 +1366,24 @@ The earlier missing-Window fixture failure is not accepted evidence. No native
 window, renderer, display or OS input was used. These are UI/consumption-boundary
 cases, not live SQL pickup or native focus-ordering proof. The optimized d9df562
 pack predates the backpack and loot follow-ups and remains unchanged.
+
+
+## Reader focus handling — 7 November 2026
+
+P2-05 / P2-14. Reader Read/Next/Previous/Close activation, pending-input
+consumption, Escape and wheel scrolling now require one focused Window. New
+unsubmitted read/page/close choices are dropped on focus loss; wheel messages
+are still drained so they do not replay later. This preserves the current page
+and a previously submitted read's wait marker. Matching authoritative completion
+still opens the exact bound document while unfocused; received work is not paused.
+No document text, content identity, read-credit rule, quest or protocol changes.
+
+Two new headless cases exercise inactive Escape with an existing read followed
+by its real matching completion-handler path, fresh focused closing, and pending
+read/page/close discard without later replay. All 217 client cases including
+local art, formatting, strict workspace/all-target Clippy and client build pass.
+Evidence (ignored): `build/reader-focus-20261107/{client-v1.log,clippy-v1.log,
+build-v1.log,fmt-v1.log}`. The tests use virtual Windows and supplied completion
+facts, not live Renet/SQL or OS focus events. No display, native window, renderer
+or OS input was used. Native wheel/focus ordering and connected reader replay
+remain pending. The optimized d9df562 pack predates the later panel-focus changes.
