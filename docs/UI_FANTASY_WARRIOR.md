@@ -1504,3 +1504,28 @@ The frozen optimized `build/local-play-release-20261107-v2` is preserved at
 and darker combat log, and predates this retry change. Seven accepted native
 starts now cover these consecutive slices; they remain controlled Linux UI
 proof, not a single-source full-theme, Windows, monitor-DPI or FPS benchmark.
+
+
+## Connected floating XP qualification — 7 November 2026
+
+P2-14 / P5-13. `build/ui-native-20261107/connected-v5/verification.json` passes
+the controlled journal, wolf-combat and PostgreSQL restart/fresh-login flow at
+1920×1200 with 125% UI. The actual singleton Bevy label is observed as `XP +25`
+after the committed first quest award (total XP 25) and first wolf kill (total
+XP 50). Both native captures show the purple text; actual window-coordinate
+bounds are 275×42 and inside the viewport. The same label becomes hidden with
+empty text after each award, before the walkthrough proceeds.
+
+Initial login has no cue. Fresh login after the database restart loads total
+XP 125 without a cue throughout the resumed interaction checks. Both starts
+have zero GPU diagnostics on RX 7900 XTX / RADV NAVI31 / Vulkan / Mesa 26.2.6.
+This adds live owner-award/fade/rejoin evidence to the earlier static previews;
+it does not demonstrate native XP placement at every scale or remote-player XP.
+
+Only opt-in OS-input qualification telemetry changed: it now reads actual label
+text, display state, alpha and computed window bounds. It never synthesizes an
+award or changes progression/popup behavior. Four existing progression-feedback
+regressions, formatting, denied-warning workspace/all-target Clippy and debug
+build pass. Exact logs: `build/ui-native-20261107/{xp-tests-v1.log,clippy-xp-v1.log,
+build-xp-v1.log,fmt-xp-v1.log}`. The prior 219-case full client result remains
+separate; nine accepted native starts cover the consecutive UI slices so far.

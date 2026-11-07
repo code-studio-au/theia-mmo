@@ -286,6 +286,31 @@ fn os_trace(world: &mut World) {
                 .map_or(1., |scale| scale.0)
         );
         data["interface"] = crate::fantasy_ui::settings::snapshot(world);
+        // Read the actual reusable label, not a manufactured progression cue.
+        // This path runs only in the explicit OS-input qualification mode.
+        let ui_scale = world.resource::<bevy::ui::UiScale>().0;
+        data["xp_popup"] = world
+            .query_filtered::<(
+                &Node,
+                &Text,
+                &TextColor,
+                &ComputedNode,
+                &bevy::ui::UiGlobalTransform,
+            ), With<crate::progression::feedback::Label>>()
+            .iter(world)
+            .map(|(node, text, color, computed, transform)| {
+                let factor = crate::fantasy_ui::window_factor(computed, ui_scale);
+                let centre = transform.affine().translation * factor;
+                let size = computed.size() * factor;
+                serde_json::json!({
+                    "text":text.0,
+                    "displayed":node.display != Display::None,
+                    "alpha":color.0.alpha(),
+                    "bounds":[centre.x-size.x/2.,centre.y-size.y/2.,size.x,size.y],
+                })
+            })
+            .collect::<Vec<_>>()
+            .into();
         data["ui_geometry_units"] = serde_json::json!("window_logical_pixels");
         data["ui_scroll_units"] = serde_json::json!("ui_logical_pixels");
         data["inventory_layout"] = inventory_layout(world);

@@ -10,6 +10,9 @@ Same-size preference-save retry also passes the actual failed-file/repaired-file
 widget flow and PostgreSQL rejoin at 1280×720 (two further zero-diagnostic starts).
 219 client tests, formatting, strict Clippy and build pass. The preserved optimized
 v2 pack at c05ac56 predates retry; the current retry native run uses a debug client.
+Live committed quest/kill XP cues, expiry and no-award-on-rejoin now pass at
+1920×1200 / 125% UI in connected-v5; two more starts have zero GPU diagnostics.
+Only opt-in read-only label telemetry changed; progression behavior is unchanged.
 
 Connected general UI checks, 7 November 2026 (P2-05/11/14 / P3-06 / P5-13):
 Desktop access was restored by the user. Saved Interface size, ability tooltip,
