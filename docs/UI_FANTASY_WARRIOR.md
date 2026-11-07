@@ -1558,3 +1558,31 @@ source prerequisite; this text/instrumentation slice is qualified through real
 native startup, connected and disconnected presentation. Eleven accepted native
 starts span the consecutive UI slices. The separate full panel replay on the
 current client is in progress.
+
+
+## Current-source panel replay — 7 November 2026
+
+P2-14 / P3-05 / P3-09 / P5-13 / P5-19.
+`build/ui-native-20261107/connected-v7/verification.json` passes the complete
+existing document/fixed-reward UI walkthrough on client source `16b57ec` at
+1280×720, 1920×1200 and 3440×1440, with 125% preferred UI (fitted at the smaller
+size). Actual OS input exercises corpse pickup, confirmed backpack items,
+preaccept read exclusion, two reader pages, loss of the required note and
+possession reversal, replacement pickup, turn-in consumption and two fixed
+Training Tokens. The 32-offer fixture scrolls to and accepts its final offer.
+At ultrawide scale the two-line reward text retains its 42-pixel layout height
+inside its clickable row. All three characters end at journal revision 9 / XP 75.
+
+Actual PostgreSQL restart/fresh login at 1280×720 restores completion,
+consumption and 103 reward tokens per retained character. The newer ability,
+world-click, bag, loot, reader and Interface focus guards coexist with this full
+focused interaction flow. Four starts have zero GPU diagnostics on RX 7900 XTX /
+RADV NAVI31 / Vulkan / Mesa 26.2.6. Exact copied binary hashes, source and fixture
+scope are in the run's `source.json`; original recipes/captures remain ignored.
+
+This is the controlled schema-21 guaranteed-loot/low-damage UI fixture. Ordinary
+random-drop content is retained separately. Capacity exhaustion retains its
+separate earlier fixture; native Windows, monitor DPI and frame-rate/crowd
+benchmarks remain distinct. The current optimized binary is being checked with
+the same full panel walkthrough before the next frozen playable checkpoint.
+Fifteen accepted native starts cover the consecutive 7 November slices so far.
