@@ -98,3 +98,24 @@ not qualification of the other skipped service suites.
 No name frame is sent or received yet. Gameplay wire version remains12 and the
 frozen v5 UI checkpoint remains available. Codec and runtime integration are the
 next actual prerequisites.
+
+
+## Standalone codec qualified; stopped safely — 7 November 2026
+
+Slice2 adds `network::player_identity_wire` as an exported, standalone codec.
+PN01 holds at most eight actor rows and 285 bytes, with optional shared validated
+names, strict actor ordering and nonzero world/epoch/tick context. Admission
+validation requires the owner row and rejects stale or conflicting updates;
+unchanged rosters can be compared independently of movement ticks.
+
+Six focused codec tests pass: bounded round trips, all truncations/trailing data,
+malformed names/header/counts, duplicate or unordered actors, admitted context and
+monotonicity, and roster change detection. Formatting and denied-warning
+workspace/all-target Clippy pass after correcting a constant assertion in the
+test. Evidence: `build/player-identity-20261107/codec-tests-v2.log`,
+`clippy-codec-v2.log` and `fmt-codec-v1.log`.
+
+This module is not connected to admissions, transport, client state or UI. No
+name packets are sent or received; gameplay protocol12 and the frozen v5 build
+remain unchanged. The user requested a safe stop here. Resume with slice3 only
+when requested; these checks do not establish working name replication.

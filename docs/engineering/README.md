@@ -1,3 +1,11 @@
+Safe stop, 7 November 2026 (P2-03 / P3-01 / P2-14):
+Stopped at the user's request after saving the standalone bounded player-name
+codec prerequisite. Its six focused tests, formatting and strict workspace/
+all-target Clippy pass. Runtime publishing, receiving and name UI remain pending;
+gameplay protocol12 is unchanged. The qualified optimized v5 playtest pack is
+preserved. Changes are committed locally only; no push. Earlier continuation
+instructions below are historical. [Scope and acceptance](../PLAYER_DISPLAY_IDENTITY.md).
+
 Player-identity prerequisite, 7 November 2026 (P2-03 / P3-01 / P2-14):
 The existing player-name validator is now a pure core value re-exported by
 persistence. 385 core/persistence cases pass (73 service skips); the actual

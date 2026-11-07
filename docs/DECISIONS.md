@@ -6,7 +6,8 @@ display/lookup data; authenticated bindings establish ownership. Future gameplay
 metadata must carry the server-selected saved character name, scoped to the
 admitted actor/world, with no local launcher-name authority or account identifiers.
 NPC authored names retain their separate policy. Parser extraction and one actual
-SQL character contract pass; codec/replication remain planned and protocol12
+SQL character contract pass; the standalone bounded codec is now qualified,
+while runtime replication remains planned and protocol12
 remains active. [Work and acceptance](PLAYER_DISPLAY_IDENTITY.md).
 
 ## 2026-11-07 — focus gates fresh input, not accepted work
