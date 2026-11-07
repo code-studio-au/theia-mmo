@@ -665,6 +665,10 @@ mod tests {
     #[test]
     fn escape_closes_reader_before_loot_or_backpack() {
         let mut app = App::new();
+        app.world_mut().spawn(Window {
+            focused: true,
+            ..default()
+        });
         app.init_resource::<ButtonInput<KeyCode>>()
             .init_resource::<Ui>()
             .init_resource::<inventory::Ui>()

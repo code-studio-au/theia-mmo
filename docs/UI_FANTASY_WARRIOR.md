@@ -1343,3 +1343,26 @@ No native window, renderer, display or OS input was used. Native focus switching
 and connected backpack replay remain pending. The frozen optimized `d9df562`
 pack predates this follow-up and remains unchanged. Document, loot, dialogue and
 quest-specific command collectors retain their separate existing behavior.
+
+
+## Corpse-loot focus handling — 7 November 2026
+
+P2-05 / P2-14 / P3-09. Loot Take/All/Close activation, Escape close and pending
+choice consumption now require one focused Window. Unsubmitted choices are
+discarded on focus loss and cannot replay after refocus. Existing pickup wait,
+claim-removal tracking and prior Loot All intent are retained; the serial
+continuation of an already requested Loot All may keep submitting its remaining
+pickups in the background. Received inventory/reward acknowledgement and removal
+reconciliation still runs normally. This gates new input, not accepted work.
+No drop roll, rights, quest eligibility, pickup/grant or server behavior changes.
+
+Two headless cases cover actual widget activation with queued-choice discard and
+retained wait/All intent, and focused/missing/ambiguous-window Escape with close
+priority. The older reader→loot Escape fixture now supplies a virtual focused
+Window. All 215 client cases including local art, formatting, strict workspace/
+all-target Clippy and client build pass. Accepted evidence (ignored):
+`build/loot-focus-20261107/{client-v2.log,clippy-v2.log,build-v2.log,fmt-v1.log}`.
+The earlier missing-Window fixture failure is not accepted evidence. No native
+window, renderer, display or OS input was used. These are UI/consumption-boundary
+cases, not live SQL pickup or native focus-ordering proof. The optimized d9df562
+pack predates the backpack and loot follow-ups and remains unchanged.

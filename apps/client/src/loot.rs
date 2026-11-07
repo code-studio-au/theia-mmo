@@ -71,11 +71,27 @@ struct Pending {
     all: bool,
     close: bool,
 }
-fn activate(event: On<Activate>, actions: Query<&Action>, ui: Res<Ui>, mut input: ResMut<Pending>) {
+impl Pending {
+    fn take_focused(&mut self, focused: bool) -> Self {
+        let input = std::mem::take(self);
+        if focused { input } else { Self::default() }
+    }
+}
+fn activate(
+    event: On<Activate>,
+    actions: Query<&Action>,
+    ui: Res<Ui>,
+    mut input: ResMut<Pending>,
+    windows: Query<&Window>,
+) {
     if !ui.open {
         return;
     }
     if let Ok(action) = actions.get(event.entity) {
+        if !windows.single().is_ok_and(|window| window.focused) {
+            *input = Pending::default();
+            return;
+        }
         match action {
             Action::Take(n) => input.take = ui.painted.get(*n).copied(),
             Action::All => input.all = true,
@@ -188,9 +204,11 @@ pub(crate) fn close_panel(
     mut ui: ResMut<Ui>,
     documents: Option<Res<crate::documents::Ui>>,
     interface: Option<Res<crate::fantasy_ui::settings::Ui>>,
+    windows: Query<&Window>,
 ) {
     ui.closed_this_frame = false;
-    if ui.open
+    if windows.single().is_ok_and(|window| window.focused)
+        && ui.open
         && keys.just_pressed(KeyCode::Escape)
         && !crate::fantasy_ui::settings::owns_escape(interface.as_deref())
         && !documents
@@ -211,8 +229,9 @@ fn update(
     mut buttons: Query<(Entity, &Action, &mut Node, Has<bevy::ui::Pressed>), Without<Pane>>,
     mut labels: Query<(&Row, &mut Text), Without<Status>>,
     mut status: Query<&mut Text, With<Status>>,
+    windows: Query<&Window>,
 ) {
-    let input = std::mem::take(&mut *pending);
+    let input = pending.take_focused(windows.single().is_ok_and(|window| window.focused));
     let state = network.state();
     if !network.connected()
         || state.error.is_some()
@@ -391,4 +410,87 @@ pub(crate) fn qualification(world: &mut World) -> serde_json::Value {
         serde_json::json!({"life":source.life.bytes(),"position":source.position.metres(),"screen":screen.map(|s|s.to_array())})
     }).collect());
     serde_json::json!({"ui":value,"selected_life":selected_life,"layout":{"take":take,"all":all,"close":close},"corpses":corpses})
+}
+
+#[cfg(test)]
+mod focus_tests {
+    use super::*;
+    #[test]
+    fn unfocused_loot_widgets_drop_new_choices_and_keep_existing_pickup_intent() {
+        let claim = ClaimId::new([1; 16]).unwrap();
+        let mut app = App::new();
+        app.init_resource::<Pending>()
+            .insert_resource(Ui {
+                open: true,
+                painted: vec![claim],
+                waiting: Some((claim, 4)),
+                all: true,
+                ..default()
+            })
+            .add_observer(activate);
+        let window = app
+            .world_mut()
+            .spawn(Window {
+                focused: true,
+                ..default()
+            })
+            .id();
+        let all = app.world_mut().spawn(Action::All).id();
+        let take = app.world_mut().spawn(Action::Take(0)).id();
+        app.world_mut().trigger(Activate { entity: all });
+        assert!(app.world().resource::<Pending>().all);
+        app.world_mut().get_mut::<Window>(window).unwrap().focused = false;
+        app.world_mut().trigger(Activate { entity: take });
+        assert!(
+            !app.world().resource::<Pending>().all
+                && app.world().resource::<Pending>().take.is_none()
+        );
+        app.world_mut().get_mut::<Window>(window).unwrap().focused = true;
+        let prior = app.world_mut().resource_mut::<Pending>().take_focused(true);
+        assert!(!prior.all && prior.take.is_none());
+        app.world_mut().trigger(Activate { entity: take });
+        assert_eq!(app.world().resource::<Pending>().take, Some(claim));
+        let discarded = app
+            .world_mut()
+            .resource_mut::<Pending>()
+            .take_focused(false);
+        assert!(discarded.take.is_none());
+        let ui = app.world().resource::<Ui>();
+        assert!(ui.open && ui.all);
+        assert_eq!(
+            ui.waiting,
+            Some((claim, 4)),
+            "Existing pickup/wait/All intent is not cancelled"
+        );
+    }
+    #[test]
+    fn loot_escape_requires_one_focused_window_and_preserves_close_priority_state() {
+        for count in [0, 1, 2] {
+            let claim = ClaimId::new([1; 16]).unwrap();
+            let mut app = App::new();
+            app.insert_resource(Ui {
+                open: true,
+                all: true,
+                waiting: Some((claim, 4)),
+                ..default()
+            })
+            .init_resource::<ButtonInput<KeyCode>>()
+            .add_systems(Update, close_panel);
+            for _ in 0..count {
+                app.world_mut().spawn(Window {
+                    focused: true,
+                    ..default()
+                });
+            }
+            app.world_mut()
+                .resource_mut::<ButtonInput<KeyCode>>()
+                .press(KeyCode::Escape);
+            app.update();
+            let ui = app.world().resource::<Ui>();
+            assert_eq!(ui.open, count != 1);
+            assert_eq!(ui.closed_this_frame, count == 1);
+            assert_eq!(ui.all, count != 1);
+            assert_eq!(ui.waiting, Some((claim, 4)));
+        }
+    }
 }
