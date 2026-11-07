@@ -749,6 +749,11 @@ impl Raw {
                         );
                     } else if bytes.starts_with(theia_network::combat_wire::EVENTS_TAG) {
                         theia_network::combat_wire::Batch::decode(&bytes, &self.catalog).unwrap();
+                    } else if bytes.starts_with(theia_network::player_identity_wire::STATE_TAG) {
+                        let view =
+                            theia_network::player_identity_wire::State::decode(&bytes).unwrap();
+                        assert_eq!(view.world, self.identity);
+                        assert_eq!(Some(view.epoch), self.welcome.as_ref().map(|w| w.epoch));
                     } else if bytes.starts_with(theia_network::targeting_wire::STATE_TAG) {
                         theia_network::targeting_wire::State::decode(&bytes).unwrap();
                     } else if matches!(

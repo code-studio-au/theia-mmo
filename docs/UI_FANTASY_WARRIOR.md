@@ -133,6 +133,31 @@ do not add inert controls or infer gameplay from them. The current reader's
 page navigation stays local and grants no extra read credit. These references
 and their chat/player artwork stay outside Git; no story text is imported.
 
+## Extended interaction references — 7 November 2026
+
+The user supplied 69 local 3440×1440 captures between 19:29:12 and 19:48:53,
+`Screenshot from 2026-11-07 HH-MM-SS.png` under `/home/steven/Pictures`.
+They extend the existing visual direction and are not proof of Theia features.
+Keep the original images and captured chat outside Git.
+
+| Area | Reference behaviour to pursue | Required boundary |
+| --- | --- | --- |
+| Menus/settings | Compact central game menu; grouped options; text scale; action-bar visibility and locking | Implement only working settings; distinguish logout from closing the application |
+| Spellbook/action bars | Category tabs, ability ranks, active/passive labels, tooltips; drag learned skills onto slots | Server validates learned abilities and casts; rearranging a slot grants no ability and resets no cooldown |
+| Merchants | Item cards, quantities, prices, purchase/sale and buyback tabs | Durable atomic item/currency transactions; explicit bounded buyback policy before implementation |
+| Food/recovery | Use food, sit, show timed regeneration and remaining duration | Server consumes the item and owns timed healing and interruption rules; screenshot rates are illustrative |
+| Unit frames | Player/pet/target name, level, health/resources and timed auras | Use actual scoped server observations; pet AI and pet commands remain separate future work |
+| Map/journal | World/region navigation, quest list/details, filters, tracking and objective areas | Map artwork/projection and authored objective areas are independent of world streaming; possession remains authoritative |
+| Chat | Channel tabs/input, local-area messages, overhead speech bubbles | Bounded authenticated routing, range/channel rules and moderation; typing consumes gameplay key input |
+| Character sheet | Equipment slots, model view, stats and pet tab | Display committed equipment and authoritative stats; model preview is presentation |
+
+These captures include addon features and later-client conventions. They do not
+override THEIA-COMBAT-001 or establish exact Classic rules. Retain metric units.
+Passive attack-table dodge shown in the spellbook does not reintroduce the
+postponed active dodge movement. Verify gameplay rules separately when each
+slice is implemented. Prioritize current player identity, then a learned-ability
+book/action-bar arrangement before adding merchant, consumable, pet or social UI.
+
 ## Asset assessment
 
 The supplied folder is `/home/steven/Downloads/Synty Models/HUDs`, rather than

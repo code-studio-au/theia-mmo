@@ -402,6 +402,10 @@ impl RawPeer {
                         self.welcome = Some(
                             theia_network::wire::Welcome::decode(&bytes, self.identity).unwrap(),
                         );
+                    } else if bytes.starts_with(theia_network::player_identity_wire::STATE_TAG) {
+                        let view =
+                            theia_network::player_identity_wire::State::decode(&bytes).unwrap();
+                        assert_eq!(view.world, self.identity);
                     } else {
                         self.targeting =
                             Some(theia_network::targeting_wire::State::decode(&bytes).unwrap());

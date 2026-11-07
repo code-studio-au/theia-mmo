@@ -2,8 +2,10 @@
 
 7 November 2026. P2-03 / P3-01 / P2-14 / P5-13.
 
-**Planned follow-up. Gameplay name replication is not implemented at this
-checkpoint.** The player frame currently shows a generic Player label and its
+**Qualified locally, 8 November 2026: gameplay name replication and owner-frame
+display are implemented.** The 7 November checkpoint below predates runtime wiring.
+
+**Previous checkpoint:** The player frame currently shows a generic Player label and its
 validated committed progression level. The qualified protocol-12 client/server
 checkpoint is preserved in `build/local-play-release-20261107-v5`.
 
@@ -119,3 +121,77 @@ This module is not connected to admissions, transport, client state or UI. No
 name packets are sent or received; gameplay protocol12 and the frozen v5 build
 remain unchanged. The user requested a safe stop here. Resume with slice3 only
 when requested; these checks do not establish working name replication.
+
+
+## Runtime integration — 8 November 2026
+
+Slices3–5 now carry the complete SQL-selected character record into the account
+reservation. The lease checks authorization, phase and exact slot generation
+before exposing a clone of the validated public name. Ticket userdata stays an
+opaque nonce/generation and never carries character names or account identifiers.
+Anonymous/direct test admissions retain an unknown name.
+
+The Renet peer captures the label once at admission. PN01 publishes only actors
+in the recipient's movement view, shares its epoch/world, and suppresses unchanged
+rosters regardless of movement ticks. Publication follows gameplay replies and
+critical presentation, defers under reliable queue pressure and never awaits I/O.
+A membership change between transport polls waits for the next completed tick if
+a different roster was already sent for that tick. This preserves strict client
+monotonicity without disconnecting valid joining players.
+
+The client validates owner presence, epoch/world and ordered monotonic metadata,
+retains the observation across movement snapshots, and displays a name only when
+the current snapshot still contains that admitted owner. Disconnect/context loss
+returns the generic label. The opt-in player frame uses a separate level line
+for named characters and allows maximum-length names to wrap within its width;
+committed-level validation remains independent. Other-player and NPC nameplates,
+public level/class metadata, renaming and Unicode policy remain separate work.
+
+Gameplay version is now13, including the derived Renet protocol ID. Protocol12
+frozen packs remain preserved and require their own paired binaries. Do not mix
+an old client with a new server or silently change transport on mismatch.
+
+Qualification is in progress. The actual local OIDC/encrypted-ticket/PostgreSQL
+lease contract passes with selected-name rejoin and revocation checks in
+`build/player-identity-20261108/admission-v1/verification.json`. The first native
+1280×720 long-name flow passes with committed levels, restart/rejoin and real
+timeout clearing; its inline name/level layout required refinement. Native-v2
+was rejected by its heading assertion; only a final rebuilt run can qualify the
+new separate level line. These diagnostics remain distinct from final evidence.
+
+
+## Integrated qualification — 8 November 2026
+
+The final network suite passes 731 tests in 70 groups with ten explicitly ignored
+fixture/service cases (`network-v6.log`). It includes encrypted two-peer names
+under delay/jitter/loss/duplication, generation replacement without old names,
+unchanged-movement suppression, strict codec/context checks and deterministic
+same-tick/queue-pressure deferral. Three low-level test peers now explicitly
+decode PN01 rather than treating every reliable frame as a combat/target/chunk
+message. Earlier failed runs identified the same-tick producer issue and outdated
+test decoders; those failures are not accepted evidence.
+
+The client suite passes 223 cases plus the separately executed licensed-art PNG
+preflight (224 total; `client-v2.log`, `client-art-v1.log`). Strict workspace/
+all-target denied-warning Clippy and formatting pass (`clippy-v4.log`,
+`fmt-v2.log`). Debug and optimized client/server/validator builds pass. Python
+multiplayer qualification assertions now expect protocol13; syntax compilation
+passes, but that older two-rendered-client recipe was not rerun in this slice.
+
+`native-v3/verification.json` qualifies four actual Linux starts: 1280×720,
+1920×1200, 3440×1440 and PostgreSQL restart/rejoin at1280. `native-v4` qualifies
+two optimized starts at1920×1200 with restart/rejoin. Both normal account flows
+create real SQL-selected maximum-length names, display the name and committed
+level1→2, exercise the existing quest/combat/XP/minimap flow and saved UI size,
+and close through Interface Exit. The rejoined run freezes only its owned server
+to observe real timeout, generic-name/level clearing and disconnected Exit.
+All owned services stop and temporary wheel devices are removed.
+
+All six final native starts report zero GPU diagnostics on AMD Radeon RX7900XTX /
+RADV NAVI31 / Vulkan / Mesa26.2.6 kisak. Captures were visually inspected for the
+long-name wrapping and separate level line. Evidence is under
+`build/player-identity-20261108/`; binaries-v3/v4 contain exact copied binaries.
+The small fixtures and debug/optimized starts are functional UI evidence, not
+MMO population/FPS, native Windows or non-unit monitor DPI qualification. Name
+policy remains 3–20 ASCII characters, and gameplay names are not yet shown as
+other-player nameplates or target labels.

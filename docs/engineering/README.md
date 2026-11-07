@@ -1,3 +1,15 @@
+Implementation resumed, 8 November 2026 (P2-03 / P3-01 / P2-14 / P5-13):
+The user restored ongoing implementation, local commits and desktop access.
+SQL-selected player names now cross the authorized lease and reliable Renet view;
+client admission/snapshot validation gates the owner frame. Protocol13 is the
+qualified path; frozen protocol12/v5 remains preserved. Actual OIDC/SQL lease
+checks, 731 network cases (ten explicit skips), 224 client cases including local
+art, formatting and strict Clippy pass. Six final native starts cover three
+resolutions and optimized rejoin with zero RX7900XTX/RADV Vulkan diagnostics.
+Long-name wrapping, committed levels and disconnect clearing pass. Continue
+bounded UI work and local commits only; no push.
+[Scope and evidence](../PLAYER_DISPLAY_IDENTITY.md). Earlier stop entries are historical; no push.
+
 Safe stop, 7 November 2026 (P2-03 / P3-01 / P2-14):
 Stopped at the user's request after saving the standalone bounded player-name
 codec prerequisite. Its six focused tests, formatting and strict workspace/

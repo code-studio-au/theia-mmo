@@ -7,6 +7,7 @@ mod confirmation;
 pub mod creature_attacks;
 pub mod dialogue;
 pub mod inventory;
+mod player_identity;
 pub mod player_life;
 pub mod progression;
 pub mod quest_journal;
@@ -97,6 +98,8 @@ pub fn read_ticket(bytes: &[u8], address: SocketAddr) -> Result<ConnectToken> {
 }
 
 struct Peer {
+    display_name: Option<theia_core::character_name::CharacterName>,
+    identity_sent: Option<crate::player_identity_wire::State>,
     avatar_life_sent: Option<crate::avatar_life_wire::Observation>,
     public_attack_sent: Option<crate::creature_attack_wire::Observation>,
     public_presentation_ready: bool,
@@ -175,6 +178,8 @@ pub struct ServerStats {
     pub reward_opportunities_forwarded: u64,
     pub reward_states_sent: u64,
     pub appearance_states_sent: u64,
+    pub player_identity_states_sent: u64,
+    pub player_identity_deferred: u64,
     pub patrol: Option<crate::simulation::creatures::Snapshot>,
     pub status_states_sent: u64,
     pub status_backpressure_disconnects: u64,
@@ -486,6 +491,11 @@ fn admit_peer(
     admission: Option<Box<dyn AdmissionLease>>,
     current: Instant,
 ) -> Result<Option<Peer>> {
+    let display_name = admission
+        .as_ref()
+        .map(|a| a.display_name())
+        .transpose()?
+        .flatten();
     let actor = if let Some(position) = position {
         world.join_restored(position)
     } else {
@@ -571,6 +581,8 @@ fn admit_peer(
         )?;
     }
     let peer = Peer {
+        display_name,
+        identity_sent: None,
         avatar_life_sent: None,
         public_attack_sent: None,
         public_presentation_ready: false,
@@ -1548,6 +1560,7 @@ async fn run_server_inner(
                     publish_progression(&mut server,&mut peers,&mut world,&mut stats)?;
                     publish_appearance(&mut server,&mut peers,&mut world,&mut stats)?;
                     dialogue::publish(&mut server,&mut peers,&mut world,&mut stats)?;
+                    player_identity::publish(&mut server,&mut peers,&world,&mut stats)?;
                     combat_events.clear();
                 }
                 stats.observe(&server, &peers);
@@ -2134,6 +2147,7 @@ async fn run_client_inner(
     let mut quest_state: Option<crate::quest_wire::State> = None;
     let mut progression_state: Option<crate::progression_wire::State> = None;
     let mut status_state: Option<crate::status_wire::State> = None;
+    let mut identity_state: Option<crate::player_identity_wire::State> = None;
     let mut targeting: Option<crate::targeting_wire::State> = None;
     let mut avatar_life_state: Option<crate::avatar_life_wire::ClientState> = None;
     let mut public_attack_state: Option<crate::creature_attack_wire::ClientState> = None;
@@ -2247,6 +2261,19 @@ async fn run_client_inner(
                             let actor=theia_core::identity::EntityKey {epoch:theia_core::identity::WorldEpoch::new(welcome.epoch).unwrap(),entity:theia_core::identity::EntityId::new(welcome.id).unwrap()};
                             mode.receive_rewards(&bytes,actor)?;
                             state.send_modify(|s|{s.rewards=mode.rewards.clone();s.transport=Some(stats.clone());});
+                            continue;
+                        }
+                        if bytes.starts_with(crate::player_identity_wire::STATE_TAG) {
+                            let welcome=admission.as_ref().ok_or("Identity before admission")?;
+                            let view=crate::player_identity_wire::State::decode(&bytes)?;
+                            let owner=theia_core::identity::EntityKey {
+                                epoch:theia_core::identity::WorldEpoch::new(welcome.epoch).ok_or("Invalid owner epoch")?,
+                                entity:theia_core::identity::EntityId::new(welcome.id).ok_or("Invalid owner ID")?,
+                            };
+                            view.validate_successor(owner,welcome.world,identity_state.as_ref())?;
+                            identity_state=Some(view);
+                            stats.player_identity_states_received+=1;
+                            state.send_modify(|s|{s.player_identity=identity_state.clone();s.transport=Some(stats.clone());});
                             continue;
                         }
                         if bytes.starts_with(crate::appearance_wire::STATE_TAG) {
@@ -2410,7 +2437,7 @@ async fn run_client_inner(
                         stats.rtt_ms = info.rtt * 1000.; stats.packet_loss = info.packet_loss;
                         stats.bytes_sent_per_second = info.bytes_sent_per_second;
                         stats.bytes_received_per_second = info.bytes_received_per_second;
-                        let mut update=State { public_avatar_life:avatar_life_state.clone(), public_creature_attack:public_attack_state.clone(), quest_journal:None, quest_journal_reply:None, quest_journal_pending:false, player_life:player_life_state.clone(), quest_lifecycle:None, quest_lifecycle_reply:None, quest_lifecycle_pending:false, dialogue:None, guide:None, dialogue_reply:None, dialogue_pending:false, quest:quest_state.clone(), progression:progression_state.clone(), rewards:inventory.as_ref().and_then(|m|m.rewards.clone()), appearance:inventory.as_ref().and_then(|m|m.appearance.clone()), statuses:status_state.clone(), inventory:inventory.as_ref().and_then(|m|m.view.clone()), inventory_pending:inventory.as_ref().is_some_and(|m|m.pending()), approved_document:inventory.as_ref().and_then(|m|m.approved_document), document_reply:inventory.as_ref().and_then(|m|m.document_reply), combat:combat_state.clone(), autoattack:melee_state.clone(), targeting:targeting.clone(), id, snapshot: Some(snapshot), error: None, transport: Some(stats.clone()), welcome:admission.clone(), wire_rebases:rebases, chunk_report:last_report.clone(), chunk_ack:last_ack.clone(),chunk_offer:last_offer.clone(),correction,correction_received,correction_ready:correction_ready.clone() };
+                        let mut update=State { player_identity:identity_state.clone(), public_avatar_life:avatar_life_state.clone(), public_creature_attack:public_attack_state.clone(), quest_journal:None, quest_journal_reply:None, quest_journal_pending:false, player_life:player_life_state.clone(), quest_lifecycle:None, quest_lifecycle_reply:None, quest_lifecycle_pending:false, dialogue:None, guide:None, dialogue_reply:None, dialogue_pending:false, quest:quest_state.clone(), progression:progression_state.clone(), rewards:inventory.as_ref().and_then(|m|m.rewards.clone()), appearance:inventory.as_ref().and_then(|m|m.appearance.clone()), statuses:status_state.clone(), inventory:inventory.as_ref().and_then(|m|m.view.clone()), inventory_pending:inventory.as_ref().is_some_and(|m|m.pending()), approved_document:inventory.as_ref().and_then(|m|m.approved_document), document_reply:inventory.as_ref().and_then(|m|m.document_reply), combat:combat_state.clone(), autoattack:melee_state.clone(), targeting:targeting.clone(), id, snapshot: Some(snapshot), error: None, transport: Some(stats.clone()), welcome:admission.clone(), wire_rebases:rebases, chunk_report:last_report.clone(), chunk_ack:last_ack.clone(),chunk_offer:last_offer.clone(),correction,correction_received,correction_ready:correction_ready.clone() };
                         if let Some(mode)=&journal {mode.copy_to(&mut update);}
                         if let Some(mode)=&lifecycle {mode.copy_to(&mut update);}
                         if let Some(mode)=&dialogue {mode.copy_to(&mut update);}

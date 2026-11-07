@@ -55,6 +55,7 @@ enum Phase {
     Retiring,
 }
 struct Entry {
+    display_name: Option<theia_core::character_name::CharacterName>,
     progression: Option<progression::Session>,
     inventory: Option<inventory::Session>,
     generation: u64,
@@ -336,6 +337,7 @@ impl GameAdmissions {
             .map_err(|_| Error::Unavailable)?;
         state.generation = generation;
         state.slots[slot] = Some(Entry {
+            display_name: None,
             progression: None,
             inventory: None,
             generation,
@@ -515,7 +517,22 @@ impl Reservation {
         Ok(result)
     }
 
-    pub fn issue(mut self, saved: SavedCharacter) -> GateResult<IssuedTicket> {
+    pub fn issue(self, saved: SavedCharacter) -> GateResult<IssuedTicket> {
+        self.issue_with_name(saved, None)
+    }
+    /// Accept the whole SQL-selected record so the name and saved binding travel
+    /// together. Neither public gameplay input nor ticket userdata supplies it.
+    pub fn issue_character(
+        self,
+        selected: theia_persistence::Character,
+    ) -> GateResult<IssuedTicket> {
+        self.issue_with_name(selected.saved, Some(selected.name))
+    }
+    fn issue_with_name(
+        mut self,
+        saved: SavedCharacter,
+        name: Option<theia_core::character_name::CharacterName>,
+    ) -> GateResult<IssuedTicket> {
         let mut state = self.gate.lock()?;
         let entry = state.slots[self.slot]
             .as_mut()
@@ -545,6 +562,7 @@ impl Reservation {
             .issue(self.slot as u64 + 1, Some(&data), TICKET_SECONDS)
             .map_err(|_| Error::Unavailable)?;
         entry.saved = Some(saved);
+        entry.display_name = name;
         entry.phase = Phase::Reserved;
         entry.deadline = Instant::now() + Duration::from_secs(TICKET_SECONDS);
         state.sequence = state.sequence.max(saved.sequence);
@@ -560,6 +578,21 @@ impl Drop for Reservation {
     }
 }
 impl AdmissionLease for Lease {
+    fn display_name(&self) -> Result<Option<theia_core::character_name::CharacterName>> {
+        let state = self.gate.lock()?;
+        let entry = state.slots[self.slot]
+            .as_ref()
+            .filter(|e| {
+                e.generation == self.generation
+                    && matches!(e.phase, Phase::Consumed | Phase::Active)
+            })
+            .ok_or(Error::Unavailable)?;
+        if !self.gate.authorized(entry)? {
+            return Err(Error::Unauthorized.into());
+        }
+        Ok(entry.display_name.clone())
+    }
+
     fn progression(&self) -> Result<Option<theia_network::renet_runtime::progression::Port>> {
         let state = self.gate.lock()?;
         let entry = state.slots[self.slot]

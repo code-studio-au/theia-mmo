@@ -5,7 +5,7 @@ use theia_core::{
     identity::{EntityId, WorldEpoch},
 };
 
-pub const VERSION: u32 = 12;
+pub const VERSION: u32 = 13;
 pub const MAX_PLAYERS: usize = 8;
 pub const MAX_BYTES: usize = 1200;
 pub const TICK_HZ: u32 = 30;

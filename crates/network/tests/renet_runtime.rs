@@ -900,6 +900,10 @@ async fn readiness_replay_unknown_ids_and_malformed_actor_addressing_are_rejecte
             .unwrap();
         socket.send_packets(&mut client).unwrap();
         while let Some(bytes) = client.receive_message(transport::EVENT_CHANNEL) {
+            if bytes.starts_with(theia_network::player_identity_wire::STATE_TAG) {
+                theia_network::player_identity_wire::State::decode(&bytes).unwrap();
+                continue;
+            }
             let ChunkEvent::Ack(ack) = ChunkEvent::decode(&bytes).unwrap() else {
                 continue;
             };

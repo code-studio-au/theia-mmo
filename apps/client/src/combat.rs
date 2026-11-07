@@ -309,6 +309,7 @@ fn present(
     *panel = ui::Model::default();
     panel.connected = network.connected();
     if panel.connected {
+        panel.player_name = ui::owner_name(&state);
         panel.player_level = progression
             .as_ref()
             .and_then(|profile| ui::owner_level(&state, &profile.0));

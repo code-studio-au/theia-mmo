@@ -36,9 +36,14 @@ struct Ledger {
     records: Vec<(EntityKey, GlobalPosition, u64)>,
     dropped: usize,
     inventory: Option<net::inventory::Port>,
+    name: Option<theia_core::character_name::CharacterName>,
 }
 struct Lease(Arc<Policy>);
 impl AdmissionLease for Lease {
+    fn display_name(&self) -> Result<Option<theia_core::character_name::CharacterName>> {
+        Ok(self.0.state.lock().unwrap().name.clone())
+    }
+
     fn inventory(&self) -> Result<Option<net::inventory::Port>> {
         Ok(self.0.state.lock().unwrap().inventory.clone())
     }
@@ -650,6 +655,7 @@ async fn saved_collision_revocation_replay_reuse_and_shutdown_keep_exact_lease_l
     {
         let mut state = policy.state.lock().unwrap();
         state.code = 1;
+        state.name = Some(theia_core::character_name::CharacterName::parse("Arden").unwrap());
         state.position = Some(position);
     }
     let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
@@ -673,6 +679,18 @@ async fn saved_collision_revocation_replay_reuse_and_shutdown_keep_exact_lease_l
     let mut client = Client::start(address, first.clone(), identity);
     let initial = client.admitted().await;
     assert_eq!(initial.id, Some(1));
+    let named = client
+        .until(|s| s.snapshot.is_some() && s.player_identity.is_some())
+        .await;
+    assert_eq!(
+        named.player_identity.as_ref().unwrap().actors[0]
+            .name
+            .as_ref()
+            .unwrap()
+            .as_str(),
+        "Arden"
+    );
+    let identity_tick = named.player_identity.as_ref().unwrap().tick;
     {
         let state = policy.state.lock().unwrap();
         assert!(state.spent);
@@ -687,6 +705,11 @@ async fn saved_collision_revocation_replay_reuse_and_shutdown_keep_exact_lease_l
     let sent_commands = client
         .move_until_recorded(&policy, position.metres()[0])
         .await;
+    assert_eq!(
+        client.state.borrow().player_identity.as_ref().unwrap().tick,
+        identity_tick,
+        "Movement must not resend unchanged display metadata"
+    );
     let old_packets: Vec<_> = relay_control
         .lock()
         .unwrap()
@@ -709,6 +732,8 @@ async fn saved_collision_revocation_replay_reuse_and_shutdown_keep_exact_lease_l
     {
         let mut state = policy.state.lock().unwrap();
         state.code = 2;
+        state.name =
+            Some(theia_core::character_name::CharacterName::parse("Abcdefghijklmnopqrst").unwrap());
         state.spent = false;
         state.records.clear();
     }
@@ -726,6 +751,14 @@ async fn saved_collision_revocation_replay_reuse_and_shutdown_keep_exact_lease_l
     let mut replacement = Client::start(address, second, identity);
     let fresh = replacement.admitted().await;
     assert_eq!(fresh.id, Some(2));
+    let named = replacement.until(|s| s.player_identity.is_some()).await;
+    let roster = named.player_identity.as_ref().unwrap();
+    assert_eq!(roster.actors.len(), 1);
+    assert_eq!(roster.actors[0].key.entity.value(), 2);
+    assert_eq!(
+        roster.actors[0].name.as_ref().unwrap().as_str(),
+        "Abcdefghijklmnopqrst"
+    );
     tokio::time::sleep(Duration::from_millis(150)).await;
     let before = replacement.state.borrow().correction.unwrap().state.input;
     assert_eq!(before.applied_sequence, 0);
@@ -756,6 +789,7 @@ async fn saved_collision_revocation_replay_reuse_and_shutdown_keep_exact_lease_l
     stop.send_replace(true);
     let stats = server.await.unwrap().unwrap();
     assert_eq!(stats.persistent_spawn_admissions, 2);
+    assert_eq!(stats.player_identity_states_sent, 2);
     assert_eq!(
         policy.state.lock().unwrap().dropped,
         2,
@@ -799,6 +833,14 @@ async fn encrypted_equipment_streams_keep_two_actors_separate_under_impaired_udp
         {
             let mut state = policy.state.lock().unwrap();
             state.code = i as u8 + 1;
+            state.name = Some(
+                theia_core::character_name::CharacterName::parse(if i == 0 {
+                    "Arden"
+                } else {
+                    "Briar"
+                })
+                .unwrap(),
+            );
             state.position = GlobalPosition::new(body);
             state.inventory = Some(if i == 0 {
                 items_a.clone()
@@ -861,6 +903,28 @@ async fn encrypted_equipment_streams_keep_two_actors_separate_under_impaired_udp
         .await;
     b.until(|s| s.inventory.is_some() && s.chunk_ack.is_some())
         .await;
+    for client in [&mut a, &mut b] {
+        let state = client
+            .until(|s| {
+                s.player_identity
+                    .as_ref()
+                    .is_some_and(|v| v.actors.len() == 2)
+            })
+            .await;
+        let roster = state.player_identity.unwrap();
+        let names: Vec<_> = roster
+            .actors
+            .iter()
+            .map(|a| a.name.as_ref().unwrap().as_str())
+            .collect();
+        assert!(names.contains(&"Arden") && names.contains(&"Briar"));
+        assert!(
+            roster
+                .actors
+                .iter()
+                .all(|a| a.key.epoch.value() == state.welcome.as_ref().unwrap().epoch)
+        );
+    }
     a.items
         .as_ref()
         .unwrap()

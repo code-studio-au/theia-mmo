@@ -1,3 +1,14 @@
+## 8 November 2026 — selected character names are public scoped metadata
+
+Capture the saved SQL-selected name in the authorized admission lease; retain
+opaque nonce-only ticket userdata. Use bounded reliable PN01 metadata for the
+same visible-player roster as movement, with no ownership or account identifiers.
+Defer under queue pressure and allow only one changed view per completed tick.
+Clients validate admitted owner/world/epoch and monotonic updates; UI additionally
+requires current snapshot membership. Names never establish authority. Protocol13
+is required for the integrated path; paired protocol12 playtest packs remain
+preserved. [Scope and qualification](PLAYER_DISPLAY_IDENTITY.md).
+
 ## 7 November 2026 — shared player display-name validation
 
 Reuse the existing temporary 3–20 ASCII player-name policy as a pure core value,

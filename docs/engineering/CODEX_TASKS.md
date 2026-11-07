@@ -1,3 +1,12 @@
+Player display identity qualified locally, 8 November 2026 (P2-03 / P3-01 /
+P2-14 / P5-13): selected saved names cross authorized leases and reliable scoped
+Renet metadata; owner UI validates current admission/snapshot context. Protocol13
+is integrated; frozen v5/protocol12 remains preserved. Network731 passes with ten
+explicit skips, client224 including executed local-art preflight, formatting,
+strict Clippy and six final native starts pass. [Scope and limits](../PLAYER_DISPLAY_IDENTITY.md#integrated-qualification--8-november-2026).
+The user resumed ongoing implementation and local commits; no push. Imported
+numbered baseline statuses below retain their historical meaning.
+
 General UI qualification, 7 November 2026 (P2-14 / P5-13 / P5-19):
 Optional saved Interface size and explicit failed-save retry, configured metric
 ability tooltips, bounded received combat history, focused fresh input and live

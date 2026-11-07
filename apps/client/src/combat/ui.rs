@@ -9,7 +9,7 @@ use bevy::{
     ui::Pressed,
     ui_widgets::{Activate, ActivateOnPress, Button},
 };
-pub(super) use unit_frame::owner_level;
+pub(super) use unit_frame::{owner_level, owner_name};
 
 #[derive(Component)]
 pub(crate) struct ActionButton(pub(crate) usize);
@@ -90,6 +90,7 @@ pub(crate) struct Action {
 #[derive(Resource, Default, serde::Serialize)]
 pub(crate) struct Model {
     pub player_level: Option<u8>,
+    pub player_name: Option<String>,
     pub life_blocked: bool,
     pub life_status: String,
     pub membership: Option<bool>,
@@ -250,7 +251,14 @@ fn setup(
             ))
             .with_children(|panel| {
                 if skin.is_some() {
-                    panel.spawn((PlayerHeading, text("Player", 16.)));
+                    panel.spawn((
+                        PlayerHeading,
+                        text("Player", 16.),
+                        TextLayout {
+                            linebreak: bevy::text::LineBreak::AnyCharacter,
+                            ..default()
+                        },
+                    ));
                 }
                 panel.spawn((
                     PlayerHealthLabel,
@@ -649,9 +657,16 @@ fn paint(
         } else if life.is_some() {
             model.life_status.clone()
         } else if heading.is_some() {
+            let name = model.player_name.as_deref().unwrap_or("Player");
             model.player_level.map_or_else(
-                || "Player".into(),
-                |level| format!("Player · Level {level}"),
+                || name.into(),
+                |level| {
+                    if model.player_name.is_some() {
+                        format!("{name}\nLevel {level}")
+                    } else {
+                        format!("{name} · Level {level}")
+                    }
+                },
             )
         } else {
             continue;
@@ -792,6 +807,30 @@ mod tests {
                 .unwrap();
             assert_eq!(heading.0, expected);
             assert_eq!(world.resource::<Input>().0, None);
+        }
+    }
+    #[test]
+    fn player_heading_renders_selected_name_and_preserves_generic_fallback() {
+        let mut app = widget_app(true);
+        app.update();
+        for (name, level, expected) in [
+            (Some("Arden"), Some(2), "Arden\nLevel 2"),
+            (Some("Abcdefghijklmnopqrst"), None, "Abcdefghijklmnopqrst"),
+            (None, None, "Player"),
+        ] {
+            let mut model = app.world_mut().resource_mut::<Model>();
+            model.player_name = name.map(str::to_owned);
+            model.player_level = level;
+            app.update();
+            let world = app.world_mut();
+            assert_eq!(
+                world
+                    .query_filtered::<&Text, With<PlayerHeading>>()
+                    .single(world)
+                    .unwrap()
+                    .0,
+                expected
+            );
         }
     }
     #[test]

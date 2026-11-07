@@ -384,7 +384,9 @@ pub(super) async fn enter(
             "Character uses incompatible gameplay content; select a compatible character",
         ));
     }
-    let ticket = reservation.issue(selected.saved).map_err(admission_error)?;
+    let ticket = reservation
+        .issue_character(selected)
+        .map_err(admission_error)?;
     // Deliberate private bearer response; never write ticket bytes to diagnostics.
     Ok(Json(
         serde_json::json!({"id":character.value().to_string(),"address":ticket.address().to_string(),"ticket":ticket.bytes(),"expires_in_seconds":20}),

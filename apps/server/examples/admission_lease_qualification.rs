@@ -2365,7 +2365,7 @@ async fn main() -> theia_network::Result<()> {
     assert!(reservation.issue(invalid).is_err());
     let ticket = gate
         .reserve(context.clone(), binding)?
-        .issue(character.saved)?;
+        .issue_character(character.clone())?;
     let data = connected_data(&mut transport, ticket.bytes()).await;
     let mut tampered = data;
     tampered[16] ^= 1;
@@ -2377,6 +2377,7 @@ async fn main() -> theia_network::Result<()> {
         "A valid, unexpired nonce must be one-use"
     );
     assert!(lease.live()?);
+    assert_eq!(lease.display_name()?.as_ref(), Some(&character.name));
     let actor = EntityKey {
         epoch: WorldEpoch::new(123).unwrap(),
         entity: EntityId::new(1).unwrap(),
@@ -2415,7 +2416,7 @@ async fn main() -> theia_network::Result<()> {
     assert_eq!(restored.saved.position, final_pose);
     let fresh = gate
         .reserve(context.clone(), binding)?
-        .issue(restored.saved)?;
+        .issue_character(restored.clone())?;
     assert!(
         gate.clone().consume(1, &data)?.is_none(),
         "Old generation cannot consume replacement reservation"
@@ -2423,8 +2424,10 @@ async fn main() -> theia_network::Result<()> {
     let fresh_data = connected_data(&mut transport, fresh.bytes()).await;
     let second = gate.clone().consume(1, &fresh_data)?.unwrap();
     assert_eq!(second.position, final_pose);
+    assert_eq!(second.lease.display_name()?.as_ref(), Some(&restored.name));
     sessions.lock().unwrap().revoke(secret.expose_secret());
     assert!(!second.lease.live()?);
+    assert!(second.lease.display_name().is_err());
     drop(second);
     assert!(matches!(
         gate.reserve(context, binding),
@@ -2448,7 +2451,7 @@ async fn main() -> theia_network::Result<()> {
     drop(admin);
     driver.await??;
     emit(
-        serde_json::json!({"passed":true,"actual_oidc_and_postgres":true,"valid_unexpired_nonce_one_use":true,"tampered_nonce_and_wrong_slot_denied":true,"cancelled_selection_released":true,"queued_final_pose_not_saved":true,"old_commit_cannot_release_new_pose":true,"actual_final_commit_before_reuse":true,"stale_generation_denied":true,"revoked_lease_denied":true,"expired_reservation_reclaimed":true,"direct_lease_contract_not_native_game":true}),
+        serde_json::json!({"passed":true,"actual_oidc_and_postgres":true,"valid_unexpired_nonce_one_use":true,"tampered_nonce_and_wrong_slot_denied":true,"cancelled_selection_released":true,"queued_final_pose_not_saved":true,"old_commit_cannot_release_new_pose":true,"actual_final_commit_before_reuse":true,"stale_generation_denied":true,"revoked_lease_denied":true,"expired_reservation_reclaimed":true,"selected_display_name_survives_rejoin_and_revocation":true,"direct_lease_contract_not_native_game":true}),
     );
     Ok(())
 }

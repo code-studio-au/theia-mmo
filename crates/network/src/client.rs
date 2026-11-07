@@ -7,6 +7,7 @@ use tokio::{sync::watch, time::MissedTickBehavior};
 
 #[derive(Clone, Debug, Default)]
 pub struct State {
+    pub player_identity: Option<crate::player_identity_wire::State>,
     pub public_avatar_life: Option<crate::avatar_life_wire::ClientState>,
     pub public_creature_attack: Option<crate::creature_attack_wire::ClientState>,
     pub player_life: Option<crate::player_life_wire::ClientState>,
@@ -132,6 +133,7 @@ pub struct TransportStats {
     pub dialogue_replies_received: u64,
     pub dialogue_requests_sent: u64,
     pub appearance_states_received: u64,
+    pub player_identity_states_received: u64,
     pub status_states_received: u64,
     pub quest_states_received: u64,
     pub progression_states_received: u64,
