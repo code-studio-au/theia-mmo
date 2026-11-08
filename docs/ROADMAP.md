@@ -28,7 +28,9 @@ Individual guide-point commands/picking/focus now add two domain checks (41 tota
 visual and agent point moves share whole-candidate validation and history.
 Schema-6 terrain colour painting adds shared stroke previews/history and standard
 Bevy/glTF vertex colours, with normalized weights and unchanged collision
-(45 focused Rust cases).
+(45 focused Rust cases). The one-command editor launcher now reopens saved
+drafts, prepares the local build SDK and defers new-file writes until Save;
+46 Rust / four Python cases and actual 3440x1440 save/reopen checks pass.
 Runtime multiplayer remains
 Rust/Bevy/Avian/Renet; editor playtest is an offline sandbox. Actual prerequisites,
 acceptance checks and implementation evidence are tracked in [the zone record](ZONE_EDITOR.md).

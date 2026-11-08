@@ -1,3 +1,12 @@
+## 8 November 2026 — one-command editor entry with nonwriting save-path selection
+
+Provide a small Python launcher for the locked editor build and default draft
+reopen. Reuse the existing Linux SDK when present and the client environment
+helper; preserve explicit editor/caller paths. Add `--save-path` to select the
+later GUI save destination without a startup write. Keep `--output` semantics
+for validated headless pipelines. Invalid source never falls back to replacing
+it with a blank draft. [Contract/evidence](ZONE_EDITOR.md#one-command-editor-launcher-and-deferred-save-destination--8-november-2026).
+
 ## 8 November 2026 — normalized terrain colour weights via standard vertex colours
 
 Zone schema 6 adds optional grass/dirt/rock/sand u8 weights per terrain vertex,

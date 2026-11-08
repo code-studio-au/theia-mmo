@@ -1,12 +1,17 @@
-Zone authoring is the current focus. Run `cargo run -p theia-zone-editor --
---commands content/zones/greybox.commands.jsonl` for the lightweight Bevy greybox
-editor at 3440x1440 fullscreen (F1 objects, F2 terrain, F3 road/stream guides,
-F4 NPC/quest markers, F6 vegetation, F7 terrain paint),
-or add `--headless --output build/my-zone.json` for structured commands.
-Export a saved zone with `--export NEW_DIR --content-id ID --revision N` for the
-existing server/client world pipeline. See [zone controls, validation and qualification](docs/ZONE_EDITOR.md). F5 is an
-offline Avian collision playtest; normal multiplayer remains the existing game
-launcher. Chat composer and speech bubbles are deferred.
+Zone authoring is the current focus. Run `python3 tools/edit_zone.py` to build and
+open the lightweight Bevy editor at **3440x1440 fullscreen**. It reopens
+`build/zone-draft.json` when present; a new draft is written on Save. Use
+`--draft FILE` for another default draft, or pass explicit editor arguments.
+
+F1 objects · F2 sculpt · F3 road/stream guides and points · F4 NPC/quest markers ·
+F6 vegetation · F7 terrain paint. F5 enters/leaves the offline Avian playtest.
+Visual editing and structured agent commands share validation and undo.
+
+For structured commands, use `python3 tools/edit_zone.py --commands JSONL
+--headless --output FILE`. Export a saved zone with `--zone FILE --export NEW_DIR
+--content-id ID --revision N` for the existing server/client world pipeline.
+[Controls, contracts and qualification](docs/ZONE_EDITOR.md). Normal multiplayer
+uses the existing game launcher. Chat composer and speech bubbles are deferred.
 
 > Development target: the 16 km × 16 km saved graybox world with the POLYGON
 > Base Locomotion player. Bake terrain once, build release binaries, then run `python3 tools/play.py`.

@@ -8,7 +8,8 @@ are the pinned stack, checked coordinates and existing query/package pipeline;
 later waves and P5-16 are not blanket gates. Guide-driven terrain grading also shares validated commands and undo.
 Individual guide points also share validated moves, visual picking and camera focus.
 Terrain colour painting adds shared preview/history and standard vertex-colour export.
-Current qualification is 45 focused
+A one-command launcher reopens drafts and defers initial writes until explicit Save.
+Current qualification is 46 focused
 Rust cases, strict workspace Clippy, default-fullscreen 3440x1440 OS-input checks
 and actual exported-package encrypted client pairs. The editor targets only
 3440x1440 under the user's current direction. Local commits only; no push.

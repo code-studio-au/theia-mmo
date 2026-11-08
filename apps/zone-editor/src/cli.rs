@@ -9,6 +9,7 @@ pub struct Options {
     pub zone: Option<PathBuf>,
     pub commands: Option<PathBuf>,
     pub output: Option<PathBuf>,
+    pub save_path: Option<PathBuf>,
     pub headless: bool,
     pub capture: Option<PathBuf>,
     pub report: Option<PathBuf>,
@@ -27,6 +28,9 @@ impl Options {
                 "--commands" => {
                     result.commands =
                         Some(args.next().ok_or("--commands needs a JSONL path")?.into())
+                }
+                "--save-path" => {
+                    result.save_path = Some(args.next().ok_or("--save-path needs a path")?.into());
                 }
                 "--output" => {
                     result.output = Some(args.next().ok_or("--output needs a path")?.into())
@@ -61,7 +65,7 @@ impl Options {
                 "--headless" => result.headless = true,
                 "--help" => {
                     println!(
-                        "theia-zone-editor [--zone FILE] [--commands JSONL] [--output FILE] [--headless] [--capture PNG] [--report JSON] [--mailbox DIR] [--export NEW_DIR --content-id ID --revision N]\n\nCommands use the same transaction/undo engine as the viewport. Headless mode validates and prints the final revision without opening a window. Output writes only after every command succeeds."
+                        "theia-zone-editor [--zone FILE] [--commands JSONL] [--output FILE] [--save-path FILE] [--headless] [--capture PNG] [--report JSON] [--mailbox DIR] [--export NEW_DIR --content-id ID --revision N]\n\nCommands use the same transaction/undo engine as the viewport. Headless mode validates and prints the final revision without opening a window. Output writes only after every command succeeds. Save-path changes the later editor save target without writing at startup."
                     );
                     std::process::exit(0);
                 }
@@ -82,6 +86,13 @@ impl Options {
             return Err("--capture, --report and --mailbox require a window".into());
         }
         Ok(result)
+    }
+    pub fn editor_path(&self) -> PathBuf {
+        self.save_path
+            .clone()
+            .or_else(|| self.output.clone())
+            .or_else(|| self.zone.clone())
+            .unwrap_or_else(|| "build/zone-draft.json".into())
     }
     pub fn prepare(&self) -> Result<Editor> {
         let zone = if let Some(path) = &self.zone {
@@ -118,5 +129,48 @@ impl Options {
             editor.zone().save(path)?;
         }
         Ok(editor)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn opening_or_redirecting_editor_save_path_does_not_write_source_or_destination() {
+        let root = std::env::temp_dir().join(format!(
+            "theia-zone-cli-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir(&root).unwrap();
+        let input = root.join("input.json");
+        let target = root.join("draft.json");
+        let blank = Options {
+            save_path: Some(target.clone()),
+            ..Options::default()
+        };
+        blank.prepare().unwrap();
+        assert!(!target.exists());
+        assert_eq!(blank.editor_path(), target);
+        let bytes = serde_json::to_vec(&Zone::default()).unwrap();
+        std::fs::write(&input, &bytes).unwrap();
+        let options = Options {
+            zone: Some(input.clone()),
+            save_path: Some(target.clone()),
+            ..Options::default()
+        };
+        options.prepare().unwrap();
+        assert_eq!(std::fs::read(&input).unwrap(), bytes);
+        assert!(!target.exists());
+        assert_eq!(options.editor_path(), target);
+        let ordinary = Options {
+            zone: Some(input.clone()),
+            ..Options::default()
+        };
+        assert_eq!(ordinary.editor_path(), input);
+        std::fs::remove_dir_all(root).unwrap();
     }
 }

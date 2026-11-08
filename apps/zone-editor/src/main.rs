@@ -231,10 +231,7 @@ fn run() -> Result<(), String> {
         palette: None,
         snap: true,
         status: "Ready - choose a primitive, then click the ground".into(),
-        path: options
-            .output
-            .or(options.zone)
-            .unwrap_or("build/zone-draft.json".into()),
+        path: options.editor_path(),
         next_id,
         drag: None,
         play: None,

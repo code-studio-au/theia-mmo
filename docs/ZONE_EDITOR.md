@@ -804,3 +804,38 @@ pass the retained independent checks; colour regions are visible in both native
 captures. Evidence: `build/zone-package-native-paint-3440-v1/verification.json`
 and both `scene.png` files. This remains Linux loopback evidence; no Windows,
 production admission or terrain/population capacity qualification is claimed.
+
+## One-command editor launcher and deferred save destination — 8 November 2026
+
+P5-17 / P3-15 usability continues from the qualified editor and local build SDK.
+Run `python3 tools/edit_zone.py` from the repository. It builds the locked debug
+editor with one Cargo job and opens the existing 3440x1440 fullscreen app. When
+the local Linux native SDK exists it prefixes its pkg-config/link paths for the
+build, preserving caller settings. Runtime uses the retained client environment
+helper. No server, service or transport is started.
+
+Default draft: `build/zone-draft.json`; `--draft FILE` chooses another default.
+An existing draft is loaded without rewriting it. A new draft starts in memory
+and is written on Save. The new editor `--save-path FILE` selects that later save/
+load destination without startup output. Existing `--output FILE` retains its
+validated startup-write semantics. Explicit editor authoring flags (`--zone`,
+`--commands`, `--output`, `--save-path`, `--export`) bypass automatic draft
+selection; caller-relative paths retain their meaning. The launcher supports
+`--build-only`, `--no-build`, and the caller's `CARGO_TARGET_DIR`. All other editor
+arguments pass through. Build failure prevents launching. Invalid existing drafts
+refuse through the normal Rust validator and retain their bytes.
+
+Acceptance: 46 focused Rust cases pass (33 domain / thirteen editor), plus four
+Python launcher tests for default-draft preservation, explicit arguments and
+nonmutating build-environment preparation. Strict workspace/all-target Clippy,
+formatting and Python compilation pass. The launcher builds successfully without
+manual SDK environment setup. Actual native OS input at 3440x1440 verifies a new
+save destination stays absent through startup and primitive placement, Ctrl-S
+writes the selected destination, and the subsequent headless reopen preserves
+saved data/bytes. Invalid-draft refusal also preserves source bytes. The native
+capture uses RX 7900 XTX / RADV Vulkan with validation observed active and zero
+GPU diagnostics. Evidence: ignored `build/zone-launch-tests-v1.log`,
+`zone-launch-python-tests-v1.log`, `zone-launch-clippy-v1.log`,
+`zone-launch-build-v1.log`, `zone-launch-native-3440-v1/{qualification.json,state.png}`
+and the retained `build/check_zone_launcher_v1.py` walkthrough. This is Linux
+execution evidence; the portable executable-suffix logic is not Windows execution.
