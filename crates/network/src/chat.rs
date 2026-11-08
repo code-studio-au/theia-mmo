@@ -16,7 +16,7 @@ pub const OUTBOX_MESSAGES: usize = 16;
 /// Opt-in compatibility binds the initial one-area policy and bounded wire
 /// shapes. Default protocol13 worlds have no chat suffix and remain unchanged.
 pub fn profile_identity(source: [u8; 32], area: theia_core::chat::Area) -> [u8; 32] {
-    let mut bytes = b"theia-local-chat-candidate-v2\0".to_vec();
+    let mut bytes = b"theia-local-chat-candidate-v3\0".to_vec();
     bytes.extend(source);
     bytes.extend(area.value().to_le_bytes());
     bytes.extend(theia_core::chat::SAY_METRES.to_le_bytes());
@@ -47,6 +47,7 @@ pub struct Stats {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Rejected {
     Admission,
+    Exhausted,
     Policy(Refusal),
 }
 pub struct Router {
@@ -55,6 +56,8 @@ pub struct Router {
     rate: TickRate,
     peers: BTreeMap<u64, Peer>,
     stats: Stats,
+    serial: u64,
+    tick: u64,
 }
 impl Router {
     pub fn new(world: [u8; 32], epoch: WorldEpoch, rate: TickRate) -> Result<Self> {
@@ -67,6 +70,8 @@ impl Router {
             rate,
             peers: BTreeMap::new(),
             stats: Stats::default(),
+            serial: 0,
+            tick: 0,
         })
     }
     /// Trusted admission only. Duplicate registration never resets a gate or
@@ -174,11 +179,17 @@ impl Router {
         if request.epoch != self.epoch {
             return Err(Rejected::Admission);
         }
+        if tick == 0 || tick < self.tick {
+            return Err(Rejected::Policy(Refusal::Time));
+        }
+        let serial = self.serial.checked_add(1).ok_or(Rejected::Exhausted)?;
         let peer = self.peer_mut(authenticated).ok_or(Rejected::Admission)?;
         let message = peer
             .gate
             .submit(peer.speaker.clone(), request.intent, tick, peer.muted)
             .map_err(Rejected::Policy)?;
+        self.serial = serial;
+        self.tick = tick;
         for peer in self.peers.values_mut() {
             if !message.reaches(Listener {
                 key: peer.speaker.key,
@@ -193,6 +204,7 @@ impl Router {
                 continue;
             }
             peer.outbox.push_back(Delivery {
+                serial,
                 world: self.world,
                 sender: message.speaker.key,
                 sequence: message.sequence,

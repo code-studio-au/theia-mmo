@@ -129,6 +129,7 @@ struct Raw {
     welcome: Option<Welcome>,
     messages: Vec<crate::chat_wire::Delivery>,
     replies: Vec<crate::chat_wire::Reply>,
+    inbox: Option<crate::chat_client::Inbox>,
     snapshots: usize,
     world: [u8; 32],
 }
@@ -147,6 +148,7 @@ impl Raw {
             welcome: None,
             messages: Vec::new(),
             replies: Vec::new(),
+            inbox: None,
             snapshots: 0,
             world,
         }
@@ -160,7 +162,13 @@ impl Raw {
         confirm_connection(&mut self.client, &mut self.confirmed).unwrap();
         while let Some(bytes) = self.client.receive_message(EVENT_CHANNEL) {
             let Some(welcome) = self.welcome.as_ref() else {
-                self.welcome = Some(Welcome::decode(&bytes, self.world).unwrap());
+                let welcome = Welcome::decode(&bytes, self.world).unwrap();
+                let owner = EntityKey {
+                    epoch: theia_core::identity::WorldEpoch::new(welcome.epoch).unwrap(),
+                    entity: theia_core::identity::EntityId::new(welcome.id).unwrap(),
+                };
+                self.inbox = Some(crate::chat_client::Inbox::new(owner, self.world).unwrap());
+                self.welcome = Some(welcome);
                 continue;
             };
             if bytes.starts_with(crate::chat_wire::DELIVERY_TAG) {
@@ -171,6 +179,13 @@ impl Raw {
                         self.world,
                     )
                     .unwrap();
+                assert!(
+                    self.inbox
+                        .as_mut()
+                        .unwrap()
+                        .receive(message.clone())
+                        .unwrap()
+                );
                 self.messages.push(message);
             } else if bytes.starts_with(crate::chat_wire::REPLY_TAG) {
                 let reply = crate::chat_wire::Reply::decode(&bytes).unwrap();
@@ -179,6 +194,11 @@ impl Raw {
                     entity: theia_core::identity::EntityId::new(welcome.id).unwrap(),
                 };
                 reply.validate_context(owner, self.world).unwrap();
+                self.inbox
+                    .as_mut()
+                    .unwrap()
+                    .receive_reply(reply.clone())
+                    .unwrap();
                 self.replies.push(reply);
             } else if bytes.starts_with(crate::player_identity_wire::STATE_TAG) {
                 crate::player_identity_wire::State::decode(&bytes).unwrap();
@@ -301,6 +321,16 @@ async fn encrypted_named_chat_routes_local_and_area_with_replay_and_flood_refusa
     }
     stop.0.send_replace(true);
     let stats = server.await.unwrap().unwrap();
+    for peer in &peers {
+        assert_eq!(
+            peer.inbox.as_ref().unwrap().history().len(),
+            peer.messages.len()
+        );
+    }
+    assert_eq!(
+        peers[0].inbox.as_ref().unwrap().reply().unwrap().outcome,
+        crate::chat_wire::Outcome::RateLimited
+    );
     assert_eq!(peers[0].replies.len(), 4);
     assert!(peers[1].replies.is_empty() && peers[2].replies.is_empty());
     assert_eq!(

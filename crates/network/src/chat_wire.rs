@@ -7,18 +7,19 @@ use theia_core::{
     identity::{EntityId, EntityKey, WorldEpoch},
 };
 pub const REQUEST_TAG: &[u8; 4] = b"CQ01";
-pub const DELIVERY_TAG: &[u8; 4] = b"CD01";
+pub const DELIVERY_TAG: &[u8; 4] = b"CD02";
 pub const REQUEST_HEADER_BYTES: usize = 23;
 pub const MAX_REQUEST_BYTES: usize = REQUEST_HEADER_BYTES + MAX_TEXT_BYTES;
-pub const DELIVERY_HEADER_BYTES: usize = 72;
+pub const DELIVERY_HEADER_BYTES: usize = 80;
 pub const MAX_DELIVERY_BYTES: usize = DELIVERY_HEADER_BYTES + NAME_BYTES + MAX_TEXT_BYTES;
 #[derive(Clone, Debug)]
 pub struct Request {
     pub epoch: WorldEpoch,
     pub intent: Intent,
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Delivery {
+    pub serial: u64,
     pub world: [u8; 32],
     pub sender: EntityKey,
     pub sequence: u64,
@@ -83,7 +84,7 @@ impl Request {
 }
 impl Delivery {
     fn validate(&self) -> Result<()> {
-        if self.world == [0; 32] || self.sequence == 0 || self.tick == 0 {
+        if self.world == [0; 32] || self.serial == 0 || self.sequence == 0 || self.tick == 0 {
             return Err("Invalid chat delivery context".into());
         }
         Ok(())
@@ -97,6 +98,7 @@ impl Delivery {
         bytes.extend(self.sender.entity.value().to_le_bytes());
         bytes.extend(self.sequence.to_le_bytes());
         bytes.extend(self.tick.to_le_bytes());
+        bytes.extend(self.serial.to_le_bytes());
         bytes.push(channel_byte(self.channel));
         bytes.push(self.name.as_str().len() as u8);
         bytes.extend((self.text.as_str().len() as u16).to_le_bytes());
@@ -114,8 +116,8 @@ impl Delivery {
             .ok_or("Invalid chat epoch")?;
         let entity = EntityId::new(u64::from_le_bytes(bytes[44..52].try_into()?))
             .ok_or("Invalid chat sender")?;
-        let name_len = usize::from(bytes[69]);
-        let text_len = usize::from(u16::from_le_bytes(bytes[70..72].try_into()?));
+        let name_len = usize::from(bytes[77]);
+        let text_len = usize::from(u16::from_le_bytes(bytes[78..80].try_into()?));
         if !(3..=NAME_BYTES).contains(&name_len)
             || bytes.len() != DELIVERY_HEADER_BYTES + name_len + text_len
         {
@@ -127,8 +129,9 @@ impl Delivery {
             sender: EntityKey { epoch, entity },
             sequence: u64::from_le_bytes(bytes[52..60].try_into()?),
             tick: u64::from_le_bytes(bytes[60..68].try_into()?),
-            channel: channel(bytes[68])?,
-            name: CharacterName::parse(std::str::from_utf8(&bytes[72..split])?)?,
+            serial: u64::from_le_bytes(bytes[68..76].try_into()?),
+            channel: channel(bytes[76])?,
+            name: CharacterName::parse(std::str::from_utf8(&bytes[80..split])?)?,
             text: text(&bytes[split..])?,
         };
         delivery.validate()?;
@@ -286,6 +289,7 @@ mod tests {
     }
     fn delivery() -> Delivery {
         Delivery {
+            serial: 1,
             world: [1; 32],
             sender: EntityKey {
                 epoch: WorldEpoch::new(7).unwrap(),
@@ -379,14 +383,14 @@ mod tests {
             }
             assert!(Request::decode(&bad).is_err(), "request offset {offset}");
         }
-        for offset in [0, 4, 36, 44, 52, 60, 68, 69, 70, 72, 77] {
+        for offset in [0, 4, 36, 44, 52, 60, 68, 76, 77, 78, 80, 85] {
             let mut bad = b.clone();
             match offset {
                 4 => bad[4..36].fill(0),
-                36 | 44 | 52 | 60 => bad[offset..offset + 8].fill(0),
-                68 => bad[offset] = 2,
-                72 => bad[offset] = 255,
-                77 => bad[offset] = b'\n',
+                36 | 44 | 52 | 60 | 68 => bad[offset..offset + 8].fill(0),
+                76 => bad[offset] = 2,
+                80 => bad[offset] = 255,
+                85 => bad[offset] = b'\n',
                 _ => bad[offset] = 0,
             }
             assert!(Delivery::decode(&bad).is_err(), "delivery offset {offset}");
@@ -396,12 +400,13 @@ mod tests {
         let mut zero = request;
         zero.intent.sequence = 0;
         assert!(zero.encode().is_err());
-        for case in 0..3 {
+        for case in 0..4 {
             let mut zero = delivery.clone();
             match case {
                 0 => zero.world = [0; 32],
                 1 => zero.sequence = 0,
-                _ => zero.tick = 0,
+                2 => zero.tick = 0,
+                _ => zero.serial = 0,
             }
             assert!(zero.encode().is_err());
         }

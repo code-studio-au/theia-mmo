@@ -150,3 +150,35 @@ fn slow_outboxes_drop_new_text_at_fixed_capacity_and_flush_one_per_peer_without_
     wrong.key.epoch = WorldEpoch::new(8).unwrap();
     assert!(router.admit(wrong).is_err());
 }
+
+#[test]
+fn delivery_serial_is_world_owned_monotonic_across_senders_and_refusals_and_never_wraps() {
+    let mut router = router();
+    router.admit(speaker(1, 0., 1)).unwrap();
+    router.admit(speaker(2, 1., 1)).unwrap();
+    router.submit(key(1), request(1, Channel::Say), 1).unwrap();
+    let first = drain(&mut router);
+    assert!(first.iter().all(|(_, message)| message.serial == 1));
+    router.submit(key(2), request(1, Channel::Say), 2).unwrap();
+    assert!(
+        drain(&mut router)
+            .iter()
+            .all(|(_, message)| message.serial == 2)
+    );
+    assert_eq!(
+        router.submit(key(1), request(2, Channel::Say), 1),
+        Err(Rejected::Policy(Refusal::Time))
+    );
+    router.submit(key(1), request(2, Channel::Say), 2).unwrap();
+    assert!(
+        drain(&mut router)
+            .iter()
+            .all(|(_, message)| message.serial == 3)
+    );
+    router.serial = u64::MAX;
+    assert_eq!(
+        router.submit(key(1), request(3, Channel::Say), 3),
+        Err(Rejected::Exhausted)
+    );
+    assert!(drain(&mut router).is_empty());
+}

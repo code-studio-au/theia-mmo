@@ -103,9 +103,11 @@ impl Bridge {
         use theia_core::chat::Refusal as R;
         let outcome = match result {
             Ok(()) => O::Accepted,
-            Err(crate::chat::Rejected::Admission | crate::chat::Rejected::Policy(R::Context)) => {
-                O::Unavailable
-            }
+            Err(
+                crate::chat::Rejected::Admission
+                | crate::chat::Rejected::Exhausted
+                | crate::chat::Rejected::Policy(R::Context),
+            ) => O::Unavailable,
             Err(crate::chat::Rejected::Policy(reason)) => match reason {
                 R::Sequence => O::Sequence,
                 R::Time => O::Time,

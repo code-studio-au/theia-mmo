@@ -1,3 +1,12 @@
+Chat inbox prerequisite, 8 November 2026 (P4-12 / P2-14 / P5-13):
+A64-message client inbox and checked world delivery serial bound history/replay
+state across actor churn. Fourteen focused tests pass, including actual encrypted
+frames through the inbox and10,000 actor IDs; strict Clippy/formatting pass.
+The chat candidate profile is v3/CD02; default worlds/protocol13 remain unchanged.
+Normal client worker/UI and bubbles remain next. Desktop access is allowed as
+needed; continue local implementation/commits, no push.
+[Scope and evidence](LOCAL_CHAT.md#bounded-client-inbox-and-world-delivery-serial--8-november-2026).
+
 Chat replies prerequisite, 8 November 2026 (P4-12 / P2-14 / P5-13):
 The opt-in server candidate has private bounded submission replies and reserves
 half the reliable queue against chat use. Ten focused tests pass, including

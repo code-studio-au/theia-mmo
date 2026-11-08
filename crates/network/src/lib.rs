@@ -64,4 +64,5 @@ pub mod vendor_wire;
 pub(crate) mod test_relay;
 
 pub mod chat;
+pub mod chat_client;
 pub mod chat_wire;

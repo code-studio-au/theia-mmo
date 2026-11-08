@@ -178,3 +178,41 @@ CD01/CR01 uploads. Strict workspace/all-target Clippy and formatting pass in
 `replies-clippy-v2.log` and `replies-fmt-v1.log` under
 `build/local-chat-20261108`. Earlier full regression/native evidence retains its
 original source scope. Client receipt/history/composer and bubbles remain pending.
+
+
+## Bounded client inbox and world delivery serial — 8 November 2026
+
+`chat_client::Inbox` validates admitted world/incarnation context, retains64
+messages and one owner-scoped latest reply, and ignores stale/duplicate delivery
+serials. A conflicting latest serial or regressing delivery tick fails before
+mutation. Replies have independent ordering, so an older queued chat delivery
+can legitimately arrive after a private reply. A stale/replayed reply cannot
+overwrite the latest request outcome. Area senders need no movement-roster entry.
+
+The router now assigns a checked monotonic world delivery serial across speakers
+and channels. This permits bounded duplicate protection without accumulating a
+per-speaker map over a long world lifetime. Accepted messages consume one serial;
+refusals do not, and exhaustion refuses further acceptance rather than wrapping.
+Global accepted chat time cannot regress. CD02 carries the additional serial;
+maximum delivery size is now356 bytes. The opt-in compatibility identity advances
+to candidate v3. CQ01 requests and69-byte CR01 replies retain their shapes; normal
+protocol13/default worlds are unchanged. Prior CD01/v1/v2 artifacts are historical.
+
+A full64-message inbox holds at most22,784 encoded delivery bytes; eight full
+sixteen-message server outboxes hold at most45,568 encoded delivery bytes. These
+exclude allocator/container overhead and the independently bounded reply queues.
+Text limits and delivery rate continue to bound content allocation.
+
+Fourteen focused tests pass in `build/local-chat-20261108/inbox-v2.log`. New cases
+exercise10,000 changing actor IDs, retained history bounds, serial gaps, exact/
+stale/conflicting delivery, context rejection, independent reply ordering and
+serial/time exhaustion. The actual encrypted three-peer fixture now feeds its
+real received frames through Inbox as well as the decoder; nearby/Area delivery
+and private rate-limited reply results remain correct. Strict workspace/all-target
+Clippy and formatting pass (`inbox-clippy-v1.log`, `inbox-fmt-v1.log`).
+
+This is the receipt/cache prerequisite exercised by raw encrypted fixture clients.
+The normal Renet client worker and gameplay State do not use it yet; no composer,
+chat window, native chat input or bubbles are claimed. Next wire the bounded
+producer/receipt mode into the real client worker with timeout/reply behavior
+that cannot disconnect or pause gameplay just because chat is delayed.

@@ -1,3 +1,12 @@
+## 8 November 2026 — world chat serial bounds long-lived client replay state
+
+Assign a checked monotonically increasing server delivery serial across speakers
+and channels, distinct from client request sequences. Keep64 received messages
+and one private reply; no per-speaker replay map grows across join/leave churn.
+Validate context before ignoring stale data; conflicting latest serials and
+regressing chat time fail before mutation. CD02/v3 is opt-in only; normal
+protocol13 remains unchanged. [Evidence](LOCAL_CHAT.md#bounded-client-inbox-and-world-delivery-serial--8-november-2026).
+
 ## 8 November 2026 — bounded private chat replies reserve gameplay capacity
 
 Reply to the admitted sender with an exact owner/world-scoped outcome; queue at
