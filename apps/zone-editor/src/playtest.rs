@@ -456,3 +456,96 @@ mod resolution_tests {
         }
     }
 }
+
+#[cfg(test)]
+mod example_tests {
+    use super::*;
+    #[test]
+    fn wayfarer_hollow_route_and_shelter_use_actual_avian_collision() {
+        let zone = Zone::from_json(include_bytes!(
+            "../../../content/zones/wayfarer-hollow.base.json"
+        ))
+        .unwrap();
+        let mut editor = Editor::new(zone).unwrap();
+        for line in include_str!("../../../content/zones/wayfarer-hollow.commands.jsonl").lines() {
+            editor.execute(serde_json::from_str(line).unwrap()).unwrap();
+        }
+        let zone = editor.zone();
+        assert_eq!(zone.schema, 7);
+        assert_eq!(
+            (
+                zone.objects.len(),
+                zone.paths.len(),
+                zone.plants.len(),
+                zone.markers.len()
+            ),
+            (11, 3, 48, 2)
+        );
+        let mut play = Playtest::new(zone).unwrap();
+        let route = &zone.paths.iter().find(|p| p.id == 100).unwrap().points;
+        for target in route.iter().skip(1) {
+            let target = zone.local(*target).unwrap();
+            let mut reached = false;
+            for _ in 0..400 {
+                let feet = play.feet.metres();
+                let delta = Vec2::new(target[0] - feet[0], target[2] - feet[2]);
+                if delta.length() < 0.35 {
+                    reached = true;
+                    break;
+                }
+                let axes = delta.normalize() * 1000.;
+                play.feet = kinematic::advance(
+                    &play.scene,
+                    &mut play.motion,
+                    play.feet,
+                    Intent {
+                        axes: [axes.x.round() as i16, axes.y.round() as i16],
+                        ..default()
+                    },
+                    TickRate::Hz30,
+                )
+                .unwrap();
+                let global = zone.global(play.feet.metres()).unwrap();
+                let surface = zone.surface_position([global[0], global[2]]).unwrap();
+                assert!(
+                    (global[1] - surface[1]).abs() < 0.15,
+                    "Road contact {global:?} vs {surface:?}"
+                );
+            }
+            assert!(
+                reached,
+                "Road blocked before {target:?}, feet {:?}",
+                play.feet.metres()
+            );
+        }
+        let feet = play.feet.metres();
+        assert!((feet[1] - 6.).abs() < 0.15);
+        let mut shelter = zone.clone();
+        shelter.spawn = [42., 0.15, 97.];
+        let mut play = Playtest::new(&shelter).unwrap();
+        for _ in 0..120 {
+            play.feet = kinematic::advance(
+                &play.scene,
+                &mut play.motion,
+                play.feet,
+                Intent {
+                    axes: [0, 1000],
+                    ..default()
+                },
+                TickRate::Hz30,
+            )
+            .unwrap();
+        }
+        let feet = play.feet.metres();
+        assert!(
+            feet[2] > 100.7 && feet[2] < 101.3,
+            "Shelter wall failed {feet:?}"
+        );
+        assert!(
+            (feet[1] - 0.05).abs() < 0.08,
+            "Shelter floor failed {feet:?}"
+        );
+        shelter.spawn = [36., 0.1, 97.];
+        assert!(Playtest::new(&shelter).is_err());
+    }
+}

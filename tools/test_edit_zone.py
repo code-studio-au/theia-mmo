@@ -4,7 +4,7 @@ import tempfile
 import sys
 import unittest
 
-from edit_zone import build_environment, editor_arguments
+from edit_zone import build_environment, editor_arguments, example_arguments
 
 
 class EditorLaunchTests(unittest.TestCase):
@@ -25,6 +25,27 @@ class EditorLaunchTests(unittest.TestCase):
         for flag in ['--zone', '--commands', '--output', '--save-path', '--export']:
             arguments = [flag, 'caller-relative.file', '--headless']
             self.assertEqual(editor_arguments(arguments, Path('unused.json')), arguments)
+
+    def test_example_seed_selects_a_separate_nonwriting_destination(self):
+        with tempfile.TemporaryDirectory() as root:
+            root = Path(root)
+            draft = root / 'new-example.json'
+            arguments = example_arguments(['--headless'], draft, root)
+            self.assertEqual(arguments, ['--headless', '--zone', str(root/'content/zones/wayfarer-hollow.base.json'),
+                                         '--commands', str(root/'content/zones/wayfarer-hollow.commands.jsonl'), '--save-path', str(draft)])
+            self.assertFalse(draft.exists())
+
+    def test_example_reopens_user_changes_without_reapplying_the_seed(self):
+        with tempfile.TemporaryDirectory() as root:
+            draft = Path(root) / 'example.json'
+            draft.write_bytes(b'user authored example')
+            self.assertEqual(example_arguments([], draft), ['--zone', str(draft)])
+            self.assertEqual(draft.read_bytes(), b'user authored example')
+
+    def test_example_refuses_ambiguous_explicit_authoring_flags(self):
+        for flag in ['--zone', '--commands', '--output', '--save-path', '--export']:
+            with self.assertRaises(ValueError):
+                example_arguments([flag, 'path'], Path('unused.json'))
 
     def test_build_environment_preserves_caller_settings_and_does_not_mutate_them(self):
         with tempfile.TemporaryDirectory() as root:

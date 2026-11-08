@@ -1,3 +1,14 @@
+## 8 November 2026 — original replayable example and whole-terrain framing
+
+Provide an original primitive-only Wayfarer Hollow base/command recipe and an
+explicit launcher `--example` path. Seed new drafts in memory with a separate
+save destination; reopen existing edited drafts without reseeding or replacing
+source. Demonstrate existing terrain, grading, painting, props, vegetation,
+notes, collision and export together. F in Sculpt/Paint frames terrain through
+the same checked normal Bevy camera path. Keep source annotations/stream guides
+separate from live NPC/quest/water behavior and leave default game content alone.
+[Contract/evidence](ZONE_EDITOR.md#wayfarer-hollow-example-and-terrain-framing--8-november-2026).
+
 ## 8 November 2026 — adjustable bounded raise/lower strength
 
 Expose the retained brush domain's 0.05..8 m stamp amount with bracket keys to

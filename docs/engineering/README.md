@@ -1,4 +1,4 @@
-Zone authoring controls, 8 November 2026 (P5-17 / P3-15 / P1-10; P2-06/07):
+Zone editor and original example, 8 November 2026 (P5-17 / P3-15 / P1-10; P2-06/07):
 H and structured `project_to_surface` now ground selected objects, plants,
 markers and guide points through shared candidate validation and undo. Primitive
 centres account for half-height; foot anchors use the exact terrain support.
@@ -12,9 +12,14 @@ Ctrl-D and structured `duplicate` commands copy any authoring kind with fresh
 shared IDs, bounded names/offsets and one-entry history. Local/far/empty native
 copy/framing and positive/negative flatten cases pass. Raise/lower strength also
 halves/doubles within 0.05..8 m, with exact visual/headless 0.125 m stamp checks
-on both grids. 58 focused Rust cases, four launcher cases, formatting
+on both grids. `python3 tools/edit_zone.py --example` now opens/reopens a separate
+Wayfarer Hollow draft from an original four-transaction recipe. F also frames
+the terrain patch. Its graded walking route and shelter pass actual Avian checks;
+local/far 3440x1440 editor runs and two real Renet client pairs pass with zero GPU
+diagnostics, including far origin Y=20. Markers remain authoring notes and the
+stream remains a visual guide. 59 focused Rust cases, seven launcher cases, formatting
 and strict workspace/all-target Clippy pass. The full native 3440x1440 walkthrough also passes
-with Vulkan validation active and zero GPU diagnostics; [contract and evidence](../ZONE_EDITOR.md#explicit-terrain-grounding--8-november-2026).
+with Vulkan validation active and zero GPU diagnostics; [contract and evidence](../ZONE_EDITOR.md#wayfarer-hollow-example-and-terrain-framing--8-november-2026).
 Local commits only; no push. Chat composer/bubbles remain deferred.
 
 Zone-authoring focus, 8 November 2026 (P5-17 / P3-15 / P1-10):

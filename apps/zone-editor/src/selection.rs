@@ -13,13 +13,16 @@ pub(super) fn keyboard(
         || session.stroke.is_some()
         || session.path_draft.is_some()
         || session.path_mode
-        || session.terrain_mode
         || keys.pressed(KeyCode::ControlLeft)
         || keys.pressed(KeyCode::ControlRight)
     {
         return false;
     }
-    if keys.just_pressed(KeyCode::Tab) && !session.marker_mode && !session.vegetation_mode {
+    if keys.just_pressed(KeyCode::Tab)
+        && !session.marker_mode
+        && !session.vegetation_mode
+        && !session.terrain_mode
+    {
         let objects = &session.editor.zone().objects;
         let reverse = keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight);
         session.selected = if objects.is_empty() {
@@ -46,7 +49,24 @@ pub(super) fn keyboard(
         return false;
     }
     let zone = session.editor.zone();
-    let framing = if session.vegetation_mode {
+    let framing = if session.terrain_mode {
+        zone.terrain.as_ref().and_then(|patch| {
+            let start = patch.origin().ok()?;
+            let minimum = patch.heights.iter().copied().fold(f32::INFINITY, f32::min);
+            let maximum = patch
+                .heights
+                .iter()
+                .copied()
+                .fold(f32::NEG_INFINITY, f32::max);
+            let centre = [
+                start[0] + 64.,
+                zone.origin[1] + f64::from((minimum + maximum) / 2.),
+                start[2] + 64.,
+            ];
+            let radius = Vec3::new(64., (maximum - minimum) / 2., 64.).length();
+            Some((centre, radius))
+        })
+    } else if session.vegetation_mode {
         zone.plants
             .iter()
             .find(|p| Some(p.id) == session.plant_selected)
@@ -89,7 +109,12 @@ pub(super) fn keyboard(
             Err(error) => session.status = error,
         }
     } else {
-        session.status = "Select a placement before focusing".into();
+        session.status = if session.terrain_mode {
+            "Create terrain before focusing"
+        } else {
+            "Select a placement before focusing"
+        }
+        .into();
     }
     true
 }

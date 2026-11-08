@@ -1199,3 +1199,106 @@ Evidence: ignored `build/zone-strength-native-3440-v1/{qualification.json,*.png}
 generated reference commands/documents, `zone-strength-tests-v1.log`,
 `zone-strength-build-v1.log` and `zone-strength-clippy-v1.log`. Editor SHA-256:
 `ea41f02024972c98f56c1162f97355e9dd362e37624aa006c6f458d7afb9d463`.
+
+
+## Wayfarer Hollow example and terrain framing — 8 November 2026
+
+P5-17 / P3-15 / P1-10; P2-06/07 terrain: an original primitive-only example now
+connects the existing authoring tools into one playable bounded slice. Open it:
+
+```sh
+python3 tools/edit_zone.py --example
+```
+
+This seeds `build/wayfarer-hollow.zone.json` in memory on first launch and writes
+it only on Save. Subsequent launches reopen that edited draft without reapplying
+the recipe. Use `--draft FILE` for a different destination. The original base and
+recipe remain unchanged. `--example` refuses explicit `--zone`, `--commands`,
+`--output`, `--save-path` or `--export` combinations; use the existing explicit
+headless pipeline below for those operations. Invalid existing drafts still
+fail instead of falling back to a fresh seed. The ordinary blank-draft launcher
+and caller-relative explicit paths retain their behavior.
+
+The source is `content/zones/wayfarer-hollow.base.json` (named schema-1 origin /
+spawn) plus `wayfarer-hollow.commands.jsonl`: four validated transactions with
+10/4/37/17 edits. They create hills, a graded approximately 92 m approach route,
+a level shelter courtyard and stream trench; refine to 2 m samples; paint dirt,
+sand and rock; then place eleven primitives, two authoring notes and 48 seeded
+plant proxies. The resulting schema-7 source is 337,763 pretty-serialized bytes,
+within the retained 1 MiB budget. Only original source/recipe data is tracked;
+generated documents and runtime exports stay under ignored build directories.
+No new engine/collision special cases or production assets are introduced.
+
+The route starts at `[64, 0.1, 116]`, faces the initial forward direction and
+climbs to a 6 m summit between static posts. The shelter has a raised floor,
+three walls, an open front and roof built from ordinary generic boxes. All
+vegetation remains nonblocking greybox presentation. NPC/quest notes are not
+live entities; their catalogue keys are unresolved example identifiers. The
+stream ribbon is a render-only authoring guide, without water/swimming/flow
+behavior. Existing default gameplay content is unchanged.
+
+In Sculpt (F2) or Paint (F7), F now frames the terrain patch using its horizontal
+extent and actual min/max heights, checked global/local conversion and the
+normal bounded Bevy camera. It changes neither document nor history. Existing
+object/plant/marker/guide/point framing remains intact. Suggested walkthrough:
+F2, F to frame, wheel to zoom, F5 to play, W to walk through the approach posts,
+then F5 to return. Save before exporting an edited draft. To reproduce directly:
+
+```sh
+target/debug/theia-zone-editor --headless \
+  --zone content/zones/wayfarer-hollow.base.json \
+  --commands content/zones/wayfarer-hollow.commands.jsonl \
+  --output build/wayfarer-hollow.zone.json \
+  --export build/wayfarer-hollow-package \
+  --content-id theia.zone.wayfarer-hollow --revision 1
+```
+
+Export destinations must be new directories. This uses the existing standard
+GLB / collision-profile schema 4 / bound manifest path. The qualified package
+has 15,242 visual triangles, terrain vertex colours, three guides, 48 render-only
+plants and two preserved source-only notes. Existing runtime collision/content
+verification passes; Khronos validator `2.0.0-dev.3.10` reports zero errors,
+warnings, infos or hints. Evidence: ignored `build/wayfarer-hollow-export-v1.log`,
+`zone-package-wayfarer-hollow-v1/`, `wayfarer-hollow-export-source-v1.json` and
+`wayfarer-hollow-gltf-validation-v1.json`.
+
+All 59 focused Rust cases (43 domain / 16 editor) and seven launcher Python cases
+pass, as do formatting and denied-warning workspace/all-target Clippy. A new
+fixture test uses actual Avian queries/shared capsule movement to traverse every
+route waypoint with terrain contact, stand on the shelter floor, stop at its
+back wall and refuse a spawn inside a wall. This is source-content collision
+proof, not a navigation, gameplay AI or Classic movement-policy change.
+Evidence: `build/wayfarer-hollow-tests-v1.log`, `wayfarer-hollow-clippy-v1.log` and
+fresh paired `wayfarer-hollow-build-v1.log`.
+
+Three actual native 3440x1440 editor cases cover first-launch seed/save, a user
+marker edit surviving reopen, and origin `[128000000000,20,-128000000000]`.
+They verify source hashes unchanged, terrain framing without history changes,
+actual forward walking past approach posts and unchanged authoring content
+after playtest. Every accepted PNG checks visible road, blue guide/avatar and
+foliage pixels in the scene region. Initial captures can precede Bevy's pipeline
+compilation; the read-only capture helper retries until scene pixels exist.
+The first run's early blank overview is not counted as final visual acceptance.
+Final evidence: `build/wayfarer-hollow-native-3440-v2/{qualification.json,*.png}`.
+All three observe active Vulkan validation on RX 7900 XTX (RADV NAVI31), device
+29772, with zero GPU/resize diagnostics.
+
+The exported package also passes two actual normal server/two-rendered-client
+Renet cases, all four clients at 3440x1440: local and instanced at
+`[128000000000,20,-128000000000]`. Bound content identities, separate player
+identities, authoritative movement/contact, global/local coordinates and blue/
+red avatar pixels pass. Capsule clearance is approximately 0.008 m in both
+frames. All four clients observe active Vulkan validation with zero GPU
+diagnostics. Evidence: `build/wayfarer-hollow-renet-local-3440-v1/verification.json`,
+`wayfarer-hollow-renet-far-3440-v1/verification.json` and captures. This is loopback
+encrypted development admission with real Bevy clients; production account
+admission, native Windows, population capacity, streaming and latency benchmarks
+remain separate. The normal client/server source is unchanged by this authoring
+slice; exact fresh paired hashes are recorded below and in
+`build/wayfarer-hollow-paired-sha256-v1.txt`.
+
+| Binary | SHA-256 |
+| --- | --- |
+| editor | `7d4090274302f02a6664d703e85fc0c7ef464cc52bdc46cc4a4cb099dc49d879` |
+| client | `7f0e002e0bc400a0d939033a7d1b87c5da7a6c58cb6d57e88a9f53a7f42c9f9b` |
+| server | `0ddeef5da03401b35faa4d9c2a812f974d175d038961564c04fbb275dedc83a6` |

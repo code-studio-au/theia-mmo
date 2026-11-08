@@ -3,9 +3,12 @@ open the lightweight Bevy editor at **3440x1440 fullscreen**. It reopens
 `build/zone-draft.json` when present; a new draft is written on Save. Use
 `--draft FILE` for another default draft, or pass explicit editor arguments.
 
+Try the original editable example with `python3 tools/edit_zone.py --example`.
+It saves separately to `build/wayfarer-hollow.zone.json` and reopens your edits.
+
 F1 objects · F2 sculpt · F3 road/stream guides and points · F4 NPC/quest markers ·
 F6 vegetation · F7 terrain paint. F5 enters/leaves the offline Avian playtest.
-Tab/Shift-Tab cycle objects; F frames a selection; Ctrl-D duplicates it.
+Tab/Shift-Tab cycle objects; F frames a selection or terrain; Ctrl-D duplicates a selection.
 H grounds the selected placement or guide points on terrain.
 Visual editing and structured agent commands share validation and undo.
 The summary marks unsaved changes, including pending drafts.

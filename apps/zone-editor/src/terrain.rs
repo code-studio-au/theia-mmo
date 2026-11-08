@@ -350,7 +350,7 @@ pub(super) fn palette(
 ) {
     for mut text in &mut help {
         **text = if session.terrain_paint {
-            "F7: terrain colour paint\nClick/drag: paint stroke\nRelease: one undo entry\nEsc cancels preview\nGrass / dirt / rock / sand\nPaint changes colour weights\nGrid weights, locked grass edge\nF2 returns to sculpting".into()
+            "F7: terrain colour paint\nF: frame terrain\nClick/drag: paint stroke\nRelease: one undo entry\nEsc cancels preview\nGrass / dirt / rock / sand\nPaint changes colour weights\nGrid weights, locked grass edge\nF2 returns to sculpting".into()
         } else if session.vegetation_mode {
             "F6: greybox trees / shrubs\nCtrl D: copy plant\nF: focus | H: ground selection\nClick places one stamp\nEsc selects | Del removes\nArrows/PgUp/Dn: move\nR / Shift R: yaw +/-15 deg\n+/-: plant scale\n[ / ]: scatter radius\n, / .: scatter count\nVegetation proxies do not\nadd world collision".into()
         } else if session.marker_mode {
@@ -363,6 +363,7 @@ Click/drag: brush stroke
 Release: one undo entry
 Esc: cancel preview
 WASD pan | RMB orbit
+F: frame terrain
 Wheel zoom | F5 playtest
 [ / ]: halve/double raise/lower
 Strength: 0.05 to 8 m / stamp
