@@ -4,6 +4,7 @@ pub mod mailbox;
 pub mod markers;
 pub mod painting;
 pub mod paths;
+pub mod projection;
 pub mod resampling;
 pub mod terrain;
 pub mod vegetation;
@@ -290,6 +291,9 @@ pub enum Edit {
     Brush {
         brush: terrain::Brush,
     },
+    ProjectToSurface {
+        projection: projection::Projection,
+    },
     ResampleTerrain {
         resolution: terrain::Resolution,
     },
@@ -433,6 +437,9 @@ impl Editor {
                         Edit::SetTerrain { terrain } => {
                             candidate.schema = candidate.schema.max(2);
                             candidate.terrain = terrain;
+                        }
+                        Edit::ProjectToSurface { projection } => {
+                            projection.apply(&mut candidate)?
                         }
                         Edit::ResampleTerrain { resolution } => {
                             candidate.schema = candidate.schema.max(7);

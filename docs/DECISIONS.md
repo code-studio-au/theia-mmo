@@ -1,3 +1,12 @@
+## 8 November 2026 — explicit terrain grounding through shared history
+
+Keep saved placement/guide heights stable during sculpting. Add explicit terrain
+projection for typed placement IDs and guide-point indices, preserving X/Z and
+accounting for primitive centre versus foot anchors. Reuse exact terrain queries,
+whole-candidate validation and bounded transaction/history rules; a whole guide
+is one undo. Keep prop stacking, full footprint fitting and runtime collision
+independent. [Contract/evidence](ZONE_EDITOR.md#explicit-terrain-grounding--8-november-2026).
+
 ## 8 November 2026 — optional finite 2 m terrain authoring grid
 
 Zone schema 7 adds a typed 2 m / 4 m sample resolution on the existing 128 m

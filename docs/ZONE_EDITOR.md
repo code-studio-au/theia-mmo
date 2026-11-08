@@ -77,7 +77,7 @@ starts at zero for each freshly opened document and is not persisted identity.
 Palette buttons / 1–3 choose placement; click the ground to place. Escape returns
 selection mode. Click an object to select; drag it on a second press to move X/Z.
 Arrows move X/Z, PageUp/Down move Y, R/Shift-R rotate ±15°, +/- scale uniformly.
-G toggles one-metre snap; Ctrl-Z/Y undo/redo; Ctrl-S/O save/load. WASD pan, RMB
+G toggles one-metre snap; H grounds the selection; Ctrl-Z/Y undo/redo; Ctrl-S/O save/load. WASD pan, RMB
 orbits and wheel zooms. F5 enters/leaves playtest; W/S forward/back, A/D turn,
 Q/E strafe and Space jumps. This sandbox uses the retained development controller
 speed policy; it is not a new Classic gameplay movement configuration.
@@ -922,3 +922,61 @@ full walkthrough.
 | editor | `1bd17cc1dc5b004a7c4d444a65ec626ce0749cd7cb865036de401f996b175d51` |
 | client | `7f0e002e0bc400a0d939033a7d1b87c5da7a6c58cb6d57e88a9f53a7f42c9f9b` |
 | server | `0ddeef5da03401b35faa4d9c2a812f974d175d038961564c04fbb275dedc83a6` |
+
+## Explicit terrain grounding — 8 November 2026
+
+P5-17 / P3-15 / P1-10, with P2-06/07 terrain: sculpting and grading preserve
+saved object/guide/marker/plant heights. H now grounds the current selection
+explicitly through the same validated command and undo path as agent requests.
+Objects use their centre anchor plus half their Y size; vegetation and markers
+use feet. A selected guide point grounds individually; a whole selected guide
+grounds all its control points in one history entry, with a 0.03 m ribbon offset.
+X/Z, yaw, size, metadata, terrain and unselected placements remain unchanged.
+
+```json
+{"command":"apply","expected_revision":0,"edits":[{"op":"project_to_surface","projection":{"targets":[{"kind":"placement","id":1},{"kind":"guide_point","id":100,"index":0}],"offset_metres":0}}]}
+```
+
+IDs share the existing authoring namespace. Placement targets resolve objects,
+plants or markers; guides require explicit point indices. Each projection has
+1..128 unique typed targets and a finite offset within ±16 m. The surface is
+sampled over the active terrain's exact triangles in global f64 coordinates;
+outside the patch or without terrain it uses zone-origin Y. This grounds an
+anchor, not the full footprint on a slope, and does not stack objects on props.
+Spawn clearance remains the playtest/export validator's responsibility. No
+schema change is needed for these existing positions.
+
+Unknown IDs/indices, duplicates, malformed candidates, invalid offsets and an
+entirely unchanged group refuse without advancing revision or changing either
+history stack. Transactions still commit only after whole-document validation.
+Draft guides must be finished/cancelled before H; playtest remains read-only.
+Mailbox busy/refusal/retry rules are retained. One grouped command is one undo
+entry even when it combines several placement types and guide points.
+
+Qualification: 54 focused Rust cases (39 domain / 15 editor), four launcher
+cases, formatting, diff checks and denied-warning workspace/all-target Clippy
+pass. Grounding tests cover exact off-grid triangle support, flat fallback,
+primitive centre/foot offsets, mixed groups, positive/negative far frames,
+no-op refusal, stale history protection and malformed intermediate terrain.
+The existing actual Avian/export/encrypted-admission tests remain included.
+Evidence: ignored `build/zone-ground-tests-final-v2.log`,
+`zone-ground-clippy-final-v2.log` and `zone-ground-build-v1.log`.
+
+The full native 3440x1440 walkthrough passes on AMD Radeon RX 7900 XTX
+(RADV NAVI31), Vulkan device 29772, with validation observed active and zero GPU
+or resize diagnostics. Real pointer/keyboard checks cover object/plant/marker/
+whole-guide grounding, individual guide-point H, exact undo/redo, repeated no-op
+refusal and agent object grounding/cached retry. Retained sculpt/paint/refine/
+grading/save/load/playtest checks also pass. Evidence:
+`build/zone-ground-native-3440-v4/{qualification.json,state.png}`, final revision
+138, history 54/1. Editor SHA-256:
+`837961d8e6cad4fc1587b73d34d3b1c245b63afc5bdf775dd63d79b30b7df372`.
+
+An initial native fixture's +1 m marker move landed exactly on terrain; the
+correct no-op refusal invalidated its expected revision. Explicit fixture
+movement directions now avoid that coincidence. A rerun also exposed initial
+cursor motion being sent before the first rendered report; the harness now
+moves within the owned window after that report before targeting a button.
+The intermediate partial runs are not counted as acceptance. Native Windows
+and new normal-game pairs were not run for this position-only command slice;
+the earlier exported-package pair evidence retains its recorded source scope.

@@ -145,6 +145,7 @@ enum Action {
     Save,
     Load,
     Snap,
+    Ground,
     Play,
     Spawn,
     Delete,
@@ -363,7 +364,7 @@ fn setup_ui(mut commands: Commands) {
                     BackgroundColor(Color::srgb(0.10, 0.16, 0.22)))).with_children(|button| { button.spawn((PaletteLabel,text(title, 15.))); });
             }
             panel.spawn((Info, text("", 14.)));
-            panel.spawn((Help,text("WASD pan | RMB orbit | wheel zoom\nDrag selected: X/Z\nArrows: X/Z | PgUp/Dn: Y\nR / Shift R: yaw +/-15 deg\n+ / -: uniform size\nPlay: W/S forward/back | A/D turn\nQ/E strafe | Space jump\nOffline collision sandbox", 13.)));
+            panel.spawn((Help,text("WASD pan | RMB orbit | wheel zoom\nDrag selected: X/Z | H: ground\nArrows: X/Z | PgUp/Dn: Y\nR / Shift R: yaw +/-15 deg\n+ / -: uniform size\nPlay: W/S forward/back | A/D turn\nQ/E strafe | Space jump\nOffline collision sandbox", 13.)));
         });
     commands.spawn((
         Summary,
@@ -400,6 +401,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
         Action::NewPath(_)
             | Action::FinishPath
             | Action::GradePath
+            | Action::Ground
             | Action::PopPath
             | Action::NextPath
             | Action::PathWidth(_)
@@ -449,6 +451,50 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
             session.vegetation_mode = false;
             session.palette = Some(primitive);
             session.status = "Click the ground to place".into();
+        }
+        Action::Ground => {
+            use theia_zone::projection::{Projection, Target};
+            if session.path_draft.is_some() {
+                session.status = "Finish or cancel the guide draft before grounding".into();
+                return;
+            }
+            let targets = if session.path_mode {
+                session
+                    .path_selected
+                    .and_then(|id| {
+                        session
+                            .editor
+                            .zone()
+                            .paths
+                            .iter()
+                            .find(|p| p.id == id)
+                            .map(|p| match session.path_point {
+                                Some(index) => vec![Target::GuidePoint { id, index }],
+                                None => (0..p.points.len())
+                                    .map(|index| Target::GuidePoint { id, index })
+                                    .collect(),
+                            })
+                    })
+                    .unwrap_or_default()
+            } else {
+                let id = if session.vegetation_mode {
+                    session.plant_selected
+                } else if session.marker_mode {
+                    session.marker_selected
+                } else if !session.terrain_mode {
+                    session.selected
+                } else {
+                    None
+                };
+                id.map(|id| vec![Target::Placement { id }])
+                    .unwrap_or_default()
+            };
+            session.edit(vec![Edit::ProjectToSurface {
+                projection: Projection {
+                    targets,
+                    offset_metres: if session.path_mode { 0.03 } else { 0. },
+                },
+            }]);
         }
         Action::Snap => session.snap = !session.snap,
         Action::Undo => session.execute(Command::Undo {
@@ -639,6 +685,8 @@ fn keyboard(
         Some(Action::Place(Primitive::Sphere))
     } else if keys.just_pressed(KeyCode::Digit3) {
         Some(Action::Place(Primitive::Cylinder))
+    } else if keys.just_pressed(KeyCode::KeyH) {
+        Some(Action::Ground)
     } else if keys.just_pressed(KeyCode::KeyG) {
         Some(Action::Snap)
     } else if keys.just_pressed(KeyCode::Delete) {

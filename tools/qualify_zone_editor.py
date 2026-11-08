@@ -12,7 +12,8 @@ from gpu_validation import check_gpu_diagnostics
 from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 
 
-def run(output, binary, size, agent=False, terrain=False, guides=False, markers=False, vegetation=False, grading=False, points=False, painting=False, fine=False):
+def run(output, binary, size, agent=False, terrain=False, guides=False, markers=False, vegetation=False, grading=False, points=False, painting=False, fine=False, grounding=False):
+    fine = fine or grounding
     painting = painting or fine
     points = points or painting
     grading = grading or points
@@ -46,6 +47,9 @@ def run(output, binary, size, agent=False, terrain=False, guides=False, markers=
             # Verify the tool's own fullscreen startup; do not resize it into compliance.
             width, height = map(int, size.split('x'))
             wait(lambda: state()['viewport'] == [width, height])
+            # Send real motion after the first rendered report, even when the
+            # pointer starts at the first button's eventual location.
+            desktop.move(window, [width/2, height/2], 1)
             assert all(0 <= b['centre'][1] - b['size'][1]/2 and b['centre'][1] + b['size'][1]/2 <= state()['viewport'][1] for b in state()['buttons'])
             def read_saved():
                 value = json.loads(saved.read_text())
@@ -734,6 +738,61 @@ def run(output, binary, size, agent=False, terrain=False, guides=False, markers=
                 wait(lambda: capture_ready(report.with_suffix('.png')),30)
                 report.with_suffix('.png').rename(output/'resolution.png')
                 checks.append('2m refinement/coarsening with preserved coarse samples/colours, shared undo/agent retry, fine sculpt/paint, save/load/playtest and cached meshes')
+            if grounding:
+                key('F1')
+                before = state()
+                start = next(o['screen'] for o in before['objects'] if o['id'] == 6)
+                click(window,start,1,1)
+                wait(lambda: state()['selected'] == 6)
+                key('Page_Up')
+                elevated = revision(before['revision'])
+                key('h')
+                grounded = revision(elevated['revision'])
+                assert grounded['document']['objects'][-1]['pose']['position'][1] != elevated['document']['objects'][-1]['pose']['position'][1]
+                chord('z')
+                assert revision(grounded['revision'])['document'] == elevated['document']
+                chord('z')
+                assert revision(grounded['revision']+1)['document'] == before['document']
+                # Grounding is explicit after sculpting; test real keyboard paths.
+                for mode, action, collection in [('F6','NextPlant','plants'), ('F4','NextMarker','markers'), ('F3','NextPath','paths')]:
+                    key(mode)
+                    button(action)
+                    before = state()
+                    key('Page_Up' if collection == 'plants' else 'Page_Down')
+                    elevated = revision(before['revision'])
+                    original = elevated['document']
+                    key('h')
+                    grounded = revision(elevated['revision'])
+                    assert grounded['document'][collection] != original[collection]
+                    assert grounded['document']['terrain'] == original['terrain']
+                    if collection == 'paths':
+                        old = original[collection][0]['points']
+                        new = grounded['document'][collection][0]['points']
+                        assert all(a[0] == b[0] and a[2] == b[2] for a,b in zip(old,new))
+                    else:
+                        old = original[collection][0]['position']
+                        new = grounded['document'][collection][0]['position']
+                        assert old[0] == new[0] and old[2] == new[2]
+                    chord('z')
+                    assert revision(grounded['revision'])['document'] == original
+                    chord('y')
+                    assert revision(grounded['revision']+1)['document'] == grounded['document']
+                    # Leave the retained point-picking qualification's source intact.
+                    chord('z')
+                    revision(grounded['revision']+2)
+                    chord('z')
+                    assert revision(grounded['revision']+3)['document'] == before['document']
+                before = state()
+                object_ = before['document']['objects'][0]
+                receipt, request = agent_request(dict(command='apply', expected_revision=before['revision'], edits=[dict(op='project_to_surface',projection=dict(targets=[dict(kind='placement',id=object_['id'])],offset_metres=0.5))]))
+                assert receipt['accepted'], receipt
+                grounded = revision(before['revision'])
+                repeated, _ = agent_request(request=request)
+                assert repeated == receipt
+                assert state()['revision'] == grounded['revision']
+                chord('z')
+                assert revision(grounded['revision'])['document'] == before['document']
+                checks.append('explicit keyboard plant/marker/whole-guide terrain grounding, shared agent object command, retry and exact undo/redo')
             if points:
                 key('F3')
                 wait(lambda: state()['path_mode'] and state()['path_selected'] is None)
@@ -756,6 +815,18 @@ def run(output, binary, size, agent=False, terrain=False, guides=False, markers=
                 previous = state()['revision']
                 chord('y')
                 assert revision(previous)['document'] == changed['document']
+                if grounding:
+                    previous = state()['revision']
+                    key('h')
+                    grounded_point = revision(previous)
+                    assert abs(grounded_point['document']['paths'][0]['points'][0][1] - original['paths'][0]['points'][0][1]) < 1e-8
+                    assert grounded_point['document']['paths'][0]['points'][1] == original['paths'][0]['points'][1]
+                    key('h')
+                    wait(lambda: state()['status'] == 'Selection already grounded')
+                    assert state()['revision'] == grounded_point['revision']
+                    chord('z')
+                    assert revision(grounded_point['revision'])['document'] == changed['document']
+                    checks.append('individual guide-point H grounding preserves other endpoints and refuses repeated no-op without history')
                 key('Tab')
                 wait(lambda: state()['path_point'] == 1)
                 key('Tab')
@@ -852,5 +923,6 @@ if __name__ == '__main__':
     parser.add_argument('--points', action='store_true')
     parser.add_argument('--paint', action='store_true')
     parser.add_argument('--fine-terrain', action='store_true')
+    parser.add_argument('--grounding', action='store_true')
     args = parser.parse_args()
-    run(args.output, args.binary, args.size, args.agent, args.terrain, args.guides, args.markers, args.vegetation, args.grading, args.points, args.paint, args.fine_terrain)
+    run(args.output, args.binary, args.size, args.agent, args.terrain, args.guides, args.markers, args.vegetation, args.grading, args.points, args.paint, args.fine_terrain, args.grounding)
