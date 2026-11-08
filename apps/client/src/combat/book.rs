@@ -1,4 +1,4 @@
-//! Read-only configured ability book. No casts, learning or gameplay authority.
+//! Configured ability book and local binding sources. No learning or gameplay authority.
 use super::Config;
 use bevy::{
     picking::{Pickable, hover::Hovered},
@@ -6,12 +6,20 @@ use bevy::{
     text::FontSize,
     ui_widgets::{Activate, Button},
 };
-const PAGE_SIZE: usize = 3;
+pub(super) const PAGE_SIZE: usize = 3;
 #[derive(Resource, Default)]
 pub(crate) struct Ui {
     pub open: bool,
     pub closed_this_frame: bool,
     page: usize,
+}
+impl Ui {
+    pub(super) fn page(&self) -> usize {
+        self.page
+    }
+    pub(super) fn ability_index(&self, row: usize) -> Option<usize> {
+        (row < PAGE_SIZE).then_some(self.page * PAGE_SIZE + row)
+    }
 }
 pub(crate) fn owns_escape(ui: Option<&Ui>) -> bool {
     ui.is_some_and(|u| u.open || u.closed_this_frame)
@@ -21,16 +29,20 @@ struct Pane;
 #[derive(Component)]
 struct Entry(usize);
 #[derive(Component)]
+pub(crate) struct BookEntry(pub(crate) usize);
+#[derive(Component)]
 struct EntryIcon(usize);
 #[derive(Component)]
 struct PageLabel;
+#[derive(Component)]
+struct DragHint;
 #[derive(Component, Clone, Copy)]
 enum Control {
     Previous,
     Next,
     Close,
 }
-fn pages(count: usize) -> usize {
+pub(super) fn pages(count: usize) -> usize {
     count.div_ceil(PAGE_SIZE).max(1)
 }
 fn label(text: &str, size: f32) -> impl Bundle {
@@ -90,7 +102,7 @@ fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
                         min_height: px(112),
                         ..default()
                     },
-                    Pickable::IGNORE,
+                    BookEntry(slot),
                 ))
                 .with_children(|row| {
                     row.spawn((
@@ -116,6 +128,13 @@ fn setup(mut commands: Commands, skin: Option<Res<crate::fantasy_ui::Skin>>) {
                 });
             }
             pane.spawn((PageLabel, label("", 14.)));
+            pane.spawn((
+                DragHint,
+                label(
+                    "Drag an ability to a slot; keep this book open to rearrange your bar.",
+                    14.,
+                ),
+            ));
             pane.spawn((
                 Node {
                     column_gap: px(8),
@@ -203,14 +222,21 @@ fn activate(
         }
     }
 }
+type BookPresentation<'w> = (
+    Res<'w, Ui>,
+    Res<'w, Config>,
+    Option<Res<'w, crate::fantasy_ui::Skin>>,
+    Option<Res<'w, super::action_bar::Drag>>,
+);
+type EntryFilter = (Without<PageLabel>, Without<DragHint>);
+type HintFilter = (With<DragHint>, Without<Entry>, Without<PageLabel>);
 fn present(
-    ui: Res<Ui>,
-    config: Res<Config>,
-    skin: Option<Res<crate::fantasy_ui::Skin>>,
+    (ui, config, skin, drag): BookPresentation<'_>,
     mut icons: Query<(&EntryIcon, &mut ImageNode, &mut Node), Without<Pane>>,
     mut panes: Query<&mut Node, With<Pane>>,
-    mut entries: Query<(&Entry, &mut Text), Without<PageLabel>>,
-    mut page_labels: Query<&mut Text, With<PageLabel>>,
+    mut entries: Query<(&Entry, &mut Text), EntryFilter>,
+    mut page_labels: Query<&mut Text, (With<PageLabel>, Without<DragHint>)>,
+    mut hints: Query<&mut Text, HintFilter>,
 ) {
     for mut pane in &mut panes {
         pane.display = if ui.open {
@@ -221,6 +247,14 @@ fn present(
     }
     if !ui.open {
         return;
+    }
+    for mut hint in &mut hints {
+        let value = super::action_bar::drag_hint(drag.as_deref()).unwrap_or_else(|| {
+            "Drag an ability to a slot; keep this book open to rearrange your bar.".into()
+        });
+        if hint.0 != value {
+            **hint = value;
+        }
     }
     let page = ui.page.min(pages(config.0.abilities().len()) - 1);
     for (icon, mut image, mut node) in &mut icons {

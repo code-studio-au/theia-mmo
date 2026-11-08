@@ -57,5 +57,47 @@ wheel device stopped. The native fixture has two configured abilities; the
 complete64-entry catalogue is headless coverage, not native crowded-page proof.
 
 The user has now prohibited mouse, keyboard and display access. Continue only
-headlessly. Dragging, slot rearrangement and persisted layouts remain pending;
+headlessly. The following headless candidate adds dragging and slot rearrangement; persisted layouts remain pending;
 the preserved optimized `build/local-play-release-20261108-v1` predates this book.
+
+
+## Action-bar binding candidate — 8 November 2026
+
+Implemented session-local twelve-slot bindings by stable ability ID. The default
+layout preserves the first configured actions. With the book open, dragging a
+book entry copies its binding; dragging a populated bar slot swaps it with the
+destination, including an empty slot. Empty slots send no casts. The standard
+Bevy widgets rebuild only when the binding revision changes; icon, tooltip,
+key label and cooldown display resolve the bound ability. Duplicate bindings
+share the server ability cooldown. Rearrangement sends no gameplay mutations.
+
+Fresh drag events require a focused game Window and a matching admitted owner,
+world and epoch with current snapshot membership. Escape/closed book, focus or
+admission loss, changed source page and pointer cancellation discard the local
+drag. Drop validation checks the original entity, source binding and current
+context. Ending outside a slot leaves the layout unchanged. While editing,
+bar widget activation is discarded; existing keyboard ability bindings remain
+available. Normal UI picking and existing world gesture guards are retained.
+
+Prerequisites are the configured catalogue, existing P-key book, twelve primary
+bindings and authoritative ability-ID cast path. P2-14 / P3-06 / P5-13 remain
+partial: persistent per-character layouts, learning/class unlocks, key rebinding,
+additional action bars and native drag qualification are separate work.
+
+Headless acceptance covers bounded IDs/slots, empty/no-op/overflow behavior,
+stale source/page/admission rejection, actual widget rebuilds and cooldown fills.
+The encrypted Renet loopback uses production Network and drag handlers with
+synthetic Bevy events and a headless server: book copy, bar swap, focus-loss
+cancellation, an actual accepted cast/damage and premature-repeat refusal all
+pass while the original server cooldown is retained. It has no OS window,
+input device, renderer, OIDC or SQL. It does not establish native pointer behavior
+or GPU layout correctness. The new drag hint and rebuilt bar are unqualified
+rendering candidates under the user's desktop prohibition; the earlier read-only
+book native evidence and frozen optimized identity pack remain preserved.
+
+231 ordinary client tests pass (one licensed-art case explicitly ignored), plus
+strict workspace/all-target Clippy and formatting. Evidence lives under
+`build/ability-book-20261108`: `bar-client-v6.log`, `bar-clippy-v5.log`,
+`bar-fmt-v2.log` and `bar-build-v2.log`. Earlier `bar-renet-v1` through `v3` are
+diagnostic compile/expected-rejection assertion failures; `bar-renet-v4` passes,
+with the expanded event/focus scenario included in the full v6 suite.

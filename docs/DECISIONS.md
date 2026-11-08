@@ -1,3 +1,13 @@
+## 8 November 2026 — action-bar bindings are local presentation state
+
+Use twelve bounded optional ability IDs with current defaults; book drops copy,
+bar drops swap. Keep cooldowns, eligibility, target and facing in the existing
+authoritative cast path. Editing requires the open book and current focused,
+admitted actor context; stale or cancelled drags make no binding change.
+Persisted layouts and learned/class eligibility require separate work. Continue
+headlessly under the latest user restriction; synthetic event/loopback acceptance
+does not qualify native drag behavior. [Scope](ABILITY_BOOK_ACTION_BAR.md#action-bar-binding-candidate--8-november-2026).
+
 ## 8 November 2026 — selected character names are public scoped metadata
 
 Capture the saved SQL-selected name in the authorized admission lease; retain

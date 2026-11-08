@@ -1,3 +1,12 @@
+Action-bar candidate, 8 November 2026 (P2-14 / P3-06 / P5-13):
+Session-local ability-ID bindings, book-copy/bar-swap drag handlers and bound
+cooldown/tooltips are implemented headlessly. 231 client tests and strict
+Clippy pass, including encrypted loopback cast/damage/cooldown refusal and
+synthetic widget/drag/focus checks. New rendering and actual pointer interaction
+remain unqualified: no mouse, keyboard or display access per current instruction.
+Persistent layouts and learned-skill policy remain pending. Local commits only;
+no push. [Evidence and limits](ABILITY_BOOK_ACTION_BAR.md#action-bar-binding-candidate--8-november-2026).
+
 Ability book checkpoint, 8 November 2026 (P2-14 / P3-06 / P5-13):
 The opt-in P-key/Interface ability book shows configured icons and metric details
 with bounded paging. 225 ordinary client tests, strict Clippy, formatting and

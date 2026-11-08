@@ -1,4 +1,5 @@
 //! Small standard Bevy presentation of server combat; never computes damage.
+pub(crate) mod action_bar;
 pub(crate) mod book;
 mod log;
 pub(crate) mod ui;
@@ -133,6 +134,7 @@ pub fn install(
 ) {
     ui::install(app);
     book::install(app);
+    action_bar::install(app);
     log::install(app);
     crate::combat_feedback::install(app);
     if catalog.abilities().iter().any(|a| a.projectile().is_some()) {
@@ -289,11 +291,12 @@ type PresentationInput<'w> = (
     Option<Res<'w, crate::world_input::Selection>>,
     Option<Res<'w, crate::fantasy_ui::Skin>>,
     Option<Res<'w, crate::progression::Profile>>,
+    Res<'w, action_bar::Layout>,
 );
 fn present(
     mut network: ResMut<Network>,
     config: Res<Config>,
-    (input, selection, skin, progression): PresentationInput<'_>,
+    (input, selection, skin, progression, layout): PresentationInput<'_>,
     (mut metrics, mut history): (ResMut<Metrics>, Option<ResMut<log::History>>),
     mut ui: ResMut<Ui>,
     (mut hud, mut panel): (Query<&mut Text, With<Hud>>, ResMut<ui::Model>),
@@ -580,10 +583,8 @@ fn present(
         if let Some((slot, source)) = input.0
             && network.connected()
             && network.can_act()
-            && let Some(ability) = config
-                .0
-                .abilities()
-                .get(slot)
+            && let Some(ability) = layout
+                .ability(&config.0, slot)
                 .filter(|_| slot < action_limit)
         {
             match source {
@@ -649,7 +650,14 @@ fn present(
         };
         let rate =
             theia_core::time::TickRate::from_hz(hz as u32).expect("Validated server tick rate");
-        for ability in config.0.abilities().iter().take(action_limit) {
+        for slot in 0..action_limit {
+            let Some(ability) = layout.ability(&config.0, slot) else {
+                panel.actions.push(ui::Action {
+                    cooldown: 0.,
+                    status: "Empty slot".into(),
+                });
+                continue;
+            };
             let ready_at = combat
                 .cooldowns
                 .iter()

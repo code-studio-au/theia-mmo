@@ -14,6 +14,10 @@ pub(super) use unit_frame::{owner_level, owner_name};
 #[derive(Component)]
 pub(crate) struct ActionButton(pub(crate) usize);
 #[derive(Component)]
+pub(crate) struct ActionSlot(pub(crate) usize);
+#[derive(Component)]
+struct ActionBar(u64);
+#[derive(Component)]
 pub(crate) struct ActionLabel(pub(crate) usize);
 #[derive(Component)]
 pub(super) struct HealthFill;
@@ -150,7 +154,8 @@ pub(super) fn install(app: &mut App) {
         .add_observer(activate)
         .init_resource::<Model>()
         .init_resource::<Metrics>()
-        .add_systems(Startup, setup)
+        .add_systems(Startup, (super::action_bar::prepare, setup).chain())
+        .add_systems(Update, refresh_bar.before(collect))
         .add_systems(Update, collect.before(super::present))
         .add_systems(Update, paint.after(super::present))
         .add_systems(Last, observe);
@@ -158,21 +163,24 @@ pub(super) fn install(app: &mut App) {
 /// Developer offscreen preview of the same widgets/painter, with explicit fixture
 /// values. No Network resource, game command collection, server or account.
 pub(crate) fn install_preview(app: &mut App) {
-    app.add_systems(Startup, (setup, super::setup))
-        .add_systems(Update, (preview_hover, paint).chain())
-        .add_systems(
-            PostStartup,
-            |mut labels: Query<(&mut Text, Has<super::Hud>, Has<crate::targeting::TargetHud>)>| {
-                for (mut label, health, heading) in &mut labels {
-                    if health {
-                        **label = "Health 57 / 100".into();
-                    }
-                    if heading {
-                        **label = "Target: Wolf".into();
-                    }
+    app.add_systems(
+        Startup,
+        (super::action_bar::prepare, setup, super::setup).chain(),
+    )
+    .add_systems(Update, (preview_hover, paint).chain())
+    .add_systems(
+        PostStartup,
+        |mut labels: Query<(&mut Text, Has<super::Hud>, Has<crate::targeting::TargetHud>)>| {
+            for (mut label, health, heading) in &mut labels {
+                if health {
+                    **label = "Health 57 / 100".into();
                 }
-            },
-        );
+                if heading {
+                    **label = "Target: Wolf".into();
+                }
+            }
+        },
+    );
 }
 fn preview_hover(mut commands: Commands, actions: Query<(Entity, &ActionButton)>) {
     // A visual fixture, not OS input or a gameplay command.
@@ -188,13 +196,16 @@ fn collect(
     mut input: ResMut<Input>,
     skin: Option<Res<crate::fantasy_ui::Skin>>,
     windows: Query<&Window>,
+    book: Option<Res<super::book::Ui>>,
 ) {
     let widget = pending.0.take();
     input.0 = None;
     if !windows.single().is_ok_and(|window| window.focused) {
         return;
     }
-    input.0 = if let Some(slot) = widget {
+    input.0 = if let Some(slot) =
+        widget.filter(|_| !book.as_ref().is_some_and(|b| b.open || b.closed_this_frame))
+    {
         Some((slot, Source::Widget))
     } else {
         PRIMARY_KEYS
@@ -219,6 +230,7 @@ fn setup(
     config: Res<Config>,
     graybox: Option<Res<crate::graybox::Graybox>>,
     skin: Option<Res<crate::fantasy_ui::Skin>>,
+    layout: Res<super::action_bar::Layout>,
 ) {
     if config.1.is_some() {
         commands
@@ -317,7 +329,7 @@ fn setup(
     }
 
     if let Some(skin) = skin.as_deref() {
-        compact_actions(&mut commands, &config, skin);
+        compact_actions(&mut commands, &config, &layout, skin);
     } else {
         commands
             .spawn((
@@ -426,11 +438,17 @@ fn setup(
 }
 /// Twelve Classic primary bindings; only configured actions issue commands.
 /// Empty positions are decoration and never invent abilities.
-fn compact_actions(commands: &mut Commands, config: &Config, skin: &crate::fantasy_ui::Skin) {
+fn compact_actions(
+    commands: &mut Commands,
+    config: &Config,
+    layout: &super::action_bar::Layout,
+    skin: &crate::fantasy_ui::Skin,
+) {
     use crate::fantasy_ui::{ACTION_WIDTH, GOLD, PANEL, SLOT, SLOTS};
     use bevy::picking::Pickable;
     commands
         .spawn((
+            ActionBar(layout.revision),
             Node {
                 position_type: PositionType::Absolute,
                 left: px(0),
@@ -466,8 +484,9 @@ fn compact_actions(commands: &mut Commands, config: &Config, skin: &crate::fanta
                         align_items: AlignItems::Center,
                         ..default()
                     };
-                    let Some(ability) = config.0.abilities().get(slot) else {
+                    let Some(ability) = layout.ability(&config.0, slot) else {
                         bar.spawn((
+                            ActionSlot(slot),
                             node,
                             BackgroundColor(Color::srgba(0.025, 0.022, 0.02, 0.96)),
                             Outline::new(px(1), px(-1), GOLD),
@@ -494,6 +513,7 @@ fn compact_actions(commands: &mut Commands, config: &Config, skin: &crate::fanta
                         ActivateOnPress,
                         Hovered::default(),
                         ActionButton(slot),
+                        ActionSlot(slot),
                         AccessibleLabel::new(format!("Cast {name} ({})", key_label(slot))),
                         node,
                         BackgroundColor(PANEL),
@@ -559,6 +579,24 @@ fn compact_actions(commands: &mut Commands, config: &Config, skin: &crate::fanta
             });
         });
 }
+fn refresh_bar(
+    mut commands: Commands,
+    layout: Res<super::action_bar::Layout>,
+    config: Res<Config>,
+    skin: Option<Res<crate::fantasy_ui::Skin>>,
+    bars: Query<(Entity, &ActionBar)>,
+) {
+    let Some(skin) = skin else {
+        return;
+    };
+    if bars.iter().all(|(_, bar)| bar.0 == layout.revision) {
+        return;
+    }
+    for (entity, _) in &bars {
+        commands.entity(entity).despawn();
+    }
+    compact_actions(&mut commands, &config, &layout, &skin);
+}
 type FillComponents<'a> = (
     &'a mut Node,
     Option<&'a HealthFill>,
@@ -583,7 +621,7 @@ type ButtonComponents<'a> = (
     &'a ActionButton,
 );
 fn paint(
-    model: Res<Model>,
+    (layout, model): (Res<super::action_bar::Layout>, Res<Model>),
     config: Res<Config>,
     mut fills: Query<FillComponents<'_>, Without<ActionLabel>>,
     mut labels: Query<LabelComponents<'_>>,
@@ -615,7 +653,13 @@ fn paint(
     }
     for (mut label, action, cast, player_health, mana, life, heading) in &mut labels {
         let value = if let Some(action) = action {
-            let ability = &config.0.abilities()[action.0];
+            let Some(ability) = layout.ability(&config.0, action.0) else {
+                let value = format!("[{}] Empty slot", key_label(action.0));
+                if label.0 != value {
+                    **label = value;
+                }
+                continue;
+            };
             let state = if !model.connected {
                 "Disconnected / loading"
             } else if model.life_blocked {
@@ -787,7 +831,7 @@ fn observe(
     }
 }
 #[cfg(test)]
-mod tests {
+pub(super) mod tests {
     use super::*;
     #[test]
     fn player_heading_updates_with_level_and_drops_unavailable_progression() {
@@ -966,15 +1010,21 @@ mod tests {
         assert_eq!(text.0, "[1] Arcane Bolt\n25 mana | Disconnected / loading");
     }
     fn widget_app(skin: bool) -> App {
+        let catalog = theia_core::abilities::Catalog::from_json(include_bytes!(
+            "../../../../content/gameplay/development-classic-abilities.json"
+        ))
+        .unwrap();
+        widget_app_catalog(skin, catalog)
+    }
+    pub(in crate::combat) fn widget_app_catalog(
+        skin: bool,
+        catalog: theia_core::abilities::Catalog,
+    ) -> App {
         let mut app = App::new();
         app.world_mut().spawn(Window {
             focused: true,
             ..default()
         });
-        let catalog = theia_core::abilities::Catalog::from_json(include_bytes!(
-            "../../../../content/gameplay/development-classic-abilities.json"
-        ))
-        .unwrap();
         let stats = theia_core::resources::Profile::from_json(include_bytes!(
             "../../../../content/gameplay/development-character-stats.json"
         ))
@@ -985,8 +1035,8 @@ mod tests {
             .init_resource::<WidgetPending>()
             .init_resource::<ButtonInput<KeyCode>>()
             .add_observer(activate)
-            .add_systems(Startup, setup)
-            .add_systems(Update, (collect, paint).chain());
+            .add_systems(Startup, (super::super::action_bar::prepare, setup).chain())
+            .add_systems(Update, (refresh_bar, collect, paint).chain());
         if skin {
             app.insert_resource(crate::fantasy_ui::Skin::fixture());
         }
@@ -1043,6 +1093,91 @@ mod tests {
                 (true, 0, 0, 0),
                 (true, 0, 0, 0)
             ]
+        );
+    }
+    #[test]
+    fn rebound_empty_slot_rebuilds_widgets_resolves_tooltip_and_suppresses_editing_click_casts() {
+        let mut app = widget_app(true);
+        app.init_resource::<super::super::book::Ui>();
+        app.update();
+        let catalog = app.world().resource::<Config>().0.clone();
+        let sword = catalog.abilities()[1].id().clone();
+        assert!(
+            app.world_mut()
+                .resource_mut::<super::super::action_bar::Layout>()
+                .copy(&catalog, &sword, 11)
+        );
+        {
+            let mut model = app.world_mut().resource_mut::<Model>();
+            model.connected = true;
+            model.has_target = true;
+            model.actions = (0..12)
+                .map(|slot| Action {
+                    cooldown: if slot == 11 { 0.75 } else { 0. },
+                    status: "Cooldown 1.1s".into(),
+                })
+                .collect();
+        }
+        app.update();
+        let world = app.world_mut();
+        let text = world
+            .query::<(&ActionLabel, &Text)>()
+            .iter(world)
+            .find(|(slot, _)| slot.0 == 11)
+            .unwrap()
+            .1;
+        assert!(text.0.starts_with("[=] Sword Slash") && text.0.contains("3 m range"));
+        let fill = world
+            .query::<(&CooldownFill, &Node)>()
+            .iter(world)
+            .find(|(slot, _)| slot.0 == 11)
+            .unwrap()
+            .1;
+        assert_eq!(fill.width, percent(75));
+        let button = world
+            .query::<(Entity, &ActionButton)>()
+            .iter(world)
+            .find(|(_, slot)| slot.0 == 11)
+            .unwrap()
+            .0;
+        world.trigger(Activate { entity: button });
+        app.update();
+        assert_eq!(
+            app.world().resource::<Input>().0,
+            Some((11, Source::Widget))
+        );
+        app.world_mut()
+            .resource_mut::<super::super::book::Ui>()
+            .open = true;
+        app.world_mut().trigger(Activate { entity: button });
+        app.update();
+        assert_eq!(app.world().resource::<Input>().0, None);
+        app.world_mut()
+            .resource_mut::<super::super::book::Ui>()
+            .open = false;
+        assert!(
+            app.world_mut()
+                .resource_mut::<super::super::action_bar::Layout>()
+                .swap(11, 10)
+        );
+        app.update();
+        assert_eq!(
+            app.world().resource::<Model>().actions[11].cooldown,
+            0.75,
+            "Rebinding cannot rewrite received authoritative action state"
+        );
+        let world = app.world_mut();
+        assert!(
+            !world
+                .query::<&ActionButton>()
+                .iter(world)
+                .any(|slot| slot.0 == 11)
+        );
+        assert!(
+            world
+                .query::<&ActionButton>()
+                .iter(world)
+                .any(|slot| slot.0 == 10)
         );
     }
     #[test]

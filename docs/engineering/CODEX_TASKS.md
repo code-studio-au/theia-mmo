@@ -1,3 +1,12 @@
+Action-bar candidate, 8 November 2026 (P2-14 / P3-06 / P5-13):
+Session-local ability-ID bindings, book-copy/bar-swap drag handlers and bound
+cooldown/tooltips are implemented headlessly. 231 client tests and strict
+Clippy pass, including encrypted loopback cast/damage/cooldown refusal and
+synthetic widget/drag/focus checks. New rendering and actual pointer interaction
+remain unqualified: no mouse, keyboard or display access per current instruction.
+Persistent layouts and learned-skill policy remain pending. Local commits only;
+no push. [Evidence and limits](../ABILITY_BOOK_ACTION_BAR.md#action-bar-binding-candidate--8-november-2026).
+
 Player display identity qualified locally, 8 November 2026 (P2-03 / P3-01 /
 P2-14 / P5-13): selected saved names cross authorized leases and reliable scoped
 Renet metadata; owner UI validates current admission/snapshot context. Protocol13
