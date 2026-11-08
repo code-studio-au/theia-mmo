@@ -52,7 +52,7 @@ pub fn geometry(id: ChunkId, cells: usize) -> Geometry {
 }
 /// Shared regular triangulation. Saved terrain never evaluates the recipe.
 pub fn grid(cells: usize) -> Geometry {
-    assert!(matches!(cells, 8 | 32));
+    assert!(matches!(cells, 8 | 32 | 64));
     let mut positions = Vec::with_capacity((cells + 1).pow(2));
     for z in 0..=cells {
         for x in 0..=cells {

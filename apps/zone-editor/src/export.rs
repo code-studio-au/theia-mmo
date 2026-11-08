@@ -372,7 +372,7 @@ fn geometry(zone: &Zone) -> Result<(Vec<u8>, Value, Value), String> {
     let visual = glb.finish(guide_kinds, !zone.plants.is_empty(), painted)?;
     let profile = json!({"schema":4,"source_origin":[0,0,0],"bounds":[[-512,-512],[512,512]],"spawns":[zone.local(zone.spawn)?],
         "visual_sha256":sha256(&visual),"triangles":triangles,"static_shapes":{"meshes":pool,"objects":bodies}});
-    let report = json!({"schema":1,"zone_name":zone.name,"authoring_origin":zone.origin,"visual_triangles":visual_triangles,"guide_paths":zone.paths.len(),"authoring_markers":zone.markers.len(),"greybox_plants":zone.plants.len(),"painted_terrain":painted,
+    let report = json!({"schema":1,"zone_name":zone.name,"authoring_origin":zone.origin,"visual_triangles":visual_triangles,"guide_paths":zone.paths.len(),"authoring_markers":zone.markers.len(),"greybox_plants":zone.plants.len(),"painted_terrain":painted,"terrain_sample_metres":zone.terrain.as_ref().map(|p|p.sample_metres()),
         "maximum_cylinder_radial_error_metres":maximum_cylinder_error,"collision_weld_tolerance_metres":0.0001,"scope":"existing bounded GLB/schema-4 content; requires authority admission; default game world unchanged"});
     Ok((visual, profile, report))
 }
@@ -639,6 +639,46 @@ mod tests {
                 .unwrap();
             assert!((centre - 0.01).abs() < 0.000001);
         }
+    }
+    #[test]
+    fn fine_terrain_exports_all_samples_and_passes_existing_runtime_admission() {
+        let mut zone = fixture();
+        zone.schema = 2;
+        zone.terrain = Some(theia_zone::terrain::HeightPatch::flat([0, 0]));
+        let mut editor = Editor::new(zone).unwrap();
+        editor
+            .execute(Command::Apply {
+                expected_revision: 0,
+                edits: vec![
+                    Edit::ResampleTerrain {
+                        resolution: theia_zone::terrain::Resolution::TwoMetres,
+                    },
+                    Edit::PaintTerrain {
+                        paint: theia_zone::painting::Paint {
+                            centre: [64., 64.],
+                            radius_metres: 16.,
+                            surface: theia_zone::painting::Surface::Dirt,
+                            blend: 1.,
+                        },
+                    },
+                ],
+            })
+            .unwrap();
+        let (_, profile, report) = geometry(editor.zone()).unwrap();
+        assert_eq!(profile["triangles"].as_array().unwrap().len(), 8192);
+        assert_eq!(report["terrain_sample_metres"], 2.);
+        let folder = Folder::new();
+        let destination = folder.0.join("fine");
+        publish(editor.zone(), &destination, "theia.test.fine", 1).unwrap();
+        assert_eq!(
+            Zone::load(&destination.join("authoring.zone.json")).unwrap(),
+            *editor.zone()
+        );
+        let terrain = Terrain::load(&destination.join("terrain.json")).unwrap();
+        terrain
+            .verify_visual(&destination.join("terrain.glb"))
+            .unwrap();
+        assert!(terrain.physics.ground([64., 64.], 10.).unwrap().0.abs() < 0.0001);
     }
     #[test]
     fn painted_terrain_exports_linear_vertex_colours_and_preserves_collision() {

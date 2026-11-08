@@ -62,7 +62,7 @@ pub(super) fn actions() -> [(Action, &'static str); 12] {
         (Action::Undo, "Undo [Ctrl Z]"),
         (Action::Redo, "Redo [Ctrl Y]"),
         (Action::Save, "Save zone [Ctrl S]"),
-        (Action::Load, "Load zone [Ctrl O]"),
+        (Action::TerrainResolution, "Toggle 2 m / 4 m samples"),
         (Action::Play, "Enter / leave playtest [F5]"),
     ]
 }
@@ -72,7 +72,7 @@ pub(super) fn geometry(zone: &Zone) -> Option<theia_network::procedural::Geometr
     let offset = zone
         .local([start[0], zone.origin[1], start[2]])
         .expect("Validated local patch");
-    let mut geometry = theia_network::procedural::grid(32);
+    let mut geometry = theia_network::procedural::grid(patch.axis() - 1);
     for (i, point) in geometry.positions.iter_mut().enumerate() {
         point[0] += offset[0];
         point[1] = patch.heights[i];
@@ -145,7 +145,7 @@ pub(super) fn surface_mesh(zone: &Zone) -> Option<Mesh> {
     }
     Some(result)
 }
-fn lines(geometry: &theia_network::procedural::Geometry) -> Mesh {
+fn lines(geometry: &theia_network::procedural::Geometry, axis: usize) -> Mesh {
     let mut positions = Vec::new();
     let mut edge = |a: usize, b: usize| {
         for index in [a, b] {
@@ -154,14 +154,14 @@ fn lines(geometry: &theia_network::procedural::Geometry) -> Mesh {
             positions.push(point);
         }
     };
-    for z in 0..33 {
-        for x in 0..33 {
-            let index = z * 33 + x;
-            if x < 32 {
+    for z in 0..axis {
+        for x in 0..axis {
+            let index = z * axis + x;
+            if x < axis - 1 {
                 edge(index, index + 1);
             }
-            if z < 32 {
-                edge(index, index + 33);
+            if z < axis - 1 {
+                edge(index, index + axis);
             }
         }
     }
@@ -195,7 +195,7 @@ pub(super) fn setup(
         Transform::default(),
         Visibility::Hidden,
     ));
-    let grid = meshes.add(lines(&theia_network::procedural::grid(32)));
+    let grid = meshes.add(lines(&theia_network::procedural::grid(32), 33));
     commands.spawn((
         TerrainGrid,
         Mesh3d(grid.clone()),
@@ -292,7 +292,8 @@ pub(super) fn sync(
         if let Some(geometry) = geometry {
             *meshes
                 .get_mut(&handle.lines)
-                .expect("Resident terrain grid") = lines(&geometry);
+                .expect("Resident terrain grid") =
+                lines(&geometry, zone.terrain.as_ref().unwrap().axis());
             *meshes
                 .get_mut(&handle.surface)
                 .expect("Resident terrain mesh") =
@@ -349,7 +350,7 @@ pub(super) fn palette(
 ) {
     for mut text in &mut help {
         **text = if session.terrain_paint {
-            "F7: terrain colour paint\nClick/drag: paint stroke\nRelease: one undo entry\nEsc cancels preview\nGrass / dirt / rock / sand\nPaint changes colour weights\n4 m samples, locked grass edge\nF2 returns to sculpting".into()
+            "F7: terrain colour paint\nClick/drag: paint stroke\nRelease: one undo entry\nEsc cancels preview\nGrass / dirt / rock / sand\nPaint changes colour weights\nGrid weights, locked grass edge\nF2 returns to sculpting".into()
         } else if session.vegetation_mode {
             "F6: greybox trees / shrubs\nClick places one stamp\nEsc selects | Del removes\nArrows/PgUp/Dn: move\nR / Shift R: yaw +/-15 deg\n+/-: plant scale\n[ / ]: scatter radius\n, / .: scatter count\nVegetation proxies do not\nadd world collision".into()
         } else if session.marker_mode {

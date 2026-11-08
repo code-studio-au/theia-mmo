@@ -1,8 +1,5 @@
 //! Grade existing terrain samples along a committed guide; no water/navigation rules.
-use super::{
-    Result, Zone, require,
-    terrain::{AXIS, HeightPatch, SAMPLE_METRES},
-};
+use super::{Result, Zone, require, terrain::HeightPatch};
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -38,11 +35,13 @@ impl Grade {
             .as_ref()
             .ok_or("Create terrain before grading a guide")?;
         patch.validate(zone)?;
+        let axis = patch.axis();
+        let metres = patch.sample_metres();
         let origin = patch.origin()?;
         let mut candidate = patch.clone();
         let mut changed = false;
-        for z in 1..AXIS - 1 {
-            for x in 1..AXIS - 1 {
+        for z in 1..axis - 1 {
+            for x in 1..axis - 1 {
                 // Subtract global anchors before local arithmetic, including at far origins.
                 let mut nearest = f64::INFINITY;
                 let mut target = 0.;
@@ -51,8 +50,8 @@ impl Grade {
                     let b = segment[1];
                     let dx = b[0] - a[0];
                     let dz = b[2] - a[2];
-                    let px = (origin[0] - a[0]) + x as f64 * SAMPLE_METRES;
-                    let pz = (origin[2] - a[2]) + z as f64 * SAMPLE_METRES;
+                    let px = (origin[0] - a[0]) + x as f64 * metres;
+                    let pz = (origin[2] - a[2]) + z as f64 * metres;
                     let t = ((px * dx + pz * dz) / (dx * dx + dz * dz)).clamp(0., 1.);
                     let distance = (px - t * dx).hypot(pz - t * dz);
                     // At exact crossings the earlier authored segment wins deterministically.
@@ -78,7 +77,7 @@ impl Grade {
                     target.is_finite() && target.abs() <= 64.,
                     "Guide grade exceeds terrain height budget",
                 )?;
-                let index = z * AXIS + x;
+                let index = z * axis + x;
                 let old = patch.heights[index];
                 let value =
                     (f64::from(old) + (target - f64::from(old)) * self.blend * weight) as f32;

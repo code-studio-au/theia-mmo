@@ -1,7 +1,7 @@
 //! Quantized terrain colour weights; no gameplay surface/friction rules.
 use super::{
     Result, require,
-    terrain::{AXIS, HeightPatch, SAMPLE_COUNT, SAMPLE_METRES, TILE_METRES},
+    terrain::{HeightPatch, TILE_METRES},
 };
 use serde::{Deserialize, Serialize};
 pub const GRASS: [u8; 4] = [255, 0, 0, 0];
@@ -33,6 +33,9 @@ pub struct Paint {
 }
 impl Paint {
     pub(crate) fn apply(&self, patch: &mut HeightPatch) -> Result<()> {
+        let axis = patch.axis();
+        let count = axis * axis;
+        let metres = patch.sample_metres();
         require(
             self.centre.iter().all(|v| v.is_finite())
                 && self.radius_metres.is_finite()
@@ -50,13 +53,13 @@ impl Paint {
             "Paint centre outside terrain patch",
         )?;
         let mut candidate = if patch.weights.is_empty() {
-            vec![GRASS; SAMPLE_COUNT]
+            vec![GRASS; count]
         } else {
             patch.weights.clone()
         };
         require(
-            candidate.len() == SAMPLE_COUNT,
-            "Paint needs exactly 33x33 weights",
+            candidate.len() == count,
+            "Paint weights must match resolution",
         )?;
         require(
             candidate
@@ -65,12 +68,12 @@ impl Paint {
             "Terrain weights must sum to 255",
         )?;
         let mut changed = false;
-        for z in 1..AXIS - 1 {
-            for x in 1..AXIS - 1 {
-                let dx = (origin[0] - self.centre[0]) + x as f64 * SAMPLE_METRES;
-                let dz = (origin[2] - self.centre[1]) + z as f64 * SAMPLE_METRES;
+        for z in 1..axis - 1 {
+            for x in 1..axis - 1 {
+                let dx = (origin[0] - self.centre[0]) + x as f64 * metres;
+                let dz = (origin[2] - self.centre[1]) + z as f64 * metres;
                 let amount = (1. - dx.hypot(dz) / self.radius_metres).max(0.) as f32 * self.blend;
-                let index = z * AXIS + x;
+                let index = z * axis + x;
                 let old = candidate[index];
                 let mut next = old;
                 let target = self.surface.index();

@@ -4,6 +4,7 @@ pub mod mailbox;
 pub mod markers;
 pub mod painting;
 pub mod paths;
+pub mod resampling;
 pub mod terrain;
 pub mod vegetation;
 
@@ -122,7 +123,7 @@ impl Zone {
         )
     }
     pub fn validate(&self) -> Result<()> {
-        require(matches!(self.schema, 1..=6), "Unsupported zone schema")?;
+        require(matches!(self.schema, 1..=7), "Unsupported zone schema")?;
         require(
             self.schema != 1 || self.terrain.is_none(),
             "Terrain requires zone schema 2",
@@ -289,6 +290,9 @@ pub enum Edit {
     Brush {
         brush: terrain::Brush,
     },
+    ResampleTerrain {
+        resolution: terrain::Resolution,
+    },
     PaintTerrain {
         paint: painting::Paint,
     },
@@ -429,6 +433,10 @@ impl Editor {
                         Edit::SetTerrain { terrain } => {
                             candidate.schema = candidate.schema.max(2);
                             candidate.terrain = terrain;
+                        }
+                        Edit::ResampleTerrain { resolution } => {
+                            candidate.schema = candidate.schema.max(7);
+                            candidate.terrain = Some(resampling::resample(&candidate, resolution)?);
                         }
                         Edit::PaintTerrain { paint } => {
                             candidate.schema = candidate.schema.max(6);

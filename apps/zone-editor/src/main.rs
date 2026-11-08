@@ -149,6 +149,7 @@ enum Action {
     Spawn,
     Delete,
     TerrainToggle,
+    TerrainResolution,
     Brush(terrain::Tool),
     Radius(i8),
     SelectPlant,
@@ -517,6 +518,19 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
         | Action::NextPath
         | Action::DeletePath
         | Action::PathWidth(_) => paths::perform(action, session),
+        Action::TerrainResolution => {
+            if let Some(patch) = &session.editor.zone().terrain {
+                let resolution = if patch.resolution == theia_zone::terrain::Resolution::FourMetres
+                {
+                    theia_zone::terrain::Resolution::TwoMetres
+                } else {
+                    theia_zone::terrain::Resolution::FourMetres
+                };
+                session.edit(vec![Edit::ResampleTerrain { resolution }]);
+            } else {
+                session.status = "Create terrain before changing sample resolution".into();
+            }
+        }
         Action::TerrainToggle => {
             let creating = session.editor.zone().terrain.is_none();
             terrain::toggle(session);
@@ -796,11 +810,10 @@ fn present(
                     "Terrain {:?} | radius {} m\n{}",
                     session.brush_tool,
                     session.brush_radius,
-                    if session.editor.zone().terrain.is_some() {
-                        "128 m patch | 4 m samples"
-                    } else {
-                        "No terrain patch"
-                    }
+                    session.editor.zone().terrain.as_ref().map_or(
+                        "No terrain patch".into(),
+                        |p| format!("128 m patch | {} m samples", p.sample_metres())
+                    )
                 )
             } else {
                 selected.map_or("No selection".into(), |o| {

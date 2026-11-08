@@ -359,3 +359,100 @@ mod grading_tests {
         }
     }
 }
+
+#[cfg(test)]
+mod resolution_tests {
+    use super::*;
+    #[test]
+    fn fine_sculpt_paint_and_all_avian_triangles_use_the_same_bounded_grid() {
+        use theia_zone::{
+            Command, Edit, Editor,
+            painting::{Paint, Surface},
+            terrain::{Brush, BrushOperation, HeightPatch, Resolution},
+        };
+        for sign in [-1_i64, 1] {
+            let patch = HeightPatch::flat([sign * 1_000_000_000, -sign * 1_000_000_000]);
+            let origin = patch.origin().unwrap();
+            let mut e = Editor::new(Zone {
+                schema: 2,
+                origin,
+                spawn: [origin[0] + 64., 4.6, origin[2] + 64.],
+                terrain: Some(patch),
+                ..Zone::default()
+            })
+            .unwrap();
+            e.execute(Command::Apply {
+                expected_revision: 0,
+                edits: vec![
+                    Edit::Brush {
+                        brush: Brush {
+                            centre: [origin[0] + 64., origin[2] + 64.],
+                            radius_metres: 16.,
+                            operation: BrushOperation::Raise { metres: 4. },
+                        },
+                    },
+                    Edit::ResampleTerrain {
+                        resolution: Resolution::TwoMetres,
+                    },
+                    Edit::Brush {
+                        brush: Brush {
+                            centre: [origin[0] + 66., origin[2] + 64.],
+                            radius_metres: 4.,
+                            operation: BrushOperation::Raise { metres: 1. },
+                        },
+                    },
+                    Edit::PaintTerrain {
+                        paint: Paint {
+                            centre: [origin[0] + 64., origin[2] + 64.],
+                            radius_metres: 8.,
+                            surface: Surface::Rock,
+                            blend: 0.7,
+                        },
+                    },
+                ],
+            })
+            .unwrap();
+            let zone = e.zone();
+            let geometry = terrain::geometry(zone).unwrap();
+            assert_eq!(geometry.positions.len(), 65 * 65);
+            assert_eq!(geometry.triangles.len(), 8192);
+            let mesh = terrain::surface_mesh(zone).unwrap();
+            assert_eq!(mesh.count_vertices(), 65 * 65);
+            let scene = collision(zone).unwrap();
+            for triangle in geometry.triangles {
+                let centre = triangle
+                    .map(|i| Vec3::from_array(geometry.positions[i as usize]))
+                    .into_iter()
+                    .sum::<Vec3>()
+                    / 3.;
+                assert!(
+                    (scene.ground([centre.x, centre.z], 64.).unwrap().0 - centre.y).abs() < 0.0001
+                );
+            }
+            let mut play = Playtest::new(zone).unwrap();
+            let start = play.feet.metres();
+            for _ in 0..30 {
+                play.feet = kinematic::advance(
+                    &play.scene,
+                    &mut play.motion,
+                    play.feet,
+                    Intent {
+                        axes: [1000, 0],
+                        ..default()
+                    },
+                    TickRate::Hz30,
+                )
+                .unwrap();
+            }
+            let feet = play.feet.metres();
+            assert!(feet[0] > start[0] + 4.);
+            let height = zone
+                .surface_position([
+                    origin[0] + f64::from(feet[0]),
+                    origin[2] + f64::from(feet[2]),
+                ])
+                .unwrap()[1];
+            assert!((f64::from(feet[1]) - height).abs() < 0.1);
+        }
+    }
+}

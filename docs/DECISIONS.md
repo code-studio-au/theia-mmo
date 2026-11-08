@@ -1,3 +1,15 @@
+## 8 November 2026 — optional finite 2 m terrain authoring grid
+
+Zone schema 7 adds a typed 2 m / 4 m sample resolution on the existing 128 m
+patch. Resample heights over the retained exact triangles and colour weights
+with deterministic normalized integer rounding. Keep sculpt, paint, grading,
+render/query and export on the same active grid. Preserve coarse samples on
+refinement and use full-document undo for coarsening's loss of intervening fine
+detail. Extend only the shared bounded generator's allowed cell counts; retain
+normal game procedural/saved-terrain 8/32-cell policies and existing runtime
+package format. No streaming, LOD or capacity claim follows from 4,225 vertices.
+[Contract/evidence](ZONE_EDITOR.md#optional-2-m-terrain-samples--8-november-2026).
+
 ## 8 November 2026 — one-command editor entry with nonwriting save-path selection
 
 Provide a small Python launcher for the locked editor build and default draft

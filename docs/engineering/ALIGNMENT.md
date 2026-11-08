@@ -31,6 +31,9 @@ Bevy/glTF vertex colours, with normalized weights and unchanged collision
 (45 focused Rust cases). The one-command editor launcher now reopens saved
 drafts, prepares the local build SDK and defers new-file writes until Save;
 46 Rust / four Python cases and actual 3440x1440 save/reopen checks pass.
+Schema-7 optional 2 m terrain refinement/coarsening now shares validated history,
+sculpt/paint/grading and existing export: 50 focused Rust plus sixteen retained
+terrain/procedural/saved-terrain regression cases pass.
 Runtime multiplayer remains
 Rust/Bevy/Avian/Renet; editor playtest is an offline sandbox. Actual prerequisites,
 acceptance checks and implementation evidence are tracked in [the zone record](../ZONE_EDITOR.md).

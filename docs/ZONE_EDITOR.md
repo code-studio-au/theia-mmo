@@ -839,3 +839,86 @@ GPU diagnostics. Evidence: ignored `build/zone-launch-tests-v1.log`,
 `zone-launch-build-v1.log`, `zone-launch-native-3440-v1/{qualification.json,state.png}`
 and the retained `build/check_zone_launcher_v1.py` walkthrough. This is Linux
 execution evidence; the portable executable-suffix logic is not Windows execution.
+
+## Optional 2 m terrain samples — 8 November 2026
+
+P5-17 / P3-15 / P2-06/07 continue from the finite height/colour patch, grading and
+retained mesh/query/export pipeline. Zone schema 7 adds optional terrain
+`resolution: "2m"`; omitted/default `"4m"` retains the original 33x33 samples.
+The fine grid is 65x65 (4,225 vertices / 8,192 triangles) over the same 128 m patch.
+Only these two typed resolutions are accepted. Zero-height/grass border, finite
+height/colour validation, area bounds and the combined byte budget remain active.
+Older source files retain their format when loaded/saved at default resolution.
+
+`resample_terrain` names resolution `"2m"` or `"4m"`. Refinement samples the exact
+retained triangular surface. Colour channels interpolate over the same triangles
+with deterministic largest-remainder u8 quantization to preserve sum 255.
+Coarsening selects the corresponding coarse samples and may remove intervening
+fine detail; undo restores it. Refinement followed by coarsening without edits
+restores the original height/colour arrays exactly. Source schema stays at its
+highest adopted version until undo/load restores an older document. Same-resolution,
+missing-patch and malformed operations refuse without altering state/history.
+
+F2 Sculpt exposes **Toggle 2 m / 4 m samples**; Ctrl-O retains load access.
+The inspector reports actual sample spacing. Sculpting, painting, guide grading,
+terrain sampling, grid presentation, offline Avian and export all use the active
+resolution. The shared bounded regular triangulation now also accepts 64 cells;
+existing game procedural/saved-terrain callers retain their 8/32-cell policies.
+This adds finite authoring detail, without streaming, runtime LOD or a new world
+package format. Existing placed objects/plants/markers/guides keep their positions.
+
+Acceptance: 35 domain and fifteen editor tests pass. New cases cover exact
+refinement surface/coarse round-trip, normalized colour resampling, atomic
+refusals/source schema, both signed far frames, fine sculpt/paint and 16,384
+actual Avian triangle-centroid queries with capsule walks. Fine mesh/query heights
+agree within 0.1 mm and capsule support within 10 cm. Fine export verifies 8,192
+collision triangles, source round-trip and actual existing runtime admission.
+Seven retained terrain-library cases plus six procedural-world and three saved-
+terrain integration cases also pass. Strict workspace/all-target Clippy and
+formatting pass. Evidence: ignored `build/zone-resolution-tests-final-v3.log`,
+`zone-resolution-network-terrain-v1.log`,
+`zone-resolution-network-regressions-v3.log`, `zone-resolution-clippy-v1.log`.
+The first fine-mesh test exposed the old generator's 8/32-only assertion; the
+bounded 64-cell case now passes. A broad network-test build was stopped because
+concurrent unnecessary links saturated swap; the final regressions select only
+the two relevant integration targets with one build job. The initial library
+saved-terrain name filter matched zero cases and is not counted as proof.
+
+The full native OS-input walkthrough passes at default 3440x1440 on RX 7900 XTX
+(RADV NAVI31), Vulkan device 29772. It verifies exact retained coarse vertex/
+colour samples after refinement, one-entry undo/redo, exact coarse round-trip,
+agent coarsening/visual undo/cached retry, fine sculpt/paint, save/load/playtest and
+stable mesh handles. Subsequent point edits/guide grading also execute on the
+fine grid. Vulkan validation is observed active with zero GPU diagnostics/resize
+exceptions. Evidence: ignored
+`build/zone-resolution-native-3440-v1/{qualification.json,resolution.png,state.png}`.
+
+Headless export of `content/zones/resolution.commands.jsonl` against the painted
+source adds a small 2 m-grid sculpt detail, passes existing runtime admission and
+Khronos GLB validation (zero errors/warnings). Both normal server/two-rendered-
+client Renet checks pass at actual 3440x1440: local and instanced at
+`[128000000000, 0, -128000000000]`. All four clients observe active Vulkan
+validation with zero GPU diagnostics. Exact content binding, distinct identities,
+movement/terrain clearance and avatar pixels pass the retained checks. Evidence:
+`build/zone-resolution-export-v1.log`, `zone-package-resolution-v1/`,
+`zone-resolution-gltf-validation-v1.json`,
+`zone-package-native-resolution-3440-v1/verification.json`,
+`zone-package-native-resolution-far-3440-v1/verification.json` and captures.
+Paired binaries are freshly built from the shared generator change with one job:
+`zone-resolution-paired-build-v1.log`. Final strict Clippy is
+`zone-resolution-clippy-final-v2.log`. Native Windows, production admission,
+streaming/LOD and population capacity remain separate qualifications.
+
+The final paint-help text is grid-neutral. A fresh 2 m source opens directly in
+paint mode at 3440x1440 with validation active and zero GPU diagnostics:
+`build/zone-resolution-ui-final-v2/{qualification.json,state.png}`. Final paired
+build and exact hashes: `zone-resolution-paired-build-final-v2.log` and
+`zone-resolution-paired-sha256-v2.txt`. The normal client/server match the two
+successful native pairs; the final editor changes only that help line after the
+full walkthrough.
+
+| Final binary | SHA-256 |
+| --- | --- |
+| editor | `1bd17cc1dc5b004a7c4d444a65ec626ce0749cd7cb865036de401f996b175d51` |
+| client | `7f0e002e0bc400a0d939033a7d1b87c5da7a6c58cb6d57e88a9f53a7f42c9f9b` |
+| server | `0ddeef5da03401b35faa4d9c2a812f974d175d038961564c04fbb275dedc83a6` |

@@ -12,7 +12,8 @@ from gpu_validation import check_gpu_diagnostics
 from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 
 
-def run(output, binary, size, agent=False, terrain=False, guides=False, markers=False, vegetation=False, grading=False, points=False, painting=False):
+def run(output, binary, size, agent=False, terrain=False, guides=False, markers=False, vegetation=False, grading=False, points=False, painting=False, fine=False):
+    painting = painting or fine
     points = points or painting
     grading = grading or points
     vegetation = vegetation or grading
@@ -661,6 +662,78 @@ def run(output, binary, size, agent=False, terrain=False, guides=False, markers=
                 wait(lambda: capture_ready(report.with_suffix('.png')),30)
                 report.with_suffix('.png').rename(output/'paint.png')
                 checks.append('terrain colour stroke preview/one-entry undo, normalized weights/locked grass borders, all surfaces, mixed agent retry, save/load/playtest and reused mesh')
+            if fine:
+                key('F2')
+                wait(lambda: state()['terrain_mode'] and not state()['terrain_paint'])
+                before = state()
+                mesh_baseline = before['mesh_assets']
+                button('TerrainResolution')
+                refined = revision(before['revision'])
+                patch = refined['document']['terrain']
+                old = before['document']['terrain']
+                assert patch['resolution'] == '2m' and len(patch['heights']) == 4225 and len(patch['weights']) == 4225
+                assert all(sum(w) == 255 for w in patch['weights'])
+                for z in range(33):
+                    for x in range(33):
+                        assert patch['heights'][z*2*65+x*2] == old['heights'][z*33+x]
+                        assert patch['weights'][z*2*65+x*2] == old['weights'][z*33+x]
+                previous = state()['revision']
+                chord('z')
+                assert revision(previous)['document'] == before['document']
+                previous = state()['revision']
+                chord('y')
+                assert revision(previous)['document'] == refined['document']
+                previous = state()['revision']
+                button('TerrainResolution')
+                coarse = revision(previous)
+                assert coarse['document']['terrain'] == old
+                previous = state()['revision']
+                button('TerrainResolution')
+                assert revision(previous)['document']['terrain'] == patch
+                receipt, request = agent_request(dict(command='apply',expected_revision=state()['revision'],edits=[dict(op='resample_terrain',resolution='4m')]))
+                assert receipt['accepted']
+                wait(lambda: state()['revision'] == receipt['revision'])
+                previous = state()['revision']
+                chord('z')
+                fine_again = revision(previous)
+                assert fine_again['document']['terrain'] == patch
+                retry, _ = agent_request(request=request)
+                assert retry == receipt and state()['document'] == fine_again['document']
+                for radius in [8.,4.]:
+                    button('Radius(-1)')
+                    wait(lambda: state()['brush_radius'] == radius)
+                button('Brush(Raise)')
+                before = state()
+                click(window,state()['terrain_points'][1],1,1)
+                sculpted = revision(before['revision'])
+                assert sculpted['document']['terrain']['heights'] != before['document']['terrain']['heights']
+                key('F7')
+                wait(lambda: state()['terrain_paint'])
+                button('Brush(Paint(Rock))')
+                before = state()
+                click(window,state()['terrain_points'][1],1,1)
+                painted = revision(before['revision'])
+                assert painted['document']['terrain']['weights'] != before['document']['terrain']['weights']
+                assert len(painted['document']['terrain']['weights']) == 4225
+                chord('s')
+                wait(lambda: read_saved() == state()['document'])
+                stored = state()['document']
+                previous = state()['revision']
+                chord('o')
+                assert revision(previous)['document'] == stored
+                assert state()['mesh_assets'] == mesh_baseline
+                key('F5')
+                wait(lambda: state()['play_feet'] is not None)
+                time.sleep(.3)
+                key('F5')
+                wait(lambda: state()['play_feet'] is None)
+                assert state()['document'] == stored
+                desktop.move(window,[150.,20.],1)
+                time.sleep(.3)
+                key('F12')
+                wait(lambda: capture_ready(report.with_suffix('.png')),30)
+                report.with_suffix('.png').rename(output/'resolution.png')
+                checks.append('2m refinement/coarsening with preserved coarse samples/colours, shared undo/agent retry, fine sculpt/paint, save/load/playtest and cached meshes')
             if points:
                 key('F3')
                 wait(lambda: state()['path_mode'] and state()['path_selected'] is None)
@@ -778,5 +851,6 @@ if __name__ == '__main__':
     parser.add_argument('--grading', action='store_true')
     parser.add_argument('--points', action='store_true')
     parser.add_argument('--paint', action='store_true')
+    parser.add_argument('--fine-terrain', action='store_true')
     args = parser.parse_args()
-    run(args.output, args.binary, args.size, args.agent, args.terrain, args.guides, args.markers, args.vegetation, args.grading, args.points, args.paint)
+    run(args.output, args.binary, args.size, args.agent, args.terrain, args.guides, args.markers, args.vegetation, args.grading, args.points, args.paint, args.fine_terrain)

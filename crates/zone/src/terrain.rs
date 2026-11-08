@@ -1,4 +1,4 @@
-//! One 128 m, 33x33 height patch. Flat locked borders meet the implicit flat
+//! One 128 m, 33x33 or 65x65 height patch. Flat locked borders meet the implicit flat
 //! ground. Full multi-tile seams/export/streaming are separate authoring slices.
 use super::{Result, Zone, require};
 use serde::{Deserialize, Serialize};
@@ -8,10 +8,37 @@ pub const SAMPLE_COUNT: usize = AXIS * AXIS;
 pub const TILE_METRES: f64 = 128.;
 pub const SAMPLE_METRES: f64 = 4.;
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Resolution {
+    #[default]
+    #[serde(rename = "4m")]
+    FourMetres,
+    #[serde(rename = "2m")]
+    TwoMetres,
+}
+impl Resolution {
+    pub fn axis(self) -> usize {
+        match self {
+            Self::FourMetres => 33,
+            Self::TwoMetres => 65,
+        }
+    }
+    pub fn metres(self) -> f64 {
+        match self {
+            Self::FourMetres => 4.,
+            Self::TwoMetres => 2.,
+        }
+    }
+    fn is_default(&self) -> bool {
+        *self == Self::FourMetres
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct HeightPatch {
     pub chunk: [i64; 2],
+    #[serde(default, skip_serializing_if = "Resolution::is_default")]
+    pub resolution: Resolution,
     /// Local height above zone-origin Y, Z-major, including both border samples.
     pub heights: Vec<f32>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -36,9 +63,16 @@ impl HeightPatch {
     pub fn flat(chunk: [i64; 2]) -> Self {
         Self {
             chunk,
+            resolution: Resolution::default(),
             heights: vec![0.; SAMPLE_COUNT],
             weights: vec![],
         }
+    }
+    pub fn axis(&self) -> usize {
+        self.resolution.axis()
+    }
+    pub fn sample_metres(&self) -> f64 {
+        self.resolution.metres()
     }
     pub fn origin(&self) -> Result<[f64; 3]> {
         ChunkId {
@@ -50,25 +84,31 @@ impl HeightPatch {
         .ok_or("Invalid terrain chunk".into())
     }
     pub fn validate(&self, zone: &Zone) -> Result<()> {
+        let axis = self.axis();
+        let count = axis * axis;
         require(
-            self.heights.len() == SAMPLE_COUNT,
-            "Terrain needs exactly 33x33 heights",
+            self.resolution == Resolution::FourMetres || zone.schema >= 7,
+            "Fine terrain requires zone schema 7",
+        )?;
+        require(
+            self.heights.len() == count,
+            "Terrain heights must match resolution",
         )?;
         if !self.weights.is_empty() {
             require(zone.schema >= 6, "Terrain paint requires zone schema 6")?;
             require(
-                self.weights.len() == SAMPLE_COUNT,
-                "Terrain paint needs exactly 33x33 weights",
+                self.weights.len() == count,
+                "Terrain paint must match resolution",
             )?;
             for (index, w) in self.weights.iter().enumerate() {
                 require(
                     w.iter().map(|&v| u16::from(v)).sum::<u16>() == 255,
                     "Terrain weights must sum to 255",
                 )?;
-                if index / AXIS == 0
-                    || index / AXIS == AXIS - 1
-                    || index % AXIS == 0
-                    || index % AXIS == AXIS - 1
+                if index / axis == 0
+                    || index / axis == axis - 1
+                    || index % axis == 0
+                    || index % axis == axis - 1
                 {
                     require(
                         *w == crate::painting::GRASS,
@@ -91,11 +131,11 @@ impl HeightPatch {
             self.heights.iter().all(|h| h.is_finite() && h.abs() <= 64.),
             "Terrain height must be finite within +/-64 metres",
         )?;
-        for z in 0..AXIS {
-            for x in 0..AXIS {
-                if x == 0 || z == 0 || x == AXIS - 1 || z == AXIS - 1 {
+        for z in 0..axis {
+            for x in 0..axis {
+                if x == 0 || z == 0 || x == axis - 1 || z == axis - 1 {
                     require(
-                        self.heights[z * AXIS + x] == 0.,
+                        self.heights[z * axis + x] == 0.,
                         "Terrain border must remain flat at zero",
                     )?;
                 }
@@ -105,25 +145,25 @@ impl HeightPatch {
     }
     /// Exact interpolation of the retained grid's [a,c,b] / [b,c,d] triangles.
     pub fn height(&self, x: f64, z: f64) -> Result<Option<f32>> {
+        let axis = self.axis();
+        let metres = self.sample_metres();
+        let cells = (axis - 1) as f64;
         require(x.is_finite() && z.is_finite(), "Invalid terrain query")?;
-        require(
-            self.heights.len() == SAMPLE_COUNT,
-            "Invalid terrain samples",
-        )?;
+        require(self.heights.len() == axis * axis, "Invalid terrain samples")?;
         let origin = self.origin()?;
-        let u = (x - origin[0]) / SAMPLE_METRES;
-        let v = (z - origin[2]) / SAMPLE_METRES;
-        if !(0. ..=32.).contains(&u) || !(0. ..=32.).contains(&v) {
+        let u = (x - origin[0]) / metres;
+        let v = (z - origin[2]) / metres;
+        if !(0. ..=cells).contains(&u) || !(0. ..=cells).contains(&v) {
             return Ok(None);
         }
-        let ix = (u.floor() as usize).min(31);
-        let iz = (v.floor() as usize).min(31);
+        let ix = (u.floor() as usize).min(axis - 2);
+        let iz = (v.floor() as usize).min(axis - 2);
         let u = (u - ix as f64) as f32;
         let v = (v - iz as f64) as f32;
-        let a = self.heights[iz * AXIS + ix];
-        let b = self.heights[iz * AXIS + ix + 1];
-        let c = self.heights[(iz + 1) * AXIS + ix];
-        let d = self.heights[(iz + 1) * AXIS + ix + 1];
+        let a = self.heights[iz * axis + ix];
+        let b = self.heights[iz * axis + ix + 1];
+        let c = self.heights[(iz + 1) * axis + ix];
+        let d = self.heights[(iz + 1) * axis + ix + 1];
         Ok(Some(if u + v <= 1. {
             a * (1. - u - v) + b * u + c * v
         } else {
@@ -131,10 +171,9 @@ impl HeightPatch {
         }))
     }
     pub(crate) fn apply(&mut self, brush: &Brush) -> Result<()> {
-        require(
-            self.heights.len() == SAMPLE_COUNT,
-            "Invalid terrain samples",
-        )?;
+        let axis = self.axis();
+        let metres = self.sample_metres();
+        require(self.heights.len() == axis * axis, "Invalid terrain samples")?;
         require(
             brush.centre.iter().all(|v| v.is_finite())
                 && brush.radius_metres.is_finite()
@@ -167,15 +206,15 @@ impl HeightPatch {
         let previous = self.heights.clone();
         let mut candidate = previous.clone();
         let mut changed = false;
-        for z in 1..AXIS - 1 {
-            for x in 1..AXIS - 1 {
-                let dx = (origin[0] - brush.centre[0]) + x as f64 * SAMPLE_METRES;
-                let dz = (origin[2] - brush.centre[1]) + z as f64 * SAMPLE_METRES;
+        for z in 1..axis - 1 {
+            for x in 1..axis - 1 {
+                let dx = (origin[0] - brush.centre[0]) + x as f64 * metres;
+                let dz = (origin[2] - brush.centre[1]) + z as f64 * metres;
                 let weight = (1. - dx.hypot(dz) / brush.radius_metres).max(0.) as f32;
                 if weight == 0. {
                     continue;
                 }
-                let index = z * AXIS + x;
+                let index = z * axis + x;
                 let old = previous[index];
                 let value = match brush.operation {
                     BrushOperation::Raise { metres } => old + metres * weight,
@@ -186,8 +225,8 @@ impl HeightPatch {
                     BrushOperation::Smooth { blend } => {
                         let average = (previous[index - 1]
                             + previous[index + 1]
-                            + previous[index - AXIS]
-                            + previous[index + AXIS])
+                            + previous[index - axis]
+                            + previous[index + axis])
                             / 4.;
                         old + (average - old) * blend * weight
                     }
