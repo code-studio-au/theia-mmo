@@ -1302,3 +1302,67 @@ slice; exact fresh paired hashes are recorded below and in
 | editor | `7d4090274302f02a6664d703e85fc0c7ef464cc52bdc46cc4a4cb099dc49d879` |
 | client | `7f0e002e0bc400a0d939033a7d1b87c5da7a6c58cb6d57e88a9f53a7f42c9f9b` |
 | server | `0ddeef5da03401b35faa4d9c2a812f974d175d038961564c04fbb275dedc83a6` |
+
+
+## Inserting and removing guide points — 8 November 2026
+
+P5-17 / P3-15 / P1-10: a committed road or stream can now be reshaped without
+rebuilding its entire guide. Insert adds the midpoint of the segment after the
+selected point; at the last point it uses the preceding segment. Whole-guide
+selection uses its first segment. The new point becomes selected. Backspace
+removes a selected committed point and selects the next available index, or the
+previous last point. A guide must keep at least two points. Delete still removes
+the whole guide, and Backspace during a pending guide draft still pops its last
+point. Insert during a draft refuses without discarding it.
+
+The shared renderer-free edits are `insert_path_point` (`id`, insertion `index`,
+global f64 `position`) and `remove_path_point` (`id`, `index`). An insertion index
+can be 0..=length, allowing structured commands to prepend/append explicitly.
+Removal indices must exist. The complete candidate still enforces 2..64 points,
+at least 0.25 m horizontal separation, at most 256 m segment length, width/margin,
+coordinate and serialized-byte bounds. Midpoint insertion into a segment too
+short to preserve minimum spacing refuses. Schema and guide IDs remain unchanged.
+
+For a freshly loaded original example, these two separate commands add/remove
+one midpoint while preserving all other guide metadata:
+
+```json
+{"command":"apply","expected_revision":0,"edits":[{"op":"insert_path_point","id":100,"index":2,"position":[56,2.03,77]}]}
+{"command":"apply","expected_revision":1,"edits":[{"op":"remove_path_point","id":100,"index":2}]}
+```
+
+Each operation is one undo entry, or part of a bounded grouped transaction.
+Invalid indices, unknown guides, invalid spacing/coordinates, stale revisions
+and exhausted point budgets preserve the prior document, revision and redo.
+No terrain grading is implicit; use Grade when changed guides should reshape
+terrain. No navigation/water/runtime actor behavior is added.
+
+Point indices are positional. When a successful edit changes the selected
+guide's point count, the common visual/agent reconciliation clears the old point
+selection; undo/redo do this too. Successful visual insertion/removal then sets
+a valid new/next selection explicitly. This prevents an agent insertion from
+silently retargeting a later visual point move. Nonstructural point transforms
+retain their selection. A selected point now uses one shared opaque cyan standard
+Bevy material, distinguishing it from the amber selected ribbon; unselected
+handles remain pale and the existing 64-handle/single-mesh pool is retained.
+Earlier amber-point capture records retain their historical source scope.
+
+All 62 focused Rust cases (46 domain / 16 editor), seven launcher cases,
+formatting and denied-warning workspace/all-target Clippy pass. Three new domain
+cases cover road/stream insert/remove exact undo/redo at positive/negative far
+frames, metadata/schema/ID retention, safe endpoints, 64-point limits, invalid
+index/spacing/global position rollback, stale revision and preserved redo.
+Evidence: ignored `build/zone-point-structure-tests-v1.log`,
+`zone-point-structure-build-final-v2.log`, `zone-point-structure-clippy-final-v2.log`.
+
+The final local/far/empty native cases pass at actual 3440x1440 on RX 7900 XTX
+(RADV NAVI31), Vulkan device 29772, with validation observed active and zero GPU
+or resize diagnostics. Actual input selects the inserted midpoint mesh, removes
+it, then selects the ribbon at its old location. Handle projections and mesh
+asset counts remain consistent. Exact undo/redo, two-point refusal, agent
+structural selection clearing and draft refusal pass alongside all retained
+selection/framing/duplication cases. Final evidence:
+`build/zone-point-structure-native-3440-v3/{qualification.json,*.png}`. Normal-game
+package formats/client/server code are unchanged; earlier example client-pair
+and Windows qualification records retain their stated scope. Editor SHA-256:
+`a4231af95f4ce17f184e30e010e09acdcf8c8150dcbcc4d772c23715561db83f`.

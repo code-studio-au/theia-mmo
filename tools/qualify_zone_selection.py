@@ -10,7 +10,7 @@ from gpu_validation import check_gpu_diagnostics
 from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 
 
-def run(output, binary, duplicate=False):
+def run(output, binary, duplicate=False, point_structure=False):
     output.mkdir(parents=True, exist_ok=False)
     binary = binary.resolve()
     cases = []
@@ -22,7 +22,7 @@ def run(output, binary, duplicate=False):
         log_path = output / f'{name}.log'
         with log_path.open('w') as log:
             mailbox = output / f'{name}.mailbox'
-            extra = ['--mailbox', str(mailbox)] if duplicate else []
+            extra = ['--mailbox', str(mailbox)] if duplicate or point_structure else []
             process = subprocess.Popen([str(binary), *arguments, *extra, '--report', str(report)],
                                        env=env, stdout=log, stderr=log)
             desktop = None
@@ -38,6 +38,7 @@ def run(output, binary, duplicate=False):
                 wait(lambda: report.exists() and state()['viewport'] == [3440, 1440], 45)
                 desktop.move(window, [1720, 720], 1)
                 original = state()
+                next_request = 0
 
                 def key(name):
                     desktop.key(name)
@@ -60,6 +61,15 @@ def run(output, binary, duplicate=False):
                         desktop.button(1, False)
                     wait(lambda: not state()['left_mouse_down'])
 
+                def click_at(point):
+                    desktop.move(window,point,1)
+                    desktop.button(1,True)
+                    try:
+                        wait(lambda: state()['left_mouse_down'])
+                    finally:
+                        desktop.button(1,False)
+                    wait(lambda: not state()['left_mouse_down'])
+
                 def focus(target):
                     key('f')
                     wait(lambda: all(abs(a-b) < 0.001 for a,b in zip(state()['view']['target'], target)))
@@ -68,6 +78,20 @@ def run(output, binary, duplicate=False):
                     key('F12')
                     wait(lambda: capture_ready(report.with_suffix('.png')), 30)
                     report.with_suffix('.png').rename(output / f'{name}.{label}.png')
+
+                def agent_command(command):
+                    nonlocal next_request
+                    next_request += 1
+                    bridge = json.loads((mailbox/'state.json').read_text())
+                    request = dict(session=bridge['session'],request_id=next_request,command=command)
+                    (mailbox/'agent.tmp').write_text(json.dumps(request))
+                    (mailbox/'agent.tmp').replace(mailbox/'request.json')
+                    def receipt():
+                        if not (mailbox/'receipt.json').exists():
+                            return None
+                        result = json.loads((mailbox/'receipt.json').read_text())
+                        return result if result['request_id'] == next_request else None
+                    return wait(receipt)
 
                 def unchanged():
                     current = state()
@@ -177,17 +201,77 @@ def run(output, binary, duplicate=False):
                     wait(lambda: state()['path_point'] == 0)
                     focus([380, .03, -380])
                     assert state()['view']['distance'] == 12
+                    if point_structure:
+                        before = state()
+                        guide = before['document']['paths'][0]
+                        a,b = guide['points']
+                        midpoint = [x+(y-x)/2 for x,y in zip(a,b)]
+                        key('Insert')
+                        inserted = wait(lambda: state() if state()['revision'] == before['revision']+1 else None)
+                        expected = json.loads(json.dumps(before['document']))
+                        expected['paths'][0]['points'].insert(1,midpoint)
+                        assert inserted['document'] == expected and inserted['path_point'] == 1
+                        assert len(inserted['path_handles']) == 3 and inserted['mesh_assets'] == before['mesh_assets']
+                        local = [v-o for v,o in zip(midpoint,before['document']['origin'])]
+                        focus(local)
+                        assert all(abs(a-b)<2 for a,b in zip(state()['path_handles'][1],[1720,720]))
+                        key('Tab')
+                        wait(lambda: state()['path_point'] == 2)
+                        key('Tab')
+                        wait(lambda: state()['path_point'] is None)
+                        click_at(state()['path_handles'][1])
+                        wait(lambda: state()['path_point'] == 1)
+                        assert state()['revision'] == inserted['revision']
+                        capture('inserted-point')
+                        chord('Control_L','z')
+                        wait(lambda: state()['revision'] == before['revision']+2)
+                        assert state()['document'] == before['document'] and state()['path_point'] is None
+                        chord('Control_L','y')
+                        wait(lambda: state()['revision'] == before['revision']+3)
+                        assert state()['document'] == expected and state()['path_point'] is None
+                        key('Tab')
+                        wait(lambda: state()['path_point'] == 0)
+                        key('Tab')
+                        wait(lambda: state()['path_point'] == 1)
+                        key('BackSpace')
+                        wait(lambda: state()['revision'] == before['revision']+4)
+                        assert state()['document'] == before['document'] and state()['path_point'] == 1
+                        click_at([1720,720])
+                        wait(lambda: state()['path_selected'] == guide['id'] and state()['path_point'] is None)
+                        assert state()['revision'] == before['revision']+4
+                        chord('Control_L','z')
+                        wait(lambda: state()['revision'] == before['revision']+5)
+                        assert state()['document'] == expected and state()['path_point'] is None
+                        chord('Control_L','y')
+                        wait(lambda: state()['revision'] == before['revision']+6)
+                        assert state()['document'] == before['document'] and state()['path_point'] is None
+                        key('Tab')
+                        wait(lambda: state()['path_point'] == 0)
+                        key('BackSpace')
+                        wait(lambda: state()['status'] == 'Guide needs at least two points')
+                        assert state()['revision'] == before['revision']+6 and state()['path_point'] == 0
+                        midpoint[1] += 2.
+                        revision = state()['revision']
+                        receipt = agent_command(dict(command='apply',expected_revision=revision,
+                            edits=[dict(op='insert_path_point',id=guide['id'],index=1,position=midpoint)]))
+                        assert receipt['accepted']
+                        wait(lambda: state()['revision'] == revision+1)
+                        assert len(state()['path_handles']) == 3 and state()['path_point'] is None
+                        assert state()['mesh_assets'] == before['mesh_assets']
+                        capture('agent-inserted-point')
+                        chord('Control_L','z')
+                        wait(lambda: state()['revision'] == revision+2)
+                        assert state()['document'] == before['document'] and state()['path_point'] is None
+                        key('Tab')
+                        wait(lambda: state()['path_point'] == 0)
+                        focus([380,.03,-380])
+                        original = state()
                     if duplicate:
                         copy_selected('paths','path_selected')
                         before = state()
-                        bridge = json.loads((mailbox/'state.json').read_text())
-                        request = dict(session=bridge['session'],request_id=1,
-                            command=dict(command='apply',expected_revision=before['revision'],
-                                edits=[dict(op='duplicate',id=1,new_id=5000,offset=[-2.,0.,-2.])]))
-                        (mailbox/'agent.tmp').write_text(json.dumps(request))
-                        (mailbox/'agent.tmp').replace(mailbox/'request.json')
+                        receipt = agent_command(dict(command='apply',expected_revision=before['revision'],
+                            edits=[dict(op='duplicate',id=1,new_id=5000,offset=[-2.,0.,-2.])]))
                         wait(lambda: state()['revision'] == before['revision']+1)
-                        receipt = wait(lambda: json.loads((mailbox/'receipt.json').read_text()) if (mailbox/'receipt.json').exists() else None)
                         assert receipt['accepted'] and state()['document']['objects'][-1]['id'] == 5000
                         chord('Control_L','z')
                         wait(lambda: state()['revision'] == before['revision']+2)
@@ -201,6 +285,10 @@ def run(output, binary, duplicate=False):
                         button('NewPath(Road)')
                         wait(lambda: state()['path_draft_points'] == 0)
                         revision = state()['revision']
+                        if point_structure:
+                            key('Insert')
+                            wait(lambda: state()['status'] == 'Finish or cancel the guide draft before editing points')
+                            assert state()['path_draft_points'] == 0 and state()['revision'] == revision
                         chord('Control_L','d')
                         wait(lambda: state()['status'] == 'Finish or cancel the guide draft before duplicating')
                         assert state()['path_draft_points'] == 0 and state()['revision'] == revision
@@ -261,6 +349,11 @@ def run(output, binary, duplicate=False):
                            'checked global-to-local framing at signed far origin'],
                    scope='Linux owned OS input, standard Bevy at 3440x1440; offline editor, no Windows or multiplayer claim')
     summary['duplication'] = duplicate
+    summary['point_structure'] = point_structure
+    if point_structure:
+        summary['checks'] += ['native midpoint insertion/removal, exact undo/redo, minimum two-point refusal and resident handles',
+                              'agent structural edit clears old point selection without changing guide identity',
+                              'actual mesh picking selects inserted handle; removed midpoint returns to whole-ribbon selection']
     if duplicate:
         summary['checks'] += ['Ctrl-D copies all four authoring kinds with exact undo/redo and whole-guide behavior',
                               'agent duplicate plus visual undo preserves monotonic shared ID allocation',
@@ -274,5 +367,6 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--binary', type=Path, default=Path('target/debug/theia-zone-editor'))
     parser.add_argument('--duplicate', action='store_true')
+    parser.add_argument('--point-structure', action='store_true')
     args = parser.parse_args()
-    run(args.output, args.binary, args.duplicate)
+    run(args.output, args.binary, args.duplicate, args.point_structure)

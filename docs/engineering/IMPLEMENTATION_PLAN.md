@@ -6,7 +6,9 @@ Whole guides are one undo entry. The summary also distinguishes saved content
 from unsaved visual/agent edits and pending drafts. This grounds anchors rather than prop stacks
 or full slope footprints. Tab/Shift-Tab also cycle hidden/distant objects; F
 frames objects, plants, markers and the existing guide/point selection without
-changing history. Flatten also samples the surface with I and adjusts its local
+changing history. Committed guides also insert/remove points through Insert /
+Backspace and narrow shared commands; structural changes clear stale point
+selection while visual edits explicitly select the new/next point. Flatten also samples the surface with I and adjusts its local
 level in 1 m / 0.1 m steps, sharing exact visual/headless stamp output.
 Ctrl-D and structured `duplicate` commands copy any authoring kind with fresh
 shared IDs, bounded names/offsets and one-entry history. Local/far/empty native
@@ -17,7 +19,7 @@ Wayfarer Hollow draft from an original four-transaction recipe. F also frames
 the terrain patch. Its graded walking route and shelter pass actual Avian checks;
 local/far 3440x1440 editor runs and two real Renet client pairs pass with zero GPU
 diagnostics, including far origin Y=20. Markers remain authoring notes and the
-stream remains a visual guide. 59 focused Rust cases, seven launcher cases, formatting
+stream remains a visual guide. 62 focused Rust cases, seven launcher cases, formatting
 and strict workspace/all-target Clippy pass. The full native 3440x1440 walkthrough also passes
 with Vulkan validation active and zero GPU diagnostics; [contract and evidence](../ZONE_EDITOR.md#wayfarer-hollow-example-and-terrain-framing--8-november-2026).
 Local commits only; no push. Chat composer/bubbles remain deferred.

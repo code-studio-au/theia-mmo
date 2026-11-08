@@ -28,6 +28,7 @@ pub(super) struct Scene {
     draft: Option<GuidePath>,
     handles: [Entity; theia_zone::paths::MAX_POINTS],
     handle_normal: Handle<StandardMaterial>,
+    handle_selected: Handle<StandardMaterial>,
     handle_state: (Vec<[f64; 3]>, [f64; 3], Option<usize>),
 }
 pub(super) fn actions() -> [(Action, &'static str); 12] {
@@ -102,6 +103,11 @@ pub(super) fn setup(
         unlit: true,
         ..default()
     });
+    let handle_selected = materials.add(StandardMaterial {
+        base_color: Color::srgb(0.08, 0.85, 1.),
+        unlit: true,
+        ..default()
+    });
     let handles = std::array::from_fn(|index| {
         commands
             .spawn((
@@ -126,6 +132,7 @@ pub(super) fn setup(
         draft: None,
         handles,
         handle_normal,
+        handle_selected,
         handle_state: (vec![], [0.; 3], None),
     });
 }
@@ -242,7 +249,7 @@ pub(super) fn sync(
                     ))
                     .with_scale(Vec3::splat(if selected { 1.5 } else { 1. })),
                     MeshMaterial3d(if selected {
-                        scene.selected.clone()
+                        scene.handle_selected.clone()
                     } else {
                         scene.handle_normal.clone()
                     }),
@@ -310,6 +317,52 @@ pub(super) fn perform(action: Action, session: &mut Session) {
                 }]);
             } else {
                 session.status = "Select a committed guide to grade terrain".into();
+            }
+        }
+        Action::InsertPoint | Action::RemovePoint => {
+            if session.path_draft.is_some() {
+                session.status = "Finish or cancel the guide draft before editing points".into();
+                return;
+            }
+            let Some(path) = session
+                .editor
+                .zone()
+                .paths
+                .iter()
+                .find(|p| Some(p.id) == session.path_selected)
+            else {
+                session.status = "Select a guide before editing points".into();
+                return;
+            };
+            let id = path.id;
+            let (edit, selected) = if matches!(action, Action::InsertPoint) {
+                let segment = session.path_point.unwrap_or(0).min(path.points.len() - 2);
+                let index = segment + 1;
+                let a = path.points[segment];
+                let b = path.points[segment + 1];
+                let position = std::array::from_fn(|i| a[i] + (b[i] - a[i]) / 2.);
+                (
+                    Edit::InsertPathPoint {
+                        id,
+                        index,
+                        position,
+                    },
+                    index,
+                )
+            } else {
+                let Some(index) = session.path_point else {
+                    session.status = "Select a control point before removing it".into();
+                    return;
+                };
+                (
+                    Edit::RemovePathPoint { id, index },
+                    index.min(path.points.len().saturating_sub(2)),
+                )
+            };
+            let revision = session.editor.revision();
+            session.edit(vec![edit]);
+            if session.editor.revision() != revision {
+                session.path_point = Some(selected);
             }
         }
         Action::PopPath => {

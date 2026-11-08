@@ -356,7 +356,7 @@ pub(super) fn palette(
         } else if session.marker_mode {
             "F4: NPC / quest markers\nCtrl D: copy marker\nF: focus | H: ground selection\nClick to place or select\nArrows/PgUp/Dn: move\nR / Shift R: yaw +/-15 deg\n+/- changes footprint radius\nCtrl O loads saved zone\nMarkers are authoring notes;\nplaytest hides them".into()
         } else if session.path_mode {
-            "F3: guide paths / streams\nCtrl D: copy whole guide\nClick ground to add points\nEnter finishes | Esc cancels\nBksp removes last point\nClick guide / point to select\nTab / Shift Tab: cycle points\nF: focus | H: ground selection\nArrows/PgUp/Dn move selection\n+/- changes guide width\nGrade terrain: selected guide\n4 m falloff, surface -0.03 m\nNo water simulation".into()
+            "F3: guide paths / streams\nCtrl D: copy whole guide\nClick ground to add points\nEnter finishes | Esc cancels\nIns: insert segment midpoint\nBksp: remove point / draft last\nClick guide / point to select\nTab / Shift Tab: cycle points\nF: focus | H: ground selection\nArrows/PgUp/Dn move selection\n+/- changes guide width\nGrade terrain: selected guide\n4 m falloff, surface -0.03 m\nNo water simulation".into()
         } else if session.terrain_mode {
             "F1: object tools | F2: terrain
 Click/drag: brush stroke

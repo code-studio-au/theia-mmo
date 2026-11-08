@@ -1,3 +1,14 @@
+## 8 November 2026 — structural guide-point edits with shared validation
+
+Add narrow insert/remove point edits with explicit guide/index/global position,
+retaining the existing 2..64 points and spacing/span/document bounds. Insert
+subdivides the selected or first segment visually; Backspace removes the selected
+committed point while preserving draft-pop behavior. Clear stale point selection
+when structural counts change, including agent edits/undo, then let successful
+visual edits select their new/next point. Use a shared opaque cyan point material
+to distinguish the selected handle from an amber ribbon.
+[Contract/evidence](ZONE_EDITOR.md#inserting-and-removing-guide-points--8-november-2026).
+
 ## 8 November 2026 — original replayable example and whole-terrain framing
 
 Provide an original primitive-only Wayfarer Hollow base/command recipe and an

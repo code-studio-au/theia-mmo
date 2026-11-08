@@ -70,13 +70,28 @@ impl Session {
             || self.path_draft.is_some()
     }
     fn execute(&mut self, command: Command) {
+        let points_before = self.selected_path_len();
         match self.editor.execute(command) {
             Ok(()) => {
                 self.status = format!("Revision {} accepted", self.editor.revision());
-                self.reconcile();
+                self.reconcile_after_edit(points_before);
             }
             Err(error) => self.status = error,
         }
+    }
+    fn selected_path_len(&self) -> Option<usize> {
+        self.editor
+            .zone()
+            .paths
+            .iter()
+            .find(|p| Some(p.id) == self.path_selected)
+            .map(|p| p.points.len())
+    }
+    fn reconcile_after_edit(&mut self, points_before: Option<usize>) {
+        if points_before != self.selected_path_len() {
+            self.path_point = None;
+        }
+        self.reconcile();
     }
     fn reconcile(&mut self) {
         if !self
@@ -179,6 +194,8 @@ enum Action {
     FinishPath,
     GradePath,
     PopPath,
+    InsertPoint,
+    RemovePoint,
     NextPath,
     DeletePath,
     PathWidth(i8),
@@ -456,6 +473,8 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
             | Action::Ground
             | Action::Duplicate
             | Action::PopPath
+            | Action::InsertPoint
+            | Action::RemovePoint
             | Action::NextPath
             | Action::PathWidth(_)
             | Action::Save
@@ -619,6 +638,8 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
         | Action::FinishPath
         | Action::GradePath
         | Action::PopPath
+        | Action::InsertPoint
+        | Action::RemovePoint
         | Action::NextPath
         | Action::DeletePath
         | Action::PathWidth(_) => paths::perform(action, session),
@@ -784,8 +805,14 @@ fn keyboard(
         Some(Action::MarkerRadius(-1))
     } else if session.path_mode && keys.just_pressed(KeyCode::Enter) {
         Some(Action::FinishPath)
+    } else if session.path_mode && !ctrl && keys.just_pressed(KeyCode::Insert) {
+        Some(Action::InsertPoint)
     } else if session.path_mode && keys.just_pressed(KeyCode::Backspace) {
-        Some(Action::PopPath)
+        Some(if session.path_draft.is_some() {
+            Action::PopPath
+        } else {
+            Action::RemovePoint
+        })
     } else if session.path_mode && keys.just_pressed(KeyCode::Equal) {
         Some(Action::PathWidth(1))
     } else if session.path_mode && keys.just_pressed(KeyCode::Minus) {

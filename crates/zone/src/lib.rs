@@ -306,6 +306,15 @@ pub enum Edit {
     PaintTerrain {
         paint: painting::Paint,
     },
+    InsertPathPoint {
+        id: u64,
+        index: usize,
+        position: [f64; 3],
+    },
+    RemovePathPoint {
+        id: u64,
+        index: usize,
+    },
     MovePathPoint {
         id: u64,
         index: usize,
@@ -462,6 +471,33 @@ impl Editor {
                                     .as_mut()
                                     .ok_or("Create terrain before painting")?,
                             )?;
+                        }
+                        Edit::InsertPathPoint {
+                            id,
+                            index,
+                            position,
+                        } => {
+                            let path = candidate
+                                .paths
+                                .iter_mut()
+                                .find(|p| p.id == id)
+                                .ok_or("Unknown path ID")?;
+                            require(
+                                path.points.len() < paths::MAX_POINTS,
+                                "Guide point budget exceeded",
+                            )?;
+                            require(index <= path.points.len(), "Unknown guide insertion index")?;
+                            path.points.insert(index, position);
+                        }
+                        Edit::RemovePathPoint { id, index } => {
+                            let path = candidate
+                                .paths
+                                .iter_mut()
+                                .find(|p| p.id == id)
+                                .ok_or("Unknown path ID")?;
+                            require(path.points.len() > 2, "Guide needs at least two points")?;
+                            require(index < path.points.len(), "Unknown guide point index")?;
+                            path.points.remove(index);
                         }
                         Edit::MovePathPoint {
                             id,

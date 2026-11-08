@@ -33,6 +33,7 @@ pub(super) fn poll(
         || session.path_draft.is_some()
         || session.play.is_some();
     let previous = session.editor.revision();
+    let points_before = session.selected_path_len();
     match mailbox.inner.poll(&mut session.editor, busy) {
         Ok(Some(receipt)) => {
             session.status = if receipt.accepted {
@@ -61,6 +62,6 @@ pub(super) fn poll(
         }
     }
     if session.editor.revision() != previous {
-        session.reconcile();
+        session.reconcile_after_edit(points_before);
     }
 }

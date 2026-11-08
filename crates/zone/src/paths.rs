@@ -292,3 +292,245 @@ mod tests {
         }
     }
 }
+
+#[cfg(test)]
+mod point_structure_tests {
+    use super::*;
+    use crate::{Command, Edit, Editor};
+    fn fixture(origin: [f64; 3], kind: PathKind) -> Zone {
+        Zone {
+            schema: 7,
+            origin,
+            spawn: [origin[0], origin[1] + 0.1, origin[2] + 6.],
+            paths: vec![GuidePath {
+                id: 1,
+                name: "Editable guide".into(),
+                kind,
+                width_metres: 4.,
+                points: vec![
+                    [origin[0] + 8., origin[1] + 3., origin[2] + 8.],
+                    [origin[0] + 24., origin[1] + 5., origin[2] + 8.],
+                ],
+            }],
+            ..Zone::default()
+        }
+    }
+    fn apply(e: &mut Editor, edits: Vec<Edit>) -> Result<()> {
+        e.execute(Command::Apply {
+            expected_revision: e.revision(),
+            edits,
+        })
+    }
+    #[test]
+    fn insert_remove_round_trip_preserves_metadata_and_far_global_positions() {
+        for sign in [-1., 0., 1.] {
+            for kind in [PathKind::Road, PathKind::Stream] {
+                let origin = [sign * 128_000_000_000., 20., -sign * 128_000_000_000.];
+                let original = fixture(origin, kind);
+                let mut e = Editor::new(original.clone()).unwrap();
+                let position = [origin[0] + 16., origin[1] + 4., origin[2] + 8.];
+                let command = Command::Apply {
+                    expected_revision: 0,
+                    edits: vec![Edit::InsertPathPoint {
+                        id: 1,
+                        index: 1,
+                        position,
+                    }],
+                };
+                e.execute(serde_json::from_slice(&serde_json::to_vec(&command).unwrap()).unwrap())
+                    .unwrap();
+                let mut inserted = original.clone();
+                inserted.paths[0].points.insert(1, position);
+                assert_eq!(e.zone(), &inserted);
+                assert_eq!(e.history(), (1, 0));
+                assert_eq!(e.zone().next_id(), Some(2));
+                apply(&mut e, vec![Edit::RemovePathPoint { id: 1, index: 1 }]).unwrap();
+                assert_eq!(e.zone(), &original);
+                e.execute(Command::Undo {
+                    expected_revision: 2,
+                })
+                .unwrap();
+                assert_eq!(e.zone(), &inserted);
+                e.execute(Command::Undo {
+                    expected_revision: 3,
+                })
+                .unwrap();
+                assert_eq!(e.zone(), &original);
+                e.execute(Command::Redo {
+                    expected_revision: 4,
+                })
+                .unwrap();
+                assert_eq!(e.zone(), &inserted);
+                e.execute(Command::Redo {
+                    expected_revision: 5,
+                })
+                .unwrap();
+                assert_eq!(e.zone(), &original);
+            }
+        }
+    }
+    #[test]
+    fn invalid_point_structure_edits_are_atomic_and_preserve_redo() {
+        let original = fixture([0.; 3], PathKind::Road);
+        let mut e = Editor::new(original.clone()).unwrap();
+        apply(
+            &mut e,
+            vec![Edit::InsertPathPoint {
+                id: 1,
+                index: 1,
+                position: [16., 4., 8.],
+            }],
+        )
+        .unwrap();
+        e.execute(Command::Undo {
+            expected_revision: 1,
+        })
+        .unwrap();
+        for edit in [
+            Edit::InsertPathPoint {
+                id: 99,
+                index: 1,
+                position: [16., 4., 8.],
+            },
+            Edit::InsertPathPoint {
+                id: 1,
+                index: usize::MAX,
+                position: [16., 4., 8.],
+            },
+            Edit::InsertPathPoint {
+                id: 1,
+                index: 1,
+                position: [f64::NAN, 4., 8.],
+            },
+            Edit::InsertPathPoint {
+                id: 1,
+                index: 1,
+                position: [8., 3., 8.],
+            },
+            Edit::InsertPathPoint {
+                id: 1,
+                index: 1,
+                position: [8.1, 3., 8.],
+            },
+            Edit::InsertPathPoint {
+                id: 1,
+                index: 0,
+                position: [-300., 0., 8.],
+            },
+            Edit::InsertPathPoint {
+                id: 1,
+                index: 1,
+                position: [600., 0., 8.],
+            },
+            Edit::RemovePathPoint { id: 1, index: 0 },
+            Edit::RemovePathPoint {
+                id: 1,
+                index: usize::MAX,
+            },
+            Edit::RemovePathPoint { id: 99, index: 0 },
+        ] {
+            assert!(
+                apply(
+                    &mut e,
+                    vec![
+                        Edit::MovePathPoint {
+                            id: 1,
+                            index: 0,
+                            position: [8., 3.1, 8.]
+                        },
+                        edit
+                    ]
+                )
+                .is_err()
+            );
+            assert_eq!(e.zone(), &original);
+            assert_eq!(e.revision(), 2);
+            assert_eq!(e.history(), (0, 1));
+        }
+        assert!(
+            e.execute(Command::Apply {
+                expected_revision: 1,
+                edits: vec![Edit::InsertPathPoint {
+                    id: 1,
+                    index: 1,
+                    position: [16., 4., 8.]
+                }]
+            })
+            .is_err()
+        );
+        e.execute(Command::Redo {
+            expected_revision: 2,
+        })
+        .unwrap();
+        assert_eq!(e.zone().paths[0].points.len(), 3);
+        let current = e.zone().clone();
+        assert!(
+            apply(
+                &mut e,
+                vec![Edit::RemovePathPoint {
+                    id: 1,
+                    index: usize::MAX
+                }]
+            )
+            .is_err()
+        );
+        assert_eq!(e.zone(), &current);
+    }
+    #[test]
+    fn endpoints_and_the_64_point_budget_remain_bounded() {
+        let mut e = Editor::new(fixture([0.; 3], PathKind::Stream)).unwrap();
+        apply(
+            &mut e,
+            vec![
+                Edit::InsertPathPoint {
+                    id: 1,
+                    index: 0,
+                    position: [0., 3., 8.],
+                },
+                Edit::InsertPathPoint {
+                    id: 1,
+                    index: 3,
+                    position: [32., 5., 8.],
+                },
+            ],
+        )
+        .unwrap();
+        assert_eq!(e.zone().paths[0].points.len(), 4);
+        apply(
+            &mut e,
+            vec![
+                Edit::RemovePathPoint { id: 1, index: 0 },
+                Edit::RemovePathPoint { id: 1, index: 2 },
+            ],
+        )
+        .unwrap();
+        assert_eq!(e.zone().paths[0].points.len(), 2);
+        let mut zone = e.zone().clone();
+        zone.paths[0].points = (0..MAX_POINTS).map(|i| [i as f64, 0., 0.]).collect();
+        let mut e = Editor::new(zone.clone()).unwrap();
+        assert!(
+            apply(
+                &mut e,
+                vec![Edit::InsertPathPoint {
+                    id: 1,
+                    index: 32,
+                    position: [31.5, 0., 0.]
+                }]
+            )
+            .is_err()
+        );
+        assert_eq!(e.zone(), &zone);
+        assert_eq!(e.revision(), 0);
+        apply(&mut e, vec![Edit::RemovePathPoint { id: 1, index: 32 }]).unwrap();
+        apply(
+            &mut e,
+            vec![Edit::InsertPathPoint {
+                id: 1,
+                index: 32,
+                position: [32., 0., 0.],
+            }],
+        )
+        .unwrap();
+        assert_eq!(e.zone(), &zone);
+    }
+}
