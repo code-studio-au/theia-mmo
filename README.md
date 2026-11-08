@@ -1,3 +1,10 @@
+Zone authoring is the current focus. Run `cargo run -p theia-zone-editor --
+--commands content/zones/greybox.commands.jsonl` for the lightweight Bevy greybox
+editor, or add `--headless --output build/my-zone.json` for structured commands.
+See [zone controls, validation and qualification](docs/ZONE_EDITOR.md). F5 is an
+offline Avian collision playtest; normal multiplayer remains the existing game
+launcher. Chat composer and speech bubbles are deferred.
+
 > Development target: the 16 km × 16 km saved graybox world with the POLYGON
 > Base Locomotion player. Bake terrain once, build release binaries, then run `python3 tools/play.py`.
 > See [graybox world](docs/GRAYBOX_WORLD.md) for controls, asset preparation,

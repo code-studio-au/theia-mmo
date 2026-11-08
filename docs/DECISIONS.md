@@ -1,3 +1,16 @@
+## 8 November 2026 — zone authoring uses one validated command history
+
+Prioritize a lightweight standard Bevy authoring app under P5-17/P3-15. Keep
+zone documents/transactions independent of rendering; visual edits and structured
+agent commands share validation and undo. Start with primitive placements,
+transforms, snapping, bounded history, versioned files and an offline Avian
+playtest using the existing capsule solver. Terrain brushes, paths/streams,
+vegetation and NPC/quest markers follow; chat composer/bubbles are deferred.
+Keep the game stack and normal multiplayer path; no new renderer, ECS or network
+transport. Use bounded f64 authoring coordinates and existing local conversion.
+Local commits and desktop qualification are authorized; no push.
+[Contract, prerequisites and evidence](ZONE_EDITOR.md).
+
 ## 8 November 2026 — client chat waits independently of gameplay
 
 Explicitly bind the opt-in chat profile after the full gameplay/Classic identity.

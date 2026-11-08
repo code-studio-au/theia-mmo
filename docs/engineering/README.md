@@ -1,3 +1,14 @@
+Zone-authoring focus, 8 November 2026 (P5-17 / P3-15 / P1-10):
+The user authorizes ongoing terrain/greybox/zone-editor work, recommended local
+implementation decisions, desktop use and local commits; no push. Chat composer
+and speech bubbles are deferred. A bounded standard-Bevy primitive editor and shared
+validated command/undo foundation now pass eight focused Rust checks, strict
+workspace Clippy, headless CLI and four native Linux walkthroughs through actual
+3440x1440, with zero GPU diagnostics. Live agent handoff and terrain remain next. Runtime multiplayer remains
+Rust/Bevy/Avian/Renet; editor playtest is an offline sandbox. Actual prerequisites,
+acceptance checks and implementation evidence are tracked in [the zone record](../ZONE_EDITOR.md).
+Earlier stop/chat-first queue entries are historical; P3-17/18 stay unspecified.
+
 Safe stop after chat client-worker slice, 8 November 2026 (P4-12 / P2-14 / P5-13):
 The user requested stopping after the current slice. Finished the opt-in real
 Renet worker's bounded chat producer/receipt view, reply pacing and local timeout

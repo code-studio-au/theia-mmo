@@ -1,0 +1,419 @@
+use super::*;
+use bevy::{
+    picking::mesh_picking::ray_cast::{MeshRayCast, MeshRayCastSettings},
+    render::{
+        renderer::RenderAdapterInfo,
+        view::window::screenshot::{Screenshot, ScreenshotCaptured},
+    },
+};
+#[derive(Component)]
+pub(super) struct Authored(pub u64);
+#[derive(Component)]
+pub(super) struct SpawnMarker;
+#[derive(Component)]
+pub(super) struct Pawn;
+#[derive(Resource)]
+pub(super) struct Palette {
+    meshes: [Handle<Mesh>; 3],
+    normal: Handle<StandardMaterial>,
+    selected: Handle<StandardMaterial>,
+}
+fn index(primitive: Primitive) -> usize {
+    match primitive {
+        Primitive::Box => 0,
+        Primitive::Sphere => 1,
+        Primitive::Cylinder => 2,
+    }
+}
+pub(super) fn setup(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    let ground = materials.add(Color::srgb(0.18, 0.24, 0.20));
+    let pawn = materials.add(Color::srgb(0.25, 0.65, 0.95));
+    commands.insert_resource(Palette {
+        meshes: [
+            meshes.add(Cuboid::new(1., 1., 1.)),
+            meshes.add(Sphere::new(0.5)),
+            meshes.add(Cylinder::new(0.5, 1.)),
+        ],
+        normal: materials.add(Color::srgb(0.52, 0.60, 0.66)),
+        selected: materials.add(Color::srgb(0.95, 0.61, 0.19)),
+    });
+    commands.spawn((
+        Mesh3d(meshes.add(Cuboid::new(1024., 1., 1024.))),
+        MeshMaterial3d(ground),
+        Transform::from_xyz(0., -0.5, 0.),
+    ));
+    let grid_mesh = meshes.add(Cuboid::new(1., 1., 1.));
+    let grid_material = materials.add(StandardMaterial {
+        base_color: Color::srgb(0.30, 0.38, 0.33),
+        unlit: true,
+        ..default()
+    });
+    for line in -32..=32 {
+        for along_x in [true, false] {
+            let translation = if along_x {
+                Vec3::new(0., 0.004, line as f32)
+            } else {
+                Vec3::new(line as f32, 0.004, 0.)
+            };
+            let scale = if along_x {
+                Vec3::new(64., 0.006, 0.012)
+            } else {
+                Vec3::new(0.012, 0.006, 64.)
+            };
+            commands.spawn((
+                Mesh3d(grid_mesh.clone()),
+                MeshMaterial3d(grid_material.clone()),
+                Transform::from_translation(translation).with_scale(scale),
+                bevy::light::NotShadowCaster,
+            ));
+        }
+    }
+    commands.spawn((
+        SpawnMarker,
+        Mesh3d(meshes.add(Sphere::new(0.25))),
+        MeshMaterial3d(materials.add(Color::srgb(0.2, 0.9, 0.5))),
+        Transform::default(),
+    ));
+    commands.spawn((
+        Pawn,
+        Mesh3d(meshes.add(Capsule3d::new(0.35, 1.1))),
+        MeshMaterial3d(pawn),
+        Visibility::Hidden,
+        Transform::default(),
+    ));
+    commands.spawn((
+        DirectionalLight {
+            illuminance: 14000.,
+            shadow_maps_enabled: true,
+            ..default()
+        },
+        Transform::from_xyz(20., 40., 15.).looking_at(Vec3::ZERO, Vec3::Y),
+    ));
+    commands.spawn((
+        Camera3d::default(),
+        bevy::core_pipeline::tonemapping::Tonemapping::ReinhardLuminance,
+        Transform::from_xyz(20., 28., 30.).looking_at(Vec3::ZERO, Vec3::Y),
+    ));
+}
+fn transform(zone: &Zone, pose: &Pose) -> Transform {
+    Transform {
+        translation: Vec3::from_array(zone.local(pose.position).expect("Validated pose")),
+        rotation: Quat::from_rotation_y(pose.yaw_degrees.to_radians() as f32),
+        scale: Vec3::from_array(pose.size.map(|v| v as f32)),
+    }
+}
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
+pub(super) fn sync(
+    mut commands: Commands,
+    session: Res<Session>,
+    palette: Res<Palette>,
+    mut objects: Query<(
+        Entity,
+        &Authored,
+        &mut Transform,
+        &mut MeshMaterial3d<StandardMaterial>,
+    )>,
+    mut spawn: Query<&mut Transform, (With<SpawnMarker>, Without<Authored>, Without<Pawn>)>,
+    mut pawn: Query<
+        (&mut Transform, &mut Visibility),
+        (With<Pawn>, Without<Authored>, Without<SpawnMarker>),
+    >,
+    mut last: Local<Option<u64>>,
+) {
+    if *last != Some(session.editor.revision()) {
+        for (entity, _, _, _) in &objects {
+            commands.entity(entity).despawn();
+        }
+        for object in &session.editor.zone().objects {
+            commands.spawn((
+                Authored(object.id),
+                Mesh3d(palette.meshes[index(object.primitive)].clone()),
+                MeshMaterial3d(palette.normal.clone()),
+                transform(session.editor.zone(), &object.pose),
+            ));
+        }
+        *last = Some(session.editor.revision());
+    } else {
+        for (_, authored, mut visual, mut material) in &mut objects {
+            let object = session
+                .editor
+                .zone()
+                .objects
+                .iter()
+                .find(|o| o.id == authored.0)
+                .expect("Synced object");
+            let pose = session
+                .drag
+                .as_ref()
+                .filter(|d| d.id == object.id)
+                .map_or(&object.pose, |d| &d.preview);
+            *visual = transform(session.editor.zone(), pose);
+            material.0 = if session.selected == Some(object.id) {
+                palette.selected.clone()
+            } else {
+                palette.normal.clone()
+            };
+        }
+    }
+    if let Ok(mut visual) = spawn.single_mut() {
+        visual.translation = Vec3::from_array(
+            session
+                .editor
+                .zone()
+                .local(session.editor.zone().spawn)
+                .unwrap(),
+        ) + Vec3::Y * 0.25;
+    }
+    if let Ok((mut visual, mut visibility)) = pawn.single_mut() {
+        *visibility = if let Some(play) = &session.play {
+            visual.translation = Vec3::from_array(play.feet.metres()) + Vec3::Y * 0.9;
+            visual.rotation = Quat::from_rotation_y(session.heading);
+            Visibility::Visible
+        } else {
+            Visibility::Hidden
+        };
+    }
+}
+fn plane(ray: Ray3d, height: f32) -> Option<Vec3> {
+    if ray.direction.y.abs() < 0.00001 {
+        return None;
+    }
+    let t = (height - ray.origin.y) / ray.direction.y;
+    (0. ..2000.).contains(&t).then(|| ray.get_point(t))
+}
+#[allow(clippy::too_many_arguments)]
+pub(super) fn pointer(
+    mouse: Res<ButtonInput<MouseButton>>,
+    windows: Query<&Window>,
+    camera: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
+    objects: Query<&Authored>,
+    mut raycast: MeshRayCast,
+    mut session: ResMut<Session>,
+) {
+    let Ok(window) = windows.single() else {
+        return;
+    };
+    if !window.focused || session.play.is_some() {
+        session.drag = None;
+        return;
+    }
+    let Some(cursor) = window.cursor_position().filter(|p| p.x > PANEL) else {
+        if mouse.just_released(MouseButton::Left) {
+            session.drag = None;
+        }
+        return;
+    };
+    let Ok((camera, camera_transform)) = camera.single() else {
+        return;
+    };
+    let Ok(ray) = camera.viewport_to_world(camera_transform, cursor) else {
+        return;
+    };
+    if mouse.just_pressed(MouseButton::Left) {
+        if let Some(primitive) = session.palette {
+            if let Some(hit) = plane(ray, 0.) {
+                let origin = session.editor.zone().origin;
+                let mut position = session.snapped([
+                    origin[0] + f64::from(hit.x),
+                    origin[1],
+                    origin[2] + f64::from(hit.z),
+                ]);
+                position[1] = origin[1] + 0.5;
+                let id = session.next_id;
+                if let Some(next) = id.checked_add(1) {
+                    session.next_id = next;
+                    session.edit(vec![Edit::Place {
+                        object: Object {
+                            id,
+                            name: format!("{primitive:?} {id}"),
+                            primitive,
+                            pose: Pose {
+                                position,
+                                yaw_degrees: 0.,
+                                size: [1.; 3],
+                            },
+                        },
+                    }]);
+                    if session.editor.zone().objects.iter().any(|o| o.id == id) {
+                        session.selected = Some(id);
+                    }
+                } else {
+                    session.status = "Object IDs exhausted".into();
+                }
+            }
+            return;
+        }
+        let hit = raycast
+            .cast_ray(ray, &MeshRayCastSettings::default())
+            .first()
+            .map(|(entity, _)| *entity);
+        let id = hit.and_then(|entity| objects.get(entity).ok()).map(|o| o.0);
+        let already_selected = id == session.selected;
+        session.selected = id;
+        if already_selected && let Some(id) = id {
+            let object = session
+                .editor
+                .zone()
+                .objects
+                .iter()
+                .find(|o| o.id == id)
+                .unwrap();
+            let local =
+                Vec3::from_array(session.editor.zone().local(object.pose.position).unwrap());
+            if let Some(hit) = plane(ray, local.y) {
+                session.drag = Some(Drag {
+                    id,
+                    before: object.pose.clone(),
+                    preview: object.pose.clone(),
+                    revision: session.editor.revision(),
+                    offset: local - hit,
+                });
+            }
+        }
+    }
+    if let Some(mut drag) = session.drag.take() {
+        let zone = session.editor.zone();
+        let height = zone.local(drag.before.position).unwrap()[1];
+        if let Some(hit) = plane(ray, height) {
+            let point = hit + drag.offset;
+            let origin = zone.origin;
+            let position = session.snapped([
+                origin[0] + f64::from(point.x),
+                drag.before.position[1],
+                origin[2] + f64::from(point.z),
+            ]);
+            drag.preview.position = [position[0], drag.before.position[1], position[2]];
+        }
+        if mouse.just_released(MouseButton::Left) {
+            if drag.preview != drag.before {
+                session.execute(Command::Apply {
+                    expected_revision: drag.revision,
+                    edits: vec![Edit::Transform {
+                        id: drag.id,
+                        pose: drag.preview,
+                    }],
+                });
+            }
+        } else if mouse.pressed(MouseButton::Left) {
+            session.drag = Some(drag);
+        }
+    }
+}
+#[derive(Resource)]
+pub(super) struct Capture {
+    pub path: PathBuf,
+    pub frames: u32,
+}
+pub(super) fn capture(
+    mut commands: Commands,
+    capture: Option<ResMut<Capture>>,
+    adapter: Res<RenderAdapterInfo>,
+    session: Res<Session>,
+) {
+    let Some(mut capture) = capture else {
+        return;
+    };
+    capture.frames += 1;
+    if capture.frames == 90 {
+        let path = capture.path.clone();
+        info!(
+            "Zone editor native capture: {} | {:?} | device {} | revision {} | objects {}",
+            adapter.name,
+            adapter.backend,
+            adapter.device,
+            session.editor.revision(),
+            session.editor.zone().objects.len()
+        );
+        commands.spawn(Screenshot::primary_window()).observe(
+            move |event: On<ScreenshotCaptured>, mut exit: MessageWriter<bevy::app::AppExit>| {
+                event
+                    .image
+                    .clone()
+                    .try_into_dynamic()
+                    .expect("GPU pixels")
+                    .save(&path)
+                    .expect("Save capture");
+                exit.write(bevy::app::AppExit::Success);
+            },
+        );
+    }
+    assert!(capture.frames < 600, "Capture timed out");
+}
+
+/// Opt-in read-only native qualification output; never consumed as a command.
+#[derive(Resource)]
+pub(super) struct Report {
+    pub path: PathBuf,
+    pub elapsed: f32,
+}
+#[allow(clippy::too_many_arguments)]
+pub(super) fn report(
+    mut commands: Commands,
+    report: Option<ResMut<Report>>,
+    time: Res<Time>,
+    keys: Res<ButtonInput<KeyCode>>,
+    session: Res<Session>,
+    windows: Query<&Window>,
+    cameras: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
+    controls: Query<(&Action, &ComputedNode, &bevy::ui::UiGlobalTransform)>,
+    scale: Res<bevy::ui::UiScale>,
+    adapter: Res<RenderAdapterInfo>,
+) {
+    let Some(mut report) = report else {
+        return;
+    };
+    report.elapsed += time.delta_secs();
+    let Ok(window) = windows.single() else {
+        return;
+    };
+    if keys.just_pressed(KeyCode::F12) && window.focused {
+        let path = report.path.with_extension("png");
+        commands.spawn(Screenshot::primary_window()).observe(
+            move |event: On<ScreenshotCaptured>| {
+                event
+                    .image
+                    .clone()
+                    .try_into_dynamic()
+                    .expect("GPU pixels")
+                    .save(&path)
+                    .expect("Save native capture");
+            },
+        );
+    }
+    if report.elapsed < 0.2 {
+        return;
+    }
+    report.elapsed = 0.;
+    let Ok((camera, transform)) = cameras.single() else {
+        return;
+    };
+    let project = |point: Vec3| {
+        camera
+            .world_to_viewport(transform, point)
+            .ok()
+            .map(|p| p.to_array())
+    };
+    let objects: Vec<_> = session.editor.zone().objects.iter().map(|object| {
+        serde_json::json!({"id":object.id,"screen":project(Vec3::from_array(session.editor.zone().local(object.pose.position).unwrap()))})
+    }).collect();
+    let buttons: Vec<_> = controls.iter().map(|(action,node,t)| {
+        let factor = node.inverse_scale_factor() * scale.0;
+        serde_json::json!({"action":format!("{action:?}"),"centre":(t.affine().translation * factor).to_array(),"size":(node.size()*factor).to_array()})
+    }).collect();
+    let value = serde_json::json!({"revision":session.editor.revision(),"history":session.editor.history(),
+        "document":session.editor.zone(),"selected":session.selected,"snap":session.snap,"status":session.status,
+        "dragging":session.drag.is_some(),"play_feet":session.play.as_ref().map(|p| p.feet.metres()),
+        "objects":objects,"buttons":buttons,"viewport":[window.width(),window.height()],
+        "ground":[project(Vec3::new(3.,0.,4.)),project(Vec3::new(5.,0.,4.))],
+        "gpu":{"name":adapter.name,"backend":format!("{:?}",adapter.backend),"device":adapter.device}});
+    let temp = report.path.with_extension("tmp");
+    if let Err(error) = std::fs::write(&temp, serde_json::to_vec_pretty(&value).unwrap())
+        .and_then(|()| std::fs::rename(temp, &report.path))
+    {
+        warn!("Qualification report: {error}");
+    }
+}
