@@ -1,4 +1,5 @@
 //! P5-17/P3-15: standard Bevy greybox authoring; no trusted gameplay authority.
+mod agent;
 mod cli;
 mod playtest;
 mod viewport;
@@ -153,6 +154,7 @@ fn run() -> Result<(), String> {
     .add_systems(
         Update,
         (
+            agent::poll,
             keyboard,
             camera_controls,
             viewport::pointer,
@@ -169,6 +171,9 @@ fn run() -> Result<(), String> {
     }
     if let Some(path) = options.report {
         app.insert_resource(viewport::Report { path, elapsed: 0. });
+    }
+    if let Some(path) = options.mailbox {
+        app.insert_resource(agent::AgentMailbox::open(&path)?);
     }
     app.run();
     Ok(())

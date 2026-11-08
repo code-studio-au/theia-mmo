@@ -1,4 +1,6 @@
 //! Bounded authoring documents and transactional commands, independent of Bevy.
+pub mod mailbox;
+
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeSet, fs, io::Read, path::Path};
 use theia_core::coordinates::{GlobalPosition, LocalFrame};
@@ -172,7 +174,7 @@ impl Zone {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "op", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Edit {
     Place { object: Object },
@@ -180,7 +182,7 @@ pub enum Edit {
     Delete { id: u64 },
     SetSpawn { position: [f64; 3] },
 }
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "command", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Command {
     Apply {

@@ -85,7 +85,7 @@ Native Linux checks must include actual rendered pixels and pointer/keyboard
 placement, transform, undo/redo, save/load and playtest transitions. Record executed
 results below; Windows cross-builds and native execution remain separate evidence.
 
-Next: live agent-command handoff, stronger transform handles/property widgets,
+Next: stronger transform handles/property widgets,
 explicit playtest export into normal server content admission, terrain samples and
 brush undo, paths/streams, deterministic vegetation overrides, NPC/quest markers.
 Do not call the offline sandbox authoritative multiplayer. Terrain brushes should
@@ -139,10 +139,77 @@ attempts is counted as qualification. The first ultrawide window resize was
 limited by desktop decorations to 3440x1368; the final fullscreen run verifies
 actual 3440x1440 pixels.
 
-Limits: this is a finite local primitive editor and offline playtest. Live agent
-commands, arbitrary assets, draggable transform handles/property fields, terrain
+Limits: this is a finite local primitive editor and offline playtest. Arbitrary assets, draggable transform handles/property fields, terrain
 brushes, paths/streams, vegetation/markers, normal server content export/admission,
 multiplayer, performance/capacity, non-unit monitor DPI and Windows execution
 remain open. Startup commands and visual edits already share one history.
 
 Qualified debug editor SHA-256: `e4a6f6f967543dfc0514645a7ac980b55e455c0f6e56b1c6ff92d99b61b53a9f`.
+
+## Live local agent mailbox (P5-17 / P3-15)
+
+`--mailbox build/zone-mailbox` opts an open editor into a bounded single-slot
+filesystem handoff. Use one editor and one command producer per directory.
+No listener, service, socket, scripting runtime or game-protocol change is added.
+Session matching prevents stale files from applying to a later opening; the
+session string is not authentication. Access is governed by local filesystem
+permissions and explicit opt-in. This is local development tooling.
+
+The editor publishes `state.json` with schema 1, a fresh `session`, current
+`revision`, undo/redo counts, `busy` and the full validated `document`. Publish a
+request to a temporary file in the same directory and rename it to `request.json`:
+
+```json
+{"session":"COPY_FROM_STATE","request_id":1,"command":{"command":"apply","expected_revision":15,"edits":[{"op":"place","object":{"id":100,"name":"Agent block","primitive":"box","pose":{"position":[3,0.5,4],"yaw_degrees":0,"size":[1,1,1]}}}]}}
+```
+
+Wait for `receipt.json` with the matching session/request ID before submitting
+another request. Receipt fields are `session`, `request_id`, `accepted`,
+`revision` and nullable `error`. Success is an editor-history entry; save and
+normal authoritative server content publication are separate operations.
+State/receipt files can remain after exit and are not proof of a live process.
+A fresh app opening publishes a new session and starts a new in-memory history.
+
+Requests require positive increasing IDs and exact current editor revisions.
+The most recent exact parsed request is cached with its original receipt, so a
+retry cannot reapply after a visual undo. Reused/older IDs with other content
+refuse. Only the latest receipt is cached; older receipts are not a replay log.
+Semantic refusals also consume their request ID; use a new ID after correcting
+stale state or waiting for a drag/playtest to finish. Malformed or old-session
+requests do not consume the current session's request sequence.
+
+The consumer claims at most one request per 200 ms by renaming it to its own
+session-specific processing file, reads at most 1 MiB plus a sentinel, validates
+through `Editor::execute` and publishes the decision/current document. A producer
+must not replace a pending request. File I/O runs in the editor update, outside
+fixed-step playtest and the game simulation. Slow local storage can stall this
+development editor; no asynchronous throughput/performance promise is made.
+If receipt publication fails after an accepted edit, the pending receipt is
+retained and publication is retried before consuming another request. The edit
+is not reapplied. This is in-process recovery, not crash-durable command history.
+Crash processing remnants are not automatically scanned or replayed.
+
+Requests refuse during visual drag previews or playtest. New agent object IDs
+advance the visual allocator; selection clears when a command removes its object.
+An agent placement can be visually undone, agent-redone and visually transformed
+using the same validated history. No second mutation path is introduced.
+
+Four additional core cases pass: exact retry across intervening visual undo,
+wrong-session/stale/busy/malformed refusal without mutation, actual file claim /
+state/receipt publication, and publication-failure recovery without reapplying.
+The focused Rust suite is now 11 zone + one actual Avian editor case. Locked
+workspace/all-target denied-warning Clippy, formatting, diff checks and build pass.
+
+The actual 1280x720 Linux/RADV/Vulkan mixed-agent walkthrough passes with zero
+GPU diagnostics. It repeats the first-slice visual/file/playtest checks, then
+verifies live agent placement, keyboard undo, exact retry after undo without
+reapplication, agent redo, widget undo, stale revision refusal, visual allocation
+above the agent's object ID 100 and live refusal during F5 playtest. The resulting
+revision is 21, with the intended six-object document restored. Owned app/window
+closes normally. Evidence: `build/zone-mailbox-tests-v2.log`,
+`zone-mailbox-clippy-v1.log`, `zone-mailbox-build-v1.log` and
+`zone-mailbox-native-v1/{qualification.json,state.png,client.log}`.
+Repeat with `tools/qualify_zone_editor.py --output build/zone-agent-proof
+--size 1280x720 --agent` using the existing asset-tools Python environment.
+No new rendering code was added in this continuation; the original three-size
+visual qualification remains scoped to its recorded source/binary.

@@ -12,6 +12,7 @@ pub struct Options {
     pub headless: bool,
     pub capture: Option<PathBuf>,
     pub report: Option<PathBuf>,
+    pub mailbox: Option<PathBuf>,
 }
 impl Options {
     pub fn parse() -> Result<Self> {
@@ -33,18 +34,23 @@ impl Options {
                 "--report" => {
                     result.report = Some(args.next().ok_or("--report needs a path")?.into())
                 }
+                "--mailbox" => {
+                    result.mailbox = Some(args.next().ok_or("--mailbox needs a directory")?.into())
+                }
                 "--headless" => result.headless = true,
                 "--help" => {
                     println!(
-                        "theia-zone-editor [--zone FILE] [--commands JSONL] [--output FILE] [--headless] [--capture PNG]\n\nCommands use the same transaction/undo engine as the viewport. Headless mode validates and prints the final revision without opening a window. Output writes only after every command succeeds."
+                        "theia-zone-editor [--zone FILE] [--commands JSONL] [--output FILE] [--headless] [--capture PNG] [--report JSON] [--mailbox DIR]\n\nCommands use the same transaction/undo engine as the viewport. Headless mode validates and prints the final revision without opening a window. Output writes only after every command succeeds."
                     );
                     std::process::exit(0);
                 }
                 _ => return Err(format!("Unknown argument: {arg}")),
             }
         }
-        if result.headless && result.capture.is_some() {
-            return Err("--capture requires a window".into());
+        if result.headless
+            && (result.capture.is_some() || result.report.is_some() || result.mailbox.is_some())
+        {
+            return Err("--capture, --report and --mailbox require a window".into());
         }
         Ok(result)
     }

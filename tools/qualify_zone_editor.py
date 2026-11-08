@@ -11,7 +11,7 @@ from gpu_validation import check_gpu_diagnostics
 from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 
 
-def run(output, binary, size):
+def run(output, binary, size, agent=False):
     output.mkdir(parents=True, exist_ok=True)
     report = output / 'state.json'
     saved = output / 'zone.json'
@@ -20,8 +20,11 @@ def run(output, binary, size):
     env = dict(os.environ, WGPU_BACKEND='vulkan', VK_INSTANCE_LAYERS='VK_LAYER_KHRONOS_validation')
     checks = []
     with (output / 'client.log').open('w') as log:
-        process = subprocess.Popen([str(binary.resolve()), '--commands', 'content/zones/greybox.commands.jsonl',
-                                    '--output', str(saved), '--report', str(report)], env=env, stdout=log, stderr=log)
+        command = [str(binary.resolve()), '--commands', 'content/zones/greybox.commands.jsonl',
+                   '--output', str(saved), '--report', str(report)]
+        if agent:
+            command += ['--mailbox', str(output / 'mailbox')]
+        process = subprocess.Popen(command, env=env, stdout=log, stderr=log)
         desktop = None
         try:
             window = wait(lambda: owned_window(process.pid), 45)
@@ -51,6 +54,20 @@ def run(output, binary, size):
                     desktop.key_state('Control_L', False)
             def revision(previous):
                 return wait(lambda: state() if state()['revision'] == previous + 1 else None)
+            next_request = 0
+            def agent_request(command=None, request=None):
+                nonlocal next_request
+                inbox = output / 'mailbox'
+                bridge = wait(lambda: json.loads((inbox/'state.json').read_text()))
+                if request is None:
+                    next_request += 1
+                    request = dict(session=bridge['session'], request_id=next_request, command=command)
+                (inbox/'agent.tmp').write_text(json.dumps(request))
+                (inbox/'agent.tmp').replace(inbox/'request.json')
+                wait(lambda: not (inbox/'request.json').exists())
+                receipt = wait(lambda: json.loads((inbox/'receipt.json').read_text()) if json.loads((inbox/'receipt.json').read_text())['request_id'] == request['request_id'] else None)
+                assert receipt['session'] == bridge['session']
+                return receipt, request
             initial = state()
             assert initial['revision'] == 1 and len(initial['document']['objects']) == 5
             checks.append('actual startup commands populate five rendered primitives')
@@ -118,10 +135,48 @@ def run(output, binary, size):
             wait(lambda: not state()['snap'])
             key('g')
             wait(lambda: state()['snap'])
+            if agent:
+                previous = state()
+                new_object = dict(id=100, name='Agent pillar', primitive='cylinder',
+                                  pose=dict(position=[-3., 1., 4.], size=[1., 2., 1.], yaw_degrees=0.))
+                receipt, request = agent_request(dict(command='apply', expected_revision=previous['revision'],
+                                                     edits=[dict(op='place', object=new_object)]))
+                assert receipt['accepted']
+                placed_by_agent = revision(previous['revision'])
+                assert len(placed_by_agent['document']['objects']) == 7
+                chord('z')
+                restored = revision(placed_by_agent['revision'])
+                assert restored['document'] == previous['document']
+                retry, _ = agent_request(request=request)
+                assert retry == receipt
+                assert state()['revision'] == restored['revision']
+                receipt, _ = agent_request(dict(command='redo', expected_revision=restored['revision']))
+                assert receipt['accepted']
+                restored_by_agent = revision(restored['revision'])
+                assert restored_by_agent['document'] == placed_by_agent['document']
+                button('Undo')
+                restored = revision(restored_by_agent['revision'])
+                assert restored['document'] == previous['document']
+                receipt, _ = agent_request(dict(command='undo', expected_revision=0))
+                assert not receipt['accepted'] and receipt['revision'] == restored['revision']
+                button('Place(Box)')
+                desktop.click(window, state()['ground'][1], 1, 1)
+                visual = revision(restored['revision'])
+                assert visual['document']['objects'][-1]['id'] == 101
+                chord('z')
+                undone = revision(visual['revision'])
+                assert undone['document'] == previous['document']
+                key('Escape')
+                checks.append('live agent edit, visual undo, exact retry, agent redo, stale refusal and collision-free visual IDs share history')
             before_play = state()
             key('F5')
             playing = wait(lambda: state() if state()['play_feet'] is not None else None)
             start_feet = playing['play_feet']
+            if agent:
+                receipt, _ = agent_request(dict(command='undo', expected_revision=playing['revision']))
+                assert not receipt['accepted'] and 'busy' in receipt['error']
+                assert state()['revision'] == playing['revision']
+                checks.append('actual live agent request refuses during offline playtest')
             desktop.key_state('w', True)
             try:
                 time.sleep(.65)
@@ -159,5 +214,6 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--binary', type=Path, default=Path('target/debug/theia-zone-editor'))
     parser.add_argument('--size', choices=['1280x720', '1920x1200', '3440x1440'])
+    parser.add_argument('--agent', action='store_true')
     args = parser.parse_args()
-    run(args.output, args.binary, args.size)
+    run(args.output, args.binary, args.size, args.agent)

@@ -1,3 +1,14 @@
+## 8 November 2026 — live zone commands use an opt-in local mailbox
+
+Use one explicit local directory and one pending request for agent edits in the
+open zone editor. Bind requests to a fresh editor session, positive monotonic
+request IDs and current revision. Cache the latest exact request/receipt so a
+retry cannot reapply after visual undo. Refuse during drag/playtest; publish
+current validated document and bounded receipts outside fixed-step simulation.
+Receipt success means an editor edit, not a file save or server publication.
+No new network endpoint or gameplay authority is added. The shared core and
+native mixed-agent walkthrough pass; [contract and evidence](ZONE_EDITOR.md#live-local-agent-mailbox-p5-17--p3-15).
+
 ## 8 November 2026 — zone authoring uses one validated command history
 
 Prioritize a lightweight standard Bevy authoring app under P5-17/P3-15. Keep
