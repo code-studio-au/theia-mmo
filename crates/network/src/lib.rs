@@ -62,3 +62,5 @@ pub mod vendor_wire;
 #[path = "../tests/support/relay.rs"]
 #[allow(dead_code)]
 pub(crate) mod test_relay;
+
+pub mod chat_wire;

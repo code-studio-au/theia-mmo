@@ -1,3 +1,14 @@
+## 8 November 2026 — bounded Say/Area chat prerequisite
+
+Use server-selected names, authenticated actor incarnations and current checked
+global positions. Client chat intents contain only sequence/channel/text. Start
+with Say at25 metres in3-D and server-authored Area membership, with a shared
+three-message/five-second budget. Those values are provisional Theia extensions.
+Keep plain text at256 UTF-8 bytes; reject controls and direction spoofing marks.
+Muted/rate-limited/no-area requests consume their sequence without spending
+accepted capacity. Persisted/account moderation, runtime routing and native
+composer/bubbles remain separate acceptance work. [Scope](LOCAL_CHAT.md).
+
 ## 8 November 2026 — action-bar bindings are local presentation state
 
 Use twelve bounded optional ability IDs with current defaults; book drops copy,

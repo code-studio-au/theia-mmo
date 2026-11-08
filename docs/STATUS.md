@@ -1,3 +1,11 @@
+Local-chat prerequisite, 8 November 2026 (P4-12 / P2-14 / P5-13):
+Bounded Unicode text, server-context local/area delivery policy, replay/mute/flood
+gate and exact CQ01/CD01 codecs pass 378 core and two focused wire cases plus
+strict Clippy/formatting. This standalone foundation does not enable runtime
+chat, composer or speech bubbles; protocol13 remains unchanged. Continue
+headlessly with local commits only, no mouse/keyboard/display or push.
+[Policy, actual prerequisites and acceptance](LOCAL_CHAT.md).
+
 Action-bar candidate, 8 November 2026 (P2-14 / P3-06 / P5-13):
 Session-local ability-ID bindings, book-copy/bar-swap drag handlers and bound
 cooldown/tooltips are implemented headlessly. 231 client tests and strict
