@@ -350,7 +350,7 @@ pub(super) fn palette(
 ) {
     for mut text in &mut help {
         **text = if session.terrain_paint {
-            "F7: terrain colour paint\nF: frame terrain\nClick/drag: paint stroke\nRelease: one undo entry\nEsc cancels preview\nGrass / dirt / rock / sand\nPaint changes colour weights\nGrid weights, locked grass edge\nF2 returns to sculpting".into()
+            "F7: terrain colour paint\nF: frame terrain\n[ / ]: halve/double paint blend\nBlend: 5 to 100%\nClick/drag: paint stroke\nRelease: one undo entry\nEsc cancels preview\nGrass / dirt / rock / sand\nPaint changes colour weights\nGrid weights, locked grass edge\nF2 returns to sculpting".into()
         } else if session.vegetation_mode {
             "F6: greybox trees / shrubs\nCtrl D: copy plant\nF: focus | H: ground selection\nClick places one stamp\nEsc selects | Del removes\nArrows/PgUp/Dn: move\nR / Shift R: yaw +/-15 deg\n+/-: plant scale\n[ / ]: scatter radius\n, / .: scatter count\nVegetation proxies do not\nadd world collision".into()
         } else if session.marker_mode {
@@ -365,8 +365,9 @@ Esc: cancel preview
 WASD pan | RMB orbit
 F: frame terrain
 Wheel zoom | F5 playtest
-[ / ]: halve/double raise/lower
-Strength: 0.05 to 8 m / stamp
+[ / ]: halve/double brush amount
+Raise/lower: 0.05 to 8 m
+Flatten/smooth blend: 5 to 100%
 I: sample flatten level
 Level is relative to zone origin
 Flatten PgUp/Dn: level +/-
@@ -428,7 +429,11 @@ Offline collision sandbox"
         for child in children.iter() {
             if let Ok(mut text) = labels.get_mut(child) {
                 **text = if matches!(*action, Action::Brush(Tool::Flatten)) {
-                    format!("Flatten to {:.2} m", session.flatten_height)
+                    format!(
+                        "Flatten {:.2} m ({:.2}%)",
+                        session.flatten_height,
+                        session.sculpt_blend * 100.
+                    )
                 } else {
                     match *action {
                         Action::Brush(Tool::Raise) => {
@@ -436,6 +441,12 @@ Offline collision sandbox"
                         }
                         Action::Brush(Tool::Lower) => {
                             format!("Lower ({:.3} m / stamp)", session.brush_strength)
+                        }
+                        Action::Brush(Tool::Smooth) => {
+                            format!("Smooth ({:.2}%)", session.sculpt_blend * 100.)
+                        }
+                        Action::Brush(Tool::Paint(surface)) => {
+                            format!("Paint {surface:?} ({:.2}%)", session.paint_blend * 100.)
                         }
                         _ => actions[slot.0].1.into(),
                     }
@@ -543,15 +554,17 @@ pub(super) fn pointer(
                 }),
                 Tool::Flatten => height(BrushOperation::Flatten {
                     height: session.flatten_height as f32,
-                    blend: 0.5,
+                    blend: session.sculpt_blend,
                 }),
-                Tool::Smooth => height(BrushOperation::Smooth { blend: 0.5 }),
+                Tool::Smooth => height(BrushOperation::Smooth {
+                    blend: session.sculpt_blend,
+                }),
                 Tool::Paint(surface) => Edit::PaintTerrain {
                     paint: theia_zone::painting::Paint {
                         centre,
                         radius_metres: session.brush_radius,
                         surface,
-                        blend: 1.,
+                        blend: session.paint_blend,
                     },
                 },
             };

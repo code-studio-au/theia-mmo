@@ -17,7 +17,9 @@ Ctrl-D and structured `duplicate` commands copy any authoring kind with fresh
 shared IDs, bounded names/offsets and one-entry history. Local/far/empty native
 copy/framing and positive/negative flatten cases pass. Raise/lower strength also
 halves/doubles within 0.05..8 m, with exact visual/headless 0.125 m stamp checks
-on both grids. `python3 tools/edit_zone.py --example` now opens/reopens a separate
+on both grids. Brackets also adjust independent sculpt/paint blends within
+5..100%, retaining 50% / 100% defaults and exact 12.5% command equivalence.
+`python3 tools/edit_zone.py --example` now opens/reopens a separate
 Wayfarer Hollow draft from an original four-transaction recipe. F also frames
 the terrain patch. Its graded walking route and shelter pass actual Avian checks;
 local/far 3440x1440 editor runs and two real Renet client pairs pass with zero GPU

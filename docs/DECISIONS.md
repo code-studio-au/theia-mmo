@@ -1,3 +1,12 @@
+## 8 November 2026 — adjustable sculpt and paint blends
+
+Extend bracket amount controls to Flatten/Smooth and Paint, with independent
+editor-local blend presets bounded to the retained domain's 0.05..1 range.
+Preserve 0.5 sculpt / 1.0 paint defaults and existing raise/lower metre controls.
+Display exact percentages and pass presets through the same validated stroke
+commands/undo. Keep terrain colour weights normalized and collision independent.
+[Contract/evidence](ZONE_EDITOR.md#adjustable-sculpt-and-paint-blends--8-november-2026).
+
 ## 8 November 2026 — bounded standard-Bevy content list on the ultrawide editor
 
 Use a fixed 40-row primary-pointer UI pool and paging for named authored content,

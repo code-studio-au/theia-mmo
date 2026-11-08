@@ -53,6 +53,8 @@ struct Session {
     brush_tool: terrain::Tool,
     brush_radius: f64,
     brush_strength: f32,
+    sculpt_blend: f32,
+    paint_blend: f32,
     flatten_height: f64,
     brush_point: Option<Vec3>,
     stroke: Option<terrain::Stroke>,
@@ -233,6 +235,7 @@ enum Action {
     Radius(i8),
     FlattenHeight(i8),
     BrushStrength(i8),
+    BrushBlend(i8),
     SelectPlant,
     Plant(theia_zone::vegetation::PlantKind, bool),
     NextPlant,
@@ -328,6 +331,8 @@ fn run() -> Result<(), String> {
         brush_tool: terrain::Tool::Raise,
         brush_radius: 12.,
         brush_strength: 2.,
+        sculpt_blend: 0.5,
+        paint_blend: 1.,
         flatten_height: 0.,
         brush_point: None,
         stroke: None,
@@ -737,6 +742,20 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
                 session.brush_strength
             );
         }
+        Action::BrushBlend(direction) => {
+            let paint = matches!(session.brush_tool, terrain::Tool::Paint(_));
+            let blend = if paint {
+                &mut session.paint_blend
+            } else {
+                &mut session.sculpt_blend
+            };
+            *blend = (*blend * if direction > 0 { 2. } else { 0.5 }).clamp(0.05, 1.);
+            session.status = format!(
+                "{} blend {:.2}%",
+                if paint { "Paint" } else { "Flatten/smooth" },
+                *blend * 100.
+            );
+        }
         Action::FlattenHeight(direction) => {
             let increment = if session.snap { 1. } else { 0.1 };
             session.flatten_height =
@@ -814,26 +833,28 @@ fn keyboard(
         && keys.just_pressed(KeyCode::PageDown)
     {
         Some(Action::FlattenHeight(-1))
-    } else if !ctrl
-        && session.terrain_mode
-        && !session.terrain_paint
-        && matches!(
-            session.brush_tool,
-            terrain::Tool::Raise | terrain::Tool::Lower
+    } else if !ctrl && session.terrain_mode && keys.just_pressed(KeyCode::BracketLeft) {
+        Some(
+            if matches!(
+                session.brush_tool,
+                terrain::Tool::Raise | terrain::Tool::Lower
+            ) {
+                Action::BrushStrength(-1)
+            } else {
+                Action::BrushBlend(-1)
+            },
         )
-        && keys.just_pressed(KeyCode::BracketLeft)
-    {
-        Some(Action::BrushStrength(-1))
-    } else if !ctrl
-        && session.terrain_mode
-        && !session.terrain_paint
-        && matches!(
-            session.brush_tool,
-            terrain::Tool::Raise | terrain::Tool::Lower
+    } else if !ctrl && session.terrain_mode && keys.just_pressed(KeyCode::BracketRight) {
+        Some(
+            if matches!(
+                session.brush_tool,
+                terrain::Tool::Raise | terrain::Tool::Lower
+            ) {
+                Action::BrushStrength(1)
+            } else {
+                Action::BrushBlend(1)
+            },
         )
-        && keys.just_pressed(KeyCode::BracketRight)
-    {
-        Some(Action::BrushStrength(1))
     } else if session.marker_mode && keys.just_pressed(KeyCode::Equal) {
         Some(Action::MarkerRadius(1))
     } else if session.marker_mode && keys.just_pressed(KeyCode::Minus) {

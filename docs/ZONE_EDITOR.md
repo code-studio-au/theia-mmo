@@ -1428,3 +1428,41 @@ bindings after mode switches, and read the allocated copy ID instead of assuming
 a cancelled guide draft releases its reserved ID. Earlier partial runs are not
 counted as final acceptance. Product input uses Bevy's platform abstractions;
 primary pointer selection does not let secondary-button gestures select rows.
+
+
+## Adjustable sculpt and paint blends — 8 November 2026
+
+P5-17 / P3-15 / P1-10; P2-06/07 terrain: bracket keys now adjust the current
+terrain brush amount consistently. Raise/Lower still halve/double metres per
+stamp. With Flatten or Smooth selected, they halve/double the shared sculpt
+blend; in Paint they adjust a separate paint blend. Both blends clamp to the
+existing domain's 5..100% range. Defaults remain 50% sculpt and 100% paint.
+Buttons show two-decimal percentages, including the exact 12.50% preset.
+
+Presets persist across tool/mode changes within the session but are not saved
+in zone data. Adjusting them changes neither document/history nor clean/dirty
+state, cancels pending preview through the existing action path and refuses
+while playtesting. Vegetation bracket controls retain their scatter meaning.
+Paint changes normalized colour weights only; it does not alter collision or
+introduce material-alpha/gameplay-surface semantics.
+
+Stamps feed the chosen blend into the existing validated `flatten`, `smooth`
+and `paint_terrain` commands. Shared candidate/border/height/weight budgets,
+one-release/one-undo behavior and normal standard-Bevy vertex-colour rendering
+remain intact. No source or runtime schema is added. The optional qualification
+report exposes `sculpt_blend` and `paint_blend` separately.
+
+All 62 focused Rust cases, seven launcher cases, formatting and denied-warning
+workspace/all-target Clippy pass. Two native 3440x1440 Linux cases exercise the
+5/100% endpoints and independent presets on positive 4 m and negative 2 m grids,
+the latter at `[128000000000,20,-128000000000]`. Actual 12.5% Flatten, Smooth and
+Paint stamps produce exact matching headless f32 samples and normalized u8
+weights. Undo/redo/save and playtest refusal pass alongside retained sampled
+flatten/raise-lower strength checks. Both observe active Vulkan validation on
+RX 7900 XTX (RADV NAVI31), device 29772, with zero GPU/resize diagnostics.
+Normal-game and Windows evidence retains its earlier scope.
+
+Evidence: ignored `build/zone-blend-native-3440-v1/{qualification.json,*.png}`,
+generated per-operation source/command/reference files, `zone-blend-tests-v1.log`,
+`zone-blend-build-v1.log` and `zone-blend-clippy-v1.log`. Editor SHA-256:
+`adabb4ac4aac24fce0def06e4d843368756b4368373c83b215fb241352d4ea37`.
