@@ -14,7 +14,7 @@ from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def run(output, binary, properties=False):
+def run(output, binary, properties=False, feedback_only=False):
     output = output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     binary = binary.resolve()
@@ -420,7 +420,54 @@ def run(output, binary, properties=False):
         final_documents[label] = expected
         checks.append('numeric box/sphere/cylinder: real tab/shift-tab and pointer focus, malformed/shape validation, atomic seven-field exact headless equivalence, one undo, redo, unchanged/cancel, modal isolation, save')
 
+    def feedback(state, key, chord, replace_text, select, modal_button, capture, agent, desktop, window, click):
+        select('Object(1)','selected',1)
+        before = copy.deepcopy(state()['document'])
+        history = state()['history']
+        revision = state()['revision']
+        key('F8')
+        wait(lambda: state()['name_edit'] is not None)
+        chord('Control_L','a')
+        key('BackSpace')
+        wait(lambda: state()['name_edit'] == '')
+        key('Return')
+        wait(lambda: 'Invalid object name' in state()['status'])
+        capture('name-invalid')
+        replace_text('Corrected wall')
+        wait(lambda: state()['status'].startswith('Editing name'))
+        assert state()['document'] == before and state()['history'] == history
+        assert state()['revision'] == revision
+        capture('name-corrected')
+        key('Escape')
+        wait(lambda: state()['name_edit'] is None and not state()['unsaved_changes'])
+        key('F9')
+        wait(lambda: state()['transform_edit'] is not None)
+        original = state()['transform_edit']['fields'][0]
+        wait(lambda: state()['transform_edit']['selection'] == [0,len(original)])
+        for character in 'bad':
+            key(character)
+        wait(lambda: state()['transform_edit']['fields'][0] == 'bad')
+        key('Return')
+        wait(lambda: 'finite number' in state()['status'])
+        capture('properties-invalid')
+        chord('Control_L','a')
+        wait(lambda: state()['transform_edit']['selection'] == [0,3])
+        for character in original:
+            key({'.':'period','-':'minus'}.get(character,character))
+        wait(lambda: state()['transform_edit']['fields'][0] == original)
+        wait(lambda: state()['status'].startswith('Editing transform'))
+        assert state()['document'] == before and state()['history'] == history
+        assert state()['revision'] == revision
+        capture('properties-corrected')
+        key('Return')
+        wait(lambda: state()['transform_edit'] is None and not state()['unsaved_changes'])
+        assert state()['document'] == before and state()['history'] == history
+        assert state()['revision'] == revision
+        checks.append('far-frame name and numeric errors clear on actual text correction; error buffers, cancel and unchanged submit preserve document/revision/history/saved state')
+
     for name, origin in [('local', [0,0,0]), ('far', [128000000000,20,-128000000000])]:
+        if feedback_only and name != 'far':
+            continue
         document = copy.deepcopy(base)
         document['origin'] = origin
         def shift(position):
@@ -435,7 +482,7 @@ def run(output, binary, properties=False):
                 item['position'] = shift(item['position'])
         source = output/f'{name}.zone.json'
         source.write_text(json.dumps(document))
-        case(name,source,edit)
+        case(name,source,feedback if feedback_only else edit)
 
     def reopened(state, key, chord, replace_text, select, modal_button, capture, agent, desktop, window, click):
         document = state()['document']
@@ -465,7 +512,8 @@ def run(output, binary, properties=False):
             checks.append('saved far numeric transforms reopen exactly and unchanged submit keeps zero history; missing selection refuses')
         checks.append('far saved names reopen cleanly with unchanged coordinates and fresh history; F8 without selection edits zone')
 
-    case('reopen', output/'far.zone.json', reopened)
+    if not feedback_only:
+        case('reopen', output/'far.zone.json', reopened)
     result = dict(passed=True, checks=checks, cases=cases, input_notes=input_notes,
                   editor_sha256=hashlib.sha256(binary.read_bytes()).hexdigest())
     (output/'qualification.json').write_text(json.dumps(result, indent=2)+'\n')
@@ -477,5 +525,6 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--binary', type=Path, default=ROOT/'target/debug/theia-zone-editor')
     parser.add_argument('--properties', action='store_true', help='Also qualify numeric primitive transform fields')
+    parser.add_argument('--feedback-only', action='store_true', help='Run the focused correction-feedback desktop case')
     args = parser.parse_args()
-    print(json.dumps(run(args.output,args.binary,args.properties),indent=2))
+    print(json.dumps(run(args.output,args.binary,args.properties,args.feedback_only),indent=2))

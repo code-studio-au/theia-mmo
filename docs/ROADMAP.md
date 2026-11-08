@@ -19,7 +19,8 @@ Local/far/reopen name-dialog native checks pass with zero GPU diagnostics.
 F9 also edits exact f64 primitive position/yaw/size through standard Bevy fields
 and modal tab navigation, applying one existing validated Transform transaction.
 All six local/far primitive edits match headless commands exactly; native
-save/reopen and zero-GPU-diagnostic checks also pass.
+save/reopen and zero-GPU-diagnostic checks also pass. Both forms clear stale
+error messages on text edits while retaining validation on Apply.
 Flatten also samples the surface with I and adjusts its local
 level in 1 m / 0.1 m steps, sharing exact visual/headless stamp output.
 Ctrl-D and structured `duplicate` commands copy any authoring kind with fresh

@@ -1596,3 +1596,26 @@ six `.before.json` / `.commands.jsonl` / `.expected.json` pairs in that director
 `zone-properties-tests-v1.log`, `zone-properties-build-v1.log` and
 `zone-properties-clippy-v1.log`. Editor SHA-256:
 `19a8276ec6158df6ca194ab34c895331453885f4c69fe7e2afc052c57d238fcf`.
+
+## Form error feedback on edit — 8 November 2026
+
+P5-17 / P3-15 / P1-10: actual name/property text changes clear the previous
+attempt's status and restore the editing instructions. Caret/selection changes
+do not do so. This avoids showing a stale invalid-number/name result after a
+correction; it does not claim the pending values are valid or run a second
+validator. Apply still validates the current complete candidate and preserves
+invalid buffers/history exactly as before. Cancel/unchanged-submit semantics and
+all source/runtime formats remain unchanged.
+
+All 68 focused Rust cases, formatting and denied-warning workspace/all-target
+Clippy pass. A focused native far-frame case at actual 3440x1440 observes both
+errors, corrects both buffers through real text input, verifies refreshed messages
+and unchanged document/revision/history, then cancels the name and submits the
+unchanged pose to restore clean state. Vulkan validation is active on RX 7900 XTX
+(RADV NAVI31), device 29772, with zero GPU/resize diagnostics and no input retries.
+Earlier full naming/property, normal-game and Windows evidence retains its scope.
+
+Evidence: ignored `build/zone-form-feedback-native-3440-v1/{qualification.json,*.png}`,
+`zone-form-feedback-tests-v1.log`, `zone-form-feedback-build-v1.log` and
+`zone-form-feedback-clippy-v1.log`. Editor SHA-256:
+`aa913989f4c4b9dbc4184da82959eaef6a36cc986f76b57645b95030b8edeb06`.

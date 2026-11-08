@@ -7,6 +7,8 @@ coordinate, revision and undo validation. Preserve invalid text for correction,
 isolate world/mailbox input during either dialog and avoid global tab handlers
 that would capture the editor's existing object/guide cycling. No schema or
 coordinate-conversion path is added; numeric fields enter global truth directly.
+Both forms clear the previous attempt's status on actual text edits and restore
+pending instructions; only Apply judges the candidate.
 [Contract/evidence](ZONE_EDITOR.md#numeric-primitive-transform-fields--8-november-2026).
 
 ## 8 November 2026 — shared names and standard Bevy text input

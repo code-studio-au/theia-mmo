@@ -228,7 +228,11 @@ pub(super) fn finish(
         session.name_edit = Some(draft);
         return;
     };
-    draft.text = field.value().to_string();
+    let text = field.value().to_string();
+    if text != draft.text {
+        session.status = "Editing name - Enter applies, Escape cancels".into();
+    }
+    draft.text = text;
     let range = field.editor().raw_selection().text_range();
     draft.selection = [range.start, range.end];
     let cancel = !windows.single().is_ok_and(|w| w.focused)

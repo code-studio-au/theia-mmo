@@ -284,12 +284,18 @@ pub(super) fn finish(
         return;
     };
     let mut composing = false;
+    let mut edited = false;
     for (entity, field, text) in &fields {
-        draft.fields[field.0] = text.value().to_string();
+        let value = text.value().to_string();
+        edited |= value != draft.fields[field.0];
+        draft.fields[field.0] = value;
         if focus.get() == Some(entity) {
             draft.active = field.0;
         }
         composing |= text.is_composing();
+    }
+    if edited {
+        session.status = "Editing transform - Apply validates all seven fields together".into();
     }
     // Resolve after updating active, since query iteration order is unspecified.
     let active_entity =
