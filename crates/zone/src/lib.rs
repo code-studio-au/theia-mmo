@@ -3,6 +3,7 @@ mod duplication;
 pub mod grading;
 pub mod mailbox;
 pub mod markers;
+mod naming;
 pub mod painting;
 pub mod paths;
 pub mod projection;
@@ -288,6 +289,13 @@ pub enum Edit {
         new_id: u64,
         offset: [f64; 3],
     },
+    Rename {
+        id: u64,
+        name: String,
+    },
+    RenameZone {
+        name: String,
+    },
     SetSpawn {
         position: [f64; 3],
     },
@@ -451,6 +459,8 @@ impl Editor {
                                 .ok_or("Unknown object ID")?;
                             candidate.objects.remove(index);
                         }
+                        Edit::Rename { id, name } => naming::apply(&mut candidate, id, name)?,
+                        Edit::RenameZone { name } => candidate.name = name,
                         Edit::SetSpawn { position } => candidate.spawn = position,
                         Edit::SetTerrain { terrain } => {
                             candidate.schema = candidate.schema.max(2);

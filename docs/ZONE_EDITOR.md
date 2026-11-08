@@ -1466,3 +1466,75 @@ Evidence: ignored `build/zone-blend-native-3440-v1/{qualification.json,*.png}`,
 generated per-operation source/command/reference files, `zone-blend-tests-v1.log`,
 `zone-blend-build-v1.log` and `zone-blend-clippy-v1.log`. Editor SHA-256:
 `adabb4ac4aac24fce0def06e4d843368756b4368373c83b215fb241352d4ea37`.
+
+
+## Shared names and standard Bevy text input — 8 November 2026
+
+P5-17 / P3-15 / P1-10: F8 opens a name dialog for the selected object, whole guide,
+marker or plant. With no selection it edits the zone name; Shift-F8 always edits
+the zone name. Selecting an individual guide point still renames its whole guide.
+The current name starts selected in Bevy's built-in TextInput/EditableText. Enter
+or the primary-pointer Apply button submits; Escape, Cancel or window focus loss
+cancels. Empty/whitespace/control-containing names and names exceeding 80 UTF-8
+bytes are invalid through the existing shared validators. Invalid submissions
+retain the text for correction. The widget additionally caps input at 80 Unicode
+characters; domain byte validation remains authoritative. Unicode storage is
+supported; visible glyph coverage depends on the retained font. Bevy's default
+in-app clipboard is retained; the optional system-clipboard feature is not enabled.
+
+Visual submissions and agent commands use the same narrow operations:
+
+```json
+{"command":"apply","expected_revision":0,"edits":[{"op":"rename","id":1,"name":"West wall"},{"op":"rename_zone","name":"Wayfarer Hollow"}]}
+```
+
+IDs share the existing authoring namespace. Missing IDs, stale revisions or any
+invalid candidate reject the entire transaction and preserve revision/history/
+redo. A transaction is one undo entry; visual submissions contain one name edit.
+Names preserve all other source fields, including geometry, coordinates, schema
+and annotation catalogue keys. Like retained Apply commands, an agent's identical
+valid name still counts as a transaction. The dialog closes an unchanged visual
+submission without issuing a command. Successful renames refresh content labels
+and save/load normally; marker naming does not create live NPC/quest behavior.
+
+Opening refuses during playtest, a drag/stroke or a pending guide draft and keeps
+that work intact. While open, editing/mode/load/save/playtest shortcuts, content
+selection, world pointer operations and camera input are blocked. The mailbox
+uses its existing busy refusal. Text editing remains in the standard field and
+an open draft contributes to the existing pending/unsaved indicator. Cancelling
+restores the content-based saved state. Bevy owns selection, cursor, glyph layout,
+scrolling and ordinary text shortcuts. The reusable field clears/sets only its
+text, preserving the font/layout styles Bevy prepared for that entity; replacing
+EditableText with a fresh internal editor would discard those styles without
+changing TextFont. Submission reads after Bevy applies queued edits.
+
+The editor remains 3440x1440 only. No source/runtime schema, custom widget engine,
+renderer, plugin or game-stack pin changes. Chat composer/bubbles remain deferred.
+
+All 65 focused Rust cases (49 domain / 16 editor), seven launcher cases,
+formatting and denied-warning workspace/all-target Clippy pass. The new domain
+cases check grouped names for all authoring kinds/zone, unchanged other metadata,
+UTF-8 byte boundaries, unknown fields/IDs, stale revisions and atomic refusal
+preserving redo. Native Linux local, far `[128000000000,20,-128000000000]` and
+saved-reopen cases pass at actual 3440x1440. They exercise prepared initial
+selection and real text replacement, invalid empty-name correction, primary Apply/
+Cancel, unchanged submit, Escape, shared undo/redo, saved names, all-mode/shortcut/
+camera/pointer isolation, busy agent refusal, accepted agent updates, guide-draft
+and playtest refusal. Opening without a selection edits the zone on reopen.
+All three observe active Vulkan validation on AMD RX 7900 XTX (RADV NAVI31),
+device 29772, with zero GPU/resize diagnostics. Normal-game/Windows evidence
+retains its earlier scope.
+
+The first desktop run caught discarded font/layout styles when replacing the
+field's internal editor; the retained-buffer fix passes subsequent native checks.
+An early qualification helper also missed a synthetic Control press after pointer
+and text-focus transitions. The final helper waits for reported modifier state,
+fresh input processing and actual selection before typing. A bounded harmless
+modifier re-press is available before commands; the accepted full run required
+zero retries. Mutating clicks/edits are never retried. Earlier partial runs are
+not acceptance evidence.
+
+Evidence: ignored `build/zone-names-native-3440-v9/{qualification.json,*.png}`,
+`zone-names-tests-v5.log`, `zone-names-build-v8.log`, `zone-names-clippy-v4.log` and
+`zone-names-launcher-tests-v1.log`. Editor SHA-256:
+`c2d9bd13142680d59ac80b3469df30d726a2f6f8e030b00749ac6d28ce3d9046`.

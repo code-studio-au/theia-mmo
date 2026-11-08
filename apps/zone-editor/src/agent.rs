@@ -31,7 +31,8 @@ pub(super) fn poll(
     let busy = session.drag.is_some()
         || session.stroke.is_some()
         || session.path_draft.is_some()
-        || session.play.is_some();
+        || session.play.is_some()
+        || session.name_edit.is_some();
     let previous = session.editor.revision();
     let points_before = session.selected_path_len();
     match mailbox.inner.poll(&mut session.editor, busy) {

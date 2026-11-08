@@ -1,3 +1,14 @@
+## 8 November 2026 — shared names and standard Bevy text input
+
+Use narrow `rename` / `rename_zone` edits with existing candidate validation and
+transactional undo. Keep IDs, geometry and annotation definitions unchanged.
+Use the pinned Bevy TextInput/EditableText infrastructure in a bounded modal;
+retain its prepared font/layout styles when resetting field text. Isolate world
+input and mailbox mutations during a name draft; invalid submissions retain the
+buffer for correction, unchanged visual submissions add no history. No schema,
+text-editing framework, engine/plugin pin or chat composer is introduced.
+[Contract/evidence](ZONE_EDITOR.md#shared-names-and-standard-bevy-text-input--8-november-2026).
+
 ## 8 November 2026 — adjustable sculpt and paint blends
 
 Extend bracket amount controls to Flatten/Smooth and Paint, with independent

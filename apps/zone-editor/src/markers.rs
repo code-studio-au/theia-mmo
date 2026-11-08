@@ -192,6 +192,9 @@ pub(super) fn pointer(
     mut raycast: MeshRayCast,
     mut session: ResMut<Session>,
 ) {
+    if session.name_edit.is_some() {
+        return;
+    }
     if !session.marker_mode || session.play.is_some() || !mouse.just_pressed(MouseButton::Left) {
         return;
     }

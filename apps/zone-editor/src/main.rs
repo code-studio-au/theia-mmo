@@ -3,6 +3,7 @@ mod agent;
 mod cli;
 mod export;
 mod markers;
+mod naming;
 mod outliner;
 mod paths;
 mod playtest;
@@ -72,6 +73,7 @@ struct Session {
     path_selected: Option<u64>,
     path_point: Option<usize>,
     path_draft: Option<paths::Draft>,
+    name_edit: Option<naming::Draft>,
 }
 struct Drag {
     id: u64,
@@ -122,6 +124,7 @@ impl Session {
             || self.drag.is_some()
             || self.stroke.is_some()
             || self.path_draft.is_some()
+            || self.name_edit.is_some()
     }
     fn execute(&mut self, command: Command) {
         let points_before = self.selected_path_len();
@@ -350,6 +353,7 @@ fn run() -> Result<(), String> {
         path_selected: None,
         path_point: None,
         path_draft: None,
+        name_edit: None,
     })
     .insert_resource(View {
         target: initial_target.unwrap_or(Vec3::ZERO),
@@ -372,6 +376,7 @@ fn run() -> Result<(), String> {
     }))
     .add_observer(activate)
     .add_observer(outliner::activate)
+    .add_observer(naming::activate)
     .add_systems(
         Startup,
         (
@@ -382,12 +387,14 @@ fn run() -> Result<(), String> {
             vegetation::setup,
             setup_ui,
             outliner::setup,
+            naming::setup,
         ),
     )
     .add_systems(
         Update,
         (
             agent::poll,
+            naming::keyboard,
             keyboard,
             camera_controls,
             vegetation::pointer,
@@ -406,6 +413,10 @@ fn run() -> Result<(), String> {
             viewport::capture,
         )
             .chain(),
+    )
+    .add_systems(
+        PostUpdate,
+        naming::finish.after(bevy::text::EditableTextSystems),
     )
     .add_systems(FixedUpdate, playtest::step)
     .add_systems(Last, viewport::report);
@@ -466,7 +477,7 @@ fn setup_ui(mut commands: Commands) {
         .with_children(|panel| {
             panel.spawn(text("THEIA / ZONE STUDIO", 22.));
             panel.spawn(text(
-                "F1 Objects | F2 Terrain\nF3 Guides | F4 Markers\nF6 Plants | F7 Terrain paint",
+                "F1 Objects | F2 Terrain\nF3 Guides | F4 Markers\nF6 Plants | F7 Terrain paint\nF8 Rename | Shift F8 Zone name",
                 12.,
             ));
             for (index, (action, title)) in object_actions().into_iter().enumerate() {
@@ -512,13 +523,17 @@ fn activate(
     mut session: ResMut<Session>,
     mut view: ResMut<View>,
 ) {
-    if windows.single().is_ok_and(|w| w.focused)
+    if session.name_edit.is_none()
+        && windows.single().is_ok_and(|w| w.focused)
         && let Ok(action) = actions.get(event.entity)
     {
         perform(*action, &mut session, &mut view);
     }
 }
 fn perform(action: Action, session: &mut Session, view: &mut View) {
+    if session.name_edit.is_some() {
+        return;
+    }
     if matches!(action, Action::Duplicate) && (session.drag.is_some() || session.stroke.is_some()) {
         session.status = "Finish or cancel the preview before duplicating".into();
         return;
@@ -774,6 +789,9 @@ fn keyboard(
     mut session: ResMut<Session>,
     mut view: ResMut<View>,
 ) {
+    if session.name_edit.is_some() {
+        return;
+    }
     if !windows.single().is_ok_and(|w| w.focused) {
         session.drag = None;
         session.stroke = None;
@@ -979,7 +997,7 @@ fn camera_controls(
     let Ok(window) = windows.single() else {
         return;
     };
-    if window.focused && session.play.is_none() {
+    if window.focused && session.play.is_none() && session.name_edit.is_none() {
         let outside = canvas_cursor(window).is_some();
         if outside && mouse.pressed(MouseButton::Right) {
             view.yaw -= motion.delta.x * 0.005;

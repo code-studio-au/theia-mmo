@@ -204,7 +204,10 @@ pub(super) fn activate(
     let Ok(control) = controls.get(event.entity) else {
         return;
     };
-    if session.play.is_some() || !windows.single().is_ok_and(|w| w.focused) {
+    if session.name_edit.is_some()
+        || session.play.is_some()
+        || !windows.single().is_ok_and(|w| w.focused)
+    {
         return;
     }
     match *control {

@@ -195,6 +195,9 @@ pub(super) fn pointer(
     let Ok(window) = windows.single() else {
         return;
     };
+    if session.name_edit.is_some() {
+        return;
+    }
     if session.terrain_mode || session.path_mode || session.marker_mode || session.vegetation_mode {
         return;
     }
@@ -364,6 +367,17 @@ pub(super) struct Report {
     pub path: PathBuf,
     pub elapsed: f32,
 }
+type ReportControls<'w, 's> = Query<
+    'w,
+    's,
+    (
+        Option<&'static Action>,
+        Option<&'static naming::Control>,
+        &'static ComputedNode,
+        &'static bevy::ui::UiGlobalTransform,
+        &'static Hovered,
+    ),
+>;
 #[allow(clippy::too_many_arguments)]
 pub(super) fn report(
     mut commands: Commands,
@@ -374,12 +388,7 @@ pub(super) fn report(
     view: Res<View>,
     windows: Query<&Window>,
     cameras: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
-    controls: Query<(
-        &Action,
-        &ComputedNode,
-        &bevy::ui::UiGlobalTransform,
-        &Hovered,
-    )>,
+    controls: ReportControls,
     scale: Res<bevy::ui::UiScale>,
     mouse: Res<ButtonInput<MouseButton>>,
     adapter: Res<RenderAdapterInfo>,
@@ -431,9 +440,10 @@ pub(super) fn report(
     let objects: Vec<_> = session.editor.zone().objects.iter().map(|object| {
         serde_json::json!({"id":object.id,"screen":project(Vec3::from_array(session.editor.zone().local(object.pose.position).unwrap()))})
     }).collect();
-    let buttons: Vec<_> = controls.iter().map(|(action,node,t,hovered)| {
+    let buttons: Vec<_> = controls.iter().filter_map(|(action,_,node,t,hovered)| {
+        let action = action?;
         let factor = node.inverse_scale_factor() * scale.0;
-        serde_json::json!({"action":format!("{action:?}"),"hovered":hovered.0,"centre":(t.affine().translation * factor).to_array(),"size":(node.size()*factor).to_array()})
+        Some(serde_json::json!({"action":format!("{action:?}"),"hovered":hovered.0,"centre":(t.affine().translation * factor).to_array(),"size":(node.size()*factor).to_array()}))
     }).collect();
     let mut value = serde_json::json!({"save_path":session.path.to_string_lossy(),"left_mouse_down":mouse.pressed(MouseButton::Left),"revision":session.editor.revision(),"mesh_assets":meshes.len(),"history":session.editor.history(),
         "document":session.editor.zone(),"selected":session.selected,"snap":session.snap,"status":session.status,
@@ -469,6 +479,18 @@ pub(super) fn report(
     }
     value["content_list"] = serde_json::json!({"visible":session.play.is_none(),"page":content.page,
         "pages":content.pages(),"count":content.entries.len(),"controls":content_buttons});
+    value["name_controls"] = serde_json::json!(controls.iter().filter_map(|(_,control,node,t,hovered)| {
+        let control = control?;
+        let factor = node.inverse_scale_factor() * scale.0;
+        Some(serde_json::json!({"action":format!("{control:?}"),"hovered":hovered.0,"centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array()}))
+    }).collect::<Vec<_>>());
+    value["input_elapsed"] = time.elapsed_secs_f64().into();
+    value["control_down"] =
+        (keys.pressed(KeyCode::ControlLeft) || keys.pressed(KeyCode::ControlRight)).into();
+    value["shift_down"] =
+        (keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight)).into();
+    value["name_selection"] = serde_json::json!(session.name_edit.as_ref().map(|d| d.selection));
+    value["name_edit"] = serde_json::json!(session.name_edit.as_ref().map(|d| &d.text));
     value["cursor"] = serde_json::json!(window.cursor_position().map(|p| p.to_array()));
     value["focused"] = window.focused.into();
     value["unsaved_changes"] = session.is_dirty().into();

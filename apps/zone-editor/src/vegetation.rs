@@ -233,6 +233,9 @@ pub(super) fn pointer(
     mut session: ResMut<Session>,
 ) {
     session.plant_point = None;
+    if session.name_edit.is_some() {
+        return;
+    }
     if !session.vegetation_mode || session.play.is_some() {
         return;
     }
