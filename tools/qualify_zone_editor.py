@@ -12,7 +12,8 @@ from gpu_validation import check_gpu_diagnostics
 from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 
 
-def run(output, binary, size, agent=False, terrain=False, guides=False):
+def run(output, binary, size, agent=False, terrain=False, guides=False, markers=False):
+    guides = guides or markers
     terrain = terrain or guides
     agent = agent or terrain
     output.mkdir(parents=True, exist_ok=True)
@@ -382,6 +383,79 @@ def run(output, binary, size, agent=False, terrain=False, guides=False):
                 wait(lambda: state()['play_feet'] is None)
                 assert state()['document'] == stored
                 checks.append('live agent guide/visual undo/exact retry, shared ID allocation, guide save/load and nonblocking playtest')
+            if markers:
+                key('F4')
+                wait(lambda: state()['marker_mode'])
+                baseline = state()['mesh_assets']
+                previous = state()['revision']
+                button('PlaceMarker(Npc)')
+                desktop.click(window, state()['guide_points'][0], 1, 1)
+                placed = revision(previous)
+                npc = placed['document']['markers'][0]
+                assert npc['kind'] == 'npc' and placed['marker_selected'] == npc['id']
+                assert npc['position'][0] == round(npc['position'][0])
+                assert 'definition' not in npc
+                for name in ['Right','Page_Up','r','equal']:
+                    previous = state()['revision']
+                    key(name)
+                    revision(previous)
+                transformed = state()['document']['markers'][0]
+                assert transformed['position'][0] == npc['position'][0]+1.
+                assert transformed['position'][1] == npc['position'][1]+1.
+                assert transformed['yaw_degrees'] == 15 and transformed['radius_metres'] == 1.5
+                chord('z')
+                wait(lambda: state()['document']['markers'][0]['radius_metres'] == 1.)
+                previous = state()['revision']
+                chord('y')
+                revision(previous)
+                button('PlaceMarker(Quest)')
+                previous = state()['revision']
+                desktop.click(window, state()['guide_points'][2], 1, 1)
+                quest = revision(previous)['document']['markers'][-1]
+                assert quest['kind'] == 'quest' and quest['radius_metres'] == 4.
+                key('Escape')
+                wait(lambda: state()['marker_palette'] == 'None')
+                centre = next(m['screen'] for m in state()['markers'] if m['id'] == npc['id'])
+                desktop.click(window, centre, 1, 1)
+                wait(lambda: state()['marker_selected'] == npc['id'])
+                previous = state()['revision']
+                key('Delete')
+                assert len(revision(previous)['document']['markers']) == 1
+                previous = state()['revision']
+                chord('z')
+                assert len(revision(previous)['document']['markers']) == 2
+                edited = dict(state()['document']['markers'][0], id=900, name='Agent guide', definition='human.guide')
+                receipt, _ = agent_request(dict(command='apply',expected_revision=state()['revision'],edits=[dict(op='put_marker',marker=edited)]))
+                assert receipt['accepted']
+                wait(lambda: len(state()['document']['markers']) == 3)
+                chord('z')
+                wait(lambda: len(state()['document']['markers']) == 2)
+                # The editor allocator advances beyond agent IDs even after visual undo.
+                button('PlaceMarker(Npc)')
+                previous = state()['revision']
+                desktop.click(window, state()['guide_points'][4], 1, 1)
+                assert revision(previous)['document']['markers'][-1]['id'] == 901
+                previous = state()['revision']
+                chord('z')
+                revision(previous)
+                button('SelectMarker')
+                chord('s')
+                wait(lambda: read_saved() == state()['document'])
+                stored = state()['document']
+                previous = state()['revision']
+                chord('o')
+                assert revision(previous)['document'] == stored
+                assert state()['mesh_assets'] == baseline
+                wait(lambda: state()['marker_visible_entities'] == 6)
+                # Annotations disappear during play; authoritative collision is unchanged.
+                key('F5')
+                wait(lambda: state()['play_feet'] is not None and state()['marker_visible_entities'] == 0)
+                time.sleep(.3)
+                key('F5')
+                wait(lambda: state()['play_feet'] is None)
+                assert state()['document'] == stored
+                wait(lambda: state()['marker_visible_entities'] == 6)
+                checks.append('NPC/quest marker pointer placement/selection, transforms/radius, delete/undo/redo, agent IDs, save/load and playtest')
             key('F12')
             wait(lambda: capture_ready(report.with_suffix('.png')), 30)
             checks.append('actual native Vulkan screenshot captured')
@@ -414,5 +488,6 @@ if __name__ == '__main__':
     parser.add_argument('--agent', action='store_true')
     parser.add_argument('--terrain', action='store_true')
     parser.add_argument('--guides', action='store_true')
+    parser.add_argument('--markers', action='store_true')
     args = parser.parse_args()
-    run(args.output, args.binary, args.size, args.agent, args.terrain, args.guides)
+    run(args.output, args.binary, args.size, args.agent, args.terrain, args.guides, args.markers)

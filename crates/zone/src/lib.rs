@@ -1,5 +1,6 @@
 //! Bounded authoring documents and transactional commands, independent of Bevy.
 pub mod mailbox;
+pub mod markers;
 pub mod paths;
 pub mod terrain;
 
@@ -53,6 +54,8 @@ pub struct Zone {
     pub terrain: Option<terrain::HeightPatch>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub paths: Vec<paths::GuidePath>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub markers: Vec<markers::Marker>,
 }
 
 fn require(condition: bool, message: &str) -> Result<()> {
@@ -71,6 +74,7 @@ impl Default for Zone {
             objects: vec![],
             terrain: None,
             paths: vec![],
+            markers: vec![],
         }
     }
 }
@@ -102,7 +106,7 @@ impl Zone {
         )
     }
     pub fn validate(&self) -> Result<()> {
-        require(matches!(self.schema, 1..=3), "Unsupported zone schema")?;
+        require(matches!(self.schema, 1..=4), "Unsupported zone schema")?;
         require(
             self.schema != 1 || self.terrain.is_none(),
             "Terrain requires zone schema 2",
@@ -115,6 +119,14 @@ impl Zone {
             "Paths require zone schema 3",
         )?;
         require(self.paths.len() <= paths::MAX_PATHS, "Path budget exceeded")?;
+        require(
+            self.schema >= 4 || self.markers.is_empty(),
+            "Markers require zone schema 4",
+        )?;
+        require(
+            self.markers.len() <= markers::MAX_MARKERS,
+            "Marker budget exceeded",
+        )?;
         require(label(&self.name), "Invalid zone name")?;
         self.frame()?;
         self.check_position(self.spawn, 2.)?;
@@ -157,6 +169,10 @@ impl Zone {
             require(ids.insert(path.id), "Duplicate authoring ID")?;
             path.validate(self)?;
         }
+        for marker in &self.markers {
+            require(ids.insert(marker.id), "Duplicate authoring ID")?;
+            marker.validate(self)?;
+        }
         require(
             serde_json::to_vec_pretty(self)
                 .map_err(|e| e.to_string())?
@@ -171,6 +187,7 @@ impl Zone {
             .iter()
             .map(|o| o.id)
             .chain(self.paths.iter().map(|p| p.id))
+            .chain(self.markers.iter().map(|m| m.id))
             .max()
             .unwrap_or(0)
             .checked_add(1)
@@ -247,6 +264,12 @@ pub enum Edit {
         path: paths::GuidePath,
     },
     DeletePath {
+        id: u64,
+    },
+    PutMarker {
+        marker: markers::Marker,
+    },
+    DeleteMarker {
         id: u64,
     },
 }
@@ -363,7 +386,7 @@ impl Editor {
                                 !candidate.objects.iter().any(|o| o.id == path.id),
                                 "Authoring ID belongs to an object",
                             )?;
-                            candidate.schema = 3;
+                            candidate.schema = candidate.schema.max(3);
                             if let Some(existing) =
                                 candidate.paths.iter_mut().find(|p| p.id == path.id)
                             {
@@ -383,6 +406,28 @@ impl Editor {
                                 .position(|p| p.id == id)
                                 .ok_or("Unknown path ID")?;
                             candidate.paths.remove(index);
+                        }
+                        Edit::PutMarker { marker } => {
+                            candidate.schema = candidate.schema.max(4);
+                            if let Some(existing) =
+                                candidate.markers.iter_mut().find(|m| m.id == marker.id)
+                            {
+                                *existing = marker;
+                            } else {
+                                require(
+                                    candidate.markers.len() < markers::MAX_MARKERS,
+                                    "Marker budget exceeded",
+                                )?;
+                                candidate.markers.push(marker);
+                            }
+                        }
+                        Edit::DeleteMarker { id } => {
+                            let index = candidate
+                                .markers
+                                .iter()
+                                .position(|m| m.id == id)
+                                .ok_or("Unknown marker ID")?;
+                            candidate.markers.remove(index);
                         }
                         Edit::Brush { brush } => candidate
                             .terrain

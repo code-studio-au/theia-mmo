@@ -487,3 +487,60 @@ and both `scene.png` captures. `tools/verify_multiplayer.py` adds an optional
 The current editor SHA-256 is
 `a816f15a1e4b57804ce1e9e17d8facfef99db569906d317b8072f948962fa14f`;
 the normal client/server hashes remain those in the export milestone above.
+
+## NPC/quest authoring markers — 8 November 2026
+
+P5-17 / P3-15 continue from the shared bounded document/history, checked terrain
+placement and standard Bevy editor. Zone schema 4 adds at most 256 markers, each
+with a shared positive authoring ID, name, kind (`npc` / `quest`), global f64
+anchor, yaw, 0.25..64 m footprint and optional 1..96-byte ASCII catalogue key.
+NPC anchors represent feet; quest anchors locate an authoring footprint. Keys
+allow letters, digits, dots, hyphens and underscores. They remain unresolved
+annotations; no arbitrary file path, live entity key or executable script is
+accepted. Whole-document IDs, checked position/footprint margins, byte budget,
+finite yaw and revision rules apply before any mutation. Schema-1/2/3 files remain
+readable; subsequent terrain/path edits preserve schema 4.
+
+`put_marker` upserts and `delete_marker` removes through shared command history.
+The fixture `content/zones/markers.commands.jsonl` starts with revision 0; it can
+be applied headlessly or adapted to a live mailbox's current revision/session.
+F4 exposes NPC/quest placement, pointer selection, Select Next, Delete, footprint
+controls, snapping and normal history/save/playtest actions. Click ground to
+place, Escape returns to selection. Arrows/PgUp/PgDn translate; R/Shift-R change
+yaw; +/- changes the selected footprint by 0.5 m. Ctrl-O loads the saved zone.
+Visual placement samples the same terrain surface after X/Z snapping. Catalogue
+keys/names can be set through structured commands and appear in the inspector.
+
+Cyan NPC badges and pink quest badges have visible footprints/headings; selection
+is amber. Three standard shared Bevy meshes/materials serve all markers. Deleted
+entities are removed without allocating per-marker meshes. Markers hide during
+offline playtest and return afterward. No creature, dialogue, quest objective,
+trigger volume, navigation or collision is activated by these annotations.
+
+Export preserves them in `authoring.zone.json` and counts them in `export.json`.
+Runtime GLB/collision bytes and world identity stay identical when only markers
+change. Marker metadata is not bound as runtime gameplay by the current manifest;
+a future explicit catalogue compiler/publisher must validate/bind references
+before a server can use it. This preserves the existing authoritative NPC/quest
+contracts rather than treating placement notes as published gameplay.
+
+Three new domain checks cover signed far-frame centimetres, round-trip data,
+shared schema/history/allocator behavior, invalid key/geometry transactions,
+redo preservation, duplicate IDs and the 256-marker cap. The export check proves
+exactly unchanged runtime geometry/collision and preserved source metadata.
+Together with retained cases, 31 focused Rust tests pass (22 domain / nine editor).
+Strict workspace/all-target Clippy and formatting pass. Evidence: ignored
+`build/zone-markers-tests-v1.log`, `zone-markers-clippy-v1.log`.
+
+The full native OS-input walkthrough passes at default fullscreen 3440x1440 on
+the same RX 7900 XTX / RADV Vulkan device. Marker placement, pointer selection,
+translation/elevation/yaw/radius, delete/undo/redo, mixed agent IDs, save/load and
+playtest pass alongside retained primitive/terrain/guide workflows. Six marker
+entities hide during playtest and return afterward; the shared mesh count stays
+constant through placement/delete/undo/load. Validation is observed active with
+zero GPU diagnostics/resize exceptions. Evidence: ignored
+`build/zone-markers-native-3440-v1/{qualification.json,state.png}` and
+`zone-markers-build-v1.log`. Headless fixture save and real package admission also
+pass without DISPLAY/WAYLAND_DISPLAY: `zone-markers-headless-v1.json` and
+`zone-package-markers-v1/`. This does not qualify live NPC/quest publication or
+Windows execution.

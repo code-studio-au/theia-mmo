@@ -1,3 +1,13 @@
+## 8 November 2026 — NPC/quest markers remain explicit authoring annotations
+
+Extend the bounded zone document to schema 4 with shared-ID NPC/quest markers,
+checked placement/footprints and optional syntactically validated catalogue keys.
+Use normal Bevy badges/footprints for visual editing and the same atomic command
+history for agents. Hide annotations during playtest. Preserve them only as source
+metadata in exports; runtime geometry/identity stay unchanged until an explicit
+compiler validates and binds NPC/quest references to authoritative content.
+See [the marker contract and evidence](ZONE_EDITOR.md#npcquest-authoring-markers--8-november-2026).
+
 ## 8 November 2026 — 3440x1440 editor and bounded road/stream guides
 
 The user restricts tool development to 3440x1440. Open the editor through standard

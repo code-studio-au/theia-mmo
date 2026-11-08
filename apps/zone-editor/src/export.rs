@@ -319,7 +319,7 @@ fn geometry(zone: &Zone) -> Result<(Vec<u8>, Value, Value), String> {
     let visual = glb.finish(guide_kinds)?;
     let profile = json!({"schema":4,"source_origin":[0,0,0],"bounds":[[-512,-512],[512,512]],"spawns":[zone.local(zone.spawn)?],
         "visual_sha256":sha256(&visual),"triangles":triangles,"static_shapes":{"meshes":pool,"objects":bodies}});
-    let report = json!({"schema":1,"zone_name":zone.name,"authoring_origin":zone.origin,"visual_triangles":visual_triangles,"guide_paths":zone.paths.len(),
+    let report = json!({"schema":1,"zone_name":zone.name,"authoring_origin":zone.origin,"visual_triangles":visual_triangles,"guide_paths":zone.paths.len(),"authoring_markers":zone.markers.len(),
         "maximum_cylinder_radial_error_metres":maximum_cylinder_error,"collision_weld_tolerance_metres":0.0001,"scope":"existing bounded GLB/schema-4 content; requires authority admission; default game world unchanged"});
     Ok((visual, profile, report))
 }
@@ -586,6 +586,32 @@ mod tests {
                 .unwrap();
             assert!((centre - 0.01).abs() < 0.000001);
         }
+    }
+    #[test]
+    fn markers_preserve_authoring_metadata_without_publishing_gameplay_or_geometry() {
+        let mut zone = fixture();
+        let (visual, profile, _) = geometry(&zone).unwrap();
+        zone.schema = 4;
+        zone.markers = vec![theia_zone::markers::Marker {
+            id: 500,
+            name: "Guide".into(),
+            kind: theia_zone::markers::MarkerKind::Npc,
+            position: [0., 0., 3.],
+            yaw_degrees: 45.,
+            radius_metres: 1.,
+            definition: Some("human.guide".into()),
+        }];
+        let (after, after_profile, report) = geometry(&zone).unwrap();
+        assert_eq!(after, visual);
+        assert_eq!(after_profile, profile);
+        assert_eq!(report["authoring_markers"], 1);
+        let folder = Folder::new();
+        let destination = folder.0.join("markers");
+        publish(&zone, &destination, "theia.test.markers", 1).unwrap();
+        assert_eq!(
+            Zone::load(&destination.join("authoring.zone.json")).unwrap(),
+            zone
+        );
     }
     #[test]
     fn guide_ribbons_export_visually_and_never_enter_authoritative_collision() {

@@ -16,8 +16,10 @@ content is unchanged. Schema-3 road/stream guides now share visual/agent validat
 undo, save/load and render-only export (27 focused Rust cases). The current user
 requires the editor at 3440x1440 only: primary-display fullscreen is now the
 default and future editor qualification targets that viewport. Earlier smaller
-checks below retain their historical scope. Vegetation and NPC/quest markers
-remain future slices. Runtime multiplayer remains
+checks below retain their historical scope. Schema-4 NPC/quest authoring markers
+now add shared validated placement/transforms/history and source-only export
+preservation (31 focused Rust cases); live catalogue publication remains separate.
+Vegetation remains a future slice. Runtime multiplayer remains
 Rust/Bevy/Avian/Renet; editor playtest is an offline sandbox. Actual prerequisites,
 acceptance checks and implementation evidence are tracked in [the zone record](ZONE_EDITOR.md).
 Earlier stop/chat-first queue entries are historical; P3-17/18 stay unspecified.
