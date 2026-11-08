@@ -520,6 +520,7 @@ pub(super) fn report(
     value["brush_strength"] = session.brush_strength.into();
     value["sculpt_blend"] = session.sculpt_blend.into();
     value["paint_blend"] = session.paint_blend.into();
+    value["stroke_edits"] = serde_json::json!(session.stroke.as_ref().map(|s| s.commands()));
     value["stroke_progress"] = serde_json::json!(
         session
             .stroke

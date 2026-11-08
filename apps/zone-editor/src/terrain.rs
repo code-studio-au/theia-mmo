@@ -20,7 +20,29 @@ pub(super) struct Stroke {
     edits: Vec<Edit>,
     last: Option<Vec3>,
 }
+/// Bound work before allocation, including discontinuities over panels/outside terrain.
+fn stroke_points(last: Option<Vec3>, point: Vec3, remaining: usize) -> Vec<Vec3> {
+    if remaining == 0 || !point.is_finite() {
+        return vec![];
+    }
+    let Some(last) = last else {
+        return vec![point];
+    };
+    if !last.is_finite() {
+        return vec![point];
+    }
+    let distance = last.xz().distance(point.xz());
+    if !distance.is_finite() || distance < 2. {
+        return vec![];
+    }
+    let count = ((distance / 2.).floor() as usize).min(remaining);
+    let step = (point - last) * (2. / distance);
+    (1..=count).map(|i| last + step * i as f32).collect()
+}
 impl Stroke {
+    pub(super) fn commands(&self) -> &[Edit] {
+        &self.edits
+    }
     pub(super) fn stamps(&self) -> usize {
         self.edits.len()
     }
@@ -520,6 +542,8 @@ pub(super) fn pointer(
     let Some(cursor) = canvas_cursor(window) else {
         if mouse.just_released(MouseButton::Left) {
             session.stroke = None;
+        } else if let Some(stroke) = &mut session.stroke {
+            stroke.last = None;
         }
         return;
     };
@@ -569,13 +593,35 @@ pub(super) fn pointer(
         });
     }
     if let Some(mut stroke) = session.stroke.take() {
-        if mouse.pressed(MouseButton::Left)
-            && let Some(point) = point
-            && stroke.edits.len() < theia_zone::MAX_EDITS
-            && stroke
-                .last
-                .is_none_or(|last| (last.xz() - point.xz()).length() >= 2.)
-        {
+        let point = point.filter(|point| {
+            let zone = stroke.draft.zone();
+            let Some(patch) = &zone.terrain else {
+                return false;
+            };
+            let Ok(origin) = patch.origin() else {
+                return false;
+            };
+            let Ok(global) = zone.global(point.to_array()) else {
+                return false;
+            };
+            (origin[0]..=origin[0] + 128.).contains(&global[0])
+                && (origin[2]..=origin[2] + 128.).contains(&global[2])
+        });
+        if point.is_none() {
+            stroke.last = None;
+        }
+        let points = if mouse.pressed(MouseButton::Left) {
+            point.map_or_else(Vec::new, |point| {
+                stroke_points(
+                    stroke.last,
+                    point,
+                    theia_zone::MAX_EDITS - stroke.edits.len(),
+                )
+            })
+        } else {
+            vec![]
+        };
+        for point in points {
             let zone = stroke.draft.zone();
             let global = zone.global(point.to_array()).expect("Bounded terrain hit");
             let centre = [global[0], global[2]];
@@ -648,4 +694,63 @@ pub(super) fn toggle(session: &mut Session) {
         Some(HeightPatch::flat([chunk.x, chunk.z]))
     };
     session.edit(vec![Edit::SetTerrain { terrain }]);
+}
+
+#[cfg(test)]
+mod stroke_tests {
+    use super::*;
+
+    #[test]
+    fn samples_fast_jumps_at_two_metres_in_xz_with_interpolated_height() {
+        let start = Vec3::new(0., -20., 0.);
+        let end = Vec3::new(6., 20., 8.);
+        let points = stroke_points(Some(start), end, 128);
+        assert_eq!(points.len(), 5);
+        let mut last = start;
+        for (i, &p) in points.iter().enumerate() {
+            assert!((p.xz().distance(last.xz()) - 2.).abs() < 1e-5);
+            assert!((p.y - (-20. + (i + 1) as f32 * 8.)).abs() < 1e-5);
+            last = p;
+        }
+        assert!(last.distance(end) < 1e-5);
+        let short = stroke_points(Some(Vec3::ZERO), Vec3::new(5., 40., 0.), 128);
+        assert_eq!(short, vec![Vec3::new(2., 16., 0.), Vec3::new(4., 32., 0.)]);
+    }
+
+    #[test]
+    fn stationary_subspacing_first_and_discontinuous_samples_are_bounded() {
+        let p = Vec3::new(10., 2., 10.);
+        assert_eq!(stroke_points(None, p, 128), vec![p]);
+        assert!(stroke_points(None, p, 0).is_empty());
+        assert!(stroke_points(Some(p), p, 128).is_empty());
+        assert!(stroke_points(Some(p), p + Vec3::Y * 40., 128).is_empty());
+        assert!(stroke_points(Some(p), p + Vec3::X * 1.99, 128).is_empty());
+        assert!(stroke_points(None, Vec3::NAN, 128).is_empty());
+        assert_eq!(
+            stroke_points(Some(Vec3::ZERO), Vec3::X * 512., 1),
+            vec![Vec3::X * 2.]
+        );
+        assert_eq!(
+            stroke_points(Some(Vec3::ZERO), Vec3::X * 512., 128).len(),
+            128
+        );
+        // A reset after leaving the canvas/patch resumes with one fresh stamp.
+        assert_eq!(
+            stroke_points(None, Vec3::X * 100., 127),
+            vec![Vec3::X * 100.]
+        );
+    }
+
+    #[test]
+    fn straight_path_matches_across_coarse_and_fine_input_events() {
+        let one = stroke_points(Some(Vec3::ZERO), Vec3::X * 64., 128);
+        let mut many = vec![];
+        let mut last = Vec3::ZERO;
+        for x in [8., 16., 32., 40., 64.] {
+            let points = stroke_points(Some(last), Vec3::X * x, 128 - many.len());
+            last = *points.last().unwrap();
+            many.extend(points);
+        }
+        assert_eq!(one, many);
+    }
 }

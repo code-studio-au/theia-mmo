@@ -1,3 +1,15 @@
+## 8 November 2026 — spatially sampled bounded terrain drags
+
+Connect observed valid terrain cursor positions with stamps every 2 m in X/Z,
+using checked existing local/global conversion and unchanged sculpt/paint edits.
+Carry the last attempted stamp across events; stationary/subspacing input adds
+no work. Bound each event to remaining transaction capacity before allocation.
+Leaving the canvas or terrain patch breaks continuity, preventing an unseen
+connecting stroke after reentry. Preserve preview validation, the 128 accepted
+edit cap, release commit and Escape cancellation. No time-dependent accumulation,
+new command/source schema or renderer is introduced.
+[Contract/evidence](ZONE_EDITOR.md#spatially-sampled-terrain-drags--8-november-2026).
+
 ## 8 November 2026 — terrain-conforming sample influence
 
 Share one bounded per-sample falloff calculation between sculpt, paint and visual

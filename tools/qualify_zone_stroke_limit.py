@@ -58,10 +58,15 @@ def run(output, binary):
                 wait(lambda: state()['stroke_progress'] and state()['stroke_progress']['stamps']==1)
                 limit = state()['stroke_progress']['limit']
                 assert limit==128
-                for count in range(2,limit+1):
-                    desktop.move(window,positions[(count-1)%2],1)
-                    wait(lambda: state()['stroke_progress']['stamps']==count)
+                count = 1
+                index = 1
+                while count < limit:
+                    desktop.move(window,positions[index],1)
+                    wait(lambda: state()['stroke_progress']['stamps']>count)
                     current = state()
+                    count = current['stroke_progress']['stamps']
+                    index = 1-index
+                    assert count<=limit
                     assert current['revision']==0 and current['history']==[0,0]
                     assert current['document']==initial
                     assert f'({count}/{limit})' in current['status']

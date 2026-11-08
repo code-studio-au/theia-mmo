@@ -25,7 +25,9 @@ Terrain brush feedback also conforms to the exact surface triangles and temporar
 stroke preview, sharing sculpt/paint falloff and locked-border rules. One resident
 standard Bevy mesh shows potential sample influence without source/history changes.
 Held strokes also show accepted stamp counts and an explicit 128-stamp limit
-message, preserving the existing bounded commit/cancel behavior.
+message, preserving the existing bounded commit/cancel behavior. Fast drags
+also interpolate 2 m stamps, breaking continuity across panels/outside terrain.
+Both grids pass native sculpt/paint command equivalence, undo/redo and save.
 Flatten also samples the surface with I and adjusts its local
 level in 1 m / 0.1 m steps, sharing exact visual/headless stamp output.
 Ctrl-D and structured `duplicate` commands copy any authoring kind with fresh
@@ -39,7 +41,7 @@ Wayfarer Hollow draft from an original four-transaction recipe. F also frames
 the terrain patch. Its graded walking route and shelter pass actual Avian checks;
 local/far 3440x1440 editor runs and two real Renet client pairs pass with zero GPU
 diagnostics, including far origin Y=20. Markers remain authoring notes and the
-stream remains a visual guide. 72 focused Rust cases, seven launcher cases, formatting
+stream remains a visual guide. 75 focused Rust cases, seven launcher cases, formatting
 and strict workspace/all-target Clippy pass. The full native 3440x1440 walkthrough also passes
 with Vulkan validation active and zero GPU diagnostics; [contract and evidence](ZONE_EDITOR.md#wayfarer-hollow-example-and-terrain-framing--8-november-2026).
 Local commits only; no push. Chat composer/bubbles remain deferred.

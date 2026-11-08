@@ -15,6 +15,7 @@ The summary marks unsaved changes, including pending drafts.
 In Sculpt, I samples a flatten level; PageUp/Down adjusts it.
 In terrain tools, [ / ] halves/doubles stamp strength or the selected blend.
 The amber brush overlay follows the terrain and shows potential grid-sample influence.
+Fast drags fill the path with stamps every 2 m; leaving the canvas/patch breaks continuity.
 Held strokes show their stamp count; at 128, release to commit or Escape to cancel.
 In Guides, Insert adds a midpoint; Backspace removes a selected point.
 The right-side content list selects named entries across modes; F frames them.

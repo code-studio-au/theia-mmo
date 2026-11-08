@@ -1694,3 +1694,47 @@ Evidence: ignored `build/zone-stroke-limit-native-3440-v1/{qualification.json,ca
 `zone-stroke-feedback-tests-v1.log`, `zone-stroke-feedback-build-v1.log` and
 `zone-stroke-feedback-clippy-v1.log`. Editor SHA-256:
 `47a97fb97d6e24ea33f3801473680ea7b09686a428573064df5cee5117cb57e9`.
+
+## Spatially sampled terrain drags — 8 November 2026
+
+P5-17 / P3-15 / P1-10; P2-06/07. Fast pointer jumps previously placed only an
+endpoint stamp. Sculpt/paint drags now sample the connecting segment every 2 m
+in X/Z from the last attempted stamp. The first hit stamps once; shorter motion
+and stationary holds add no work. Unused distance carries through the retained
+last stamp; an endpoint less than 2 m beyond it is not forced on release. Height
+is linearly interpolated only for checked local/global conversion; the existing
+commands determine actual height/colour changes from X/Z and source data. This
+connects observed input samples with straight segments, not unobserved mouse
+motion. It is not time-based brush accumulation.
+
+Each event allocates at most the remaining accepted-edit capacity (128 total).
+Every generated stamp uses the same validated disposable Editor and existing
+Brush/Paint edits. Failed/no-change attempts advance the spacing anchor but do
+not consume accepted capacity. Leaving the canvas, missing a ground hit or
+moving outside the patch clears the anchor; reentry starts one fresh stamp
+instead of bridging the gap. Source/history stay committed until release, which
+applies the accepted edits as one transaction. Escape/focus-loss cancellation
+and releasing over a panel retain their earlier behavior. The optional report
+also exposes bounded accepted preview edits for headless equivalence checks.
+There is no new shared command, source schema, authority or renderer path.
+
+All 75 focused Rust cases (51 domain / 24 editor), formatting and denied-warning
+workspace/all-target Clippy pass. New tests cover diagonal/height interpolation,
+first/zero/short/stationary input, capacity bounds and equal straight-path samples
+across coarse/fine input events. Native actual 3440x1440 qualification passes on
+4 m local and 2 m far `[128000000000,20,-128000000000]` terrain. About-64 m OS
+jumps produce 32 evenly spaced sculpt and paint edits on each grid; stationary
+holds add none. The six complete resulting documents (including interrupted
+strokes) match independently executed headless commands exactly. Preview/history
+isolation, one-entry release, undo/redo/save and panel/outside-patch discontinuity
+checks pass. The cap walkthrough also passes with interpolated multi-stamp
+frames, frozen capped preview, exact one-entry commit and cancellation. Vulkan
+validation is active on RX 7900 XTX (RADV NAVI31), device 29772, with zero GPU/
+resize diagnostics. Linux editor evidence adds no Windows or multiplayer claim.
+
+Evidence: ignored `build/zone-stroke-spacing-native-3440-v1/{qualification.json,*.png}`,
+six `.before.json` / `.commands.jsonl` / `.expected.json` pairs in that directory,
+`build/zone-stroke-spacing-limit-native-3440-v1/qualification.json`,
+`zone-stroke-spacing-tests-v1.log`, `zone-stroke-spacing-build-v1.log` and
+`zone-stroke-spacing-clippy-v1.log`. Editor SHA-256:
+`48b016b1327b818172d7bb57f0127bc9b567ed309a4fe9ddbb1807485cd2ab0e`.
