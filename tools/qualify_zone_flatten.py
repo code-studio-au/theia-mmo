@@ -18,7 +18,7 @@ def normalized(document):
     return document
 
 
-def run(output, binary):
+def run(output, binary, strength=False):
     output.mkdir(parents=True, exist_ok=False)
     binary = binary.resolve()
     cases = []
@@ -132,6 +132,69 @@ def run(output, binary):
                 key('F5')
                 wait(lambda: state()['play_feet'] is None)
                 assert state()['document'] == edited['document']
+                if strength:
+                    before = state()
+                    action = 'Brush(Raise)' if direction > 0 else 'Brush(Lower)'
+                    entry = next(b for b in state()['buttons'] if b['action'] == action)
+                    desktop.move(window, entry['centre'], 1)
+                    wait(lambda: any(b['action'] == action and b['hovered'] for b in state()['buttons']))
+                    desktop.button(1, True)
+                    try:
+                        wait(lambda: state()['left_mouse_down'])
+                    finally:
+                        desktop.button(1, False)
+                    wait(lambda: state()['brush_tool'] == ('Raise' if direction > 0 else 'Lower'))
+                    for _ in range(7):
+                        key('bracketleft')
+                    wait(lambda: abs(state()['brush_strength']-.05) < 1e-7)
+                    for _ in range(9):
+                        key('bracketright')
+                    wait(lambda: state()['brush_strength'] == 8.)
+                    for _ in range(6):
+                        key('bracketleft')
+                    wait(lambda: state()['brush_strength'] == .125)
+                    assert state()['revision'] == before['revision'] and state()['document'] == before['document']
+                    assert not state()['unsaved_changes']
+                    desktop.move(window, point, 1)
+                    centre = wait(lambda: state()['brush_point'])
+                    # Wait for a report after moving back from the palette.
+                    wait(lambda: state()['brush_point'] and state()['brush_point'] == centre)
+                    desktop.button(1, True)
+                    try:
+                        wait(lambda: state()['left_mouse_down'])
+                    finally:
+                        desktop.button(1, False)
+                    sculpted = wait(lambda: state() if state()['revision'] == before['revision']+1 else None)
+                    assert sculpted['history'] == [before['history'][0]+1,0]
+                    delta = [a-b for a,b in zip(sculpted['document']['terrain']['heights'], before['document']['terrain']['heights'])]
+                    assert max(abs(d) for d in delta) <= .125001
+                    assert max(delta) > 0 if direction > 0 else min(delta) < 0
+                    strength_source = output / f'{name}.strength.source.json'
+                    strength_source.write_text(json.dumps(before['document']))
+                    strength_commands = output / f'{name}.strength.commands.jsonl'
+                    strength_commands.write_text(json.dumps(dict(command='apply',expected_revision=0,
+                        edits=[dict(op='brush',brush=dict(centre=[origin[0]+centre[0],origin[2]+centre[2]],
+                            radius_metres=12.,operation=dict(kind='raise' if direction>0 else 'lower',metres=.125)))]))+'\n')
+                    strength_reference = output / f'{name}.strength.reference.json'
+                    subprocess.run([str(binary),'--headless','--zone',str(strength_source),'--commands',str(strength_commands),
+                                    '--output',str(strength_reference)],check=True,capture_output=True,text=True)
+                    assert normalized(json.loads(strength_reference.read_text())) == normalized(sculpted['document'])
+                    chord('z')
+                    wait(lambda: state()['revision'] == sculpted['revision']+1)
+                    assert state()['document'] == before['document'] and not state()['unsaved_changes']
+                    chord('y')
+                    wait(lambda: state()['revision'] == sculpted['revision']+2)
+                    assert state()['document'] == sculpted['document']
+                    chord('s')
+                    wait(lambda: not state()['unsaved_changes'])
+                    assert normalized(json.loads(saved.read_text())) == normalized(sculpted['document'])
+                    key('F5')
+                    wait(lambda: state()['play_feet'] is not None)
+                    key('bracketleft')
+                    wait(lambda: state()['status'] == 'Leave playtest before editing')
+                    assert state()['brush_strength'] == .125 and state()['document'] == sculpted['document']
+                    key('F5')
+                    wait(lambda: state()['play_feet'] is None)
                 key('F12')
                 wait(lambda: capture_ready(report.with_suffix('.png')), 30)
                 final = state()
@@ -153,6 +216,10 @@ def run(output, binary):
         'paint-mode isolation, one-entry visual stroke and exact headless command equivalence',
         'undo/redo/save and actual offline Avian playtest on 4m and far-origin 2m terrain'],
         scope='Linux owned native input, 3440x1440 only; no Windows or multiplayer claim')
+    summary['adjustable_strength'] = strength
+    if strength:
+        summary['checks'] += ['raise/lower strength clamps to 0.05/8m, preserves history until stamping, and refuses playtest changes',
+                              '0.125m sculpt has exact matching headless f32 samples, one-entry undo/redo/save on both grids']
     (output / 'qualification.json').write_text(json.dumps(summary, indent=2)+'\n')
     print(json.dumps(summary, indent=2))
 
@@ -161,5 +228,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--binary', type=Path, default=Path('target/debug/theia-zone-editor'))
+    parser.add_argument('--strength', action='store_true')
     args = parser.parse_args()
-    run(args.output, args.binary)
+    run(args.output, args.binary, args.strength)

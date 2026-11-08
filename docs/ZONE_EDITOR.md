@@ -1164,3 +1164,38 @@ Evidence: `build/zone-copy-export-v1.log`, `zone-copy-export-source-v1.json` and
 A final rerun captures each selected copied type before undo; all local/far/empty
 checks still pass with zero GPU diagnostics:
 `build/zone-duplicate-native-3440-v2/{qualification.json,*copy*.png}`.
+
+
+## Adjustable raise/lower strength — 8 November 2026
+
+P5-17 / P3-15 / P1-10; P2-06/07 terrain: with Raise or Lower selected in Sculpt,
+`[` halves the stamp amount and `]` doubles it, clamped to the existing domain's
+0.05..8 m range. The default remains 2 m. Both buttons show the current amount
+to three decimal places, including the exact 0.125 m preset used for detail work.
+Amounts are per existing distance-spaced stamp, not per frame or per second.
+
+Strength is an editor-local preset; changing it creates no document/history edit
+and does not mark clean terrain unsaved. Existing action behavior cancels pending
+stroke previews before changing the amount. Paint/flatten/smooth and nonterrain
+modes do not change height strength with those keys; vegetation scatter retains
+its own bracket controls. Playtest is read-only. No schema/preferences file or
+runtime format is added.
+
+Stamps pass the selected finite f32 amount to the retained `raise` / `lower`
+brush operations, preserving candidate validation, border/height bounds,
+preview cancellation and one-release/one-undo behavior. Agents can send the same
+amount directly using existing structured brush commands.
+
+All 58 focused Rust cases, formatting and denied-warning workspace/all-target
+Clippy pass. Native Linux 3440x1440 checks cover the 0.05/8 m endpoints and exact
+0.125 m raise/lower command equivalence on a positive 4 m-grid plateau and a
+negative 2 m-grid plateau at `[128000000000,20,-128000000000]`. Exact f32 arrays,
+one-entry undo/redo, save and playtest refusal pass alongside the retained
+sampled-flatten cases. Both observe active Vulkan validation on RX 7900 XTX
+(RADV NAVI31), device 29772, with zero GPU/resize diagnostics. This is editor
+qualification, without new Windows or normal-game claims.
+
+Evidence: ignored `build/zone-strength-native-3440-v1/{qualification.json,*.png}`,
+generated reference commands/documents, `zone-strength-tests-v1.log`,
+`zone-strength-build-v1.log` and `zone-strength-clippy-v1.log`. Editor SHA-256:
+`ea41f02024972c98f56c1162f97355e9dd362e37624aa006c6f458d7afb9d463`.

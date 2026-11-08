@@ -364,6 +364,8 @@ Release: one undo entry
 Esc: cancel preview
 WASD pan | RMB orbit
 Wheel zoom | F5 playtest
+[ / ]: halve/double raise/lower
+Strength: 0.05 to 8 m / stamp
 I: sample flatten level
 Level is relative to zone origin
 Flatten PgUp/Dn: level +/-
@@ -427,7 +429,15 @@ Offline collision sandbox"
                 **text = if matches!(*action, Action::Brush(Tool::Flatten)) {
                     format!("Flatten to {:.2} m", session.flatten_height)
                 } else {
-                    actions[slot.0].1.into()
+                    match *action {
+                        Action::Brush(Tool::Raise) => {
+                            format!("Raise ({:.3} m / stamp)", session.brush_strength)
+                        }
+                        Action::Brush(Tool::Lower) => {
+                            format!("Lower ({:.3} m / stamp)", session.brush_strength)
+                        }
+                        _ => actions[slot.0].1.into(),
+                    }
                 };
             }
         }
@@ -524,8 +534,12 @@ pub(super) fn pointer(
                 },
             };
             let edit = match session.brush_tool {
-                Tool::Raise => height(BrushOperation::Raise { metres: 2. }),
-                Tool::Lower => height(BrushOperation::Lower { metres: 2. }),
+                Tool::Raise => height(BrushOperation::Raise {
+                    metres: session.brush_strength,
+                }),
+                Tool::Lower => height(BrushOperation::Lower {
+                    metres: session.brush_strength,
+                }),
                 Tool::Flatten => height(BrushOperation::Flatten {
                     height: session.flatten_height as f32,
                     blend: 0.5,

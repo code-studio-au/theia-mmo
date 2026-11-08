@@ -36,6 +36,7 @@ struct Session {
     terrain_paint: bool,
     brush_tool: terrain::Tool,
     brush_radius: f64,
+    brush_strength: f32,
     flatten_height: f64,
     brush_point: Option<Vec3>,
     stroke: Option<terrain::Stroke>,
@@ -164,6 +165,7 @@ enum Action {
     Brush(terrain::Tool),
     Radius(i8),
     FlattenHeight(i8),
+    BrushStrength(i8),
     SelectPlant,
     Plant(theia_zone::vegetation::PlantKind, bool),
     NextPlant,
@@ -256,6 +258,7 @@ fn run() -> Result<(), String> {
         terrain_paint: false,
         brush_tool: terrain::Tool::Raise,
         brush_radius: 12.,
+        brush_strength: 2.,
         flatten_height: 0.,
         brush_point: None,
         stroke: None,
@@ -650,6 +653,14 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
         Action::Radius(direction) => {
             session.brush_radius = (session.brush_radius + f64::from(direction) * 4.).clamp(4., 32.)
         }
+        Action::BrushStrength(direction) => {
+            session.brush_strength =
+                (session.brush_strength * if direction > 0 { 2. } else { 0.5 }).clamp(0.05, 8.);
+            session.status = format!(
+                "Raise/lower strength {:.3} m per stamp",
+                session.brush_strength
+            );
+        }
         Action::FlattenHeight(direction) => {
             let increment = if session.snap { 1. } else { 0.1 };
             session.flatten_height =
@@ -747,6 +758,26 @@ fn keyboard(
         && keys.just_pressed(KeyCode::PageDown)
     {
         Some(Action::FlattenHeight(-1))
+    } else if !ctrl
+        && session.terrain_mode
+        && !session.terrain_paint
+        && matches!(
+            session.brush_tool,
+            terrain::Tool::Raise | terrain::Tool::Lower
+        )
+        && keys.just_pressed(KeyCode::BracketLeft)
+    {
+        Some(Action::BrushStrength(-1))
+    } else if !ctrl
+        && session.terrain_mode
+        && !session.terrain_paint
+        && matches!(
+            session.brush_tool,
+            terrain::Tool::Raise | terrain::Tool::Lower
+        )
+        && keys.just_pressed(KeyCode::BracketRight)
+    {
+        Some(Action::BrushStrength(1))
     } else if session.marker_mode && keys.just_pressed(KeyCode::Equal) {
         Some(Action::MarkerRadius(1))
     } else if session.marker_mode && keys.just_pressed(KeyCode::Minus) {

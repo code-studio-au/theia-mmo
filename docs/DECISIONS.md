@@ -1,3 +1,11 @@
+## 8 November 2026 — adjustable bounded raise/lower strength
+
+Expose the retained brush domain's 0.05..8 m stamp amount with bracket keys to
+halve/double it, retaining the 2 m default. Display the actual amount on both
+buttons and keep this editor preset separate from saved terrain. Reuse the
+existing raise/lower command, validated previews and one-entry stroke history.
+[Contract/evidence](ZONE_EDITOR.md#adjustable-raise-lower-strength--8-november-2026).
+
 ## 8 November 2026 — bounded duplicate command for greyboxing
 
 Copy authored objects, plants, markers and whole guides through one shared
