@@ -1,3 +1,13 @@
+## 8 November 2026 — bounded duplicate command for greyboxing
+
+Copy authored objects, plants, markers and whole guides through one shared
+`duplicate` edit with explicit source/new IDs and f64 offset. Preserve metadata,
+geometry and schema; append a UTF-8-bounded copy suffix and revalidate the full
+candidate against existing ID, document and per-kind budgets. Ctrl-D uses the
+monotonic shared allocator, offsets one grid step in X/Z and selects the new
+copy. Keep draft/preview/playtest refusals and one-command undo semantics.
+[Contract/evidence](ZONE_EDITOR.md#shared-duplication-for-greyboxing--8-november-2026).
+
 ## 8 November 2026 — sampled and adjustable flatten level
 
 Expose the existing validated flatten brush's nonzero level through I surface

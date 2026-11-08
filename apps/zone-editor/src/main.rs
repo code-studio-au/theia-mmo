@@ -158,6 +158,7 @@ enum Action {
     Play,
     Spawn,
     Delete,
+    Duplicate,
     TerrainToggle,
     TerrainResolution,
     Brush(terrain::Tool),
@@ -367,18 +368,48 @@ fn object_actions() -> [(Action, &'static str); 12] {
     ]
 }
 fn setup_ui(mut commands: Commands) {
-    commands.spawn((Node { position_type: PositionType::Absolute, left: px(0), top: px(0), bottom: px(0),
-        width: px(PANEL), padding: UiRect::all(px(14)), flex_direction: FlexDirection::Column, row_gap: px(6), ..default() },
-        BackgroundColor(Color::srgb(0.035, 0.05, 0.075))))
+    commands
+        .spawn((
+            Node {
+                position_type: PositionType::Absolute,
+                left: px(0),
+                top: px(0),
+                bottom: px(0),
+                width: px(PANEL),
+                padding: UiRect::all(px(14)),
+                flex_direction: FlexDirection::Column,
+                row_gap: px(6),
+                ..default()
+            },
+            BackgroundColor(Color::srgb(0.035, 0.05, 0.075)),
+        ))
         .with_children(|panel| {
             panel.spawn(text("THEIA / ZONE STUDIO", 22.));
-            panel.spawn(text("F1 Objects | F2 Terrain\nF3 Guides | F4 Markers\nF6 Plants | F7 Terrain paint", 12.));
-            for (index,(action, title)) in object_actions().into_iter().enumerate() {
-                panel.spawn((PaletteSlot(index), action, Button, ActivateOnPress, Hovered::default(), Node { min_height: px(26), padding: UiRect::all(px(4)), ..default() },
-                    BackgroundColor(Color::srgb(0.10, 0.16, 0.22)))).with_children(|button| { button.spawn((PaletteLabel,text(title, 15.))); });
+            panel.spawn(text(
+                "F1 Objects | F2 Terrain\nF3 Guides | F4 Markers\nF6 Plants | F7 Terrain paint",
+                12.,
+            ));
+            for (index, (action, title)) in object_actions().into_iter().enumerate() {
+                panel
+                    .spawn((
+                        PaletteSlot(index),
+                        action,
+                        Button,
+                        ActivateOnPress,
+                        Hovered::default(),
+                        Node {
+                            min_height: px(26),
+                            padding: UiRect::all(px(4)),
+                            ..default()
+                        },
+                        BackgroundColor(Color::srgb(0.10, 0.16, 0.22)),
+                    ))
+                    .with_children(|button| {
+                        button.spawn((PaletteLabel, text(title, 15.)));
+                    });
             }
             panel.spawn((Info, text("", 14.)));
-            panel.spawn((Help,text("WASD pan | RMB orbit | wheel zoom\nDrag selected: X/Z | H: ground\nArrows: X/Z | PgUp/Dn: Y\nR / Shift R: yaw +/-15 deg\n+ / -: uniform size\nPlay: W/S forward/back | A/D turn\nQ/E strafe | Space jump\nOffline collision sandbox", 13.)));
+            panel.spawn((Help, text("", 13.)));
         });
     commands.spawn((
         Summary,
@@ -408,6 +439,10 @@ fn activate(
     }
 }
 fn perform(action: Action, session: &mut Session, view: &mut View) {
+    if matches!(action, Action::Duplicate) && (session.drag.is_some() || session.stroke.is_some()) {
+        session.status = "Finish or cancel the preview before duplicating".into();
+        return;
+    }
     session.drag = None;
     session.stroke = None;
     if !matches!(
@@ -416,6 +451,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
             | Action::FinishPath
             | Action::GradePath
             | Action::Ground
+            | Action::Duplicate
             | Action::PopPath
             | Action::NextPath
             | Action::PathWidth(_)
@@ -444,6 +480,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
         return;
     }
     match action {
+        Action::Duplicate => selection::duplicate(session),
         Action::Select => {
             session.palette = None;
             session.marker_palette = None;
@@ -692,6 +729,8 @@ fn keyboard(
         Some(Action::Redo)
     } else if ctrl && keys.just_pressed(KeyCode::KeyS) {
         Some(Action::Save)
+    } else if ctrl && keys.just_pressed(KeyCode::KeyD) {
+        Some(Action::Duplicate)
     } else if ctrl && keys.just_pressed(KeyCode::KeyO) {
         Some(Action::Load)
     } else if !ctrl

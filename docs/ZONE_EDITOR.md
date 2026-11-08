@@ -1102,3 +1102,65 @@ including generated source documents and exact reference command/output files;
 All 54 retained focused Rust cases, formatting, diff checks and denied-warning
 workspace/all-target Clippy pass for this slice; launcher Python checks remain
 four passing cases.
+
+
+## Shared duplication for greyboxing — 8 November 2026
+
+P5-17 / P3-15 / P1-10: Ctrl-D copies the selected object, plant, marker or whole
+guide, selects the new copy and records one undo entry. Even when a guide point
+is selected, duplication copies its whole guide and returns to whole-guide
+selection. UI copies offset X/Z by 1 m, or 0.1 m with grid snap off, preserving Y.
+They leave placement mode so subsequent transforms act on the copy. Use H when
+the copy should be grounded on differing terrain. There is no implicit fitting,
+prop stacking or publication of authoring annotations.
+
+The same renderer-free edit is available to agents/headless commands:
+
+```json
+{"command":"apply","expected_revision":0,"edits":[{"op":"duplicate","id":1,"new_id":2001,"offset":[8,0,8]}]}
+```
+
+`id` can resolve any of the four authoring kinds. `new_id` must be positive and
+unused throughout the shared namespace. Offsets are finite f64 metres within
+±1024 per axis; final positions still obey all existing zone/global limits.
+Preserve source geometry, transforms, kind, radius/scale, explicit guide points
+and unresolved marker definitions. Append ` copy` to the name after truncating
+its prefix at a UTF-8 boundary to keep the existing 80-byte label bound. Source
+records remain unchanged. No schema/format change is needed.
+
+Every duplicate passes the existing per-kind count, document-byte and spatial
+validation before committing. Unknown sources, occupied IDs, invalid offsets,
+out-of-zone results and exhausted budgets leave revision/history/redo intact.
+Mixed copies can share one transaction and undo. The visual allocator stays
+monotonic across undo and agent requests, so a copied entity's removed ID is
+not silently reused. Guide drafts and pending drag/stroke previews must be
+finished/cancelled first; playtest is read-only. Agent mailbox busy/refusal/cache
+semantics are retained. The context-specific help is now initialized from its
+single mode-aware source, keeping Ctrl-D and H hints visible.
+
+58 focused Rust cases (43 domain / 15 editor) pass, including mixed copy groups
+at positive/negative far frames, exact undo/redo and metadata, bounded UTF-8 copy
+names, stale/invalid transaction rollback and every per-kind count limit.
+Denied-warning workspace/all-target Clippy and formatting pass. Evidence:
+ignored `build/zone-duplicate-tests-v1.log`, `zone-duplicate-clippy-v1.log` and
+`zone-duplicate-build-v1.log`.
+
+Local/far/empty native 3440x1440 cases pass actual Ctrl-D, one-entry undo/redo,
+all four copy types, whole-guide behavior from a selected point, agent copy and
+visual undo, and subsequent UI ID 5001 after agent ID 5000 was undone. Pending
+guide drafts and playtest refuse copying without losing state. All three observe
+active Vulkan validation on RX 7900 XTX (RADV NAVI31), device 29772, with zero GPU
+or resize diagnostics. Native Windows and new normal-game pairs remain separate.
+Evidence: `build/zone-duplicate-native-3440-v1/qualification.json`.
+
+The mixed fixture `content/zones/duplication.commands.jsonl`, applied to the
+selection source, also exports through the existing runtime's collision/content
+verification. Its schema-4 package has four primitives, two guides, two plants
+and two source-only markers, with 280 visual triangles. This is actual package
+validation rather than a new runtime format or gameplay marker activation.
+Evidence: `build/zone-copy-export-v1.log`, `zone-copy-export-source-v1.json` and
+`zone-package-copy-v1/`. Editor SHA-256:
+`3eb4d1f0b3d37e8389e2a3aa61d48430cb1616c0cfc334824162132c2f72c506`.
+A final rerun captures each selected copied type before undo; all local/far/empty
+checks still pass with zero GPU diagnostics:
+`build/zone-duplicate-native-3440-v2/{qualification.json,*copy*.png}`.

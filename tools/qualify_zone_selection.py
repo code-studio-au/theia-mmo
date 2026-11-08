@@ -10,7 +10,7 @@ from gpu_validation import check_gpu_diagnostics
 from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 
 
-def run(output, binary):
+def run(output, binary, duplicate=False):
     output.mkdir(parents=True, exist_ok=False)
     binary = binary.resolve()
     cases = []
@@ -21,7 +21,9 @@ def run(output, binary):
         report = output / f'{name}.state.json'
         log_path = output / f'{name}.log'
         with log_path.open('w') as log:
-            process = subprocess.Popen([str(binary), *arguments, '--report', str(report)],
+            mailbox = output / f'{name}.mailbox'
+            extra = ['--mailbox', str(mailbox)] if duplicate else []
+            process = subprocess.Popen([str(binary), *arguments, *extra, '--report', str(report)],
                                        env=env, stdout=log, stderr=log)
             desktop = None
             try:
@@ -74,6 +76,46 @@ def run(output, binary):
                     assert current['history'] == original['history']
                     assert not current['unsaved_changes']
 
+                seen_ids = {p['id'] for field in ['objects','paths','plants','markers'] for p in original['document'].get(field,[])}
+
+                def copy_selected(collection, selection_field):
+                    nonlocal original
+                    before = state()
+                    source = next(p for p in before['document'][collection] if p['id'] == before[selection_field])
+                    chord('Control_L', 'd')
+                    copied = wait(lambda: state() if state()['revision'] == before['revision'] + 1 else None)
+                    new_id = copied[selection_field]
+                    assert new_id not in seen_ids
+                    seen_ids.add(new_id)
+                    expected = json.loads(json.dumps(source))
+                    expected['id'] = new_id
+                    expected['name'] += ' copy'
+                    def shifted(point):
+                        return [point[0]+1., point[1], point[2]+1.]
+                    if collection == 'objects':
+                        expected['pose']['position'] = shifted(expected['pose']['position'])
+                    elif collection == 'paths':
+                        expected['points'] = list(map(shifted, expected['points']))
+                        assert copied['path_point'] is None
+                    else:
+                        expected['position'] = shifted(expected['position'])
+                    expected_document = json.loads(json.dumps(before['document']))
+                    expected_document[collection].append(expected)
+                    assert copied['document'] == expected_document and copied['unsaved_changes']
+                    assert copied['history'] == [before['history'][0]+1, 0]
+                    capture(f'copy-{collection}-{new_id}')
+                    chord('Control_L', 'z')
+                    wait(lambda: state()['revision'] == copied['revision']+1)
+                    assert state()['document'] == before['document'] and not state()['unsaved_changes']
+                    chord('Control_L', 'y')
+                    wait(lambda: state()['revision'] == copied['revision']+2)
+                    assert state()['document'] == copied['document']
+                    chord('Control_L', 'z')
+                    wait(lambda: state()['revision'] == copied['revision']+3)
+                    assert state()['document'] == before['document'] and not state()['unsaved_changes']
+                    original = state()
+                    return new_id
+
                 key('Tab')
                 if empty:
                     wait(lambda: state()['status'] == 'No objects to select')
@@ -81,6 +123,9 @@ def run(output, binary):
                     key('f')
                     wait(lambda: state()['status'] == 'Select a placement before focusing')
                     assert state()['selected'] is None and state()['view'] == original['view']
+                    if duplicate:
+                        chord('Control_L','d')
+                        wait(lambda: state()['status'] == 'Select a placement or guide before duplicating')
                     unchanged()
                 else:
                     wait(lambda: state()['selected'] == 1)
@@ -108,16 +153,22 @@ def run(output, binary):
                     focus([-350, 64, -350])
                     assert 300 < state()['view']['distance'] < 512
                     capture('large-object')
+                    if duplicate:
+                        copy_selected('objects','selected')
                     key('F4')
                     wait(lambda: state()['marker_mode'])
                     button('NextMarker')
                     focus([-300, 0, 300])
                     assert state()['view']['distance'] == 200
+                    if duplicate:
+                        copy_selected('markers','marker_selected')
                     key('F6')
                     wait(lambda: state()['vegetation_mode'])
                     button('NextPlant')
                     focus([350, 20, -300])
                     capture('plant')
+                    if duplicate:
+                        copy_selected('plants','plant_selected')
                     key('F3')
                     wait(lambda: state()['path_mode'])
                     button('NextPath')
@@ -126,12 +177,44 @@ def run(output, binary):
                     wait(lambda: state()['path_point'] == 0)
                     focus([380, .03, -380])
                     assert state()['view']['distance'] == 12
+                    if duplicate:
+                        copy_selected('paths','path_selected')
+                        before = state()
+                        bridge = json.loads((mailbox/'state.json').read_text())
+                        request = dict(session=bridge['session'],request_id=1,
+                            command=dict(command='apply',expected_revision=before['revision'],
+                                edits=[dict(op='duplicate',id=1,new_id=5000,offset=[-2.,0.,-2.])]))
+                        (mailbox/'agent.tmp').write_text(json.dumps(request))
+                        (mailbox/'agent.tmp').replace(mailbox/'request.json')
+                        wait(lambda: state()['revision'] == before['revision']+1)
+                        receipt = wait(lambda: json.loads((mailbox/'receipt.json').read_text()) if (mailbox/'receipt.json').exists() else None)
+                        assert receipt['accepted'] and state()['document']['objects'][-1]['id'] == 5000
+                        chord('Control_L','z')
+                        wait(lambda: state()['revision'] == before['revision']+2)
+                        assert state()['document'] == before['document']
+                        key('F1')
+                        key('Tab')
+                        wait(lambda: state()['selected'] == 1)
+                        assert copy_selected('objects','selected') == 5001
+                        key('F3')
+                        wait(lambda: state()['path_mode'])
+                        button('NewPath(Road)')
+                        wait(lambda: state()['path_draft_points'] == 0)
+                        revision = state()['revision']
+                        chord('Control_L','d')
+                        wait(lambda: state()['status'] == 'Finish or cancel the guide draft before duplicating')
+                        assert state()['path_draft_points'] == 0 and state()['revision'] == revision
+                        key('Escape')
+                        wait(lambda: state()['path_draft_points'] is None)
                     unchanged()
                     view = state()['view']
                     key('F5')
                     wait(lambda: state()['play_feet'] is not None)
                     key('f')
                     key('Tab')
+                    if duplicate:
+                        chord('Control_L','d')
+                        wait(lambda: state()['status'] == 'Leave playtest before editing')
                     assert state()['view'] == view
                     unchanged()
                     key('F5')
@@ -177,6 +260,11 @@ def run(output, binary):
                            'large-object framing beyond the old camera range and safe empty/playtest input',
                            'checked global-to-local framing at signed far origin'],
                    scope='Linux owned OS input, standard Bevy at 3440x1440; offline editor, no Windows or multiplayer claim')
+    summary['duplication'] = duplicate
+    if duplicate:
+        summary['checks'] += ['Ctrl-D copies all four authoring kinds with exact undo/redo and whole-guide behavior',
+                              'agent duplicate plus visual undo preserves monotonic shared ID allocation',
+                              'pending guide draft and playtest refuse copying without data loss']
     (output / 'qualification.json').write_text(json.dumps(summary, indent=2) + '\n')
     print(json.dumps(summary, indent=2))
 
@@ -185,5 +273,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--binary', type=Path, default=Path('target/debug/theia-zone-editor'))
+    parser.add_argument('--duplicate', action='store_true')
     args = parser.parse_args()
-    run(args.output, args.binary)
+    run(args.output, args.binary, args.duplicate)

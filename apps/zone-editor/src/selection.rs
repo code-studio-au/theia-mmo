@@ -93,3 +93,54 @@ pub(super) fn keyboard(
     }
     true
 }
+
+pub(super) fn duplicate(session: &mut Session) {
+    if session.path_draft.is_some() {
+        session.status = "Finish or cancel the guide draft before duplicating".into();
+        return;
+    }
+    let selected = if session.path_mode {
+        session.path_selected
+    } else if session.marker_mode {
+        session.marker_selected
+    } else if session.vegetation_mode {
+        session.plant_selected
+    } else if !session.terrain_mode {
+        session.selected
+    } else {
+        None
+    };
+    let Some(id) = selected else {
+        session.status = "Select a placement or guide before duplicating".into();
+        return;
+    };
+    let new_id = session.next_id;
+    let Some(next) = new_id.checked_add(1) else {
+        session.status = "Authoring IDs exhausted".into();
+        return;
+    };
+    session.next_id = next;
+    let step = if session.snap { 1. } else { 0.1 };
+    let revision = session.editor.revision();
+    session.edit(vec![Edit::Duplicate {
+        id,
+        new_id,
+        offset: [step, 0., step],
+    }]);
+    if session.editor.revision() == revision {
+        return;
+    }
+    if session.path_mode {
+        session.path_selected = Some(new_id);
+        session.path_point = None;
+    } else if session.marker_mode {
+        session.marker_selected = Some(new_id);
+        session.marker_palette = None;
+    } else if session.vegetation_mode {
+        session.plant_selected = Some(new_id);
+        session.plant_palette = None;
+    } else {
+        session.selected = Some(new_id);
+        session.palette = None;
+    }
+}

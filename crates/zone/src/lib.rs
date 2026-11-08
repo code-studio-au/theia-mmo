@@ -1,4 +1,5 @@
 //! Bounded authoring documents and transactional commands, independent of Bevy.
+mod duplication;
 pub mod grading;
 pub mod mailbox;
 pub mod markers;
@@ -282,6 +283,11 @@ pub enum Edit {
     Delete {
         id: u64,
     },
+    Duplicate {
+        id: u64,
+        new_id: u64,
+        offset: [f64; 3],
+    },
     SetSpawn {
         position: [f64; 3],
     },
@@ -424,6 +430,9 @@ impl Editor {
                                 .find(|o| o.id == id)
                                 .ok_or("Unknown object ID")?
                                 .pose = pose;
+                        }
+                        Edit::Duplicate { id, new_id, offset } => {
+                            duplication::apply(&mut candidate, id, new_id, offset)?
                         }
                         Edit::Delete { id } => {
                             let index = candidate

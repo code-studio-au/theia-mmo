@@ -8,7 +8,9 @@ or full slope footprints. Tab/Shift-Tab also cycle hidden/distant objects; F
 frames objects, plants, markers and the existing guide/point selection without
 changing history. Flatten also samples the surface with I and adjusts its local
 level in 1 m / 0.1 m steps, sharing exact visual/headless stamp output.
-Local/far/empty native framing and positive/negative flatten cases pass. 54 focused Rust cases, four launcher cases, formatting
+Ctrl-D and structured `duplicate` commands copy any authoring kind with fresh
+shared IDs, bounded names/offsets and one-entry history. Local/far/empty native
+copy/framing and positive/negative flatten cases pass. 58 focused Rust cases, four launcher cases, formatting
 and strict workspace/all-target Clippy pass. The full native 3440x1440 walkthrough also passes
 with Vulkan validation active and zero GPU diagnostics; [contract and evidence](ZONE_EDITOR.md#explicit-terrain-grounding--8-november-2026).
 Local commits only; no push. Chat composer/bubbles remain deferred.
