@@ -13,6 +13,20 @@ use theia_core::{
 };
 pub const MAX_PEERS: usize = crate::wire::MAX_PLAYERS;
 pub const OUTBOX_MESSAGES: usize = 16;
+/// Opt-in compatibility binds the initial one-area policy and bounded wire
+/// shapes. Default protocol13 worlds have no chat suffix and remain unchanged.
+pub fn profile_identity(source: [u8; 32], area: theia_core::chat::Area) -> [u8; 32] {
+    let mut bytes = b"theia-local-chat-candidate-v1\0".to_vec();
+    bytes.extend(source);
+    bytes.extend(area.value().to_le_bytes());
+    bytes.extend(theia_core::chat::SAY_METRES.to_le_bytes());
+    bytes.extend((theia_core::chat::MAX_TEXT_BYTES as u64).to_le_bytes());
+    bytes.extend((theia_core::chat::BURST as u64).to_le_bytes());
+    bytes.extend(theia_core::chat::WINDOW_SECONDS.to_le_bytes());
+    bytes.extend(crate::chat_wire::REQUEST_TAG);
+    bytes.extend(crate::chat_wire::DELIVERY_TAG);
+    crate::terrain::sha256(&bytes)
+}
 struct Peer {
     speaker: Speaker,
     gate: Gate,

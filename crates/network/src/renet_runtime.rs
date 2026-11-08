@@ -7,6 +7,7 @@ mod confirmation;
 pub mod creature_attacks;
 pub mod dialogue;
 pub mod inventory;
+mod local_chat;
 mod player_identity;
 pub mod player_life;
 pub mod progression;
@@ -129,6 +130,7 @@ struct Peer {
 
 #[derive(Clone, Debug, Default, serde::Serialize)]
 pub struct ServerStats {
+    pub local_chat: local_chat::Stats,
     pub connection_confirmation: confirmation::Stats,
     pub avatar_life_states_sent: u64,
     pub avatar_life_uploads_rejected: u64,
@@ -1194,6 +1196,10 @@ async fn run_server_inner(
     authority: Option<std::sync::Arc<dyn AccountAdmissions>>,
 ) -> Result<ServerStats> {
     world.require_client_chunks()?;
+    if world.local_chat_area().is_some() && authority.is_none() {
+        return Err("Local chat requires authorized named admissions".into());
+    }
+    let mut chat = local_chat::Bridge::new(&world)?;
     let public_presentation_enabled = world.public_creature_attack_profile().is_some()
         || world.public_avatar_life_profile().is_some();
     let mut server = RenetServer::new(if public_presentation_enabled {
@@ -1291,6 +1297,10 @@ async fn run_server_inner(
                 publish_melee_state(&mut server, &mut peers, &mut world, &mut stats)?;
                 publish_status_state(&mut server,&mut peers,&mut world,&mut stats)?;
                 dialogue::publish(&mut server,&mut peers,&mut world,&mut stats)?;
+                if let Some(chat)=&mut chat {
+                    chat.sync(&peers,&world)?;
+                    chat.flush(&mut server,&peers,&mut stats.local_chat)?;
+                }
                 stats.observe(&server, &peers);
                 metrics.record(rate, started.elapsed(), started.saturating_duration_since(scheduled));
             }
@@ -1377,6 +1387,7 @@ async fn run_server_inner(
                         }
                     }
                 }
+                if let Some(chat)=&mut chat { chat.sync(&peers,&world)?; }
                 let mut retired_combat_peers = Vec::new();
                 for (&id, peer) in &mut peers {
                     if let Some(admission) = &peer.admission && !admission.live()? {
@@ -1394,6 +1405,14 @@ async fn run_server_inner(
                         controls += 1; peer.received += 1;
                         if peer.received > 180 || (world.chunks().is_none() && world.procedural().is_none()) {
                             invalid_control = true; stats.rejected_chunk_ready += 1; break;
+                        }
+                        if bytes.starts_with(crate::chat_wire::REQUEST_TAG) {
+                            let Some(chat)=&mut chat else {stats.local_chat.disabled_uploads+=1;invalid_control=true;break;};
+                            if chat.request(peer,&world,&bytes,&mut stats.local_chat).is_err() {invalid_control=true;break;}
+                            continue;
+                        }
+                        if bytes.starts_with(crate::chat_wire::DELIVERY_TAG) {
+                            stats.local_chat.forged_deliveries+=1;invalid_control=true;break;
                         }
                         if crate::avatar_life_wire::is_state(&bytes) {
                             stats.avatar_life_uploads_rejected+=1;invalid_control=true;break;

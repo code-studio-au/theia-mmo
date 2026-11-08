@@ -3,8 +3,9 @@
 8 November 2026. P4-12 / P2-14 / P5-13. The user explicitly identified in-game
 chat, local-area chat and overhead speech bubbles in the supplied references.
 Implement this incrementally without copying captured player messages into
-fixtures. Current instruction permits headless development and local commits;
-mouse, keyboard and display access remain prohibited.
+fixtures. The user restored mouse, keyboard and display access later on8 November.
+Continue implementation and local commits; no push. Earlier headless-only
+checkpoints below retain their original evidence scope.
 
 ## Initial policy
 
@@ -102,3 +103,46 @@ Strict workspace/all-target Clippy and formatting pass. Artifacts:
 no authenticated encrypted routing evidence yet. No normal executable, protocol,
 rendering or input path changed. Next implement explicit opt-in compatibility,
 lease/pose synchronization and encrypted loopback acceptance before normal use.
+
+
+## Opt-in encrypted owner-loop candidate — 8 November 2026
+
+`World::enable_local_chat` now enables a candidate one-area local world before
+actors join. Its compatibility identity hashes the prior complete world identity,
+area ID and initial policy/codec version. Default worlds retain their exact prior
+identity; this adds no protocol13 change. The normal executable and launcher do
+not enable this mode. An anonymous owner loop refuses chat-enabled startup.
+
+The existing Renet owner loop synchronizes live authorized named leases and
+checked world poses into the router before requests and after peer retirement.
+Lease errors fail authority; revoked/unnamed/retired peers cannot remain chat
+recipients. The initial world supplies one configured area for everyone, rather
+than deriving zones from chunks. Routing stays outside World::step and performs
+no SQL, provider calls or awaited transport work. Flush follows gameplay and
+identity publishing. Existing eight-event/poll and180-event/second limits bound
+chat parsing too. Malformed uploads, disabled-mode requests and forged server
+deliveries disconnect the uploading peer; valid policy refusals do not.
+
+Actual encrypted loopback with three named synthetic authorized leases passes:
+nearby Say, distant Area-only delivery, saved-name stamping, three accepted
+messages/seven recipient deliveries and two flood/replay refusals. Separate
+actual encrypted scenarios reject disabled, truncated and forged uploads.
+The compatibility/revocation test purges queued text on lease revocation.
+These fixtures use in-memory authorization, not OIDC/SQL or native rendering.
+Normal login/SQL name authority was qualified separately by the identity slice.
+
+Full network regression `build/local-chat-20261108/network-v1.log` passes738 cases
+with ten explicit skips across70 result groups, including the two original runtime
+cases. The added three-scenario negative test and final event fixture pass in
+`runtime-v6.log` (three focused tests total). Client regression passes231 cases
+with one explicit art skip (`client-v1.log`). Strict workspace/all-target Clippy
+and formatting pass (`runtime-clippy-v3.log`, `runtime-fmt-v1.log`). Earlier runtime
+logs retain diagnostic compile/assertion failures and are not accepted evidence.
+
+This is an opt-in server candidate with raw qualified test clients. The normal
+client has no chat receiver/composer yet. Explicit bounded submission replies,
+client history/deduplication, typing capture and Say bubbles remain next work.
+Mute/block policy functions exist in the router, but no live moderation UI or
+persistent account-wide moderation/reconnect flood controls are implemented.
+Native drag work can resume after the user's renewed desktop permission; it does
+not constitute native chat qualification.

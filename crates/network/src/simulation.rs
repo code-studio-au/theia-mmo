@@ -30,6 +30,7 @@ pub struct World {
     players: BTreeMap<u64, Actor>,
     targets: BTreeMap<u64, crate::targeting::Target>,
     targeting_enabled: bool,
+    local_chat: Option<theia_core::chat::Area>,
     dialogue: Option<dialogue::Authority>,
     vendor: Option<std::sync::Arc<crate::vendor_wire::Profile>>,
     combat: Option<combat::Authority>,
@@ -92,6 +93,7 @@ impl Default for World {
             players: BTreeMap::new(),
             targets: BTreeMap::new(),
             targeting_enabled: false,
+            local_chat: None,
             dialogue: None,
             vendor: None,
             combat: None,
@@ -698,7 +700,30 @@ impl World {
             .ok_or("World has no chunk backend")?
             .activate(epoch, prepared, &actors)
     }
+    /// Explicit candidate profile: one authored chat area for this local world.
+    /// Names/admission and routing remain outside the fixed simulation step.
+    pub fn enable_local_chat(&mut self, area: theia_core::chat::Area) -> crate::Result<()> {
+        if self.tick != 0
+            || !self.players.is_empty()
+            || self.procedural.is_none()
+            || self.local_chat.is_some()
+            || self.dev_tour
+        {
+            return Err("Local chat requires an inactive normal procedural world".into());
+        }
+        self.local_chat = Some(area);
+        Ok(())
+    }
+    pub fn local_chat_area(&self) -> Option<theia_core::chat::Area> {
+        self.local_chat
+    }
     pub fn identity(&self) -> [u8; 32] {
+        let identity = self.identity_without_chat();
+        self.local_chat.map_or(identity, |area| {
+            crate::chat::profile_identity(identity, area)
+        })
+    }
+    fn identity_without_chat(&self) -> [u8; 32] {
         if let Some(terrain) = &self.procedural {
             let identity = terrain.source.identity();
             let identity = if self.targeting_enabled {

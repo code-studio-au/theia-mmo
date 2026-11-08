@@ -1,3 +1,15 @@
+## 8 November 2026 — opt-in server chat compatibility and priority
+
+Bind the initial one-area Say/Area mode into the complete world identity without
+changing default protocol13 worlds. Require named authorized leases; synchronize
+live leases and checked poses in the I/O owner loop and purge retired recipients.
+Flush at most one bounded chat frame per recipient after gameplay-priority
+publishing; never await transport or persistence from the simulation step.
+Retain existing input limits and refuse forged/disabled uploads. Raw encrypted
+fixtures qualify this candidate; normal client chat and explicit submission
+replies remain separate work. The user has restored desktop access as needed.
+[Scope and evidence](LOCAL_CHAT.md#opt-in-encrypted-owner-loop-candidate--8-november-2026).
+
 ## 8 November 2026 — bounded Say/Area chat prerequisite
 
 Use server-selected names, authenticated actor incarnations and current checked

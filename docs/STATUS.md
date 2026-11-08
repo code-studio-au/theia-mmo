@@ -1,3 +1,14 @@
+Opt-in chat runtime candidate, 8 November 2026 (P4-12 / P2-14 / P5-13):
+Authorized named leases and checked server poses now feed bounded Say/Area routing
+in the Renet owner loop under an explicit world compatibility profile. Three
+actual encrypted clients pass; disabled/malformed/forged uploads fail closed.
+738 network regression cases (ten explicit skips),231 client cases and strict
+Clippy pass, with three final focused runtime cases. Normal chat UI/launcher
+activation, submission replies and bubbles remain pending.
+**Latest permission: mouse, keyboard and display may be used as needed. Continue
+implementation and local commits; no push.** Earlier desktop bans are historical.
+[Evidence and limits](LOCAL_CHAT.md#opt-in-encrypted-owner-loop-candidate--8-november-2026).
+
 Local-chat routing prerequisite, 8 November 2026 (P4-12):
 The host-side router bounds eight admissions and sixteen queued messages per
 recipient; current trusted name/pose/area context determines delivery. Three
