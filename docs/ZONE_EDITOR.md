@@ -6,7 +6,8 @@ adopted stack. The editor is a separate standard Bevy app, independent of normal
 multiplayer startup, with a renderer-free `theia-zone` document/command crate.
 This is P5-17 / P3-15 / P1-10; later terrain integration also uses P2-06/07.
 P3-17/18 remain unspecified. The current tool includes primitive authoring,
-shared visual/live-agent history, bounded terrain brushes, road/stream guides and validated export
+shared visual/live-agent history, bounded terrain brushes, road/stream guides,
+NPC/quest annotations, greybox vegetation and validated export
 into the existing world-package pipeline. Milestone records below retain their
 exact source/evidence scope. The current tool targets **3440x1440 only**, opening
 borderless fullscreen on the primary display. Smaller-window checks below are
@@ -544,3 +545,76 @@ zero GPU diagnostics/resize exceptions. Evidence: ignored
 pass without DISPLAY/WAYLAND_DISPLAY: `zone-markers-headless-v1.json` and
 `zone-package-markers-v1/`. This does not qualify live NPC/quest publication or
 Windows execution.
+
+## Greybox vegetation placement/scatter — 8 November 2026
+
+P5-17 / P3-15 continue from checked coordinates, shared commands/history and the
+existing exporter. Zone schema 5 optionally contains at most 512 plants. Tree and
+shrub proxies have shared positive IDs, bounded names, global f64 foot anchors,
+finite yaw and uniform dimensionless scale 0.25..8. Conservative margins account
+for the fixed metre-sized proxy geometry. Earlier schemas remain readable;
+terrain/path/marker edits preserve schema 5. The overall byte budget still applies.
+
+`put_plant` upserts, `delete_plant` removes and `scatter_vegetation` generates a
+bounded stamp. Scatter names first ID, seed, kind, global X/Z centre, 1..32 m
+radius and 1..64 plants. Explicit SplitMix64 arithmetic and bounded unit-disk
+rejection sampling determine positions, yaw and scales 0.8..1.2 without global
+RNG or frame dependence. Each point samples the exact triangular terrain support
+through `Zone::surface_position`, falling back to flat zone-origin Y. ID overflow,
+collisions, area/count/byte limits or invalid geometry refuse the entire command
+without altering revision/history. One scatter stamp is one undo entry; redo
+restores stored plants rather than rerolling. The sampler does not impose spacing,
+biomes or slope exclusion, and existing vegetation does not move after sculpting.
+
+F6 opens Plants. Place tree/shrub proxies individually, or choose scatter and click
+once per stamp. The standard Bevy transparent footprint previews the stamp area.
+`[`/`]` changes radius by 1 m and `,`/`.` changes count by four, within domain
+bounds. Default: eight plants / 8 m. Escape selects; pointer/Select Next selects
+plants; Delete removes. Arrows/PgUp/PgDn move, R/Shift-R yaws and +/- changes scale.
+Snapping, save/load and visual/agent undo share the existing pipeline. Agent IDs
+advance the visual allocator even after visual undo. Three shared meshes serve
+the cursor, trunk and low-poly foliage; removed plants release their entities.
+
+Tree trunks and spherical crowns, and ellipsoid shrubs, are static visual
+proxies using normal Bevy meshes/materials. They remain visible during playtest
+and export through the normal self-contained GLB pipeline. They add no collision,
+navigation or harvesting/gameplay behavior. Source metadata is retained and the
+visual digest changes. World collision remains exactly the authored primitives
+and terrain. General art assets, vegetation collision policy, wind, biomes,
+spacing, LOD/streaming and population capacity are separate work. The exporter
+now applies the inverse-transpose normal transform for nonuniform mesh scale,
+which the ellipsoid shrubs require; an emitted-data ellipsoid-gradient test
+checks it independently.
+
+Acceptance: 25 domain and ten editor tests pass. New cases cover deterministic
+terrain sampling and grouped history, rollback/redo/ID overflow, far signed
+centimetres, the 512-plant cap, source/export binding, unchanged collision and
+ellipsoid normals. Formatting, strict workspace/all-target Clippy and Khronos
+GLB validation pass (zero errors/warnings). Native OS-input qualification passes
+at default fullscreen 3440x1440 on the same RX 7900 XTX / RADV Vulkan device,
+with observed validation and zero GPU diagnostics/resize exceptions. It repeats
+all primitive/terrain/guide/marker workflows, then exercises plant placement,
+selection/transforms/delete, a twelve-tree scatter as one undo entry, exact redo,
+agent retry/IDs, save/load and playtest. Shared mesh count stays constant.
+
+Evidence: ignored `build/zone-vegetation-tests-final-v2.log`,
+`zone-vegetation-clippy-v2.log`, `zone-vegetation-build-v1.log`,
+`zone-vegetation-native-3440-v1/{qualification.json,state.png}`,
+`zone-package-vegetation-v1/`, `zone-vegetation-export-v1.log` and
+`zone-vegetation-gltf-validation-v1.json`. The two initial strict-Clippy findings
+were test style issues and are fixed in the passing v2 checks. The initial domain
+compile's integer/float range typo is corrected; failed candidates are not proof.
+The fixture `content/zones/vegetation.commands.jsonl` starts at revision 0 and
+shows individual placement plus seeded scatter. All changes remain local.
+
+
+The vegetation package also passes normal server/two-rendered-client encrypted
+Renet qualification, both clients at actual 3440x1440, with observed Vulkan
+validation and zero GPU diagnostics. The independent checks confirm admitted
+content identity, distinct players, moving poses, wall clearance and both avatar
+colours. Evidence: `build/zone-package-native-vegetation-3440-v1/verification.json`
+and both `scene.png` captures. The current editor binary SHA-256 is
+`2a961f0eecb14dadd1318a916ed9047fef8c03067f0c0f04ba026d34854afa1d`;
+normal client/server hashes remain those in the export milestone. This is Linux
+loopback presentation/transport evidence, not native Windows, production admission
+or capacity qualification.

@@ -285,7 +285,9 @@ pub(super) fn palette(
     mut help: Query<&mut Text, (With<Help>, Without<PaletteLabel>)>,
 ) {
     for mut text in &mut help {
-        **text = if session.marker_mode {
+        **text = if session.vegetation_mode {
+            "F6: greybox trees / shrubs\nClick places one stamp\nEsc selects | Del removes\nArrows/PgUp/Dn: move\nR / Shift R: yaw +/-15 deg\n+/-: plant scale\n[ / ]: scatter radius\n, / .: scatter count\nVegetation proxies do not\nadd world collision".into()
+        } else if session.marker_mode {
             "F4: NPC / quest markers\nClick to place or select\nArrows/PgUp/Dn: move\nR / Shift R: yaw +/-15 deg\n+/- changes footprint radius\nCtrl O loads saved zone\nMarkers are authoring notes;\nplaytest hides them".into()
         } else if session.path_mode {
             "F3: guide paths / streams\nClick ground to add points\nEnter finishes | Esc cancels\nBksp removes last point\nArrows/PgUp/Dn move guide\n+/- changes width\nRoad/stream guides do not\nadd collision or water rules".into()
@@ -311,7 +313,9 @@ Offline collision sandbox"
                 .into()
         };
     }
-    let actions = if session.marker_mode {
+    let actions = if session.vegetation_mode {
+        vegetation::actions()
+    } else if session.marker_mode {
         markers::actions()
     } else if session.path_mode {
         paths::actions()
@@ -328,6 +332,10 @@ Offline collision sandbox"
                 .path_draft
                 .as_ref()
                 .is_some_and(|draft| draft.path.kind == kind),
+            Action::Plant(kind, scatter) => {
+                session.plant_palette == Some(kind) && session.plant_scatter == scatter
+            }
+            Action::SelectPlant => session.plant_palette.is_none(),
             Action::PlaceMarker(kind) => session.marker_palette == Some(kind),
             Action::SelectMarker => session.marker_palette.is_none(),
             Action::Place(primitive) => session.palette == Some(primitive),

@@ -195,7 +195,7 @@ pub(super) fn pointer(
     let Ok(window) = windows.single() else {
         return;
     };
-    if session.terrain_mode || session.path_mode || session.marker_mode {
+    if session.terrain_mode || session.path_mode || session.marker_mode || session.vegetation_mode {
         return;
     }
     if !window.focused || session.play.is_some() {
@@ -422,7 +422,9 @@ pub(super) fn report(
     }).collect();
     let value = serde_json::json!({"revision":session.editor.revision(),"mesh_assets":meshes.len(),"history":session.editor.history(),
         "document":session.editor.zone(),"selected":session.selected,"snap":session.snap,"status":session.status,
-        "dragging":session.drag.is_some() || session.stroke.is_some(),"marker_visible_entities":marker_visibility.iter().filter(|v| **v != Visibility::Hidden).count(),"marker_mode":session.marker_mode,"marker_selected":session.marker_selected,"marker_palette":format!("{:?}",session.marker_palette),"terrain_mode":session.terrain_mode,"path_mode":session.path_mode,"path_selected":session.path_selected,"path_draft_points":session.path_draft.as_ref().map(|d|d.path.points.len()),"brush_radius":session.brush_radius,"brush_tool":format!("{:?}",session.brush_tool),"play_feet":session.play.as_ref().map(|p| p.feet.metres()),
+        "dragging":session.drag.is_some() || session.stroke.is_some(),"vegetation_mode":session.vegetation_mode,"plant_selected":session.plant_selected,"scatter_radius":session.scatter_radius,"scatter_count":session.scatter_count,
+        "plants":session.editor.zone().plants.iter().map(|p|serde_json::json!({"id":p.id,"screen":project(Vec3::from_array(session.editor.zone().local(p.position).unwrap())+Vec3::Y*if p.kind==theia_zone::vegetation::PlantKind::Tree{3.2*p.scale as f32}else{0.6*p.scale as f32})})).collect::<Vec<_>>(),
+        "marker_visible_entities":marker_visibility.iter().filter(|v| **v != Visibility::Hidden).count(),"marker_mode":session.marker_mode,"marker_selected":session.marker_selected,"marker_palette":format!("{:?}",session.marker_palette),"terrain_mode":session.terrain_mode,"path_mode":session.path_mode,"path_selected":session.path_selected,"path_draft_points":session.path_draft.as_ref().map(|d|d.path.points.len()),"brush_radius":session.brush_radius,"brush_tool":format!("{:?}",session.brush_tool),"play_feet":session.play.as_ref().map(|p| p.feet.metres()),
         "objects":objects,"buttons":buttons,"viewport":[window.width(),window.height()],
         "markers":session.editor.zone().markers.iter().map(|m|serde_json::json!({"id":m.id,"screen":project(Vec3::from_array(session.editor.zone().local(m.position).unwrap())+Vec3::Y*0.5)})).collect::<Vec<_>>(),
         "guide_points":[project(Vec3::new(48.,0.,88.)),project(Vec3::new(64.,0.,88.)),project(Vec3::new(56.,0.,84.)),project(Vec3::new(64.,0.,80.)),project(Vec3::new(72.,0.,84.))],

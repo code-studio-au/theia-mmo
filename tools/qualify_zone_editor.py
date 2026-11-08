@@ -12,7 +12,8 @@ from gpu_validation import check_gpu_diagnostics
 from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 
 
-def run(output, binary, size, agent=False, terrain=False, guides=False, markers=False):
+def run(output, binary, size, agent=False, terrain=False, guides=False, markers=False, vegetation=False):
+    markers = markers or vegetation
     guides = guides or markers
     terrain = terrain or guides
     agent = agent or terrain
@@ -456,6 +457,86 @@ def run(output, binary, size, agent=False, terrain=False, guides=False, markers=
                 assert state()['document'] == stored
                 wait(lambda: state()['marker_visible_entities'] == 6)
                 checks.append('NPC/quest marker pointer placement/selection, transforms/radius, delete/undo/redo, agent IDs, save/load and playtest')
+            if vegetation:
+                key('F6')
+                wait(lambda: state()['vegetation_mode'])
+                mesh_baseline = state()['mesh_assets']
+                button('Plant(Tree, false)')
+                previous = state()['revision']
+                desktop.click(window,state()['guide_points'][4],1,1)
+                placed = revision(previous)
+                tree = placed['document']['plants'][0]
+                assert tree['kind'] == 'tree' and tree['scale'] == 1.
+                for name in ['Right','Page_Up','r','equal']:
+                    previous = state()['revision']
+                    key(name)
+                    revision(previous)
+                transformed = state()['document']['plants'][0]
+                assert transformed['position'][0] == tree['position'][0]+1.
+                assert transformed['position'][1] == tree['position'][1]+1.
+                assert transformed['yaw_degrees'] == 15 and transformed['scale'] == 1.25
+                button('Plant(Shrub, false)')
+                previous = state()['revision']
+                desktop.click(window,state()['guide_points'][2],1,1)
+                shrub = revision(previous)['document']['plants'][-1]
+                assert shrub['kind'] == 'shrub'
+                key('Escape')
+                time.sleep(.3)
+                centre = next(p['screen'] for p in state()['plants'] if p['id'] == tree['id'])
+                desktop.click(window,centre,1,1)
+                wait(lambda: state()['plant_selected'] == tree['id'])
+                previous = state()['revision']
+                key('Delete')
+                assert len(revision(previous)['document']['plants']) == 1
+                previous = state()['revision']
+                chord('z')
+                assert len(revision(previous)['document']['plants']) == 2
+                button('Plant(Tree, true)')
+                key('bracketright')
+                key('period')
+                wait(lambda: state()['scatter_radius'] == 9. and state()['scatter_count'] == 12)
+                before = state()
+                desktop.click(window,state()['guide_points'][3],1,1)
+                scattered = revision(before['revision'])
+                assert len(scattered['document']['plants']) == 14
+                assert scattered['history'][0] == before['history'][0]+1
+                previous = state()['revision']
+                chord('z')
+                assert len(revision(previous)['document']['plants']) == 2
+                previous = state()['revision']
+                chord('y')
+                assert revision(previous)['document'] == scattered['document']
+                agent_plant = dict(shrub,id=2000,name='Agent shrub')
+                receipt, request = agent_request(dict(command='apply',expected_revision=state()['revision'],edits=[dict(op='put_plant',plant=agent_plant)]))
+                assert receipt['accepted']
+                wait(lambda: len(state()['document']['plants']) == 15)
+                previous = state()['revision']
+                chord('z')
+                undone = revision(previous)
+                retry, _ = agent_request(request=request)
+                assert retry == receipt and state()['document'] == undone['document']
+                button('Plant(Shrub, false)')
+                previous = state()['revision']
+                desktop.click(window,state()['guide_points'][0],1,1)
+                assert revision(previous)['document']['plants'][-1]['id'] == 2001
+                previous = state()['revision']
+                chord('z')
+                revision(previous)
+                button('SelectPlant')
+                chord('s')
+                wait(lambda: read_saved() == state()['document'])
+                stored = state()['document']
+                previous = state()['revision']
+                chord('o')
+                assert revision(previous)['document'] == stored
+                assert state()['mesh_assets'] == mesh_baseline
+                key('F5')
+                wait(lambda: state()['play_feet'] is not None)
+                time.sleep(.3)
+                key('F5')
+                wait(lambda: state()['play_feet'] is None)
+                assert state()['document'] == stored
+                checks.append('vegetation pointer placement/selection/transforms, bounded deterministic scatter/one-entry undo, agent retry/IDs, save/load/playtest and shared meshes')
             key('F12')
             wait(lambda: capture_ready(report.with_suffix('.png')), 30)
             checks.append('actual native Vulkan screenshot captured')
@@ -489,5 +570,6 @@ if __name__ == '__main__':
     parser.add_argument('--terrain', action='store_true')
     parser.add_argument('--guides', action='store_true')
     parser.add_argument('--markers', action='store_true')
+    parser.add_argument('--vegetation', action='store_true')
     args = parser.parse_args()
-    run(args.output, args.binary, args.size, args.agent, args.terrain, args.guides, args.markers)
+    run(args.output, args.binary, args.size, args.agent, args.terrain, args.guides, args.markers, args.vegetation)

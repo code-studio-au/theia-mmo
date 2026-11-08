@@ -1,3 +1,15 @@
+## 8 November 2026 — bounded seeded greybox vegetation
+
+Zone schema 5 adds finite tree/shrub visual proxies and deterministic bounded
+scatter stamps. Share authoring IDs, checked global/local conversion, exact
+terrain support and atomic history with other editor commands. Use standard
+Bevy geometry/materials and the existing GLB exporter, with inverse-transpose
+normal transformation for ellipsoid foliage. Keep vegetation nonblocking in this
+explicit greybox slice; collision/navigation/gameplay and production asset/LOD
+policies require separate implemented contracts. The 512-plant authoring cap is
+not evidence of population or MMO-scale capacity. Qualify the editor only at the
+user's 3440x1440 viewport. [Contract/evidence](ZONE_EDITOR.md#greybox-vegetation-placementscatter--8-november-2026).
+
 ## 8 November 2026 — NPC/quest markers remain explicit authoring annotations
 
 Extend the bounded zone document to schema 4 with shared-ID NPC/quest markers,

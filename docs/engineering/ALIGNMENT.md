@@ -19,7 +19,10 @@ default and future editor qualification targets that viewport. Earlier smaller
 checks below retain their historical scope. Schema-4 NPC/quest authoring markers
 now add shared validated placement/transforms/history and source-only export
 preservation (31 focused Rust cases); live catalogue publication remains separate.
-Vegetation remains a future slice. Runtime multiplayer remains
+Schema-5 tree/shrub proxies now add bounded seeded scatter, shared history and
+render-only export (35 focused Rust cases and the full 3440x1440 native editor
+walkthrough). General vegetation assets/behavior and broader terrain tools remain
+future work. Runtime multiplayer remains
 Rust/Bevy/Avian/Renet; editor playtest is an offline sandbox. Actual prerequisites,
 acceptance checks and implementation evidence are tracked in [the zone record](../ZONE_EDITOR.md).
 Earlier stop/chat-first queue entries are historical; P3-17/18 stay unspecified.

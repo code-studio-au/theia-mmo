@@ -1,3 +1,19 @@
+Current focus, 8 November 2026 (P5-17 / P3-15 / P1-10; terrain P2-06/07):
+The user prioritizes terrain, greyboxing and zone authoring and defers chat
+composer/bubbles. The standard Bevy editor now has shared validated visual/agent
+history, primitive transforms/snapping, bounded terrain brushes, road/stream
+guides, NPC/quest annotations, greybox vegetation/scatter, save/load, offline
+playtest and export into the retained Renet world-package path. Actual prerequisites
+are the pinned stack, checked coordinates and existing query/package pipeline;
+later waves and P5-16 are not blanket gates. Current qualification is 35 focused
+Rust cases, strict workspace Clippy, default-fullscreen 3440x1440 OS-input checks
+and actual exported-package encrypted client pairs. The editor targets only
+3440x1440 under the user's current direction. Local commits only; no push.
+[Exact contracts, acceptance evidence and remaining scope](../ZONE_EDITOR.md).
+Older task/queue entries below retain their historical scope; P3-17/18 remain
+unspecified. Live NPC/quest publication, general vegetation assets/behavior,
+terrain grading/materials and broader terrain authoring remain separate work.
+
 Safe stop after chat client-worker slice, 8 November 2026 (P4-12 / P2-14 / P5-13):
 The user requested stopping after the current slice. Finished the opt-in real
 Renet worker's bounded chat producer/receipt view, reply pacing and local timeout

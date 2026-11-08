@@ -3,6 +3,7 @@ pub mod mailbox;
 pub mod markers;
 pub mod paths;
 pub mod terrain;
+pub mod vegetation;
 
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeSet, fs, io::Read, path::Path};
@@ -56,6 +57,8 @@ pub struct Zone {
     pub paths: Vec<paths::GuidePath>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub markers: Vec<markers::Marker>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub plants: Vec<vegetation::Plant>,
 }
 
 fn require(condition: bool, message: &str) -> Result<()> {
@@ -75,6 +78,7 @@ impl Default for Zone {
             terrain: None,
             paths: vec![],
             markers: vec![],
+            plants: vec![],
         }
     }
 }
@@ -98,6 +102,16 @@ impl Zone {
             .map(|p| p.metres())
             .ok_or("Invalid global position".into())
     }
+    /// Exact triangular terrain support, falling back to flat zone-origin Y.
+    pub fn surface_position(&self, xz: [f64; 2]) -> Result<[f64; 3]> {
+        let height = match &self.terrain {
+            Some(p) => p.height(xz[0], xz[1])?.unwrap_or(0.),
+            None => 0.,
+        };
+        let position = [xz[0], self.origin[1] + f64::from(height), xz[1]];
+        self.check_position(position, 0.)?;
+        Ok(position)
+    }
     fn check_position(&self, position: [f64; 3], margin: f64) -> Result<()> {
         self.local(position)?;
         require(
@@ -106,7 +120,7 @@ impl Zone {
         )
     }
     pub fn validate(&self) -> Result<()> {
-        require(matches!(self.schema, 1..=4), "Unsupported zone schema")?;
+        require(matches!(self.schema, 1..=5), "Unsupported zone schema")?;
         require(
             self.schema != 1 || self.terrain.is_none(),
             "Terrain requires zone schema 2",
@@ -126,6 +140,14 @@ impl Zone {
         require(
             self.markers.len() <= markers::MAX_MARKERS,
             "Marker budget exceeded",
+        )?;
+        require(
+            self.schema >= 5 || self.plants.is_empty(),
+            "Vegetation requires zone schema 5",
+        )?;
+        require(
+            self.plants.len() <= vegetation::MAX_PLANTS,
+            "Vegetation budget exceeded",
         )?;
         require(label(&self.name), "Invalid zone name")?;
         self.frame()?;
@@ -173,6 +195,10 @@ impl Zone {
             require(ids.insert(marker.id), "Duplicate authoring ID")?;
             marker.validate(self)?;
         }
+        for plant in &self.plants {
+            require(ids.insert(plant.id), "Duplicate authoring ID")?;
+            plant.validate(self)?;
+        }
         require(
             serde_json::to_vec_pretty(self)
                 .map_err(|e| e.to_string())?
@@ -188,6 +214,7 @@ impl Zone {
             .map(|o| o.id)
             .chain(self.paths.iter().map(|p| p.id))
             .chain(self.markers.iter().map(|m| m.id))
+            .chain(self.plants.iter().map(|p| p.id))
             .max()
             .unwrap_or(0)
             .checked_add(1)
@@ -265,6 +292,15 @@ pub enum Edit {
     },
     DeletePath {
         id: u64,
+    },
+    PutPlant {
+        plant: vegetation::Plant,
+    },
+    DeletePlant {
+        id: u64,
+    },
+    ScatterVegetation {
+        scatter: vegetation::Scatter,
     },
     PutMarker {
         marker: markers::Marker,
@@ -428,6 +464,33 @@ impl Editor {
                                 .position(|m| m.id == id)
                                 .ok_or("Unknown marker ID")?;
                             candidate.markers.remove(index);
+                        }
+                        Edit::PutPlant { plant } => {
+                            candidate.schema = candidate.schema.max(5);
+                            if let Some(existing) =
+                                candidate.plants.iter_mut().find(|p| p.id == plant.id)
+                            {
+                                *existing = plant;
+                            } else {
+                                require(
+                                    candidate.plants.len() < vegetation::MAX_PLANTS,
+                                    "Vegetation budget exceeded",
+                                )?;
+                                candidate.plants.push(plant);
+                            }
+                        }
+                        Edit::DeletePlant { id } => {
+                            let index = candidate
+                                .plants
+                                .iter()
+                                .position(|p| p.id == id)
+                                .ok_or("Unknown plant ID")?;
+                            candidate.plants.remove(index);
+                        }
+                        Edit::ScatterVegetation { scatter } => {
+                            let plants = scatter.generate(&candidate)?;
+                            candidate.schema = candidate.schema.max(5);
+                            candidate.plants.extend(plants);
                         }
                         Edit::Brush { brush } => candidate
                             .terrain

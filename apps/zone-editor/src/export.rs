@@ -64,7 +64,7 @@ impl Glb {
         let normals: Vec<_> = normals
             .iter()
             .map(|n| {
-                (transform.rotation * Vec3::from_array(*n))
+                (transform.rotation * (Vec3::from_array(*n) / transform.scale))
                     .normalize()
                     .to_array()
             })
@@ -121,7 +121,7 @@ impl Glb {
         self.nodes.push(json!({"name":name,"mesh":index}));
         Ok(())
     }
-    fn finish(self, guide_kinds: [bool; 2]) -> Result<Vec<u8>, String> {
+    fn finish(self, guide_kinds: [bool; 2], plants: bool) -> Result<Vec<u8>, String> {
         let material = |name: &str, color: [f32; 4]| json!({"name":name,"pbrMetallicRoughness":{"baseColorFactor":color,"metallicFactor":0,"roughnessFactor":0.5}});
         // Factors are linear, matching the standard Bevy srgb materials.
         let color = |r, g, b| Color::srgb(r, g, b).to_linear().to_f32_array();
@@ -139,6 +139,10 @@ impl Glb {
             stream["alphaMode"] = json!("BLEND");
             stream["extensions"] = json!({"KHR_materials_unlit":{}});
             materials.push(stream);
+        }
+        if plants {
+            materials.push(material("Vegetation trunk", color(0.3, 0.16, 0.07)));
+            materials.push(material("Vegetation leaves", color(0.16, 0.39, 0.13)));
         }
         let mut document = json!({"asset":{"version":"2.0","generator":"Theia Bevy zone exporter"},
             "scene":0,"scenes":[{"nodes":(0..self.nodes.len()).collect::<Vec<_>>()}],"nodes":self.nodes,"meshes":self.meshes,
@@ -315,11 +319,22 @@ fn geometry(zone: &Zone) -> Result<(Vec<u8>, Value, Value), String> {
             material,
         )?;
     }
+    let plant_material = 2 + guide_kinds.iter().filter(|v| **v).count();
+    for plant in &zone.plants {
+        for (index, transform) in vegetation::parts(zone, plant) {
+            glb.add(
+                &plant.name,
+                vegetation::mesh(index),
+                transform,
+                plant_material + index,
+            )?;
+        }
+    }
     let visual_triangles = glb.triangles;
-    let visual = glb.finish(guide_kinds)?;
+    let visual = glb.finish(guide_kinds, !zone.plants.is_empty())?;
     let profile = json!({"schema":4,"source_origin":[0,0,0],"bounds":[[-512,-512],[512,512]],"spawns":[zone.local(zone.spawn)?],
         "visual_sha256":sha256(&visual),"triangles":triangles,"static_shapes":{"meshes":pool,"objects":bodies}});
-    let report = json!({"schema":1,"zone_name":zone.name,"authoring_origin":zone.origin,"visual_triangles":visual_triangles,"guide_paths":zone.paths.len(),"authoring_markers":zone.markers.len(),
+    let report = json!({"schema":1,"zone_name":zone.name,"authoring_origin":zone.origin,"visual_triangles":visual_triangles,"guide_paths":zone.paths.len(),"authoring_markers":zone.markers.len(),"greybox_plants":zone.plants.len(),
         "maximum_cylinder_radial_error_metres":maximum_cylinder_error,"collision_weld_tolerance_metres":0.0001,"scope":"existing bounded GLB/schema-4 content; requires authority admission; default game world unchanged"});
     Ok((visual, profile, report))
 }
@@ -585,6 +600,80 @@ mod tests {
                 .as_f64()
                 .unwrap();
             assert!((centre - 0.01).abs() < 0.000001);
+        }
+    }
+    #[test]
+    fn greybox_vegetation_exports_standard_visuals_and_unchanged_collision() {
+        let mut zone = fixture();
+        let (before, profile, report) = geometry(&zone).unwrap();
+        zone.schema = 5;
+        zone.plants = vec![
+            theia_zone::vegetation::Plant {
+                id: 100,
+                name: "Tree".into(),
+                kind: theia_zone::vegetation::PlantKind::Tree,
+                position: [-4., 0., 6.],
+                yaw_degrees: 45.,
+                scale: 1.,
+            },
+            theia_zone::vegetation::Plant {
+                id: 101,
+                name: "Shrub".into(),
+                kind: theia_zone::vegetation::PlantKind::Shrub,
+                position: [4., 0., 6.],
+                yaw_degrees: 15.,
+                scale: 1.5,
+            },
+        ];
+        let (after, after_profile, after_report) = geometry(&zone).unwrap();
+        assert_ne!(before, after);
+        assert_eq!(profile["static_shapes"], after_profile["static_shapes"]);
+        assert_eq!(profile["triangles"], after_profile["triangles"]);
+        assert_eq!(after_report["greybox_plants"], 2);
+        assert!(
+            after_report["visual_triangles"].as_u64().unwrap()
+                > report["visual_triangles"].as_u64().unwrap()
+        );
+        let folder = Folder::new();
+        let destination = folder.0.join("plants");
+        publish(&zone, &destination, "theia.test.plants", 1).unwrap();
+        assert_eq!(
+            Zone::load(&destination.join("authoring.zone.json")).unwrap(),
+            zone
+        );
+        Terrain::load(&destination.join("terrain.json"))
+            .unwrap()
+            .verify_visual(&destination.join("terrain.glb"))
+            .unwrap();
+        // An ellipsoid's outward normal is its implicit-surface gradient.
+        // Inspect emitted GLB data rather than reusing the transform expression.
+        let mut glb = Glb::new();
+        glb.add(
+            "Ellipsoid",
+            vegetation::mesh(1),
+            Transform::from_scale(Vec3::new(2., 1., 3.)),
+            0,
+        )
+        .unwrap();
+        let read = |view: usize| -> Vec<Vec3> {
+            let start = glb.views[view]["byteOffset"].as_u64().unwrap() as usize;
+            let length = glb.views[view]["byteLength"].as_u64().unwrap() as usize;
+            glb.bytes[start..start + length]
+                .as_chunks::<12>()
+                .0
+                .iter()
+                .map(|v| {
+                    Vec3::new(
+                        f32::from_le_bytes(v[0..4].try_into().unwrap()),
+                        f32::from_le_bytes(v[4..8].try_into().unwrap()),
+                        f32::from_le_bytes(v[8..12].try_into().unwrap()),
+                    )
+                })
+                .collect()
+        };
+        for (position, normal) in read(0).iter().zip(read(1)) {
+            let gradient = Vec3::new(position.x / 4., position.y, position.z / 9.).normalize();
+            assert!(normal.dot(gradient) > 0.99999);
         }
     }
     #[test]

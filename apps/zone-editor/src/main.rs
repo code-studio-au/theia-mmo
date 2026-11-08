@@ -6,6 +6,7 @@ mod markers;
 mod paths;
 mod playtest;
 mod terrain;
+mod vegetation;
 mod viewport;
 use bevy::picking::hover::Hovered;
 use bevy::{
@@ -36,6 +37,13 @@ struct Session {
     stroke: Option<terrain::Stroke>,
     path_mode: bool,
     marker_mode: bool,
+    vegetation_mode: bool,
+    plant_selected: Option<u64>,
+    plant_palette: Option<theia_zone::vegetation::PlantKind>,
+    plant_scatter: bool,
+    scatter_radius: f64,
+    scatter_count: u32,
+    plant_point: Option<[f64; 3]>,
     marker_selected: Option<u64>,
     marker_palette: Option<theia_zone::markers::MarkerKind>,
     path_selected: Option<u64>,
@@ -86,6 +94,15 @@ impl Session {
         {
             self.marker_selected = None;
         }
+        if !self
+            .editor
+            .zone()
+            .plants
+            .iter()
+            .any(|p| Some(p.id) == self.plant_selected)
+        {
+            self.plant_selected = None;
+        }
         self.next_id = self
             .next_id
             .max(self.editor.zone().next_id().unwrap_or(u64::MAX));
@@ -122,6 +139,10 @@ enum Action {
     TerrainToggle,
     Brush(terrain::Tool),
     Radius(i8),
+    SelectPlant,
+    Plant(theia_zone::vegetation::PlantKind, bool),
+    NextPlant,
+    DeletePlant,
     SelectMarker,
     PlaceMarker(theia_zone::markers::MarkerKind),
     NextMarker,
@@ -177,7 +198,7 @@ fn run() -> Result<(), String> {
     if options.headless {
         println!(
             "{}",
-            serde_json::json!({"revision":editor.revision(),"objects":editor.zone().objects.len(),"paths":editor.zone().paths.len(),"markers":editor.zone().markers.len(),"history":editor.history(),"valid":true})
+            serde_json::json!({"revision":editor.revision(),"objects":editor.zone().objects.len(),"paths":editor.zone().paths.len(),"markers":editor.zone().markers.len(),"plants":editor.zone().plants.len(),"history":editor.history(),"valid":true})
         );
         return Ok(());
     }
@@ -212,6 +233,13 @@ fn run() -> Result<(), String> {
         stroke: None,
         path_mode: false,
         marker_mode: false,
+        vegetation_mode: false,
+        plant_selected: None,
+        plant_palette: None,
+        plant_scatter: false,
+        scatter_radius: 8.,
+        scatter_count: 8,
+        plant_point: None,
         marker_selected: None,
         marker_palette: None,
         path_selected: None,
@@ -244,6 +272,7 @@ fn run() -> Result<(), String> {
             terrain::setup,
             paths::setup,
             markers::setup,
+            vegetation::setup,
             setup_ui,
         ),
     )
@@ -253,6 +282,7 @@ fn run() -> Result<(), String> {
             agent::poll,
             keyboard,
             camera_controls,
+            vegetation::pointer,
             markers::pointer,
             paths::pointer,
             terrain::pointer,
@@ -262,6 +292,7 @@ fn run() -> Result<(), String> {
             viewport::sync,
             paths::sync,
             markers::sync,
+            vegetation::sync,
             present,
             viewport::capture,
         )
@@ -313,7 +344,7 @@ fn setup_ui(mut commands: Commands) {
         BackgroundColor(Color::srgb(0.035, 0.05, 0.075))))
         .with_children(|panel| {
             panel.spawn(text("THEIA / ZONE STUDIO", 22.));
-            panel.spawn(text("F1 Objects | F2 Terrain\nF3 Guides | F4 Markers", 12.));
+            panel.spawn(text("F1 Objects | F2 Terrain\nF3 Guides | F4 Markers | F6 Plants", 12.));
             for (index,(action, title)) in object_actions().into_iter().enumerate() {
                 panel.spawn((PaletteSlot(index), action, Button, ActivateOnPress, Hovered::default(), Node { min_height: px(26), padding: UiRect::all(px(4)), ..default() },
                     BackgroundColor(Color::srgb(0.10, 0.16, 0.22)))).with_children(|button| { button.spawn((PaletteLabel,text(title, 15.))); });
@@ -386,6 +417,10 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
         Action::Select => {
             session.palette = None;
             session.marker_palette = None;
+            session.plant_palette = None;
+        }
+        Action::SelectPlant | Action::Plant(_, _) | Action::NextPlant | Action::DeletePlant => {
+            vegetation::perform(action, session)
         }
         Action::SelectMarker
         | Action::PlaceMarker(_)
@@ -396,6 +431,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
             session.terrain_mode = false;
             session.path_mode = false;
             session.marker_mode = false;
+            session.vegetation_mode = false;
             session.palette = Some(primitive);
             session.status = "Click the ground to place".into();
         }
@@ -428,6 +464,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
                     session.selected = None;
                     session.path_selected = None;
                     session.marker_selected = None;
+                    session.plant_selected = None;
                     session.reconcile();
                     "Loaded zone (undo restores prior document)".into()
                 }
@@ -500,12 +537,16 @@ fn keyboard(
     if (keys.just_pressed(KeyCode::F1)
         || keys.just_pressed(KeyCode::F2)
         || keys.just_pressed(KeyCode::F3)
-        || keys.just_pressed(KeyCode::F4))
+        || keys.just_pressed(KeyCode::F4)
+        || keys.just_pressed(KeyCode::F6))
         && session.play.is_none()
     {
         session.terrain_mode = keys.just_pressed(KeyCode::F2);
         session.path_mode = keys.just_pressed(KeyCode::F3);
         session.marker_mode = keys.just_pressed(KeyCode::F4);
+        session.vegetation_mode = keys.just_pressed(KeyCode::F6);
+        session.plant_selected = None;
+        session.plant_palette = None;
         session.marker_selected = None;
         session.marker_palette = None;
         session.path_draft = None;
@@ -514,7 +555,9 @@ fn keyboard(
         session.drag = None;
         session.palette = None;
         session.selected = None;
-        session.status = if session.marker_mode {
+        session.status = if session.vegetation_mode {
+            "Vegetation tools - place or scatter tree/shrub proxies".into()
+        } else if session.marker_mode {
             "Marker tools - NPC/quest authoring annotations".into()
         } else if session.path_mode {
             "Guide tools - choose a road or stream, then add ground points".into()
@@ -559,7 +602,9 @@ fn keyboard(
     } else if keys.just_pressed(KeyCode::KeyG) {
         Some(Action::Snap)
     } else if keys.just_pressed(KeyCode::Delete) {
-        Some(if session.marker_mode {
+        Some(if session.vegetation_mode {
+            Action::DeletePlant
+        } else if session.marker_mode {
             Action::DeleteMarker
         } else if session.path_mode {
             Action::DeletePath
@@ -571,6 +616,10 @@ fn keyboard(
     };
     if let Some(action) = action {
         perform(action, &mut session, &mut view);
+        return;
+    }
+    if session.vegetation_mode {
+        vegetation::keyboard(&keys, &mut session);
         return;
     }
     if session.marker_mode {
@@ -708,7 +757,9 @@ fn present(
             session.editor.zone().objects.len(),
             session.editor.history(),
             session.snap,
-            if session.marker_mode {
+            if session.vegetation_mode {
+                vegetation::summary(&session)
+            } else if session.marker_mode {
                 markers::summary(&session)
             } else if session.path_mode {
                 paths::summary(&session)
