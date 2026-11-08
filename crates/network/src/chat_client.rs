@@ -78,6 +78,43 @@ impl Inbox {
         self.reply.as_ref()
     }
 }
+/// Render-independent client view published by the real Renet worker.
+#[derive(Clone, Debug)]
+pub struct View {
+    pub inbox: std::sync::Arc<Inbox>,
+    pub submitted: u64,
+    pub pending: bool,
+    pub timed_out: bool,
+    pub exhausted: bool,
+}
+#[derive(Clone, Debug)]
+pub struct Compose {
+    pub channel: theia_core::chat::Channel,
+    pub text: theia_core::chat::Text,
+}
+/// Explicit opt-in mode. The source is the complete gameplay identity before
+/// the chat suffix (including Classic movement if enabled).
+pub struct Client {
+    pub(crate) source_world: [u8; 32],
+    pub(crate) area: theia_core::chat::Area,
+    pub(crate) outgoing: tokio::sync::mpsc::Receiver<Compose>,
+}
+impl Client {
+    pub fn new(
+        source_world: [u8; 32],
+        area: theia_core::chat::Area,
+        outgoing: tokio::sync::mpsc::Receiver<Compose>,
+    ) -> Result<Self> {
+        if source_world == [0; 32] || outgoing.max_capacity() > 4 {
+            return Err("Invalid chat client source/queue capacity".into());
+        }
+        Ok(Self {
+            source_world,
+            area,
+            outgoing,
+        })
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;

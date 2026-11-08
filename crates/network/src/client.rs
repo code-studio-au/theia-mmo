@@ -7,6 +7,7 @@ use tokio::{sync::watch, time::MissedTickBehavior};
 
 #[derive(Clone, Debug, Default)]
 pub struct State {
+    pub chat: Option<crate::chat_client::View>,
     pub player_identity: Option<crate::player_identity_wire::State>,
     pub public_avatar_life: Option<crate::avatar_life_wire::ClientState>,
     pub public_creature_attack: Option<crate::creature_attack_wire::ClientState>,
@@ -111,6 +112,10 @@ impl State {
 /// Observed Renet diagnostics; byte rates exclude UDP/netcode overhead.
 #[derive(Clone, Debug, Default, serde::Serialize)]
 pub struct TransportStats {
+    pub chat_requests_sent: u64,
+    pub chat_deliveries_received: u64,
+    pub chat_replies_received: u64,
+    pub chat_timeouts: u64,
     pub avatar_life_states_received: u64,
     pub avatar_life_stale_states: u64,
     pub avatar_life_duplicate_states: u64,

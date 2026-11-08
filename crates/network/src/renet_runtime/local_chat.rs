@@ -186,3 +186,171 @@ impl Bridge {
 }
 #[cfg(test)]
 mod tests;
+
+/// One outstanding chat submission, independent of gameplay progress/transport.
+/// A delayed reply times out locally without disconnecting or pausing the world.
+pub(super) struct Driver {
+    world: [u8; 32],
+    client: crate::chat_client::Client,
+    view: Option<crate::chat_client::View>,
+    pending: Option<(u64, Instant)>,
+}
+impl Driver {
+    pub(super) fn new(client: crate::chat_client::Client, expected: [u8; 32]) -> Result<Self> {
+        if crate::chat::profile_identity(client.source_world, client.area) != expected {
+            return Err("Unbound chat transport profile".into());
+        }
+        Ok(Self {
+            world: expected,
+            client,
+            view: None,
+            pending: None,
+        })
+    }
+    fn discard_queued(&mut self) {
+        for _ in 0..4 {
+            if self.client.outgoing.try_recv().is_err() {
+                break;
+            }
+        }
+    }
+    pub(super) fn admit(&mut self, welcome: &Welcome, state: &watch::Sender<State>) -> Result<()> {
+        if welcome.world != self.world {
+            return Err("Chat admission changed world profile".into());
+        }
+        let owner = EntityKey {
+            epoch: theia_core::identity::WorldEpoch::new(welcome.epoch)
+                .ok_or("Invalid chat admission epoch")?,
+            entity: theia_core::identity::EntityId::new(welcome.id)
+                .ok_or("Invalid chat admission actor")?,
+        };
+        let inbox = crate::chat_client::Inbox::new(owner, welcome.world)?;
+        self.view = Some(crate::chat_client::View {
+            inbox: std::sync::Arc::new(inbox),
+            submitted: 0,
+            pending: false,
+            timed_out: false,
+            exhausted: false,
+        });
+        self.pending = None;
+        self.discard_queued();
+        state.send_modify(|s| s.chat = self.view());
+        Ok(())
+    }
+    pub(super) fn view(&self) -> Option<crate::chat_client::View> {
+        self.view.clone()
+    }
+    pub(super) fn receive(
+        &mut self,
+        bytes: &[u8],
+        state: &watch::Sender<State>,
+        stats: &mut TransportStats,
+    ) -> Result<()> {
+        let view = self
+            .view
+            .as_mut()
+            .ok_or("Chat observation before admission")?;
+        if bytes.starts_with(crate::chat_wire::DELIVERY_TAG) {
+            let message = crate::chat_wire::Delivery::decode(bytes)?;
+            std::sync::Arc::make_mut(&mut view.inbox).receive(message)?;
+            stats.chat_deliveries_received = stats.chat_deliveries_received.saturating_add(1);
+        } else {
+            let reply = crate::chat_wire::Reply::decode(bytes)?;
+            if reply.sequence > view.submitted {
+                return Err("Unsolicited chat submission reply".into());
+            }
+            let sequence = reply.sequence;
+            std::sync::Arc::make_mut(&mut view.inbox).receive_reply(reply)?;
+            if self.pending.is_some_and(|(pending, _)| pending == sequence) {
+                self.pending = None;
+                view.pending = false;
+                view.timed_out = false;
+            }
+            stats.chat_replies_received = stats.chat_replies_received.saturating_add(1);
+        }
+        state.send_modify(|s| {
+            s.chat = self.view();
+            s.transport = Some(stats.clone());
+        });
+        Ok(())
+    }
+    pub(super) fn tick(
+        &mut self,
+        transport: &mut RenetClient,
+        current: Instant,
+        state: &watch::Sender<State>,
+        stats: &mut TransportStats,
+    ) -> Result<()> {
+        if self.pending.is_some_and(|(_, sent)| {
+            current.saturating_duration_since(sent) >= Duration::from_secs(5)
+        }) {
+            self.pending = None;
+            if let Some(view) = &mut self.view {
+                view.pending = false;
+                view.timed_out = true;
+            }
+            self.discard_queued();
+            stats.chat_timeouts = stats.chat_timeouts.saturating_add(1);
+            state.send_modify(|s| {
+                s.chat = self.view();
+                s.transport = Some(stats.clone());
+            });
+            return Ok(());
+        }
+        if self.pending.is_some()
+            || !transport.is_connected()
+            || !transport.can_send_message(
+                EVENT_CHANNEL,
+                crate::chat_wire::MAX_REQUEST_BYTES + GAMEPLAY_RESERVE_BYTES,
+            )
+        {
+            return Ok(());
+        }
+        let Some(view) = self.view.as_mut() else {
+            return Ok(());
+        };
+        if view.exhausted {
+            self.discard_queued();
+            return Ok(());
+        }
+        let Ok(compose) = self.client.outgoing.try_recv() else {
+            return Ok(());
+        };
+        let Some(sequence) = view.submitted.checked_add(1) else {
+            view.exhausted = true;
+            self.discard_queued();
+            state.send_modify(|s| s.chat = self.view());
+            return Ok(());
+        };
+        let owner = state
+            .borrow()
+            .welcome
+            .as_ref()
+            .map(|w| w.epoch)
+            .and_then(theia_core::identity::WorldEpoch::new)
+            .ok_or("Chat without admission")?;
+        let request = crate::chat_wire::Request {
+            epoch: owner,
+            intent: theia_core::chat::Request {
+                sequence,
+                channel: compose.channel,
+                text: compose.text,
+            },
+        };
+        transport.send_message(EVENT_CHANNEL, request.encode()?);
+        view.submitted = sequence;
+        view.pending = true;
+        view.timed_out = false;
+        self.pending = Some((sequence, current));
+        stats.chat_requests_sent = stats.chat_requests_sent.saturating_add(1);
+        state.send_modify(|s| {
+            s.chat = self.view();
+            s.transport = Some(stats.clone());
+        });
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+#[path = "local_chat/worker_tests.rs"]
+mod worker_tests;

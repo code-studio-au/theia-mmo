@@ -1688,6 +1688,7 @@ pub async fn run_client_with_chunks(
         shutdown,
         expected_world,
         ClientMode {
+            chat: None,
             avatar_life: None,
             public_attacks: None,
             classic_source: None,
@@ -1721,6 +1722,7 @@ pub async fn run_client_predicted(
         shutdown,
         expected_world,
         ClientMode {
+            chat: None,
             avatar_life: None,
             public_attacks: None,
             classic_source: None,
@@ -1751,6 +1753,7 @@ pub struct TargetingClient {
 }
 #[derive(Default)]
 struct ClientMode {
+    chat: Option<crate::chat_client::Client>,
     avatar_life: Option<avatar_life::Client>,
     public_attacks: Option<creature_attacks::Client>,
     classic_source: Option<[u8; 32]>,
@@ -1786,6 +1789,7 @@ pub async fn run_client_targeted(
         shutdown,
         expected_world,
         ClientMode {
+            chat: None,
             avatar_life: None,
             public_attacks: None,
             classic_source: None,
@@ -1858,6 +1862,7 @@ pub async fn run_client_combat(
         shutdown,
         expected_world,
         ClientMode {
+            chat: None,
             avatar_life: None,
             public_attacks: None,
             classic_source: None,
@@ -1890,6 +1895,7 @@ pub struct DodgeClient {
     pub profile: std::sync::Arc<crate::dodging::Profile>,
 }
 pub struct GameplayClient {
+    pub chat: Option<crate::chat_client::Client>,
     pub avatar_life: Option<avatar_life::Client>,
     pub public_attacks: Option<creature_attacks::Client>,
     pub classic_source: Option<[u8; 32]>,
@@ -1925,6 +1931,7 @@ pub async fn run_client_gameplay(
         shutdown,
         expected_world,
         ClientMode {
+            chat: mode.chat,
             avatar_life: mode.avatar_life,
             public_attacks: mode.public_attacks,
             classic_source: mode.classic_source,
@@ -1955,6 +1962,7 @@ async fn run_client_inner(
     mode: ClientMode,
 ) -> Result<()> {
     let ClientMode {
+        chat,
         avatar_life,
         public_attacks,
         classic_source,
@@ -1972,6 +1980,10 @@ async fn run_client_inner(
         quest,
         statuses,
     } = mode;
+    let gameplay_world = chat.as_ref().map_or(expected_world, |c| c.source_world);
+    let mut chat = chat
+        .map(|client| local_chat::Driver::new(client, expected_world))
+        .transpose()?;
     if let Some(items) = &inventory {
         items
             .profile
@@ -1986,14 +1998,14 @@ async fn run_client_inner(
         && (dodge.is_some()
             || commands.is_none()
             || ready.is_none()
-            || expected_world != crate::classic::profile_identity(source))
+            || gameplay_world != crate::classic::profile_identity(source))
     {
         return Err("Unbound classic transport profile".into());
     }
     if let Some(mode) = &dodge
         && (commands.is_none()
             || ready.is_none()
-            || expected_world != crate::dodging::profile_identity(mode.source_world, &mode.profile))
+            || gameplay_world != crate::dodging::profile_identity(mode.source_world, &mode.profile))
     {
         return Err("Unbound dodge transport profile".into());
     }
@@ -2215,8 +2227,14 @@ async fn run_client_inner(
                         if commands.is_some() && !welcome.terrain_stream {return Err("Prediction requires streamed terrain".into());}
                         id=Some(welcome.id); last_origin=Some(welcome.origin);
                         admission=Some(welcome.clone());
-                        state.send_replace(State {id,welcome:Some(welcome),..State::default()});
+                        state.send_replace(State {id,welcome:Some(welcome.clone()),..State::default()});
+                        if let Some(chat)=&mut chat {chat.admit(&welcome,&state)?;}
                     } else {
+                        if bytes.starts_with(crate::chat_wire::DELIVERY_TAG) || bytes.starts_with(crate::chat_wire::REPLY_TAG) {
+                            let Some(chat)=&mut chat else {return Err("Unexpected chat observation".into());};
+                            chat.receive(&bytes,&state,&mut stats)?;
+                            continue;
+                        }
                         if crate::player_life_wire::is_any_state(&bytes) {
                             let mode=player_life.as_ref().ok_or("Unexpected player-life observation")?;
                             let welcome=admission.as_ref().unwrap();
@@ -2456,7 +2474,7 @@ async fn run_client_inner(
                         stats.rtt_ms = info.rtt * 1000.; stats.packet_loss = info.packet_loss;
                         stats.bytes_sent_per_second = info.bytes_sent_per_second;
                         stats.bytes_received_per_second = info.bytes_received_per_second;
-                        let mut update=State { player_identity:identity_state.clone(), public_avatar_life:avatar_life_state.clone(), public_creature_attack:public_attack_state.clone(), quest_journal:None, quest_journal_reply:None, quest_journal_pending:false, player_life:player_life_state.clone(), quest_lifecycle:None, quest_lifecycle_reply:None, quest_lifecycle_pending:false, dialogue:None, guide:None, dialogue_reply:None, dialogue_pending:false, quest:quest_state.clone(), progression:progression_state.clone(), rewards:inventory.as_ref().and_then(|m|m.rewards.clone()), appearance:inventory.as_ref().and_then(|m|m.appearance.clone()), statuses:status_state.clone(), inventory:inventory.as_ref().and_then(|m|m.view.clone()), inventory_pending:inventory.as_ref().is_some_and(|m|m.pending()), approved_document:inventory.as_ref().and_then(|m|m.approved_document), document_reply:inventory.as_ref().and_then(|m|m.document_reply), combat:combat_state.clone(), autoattack:melee_state.clone(), targeting:targeting.clone(), id, snapshot: Some(snapshot), error: None, transport: Some(stats.clone()), welcome:admission.clone(), wire_rebases:rebases, chunk_report:last_report.clone(), chunk_ack:last_ack.clone(),chunk_offer:last_offer.clone(),correction,correction_received,correction_ready:correction_ready.clone() };
+                        let mut update=State { chat:chat.as_ref().and_then(|c|c.view()), player_identity:identity_state.clone(), public_avatar_life:avatar_life_state.clone(), public_creature_attack:public_attack_state.clone(), quest_journal:None, quest_journal_reply:None, quest_journal_pending:false, player_life:player_life_state.clone(), quest_lifecycle:None, quest_lifecycle_reply:None, quest_lifecycle_pending:false, dialogue:None, guide:None, dialogue_reply:None, dialogue_pending:false, quest:quest_state.clone(), progression:progression_state.clone(), rewards:inventory.as_ref().and_then(|m|m.rewards.clone()), appearance:inventory.as_ref().and_then(|m|m.appearance.clone()), statuses:status_state.clone(), inventory:inventory.as_ref().and_then(|m|m.view.clone()), inventory_pending:inventory.as_ref().is_some_and(|m|m.pending()), approved_document:inventory.as_ref().and_then(|m|m.approved_document), document_reply:inventory.as_ref().and_then(|m|m.document_reply), combat:combat_state.clone(), autoattack:melee_state.clone(), targeting:targeting.clone(), id, snapshot: Some(snapshot), error: None, transport: Some(stats.clone()), welcome:admission.clone(), wire_rebases:rebases, chunk_report:last_report.clone(), chunk_ack:last_ack.clone(),chunk_offer:last_offer.clone(),correction,correction_received,correction_ready:correction_ready.clone() };
                         if let Some(mode)=&journal {mode.copy_to(&mut update);}
                         if let Some(mode)=&lifecycle {mode.copy_to(&mut update);}
                         if let Some(mode)=&dialogue {mode.copy_to(&mut update);}
@@ -2557,6 +2575,7 @@ async fn run_client_inner(
                         });
                     }
                 }
+                if let Some(chat)=&mut chat {chat.tick(&mut client,current,&state,&mut stats)?;}
                 stats.max_movement_queue_bytes = stats.max_movement_queue_bytes.max(CHANNEL_MEMORY_BYTES - client.channel_available_memory(MOVEMENT_CHANNEL));
                 stats.max_event_queue_bytes = stats.max_event_queue_bytes.max(CHANNEL_MEMORY_BYTES - client.channel_available_memory(EVENT_CHANNEL));
                 transport.send_packets(&mut client)?;

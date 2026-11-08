@@ -1,3 +1,15 @@
+Safe stop after chat client-worker slice, 8 November 2026 (P4-12 / P2-14 / P5-13):
+The user requested stopping after the current slice. Finished the opt-in real
+Renet worker's bounded chat producer/receipt view, reply pacing and local timeout
+without gameplay disconnect. 747 full network cases pass (10 explicit skips),
+with18 final focused chat checks,231 ordinary client cases and strict Clippy/
+formatting. Actual baseline/Classic encrypted worker fixtures pass. Normal chat
+activation, composer and speech bubbles remain pending; no new UI work begins.
+The action bar is separately native-qualified at three sizes plus SQL rejoin.
+Local commits only; no push. Desktop permission remains available as needed on
+future authorized work; it does not override this stop.
+[Scope and resume boundary](LOCAL_CHAT.md#real-client-worker-integration--8-november-2026).
+
 Chat inbox prerequisite, 8 November 2026 (P4-12 / P2-14 / P5-13):
 A64-message client inbox and checked world delivery serial bound history/replay
 state across actor churn. Fourteen focused tests pass, including actual encrypted

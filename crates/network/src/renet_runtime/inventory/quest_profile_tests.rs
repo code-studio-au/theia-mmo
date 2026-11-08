@@ -89,6 +89,7 @@ async fn startup_rejection(
         shutdown,
         [1; 32],
         super::super::GameplayClient {
+            chat: None,
             avatar_life: None,
             public_attacks: None,
             classic_source: None,

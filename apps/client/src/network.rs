@@ -674,6 +674,7 @@ impl Network {
                             shutdown,
                             expected_world,
                             theia_network::renet_runtime::GameplayClient {
+                                chat: None,
                                 avatar_life: public_avatar_profile.map(|profile| {
                                     theia_network::renet_runtime::avatar_life::Client {
                                         profile,

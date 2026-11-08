@@ -209,6 +209,8 @@ impl Raw {
         while let Some(bytes) = self.client.receive_message(MOVEMENT_CHANNEL) {
             if Snapshot::decode(&bytes).is_ok() {
                 self.snapshots += 1;
+            } else if bytes.starts_with(crate::classic_wire::CORRECTION_TAG) {
+                crate::classic_wire::decode_correction(&bytes).unwrap();
             } else {
                 crate::prediction_wire::Corrected::decode(&bytes).unwrap();
             }
@@ -478,4 +480,165 @@ fn chat_replies_and_deliveries_defer_while_gameplay_queue_reserve_remains_availa
     assert_eq!(stats.replies_sent, 1);
     assert_eq!(stats.sent, 1);
     assert_eq!(peers.len(), 1);
+}
+
+async fn worker_fixture(classic: bool) {
+    let mut world = World::with_procedural([8060., 8000.], 1.).unwrap();
+    world.enable_prediction().unwrap();
+    let classic_source = world.identity();
+    if classic {
+        world.enable_classic().unwrap();
+    }
+    let source = world.identity();
+    let area = Area::new(1).unwrap();
+    world.enable_local_chat(area).unwrap();
+    let identity = world.identity();
+    let patch = world
+        .procedural()
+        .unwrap()
+        .patch(GlobalPosition::new([8060., 0., 8000.]).unwrap())
+        .unwrap();
+    let positions = std::array::from_fn(|index| {
+        let x = 8060. + index as f64 * 3.;
+        let p = patch.try_spawn(x, 8000.).unwrap().metres();
+        GlobalPosition::new([p[0], p[1] + f64::from(crate::world::PAWN_Y), p[2]]).unwrap()
+    });
+    let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+    let address = socket.local_addr().unwrap();
+    let (transport, issuer) = secure_issuer(socket, vec![address]).unwrap();
+    let tickets: Vec<_> = (1..=2)
+        .map(|id| {
+            let mut data = [0; 256];
+            data[0] = id as u8;
+            issuer.issue(id, Some(&data), 30).unwrap()
+        })
+        .collect();
+    let mut peers = [Raw::new(address, tickets[1].bytes(), identity)];
+    let (server_stop, shutdown) = watch::channel(false);
+    let server_stop = Stop(server_stop);
+    let server = tokio::spawn(run_server_with_admissions(
+        transport,
+        shutdown,
+        world,
+        Arc::new(Policy {
+            used: std::sync::Mutex::new([false; 3]),
+            positions,
+        }),
+    ));
+    let (_input, inputs) = watch::channel(crate::wire::Intent::default());
+    let (_ready, ready) = watch::channel(Some(
+        crate::procedural::neighbours(theia_core::coordinates::ChunkId { x: 62, z: 62 }, 1)
+            .into_iter()
+            .collect(),
+    ));
+    let (_commands, commands) = mpsc::channel(8);
+    let (publish, state) = watch::channel(State::default());
+    let (submit, outgoing) = mpsc::channel(4);
+    let (stop, shutdown) = watch::channel(false);
+    let stop = Stop(stop);
+    let ticket = tickets[0].bytes().to_vec();
+    let task = tokio::spawn(async move {
+        run_client_gameplay(
+            address,
+            &ticket,
+            inputs,
+            publish,
+            shutdown,
+            identity,
+            GameplayClient {
+                chat: Some(crate::chat_client::Client::new(source, area, outgoing).unwrap()),
+                avatar_life: None,
+                public_attacks: None,
+                classic_source: classic.then_some(classic_source),
+                dodge: None,
+                player_life: None,
+                journal: None,
+                lifecycle: None,
+                dialogue: None,
+                ready,
+                commands: Some(commands),
+                choices: None,
+                combat: None,
+                quest: None,
+                progression: None,
+                inventory: None,
+                statuses: None,
+            },
+        )
+        .await
+    });
+    until(&mut peers, |p| {
+        let s = state.borrow();
+        assert!(s.error.is_none());
+        p[0].welcome.is_some() && s.snapshot.is_some() && s.chunk_ack.is_some() && s.chat.is_some()
+    })
+    .await;
+    submit
+        .try_send(crate::chat_client::Compose {
+            channel: Channel::Say,
+            text: Text::parse("Hello nearby").unwrap(),
+        })
+        .unwrap();
+    until(&mut peers, |p| {
+        let s = state.borrow();
+        s.chat
+            .as_ref()
+            .is_some_and(|c| c.submitted == 1 && !c.pending && c.inbox.history().len() == 1)
+            && p[0].messages.len() == 1
+    })
+    .await;
+    peers[0].send(1, Channel::Say);
+    until(&mut peers, |p| {
+        state.borrow().chat.as_ref().unwrap().inbox.history().len() == 2 && p[0].messages.len() == 2
+    })
+    .await;
+    for channel in [Channel::Say, Channel::Area, Channel::Say] {
+        submit
+            .try_send(crate::chat_client::Compose {
+                channel,
+                text: Text::parse("Another nearby message").unwrap(),
+            })
+            .unwrap();
+    }
+    until(&mut peers, |p| {
+        let s = state.borrow();
+        s.chat.as_ref().is_some_and(|c| {
+            c.submitted == 4 && !c.pending && c.inbox.reply().is_some_and(|r| r.sequence == 4)
+        }) && p[0].messages.len() == 4
+    })
+    .await;
+    let before = state.borrow().snapshot.as_ref().unwrap().tick;
+    until(&mut peers, |_| {
+        state.borrow().snapshot.as_ref().unwrap().tick > before + 2
+    })
+    .await;
+    let s = state.borrow().clone();
+    let chat = s.chat.as_ref().unwrap();
+    assert_eq!(chat.inbox.history().len(), 4);
+    assert_eq!(
+        chat.inbox.reply().unwrap().outcome,
+        crate::chat_wire::Outcome::RateLimited
+    );
+    assert!(!chat.pending && !chat.timed_out);
+    assert!(s.error.is_none());
+    let stats = s.transport.as_ref().unwrap();
+    assert_eq!(stats.chat_requests_sent, 4);
+    assert_eq!(stats.chat_replies_received, 4);
+    assert_eq!(stats.chat_deliveries_received, 4);
+    stop.0.send_replace(true);
+    task.await.unwrap().unwrap();
+    server_stop.0.send_replace(true);
+    let stats = server.await.unwrap().unwrap();
+    assert_eq!(stats.local_chat.accepted, 4);
+    assert_eq!(stats.local_chat.refused, 1);
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn actual_client_worker_preserves_chat_through_snapshots_and_paces_submissions_until_reply() {
+    worker_fixture(false).await;
+}
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn actual_classic_client_worker_binds_chat_after_movement_and_preserves_chat_through_snapshots()
+ {
+    worker_fixture(true).await;
 }

@@ -121,6 +121,7 @@ impl PeerClient {
                 shutdown,
                 world,
                 net::GameplayClient {
+                    chat: None,
                     avatar_life: None,
                     public_attacks: None,
                     classic_source: None,

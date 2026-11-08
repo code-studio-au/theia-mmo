@@ -216,3 +216,52 @@ The normal Renet client worker and gameplay State do not use it yet; no composer
 chat window, native chat input or bubbles are claimed. Next wire the bounded
 producer/receipt mode into the real client worker with timeout/reply behavior
 that cannot disconnect or pause gameplay just because chat is delayed.
+
+
+## Real client-worker integration — 8 November 2026
+
+`GameplayClient.chat` now explicitly opts the real Renet worker into the source
+world/area profile, bounded composition queue and client inbox. Existing callers,
+including the normal application and server-side fixture clients, explicitly
+retain `None`. Admission validates the combined world identity; Classic movement
+validation uses the complete gameplay identity before the chat suffix. Unknown
+chat observations remain invalid for clients that did not opt in.
+
+The worker stamps request sequences and permits one outstanding request. Its
+maximum-four input queue and reliable-capacity reserve bound queued work. It
+discards queued text before admission and after a five-second local reply timeout.
+Timeout sets a local view flag without disconnecting, pausing or mutating gameplay.
+A late reply cannot clear a newer pending request; sequence exhaustion disables
+further chat submissions without wrapping or disconnecting. An explicit fresh
+submission can follow timeout; text is never silently resubmitted.
+
+Validated deliveries/private replies publish a shared immutable inbox through
+`client::State.chat`. Movement snapshots preserve this view. Transport diagnostics
+count requests, deliveries, replies and timeouts without body logging. Rendering,
+keyboard handling and the normal executable's profile selection remain unchanged;
+no chat controls are exposed yet.
+
+Eighteen focused checks pass in `build/local-chat-20261108/worker-v3.log`. Actual
+encrypted production client-worker fixtures exercise both baseline predicted and
+Classic movement: nearby peer traffic, Say/Area sending, serialized submissions,
+private rate-limit replies and inbox survival across subsequent snapshots. The
+server uses synthetic authorized named leases. Deterministic driver checks cover
+pre-admission input discard, queue pressure, timeout, stale queued work, late
+reply isolation, world binding and exhaustion without gameplay disconnect.
+Full client regression passes231 ordinary cases with one explicit licensed-art
+skip (`worker-client-v1.log`); strict workspace/all-target denied-warning Clippy
+passes (`worker-clippy-v2.log`), as does formatting (`worker-fmt-v2.log`). Full
+network regression is recorded separately with its exact final counts.
+
+The user asked to stop after this slice. The safe boundary is this client-worker
+checkpoint with local commits only. Next work, after an explicit resume: normal
+launcher/profile opt-in, focused composer with gameplay-key consumption, bounded
+chat HUD/history controls and Say speech bubbles with visibility/lifetime caps,
+then normal-account/SQL and native qualification. Those parts are not implemented
+by the worker tests or by the earlier native action-bar proof.
+
+Final full network regression: 747 passing cases, 10 explicit skips across
+70 result groups in `worker-network-v1.log`. Its library run contains404
+cases; the final Classic-worker and extra queue/exhaustion additions are covered
+by the subsequent18-test `worker-v3.log`. No production behavior changed after
+that full run's source except formatting. All checks pass; changes are local.

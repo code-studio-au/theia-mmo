@@ -250,6 +250,7 @@ impl ClientPeer {
                 shutdown,
                 identity,
                 net::GameplayClient {
+                    chat: None,
                     avatar_life: None,
                     public_attacks: None,
                     classic_source: None,

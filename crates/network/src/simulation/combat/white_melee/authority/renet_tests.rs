@@ -291,6 +291,7 @@ impl Peer {
         });
         let client = tokio::spawn(async move {
             let result=net::run_client_gameplay(address,&token,inputs,publish.clone(),shutdown,session.identity,net::GameplayClient {
+                chat: None,
                 avatar_life: None,
                 public_attacks: None,
     journal: None,
@@ -619,6 +620,7 @@ async fn unbound_ordinary_context_or_weapon_catalog_is_refused_before_network_io
             shutdown,
             f.session.identity,
             net::GameplayClient {
+                chat: None,
                 avatar_life: None,
                 public_attacks: None,
                 journal: None,

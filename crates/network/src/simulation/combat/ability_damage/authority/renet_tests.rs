@@ -427,6 +427,7 @@ impl Peer {
         });
         let client = tokio::spawn(async move {
             let result=net::run_client_gameplay(address,&token,inputs,publish.clone(),shutdown,session.identity,net::GameplayClient {
+                chat: None,
                 avatar_life: avatar_mode,
                 public_attacks: public_mode,
     journal: journal_mode,
@@ -816,7 +817,7 @@ async fn unbound_ability_ordinary_or_changed_catalogue_is_refused_before_network
         } else {
             f.session.abilities.clone()
         };
-        let error=net::run_client_gameplay("127.0.0.1:1".parse().unwrap(),&[],input,state,shutdown,f.session.identity,net::GameplayClient{avatar_life:None,public_attacks:None,journal:None,classic_source:Some(f.session.source),dodge:None,player_life:None,lifecycle:None,dialogue:None,ready,commands:Some(commands),choices:None,combat:Some(net::CombatActions{catalog:catalogue,casts,events,melee:Some(net::MeleeActions{catalog:Arc::new(melee::Catalog::from_json(include_bytes!("../../../../../../../content/gameplay/development-melee-weapons.json")).unwrap()),physical:Some(f.session.physical.clone()),white,ability:Some(f.session.ability.clone()),choices})}),quest:None,progression:None,inventory:None,statuses:None}).await.unwrap_err();
+        let error=net::run_client_gameplay("127.0.0.1:1".parse().unwrap(),&[],input,state,shutdown,f.session.identity,net::GameplayClient{chat:None,avatar_life:None,public_attacks:None,journal:None,classic_source:Some(f.session.source),dodge:None,player_life:None,lifecycle:None,dialogue:None,ready,commands:Some(commands),choices:None,combat:Some(net::CombatActions{catalog:catalogue,casts,events,melee:Some(net::MeleeActions{catalog:Arc::new(melee::Catalog::from_json(include_bytes!("../../../../../../../content/gameplay/development-melee-weapons.json")).unwrap()),physical:Some(f.session.physical.clone()),white,ability:Some(f.session.ability.clone()),choices})}),quest:None,progression:None,inventory:None,statuses:None}).await.unwrap_err();
         assert!(
             error.to_string().contains("Unbound ability-damage"),
             "{error}"

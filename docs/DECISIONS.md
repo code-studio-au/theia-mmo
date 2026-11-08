@@ -1,3 +1,14 @@
+## 8 November 2026 — client chat waits independently of gameplay
+
+Explicitly bind the opt-in chat profile after the full gameplay/Classic identity.
+Publish bounded receipt state through shared immutable inbox views and preserve it
+across snapshots. Permit one outstanding request; a five-second local timeout
+discards queued text and marks the chat view without disconnecting gameplay.
+Only a matching reply clears pending state; late replies cannot clear newer work.
+Keep the normal client opt-out until the composer and native/account acceptance
+pass. Stop at this completed worker checkpoint per the latest user request.
+[Evidence](LOCAL_CHAT.md#real-client-worker-integration--8-november-2026).
+
 ## 8 November 2026 — world chat serial bounds long-lived client replay state
 
 Assign a checked monotonically increasing server delivery serial across speakers
