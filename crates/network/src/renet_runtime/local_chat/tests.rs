@@ -128,6 +128,7 @@ struct Raw {
     confirmed: bool,
     welcome: Option<Welcome>,
     messages: Vec<crate::chat_wire::Delivery>,
+    replies: Vec<crate::chat_wire::Reply>,
     snapshots: usize,
     world: [u8; 32],
 }
@@ -145,6 +146,7 @@ impl Raw {
             confirmed: false,
             welcome: None,
             messages: Vec::new(),
+            replies: Vec::new(),
             snapshots: 0,
             world,
         }
@@ -170,6 +172,14 @@ impl Raw {
                     )
                     .unwrap();
                 self.messages.push(message);
+            } else if bytes.starts_with(crate::chat_wire::REPLY_TAG) {
+                let reply = crate::chat_wire::Reply::decode(&bytes).unwrap();
+                let owner = EntityKey {
+                    epoch: theia_core::identity::WorldEpoch::new(welcome.epoch).unwrap(),
+                    entity: theia_core::identity::EntityId::new(welcome.id).unwrap(),
+                };
+                reply.validate_context(owner, self.world).unwrap();
+                self.replies.push(reply);
             } else if bytes.starts_with(crate::player_identity_wire::STATE_TAG) {
                 crate::player_identity_wire::State::decode(&bytes).unwrap();
             } else {
@@ -291,6 +301,18 @@ async fn encrypted_named_chat_routes_local_and_area_with_replay_and_flood_refusa
     }
     stop.0.send_replace(true);
     let stats = server.await.unwrap().unwrap();
+    assert_eq!(peers[0].replies.len(), 4);
+    assert!(peers[1].replies.is_empty() && peers[2].replies.is_empty());
+    assert_eq!(
+        peers[0].replies[0].outcome,
+        crate::chat_wire::Outcome::Accepted
+    );
+    assert_eq!(
+        peers[0].replies[3].outcome,
+        crate::chat_wire::Outcome::RateLimited
+    );
+    assert_eq!(stats.local_chat.replies_sent, 4);
+    assert_eq!(stats.local_chat.replies_dropped, 1);
     assert_eq!(stats.local_chat.accepted, 3);
     assert_eq!(stats.local_chat.refused, 2);
     assert_eq!(stats.local_chat.queued, 7);
@@ -301,7 +323,7 @@ async fn encrypted_named_chat_routes_local_and_area_with_replay_and_flood_refusa
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn encrypted_disabled_malformed_and_forged_chat_uploads_fail_closed() {
-    for case in 0..3 {
+    for case in 0..4 {
         let mut world = World::with_procedural([8060., 8000.], 1.).unwrap();
         world.enable_prediction().unwrap();
         if case != 0 {
@@ -344,9 +366,12 @@ async fn encrypted_disabled_malformed_and_forged_chat_uploads_fail_closed() {
             1 => peers[0]
                 .client
                 .send_message(EVENT_CHANNEL, crate::chat_wire::REQUEST_TAG.as_slice()),
-            _ => peers[0]
+            2 => peers[0]
                 .client
                 .send_message(EVENT_CHANNEL, crate::chat_wire::DELIVERY_TAG.as_slice()),
+            _ => peers[0]
+                .client
+                .send_message(EVENT_CHANNEL, crate::chat_wire::REPLY_TAG.as_slice()),
         }
         peers[0]
             .transport
@@ -380,4 +405,47 @@ async fn encrypted_disabled_malformed_and_forged_chat_uploads_fail_closed() {
             _ => assert_eq!(stats.local_chat.forged_deliveries, 1),
         }
     }
+}
+
+#[test]
+fn chat_replies_and_deliveries_defer_while_gameplay_queue_reserve_remains_available() {
+    let mut world = world();
+    let mut server = RenetServer::new(connection_config());
+    server.add_connection(1);
+    let peer = admit_peer(
+        &mut world,
+        &mut server,
+        1,
+        None,
+        Some(Box::new(Lease {
+            live: Arc::new(AtomicBool::new(true)),
+            name: Some(CharacterName::parse("Arden").unwrap()),
+        })),
+        Instant::now(),
+    )
+    .unwrap()
+    .unwrap();
+    let peers = BTreeMap::from([(1, peer)]);
+    world.step();
+    let mut bridge = Bridge::new(&world).unwrap().unwrap();
+    bridge.sync(&peers, &world).unwrap();
+    let mut stats = Stats::default();
+    bridge
+        .request(&peers[&1], &world, &bytes(&world, 1), &mut stats)
+        .unwrap();
+    while server.can_send_message(1, EVENT_CHANNEL, GAMEPLAY_RESERVE_BYTES + 64) {
+        server.send_message(1, EVENT_CHANNEL, vec![0; 64]);
+    }
+    assert!(server.can_send_message(1, EVENT_CHANNEL, 64));
+    bridge.flush(&mut server, &peers, &mut stats).unwrap();
+    assert_eq!(stats.replies_deferred, 1);
+    assert_eq!(stats.deferred, 1);
+    assert_eq!(stats.replies_sent, 0);
+    assert_eq!(stats.sent, 0);
+    let mut drained = RenetServer::new(connection_config());
+    drained.add_connection(1);
+    bridge.flush(&mut drained, &peers, &mut stats).unwrap();
+    assert_eq!(stats.replies_sent, 1);
+    assert_eq!(stats.sent, 1);
+    assert_eq!(peers.len(), 1);
 }

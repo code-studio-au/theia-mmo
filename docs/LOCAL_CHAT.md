@@ -146,3 +146,35 @@ Mute/block policy functions exist in the router, but no live moderation UI or
 persistent account-wide moderation/reconnect flood controls are implemented.
 Native drag work can resume after the user's renewed desktop permission; it does
 not constitute native chat qualification.
+
+
+## Private replies and gameplay queue reserve — 8 November 2026
+
+CR01 adds an exact69-byte private submission reply with admitted owner/world,
+request sequence, server tick and bounded outcome (accepted, unavailable,
+sequence/time refusal, muted, no area or rate limited). No body or public sender
+metadata is copied into the reply. The opt-in compatibility identity advances to
+candidate v2 and includes the reply tag; default worlds/protocol13 are unchanged.
+
+The owner loop keeps at most four pending replies per named peer, purges them
+with retirement/revocation and attempts one reply plus one delivery per peer per
+I/O pass after gameplay publishing. Overflow drops new replies with a counter;
+it does not widen queues or wait. Normal future UI must permit one outstanding
+submission and handle timeout/disconnect rather than assume reply delivery.
+Replies go only to their admitted sender. Uploading CR01/CD01 is invalid.
+
+Both reply and delivery capacity checks reserve4096 bytes (half the shared8192
+reliable queue) against chat use. Publishing order alone would allow chat to fill
+space needed by gameplay on the next simulation step. The reserve supplements
+existing critical channels; it is not a guarantee against gameplay's own bounded
+queue exhaustion. A synthetic Renet queue-pressure/recovery check proves chat
+defers while a gameplay frame can still enqueue and later resumes without peer
+retirement. The server does not log text or reply bodies.
+
+Ten focused policy/codec/runtime tests pass in `replies-v3.log`, including actual
+encrypted accepted/rate-limited private replies, a deliberate five-request/four-
+reply-capacity overflow, replay refusal, disabled/truncated requests and forged
+CD01/CR01 uploads. Strict workspace/all-target Clippy and formatting pass in
+`replies-clippy-v2.log` and `replies-fmt-v1.log` under
+`build/local-chat-20261108`. Earlier full regression/native evidence retains its
+original source scope. Client receipt/history/composer and bubbles remain pending.

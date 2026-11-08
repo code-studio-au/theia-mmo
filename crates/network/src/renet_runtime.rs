@@ -1411,7 +1411,7 @@ async fn run_server_inner(
                             if chat.request(peer,&world,&bytes,&mut stats.local_chat).is_err() {invalid_control=true;break;}
                             continue;
                         }
-                        if bytes.starts_with(crate::chat_wire::DELIVERY_TAG) {
+                        if bytes.starts_with(crate::chat_wire::DELIVERY_TAG) || bytes.starts_with(crate::chat_wire::REPLY_TAG) {
                             stats.local_chat.forged_deliveries+=1;invalid_control=true;break;
                         }
                         if crate::avatar_life_wire::is_state(&bytes) {

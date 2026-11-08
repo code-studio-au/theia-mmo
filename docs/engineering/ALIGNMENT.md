@@ -1,3 +1,13 @@
+Chat replies prerequisite, 8 November 2026 (P4-12 / P2-14 / P5-13):
+The opt-in server candidate has private bounded submission replies and reserves
+half the reliable queue against chat use. Ten focused tests pass, including
+actual encrypted replies/refusals/forged uploads and queue-pressure recovery;
+strict Clippy/formatting pass. Default protocol13 and normal chat activation are
+unchanged. Receipt/history/composer/bubbles remain pending. Native action-bar
+editing is separately qualified at three sizes plus SQL rejoin.
+Continue implementation/local commits; mouse, keyboard and display may be used
+as needed per latest permission. No push. [Scope and evidence](../LOCAL_CHAT.md#private-replies-and-gameplay-queue-reserve--8-november-2026).
+
 Native action-bar qualification, 8 November 2026 (P2-14 / P3-06 / P5-13):
 Four Linux starts pass at1280×720,1920×1200,3440×1440 and SQL restart/rejoin.
 Actual book-copy, empty/occupied swaps, invalid drop, focus cancellation and

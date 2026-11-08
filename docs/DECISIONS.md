@@ -1,3 +1,13 @@
+## 8 November 2026 — bounded private chat replies reserve gameplay capacity
+
+Reply to the admitted sender with an exact owner/world-scoped outcome; queue at
+most four replies per peer and flush one alongside one chat delivery after
+priority publishing. Reserve half the shared reliable queue against chat use,
+since future gameplay arrives after the current publishing pass. Drop new replies
+under pressure with counters; a future one-pending composer must handle timeout.
+The explicit chat compatibility profile advances to v2; normal protocol13 remains
+unchanged. [Evidence](LOCAL_CHAT.md#private-replies-and-gameplay-queue-reserve--8-november-2026).
+
 ## 8 November 2026 — opt-in server chat compatibility and priority
 
 Bind the initial one-area Say/Area mode into the complete world identity without

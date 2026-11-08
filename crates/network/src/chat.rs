@@ -16,7 +16,7 @@ pub const OUTBOX_MESSAGES: usize = 16;
 /// Opt-in compatibility binds the initial one-area policy and bounded wire
 /// shapes. Default protocol13 worlds have no chat suffix and remain unchanged.
 pub fn profile_identity(source: [u8; 32], area: theia_core::chat::Area) -> [u8; 32] {
-    let mut bytes = b"theia-local-chat-candidate-v1\0".to_vec();
+    let mut bytes = b"theia-local-chat-candidate-v2\0".to_vec();
     bytes.extend(source);
     bytes.extend(area.value().to_le_bytes());
     bytes.extend(theia_core::chat::SAY_METRES.to_le_bytes());
@@ -25,6 +25,7 @@ pub fn profile_identity(source: [u8; 32], area: theia_core::chat::Area) -> [u8; 
     bytes.extend(theia_core::chat::WINDOW_SECONDS.to_le_bytes());
     bytes.extend(crate::chat_wire::REQUEST_TAG);
     bytes.extend(crate::chat_wire::DELIVERY_TAG);
+    bytes.extend(crate::chat_wire::REPLY_TAG);
     crate::terrain::sha256(&bytes)
 }
 struct Peer {

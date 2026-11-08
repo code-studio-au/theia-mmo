@@ -144,9 +144,146 @@ impl Delivery {
         Ok(())
     }
 }
+/// Private bounded acknowledgement. Identity is the admitted recipient, never
+/// the public sender of another message. No message body is echoed here.
+pub const REPLY_TAG: &[u8; 4] = b"CR01";
+pub const REPLY_BYTES: usize = 69;
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Outcome {
+    Accepted,
+    Unavailable,
+    Sequence,
+    Time,
+    Muted,
+    NoArea,
+    RateLimited,
+}
+#[derive(Clone, Debug)]
+pub struct Reply {
+    pub world: [u8; 32],
+    pub owner: EntityKey,
+    pub sequence: u64,
+    pub tick: u64,
+    pub outcome: Outcome,
+}
+impl Reply {
+    pub fn encode(&self) -> Result<Vec<u8>> {
+        if self.world == [0; 32] || self.sequence == 0 || self.tick == 0 {
+            return Err("Invalid chat reply context".into());
+        }
+        let mut bytes = Vec::with_capacity(REPLY_BYTES);
+        bytes.extend(REPLY_TAG);
+        bytes.extend(self.world);
+        bytes.extend(self.owner.epoch.value().to_le_bytes());
+        bytes.extend(self.owner.entity.value().to_le_bytes());
+        bytes.extend(self.sequence.to_le_bytes());
+        bytes.extend(self.tick.to_le_bytes());
+        bytes.push(match self.outcome {
+            Outcome::Accepted => 0,
+            Outcome::Unavailable => 1,
+            Outcome::Sequence => 2,
+            Outcome::Time => 3,
+            Outcome::Muted => 4,
+            Outcome::NoArea => 5,
+            Outcome::RateLimited => 6,
+        });
+        Ok(bytes)
+    }
+    pub fn decode(bytes: &[u8]) -> Result<Self> {
+        if bytes.len() != REPLY_BYTES || !bytes.starts_with(REPLY_TAG) {
+            return Err("Invalid chat reply frame".into());
+        }
+        let reply = Self {
+            world: bytes[4..36].try_into()?,
+            owner: EntityKey {
+                epoch: WorldEpoch::new(u64::from_le_bytes(bytes[36..44].try_into()?))
+                    .ok_or("Invalid chat reply epoch")?,
+                entity: EntityId::new(u64::from_le_bytes(bytes[44..52].try_into()?))
+                    .ok_or("Invalid chat reply owner")?,
+            },
+            sequence: u64::from_le_bytes(bytes[52..60].try_into()?),
+            tick: u64::from_le_bytes(bytes[60..68].try_into()?),
+            outcome: match bytes[68] {
+                0 => Outcome::Accepted,
+                1 => Outcome::Unavailable,
+                2 => Outcome::Sequence,
+                3 => Outcome::Time,
+                4 => Outcome::Muted,
+                5 => Outcome::NoArea,
+                6 => Outcome::RateLimited,
+                _ => return Err("Invalid chat reply outcome".into()),
+            },
+        };
+        if reply.world == [0; 32] || reply.sequence == 0 || reply.tick == 0 {
+            return Err("Invalid chat reply context".into());
+        }
+        Ok(reply)
+    }
+    pub fn validate_context(&self, owner: EntityKey, world: [u8; 32]) -> Result<()> {
+        if self.owner != owner
+            || self.world != world
+            || world == [0; 32]
+            || self.sequence == 0
+            || self.tick == 0
+        {
+            return Err("Chat reply outside admitted owner/world".into());
+        }
+        Ok(())
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn private_replies_bound_exact_frames_and_admitted_owner_for_every_outcome() {
+        let source = delivery();
+        for outcome in [
+            Outcome::Accepted,
+            Outcome::Unavailable,
+            Outcome::Sequence,
+            Outcome::Time,
+            Outcome::Muted,
+            Outcome::NoArea,
+            Outcome::RateLimited,
+        ] {
+            let reply = Reply {
+                world: source.world,
+                owner: source.sender,
+                sequence: 1,
+                tick: 2,
+                outcome,
+            };
+            let bytes = reply.encode().unwrap();
+            assert_eq!(bytes.len(), REPLY_BYTES);
+            let decoded = Reply::decode(&bytes).unwrap();
+            assert_eq!(decoded.outcome, outcome);
+            assert!(
+                decoded
+                    .validate_context(source.sender, source.world)
+                    .is_ok()
+            );
+            let mut foreign = source.sender;
+            foreign.entity = EntityId::new(4).unwrap();
+            assert!(decoded.validate_context(foreign, source.world).is_err());
+            assert!(decoded.validate_context(source.sender, [2; 32]).is_err());
+            for cut in 0..bytes.len() {
+                assert!(Reply::decode(&bytes[..cut]).is_err());
+            }
+            let mut trailing = bytes.clone();
+            trailing.push(0);
+            assert!(Reply::decode(&trailing).is_err());
+            for offset in [0, 4, 36, 44, 52, 60, 68] {
+                let mut bad = bytes.clone();
+                match offset {
+                    4 => bad[4..36].fill(0),
+                    36 | 44 | 52 | 60 => bad[offset..offset + 8].fill(0),
+                    68 => bad[68] = 7,
+                    _ => bad[0] = 0,
+                }
+                assert!(Reply::decode(&bad).is_err());
+            }
+        }
+    }
     fn delivery() -> Delivery {
         Delivery {
             world: [1; 32],
