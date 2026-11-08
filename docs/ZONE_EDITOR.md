@@ -683,3 +683,60 @@ active Vulkan validation with zero GPU diagnostics. Evidence:
 `build/zone-package-native-grading-3440-v1/verification.json` and both captures.
 These are Linux loopback checks; native Windows, production admission and capacity
 remain separate. All artifacts remain ignored; commits stay local.
+
+## Individual guide-point editing — 8 November 2026
+
+P5-17 / P3-15 continue from guide validation/history and terrain grading. A new
+`move_path_point` edit names guide `id`, zero-based `index` and global f64
+`position`. It changes only that point, then validates the whole candidate with
+the retained bounds, horizontal separation and segment-length rules. Unknown
+IDs/indices, collapsed segments, out-of-area coordinates and stale revisions
+preserve the document and both history branches. Existing source schema/data is
+unchanged; saved guides retain their explicit coordinates.
+
+In F3, click a ribbon to select the whole guide or click a control-point handle
+to select one point. Tab/Shift-Tab cycles whole-guide selection and points in
+both directions. Arrows/PgUp/PgDn move the selected point, or the whole guide if
+no point is selected, using the existing 1 m / 0.1 m increments. F focuses the
+camera on the selected guide/point. The inspector names the active point; the
+selected handle is larger/amber. Width controls still change guide width. Use
+Grade terrain to guide after adjusting heights to construct an authored slope.
+Select Next returns to whole-guide selection. Load, deletion and agent changes
+reconcile invalid point selection before subsequent edits.
+
+The editor uses normal Bevy meshes, materials and mesh ray casting. A pool of
+64 handles shares one mesh; only the active draft or selected guide's handles
+are visible, and playtest hides them. These are editor presentation entities,
+excluded from collision, source data and GLB export. There is no new engine
+infrastructure. Point dragging and point insertion/deletion on committed guides
+remain separate usability work; replacement remains available through `put_path`.
+
+Two new domain checks exercise narrow edits, full-candidate rollback/redo,
+unknown indices and signed far-frame centimetres with command JSON round-trip.
+Together with retained cases, 41 focused Rust cases pass (30 domain / eleven
+editor). Strict workspace/all-target Clippy and formatting pass. Evidence:
+ignored `build/zone-guide-points-tests-v1.log`, `zone-guide-points-clippy-final-v4.log`.
+
+
+Camera pan/focus now uses the full +/-512 m authoring extent. This allows focus
+on valid control points beyond the previous +/-480 m camera limit. The optional
+qualification report exposes actual Bevy hover and left-button state; the native
+harness waits for those observations before releasing presses. It never retries
+mutating button actions. The first basic point walkthrough passed; the first
+edge-expanded run missed an earlier terrain toolbar press and is retained as a
+failed candidate, not counted as a final pass.
+
+The final full native OS-input walkthrough passes at default 3440x1440 on the
+same RX 7900 XTX / RADV Vulkan device, including ribbon/point mesh picking,
+isolated endpoint movement, both directions of point cycling, agent point edits,
+collapsed-segment refusal, shared undo, grading and save/load. It also places an
+edge guide at x=500..504 m, focuses its first point to the viewport centre, then
+undoes it and verifies stale selection is cleared. The final capture focuses the
+selected road point at close range. Vulkan validation is observed active with
+zero GPU diagnostics/resize exceptions. Evidence: ignored
+`build/zone-guide-points-native-3440-final-v3/{qualification.json,state.png}`,
+`zone-guide-points-build-final-v4.log`. The headless
+`content/zones/guide-points.commands.jsonl` fixture moves a point in the grading
+package's source, grades it and relocates spawn in one transaction; it passes
+without a display (`build/zone-guide-points-headless-v1.{json,log}`). No runtime
+format, normal game controls or network behavior changed in this slice.

@@ -24,6 +24,8 @@ render-only export (35 focused Rust cases and the full 3440x1440 native editor
 walkthrough). General vegetation assets/behavior and broader terrain tools remain
 future work. Guide-driven terrain grading now shares visual/agent history and
 passes 39 focused Rust cases, including actual Avian graded-surface traversal.
+Individual guide-point commands/picking/focus now add two domain checks (41 total);
+visual and agent point moves share whole-candidate validation and history.
 Runtime multiplayer remains
 Rust/Bevy/Avian/Renet; editor playtest is an offline sandbox. Actual prerequisites,
 acceptance checks and implementation evidence are tracked in [the zone record](ZONE_EDITOR.md).

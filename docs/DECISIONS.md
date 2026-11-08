@@ -1,3 +1,13 @@
+## 8 November 2026 — individual guide-point editing with standard Bevy handles
+
+Add narrow `move_path_point` edits to the existing document/undo validator. Select
+ribbons and point handles using normal mesh ray casts; pool at most 64 handles
+on one mesh. Preserve whole-guide moves and cycle point selection with Tab in
+both directions. Guide-only F focus uses bounded local coordinates and the full
+authoring extent. Keep handles out of playtest collision and exported content.
+A point move validates its adjacent segments and entire candidate before commit.
+[Contract/evidence](ZONE_EDITOR.md#individual-guide-point-editing--8-november-2026).
+
 ## 8 November 2026 — grade existing terrain from committed guide heights
 
 Add a bounded `grade_path` operation to the existing visual/agent command history.

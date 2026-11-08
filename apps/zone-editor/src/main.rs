@@ -47,6 +47,7 @@ struct Session {
     marker_selected: Option<u64>,
     marker_palette: Option<theia_zone::markers::MarkerKind>,
     path_selected: Option<u64>,
+    path_point: Option<usize>,
     path_draft: Option<paths::Draft>,
 }
 struct Drag {
@@ -84,6 +85,16 @@ impl Session {
             .any(|p| Some(p.id) == self.path_selected)
         {
             self.path_selected = None;
+        }
+        if self.path_point.is_some_and(|index| {
+            !self
+                .editor
+                .zone()
+                .paths
+                .iter()
+                .any(|p| Some(p.id) == self.path_selected && index < p.points.len())
+        }) {
+            self.path_point = None;
         }
         if !self
             .editor
@@ -244,6 +255,7 @@ fn run() -> Result<(), String> {
         marker_selected: None,
         marker_palette: None,
         path_selected: None,
+        path_point: None,
         path_draft: None,
     })
     .insert_resource(View {
@@ -465,6 +477,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
                 Ok(()) => {
                     session.selected = None;
                     session.path_selected = None;
+                    session.path_point = None;
                     session.marker_selected = None;
                     session.plant_selected = None;
                     session.reconcile();
@@ -554,6 +567,7 @@ fn keyboard(
         session.marker_palette = None;
         session.path_draft = None;
         session.path_selected = None;
+        session.path_point = None;
         session.stroke = None;
         session.drag = None;
         session.palette = None;
@@ -630,7 +644,7 @@ fn keyboard(
         return;
     }
     if session.path_mode {
-        paths::translate(&keys, &mut session);
+        paths::translate(&keys, &mut session, &mut view);
         return;
     }
     if session.play.is_some()
@@ -714,9 +728,11 @@ fn camera_controls(
                 (i32::from(keys.pressed(KeyCode::KeyS)) as f32)
                     - (i32::from(keys.pressed(KeyCode::KeyW)) as f32),
             );
-            view.target = (view.target
-                + axis.normalize_or_zero() * time.delta_secs().min(0.1) * 16.)
-                .clamp(Vec3::splat(-480.), Vec3::splat(480.));
+            view.target =
+                (view.target + axis.normalize_or_zero() * time.delta_secs().min(0.1) * 16.).clamp(
+                    Vec3::splat(-theia_zone::ZONE_EXTENT as f32),
+                    Vec3::splat(theia_zone::ZONE_EXTENT as f32),
+                );
         }
     }
     if let Ok(mut transform) = camera.single_mut() {

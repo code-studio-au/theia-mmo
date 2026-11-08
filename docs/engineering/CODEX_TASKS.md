@@ -6,7 +6,8 @@ guides, NPC/quest annotations, greybox vegetation/scatter, save/load, offline
 playtest and export into the retained Renet world-package path. Actual prerequisites
 are the pinned stack, checked coordinates and existing query/package pipeline;
 later waves and P5-16 are not blanket gates. Guide-driven terrain grading also shares validated commands and undo.
-Current qualification is 39 focused
+Individual guide points also share validated moves, visual picking and camera focus.
+Current qualification is 41 focused
 Rust cases, strict workspace Clippy, default-fullscreen 3440x1440 OS-input checks
 and actual exported-package encrypted client pairs. The editor targets only
 3440x1440 under the user's current direction. Local commits only; no push.

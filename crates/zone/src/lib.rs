@@ -288,6 +288,11 @@ pub enum Edit {
     Brush {
         brush: terrain::Brush,
     },
+    MovePathPoint {
+        id: u64,
+        index: usize,
+        position: [f64; 3],
+    },
     GradePath {
         grade: grading::Grade,
     },
@@ -420,6 +425,21 @@ impl Editor {
                         Edit::SetTerrain { terrain } => {
                             candidate.schema = candidate.schema.max(2);
                             candidate.terrain = terrain;
+                        }
+                        Edit::MovePathPoint {
+                            id,
+                            index,
+                            position,
+                        } => {
+                            let path = candidate
+                                .paths
+                                .iter_mut()
+                                .find(|p| p.id == id)
+                                .ok_or("Unknown path ID")?;
+                            *path
+                                .points
+                                .get_mut(index)
+                                .ok_or("Unknown guide point index")? = position;
                         }
                         Edit::GradePath { grade } => {
                             candidate.terrain = Some(grade.apply(&candidate)?);

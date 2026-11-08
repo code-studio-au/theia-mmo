@@ -12,7 +12,8 @@ from gpu_validation import check_gpu_diagnostics
 from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 
 
-def run(output, binary, size, agent=False, terrain=False, guides=False, markers=False, vegetation=False, grading=False):
+def run(output, binary, size, agent=False, terrain=False, guides=False, markers=False, vegetation=False, grading=False, points=False):
+    grading = grading or points
     vegetation = vegetation or grading
     markers = markers or vegetation
     guides = guides or markers
@@ -51,9 +52,20 @@ def run(output, binary, size, agent=False, terrain=False, guides=False, markers=
                 if value.get('terrain'):
                     value['terrain']['heights'] = [struct.unpack('<f', struct.pack('<f', h))[0] for h in value['terrain']['heights']]
                 return value
+            def click(target, point, scale, number):
+                assert number == 1
+                desktop.move(target, point, scale)
+                desktop.button(number, True)
+                try:
+                    wait(lambda: state()['left_mouse_down'])
+                finally:
+                    desktop.button(number, False)
+                wait(lambda: not state()['left_mouse_down'])
             def button(action):
                 entry = next(b for b in state()['buttons'] if b['action'] == action)
-                desktop.click(window, entry['centre'], 1, 1)
+                desktop.move(window, entry['centre'], 1)
+                wait(lambda: any(b['action'] == action and b['hovered'] for b in state()['buttons']))
+                click(window, entry['centre'], 1, 1)
             def key(name):
                 desktop.key(name)
             def chord(name):
@@ -83,7 +95,7 @@ def run(output, binary, size, agent=False, terrain=False, guides=False, markers=
             checks.append('actual startup commands populate five rendered primitives')
             button('Place(Box)')
             time.sleep(.3)
-            desktop.click(window, state()['ground'][0], 1, 1)
+            click(window, state()['ground'][0], 1, 1)
             placed = revision(1)
             assert len(placed['document']['objects']) == 6 and placed['selected'] == 6
             checks.append('actual palette pointer placement shares command history')
@@ -122,7 +134,7 @@ def run(output, binary, size, agent=False, terrain=False, guides=False, markers=
             button('Undo')
             assert len(revision(previous)['document']['objects']) == 6
             point = next(o['screen'] for o in state()['objects'] if o['id'] == 6)
-            desktop.click(window, point, 1, 1)
+            click(window, point, 1, 1)
             wait(lambda: state()['selected'] == 6)
             chord('s')
             wait(lambda: read_saved() == state()['document'])
@@ -170,7 +182,7 @@ def run(output, binary, size, agent=False, terrain=False, guides=False, markers=
                 receipt, _ = agent_request(dict(command='undo', expected_revision=0))
                 assert not receipt['accepted'] and receipt['revision'] == restored['revision']
                 button('Place(Box)')
-                desktop.click(window, state()['ground'][1], 1, 1)
+                click(window, state()['ground'][1], 1, 1)
                 visual = revision(restored['revision'])
                 assert visual['document']['objects'][-1]['id'] == 101
                 chord('z')
@@ -236,14 +248,14 @@ def run(output, binary, size, agent=False, terrain=False, guides=False, markers=
                 checks.append('native terrain drag previews through shared validation and commits one undo entry; live agent refuses preview')
                 previous = state()['revision']
                 button('Brush(Lower)')
-                desktop.click(window, state()['terrain_points'][2], 1, 1)
+                click(window, state()['terrain_points'][2], 1, 1)
                 lowered = revision(previous)
                 assert min(lowered['document']['terrain']['heights']) < -1.
                 for tool in ['Flatten', 'Smooth']:
                     previous = state()['revision']
                     before = state()['document']['terrain']['heights']
                     button(f'Brush({tool})')
-                    desktop.click(window, state()['terrain_points'][0], 1, 1)
+                    click(window, state()['terrain_points'][0], 1, 1)
                     after = revision(previous)
                     assert after['document']['terrain']['heights'] != before
                 button('Radius(1)')
@@ -290,7 +302,7 @@ def run(output, binary, size, agent=False, terrain=False, guides=False, markers=
                 wait(lambda: state()['path_mode'])
                 button('NewPath(Road)')
                 wait(lambda: state()['path_draft_points'] == 0)
-                desktop.click(window, state()['guide_points'][0], 1, 1)
+                click(window, state()['guide_points'][0], 1, 1)
                 wait(lambda: state()['path_draft_points'] == 1)
                 if grading:
                     button('GradePath')
@@ -302,12 +314,12 @@ def run(output, binary, size, agent=False, terrain=False, guides=False, markers=
                 wait(lambda: state()['path_draft_points'] is None)
                 assert state()['document'] == previous['document'] and state()['revision'] == previous['revision']
                 button('NewPath(Road)')
-                desktop.click(window, state()['guide_points'][0], 1, 1)
-                desktop.click(window, state()['guide_points'][1], 1, 1)
+                click(window, state()['guide_points'][0], 1, 1)
+                click(window, state()['guide_points'][1], 1, 1)
                 wait(lambda: state()['path_draft_points'] == 2)
                 key('BackSpace')
                 wait(lambda: state()['path_draft_points'] == 1)
-                desktop.click(window, state()['guide_points'][1], 1, 1)
+                click(window, state()['guide_points'][1], 1, 1)
                 wait(lambda: state()['path_draft_points'] == 2)
                 chord('s')
                 wait(lambda: 'draft still pending' in state()['status'])
@@ -339,7 +351,7 @@ def run(output, binary, size, agent=False, terrain=False, guides=False, markers=
                 wait(lambda: state()['mesh_assets'] == mesh_baseline+1)
                 button('NewPath(Stream)')
                 for point in state()['guide_points'][2:]:
-                    desktop.click(window, point, 1, 1)
+                    click(window, point, 1, 1)
                 wait(lambda: state()['path_draft_points'] == 3)
                 before = state()['revision']
                 key('Return')
@@ -358,8 +370,8 @@ def run(output, binary, size, agent=False, terrain=False, guides=False, markers=
                 retry, _ = agent_request(request=request)
                 assert retry == receipt and state()['revision'] == undone['revision']
                 button('NewPath(Road)')
-                desktop.click(window, state()['guide_points'][0], 1, 1)
-                desktop.click(window, state()['guide_points'][1], 1, 1)
+                click(window, state()['guide_points'][0], 1, 1)
+                click(window, state()['guide_points'][1], 1, 1)
                 wait(lambda: state()['path_draft_points'] == 2)
                 before = state()['revision']
                 key('Return')
@@ -395,7 +407,7 @@ def run(output, binary, size, agent=False, terrain=False, guides=False, markers=
                 baseline = state()['mesh_assets']
                 previous = state()['revision']
                 button('PlaceMarker(Npc)')
-                desktop.click(window, state()['guide_points'][0], 1, 1)
+                click(window, state()['guide_points'][0], 1, 1)
                 placed = revision(previous)
                 npc = placed['document']['markers'][0]
                 assert npc['kind'] == 'npc' and placed['marker_selected'] == npc['id']
@@ -416,13 +428,13 @@ def run(output, binary, size, agent=False, terrain=False, guides=False, markers=
                 revision(previous)
                 button('PlaceMarker(Quest)')
                 previous = state()['revision']
-                desktop.click(window, state()['guide_points'][2], 1, 1)
+                click(window, state()['guide_points'][2], 1, 1)
                 quest = revision(previous)['document']['markers'][-1]
                 assert quest['kind'] == 'quest' and quest['radius_metres'] == 4.
                 key('Escape')
                 wait(lambda: state()['marker_palette'] == 'None')
                 centre = next(m['screen'] for m in state()['markers'] if m['id'] == npc['id'])
-                desktop.click(window, centre, 1, 1)
+                click(window, centre, 1, 1)
                 wait(lambda: state()['marker_selected'] == npc['id'])
                 previous = state()['revision']
                 key('Delete')
@@ -439,7 +451,7 @@ def run(output, binary, size, agent=False, terrain=False, guides=False, markers=
                 # The editor allocator advances beyond agent IDs even after visual undo.
                 button('PlaceMarker(Npc)')
                 previous = state()['revision']
-                desktop.click(window, state()['guide_points'][4], 1, 1)
+                click(window, state()['guide_points'][4], 1, 1)
                 assert revision(previous)['document']['markers'][-1]['id'] == 901
                 previous = state()['revision']
                 chord('z')
@@ -468,7 +480,7 @@ def run(output, binary, size, agent=False, terrain=False, guides=False, markers=
                 mesh_baseline = state()['mesh_assets']
                 button('Plant(Tree, false)')
                 previous = state()['revision']
-                desktop.click(window,state()['guide_points'][4],1,1)
+                click(window,state()['guide_points'][4],1,1)
                 placed = revision(previous)
                 tree = placed['document']['plants'][0]
                 assert tree['kind'] == 'tree' and tree['scale'] == 1.
@@ -482,13 +494,13 @@ def run(output, binary, size, agent=False, terrain=False, guides=False, markers=
                 assert transformed['yaw_degrees'] == 15 and transformed['scale'] == 1.25
                 button('Plant(Shrub, false)')
                 previous = state()['revision']
-                desktop.click(window,state()['guide_points'][2],1,1)
+                click(window,state()['guide_points'][2],1,1)
                 shrub = revision(previous)['document']['plants'][-1]
                 assert shrub['kind'] == 'shrub'
                 key('Escape')
                 time.sleep(.3)
                 centre = next(p['screen'] for p in state()['plants'] if p['id'] == tree['id'])
-                desktop.click(window,centre,1,1)
+                click(window,centre,1,1)
                 wait(lambda: state()['plant_selected'] == tree['id'])
                 previous = state()['revision']
                 key('Delete')
@@ -501,7 +513,7 @@ def run(output, binary, size, agent=False, terrain=False, guides=False, markers=
                 key('period')
                 wait(lambda: state()['scatter_radius'] == 9. and state()['scatter_count'] == 12)
                 before = state()
-                desktop.click(window,state()['guide_points'][3],1,1)
+                click(window,state()['guide_points'][3],1,1)
                 scattered = revision(before['revision'])
                 assert len(scattered['document']['plants']) == 14
                 assert scattered['history'][0] == before['history'][0]+1
@@ -522,7 +534,7 @@ def run(output, binary, size, agent=False, terrain=False, guides=False, markers=
                 assert retry == receipt and state()['document'] == undone['document']
                 button('Plant(Shrub, false)')
                 previous = state()['revision']
-                desktop.click(window,state()['guide_points'][0],1,1)
+                click(window,state()['guide_points'][0],1,1)
                 assert revision(previous)['document']['plants'][-1]['id'] == 2001
                 previous = state()['revision']
                 chord('z')
@@ -587,6 +599,86 @@ def run(output, binary, size, agent=False, terrain=False, guides=False, markers=
                 key('F5')
                 wait(lambda: state()['play_feet'] is None)
                 checks.append('selected guide terrain grading, single-entry visual undo/redo, mixed agent grade/exact retry, save/load and playtest')
+            if points:
+                key('F3')
+                wait(lambda: state()['path_mode'] and state()['path_selected'] is None)
+                road = state()['document']['paths'][0]
+                centre = next(p['screen'] for p in state()['guides'] if p['id'] == road['id'])
+                click(window,centre,1,1)
+                wait(lambda: state()['path_selected'] == road['id'] and state()['path_point'] is None)
+                # Point handles use normal mesh picking, including the raised road.
+                click(window,state()['path_handles'][0],1,1)
+                wait(lambda: state()['path_point'] == 0)
+                original = state()['document']
+                previous = state()['revision']
+                key('Page_Up')
+                changed = revision(previous)
+                assert changed['document']['paths'][0]['points'][0][1] == original['paths'][0]['points'][0][1]+1.
+                assert changed['document']['paths'][0]['points'][1] == original['paths'][0]['points'][1]
+                previous = state()['revision']
+                chord('z')
+                assert revision(previous)['document'] == original
+                previous = state()['revision']
+                chord('y')
+                assert revision(previous)['document'] == changed['document']
+                key('Tab')
+                wait(lambda: state()['path_point'] == 1)
+                key('Tab')
+                wait(lambda: state()['path_point'] is None)
+                desktop.key_state('Shift_L',True)
+                try:
+                    key('Tab')
+                finally:
+                    desktop.key_state('Shift_L',False)
+                wait(lambda: state()['path_point'] == 1)
+                before = state()
+                # An agent uses the same narrow point edit; other endpoints stay intact.
+                position = list(before['document']['paths'][0]['points'][1])
+                position[1] += 1.
+                receipt, _ = agent_request(dict(command='apply',expected_revision=before['revision'],edits=[dict(op='move_path_point',id=road['id'],index=1,position=position)]))
+                assert receipt['accepted']
+                changed = wait(lambda: state() if state()['revision'] == receipt['revision'] else None)
+                assert changed['document']['paths'][0]['points'][1] == position
+                previous = state()['revision']
+                chord('z')
+                assert revision(previous)['document'] == before['document']
+                # Collapse both endpoints horizontally: shared validation must refuse.
+                invalid = list(state()['document']['paths'][0]['points'][0])
+                receipt, _ = agent_request(dict(command='apply',expected_revision=state()['revision'],edits=[dict(op='move_path_point',id=road['id'],index=1,position=invalid)]))
+                assert not receipt['accepted'] and state()['document'] == before['document']
+                previous = state()['revision']
+                button('GradePath')
+                graded = revision(previous)
+                assert graded['document']['terrain']['heights'] != before['document']['terrain']['heights']
+                chord('s')
+                wait(lambda: read_saved() == state()['document'])
+                previous = state()['revision']
+                chord('o')
+                assert revision(previous)['document'] == graded['document']
+                edge = dict(id=3000,name='Edge guide',kind='road',width_metres=.5,points=[[500.,.03,0.],[504.,.03,0.]])
+                receipt, _ = agent_request(dict(command='apply',expected_revision=state()['revision'],edits=[dict(op='put_path',path=edge)]))
+                assert receipt['accepted']
+                wait(lambda: len(state()['document']['paths']) == 3)
+                for selected_id in [road['id'],state()['document']['paths'][1]['id'],3000]:
+                    button('NextPath')
+                    wait(lambda: state()['path_selected'] == selected_id)
+                key('Tab')
+                wait(lambda: state()['path_point'] == 0)
+                key('f')
+                time.sleep(.4)
+                assert all(abs(a-b/2)<2. for a,b in zip(state()['path_handles'][0],state()['viewport']))
+                previous = state()['revision']
+                chord('z')
+                restored = revision(previous)
+                assert restored['path_selected'] is None and restored['path_point'] is None
+                button('NextPath')
+                wait(lambda: state()['path_selected'] == road['id'])
+                key('Tab')
+                wait(lambda: state()['path_point'] == 0)
+                key('f')
+                time.sleep(.4)
+                assert all(abs(a-b/2)<2. for a,b in zip(state()['path_handles'][0],state()['viewport']))
+                checks.append('normal mesh picking of guides/control points, isolated point transforms, forward/reverse point cycling, agent move validation/history and graded save/load')
             key('F12')
             wait(lambda: capture_ready(report.with_suffix('.png')), 30)
             checks.append('actual native Vulkan screenshot captured')
@@ -622,5 +714,6 @@ if __name__ == '__main__':
     parser.add_argument('--markers', action='store_true')
     parser.add_argument('--vegetation', action='store_true')
     parser.add_argument('--grading', action='store_true')
+    parser.add_argument('--points', action='store_true')
     args = parser.parse_args()
-    run(args.output, args.binary, args.size, args.agent, args.terrain, args.guides, args.markers, args.vegetation, args.grading)
+    run(args.output, args.binary, args.size, args.agent, args.terrain, args.guides, args.markers, args.vegetation, args.grading, args.points)

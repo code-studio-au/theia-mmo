@@ -204,4 +204,91 @@ mod tests {
         assert_eq!(editor.revision(), 0);
         assert_eq!(editor.history(), (0, 0));
     }
+    #[test]
+    fn individual_point_moves_share_validation_history_and_atomic_failure() {
+        let mut e = Editor::new(Zone::default()).unwrap();
+        apply(&mut e, vec![Edit::PutPath { path: path(100) }]).unwrap();
+        let original = e.zone().clone();
+        apply(
+            &mut e,
+            vec![Edit::MovePathPoint {
+                id: 100,
+                index: 1,
+                position: [4., 0.03, 4.],
+            }],
+        )
+        .unwrap();
+        let moved = e.zone().clone();
+        assert_eq!(moved.paths[0].points[0], original.paths[0].points[0]);
+        assert_eq!(moved.paths[0].points[2], original.paths[0].points[2]);
+        e.execute(Command::Undo {
+            expected_revision: 2,
+        })
+        .unwrap();
+        for (id, index, position) in [
+            (999, 1, [4., 0.03, 4.]),
+            (100, usize::MAX, [4., 0.03, 4.]),
+            (100, 1, original.paths[0].points[0]),
+            (100, 1, [999., 0., 0.]),
+        ] {
+            assert!(
+                apply(
+                    &mut e,
+                    vec![
+                        Edit::SetSpawn {
+                            position: [4., 0.1, 4.]
+                        },
+                        Edit::MovePathPoint {
+                            id,
+                            index,
+                            position
+                        }
+                    ]
+                )
+                .is_err()
+            );
+            assert_eq!(e.zone(), &original);
+            assert_eq!((e.revision(), e.history()), (3, (1, 1)));
+        }
+        e.execute(Command::Redo {
+            expected_revision: 3,
+        })
+        .unwrap();
+        assert_eq!(e.zone(), &moved);
+    }
+    #[test]
+    fn point_command_round_trip_preserves_signed_far_centimetres() {
+        for sign in [-1., 1.] {
+            let origin = [sign * 128_000_000_000., 16., -sign * 128_000_000_000.];
+            let mut guide = path(100);
+            for p in &mut guide.points {
+                for i in 0..3 {
+                    p[i] += origin[i];
+                }
+            }
+            let mut e = Editor::new(Zone {
+                schema: 3,
+                origin,
+                spawn: origin.map(|v| v + 0.1),
+                paths: vec![guide],
+                ..Zone::default()
+            })
+            .unwrap();
+            let position = [origin[0] + 8.01, origin[1] + 1.03, origin[2] + 8.02];
+            let command = Command::Apply {
+                expected_revision: 0,
+                edits: vec![Edit::MovePathPoint {
+                    id: 100,
+                    index: 2,
+                    position,
+                }],
+            };
+            let bytes = serde_json::to_vec(&command).unwrap();
+            e.execute(serde_json::from_slice(&bytes).unwrap()).unwrap();
+            assert_eq!(e.zone().paths[0].points[2], position);
+            let local = e.zone().local(position).unwrap();
+            assert!((local[0] - 8.01).abs() < 0.00001);
+            assert!((local[2] - 8.02).abs() < 0.00001);
+        }
+    }
 }
