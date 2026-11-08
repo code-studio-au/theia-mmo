@@ -1088,13 +1088,18 @@ fn present(
                 paths::summary(&session)
             } else if session.terrain_mode {
                 format!(
-                    "Terrain {:?} | radius {} m\n{}",
+                    "Terrain {:?} | radius {} m\n{}{}",
                     session.brush_tool,
                     session.brush_radius,
                     session.editor.zone().terrain.as_ref().map_or(
                         "No terrain patch".into(),
                         |p| format!("128 m patch | {} m samples", p.sample_metres())
-                    )
+                    ),
+                    session.stroke.as_ref().map_or(String::new(), |s| format!(
+                        "\nStroke {}/{} stamps",
+                        s.stamps(),
+                        theia_zone::MAX_EDITS
+                    ))
                 )
             } else {
                 selected.map_or("No selection".into(), |o| {

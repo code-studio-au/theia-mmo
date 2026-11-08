@@ -520,6 +520,12 @@ pub(super) fn report(
     value["brush_strength"] = session.brush_strength.into();
     value["sculpt_blend"] = session.sculpt_blend.into();
     value["paint_blend"] = session.paint_blend.into();
+    value["stroke_progress"] = serde_json::json!(
+        session
+            .stroke
+            .as_ref()
+            .map(|s| serde_json::json!({"stamps":s.stamps(),"limit":theia_zone::MAX_EDITS}))
+    );
     value["terrain_preview_heights"] = serde_json::json!(
         session
             .stroke

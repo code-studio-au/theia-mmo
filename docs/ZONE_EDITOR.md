@@ -1668,3 +1668,29 @@ Evidence: ignored `build/zone-influence-native-3440-v3/{qualification.json,*.png
 `build/zone-influence-blend-regression-3440-v1/qualification.json`, `zone-influence-tests-v2.log`,
 `zone-influence-build-v2.log` and `zone-influence-clippy-v2.log`. Editor SHA-256:
 `bfd9035848c822d74e6b83a1359da59df3612d1eed3f3878bc175b786a51d58f`.
+
+## Bounded stroke feedback — 8 November 2026
+
+P5-17 / P3-15 / P1-10; P2-06/07. The retained shared transaction limit remains
+128 edits. Sculpt/paint previews now display accepted stamp counts in the
+summary and status; both help panels explain the limit. The 128th accepted
+stamp explicitly reports that the limit is reached and asks for release to
+commit or Escape to cancel. Further motion leaves the preview unchanged under
+the existing cap. Rejected/no-change stamps do not consume capacity. No timing,
+spacing, command validation, history, source schema or stroke lifecycle changes.
+The optional report exposes accepted count and limit for a held stroke.
+
+All 72 focused Rust cases, formatting and denied-warning workspace/all-target
+Clippy pass. Native 3440x1440 qualification performs all 128 accepted stamps,
+observes counts while committed source/revision/history remain unchanged,
+confirms further motion freezes the capped preview and sees the explicit message.
+Release commits exactly that preview as one undo entry; undo/redo and cancellation
+of a fresh stroke preserve the expected source/history. Vulkan validation is
+active on AMD RX 7900 XTX (RADV NAVI31), device 29772, with zero GPU/resize
+diagnostics. This is Linux editor evidence; previous Windows/multiplayer scope
+is unchanged.
+
+Evidence: ignored `build/zone-stroke-limit-native-3440-v1/{qualification.json,capped.png}`,
+`zone-stroke-feedback-tests-v1.log`, `zone-stroke-feedback-build-v1.log` and
+`zone-stroke-feedback-clippy-v1.log`. Editor SHA-256:
+`47a97fb97d6e24ea33f3801473680ea7b09686a428573064df5cee5117cb57e9`.

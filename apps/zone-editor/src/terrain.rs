@@ -20,6 +20,25 @@ pub(super) struct Stroke {
     edits: Vec<Edit>,
     last: Option<Vec3>,
 }
+impl Stroke {
+    pub(super) fn stamps(&self) -> usize {
+        self.edits.len()
+    }
+    fn feedback(&self) -> String {
+        if self.edits.len() == theia_zone::MAX_EDITS {
+            format!(
+                "Stroke limit reached ({0}/{0}) - release to commit, Esc to cancel",
+                theia_zone::MAX_EDITS
+            )
+        } else {
+            format!(
+                "Terrain preview ({}/{}) - release to commit, Esc to cancel",
+                self.edits.len(),
+                theia_zone::MAX_EDITS
+            )
+        }
+    }
+}
 #[derive(Component)]
 pub(super) struct GroundPart(pub usize);
 #[derive(Component)]
@@ -368,7 +387,7 @@ pub(super) fn palette(
 ) {
     for mut text in &mut help {
         **text = if session.terrain_paint {
-            "F7: terrain colour paint\nF: frame terrain\n[ / ]: halve/double paint blend\nBlend: 5 to 100%\nClick/drag: paint stroke\nRelease: one undo entry\nEsc cancels preview\nGrass / dirt / rock / sand\nPaint changes colour weights\nGrid weights, locked grass edge\nF2 returns to sculpting".into()
+            "F7: terrain colour paint\nF: frame terrain\n[ / ]: halve/double paint blend\nBlend: 5 to 100%\nClick/drag: paint stroke\nRelease: one undo entry\nUp to 128 stamps per stroke\nEsc cancels preview\nGrass / dirt / rock / sand\nPaint changes colour weights\nGrid weights, locked grass edge\nF2 returns to sculpting".into()
         } else if session.vegetation_mode {
             "F6: greybox trees / shrubs\nCtrl D: copy plant\nF: focus | H: ground selection\nClick places one stamp\nEsc selects | Del removes\nArrows/PgUp/Dn: move\nR / Shift R: yaw +/-15 deg\n+/-: plant scale\n[ / ]: scatter radius\n, / .: scatter count\nVegetation proxies do not\nadd world collision".into()
         } else if session.marker_mode {
@@ -379,6 +398,7 @@ pub(super) fn palette(
             "F1: object tools | F2: terrain
 Click/drag: brush stroke
 Release: one undo entry
+Up to 128 stamps per stroke
 Esc: cancel preview
 WASD pan | RMB orbit
 F: frame terrain
@@ -596,7 +616,7 @@ pub(super) fn pointer(
                 Ok(()) => {
                     stroke.edits.push(edit);
                     stroke.last = Some(point);
-                    session.status = "Terrain preview - release to commit, Esc to cancel".into();
+                    session.status = stroke.feedback();
                 }
                 Err(error) => {
                     stroke.last = Some(point);

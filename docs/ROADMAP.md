@@ -24,6 +24,8 @@ error messages on text edits while retaining validation on Apply.
 Terrain brush feedback also conforms to the exact surface triangles and temporary
 stroke preview, sharing sculpt/paint falloff and locked-border rules. One resident
 standard Bevy mesh shows potential sample influence without source/history changes.
+Held strokes also show accepted stamp counts and an explicit 128-stamp limit
+message, preserving the existing bounded commit/cancel behavior.
 Flatten also samples the surface with I and adjusts its local
 level in 1 m / 0.1 m steps, sharing exact visual/headless stamp output.
 Ctrl-D and structured `duplicate` commands copy any authoring kind with fresh
