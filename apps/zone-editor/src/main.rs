@@ -2,6 +2,7 @@
 mod agent;
 mod cli;
 mod playtest;
+mod terrain;
 mod viewport;
 use bevy::picking::hover::Hovered;
 use bevy::{
@@ -25,6 +26,11 @@ struct Session {
     drag: Option<Drag>,
     play: Option<playtest::Playtest>,
     heading: f32,
+    terrain_mode: bool,
+    brush_tool: terrain::Tool,
+    brush_radius: f64,
+    brush_point: Option<Vec3>,
+    stroke: Option<terrain::Stroke>,
 }
 struct Drag {
     id: u64,
@@ -80,7 +86,16 @@ enum Action {
     Play,
     Spawn,
     Delete,
+    TerrainToggle,
+    Brush(terrain::Tool),
+    Radius(i8),
 }
+#[derive(Component)]
+struct PaletteSlot(usize);
+#[derive(Component)]
+struct PaletteLabel;
+#[derive(Component)]
+struct Help;
 #[derive(Component)]
 struct Summary;
 #[derive(Component)]
@@ -117,6 +132,14 @@ fn run() -> Result<(), String> {
         .max()
         .unwrap_or(0)
         .saturating_add(1);
+    let initial_target = editor.zone().terrain.as_ref().map(|patch| {
+        let start = patch.origin().expect("Validated terrain");
+        let local = editor
+            .zone()
+            .local([start[0], editor.zone().origin[1], start[2]])
+            .expect("Validated terrain frame");
+        Vec3::new(local[0] + 64., 0., local[2] + 64.)
+    });
     let mut app = App::new();
     app.insert_resource(Session {
         editor,
@@ -132,12 +155,17 @@ fn run() -> Result<(), String> {
         drag: None,
         play: None,
         heading: 0.,
+        terrain_mode: false,
+        brush_tool: terrain::Tool::Raise,
+        brush_radius: 12.,
+        brush_point: None,
+        stroke: None,
     })
     .insert_resource(View {
-        target: Vec3::ZERO,
+        target: initial_target.unwrap_or(Vec3::ZERO),
         yaw: 0.6,
         pitch: 0.8,
-        distance: 32.,
+        distance: if initial_target.is_some() { 120. } else { 32. },
     })
     .insert_resource(Time::<Fixed>::from_hz(30.))
     .insert_resource(bevy::winit::WinitSettings::continuous())
@@ -150,14 +178,17 @@ fn run() -> Result<(), String> {
         ..default()
     }))
     .add_observer(activate)
-    .add_systems(Startup, (viewport::setup, setup_ui))
+    .add_systems(Startup, (viewport::setup, terrain::setup, setup_ui))
     .add_systems(
         Update,
         (
             agent::poll,
             keyboard,
             camera_controls,
+            terrain::pointer,
             viewport::pointer,
+            terrain::sync,
+            terrain::palette,
             viewport::sync,
             present,
             viewport::capture,
@@ -188,26 +219,35 @@ fn text(value: &str, size: f32) -> impl Bundle {
         bevy::picking::Pickable::IGNORE,
     )
 }
+fn object_actions() -> [(Action, &'static str); 12] {
+    [
+        (Action::Select, "Select / drag [Esc]"),
+        (Action::Place(Primitive::Box), "Place box [1]"),
+        (Action::Place(Primitive::Sphere), "Place sphere [2]"),
+        (Action::Place(Primitive::Cylinder), "Place cylinder [3]"),
+        (Action::Snap, "Toggle 1 m snap [G]"),
+        (Action::Undo, "Undo [Ctrl Z]"),
+        (Action::Redo, "Redo [Ctrl Y]"),
+        (Action::Delete, "Delete selected [Del]"),
+        (Action::Spawn, "Spawn at view centre"),
+        (Action::Save, "Save zone [Ctrl S]"),
+        (Action::Load, "Load zone [Ctrl O]"),
+        (Action::Play, "Enter / leave playtest [F5]"),
+    ]
+}
 fn setup_ui(mut commands: Commands) {
     commands.spawn((Node { position_type: PositionType::Absolute, left: px(0), top: px(0), bottom: px(0),
         width: px(PANEL), padding: UiRect::all(px(14)), flex_direction: FlexDirection::Column, row_gap: px(6), ..default() },
         BackgroundColor(Color::srgb(0.035, 0.05, 0.075))))
         .with_children(|panel| {
             panel.spawn(text("THEIA / ZONE STUDIO", 22.));
-            panel.spawn(text("Greybox | metres | Y up", 14.));
-            for (action, title) in [
-                (Action::Select, "Select / drag [Esc]"), (Action::Place(Primitive::Box), "Place box [1]"),
-                (Action::Place(Primitive::Sphere), "Place sphere [2]"), (Action::Place(Primitive::Cylinder), "Place cylinder [3]"),
-                (Action::Snap, "Toggle 1 m snap [G]"), (Action::Undo, "Undo [Ctrl Z]"), (Action::Redo, "Redo [Ctrl Y]"),
-                (Action::Delete, "Delete selected [Del]"), (Action::Spawn, "Spawn at view centre"),
-                (Action::Save, "Save zone [Ctrl S]"), (Action::Load, "Load zone [Ctrl O]"),
-                (Action::Play, "Enter / leave playtest [F5]"),
-            ] {
-                panel.spawn((action, Button, ActivateOnPress, Hovered::default(), Node { min_height: px(26), padding: UiRect::all(px(4)), ..default() },
-                    BackgroundColor(Color::srgb(0.10, 0.16, 0.22)))).with_children(|button| { button.spawn(text(title, 15.)); });
+            panel.spawn(text("F1 Objects | F2 Terrain | metres", 14.));
+            for (index,(action, title)) in object_actions().into_iter().enumerate() {
+                panel.spawn((PaletteSlot(index), action, Button, ActivateOnPress, Hovered::default(), Node { min_height: px(26), padding: UiRect::all(px(4)), ..default() },
+                    BackgroundColor(Color::srgb(0.10, 0.16, 0.22)))).with_children(|button| { button.spawn((PaletteLabel,text(title, 15.))); });
             }
             panel.spawn((Info, text("", 14.)));
-            panel.spawn(text("Edit: WASD pan | RMB orbit | wheel zoom\nDrag selected: X/Z\nArrows: X/Z | PgUp/Dn: Y\nR / Shift R: yaw +/-15 deg\n+ / -: uniform size\nPlay: W/S forward/back | A/D turn\nQ/E strafe | Space jump\nOffline collision sandbox", 13.));
+            panel.spawn((Help,text("WASD pan | RMB orbit | wheel zoom\nDrag selected: X/Z\nArrows: X/Z | PgUp/Dn: Y\nR / Shift R: yaw +/-15 deg\n+ / -: uniform size\nPlay: W/S forward/back | A/D turn\nQ/E strafe | Space jump\nOffline collision sandbox", 13.)));
         });
     commands.spawn((
         Summary,
@@ -228,16 +268,17 @@ fn activate(
     actions: Query<&Action>,
     windows: Query<&Window>,
     mut session: ResMut<Session>,
-    view: Res<View>,
+    mut view: ResMut<View>,
 ) {
     if windows.single().is_ok_and(|w| w.focused)
         && let Ok(action) = actions.get(event.entity)
     {
-        perform(*action, &mut session, &view);
+        perform(*action, &mut session, &mut view);
     }
 }
-fn perform(action: Action, session: &mut Session, view: &View) {
+fn perform(action: Action, session: &mut Session, view: &mut View) {
     session.drag = None;
+    session.stroke = None;
     if matches!(action, Action::Play) {
         if session.play.take().is_some() {
             session.status = "Returned to editing".into();
@@ -260,6 +301,7 @@ fn perform(action: Action, session: &mut Session, view: &View) {
     match action {
         Action::Select => session.palette = None,
         Action::Place(primitive) => {
+            session.terrain_mode = false;
             session.palette = Some(primitive);
             session.status = "Click the ground to place".into();
         }
@@ -310,7 +352,35 @@ fn perform(action: Action, session: &mut Session, view: &View) {
                 origin[1] + 0.1,
                 origin[2] + f64::from(view.target.z),
             ];
+            let mut position = position;
+            if let Some(patch) = &session.editor.zone().terrain {
+                position[1] += f64::from(
+                    patch
+                        .height(position[0], position[2])
+                        .ok()
+                        .flatten()
+                        .unwrap_or(0.),
+                );
+            }
             session.edit(vec![Edit::SetSpawn { position }]);
+        }
+        Action::TerrainToggle => {
+            let creating = session.editor.zone().terrain.is_none();
+            terrain::toggle(session);
+            if creating && let Some(patch) = &session.editor.zone().terrain {
+                let start = patch.origin().unwrap();
+                let offset = session
+                    .editor
+                    .zone()
+                    .local([start[0], session.editor.zone().origin[1], start[2]])
+                    .unwrap();
+                view.target = Vec3::new(offset[0] + 64., 0., offset[2] + 64.);
+                view.distance = 120.;
+            }
+        }
+        Action::Brush(tool) => session.brush_tool = tool,
+        Action::Radius(direction) => {
+            session.brush_radius = (session.brush_radius + f64::from(direction) * 4.).clamp(4., 32.)
         }
         Action::Play => unreachable!(),
     }
@@ -319,10 +389,25 @@ fn keyboard(
     keys: Res<ButtonInput<KeyCode>>,
     windows: Query<&Window>,
     mut session: ResMut<Session>,
-    view: Res<View>,
+    mut view: ResMut<View>,
 ) {
     if !windows.single().is_ok_and(|w| w.focused) {
         session.drag = None;
+        session.stroke = None;
+        return;
+    }
+    if (keys.just_pressed(KeyCode::F1) || keys.just_pressed(KeyCode::F2)) && session.play.is_none()
+    {
+        session.terrain_mode = keys.just_pressed(KeyCode::F2);
+        session.stroke = None;
+        session.drag = None;
+        session.palette = None;
+        session.selected = None;
+        session.status = if session.terrain_mode {
+            "Terrain tools - create a patch, then click or drag to sculpt".into()
+        } else {
+            "Object tools".into()
+        };
         return;
     }
     let ctrl = keys.pressed(KeyCode::ControlLeft) || keys.pressed(KeyCode::ControlRight);
@@ -352,10 +437,15 @@ fn keyboard(
         None
     };
     if let Some(action) = action {
-        perform(action, &mut session, &view);
+        perform(action, &mut session, &mut view);
         return;
     }
-    if session.play.is_some() || session.drag.is_some() || ctrl {
+    if session.play.is_some()
+        || session.drag.is_some()
+        || session.stroke.is_some()
+        || session.terrain_mode
+        || ctrl
+    {
         return;
     }
     let Some(object) = session
@@ -477,10 +567,25 @@ fn present(
             session.editor.zone().objects.len(),
             session.editor.history(),
             session.snap,
-            selected.map_or("No selection".into(), |o| format!(
-                "#{} {}\npos {:.2?}\nsize {:.2?}\nyaw {:.0} deg",
-                o.id, o.name, o.pose.position, o.pose.size, o.pose.yaw_degrees
-            ))
+            if session.terrain_mode {
+                format!(
+                    "Terrain {:?} | radius {} m\n{}",
+                    session.brush_tool,
+                    session.brush_radius,
+                    if session.editor.zone().terrain.is_some() {
+                        "128 m patch | 4 m samples"
+                    } else {
+                        "No terrain patch"
+                    }
+                )
+            } else {
+                selected.map_or("No selection".into(), |o| {
+                    format!(
+                        "#{} {}\npos {:.2?}\nsize {:.2?}\nyaw {:.0} deg",
+                        o.id, o.name, o.pose.position, o.pose.size, o.pose.yaw_degrees
+                    )
+                })
+            }
         );
     }
 }

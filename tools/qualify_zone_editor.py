@@ -5,13 +5,15 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import struct
 import time
 
 from gpu_validation import check_gpu_diagnostics
 from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 
 
-def run(output, binary, size, agent=False):
+def run(output, binary, size, agent=False, terrain=False):
+    agent = agent or terrain
     output.mkdir(parents=True, exist_ok=True)
     report = output / 'state.json'
     saved = output / 'zone.json'
@@ -41,6 +43,13 @@ def run(output, binary, size, agent=False):
                     subprocess.run(['wmctrl', '-ir', hex(window), '-b', 'add,fullscreen'], check=True)
                 wait(lambda: state()['viewport'] == [width, height])
             assert all(0 <= b['centre'][1] - b['size'][1]/2 and b['centre'][1] + b['size'][1]/2 <= state()['viewport'][1] for b in state()['buttons'])
+            def read_saved():
+                value = json.loads(saved.read_text())
+                # Files serialize f32 heights with shortest round-trippable decimals;
+                # JSON Value telemetry expands them to f64. Compare declared f32 data.
+                if value.get('terrain'):
+                    value['terrain']['heights'] = [struct.unpack('<f', struct.pack('<f', h))[0] for h in value['terrain']['heights']]
+                return value
             def button(action):
                 entry = next(b for b in state()['buttons'] if b['action'] == action)
                 desktop.click(window, entry['centre'], 1, 1)
@@ -115,8 +124,8 @@ def run(output, binary, size, agent=False):
             desktop.click(window, point, 1, 1)
             wait(lambda: state()['selected'] == 6)
             chord('s')
-            wait(lambda: json.loads(saved.read_text()) == state()['document'])
-            saved_document = json.loads(saved.read_text())
+            wait(lambda: read_saved() == state()['document'])
+            saved_document = read_saved()
             previous = state()['revision']
             key('Left')
             altered = revision(previous)
@@ -188,11 +197,97 @@ def run(output, binary, size, agent=False):
             assert after_play['document'] == before_play['document']
             assert after_play['revision'] == before_play['revision']
             checks.append('F5 native shared-Avian walking returns without changing edits/history')
+            if terrain:
+                key('F2')
+                wait(lambda: state()['terrain_mode'])
+                previous = state()['revision']
+                button('TerrainToggle')
+                flat = revision(previous)
+                assert flat['document']['schema'] == 2
+                assert len(flat['document']['terrain']['heights']) == 1089
+                time.sleep(.5)
+                button('Brush(Raise)')
+                desktop.move(window, state()['terrain_points'][0], 1)
+                desktop.button(1, True)
+                wait(lambda: state()['dragging'])
+                key('Escape')
+                desktop.button(1, False)
+                wait(lambda: not state()['dragging'])
+                assert state()['revision'] == flat['revision'] and state()['document'] == flat['document']
+                checks.append('actual Escape cancels a terrain preview without changing document/history')
+                desktop.move(window, state()['terrain_points'][0], 1)
+                desktop.button(1, True)
+                time.sleep(.3)
+                desktop.move(window, state()['terrain_points'][1], 1)
+                time.sleep(.3)
+                assert state()['revision'] == flat['revision']
+                assert state()['dragging']
+                receipt, _ = agent_request(dict(command='undo', expected_revision=flat['revision']))
+                assert not receipt['accepted'] and 'busy' in receipt['error']
+                desktop.button(1, False)
+                raised = revision(flat['revision'])
+                assert max(raised['document']['terrain']['heights']) > 1.
+                chord('z')
+                assert revision(raised['revision'])['document'] == flat['document']
+                previous = state()['revision']
+                chord('y')
+                assert revision(previous)['document'] == raised['document']
+                checks.append('native terrain drag previews through shared validation and commits one undo entry; live agent refuses preview')
+                previous = state()['revision']
+                button('Brush(Lower)')
+                desktop.click(window, state()['terrain_points'][2], 1, 1)
+                lowered = revision(previous)
+                assert min(lowered['document']['terrain']['heights']) < -1.
+                for tool in ['Flatten', 'Smooth']:
+                    previous = state()['revision']
+                    before = state()['document']['terrain']['heights']
+                    button(f'Brush({tool})')
+                    desktop.click(window, state()['terrain_points'][0], 1, 1)
+                    after = revision(previous)
+                    assert after['document']['terrain']['heights'] != before
+                button('Radius(1)')
+                wait(lambda: state()['brush_radius'] == 16.)
+                button('Radius(-1)')
+                wait(lambda: state()['brush_radius'] == 12.)
+                key('F1')
+                wait(lambda: not state()['terrain_mode'])
+                previous = state()['revision']
+                button('Spawn')
+                spawned = revision(previous)
+                chord('s')
+                wait(lambda: read_saved() == state()['document'])
+                saved_terrain = state()['document']
+                key('F5')
+                playing = wait(lambda: state() if state()['play_feet'] is not None else None)
+                assert playing['play_feet'][1] > .1
+                start = playing['play_feet']
+                desktop.key_state('w', True)
+                try:
+                    time.sleep(.6)
+                finally:
+                    desktop.key_state('w', False)
+                wait(lambda: state()['play_feet'][2] < start[2]-1.)
+                key('F5')
+                wait(lambda: state()['play_feet'] is None)
+                assert state()['document'] == saved_terrain
+                previous = state()['revision']
+                chord('o')
+                assert revision(previous)['document'] == saved_terrain
+                receipt, _ = agent_request(dict(command='apply', expected_revision=state()['revision'], edits=[dict(op='brush',brush=dict(centre=[80.,64.],radius_metres=8.,operation=dict(kind='lower',metres=2.)))]))
+                assert receipt['accepted']
+                changed = wait(lambda: state() if state()['revision'] == receipt['revision'] else None)
+                assert changed['document']['terrain']['heights'] != saved_terrain['terrain']['heights']
+                chord('z')
+                assert revision(changed['revision'])['document'] == saved_terrain
+                key('F2')
+                wait(lambda: state()['terrain_mode'])
+                checks.append('native lower/flatten/smooth, brush radius, terrain save/load, actual capsule terrain walk and live agent brush/visual undo')
             key('F12')
             wait(lambda: capture_ready(report.with_suffix('.png')), 30)
             checks.append('actual native Vulkan screenshot captured')
-            summary = dict(checks=checks, gpu=after_play['gpu'], viewport=after_play['viewport'],
-                           revision=after_play['revision'], history=after_play['history'],
+            final = state()
+            summary = dict(checks=checks, gpu=final['gpu'], viewport=final['viewport'],
+                           revision=final['revision'], history=final['history'],
                            scope='Linux synthetic OS input; offline editor and collision sandbox; no multiplayer or Windows evidence')
             (output/'qualification.json').write_text(json.dumps(summary, indent=2)+'\n')
             subprocess.run(['wmctrl', '-ic', hex(window)], check=True)
@@ -215,5 +310,6 @@ if __name__ == '__main__':
     parser.add_argument('--binary', type=Path, default=Path('target/debug/theia-zone-editor'))
     parser.add_argument('--size', choices=['1280x720', '1920x1200', '3440x1440'])
     parser.add_argument('--agent', action='store_true')
+    parser.add_argument('--terrain', action='store_true')
     args = parser.parse_args()
-    run(args.output, args.binary, args.size, args.agent)
+    run(args.output, args.binary, args.size, args.agent, args.terrain)

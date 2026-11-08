@@ -28,7 +28,7 @@ pub(super) fn poll(
         return;
     }
     mailbox.elapsed = 0.;
-    let busy = session.drag.is_some() || session.play.is_some();
+    let busy = session.drag.is_some() || session.stroke.is_some() || session.play.is_some();
     let previous = session.editor.revision();
     match mailbox.inner.poll(&mut session.editor, busy) {
         Ok(Some(receipt)) => {

@@ -12,6 +12,8 @@ pub(super) struct Authored(pub u64);
 pub(super) struct SpawnMarker;
 #[derive(Component)]
 pub(super) struct Pawn;
+#[derive(Component)]
+pub(super) struct GridLine;
 #[derive(Resource)]
 pub(super) struct Palette {
     meshes: [Handle<Mesh>; 3],
@@ -30,7 +32,6 @@ pub(super) fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let ground = materials.add(Color::srgb(0.18, 0.24, 0.20));
     let pawn = materials.add(Color::srgb(0.25, 0.65, 0.95));
     commands.insert_resource(Palette {
         meshes: [
@@ -41,11 +42,6 @@ pub(super) fn setup(
         normal: materials.add(Color::srgb(0.52, 0.60, 0.66)),
         selected: materials.add(Color::srgb(0.95, 0.61, 0.19)),
     });
-    commands.spawn((
-        Mesh3d(meshes.add(Cuboid::new(1024., 1., 1024.))),
-        MeshMaterial3d(ground),
-        Transform::from_xyz(0., -0.5, 0.),
-    ));
     let grid_mesh = meshes.add(Cuboid::new(1., 1., 1.));
     let grid_material = materials.add(StandardMaterial {
         base_color: Color::srgb(0.30, 0.38, 0.33),
@@ -65,6 +61,7 @@ pub(super) fn setup(
                 Vec3::new(0.012, 0.006, 64.)
             };
             commands.spawn((
+                GridLine,
                 Mesh3d(grid_mesh.clone()),
                 MeshMaterial3d(grid_material.clone()),
                 Transform::from_translation(translation).with_scale(scale),
@@ -191,12 +188,16 @@ pub(super) fn pointer(
     windows: Query<&Window>,
     camera: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
     objects: Query<&Authored>,
+    ground: Query<(), With<terrain::GroundPart>>,
     mut raycast: MeshRayCast,
     mut session: ResMut<Session>,
 ) {
     let Ok(window) = windows.single() else {
         return;
     };
+    if session.terrain_mode {
+        return;
+    }
     if !window.focused || session.play.is_some() {
         session.drag = None;
         return;
@@ -215,14 +216,29 @@ pub(super) fn pointer(
     };
     if mouse.just_pressed(MouseButton::Left) {
         if let Some(primitive) = session.palette {
-            if let Some(hit) = plane(ray, 0.) {
+            let filter = |entity| ground.contains(entity);
+            let settings = MeshRayCastSettings::default().with_filter(&filter);
+            let hit = raycast
+                .cast_ray(ray, &settings)
+                .first()
+                .map(|(_, hit)| ray.get_point(hit.distance));
+            if let Some(hit) = hit {
                 let origin = session.editor.zone().origin;
-                let mut position = session.snapped([
-                    origin[0] + f64::from(hit.x),
-                    origin[1],
-                    origin[2] + f64::from(hit.z),
-                ]);
-                position[1] = origin[1] + 0.5;
+                let mut position = session.snapped(
+                    session
+                        .editor
+                        .zone()
+                        .global(hit.to_array())
+                        .expect("Bounded ground hit"),
+                );
+                let height = session
+                    .editor
+                    .zone()
+                    .terrain
+                    .as_ref()
+                    .and_then(|patch| patch.height(position[0], position[2]).ok().flatten())
+                    .unwrap_or(0.);
+                position[1] = origin[1] + f64::from(height) + 0.5;
                 let id = session.next_id;
                 if let Some(next) = id.checked_add(1) {
                     session.next_id = next;
@@ -280,12 +296,8 @@ pub(super) fn pointer(
         let height = zone.local(drag.before.position).unwrap()[1];
         if let Some(hit) = plane(ray, height) {
             let point = hit + drag.offset;
-            let origin = zone.origin;
-            let position = session.snapped([
-                origin[0] + f64::from(point.x),
-                drag.before.position[1],
-                origin[2] + f64::from(point.z),
-            ]);
+            let position =
+                session.snapped(zone.global(point.to_array()).expect("Bounded drag plane"));
             drag.preview.position = [position[0], drag.before.position[1], position[2]];
         }
         if mouse.just_released(MouseButton::Left) {
@@ -406,8 +418,9 @@ pub(super) fn report(
     }).collect();
     let value = serde_json::json!({"revision":session.editor.revision(),"history":session.editor.history(),
         "document":session.editor.zone(),"selected":session.selected,"snap":session.snap,"status":session.status,
-        "dragging":session.drag.is_some(),"play_feet":session.play.as_ref().map(|p| p.feet.metres()),
+        "dragging":session.drag.is_some() || session.stroke.is_some(),"terrain_mode":session.terrain_mode,"brush_radius":session.brush_radius,"brush_tool":format!("{:?}",session.brush_tool),"play_feet":session.play.as_ref().map(|p| p.feet.metres()),
         "objects":objects,"buttons":buttons,"viewport":[window.width(),window.height()],
+        "terrain_points":[project(Vec3::new(64.,0.,64.)),project(Vec3::new(72.,0.,64.)),project(Vec3::new(48.,0.,64.))],
         "ground":[project(Vec3::new(3.,0.,4.)),project(Vec3::new(5.,0.,4.))],
         "gpu":{"name":adapter.name,"backend":format!("{:?}",adapter.backend),"device":adapter.device}});
     let temp = report.path.with_extension("tmp");

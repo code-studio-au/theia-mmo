@@ -85,9 +85,8 @@ Native Linux checks must include actual rendered pixels and pointer/keyboard
 placement, transform, undo/redo, save/load and playtest transitions. Record executed
 results below; Windows cross-builds and native execution remain separate evidence.
 
-Next: stronger transform handles/property widgets,
-explicit playtest export into normal server content admission, terrain samples and
-brush undo, paths/streams, deterministic vegetation overrides, NPC/quest markers.
+Next: explicit playtest export into normal server content admission, stronger
+transform handles/property widgets, multi-tile terrain, paths/streams, deterministic vegetation overrides, NPC/quest markers.
 Do not call the offline sandbox authoritative multiplayer. Terrain brushes should
 reuse the shared validation/history boundary; avoid a second editing engine.
 
@@ -139,8 +138,7 @@ attempts is counted as qualification. The first ultrawide window resize was
 limited by desktop decorations to 3440x1368; the final fullscreen run verifies
 actual 3440x1440 pixels.
 
-Limits: this is a finite local primitive editor and offline playtest. Arbitrary assets, draggable transform handles/property fields, terrain
-brushes, paths/streams, vegetation/markers, normal server content export/admission,
+Limits: this is a finite local primitive editor and offline playtest. Arbitrary assets, draggable transform handles/property fields, multi-tile terrain, paths/streams, vegetation/markers, normal server content export/admission,
 multiplayer, performance/capacity, non-unit monitor DPI and Windows execution
 remain open. Startup commands and visual edits already share one history.
 
@@ -213,3 +211,89 @@ Repeat with `tools/qualify_zone_editor.py --output build/zone-agent-proof
 --size 1280x720 --agent` using the existing asset-tools Python environment.
 No new rendering code was added in this continuation; the original three-size
 visual qualification remains scoped to its recorded source/binary.
+
+## Bounded terrain brushes (P5-17 / P3-15 / P1-10 / P2-06/07)
+
+The bounded terrain continuation is implemented and qualified. Zone schema 2 optionally contains
+one `terrain` patch: integer `chunk: [x,z]`, 33x33 Z-major f32 `heights`, 128 m
+square / 4 m sample spacing. Chunk lower corners use the existing integer
+`ChunkId::origin(128)` convention. Heights are relative to the zone's global f64
+origin Y and bounded to +/-64 m. The patch must fit the finite authoring frame.
+All border samples remain zero to meet the implicit flat surroundings. This is
+one editable height patch, not multi-tile authoring, streaming or a normal server
+terrain package. Schema-1 primitive zones retain their format and remain readable.
+
+`set_terrain` creates/replaces/removes a patch and upgrades the document to schema
+2. `brush` carries a global f64 `centre: [x,z]`, `radius_metres` in 4..32 and an
+`operation`: `raise`/`lower` with `metres` in 0.05..8, `flatten` with local `height`
+and `blend` in 0.05..1, or `smooth` with `blend`. Radial linear falloff and
+four-neighbour smoothing are explicit Theia authoring choices. Smoothing samples
+one immutable prior grid per stamp. Invalid/no-op/out-of-patch/over-height strokes
+refuse atomically. The fixed border is excluded from every brush.
+
+F1/F2 switch between object and terrain palettes. Creating terrain focuses its
+128 m patch. The terrain palette provides create/remove, raise/lower (2 m per
+stamp), flatten to local zero, smooth, radius +/-4 m, undo/redo, save/load and
+playtest. A drag stamps on pointer movement of at least 2 m; stationary holds do
+not accumulate changes at a render-dependent rate. At most 128 stamps fit one
+stroke. Each preview stamp is validated in a disposable `Editor`; releasing
+replays the same command transaction once into live history. Escape, focus loss
+or release over the sidebar cancels the preview. Agent requests refuse during it.
+
+Rendering and Avian use the existing 32-cell procedural grid topology with every
+authored sample. Standard Bevy mesh normals/PBR and ordinary static Avian triangle
+meshes present/query it. The surroundings are four ordinary cuboids with a true
+patch cutout, so lowered terrain has no hidden flat collider or render plane.
+Reusable terrain surface/grid mesh handles update for previews/undo/reload; no per-stamp
+asset accumulation is introduced. Flat grid lines hide while terrain is active. A standard line-list mesh follows
+the authored grid in edit mode, and active palette tools are highlighted.
+Primitive placement and the spawn-at-view action sample the same triangle surface.
+F5 validates a capsule spawn and uses the same existing shared movement solver.
+No file I/O or terrain authoring enters the normal authoritative simulation.
+
+Example structured terrain fixture:
+
+```bash
+cargo run -p theia-zone-editor -- \
+  --commands content/zones/terrain.commands.jsonl --output build/terrain-zone.json
+```
+
+The fixture creates a hill and depression. Terrain file values are f32; JSON may
+print shorter decimal representations than expanded telemetry. Comparisons must
+use the declared sample precision, not require equal f64 decimal spellings.
+
+Four new domain tests pass for all brush operations/grouped undo/schema round
+trip, complete rollback after a stroke exceeds the height budget, exact triangle
+interpolation/far signed chunk binding, and malformed borders/topology/extents.
+An actual Avian test checks every triangle centroid of two opposite-height patches
+at signed far origins: 4,096 rays agree within 0.1 mm, including negative samples
+with no hidden floor, plus shared capsule spawn checks. Combined focused suite:
+15 zone + two editor cases. Fresh locked focused tests, denied-warning workspace /
+all-target Clippy, formatting/diff checks and editor build pass.
+
+Final actual Linux/RADV/Vulkan walkthroughs pass at 1280x720, 1920x1200 and
+fullscreen 3440x1440 with zero GPU diagnostics. They repeat the primitive and live
+agent checks and prove actual Escape-cancelled previews, one-entry brush drags,
+live agent refusal during a brush, all four brush modes, radius changes, exact
+f32 terrain save/load, spawn sampling, shared-capsule walking on the sculpted
+surface and a live agent brush undone visually. Each final editor reaches
+revision 32 and closes normally. Actual screenshots verify visible terrain grid,
+palette controls and highlighted brush; these are synthetic OS-input checks,
+not physical-device/Windows or capacity evidence.
+
+Evidence: ignored `build/zone-terrain-tests-final-v2.log`,
+`zone-terrain-clippy-final-v1.log`, `zone-terrain-build-v4.log`, and
+`zone-terrain-final-{1280x720,1920x1200,3440x1440}/`. The new fixture also passes
+actual `--headless` command execution (revision 2 / two grouped entries).
+`tools/qualify_zone_editor.py --terrain` repeats the complete native workflow.
+The first terrain native attempt is retained in `zone-terrain-native-v1/`: its
+file check incorrectly required f64 decimal equality for saved f32 heights. The
+corrected driver compares the declared f32 sample values; the file format was
+not changed to accommodate that assertion. Native v2 passes before the final
+grid/highlight continuation. Existing source/screenshot evidence remains scoped
+to its exact version.
+
+Remaining: multi-tile/seam authoring, import/export into admitted game packages,
+terrain materials/LOD, configurable flatten heights/strength, path/stream tools,
+vegetation and nonblocking NPC/quest markers. This patch does not modify the
+existing 125x125 saved-terrain world or enable authoritative multiplayer zones.

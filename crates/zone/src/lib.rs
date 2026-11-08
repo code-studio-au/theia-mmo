@@ -1,9 +1,10 @@
 //! Bounded authoring documents and transactional commands, independent of Bevy.
 pub mod mailbox;
+pub mod terrain;
 
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeSet, fs, io::Read, path::Path};
-use theia_core::coordinates::{GlobalPosition, LocalFrame};
+use theia_core::coordinates::{GlobalPosition, LocalFrame, LocalPosition};
 
 pub const MAX_OBJECTS: usize = 1024;
 pub const MAX_DOCUMENT_BYTES: u64 = 1024 * 1024;
@@ -47,6 +48,8 @@ pub struct Zone {
     /// Player feet, global metres. Placement clearance is checked at playtest time.
     pub spawn: [f64; 3],
     pub objects: Vec<Object>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub terrain: Option<terrain::HeightPatch>,
 }
 
 fn require(condition: bool, message: &str) -> Result<()> {
@@ -63,6 +66,7 @@ impl Default for Zone {
             origin: [0.; 3],
             spawn: [0., 0.1, 6.],
             objects: vec![],
+            terrain: None,
         }
     }
 }
@@ -79,6 +83,13 @@ impl Zone {
             .map(|v| v.metres())
             .ok_or("Outside local frame".into())
     }
+    pub fn global(&self, local: [f32; 3]) -> Result<[f64; 3]> {
+        let point = LocalPosition::new(local).ok_or("Invalid local position")?;
+        self.frame()?
+            .to_global(point)
+            .map(|p| p.metres())
+            .ok_or("Invalid global position".into())
+    }
     fn check_position(&self, position: [f64; 3], margin: f64) -> Result<()> {
         self.local(position)?;
         require(
@@ -87,7 +98,14 @@ impl Zone {
         )
     }
     pub fn validate(&self) -> Result<()> {
-        require(self.schema == 1, "Unsupported zone schema")?;
+        require(matches!(self.schema, 1 | 2), "Unsupported zone schema")?;
+        require(
+            self.schema != 1 || self.terrain.is_none(),
+            "Terrain requires zone schema 2",
+        )?;
+        if let Some(terrain) = &self.terrain {
+            terrain.validate(self)?;
+        }
         require(label(&self.name), "Invalid zone name")?;
         self.frame()?;
         self.check_position(self.spawn, 2.)?;
@@ -177,10 +195,25 @@ impl Zone {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "op", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Edit {
-    Place { object: Object },
-    Transform { id: u64, pose: Pose },
-    Delete { id: u64 },
-    SetSpawn { position: [f64; 3] },
+    Place {
+        object: Object,
+    },
+    Transform {
+        id: u64,
+        pose: Pose,
+    },
+    Delete {
+        id: u64,
+    },
+    SetSpawn {
+        position: [f64; 3],
+    },
+    SetTerrain {
+        terrain: Option<terrain::HeightPatch>,
+    },
+    Brush {
+        brush: terrain::Brush,
+    },
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "command", rename_all = "snake_case", deny_unknown_fields)]
@@ -286,6 +319,15 @@ impl Editor {
                             candidate.objects.remove(index);
                         }
                         Edit::SetSpawn { position } => candidate.spawn = position,
+                        Edit::SetTerrain { terrain } => {
+                            candidate.schema = 2;
+                            candidate.terrain = terrain;
+                        }
+                        Edit::Brush { brush } => candidate
+                            .terrain
+                            .as_mut()
+                            .ok_or("Create terrain before brushing")?
+                            .apply(&brush)?,
                     }
                 }
                 self.replace(candidate, expected_revision)
@@ -447,7 +489,7 @@ mod tests {
             })
             .unwrap();
         assert_eq!(editor.zone(), &previous);
-        zone.schema = 2;
+        zone.schema = 99;
         assert!(editor.replace(zone, 2).is_err());
         assert_eq!(editor.history(), (0, 1));
         assert!(Zone::from_json(br#"{"schema":1,"unknown":true}"#).is_err());

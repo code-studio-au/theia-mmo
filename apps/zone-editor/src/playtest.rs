@@ -16,11 +16,28 @@ pub(super) struct Playtest {
 }
 pub(super) fn collision(zone: &Zone) -> Result<StaticScene, String> {
     zone.validate()?;
-    let mut colliders = vec![PlacedCollider {
-        shape: Collider::cuboid(1024., 1., 1024.),
-        center: Vec3::new(0., -0.5, 0.),
-        layer: SOLID | GROUND | CAMERA,
-    }];
+    let mut colliders: Vec<_> = terrain::ground_boxes(zone)
+        .into_iter()
+        .map(|(center, size)| PlacedCollider {
+            shape: Collider::cuboid(size.x, size.y, size.z),
+            center,
+            layer: SOLID | GROUND | CAMERA,
+        })
+        .collect();
+    if let Some(geometry) = terrain::geometry(zone) {
+        colliders.push(PlacedCollider {
+            shape: Collider::trimesh(
+                geometry
+                    .positions
+                    .into_iter()
+                    .map(Vec3::from_array)
+                    .collect(),
+                geometry.triangles,
+            ),
+            center: Vec3::ZERO,
+            layer: SOLID | GROUND | CAMERA,
+        });
+    }
     for object in &zone.objects {
         let [x, y, z] = object.pose.size.map(|v| v as f32);
         let shape = match object.primitive {
@@ -175,5 +192,64 @@ mod tests {
         );
         zone.spawn = [0., 0.1, 0.];
         assert!(Playtest::new(&zone).is_err());
+    }
+}
+
+#[cfg(test)]
+mod terrain_tests {
+    use super::*;
+    #[test]
+    fn every_terrain_triangle_matches_avian_including_depressions_and_far_frames() {
+        for sign in [-1., 1.] {
+            let chunk = [(sign as i64) * 1_000_000, -(sign as i64) * 1_000_000];
+            let mut patch = theia_zone::terrain::HeightPatch::flat(chunk);
+            let origin = patch.origin().unwrap();
+            for z in 0..33 {
+                for x in 0..33 {
+                    patch.heights[z * 33 + x] = sign
+                        * 4.
+                        * (1. - ((x as f32 - 16.).abs().max((z as f32 - 16.).abs())) / 16.);
+                }
+            }
+            let zone = Zone {
+                schema: 2,
+                origin,
+                spawn: [origin[0] + 64., f64::from(sign * 4.) + 0.1, origin[2] + 64.],
+                terrain: Some(patch),
+                ..Zone::default()
+            };
+            let scene = collision(&zone).unwrap();
+            let geometry = terrain::geometry(&zone).unwrap();
+            let patch = zone.terrain.as_ref().unwrap();
+            for triangle in geometry.triangles {
+                let centre = triangle
+                    .map(|index| Vec3::from_array(geometry.positions[index as usize]))
+                    .into_iter()
+                    .sum::<Vec3>()
+                    / 3.;
+                let height = scene.ground([centre.x, centre.z], 64.).unwrap().0;
+                assert!(
+                    (height - centre.y).abs() < 0.0001,
+                    "Actual Avian triangle mismatch {centre:?} vs {height}"
+                );
+                let sampled = patch
+                    .height(
+                        origin[0] + f64::from(centre.x),
+                        origin[2] + f64::from(centre.z),
+                    )
+                    .unwrap()
+                    .unwrap();
+                assert!(
+                    (sampled - centre.y).abs() < 0.0001,
+                    "Authored interpolation mismatch"
+                );
+            }
+            let play = Playtest::new(&zone).unwrap();
+            assert!(
+                (play.feet.metres()[1] - sign * 4.).abs() < 0.08,
+                "Shared capsule terrain spawn {:?}",
+                play.feet.metres()
+            );
+        }
     }
 }

@@ -6,7 +6,10 @@ validated command/undo foundation now pass eight focused Rust checks, strict
 workspace Clippy, headless CLI and four native Linux walkthroughs through actual
 3440x1440, with zero GPU diagnostics. The opt-in live agent mailbox now also
 passes mixed agent/visual undo/redo and playtest refusal natively at 1280x720,
-with 12 focused Rust cases and strict Clippy. Terrain remains next. Runtime multiplayer remains
+with 12 focused Rust cases and strict Clippy. Schema-2 terrain brushes now add
+shared validated stroke previews/undo, actual Avian surface queries and three-size
+native sculpt/save/load/playtest checks: 17 focused Rust cases, strict Clippy and
+zero GPU diagnostics. Admitted game-package export and later zone tools remain. Runtime multiplayer remains
 Rust/Bevy/Avian/Renet; editor playtest is an offline sandbox. Actual prerequisites,
 acceptance checks and implementation evidence are tracked in [the zone record](../ZONE_EDITOR.md).
 Earlier stop/chat-first queue entries are historical; P3-17/18 stay unspecified.

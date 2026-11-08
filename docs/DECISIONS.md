@@ -1,3 +1,16 @@
+## 8 November 2026 — bounded terrain brushes share command validation
+
+Add one schema-2 128 m / 33x33 height patch to the zone editor using integer chunk
+IDs, global f64 origins and bounded local f32 sample heights. Keep borders flat
+for this first finite patch; use a real cutout in surrounding flat ground.
+Raise/lower/flatten/smooth previews validate through disposable command state;
+release commits the same bounded stamp transaction as one live undo entry.
+Bevy surface/grid meshes and Avian use the same existing regular triangulation.
+Keep terrain authoring outside authoritative simulation and preserve schema-1
+primitive documents. The actual Avian/ray and three-size native gates pass;
+normal server package export, multi-tile seams and richer tools remain open.
+[Contract and evidence](ZONE_EDITOR.md#bounded-terrain-brushes-p5-17--p3-15--p1-10--p2-0607).
+
 ## 8 November 2026 — live zone commands use an opt-in local mailbox
 
 Use one explicit local directory and one pending request for agent edits in the
