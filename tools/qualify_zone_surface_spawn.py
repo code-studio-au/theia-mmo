@@ -6,12 +6,14 @@ import os
 from pathlib import Path
 import subprocess
 
+from PIL import Image
+
 from gpu_validation import check_gpu_diagnostics
 from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 from qualify_zone_flatten import normalized
 
 
-def run(output, binary):
+def run(output, binary, marker=False):
     output = output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     binary = binary.resolve()
@@ -48,6 +50,23 @@ def run(output, binary):
                 desktop.move(window,[1737,731],1)
                 desktop.move(window,[1720,720],1)
                 key = desktop.key
+                marker_mesh = None
+
+                def check_marker():
+                    nonlocal marker_mesh
+                    s = state()
+                    visual = s['spawn_visual']
+                    assert visual['visible'] and visual['screen'] is not None
+                    if marker_mesh is None:
+                        marker_mesh = visual['mesh']
+                    assert visual['mesh']==marker_mesh
+                    local = [a-b for a,b in zip(s['document']['spawn'],origin)]
+                    low,high = visual['bounds']
+                    assert abs(low[1]-local[1])<2e-5 and abs(high[1]-local[1]-2.4)<2e-5
+                    assert high[0]-low[0]>1.25 and high[2]-low[2]>1.25
+                    assert abs((low[0]+high[0])/2-local[0])<2e-5
+                    assert abs((low[2]+high[2])/2-local[2])<2e-5
+
                 key('F2')
                 wait(lambda: state()['terrain_mode'])
                 key('f')
@@ -100,6 +119,25 @@ def run(output, binary):
                     key('p')
                     after = wait(lambda: state() if state()['revision']==before['revision']+1 else None)
                     assert after['document']['spawn']==position
+                    if marker:
+                        check_marker()
+                        if label=='snapped':
+                            # Observe settled render frames before capturing a
+                            # newly moved marker, then verify actual world pixels.
+                            fresh()
+                            fresh()
+                            check_marker()
+                            screen = state()['spawn_visual']['screen']
+                            key('F12')
+                            wait(lambda: capture_ready(report.with_suffix('.png')),30)
+                            capture = output/f'{name}.spawn.png'
+                            report.with_suffix('.png').rename(capture)
+                            with Image.open(capture) as image:
+                                assert image.size==(3440,1440)
+                                x,y = screen
+                                pixels = image.convert('RGB').crop((int(x)-24,int(y)-24,int(x)+25,int(y)+25))
+                                green = sum(g>80 and g>1.5*r and g>1.2*b for r,g,b in pixels.getdata())
+                                assert green>8,('Missing rendered spawn marker',green,screen)
                     assert after['history']==[before['history'][0]+1,0]
                     reference(label,before['document'],position,after['document'])
                     key('p')
@@ -154,11 +192,16 @@ def run(output, binary):
                 key('F5')
                 wait(lambda: state()['play_feet'] is not None)
                 assert abs(state()['play_feet'][1]-base)<.2
+                if marker:
+                    wait(lambda: not state()['spawn_visual']['visible'])
                 key('p')
                 fresh()
                 assert state()['document']==before['document'] and state()['revision']==before['revision']
                 key('F5')
                 wait(lambda: state()['play_feet'] is None)
+                if marker:
+                    wait(lambda: state()['spawn_visual']['visible'])
+                    check_marker()
                 button('Save')
                 wait(lambda: saved.exists() and not state()['unsaved_changes'])
                 assert normalized(json.loads(saved.read_text()))==normalized(state()['document'])
@@ -184,6 +227,9 @@ def run(output, binary):
         'panel/modal/playtest isolation, pending stroke refusal without preview loss',
         'actual offline Avian spawn on positive/negative terrain at local/far origins'],
         scope='Linux native 3440x1440 only; terrain support, no prop-stack or multiplayer-authority claim')
+    result['spawn_marker'] = marker
+    if marker:
+        result['checks'].append('rendered green marker pixels at full-zone framing, one resident mesh, anchored 2.4 m bounds and playtest hiding/restoration')
     (output/'qualification.json').write_text(json.dumps(result,indent=2)+'\n')
     print(json.dumps(result,indent=2))
 
@@ -192,5 +238,6 @@ if __name__=='__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--binary',type=Path,default=Path('target/debug/theia-zone-editor'))
+    parser.add_argument('--marker',action='store_true')
     args = parser.parse_args()
-    run(args.output,args.binary)
+    run(args.output,args.binary,args.marker)

@@ -71,9 +71,16 @@ pub(super) fn setup(
     }
     commands.spawn((
         SpawnMarker,
-        Mesh3d(meshes.add(Sphere::new(0.25))),
-        MeshMaterial3d(materials.add(Color::srgb(0.2, 0.9, 0.5))),
-        Transform::default(),
+        Mesh3d(meshes.add(Cone::new(0.65, 2.4))),
+        MeshMaterial3d(materials.add(StandardMaterial {
+            base_color: Color::srgb(0.2, 0.9, 0.5),
+            unlit: true,
+            ..default()
+        })),
+        Transform::from_rotation(Quat::from_rotation_x(std::f32::consts::PI)),
+        Visibility::Visible,
+        bevy::light::NotShadowCaster,
+        bevy::picking::Pickable::IGNORE,
     ));
     commands.spawn((
         Pawn,
@@ -114,7 +121,10 @@ pub(super) fn sync(
         &mut Transform,
         &mut MeshMaterial3d<StandardMaterial>,
     )>,
-    mut spawn: Query<&mut Transform, (With<SpawnMarker>, Without<Authored>, Without<Pawn>)>,
+    mut spawn: Query<
+        (&mut Transform, &mut Visibility),
+        (With<SpawnMarker>, Without<Authored>, Without<Pawn>),
+    >,
     mut pawn: Query<
         (&mut Transform, &mut Visibility),
         (With<Pawn>, Without<Authored>, Without<SpawnMarker>),
@@ -156,14 +166,19 @@ pub(super) fn sync(
             };
         }
     }
-    if let Ok(mut visual) = spawn.single_mut() {
+    if let Ok((mut visual, mut visibility)) = spawn.single_mut() {
+        *visibility = if session.play.is_none() {
+            Visibility::Visible
+        } else {
+            Visibility::Hidden
+        };
         visual.translation = Vec3::from_array(
             session
                 .editor
                 .zone()
                 .local(session.editor.zone().spawn)
                 .unwrap(),
-        ) + Vec3::Y * 0.25;
+        ) + Vec3::Y * 1.2;
     }
     if let Ok((mut visual, mut visibility)) = pawn.single_mut() {
         *visibility = if let Some(play) = &session.play {
@@ -386,8 +401,10 @@ type SceneVisuals<'w, 's> = Query<
     (
         Has<markers::AuthoredMarker>,
         Has<terrain::BrushCursor>,
+        Has<SpawnMarker>,
         &'static Visibility,
         Option<&'static Mesh3d>,
+        Option<&'static Transform>,
     ),
 >;
 #[allow(clippy::too_many_arguments)]
@@ -461,7 +478,7 @@ pub(super) fn report(
         "document":session.editor.zone(),"selected":session.selected,"snap":session.snap,"status":session.status,
         "dragging":session.drag.is_some() || session.stroke.is_some(),"vegetation_mode":session.vegetation_mode,"plant_selected":session.plant_selected,"scatter_radius":session.scatter_radius,"scatter_count":session.scatter_count,
         "plants":session.editor.zone().plants.iter().map(|p|serde_json::json!({"id":p.id,"screen":project(Vec3::from_array(session.editor.zone().local(p.position).unwrap())+Vec3::Y*if p.kind==theia_zone::vegetation::PlantKind::Tree{3.2*p.scale as f32}else{0.6*p.scale as f32})})).collect::<Vec<_>>(),
-        "marker_visible_entities":scene_visuals.iter().filter(|(marker,_,v,_)|*marker && **v != Visibility::Hidden).count(),"marker_mode":session.marker_mode,"marker_selected":session.marker_selected,"marker_palette":format!("{:?}",session.marker_palette),"terrain_mode":session.terrain_mode,"terrain_paint":session.terrain_paint,"path_mode":session.path_mode,"path_selected":session.path_selected,"path_point":session.path_point,
+        "marker_visible_entities":scene_visuals.iter().filter(|(marker,_,_,v,_,_)|*marker && **v != Visibility::Hidden).count(),"marker_mode":session.marker_mode,"marker_selected":session.marker_selected,"marker_palette":format!("{:?}",session.marker_palette),"terrain_mode":session.terrain_mode,"terrain_paint":session.terrain_paint,"path_mode":session.path_mode,"path_selected":session.path_selected,"path_point":session.path_point,
         "path_handles":session.editor.zone().paths.iter().find(|p|Some(p.id)==session.path_selected).map(|p|p.points.iter().map(|&point|project(Vec3::from_array(session.editor.zone().local(point).unwrap()))).collect::<Vec<_>>()),"path_draft_points":session.path_draft.as_ref().map(|d|d.path.points.len()),"brush_radius":session.brush_radius,"brush_tool":format!("{:?}",session.brush_tool),"play_feet":session.play.as_ref().map(|p| p.feet.metres()),
         "objects":objects,"buttons":buttons,"viewport":[window.width(),window.height()],
         "markers":session.editor.zone().markers.iter().map(|m|serde_json::json!({"id":m.id,"screen":project(Vec3::from_array(session.editor.zone().local(m.position).unwrap())+Vec3::Y*0.5)})).collect::<Vec<_>>(),
@@ -533,7 +550,23 @@ pub(super) fn report(
             .as_ref()
             .and_then(|s| s.draft.zone().terrain.as_ref().map(|p| &p.heights))
     );
-    value["brush_preview"] = serde_json::json!(scene_visuals.iter().find_map(|(_,cursor,visibility,handle)| {
+    value["spawn_visual"] = serde_json::json!(scene_visuals.iter().find_map(|(_,_,spawn,visibility,handle,transform)| {
+        if !spawn { return None; }
+        let transform = transform?;
+        let handle = handle?;
+        let mesh = meshes.get(&handle.0)?;
+        let bevy::mesh::VertexAttributeValues::Float32x3(positions) = mesh.attribute(Mesh::ATTRIBUTE_POSITION)? else { return None; };
+        let mut minimum = Vec3::splat(f32::INFINITY);
+        let mut maximum = Vec3::splat(f32::NEG_INFINITY);
+        for &p in positions {
+            let point = transform.transform_point(Vec3::from_array(p));
+            minimum = minimum.min(point);
+            maximum = maximum.max(point);
+        }
+        Some(serde_json::json!({"visible":*visibility!=Visibility::Hidden,"mesh":format!("{:?}",handle.0.id()),"bounds":[minimum.to_array(),maximum.to_array()],
+            "screen":project(Vec3::from_array(session.editor.zone().local(session.editor.zone().spawn).ok()?)+Vec3::Y*1.2)}))
+    }));
+    value["brush_preview"] = serde_json::json!(scene_visuals.iter().find_map(|(_,cursor,_,visibility,handle,_)| {
         if !cursor { return None; }
         let handle = handle?;
         let mesh = meshes.get(&handle.0)?;

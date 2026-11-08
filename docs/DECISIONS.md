@@ -1,3 +1,13 @@
+## 8 November 2026 — editor marker visibility and terrain asset reuse
+
+Keep the spawn marker a standard unlit, noncolliding Bevy primitive, anchored
+through checked conversion and hidden during playtest. Cache actual terrain
+origin/patch inputs so unrelated document revisions do not replace resident
+surface/grid meshes. Native review caught an immediate blank world capture
+following an unchanged-terrain rebuild; pixel qualification now verifies the
+marker in the rendered world rather than relying on transform metadata alone.
+[Contract/evidence](ZONE_EDITOR.md#readable-spawn-marker-and-retained-terrain-meshes--8-november-2026).
+
 ## 8 November 2026 — surface-supported playtest spawn shortcut
 
 Use P over ground in Sculpt/Paint to author the existing spawn through SetSpawn,

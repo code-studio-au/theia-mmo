@@ -1778,3 +1778,38 @@ six `.before.json` / `.commands.jsonl` / `.expected.json` pairs in that director
 `zone-surface-spawn-tests-v2.log`, `zone-surface-spawn-build-v2.log` and
 `zone-surface-spawn-clippy-v1.log`. Editor SHA-256:
 `8fd58f5e084b20e56025d2783417426ecfdbd6938eb481c8ee595a787deef946`.
+
+## Readable spawn marker and retained terrain meshes — 8 November 2026
+
+P5-17 / P3-15 / P1-10; P2-06/07. The small spawn sphere is replaced by one
+standard Bevy cone, 1.3 m wide and 2.4 m tall, pointing down at the authored
+spawn. Its unlit green material stays legible in terrain shade. It uses the
+existing marker entity/mesh/material allocation, ignores picking, casts no
+shadow and adds no collision/export/source data. It hides while the real
+playtest pawn is visible and returns on leaving playtest. Position still uses
+checked origin conversion. The optional report exposes actual mesh bounds,
+visibility and projected centre for native checks.
+
+Native review also caught a transient blank world capture immediately after
+spawn placement: every document revision replaced unchanged terrain/grid assets.
+Terrain sync now compares retained origin/patch inputs after revision changes;
+spawn/name/prop-only edits preserve resident terrain meshes. Actual origin,
+height, weight, resolution, chunk or terrain-presence changes still refresh the
+surface/grid/cutout, including temporary previews and undo. The bounded cache
+owns one patch snapshot and adds no document history or authority path.
+
+All 77 focused Rust cases, formatting and denied-warning workspace/all-target
+Clippy pass. Native 3440x1440 local/far surface-spawn checks retain all six exact
+headless documents, history/save/input isolation and actual Avian entry. They
+also verify one resident marker mesh, exact 2.4 m height anchored at spawn,
+rendered green pixels at whole-zone framing and playtest hide/restore. Vulkan
+validation is active on RX 7900 XTX (RADV NAVI31), device 29772, with zero GPU/
+resize diagnostics. The retained local/far flatten walkthrough also passes after
+the cache change: actual terrain editing, exact headless equivalence, undo/redo,
+save and offline Avian playtest. Linux evidence adds no Windows or multiplayer claim.
+
+Evidence: ignored `build/zone-spawn-marker-native-3440-v2/{qualification.json,*.png}`,
+`build/zone-spawn-marker-terrain-regression-3440-v1/qualification.json`,
+`zone-spawn-marker-tests-v2.log`, `zone-spawn-marker-build-v2.log` and
+`zone-spawn-marker-clippy-v2.log`. Editor SHA-256:
+`858fb83c1def1f89a4984c0a855188cfaa480fbc47a0590bfb81dce870af687e`.

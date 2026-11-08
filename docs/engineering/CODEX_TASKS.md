@@ -1,3 +1,12 @@
+Safe stop, 8 November 2026 (P5-17 / P3-15 / P1-10; P2-06/07):
+The user requested stopping after the current slice. Terrain-conforming brush
+feedback, accepted stroke counts/cap feedback, 2 m spatial drag sampling,
+surface-supported cursor spawn placement and a clearer spawn marker are complete.
+Unrelated document edits also preserve resident terrain meshes. The current
+77 focused Rust cases, formatting, strict Clippy and native 3440x1440 checks pass;
+exact contracts/evidence are in the zone record. Work is committed locally; no
+push. No further autonomous slices begin until the user resumes work.
+
 Zone authoring workspace, 8 November 2026 (P5-17 / P3-15 / P1-10; P2-06/07):
 H and structured `project_to_surface` now ground selected objects, plants,
 markers and guide points through shared candidate validation and undo. Primitive
@@ -31,6 +40,8 @@ Both grids pass native sculpt/paint command equivalence, undo/redo and save.
 P also places a surface-supported playtest spawn from Sculpt/Paint, respecting
 snapping and pending-stroke/modal isolation through the existing SetSpawn edit.
 The view-centre button shares checked conversion and surface sampling.
+An unlit downward spawn marker also replaces the small sphere and hides during
+playtest. Unrelated edits retain the unchanged terrain mesh instead of rebuilding it.
 Flatten also samples the surface with I and adjusts its local
 level in 1 m / 0.1 m steps, sharing exact visual/headless stamp output.
 Ctrl-D and structured `duplicate` commands copy any authoring kind with fresh

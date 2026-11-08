@@ -14,6 +14,7 @@ Visual editing and structured agent commands share validation and undo.
 The summary marks unsaved changes, including pending drafts.
 In Sculpt, I samples a flatten level; PageUp/Down adjusts it.
 In Sculpt/Paint, P places the playtest spawn at the ground cursor (G toggles snapping).
+A green downward pointer marks the spawn and hides during playtest.
 In terrain tools, [ / ] halves/doubles stamp strength or the selected blend.
 The amber brush overlay follows the terrain and shows potential grid-sample influence.
 Fast drags fill the path with stamps every 2 m; leaving the canvas/patch breaks continuity.

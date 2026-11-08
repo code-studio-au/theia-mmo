@@ -307,6 +307,7 @@ pub(super) fn sync(
         ),
     >,
     mut last: Local<Option<(u64, Option<u64>)>>,
+    mut surface_last: Local<Option<([f64; 3], Option<HeightPatch>)>>,
     mut brush_last: Local<Option<((u64, Option<u64>), [f64; 2], f64)>>,
 ) {
     for mut visibility in &mut grid {
@@ -332,38 +333,42 @@ pub(super) fn sync(
             .stroke
             .as_ref()
             .map_or(session.editor.zone(), |s| s.draft.zone());
-        let boxes = ground_boxes(zone);
-        let geometry = geometry(zone);
-        let has_terrain = geometry.is_some();
-        if let Some(geometry) = geometry {
-            *meshes
-                .get_mut(&handle.lines)
-                .expect("Resident terrain grid") =
-                lines(&geometry, zone.terrain.as_ref().unwrap().axis());
-            *meshes
-                .get_mut(&handle.surface)
-                .expect("Resident terrain mesh") =
-                surface_mesh(zone).expect("Terrain surface mesh");
-        }
-        for (part, mut transform, mut visibility, mut material) in &mut ground {
-            if part.0 == 4 {
-                material.0 = if zone.terrain.as_ref().is_some_and(|p| !p.weights.is_empty()) {
-                    handle.painted.clone()
-                } else {
-                    handle.normal.clone()
-                };
-                *transform = Transform::default();
-                *visibility = if has_terrain {
-                    Visibility::Visible
-                } else {
-                    Visibility::Hidden
-                };
-            } else if let Some((centre, size)) = boxes.get(part.0) {
-                *transform = Transform::from_translation(*centre).with_scale(*size);
-                *visibility = Visibility::Visible;
-            } else {
-                *visibility = Visibility::Hidden;
+        let surface_key = (zone.origin, zone.terrain.clone());
+        if surface_last.as_ref() != Some(&surface_key) {
+            let boxes = ground_boxes(zone);
+            let geometry = geometry(zone);
+            let has_terrain = geometry.is_some();
+            if let Some(geometry) = geometry {
+                *meshes
+                    .get_mut(&handle.lines)
+                    .expect("Resident terrain grid") =
+                    lines(&geometry, zone.terrain.as_ref().unwrap().axis());
+                *meshes
+                    .get_mut(&handle.surface)
+                    .expect("Resident terrain mesh") =
+                    surface_mesh(zone).expect("Terrain surface mesh");
             }
+            for (part, mut transform, mut visibility, mut material) in &mut ground {
+                if part.0 == 4 {
+                    material.0 = if zone.terrain.as_ref().is_some_and(|p| !p.weights.is_empty()) {
+                        handle.painted.clone()
+                    } else {
+                        handle.normal.clone()
+                    };
+                    *transform = Transform::default();
+                    *visibility = if has_terrain {
+                        Visibility::Visible
+                    } else {
+                        Visibility::Hidden
+                    };
+                } else if let Some((centre, size)) = boxes.get(part.0) {
+                    *transform = Transform::from_translation(*centre).with_scale(*size);
+                    *visibility = Visibility::Visible;
+                } else {
+                    *visibility = Visibility::Hidden;
+                }
+            }
+            *surface_last = Some(surface_key);
         }
         *last = Some(key);
     }
