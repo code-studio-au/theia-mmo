@@ -1060,3 +1060,45 @@ Reproducer fixture: `content/zones/selection.commands.jsonl`. Evidence: ignored
 `zone-selection-tests-v1.log`, `zone-selection-build-v1.log` and
 `zone-selection-clippy-v1.log`. Editor SHA-256:
 `d934da475b0947a812bf0c0d1d7ba08eb8974feccc2f4514249e1d32bff234b4`.
+
+
+## Sampled and adjustable flatten level — 8 November 2026
+
+P5-17 / P3-15 / P1-10; P2-06/07 terrain: in Sculpt (F2), place the pointer over
+the surface and press I to select Flatten at that sampled height. Sampling uses
+the existing checked conversion and exact domain triangles at the cursor X/Z,
+rather than persisting the approximate render-ray Y. Heights are relative to
+zone-origin Y, including negative terrain and nonzero global origin Y.
+
+With Flatten selected, PageUp/Down adjusts the chosen level by 1 m; G snap off
+uses 0.1 m steps. Clamp the level to ±64 m, matching the retained terrain domain.
+The Flatten button displays the current level. The default is still zero.
+Settings/sampling change no document or history; paint mode, held/pending
+strokes and playtest do not sample. Level adjustments during a preview cancel
+it through the existing action path. Existing focus/panel/Esc cancellation
+and one-release/one-undo stroke behavior remain intact.
+
+Visual flatten stamps now supply this level to the existing `brush` operation
+(`kind: flatten`, `height`, `blend: 0.5`), using the same full-candidate validation,
+command bounds and history as agent/headless edits. There is no new schema or
+persisted brush-setting format. The optional report includes local
+`flatten_height` and render-local `brush_point` for qualification.
+
+Two native Linux 3440x1440 cases pass on RX 7900 XTX (RADV NAVI31), Vulkan device
+29772, with validation active and zero GPU/resize diagnostics: a 4 m positive
+plateau and a 2 m negative plateau at origin `[128000000000,20,-128000000000]`.
+Actual input samples levels +4/-4, adjusts coarse/fine increments, isolates paint
+mode, and stamps +5/-5. Independently running the same structured command through
+the headless path produces exact matching f32 sample arrays. One-entry undo,
+redo, save and actual Avian offline playtest pass. Captured pixels show the
+selected level and appropriate terrain. No normal-game or Windows qualification
+is added by these editor checks.
+
+Evidence: ignored `build/zone-flatten-native-3440-v1/{qualification.json,*.png}`,
+including generated source documents and exact reference command/output files;
+`zone-flatten-tests-v1.log`, `zone-flatten-build-v2.log` and
+`zone-flatten-clippy-v1.log`. Editor SHA-256:
+`fd7196b36d3a8834fe9910de9a27aa463e9396a01f483ca65fd859c4db221ea6`.
+All 54 retained focused Rust cases, formatting, diff checks and denied-warning
+workspace/all-target Clippy pass for this slice; launcher Python checks remain
+four passing cases.

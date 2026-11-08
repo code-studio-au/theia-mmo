@@ -441,6 +441,8 @@ pub(super) fn report(
         "ground":[project(Vec3::new(3.,0.,4.)),project(Vec3::new(5.,0.,4.))],
         "gpu":{"name":adapter.name,"backend":format!("{:?}",adapter.backend),"device":adapter.device}});
     value["unsaved_changes"] = session.is_dirty().into();
+    value["flatten_height"] = session.flatten_height.into();
+    value["brush_point"] = serde_json::json!(session.brush_point.map(|p| p.to_array()));
     value["view"] = serde_json::json!({"target":view.target.to_array(),"distance":view.distance});
     let temp = report.path.with_extension("tmp");
     if let Err(error) = std::fs::write(&temp, serde_json::to_vec_pretty(&value).unwrap())

@@ -364,6 +364,10 @@ Release: one undo entry
 Esc: cancel preview
 WASD pan | RMB orbit
 Wheel zoom | F5 playtest
+I: sample flatten level
+Level is relative to zone origin
+Flatten PgUp/Dn: level +/-
+G: 1 m / 0.1 m level steps
 Borders locked flat
 Offline collision sandbox"
                 .into()
@@ -419,13 +423,18 @@ Offline collision sandbox"
         };
         for child in children.iter() {
             if let Ok(mut text) = labels.get_mut(child) {
-                **text = actions[slot.0].1.into();
+                **text = if matches!(*action, Action::Brush(Tool::Flatten)) {
+                    format!("Flatten to {:.2} m", session.flatten_height)
+                } else {
+                    actions[slot.0].1.into()
+                };
             }
         }
     }
 }
 #[allow(clippy::too_many_arguments)]
 pub(super) fn pointer(
+    keys: Res<ButtonInput<KeyCode>>,
     mouse: Res<ButtonInput<MouseButton>>,
     windows: Query<&Window>,
     camera: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
@@ -463,6 +472,30 @@ pub(super) fn pointer(
         .first()
         .map(|(_, hit)| ray.get_point(hit.distance));
     session.brush_point = point;
+    if keys.just_pressed(KeyCode::KeyI)
+        && !keys.pressed(KeyCode::ControlLeft)
+        && !keys.pressed(KeyCode::ControlRight)
+        && !session.terrain_paint
+        && session.stroke.is_none()
+        && !mouse.pressed(MouseButton::Left)
+        && session.editor.zone().terrain.is_some()
+        && let Some(point) = point
+    {
+        let zone = session.editor.zone();
+        let height = zone
+            .global(point.to_array())
+            .and_then(|p| zone.surface_position([p[0], p[2]]))
+            .map(|p| p[1] - zone.origin[1]);
+        match height {
+            Ok(height) => {
+                session.flatten_height = height.clamp(-64., 64.);
+                session.brush_tool = Tool::Flatten;
+                session.status = format!("Sampled flatten level {:.2} m", session.flatten_height);
+            }
+            Err(error) => session.status = error,
+        }
+        return;
+    }
     if mouse.just_pressed(MouseButton::Left) && session.editor.zone().terrain.is_some() {
         session.stroke = Some(Stroke {
             draft: Editor::new(session.editor.zone().clone()).expect("Validated draft"),
@@ -493,7 +526,7 @@ pub(super) fn pointer(
                 Tool::Raise => height(BrushOperation::Raise { metres: 2. }),
                 Tool::Lower => height(BrushOperation::Lower { metres: 2. }),
                 Tool::Flatten => height(BrushOperation::Flatten {
-                    height: 0.,
+                    height: session.flatten_height as f32,
                     blend: 0.5,
                 }),
                 Tool::Smooth => height(BrushOperation::Smooth { blend: 0.5 }),

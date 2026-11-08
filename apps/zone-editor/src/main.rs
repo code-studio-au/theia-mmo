@@ -36,6 +36,7 @@ struct Session {
     terrain_paint: bool,
     brush_tool: terrain::Tool,
     brush_radius: f64,
+    flatten_height: f64,
     brush_point: Option<Vec3>,
     stroke: Option<terrain::Stroke>,
     path_mode: bool,
@@ -161,6 +162,7 @@ enum Action {
     TerrainResolution,
     Brush(terrain::Tool),
     Radius(i8),
+    FlattenHeight(i8),
     SelectPlant,
     Plant(theia_zone::vegetation::PlantKind, bool),
     NextPlant,
@@ -253,6 +255,7 @@ fn run() -> Result<(), String> {
         terrain_paint: false,
         brush_tool: terrain::Tool::Raise,
         brush_radius: 12.,
+        flatten_height: 0.,
         brush_point: None,
         stroke: None,
         path_mode: false,
@@ -610,6 +613,15 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
         Action::Radius(direction) => {
             session.brush_radius = (session.brush_radius + f64::from(direction) * 4.).clamp(4., 32.)
         }
+        Action::FlattenHeight(direction) => {
+            let increment = if session.snap { 1. } else { 0.1 };
+            session.flatten_height =
+                (session.flatten_height + f64::from(direction) * increment).clamp(-64., 64.);
+            session.status = format!(
+                "Flatten level {:.2} m relative to zone origin",
+                session.flatten_height
+            );
+        }
         Action::Play => unreachable!(),
     }
 }
@@ -682,6 +694,20 @@ fn keyboard(
         Some(Action::Save)
     } else if ctrl && keys.just_pressed(KeyCode::KeyO) {
         Some(Action::Load)
+    } else if !ctrl
+        && session.terrain_mode
+        && !session.terrain_paint
+        && session.brush_tool == terrain::Tool::Flatten
+        && keys.just_pressed(KeyCode::PageUp)
+    {
+        Some(Action::FlattenHeight(1))
+    } else if !ctrl
+        && session.terrain_mode
+        && !session.terrain_paint
+        && session.brush_tool == terrain::Tool::Flatten
+        && keys.just_pressed(KeyCode::PageDown)
+    {
+        Some(Action::FlattenHeight(-1))
     } else if session.marker_mode && keys.just_pressed(KeyCode::Equal) {
         Some(Action::MarkerRadius(1))
     } else if session.marker_mode && keys.just_pressed(KeyCode::Minus) {

@@ -1,3 +1,12 @@
+## 8 November 2026 — sampled and adjustable flatten level
+
+Expose the existing validated flatten brush's nonzero level through I surface
+sampling and PageUp/Down adjustments. Use checked domain surface sampling from
+cursor X/Z, local height relative to zone-origin Y, bounded ±64 m, 1 m steps or
+0.1 m with snap off. Keep the preset editor-local; commit strokes through the
+retained brush command, candidate validation and history. Paint mode ignores the
+height sampler. [Contract/evidence](ZONE_EDITOR.md#sampled-and-adjustable-flatten-level--8-november-2026).
+
 ## 8 November 2026 — keyboard recovery and bounded selection framing
 
 Cycle object selection with Tab/Shift-Tab in source order, independent of mesh
