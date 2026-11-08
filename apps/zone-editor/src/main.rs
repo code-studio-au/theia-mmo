@@ -3,6 +3,7 @@ mod agent;
 mod cli;
 mod export;
 mod markers;
+mod outliner;
 mod paths;
 mod playtest;
 mod selection;
@@ -19,6 +20,21 @@ use std::path::PathBuf;
 use theia_zone::{Command, Edit, Editor, Object, Pose, Primitive, Zone};
 
 const PANEL: f32 = 300.;
+fn canvas_cursor(window: &Window) -> Option<Vec2> {
+    window
+        .cursor_position()
+        .filter(|p| p.x > PANEL && p.x < window.width() - outliner::WIDTH)
+}
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum EditorMode {
+    Objects,
+    Sculpt,
+    Paint,
+    Guides,
+    Markers,
+    Plants,
+}
+
 #[derive(Resource)]
 struct Session {
     editor: Editor,
@@ -63,6 +79,42 @@ struct Drag {
     offset: Vec3,
 }
 impl Session {
+    fn set_mode(&mut self, mode: EditorMode) {
+        self.terrain_mode = matches!(mode, EditorMode::Sculpt | EditorMode::Paint);
+        self.terrain_paint = mode == EditorMode::Paint;
+        if self.terrain_paint {
+            self.brush_tool = terrain::Tool::Paint(theia_zone::painting::Surface::Dirt);
+        } else if matches!(self.brush_tool, terrain::Tool::Paint(_)) {
+            self.brush_tool = terrain::Tool::Raise;
+        }
+        self.path_mode = mode == EditorMode::Guides;
+        self.marker_mode = mode == EditorMode::Markers;
+        self.vegetation_mode = mode == EditorMode::Plants;
+        self.plant_selected = None;
+        self.plant_palette = None;
+        self.marker_selected = None;
+        self.marker_palette = None;
+        self.path_draft = None;
+        self.path_selected = None;
+        self.path_point = None;
+        self.stroke = None;
+        self.drag = None;
+        self.palette = None;
+        self.selected = None;
+        self.status = if self.terrain_paint {
+            "Terrain paint - choose a surface and click or drag".into()
+        } else if self.vegetation_mode {
+            "Vegetation tools - place or scatter tree/shrub proxies".into()
+        } else if self.marker_mode {
+            "Marker tools - NPC/quest authoring annotations".into()
+        } else if self.path_mode {
+            "Guide tools - choose a road or stream, then add ground points".into()
+        } else if self.terrain_mode {
+            "Terrain tools - create a patch, then click or drag to sculpt".into()
+        } else {
+            "Object tools".into()
+        };
+    }
     fn is_dirty(&self) -> bool {
         self.saved_zone.as_ref() != Some(self.editor.zone())
             || self.drag.is_some()
@@ -314,6 +366,7 @@ fn run() -> Result<(), String> {
         ..default()
     }))
     .add_observer(activate)
+    .add_observer(outliner::activate)
     .add_systems(
         Startup,
         (
@@ -323,6 +376,7 @@ fn run() -> Result<(), String> {
             markers::setup,
             vegetation::setup,
             setup_ui,
+            outliner::setup,
         ),
     )
     .add_systems(
@@ -342,6 +396,7 @@ fn run() -> Result<(), String> {
             paths::sync,
             markers::sync,
             vegetation::sync,
+            outliner::sync,
             present,
             viewport::capture,
         )
@@ -714,40 +769,20 @@ fn keyboard(
         || keys.just_pressed(KeyCode::F7))
         && session.play.is_none()
     {
-        session.terrain_mode = keys.just_pressed(KeyCode::F2) || keys.just_pressed(KeyCode::F7);
-        session.terrain_paint = keys.just_pressed(KeyCode::F7);
-        if session.terrain_paint {
-            session.brush_tool = terrain::Tool::Paint(theia_zone::painting::Surface::Dirt);
-        } else if matches!(session.brush_tool, terrain::Tool::Paint(_)) {
-            session.brush_tool = terrain::Tool::Raise;
-        }
-        session.path_mode = keys.just_pressed(KeyCode::F3);
-        session.marker_mode = keys.just_pressed(KeyCode::F4);
-        session.vegetation_mode = keys.just_pressed(KeyCode::F6);
-        session.plant_selected = None;
-        session.plant_palette = None;
-        session.marker_selected = None;
-        session.marker_palette = None;
-        session.path_draft = None;
-        session.path_selected = None;
-        session.path_point = None;
-        session.stroke = None;
-        session.drag = None;
-        session.palette = None;
-        session.selected = None;
-        session.status = if session.terrain_paint {
-            "Terrain paint - choose a surface and click or drag".into()
-        } else if session.vegetation_mode {
-            "Vegetation tools - place or scatter tree/shrub proxies".into()
-        } else if session.marker_mode {
-            "Marker tools - NPC/quest authoring annotations".into()
-        } else if session.path_mode {
-            "Guide tools - choose a road or stream, then add ground points".into()
-        } else if session.terrain_mode {
-            "Terrain tools - create a patch, then click or drag to sculpt".into()
+        let mode = if keys.just_pressed(KeyCode::F2) {
+            EditorMode::Sculpt
+        } else if keys.just_pressed(KeyCode::F7) {
+            EditorMode::Paint
+        } else if keys.just_pressed(KeyCode::F3) {
+            EditorMode::Guides
+        } else if keys.just_pressed(KeyCode::F4) {
+            EditorMode::Markers
+        } else if keys.just_pressed(KeyCode::F6) {
+            EditorMode::Plants
         } else {
-            "Object tools".into()
+            EditorMode::Objects
         };
+        session.set_mode(mode);
         return;
     }
     let ctrl = keys.pressed(KeyCode::ControlLeft) || keys.pressed(KeyCode::ControlRight);
@@ -924,7 +959,7 @@ fn camera_controls(
         return;
     };
     if window.focused && session.play.is_none() {
-        let outside = window.cursor_position().is_some_and(|p| p.x > PANEL);
+        let outside = canvas_cursor(window).is_some();
         if outside && mouse.pressed(MouseButton::Right) {
             view.yaw -= motion.delta.x * 0.005;
             view.pitch = (view.pitch + motion.delta.y * 0.005).clamp(0.15, 1.5);

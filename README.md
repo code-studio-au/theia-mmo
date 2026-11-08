@@ -15,6 +15,7 @@ The summary marks unsaved changes, including pending drafts.
 In Sculpt, I samples a flatten level; PageUp/Down adjusts it.
 With Raise/Lower selected, [ / ] halves/doubles stamp strength.
 In Guides, Insert adds a midpoint; Backspace removes a selected point.
+The right-side content list selects named entries across modes; F frames them.
 
 For structured commands, use `python3 tools/edit_zone.py --commands JSONL
 --headless --output FILE`. Export a saved zone with `--zone FILE --export NEW_DIR

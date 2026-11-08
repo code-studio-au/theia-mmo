@@ -202,7 +202,7 @@ pub(super) fn pointer(
         session.drag = None;
         return;
     }
-    let Some(cursor) = window.cursor_position().filter(|p| p.x > PANEL) else {
+    let Some(cursor) = canvas_cursor(window) else {
         if mouse.just_released(MouseButton::Left) {
             session.drag = None;
         }
@@ -385,6 +385,14 @@ pub(super) fn report(
     adapter: Res<RenderAdapterInfo>,
     meshes: Res<Assets<Mesh>>,
     marker_visibility: Query<&Visibility, With<markers::AuthoredMarker>>,
+    content: Res<outliner::Content>,
+    content_controls: Query<(
+        &outliner::Control,
+        &Node,
+        &ComputedNode,
+        &bevy::ui::UiGlobalTransform,
+        &Hovered,
+    )>,
 ) {
     let Some(mut report) = report else {
         return;
@@ -440,11 +448,34 @@ pub(super) fn report(
         "terrain_points":[project(Vec3::new(64.,0.,64.)),project(Vec3::new(72.,0.,64.)),project(Vec3::new(48.,0.,64.))],
         "ground":[project(Vec3::new(3.,0.,4.)),project(Vec3::new(5.,0.,4.))],
         "gpu":{"name":adapter.name,"backend":format!("{:?}",adapter.backend),"device":adapter.device}});
+    let mut content_buttons = vec![];
+    if session.play.is_none() {
+        for (control, node, computed, transform, hovered) in &content_controls {
+            if node.display == Display::None {
+                continue;
+            }
+            let factor = computed.inverse_scale_factor() * scale.0;
+            let (target, label) = match *control {
+                outliner::Control::Row(index) => match content.row(index) {
+                    Some(entry) => (format!("{:?}", entry.target), entry.label.clone()),
+                    None => continue,
+                },
+                outliner::Control::Previous => ("Previous".into(), "Previous".into()),
+                outliner::Control::Next => ("Next".into(), "Next".into()),
+            };
+            content_buttons.push(serde_json::json!({"target":target,"label":label,"hovered":hovered.0,
+                "centre":(transform.affine().translation*factor).to_array(),"size":(computed.size()*factor).to_array()}));
+        }
+    }
+    value["content_list"] = serde_json::json!({"visible":session.play.is_none(),"page":content.page,
+        "pages":content.pages(),"count":content.entries.len(),"controls":content_buttons});
+    value["cursor"] = serde_json::json!(window.cursor_position().map(|p| p.to_array()));
+    value["focused"] = window.focused.into();
     value["unsaved_changes"] = session.is_dirty().into();
     value["flatten_height"] = session.flatten_height.into();
     value["brush_strength"] = session.brush_strength.into();
     value["brush_point"] = serde_json::json!(session.brush_point.map(|p| p.to_array()));
-    value["view"] = serde_json::json!({"target":view.target.to_array(),"distance":view.distance});
+    value["view"] = serde_json::json!({"target":view.target.to_array(),"distance":view.distance,"yaw":view.yaw,"pitch":view.pitch});
     let temp = report.path.with_extension("tmp");
     if let Err(error) = std::fs::write(&temp, serde_json::to_vec_pretty(&value).unwrap())
         .and_then(|()| std::fs::rename(temp, &report.path))

@@ -465,7 +465,7 @@ pub(super) fn pointer(
         session.stroke = None;
         return;
     }
-    let Some(cursor) = window.cursor_position().filter(|p| p.x > PANEL) else {
+    let Some(cursor) = canvas_cursor(window) else {
         if mouse.just_released(MouseButton::Left) {
             session.stroke = None;
         }

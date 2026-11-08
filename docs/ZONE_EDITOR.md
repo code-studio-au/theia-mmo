@@ -1366,3 +1366,65 @@ selection/framing/duplication cases. Final evidence:
 package formats/client/server code are unchanged; earlier example client-pair
 and Windows qualification records retain their stated scope. Editor SHA-256:
 `a4231af95f4ce17f184e30e010e09acdcf8c8150dcbcc4d772c23715561db83f`.
+
+
+## Paged content selection at 3440x1440 — 8 November 2026
+
+P5-17 / P3-15 / P1-10: the right-side Zone Content list now shows named terrain,
+spawn, primitive, guide, marker and plant entries. It uses ordinary Bevy UI
+buttons/text and primary-pointer picking, with 40 fixed row slots and Previous /
+Next controls. The current document limits allow at most 1,922 entries including
+terrain and spawn; paging does not allocate a UI row per authored entity.
+
+Click an authored entry to select it and enter its existing editing mode. F
+frames it through the retained camera path. Guide rows select the whole guide;
+point selection remains in the viewport. The terrain row selects Sculpt, or
+retains Paint when already painting. The spawn row frames the existing spawn
+without moving it. Full selected names appear below the list when a row label
+is clipped. The existing F-key mode switches and list selection now use the same
+mode-reset helper. This is a flat content browser, without hierarchy/group data.
+
+Selection, paging and framing change no document or history and do not clear
+unsaved work. The list reveals a changed keyboard/viewport selection's page and
+clamps its page when content shrinks. Agent edits, duplicate/undo and loaded
+content refresh labels and rows from the current validated document. A stale
+clicked entry is checked against current content before selection. Pending
+strokes, drags and guide drafts must be finished/cancelled before row selection;
+paging itself remains available. The list hides during playtest.
+
+Both side panels are excluded from all object/guide/marker/plant/terrain mouse
+picking and from editor orbit/wheel zoom. Keyboard transforms keep their existing
+behavior. In particular, paging while a placement palette is active cannot place
+behind the panel, and clicking a content row cannot stamp terrain underneath it.
+The editor still targets 3440x1440 only. It uses the normal full-window Bevy camera
+and symmetric 300 px UI panels; no custom render target or viewport renderer is
+introduced. The optional report includes list controls/bounds plus cursor/focus
+and camera yaw/pitch for native qualification. Zone/runtime formats and normal
+client/server code remain unchanged.
+
+The 62 retained focused Rust cases, seven launcher cases, formatting and denied-
+warning workspace/all-target Clippy pass. Initial native local/far/reopen cases
+pass 40-row bounds, cross-mode selection/framing, click/wheel/right-drag isolation,
+draft protection, duplicate/undo and agent name updates. Keyboard selection also reveals its page; a grouped 48-plant removal clamps the
+browser from two pages to one and visual undo restores all rows. Final evidence:
+ignored `build/zone-outliner-tests-v1.log`, `zone-outliner-clippy-final-v2.log`,
+`zone-outliner-build-v5.log`, `zone-outliner-layout-v1.png` and
+`zone-outliner-native-3440-v5/{qualification.json,*.png}`. All three fresh/reopen/
+far cases run at actual 3440x1440 on RX 7900 XTX (RADV NAVI31), Vulkan device
+29772, with validation active and zero GPU/resize diagnostics.
+
+The full retained native walkthrough also passes with the new panels and common
+mode switch: primitive placement/drag/transforms, live mailbox, sculpt/paint,
+refinement/coarsening, guide grading/points, vegetation, markers, grounding,
+undo/redo/save/load and offline playtest. Final revision/history remain 138 and
+54/1. Evidence: `build/zone-outliner-regression-3440-v2/qualification.json` and
+captures. No new normal-game or Windows qualification is inferred from these
+editor UI checks. Editor SHA-256:
+`5d248972af2e36c15c44744a730db74c46dad6ec61f82f0f84ad74110cd7994a`.
+
+Qualification refinements were confined to the native harness: initialize the
+owned synthetic wheel over UI before measuring viewport zoom, wait for toolbar
+bindings after mode switches, and read the allocated copy ID instead of assuming
+a cancelled guide draft releases its reserved ID. Earlier partial runs are not
+counted as final acceptance. Product input uses Bevy's platform abstractions;
+primary pointer selection does not let secondary-button gestures select rows.

@@ -242,7 +242,7 @@ pub(super) fn pointer(
     if !window.focused {
         return;
     }
-    let Some(cursor) = window.cursor_position().filter(|p| p.x > PANEL) else {
+    let Some(cursor) = canvas_cursor(window) else {
         return;
     };
     let Ok((camera, transform)) = camera.single() else {

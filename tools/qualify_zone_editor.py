@@ -68,7 +68,7 @@ def run(output, binary, size, agent=False, terrain=False, guides=False, markers=
                     desktop.button(number, False)
                 wait(lambda: not state()['left_mouse_down'])
             def button(action):
-                entry = next(b for b in state()['buttons'] if b['action'] == action)
+                entry = wait(lambda: next((b for b in state()['buttons'] if b['action'] == action),None))
                 desktop.move(window, entry['centre'], 1)
                 wait(lambda: any(b['action'] == action and b['hovered'] for b in state()['buttons']))
                 click(window, entry['centre'], 1, 1)

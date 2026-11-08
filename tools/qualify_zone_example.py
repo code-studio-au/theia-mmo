@@ -18,7 +18,7 @@ from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def run(output):
+def run(output, content_list=False):
     output = output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     draft = output / 'draft.json'
@@ -32,8 +32,10 @@ def run(output):
         report = output / f'{name}.state.json'
         log_path = output / f'{name}.log'
         captures = []
+        mailbox = output / f'{name}.mailbox'
+        extra = ['--mailbox', str(mailbox)] if content_list else []
         with log_path.open('w') as log:
-            process = subprocess.Popen([sys.executable, str(ROOT/'tools/edit_zone.py'), '--no-build', *args,
+            process = subprocess.Popen([sys.executable, str(ROOT/'tools/edit_zone.py'), '--no-build', *args, *extra,
                                         '--report', str(report)], env=env, stdout=log, stderr=log)
             desktop = None
             try:
@@ -46,8 +48,10 @@ def run(output):
                     return json.loads(report.read_text())
 
                 wait(lambda: report.exists() and state()['viewport'] == [3440, 1440], 45)
+                desktop.move(window, [1737,731], 1)
                 desktop.move(window, [1720,720], 1)
                 key = desktop.key
+                next_request = 0
 
                 def chord(name):
                     desktop.key_state('Control_L', True)
@@ -57,7 +61,7 @@ def run(output):
                         desktop.key_state('Control_L', False)
 
                 def button(action):
-                    entry = next(b for b in state()['buttons'] if b['action'] == action)
+                    entry = wait(lambda: next((b for b in state()['buttons'] if b['action'] == action),None))
                     desktop.move(window, entry['centre'], 1)
                     wait(lambda: any(b['action'] == action and b['hovered'] for b in state()['buttons']))
                     desktop.button(1, True)
@@ -66,6 +70,31 @@ def run(output):
                     finally:
                         desktop.button(1, False)
                     wait(lambda: not state()['left_mouse_down'])
+
+                def content_click(target):
+                    entry = next(b for b in state()['content_list']['controls'] if b['target'] == target)
+                    desktop.move(window,entry['centre'],1)
+                    wait(lambda: any(b['target'] == target and b['hovered'] for b in state()['content_list']['controls']))
+                    desktop.button(1,True)
+                    try:
+                        wait(lambda: state()['left_mouse_down'])
+                    finally:
+                        desktop.button(1,False)
+                    wait(lambda: not state()['left_mouse_down'])
+
+                def agent_command(command):
+                    nonlocal next_request
+                    next_request += 1
+                    bridge = json.loads((mailbox/'state.json').read_text())
+                    request = dict(session=bridge['session'],request_id=next_request,command=command)
+                    (mailbox/'agent.tmp').write_text(json.dumps(request))
+                    (mailbox/'agent.tmp').replace(mailbox/'request.json')
+                    def receipt():
+                        if not (mailbox/'receipt.json').exists():
+                            return None
+                        value = json.loads((mailbox/'receipt.json').read_text())
+                        return value if value['request_id'] == next_request else None
+                    return wait(receipt)
 
                 def capture(label):
                     attempts = 0
@@ -122,7 +151,7 @@ def run(output):
                     wait(lambda: state()['play_feet'] is None)
                     assert state()['document'] == before['document'] and state()['unsaved_changes'] == before['unsaved_changes']
 
-                verify(state, key, chord, button, desktop, window, capture, frame_terrain, play_short_route)
+                verify(state, key, chord, button, desktop, window, capture, frame_terrain, play_short_route, agent_command, content_click)
                 capture('final')
                 final = state()
                 subprocess.run(['wmctrl','-ic',hex(window)], check=True)
@@ -141,12 +170,20 @@ def run(output):
                           validation_layer_active=True,allowed_resize_diagnostics=diagnostics,captures=captures))
         return final
 
-    def fresh(state,key,chord,button,desktop,window,capture,frame,play):
+    def fresh(state,key,chord,button,desktop,window,capture,frame,play,agent,content):
         assert not draft.exists()
         assert state()['document']['name'] == 'Wayfarer Hollow' and state()['revision'] == 4
         assert state()['unsaved_changes'] and len(state()['document']['plants']) == 48
         view = frame()
+        # Initialize the owned synthetic wheel over a non-scrolling UI area;
+        # its first valuator event can be consumed as a device baseline.
+        desktop.move(window,[150,20],1)
+        wait(lambda: state().get('cursor') == [150,20])
+        desktop.scroll(1)
+        time.sleep(.3)
+        assert state()['view'] == view
         desktop.move(window,[1720,720],1)
+        wait(lambda: state().get('cursor') == [1720,720])
         desktop.scroll(3)
         wait(lambda: state()['view']['distance'] < view['distance']*.9)
         capture('overview')
@@ -162,10 +199,135 @@ def run(output):
         chord('s')
         wait(lambda: not state()['unsaved_changes'])
 
+        if content_list:
+            before = state()
+            assert before['content_list']['count'] == 66 and before['content_list']['pages'] == 2
+            assert len(before['content_list']['controls']) == 42
+            for row in before['content_list']['controls']:
+                x,y = row['centre']; w,h = row['size']
+                assert x-w/2 >= 3140 and x+w/2 <= 3440 and y-h/2 >= 0 and y+h/2 <= 1440
+            def unchanged():
+                assert state()['document'] == before['document'] and state()['revision'] == before['revision']
+                assert state()['history'] == before['history'] and not state()['unsaved_changes']
+            content('Object(1)')
+            wait(lambda: state()['selected'] == 1 and not state()['marker_mode'])
+            unchanged()
+            key('f')
+            wait(lambda: abs(state()['view']['target'][0]-42)<.001)
+            content('Next')
+            wait(lambda: state()['content_list']['page'] == 1)
+            content('Plant(5019)')
+            wait(lambda: state()['plant_selected'] == 5019 and state()['vegetation_mode'])
+            unchanged()
+            key('f')
+            plant = before['document']['plants'][-1]
+            expected = list(plant['position']); expected[1] += .6*plant['scale']
+            wait(lambda: all(abs(a-b)<.001 for a,b in zip(state()['view']['target'],expected)))
+            # Keyboard selection reveals the corresponding page without framing.
+            view = state()['view']
+            key('F1')
+            wait(lambda: not state()['vegetation_mode'] and any(b['action'] == 'Place(Box)' for b in state()['buttons']))
+            key('Tab')
+            wait(lambda: state()['selected'] == 1 and state()['content_list']['page'] == 0)
+            assert state()['view'] == view
+            unchanged()
+            content('Next')
+            wait(lambda: state()['content_list']['page'] == 1)
+            content('Plant(5019)')
+            wait(lambda: state()['plant_selected'] == 5019)
+            content('Previous')
+            wait(lambda: state()['content_list']['page'] == 0)
+            content('Guide(100)')
+            wait(lambda: state()['path_selected'] == 100 and state()['path_mode'])
+            assert state()['path_point'] is None
+            unchanged()
+            key('f')
+            wait(lambda: abs(state()['view']['target'][0]-56)<.001)
+            content('Terrain')
+            wait(lambda: state()['terrain_mode'] and not state()['path_mode'])
+            assert state()['brush_point'] is None
+            unchanged()
+            content('Spawn')
+            wait(lambda: state()['status'] == 'Focused playtest spawn')
+            assert all(abs(a-b)<.001 for a,b in zip(state()['view']['target'],[64,1.1,116]))
+            unchanged()
+            # Page clicks must not place behind the panel with an active palette.
+            key('F1')
+            button('Place(Box)')
+            content('Next')
+            wait(lambda: state()['content_list']['page'] == 1)
+            unchanged()
+            right = next(b for b in state()['content_list']['controls'] if b['target'] == 'Previous')['centre']
+            desktop.move(window,right,1)
+            view = state()['view']
+            desktop.scroll(2)
+            desktop.button(3,True)
+            try:
+                desktop.move(window,[right[0]+10,right[1]+5],1)
+            finally:
+                desktop.button(3,False)
+            time.sleep(.3)
+            assert state()['view'] == view
+            unchanged()
+            content('Previous')
+            wait(lambda: state()['content_list']['page'] == 0)
+            key('F3')
+            button('NewPath(Road)')
+            wait(lambda: state()['path_draft_points'] == 0)
+            content('Object(2)')
+            wait(lambda: state()['status'] == 'Finish or cancel the preview before selecting content')
+            assert state()['path_draft_points'] == 0 and state()['document'] == before['document']
+            key('Escape')
+            wait(lambda: state()['path_draft_points'] is None)
+            unchanged()
+            key('F5')
+            wait(lambda: state()['play_feet'] is not None and not state()['content_list']['visible'])
+            assert state()['content_list']['controls'] == []
+            key('F5')
+            wait(lambda: state()['play_feet'] is None and state()['content_list']['visible'])
+            unchanged()
+            content('Marker(2001)')
+            wait(lambda: state()['marker_selected'] == 2001 and state()['marker_mode'])
+            chord('d')
+            copied = wait(lambda: state() if state()['revision'] == before['revision']+1 else None)
+            assert copied['content_list']['count'] == 67
+            copied_id = copied['marker_selected']
+            assert copied_id > max(p['id'] for field in ['objects','paths','markers','plants'] for p in before['document'][field])
+            assert any(b['target'] == f'Marker({copied_id})' and ' copy' in b['label'] for b in copied['content_list']['controls'])
+            chord('z')
+            wait(lambda: state()['revision'] == before['revision']+2 and state()['content_list']['count'] == 66)
+            assert state()['document'] == before['document'] and not state()['unsaved_changes']
+            marker = dict(before['document']['markers'][0]); marker['name'] = 'Agent refuge note'
+            revision = state()['revision']
+            receipt = agent(dict(command='apply',expected_revision=revision,edits=[dict(op='put_marker',marker=marker)]))
+            assert receipt['accepted']
+            wait(lambda: state()['revision'] == revision+1 and any('Agent refuge note' in b['label'] for b in state()['content_list']['controls']))
+            content('Marker(2000)')
+            wait(lambda: state()['marker_selected'] == 2000)
+            chord('z')
+            wait(lambda: state()['revision'] == revision+2)
+            assert state()['document'] == before['document'] and not state()['unsaved_changes']
+            assert any(before['document']['markers'][0]['name'] in b['label'] for b in state()['content_list']['controls'])
+            frame()
+            content('Next')
+            wait(lambda: state()['content_list']['page'] == 1)
+            revision = state()['revision']
+            receipt = agent(dict(command='apply',expected_revision=revision,
+                edits=[dict(op='delete_plant',id=p['id']) for p in before['document']['plants']]))
+            assert receipt['accepted']
+            wait(lambda: state()['revision'] == revision+1 and state()['content_list']['count'] == 18)
+            assert state()['content_list']['pages'] == 1 and state()['content_list']['page'] == 0
+            assert len(state()['content_list']['controls']) == 20
+            chord('z')
+            wait(lambda: state()['revision'] == revision+2 and state()['content_list']['count'] == 66)
+            assert state()['document'] == before['document'] and not state()['unsaved_changes']
+            assert len(state()['content_list']['controls']) == 42
+            capture('content-list')
+
     original = case('fresh',['--example','--draft',str(draft)],fresh)
     stored_bytes = draft.read_bytes()
 
-    def reopen(state,key,chord,button,desktop,window,capture,frame,play):
+    def reopen(state,key,chord,button,desktop,window,capture,frame,play,agent,content):
         assert state()['revision'] == 0 and not state()['unsaved_changes']
         assert state()['document'] == original['document']
         assert state()['document']['markers'][0]['radius_metres'] == 2.
@@ -190,9 +352,16 @@ def run(output):
     far_path = output/'far.zone.json'
     far_path.write_text(json.dumps(far))
 
-    def far_case(state,key,chord,button,desktop,window,capture,frame,play):
+    def far_case(state,key,chord,button,desktop,window,capture,frame,play,agent,content):
         assert state()['document']['origin'] == offset and not state()['unsaved_changes']
         frame()
+        if content_list:
+            content('Object(2)')
+            wait(lambda: state()['selected'] == 2)
+            key('f')
+            wait(lambda: all(abs(a-b)<.001 for a,b in zip(state()['view']['target'],[42,1.55,102])))
+            assert state()['revision'] == 0 and not state()['unsaved_changes']
+            frame()
         capture('overview')
         play()
 
@@ -204,6 +373,12 @@ def run(output):
                            'whole-terrain framing preserves model/history at local and far Y=20 origin',
                            'actual forward walking past approach posts with Avian contact and unchanged authoring data'],
                    scope='Linux owned native input at 3440x1440; offline authoring/playtest, no live quests or NPCs')
+    summary['content_list'] = content_list
+    if content_list:
+        summary['checks'] += ['40-row paging, cross-mode selection/focus, source bounds and unchanged document/history',
+                              'panel click/wheel/right-drag isolation while placing/sculpting; pending draft preservation',
+                              'duplicate/undo and agent name changes update visible rows; playtest hides the list',
+                              'keyboard selection reveals its page; batch deletion clamps pages and undo restores rows']
     (output/'qualification.json').write_text(json.dumps(summary,indent=2)+'\n')
     print(json.dumps(summary,indent=2))
 
@@ -211,5 +386,6 @@ def run(output):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output',type=Path,required=True)
+    parser.add_argument('--content-list',action='store_true')
     args = parser.parse_args()
-    run(args.output)
+    run(args.output,args.content_list)

@@ -1,3 +1,13 @@
+## 8 November 2026 — bounded standard-Bevy content list on the ultrawide editor
+
+Use a fixed 40-row primary-pointer UI pool and paging for named authored content,
+reusing the existing mode transitions and frame-selection path. Keep browsing
+outside document history, refresh it from validated revisions, reveal selections
+and clamp shrinking pages. Exclude both side panels from world mouse actions and
+hide the content list during playtest. Preserve pending drafts on row selection
+attempts. No hierarchy, scene schema or custom renderer is added.
+[Contract/evidence](ZONE_EDITOR.md#paged-content-selection-at-3440x1440--8-november-2026).
+
 ## 8 November 2026 — structural guide-point edits with shared validation
 
 Add narrow insert/remove point edits with explicit guide/index/global position,

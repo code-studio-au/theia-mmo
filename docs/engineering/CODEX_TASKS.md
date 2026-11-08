@@ -1,4 +1,4 @@
-Zone editor and original example, 8 November 2026 (P5-17 / P3-15 / P1-10; P2-06/07):
+Zone authoring workspace, 8 November 2026 (P5-17 / P3-15 / P1-10; P2-06/07):
 H and structured `project_to_surface` now ground selected objects, plants,
 markers and guide points through shared candidate validation and undo. Primitive
 centres account for half-height; foot anchors use the exact terrain support.
@@ -8,7 +8,10 @@ or full slope footprints. Tab/Shift-Tab also cycle hidden/distant objects; F
 frames objects, plants, markers and the existing guide/point selection without
 changing history. Committed guides also insert/remove points through Insert /
 Backspace and narrow shared commands; structural changes clear stale point
-selection while visual edits explicitly select the new/next point. Flatten also samples the surface with I and adjusts its local
+selection while visual edits explicitly select the new/next point. A standard-Bevy
+right-side content browser also selects named entries across modes through a
+fixed 40-row pool and paging, without changing document/history. Both side
+panels are excluded from world mouse actions; the list hides in playtest. Flatten also samples the surface with I and adjusts its local
 level in 1 m / 0.1 m steps, sharing exact visual/headless stamp output.
 Ctrl-D and structured `duplicate` commands copy any authoring kind with fresh
 shared IDs, bounded names/offsets and one-entry history. Local/far/empty native
