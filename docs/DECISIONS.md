@@ -1,3 +1,14 @@
+## 8 November 2026 — surface-supported playtest spawn shortcut
+
+Use P over ground in Sculpt/Paint to author the existing spawn through SetSpawn,
+with 1 m X/Z snapping when enabled, sampled terrain/flat support and the retained
+0.1 m clearance. Route the existing view-centre button through the same checked
+local/global conversion and surface sampler. Preserve pending strokes, modal/UI/
+playtest isolation and the shared command validation/history boundary. Cursor
+placement that equals the current spawn skips visual history; the existing button
+retains its transaction behavior. Physics still qualifies entry separately.
+[Contract/evidence](ZONE_EDITOR.md#surface-supported-playtest-spawn--8-november-2026).
+
 ## 8 November 2026 — spatially sampled bounded terrain drags
 
 Connect observed valid terrain cursor positions with stamps every 2 m in X/Z,

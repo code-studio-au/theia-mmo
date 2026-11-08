@@ -10,6 +10,7 @@ mod paths;
 mod playtest;
 mod properties;
 mod selection;
+mod spawn;
 mod terrain;
 mod vegetation;
 mod viewport;
@@ -702,25 +703,10 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
                 session.edit(vec![Edit::Delete { id }]);
             }
         }
-        Action::Spawn => {
-            let origin = session.editor.zone().origin;
-            let position = [
-                origin[0] + f64::from(view.target.x),
-                origin[1] + 0.1,
-                origin[2] + f64::from(view.target.z),
-            ];
-            let mut position = position;
-            if let Some(patch) = &session.editor.zone().terrain {
-                position[1] += f64::from(
-                    patch
-                        .height(position[0], position[2])
-                        .ok()
-                        .flatten()
-                        .unwrap_or(0.),
-                );
-            }
-            session.edit(vec![Edit::SetSpawn { position }]);
-        }
+        Action::Spawn => match spawn::position(session.editor.zone(), view.target, false) {
+            Ok(position) => session.edit(vec![Edit::SetSpawn { position }]),
+            Err(error) => session.status = error,
+        },
         Action::NewPath(_)
         | Action::FinishPath
         | Action::GradePath

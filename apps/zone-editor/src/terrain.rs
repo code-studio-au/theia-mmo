@@ -409,7 +409,7 @@ pub(super) fn palette(
 ) {
     for mut text in &mut help {
         **text = if session.terrain_paint {
-            "F7: terrain colour paint\nF: frame terrain\n[ / ]: halve/double paint blend\nBlend: 5 to 100%\nClick/drag: paint stroke\nRelease: one undo entry\nUp to 128 stamps per stroke\nEsc cancels preview\nGrass / dirt / rock / sand\nPaint changes colour weights\nGrid weights, locked grass edge\nF2 returns to sculpting".into()
+            "F7: terrain colour paint\nF: frame terrain\n[ / ]: halve/double paint blend\nBlend: 5 to 100%\nClick/drag: paint stroke\nRelease: one undo entry\nUp to 128 stamps per stroke\nEsc cancels preview\nP: spawn at ground cursor\nGrass / dirt / rock / sand\nPaint changes colour weights\nGrid weights, locked grass edge\nF2 returns to sculpting".into()
         } else if session.vegetation_mode {
             "F6: greybox trees / shrubs\nCtrl D: copy plant\nF: focus | H: ground selection\nClick places one stamp\nEsc selects | Del removes\nArrows/PgUp/Dn: move\nR / Shift R: yaw +/-15 deg\n+/-: plant scale\n[ / ]: scatter radius\n, / .: scatter count\nVegetation proxies do not\nadd world collision".into()
         } else if session.marker_mode {
@@ -429,6 +429,7 @@ Wheel zoom | F5 playtest
 Raise/lower: 0.05 to 8 m
 Flatten/smooth blend: 5 to 100%
 I: sample flatten level
+P: spawn at ground cursor
 Level is relative to zone origin
 Flatten PgUp/Dn: level +/-
 G: 1 m / 0.1 m level steps
@@ -560,6 +561,13 @@ pub(super) fn pointer(
         .first()
         .map(|(_, hit)| ray.get_point(hit.distance));
     session.brush_point = point;
+    if keys.just_pressed(KeyCode::KeyP)
+        && !keys.pressed(KeyCode::ControlLeft)
+        && !keys.pressed(KeyCode::ControlRight)
+    {
+        spawn::at_cursor(&mut session, point, mouse.pressed(MouseButton::Left));
+        return;
+    }
     if keys.just_pressed(KeyCode::KeyI)
         && !keys.pressed(KeyCode::ControlLeft)
         && !keys.pressed(KeyCode::ControlRight)

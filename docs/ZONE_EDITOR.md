@@ -1738,3 +1738,43 @@ six `.before.json` / `.commands.jsonl` / `.expected.json` pairs in that director
 `zone-stroke-spacing-tests-v1.log`, `zone-stroke-spacing-build-v1.log` and
 `zone-stroke-spacing-clippy-v1.log`. Editor SHA-256:
 `48b016b1327b818172d7bb57f0127bc9b567ed309a4fe9ddbb1807485cd2ab0e`.
+
+## Surface-supported playtest spawn — 8 November 2026
+
+P5-17 / P3-15 / P1-10; P2-06/07. P over ground in Sculpt/Paint places the playtest
+spawn using the retained SetSpawn edit and full candidate validation. Cursor X/Z
+uses the centralized checked f32-local/f64-global conversion, with 1 m snapping
+relative to zone origin when G is enabled; disabled snapping preserves the ray
+hit's X/Z through that conversion. Exact triangular terrain support (or implicit
+flat zone-origin Y outside the patch) supplies height, plus the existing 0.1 m
+clearance. Cursor-hit Y is not trusted as authored support. The existing object
+palette's view-centre spawn button now shares this checked conversion/sampler
+and retains its unsnapped X/Z and transaction behavior. Failed conversion/sample
+attempts report errors instead of silently substituting a height.
+
+Cursor placement equal to the current spawn reports that fact without history.
+Pending strokes/held mouse refuse placement while retaining the preview. Both
+side panels, modal fields, unfocused windows, playtest and other modes isolate P;
+text inputs retain their ordinary P key. Help explains the shortcut. Successful
+placement is one existing undo entry; save/load/export reuse the same spawn data.
+This supports terrain/flat ground, not prop-stack support or navigation checks.
+Actual offline Avian entry still checks physical occupancy and may refuse a
+blocked location. No new command/schema, renderer or server-authority claim.
+
+All 77 focused Rust cases (51 domain / 26 editor), formatting and denied-warning
+workspace/all-target Clippy pass. New cases cover snapped/precise surface heights
+on both resolutions and both signed 128-billion-metre frames with Y=20, shared
+SetSpawn undo, implicit flat support and invalid/bounded-coordinate refusal.
+Native actual 3440x1440 checks pass on 4 m positive local and 2 m negative far
+terrain: snapped/precise cursor placement in both modes, unchanged cursor no-op,
+view-centre placement, undo/redo/save, panel/name-modal/playtest isolation and
+pending-stroke refusal without preview loss. Six complete documents match
+independent headless SetSpawn runs exactly. Actual Avian playtest starts on both
+surfaces. Vulkan validation is active on RX 7900 XTX (RADV NAVI31), device 29772,
+with zero GPU/resize diagnostics. Earlier Windows/multiplayer scope is unchanged.
+
+Evidence: ignored `build/zone-surface-spawn-native-3440-v1/{qualification.json,*.png}`,
+six `.before.json` / `.commands.jsonl` / `.expected.json` pairs in that directory,
+`zone-surface-spawn-tests-v2.log`, `zone-surface-spawn-build-v2.log` and
+`zone-surface-spawn-clippy-v1.log`. Editor SHA-256:
+`8fd58f5e084b20e56025d2783417426ecfdbd6938eb481c8ee595a787deef946`.
