@@ -12,7 +12,8 @@ from gpu_validation import check_gpu_diagnostics
 from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 
 
-def run(output, binary, size, agent=False, terrain=False, guides=False, markers=False, vegetation=False):
+def run(output, binary, size, agent=False, terrain=False, guides=False, markers=False, vegetation=False, grading=False):
+    vegetation = vegetation or grading
     markers = markers or vegetation
     guides = guides or markers
     terrain = terrain or guides
@@ -291,6 +292,10 @@ def run(output, binary, size, agent=False, terrain=False, guides=False, markers=
                 wait(lambda: state()['path_draft_points'] == 0)
                 desktop.click(window, state()['guide_points'][0], 1, 1)
                 wait(lambda: state()['path_draft_points'] == 1)
+                if grading:
+                    button('GradePath')
+                    wait(lambda: 'Finish or cancel' in state()['status'])
+                    assert state()['path_draft_points'] == 1
                 receipt, _ = agent_request(dict(command='undo', expected_revision=state()['revision']))
                 assert not receipt['accepted'] and 'busy' in receipt['error']
                 key('Escape')
@@ -537,6 +542,51 @@ def run(output, binary, size, agent=False, terrain=False, guides=False, markers=
                 wait(lambda: state()['play_feet'] is None)
                 assert state()['document'] == stored
                 checks.append('vegetation pointer placement/selection/transforms, bounded deterministic scatter/one-entry undo, agent retry/IDs, save/load/playtest and shared meshes')
+            if grading:
+                key('F3')
+                wait(lambda: state()['path_mode'])
+                button('NextPath')
+                wait(lambda: state()['path_selected'] == state()['document']['paths'][0]['id'])
+                previous = state()['revision']
+                key('Page_Up')
+                elevated = revision(previous)
+                previous = state()['revision']
+                key('Page_Up')
+                elevated = revision(previous)
+                before = state()
+                button('GradePath')
+                graded = revision(before['revision'])
+                assert graded['document']['paths'] == before['document']['paths']
+                assert graded['document']['terrain']['heights'] != before['document']['terrain']['heights']
+                assert graded['history'][0] == before['history'][0]+1
+                previous = state()['revision']
+                chord('z')
+                assert revision(previous)['document'] == before['document']
+                previous = state()['revision']
+                chord('y')
+                assert revision(previous)['document'] == graded['document']
+                # Exercise the same operation from a live agent, with an explicit wider blend.
+                receipt, request = agent_request(dict(command='apply',expected_revision=state()['revision'],edits=[dict(op='grade_path',grade=dict(path_id=state()['path_selected'],surface_offset_metres=-.03,falloff_metres=8.,blend=.5))]))
+                assert receipt['accepted']
+                changed = wait(lambda: state() if state()['revision'] == receipt['revision'] else None)
+                assert changed['document']['terrain']['heights'] != graded['document']['terrain']['heights']
+                previous = state()['revision']
+                chord('z')
+                undone = revision(previous)
+                assert undone['document'] == graded['document']
+                retry, _ = agent_request(request=request)
+                assert retry == receipt and state()['document'] == undone['document']
+                chord('s')
+                wait(lambda: read_saved() == state()['document'])
+                previous = state()['revision']
+                chord('o')
+                assert revision(previous)['document'] == graded['document']
+                key('F5')
+                wait(lambda: state()['play_feet'] is not None)
+                time.sleep(.3)
+                key('F5')
+                wait(lambda: state()['play_feet'] is None)
+                checks.append('selected guide terrain grading, single-entry visual undo/redo, mixed agent grade/exact retry, save/load and playtest')
             key('F12')
             wait(lambda: capture_ready(report.with_suffix('.png')), 30)
             checks.append('actual native Vulkan screenshot captured')
@@ -571,5 +621,6 @@ if __name__ == '__main__':
     parser.add_argument('--guides', action='store_true')
     parser.add_argument('--markers', action='store_true')
     parser.add_argument('--vegetation', action='store_true')
+    parser.add_argument('--grading', action='store_true')
     args = parser.parse_args()
-    run(args.output, args.binary, args.size, args.agent, args.terrain, args.guides, args.markers, args.vegetation)
+    run(args.output, args.binary, args.size, args.agent, args.terrain, args.guides, args.markers, args.vegetation, args.grading)

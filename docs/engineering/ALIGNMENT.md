@@ -22,7 +22,9 @@ preservation (31 focused Rust cases); live catalogue publication remains separat
 Schema-5 tree/shrub proxies now add bounded seeded scatter, shared history and
 render-only export (35 focused Rust cases and the full 3440x1440 native editor
 walkthrough). General vegetation assets/behavior and broader terrain tools remain
-future work. Runtime multiplayer remains
+future work. Guide-driven terrain grading now shares visual/agent history and
+passes 39 focused Rust cases, including actual Avian graded-surface traversal.
+Runtime multiplayer remains
 Rust/Bevy/Avian/Renet; editor playtest is an offline sandbox. Actual prerequisites,
 acceptance checks and implementation evidence are tracked in [the zone record](../ZONE_EDITOR.md).
 Earlier stop/chat-first queue entries are historical; P3-17/18 stay unspecified.

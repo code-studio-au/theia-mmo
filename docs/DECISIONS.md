@@ -1,3 +1,15 @@
+## 8 November 2026 — grade existing terrain from committed guide heights
+
+Add a bounded `grade_path` operation to the existing visual/agent command history.
+Use nearest horizontal segments, explicit authored guide heights, width, surface
+offset and linear falloff/blend; preserve the locked zero border and checked
+local height budget. Keep source guide and other placements unchanged. Reuse the
+resulting heightfield for normal render, offline Avian and world-package export.
+The visual default grades 0.03 m below the selected ribbon with 4 m falloff. Drafts
+refuse without being discarded. Partial/falloff repetition is a new blend; exact
+mailbox retries remain cached. No new terrain/water/navigation runtime format.
+[Contract/evidence](ZONE_EDITOR.md#guide-driven-terrain-grading--8-november-2026).
+
 ## 8 November 2026 — bounded seeded greybox vegetation
 
 Zone schema 5 adds finite tree/shrub visual proxies and deterministic bounded

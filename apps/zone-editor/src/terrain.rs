@@ -290,7 +290,7 @@ pub(super) fn palette(
         } else if session.marker_mode {
             "F4: NPC / quest markers\nClick to place or select\nArrows/PgUp/Dn: move\nR / Shift R: yaw +/-15 deg\n+/- changes footprint radius\nCtrl O loads saved zone\nMarkers are authoring notes;\nplaytest hides them".into()
         } else if session.path_mode {
-            "F3: guide paths / streams\nClick ground to add points\nEnter finishes | Esc cancels\nBksp removes last point\nArrows/PgUp/Dn move guide\n+/- changes width\nRoad/stream guides do not\nadd collision or water rules".into()
+            "F3: guide paths / streams\nClick ground to add points\nEnter finishes | Esc cancels\nBksp removes last point\nArrows/PgUp/Dn move guide\n+/- changes width\nGrade terrain: selected guide\n4 m falloff, surface -0.03 m\nNo water simulation".into()
         } else if session.terrain_mode {
             "F1: object tools | F2: terrain
 Click/drag: brush stroke

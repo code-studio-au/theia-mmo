@@ -253,3 +253,109 @@ mod terrain_tests {
         }
     }
 }
+
+#[cfg(test)]
+mod grading_tests {
+    use super::*;
+    #[test]
+    fn graded_path_mesh_matches_all_avian_triangles_and_actual_capsule_walk() {
+        use theia_zone::{
+            Command, Edit, Editor,
+            grading::Grade,
+            paths::{GuidePath, PathKind},
+            terrain::HeightPatch,
+        };
+        for sign in [-1_i64, 1] {
+            let patch = HeightPatch::flat([sign * 1_000_000_000, -sign * 1_000_000_000]);
+            let mut origin = patch.origin().unwrap();
+            origin[1] = 24.;
+            let mut editor = Editor::new(Zone {
+                schema: 3,
+                origin,
+                terrain: Some(patch),
+                spawn: [
+                    origin[0] + 64.,
+                    origin[1] + sign as f64 * 4. + 0.1,
+                    origin[2] + 64.,
+                ],
+                paths: vec![GuidePath {
+                    id: 1,
+                    name: "Grade".into(),
+                    kind: PathKind::Road,
+                    width_metres: 8.,
+                    points: vec![
+                        [
+                            origin[0] + 32.,
+                            origin[1] + sign as f64 * 2. + 0.03,
+                            origin[2] + 64.,
+                        ],
+                        [
+                            origin[0] + 96.,
+                            origin[1] + sign as f64 * 6. + 0.03,
+                            origin[2] + 64.,
+                        ],
+                    ],
+                }],
+                ..Zone::default()
+            })
+            .unwrap();
+            editor
+                .execute(Command::Apply {
+                    expected_revision: 0,
+                    edits: vec![Edit::GradePath {
+                        grade: Grade {
+                            path_id: 1,
+                            surface_offset_metres: -0.03,
+                            falloff_metres: 8.,
+                            blend: 1.,
+                        },
+                    }],
+                })
+                .unwrap();
+            let zone = editor.zone();
+            let scene = collision(zone).unwrap();
+            let geometry = terrain::geometry(zone).unwrap();
+            for triangle in geometry.triangles {
+                let centre = triangle
+                    .map(|index| Vec3::from_array(geometry.positions[index as usize]))
+                    .into_iter()
+                    .sum::<Vec3>()
+                    / 3.;
+                let actual = scene.ground([centre.x, centre.z], 64.).unwrap().0;
+                assert!(
+                    (actual - centre.y).abs() < 0.0001,
+                    "Graded Avian mismatch {centre:?} vs {actual}"
+                );
+            }
+            let mut play = Playtest::new(zone).unwrap();
+            let start = play.feet.metres();
+            for _ in 0..30 {
+                play.feet = kinematic::advance(
+                    &play.scene,
+                    &mut play.motion,
+                    play.feet,
+                    Intent {
+                        axes: [1000, 0],
+                        ..default()
+                    },
+                    TickRate::Hz30,
+                )
+                .unwrap();
+            }
+            let feet = play.feet.metres();
+            assert!(feet[0] > start[0] + 4.);
+            assert!(
+                (feet[1] - start[1]) * sign as f32 > 0.2,
+                "Capsule must traverse graded slope {start:?} -> {feet:?}"
+            );
+            let sampled = zone
+                .surface_position([
+                    origin[0] + f64::from(feet[0]),
+                    origin[2] + f64::from(feet[2]),
+                ])
+                .unwrap()[1]
+                - origin[1];
+            assert!((f64::from(feet[1]) - sampled).abs() < 0.08);
+        }
+    }
+}

@@ -1,4 +1,5 @@
 //! Bounded authoring documents and transactional commands, independent of Bevy.
+pub mod grading;
 pub mod mailbox;
 pub mod markers;
 pub mod paths;
@@ -287,6 +288,9 @@ pub enum Edit {
     Brush {
         brush: terrain::Brush,
     },
+    GradePath {
+        grade: grading::Grade,
+    },
     PutPath {
         path: paths::GuidePath,
     },
@@ -416,6 +420,9 @@ impl Editor {
                         Edit::SetTerrain { terrain } => {
                             candidate.schema = candidate.schema.max(2);
                             candidate.terrain = terrain;
+                        }
+                        Edit::GradePath { grade } => {
+                            candidate.terrain = Some(grade.apply(&candidate)?);
                         }
                         Edit::PutPath { path } => {
                             require(

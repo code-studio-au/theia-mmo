@@ -29,7 +29,7 @@ pub(super) fn actions() -> [(Action, &'static str); 12] {
         (Action::NewPath(PathKind::Road), "New road guide"),
         (Action::NewPath(PathKind::Stream), "New stream guide"),
         (Action::FinishPath, "Finish guide [Enter]"),
-        (Action::PopPath, "Remove last point [Bksp]"),
+        (Action::GradePath, "Grade terrain to guide"),
         (Action::NextPath, "Select next guide"),
         (Action::DeletePath, "Delete guide [Del]"),
         (Action::PathWidth(1), "Wider guide (+0.5 m)"),
@@ -241,6 +241,24 @@ pub(super) fn perform(action: Action, session: &mut Session) {
                 if session.editor.zone().paths.iter().any(|p| p.id == id) {
                     session.path_selected = Some(id);
                 }
+            }
+        }
+        Action::GradePath => {
+            if session.path_draft.is_some() {
+                session.status = "Finish or cancel guide draft before grading".into();
+                return;
+            }
+            if let Some(path_id) = session.path_selected {
+                session.edit(vec![Edit::GradePath {
+                    grade: theia_zone::grading::Grade {
+                        path_id,
+                        surface_offset_metres: -0.03,
+                        falloff_metres: 4.,
+                        blend: 1.,
+                    },
+                }]);
+            } else {
+                session.status = "Select a committed guide to grade terrain".into();
             }
         }
         Action::PopPath => {

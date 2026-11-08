@@ -150,6 +150,7 @@ enum Action {
     MarkerRadius(i8),
     NewPath(theia_zone::paths::PathKind),
     FinishPath,
+    GradePath,
     PopPath,
     NextPath,
     DeletePath,
@@ -386,6 +387,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
         action,
         Action::NewPath(_)
             | Action::FinishPath
+            | Action::GradePath
             | Action::PopPath
             | Action::NextPath
             | Action::PathWidth(_)
@@ -497,6 +499,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
         }
         Action::NewPath(_)
         | Action::FinishPath
+        | Action::GradePath
         | Action::PopPath
         | Action::NextPath
         | Action::DeletePath

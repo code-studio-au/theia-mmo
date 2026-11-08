@@ -618,3 +618,68 @@ and both `scene.png` captures. The current editor binary SHA-256 is
 normal client/server hashes remain those in the export milestone. This is Linux
 loopback presentation/transport evidence, not native Windows, production admission
 or capacity qualification.
+
+## Guide-driven terrain grading — 8 November 2026
+
+P5-17 / P3-15 / P2-06/07 continue from committed guide geometry, the bounded
+height patch, shared command history and the retained Avian/export pipeline.
+`grade_path` accepts a `grade` with `path_id`, `surface_offset_metres` (-16..16),
+`falloff_metres` (0..32) and `blend` (0.05..1). It resolves the committed guide and
+changes the existing terrain samples in one validated transaction. Persistent
+zone schemas/data remain compatible: the resulting heights and guide are saved.
+
+For each interior 4 m sample, choose the nearest horizontal guide segment,
+interpolate its explicit endpoint heights, and add the requested surface offset.
+The full guide width receives the target blend; an optional linear falloff blends
+outward from that band. Endpoint regions are round. At exact crossings the first
+authored segment wins. Global anchors are subtracted before interpolation/local
+arithmetic, including signed far frames and nonzero origin Y. Targets/results
+must stay within the existing +/-64 m local height budget. The locked zero border
+is preserved. Only this patch's interior samples change; paths outside it may
+produce no change and refuse. Guide ribbons, objects, plants and markers retain
+their authored positions. There is no water simulation or navigation operation.
+
+In F3 Guides, select a committed guide and choose **Grade terrain to guide**.
+Defaults are -0.03 m surface offset, 4 m falloff, full blend, putting the terrain
+under the existing visual ribbon offset. Backspace still removes draft points.
+A pending guide draft refuses grading and remains available to finish/cancel.
+Changing a selected guide's height with PgUp/PgDn before grading supports cuts
+and embankments. Explicit agent parameters support stream-bed lowering and softer
+blends. Repeating falloff/partial blends continues toward the target; retrying the
+same mailbox request is still cached and cannot accidentally apply it twice.
+
+Missing terrain/guide, invalid parameters, over-height targets and no-change
+operations refuse atomically. Undo restores the entire previous patch as one
+entry; redo restores exact saved samples. Mixed agent/visual history is shared.
+The fixture `content/zones/grading.commands.jsonl` is revision-0 input for the
+retained terrain authoring fixture: it adds a sloped road, grades the patch and
+sets a valid elevated spawn in the same transaction.
+
+Acceptance: 28 domain and eleven editor cases pass, including numerical width/
+falloff/interpolation, grouped history, rollback with preserved redo, signed
+far-frame stream lowering, 4,096 new actual Avian triangle-centroid queries and
+capsule walks up/down the resulting slopes. All graded visual triangle heights
+agree with actual Avian within 0.1 mm; capsule support stays within 8 cm. Strict
+workspace/all-target Clippy and formatting pass. The graded world package exports
+without DISPLAY/WAYLAND_DISPLAY, passes actual runtime admission and Khronos GLB
+validation with zero errors/warnings. Evidence: ignored
+`build/zone-grading-tests-v2.log`, `zone-grading-clippy-v1.log`,
+`zone-grading-build-v1.log`, `zone-grading-export-v1.log`,
+`zone-package-grading-v1/`, `zone-grading-gltf-validation-v1.json`.
+The initial test incorrectly expected a repeated falloff blend to be a no-op;
+the final check verifies no-change refusal for a full-width, zero-falloff pass.
+This is bounded terrain authoring, not terrain streaming or MMO-scale evidence.
+
+The full OS-input walkthrough passes at default 3440x1440 on AMD Radeon RX 7900
+XTX (RADV NAVI31), Vulkan device 29772. It verifies refusal with a pending draft,
+selected-guide height edits and grading, one-entry undo/redo, mixed agent grading,
+exact cached retry after visual undo, save/load and offline playtest, alongside
+all earlier tools. Validation is observed active; zero GPU diagnostics or resize
+exceptions. Evidence: `build/zone-grading-native-3440-v1/{qualification.json,state.png}`.
+The normal headless server and two actual rendered Renet clients also pass the
+graded-slope package at 3440x1440, including bound content identity, movement/
+terrain support, distinct identities and avatar pixels. Both clients observe
+active Vulkan validation with zero GPU diagnostics. Evidence:
+`build/zone-package-native-grading-3440-v1/verification.json` and both captures.
+These are Linux loopback checks; native Windows, production admission and capacity
+remain separate. All artifacts remain ignored; commits stay local.
