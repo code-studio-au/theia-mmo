@@ -7283,6 +7283,7 @@ dependencies = [
  "theia-core",
  "theia-network",
  "theia-zone",
+ "tokio",
 ]
 
 [[package]]

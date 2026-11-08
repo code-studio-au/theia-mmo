@@ -1,3 +1,18 @@
+## 8 November 2026 — authored zones export through the existing world pipeline
+
+Export standard Bevy meshes as self-contained GLB and existing schema-4 collision
+packages with explicit validated spawns and bound identity. Keep boxes analytic;
+encode spheres as existing zero-length capsules and cylinders as adaptively
+bounded convex meshes, welding render seams only in the collision copy. Rebase
+through checked local conversion; preserve the exact authoring document/origin
+separately. Refuse oversized/invalid/occupied outputs and publish the manifest
+last in a fresh directory. No new runtime format, transport or default-map change.
+Actual headless validation, independent convex/glTF checks and native encrypted
+pairs pass, including direct hillside and far-instance traversal. This is the
+retained raw imported-world development profile; full Classic account/gameplay
+bundle integration and richer zone content remain separate.
+[Contract and evidence](ZONE_EDITOR.md#export-into-admitted-world-packages-p5-17--p3-15--p1-10--p2-0708).
+
 ## 8 November 2026 — bounded terrain brushes share command validation
 
 Add one schema-2 128 m / 33x33 height patch to the zone editor using integer chunk

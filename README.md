@@ -1,7 +1,8 @@
 Zone authoring is the current focus. Run `cargo run -p theia-zone-editor --
 --commands content/zones/greybox.commands.jsonl` for the lightweight Bevy greybox
 editor, or add `--headless --output build/my-zone.json` for structured commands.
-See [zone controls, validation and qualification](docs/ZONE_EDITOR.md). F5 is an
+Export a saved zone with `--export NEW_DIR --content-id ID --revision N` for the
+existing server/client world pipeline. See [zone controls, validation and qualification](docs/ZONE_EDITOR.md). F5 is an
 offline Avian collision playtest; normal multiplayer remains the existing game
 launcher. Chat composer and speech bubbles are deferred.
 

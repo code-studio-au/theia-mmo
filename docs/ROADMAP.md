@@ -9,7 +9,10 @@ passes mixed agent/visual undo/redo and playtest refusal natively at 1280x720,
 with 12 focused Rust cases and strict Clippy. Schema-2 terrain brushes now add
 shared validated stroke previews/undo, actual Avian surface queries and three-size
 native sculpt/save/load/playtest checks: 17 focused Rust cases, strict Clippy and
-zero GPU diagnostics. Admitted game-package export and later zone tools remain. Runtime multiplayer remains
+zero GPU diagnostics. Standard GLB/schema-4 export now also passes 22 focused
+Rust cases, Khronos validation, actual encrypted admission and four native
+two-client cases (including hillside and far-frame traversal). Default gameplay
+content is unchanged; later zone tools remain. Runtime multiplayer remains
 Rust/Bevy/Avian/Renet; editor playtest is an offline sandbox. Actual prerequisites,
 acceptance checks and implementation evidence are tracked in [the zone record](ZONE_EDITOR.md).
 Earlier stop/chat-first queue entries are historical; P3-17/18 stay unspecified.

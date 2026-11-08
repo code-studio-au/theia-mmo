@@ -5,7 +5,10 @@ Chat composer and speech bubbles are deferred. Rust/Bevy/Avian/Renet remain the
 adopted stack. The editor is a separate standard Bevy app, independent of normal
 multiplayer startup, with a renderer-free `theia-zone` document/command crate.
 This is P5-17 / P3-15 / P1-10; later terrain integration also uses P2-06/07.
-P3-17/18 remain unspecified.
+P3-17/18 remain unspecified. The current tool includes primitive authoring,
+shared visual/live-agent history, bounded terrain brushes and validated export
+into the existing world-package pipeline. Milestone records below retain their
+exact source/evidence scope.
 
 Actual prerequisites for this slice are the existing pinned Bevy/Avian stack,
 checked coordinate conversion, static query scene and shared capsule solver.
@@ -138,7 +141,8 @@ attempts is counted as qualification. The first ultrawide window resize was
 limited by desktop decorations to 3440x1368; the final fullscreen run verifies
 actual 3440x1440 pixels.
 
-Limits: this is a finite local primitive editor and offline playtest. Arbitrary assets, draggable transform handles/property fields, multi-tile terrain, paths/streams, vegetation/markers, normal server content export/admission,
+Limits at the first-slice checkpoint: this was a finite local primitive editor
+and offline playtest. Arbitrary assets, draggable transform handles/property fields, multi-tile terrain, paths/streams, vegetation/markers, normal server content export/admission,
 multiplayer, performance/capacity, non-unit monitor DPI and Windows execution
 remain open. Startup commands and visual edits already share one history.
 
@@ -293,7 +297,118 @@ not changed to accommodate that assertion. Native v2 passes before the final
 grid/highlight continuation. Existing source/screenshot evidence remains scoped
 to its exact version.
 
-Remaining: multi-tile/seam authoring, import/export into admitted game packages,
+Follow-ups at the terrain checkpoint included multi-tile/seam authoring and
+import/export into admitted game packages (the latter is implemented below),
 terrain materials/LOD, configurable flatten heights/strength, path/stream tools,
 vegetation and nonblocking NPC/quest markers. This patch does not modify the
 existing 125x125 saved-terrain world or enable authoritative multiplayer zones.
+
+## Export into admitted world packages (P5-17 / P3-15 / P1-10 / P2-07/08)
+
+`--export NEW_DIRECTORY --content-id LOGICAL_ID --revision N` prepares an offline
+world package and exits without a window. It applies optional startup commands
+first, validates the zone, generates standard Bevy primitive/terrain meshes and
+writes an ordinary self-contained GLB plus existing schema-4 collision data.
+No gameplay format, transport, server/client runtime or default world is changed.
+The source authoring document is copied as `authoring.zone.json`; `export.json`
+records logical identity, source origin, counts and approximation tolerances.
+
+```bash
+cargo run -p theia-zone-editor -- --zone build/zone-draft.json \
+  --export build/my-zone-playtest-r1 --content-id theia.zone.my-zone --revision 1
+```
+
+Output requires a new directory. Geometry and spawn checks run before publication
+through the actual headless `Terrain::decode`/Avian/shared capsule path, then the
+staged package passes `Terrain::load` and visual digest verification. An exclusive
+destination reservation refuses races/existing output; verified artifacts move
+into it with the required manifest last. Failure cleans only directories created
+by this export. There is no registry enforcing revision uniqueness and no crash-
+durable publication claim. Keep admitted files immutable and export a fresh
+revision/directory after editing.
+
+- Boxes retain analytic oriented collision. Spheres use the existing zero-length
+  capsule representation; an actual decoder/query test confirms it works.
+- Cylinders use a Bevy mesh with adaptive radial resolution targeting <=1 mm
+  polygon error, then the existing convex-mesh collider representation. A collision
+  copy welds split cap/UV/normal seams within 0.1 mm, retaining source positions
+  rather than averaging them. The GLB keeps the original split render vertices.
+  This is a bounded approximation, with additional f32 precision error; it does
+  not change the editor's analytic cylinder controller or extend the runtime format.
+- Terrain uses every authored sample and the same existing triangulation. Flat
+  surrounding boxes retain the true cutout for depressions. Spawns remain explicit
+  validated capsule-foot guesses. No navigation, object interaction or NPC physics
+  is inferred from visual geometry.
+- Geometry rebases through `Zone::local` before f32 serialization. The runtime
+  profile is already local (`source_origin` zero); the exact f64 authoring origin
+  remains in the source/report. Export does not automatically place or own an MMO
+  region at that origin. The existing server `--world-origin` can instance the
+  local package separately; native far-frame evidence uses that explicit setting.
+- Visual preparation is capped at 262,144 triangles / 64 MiB. Existing schema-4
+  vertex/triangle/body/coverage/profile bounds still apply and refuse oversized
+  exports. It is valid for a document within the editor's object budget to exceed
+  an export budget; nothing is silently decimated or dropped.
+
+Run the ordinary imported-world development path with simple capsule players,
+using fresh ticket directories (build the paired binaries first):
+
+```bash
+target/debug/theia-server 127.0.0.1:5001 build/zone-server-cert.der \
+  --terrain-world build/my-zone-playtest-r1 --renet-tickets build/zone-tickets-r1
+# Separate terminals; tickets are private, single-use development credentials.
+target/debug/theia-client --terrain-world build/my-zone-playtest-r1 \
+  --renet-connect 127.0.0.1:5001 build/zone-tickets-r1/client-1.token
+target/debug/theia-client --terrain-world build/my-zone-playtest-r1 \
+  --renet-connect 127.0.0.1:5001 build/zone-tickets-r1/client-2.token
+```
+
+This is the retained raw imported-world movement profile and development admission,
+not the full Classic account/combat/quest bundle. The F5 editor sandbox remains
+separate; export does not start services or change the normal game launcher.
+
+Five export cases pass, in addition to the 17 prior zone/editor cases:
+actual runtime mixed-shape admission/source round trip/identity without visual I/O;
+invalid-spawn/metadata/visual-budget refusal with no output; far signed centimetre
+preservation and negative terrain; closed cylinder collision topology plus byte-
+deterministic repeated export; and two actual encrypted Renet clients moving in
+the authored world, stopping at its wall and rejecting a stale package revision.
+Fresh focused tests total **22**, with locked workspace/all-target denied-warning
+Clippy, formatting/diff checks and builds. Actual CLI export with DISPLAY and
+WAYLAND_DISPLAY unset passes; exporting over an existing package refuses and
+preserves every artifact hash.
+
+Both primitive and terrain GLBs pass Khronos validation with **zero errors and
+zero warnings**. Independent float64 closed-convex source checks pass on the
+welded cylinder collision copies. Four final native pairs (eight normal rendered
+clients) pass on Linux RX 7900 XTX / RADV NAVI31 / Vulkan with validation-layer
+activation proved in logs and no GPU diagnostics: primitive world, terrain world,
+explicit 128-billion-metre instance, and direct hillside traversal. The hillside
+fixture starts on actual nonzero terrain: one owner gains **1.4444 m** and the
+other descends **0.1654 m** while both clients agree on committed poses; maximum
+reported ground discrepancy is 0.0000001193 m. That is this short controlled
+fixture, not a general numerical error/performance/capacity guarantee.
+
+Evidence: ignored `build/zone-export-tests-final-v1.log`,
+`zone-export-clippy-final-v2.log`, `zone-export-paired-build-v1.log`,
+`zone-export-build-v3.log`, `zone-export-no-display-v1.log`,
+`zone-package-{primitives,terrain}-v3/`, `zone-package-terrain-v4/`, corresponding
+`zone-package-*-gltf-validation-v3/v4.json`, and
+`zone-package-native-{primitives,terrain,far}-v3/` /
+`zone-package-native-hillside-v4/`. The first native attempt's independent oracle
+rejected un-welded split render vertices as an open collision source; it is
+retained as a failed candidate and not counted. The final collision copy is
+independently closed/convex. Initial flat-terrain traversal is retained separately
+from the final hillside proof. `tools/verify_multiplayer.py --terrain-world DIR`
+repeats the actual normal server/two-rendered-client check.
+
+Exact paired debug SHA-256:
+
+| Binary | SHA-256 |
+| --- | --- |
+| zone editor | `8f0c964c911b77b20053393a37ea42b625d0839e9d19fc39b2bd927d2f53bf72` |
+| normal client | `3ee30b087260ca8cbfb4ba176ca969540eeb327a278159d9446470bfba7106b7` |
+| headless server | `0e79e534335cd1718ba3f7d06b2622c537a90183e20f7a5809b6566b872dde89` |
+
+Windows execution, production authentication for imported zones, persistence,
+Classic gameplay-bundle integration, terrain streaming/LOD/materials, navigation,
+NPC/quest publication and population/resource qualification remain open.

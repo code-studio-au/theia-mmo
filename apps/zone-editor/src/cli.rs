@@ -13,6 +13,9 @@ pub struct Options {
     pub capture: Option<PathBuf>,
     pub report: Option<PathBuf>,
     pub mailbox: Option<PathBuf>,
+    pub export: Option<PathBuf>,
+    pub content_id: Option<String>,
+    pub revision: Option<u32>,
 }
 impl Options {
     pub fn parse() -> Result<Self> {
@@ -37,15 +40,41 @@ impl Options {
                 "--mailbox" => {
                     result.mailbox = Some(args.next().ok_or("--mailbox needs a directory")?.into())
                 }
+                "--export" => {
+                    result.export = Some(
+                        args.next()
+                            .ok_or("--export needs a fresh directory")?
+                            .into(),
+                    )
+                }
+                "--content-id" => {
+                    result.content_id = Some(args.next().ok_or("--content-id needs a logical ID")?)
+                }
+                "--revision" => {
+                    result.revision = Some(
+                        args.next()
+                            .ok_or("--revision needs a nonzero number")?
+                            .parse()
+                            .map_err(|_| "Invalid content revision")?,
+                    )
+                }
                 "--headless" => result.headless = true,
                 "--help" => {
                     println!(
-                        "theia-zone-editor [--zone FILE] [--commands JSONL] [--output FILE] [--headless] [--capture PNG] [--report JSON] [--mailbox DIR]\n\nCommands use the same transaction/undo engine as the viewport. Headless mode validates and prints the final revision without opening a window. Output writes only after every command succeeds."
+                        "theia-zone-editor [--zone FILE] [--commands JSONL] [--output FILE] [--headless] [--capture PNG] [--report JSON] [--mailbox DIR] [--export NEW_DIR --content-id ID --revision N]\n\nCommands use the same transaction/undo engine as the viewport. Headless mode validates and prints the final revision without opening a window. Output writes only after every command succeeds."
                     );
                     std::process::exit(0);
                 }
                 _ => return Err(format!("Unknown argument: {arg}")),
             }
+        }
+        if result.export.is_some() {
+            if result.content_id.is_none() || result.revision.is_none_or(|r| r == 0) {
+                return Err("Export requires --content-id and positive --revision".into());
+            }
+            result.headless = true;
+        } else if result.content_id.is_some() || result.revision.is_some() {
+            return Err("Content identity options require --export".into());
         }
         if result.headless
             && (result.capture.is_some() || result.report.is_some() || result.mailbox.is_some())

@@ -1,6 +1,7 @@
 //! P5-17/P3-15: standard Bevy greybox authoring; no trusted gameplay authority.
 mod agent;
 mod cli;
+mod export;
 mod playtest;
 mod terrain;
 mod viewport;
@@ -117,6 +118,19 @@ fn main() {
 fn run() -> Result<(), String> {
     let options = cli::Options::parse()?;
     let editor = options.prepare()?;
+    if let Some(path) = &options.export {
+        let report = export::publish(
+            editor.zone(),
+            path,
+            options.content_id.as_deref().expect("Checked export ID"),
+            options.revision.expect("Checked export revision"),
+        )?;
+        println!(
+            "{}",
+            serde_json::to_string(&report).map_err(|e| e.to_string())?
+        );
+        return Ok(());
+    }
     if options.headless {
         println!(
             "{}",
