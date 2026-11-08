@@ -1,3 +1,11 @@
+Local-chat routing prerequisite, 8 November 2026 (P4-12):
+The host-side router bounds eight admissions and sixteen queued messages per
+recipient; current trusted name/pose/area context determines delivery. Three
+focused codec/routing/backpressure tests and strict Clippy/formatting pass.
+This library is not installed in the owner loop; encrypted chat, composer and
+bubbles remain pending. [Evidence and next acceptance](LOCAL_CHAT.md#bounded-host-router-prerequisite).
+Continue headlessly; local commits only, no push or desktop access.
+
 Local-chat prerequisite, 8 November 2026 (P4-12 / P2-14 / P5-13):
 Bounded Unicode text, server-context local/area delivery policy, replay/mute/flood
 gate and exact CQ01/CD01 codecs pass 378 core and two focused wire cases plus

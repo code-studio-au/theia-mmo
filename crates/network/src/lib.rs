@@ -63,4 +63,5 @@ pub mod vendor_wire;
 #[allow(dead_code)]
 pub(crate) mod test_relay;
 
+pub mod chat;
 pub mod chat_wire;

@@ -72,3 +72,33 @@ strict workspace/all-target Clippy and formatting pass. Artifacts:
 `build/local-chat-20261108/core-v1.log`, `wire-v1.log`, `clippy-v2.log` and
 `fmt-v1.log`. No desktop, OS input or renderer was used. Core policy and codec
 checks establish no live chat, speech bubbles, moderation tools or scale claim.
+
+
+## Bounded host router prerequisite
+
+`theia_network::chat::Router` now owns up to eight admitted speakers, separate
+server-updated checked positions/Area membership, submission gates and sixteen
+queued deliveries per recipient. Admission never accepts a client display name
+or position; the host must bind its caller key to a live authorized connection.
+Duplicate admission refuses instead of resetting flood state. Submission uses
+the current server contexts and stamps the saved sender name. Recipient blocking
+also purges that sender's unsent messages. Retiring a recipient drops its queue.
+
+The audience is captured at acceptance time. Queued Say does not get rerouted
+when either actor later moves. A full outbox drops the newest message; a transport
+capacity refusal retains the oldest. Flush attempts at most one bounded delivery
+per peer and uses a synchronous capacity/send callback after gameplay-priority
+publishing. Counters saturate and carry no message text. Eight full outboxes hold
+at most128 deliveries (44,544 encoded bytes, excluding container/allocator overhead).
+This policy does not guarantee delivery or acceptance echo when a recipient is
+slow. A future composer requires explicit submission replies to report refusals.
+
+Three focused routing tests pass: real codec frames, proximity/area/authoritative
+name stamping, pose updates, mute/replay/flood behavior, block queue purge,
+retirement, bounded admission, full-queue drops and deferred ordered flushing.
+Strict workspace/all-target Clippy and formatting pass. Artifacts:
+`build/local-chat-20261108/router-v1.log`, `router-clippy-v1.log` and
+`router-fmt-v1.log`. This router is not installed in the Renet owner loop and has
+no authenticated encrypted routing evidence yet. No normal executable, protocol,
+rendering or input path changed. Next implement explicit opt-in compatibility,
+lease/pose synchronization and encrypted loopback acceptance before normal use.
