@@ -5,6 +5,7 @@ mod export;
 mod markers;
 mod paths;
 mod playtest;
+mod selection;
 mod terrain;
 mod vegetation;
 mod viewport;
@@ -720,6 +721,9 @@ fn keyboard(
         perform(action, &mut session, &mut view);
         return;
     }
+    if selection::keyboard(&keys, &mut session, &mut view) {
+        return;
+    }
     if session.vegetation_mode {
         vegetation::keyboard(&keys, &mut session);
         return;
@@ -803,7 +807,8 @@ fn camera_controls(
             view.pitch = (view.pitch + motion.delta.y * 0.005).clamp(0.15, 1.5);
         }
         if outside {
-            view.distance = (view.distance * (-scroll.delta.y * 0.1).exp()).clamp(3., 240.);
+            view.distance = (view.distance * (-scroll.delta.y * 0.1).exp())
+                .clamp(3., selection::MAX_VIEW_DISTANCE);
         }
         if !keys.pressed(KeyCode::ControlLeft) && !keys.pressed(KeyCode::ControlRight) {
             let axis = Vec3::new(

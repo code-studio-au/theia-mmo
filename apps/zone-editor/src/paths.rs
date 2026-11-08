@@ -536,7 +536,7 @@ pub(super) fn translate(keys: &ButtonInput<KeyCode>, session: &mut Session, view
             view.target = (minimum + maximum) / 2.;
             view.distance =
                 ((maximum - minimum).length() * 1.5 + path.width_metres as f32 * 2. + 8.)
-                    .clamp(8., 240.);
+                    .clamp(8., selection::MAX_VIEW_DISTANCE);
         }
         return;
     }

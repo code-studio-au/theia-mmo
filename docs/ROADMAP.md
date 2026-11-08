@@ -1,10 +1,12 @@
-Terrain grounding and save-state display, 8 November 2026 (P5-17 / P3-15 / P1-10; P2-06/07):
+Terrain grounding, save state and selection framing, 8 November 2026 (P5-17 / P3-15 / P1-10; P2-06/07):
 H and structured `project_to_surface` now ground selected objects, plants,
 markers and guide points through shared candidate validation and undo. Primitive
 centres account for half-height; foot anchors use the exact terrain support.
 Whole guides are one undo entry. The summary also distinguishes saved content
 from unsaved visual/agent edits and pending drafts. This grounds anchors rather than prop stacks
-or full slope footprints. 54 focused Rust cases, four launcher cases, formatting
+or full slope footprints. Tab/Shift-Tab also cycle hidden/distant objects; F
+frames objects, plants, markers and the existing guide/point selection without
+changing history. Local/far/empty native framing cases pass. 54 focused Rust cases, four launcher cases, formatting
 and strict workspace/all-target Clippy pass. The full native 3440x1440 walkthrough also passes
 with Vulkan validation active and zero GPU diagnostics; [contract and evidence](ZONE_EDITOR.md#explicit-terrain-grounding--8-november-2026).
 Local commits only; no push. Chat composer/bubbles remain deferred.

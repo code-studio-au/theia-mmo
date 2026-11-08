@@ -1,3 +1,12 @@
+## 8 November 2026 — keyboard recovery and bounded selection framing
+
+Cycle object selection with Tab/Shift-Tab in source order, independent of mesh
+visibility, and extend F framing to objects, plants and markers. Keep existing
+guide-point/whole-guide controls and document history separate from camera state.
+Extend the bounded editor orbit range from 240 m to 512 m to frame the largest
+permitted primitive. Reuse checked global/local conversion and standard Bevy
+camera transforms. [Contract/evidence](ZONE_EDITOR.md#keyboard-selection-and-placement-framing--8-november-2026).
+
 ## 8 November 2026 — saved content comparison in the editor summary
 
 Track the selected destination's last loaded/saved document independently of

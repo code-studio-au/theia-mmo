@@ -1018,3 +1018,45 @@ three native cases pass again with zero GPU diagnostics:
 Final build/Clippy: `zone-save-state-build-final-v3.log`,
 `zone-save-state-clippy-final-v2.log`. Final editor SHA-256:
 `c6bc2ace0840765d20a1ff206ace7a804dd9f1190c0cb2f3d639d90380a3a5bd`.
+
+
+## Keyboard selection and placement framing — 8 November 2026
+
+P5-17 / P3-15 / P1-10: Objects now support Tab / Shift-Tab selection in document
+order, with forward/backward wrapping and safe empty selection. Cycling leaves
+placement mode and can reach objects hidden by terrain or outside the view.
+H can then ground the selected object. Delete/agent changes retain the existing
+selection reconciliation; no visibility-dependent selection list is stored.
+
+F now frames selected objects, plants and marker footprints as well as the
+existing whole-guide/control-point selection. Object framing uses a conservative
+bounding sphere. Fixed greybox plant bounds include the canopy; marker framing
+includes its footprint. Convert f64 anchors through the existing checked zone
+frame, then move the normal Bevy camera target and distance. A three-radius plus
+8 m framing distance gives margin at the retained default 45-degree vertical
+field of view. The bounded orbit maximum increases from 240 m to 512 m so the
+largest allowed 128 m primitive fits. View positions remain within the retained
+4,096 m local coordinate bound. Long guides can still exceed a single view.
+
+Selection/framing never creates a document edit, changes either history stack
+or clears unsaved state. F and object cycling refuse during playtest or pending
+stroke/drag/guide draft; Ctrl chords retain existing behavior. Guide Tab cycling
+continues to select whole guides/control points. The optional native report adds
+local camera `view.target` / `view.distance` fields for verification.
+
+All 54 retained focused Rust cases, formatting and denied-warning workspace/
+all-target Clippy pass. Three native 3440x1440 cases cover local coordinates,
+origin `[128000000000, 0, -128000000000]` and an empty document. Actual keyboard/
+pointer checks cover forward/reverse wrapping, a buried-step H/undo recovery,
+large primitive framing beyond 300 m, plants, marker footprints, whole guides,
+individual points and playtest refusal. Captures show the entire selected large
+cube and tree proxy. Selection and framing preserve document/history/dirty state.
+All three observe active Vulkan validation on AMD RX 7900 XTX (RADV NAVI31),
+device 29772, with zero GPU/resize diagnostics. This is Linux editor evidence;
+normal-game networking and native Windows retain their earlier qualified scope.
+
+Reproducer fixture: `content/zones/selection.commands.jsonl`. Evidence: ignored
+`build/zone-selection-native-3440-v1/{qualification.json,*.png}`,
+`zone-selection-tests-v1.log`, `zone-selection-build-v1.log` and
+`zone-selection-clippy-v1.log`. Editor SHA-256:
+`d934da475b0947a812bf0c0d1d7ba08eb8974feccc2f4514249e1d32bff234b4`.

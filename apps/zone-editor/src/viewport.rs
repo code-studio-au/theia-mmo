@@ -371,6 +371,7 @@ pub(super) fn report(
     time: Res<Time>,
     keys: Res<ButtonInput<KeyCode>>,
     session: Res<Session>,
+    view: Res<View>,
     windows: Query<&Window>,
     cameras: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
     controls: Query<(
@@ -440,6 +441,7 @@ pub(super) fn report(
         "ground":[project(Vec3::new(3.,0.,4.)),project(Vec3::new(5.,0.,4.))],
         "gpu":{"name":adapter.name,"backend":format!("{:?}",adapter.backend),"device":adapter.device}});
     value["unsaved_changes"] = session.is_dirty().into();
+    value["view"] = serde_json::json!({"target":view.target.to_array(),"distance":view.distance});
     let temp = report.path.with_extension("tmp");
     if let Err(error) = std::fs::write(&temp, serde_json::to_vec_pretty(&value).unwrap())
         .and_then(|()| std::fs::rename(temp, &report.path))

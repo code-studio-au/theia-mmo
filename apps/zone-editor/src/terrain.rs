@@ -352,9 +352,9 @@ pub(super) fn palette(
         **text = if session.terrain_paint {
             "F7: terrain colour paint\nClick/drag: paint stroke\nRelease: one undo entry\nEsc cancels preview\nGrass / dirt / rock / sand\nPaint changes colour weights\nGrid weights, locked grass edge\nF2 returns to sculpting".into()
         } else if session.vegetation_mode {
-            "F6: greybox trees / shrubs\nH: ground selection\nClick places one stamp\nEsc selects | Del removes\nArrows/PgUp/Dn: move\nR / Shift R: yaw +/-15 deg\n+/-: plant scale\n[ / ]: scatter radius\n, / .: scatter count\nVegetation proxies do not\nadd world collision".into()
+            "F6: greybox trees / shrubs\nF: focus | H: ground selection\nClick places one stamp\nEsc selects | Del removes\nArrows/PgUp/Dn: move\nR / Shift R: yaw +/-15 deg\n+/-: plant scale\n[ / ]: scatter radius\n, / .: scatter count\nVegetation proxies do not\nadd world collision".into()
         } else if session.marker_mode {
-            "F4: NPC / quest markers\nH: ground selection\nClick to place or select\nArrows/PgUp/Dn: move\nR / Shift R: yaw +/-15 deg\n+/- changes footprint radius\nCtrl O loads saved zone\nMarkers are authoring notes;\nplaytest hides them".into()
+            "F4: NPC / quest markers\nF: focus | H: ground selection\nClick to place or select\nArrows/PgUp/Dn: move\nR / Shift R: yaw +/-15 deg\n+/- changes footprint radius\nCtrl O loads saved zone\nMarkers are authoring notes;\nplaytest hides them".into()
         } else if session.path_mode {
             "F3: guide paths / streams\nClick ground to add points\nEnter finishes | Esc cancels\nBksp removes last point\nClick guide / point to select\nTab / Shift Tab: cycle points\nF: focus | H: ground selection\nArrows/PgUp/Dn move selection\n+/- changes guide width\nGrade terrain: selected guide\n4 m falloff, surface -0.03 m\nNo water simulation".into()
         } else if session.terrain_mode {
@@ -370,6 +370,8 @@ Offline collision sandbox"
         } else {
             "WASD pan | RMB orbit | wheel zoom
 Drag selected: X/Z | H: ground
+Tab / Shift Tab: cycle objects
+F: focus selection
 Arrows: X/Z | PgUp/Dn: Y
 R / Shift R: yaw +/-15 deg
 + / -: uniform size
