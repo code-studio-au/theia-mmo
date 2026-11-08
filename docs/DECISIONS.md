@@ -1,3 +1,12 @@
+## 8 November 2026 — saved content comparison in the editor summary
+
+Track the selected destination's last loaded/saved document independently of
+history revision. Show unsaved state for differing content and pending drafts;
+restore clean state on exact undo, successful Save/Load or draft cancellation.
+Keep Save failure and accepted agent edits distinct from durable file success.
+Use standard Bevy text; retain explicit Save and existing formats.
+[Contract/evidence](ZONE_EDITOR.md#saved-and-unsaved-authoring-state--8-november-2026).
+
 ## 8 November 2026 — explicit terrain grounding through shared history
 
 Keep saved placement/guide heights stable during sculpting. Add explicit terrain

@@ -980,3 +980,41 @@ moves within the owned window after that report before targeting a button.
 The intermediate partial runs are not counted as acceptance. Native Windows
 and new normal-game pairs were not run for this position-only command slice;
 the earlier exported-package pair evidence retains its recorded source scope.
+
+
+## Saved and unsaved authoring state — 8 November 2026
+
+P5-17 / P3-15 / P1-10: the standard Bevy summary now shows Saved or Unsaved.
+Compare the current validated document with a bounded snapshot of the selected
+save destination at startup or its last successful Save/Load. A new destination
+is unsaved until Save succeeds. Startup commands that change a loaded source
+also remain unsaved unless `--output` already wrote that exact candidate.
+
+Content equality, rather than revision number, makes undo back to saved content
+clean and redo away from it dirty. Visual and accepted agent edits use the same
+comparison. Pending drags, strokes and guide drafts count as unsaved work;
+saving the committed document while a guide draft is open retains Unsaved.
+Cancelling the draft can restore Saved. Offline playtest movement does not
+change saved authoring content. Save failure retains the baseline and document;
+load failure does not clear unsaved state. Existing files are not watched for
+external changes. No autosave, close interception or save-format change is added.
+The optional qualification report exposes `unsaved_changes`.
+
+Qualification: all 54 focused Rust cases, formatting and denied-warning workspace/
+all-target Clippy pass. Three native Linux runs at actual 3440x1440 cover a new
+draft, saved-source reopen and failed Save to a directory. Real keyboard/pointer
+checks also cover exact undo/redo/load baseline changes, an accepted mailbox edit,
+saving/cancelling pending guide drafts and unchanged playtest content. All three
+runs observe active Vulkan validation on RX 7900 XTX (RADV NAVI31), device 29772,
+with zero GPU/resize diagnostics. Captured pixels show Saved/Unsaved in the
+standard Bevy summary. Evidence: ignored `build/zone-save-state-tests-v1.log`,
+`zone-save-state-clippy-v1.log`, `zone-save-state-build-v2.log` and
+`zone-save-state-native-3440-v2/{qualification.json,*.state.png}`.
+
+Final screenshot review found the mode-specific help replacing the initial H
+hint. Object, guide, marker and plant help now retain that shortcut. The final
+three native cases pass again with zero GPU diagnostics:
+`build/zone-save-state-native-3440-final-v3/qualification.json` and captures.
+Final build/Clippy: `zone-save-state-build-final-v3.log`,
+`zone-save-state-clippy-final-v2.log`. Final editor SHA-256:
+`c6bc2ace0840765d20a1ff206ace7a804dd9f1190c0cb2f3d639d90380a3a5bd`.

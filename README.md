@@ -7,6 +7,7 @@ F1 objects · F2 sculpt · F3 road/stream guides and points · F4 NPC/quest mark
 F6 vegetation · F7 terrain paint. F5 enters/leaves the offline Avian playtest.
 H grounds the selected placement or guide points on terrain.
 Visual editing and structured agent commands share validation and undo.
+The summary marks unsaved changes, including pending drafts.
 
 For structured commands, use `python3 tools/edit_zone.py --commands JSONL
 --headless --output FILE`. Export a saved zone with `--zone FILE --export NEW_DIR

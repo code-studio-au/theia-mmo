@@ -21,6 +21,7 @@ const PANEL: f32 = 300.;
 #[derive(Resource)]
 struct Session {
     editor: Editor,
+    saved_zone: Option<Zone>,
     selected: Option<u64>,
     palette: Option<Primitive>,
     snap: bool,
@@ -59,6 +60,12 @@ struct Drag {
     offset: Vec3,
 }
 impl Session {
+    fn is_dirty(&self) -> bool {
+        self.saved_zone.as_ref() != Some(self.editor.zone())
+            || self.drag.is_some()
+            || self.stroke.is_some()
+            || self.path_draft.is_some()
+    }
     fn execute(&mut self, command: Command) {
         match self.editor.execute(command) {
             Ok(()) => {
@@ -226,14 +233,17 @@ fn run() -> Result<(), String> {
             .expect("Validated terrain frame");
         Vec3::new(local[0] + 64., 0., local[2] + 64.)
     });
+    let path = options.editor_path();
+    let saved_zone = Zone::load(&path).ok();
     let mut app = App::new();
     app.insert_resource(Session {
         editor,
+        saved_zone,
         selected: None,
         palette: None,
         snap: true,
         status: "Ready - choose a primitive, then click the ground".into(),
-        path: options.editor_path(),
+        path,
         next_id,
         drag: None,
         play: None,
@@ -505,15 +515,18 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
         }),
         Action::Save => {
             session.status = match session.editor.zone().save(&session.path) {
-                Ok(()) => format!(
-                    "Saved {}{}",
-                    session.path.display(),
-                    if session.path_draft.is_some() {
-                        " (guide draft still pending)"
-                    } else {
-                        ""
-                    }
-                ),
+                Ok(()) => {
+                    session.saved_zone = Some(session.editor.zone().clone());
+                    format!(
+                        "Saved {}{}",
+                        session.path.display(),
+                        if session.path_draft.is_some() {
+                            " (guide draft still pending)"
+                        } else {
+                            ""
+                        }
+                    )
+                }
                 Err(e) => e,
             };
         }
@@ -528,6 +541,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
                     session.marker_selected = None;
                     session.plant_selected = None;
                     session.reconcile();
+                    session.saved_zone = Some(session.editor.zone().clone());
                     "Loaded zone (undo restores prior document)".into()
                 }
                 Err(e) => e,
@@ -841,8 +855,13 @@ fn present(
         .find(|o| Some(o.id) == session.selected);
     for mut text in &mut info {
         **text = format!(
-            "{}\nrev {} | {} objects\nundo/redo {:?} | snap {}\n{}",
+            "{}\n{} | rev {} | {} objects\nundo/redo {:?} | snap {}\n{}",
             session.editor.zone().name,
+            if session.is_dirty() {
+                "Unsaved"
+            } else {
+                "Saved"
+            },
             session.editor.revision(),
             session.editor.zone().objects.len(),
             session.editor.history(),
