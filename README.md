@@ -17,6 +17,7 @@ In terrain tools, [ / ] halves/doubles stamp strength or the selected blend.
 In Guides, Insert adds a midpoint; Backspace removes a selected point.
 The right-side content list selects named entries across modes; F frames them.
 F8 renames a selection; Shift-F8 edits the zone name through shared undo.
+F9 opens numeric position/yaw/size fields for a selected primitive.
 
 For structured commands, use `python3 tools/edit_zone.py --commands JSONL
 --headless --output FILE`. Export a saved zone with `--zone FILE --export NEW_DIR

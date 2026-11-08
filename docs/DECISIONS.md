@@ -1,3 +1,14 @@
+## 8 November 2026 — exact numeric primitive transforms
+
+Use built-in Bevy text inputs and the modal TabNavigation API for seven global
+position/yaw/size fields. Keep f64 round-trip strings and parse finite numbers;
+submit all fields in one existing Transform command. Reuse full-candidate shape,
+coordinate, revision and undo validation. Preserve invalid text for correction,
+isolate world/mailbox input during either dialog and avoid global tab handlers
+that would capture the editor's existing object/guide cycling. No schema or
+coordinate-conversion path is added; numeric fields enter global truth directly.
+[Contract/evidence](ZONE_EDITOR.md#numeric-primitive-transform-fields--8-november-2026).
+
 ## 8 November 2026 — shared names and standard Bevy text input
 
 Use narrow `rename` / `rename_zone` edits with existing candidate validation and

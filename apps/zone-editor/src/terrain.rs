@@ -466,7 +466,7 @@ pub(super) fn pointer(
     mut session: ResMut<Session>,
 ) {
     session.brush_point = None;
-    if session.name_edit.is_some() {
+    if session.has_modal() {
         return;
     }
     if !session.terrain_mode {

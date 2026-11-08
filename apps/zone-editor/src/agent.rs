@@ -32,7 +32,7 @@ pub(super) fn poll(
         || session.stroke.is_some()
         || session.path_draft.is_some()
         || session.play.is_some()
-        || session.name_edit.is_some();
+        || session.has_modal();
     let previous = session.editor.revision();
     let points_before = session.selected_path_len();
     match mailbox.inner.poll(&mut session.editor, busy) {

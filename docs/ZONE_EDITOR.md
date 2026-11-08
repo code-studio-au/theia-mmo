@@ -1538,3 +1538,61 @@ Evidence: ignored `build/zone-names-native-3440-v9/{qualification.json,*.png}`,
 `zone-names-tests-v5.log`, `zone-names-build-v8.log`, `zone-names-clippy-v4.log` and
 `zone-names-launcher-tests-v1.log`. Editor SHA-256:
 `c2d9bd13142680d59ac80b3469df30d726a2f6f8e030b00749ac6d28ce3d9046`.
+
+
+## Numeric primitive transform fields — 8 November 2026
+
+P5-17 / P3-15 / P1-10: F9 opens properties for a selected Box, Sphere or Cylinder.
+The seven standard Bevy TextInput fields hold global X/Y/Z metres, yaw around Y
+in degrees and XYZ dimensions in metres. Global values stay f64 from the source
+Pose through exact round-trip strings and finite-number parsing. They never pass
+through f32 display coordinates or a new origin-conversion path. Text accepts
+ordinary signed/decimal/scientific numbers and surrounding whitespace; each field
+is bounded to 64 characters. Existing whole-candidate validators still own global/
+local-frame/authoring bounds, dimensions 0.1..128 m, yaw bounds, uniform sphere
+size and equal cylinder X/Z diameter. Numeric entries apply exactly, independently
+of the grid-snap preset.
+
+Tab/Shift-Tab cycle within Bevy's modal TabGroup using its TabNavigation system
+parameter; primary-pointer field selection uses standard focus infrastructure.
+This does not install a global tab observer or change ordinary object/guide
+cycling. Text buffers retain Bevy's prepared font/layout styles when reset.
+Enter or primary Apply submits all seven fields in one existing Transform edit.
+Nothing changes in the document until Apply succeeds. Invalid numeric/shape/
+coordinate input leaves the dialog and values intact, with no change to revision,
+history or redo. Escape, primary Cancel or window focus loss cancels. Unchanged
+submission closes without an edit. F9 without a selected primitive explains the
+required selection; this first property form does not edit guide/marker/plant
+properties.
+
+Both dialogs share a modal guard: world/mode/load/save/playtest/undo/duplicate
+input, content selection and camera movement remain isolated during typing;
+mailbox mutations use the retained busy refusal. Each refuses opening during
+playtest or a pending drag/stroke/guide draft, preserving that work, and either
+open form contributes to the pending/unsaved indicator. The report exposes field
+values, active selection and UI bounds for native qualification. No source/runtime
+schema, engine/plugin pin or server-authority change is introduced.
+
+All 68 focused Rust cases (49 domain / 19 editor), seven launcher cases,
+formatting and denied-warning workspace/all-target Clippy pass. New parser cases
+exercise exact far f64 strings, scientific notation and malformed/nonfinite fields;
+all three primitive kinds share full-candidate refusal, redo preservation and
+one-entry undo at local/far origins. Three native Linux cases pass at actual
+3440x1440: local, far `[128000000000,20,-128000000000]` and saved reopen. Real
+Tab/Shift-Tab wrapping, primary field focus and Apply/Cancel, malformed-number and
+nonuniform-sphere refusal, pending-input preservation, unchanged submit, all-field
+atomic Apply and visual undo/redo pass. Six resulting complete documents match
+independently executed headless Transform commands exactly. Saved far fields
+reopen exactly without an unchanged-submit history entry. Missing selection,
+modal isolation, busy mailbox and draft/playtest refusal pass alongside the full
+retained naming walkthrough. All three observe active Vulkan validation on AMD
+RX 7900 XTX (RADV NAVI31), device 29772, with zero GPU/resize diagnostics. The
+owned input driver recorded two harmless missed-Control re-presses before sending
+select-all; it never retried mutating clicks or commands. Normal-game and Windows
+evidence retain their earlier scope.
+
+Evidence: ignored `build/zone-properties-native-3440-v1/{qualification.json,*.png}`,
+six `.before.json` / `.commands.jsonl` / `.expected.json` pairs in that directory,
+`zone-properties-tests-v1.log`, `zone-properties-build-v1.log` and
+`zone-properties-clippy-v1.log`. Editor SHA-256:
+`19a8276ec6158df6ca194ab34c895331453885f4c69fe7e2afc052c57d238fcf`.

@@ -439,7 +439,7 @@ pub(super) fn pointer(
     objects: Query<(), With<viewport::Authored>>,
     mut session: ResMut<Session>,
 ) {
-    if session.name_edit.is_some() {
+    if session.has_modal() {
         return;
     }
     if !session.path_mode || session.play.is_some() {

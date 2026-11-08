@@ -137,7 +137,7 @@ pub(super) fn keyboard(
     mut focus: ResMut<InputFocus>,
     mut fields: Query<(Entity, &mut EditableText), With<Field>>,
 ) {
-    if session.name_edit.is_some()
+    if session.has_modal()
         || !keys.just_pressed(KeyCode::F8)
         || !windows.single().is_ok_and(|w| w.focused)
     {

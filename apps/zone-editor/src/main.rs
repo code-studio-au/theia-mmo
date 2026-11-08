@@ -7,6 +7,7 @@ mod naming;
 mod outliner;
 mod paths;
 mod playtest;
+mod properties;
 mod selection;
 mod terrain;
 mod vegetation;
@@ -74,6 +75,7 @@ struct Session {
     path_point: Option<usize>,
     path_draft: Option<paths::Draft>,
     name_edit: Option<naming::Draft>,
+    transform_edit: Option<properties::Draft>,
 }
 struct Drag {
     id: u64,
@@ -83,6 +85,9 @@ struct Drag {
     offset: Vec3,
 }
 impl Session {
+    fn has_modal(&self) -> bool {
+        self.name_edit.is_some() || self.transform_edit.is_some()
+    }
     fn set_mode(&mut self, mode: EditorMode) {
         self.terrain_mode = matches!(mode, EditorMode::Sculpt | EditorMode::Paint);
         self.terrain_paint = mode == EditorMode::Paint;
@@ -124,7 +129,7 @@ impl Session {
             || self.drag.is_some()
             || self.stroke.is_some()
             || self.path_draft.is_some()
-            || self.name_edit.is_some()
+            || self.has_modal()
     }
     fn execute(&mut self, command: Command) {
         let points_before = self.selected_path_len();
@@ -354,6 +359,7 @@ fn run() -> Result<(), String> {
         path_point: None,
         path_draft: None,
         name_edit: None,
+        transform_edit: None,
     })
     .insert_resource(View {
         target: initial_target.unwrap_or(Vec3::ZERO),
@@ -377,6 +383,7 @@ fn run() -> Result<(), String> {
     .add_observer(activate)
     .add_observer(outliner::activate)
     .add_observer(naming::activate)
+    .add_observer(properties::activate)
     .add_systems(
         Startup,
         (
@@ -388,6 +395,7 @@ fn run() -> Result<(), String> {
             setup_ui,
             outliner::setup,
             naming::setup,
+            properties::setup,
         ),
     )
     .add_systems(
@@ -395,6 +403,7 @@ fn run() -> Result<(), String> {
         (
             agent::poll,
             naming::keyboard,
+            properties::keyboard,
             keyboard,
             camera_controls,
             vegetation::pointer,
@@ -416,7 +425,9 @@ fn run() -> Result<(), String> {
     )
     .add_systems(
         PostUpdate,
-        naming::finish.after(bevy::text::EditableTextSystems),
+        (naming::finish, properties::finish)
+            .chain()
+            .after(bevy::text::EditableTextSystems),
     )
     .add_systems(FixedUpdate, playtest::step)
     .add_systems(Last, viewport::report);
@@ -477,7 +488,7 @@ fn setup_ui(mut commands: Commands) {
         .with_children(|panel| {
             panel.spawn(text("THEIA / ZONE STUDIO", 22.));
             panel.spawn(text(
-                "F1 Objects | F2 Terrain\nF3 Guides | F4 Markers\nF6 Plants | F7 Terrain paint\nF8 Rename | Shift F8 Zone name",
+                "F1 Objects | F2 Terrain\nF3 Guides | F4 Markers\nF6 Plants | F7 Terrain paint\nF8 Rename | Shift F8 Zone name\nF9 Object transform",
                 12.,
             ));
             for (index, (action, title)) in object_actions().into_iter().enumerate() {
@@ -523,7 +534,7 @@ fn activate(
     mut session: ResMut<Session>,
     mut view: ResMut<View>,
 ) {
-    if session.name_edit.is_none()
+    if !session.has_modal()
         && windows.single().is_ok_and(|w| w.focused)
         && let Ok(action) = actions.get(event.entity)
     {
@@ -531,7 +542,7 @@ fn activate(
     }
 }
 fn perform(action: Action, session: &mut Session, view: &mut View) {
-    if session.name_edit.is_some() {
+    if session.has_modal() {
         return;
     }
     if matches!(action, Action::Duplicate) && (session.drag.is_some() || session.stroke.is_some()) {
@@ -789,7 +800,7 @@ fn keyboard(
     mut session: ResMut<Session>,
     mut view: ResMut<View>,
 ) {
-    if session.name_edit.is_some() {
+    if session.has_modal() {
         return;
     }
     if !windows.single().is_ok_and(|w| w.focused) {
@@ -997,7 +1008,7 @@ fn camera_controls(
     let Ok(window) = windows.single() else {
         return;
     };
-    if window.focused && session.play.is_none() && session.name_edit.is_none() {
+    if window.focused && session.play.is_none() && !session.has_modal() {
         let outside = canvas_cursor(window).is_some();
         if outside && mouse.pressed(MouseButton::Right) {
             view.yaw -= motion.delta.x * 0.005;

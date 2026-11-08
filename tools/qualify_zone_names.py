@@ -14,7 +14,7 @@ from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def run(output, binary):
+def run(output, binary, properties=False):
     output = output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     binary = binary.resolve()
@@ -22,8 +22,13 @@ def run(output, binary):
     subprocess.run([str(binary), '--headless', '--commands', str(ROOT/'content/zones/selection.commands.jsonl'),
                     '--output', str(seed)], check=True, capture_output=True)
     base = json.loads(seed.read_text())
+    if properties:
+        for identifier, primitive, position in [(4,'sphere',[16,1,8]),(5,'cylinder',[-8,1,12])]:
+            base['objects'].append(dict(id=identifier, name=f'Numeric {primitive}', primitive=primitive,
+                                        pose=dict(position=position,yaw_degrees=0,size=[2,2,2])))
     cases = []
     checks = []
+    final_documents = {}
     input_notes = []
     env = dict(os.environ, WGPU_BACKEND='vulkan', VK_INSTANCE_LAYERS='VK_LAYER_KHRONOS_validation',
                VK_LOADER_DEBUG='layer')
@@ -173,7 +178,7 @@ def run(output, binary):
             wait(lambda: state()['name_selection'] == [0,len(state()['name_edit'].encode())])
             replace_text(name)
             # Editor mode, view, history, load/save/playtest/delete/duplicate stay isolated.
-            for shortcut in ['F1', 'F5', 'Tab', 'Delete']:
+            for shortcut in ['F1', 'F5', 'F9', 'Tab', 'Delete']:
                 key(shortcut)
             for shortcut in ['s', 'o', 'd', 'z', 'y']:
                 chord('Control_L', shortcut)
@@ -255,6 +260,8 @@ def run(output, binary):
         wait(lambda: not state()['unsaved_changes'])
         assert json.loads(Path(state()['save_path']).read_text()) == expected
         assert original['origin'] == expected['origin']
+        if properties:
+            transform_checks(state, key, chord, select, capture, agent, desktop, window, click)
         # Pending guide draft and playtest refuse opening without losing work.
         key('F3')
         wait(lambda: state()['path_mode'])
@@ -264,15 +271,154 @@ def run(output, binary):
         key('F8')
         wait(lambda: 'Finish or cancel' in state()['status'])
         assert state()['name_edit'] is None and state()['path_draft_points'] == 0
+        if properties:
+            key('F9')
+            wait(lambda: 'Finish or cancel' in state()['status'])
+            assert state()['transform_edit'] is None and state()['path_draft_points'] == 0
         key('Escape')
         key('F5')
         wait(lambda: state()['play_feet'] is not None)
         key('F8')
         wait(lambda: 'Finish or cancel' in state()['status'])
         assert state()['name_edit'] is None
+        if properties:
+            key('F9')
+            wait(lambda: 'Finish or cancel' in state()['status'])
+            assert state()['transform_edit'] is None
         key('F5')
         wait(lambda: state()['play_feet'] is None)
         checks.append('all authored kinds and zone: real text/select-all, shared undo/redo, invalid buffer retained, input isolation, pointer Apply/Cancel, busy agent and draft/playtest refusal, save')
+
+    def transform_checks(state, key, chord, select, capture, agent, desktop, window, click):
+        label = Path(state()['save_path']).name.split('.')[0]
+        origin = state()['document']['origin']
+        poses = {
+            1: dict(position=[origin[0]+8.125,origin[1]+2.25,origin[2]-8.5],yaw_degrees=37.5,size=[5.25,2.5,1.75]),
+            4: dict(position=[origin[0]+16.25,origin[1]+1.5,origin[2]+8.5],yaw_degrees=12.5,size=[3,3,3]),
+            5: dict(position=[origin[0]-8.125,origin[1]+1.75,origin[2]+12.5],yaw_degrees=-22.5,size=[2.5,3.5,2.5]),
+        }
+
+        def draft():
+            value = state()['transform_edit']
+            assert value is not None, 'Properties dialog closed unexpectedly'
+            return value
+
+        def control(target):
+            entry = wait(lambda: next((b for b in state()['transform_controls'] if b['target'] == target and all(x>0 for x in b['size'])),None))
+            desktop.move(window,entry['centre'],1)
+            wait(lambda: any(b['target'] == target and b['hovered'] for b in state()['transform_controls']))
+            click(entry)
+
+        def field(index,value):
+            if draft()['active'] != index:
+                control(f'Field({index})')
+                wait(lambda: draft()['active'] == index)
+            chord('Control_L','a')
+            wait(lambda: draft()['selection'] == [0,len(draft()['fields'][index].encode())])
+            for character in value:
+                key({'.':'period','-':'minus','+':'plus'}.get(character,character))
+            wait(lambda: draft()['fields'][index] == value)
+
+        for identifier, pose in poses.items():
+            select(f'Object({identifier})','selected',identifier)
+            before = copy.deepcopy(state()['document'])
+            revision = state()['revision']
+            history = state()['history']
+            view = state()['view']
+            prefix = output/f'{label}.transform-{identifier}'
+            source = Path(str(prefix)+'.before.json')
+            commands = Path(str(prefix)+'.commands.jsonl')
+            expected_path = Path(str(prefix)+'.expected.json')
+            source.write_text(json.dumps(before))
+            commands.write_text(json.dumps(dict(command='apply',expected_revision=0,
+                                                edits=[dict(op='transform',id=identifier,pose=pose)]))+'\n')
+            subprocess.run([str(binary),'--headless','--zone',str(source),'--commands',str(commands),
+                            '--output',str(expected_path)],check=True,capture_output=True)
+            expected = json.loads(expected_path.read_text())
+            key('F9')
+            wait(lambda: state()['transform_edit'] is not None)
+            wait(lambda: draft()['active'] == 0 and draft()['selection'] == [0,len(draft()['fields'][0])])
+            assert state()['unsaved_changes']
+            if identifier == 1:
+                for shortcut in ['F1','F2','F3','F4','F5','F6','F7','F8','F9','Delete']:
+                    key(shortcut)
+                for shortcut in ['s','o','d','z','y']:
+                    chord('Control_L',shortcut)
+                assert state()['name_edit'] is None and state()['selected'] == identifier
+                assert state()['document'] == before and state()['revision'] == revision
+                assert state()['history'] == history and state()['view'] == view
+                receipt = agent([dict(op='transform',id=identifier,pose=pose)])
+                assert not receipt['accepted'] and receipt['revision'] == revision
+                field(0,'bad')
+                key('Return')
+                wait(lambda: 'finite number' in state()['status'])
+                assert draft()['fields'][0] == 'bad'
+                assert state()['document'] == before and state()['history'] == history
+                capture('properties-invalid')
+            elif identifier == 4:
+                field(4,'4')
+                key('Return')
+                wait(lambda: 'Sphere needs uniform size' in state()['status'])
+                assert draft()['fields'][4] == '4' and state()['document'] == before
+                assert state()['history'] == history and state()['revision'] == revision
+                capture('properties-shape-invalid')
+            fields = [*pose['position'],pose['yaw_degrees'],*pose['size']]
+            for index,value in enumerate(fields):
+                field(index,str(value))
+                if index < 6:
+                    key('Tab')
+                    wait(lambda: draft()['active'] == index+1)
+            key('Tab')
+            wait(lambda: draft()['active'] == 0)
+            chord('Shift_L','Tab')
+            wait(lambda: draft()['active'] == 6)
+            assert state()['document'] == before and state()['revision'] == revision
+            capture(f'properties-{identifier}-ready')
+            if identifier == 1:
+                # World/side panels remain blocked while all edits are pending.
+                click(next(b for b in state()['buttons'] if b['action'] == 'Place(Box)'))
+                click(next(b for b in state()['content_list']['controls'] if b['target'] == 'Object(2)'))
+                desktop.click(window,[2400,450],1,1)
+                desktop.drag(window,[2400,450],1)
+                assert state()['document'] == before and state()['view'] == view
+                assert state()['selected'] == identifier and state()['history'] == history
+                control('Apply')
+            else:
+                key('Return')
+            wait(lambda: state()['transform_edit'] is None and state()['revision'] == revision+1)
+            assert state()['document'] == expected
+            assert state()['history'][0] == history[0]+1 and state()['history'][1] == 0
+            chord('Control_L','z')
+            wait(lambda: state()['revision'] == revision+2)
+            assert state()['document'] == before
+            chord('Control_L','y')
+            wait(lambda: state()['revision'] == revision+3)
+            assert state()['document'] == expected
+            key('f')
+            capture(f'properties-{identifier}-applied')
+        # Unchanged submit and both cancellation paths preserve history and values.
+        expected = copy.deepcopy(state()['document'])
+        revision = state()['revision']
+        history = state()['history']
+        for action in ['unchanged','escape','button']:
+            key('F9')
+            wait(lambda: state()['transform_edit'] is not None)
+            if action == 'unchanged':
+                key('Return')
+            else:
+                field(0,'123')
+                if action == 'escape':
+                    key('Escape')
+                else:
+                    control('Cancel')
+            wait(lambda: state()['transform_edit'] is None)
+            assert state()['document'] == expected and state()['history'] == history
+            assert state()['revision'] == revision
+        chord('Control_L','s')
+        wait(lambda: not state()['unsaved_changes'])
+        assert json.loads(Path(state()['save_path']).read_text()) == expected
+        final_documents[label] = expected
+        checks.append('numeric box/sphere/cylinder: real tab/shift-tab and pointer focus, malformed/shape validation, atomic seven-field exact headless equivalence, one undo, redo, unchanged/cancel, modal isolation, save')
 
     for name, origin in [('local', [0,0,0]), ('far', [128000000000,20,-128000000000])]:
         document = copy.deepcopy(base)
@@ -303,6 +449,20 @@ def run(output, binary):
         wait(lambda: state()['name_edit'] == 'Hollow west')
         key('Escape')
         wait(lambda: state()['name_edit'] is None and not state()['unsaved_changes'])
+        if properties:
+            assert document == final_documents['far']
+            key('F9')
+            wait(lambda: 'Select an object' in state()['status'])
+            assert state()['transform_edit'] is None
+            select('Object(1)','selected',1)
+            key('F9')
+            wait(lambda: state()['transform_edit'] is not None)
+            pose = document['objects'][0]['pose']
+            assert list(map(float,state()['transform_edit']['fields'])) == [*pose['position'],pose['yaw_degrees'],*pose['size']]
+            key('Return')
+            wait(lambda: state()['transform_edit'] is None and not state()['unsaved_changes'])
+            assert state()['revision'] == 0 and state()['document'] == document
+            checks.append('saved far numeric transforms reopen exactly and unchanged submit keeps zero history; missing selection refuses')
         checks.append('far saved names reopen cleanly with unchanged coordinates and fresh history; F8 without selection edits zone')
 
     case('reopen', output/'far.zone.json', reopened)
@@ -316,5 +476,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--binary', type=Path, default=ROOT/'target/debug/theia-zone-editor')
+    parser.add_argument('--properties', action='store_true', help='Also qualify numeric primitive transform fields')
     args = parser.parse_args()
-    print(json.dumps(run(args.output,args.binary),indent=2))
+    print(json.dumps(run(args.output,args.binary,args.properties),indent=2))
