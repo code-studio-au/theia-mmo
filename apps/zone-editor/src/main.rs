@@ -31,6 +31,7 @@ struct Session {
     play: Option<playtest::Playtest>,
     heading: f32,
     terrain_mode: bool,
+    terrain_paint: bool,
     brush_tool: terrain::Tool,
     brush_radius: f64,
     brush_point: Option<Vec3>,
@@ -239,6 +240,7 @@ fn run() -> Result<(), String> {
         play: None,
         heading: 0.,
         terrain_mode: false,
+        terrain_paint: false,
         brush_tool: terrain::Tool::Raise,
         brush_radius: 12.,
         brush_point: None,
@@ -357,7 +359,7 @@ fn setup_ui(mut commands: Commands) {
         BackgroundColor(Color::srgb(0.035, 0.05, 0.075))))
         .with_children(|panel| {
             panel.spawn(text("THEIA / ZONE STUDIO", 22.));
-            panel.spawn(text("F1 Objects | F2 Terrain\nF3 Guides | F4 Markers | F6 Plants", 12.));
+            panel.spawn(text("F1 Objects | F2 Terrain\nF3 Guides | F4 Markers\nF6 Plants | F7 Terrain paint", 12.));
             for (index,(action, title)) in object_actions().into_iter().enumerate() {
                 panel.spawn((PaletteSlot(index), action, Button, ActivateOnPress, Hovered::default(), Node { min_height: px(26), padding: UiRect::all(px(4)), ..default() },
                     BackgroundColor(Color::srgb(0.10, 0.16, 0.22)))).with_children(|button| { button.spawn((PaletteLabel,text(title, 15.))); });
@@ -443,6 +445,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
         | Action::MarkerRadius(_) => markers::perform(action, session),
         Action::Place(primitive) => {
             session.terrain_mode = false;
+            session.terrain_paint = false;
             session.path_mode = false;
             session.marker_mode = false;
             session.vegetation_mode = false;
@@ -554,10 +557,17 @@ fn keyboard(
         || keys.just_pressed(KeyCode::F2)
         || keys.just_pressed(KeyCode::F3)
         || keys.just_pressed(KeyCode::F4)
-        || keys.just_pressed(KeyCode::F6))
+        || keys.just_pressed(KeyCode::F6)
+        || keys.just_pressed(KeyCode::F7))
         && session.play.is_none()
     {
-        session.terrain_mode = keys.just_pressed(KeyCode::F2);
+        session.terrain_mode = keys.just_pressed(KeyCode::F2) || keys.just_pressed(KeyCode::F7);
+        session.terrain_paint = keys.just_pressed(KeyCode::F7);
+        if session.terrain_paint {
+            session.brush_tool = terrain::Tool::Paint(theia_zone::painting::Surface::Dirt);
+        } else if matches!(session.brush_tool, terrain::Tool::Paint(_)) {
+            session.brush_tool = terrain::Tool::Raise;
+        }
         session.path_mode = keys.just_pressed(KeyCode::F3);
         session.marker_mode = keys.just_pressed(KeyCode::F4);
         session.vegetation_mode = keys.just_pressed(KeyCode::F6);
@@ -572,7 +582,9 @@ fn keyboard(
         session.drag = None;
         session.palette = None;
         session.selected = None;
-        session.status = if session.vegetation_mode {
+        session.status = if session.terrain_paint {
+            "Terrain paint - choose a surface and click or drag".into()
+        } else if session.vegetation_mode {
             "Vegetation tools - place or scatter tree/shrub proxies".into()
         } else if session.marker_mode {
             "Marker tools - NPC/quest authoring annotations".into()

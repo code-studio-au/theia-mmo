@@ -2,6 +2,7 @@
 pub mod grading;
 pub mod mailbox;
 pub mod markers;
+pub mod painting;
 pub mod paths;
 pub mod terrain;
 pub mod vegetation;
@@ -121,7 +122,7 @@ impl Zone {
         )
     }
     pub fn validate(&self) -> Result<()> {
-        require(matches!(self.schema, 1..=5), "Unsupported zone schema")?;
+        require(matches!(self.schema, 1..=6), "Unsupported zone schema")?;
         require(
             self.schema != 1 || self.terrain.is_none(),
             "Terrain requires zone schema 2",
@@ -288,6 +289,9 @@ pub enum Edit {
     Brush {
         brush: terrain::Brush,
     },
+    PaintTerrain {
+        paint: painting::Paint,
+    },
     MovePathPoint {
         id: u64,
         index: usize,
@@ -425,6 +429,15 @@ impl Editor {
                         Edit::SetTerrain { terrain } => {
                             candidate.schema = candidate.schema.max(2);
                             candidate.terrain = terrain;
+                        }
+                        Edit::PaintTerrain { paint } => {
+                            candidate.schema = candidate.schema.max(6);
+                            paint.apply(
+                                candidate
+                                    .terrain
+                                    .as_mut()
+                                    .ok_or("Create terrain before painting")?,
+                            )?;
                         }
                         Edit::MovePathPoint {
                             id,

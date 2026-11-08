@@ -14,6 +14,8 @@ pub struct HeightPatch {
     pub chunk: [i64; 2],
     /// Local height above zone-origin Y, Z-major, including both border samples.
     pub heights: Vec<f32>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub weights: Vec<[u8; 4]>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
@@ -35,6 +37,7 @@ impl HeightPatch {
         Self {
             chunk,
             heights: vec![0.; SAMPLE_COUNT],
+            weights: vec![],
         }
     }
     pub fn origin(&self) -> Result<[f64; 3]> {
@@ -51,6 +54,29 @@ impl HeightPatch {
             self.heights.len() == SAMPLE_COUNT,
             "Terrain needs exactly 33x33 heights",
         )?;
+        if !self.weights.is_empty() {
+            require(zone.schema >= 6, "Terrain paint requires zone schema 6")?;
+            require(
+                self.weights.len() == SAMPLE_COUNT,
+                "Terrain paint needs exactly 33x33 weights",
+            )?;
+            for (index, w) in self.weights.iter().enumerate() {
+                require(
+                    w.iter().map(|&v| u16::from(v)).sum::<u16>() == 255,
+                    "Terrain weights must sum to 255",
+                )?;
+                if index / AXIS == 0
+                    || index / AXIS == AXIS - 1
+                    || index % AXIS == 0
+                    || index % AXIS == AXIS - 1
+                {
+                    require(
+                        *w == crate::painting::GRASS,
+                        "Terrain colour border must remain grass",
+                    )?;
+                }
+            }
+        }
         let start = self.origin()?;
         zone.check_position([start[0], zone.origin[1], start[2]], 0.)?;
         zone.check_position(

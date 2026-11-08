@@ -1,3 +1,14 @@
+## 8 November 2026 — normalized terrain colour weights via standard vertex colours
+
+Zone schema 6 adds optional grass/dirt/rock/sand u8 weights per terrain vertex,
+normalized to 255 and grass-locked on the border. Share sculpt's validated stroke
+preview/history for visual and agent paint commands. Render linear blended colour
+through normal Bevy vertex colours/white PBR and export standard glTF COLOR_0 with
+bound identity. Collision, heights and gameplay surface rules stay independent.
+Retain the finite patch/byte budgets and source compatibility. Texture/material
+catalogues, biomes and LOD require further scoped work.
+[Contract/evidence](ZONE_EDITOR.md#terrain-colour-painting--8-november-2026).
+
 ## 8 November 2026 — individual guide-point editing with standard Bevy handles
 
 Add narrow `move_path_point` edits to the existing document/undo validator. Select

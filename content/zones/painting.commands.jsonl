@@ -1,0 +1,1 @@
+{"command":"apply","expected_revision":0,"edits":[{"op":"paint_terrain","paint":{"centre":[64,80],"radius_metres":24,"surface":"dirt","blend":1}},{"op":"paint_terrain","paint":{"centre":[56,64],"radius_metres":12,"surface":"rock","blend":0.7}},{"op":"paint_terrain","paint":{"centre":[80,64],"radius_metres":12,"surface":"sand","blend":0.75}}]}

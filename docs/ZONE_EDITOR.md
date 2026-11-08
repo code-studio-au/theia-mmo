@@ -740,3 +740,67 @@ zero GPU diagnostics/resize exceptions. Evidence: ignored
 package's source, grades it and relocates spawn in one transaction; it passes
 without a display (`build/zone-guide-points-headless-v1.{json,log}`). No runtime
 format, normal game controls or network behavior changed in this slice.
+
+## Terrain colour painting — 8 November 2026
+
+P5-17 / P3-15 / P2-06/07 continue from the shared sculpt-stroke previews, bounded
+patch and standard Bevy/GLB renderer. Zone schema 6 adds optional per-vertex colour
+weights to the terrain patch. Omitted weights retain the existing grass colour;
+painted patches carry exactly 33x33 four-channel u8 rows in grass/dirt/rock/sand
+order, each summing to 255. The outer border remains all grass to meet the flat
+surroundings. Height/sculpt/grade edits retain those weights. Schemas 1..5 remain
+readable; data with paint requires schema 6. The combined document-byte limit
+continues to apply.
+
+`paint_terrain` accepts `paint` with global X/Z `centre`, `radius_metres` (4..32),
+`surface` (`grass`, `dirt`, `rock`, `sand`) and `blend` (0.05..1). Radial linear
+falloff reduces other channels with bounded integer quantization; the target
+receives the remaining weight, keeping every row's sum exact. All input weights
+are checked before arithmetic, including malformed intermediate patches inside
+multi-edit transactions. Invalid/no-change/outside-patch operations preserve the
+whole document, revision and redo. Paint affects colours while heights, shapes,
+spawns and other placements retain their data.
+
+F7 opens terrain paint; F2 returns to sculpting. Choose a surface, click/drag a
+stroke and release for one history entry. Existing radius controls, Escape/focus
+cancellation, draft busy refusal, shared agent history and save/load apply. The
+same disposable validated preview editor drives sculpt and paint. Four standard
+Bevy colour factors blend in linear space through `Mesh::ATTRIBUTE_COLOR`, with
+a white standard PBR material for painted terrain. Border grass matches the
+retained uniform ground. This is colour authoring; texture sets, UV/material
+catalogues, biomes, gameplay surface/friction and terrain LOD remain separate.
+
+Export reuses the exact editor mesh factory and emits standard glTF `COLOR_0`
+float RGBA attributes, a white PBR material and the existing world package. The
+visual digest/identity changes and authoring weights are retained. Existing
+collision triangles/shapes stay identical. No custom shader, texture generator,
+renderer or terrain runtime format is introduced. The structured fixture
+`content/zones/painting.commands.jsonl` applies three coloured regions to the
+retained terrain source at revision 0.
+
+Acceptance: 33 domain and twelve editor tests pass. New cases cover grouped
+paint history, exact normalization/borders, all channels at signed far origins,
+invalid serialized/intermediate data and rollback/redo. Export checks exact
+linear centre colours, the standard colour accessor/material, source round-trip,
+bound visual bytes and unchanged collision. Strict workspace/all-target Clippy
+and formatting pass. Headless export and actual runtime admission pass without a
+display; Khronos GLB validation reports zero errors/warnings. Evidence: ignored
+`build/zone-paint-tests-v1.log`, `zone-paint-clippy-v1.log`,
+`zone-paint-build-v1.log`, `zone-paint-export-v1.log`,
+`zone-package-paint-v1/`, `zone-paint-gltf-validation-v1.json`.
+
+The full native OS-input walkthrough passes at default 3440x1440 on the same
+RX 7900 XTX / RADV Vulkan device. It verifies uncommitted colour stroke preview,
+one-entry commit/undo/redo, exact normalized weights/grass border and unchanged
+heights, all four surfaces, live agent paint/visual undo/cached retry, save/load,
+playtest and stable mesh asset count. It then repeats point picking/focus and
+edge-selection cleanup. Vulkan validation is observed active with zero GPU
+diagnostics/resize exceptions. Evidence:
+`build/zone-paint-native-3440-v1/{qualification.json,paint.png,state.png}`.
+The normal headless server and two rendered Renet clients also pass at 3440x1440
+with the exported painted hillside, active validation and zero GPU diagnostics.
+Actual package binding, player identities, poses/terrain support and both avatars
+pass the retained independent checks; colour regions are visible in both native
+captures. Evidence: `build/zone-package-native-paint-3440-v1/verification.json`
+and both `scene.png` files. This remains Linux loopback evidence; no Windows,
+production admission or terrain/population capacity qualification is claimed.

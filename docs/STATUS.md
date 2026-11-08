@@ -26,6 +26,9 @@ future work. Guide-driven terrain grading now shares visual/agent history and
 passes 39 focused Rust cases, including actual Avian graded-surface traversal.
 Individual guide-point commands/picking/focus now add two domain checks (41 total);
 visual and agent point moves share whole-candidate validation and history.
+Schema-6 terrain colour painting adds shared stroke previews/history and standard
+Bevy/glTF vertex colours, with normalized weights and unchanged collision
+(45 focused Rust cases).
 Runtime multiplayer remains
 Rust/Bevy/Avian/Renet; editor playtest is an offline sandbox. Actual prerequisites,
 acceptance checks and implementation evidence are tracked in [the zone record](ZONE_EDITOR.md).

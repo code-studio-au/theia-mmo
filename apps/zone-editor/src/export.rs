@@ -111,17 +111,53 @@ impl Glb {
             }
             self.accessors.push(accessor);
         }
+        let colour_accessor = if let Some(attribute) = mesh.attribute(Mesh::ATTRIBUTE_COLOR) {
+            let VertexAttributeValues::Float32x4(colours) = attribute else {
+                return Err("Export colour attribute needs float RGBA".into());
+            };
+            if colours.len() != positions.len()
+                || colours
+                    .iter()
+                    .flatten()
+                    .any(|v| !v.is_finite() || !(0. ..=1.).contains(v))
+            {
+                return Err("Invalid export vertex colours".into());
+            }
+            let bytes: Vec<u8> = colours
+                .iter()
+                .flatten()
+                .flat_map(|v| v.to_le_bytes())
+                .collect();
+            let view = self.view(&bytes, 34962);
+            let index = self.accessors.len();
+            self.accessors.push(
+                json!({"bufferView":view,"componentType":5126,"count":colours.len(),"type":"VEC4"}),
+            );
+            Some(index)
+        } else {
+            None
+        };
+        let index_accessor = self.accessors.len();
         let bytes: Vec<u8> = indices.iter().flat_map(|v| v.to_le_bytes()).collect();
         let view = self.view(&bytes, 34963);
         self.accessors.push(
             json!({"bufferView":view,"componentType":5125,"count":indices.len(),"type":"SCALAR"}),
         );
         let index = self.meshes.len();
-        self.meshes.push(json!({"name":name,"primitives":[{"attributes":{"POSITION":start,"NORMAL":start+1},"indices":start+2,"material":material}]}));
+        let mut attributes = json!({"POSITION":start,"NORMAL":start+1});
+        if let Some(index) = colour_accessor {
+            attributes["COLOR_0"] = json!(index);
+        }
+        self.meshes.push(json!({"name":name,"primitives":[{"attributes":attributes,"indices":index_accessor,"material":material}]}));
         self.nodes.push(json!({"name":name,"mesh":index}));
         Ok(())
     }
-    fn finish(self, guide_kinds: [bool; 2], plants: bool) -> Result<Vec<u8>, String> {
+    fn finish(
+        self,
+        guide_kinds: [bool; 2],
+        plants: bool,
+        painted: bool,
+    ) -> Result<Vec<u8>, String> {
         let material = |name: &str, color: [f32; 4]| json!({"name":name,"pbrMetallicRoughness":{"baseColorFactor":color,"metallicFactor":0,"roughnessFactor":0.5}});
         // Factors are linear, matching the standard Bevy srgb materials.
         let color = |r, g, b| Color::srgb(r, g, b).to_linear().to_f32_array();
@@ -143,6 +179,9 @@ impl Glb {
         if plants {
             materials.push(material("Vegetation trunk", color(0.3, 0.16, 0.07)));
             materials.push(material("Vegetation leaves", color(0.16, 0.39, 0.13)));
+        }
+        if painted {
+            materials.push(material("Painted terrain", [1.; 4]));
         }
         let mut document = json!({"asset":{"version":"2.0","generator":"Theia Bevy zone exporter"},
             "scene":0,"scenes":[{"nodes":(0..self.nodes.len()).collect::<Vec<_>>()}],"nodes":self.nodes,"meshes":self.meshes,
@@ -227,6 +266,17 @@ fn cylinder_segments(radius: f64) -> u32 {
 }
 fn geometry(zone: &Zone) -> Result<(Vec<u8>, Value, Value), String> {
     zone.validate()?;
+    let guide_kinds = [
+        zone.paths
+            .iter()
+            .any(|p| p.kind == theia_zone::paths::PathKind::Road),
+        zone.paths
+            .iter()
+            .any(|p| p.kind == theia_zone::paths::PathKind::Stream),
+    ];
+    let painted = zone.terrain.as_ref().is_some_and(|p| !p.weights.is_empty());
+    let paint_material =
+        2 + guide_kinds.iter().filter(|v| **v).count() + if zone.plants.is_empty() { 0 } else { 2 };
     let mut glb = Glb::new();
     let mut bodies = vec![];
     let mut pool = vec![];
@@ -244,16 +294,12 @@ fn geometry(zone: &Zone) -> Result<(Vec<u8>, Value, Value), String> {
         for triangle in &geometry.triangles {
             triangles.push(triangle.map(|i| geometry.positions[i as usize]));
         }
-        let mut mesh = Mesh::new(
-            bevy::mesh::PrimitiveTopology::TriangleList,
-            bevy::asset::RenderAssetUsages::default(),
-        );
-        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, geometry.positions);
-        mesh.insert_indices(bevy::mesh::Indices::U32(
-            geometry.triangles.into_iter().flatten().collect(),
-        ));
-        mesh.compute_normals();
-        glb.add("Height patch", mesh, Transform::default(), 0)?;
+        glb.add(
+            "Height patch",
+            terrain::surface_mesh(zone).expect("Terrain mesh"),
+            Transform::default(),
+            if painted { paint_material } else { 0 },
+        )?;
     }
     let mut maximum_cylinder_error = 0_f64;
     for object in &zone.objects {
@@ -298,14 +344,6 @@ fn geometry(zone: &Zone) -> Result<(Vec<u8>, Value, Value), String> {
         };
         glb.add(&object.name, mesh, transform, 1)?;
     }
-    let guide_kinds = [
-        zone.paths
-            .iter()
-            .any(|p| p.kind == theia_zone::paths::PathKind::Road),
-        zone.paths
-            .iter()
-            .any(|p| p.kind == theia_zone::paths::PathKind::Stream),
-    ];
     for path in &zone.paths {
         let material = if path.kind == theia_zone::paths::PathKind::Road {
             2
@@ -331,10 +369,10 @@ fn geometry(zone: &Zone) -> Result<(Vec<u8>, Value, Value), String> {
         }
     }
     let visual_triangles = glb.triangles;
-    let visual = glb.finish(guide_kinds, !zone.plants.is_empty())?;
+    let visual = glb.finish(guide_kinds, !zone.plants.is_empty(), painted)?;
     let profile = json!({"schema":4,"source_origin":[0,0,0],"bounds":[[-512,-512],[512,512]],"spawns":[zone.local(zone.spawn)?],
         "visual_sha256":sha256(&visual),"triangles":triangles,"static_shapes":{"meshes":pool,"objects":bodies}});
-    let report = json!({"schema":1,"zone_name":zone.name,"authoring_origin":zone.origin,"visual_triangles":visual_triangles,"guide_paths":zone.paths.len(),"authoring_markers":zone.markers.len(),"greybox_plants":zone.plants.len(),
+    let report = json!({"schema":1,"zone_name":zone.name,"authoring_origin":zone.origin,"visual_triangles":visual_triangles,"guide_paths":zone.paths.len(),"authoring_markers":zone.markers.len(),"greybox_plants":zone.plants.len(),"painted_terrain":painted,
         "maximum_cylinder_radial_error_metres":maximum_cylinder_error,"collision_weld_tolerance_metres":0.0001,"scope":"existing bounded GLB/schema-4 content; requires authority admission; default game world unchanged"});
     Ok((visual, profile, report))
 }
@@ -601,6 +639,69 @@ mod tests {
                 .unwrap();
             assert!((centre - 0.01).abs() < 0.000001);
         }
+    }
+    #[test]
+    fn painted_terrain_exports_linear_vertex_colours_and_preserves_collision() {
+        let mut zone = fixture();
+        zone.schema = 2;
+        zone.terrain = Some(theia_zone::terrain::HeightPatch::flat([0, 0]));
+        let (base, profile, _) = geometry(&zone).unwrap();
+        let mut editor = Editor::new(zone).unwrap();
+        editor
+            .execute(Command::Apply {
+                expected_revision: 0,
+                edits: vec![Edit::PaintTerrain {
+                    paint: theia_zone::painting::Paint {
+                        centre: [64., 64.],
+                        radius_metres: 16.,
+                        surface: theia_zone::painting::Surface::Dirt,
+                        blend: 1.,
+                    },
+                }],
+            })
+            .unwrap();
+        let (visual, after, report) = geometry(editor.zone()).unwrap();
+        assert_ne!(visual, base);
+        assert_eq!(profile["triangles"], after["triangles"]);
+        assert_eq!(profile["static_shapes"], after["static_shapes"]);
+        assert_eq!(report["painted_terrain"], true);
+        let mesh = terrain::surface_mesh(editor.zone()).unwrap();
+        let VertexAttributeValues::Float32x4(colours) =
+            mesh.attribute(Mesh::ATTRIBUTE_COLOR).unwrap()
+        else {
+            panic!("Expected RGBA")
+        };
+        let expected = Color::srgb(0.38, 0.24, 0.11).to_linear().to_f32_array();
+        assert_eq!(colours[16 * 33 + 16], expected);
+        let json_size = u32::from_le_bytes(visual[12..16].try_into().unwrap()) as usize;
+        let document: Value = serde_json::from_slice(&visual[20..20 + json_size]).unwrap();
+        let primitive = document["meshes"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|m| m["name"] == "Height patch")
+            .unwrap()["primitives"][0]
+            .clone();
+        let accessor =
+            &document["accessors"][primitive["attributes"]["COLOR_0"].as_u64().unwrap() as usize];
+        assert_eq!(accessor["count"], 1089);
+        assert_eq!(accessor["type"], "VEC4");
+        assert_eq!(
+            document["materials"][primitive["material"].as_u64().unwrap() as usize]["pbrMetallicRoughness"]
+                ["baseColorFactor"],
+            json!([1., 1., 1., 1.])
+        );
+        let folder = Folder::new();
+        let destination = folder.0.join("paint");
+        publish(editor.zone(), &destination, "theia.test.paint", 1).unwrap();
+        assert_eq!(
+            Zone::load(&destination.join("authoring.zone.json")).unwrap(),
+            *editor.zone()
+        );
+        Terrain::load(&destination.join("terrain.json"))
+            .unwrap()
+            .verify_visual(&destination.join("terrain.glb"))
+            .unwrap();
     }
     #[test]
     fn greybox_vegetation_exports_standard_visuals_and_unchanged_collision() {

@@ -12,6 +12,7 @@ pub(super) enum Tool {
     Lower,
     Flatten,
     Smooth,
+    Paint(theia_zone::painting::Surface),
 }
 pub(super) struct Stroke {
     pub draft: Editor,
@@ -27,9 +28,28 @@ pub(super) struct BrushCursor;
 pub(super) struct GroundMesh {
     surface: Handle<Mesh>,
     lines: Handle<Mesh>,
+    normal: Handle<StandardMaterial>,
+    painted: Handle<StandardMaterial>,
 }
 #[derive(Component)]
 pub(super) struct TerrainGrid;
+pub(super) fn paint_actions() -> [(Action, &'static str); 12] {
+    use theia_zone::painting::Surface;
+    [
+        (Action::TerrainToggle, "Create / remove terrain"),
+        (Action::Brush(Tool::Paint(Surface::Grass)), "Paint grass"),
+        (Action::Brush(Tool::Paint(Surface::Dirt)), "Paint dirt"),
+        (Action::Brush(Tool::Paint(Surface::Rock)), "Paint rock"),
+        (Action::Brush(Tool::Paint(Surface::Sand)), "Paint sand"),
+        (Action::Radius(1), "Larger brush (+4 m)"),
+        (Action::Radius(-1), "Smaller brush (-4 m)"),
+        (Action::Undo, "Undo [Ctrl Z]"),
+        (Action::Redo, "Redo [Ctrl Y]"),
+        (Action::Save, "Save zone [Ctrl S]"),
+        (Action::Load, "Load zone [Ctrl O]"),
+        (Action::Play, "Enter / leave playtest [F5]"),
+    ]
+}
 pub(super) fn actions() -> [(Action, &'static str); 12] {
     [
         (Action::TerrainToggle, "Create / remove terrain"),
@@ -98,6 +118,33 @@ fn mesh(geometry: theia_network::procedural::Geometry) -> Mesh {
     mesh.compute_normals();
     mesh
 }
+pub(super) fn surface_mesh(zone: &Zone) -> Option<Mesh> {
+    let mut result = mesh(geometry(zone)?);
+    let patch = zone.terrain.as_ref()?;
+    if !patch.weights.is_empty() {
+        let palette = [
+            Color::srgb(0.18, 0.24, 0.20),
+            Color::srgb(0.38, 0.24, 0.11),
+            Color::srgb(0.37, 0.39, 0.43),
+            Color::srgb(0.65, 0.55, 0.31),
+        ]
+        .map(|c| c.to_linear().to_f32_array());
+        let colours: Vec<[f32; 4]> = patch
+            .weights
+            .iter()
+            .map(|w| {
+                let rgb = std::array::from_fn::<_, 3, _>(|i| {
+                    (0..4)
+                        .map(|channel| palette[channel][i] * (f32::from(w[channel]) / 255.))
+                        .sum::<f32>()
+                });
+                [rgb[0], rgb[1], rgb[2], 1.]
+            })
+            .collect();
+        result.insert_attribute(Mesh::ATTRIBUTE_COLOR, colours);
+    }
+    Some(result)
+}
 fn lines(geometry: &theia_network::procedural::Geometry) -> Mesh {
     let mut positions = Vec::new();
     let mut edge = |a: usize, b: usize| {
@@ -144,7 +191,7 @@ pub(super) fn setup(
     commands.spawn((
         GroundPart(4),
         Mesh3d(terrain.clone()),
-        MeshMaterial3d(material),
+        MeshMaterial3d(material.clone()),
         Transform::default(),
         Visibility::Hidden,
     ));
@@ -164,6 +211,8 @@ pub(super) fn setup(
     commands.insert_resource(GroundMesh {
         surface: terrain,
         lines: grid,
+        normal: material,
+        painted: materials.add(Color::WHITE),
     });
     commands.spawn((
         BrushCursor,
@@ -184,7 +233,15 @@ pub(super) fn sync(
     session: Res<Session>,
     handle: Res<GroundMesh>,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut ground: Query<(&GroundPart, &mut Transform, &mut Visibility), Without<BrushCursor>>,
+    mut ground: Query<
+        (
+            &GroundPart,
+            &mut Transform,
+            &mut Visibility,
+            &mut MeshMaterial3d<StandardMaterial>,
+        ),
+        Without<BrushCursor>,
+    >,
     mut cursor: Query<(&mut Transform, &mut Visibility), (With<BrushCursor>, Without<GroundPart>)>,
     mut grid: Query<
         &mut Visibility,
@@ -238,10 +295,16 @@ pub(super) fn sync(
                 .expect("Resident terrain grid") = lines(&geometry);
             *meshes
                 .get_mut(&handle.surface)
-                .expect("Resident terrain mesh") = mesh(geometry);
+                .expect("Resident terrain mesh") =
+                surface_mesh(zone).expect("Terrain surface mesh");
         }
-        for (part, mut transform, mut visibility) in &mut ground {
+        for (part, mut transform, mut visibility, mut material) in &mut ground {
             if part.0 == 4 {
+                material.0 = if zone.terrain.as_ref().is_some_and(|p| !p.weights.is_empty()) {
+                    handle.painted.clone()
+                } else {
+                    handle.normal.clone()
+                };
                 *transform = Transform::default();
                 *visibility = if has_terrain {
                     Visibility::Visible
@@ -285,7 +348,9 @@ pub(super) fn palette(
     mut help: Query<&mut Text, (With<Help>, Without<PaletteLabel>)>,
 ) {
     for mut text in &mut help {
-        **text = if session.vegetation_mode {
+        **text = if session.terrain_paint {
+            "F7: terrain colour paint\nClick/drag: paint stroke\nRelease: one undo entry\nEsc cancels preview\nGrass / dirt / rock / sand\nPaint changes colour weights\n4 m samples, locked grass edge\nF2 returns to sculpting".into()
+        } else if session.vegetation_mode {
             "F6: greybox trees / shrubs\nClick places one stamp\nEsc selects | Del removes\nArrows/PgUp/Dn: move\nR / Shift R: yaw +/-15 deg\n+/-: plant scale\n[ / ]: scatter radius\n, / .: scatter count\nVegetation proxies do not\nadd world collision".into()
         } else if session.marker_mode {
             "F4: NPC / quest markers\nClick to place or select\nArrows/PgUp/Dn: move\nR / Shift R: yaw +/-15 deg\n+/- changes footprint radius\nCtrl O loads saved zone\nMarkers are authoring notes;\nplaytest hides them".into()
@@ -313,7 +378,9 @@ Offline collision sandbox"
                 .into()
         };
     }
-    let actions = if session.vegetation_mode {
+    let actions = if session.terrain_paint {
+        paint_actions()
+    } else if session.vegetation_mode {
         vegetation::actions()
     } else if session.marker_mode {
         markers::actions()
@@ -412,20 +479,28 @@ pub(super) fn pointer(
             let zone = stroke.draft.zone();
             let global = zone.global(point.to_array()).expect("Bounded terrain hit");
             let centre = [global[0], global[2]];
-            let operation = match session.brush_tool {
-                Tool::Raise => BrushOperation::Raise { metres: 2. },
-                Tool::Lower => BrushOperation::Lower { metres: 2. },
-                Tool::Flatten => BrushOperation::Flatten {
-                    height: 0.,
-                    blend: 0.5,
-                },
-                Tool::Smooth => BrushOperation::Smooth { blend: 0.5 },
-            };
-            let edit = Edit::Brush {
+            let height = |operation| Edit::Brush {
                 brush: Brush {
                     centre,
                     radius_metres: session.brush_radius,
                     operation,
+                },
+            };
+            let edit = match session.brush_tool {
+                Tool::Raise => height(BrushOperation::Raise { metres: 2. }),
+                Tool::Lower => height(BrushOperation::Lower { metres: 2. }),
+                Tool::Flatten => height(BrushOperation::Flatten {
+                    height: 0.,
+                    blend: 0.5,
+                }),
+                Tool::Smooth => height(BrushOperation::Smooth { blend: 0.5 }),
+                Tool::Paint(surface) => Edit::PaintTerrain {
+                    paint: theia_zone::painting::Paint {
+                        centre,
+                        radius_metres: session.brush_radius,
+                        surface,
+                        blend: 1.,
+                    },
                 },
             };
             match stroke.draft.execute(Command::Apply {
