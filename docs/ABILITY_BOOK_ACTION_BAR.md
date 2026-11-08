@@ -101,3 +101,32 @@ strict workspace/all-target Clippy and formatting. Evidence lives under
 `bar-fmt-v2.log` and `bar-build-v2.log`. Earlier `bar-renet-v1` through `v3` are
 diagnostic compile/expected-rejection assertion failures; `bar-renet-v4` passes,
 with the expanded event/focus scenario included in the full v6 suite.
+
+
+## Native action-bar qualification — 8 November 2026
+
+After the user restored mouse/keyboard/display permission, the candidate passed
+four actual Linux starts:1280×720,1920×1200,3440×1440 and SQL process restart/
+fresh login at1280×720. Book-copy, populated-to-empty move, populated-to-populated
+swap and restoration pass with actual pointer drags. Dropping outside slots leaves
+the revision/bindings/selection unchanged and sends no widget casts. A temporary
+owned X11 focus window proves focus-loss cancellation during an actual drag.
+The earlier root-focus attempt (`bar-native-v1`) was a harness timeout and is not
+accepted evidence; `bar-native-v2` is the final four-start result.
+
+The normal quest fights use the copied `=` slot through actual keyboard events.
+Server Sword Slash events and all three kills/four quest actions pass in each
+fresh size; duplicate-slot cooldown fills match in119 positive samples (44/39/36
+by size). Completed quests/125 XP survive PostgreSQL process restart and fresh
+login. Bindings remain session-local: they reset on the fresh client, which then
+repeats edit/cancel checks. This is not persisted action-bar evidence.
+
+Native screenshots show the small-window book/hint/bar within viewport bounds;
+the1280 capture was inspected. GPU diagnostics are clean on AMD Radeon RX7900XTX /
+RADV NAVI31 / Vulkan / Mesa26.2.6 kisak. Evidence:
+`build/ability-book-20261108/bar-native-v2/verification.json`, per-size proofs and
+captures, plus binary hashes in `binaries-bar-v2/build.json`. This is controlled
+Linux functional interaction, not physical-input, Windows, FPS/crowd or non-unit
+monitor-DPI qualification. All owned provider/SQL/server/client processes and the
+temporary input/focus fixtures stopped. Optimized identity and earlier read-only
+book packs remain preserved; the new bar pack is debug, not optimized.

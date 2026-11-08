@@ -1,3 +1,12 @@
+Native action-bar qualification, 8 November 2026 (P2-14 / P3-06 / P5-13):
+Four Linux starts pass at1280×720,1920×1200,3440×1440 and SQL restart/rejoin.
+Actual book-copy, empty/occupied swaps, invalid drop, focus cancellation and
+copied '=' binding casts pass;119 positive duplicate cooldown samples match.
+Normal quest/combat/progression remains intact with zero RX7900XTX/RADV Vulkan
+GPU diagnostics. Session-local bindings reset on login; persistence remains open.
+[Evidence and limits](../ABILITY_BOOK_ACTION_BAR.md#native-action-bar-qualification--8-november-2026).
+Continue implementation/local commits; desktop access is allowed as needed. No push.
+
 Opt-in chat runtime candidate, 8 November 2026 (P4-12 / P2-14 / P5-13):
 Authorized named leases and checked server poses now feed bounded Say/Area routing
 in the Renet owner loop under an explicit world compatibility profile. Three
