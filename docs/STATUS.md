@@ -12,7 +12,12 @@ native sculpt/save/load/playtest checks: 17 focused Rust cases, strict Clippy an
 zero GPU diagnostics. Standard GLB/schema-4 export now also passes 22 focused
 Rust cases, Khronos validation, actual encrypted admission and four native
 two-client cases (including hillside and far-frame traversal). Default gameplay
-content is unchanged; later zone tools remain. Runtime multiplayer remains
+content is unchanged. Schema-3 road/stream guides now share visual/agent validation,
+undo, save/load and render-only export (27 focused Rust cases). The current user
+requires the editor at 3440x1440 only: primary-display fullscreen is now the
+default and future editor qualification targets that viewport. Earlier smaller
+checks below retain their historical scope. Vegetation and NPC/quest markers
+remain future slices. Runtime multiplayer remains
 Rust/Bevy/Avian/Renet; editor playtest is an offline sandbox. Actual prerequisites,
 acceptance checks and implementation evidence are tracked in [the zone record](ZONE_EDITOR.md).
 Earlier stop/chat-first queue entries are historical; P3-17/18 stay unspecified.

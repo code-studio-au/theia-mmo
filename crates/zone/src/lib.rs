@@ -1,5 +1,6 @@
 //! Bounded authoring documents and transactional commands, independent of Bevy.
 pub mod mailbox;
+pub mod paths;
 pub mod terrain;
 
 use serde::{Deserialize, Serialize};
@@ -50,6 +51,8 @@ pub struct Zone {
     pub objects: Vec<Object>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub terrain: Option<terrain::HeightPatch>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub paths: Vec<paths::GuidePath>,
 }
 
 fn require(condition: bool, message: &str) -> Result<()> {
@@ -67,6 +70,7 @@ impl Default for Zone {
             spawn: [0., 0.1, 6.],
             objects: vec![],
             terrain: None,
+            paths: vec![],
         }
     }
 }
@@ -98,7 +102,7 @@ impl Zone {
         )
     }
     pub fn validate(&self) -> Result<()> {
-        require(matches!(self.schema, 1 | 2), "Unsupported zone schema")?;
+        require(matches!(self.schema, 1..=3), "Unsupported zone schema")?;
         require(
             self.schema != 1 || self.terrain.is_none(),
             "Terrain requires zone schema 2",
@@ -106,6 +110,11 @@ impl Zone {
         if let Some(terrain) = &self.terrain {
             terrain.validate(self)?;
         }
+        require(
+            self.schema >= 3 || self.paths.is_empty(),
+            "Paths require zone schema 3",
+        )?;
+        require(self.paths.len() <= paths::MAX_PATHS, "Path budget exceeded")?;
         require(label(&self.name), "Invalid zone name")?;
         self.frame()?;
         self.check_position(self.spawn, 2.)?;
@@ -144,7 +153,27 @@ impl Zone {
             let radius = pose.size.iter().map(|v| v * v).sum::<f64>().sqrt() / 2.;
             self.check_position(pose.position, radius)?;
         }
+        for path in &self.paths {
+            require(ids.insert(path.id), "Duplicate authoring ID")?;
+            path.validate(self)?;
+        }
+        require(
+            serde_json::to_vec_pretty(self)
+                .map_err(|e| e.to_string())?
+                .len() as u64
+                <= MAX_DOCUMENT_BYTES,
+            "Zone document byte budget exceeded",
+        )?;
         Ok(())
+    }
+    pub fn next_id(&self) -> Option<u64> {
+        self.objects
+            .iter()
+            .map(|o| o.id)
+            .chain(self.paths.iter().map(|p| p.id))
+            .max()
+            .unwrap_or(0)
+            .checked_add(1)
     }
     pub fn from_json(bytes: &[u8]) -> Result<Self> {
         require(
@@ -213,6 +242,12 @@ pub enum Edit {
     },
     Brush {
         brush: terrain::Brush,
+    },
+    PutPath {
+        path: paths::GuidePath,
+    },
+    DeletePath {
+        id: u64,
     },
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -320,8 +355,34 @@ impl Editor {
                         }
                         Edit::SetSpawn { position } => candidate.spawn = position,
                         Edit::SetTerrain { terrain } => {
-                            candidate.schema = 2;
+                            candidate.schema = candidate.schema.max(2);
                             candidate.terrain = terrain;
+                        }
+                        Edit::PutPath { path } => {
+                            require(
+                                !candidate.objects.iter().any(|o| o.id == path.id),
+                                "Authoring ID belongs to an object",
+                            )?;
+                            candidate.schema = 3;
+                            if let Some(existing) =
+                                candidate.paths.iter_mut().find(|p| p.id == path.id)
+                            {
+                                *existing = path;
+                            } else {
+                                require(
+                                    candidate.paths.len() < paths::MAX_PATHS,
+                                    "Path budget exceeded",
+                                )?;
+                                candidate.paths.push(path);
+                            }
+                        }
+                        Edit::DeletePath { id } => {
+                            let index = candidate
+                                .paths
+                                .iter()
+                                .position(|p| p.id == id)
+                                .ok_or("Unknown path ID")?;
+                            candidate.paths.remove(index);
                         }
                         Edit::Brush { brush } => candidate
                             .terrain

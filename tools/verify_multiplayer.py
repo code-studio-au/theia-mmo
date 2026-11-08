@@ -221,7 +221,7 @@ def sha256(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def run(output, binaries, references=None, terrain=None, player_assets=None, collision=False, interior=False, full_map=False, map_access=False, transport="renet", world_origin=None, replication_span=None, render_span=None, jump=False, chunk_world=None, client_chunk_world=None, expect_remote_pixels=True, chunk_direction="z", chunk_stream=False, chunk_delay_ms=0, chunk_asset_failure=False, chunk_bounds_failure=False, chunk_image_failure=False, chunk_shared_images=False, staging_root_limit=1, stream_probe="green_floor"):
+def run(output, binaries, references=None, terrain=None, player_assets=None, collision=False, interior=False, full_map=False, map_access=False, transport="renet", world_origin=None, replication_span=None, render_span=None, jump=False, chunk_world=None, client_chunk_world=None, expect_remote_pixels=True, chunk_direction="z", chunk_stream=False, chunk_delay_ms=0, chunk_asset_failure=False, chunk_bounds_failure=False, chunk_image_failure=False, chunk_shared_images=False, staging_root_limit=1, stream_probe="green_floor", window_size="1280x720"):
     assert stream_probe in ('green_floor', 'bound_geometry')
     assert stream_probe == 'green_floor' or (chunk_stream and chunk_shared_images and not any((chunk_asset_failure, chunk_bounds_failure, chunk_image_failure)))
     assert type(staging_root_limit) is int and 1 <= staging_root_limit <= 32
@@ -302,12 +302,12 @@ def run(output, binaries, references=None, terrain=None, player_assets=None, col
             log = (directory / "run.log").open("w")
             logs.append(log)
             process = subprocess.Popen(
-                [str(client_binary), *client_scene, "--renet-smoke" if tickets else "--network-smoke", address,
+                [str(client_binary), *(["--fullscreen"] if window_size == "3440x1440" else []), *client_scene, "--renet-smoke" if tickets else "--network-smoke", address,
                  str(Path(tickets.name) / ("client-1.token" if name == "a" else "client-2.token")) if tickets else str(certificate), str(directory), direction],
                 # Gait acceptance below requires application info logs regardless
                 # of the caller's ambient logging filter.
                 env=dict(os.environ,
-                         THEIA_WINDOW_SIZE='1280x720',
+                         THEIA_WINDOW_SIZE=window_size,
                          RUST_LOG=os.environ.get('RUST_LOG', 'info') + ',theia_client=info',
                          THEIA_RENDER_SPAN=str(render_span if render_span is not None else 128),
                          THEIA_SMOKE_START_GATE=str(gate),
@@ -517,7 +517,7 @@ def run(output, binaries, references=None, terrain=None, player_assets=None, col
                     assert abs(own['y']-initial['y']) > .02, 'Server height must change on this terrain walk'
             png = output / name / "scene.png"
             image = Image.open(png).convert("RGB")
-            assert image.size == (1280, 720)
+            assert image.size == tuple(map(int, window_size.split('x')))
             if chunk_stream:
                 surface = report['chunk_world']['stream']['surface_probe']
                 assert surface['present'] == (not candidate_failure)
@@ -703,5 +703,6 @@ if __name__ == "__main__":
     parser.add_argument('--replication-span', type=float)
     parser.add_argument("--render-span", type=float)
     parser.add_argument("--jump", action="store_true")
+    parser.add_argument("--window-size", choices=["1280x720", "3440x1440"], default="1280x720")
     args = parser.parse_args()
-    run(args.output.resolve(), args.binaries.resolve(), args.reference_assets.resolve() if args.reference_assets else None, args.terrain_world.resolve() if args.terrain_world else None, args.player_assets.resolve() if args.player_assets else None, args.static_collision, args.interior, args.full_map, args.map_access, args.transport, args.world_origin, args.replication_span, args.render_span, args.jump, args.chunk_world.resolve() if args.chunk_world else None, args.client_chunk_world.resolve() if args.client_chunk_world else None, not args.offscreen_remote, args.chunk_direction)
+    run(args.output.resolve(), args.binaries.resolve(), args.reference_assets.resolve() if args.reference_assets else None, args.terrain_world.resolve() if args.terrain_world else None, args.player_assets.resolve() if args.player_assets else None, args.static_collision, args.interior, args.full_map, args.map_access, args.transport, args.world_origin, args.replication_span, args.render_span, args.jump, args.chunk_world.resolve() if args.chunk_world else None, args.client_chunk_world.resolve() if args.client_chunk_world else None, not args.offscreen_remote, args.chunk_direction, window_size=args.window_size)

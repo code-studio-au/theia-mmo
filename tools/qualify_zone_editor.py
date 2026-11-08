@@ -12,14 +12,15 @@ from gpu_validation import check_gpu_diagnostics
 from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 
 
-def run(output, binary, size, agent=False, terrain=False):
+def run(output, binary, size, agent=False, terrain=False, guides=False):
+    terrain = terrain or guides
     agent = agent or terrain
     output.mkdir(parents=True, exist_ok=True)
     report = output / 'state.json'
     saved = output / 'zone.json'
     for path in [report, report.with_suffix('.png'), saved]:
         path.unlink(missing_ok=True)
-    env = dict(os.environ, WGPU_BACKEND='vulkan', VK_INSTANCE_LAYERS='VK_LAYER_KHRONOS_validation')
+    env = dict(os.environ, WGPU_BACKEND='vulkan', VK_INSTANCE_LAYERS='VK_LAYER_KHRONOS_validation', VK_LOADER_DEBUG='layer')
     checks = []
     with (output / 'client.log').open('w') as log:
         command = [str(binary.resolve()), '--commands', 'content/zones/greybox.commands.jsonl',
@@ -36,12 +37,9 @@ def run(output, binary, size, agent=False, terrain=False):
                 assert process.poll() is None, 'Editor exited during qualification'
                 return json.loads(report.read_text())
             wait(lambda: report.exists() and len(state()['buttons']) == 12, 45)
-            if size:
-                width, height = map(int, size.split('x'))
-                subprocess.run(['wmctrl', '-ir', hex(window), '-e', f'0,-1,-1,{width},{height}'], check=True)
-                if size == '3440x1440':
-                    subprocess.run(['wmctrl', '-ir', hex(window), '-b', 'add,fullscreen'], check=True)
-                wait(lambda: state()['viewport'] == [width, height])
+            # Verify the tool's own fullscreen startup; do not resize it into compliance.
+            width, height = map(int, size.split('x'))
+            wait(lambda: state()['viewport'] == [width, height])
             assert all(0 <= b['centre'][1] - b['size'][1]/2 and b['centre'][1] + b['size'][1]/2 <= state()['viewport'][1] for b in state()['buttons'])
             def read_saved():
                 value = json.loads(saved.read_text())
@@ -282,6 +280,108 @@ def run(output, binary, size, agent=False, terrain=False):
                 key('F2')
                 wait(lambda: state()['terrain_mode'])
                 checks.append('native lower/flatten/smooth, brush radius, terrain save/load, actual capsule terrain walk and live agent brush/visual undo')
+            if guides:
+                previous = state()
+                mesh_baseline = previous['mesh_assets']
+                key('F3')
+                wait(lambda: state()['path_mode'])
+                button('NewPath(Road)')
+                wait(lambda: state()['path_draft_points'] == 0)
+                desktop.click(window, state()['guide_points'][0], 1, 1)
+                wait(lambda: state()['path_draft_points'] == 1)
+                receipt, _ = agent_request(dict(command='undo', expected_revision=state()['revision']))
+                assert not receipt['accepted'] and 'busy' in receipt['error']
+                key('Escape')
+                wait(lambda: state()['path_draft_points'] is None)
+                assert state()['document'] == previous['document'] and state()['revision'] == previous['revision']
+                button('NewPath(Road)')
+                desktop.click(window, state()['guide_points'][0], 1, 1)
+                desktop.click(window, state()['guide_points'][1], 1, 1)
+                wait(lambda: state()['path_draft_points'] == 2)
+                key('BackSpace')
+                wait(lambda: state()['path_draft_points'] == 1)
+                desktop.click(window, state()['guide_points'][1], 1, 1)
+                wait(lambda: state()['path_draft_points'] == 2)
+                chord('s')
+                wait(lambda: 'draft still pending' in state()['status'])
+                assert state()['path_draft_points'] == 2 and read_saved() == previous['document']
+                assert state()['revision'] == previous['revision']
+                key('Return')
+                road = revision(previous['revision'])
+                assert len(road['document']['paths']) == 1 and road['document']['schema'] == 3
+                assert road['document']['paths'][0]['kind'] == 'road'
+                key('Right')
+                translated = revision(road['revision'])
+                assert all(new[0] == old[0]+1. for new, old in zip(translated['document']['paths'][0]['points'],road['document']['paths'][0]['points']))
+                chord('z')
+                assert revision(translated['revision'])['document'] == road['document']
+                before = state()['revision']
+                chord('y')
+                assert revision(before)['document'] == translated['document']
+                before = state()['revision']
+                key('equal')
+                wider = revision(before)
+                assert wider['document']['paths'][0]['width_metres'] == 4.5
+                before = wider['revision']
+                key('Delete')
+                removed = revision(before)
+                assert not removed['document'].get('paths')
+                wait(lambda: state()['mesh_assets'] == mesh_baseline)
+                chord('z')
+                assert revision(removed['revision'])['document'] == wider['document']
+                wait(lambda: state()['mesh_assets'] == mesh_baseline+1)
+                button('NewPath(Stream)')
+                for point in state()['guide_points'][2:]:
+                    desktop.click(window, point, 1, 1)
+                wait(lambda: state()['path_draft_points'] == 3)
+                before = state()['revision']
+                key('Return')
+                both = revision(before)
+                assert len(both['document']['paths']) == 2 and both['document']['paths'][1]['kind'] == 'stream'
+                wait(lambda: state()['mesh_assets'] == mesh_baseline+2)
+                checks.append('native guide point placement/backspace/cancel, pending-draft save, one-entry finish, translation, width, delete/undo and bounded mesh lifetime')
+                agent_path = dict(id=500,name='Agent road',kind='road',width_metres=2.,points=[[48.,.03,92.],[56.,.03,92.]])
+                receipt, request = agent_request(dict(command='apply',expected_revision=both['revision'],edits=[dict(op='put_path',path=agent_path)]))
+                assert receipt['accepted']
+                agent_added = revision(both['revision'])
+                assert len(agent_added['document']['paths']) == 3
+                chord('z')
+                undone = revision(agent_added['revision'])
+                assert undone['document'] == both['document']
+                retry, _ = agent_request(request=request)
+                assert retry == receipt and state()['revision'] == undone['revision']
+                button('NewPath(Road)')
+                desktop.click(window, state()['guide_points'][0], 1, 1)
+                desktop.click(window, state()['guide_points'][1], 1, 1)
+                wait(lambda: state()['path_draft_points'] == 2)
+                before = state()['revision']
+                key('Return')
+                visual = revision(before)
+                assert visual['document']['paths'][-1]['id'] == 501
+                chord('z')
+                assert revision(visual['revision'])['document'] == both['document']
+                wait(lambda: state()['mesh_assets'] == mesh_baseline+2)
+                chord('s')
+                wait(lambda: read_saved() == state()['document'])
+                stored = state()['document']
+                before = state()['revision']
+                chord('o')
+                loaded = revision(before)
+                assert loaded['document'] == stored
+                wait(lambda: state()['mesh_assets'] == mesh_baseline+2)
+                key('F5')
+                playing = wait(lambda: state() if state()['play_feet'] is not None else None)
+                start = playing['play_feet']
+                desktop.key_state('w', True)
+                try:
+                    time.sleep(.5)
+                finally:
+                    desktop.key_state('w', False)
+                wait(lambda: state()['play_feet'][2] < start[2]-1.)
+                key('F5')
+                wait(lambda: state()['play_feet'] is None)
+                assert state()['document'] == stored
+                checks.append('live agent guide/visual undo/exact retry, shared ID allocation, guide save/load and nonblocking playtest')
             key('F12')
             wait(lambda: capture_ready(report.with_suffix('.png')), 30)
             checks.append('actual native Vulkan screenshot captured')
@@ -299,6 +399,8 @@ def run(output, binary, size, agent=False, terrain=False):
             if process.poll() is None:
                 process.terminate()
                 process.wait(timeout=15)
+    summary['validation_layer_active'] = 'Insert instance layer \"VK_LAYER_KHRONOS_validation\"' in (output/'client.log').read_text()
+    assert summary['validation_layer_active'], 'Vulkan validation layer activation was not observed'
     summary['allowed_resize_diagnostics'] = check_gpu_diagnostics((output/'client.log').read_text(), allow_surface_resize=bool(size))
     (output/'qualification.json').write_text(json.dumps(summary, indent=2)+'\n')
     print(json.dumps(summary, indent=2))
@@ -308,8 +410,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--binary', type=Path, default=Path('target/debug/theia-zone-editor'))
-    parser.add_argument('--size', choices=['1280x720', '1920x1200', '3440x1440'])
+    parser.add_argument('--size', choices=['3440x1440'], default='3440x1440')
     parser.add_argument('--agent', action='store_true')
     parser.add_argument('--terrain', action='store_true')
+    parser.add_argument('--guides', action='store_true')
     args = parser.parse_args()
-    run(args.output, args.binary, args.size, args.agent, args.terrain)
+    run(args.output, args.binary, args.size, args.agent, args.terrain, args.guides)

@@ -195,7 +195,7 @@ pub(super) fn pointer(
     let Ok(window) = windows.single() else {
         return;
     };
-    if session.terrain_mode {
+    if session.terrain_mode || session.path_mode {
         return;
     }
     if !window.focused || session.play.is_some() {
@@ -263,8 +263,10 @@ pub(super) fn pointer(
             }
             return;
         }
+        let filter = |entity| objects.contains(entity) || ground.contains(entity);
+        let settings = MeshRayCastSettings::default().with_filter(&filter);
         let hit = raycast
-            .cast_ray(ray, &MeshRayCastSettings::default())
+            .cast_ray(ray, &settings)
             .first()
             .map(|(entity, _)| *entity);
         let id = hit.and_then(|entity| objects.get(entity).ok()).map(|o| o.0);
@@ -374,6 +376,7 @@ pub(super) fn report(
     controls: Query<(&Action, &ComputedNode, &bevy::ui::UiGlobalTransform)>,
     scale: Res<bevy::ui::UiScale>,
     adapter: Res<RenderAdapterInfo>,
+    meshes: Res<Assets<Mesh>>,
 ) {
     let Some(mut report) = report else {
         return;
@@ -416,10 +419,11 @@ pub(super) fn report(
         let factor = node.inverse_scale_factor() * scale.0;
         serde_json::json!({"action":format!("{action:?}"),"centre":(t.affine().translation * factor).to_array(),"size":(node.size()*factor).to_array()})
     }).collect();
-    let value = serde_json::json!({"revision":session.editor.revision(),"history":session.editor.history(),
+    let value = serde_json::json!({"revision":session.editor.revision(),"mesh_assets":meshes.len(),"history":session.editor.history(),
         "document":session.editor.zone(),"selected":session.selected,"snap":session.snap,"status":session.status,
-        "dragging":session.drag.is_some() || session.stroke.is_some(),"terrain_mode":session.terrain_mode,"brush_radius":session.brush_radius,"brush_tool":format!("{:?}",session.brush_tool),"play_feet":session.play.as_ref().map(|p| p.feet.metres()),
+        "dragging":session.drag.is_some() || session.stroke.is_some(),"terrain_mode":session.terrain_mode,"path_mode":session.path_mode,"path_selected":session.path_selected,"path_draft_points":session.path_draft.as_ref().map(|d|d.path.points.len()),"brush_radius":session.brush_radius,"brush_tool":format!("{:?}",session.brush_tool),"play_feet":session.play.as_ref().map(|p| p.feet.metres()),
         "objects":objects,"buttons":buttons,"viewport":[window.width(),window.height()],
+        "guide_points":[project(Vec3::new(48.,0.,88.)),project(Vec3::new(64.,0.,88.)),project(Vec3::new(56.,0.,84.)),project(Vec3::new(64.,0.,80.)),project(Vec3::new(72.,0.,84.))],
         "terrain_points":[project(Vec3::new(64.,0.,64.)),project(Vec3::new(72.,0.,64.)),project(Vec3::new(48.,0.,64.))],
         "ground":[project(Vec3::new(3.,0.,4.)),project(Vec3::new(5.,0.,4.))],
         "gpu":{"name":adapter.name,"backend":format!("{:?}",adapter.backend),"device":adapter.device}});

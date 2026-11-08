@@ -121,14 +121,33 @@ impl Glb {
         self.nodes.push(json!({"name":name,"mesh":index}));
         Ok(())
     }
-    fn finish(self) -> Result<Vec<u8>, String> {
+    fn finish(self, guide_kinds: [bool; 2]) -> Result<Vec<u8>, String> {
         let material = |name: &str, color: [f32; 4]| json!({"name":name,"pbrMetallicRoughness":{"baseColorFactor":color,"metallicFactor":0,"roughnessFactor":0.5}});
         // Factors are linear, matching the standard Bevy srgb materials.
         let color = |r, g, b| Color::srgb(r, g, b).to_linear().to_f32_array();
-        let mut document=serde_json::to_vec(&json!({"asset":{"version":"2.0","generator":"Theia Bevy zone exporter"},
+        let mut materials = vec![
+            material("Ground", color(0.18, 0.24, 0.20)),
+            material("Greybox", color(0.52, 0.60, 0.66)),
+        ];
+        if guide_kinds[0] {
+            materials.push(material("Road guide", color(0.48, 0.31, 0.15)));
+        }
+        if guide_kinds[1] {
+            let mut rgba = color(0.04, 0.36, 0.75);
+            rgba[3] = 0.8;
+            let mut stream = material("Stream guide", rgba);
+            stream["alphaMode"] = json!("BLEND");
+            stream["extensions"] = json!({"KHR_materials_unlit":{}});
+            materials.push(stream);
+        }
+        let mut document = json!({"asset":{"version":"2.0","generator":"Theia Bevy zone exporter"},
             "scene":0,"scenes":[{"nodes":(0..self.nodes.len()).collect::<Vec<_>>()}],"nodes":self.nodes,"meshes":self.meshes,
-            "materials":[material("Ground",color(0.18,0.24,0.20)),material("Greybox",color(0.52,0.60,0.66))],
-            "buffers":[{"byteLength":self.bytes.len()}],"bufferViews":self.views,"accessors":self.accessors})).map_err(|e|e.to_string())?;
+            "materials":materials,
+            "buffers":[{"byteLength":self.bytes.len()}],"bufferViews":self.views,"accessors":self.accessors});
+        if guide_kinds[1] {
+            document["extensionsUsed"] = json!(["KHR_materials_unlit"]);
+        }
+        let mut document = serde_json::to_vec(&document).map_err(|e| e.to_string())?;
         while !document.len().is_multiple_of(4) {
             document.push(b' ');
         }
@@ -275,11 +294,32 @@ fn geometry(zone: &Zone) -> Result<(Vec<u8>, Value, Value), String> {
         };
         glb.add(&object.name, mesh, transform, 1)?;
     }
+    let guide_kinds = [
+        zone.paths
+            .iter()
+            .any(|p| p.kind == theia_zone::paths::PathKind::Road),
+        zone.paths
+            .iter()
+            .any(|p| p.kind == theia_zone::paths::PathKind::Stream),
+    ];
+    for path in &zone.paths {
+        let material = if path.kind == theia_zone::paths::PathKind::Road {
+            2
+        } else {
+            2 + usize::from(guide_kinds[0])
+        };
+        glb.add(
+            &path.name,
+            paths::ribbon(zone, path),
+            Transform::default(),
+            material,
+        )?;
+    }
     let visual_triangles = glb.triangles;
-    let visual = glb.finish()?;
+    let visual = glb.finish(guide_kinds)?;
     let profile = json!({"schema":4,"source_origin":[0,0,0],"bounds":[[-512,-512],[512,512]],"spawns":[zone.local(zone.spawn)?],
         "visual_sha256":sha256(&visual),"triangles":triangles,"static_shapes":{"meshes":pool,"objects":bodies}});
-    let report = json!({"schema":1,"zone_name":zone.name,"authoring_origin":zone.origin,"visual_triangles":visual_triangles,
+    let report = json!({"schema":1,"zone_name":zone.name,"authoring_origin":zone.origin,"visual_triangles":visual_triangles,"guide_paths":zone.paths.len(),
         "maximum_cylinder_radial_error_metres":maximum_cylinder_error,"collision_weld_tolerance_metres":0.0001,"scope":"existing bounded GLB/schema-4 content; requires authority admission; default game world unchanged"});
     Ok((visual, profile, report))
 }
@@ -546,6 +586,64 @@ mod tests {
                 .unwrap();
             assert!((centre - 0.01).abs() < 0.000001);
         }
+    }
+    #[test]
+    fn guide_ribbons_export_visually_and_never_enter_authoritative_collision() {
+        use theia_core::time::TickRate;
+        use theia_network::kinematic::{self, Motion};
+        use theia_zone::paths::{GuidePath, PathKind};
+        let mut zone = fixture();
+        let (_, base_profile, base_report) = geometry(&zone).unwrap();
+        zone.schema = 3;
+        zone.paths = vec![
+            GuidePath {
+                id: 100,
+                name: "Road guide".into(),
+                kind: PathKind::Road,
+                width_metres: 2.,
+                points: vec![[-3., 1., 4.], [3., 1., 4.]],
+            },
+            GuidePath {
+                id: 101,
+                name: "Stream guide".into(),
+                kind: PathKind::Stream,
+                width_metres: 2.,
+                points: vec![[-3., 1., 2.], [3., 1., 2.]],
+            },
+        ];
+        let (_, profile, report) = geometry(&zone).unwrap();
+        assert_eq!(report["guide_paths"], 2);
+        assert_eq!(
+            report["visual_triangles"].as_u64().unwrap(),
+            base_report["visual_triangles"].as_u64().unwrap() + 4
+        );
+        assert_eq!(profile["static_shapes"], base_profile["static_shapes"]);
+        assert_eq!(profile["triangles"], base_profile["triangles"]);
+        let before = Terrain::decode(&serde_json::to_vec(&base_profile).unwrap()).unwrap();
+        let after = Terrain::decode(&serde_json::to_vec(&profile).unwrap()).unwrap();
+        assert_eq!(
+            before.physics.colliders.len(),
+            after.physics.colliders.len()
+        );
+        assert_ne!(before.identity, after.identity);
+        let mut a = before.spawn(0).unwrap();
+        let mut b = after.spawn(0).unwrap();
+        let mut ma = Motion::default();
+        let mut mb = Motion::default();
+        for _ in 0..45 {
+            let intent = Intent {
+                axes: [0, -1000],
+                ..default()
+            };
+            a = kinematic::advance(&before.physics, &mut ma, a, intent, TickRate::Hz30).unwrap();
+            b = kinematic::advance(&after.physics, &mut mb, b, intent, TickRate::Hz30).unwrap();
+        }
+        assert_eq!(a, b);
+        assert!(a.metres()[2] < 1.);
+        let folder = Folder::new();
+        let path = folder.0.join("guides");
+        publish(&zone, &path, "theia.test.guides", 1).unwrap();
+        assert_eq!(Zone::load(&path.join("authoring.zone.json")).unwrap(), zone);
     }
     async fn until(
         state: &mut watch::Receiver<State>,

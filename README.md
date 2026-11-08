@@ -1,6 +1,7 @@
 Zone authoring is the current focus. Run `cargo run -p theia-zone-editor --
 --commands content/zones/greybox.commands.jsonl` for the lightweight Bevy greybox
-editor, or add `--headless --output build/my-zone.json` for structured commands.
+editor at 3440x1440 fullscreen (F1 objects, F2 terrain, F3 road/stream guides),
+or add `--headless --output build/my-zone.json` for structured commands.
 Export a saved zone with `--export NEW_DIR --content-id ID --revision N` for the
 existing server/client world pipeline. See [zone controls, validation and qualification](docs/ZONE_EDITOR.md). F5 is an
 offline Avian collision playtest; normal multiplayer remains the existing game

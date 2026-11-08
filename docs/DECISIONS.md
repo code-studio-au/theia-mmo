@@ -1,3 +1,15 @@
+## 8 November 2026 — 3440x1440 editor and bounded road/stream guides
+
+The user restricts tool development to 3440x1440. Open the editor through standard
+Bevy primary-monitor borderless fullscreen and qualify only that editor viewport
+from now on; retain older evidence as historical. Keep normal client display
+support separate. Schema-3 optional road/stream guides share IDs, validation,
+undo and save/load with primitive/terrain edits. Export standard render-only
+ribbons through the existing world package; terrain grading, water simulation,
+navigation and collision remain separate requirements. Explicit finite limits
+and the combined serialized byte budget apply before state/history mutation.
+See [the current contract and evidence](ZONE_EDITOR.md#roadstream-guides-and-3440x1440-tool--8-november-2026).
+
 ## 8 November 2026 — authored zones export through the existing world pipeline
 
 Export standard Bevy meshes as self-contained GLB and existing schema-4 collision

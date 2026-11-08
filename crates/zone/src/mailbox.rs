@@ -96,7 +96,7 @@ impl Mailbox {
             }
         }
         let result = if busy {
-            Err("Editor busy: finish drag or leave playtest".into())
+            Err("Editor busy: finish or cancel the authoring draft, or leave playtest".into())
         } else {
             editor.execute(request.command.clone())
         };

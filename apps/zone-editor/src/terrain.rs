@@ -285,7 +285,9 @@ pub(super) fn palette(
     mut help: Query<&mut Text, (With<Help>, Without<PaletteLabel>)>,
 ) {
     for mut text in &mut help {
-        **text = if session.terrain_mode {
+        **text = if session.path_mode {
+            "F3: guide paths / streams\nClick ground to add points\nEnter finishes | Esc cancels\nBksp removes last point\nArrows/PgUp/Dn move guide\n+/- changes width\nRoad/stream guides do not\nadd collision or water rules".into()
+        } else if session.terrain_mode {
             "F1: object tools | F2: terrain
 Click/drag: brush stroke
 Release: one undo entry
@@ -307,7 +309,9 @@ Offline collision sandbox"
                 .into()
         };
     }
-    let actions = if session.terrain_mode {
+    let actions = if session.path_mode {
+        paths::actions()
+    } else if session.terrain_mode {
         actions()
     } else {
         object_actions()
@@ -316,6 +320,10 @@ Offline collision sandbox"
         *action = actions[slot.0].0;
         let active = match *action {
             Action::Brush(tool) => session.terrain_mode && tool == session.brush_tool,
+            Action::NewPath(kind) => session
+                .path_draft
+                .as_ref()
+                .is_some_and(|draft| draft.path.kind == kind),
             Action::Place(primitive) => session.palette == Some(primitive),
             Action::Select => session.palette.is_none(),
             _ => false,

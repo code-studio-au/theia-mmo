@@ -2,6 +2,7 @@
 mod agent;
 mod cli;
 mod export;
+mod paths;
 mod playtest;
 mod terrain;
 mod viewport;
@@ -32,6 +33,9 @@ struct Session {
     brush_radius: f64,
     brush_point: Option<Vec3>,
     stroke: Option<terrain::Stroke>,
+    path_mode: bool,
+    path_selected: Option<u64>,
+    path_draft: Option<paths::Draft>,
 }
 struct Drag {
     id: u64,
@@ -45,18 +49,33 @@ impl Session {
         match self.editor.execute(command) {
             Ok(()) => {
                 self.status = format!("Revision {} accepted", self.editor.revision());
-                if !self
-                    .editor
-                    .zone()
-                    .objects
-                    .iter()
-                    .any(|o| Some(o.id) == self.selected)
-                {
-                    self.selected = None;
-                }
+                self.reconcile();
             }
             Err(error) => self.status = error,
         }
+    }
+    fn reconcile(&mut self) {
+        if !self
+            .editor
+            .zone()
+            .objects
+            .iter()
+            .any(|o| Some(o.id) == self.selected)
+        {
+            self.selected = None;
+        }
+        if !self
+            .editor
+            .zone()
+            .paths
+            .iter()
+            .any(|p| Some(p.id) == self.path_selected)
+        {
+            self.path_selected = None;
+        }
+        self.next_id = self
+            .next_id
+            .max(self.editor.zone().next_id().unwrap_or(u64::MAX));
     }
     fn edit(&mut self, edits: Vec<Edit>) {
         self.execute(Command::Apply {
@@ -90,6 +109,12 @@ enum Action {
     TerrainToggle,
     Brush(terrain::Tool),
     Radius(i8),
+    NewPath(theia_zone::paths::PathKind),
+    FinishPath,
+    PopPath,
+    NextPath,
+    DeletePath,
+    PathWidth(i8),
 }
 #[derive(Component)]
 struct PaletteSlot(usize);
@@ -134,18 +159,11 @@ fn run() -> Result<(), String> {
     if options.headless {
         println!(
             "{}",
-            serde_json::json!({"revision":editor.revision(),"objects":editor.zone().objects.len(),"history":editor.history(),"valid":true})
+            serde_json::json!({"revision":editor.revision(),"objects":editor.zone().objects.len(),"paths":editor.zone().paths.len(),"history":editor.history(),"valid":true})
         );
         return Ok(());
     }
-    let next_id = editor
-        .zone()
-        .objects
-        .iter()
-        .map(|o| o.id)
-        .max()
-        .unwrap_or(0)
-        .saturating_add(1);
+    let next_id = editor.zone().next_id().unwrap_or(u64::MAX);
     let initial_target = editor.zone().terrain.as_ref().map(|patch| {
         let start = patch.origin().expect("Validated terrain");
         let local = editor
@@ -174,6 +192,9 @@ fn run() -> Result<(), String> {
         brush_radius: 12.,
         brush_point: None,
         stroke: None,
+        path_mode: false,
+        path_selected: None,
+        path_draft: None,
     })
     .insert_resource(View {
         target: initial_target.unwrap_or(Vec3::ZERO),
@@ -186,24 +207,32 @@ fn run() -> Result<(), String> {
     .add_plugins(DefaultPlugins.set(WindowPlugin {
         primary_window: Some(Window {
             title: "Theia - Zone Editor".into(),
-            resolution: (1280, 800).into(),
+            resolution: (3440, 1440).into(),
+            mode: bevy::window::WindowMode::BorderlessFullscreen(
+                bevy::window::MonitorSelection::Primary,
+            ),
             ..default()
         }),
         ..default()
     }))
     .add_observer(activate)
-    .add_systems(Startup, (viewport::setup, terrain::setup, setup_ui))
+    .add_systems(
+        Startup,
+        (viewport::setup, terrain::setup, paths::setup, setup_ui),
+    )
     .add_systems(
         Update,
         (
             agent::poll,
             keyboard,
             camera_controls,
+            paths::pointer,
             terrain::pointer,
             viewport::pointer,
             terrain::sync,
             terrain::palette,
             viewport::sync,
+            paths::sync,
             present,
             viewport::capture,
         )
@@ -255,7 +284,7 @@ fn setup_ui(mut commands: Commands) {
         BackgroundColor(Color::srgb(0.035, 0.05, 0.075))))
         .with_children(|panel| {
             panel.spawn(text("THEIA / ZONE STUDIO", 22.));
-            panel.spawn(text("F1 Objects | F2 Terrain | metres", 14.));
+            panel.spawn(text("F1 Objects | F2 Terrain | F3 Guides", 12.));
             for (index,(action, title)) in object_actions().into_iter().enumerate() {
                 panel.spawn((PaletteSlot(index), action, Button, ActivateOnPress, Hovered::default(), Node { min_height: px(26), padding: UiRect::all(px(4)), ..default() },
                     BackgroundColor(Color::srgb(0.10, 0.16, 0.22)))).with_children(|button| { button.spawn((PaletteLabel,text(title, 15.))); });
@@ -293,6 +322,18 @@ fn activate(
 fn perform(action: Action, session: &mut Session, view: &mut View) {
     session.drag = None;
     session.stroke = None;
+    if !matches!(
+        action,
+        Action::NewPath(_)
+            | Action::FinishPath
+            | Action::PopPath
+            | Action::NextPath
+            | Action::PathWidth(_)
+            | Action::Save
+            | Action::Snap
+    ) {
+        session.path_draft = None;
+    }
     if matches!(action, Action::Play) {
         if session.play.take().is_some() {
             session.status = "Returned to editing".into();
@@ -316,6 +357,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
         Action::Select => session.palette = None,
         Action::Place(primitive) => {
             session.terrain_mode = false;
+            session.path_mode = false;
             session.palette = Some(primitive);
             session.status = "Click the ground to place".into();
         }
@@ -328,7 +370,15 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
         }),
         Action::Save => {
             session.status = match session.editor.zone().save(&session.path) {
-                Ok(()) => format!("Saved {}", session.path.display()),
+                Ok(()) => format!(
+                    "Saved {}{}",
+                    session.path.display(),
+                    if session.path_draft.is_some() {
+                        " (guide draft still pending)"
+                    } else {
+                        ""
+                    }
+                ),
                 Err(e) => e,
             };
         }
@@ -338,17 +388,8 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
             {
                 Ok(()) => {
                     session.selected = None;
-                    session.next_id = session.next_id.max(
-                        session
-                            .editor
-                            .zone()
-                            .objects
-                            .iter()
-                            .map(|o| o.id)
-                            .max()
-                            .unwrap_or(0)
-                            .saturating_add(1),
-                    );
+                    session.path_selected = None;
+                    session.reconcile();
                     "Loaded zone (undo restores prior document)".into()
                 }
                 Err(e) => e,
@@ -378,6 +419,12 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
             }
             session.edit(vec![Edit::SetSpawn { position }]);
         }
+        Action::NewPath(_)
+        | Action::FinishPath
+        | Action::PopPath
+        | Action::NextPath
+        | Action::DeletePath
+        | Action::PathWidth(_) => paths::perform(action, session),
         Action::TerrainToggle => {
             let creating = session.editor.zone().terrain.is_none();
             terrain::toggle(session);
@@ -408,16 +455,25 @@ fn keyboard(
     if !windows.single().is_ok_and(|w| w.focused) {
         session.drag = None;
         session.stroke = None;
+        session.path_draft = None;
         return;
     }
-    if (keys.just_pressed(KeyCode::F1) || keys.just_pressed(KeyCode::F2)) && session.play.is_none()
+    if (keys.just_pressed(KeyCode::F1)
+        || keys.just_pressed(KeyCode::F2)
+        || keys.just_pressed(KeyCode::F3))
+        && session.play.is_none()
     {
         session.terrain_mode = keys.just_pressed(KeyCode::F2);
+        session.path_mode = keys.just_pressed(KeyCode::F3);
+        session.path_draft = None;
+        session.path_selected = None;
         session.stroke = None;
         session.drag = None;
         session.palette = None;
         session.selected = None;
-        session.status = if session.terrain_mode {
+        session.status = if session.path_mode {
+            "Guide tools - choose a road or stream, then add ground points".into()
+        } else if session.terrain_mode {
             "Terrain tools - create a patch, then click or drag to sculpt".into()
         } else {
             "Object tools".into()
@@ -437,6 +493,14 @@ fn keyboard(
         Some(Action::Save)
     } else if ctrl && keys.just_pressed(KeyCode::KeyO) {
         Some(Action::Load)
+    } else if session.path_mode && keys.just_pressed(KeyCode::Enter) {
+        Some(Action::FinishPath)
+    } else if session.path_mode && keys.just_pressed(KeyCode::Backspace) {
+        Some(Action::PopPath)
+    } else if session.path_mode && keys.just_pressed(KeyCode::Equal) {
+        Some(Action::PathWidth(1))
+    } else if session.path_mode && keys.just_pressed(KeyCode::Minus) {
+        Some(Action::PathWidth(-1))
     } else if keys.just_pressed(KeyCode::Digit1) {
         Some(Action::Place(Primitive::Box))
     } else if keys.just_pressed(KeyCode::Digit2) {
@@ -446,12 +510,20 @@ fn keyboard(
     } else if keys.just_pressed(KeyCode::KeyG) {
         Some(Action::Snap)
     } else if keys.just_pressed(KeyCode::Delete) {
-        Some(Action::Delete)
+        Some(if session.path_mode {
+            Action::DeletePath
+        } else {
+            Action::Delete
+        })
     } else {
         None
     };
     if let Some(action) = action {
         perform(action, &mut session, &mut view);
+        return;
+    }
+    if session.path_mode {
+        paths::translate(&keys, &mut session);
         return;
     }
     if session.play.is_some()
@@ -581,7 +653,9 @@ fn present(
             session.editor.zone().objects.len(),
             session.editor.history(),
             session.snap,
-            if session.terrain_mode {
+            if session.path_mode {
+                paths::summary(&session)
+            } else if session.terrain_mode {
                 format!(
                     "Terrain {:?} | radius {} m\n{}",
                     session.brush_tool,

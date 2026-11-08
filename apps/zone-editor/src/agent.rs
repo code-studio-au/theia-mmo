@@ -28,7 +28,10 @@ pub(super) fn poll(
         return;
     }
     mailbox.elapsed = 0.;
-    let busy = session.drag.is_some() || session.stroke.is_some() || session.play.is_some();
+    let busy = session.drag.is_some()
+        || session.stroke.is_some()
+        || session.path_draft.is_some()
+        || session.play.is_some();
     let previous = session.editor.revision();
     match mailbox.inner.poll(&mut session.editor, busy) {
         Ok(Some(receipt)) => {
@@ -58,25 +61,6 @@ pub(super) fn poll(
         }
     }
     if session.editor.revision() != previous {
-        if !session
-            .editor
-            .zone()
-            .objects
-            .iter()
-            .any(|o| Some(o.id) == session.selected)
-        {
-            session.selected = None;
-        }
-        session.next_id = session.next_id.max(
-            session
-                .editor
-                .zone()
-                .objects
-                .iter()
-                .map(|o| o.id)
-                .max()
-                .unwrap_or(0)
-                .saturating_add(1),
-        );
+        session.reconcile();
     }
 }

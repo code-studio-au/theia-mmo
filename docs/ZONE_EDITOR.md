@@ -6,9 +6,11 @@ adopted stack. The editor is a separate standard Bevy app, independent of normal
 multiplayer startup, with a renderer-free `theia-zone` document/command crate.
 This is P5-17 / P3-15 / P1-10; later terrain integration also uses P2-06/07.
 P3-17/18 remain unspecified. The current tool includes primitive authoring,
-shared visual/live-agent history, bounded terrain brushes and validated export
+shared visual/live-agent history, bounded terrain brushes, road/stream guides and validated export
 into the existing world-package pipeline. Milestone records below retain their
-exact source/evidence scope.
+exact source/evidence scope. The current tool targets **3440x1440 only**, opening
+borderless fullscreen on the primary display. Smaller-window checks below are
+historical evidence; they are no longer supported qualification targets.
 
 Actual prerequisites for this slice are the existing pinned Bevy/Avian stack,
 checked coordinate conversion, static query scene and shared capsule solver.
@@ -412,3 +414,76 @@ Exact paired debug SHA-256:
 Windows execution, production authentication for imported zones, persistence,
 Classic gameplay-bundle integration, terrain streaming/LOD/materials, navigation,
 NPC/quest publication and population/resource qualification remain open.
+
+
+## Road/stream guides and 3440x1440 tool — 8 November 2026
+
+P5-17 / P3-15 continue from the shared command history, terrain sampling and world
+exporter. Schema 3 adds optional road/stream guides: positive stable IDs shared
+with primitive objects, names, width 0.25..32 m and 2..64 explicit global f64
+control points per guide, at most 128 guides. Adjacent points need at least
+0.25 m horizontal separation and at most 256 m spatial distance. Width margins
+must fit the existing bounded authoring area. Older schema-1/2 documents remain
+readable. Whole-document validation also checks serialized size, preventing a
+combined valid-count document from exceeding the 1 MiB save/load budget.
+
+`put_path` upserts and `delete_path` removes through the same atomic command and
+undo pipeline as objects/terrain. Failed geometry, cross-kind ID collisions,
+old-schema guide data and oversized documents preserve state/history. The
+allocator advances across both kinds, including agent-authored IDs.
+
+F3 opens Guides; F1/F2 return to Objects/Terrain. Start a road or stream, click
+control points on the sampled ground, Backspace removes the last point, Enter
+commits one history entry, Escape cancels. Drafts block live agent mutation.
+Ctrl-S saves committed data and explicitly leaves the pending draft unsaved.
+Select Next cycles guides; arrows/PgUp/PgDn translate the whole selected guide;
+width controls, Delete, undo/redo and load share normal history. Snapping uses
+global f64 positions before bounded local conversion. The editor caches committed
+and draft meshes and releases removed guide mesh assets.
+
+These are straight nonblocking visual ribbons with explicit point heights. Roads
+use standard PBR; streams use standard transparent unlit materials. They export
+through the existing GLB pipeline and remain in the source-zone copy. They do not
+carve/grade terrain, conform between points, establish navigation, simulate water
+or create collision. Those remain separately scoped work.
+
+Acceptance evidence: 19 domain and eight editor tests pass, including far signed
+centimetre coordinates, schema/history/ID failures, combined byte limits and
+render-only export. The export case checks unchanged collision and actual Avian
+capsule movement across ribbons while package identity changes. Strict workspace
+all-target Clippy and formatting pass. The headless mixed-guide package passes
+Khronos GLB validation with zero errors/warnings.
+
+The current user explicitly restricted tool development to 3440x1440. Startup
+uses standard Bevy primary-monitor borderless fullscreen, with a 3440x1440 window
+resolution. The OS-input qualifier now accepts only that viewport and verifies
+the application's own startup without forcing a resize. This policy does not
+change normal game-client display support. Native qualification uses Linux,
+AMD Radeon RX 7900 XTX (RADV NAVI31), Vulkan device 29772. This is not Windows or
+MMO-scale evidence.
+
+Evidence: ignored `build/zone-path-tests-final-v1.log`,
+`zone-guide-3440-clippy.log`, `zone-guide-3440-build.log`,
+`zone-package-guides-v1/`, `zone-guide-gltf-validation-v1.json`.
+
+The complete OS-input walkthrough passes at actual 3440x1440 with the fullscreen
+default: primitive transforms/drag/snapping, shared agent history/retry/busy
+refusals, terrain strokes, road/stream drafts/cancel/commit, whole-guide
+translation/width/delete, shared ID allocation, save/load and offline playtest.
+The Vulkan validation layer is observed active; zero GPU diagnostics or resize
+exceptions were needed. Screenshot: ignored
+`build/zone-guide-3440-default-v1/state.png`; structured evidence beside it.
+Two retained guide meshes raise the CPU asset count from 17 to 19; delete/undo
+and load return the expected counts. This is asset-lifetime evidence, not a GPU
+memory/capacity claim. Earlier mixed-size guide runs predate the viewport policy.
+
+The normal headless server and two actual rendered clients also pass encrypted
+Renet traversal for the exported guide package, both at 3440x1440 with observed
+Vulkan validation and zero GPU diagnostics. Actual package binding, distinct
+player IDs, wall clearance and both avatar colours pass existing independent
+checks. Evidence: `build/zone-package-native-guides-3440-v1/verification.json`
+and both `scene.png` captures. `tools/verify_multiplayer.py` adds an optional
+`--window-size 3440x1440` fullscreen mode while preserving its ordinary default.
+The current editor SHA-256 is
+`a816f15a1e4b57804ce1e9e17d8facfef99db569906d317b8072f948962fa14f`;
+the normal client/server hashes remain those in the export milestone above.
