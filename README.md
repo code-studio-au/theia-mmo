@@ -14,6 +14,7 @@ Visual editing and structured agent commands share validation and undo.
 The summary marks unsaved changes, including pending drafts.
 In Sculpt, I samples a flatten level; PageUp/Down adjusts it.
 In terrain tools, [ / ] halves/doubles stamp strength or the selected blend.
+The amber brush overlay follows the terrain and shows potential grid-sample influence.
 In Guides, Insert adds a midpoint; Backspace removes a selected point.
 The right-side content list selects named entries across modes; F frames them.
 F8 renames a selection; Shift-F8 edits the zone name through shared undo.

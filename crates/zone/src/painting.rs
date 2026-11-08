@@ -1,8 +1,5 @@
 //! Quantized terrain colour weights; no gameplay surface/friction rules.
-use super::{
-    Result, require,
-    terrain::{HeightPatch, TILE_METRES},
-};
+use super::{Result, require, terrain::HeightPatch};
 use serde::{Deserialize, Serialize};
 pub const GRASS: [u8; 4] = [255, 0, 0, 0];
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -35,22 +32,10 @@ impl Paint {
     pub(crate) fn apply(&self, patch: &mut HeightPatch) -> Result<()> {
         let axis = patch.axis();
         let count = axis * axis;
-        let metres = patch.sample_metres();
-        require(
-            self.centre.iter().all(|v| v.is_finite())
-                && self.radius_metres.is_finite()
-                && (4. ..=32.).contains(&self.radius_metres),
-            "Paint needs finite centre and 4..32 metre radius",
-        )?;
+        let influence = patch.brush_influence(self.centre, self.radius_metres)?;
         require(
             self.blend.is_finite() && (0.05..=1.).contains(&self.blend),
             "Paint blend must be 0.05..1",
-        )?;
-        let origin = patch.origin()?;
-        require(
-            (origin[0]..=origin[0] + TILE_METRES).contains(&self.centre[0])
-                && (origin[2]..=origin[2] + TILE_METRES).contains(&self.centre[1]),
-            "Paint centre outside terrain patch",
         )?;
         let mut candidate = if patch.weights.is_empty() {
             vec![GRASS; count]
@@ -70,9 +55,7 @@ impl Paint {
         let mut changed = false;
         for z in 1..axis - 1 {
             for x in 1..axis - 1 {
-                let dx = (origin[0] - self.centre[0]) + x as f64 * metres;
-                let dz = (origin[2] - self.centre[1]) + z as f64 * metres;
-                let amount = (1. - dx.hypot(dz) / self.radius_metres).max(0.) as f32 * self.blend;
+                let amount = influence[z * axis + x] * self.blend;
                 let index = z * axis + x;
                 let old = candidate[index];
                 let mut next = old;

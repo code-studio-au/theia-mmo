@@ -1,3 +1,14 @@
+## 8 November 2026 — terrain-conforming sample influence
+
+Share one bounded per-sample falloff calculation between sculpt, paint and visual
+feedback, retaining exact command output and locked borders. Show amber vertex
+alpha on the exact standard-Bevy terrain triangles, lifted 4 cm and following the
+temporary stroke preview. Reuse one resident mesh and hide invalid/empty targets;
+keep feedback outside picking, physics and document history. This shows potential
+grid influence, not an analytic radius outline or a prediction of tool-specific
+height/quantized-colour changes. No decal infrastructure or schema is introduced.
+[Contract/evidence](ZONE_EDITOR.md#terrain-conforming-sample-influence--8-november-2026).
+
 ## 8 November 2026 — exact numeric primitive transforms
 
 Use built-in Bevy text inputs and the modal TabNavigation API for seven global

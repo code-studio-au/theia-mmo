@@ -1,5 +1,6 @@
 //! P5-17/P3-15: standard Bevy greybox authoring; no trusted gameplay authority.
 mod agent;
+mod brush_preview;
 mod cli;
 mod export;
 mod markers;

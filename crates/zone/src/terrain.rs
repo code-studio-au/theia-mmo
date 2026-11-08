@@ -170,16 +170,37 @@ impl HeightPatch {
             b * (1. - v) + c * (1. - u) + d * (u + v - 1.)
         }))
     }
-    pub(crate) fn apply(&mut self, brush: &Brush) -> Result<()> {
+    /// Potential per-vertex influence shared by sculpt, paint and authoring feedback.
+    /// Locked border samples are always zero; coordinates and radius use the command bounds.
+    pub fn brush_influence(&self, centre: [f64; 2], radius_metres: f64) -> Result<Vec<f32>> {
         let axis = self.axis();
         let metres = self.sample_metres();
         require(self.heights.len() == axis * axis, "Invalid terrain samples")?;
         require(
-            brush.centre.iter().all(|v| v.is_finite())
-                && brush.radius_metres.is_finite()
-                && (4. ..=32.).contains(&brush.radius_metres),
+            centre.iter().all(|v| v.is_finite())
+                && radius_metres.is_finite()
+                && (4. ..=32.).contains(&radius_metres),
             "Brush needs finite centre and 4..32 metre radius",
         )?;
+        let origin = self.origin()?;
+        require(
+            (origin[0]..=origin[0] + TILE_METRES).contains(&centre[0])
+                && (origin[2]..=origin[2] + TILE_METRES).contains(&centre[1]),
+            "Brush centre outside terrain patch",
+        )?;
+        let mut influence = vec![0.; axis * axis];
+        for z in 1..axis - 1 {
+            for x in 1..axis - 1 {
+                let dx = (origin[0] - centre[0]) + x as f64 * metres;
+                let dz = (origin[2] - centre[1]) + z as f64 * metres;
+                influence[z * axis + x] = (1. - dx.hypot(dz) / radius_metres).max(0.) as f32;
+            }
+        }
+        Ok(influence)
+    }
+    pub(crate) fn apply(&mut self, brush: &Brush) -> Result<()> {
+        let axis = self.axis();
+        let influence = self.brush_influence(brush.centre, brush.radius_metres)?;
         match brush.operation {
             BrushOperation::Raise { metres } | BrushOperation::Lower { metres } => require(
                 metres.is_finite() && (0.05..=8.).contains(&metres),
@@ -197,20 +218,12 @@ impl HeightPatch {
                 "Invalid smooth blend",
             )?,
         }
-        let origin = self.origin()?;
-        require(
-            (origin[0]..=origin[0] + TILE_METRES).contains(&brush.centre[0])
-                && (origin[2]..=origin[2] + TILE_METRES).contains(&brush.centre[1]),
-            "Brush centre outside terrain patch",
-        )?;
         let previous = self.heights.clone();
         let mut candidate = previous.clone();
         let mut changed = false;
         for z in 1..axis - 1 {
             for x in 1..axis - 1 {
-                let dx = (origin[0] - brush.centre[0]) + x as f64 * metres;
-                let dz = (origin[2] - brush.centre[1]) + z as f64 * metres;
-                let weight = (1. - dx.hypot(dz) / brush.radius_metres).max(0.) as f32;
+                let weight = influence[z * axis + x];
                 if weight == 0. {
                     continue;
                 }
@@ -418,5 +431,106 @@ mod tests {
         zone.terrain = Some(HeightPatch::flat([0, 0]));
         zone.terrain.as_mut().unwrap().heights.pop();
         assert!(zone.validate().is_err());
+    }
+}
+
+#[cfg(test)]
+mod influence_tests {
+    use super::*;
+    use crate::{
+        Command, Edit, Editor,
+        painting::{Paint, Surface},
+    };
+    #[test]
+    fn influence_matches_actual_raise_and_quantized_paint_on_both_far_grids() {
+        for resolution in [Resolution::FourMetres, Resolution::TwoMetres] {
+            for chunk in [
+                [0, 0],
+                [1_000_000_000, -1_000_000_000],
+                [-1_000_000_000, 1_000_000_000],
+            ] {
+                let mut patch = HeightPatch::flat(chunk);
+                patch.resolution = resolution;
+                patch.heights = vec![0.; patch.axis() * patch.axis()];
+                let origin = patch.origin().unwrap();
+                let zone = Zone {
+                    schema: 7,
+                    origin,
+                    spawn: [origin[0] + 16., 0.1, origin[2] + 16.],
+                    terrain: Some(patch.clone()),
+                    ..Zone::default()
+                };
+                for offset in [[64., 64.], [64.125, 65.375], [0., 64.]] {
+                    let centre = [origin[0] + offset[0], origin[2] + offset[1]];
+                    let influence = patch.brush_influence(centre, 8.).unwrap();
+                    assert!(influence.iter().all(|&w| (0. ..=1.).contains(&w)));
+                    for i in 0..patch.axis() {
+                        assert_eq!(influence[i], 0.);
+                        assert_eq!(influence[(patch.axis() - 1) * patch.axis() + i], 0.);
+                        assert_eq!(influence[i * patch.axis()], 0.);
+                        assert_eq!(influence[i * patch.axis() + patch.axis() - 1], 0.);
+                    }
+                    let mut editor = Editor::new(zone.clone()).unwrap();
+                    editor
+                        .execute(Command::Apply {
+                            expected_revision: 0,
+                            edits: vec![Edit::Brush {
+                                brush: Brush {
+                                    centre,
+                                    radius_metres: 8.,
+                                    operation: BrushOperation::Raise { metres: 1. },
+                                },
+                            }],
+                        })
+                        .unwrap();
+                    assert_eq!(editor.zone().terrain.as_ref().unwrap().heights, influence);
+                    editor
+                        .execute(Command::Apply {
+                            expected_revision: 1,
+                            edits: vec![Edit::PaintTerrain {
+                                paint: Paint {
+                                    centre,
+                                    radius_metres: 8.,
+                                    surface: Surface::Dirt,
+                                    blend: 1.,
+                                },
+                            }],
+                        })
+                        .unwrap();
+                    for (weight, rgba) in influence
+                        .iter()
+                        .zip(&editor.zone().terrain.as_ref().unwrap().weights)
+                    {
+                        let grass = (255. * (1. - weight)).round() as u8;
+                        assert_eq!(*rgba, [grass, 255 - grass, 0, 0]);
+                    }
+                    assert_eq!(editor.history(), (2, 0));
+                }
+            }
+        }
+    }
+    #[test]
+    fn influence_has_known_falloff_and_rejects_invalid_geometry_without_mutating() {
+        let patch = HeightPatch::flat([0, 0]);
+        let influence = patch.brush_influence([64., 64.], 8.).unwrap();
+        assert_eq!(influence[16 * 33 + 16], 1.);
+        assert_eq!(influence[16 * 33 + 17], 0.5);
+        assert_eq!(influence[16 * 33 + 18], 0.);
+        assert!((influence[17 * 33 + 17] - (1. - 2_f32.sqrt() / 2.)).abs() < 1e-7);
+        for (centre, radius) in [
+            ([f64::NAN, 64.], 8.),
+            ([64., f64::INFINITY], 8.),
+            ([64., 64.], f64::NAN),
+            ([64., 64.], 3.9),
+            ([64., 64.], 32.1),
+            ([-0.01, 64.], 8.),
+            ([64., 128.01], 8.),
+        ] {
+            assert!(patch.brush_influence(centre, radius).is_err());
+        }
+        let mut broken = patch.clone();
+        broken.heights.pop();
+        assert!(broken.brush_influence([64., 64.], 8.).is_err());
+        assert_eq!(patch, HeightPatch::flat([0, 0]));
     }
 }

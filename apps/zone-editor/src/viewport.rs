@@ -380,6 +380,16 @@ type ReportControls<'w, 's> = Query<
         &'static Hovered,
     ),
 >;
+type SceneVisuals<'w, 's> = Query<
+    'w,
+    's,
+    (
+        Has<markers::AuthoredMarker>,
+        Has<terrain::BrushCursor>,
+        &'static Visibility,
+        Option<&'static Mesh3d>,
+    ),
+>;
 #[allow(clippy::too_many_arguments)]
 pub(super) fn report(
     mut commands: Commands,
@@ -395,7 +405,7 @@ pub(super) fn report(
     mouse: Res<ButtonInput<MouseButton>>,
     adapter: Res<RenderAdapterInfo>,
     meshes: Res<Assets<Mesh>>,
-    marker_visibility: Query<&Visibility, With<markers::AuthoredMarker>>,
+    scene_visuals: SceneVisuals,
     content: Res<outliner::Content>,
     content_controls: Query<(
         &outliner::Control,
@@ -451,7 +461,7 @@ pub(super) fn report(
         "document":session.editor.zone(),"selected":session.selected,"snap":session.snap,"status":session.status,
         "dragging":session.drag.is_some() || session.stroke.is_some(),"vegetation_mode":session.vegetation_mode,"plant_selected":session.plant_selected,"scatter_radius":session.scatter_radius,"scatter_count":session.scatter_count,
         "plants":session.editor.zone().plants.iter().map(|p|serde_json::json!({"id":p.id,"screen":project(Vec3::from_array(session.editor.zone().local(p.position).unwrap())+Vec3::Y*if p.kind==theia_zone::vegetation::PlantKind::Tree{3.2*p.scale as f32}else{0.6*p.scale as f32})})).collect::<Vec<_>>(),
-        "marker_visible_entities":marker_visibility.iter().filter(|v| **v != Visibility::Hidden).count(),"marker_mode":session.marker_mode,"marker_selected":session.marker_selected,"marker_palette":format!("{:?}",session.marker_palette),"terrain_mode":session.terrain_mode,"terrain_paint":session.terrain_paint,"path_mode":session.path_mode,"path_selected":session.path_selected,"path_point":session.path_point,
+        "marker_visible_entities":scene_visuals.iter().filter(|(marker,_,v,_)|*marker && **v != Visibility::Hidden).count(),"marker_mode":session.marker_mode,"marker_selected":session.marker_selected,"marker_palette":format!("{:?}",session.marker_palette),"terrain_mode":session.terrain_mode,"terrain_paint":session.terrain_paint,"path_mode":session.path_mode,"path_selected":session.path_selected,"path_point":session.path_point,
         "path_handles":session.editor.zone().paths.iter().find(|p|Some(p.id)==session.path_selected).map(|p|p.points.iter().map(|&point|project(Vec3::from_array(session.editor.zone().local(point).unwrap()))).collect::<Vec<_>>()),"path_draft_points":session.path_draft.as_ref().map(|d|d.path.points.len()),"brush_radius":session.brush_radius,"brush_tool":format!("{:?}",session.brush_tool),"play_feet":session.play.as_ref().map(|p| p.feet.metres()),
         "objects":objects,"buttons":buttons,"viewport":[window.width(),window.height()],
         "markers":session.editor.zone().markers.iter().map(|m|serde_json::json!({"id":m.id,"screen":project(Vec3::from_array(session.editor.zone().local(m.position).unwrap())+Vec3::Y*0.5)})).collect::<Vec<_>>(),
@@ -510,6 +520,24 @@ pub(super) fn report(
     value["brush_strength"] = session.brush_strength.into();
     value["sculpt_blend"] = session.sculpt_blend.into();
     value["paint_blend"] = session.paint_blend.into();
+    value["terrain_preview_heights"] = serde_json::json!(
+        session
+            .stroke
+            .as_ref()
+            .and_then(|s| s.draft.zone().terrain.as_ref().map(|p| &p.heights))
+    );
+    value["brush_preview"] = serde_json::json!(scene_visuals.iter().find_map(|(_,cursor,visibility,handle)| {
+        if !cursor { return None; }
+        let handle = handle?;
+        let mesh = meshes.get(&handle.0)?;
+        let bevy::mesh::VertexAttributeValues::Float32x3(positions) = mesh.attribute(Mesh::ATTRIBUTE_POSITION)? else { return None; };
+        let colours = match mesh.attribute(Mesh::ATTRIBUTE_COLOR) {
+            Some(bevy::mesh::VertexAttributeValues::Float32x4(colours)) => Some(colours),
+            _ => None,
+        };
+        let samples: Vec<_> = colours.into_iter().flatten().enumerate().filter(|(_,colour)| colour[3]>0.).map(|(i,colour)| serde_json::json!({"index":i,"position":positions[i],"alpha":colour[3]})).collect();
+        Some(serde_json::json!({"visible":*visibility!=Visibility::Hidden,"mesh":format!("{:?}",handle.0.id()),"vertices":positions.len(),"triangles":mesh.indices().map_or(0,|i|i.len()/3),"samples":samples}))
+    }));
     value["brush_point"] = serde_json::json!(session.brush_point.map(|p| p.to_array()));
     value["view"] = serde_json::json!({"target":view.target.to_array(),"distance":view.distance,"yaw":view.yaw,"pitch":view.pitch});
     let temp = report.path.with_extension("tmp");

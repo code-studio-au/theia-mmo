@@ -1619,3 +1619,52 @@ Evidence: ignored `build/zone-form-feedback-native-3440-v1/{qualification.json,*
 `zone-form-feedback-tests-v1.log`, `zone-form-feedback-build-v1.log` and
 `zone-form-feedback-clippy-v1.log`. Editor SHA-256:
 `aa913989f4c4b9dbc4184da82959eaef6a36cc986f76b57645b95030b8edeb06`.
+
+## Terrain-conforming sample influence — 8 November 2026
+
+P5-17 / P3-15 / P1-10; P2-06/07. Prerequisites are the retained 4 m / 2 m height
+patch, shared sculpt/paint commands and checked local/global conversion. The
+amber brush now follows exact terrain triangles rather than a flat cylinder.
+Sculpt and paint share `HeightPatch::brush_influence`: finite in-patch global
+centre, 4..32 m radius, existing linear f64-distance/f32-weight falloff and zero
+influence on the locked border. Their operation/blend/quantization and complete
+candidate validation remain in the existing commands.
+
+The standard Bevy mesh uses the terrain's exact indices and local positions,
+lifted 0.04 m; unlit amber vertex alpha is half the potential sample influence.
+Interpolation follows the grid triangles, so its visible edge can extend to
+adjacent zero-weight samples rather than tracing an analytic circle. It does not
+predict final height, blend strength, paint rounding or an operation's no-change
+refusal. The overlay follows temporary sculpt heights while a stroke is held.
+It reuses one resident asset, caches source/draft revision, centre and radius,
+and never participates in ray picking, shadows or collision. Its bounded single
+entity skips frustum culling to avoid stale mesh bounds after replacement. It
+hides outside terrain, over panels, during modal input/playtest, in other modes
+or when no unlocked samples have influence. Cursor/settings alone never mutate
+source/history; release retains the existing one-entry stroke commit. There is
+no new source/runtime format, engine feature, renderer or server-authority path.
+
+All 72 focused Rust cases (51 domain / 21 editor), formatting and denied-warning
+workspace/all-target Clippy pass. New cases cover known weights, invalid geometry,
+locked edges, actual raise/paint agreement, both resolutions and both far-frame
+signs, exact mesh indices/positions/alpha and empty/outside targets. Ten complete
+historical sculpt/paint documents match the new headless output exactly, including
+0.125 m strength and 12.5% flatten/smooth/paint on both grids.
+
+Native Linux qualification at actual 3440x1440 covers a 4 m hill and 2 m valley
+at `[128000000000,20,-128000000000]`: observed resident mesh samples match the
+independently calculated falloff and exact surface heights on peaks, slopes,
+locked edges and a held temporary sculpt preview. Radius changes, outside-patch and UI/mode/name-modal hiding,
+clean source/history before editing and one-entry release pass. Screenshots were
+captured and the slope visually inspected. Vulkan validation is active on AMD
+RX 7900 XTX (RADV NAVI31), device 29772, with zero GPU/resize diagnostics. The retained native
+strength/blend walkthrough also passes on both grids: exact headless equivalence,
+one-entry strokes, undo/redo/save and actual offline Avian playtest, with zero
+GPU/resize diagnostics. Earlier normal-game, multiplayer and Windows evidence
+retains its scope.
+
+Evidence: ignored `build/zone-influence-native-3440-v3/{qualification.json,*.png}`,
+`build/zone-influence-compat-v1/qualification.json`,
+`build/zone-influence-blend-regression-3440-v1/qualification.json`, `zone-influence-tests-v2.log`,
+`zone-influence-build-v2.log` and `zone-influence-clippy-v2.log`. Editor SHA-256:
+`bfd9035848c822d74e6b83a1359da59df3612d1eed3f3878bc175b786a51d58f`.

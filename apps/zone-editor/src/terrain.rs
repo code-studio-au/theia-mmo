@@ -27,6 +27,7 @@ pub(super) struct BrushCursor;
 #[derive(Resource)]
 pub(super) struct GroundMesh {
     surface: Handle<Mesh>,
+    brush: Handle<Mesh>,
     lines: Handle<Mesh>,
     normal: Handle<StandardMaterial>,
     painted: Handle<StandardMaterial>,
@@ -208,7 +209,9 @@ pub(super) fn setup(
         Visibility::Hidden,
         bevy::light::NotShadowCaster,
     ));
+    let brush = meshes.add(mesh(theia_network::procedural::grid(32)));
     commands.insert_resource(GroundMesh {
+        brush: brush.clone(),
         surface: terrain,
         lines: grid,
         normal: material,
@@ -216,9 +219,10 @@ pub(super) fn setup(
     });
     commands.spawn((
         BrushCursor,
-        Mesh3d(meshes.add(Cylinder::new(1., 0.025))),
+        bevy::camera::visibility::NoFrustumCulling,
+        Mesh3d(brush),
         MeshMaterial3d(materials.add(StandardMaterial {
-            base_color: Color::srgba(1., 0.65, 0.12, 0.3),
+            base_color: Color::WHITE,
             unlit: true,
             alpha_mode: AlphaMode::Blend,
             ..default()
@@ -262,6 +266,7 @@ pub(super) fn sync(
         ),
     >,
     mut last: Local<Option<(u64, Option<u64>)>>,
+    mut brush_last: Local<Option<((u64, Option<u64>), [f64; 2], f64)>>,
 ) {
     for mut visibility in &mut grid {
         *visibility = if session.editor.zone().terrain.is_some() {
@@ -322,18 +327,31 @@ pub(super) fn sync(
         *last = Some(key);
     }
     if let Ok((mut transform, mut visibility)) = cursor.single_mut() {
-        *visibility =
-            if session.terrain_mode
-                && session.play.is_none()
-                && let Some(point) = session.brush_point
-            {
-                *transform = Transform::from_translation(point + Vec3::Y * 0.08).with_scale(
-                    Vec3::new(session.brush_radius as f32, 1., session.brush_radius as f32),
-                );
-                Visibility::Visible
-            } else {
-                Visibility::Hidden
-            };
+        *visibility = Visibility::Hidden;
+        if session.terrain_mode
+            && session.play.is_none()
+            && !session.has_modal()
+            && let Some(point) = session.brush_point
+        {
+            let zone = session
+                .stroke
+                .as_ref()
+                .map_or(session.editor.zone(), |s| s.draft.zone());
+            if let Ok(global) = zone.global(point.to_array()) {
+                let centre = [global[0], global[2]];
+                let brush_key = (key, centre, session.brush_radius);
+                if *brush_last == Some(brush_key) {
+                    *visibility = Visibility::Visible;
+                } else if let Some(mesh) = brush_preview::mesh(zone, centre, session.brush_radius) {
+                    *meshes
+                        .get_mut(&handle.brush)
+                        .expect("Resident brush overlay") = mesh;
+                    *brush_last = Some(brush_key);
+                    *visibility = Visibility::Visible;
+                }
+            }
+        }
+        *transform = Transform::IDENTITY;
     }
 }
 pub(super) fn palette(
