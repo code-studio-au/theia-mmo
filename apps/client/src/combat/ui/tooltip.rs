@@ -7,7 +7,7 @@ fn number(value: f64) -> String {
         value.to_string()
     }
 }
-pub(super) fn describe(ability: &Ability, key: &str, state: &str) -> String {
+pub(crate) fn describe(ability: &Ability, key: &str, state: &str) -> String {
     let name = super::ability_name(ability.id().as_str());
     let maximum = number(ability.range_metres());
     let range = match ability.combat_rules().map(|r| r.minimum_range_metres()) {
@@ -32,7 +32,11 @@ pub(super) fn describe(ability: &Ability, key: &str, state: &str) -> String {
         format!(" · {} s cooldown", number(cooldown.as_secs_f64()))
     };
     let mut lines = vec![
-        format!("[{key}] {name}"),
+        if key.is_empty() {
+            name
+        } else {
+            format!("[{key}] {name}")
+        },
         format!("{cost}{range}"),
         format!("{cast}{cooldown}"),
     ];

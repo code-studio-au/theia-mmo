@@ -203,13 +203,17 @@ pub(crate) fn close_panel(
     keys: Res<ButtonInput<KeyCode>>,
     mut ui: ResMut<Ui>,
     documents: Option<Res<crate::documents::Ui>>,
-    interface: Option<Res<crate::fantasy_ui::settings::Ui>>,
+    (interface, book): (
+        Option<Res<crate::fantasy_ui::settings::Ui>>,
+        Option<Res<crate::combat::book::Ui>>,
+    ),
     windows: Query<&Window>,
 ) {
     ui.closed_this_frame = false;
     if windows.single().is_ok_and(|window| window.focused)
         && ui.open
         && keys.just_pressed(KeyCode::Escape)
+        && !crate::combat::book::owns_escape(book.as_deref())
         && !crate::fantasy_ui::settings::owns_escape(interface.as_deref())
         && !documents
             .as_ref()

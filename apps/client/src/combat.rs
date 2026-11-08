@@ -1,4 +1,5 @@
 //! Small standard Bevy presentation of server combat; never computes damage.
+pub(crate) mod book;
 mod log;
 pub(crate) mod ui;
 use crate::network::Network;
@@ -131,6 +132,7 @@ pub fn install(
     player_life: bool,
 ) {
     ui::install(app);
+    book::install(app);
     log::install(app);
     crate::combat_feedback::install(app);
     if catalog.abilities().iter().any(|a| a.projectile().is_some()) {

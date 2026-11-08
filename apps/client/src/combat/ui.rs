@@ -1,5 +1,5 @@
 //! Standard Bevy widgets and bounded, server-derived progress. No gameplay authority.
-mod tooltip;
+pub(super) mod tooltip;
 mod unit_frame;
 use super::Config;
 use bevy::{

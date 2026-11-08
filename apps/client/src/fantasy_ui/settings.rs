@@ -27,6 +27,7 @@ enum Control {
     Close,
     Scale(u8),
     Exit,
+    Abilities,
 }
 fn label(value: &str) -> impl Bundle {
     (
@@ -91,7 +92,7 @@ pub(crate) fn snapshot(world: &mut World) -> serde_json::Value {
     let buttons:Vec<_>=world.query::<(&Control,&ComputedNode,&bevy::ui::UiGlobalTransform)>().iter(world)
         .filter(|(action,_,_)|open || matches!(action,Control::Toggle))
         .map(|(action,node,transform)|{
-            let name=match action {Control::Toggle=>"toggle".to_owned(),Control::Close=>"close".to_owned(),Control::Scale(value)=>format!("scale-{value}"),Control::Exit=>"exit".to_owned()};
+            let name=match action {Control::Toggle=>"toggle".to_owned(),Control::Close=>"close".to_owned(),Control::Scale(value)=>format!("scale-{value}"),Control::Exit=>"exit".to_owned(),Control::Abilities=>"abilities".to_owned()};
             serde_json::json!({"action":name,"point":(transform.affine().translation*super::window_factor(node,scale)).to_array()})
         }).collect();
     serde_json::json!({"open":open,"preferred":preferred,"displayed":scale,"buttons":buttons,"persistence":persistence})
@@ -122,6 +123,7 @@ fn setup(mut commands: Commands) {
             });
             pane.spawn(label("The interface fits smaller windows and restores your preferred size when space returns."));
             pane.spawn((PersistenceHint, label("Applies to this session. The world continues running.")));
+            pane.spawn(button(Control::Abilities,"Open ability book [P]")).with_child(label("Abilities [P]"));
             pane.spawn(button(Control::Close,"Close interface settings")).with_child(label("Close [Esc]"));
             pane.spawn(button(Control::Exit,"Exit game")).with_child(label("Exit game"));
         });
@@ -151,7 +153,10 @@ fn activate(
     mut ui: ResMut<Ui>,
     mut preferred: ResMut<PreferredScale>,
     windows: Query<&Window>,
-    store: Option<ResMut<super::preferences::Store>>,
+    (store, book): (
+        Option<ResMut<super::preferences::Store>>,
+        Option<ResMut<crate::combat::book::Ui>>,
+    ),
     mut exit: MessageWriter<bevy::app::AppExit>,
 ) {
     let Ok(control) = controls.get(event.entity) else {
@@ -170,6 +175,13 @@ fn activate(
                 store.retry_failed();
             }
             preferred.0 = f32::from(value) / 100.
+        }
+        Control::Abilities if ui.open => {
+            if let Some(mut book) = book {
+                book.open = true;
+                ui.open = false;
+                ui.closed_this_frame = true;
+            }
         }
         Control::Exit if ui.open => {
             ui.open = false;

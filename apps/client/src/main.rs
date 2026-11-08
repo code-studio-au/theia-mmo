@@ -1437,6 +1437,7 @@ fn toggle_fullscreen(
 
 #[derive(bevy::ecs::system::SystemParam)]
 struct InputMode<'w> {
+    book: Option<Res<'w, combat::book::Ui>>,
     interface: Option<Res<'w, fantasy_ui::settings::Ui>>,
     dialogue: Option<Res<'w, dialogue::Ui>>,
     inventory: Option<Res<'w, inventory::Ui>>,
@@ -1485,7 +1486,8 @@ fn input(
         });
     if let Some(classic) = classic.as_mut() {
         classic.escape_owned_by_panel = keys.just_pressed(KeyCode::Escape)
-            && (fantasy_ui::settings::owns_escape(mode.interface.as_deref())
+            && (combat::book::owns_escape(mode.book.as_deref())
+                || fantasy_ui::settings::owns_escape(mode.interface.as_deref())
                 || talking
                 || mode
                     .documents
@@ -1495,6 +1497,7 @@ fn input(
                 || mode.loot.as_ref().is_some_and(|u| u.open));
     }
     if keys.just_pressed(KeyCode::Escape)
+        && !combat::book::owns_escape(mode.book.as_deref())
         && !fantasy_ui::settings::owns_escape(mode.interface.as_deref())
         && !talking
         && !mode
@@ -1611,6 +1614,8 @@ mod control_tests {
             .init_resource::<loot::Ui>()
             .init_resource::<documents::Ui>()
             .init_resource::<fantasy_ui::settings::Ui>()
+            .init_resource::<combat::book::Ui>()
+            .insert_resource(fantasy_ui::Skin::fixture())
             .insert_resource(
                 classic_controls::Controller::parse(include_bytes!(
                     "../../../content/input/classic-controls.json"
@@ -1618,7 +1623,10 @@ mod control_tests {
                 .unwrap(),
             )
             .add_message::<AppExit>()
-            .add_systems(PreUpdate, fantasy_ui::settings::keyboard)
+            .add_systems(
+                PreUpdate,
+                (fantasy_ui::settings::keyboard, combat::book::keyboard).chain(),
+            )
             .add_systems(
                 Update,
                 (
@@ -1639,7 +1647,8 @@ mod control_tests {
         app.world_mut().resource_mut::<documents::Ui>().open = true;
         app.world_mut().resource_mut::<loot::Ui>().open = true;
         app.world_mut().resource_mut::<inventory::Ui>().open = true;
-        for step in 0..4 {
+        app.world_mut().resource_mut::<combat::book::Ui>().open = true;
+        for step in 0..5 {
             {
                 let mut keys = app.world_mut().resource_mut::<ButtonInput<KeyCode>>();
                 keys.release(KeyCode::Escape);
@@ -1648,9 +1657,10 @@ mod control_tests {
             }
             app.update();
             assert!(!app.world().resource::<fantasy_ui::settings::Ui>().open);
-            assert_eq!(app.world().resource::<documents::Ui>().open, step < 1);
-            assert_eq!(app.world().resource::<loot::Ui>().open, step < 2);
-            assert_eq!(app.world().resource::<inventory::Ui>().open, step < 3);
+            assert_eq!(app.world().resource::<combat::book::Ui>().open, step < 1);
+            assert_eq!(app.world().resource::<documents::Ui>().open, step < 2);
+            assert_eq!(app.world().resource::<loot::Ui>().open, step < 3);
+            assert_eq!(app.world().resource::<inventory::Ui>().open, step < 4);
             assert!(
                 app.world()
                     .resource::<classic_controls::Controller>()

@@ -1,3 +1,11 @@
+Ability book checkpoint, 8 November 2026 (P2-14 / P3-06 / P5-13):
+The opt-in P-key/Interface ability book shows configured icons and metric details
+with bounded paging. 225 ordinary client tests, strict Clippy, formatting and
+four native Linux starts pass; no casts or learning requests are sent. Dragging
+and action-bar rearrangement remain pending. [Evidence and scope](ABILITY_BOOK_ACTION_BAR.md).
+**Latest instruction: continue implementation and local commits only, with no
+mouse, keyboard or display access. No push.** Earlier permissions are historical.
+
 Optimized identity checkpoint, 8 November 2026:
 Preserved `build/local-play-release-20261108-v1`, runtime `2930fa4`, paired
 protocol13 client/server/validator and copied private qualified art. Build hashes

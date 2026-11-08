@@ -297,6 +297,7 @@ fn os_trace(world: &mut World) {
                 .map_or(1., |scale| scale.0)
         );
         data["interface"] = crate::fantasy_ui::settings::snapshot(world);
+        data["ability_book"] = crate::combat::book::snapshot(world);
         data["connection_hud"] = text_geometry::<crate::scene::NetworkHud>(world);
         data["player_heading"] = text_geometry::<crate::combat::ui::PlayerHeading>(world);
         // Read the actual reusable label, not a manufactured progression cue.
