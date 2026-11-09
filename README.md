@@ -47,7 +47,9 @@ as one undo entry.
 The content list has All / Objects / Guides / Markers / Plants / Terrain filters.
 They narrow the list while retaining the world and current selection.
 Use **Find...** for a name, kind or `#ID` substring; Apply updates the list and
-**Clear search** restores entries within the current type filter.
+**Clear search** restores entries within the current type filter. Double-click
+an entry to select and frame it; a single click selects it. The spawn row
+continues to frame the spawn immediately.
 Select an object, plant or NPC/quest marker in the content list, then use
 **Transform...** for exact numeric fields in the docked properties area. Objects
 expose position, yaw and XYZ size; plants expose position, yaw and scale; markers

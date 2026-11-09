@@ -147,6 +147,16 @@ def run(output, binary, selected_case):
                 desktop.key('Escape'); wait(lambda: state()['transform_edit'] is None)
                 click('Previous'); wait(lambda: state()['content_list']['page'] == 0)
                 assert state()['document'] == initial['document'] and source.read_bytes() == original
+                entry = next(c for c in state()['content_list']['controls'] if c['target'] == 'Object(17)')
+                desktop.move(window, entry['centre'], 1)
+                wait(lambda: any(c['target'] == 'Object(17)' and c['hovered'] for c in state()['content_list']['controls']))
+                for _ in range(2):
+                    desktop.button(1, True)
+                    desktop.button(1, False)
+                expected = [objects[16]['pose']['position'][i] - origin[i] for i in range(3)]
+                wait(lambda: max(abs(a - b) for a, b in zip(state()['view']['target'], expected)) < 1e-4)
+                assert state()['document'] == initial['document'] and state()['revision'] == 0
+                capture('framed-selection')
                 final = fresh()
                 subprocess.run(['wmctrl', '-ic', hex(window)], check=True)
                 process.wait(timeout=20)
@@ -159,7 +169,7 @@ def run(output, binary, selected_case):
         assert 'Insert instance layer "VK_LAYER_KHRONOS_validation"' in text
         diagnostics = check_gpu_diagnostics(text, allow_surface_resize=False)
         record = dict(name=name, gpu=final['gpu'], viewport=final['viewport'], visible_targets=seen, gpu_diagnostics=diagnostics, validation_layer_active=True,
-                      checks=['all 44 targets reachable with every row wholly above Properties', 'last row selected on all three pages; disabled boundary buttons', 'Linux wheel paging and type filters preserve view/source/history and isolate exact-properties modal'])
+                      checks=['all 44 targets reachable with every row wholly above Properties', 'last row selected on all three pages; disabled boundary buttons', 'Linux wheel paging, type filters and search preserve source/history and isolate exact-properties modal', 'double-click frames an entry through the existing checked local-coordinate path'])
         (folder / 'qualification.json').write_text(json.dumps(record, indent=2) + '\n')
         cases.append(record)
     result = dict(cases=cases, binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(), scope='Linux native synthetic input, 3440x1440; no Windows or multiplayer claim')

@@ -2732,3 +2732,33 @@ GPU and Windows acceptance remain pending, including the earlier wheel-delivery
 gap. Source schema, renderer, engine pins and shared authoring commands unchanged.
 Search is a preference and deliberately creates no document undo entry. No
 multiplayer authority or capacity claim.
+
+## Content double-click framing — 9 November 2026
+
+P5-17 / P3-15 / P1-10; prerequisites are the standard Bevy content row events,
+validated selection and retained Frame helpers. A primary row press with Bevy’s
+consecutive-press count of two or higher selects the entry and calls the same
+checked object/plant/marker/terrain framing or whole-guide focus used by the
+existing Frame button. Single clicks retain selection-only behavior. The spawn
+row retains immediate framing on both single and repeated clicks, even when a
+previous terrain/other editing mode remains selected. Footer hints expose the
+direct action. No custom double-click timer or input backend is introduced.
+
+Headless acceptance: all 108 focused Rust tests (55 domain / 53 editor), strict
+workspace/all-target Clippy, formatting, Python compilation and an editor build.
+Actual Bevy PointerPress observer events exercise every row kind at fractional
+local/far origins. Exact checked local targets and bounded view distance pass,
+including guide bounds, tree proxy centre and zone-origin terrain/spawn targets.
+Single-click view preservation, retained canonical view preset, pending-guide
+and unfocused-window refusal, complete source/revision/clean-state preservation
+and pending redo pass. Events remain inside the ECS app, without OS input or a
+window backend. The existing real-font CPU layout regression also passes with
+the new footer hints.
+
+Evidence: ignored build/zone-content-frame-{tests,all-tests,clippy,build}.log.
+The owned native qualifier now includes a future double-click target/capture
+check after its paging/search checks. It was not run while desktop access is
+reserved. Native repeated-click delivery, UI/GPU and Windows acceptance remain
+pending, including the earlier wheel-delivery gap. No display, mouse or keyboard
+input was used. Source schema, engine pins and world presentation are unchanged;
+this adds an input route to existing editor camera behavior. No multiplayer claim.

@@ -396,6 +396,14 @@ pub(super) fn activate(
             } else {
                 format!("Selected {label}")
             };
+            if event.count >= 2 && target != Target::Spawn {
+                if session.path_mode {
+                    paths::focus(&session, &mut view);
+                    session.status = format!("Focused {label}");
+                } else {
+                    selection::frame(&mut session, &mut view);
+                }
+            }
         }
     }
 }
@@ -556,16 +564,16 @@ pub(super) fn sync(
                 } else if content.entries.is_empty() {
                     "No matching content\nChoose another filter".into()
                 } else {
-                    "Select content | F frames\nSpawn row frames the spawn".into()
+                    "Double-click content to frame\nSpawn row frames the spawn".into()
                 },
                 |index| {
                     format!(
                         "{}\n{}",
                         content.entries[index].label,
                         if content.entries[index].target == Target::Terrain {
-                            "F frames the terrain"
+                            "Double-click frames terrain"
                         } else {
-                            "F frames | Ctrl D copies"
+                            "Double-click frames | F frames"
                         }
                     )
                 },
@@ -674,6 +682,9 @@ mod tests {
             .1
     }
     fn press(app: &mut App, window: Entity, control: Control) {
+        press_count(app, window, control, 1);
+    }
+    fn press_count(app: &mut App, window: Entity, control: Control, count: u8) {
         use bevy::picking::{
             backend::HitData,
             events::Pointer,
@@ -689,7 +700,7 @@ mod tests {
         app.world_mut().trigger(PointerPress {
             entity,
             button: PointerButton::Primary,
-            count: 1,
+            count,
             pointer: Pointer::new(
                 PointerId::Mouse,
                 Location {
@@ -704,6 +715,119 @@ mod tests {
             hit: HitData::new(window, 0., None, None),
         });
         wheel(app, 0.);
+    }
+    #[test]
+    fn double_click_frames_all_entry_kinds_at_local_and_far_origins_without_source_edits() {
+        for origin in [
+            [0.125, 0.25, -0.5],
+            [128_000_000_000.125, 20.25, -128_000_000_000.5],
+        ] {
+            let (mut app, window) = app(origin);
+            let mut template = Editor::new(Zone::default()).unwrap();
+            template
+                .execute(
+                    serde_json::from_slice(include_bytes!(
+                        "../../../content/zones/selection.commands.jsonl"
+                    ))
+                    .unwrap(),
+                )
+                .unwrap();
+            let mut source = template.zone().clone();
+            let shift = |position: [f64; 3]| std::array::from_fn(|i| position[i] + origin[i]);
+            source.origin = shift(source.origin);
+            source.spawn = shift(source.spawn);
+            for object in &mut source.objects {
+                object.pose.position = shift(object.pose.position);
+            }
+            for path in &mut source.paths {
+                for point in &mut path.points {
+                    *point = shift(*point);
+                }
+            }
+            for marker in &mut source.markers {
+                marker.position = shift(marker.position);
+            }
+            for plant in &mut source.plants {
+                plant.position = shift(plant.position);
+            }
+            source.schema = 7;
+            source.terrain = Some(theia_zone::terrain::HeightPatch::flat([
+                (origin[0] / 128.).floor() as i64,
+                (origin[2] / 128.).floor() as i64,
+            ]));
+            let mut editor = Editor::new(source.clone()).unwrap();
+            editor
+                .execute(Command::Apply {
+                    expected_revision: 0,
+                    edits: vec![Edit::RenameZone {
+                        name: "Temporary name".into(),
+                    }],
+                })
+                .unwrap();
+            editor
+                .execute(Command::Undo {
+                    expected_revision: 1,
+                })
+                .unwrap();
+            app.insert_resource(Session::new(editor, PathBuf::new(), Some(source.clone())))
+                .insert_resource(Content::default());
+            wheel(&mut app, 0.);
+            for (filter, expected) in [
+                (Filter::Objects, Vec3::new(400., 1.5, 400.)),
+                (Filter::Guides, Vec3::new(395., 0.03, -380.)),
+                (Filter::Markers, Vec3::new(-300., 0., 300.)),
+                (Filter::Plants, Vec3::new(350., 20., -300.)),
+                (Filter::Terrain, Vec3::new(63.875, 0., -63.5)),
+            ] {
+                press(&mut app, window, Control::Filter(filter));
+                {
+                    let mut view = app.world_mut().resource_mut::<View>();
+                    view.target = Vec3::ZERO;
+                    view.distance = 32.;
+                    view.preset = camera_views::Preset::Front;
+                }
+                press(&mut app, window, Control::Row(0));
+                assert_eq!(app.world().resource::<View>().target, Vec3::ZERO);
+                assert_eq!(app.world().resource::<View>().distance, 32.);
+                press_count(&mut app, window, Control::Row(0), 2);
+                let view = app.world().resource::<View>();
+                assert!(
+                    view.target.abs_diff_eq(expected, 0.001),
+                    "{filter:?}: {:?}",
+                    view.target
+                );
+                assert!((8. ..=selection::MAX_VIEW_DISTANCE).contains(&view.distance));
+                assert_eq!(view.preset, camera_views::Preset::Front);
+            }
+            // Spawn already frames on a single click; a double click must keep
+            // framing the spawn even when the previous terrain mode remains active.
+            press(&mut app, window, Control::Filter(Filter::All));
+            press(&mut app, window, Control::Row(1));
+            let spawn_target = Vec3::from_array(source.local(source.spawn).unwrap()) + Vec3::Y;
+            assert_eq!(app.world().resource::<View>().target, spawn_target);
+            press_count(&mut app, window, Control::Row(1), 2);
+            assert_eq!(app.world().resource::<View>().target, spawn_target);
+            paths::perform(
+                Action::NewPath(theia_zone::paths::PathKind::Road),
+                &mut app.world_mut().resource_mut::<Session>(),
+            );
+            press_count(&mut app, window, Control::Row(2), 2);
+            assert!(app.world().resource::<Session>().path_draft.is_some());
+            assert_eq!(app.world().resource::<View>().target, spawn_target);
+            app.world_mut().resource_mut::<Session>().path_draft = None;
+            app.world_mut()
+                .entity_mut(window)
+                .get_mut::<Window>()
+                .unwrap()
+                .focused = false;
+            press_count(&mut app, window, Control::Row(2), 2);
+            assert_eq!(app.world().resource::<View>().target, spawn_target);
+            let session = app.world().resource::<Session>();
+            assert_eq!(session.editor.zone(), &source);
+            assert_eq!(session.editor.revision(), 2);
+            assert_eq!(session.editor.history(), (0, 1));
+            assert!(!session.is_dirty());
+        }
     }
     #[test]
     fn content_search_form_apply_cancel_validation_and_clear_preserve_source_and_redo() {
