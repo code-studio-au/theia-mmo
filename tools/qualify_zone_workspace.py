@@ -413,9 +413,40 @@ def run(output,binary,scatter=False,guides=False,views=False):
                         subprocess.run([str(binary),'--headless','--zone',str(prior),'--commands',str(commands),
                             '--output',str(expected)],check=True,capture_output=True)
                         assert normalized(json.loads(expected.read_text()))==normalized(state()['document'])
+                    def grid_check(preset):
+                        current=fresh();grid=current['grid']
+                        surface=preset in ('Top','Perspective')
+                        assert grid['surface']==surface and grid['enabled']
+                        assert grid['surface_visible']==surface
+                        assert len(grid['lines'])==130
+                        visible=[line for line in grid['lines'] if line['visible']]
+                        assert len(visible)==(0 if surface else 130)
+                        if surface:
+                            assert grid['spacing']==(4 if axis==33 else 2)
+                        else:
+                            spacing=grid['spacing'];span=current['view']['distance']
+                            assert span/20<=spacing<=span/4
+                            normal=2 if preset=='Front' else 0
+                            for line in visible:
+                                assert abs(line['position'][normal]-.004)<1e-6
+                                assert all(v>0 for v in line['scale'])
+                                for coordinate in [i for i in range(3) if i!=normal]:
+                                    value=line['position'][coordinate]/spacing
+                                    assert abs(value-round(value))<1e-4
                     for preset in ['Top','Front','Right','Perspective']:
-                        view(preset)
+                        view(preset);grid_check(preset)
+                        control('Grid');wait(lambda:not state()['grid']['enabled'])
+                        assert not any(line['visible'] for line in state()['grid']['lines'])
+                        assert not state()['grid']['surface_visible']
+                        control('Grid');wait(lambda:state()['grid']['enabled']);grid_check(preset)
                         assert state()['document']==before and state()['revision']==7 and state()['history']==[1,1]
+                    view('Front');control('Frame');grid_check('Front')
+                    spacing=state()['grid']['spacing']
+                    desktop.move(window,[1720,720],1)
+                    for _ in range(9):
+                        desktop.button(5,True);desktop.button(5,False)
+                    wait(lambda:state()['grid']['spacing']>spacing);grid_check('Front')
+                    capture('front-grid')
                     control('Mode(Sculpt)');control('Frame');view('Top')
                     wait(lambda:state()['camera_projection']['height']==state()['view']['distance'])
                     # Canonical pan/zoom settings do not create source history.
@@ -497,15 +528,21 @@ def run(output,binary,scatter=False,guides=False,views=False):
                     view('Top');control('Transform')
                     wait(lambda:state()['transform_edit'] is not None)
                     control('View(Front)');assert state()['view']['preset']=='Top'
+                    control('Grid');assert state()['grid']['enabled']
                     desktop.key('Escape');wait(lambda:state()['transform_edit'] is None)
                     control('Mode(Guides)');tool('NewPath(Road)')
                     wait(lambda:state()['path_draft_points']==0)
                     control('View(Front)');assert state()['view']['preset']=='Top' and state()['path_draft_points']==0
+                    control('Grid');assert state()['grid']['enabled']
                     desktop.key('Escape');wait(lambda:state()['path_draft_points'] is None)
                     view('Right');control('Command(Play)')
                     wait(lambda:state()['play_feet'] is not None and state()['camera_projection']['kind']=='Perspective')
+                    assert not any(line['visible'] for line in state()['grid']['lines'])
+                    assert not state()['grid']['surface_visible']
+                    control('Grid');assert state()['grid']['enabled']
                     control('View(Front)');assert state()['view']['preset']=='Right'
                     control('Command(Play)');wait(lambda:state()['play_feet'] is None and state()['camera_projection']['kind']=='Orthographic')
+                    grid_check('Right')
                     assert state()['view']['preset']=='Right' and state()['revision']==14 and state()['document']==moved
                     control('Command(Save)');wait(lambda:not state()['unsaved_changes'])
                     assert normalized(json.loads(saved.read_text()))==normalized(moved)
@@ -525,6 +562,7 @@ def run(output,binary,scatter=False,guides=False,views=False):
         'outliner selection, docked numeric transform matches headless command with one-entry undo/redo, name action, framing and playtest isolation'],scope='Linux native 3440x1440 only; first application-shell slice')
     if scatter: result['checks'].append('vegetation slider boundaries, integer count, tool visibility, history isolation and seeded scatter/headless equality, one-entry undo/redo/save')
     if guides: result['checks'].append('guide width and point properties, segment/range validation, exact headless equivalence, one-entry undo/redo/save, mouse point selection/topology, two-point minimum and primitive row restoration')
+    if views: result['checks'].append('grid toggle and terrain surface visibility, adaptive vertical reference spacing and plane alignment, zoom, no history, modal/draft/play isolation and restore')
     if views: result['checks'].append('orthographic top/front/right projections, canonical pan/zoom, top sculpt and front Y move equal exact agent commands, camera frozen during held transform, orbit perspective, modal/draft/play isolation and restored projection/save')
     (output/'qualification.json').write_text(json.dumps(result,indent=2)+'\n')
     print(json.dumps(result,indent=2))

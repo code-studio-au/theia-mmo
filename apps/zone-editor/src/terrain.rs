@@ -277,6 +277,7 @@ pub(super) fn setup(
 pub(super) fn sync(
     session: Res<Session>,
     handle: Res<GroundMesh>,
+    view: Res<View>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut ground: Query<
         (
@@ -288,37 +289,22 @@ pub(super) fn sync(
         Without<BrushCursor>,
     >,
     mut cursor: Query<(&mut Transform, &mut Visibility), (With<BrushCursor>, Without<GroundPart>)>,
-    mut grid: Query<
-        &mut Visibility,
-        (
-            With<viewport::GridLine>,
-            Without<GroundPart>,
-            Without<BrushCursor>,
-            Without<TerrainGrid>,
-        ),
-    >,
     mut terrain_grid: Query<
         &mut Visibility,
-        (
-            With<TerrainGrid>,
-            Without<GroundPart>,
-            Without<BrushCursor>,
-            Without<viewport::GridLine>,
-        ),
+        (With<TerrainGrid>, Without<GroundPart>, Without<BrushCursor>),
     >,
     mut last: Local<Option<(u64, Option<u64>)>>,
     mut surface_last: Local<Option<([f64; 3], Option<HeightPatch>)>>,
     mut brush_last: Local<Option<((u64, Option<u64>), [f64; 2], f64)>>,
 ) {
-    for mut visibility in &mut grid {
-        *visibility = if session.editor.zone().terrain.is_some() {
-            Visibility::Hidden
-        } else {
-            Visibility::Visible
-        };
-    }
     for mut visibility in &mut terrain_grid {
-        *visibility = if session.editor.zone().terrain.is_some() && session.play.is_none() {
+        *visibility = if session.editor.zone().terrain.is_some()
+            && session.play.is_none()
+            && view.show_grid
+            && matches!(
+                view.preset,
+                camera_views::Preset::Perspective | camera_views::Preset::Top
+            ) {
             Visibility::Visible
         } else {
             Visibility::Hidden

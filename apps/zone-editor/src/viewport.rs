@@ -12,8 +12,6 @@ pub(super) struct Authored(pub u64);
 pub(super) struct SpawnMarker;
 #[derive(Component)]
 pub(super) struct Pawn;
-#[derive(Component)]
-pub(super) struct GridLine;
 #[derive(Resource)]
 pub(super) struct Palette {
     meshes: [Handle<Mesh>; 3],
@@ -42,33 +40,6 @@ pub(super) fn setup(
         normal: materials.add(Color::srgb(0.52, 0.60, 0.66)),
         selected: materials.add(Color::srgb(0.95, 0.61, 0.19)),
     });
-    let grid_mesh = meshes.add(Cuboid::new(1., 1., 1.));
-    let grid_material = materials.add(StandardMaterial {
-        base_color: Color::srgb(0.30, 0.38, 0.33),
-        unlit: true,
-        ..default()
-    });
-    for line in -32..=32 {
-        for along_x in [true, false] {
-            let translation = if along_x {
-                Vec3::new(0., 0.004, line as f32)
-            } else {
-                Vec3::new(line as f32, 0.004, 0.)
-            };
-            let scale = if along_x {
-                Vec3::new(64., 0.006, 0.012)
-            } else {
-                Vec3::new(0.012, 0.006, 64.)
-            };
-            commands.spawn((
-                GridLine,
-                Mesh3d(grid_mesh.clone()),
-                MeshMaterial3d(grid_material.clone()),
-                Transform::from_translation(translation).with_scale(scale),
-                bevy::light::NotShadowCaster,
-            ));
-        }
-    }
     commands.spawn((
         SpawnMarker,
         Mesh3d(meshes.add(Cone::new(0.65, 2.4))),
@@ -478,6 +449,8 @@ type SceneVisuals<'w, 's> = Query<
         Option<&'static Mesh3d>,
         Option<&'static Transform>,
         Option<&'static gizmo::TransformHandle>,
+        Option<&'static authoring_grid::Line>,
+        Has<terrain::TerrainGrid>,
     ),
 >;
 #[allow(clippy::too_many_arguments)]
@@ -560,6 +533,8 @@ pub(super) fn report(
         "terrain_points":[project(Vec3::new(64.,0.,64.)),project(Vec3::new(72.,0.,64.)),project(Vec3::new(48.,0.,64.))],
         "ground":[project(Vec3::new(3.,0.,4.)),project(Vec3::new(5.,0.,4.))],
         "gpu":{"name":adapter.name,"backend":format!("{:?}",adapter.backend),"device":adapter.device}});
+    value["grid"] = serde_json::json!({"enabled":view.show_grid,"spacing":authoring_grid::spacing(&session,&view),"surface":authoring_grid::surface(&session,&view),"surface_visible":scene_visuals.iter().any(|(_,_,_,v,_,_,_,_,grid)|grid && *v!=Visibility::Hidden),
+        "lines":scene_visuals.iter().filter_map(|(_,_,_,visibility,_,transform,_,line,..)|line.map(|line|serde_json::json!({"slot":line.slot,"along_first":line.along_first,"visible":*visibility!=Visibility::Hidden,"position":transform.map(|t|t.translation.to_array()),"scale":transform.map(|t|t.scale.to_array())}))).collect::<Vec<_>>()});
     value["plant_point"] = serde_json::json!(session.plant_point);
     value["show_move_handles"] = session.show_move_handles.into();
     value["camera_position"] = serde_json::json!(transform.translation().to_array());
@@ -574,7 +549,7 @@ pub(super) fn report(
     value["move_handles"] = serde_json::json!(
         scene_visuals
             .iter()
-            .filter_map(|(_, _, _, visibility, mesh, transform, handle)| {
+            .filter_map(|(_, _, _, visibility, mesh, transform, handle, ..)| {
                 let handle = handle?;
                 if !handle.head {
                     return None;

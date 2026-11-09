@@ -14,6 +14,10 @@ Use **Open** (Ctrl+O) or **Save As** (Ctrl+Shift+S) to browse folders and zone
 JSON files. Save As asks before overwriting; Open remains undoable. **Reload**
 (Ctrl+Shift+O) reloads the active file.
 Choose **Top, Front or Right** for orthographic authoring, or **Perspective**.
+The **Grid** checkbox shows/hides references and displays their spacing in metres.
+Front/Right use adaptive vertical grids; zones without terrain also use an
+adaptive ground grid. Terrain keeps its surface-following sample grid in Top
+and Perspective. Grid spacing is visual; movement snapping stays at 1 m.
 The wheel zooms; WASD pans along the canonical view axes. RMB orbit returns to
 perspective. The camera stays still during a transform drag. Playtest uses its
 normal perspective camera and restores the editor view when you return.

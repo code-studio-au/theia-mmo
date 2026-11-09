@@ -79,6 +79,7 @@ mod tests {
     fn view() -> View {
         View {
             target: Vec3::new(64., 20., 64.),
+            show_grid: true,
             yaw: 0.6,
             pitch: 0.8,
             distance: 180.,

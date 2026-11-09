@@ -2283,3 +2283,41 @@ local/open-ready.png; build/zone-file-picker-save-state-native-3440-v1/qualifica
 zone-file-picker-tests-v2.log, zone-file-picker-clippy-v2.log and
 zone-file-picker-build-v2.log. Editor SHA-256:
 `b100d0279a4cc590bafba89f4d2edd098c90492315632bcd36cc0a310a36c84c`.
+
+## View-plane reference grids — 9 November 2026
+
+P5-17 / P3-15 / P1-10 follow-up; prerequisites are canonical authoring views and
+standard resident Bevy mesh presentation. Front uses local XY references and
+Right uses ZY; Top/Perspective retain the surface-following sample grid when a
+terrain patch exists, otherwise they use XZ references. A standard Grid checkbox
+shows/hides both kinds, displays spacing in metres and distinguishes surface
+samples. Movement snapping remains 1 m independently of visual spacing.
+
+Adaptive spacing chooses 1/2/5 decade steps from the view span. A fixed 130
+resident unlit cuboids follow the pan target on zone-origin-aligned multiples,
+with stronger fifth lines and coloured X/Y/Z axes. Canonical grids remain on the
+zone-origin plane, depth tested against geometry, rather than following object
+depth. Width follows zoom; no per-frame mesh allocation or custom renderer. The
+references ignore picking, receive/cast no shadows and never enter authored
+source, collision or export. Playtest hides them and restores the setting on
+return. Existing modal/pending-draft/play guards prevent changing the toggle
+while busy; grid and projection choices never create source history.
+
+Acceptance: 90 focused Rust tests (51 domain / 39 editor), formatting and strict
+workspace/all-target Clippy pass. Native terrain view/transform walkthroughs at
+actual 3440x1440 pass at local and far origins, including adaptive zoom/plane
+alignment, surface/reference visibility, toggle/history preservation, modal and
+pending-draft refusal, playtest hiding/restoration and retained exact brush and
+move-command oracles. The Front reference capture was visually inspected.
+Separate no-terrain native walkthroughs also pass all four view planes, toggles,
+pan and playtest hiding/restoration at both origins; the Perspective capture was
+visually inspected. All four runs use AMD RX 7900 XTX (RADV NAVI31), Vulkan
+device 29772, active Khronos validation and zero GPU/resize diagnostics. Windows,
+user-selectable grid origins and arbitrary clipping/slice planes remain deferred.
+Engine pins, source schema, gameplay and multiplayer authority are unchanged.
+
+Evidence: ignored build/zone-reference-grid-native-3440-v1/qualification.json,
+coarse.front-grid.png, build/zone-reference-grid-empty-native-3440-v1/qualification.json,
+local/perspective.png, zone-reference-grid-tests-v2.log,
+zone-reference-grid-clippy.log and zone-reference-grid-build.log. Editor SHA-256:
+`f4c84fd2bfc132dc6b5456544f4925e7c541ad49280ed3c8d9364f253562a28e`.

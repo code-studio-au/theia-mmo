@@ -1,3 +1,10 @@
+View-plane reference grids, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Front/Right now expose adaptive vertical reference grids; zones without terrain
+also use an adaptive ground grid. The standard Grid checkbox controls references
+and retained terrain surface lines, shows metre spacing, and preserves history.
+See [the zone record](ZONE_EDITOR.md#view-plane-reference-grids--9-november-2026)
+for acceptance and limitations. Continue after each local commit; no push.
+
 Zone file browser, 9 November 2026 (P5-17 / P3-15 / P1-10):
 The command bar now exposes Open and Save As with a standard Bevy folder/file
 browser, filename input, paging and explicit overwrite confirmation. Open uses

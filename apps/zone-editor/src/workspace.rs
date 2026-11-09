@@ -30,6 +30,7 @@ pub(super) enum Control {
     WholePath,
     Snap,
     Handles,
+    Grid,
     GizmoTool(gizmo::Tool),
     View(camera_views::Preset),
     Help,
@@ -189,6 +190,18 @@ pub(super) fn setup(mut commands: Commands) {
                 ] {
                     row.spawn(button(Control::View(preset), label));
                 }
+                row.spawn((
+                    Control::Grid,
+                    Checkbox,
+                    Hovered::default(),
+                    Node {
+                        min_height: px(30),
+                        padding: UiRect::axes(px(10), px(6)),
+                        ..default()
+                    },
+                    BackgroundColor(Color::srgb(0.10, 0.14, 0.19)),
+                    children![(ButtonLabel, text("[x] Grid", 15.))],
+                ));
             });
         });
     commands.spawn((GlobalZIndex(4), Node {
@@ -361,7 +374,7 @@ pub(super) fn activate(
     let Ok(control) = controls.get(event.entity) else {
         return;
     };
-    if matches!(control, Control::Snap | Control::Handles) {
+    if matches!(control, Control::Snap | Control::Handles | Control::Grid) {
         return;
     }
     if session.has_modal() {
@@ -420,7 +433,7 @@ pub(super) fn activate(
         Control::Transform => requests.transform = true,
         Control::FileOpen => requests.file_open = true,
         Control::FileSaveAs => requests.file_save_as = true,
-        Control::Snap | Control::Handles => {}
+        Control::Snap | Control::Handles | Control::Grid => {}
     }
 }
 pub(super) fn change(
@@ -461,11 +474,13 @@ pub(super) fn toggle(
     controls: Query<&Control>,
     windows: Query<&Window>,
     mut session: ResMut<Session>,
+    mut view: ResMut<View>,
 ) {
     if busy(&session) || !windows.single().is_ok_and(|w| w.focused) {
         return;
     }
     match controls.get(event.source) {
+        Ok(Control::Grid) => view.show_grid = event.value,
         Ok(Control::Snap) => session.snap = event.value,
         Ok(Control::Handles) => session.show_move_handles = event.value,
         _ => {}
@@ -546,6 +561,7 @@ pub(super) fn sync(
             Control::Mode(m) => m == mode(&session),
             Control::Snap => session.snap,
             Control::Handles => session.show_move_handles,
+            Control::Grid => view.show_grid,
             Control::GizmoTool(tool) => session.gizmo_tool == tool,
             Control::View(preset) => view.preset == preset,
             Control::Help => requests.help,
@@ -562,14 +578,26 @@ pub(super) fn sync(
         } else {
             Color::srgb(0.10, 0.14, 0.19)
         };
-        if matches!(control, Control::Snap | Control::Handles) && checked != active {
+        if matches!(control, Control::Snap | Control::Handles | Control::Grid) && checked != active
+        {
             if active {
                 commands.entity(entity).insert(Checked);
             } else {
                 commands.entity(entity).remove::<Checked>();
             }
         }
+        let grid_caption = format!(
+            "[{}] Grid ({} m{})",
+            if view.show_grid { "x" } else { " " },
+            authoring_grid::spacing(&session, &view),
+            if authoring_grid::surface(&session, &view) {
+                " surface"
+            } else {
+                ""
+            }
+        );
         let caption = match control {
+            Control::Grid => Some(grid_caption.as_str()),
             Control::Snap => Some(if session.snap {
                 "[x] Snap (1 m / 15 deg / 10%)"
             } else {

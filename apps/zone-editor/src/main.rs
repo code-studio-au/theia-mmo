@@ -1,5 +1,6 @@
 //! P5-17/P3-15: standard Bevy greybox authoring; no trusted gameplay authority.
 mod agent;
+mod authoring_grid;
 mod brush_preview;
 mod camera_views;
 mod cli;
@@ -292,6 +293,7 @@ struct View {
     pitch: f32,
     distance: f32,
     preset: camera_views::Preset,
+    show_grid: bool,
 }
 
 fn main() {
@@ -381,6 +383,7 @@ fn run() -> Result<(), String> {
         target: initial_target.unwrap_or(Vec3::ZERO),
         yaw: 0.6,
         pitch: 0.8,
+        show_grid: true,
         distance: if initial_target.is_some() { 120. } else { 32. },
         preset: camera_views::Preset::Perspective,
     })
@@ -409,6 +412,7 @@ fn run() -> Result<(), String> {
         Startup,
         (
             viewport::setup,
+            authoring_grid::setup,
             gizmo::setup,
             terrain::setup,
             paths::setup,
@@ -437,7 +441,7 @@ fn run() -> Result<(), String> {
             camera_controls,
             terrain::sync,
             terrain::palette,
-            (viewport::sync, gizmo::sync).chain(),
+            (viewport::sync, gizmo::sync, authoring_grid::sync).chain(),
             paths::sync,
             markers::sync,
             vegetation::sync,
