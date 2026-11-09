@@ -13,6 +13,7 @@ mod markers;
 mod naming;
 mod outliner;
 mod paths;
+mod placement;
 mod playtest;
 mod properties;
 mod selection;
@@ -57,6 +58,7 @@ struct Session {
     selected: Option<u64>,
     palette: Option<Primitive>,
     placement_size: [f64; 3],
+    placement_preview: Option<placement::Preview>,
     snap: bool,
     move_step: f64,
     show_move_handles: bool,
@@ -118,6 +120,7 @@ impl Session {
             selected: None,
             palette: None,
             placement_size: [1.; 3],
+            placement_preview: None,
             snap: true,
             move_step: 1.,
             show_move_handles: true,
@@ -168,34 +171,21 @@ impl Session {
         }
     }
     fn place_primitive(&mut self, primitive: Primitive, hit: [f64; 3]) {
-        let point = self.snapped(hit);
-        let mut position = match self.editor.zone().surface_position([point[0], point[2]]) {
-            Ok(position) => position,
+        let pose = match placement::pose(self, primitive, hit) {
+            Ok(pose) => pose,
             Err(error) => {
                 self.status = error;
                 return;
             }
         };
-        let size = self.placement_dimensions(primitive);
-        position[1] += size[1] / 2.;
-        let id = self.next_id;
+        let object = placement::object(self, primitive, pose);
+        let id = object.id;
         let Some(next) = id.checked_add(1) else {
             self.status = "Object IDs exhausted".into();
             return;
         };
         self.next_id = next;
-        self.edit(vec![Edit::Place {
-            object: Object {
-                id,
-                name: format!("{primitive:?} {id}"),
-                primitive,
-                pose: Pose {
-                    position,
-                    yaw_degrees: 0.,
-                    size,
-                },
-            },
-        }]);
+        self.edit(vec![Edit::Place { object }]);
         if self.editor.zone().objects.iter().any(|o| o.id == id) {
             self.selected = Some(id);
         }
@@ -252,6 +242,7 @@ impl Session {
         self.name_edit.is_some() || self.transform_edit.is_some() || self.file_dialog.is_some()
     }
     fn set_mode(&mut self, mode: EditorMode) {
+        self.placement_preview = None;
         self.terrain_mode = matches!(mode, EditorMode::Sculpt | EditorMode::Paint);
         self.terrain_paint = mode == EditorMode::Paint;
         if self.terrain_paint {
@@ -541,6 +532,7 @@ fn run() -> Result<(), String> {
         Startup,
         (
             viewport::setup,
+            placement::setup.after(viewport::setup),
             authoring_grid::setup,
             gizmo::setup,
             terrain::setup,
@@ -570,7 +562,13 @@ fn run() -> Result<(), String> {
             camera_controls,
             terrain::sync,
             terrain::palette,
-            (viewport::sync, gizmo::sync, authoring_grid::sync).chain(),
+            (
+                viewport::sync,
+                gizmo::sync,
+                authoring_grid::sync,
+                placement::sync,
+            )
+                .chain(),
             paths::sync,
             markers::sync,
             vegetation::sync,

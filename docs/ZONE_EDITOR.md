@@ -3147,3 +3147,54 @@ bea3000222275ca90ccef1267439fad1faaf27a0955963c30207bb74cd576a19.
 This presentation change has native local-origin coverage; the earlier far-origin
 keyboard evidence remains tied to its own binary. No new Windows acceptance.
 Schema, engine pins and gameplay unchanged. No push.
+
+## Read-only primitive placement preview — 9 November 2026
+
+P5-17 / P3-15 / P1-10; prerequisites are primitive dimensions, checked surface/
+grid conversion and the existing shared Editor command path. Moving a placement
+tool over ground now shows its prospective stamp with a translucent blue mesh.
+Refused candidates use red. The ghost hides over panels or when no candidate
+exists. It neither changes source/history/dirty state nor reserves an ID. A click
+still performs one validated shared Edit::Place. Preview and actual placement
+share pose and object construction, including dimensions, snapped X/Z and
+half-height terrain support. Candidate validation uses the same Editor::execute
+path as structured commands. The cached candidate is reused only while revision,
+ID and object/pose remain equal. Source changes, defaults or tool changes recheck
+it. A refused click retains the existing status error behavior.
+
+The renderer uses one nonpickable, nonshadowing Bevy mesh entity, the three
+existing palette meshes and two fixed standard alpha-blended materials. It adds
+no physics collider and no streaming/custom renderer. Checked f64 global poses
+convert through the zone frame for f32 rendering. Pure hover is not an authoring
+draft and does not block New, Save, agent commands or playtest. Switching workspace
+clears the candidate. A placement ray's ground filter excludes the ghost itself.
+
+CPU acceptance: 127 focused Rust tests (55 domain / 72 editor), formatting,
+strict workspace/all-target Clippy and build pass. Tests cover all shapes and
+snap settings at local/far fractional origins, complete candidate/stamp equality,
+unchanged saved/source/history/redo/allocator under hover, rechecking after a
+stamp, invalid coordinate/bounds, ID exhaustion and the actual 1024-object budget.
+The standard ECS renderer is checked for one hidden/visible ghost, correct shape
+mesh/material/local pose, no picking/shadow casting and fixed mesh/material
+counts while shapes and valid/refused candidates change. Evidence: ignored
+build/zone-placement-preview-{tests,all-tests,clippy,build}.log. Native acceptance
+is recorded after the owned-input runs below; these CPU checks do not claim GPU
+pixels or native device execution.
+
+Native acceptance passes both local/far fractional origins at 3440 x 1440 in
+ignored build/zone-placement-preview-native-3440-v1/ (--keyboard --preview).
+All three blue ghost poses/scales match the eventual exact stamped object;
+hover and panel entry leave complete source/revision/history unchanged, and
+panel entry hides the ghost. The six command oracles, undo/redo, settings keys
+and exact Save checks pass. An owned mailbox request adds a high-ID fixture to
+exhaust the allocator: its red candidate renders, clicking refuses without
+source/history change, and Undo removes the fixture and restores the saved
+source. This is authoring validation evidence, not multiplayer or capacity.
+Blue local and red far app-only captures were inspected. Each accepted case uses
+AMD Radeon RX 7900 XTX (RADV NAVI31), Vulkan device 29772, confirmed active
+validation-layer insertion and zero strict GPU diagnostics. Editor SHA-256:
+2ed2ab4ed0521edd77742cb2b05608f694ceb73d70093fa2dd00be49ebcfa0c4.
+Native terrain support and Windows execution are not newly claimed. The 1024-
+object refusal and resident asset checks are CPU evidence, not a scale benchmark.
+Schemas, engine pins, physics/gameplay authority and networking are unchanged.
+No push.

@@ -14,11 +14,11 @@ pub(super) struct SpawnMarker;
 pub(super) struct Pawn;
 #[derive(Resource)]
 pub(super) struct Palette {
-    meshes: [Handle<Mesh>; 3],
+    pub(super) meshes: [Handle<Mesh>; 3],
     normal: Handle<StandardMaterial>,
     selected: Handle<StandardMaterial>,
 }
-fn index(primitive: Primitive) -> usize {
+pub(super) fn index(primitive: Primitive) -> usize {
     match primitive {
         Primitive::Box => 0,
         Primitive::Sphere => 1,
@@ -172,6 +172,7 @@ pub(super) fn pointer(
     mut raycast: MeshRayCast,
     mut session: ResMut<Session>,
 ) {
+    let previous_preview = session.placement_preview.take();
     let Ok(window) = windows.single() else {
         return;
     };
@@ -197,23 +198,29 @@ pub(super) fn pointer(
     let Ok(ray) = camera.viewport_to_world(camera_transform, cursor) else {
         return;
     };
-    if mouse.just_pressed(MouseButton::Left) {
-        if let Some(primitive) = session.palette {
-            let filter = |entity| ground.contains(entity);
-            let settings = MeshRayCastSettings::default().with_filter(&filter);
-            let hit = raycast
-                .cast_ray(ray, &settings)
-                .first()
-                .map(|(_, hit)| ray.get_point(hit.distance));
-            if let Some(hit) = hit {
-                let point = session.editor.zone().global(hit.to_array());
-                match point {
-                    Ok(point) => session.place_primitive(primitive, point),
-                    Err(error) => session.status = error,
+    if let Some(primitive) = session.palette {
+        let filter = |entity| ground.contains(entity);
+        let settings = MeshRayCastSettings::default().with_filter(&filter);
+        let hit = raycast
+            .cast_ray(ray, &settings)
+            .first()
+            .map(|(_, hit)| ray.get_point(hit.distance));
+        if let Some(hit) = hit {
+            match session.editor.zone().global(hit.to_array()) {
+                Ok(point) => {
+                    session.placement_preview =
+                        placement::preview(&session, primitive, point, previous_preview);
+                    if mouse.just_pressed(MouseButton::Left) {
+                        session.place_primitive(primitive, point);
+                    }
                 }
+                Err(error) if mouse.just_pressed(MouseButton::Left) => session.status = error,
+                Err(_) => {}
             }
-            return;
         }
+        return;
+    }
+    if mouse.just_pressed(MouseButton::Left) {
         let filter = |entity| {
             objects.contains(entity)
                 || ground.contains(entity)
@@ -431,6 +438,7 @@ type SceneVisuals<'w, 's> = Query<
         Option<&'static gizmo::TransformHandle>,
         Option<&'static authoring_grid::Line>,
         Has<terrain::TerrainGrid>,
+        Has<placement::Ghost>,
     ),
 >;
 #[allow(clippy::too_many_arguments)]
@@ -507,7 +515,7 @@ pub(super) fn report(
         "terrain_points":[project(Vec3::new(64.,0.,64.)),project(Vec3::new(72.,0.,64.)),project(Vec3::new(48.,0.,64.))],
         "ground":[project(Vec3::new(3.,0.,4.)),project(Vec3::new(5.,0.,4.))],
         "gpu":{"name":adapter.name,"backend":format!("{:?}",adapter.backend),"device":adapter.device}});
-    value["grid"] = serde_json::json!({"enabled":view.show_grid,"spacing":authoring_grid::spacing(&session,&view),"surface":authoring_grid::surface(&session,&view),"surface_visible":scene_visuals.iter().any(|(_,_,_,v,_,_,_,_,grid)|grid && *v!=Visibility::Hidden),
+    value["grid"] = serde_json::json!({"enabled":view.show_grid,"spacing":authoring_grid::spacing(&session,&view),"surface":authoring_grid::surface(&session,&view),"surface_visible":scene_visuals.iter().any(|(_,_,_,v,_,_,_,_,grid,..)|grid && *v!=Visibility::Hidden),
         "lines":scene_visuals.iter().filter_map(|(_,_,_,visibility,_,transform,_,line,..)|line.map(|line|serde_json::json!({"slot":line.slot,"along_first":line.along_first,"visible":*visibility!=Visibility::Hidden,"position":transform.map(|t|t.translation.to_array()),"scale":transform.map(|t|t.scale.to_array())}))).collect::<Vec<_>>()});
     value["move_step_metres"] = session.move_step.into();
     value["middle_mouse_down"] = mouse.pressed(MouseButton::Middle).into();
@@ -522,6 +530,15 @@ pub(super) fn report(
         Projection::Perspective(p) => serde_json::json!({"kind":"Perspective","fov":p.fov}),
         _ => serde_json::json!({"kind":"Custom"}),
     };
+    value["placement_preview"] = serde_json::json!(
+        session
+            .placement_preview
+            .as_ref()
+            .map(|preview| serde_json::json!({"object":preview.object,"error":preview.error}))
+    );
+    value["placement_ghost"] = serde_json::json!(scene_visuals.iter().find_map(|(_,_,_,visibility,_,transform,_,_,_,ghost)| {
+        ghost.then(||serde_json::json!({"visible":*visibility!=Visibility::Hidden,"position":transform.map(|t|t.translation.to_array()),"scale":transform.map(|t|t.scale.to_array())}))
+    }));
     value["move_preview"] = serde_json::json!(session.drag.as_ref().map(|d| &d.preview));
     value["move_handles"] = serde_json::json!(
         scene_visuals

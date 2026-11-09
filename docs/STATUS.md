@@ -3,6 +3,15 @@ mouse use as needed again; keyboard use remains authorized. Continue after local
 commits and do not push. Native authoring checks target 3440 x 1440 only. Earlier
 headless records below retain their original execution/acceptance limitations.
 
+Read-only primitive placement preview, 9 November 2026 (P5-17 / P3-15 / P1-10):
+A standard Bevy ghost shows the prospective stamp: blue for valid, red for a
+refused candidate. It shares pose/object construction and command validation
+with actual placement while preserving source, history, redo and IDs. All 127
+focused Rust tests, formatting, strict Clippy and build pass. Native local/far
+3440 x 1440 preview/stamp equality, panel hiding and refused-click isolation
+pass with zero Vulkan diagnostics. See [the record](ZONE_EDITOR.md#read-only-primitive-placement-preview--9-november-2026).
+Continue after local commits; desktop access authorized; do not push.
+
 Workspace slider focus cue, 9 November 2026 (P5-17 / P3-15 / P1-10):
 A pale thumb identifies the focused slider; the footer explains its keys.
 All 124 focused Rust tests, strict Clippy, formatting and build pass. Native

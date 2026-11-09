@@ -11,7 +11,7 @@ from gpu_validation import check_gpu_diagnostics
 from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 
 
-def run(output,binary,only_case=None,keyboard=False):
+def run(output,binary,only_case=None,keyboard=False,preview=False):
     output=output.resolve();output.mkdir(parents=True,exist_ok=False);binary=binary.resolve()
     cases=[];oracles=0
     env=dict(os.environ,WGPU_BACKEND='vulkan',VK_INSTANCE_LAYERS='VK_LAYER_KHRONOS_validation',VK_LOADER_DEBUG='layer')
@@ -23,7 +23,10 @@ def run(output,binary,only_case=None,keyboard=False):
             spawn=[origin[0],origin[1]+.1,origin[2]+6],objects=[dict(id=1,name='Precise box',primitive='box',
                 pose=dict(position=[origin[0]+8.125,origin[1]+1.25,origin[2]-8.5],yaw_degrees=17.25,size=[2,2,2]))])))
         with logfile.open('w') as log:
-            process=subprocess.Popen([str(binary),'--zone',str(source),'--save-path',str(saved),'--report',str(report)],env=env,stdout=log,stderr=log)
+            mailbox=folder/'mailbox'
+            arguments=[str(binary),'--zone',str(source),'--save-path',str(saved),'--report',str(report)]
+            if preview:arguments+=['--mailbox',str(mailbox)]
+            process=subprocess.Popen(arguments,env=env,stdout=log,stderr=log)
             desktop=None
             try:
                 window=wait(lambda:owned_window(process.pid),45);desktop=Desktop();desktop.focus(window)
@@ -106,9 +109,23 @@ def run(output,binary,only_case=None,keyboard=False):
                     controls={c['target']:c for c in current['workspace_controls']}
                     for axis in range(3):assert (controls[f'PlacementSize({axis})']['size'][1]>0)==(axis<axes)
                     capture(f'{shape.lower()}-placement-controls')
-                    before=copy.deepcopy(fresh());click(before['ground'][0])
+                    before=copy.deepcopy(fresh())
+                    candidate=None
+                    if preview:
+                        desktop.move(window,before['ground'][0],1)
+                        wait(lambda:state()['placement_preview'] is not None and state()['placement_ghost']['visible'])
+                        current=fresh();candidate=copy.deepcopy(current['placement_preview']['object'])
+                        assert current['placement_preview']['error'] is None and candidate['pose']['size']==dimensions
+                        assert current['placement_ghost']['scale']==dimensions
+                        assert max(abs(a-(b-c)) for a,b,c in zip(current['placement_ghost']['position'],candidate['pose']['position'],origin))<1e-4
+                        assert current['document']==before['document'] and current['revision']==before['revision'] and current['history']==before['history']
+                        capture(f'{shape.lower()}-placement-preview')
+                        desktop.move(window,[3290,350],1)
+                        wait(lambda:state()['placement_preview'] is None and not state()['placement_ghost']['visible'])
+                    click(before['ground'][0])
                     wait(lambda:state()['revision']==before['revision']+1)
                     placed=copy.deepcopy(state()['document']);entry=placed['objects'][-1]
+                    if candidate is not None:assert entry==candidate
                     assert entry['primitive']==shape.lower() and entry['pose']['size']==dimensions
                     assert entry['pose']['position'][1]==origin[1]+dimensions[1]/2.
                     for axis in [0,2]:assert (entry['pose']['position'][axis]-origin[axis]).is_integer()
@@ -128,6 +145,24 @@ def run(output,binary,only_case=None,keyboard=False):
                 assert all(c['size'][1]==0 for c in state()['workspace_controls'] if c['target'].startswith('PlacementSize('))
                 control('Command(Save)');wait(lambda:not state()['unsaved_changes'])
                 assert json.loads(saved.read_text())==placed
+                if preview:
+                    snapshot=copy.deepcopy(fresh())
+                    bridge=wait(lambda:json.loads((mailbox/'state.json').read_text()) if (mailbox/'state.json').exists() else None)
+                    fixture=dict(id=18446744073709551614,name='ID exhaustion fixture',primitive='box',pose=dict(position=[origin[0]+32,origin[1]+1,origin[2]+32],yaw_degrees=0,size=[2,2,2]))
+                    request=dict(session=bridge['session'],request_id=1,command=dict(command='apply',expected_revision=snapshot['revision'],edits=[dict(op='place',object=fixture)]))
+                    (mailbox/'agent.tmp').write_text(json.dumps(request));(mailbox/'agent.tmp').replace(mailbox/'request.json')
+                    receipt=wait(lambda:json.loads((mailbox/'receipt.json').read_text()) if (mailbox/'receipt.json').exists() else None)
+                    assert receipt['accepted'] and receipt['request_id']==1
+                    wait(lambda:state()['revision']==snapshot['revision']+1)
+                    tool('Place(Box)');fresh()
+                    invalid_before=copy.deepcopy(fresh());desktop.move(window,invalid_before['ground'][1],1)
+                    wait(lambda:state()['placement_preview'] is not None and state()['placement_preview']['error']=='Object IDs exhausted' and state()['placement_ghost']['visible'])
+                    capture('refused-placement-preview')
+                    click(invalid_before['ground'][1]);fresh()
+                    assert state()['document']==invalid_before['document'] and state()['revision']==invalid_before['revision'] and state()['history']==invalid_before['history']
+                    control('Command(Undo)');wait(lambda:state()['document']==placed and not state()['unsaved_changes'])
+                    assert json.loads(saved.read_text())==placed
+                    wait(lambda:state()['placement_preview'] is None and not state()['placement_ghost']['visible'])
                 capture('final-placement');final=state()
                 subprocess.run(['wmctrl','-ic',hex(window)],check=True);process.wait(timeout=20);assert process.returncode==0
             finally:
@@ -136,7 +171,7 @@ def run(output,binary,only_case=None,keyboard=False):
         logs=logfile.read_text();assert 'Insert instance layer "VK_LAYER_KHRONOS_validation"' in logs
         cases.append(dict(name=name,gpu=final['gpu'],viewport=final['viewport'],records=records,validation_layer_active=True,gpu_diagnostics=check_gpu_diagnostics(logs,allow_surface_resize=False)))
         (folder/'qualification.json').write_text(json.dumps(cases[-1],indent=2)+'\n')
-    result=dict(keyboard=keyboard,cases=cases,editor_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),oracles=oracles,checks=[
+    result=dict(keyboard=keyboard,preview=preview,cases=cases,editor_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),oracles=oracles,checks=[
         'shape-specific quarter-step dimension sliders fit Properties and preserve source/revision/redo during held drags',
         'native box/sphere/cylinder placement uses chosen dimensions and half-height support with origin-relative snapping',
         'complete documents equal shared structured commands; undo/redo and exact saves retain placed dimensions'],scope='Linux owned input at 3440x1440; local/far fractional origins; no Windows or multiplayer claim')
@@ -146,4 +181,5 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--binary',type=Path,default=Path('target/debug/theia-zone-editor'));parser.add_argument('--case',choices=['local','far'])
     parser.add_argument('--keyboard',action='store_true',help='Check focused grid/size keys with an actual selected object')
-    args=parser.parse_args();run(args.output,args.binary,args.case,args.keyboard)
+    parser.add_argument('--preview',action='store_true',help='Check read-only ghost pose, panel hiding and refused ID-exhaustion preview')
+    args=parser.parse_args();run(args.output,args.binary,args.case,args.keyboard,args.preview)

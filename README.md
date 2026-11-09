@@ -21,7 +21,9 @@ When placing primitives, Properties shows size sliders in metres (0.25–32 m).
 Boxes have X/Y/Z sizes, cylinders diameter/height, and spheres one diameter.
 Focused sliders use Left/Right and Home/End to adjust their values.
 These affect new stamps; existing objects use **Transform...**. New stamps rest
-on the ground or terrain at half their chosen height.
+on the ground or terrain at half their chosen height. Move over the scene to
+preview the stamp: blue is valid, red means placement will be refused. Hovering
+does not change source or history; moving over a panel hides the preview.
 Choose **Top, Front or Right** for orthographic authoring, or **Perspective**.
 The **Grid** checkbox shows/hides references and displays their spacing in metres.
 Front/Right use adaptive vertical grids; zones without terrain also use an
