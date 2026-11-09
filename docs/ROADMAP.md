@@ -1,3 +1,10 @@
+Structured entry translation, 9 November 2026 (P5-17 / P3-15 / P1-10):
+The shared translate edit offsets primitive/plant/marker anchors or every point
+of a whole guide, preserving identity and metadata. Mixed Apply batches retain
+whole-candidate validation and one-entry undo. CLI/preflight and mailbox paths
+are qualified headlessly; see [the zone record](ZONE_EDITOR.md#structured-entry-translation--9-november-2026).
+Continue headless after local commits; no desktop input/display use; no push.
+
 Headless playtest preflight, 9 November 2026 (P5-17 / P3-15 / P1-10):
 --check-playtest builds the actual offline collision scene and resolves the
 requested capsule spawn, returning JSON/readiness and a nonzero refusal status.

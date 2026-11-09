@@ -70,15 +70,17 @@ Each JSONL line is a command, e.g.:
 {"command":"redo","expected_revision":2}
 ```
 
-Other edits are `transform` (`id`, full `pose`), `delete` (`id`) and `set_spawn`
+Basic edits include `transform` (`id`, full `pose`), `translate` (`id`, XYZ metre
+`offset` for an object/plant/marker/whole guide), `delete` (`id`) and `set_spawn`
 (`position`). Startup command history is retained for visual undo/redo. Revision
 starts at zero for each freshly opened document and is not persisted identity.
 
 Palette buttons / 1–3 choose placement; click the ground to place. Escape returns
 selection mode. Click an object to select; drag it on a second press to move X/Z.
 Arrows move X/Z, PageUp/Down move Y, R/Shift-R rotate ±15°, +/- scale uniformly.
-G toggles one-metre snap; H grounds the selection; Ctrl-Z/Y undo/redo; Ctrl-S/O save/load. WASD pan, RMB
-orbits and wheel zooms. F5 enters/leaves playtest; W/S forward/back, A/D turn,
+G toggles the selected move/placement grid; H grounds the selection; Ctrl-Z/Y
+undo/redo. Ctrl-S saves, Ctrl-Shift-S opens Save As, Ctrl-O opens the zone browser
+and Ctrl-Shift-O reloads the active file. WASD/MMB pan, RMB orbits and the wheel zooms. F5 enters/leaves playtest; W/S forward/back, A/D turn,
 Q/E strafe and Space jumps. This sandbox uses the retained development controller
 speed policy; it is not a new Classic gameplay movement configuration.
 
@@ -2517,3 +2519,47 @@ Evidence: ignored build/zone-preflight-headless-v1/qualification.json with per-c
 stdout/stderr, zone-preflight-tests.log, zone-preflight-launcher-tests.log,
 zone-preflight-clippy.log and zone-preflight-build.log. Editor SHA-256:
 `45ef8bf8c7fc0d3137ccc2e691b2e6574754accdb908012ac5f292ed640c820e`.
+
+## Structured entry translation — 9 November 2026
+
+P5-17 / P3-15 / P1-10; prerequisites are the shared authoring ID namespace,
+checked f64 source positions and candidate/history engine. New `translate` edits
+accept an existing ID and `[x,y,z]` offset in metres. They move primitive poses,
+plant/marker anchors or every point of a whole guide while preserving names,
+IDs, primitive/kind, yaw, dimensions/scale/radius, guide width and marker
+definition keys. Origin, terrain and spawn remain unchanged. Explicit deltas
+are unsnapped and never narrow through f32.
+
+```json
+{"command":"apply","expected_revision":0,"edits":[{"op":"translate","id":1,"offset":[0.25,0,-0.5]},{"op":"translate","id":1002,"offset":[0.25,0,-0.5]}]}
+```
+
+Offsets must be finite and within ±1024 metres per axis, consistent with bounded
+copy offsets and the ±512 m authoring area. Existing whole-candidate validation
+then checks all source bounds and type constraints. Unknown IDs, malformed
+payloads, stale revisions and budget/range failures preserve source/history/redo.
+Batch up to the existing 128 edits for one undo entry; ordinary explicit Apply
+semantics remain, including zero-delta transactions. The document schema and
+existing lower-level edits are unchanged. This is an additive command API, with
+no new visual controls or gameplay movement behavior.
+
+Acceptance passes: 100 focused Rust tests (55 domain / 45 editor), formatting,
+strict workspace/all-target Clippy and display-disabled Linux process checks at
+fractional local/far origins. Mixed translations equal complete documents built
+with the existing Transform/PutPath/PutPlant/PutMarker edits. Metadata, all three
+primitive shapes, unchanged origin/spawn/terrain, one-entry undo/redo and exact
+JSONL output pass. Fourteen failed command-file cases preserve existing output
+and source bytes, including a later line failing after an earlier valid edit.
+Read-only actual Avian preflight also accepts the translated candidates. An
+actual filesystem mailbox test proves new-op delivery, exact retry after shared
+Undo without double application, Redo, busy refusal and published source state.
+
+No desktop input, display or GPU checks were used for this command-only slice.
+Windows cross-build/native execution remain unqualified; the Windows target and
+cross compiler are not installed in this environment. No multiplayer authority
+or capacity claim.
+
+Evidence: ignored build/zone-translation-headless-v1/qualification.json, source/
+command/output pairs and refusal stderr; zone-translation-tests-v2.log,
+zone-translation-clippy-v2.log and zone-translation-build-v2.log. Editor SHA-256:
+`e080ab4d8e7125314a9b66e99798db9251d9d76e58c7549f5956e4e4793ab5c5`.

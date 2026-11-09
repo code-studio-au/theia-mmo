@@ -9,6 +9,7 @@ pub mod paths;
 pub mod projection;
 pub mod resampling;
 pub mod terrain;
+mod translation;
 pub mod vegetation;
 
 use serde::{Deserialize, Serialize};
@@ -284,6 +285,10 @@ pub enum Edit {
     Delete {
         id: u64,
     },
+    Translate {
+        id: u64,
+        offset: [f64; 3],
+    },
     Duplicate {
         id: u64,
         new_id: u64,
@@ -447,6 +452,9 @@ impl Editor {
                                 .find(|o| o.id == id)
                                 .ok_or("Unknown object ID")?
                                 .pose = pose;
+                        }
+                        Edit::Translate { id, offset } => {
+                            translation::apply(&mut candidate, id, offset)?
                         }
                         Edit::Duplicate { id, new_id, offset } => {
                             duplication::apply(&mut candidate, id, new_id, offset)?
