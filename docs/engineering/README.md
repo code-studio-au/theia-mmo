@@ -1,3 +1,10 @@
+Active document context, 9 November 2026 (P5-17 / P3-15 / P1-10):
+The footer now persistently identifies the active save path and saved/unsaved
+state; the window title identifies the zone/file and marks dirty content. Older
+terrain/vegetation shortcut hints now distinguish Open from Reload. See
+[the zone record](../ZONE_EDITOR.md#active-document-context--9-november-2026).
+Continue after each local commit; no push.
+
 View-plane reference grids, 9 November 2026 (P5-17 / P3-15 / P1-10):
 Front/Right now expose adaptive vertical reference grids; zones without terrain
 also use an adaptive ground grid. The standard Grid checkbox controls references

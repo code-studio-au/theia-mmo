@@ -64,7 +64,7 @@ pub(super) fn actions() -> [(Action, &'static str); 12] {
         (Action::Undo, "Undo [Ctrl Z]"),
         (Action::Redo, "Redo [Ctrl Y]"),
         (Action::Save, "Save zone [Ctrl S]"),
-        (Action::Load, "Load zone [Ctrl O]"),
+        (Action::Load, "Reload zone [Ctrl Shift O]"),
         (Action::Play, "Enter / leave playtest [F5]"),
     ]
 }

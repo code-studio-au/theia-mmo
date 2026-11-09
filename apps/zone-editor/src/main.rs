@@ -550,13 +550,16 @@ fn setup_ui(mut commands: Commands) {
         });
     commands.spawn((
         Summary,
-        text("", 16.),
+        text("", 14.),
+        TextLayout::no_wrap(),
         Node {
             position_type: PositionType::Absolute,
             left: px(PANEL + 12.),
-            bottom: px(12),
+            bottom: px(8),
             right: px(outliner::WIDTH + 12.),
-            padding: UiRect::all(px(10)),
+            height: px(44),
+            padding: UiRect::all(px(4)),
+            overflow: Overflow::clip(),
             ..default()
         },
         BackgroundColor(Color::srgba(0.035, 0.05, 0.075, 0.9)),
@@ -1086,11 +1089,52 @@ fn camera_controls(
 }
 fn present(
     session: Res<Session>,
+    mut windows: Query<&mut Window>,
     mut summaries: Query<&mut Text, With<Summary>>,
     mut info: Query<&mut Text, (With<Info>, Without<Summary>)>,
 ) {
+    let dirty = session.is_dirty();
+    let path = session.path.to_string_lossy();
+    let safe_path: String = path
+        .chars()
+        .map(|c| if c.is_control() { '�' } else { c })
+        .collect();
+    let suffix: String = safe_path
+        .chars()
+        .rev()
+        .take(180)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect();
+    let display_path = if safe_path.chars().count() > 180 {
+        format!("…{suffix}")
+    } else {
+        suffix
+    };
     for mut text in &mut summaries {
-        **text = session.status.clone();
+        **text = format!(
+            "{}  |  {}\n{}",
+            if dirty { "Unsaved" } else { "Saved" },
+            display_path,
+            session.status
+        );
+    }
+    if let Ok(mut window) = windows.single_mut() {
+        let filename = session
+            .path
+            .file_name()
+            .unwrap_or(session.path.as_os_str())
+            .to_string_lossy();
+        let title = format!(
+            "{}{} — {} — Theia Zone Studio",
+            if dirty { "* " } else { "" },
+            session.editor.zone().name,
+            filename
+        );
+        if window.title != title {
+            window.title = title;
+        }
     }
     let selected = session
         .editor

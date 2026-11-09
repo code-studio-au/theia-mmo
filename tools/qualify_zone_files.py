@@ -12,13 +12,14 @@ from gpu_validation import check_gpu_diagnostics
 from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 
 
-def run(output,binary):
+def run(output,binary,only_case=None):
     output=output.resolve();output.mkdir(parents=True,exist_ok=False)
     binary=binary.resolve();binary_hash=hashlib.sha256(binary.read_bytes()).hexdigest()
     cases=[];input_notes=[]
     env=dict(os.environ,WGPU_BACKEND='vulkan',VK_INSTANCE_LAYERS='VK_LAYER_KHRONOS_validation',VK_LOADER_DEBUG='layer')
     for name,origin,other_origin in [('local',[0,0,0],[128000000000,20,-128000000000]),
                                     ('far',[128000000000,20,-128000000000],[0,0,0])]:
+        if only_case and name!=only_case: continue
         folder=output/name;folder.mkdir()
         (folder/'nested').mkdir()
         def fixture(label,anchor,identifier):
@@ -99,6 +100,11 @@ def run(output,binary):
                 def capture(label):
                     desktop.key('F12');path=report.with_suffix('.png')
                     wait(lambda:capture_ready(path),30);path.rename(folder/f'{label}.png')
+                def title_check():
+                    current=state()
+                    expected=f"{'* ' if current['unsaved_changes'] else ''}{current['document']['name']} — {Path(current['save_path']).name} — Theia Zone Studio"
+                    wait(lambda:state()['window_title']==expected)
+                title_check()
                 initial=copy.deepcopy(state()['document']);initial_path=state()['save_path'];initial_view=state()['view']
                 control('FileSaveAs');wait(lambda:state()['file_dialog'] and state()['file_dialog']['mode']=='SaveAs')
                 assert state()['file_dialog']['pages']>=2
@@ -117,6 +123,7 @@ def run(output,binary):
                 capture('save-as-ready');file_control('Apply')
                 renamed=folder/'renamed.zone.json'
                 wait(lambda:state()['file_dialog'] is None and renamed.exists() and not state()['unsaved_changes'])
+                title_check()
                 assert Path(state()['save_path'])==renamed and json.loads(renamed.read_text())==initial
                 assert state()['revision']==0 and state()['history']==[0,0] and not saved.exists()
                 # First overwrite request is a review step; typing or Cancel
@@ -151,11 +158,14 @@ def run(output,binary):
                 opened=copy.deepcopy(state()['document'])
                 assert opened['name']=='Opened zone' and opened['origin']==other_origin
                 assert Path(state()['save_path'])==other and state()['history']==[1,0] and not state()['unsaved_changes']
+                title_check();capture('opened-file-context')
                 assert state()['view']['preset']=='Perspective'
                 control('Command(Undo)');wait(lambda:state()['revision']==2)
                 assert state()['document']==initial and Path(state()['save_path'])==other and state()['unsaved_changes']
+                title_check();capture('unsaved-file-context')
                 control('Command(Redo)');wait(lambda:state()['revision']==3)
                 assert state()['document']==opened and not state()['unsaved_changes']
+                title_check()
                 # Reconciled IDs and frame conversion work after opening a
                 # different global origin through the actual browser.
                 click(next(b for b in state()['buttons'] if b['action']=='Place(Box)' and all(x>0 for x in b['size'])))
@@ -176,6 +186,7 @@ def run(output,binary):
                 control('FileSaveAs');wait(lambda:state()['file_dialog'] is not None)
                 replace('missing/copy');file_control('Apply')
                 wait(lambda:'No such file' in state()['status'])
+                title_check()
                 assert state()['file_dialog']['text']=='missing/copy' and Path(state()['save_path'])==active
                 assert state()['document']==opened and state()['history']==[1,1] and not (folder/'missing').exists()
                 desktop.key('Escape');wait(lambda:state()['file_dialog'] is None and not state()['unsaved_changes'])
@@ -201,7 +212,9 @@ def run(output,binary):
         logs=logfile.read_text();assert 'Insert instance layer "VK_LAYER_KHRONOS_validation"' in logs
         cases.append(dict(name=name,viewport=final['viewport'],gpu=final['gpu'],validation_layer_active=True,
             gpu_diagnostics=check_gpu_diagnostics(logs,allow_surface_resize=False)))
+        (folder/'qualification.json').write_text(json.dumps(dict(case=cases[-1],editor_sha256=binary_hash),indent=2)+'\n')
     result=dict(passed=True,cases=cases,input_notes=input_notes,editor_sha256=binary_hash,checks=[
+        'actual window title follows active path, zone name and dirty state through Save As, Open, undo/redo and failures',
         'standard browser paging, folder navigation, filename retention and extension validation',
         'new Save As, explicit overwrite confirmation/cancel/changed-name reset, keyboard shortcuts and exact writes without history',
         'invalid open refusal/correction, modal isolation, cross-origin validated load/undo/redo and reconciled fresh placement IDs',
@@ -213,4 +226,5 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--binary',type=Path,default=Path('target/debug/theia-zone-editor'))
-    args=parser.parse_args();run(args.output,args.binary)
+    parser.add_argument('--case',choices=['local','far'])
+    args=parser.parse_args();run(args.output,args.binary,args.case)

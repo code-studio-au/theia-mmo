@@ -88,7 +88,7 @@ pub(super) fn paint_actions() -> [(Action, &'static str); 12] {
         (Action::Undo, "Undo [Ctrl Z]"),
         (Action::Redo, "Redo [Ctrl Y]"),
         (Action::Save, "Save zone [Ctrl S]"),
-        (Action::Load, "Load zone [Ctrl O]"),
+        (Action::Load, "Reload zone [Ctrl Shift O]"),
         (Action::Play, "Enter / leave playtest [F5]"),
     ]
 }
@@ -405,7 +405,7 @@ pub(super) fn palette(
         } else if session.vegetation_mode {
             "F6: greybox trees / shrubs\nCtrl D: copy plant\nF: focus | H: ground selection\nClick places one stamp\nEsc selects | Del removes\nArrows/PgUp/Dn: move\nR / Shift R: yaw +/-15 deg\n+/-: plant scale\n[ / ]: scatter radius\n, / .: scatter count\nVegetation proxies do not\nadd world collision".into()
         } else if session.marker_mode {
-            "F4: NPC / quest markers\nCtrl D: copy marker\nF: focus | H: ground selection\nClick to place or select\nArrows/PgUp/Dn: move\nR / Shift R: yaw +/-15 deg\n+/- changes footprint radius\nCtrl O loads saved zone\nMarkers are authoring notes;\nplaytest hides them".into()
+            "F4: NPC / quest markers\nCtrl D: copy marker\nF: focus | H: ground selection\nClick to place or select\nArrows/PgUp/Dn: move\nR / Shift R: yaw +/-15 deg\n+/- changes footprint radius\nCtrl O: open zone browser\nCtrl Shift O: reload file\nMarkers are authoring notes;\nplaytest hides them".into()
         } else if session.path_mode {
             "F3: guide paths / streams\nCtrl D: copy whole guide\nClick ground to add points\nEnter finishes | Esc cancels\nIns: insert segment midpoint\nBksp: remove point / draft last\nClick guide / point to select\nTab / Shift Tab: cycle points\nF: focus | H: ground selection\nArrows/PgUp/Dn move selection\n+/- changes guide width\nGrade terrain: selected guide\n4 m falloff, surface -0.03 m\nNo water simulation".into()
         } else if session.terrain_mode {

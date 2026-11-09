@@ -12,7 +12,8 @@ zone content and properties. **Save, Save As, Open, Reload, Undo, Redo, Frame se
 Playtest** are in the command bar, alongside the snap checkbox.
 Use **Open** (Ctrl+O) or **Save As** (Ctrl+Shift+S) to browse folders and zone
 JSON files. Save As asks before overwriting; Open remains undoable. **Reload**
-(Ctrl+Shift+O) reloads the active file.
+(Ctrl+Shift+O) reloads the active file. The footer always shows the active save
+path and saved/unsaved state, and the window title marks unsaved content with *.
 Choose **Top, Front or Right** for orthographic authoring, or **Perspective**.
 The **Grid** checkbox shows/hides references and displays their spacing in metres.
 Front/Right use adaptive vertical grids; zones without terrain also use an

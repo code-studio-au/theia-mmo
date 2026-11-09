@@ -2321,3 +2321,34 @@ coarse.front-grid.png, build/zone-reference-grid-empty-native-3440-v1/qualificat
 local/perspective.png, zone-reference-grid-tests-v2.log,
 zone-reference-grid-clippy.log and zone-reference-grid-build.log. Editor SHA-256:
 `f4c84fd2bfc132dc6b5456544f4925e7c541ad49280ed3c8d9364f253562a28e`.
+
+## Active document context — 9 November 2026
+
+P5-17 / P3-15 / P1-10 follow-up to multi-file authoring. The footer persistently
+shows saved/unsaved state and the active save path above the transient status
+message. The window title shows zone name, filename and an asterisk when dirty.
+This makes Open/Save As destinations visible even after another operation
+replaces status text. Undo after Open intentionally keeps the opened path and
+compares the restored content with that path's saved baseline; the visible
+context reflects both. Paths are presentation-bounded to the final 180 Unicode
+characters with a leading ellipsis, control characters replaced, and both footer
+lines clipped within the reserved 52-pixel bottom area. Full paths remain intact
+for actual operations. Older terrain/vegetation reload hints now use
+Ctrl+Shift+O; Ctrl+O opens the browser. No source/history behavior changes.
+
+Acceptance: all 90 focused Rust tests, formatting and strict workspace/all-target
+Clippy pass. Native file-context walkthroughs pass at both origins on actual
+3440x1440, AMD RX 7900 XTX (RADV NAVI31), Vulkan device 29772, active Khronos
+validation and zero GPU/resize diagnostics. Actual title assertions cover Save As,
+Open, Undo/Redo and failed writes; retained browser overwrite/paging, cross-origin
+replacement, history/ID reconciliation and modal/play/draft isolation also pass.
+The local unsaved-file-context capture was visually inspected. Local v2 completed
+successfully before its subsequent far window lost focus and cancelled the dialog;
+the far case passed independently in v3. No interrupted case is counted as passing.
+Windows native execution and very long-path native presentation remain unqualified.
+
+Evidence: ignored build/zone-file-context-qualification.json;
+zone-file-context-native-3440-v2/local/unsaved-file-context.png and state.json;
+zone-file-context-far-native-3440-v3/qualification.json; zone-file-context-tests.log,
+zone-file-context-clippy-v2.log and zone-file-context-build.log. Editor SHA-256:
+`7487ad72ca6d873c605562e900bd3180fd198697bf8a313c50b240eefe69f691`.
