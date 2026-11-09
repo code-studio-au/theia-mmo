@@ -50,7 +50,9 @@ pub(super) struct Content {
     pub page: usize,
     pub filter: Filter,
     pub total: usize,
+    pub query: String,
     applied_filter: Option<Filter>,
+    applied_query: String,
     revision: Option<u64>,
     selection: Option<Target>,
     selection_index: Option<usize>,
@@ -58,6 +60,14 @@ pub(super) struct Content {
     pub last_scroll: Option<serde_json::Value>,
 }
 impl Content {
+    pub fn set_query(&mut self, query: &str) -> Result<(), String> {
+        if query.len() > 128 || query.chars().any(char::is_control) {
+            return Err("Search needs at most 128 UTF-8 bytes without control characters".into());
+        }
+        self.query = query.trim().into();
+        self.page = 0;
+        Ok(())
+    }
     pub fn pages(&self) -> usize {
         self.entries.len().div_ceil(ROWS).max(1)
     }
@@ -73,6 +83,8 @@ pub(super) enum Control {
     Next,
     Row(usize),
     Filter(Filter),
+    Search,
+    ClearSearch,
 }
 #[derive(Component)]
 pub(super) enum Label {
@@ -80,6 +92,7 @@ pub(super) enum Label {
     Page,
     Footer,
     Row(usize),
+    Search,
 }
 
 fn entries(zone: &Zone) -> Vec<Entry> {
@@ -160,6 +173,43 @@ pub(super) fn setup(mut commands: Commands) {
         ))
         .with_children(|panel| {
             panel.spawn((Label::Title, text("ZONE CONTENT", 20.)));
+            panel
+                .spawn(Node {
+                    column_gap: px(6),
+                    ..default()
+                })
+                .with_children(|row| {
+                    for (control, caption, width) in [
+                        (Control::Search, "Find...", 158),
+                        (Control::ClearSearch, "Clear search", 100),
+                    ] {
+                        row.spawn((
+                            control,
+                            Button,
+                            ActivateOnPress,
+                            Hovered::default(),
+                            Node {
+                                width: px(width),
+                                min_height: px(26),
+                                padding: UiRect::all(px(4)),
+                                overflow: Overflow::clip(),
+                                ..default()
+                            },
+                            BackgroundColor(Color::srgb(0.10, 0.16, 0.22)),
+                        ))
+                        .with_children(|button| {
+                            if matches!(control, Control::Search) {
+                                button.spawn((
+                                    Label::Search,
+                                    text(caption, 13.),
+                                    TextLayout::no_wrap(),
+                                ));
+                            } else {
+                                button.spawn((text(caption, 13.), TextLayout::no_wrap()));
+                            }
+                        });
+                    }
+                });
             panel
                 .spawn(Node {
                     flex_wrap: FlexWrap::Wrap,
@@ -271,6 +321,7 @@ pub(super) fn activate(
     mut content: ResMut<Content>,
     mut session: ResMut<Session>,
     mut view: ResMut<View>,
+    mut requests: ResMut<workspace::Requests>,
 ) {
     if event.button != PointerButton::Primary {
         return;
@@ -282,6 +333,10 @@ pub(super) fn activate(
         return;
     }
     match *control {
+        Control::Search => requests.find = true,
+        Control::ClearSearch => {
+            content.set_query("").expect("Empty query is valid");
+        }
         Control::Filter(filter) => {
             content.filter = filter;
             content.page = 0;
@@ -406,16 +461,21 @@ pub(super) fn sync(
             Display::None
         };
     }
-    let filtering = content.applied_filter != Some(content.filter);
+    let filtering =
+        content.applied_filter != Some(content.filter) || content.applied_query != content.query;
     if content.revision != Some(session.editor.revision()) || filtering {
         let all = entries(session.editor.zone());
         content.total = all.len();
+        let query = content.query.to_lowercase();
         content.entries = all
             .into_iter()
-            .filter(|entry| content.filter.accepts(entry.target))
+            .filter(|entry| {
+                content.filter.accepts(entry.target) && entry.label.to_lowercase().contains(&query)
+            })
             .collect();
         content.revision = Some(session.editor.revision());
         content.applied_filter = Some(content.filter);
+        content.applied_query = content.query.clone();
         if filtering {
             content.page = 0;
         }
@@ -442,6 +502,8 @@ pub(super) fn sync(
                 Control::Next => content.page + 1 == content.pages(),
                 Control::Row(index) => content.row(index).is_none(),
                 Control::Filter(_) => false,
+                Control::Search => false,
+                Control::ClearSearch => content.query.is_empty(),
             };
         if disabled {
             commands.entity(entity).insert(InteractionDisabled);
@@ -474,13 +536,20 @@ pub(super) fn sync(
     for (label, mut value) in &mut labels {
         let next = match *label {
             Label::Title => {
-                if content.filter == Filter::All {
+                if content.filter == Filter::All && content.query.is_empty() {
                     format!("ZONE CONTENT | {}", content.entries.len())
                 } else {
                     format!("ZONE CONTENT | {}/{}", content.entries.len(), content.total)
                 }
             }
             Label::Page => format!("{}/{}", content.page + 1, content.pages()),
+            Label::Search => {
+                if content.query.is_empty() {
+                    "Find...".into()
+                } else {
+                    format!("Find: {}", content.query)
+                }
+            }
             Label::Footer => index.map_or(
                 if selected.is_some() {
                     "Selection hidden by filter\nChoose All to reveal".into()
@@ -527,7 +596,11 @@ mod tests {
         for id in 1..=43 {
             zone.objects.push(Object {
                 id,
-                name: format!("Block {id}"),
+                name: if id == 43 {
+                    "Élan grove".into()
+                } else {
+                    format!("Block {id}")
+                },
                 primitive: Primitive::Box,
                 pose: Pose {
                     position: [origin[0] + id as f64 * 4., origin[1] + 1., origin[2]],
@@ -631,6 +704,122 @@ mod tests {
             hit: HitData::new(window, 0., None, None),
         });
         wheel(app, 0.);
+    }
+    #[test]
+    fn content_search_form_apply_cancel_validation_and_clear_preserve_source_and_redo() {
+        use bevy::text::EditableText;
+        fn input(app: &mut App, value: &str) {
+            let mut query = app
+                .world_mut()
+                .query_filtered::<&mut EditableText, With<naming::Field>>();
+            query
+                .single_mut(app.world_mut())
+                .unwrap()
+                .editor_mut()
+                .set_text(value);
+        }
+        fn submit(app: &mut App, value: &str) {
+            input(app, value);
+            app.world_mut()
+                .resource_mut::<ButtonInput<KeyCode>>()
+                .press(KeyCode::Enter);
+            app.update();
+            app.world_mut()
+                .resource_mut::<ButtonInput<KeyCode>>()
+                .reset_all();
+            wheel(app, 0.);
+        }
+        let (mut app, window) = app([0.; 3]);
+        app.add_systems(PostUpdate, naming::finish);
+        let original = app.world().resource::<Session>().editor.zone().clone();
+        assert!(
+            app.world_mut()
+                .query::<(&Control, Has<InteractionDisabled>)>()
+                .iter(app.world())
+                .find(|(control, _)| **control == Control::ClearSearch)
+                .unwrap()
+                .1
+        );
+        press(&mut app, window, Control::Search);
+        assert!(app.world().resource::<Session>().has_modal());
+        assert!(!app.world().resource::<Session>().is_dirty());
+        submit(&mut app, "éLAN");
+        assert!(!app.world().resource::<Session>().has_modal());
+        assert_eq!(
+            app.world().resource::<Content>().row(0).unwrap().target,
+            Target::Object(43)
+        );
+        assert_eq!(app.world().resource::<Content>().entries.len(), 1);
+        press(&mut app, window, Control::Filter(Filter::Markers));
+        assert!(app.world().resource::<Content>().entries.is_empty());
+        assert_eq!(app.world().resource::<Content>().query, "éLAN");
+        press(&mut app, window, Control::Filter(Filter::All));
+        press(&mut app, window, Control::Row(0));
+        assert_eq!(app.world().resource::<Session>().selected, Some(43));
+        press(&mut app, window, Control::Search);
+        submit(&mut app, "bad\nquery");
+        assert!(app.world().resource::<Session>().has_modal());
+        assert!(!app.world().resource::<Session>().is_dirty());
+        assert_eq!(app.world().resource::<Content>().query, "éLAN");
+        submit(&mut app, &"é".repeat(65));
+        assert!(app.world().resource::<Session>().has_modal());
+        assert_eq!(app.world().resource::<Content>().query, "éLAN");
+        submit(&mut app, &"é".repeat(64));
+        assert!(
+            !app.world().resource::<Session>().has_modal(),
+            "status={}, draft={:?}",
+            app.world().resource::<Session>().status,
+            app.world()
+                .resource::<Session>()
+                .name_edit
+                .as_ref()
+                .map(|draft| &draft.text)
+        );
+        assert_eq!(app.world().resource::<Content>().query.len(), 128);
+        assert!(app.world().resource::<Content>().entries.is_empty());
+        press(&mut app, window, Control::ClearSearch);
+        assert_eq!(app.world().resource::<Content>().entries.len(), 44);
+        press(&mut app, window, Control::Search);
+        submit(&mut app, "  #43  ");
+        assert_eq!(app.world().resource::<Content>().query, "#43");
+        assert_eq!(app.world().resource::<Content>().entries.len(), 1);
+        press(&mut app, window, Control::Search);
+        input(&mut app, "Block");
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .press(KeyCode::Escape);
+        app.update();
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .reset_all();
+        assert_eq!(app.world().resource::<Content>().query, "#43");
+        press(&mut app, window, Control::Search);
+        input(&mut app, "different search");
+        app.world_mut()
+            .entity_mut(window)
+            .get_mut::<Window>()
+            .unwrap()
+            .focused = false;
+        app.update();
+        assert!(!app.world().resource::<Session>().has_modal());
+        assert_eq!(app.world().resource::<Content>().query, "#43");
+        app.world_mut()
+            .entity_mut(window)
+            .get_mut::<Window>()
+            .unwrap()
+            .focused = true;
+        press(&mut app, window, Control::ClearSearch);
+        let session = app.world().resource::<Session>();
+        assert_eq!(session.editor.zone(), &original);
+        assert_eq!(session.editor.revision(), 2);
+        assert_eq!(session.editor.history(), (0, 1));
+        assert!(!session.is_dirty());
+        // Reusing the form must retain the existing authoring dirty contract.
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .press(KeyCode::F8);
+        wheel(&mut app, 0.);
+        assert!(app.world().resource::<Session>().is_dirty());
     }
     #[test]
     fn filter_buttons_select_each_content_kind_without_dirtying_or_losing_redo() {
@@ -1034,8 +1223,18 @@ mod tests {
                 .query::<(&Control, &Node, &ComputedNode, &bevy::ui::UiGlobalTransform)>()
                 .iter(app.world())
             {
-                if matches!(control, Control::Filter(_)) {
-                    assert_eq!(computed.size().x, 86.);
+                if matches!(
+                    control,
+                    Control::Filter(_) | Control::Search | Control::ClearSearch
+                ) {
+                    assert_eq!(
+                        computed.size().x,
+                        match control {
+                            Control::Search => 158.,
+                            Control::ClearSearch => 100.,
+                            _ => 86.,
+                        }
+                    );
                     assert!(computed.size().y >= 26.);
                     let position = transform.affine().translation;
                     let half = computed.size() * 0.5;

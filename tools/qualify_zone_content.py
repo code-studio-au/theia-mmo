@@ -63,7 +63,7 @@ def run(output, binary, selected_case):
                     current = fresh()
                     content = current['content_list']
                     assert content['page'] == index
-                    rows = [c for c in content['controls'] if c['target'] not in ['Previous', 'Next'] and not c['target'].startswith('Filter(')]
+                    rows = [c for c in content['controls'] if c['target'] not in ['Previous', 'Next', 'Search', 'ClearSearch'] and not c['target'].startswith('Filter(')]
                     rows.sort(key=lambda row: row['centre'][1])
                     expected = (['Spawn'] + [f'Object({i})' for i in range(1, 44)])[index * 18:(index + 1) * 18]
                     assert [c['target'] for c in rows] == expected
@@ -123,6 +123,22 @@ def run(output, binary, selected_case):
                 assert all(c['disabled'] for c in filtered['controls'] if c['target'] in ['Previous', 'Next'])
                 click('Filter(All)')
                 wait(lambda: state()['content_list']['filter'] == 'All')
+                click('Search')
+                wait(lambda: state()['name_edit'] is not None)
+                assert state()['text_form_kind'] == 'search'
+                assert state()['unsaved_changes'] == initial['unsaved_changes'], 'Browser search must preserve the saved-state indicator'
+                for character in 'block 17':
+                    desktop.key('space' if character == ' ' else character)
+                wait(lambda: state()['name_edit'] == 'block 17')
+                desktop.key('Return')
+                wait(lambda: state()['name_edit'] is None and state()['content_list']['query'] == 'block 17')
+                assert fresh()['content_list']['count'] == 1
+                click('Object(17)'); wait(lambda: state()['selected'] == 17)
+                click('Search'); wait(lambda: state()['name_edit'] is not None)
+                desktop.key('Escape'); wait(lambda: state()['name_edit'] is None)
+                assert state()['content_list']['query'] == 'block 17'
+                click('ClearSearch')
+                wait(lambda: state()['content_list']['query'] == '' and state()['content_list']['count'] == 44)
                 wheel(-1, 1)
                 click('SpawnTransform', 'workspace_controls')
                 wait(lambda: state()['transform_edit'] is not None)

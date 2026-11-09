@@ -190,7 +190,12 @@ impl Session {
             || self.drag.is_some()
             || self.stroke.is_some()
             || self.path_draft.is_some()
-            || self.has_modal()
+            || self
+                .name_edit
+                .as_ref()
+                .is_some_and(naming::Draft::is_authoring)
+            || self.transform_edit.is_some()
+            || self.file_dialog.is_some()
     }
     fn execute(&mut self, command: Command) {
         let points_before = self.selected_path_len();

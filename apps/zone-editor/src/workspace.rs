@@ -12,6 +12,7 @@ pub(super) const INSPECTOR: f32 = 600.;
 #[derive(Resource, Default)]
 pub(super) struct Requests {
     pub name: bool,
+    pub find: bool,
     pub transform: bool,
     pub spawn_transform: bool,
     pub help: bool,

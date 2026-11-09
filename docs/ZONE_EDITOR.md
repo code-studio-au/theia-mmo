@@ -2691,3 +2691,44 @@ future authorized run. It was not run for this slice. Native UI/input/GPU and
 Windows acceptance remain pending; no display, mouse or keyboard input was used.
 The earlier wheel-delivery gap remains open and is not claimed fixed by these
 CPU checks. No multiplayer authority or capacity claim.
+
+## Content search — 9 November 2026
+
+P5-17 / P3-15 / P1-10; prerequisites are the shared standard Bevy text form,
+browser filtering and modal input isolation. Find... opens the retained text
+form with the current query selected. Apply commits an editor-local browser
+preference; Cancel/Escape/focus loss preserve the previous query. Clear search
+removes the query while retaining the type filter. The Find button shows an
+active query, with clipped single-line text inside its fixed bounds. Opt-in
+reports identify the shared text form as search or rename, retaining existing
+text/selection fields for compatibility.
+
+Matching is one case-insensitive Unicode-lowercased substring over the existing
+row label: name, kind, #ID and existing guide point count. Outer whitespace is
+trimmed; there is no regex or query language. It combines with the type filter.
+Queries are bounded to 128 UTF-8 bytes without control characters; invalid Apply
+keeps the form open and the previous query/list intact. Empty results remain
+explicit. Filter/query changes start at page one; subsequent unchanged frames
+retain that page. Query changes, clearing and even an open search form preserve
+source, selection, saved-state indicator, revision, history and pending redo.
+Real rename/transform/file forms retain their authoring dirty behavior. The
+shared modal guard still blocks unrelated editing/agent requests during search.
+
+Acceptance: 107 focused Rust tests (55 domain / 52 editor), formatting, strict
+workspace/all-target Clippy, Python compilation and an editor build pass.
+A headless actual Bevy observer/form/sync test proves Unicode matching, trimmed
+#ID search, type-filter combination, result selection, control/oversize refusal,
+exact 128-byte multibyte acceptance, empty results, clearing, Escape/focus-loss
+cancellation and unchanged complete source/revision/clean state/redo. The test
+also verifies that reopening a real rename still marks pending authoring work.
+Input is modified only inside the ECS test app; no OS keyboard/mouse events are
+sent. The existing embedded-font CPU layout test covers the new buttons, type
+filters, all content pages and footer at 3440 x 1440.
+
+Evidence: ignored build/zone-content-search-{tests,all-tests,clippy,build}.log.
+The native qualifier includes a future Find/Apply/select/cancel/clear workflow,
+but was not run while the user reserves mouse/display access. Native UI/input/
+GPU and Windows acceptance remain pending, including the earlier wheel-delivery
+gap. Source schema, renderer, engine pins and shared authoring commands unchanged.
+Search is a preference and deliberately creates no document undo entry. No
+multiplayer authority or capacity claim.

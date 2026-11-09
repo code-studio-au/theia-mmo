@@ -597,6 +597,8 @@ pub(super) fn report(
                 outliner::Control::Filter(filter) => {
                     (format!("Filter({filter:?})"), format!("{filter:?}"))
                 }
+                outliner::Control::Search => ("Search".into(), "Find...".into()),
+                outliner::Control::ClearSearch => ("ClearSearch".into(), "Clear search".into()),
             };
             content_buttons.push(serde_json::json!({"target":target,"label":label,"hovered":hovered.0,"disabled":disabled,
                 "centre":(transform.affine().translation*factor).to_array(),"size":(computed.size()*factor).to_array()}));
@@ -605,6 +607,7 @@ pub(super) fn report(
     value["content_list"] = serde_json::json!({"visible":session.play.is_none(),"page":content.page,
         "pages":content.pages(),"count":content.entries.len(),"controls":content_buttons,
         "filter":format!("{:?}",content.filter),"total":content.total,
+        "query":content.query,
         "scroll_events":content.scroll_events,"last_scroll":content.last_scroll});
     value["workspace_controls"] = serde_json::json!(controls.iter().filter_map(|(_,_,_,_,node,t,hovered,control,setting,value,range,..)| {
         let target = match (control,setting) { (Some(c),_)=>format!("{c:?}"),(_,Some(s))=>format!("{s:?}"),_=>return None };
@@ -642,6 +645,12 @@ pub(super) fn report(
         (keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight)).into();
     value["name_selection"] = serde_json::json!(session.name_edit.as_ref().map(|d| d.selection));
     value["name_edit"] = serde_json::json!(session.name_edit.as_ref().map(|d| &d.text));
+    value["text_form_kind"] =
+        serde_json::json!(session.name_edit.as_ref().map(|d| if d.is_authoring() {
+            "rename"
+        } else {
+            "search"
+        }));
     value["cursor"] = serde_json::json!(window.cursor_position().map(|p| p.to_array()));
     value["focused"] = window.focused.into();
     value["unsaved_changes"] = session.is_dirty().into();

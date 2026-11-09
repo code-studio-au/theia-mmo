@@ -2,6 +2,13 @@ Headless work resumed, 9 November 2026: the user reserves the display and
 mouse. Continue without desktop input, display inspection or native window
 checks until renewed authorization. Commit locally; do not push.
 
+Content search, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Find/Clear search use the retained Bevy text form for bounded name/kind/#ID
+matching within the chosen type filter. Search, including a pending form, leaves
+source/save state/history unchanged. Headless behavior/layout checks pass;
+native UI/input/GPU acceptance remains pending. See [the zone record](ZONE_EDITOR.md#content-search--9-november-2026).
+Continue headlessly after local commits; no desktop input/display use; no push.
+
 Content-type filters, 9 November 2026 (P5-17 / P3-15 / P1-10):
 All/Objects/Guides/Markers/Plants/Terrain buttons narrow the content list while
 preserving source, selection and pending redo. Actual Bevy observer/sync and

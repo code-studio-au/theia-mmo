@@ -1,4 +1,4 @@
-//! Standard Bevy TextInput; submission uses the same narrow commands as agents.
+//! Standard Bevy TextInput for shared rename commands and editor-local search.
 use super::*;
 use bevy::input_focus::{FocusCause, InputFocus};
 use bevy::picking::{events::PointerPress, pointer::PointerButton};
@@ -9,6 +9,7 @@ use bevy::ui_widgets::{SelectAllOnFocus, TextInput};
 pub(super) enum Target {
     Zone,
     Entry(u64),
+    Search,
 }
 pub(super) struct Draft {
     target: Target,
@@ -18,6 +19,18 @@ pub(super) struct Draft {
     pub selection: [usize; 2],
     subject: String,
     action: Option<Control>,
+}
+impl Draft {
+    pub fn is_authoring(&self) -> bool {
+        !matches!(self.target, Target::Search)
+    }
+    fn hint(&self) -> &'static str {
+        if self.is_authoring() {
+            "Editing name - Enter applies, Escape cancels"
+        } else {
+            "Find content - Enter applies, Escape cancels"
+        }
+    }
 }
 #[derive(Component)]
 pub(super) struct Root;
@@ -137,10 +150,12 @@ pub(super) fn keyboard(
     mut focus: ResMut<InputFocus>,
     mut fields: Query<(Entity, &mut EditableText), With<Field>>,
     mut requests: ResMut<workspace::Requests>,
+    content: Res<outliner::Content>,
 ) {
     let requested = std::mem::take(&mut requests.name);
+    let find = std::mem::take(&mut requests.find);
     if session.has_modal()
-        || !(keys.just_pressed(KeyCode::F8) || requested)
+        || !(keys.just_pressed(KeyCode::F8) || requested || find)
         || !windows.single().is_ok_and(|w| w.focused)
     {
         return;
@@ -150,7 +165,7 @@ pub(super) fn keyboard(
         || session.stroke.is_some()
         || session.path_draft.is_some()
     {
-        session.status = "Finish or cancel the preview before renaming".into();
+        session.status = "Finish or cancel the preview before editing text".into();
         return;
     }
     let zone =
@@ -160,13 +175,16 @@ pub(super) fn keyboard(
         .or(session.path_selected)
         .or(session.marker_selected)
         .or(session.plant_selected);
-    let target = if zone {
+    let target = if find {
+        Target::Search
+    } else if zone {
         Target::Zone
     } else {
         id.map_or(Target::Zone, Target::Entry)
     };
     let original = match target {
         Target::Zone => session.editor.zone().name.clone(),
+        Target::Search => content.query.clone(),
         Target::Entry(id) => session
             .editor
             .zone()
@@ -185,6 +203,7 @@ pub(super) fn keyboard(
     focus.set(entity, FocusCause::Navigated);
     let subject = match target {
         Target::Zone => "zone".into(),
+        Target::Search => "content (name, kind or #ID)".into(),
         Target::Entry(id) => {
             let zone = session.editor.zone();
             let kind = if zone.objects.iter().any(|o| o.id == id) {
@@ -199,7 +218,7 @@ pub(super) fn keyboard(
             format!("{kind} #{id}")
         }
     };
-    session.name_edit = Some(Draft {
+    let draft = Draft {
         target,
         subject,
         revision: session.editor.revision(),
@@ -207,11 +226,13 @@ pub(super) fn keyboard(
         selection: [0; 2],
         original,
         action: None,
-    });
-    session.status = "Editing name - Enter applies, Escape cancels".into();
+    };
+    session.status = draft.hint().into();
+    session.name_edit = Some(draft);
 }
 
 // Read after Bevy has applied queued text edits, including input received with Enter.
+#[allow(clippy::too_many_arguments)]
 pub(super) fn finish(
     keys: Res<ButtonInput<KeyCode>>,
     windows: Query<&Window>,
@@ -220,6 +241,7 @@ pub(super) fn finish(
     fields: Query<(Entity, &EditableText), With<Field>>,
     mut roots: Query<&mut Node, With<Root>>,
     mut captions: Query<&mut Text, With<Caption>>,
+    mut content: ResMut<outliner::Content>,
 ) {
     let Some(mut draft) = session.name_edit.take() else {
         if let Ok(mut root) = roots.single_mut() {
@@ -233,7 +255,7 @@ pub(super) fn finish(
     };
     let text = field.value().to_string();
     if text != draft.text {
-        session.status = "Editing name - Enter applies, Escape cancels".into();
+        session.status = draft.hint().into();
     }
     draft.text = text;
     let range = field.editor().raw_selection().text_range();
@@ -246,8 +268,24 @@ pub(super) fn finish(
             || keys.just_pressed(KeyCode::NumpadEnter)
             || matches!(draft.action, Some(Control::Apply)));
     let close = if cancel {
-        session.status = "Name edit cancelled".into();
+        session.status = if draft.is_authoring() {
+            "Name edit cancelled"
+        } else {
+            "Search cancelled"
+        }
+        .into();
         true
+    } else if apply && !draft.is_authoring() {
+        match content.set_query(&draft.text) {
+            Ok(()) => {
+                session.status = "Content search updated".into();
+                true
+            }
+            Err(error) => {
+                session.status = error;
+                false
+            }
+        }
     } else if apply {
         if draft.text == draft.original {
             session.status = "Name unchanged".into();
@@ -261,6 +299,7 @@ pub(super) fn finish(
                     id,
                     name: draft.text.clone(),
                 },
+                Target::Search => unreachable!("Search commits only editor-local preferences"),
             };
             let points_before = session.selected_path_len();
             match session.editor.execute(Command::Apply {
@@ -296,9 +335,15 @@ pub(super) fn finish(
         }
         if let Ok(mut caption) = captions.single_mut() {
             caption.0 = format!(
-                "Rename {} | {} / 80 bytes\n{}",
+                "{} {} | {} / {} bytes\n{}",
+                if draft.is_authoring() {
+                    "Rename"
+                } else {
+                    "Find"
+                },
                 draft.subject,
                 draft.text.len(),
+                if draft.is_authoring() { 80 } else { 128 },
                 session.status
             );
         }
