@@ -88,6 +88,7 @@ pub(super) fn fixture_with_input(
     app.insert_resource(session)
         .init_resource::<ButtonInput<KeyCode>>()
         .init_resource::<InputFocus>()
+        .init_resource::<bevy::ui::UiScale>()
         .insert_resource(workspace::Requests {
             transform: target != 4,
             spawn_transform: target == 4,
@@ -140,6 +141,41 @@ pub(super) fn key(app: &mut App, key: KeyCode) {
         .resource_mut::<ButtonInput<KeyCode>>()
         .reset_all();
 }
+pub(super) fn reset(app: &mut App) {
+    use bevy::picking::{
+        backend::HitData,
+        events::Pointer,
+        pointer::{Location, PointerId},
+    };
+    let window = app
+        .world_mut()
+        .query_filtered::<Entity, With<Window>>()
+        .single(app.world())
+        .unwrap();
+    let button = app
+        .world_mut()
+        .query::<(Entity, &Control)>()
+        .iter(app.world())
+        .find(|(_, control)| **control == Control::Reset)
+        .unwrap()
+        .0;
+    app.world_mut().trigger(PointerPress {
+        entity: button,
+        button: PointerButton::Primary,
+        count: 1,
+        pointer: Pointer::new(
+            PointerId::Mouse,
+            Location {
+                target: bevy::camera::RenderTarget::Window(bevy::window::WindowRef::Entity(window))
+                    .normalize(Some(window))
+                    .unwrap(),
+                position: Vec2::ZERO,
+            },
+        ),
+        hit: HitData::new(window, 0., None, None),
+    });
+    app.update();
+}
 #[test]
 fn slider_edits_pending_fields_and_applies_one_shared_transaction_for_each_yaw_kind() {
     for origin in [
@@ -169,7 +205,7 @@ fn slider_edits_pending_fields_and_applies_one_shared_transaction_for_each_yaw_k
             change(&mut app, slider, value, false);
             change(&mut app, slider, value, true);
             let expected_yaw = if target == 0 { 135. } else { 13. };
-            let mut expected_fields = original_fields;
+            let mut expected_fields = original_fields.clone();
             expected_fields[3] = expected_yaw.to_string();
             assert_eq!(
                 app.world()
@@ -183,6 +219,36 @@ fn slider_edits_pending_fields_and_applies_one_shared_transaction_for_each_yaw_k
             assert_eq!(app.world().resource::<Session>().editor.zone(), &before);
             assert_eq!(app.world().resource::<Session>().editor.revision(), 2);
             assert_eq!(app.world().resource::<Session>().editor.history(), (0, 1));
+            // Reset uses the actual button observer and keeps this form open.
+            // A simultaneous Enter must not accidentally submit the reset.
+            app.world_mut()
+                .resource_mut::<ButtonInput<KeyCode>>()
+                .press(KeyCode::Enter);
+            reset(&mut app);
+            app.world_mut()
+                .resource_mut::<ButtonInput<KeyCode>>()
+                .reset_all();
+            assert_eq!(
+                app.world()
+                    .resource::<Session>()
+                    .transform_edit
+                    .as_ref()
+                    .unwrap()
+                    .fields,
+                original_fields
+            );
+            assert_eq!(app.world().resource::<Session>().editor.zone(), &before);
+            assert_eq!(app.world().resource::<Session>().editor.history(), (0, 1));
+            change(&mut app, slider, value, true);
+            assert_eq!(
+                app.world()
+                    .resource::<Session>()
+                    .transform_edit
+                    .as_ref()
+                    .unwrap()
+                    .fields,
+                expected_fields
+            );
             app.world_mut()
                 .resource_mut::<InputFocus>()
                 .set(slider, FocusCause::Navigated);
@@ -289,6 +355,16 @@ fn noops_cancel_hidden_targets_invalid_events_and_focus_loss_preserve_source_and
             assert_eq!(app.world().resource::<Session>().editor.zone(), &before);
             assert_eq!(app.world().resource::<Session>().editor.history(), (0, 1));
         }
+        reset(&mut app);
+        assert_eq!(
+            app.world()
+                .resource::<Session>()
+                .transform_edit
+                .as_ref()
+                .unwrap()
+                .fields,
+            original
+        );
         key(&mut app, KeyCode::Escape);
         assert_eq!(app.world().resource::<Session>().editor.zone(), &before);
         assert_eq!(app.world().resource::<Session>().editor.history(), (0, 1));

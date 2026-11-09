@@ -233,6 +233,7 @@ impl Target {
 #[derive(Component, Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Control {
     Apply,
+    Reset,
     Cancel,
     YawSlider,
     ValueSlider,
@@ -457,7 +458,8 @@ pub(super) fn setup(mut commands: Commands) {
                     })
                     .with_children(|row| {
                         for (control, label) in [
-                            (Control::Apply, "Apply transform"),
+                            (Control::Apply, "Apply"),
+                            (Control::Reset, "Reset fields"),
                             (Control::Cancel, "Cancel"),
                         ] {
                             row.spawn((
@@ -481,8 +483,10 @@ pub(super) fn activate(
     event: On<PointerPress>,
     controls: Query<&Control>,
     mut session: ResMut<Session>,
+    windows: Query<&Window>,
 ) {
     if event.button == PointerButton::Primary
+        && windows.single().is_ok_and(|window| window.focused)
         && let Ok(control) = controls.get(event.entity)
         && let Some(draft) = &mut session.transform_edit
     {
@@ -623,7 +627,7 @@ pub(super) fn finish(
     windows: Query<&Window>,
     mut session: ResMut<Session>,
     mut focus: ResMut<InputFocus>,
-    fields: Query<(Entity, &Field, &EditableText)>,
+    mut fields: Query<(Entity, &Field, &mut EditableText)>,
     mut roots: Query<&mut Node, With<Root>>,
     mut captions: Query<&mut Text, With<Caption>>,
     mut rows: Query<(&FieldRow, &mut Node, &mut Visibility), Without<Root>>,
@@ -636,6 +640,22 @@ pub(super) fn finish(
         }
         return;
     };
+    let resetting = matches!(draft.action, Some(Control::Reset))
+        && windows.single().is_ok_and(|window| window.focused);
+    if resetting {
+        draft.fields = draft.original.values();
+        draft.active = 0;
+        for (entity, field, mut text) in &mut fields {
+            if let Some(value) = draft.fields.get(field.0) {
+                text.clear();
+                text.editor_mut().set_text(value);
+                if field.0 == 0 {
+                    focus.set(entity, FocusCause::Navigated);
+                }
+            }
+        }
+        session.status = "Transform fields reset".into();
+    }
     let mut composing = false;
     let mut edited = false;
     for (row, mut node, mut visibility) in &mut rows {
@@ -685,7 +705,8 @@ pub(super) fn finish(
     let cancel = !windows.single().is_ok_and(|w| w.focused)
         || keys.just_pressed(KeyCode::Escape)
         || matches!(draft.action, Some(Control::Cancel));
-    let apply = !composing
+    let apply = !resetting
+        && !composing
         && (keys.just_pressed(KeyCode::Enter)
             || keys.just_pressed(KeyCode::NumpadEnter)
             || matches!(draft.action, Some(Control::Apply)));

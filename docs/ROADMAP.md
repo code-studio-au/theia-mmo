@@ -1,3 +1,10 @@
+Reset transform fields, 9 November 2026 (P5-17 / P3-15 / P1-10):
+A Reset fields button restores the open form’s exact original numbers and
+sliders, retaining the form, original revision and pending redo. Apply/Cancel
+remain the transaction boundary. Headless behavior/layout checks pass; native
+UI/input/GPU acceptance remains pending. See [the zone record](ZONE_EDITOR.md#reset-transform-fields--9-november-2026).
+Continue headlessly after local commits; no desktop input/display use; no push.
+
 Property keyboard routing, 9 November 2026 (P5-17 / P3-15 / P1-10):
 Headless real input/focus/visibility tests cover Tab/Shift-Tab and slider keys
 without OS input. They caught and fixed a yaw +180/-180 thumb jump. All 115

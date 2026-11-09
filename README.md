@@ -56,7 +56,8 @@ expose position, yaw and XYZ size; plants expose position, yaw and scale; marker
 expose position, yaw and authoring radius. The yaw slider edits the pending form
 in 15-degree steps with Snap enabled or one-degree steps otherwise; exact numeric
 values remain available. Plant scale, marker radius and guide width also have
-quarter-step sliders. Apply commits one validated undo entry.
+quarter-step sliders. **Reset fields** restores the form’s original values
+without closing it. Apply commits one validated undo entry.
 For guides, **Whole guide** exposes width; **Previous point / Next point** select
 a point for exact XYZ and width editing. **Insert point / Remove point** expose
 topology edits directly, with the same validation and undo. Rename, Duplicate

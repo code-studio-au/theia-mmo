@@ -1,5 +1,5 @@
 //! Bounded size controls use the retained exact form and shared command engine.
-use super::yaw_tests::{change, fixture, key};
+use super::yaw_tests::{change, fixture, key, reset};
 use super::*;
 
 fn slider(app: &mut App) -> Entity {
@@ -62,6 +62,29 @@ fn scale_radius_and_both_guide_width_forms_preserve_other_fields_and_undo_once()
             assert_eq!(app.world().resource::<Session>().editor.zone(), &before);
             assert_eq!(app.world().resource::<Session>().editor.revision(), 2);
             assert_eq!(app.world().resource::<Session>().editor.history(), (0, 1));
+            reset(&mut app);
+            assert_eq!(app.world().resource::<Session>().editor.zone(), &before);
+            assert_eq!(app.world().resource::<Session>().editor.revision(), 2);
+            assert_eq!(app.world().resource::<Session>().editor.history(), (0, 1));
+            assert_ne!(
+                app.world()
+                    .resource::<Session>()
+                    .transform_edit
+                    .as_ref()
+                    .unwrap()
+                    .fields,
+                fields
+            );
+            change(&mut app, slider, desired, true);
+            assert_eq!(
+                app.world()
+                    .resource::<Session>()
+                    .transform_edit
+                    .as_ref()
+                    .unwrap()
+                    .fields,
+                fields
+            );
             app.world_mut()
                 .resource_mut::<InputFocus>()
                 .set(slider, FocusCause::Navigated);

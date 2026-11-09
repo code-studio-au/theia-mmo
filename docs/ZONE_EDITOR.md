@@ -2883,3 +2883,35 @@ restored-drag checks. It was compiled but not run under the desktop restriction.
 Native UI/input/GPU and Windows acceptance remain pending; the earlier wheel-
 delivery gap remains open. No display, mouse or keyboard input was used. Engine
 pins, schema, simulation and gameplay-facing rules unchanged.
+
+## Reset transform fields — 9 November 2026
+
+P5-17 / P3-15 / P1-10; prerequisites are the retained exact form, original target
+snapshot and controlled sliders. Apply / Reset fields / Cancel now fit in one
+button row. Reset restores all field strings from the values captured when the
+form opened, returns input focus to its first field and keeps the form open.
+The tracks synchronize to those exact originals without quantizing them. It also
+repairs invalid pending text and discards pending slider changes. It neither
+reloads a document nor refreshes the captured revision; subsequent Apply retains
+the existing validation/stale-revision/undo boundary. It does not alter source,
+selection, editor settings, history or pending redo. Enter received with Reset
+cannot accidentally submit/close the form. Window-focus loss still cancels.
+
+Acceptance: all 115 focused Rust tests (55 domain / 60 editor), formatting,
+strict workspace/all-target Clippy, Python compilation and an editor build pass.
+Existing actual Bevy form/slider integration flows now exercise the Reset button
+observer at local/far origins before reapplying their pending edits. Exact yaw/
+scale/radius/width and all untouched numeric strings return, complete source
+and pending redo remain, and later Apply still makes one validated undo entry.
+The cancellation/refusal flows cover resetting invalid coordinates and all six
+target forms, including spawn and whole/point guides. A simultaneous Enter is
+suppressed. Existing embedded-font/editable-text CPU layout also covers all
+three buttons inside the Properties region at 3440 x 1440.
+
+Evidence: ignored build/zone-property-reset-{regression-tests,all-tests,clippy,
+build}.log. The owned native qualifier accepts --reset (with --keyboard and/or
+--values) for a future reset/reapply drag workflow. It was compiled but not run
+under the user’s desktop restriction. Native UI/input/GPU and Windows acceptance
+remain pending, including the earlier wheel-delivery gap. No display, mouse or
+keyboard input was used. Schema, shared commands, engine pins and gameplay remain
+unchanged. Reset is a form-local action and creates no document undo entry.
