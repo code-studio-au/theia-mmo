@@ -19,7 +19,10 @@ Select an object, plant or NPC/quest marker in the content list, then use
 **Transform...** for exact numeric fields in the docked properties area. Objects
 expose position, yaw and XYZ size; plants expose position, yaw and scale; markers
 expose position, yaw and authoring radius. Apply commits one validated undo entry.
-Rename, Duplicate and Ground are also available there. **Shortcuts** reveals the
+For guides, **Whole guide** exposes width; **Previous point / Next point** select
+a point for exact XYZ and width editing. **Insert point / Remove point** expose
+topology edits directly, with the same validation and undo. Rename, Duplicate
+and Ground are also available there. **Shortcuts** reveals the
 keyboard reference. Visual and structured agent edits retain shared validation
 and undo; pending drafts are protected by workspace controls.
 

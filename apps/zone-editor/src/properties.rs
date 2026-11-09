@@ -7,7 +7,7 @@ use bevy::input_focus::{
 use bevy::picking::{events::PointerPress, pointer::PointerButton};
 use bevy::text::{EditableText, TextCursorStyle};
 use bevy::ui_widgets::{SelectAllOnFocus, TextInput};
-use theia_zone::{markers::Marker, vegetation::Plant};
+use theia_zone::{markers::Marker, paths::GuidePath, vegetation::Plant};
 
 const LABELS: [&str; 7] = [
     "World X (m)",
@@ -33,6 +33,10 @@ enum Target {
     Object(Pose),
     Plant(Plant),
     Marker(Marker),
+    Path {
+        path: GuidePath,
+        point: Option<usize>,
+    },
 }
 impl Target {
     fn labels(&self) -> &'static [&'static str] {
@@ -52,6 +56,10 @@ impl Target {
                 "Yaw (degrees)",
                 "Radius (m)",
             ],
+            Self::Path { point: None, .. } => &["Width (m)"],
+            Self::Path { point: Some(_), .. } => {
+                &["World X (m)", "World Y (m)", "World Z (m)", "Width (m)"]
+            }
         }
     }
     fn values(&self) -> Vec<String> {
@@ -75,6 +83,12 @@ impl Target {
             ]
             .map(|v| v.to_string())
             .to_vec(),
+            Self::Path { path, point } => {
+                let mut values =
+                    point.map_or_else(Vec::new, |i| path.points[i].map(|v| v.to_string()).to_vec());
+                values.push(path.width_metres.to_string());
+                values
+            }
         }
     }
     fn edit(&self, id: u64, fields: &[String]) -> Result<Option<Edit>, String> {
@@ -98,6 +112,21 @@ impl Target {
                 marker.yaw_degrees = v[3];
                 marker.radius_metres = v[4];
                 Ok((marker != *original).then_some(Edit::PutMarker { marker }))
+            }
+            Self::Path {
+                path: original,
+                point,
+            } => {
+                let v = numbers(fields, self.labels())?;
+                let mut path = original.clone();
+                path.width_metres = *v.last().unwrap();
+                if let Some(index) = point {
+                    *path
+                        .points
+                        .get_mut(*index)
+                        .ok_or("Unknown guide point index")? = [v[0], v[1], v[2]];
+                }
+                Ok((path != *original).then_some(Edit::PutPath { path }))
             }
         }
     }
@@ -359,8 +388,28 @@ pub(super) fn keyboard(
                 Target::Marker(marker.clone()),
                 format!("{:?} #{} | {}", marker.kind, marker.id, marker.name),
             )
+        } else if let Some(path) = zone
+            .paths
+            .iter()
+            .find(|p| Some(p.id) == session.path_selected)
+        {
+            let point = session.path_point.filter(|i| *i < path.points.len());
+            (
+                path.id,
+                Target::Path {
+                    path: path.clone(),
+                    point,
+                },
+                format!(
+                    "{:?} #{} | {}{}",
+                    path.kind,
+                    path.id,
+                    path.name,
+                    point.map_or_else(String::new, |i| format!("\nPoint {}", i + 1))
+                ),
+            )
         } else {
-            session.status = "Select an object, plant or marker to edit its transform".into();
+            session.status = "Select an object, plant, marker or guide to edit properties".into();
             return;
         };
     let draft = Draft {
@@ -518,6 +567,108 @@ pub(super) fn finish(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn guide_width_and_point_properties_share_validation_and_preserve_other_points() {
+        use theia_zone::paths::PathKind;
+        for origin in [[0.; 3], [128_000_000_000., 20., -128_000_000_000.]] {
+            for kind in [PathKind::Road, PathKind::Stream] {
+                let path = GuidePath {
+                    id: 9,
+                    name: "Walking route".into(),
+                    kind,
+                    width_metres: 4.,
+                    points: vec![
+                        [origin[0] + 8., origin[1] + 0.03, origin[2] + 8.],
+                        [origin[0] + 24., origin[1] + 0.03, origin[2] + 8.],
+                        [origin[0] + 24., origin[1] + 0.03, origin[2] + 24.],
+                    ],
+                };
+                for point in [None, Some(1)] {
+                    let target = Target::Path {
+                        path: path.clone(),
+                        point,
+                    };
+                    let mut fields = target.values();
+                    assert!(target.edit(9, &fields).unwrap().is_none());
+                    assert!(target.edit(9, &[]).is_err());
+                    let mut zone = Zone {
+                        schema: 7,
+                        origin,
+                        spawn: origin,
+                        ..default()
+                    };
+                    zone.paths.push(path.clone());
+                    let mut editor = Editor::new(zone.clone()).unwrap();
+                    if point.is_some() {
+                        fields[0] = (origin[0] + 24.125).to_string();
+                        fields[1] = (origin[1] + 1.25).to_string();
+                        fields[2] = (origin[2] + 8.5).to_string();
+                    }
+                    *fields.last_mut().unwrap() = "2.75".into();
+                    editor
+                        .execute(Command::Apply {
+                            expected_revision: 0,
+                            edits: vec![target.edit(9, &fields).unwrap().unwrap()],
+                        })
+                        .unwrap();
+                    let changed = editor.zone().clone();
+                    assert_eq!(changed.paths[0].name, path.name);
+                    assert_eq!(changed.paths[0].kind, kind);
+                    assert_eq!(changed.paths[0].width_metres, 2.75);
+                    assert_eq!(changed.paths[0].points[0], path.points[0]);
+                    assert_eq!(changed.paths[0].points[2], path.points[2]);
+                    assert_eq!(
+                        changed.paths[0].points[1],
+                        if point.is_some() {
+                            [origin[0] + 24.125, origin[1] + 1.25, origin[2] + 8.5]
+                        } else {
+                            path.points[1]
+                        }
+                    );
+                    assert_eq!(editor.history(), (1, 0));
+                    editor
+                        .execute(Command::Undo {
+                            expected_revision: 1,
+                        })
+                        .unwrap();
+                    assert_eq!(editor.zone(), &zone);
+                    let mut invalid = fields.clone();
+                    *invalid.last_mut().unwrap() = "0.1".into();
+                    assert!(
+                        editor
+                            .execute(Command::Apply {
+                                expected_revision: 2,
+                                edits: vec![target.edit(9, &invalid).unwrap().unwrap()]
+                            })
+                            .is_err()
+                    );
+                    if point.is_some() {
+                        for (value, coordinate) in invalid.iter_mut().zip(path.points[0]) {
+                            *value = coordinate.to_string();
+                        }
+                        *invalid.last_mut().unwrap() = "2.75".into();
+                        assert!(
+                            editor
+                                .execute(Command::Apply {
+                                    expected_revision: 2,
+                                    edits: vec![target.edit(9, &invalid).unwrap().unwrap()]
+                                })
+                                .is_err()
+                        );
+                    }
+                    assert_eq!(editor.zone(), &zone);
+                    assert_eq!(editor.history(), (0, 1));
+                    assert_eq!(editor.revision(), 2);
+                    editor
+                        .execute(Command::Redo {
+                            expected_revision: 2,
+                        })
+                        .unwrap();
+                    assert_eq!(editor.zone(), &changed);
+                }
+            }
+        }
+    }
     #[test]
     fn plant_marker_fields_preserve_metadata_and_share_candidate_history() {
         use theia_zone::{markers::MarkerKind, vegetation::PlantKind};

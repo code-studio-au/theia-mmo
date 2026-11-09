@@ -22,6 +22,8 @@ pub(super) enum Control {
     Frame,
     Rename,
     Transform,
+    Point(i8),
+    WholePath,
     Snap,
     Help,
 }
@@ -164,6 +166,11 @@ pub(super) fn setup(mut commands: Commands) {
                 (Control::Command(Action::Duplicate),"Duplicate"),(Control::Command(Action::Ground),"Ground"),
                 (Control::Frame,"Frame")] { row.spawn(button(control,label)); }
         });
+        panel.spawn(Node { flex_wrap:FlexWrap::Wrap,column_gap:px(6),row_gap:px(6),..default() }).with_children(|row| {
+            for (control,label) in [(Control::Point(-1),"Previous point"),(Control::Point(1),"Next point"),
+                (Control::WholePath,"Whole guide"),(Control::Command(Action::InsertPoint),"Insert point"),
+                (Control::Command(Action::RemovePoint),"Remove point")] { row.spawn(button(control,label)); }
+        });
         for setting in [Setting::Radius,Setting::Strength,Setting::Blend,Setting::Level,Setting::ScatterRadius,Setting::ScatterCount] {
             let (minimum,maximum) = setting.range();
             panel.spawn((SettingRow(setting), Node { flex_direction:FlexDirection::Column,row_gap:px(6),..default() }))
@@ -203,7 +210,31 @@ impl Control {
                 .selected
                 .or(session.plant_selected)
                 .or(session.marker_selected)
+                .or(session.path_selected)
                 .is_some(),
+            Self::Point(_) | Self::WholePath => {
+                session.path_mode && session.path_selected.is_some()
+            }
+            Self::Command(Action::InsertPoint) => {
+                session.path_point.is_some()
+                    && session
+                        .editor
+                        .zone()
+                        .paths
+                        .iter()
+                        .find(|p| Some(p.id) == session.path_selected)
+                        .is_some_and(|p| p.points.len() < theia_zone::paths::MAX_POINTS)
+            }
+            Self::Command(Action::RemovePoint) => {
+                session.path_point.is_some()
+                    && session
+                        .editor
+                        .zone()
+                        .paths
+                        .iter()
+                        .find(|p| Some(p.id) == session.path_selected)
+                        .is_some_and(|p| p.points.len() > 2)
+            }
             Self::Frame => {
                 (session.terrain_mode && session.editor.zone().terrain.is_some()) || selected
             }
@@ -322,6 +353,25 @@ pub(super) fn activate(
                 selection::frame(&mut session, &mut view);
             }
         }
+        Control::Point(direction) => {
+            if let Some(path) = session
+                .editor
+                .zone()
+                .paths
+                .iter()
+                .find(|p| Some(p.id) == session.path_selected)
+            {
+                let count = path.points.len();
+                let slot = session.path_point.map_or(0, |i| i + 1);
+                let next = if direction < 0 {
+                    (slot + count) % (count + 1)
+                } else {
+                    (slot + 1) % (count + 1)
+                };
+                session.path_point = next.checked_sub(1);
+            }
+        }
+        Control::WholePath => session.path_point = None,
         Control::Help => requests.help = !requests.help,
         Control::Rename => requests.name = true,
         Control::Transform => requests.transform = true,
@@ -379,7 +429,15 @@ pub(super) fn sync(
     mut commands: Commands,
     session: Res<Session>,
     requests: Res<Requests>,
-    mut help: Query<&mut Node, (With<Help>, Without<Thumb>, Without<SettingRow>)>,
+    mut help: Query<
+        &mut Node,
+        (
+            With<Help>,
+            Without<Thumb>,
+            Without<SettingRow>,
+            Without<Control>,
+        ),
+    >,
     mut controls: Query<
         (
             Entity,
@@ -387,6 +445,7 @@ pub(super) fn sync(
             &Children,
             &Hovered,
             &mut BackgroundColor,
+            &mut Node,
             Has<Checked>,
             Has<InteractionDisabled>,
         ),
@@ -402,7 +461,7 @@ pub(super) fn sync(
     )>,
     hierarchy: Query<&Children>,
     mut thumbs: Query<(&mut Node, &mut BackgroundColor), With<Thumb>>,
-    mut rows: Query<(&SettingRow, &mut Node), Without<Thumb>>,
+    mut rows: Query<(&SettingRow, &mut Node), (Without<Thumb>, Without<Control>)>,
     mut labels: Query<(&SettingLabel, &mut Text), Without<ButtonLabel>>,
     mut captions: Query<&mut Text, (With<Caption>, Without<ButtonLabel>, Without<SettingLabel>)>,
 ) {
@@ -413,7 +472,20 @@ pub(super) fn sync(
             Display::None
         };
     }
-    for (entity, control, children, hovered, mut background, checked, disabled) in &mut controls {
+    for (entity, control, children, hovered, mut background, mut node, checked, disabled) in
+        &mut controls
+    {
+        node.display = if matches!(
+            control,
+            Control::Point(_)
+                | Control::WholePath
+                | Control::Command(Action::InsertPoint | Action::RemovePoint)
+        ) && !session.path_mode
+        {
+            Display::None
+        } else {
+            Display::Flex
+        };
         let enabled = control.enabled(&session);
         if disabled == enabled {
             if enabled {
@@ -426,6 +498,7 @@ pub(super) fn sync(
             Control::Mode(m) => m == mode(&session),
             Control::Snap => session.snap,
             Control::Help => requests.help,
+            Control::WholePath => session.path_selected.is_some() && session.path_point.is_none(),
             Control::Command(Action::Play) => session.play.is_some(),
             _ => false,
         };

@@ -1968,3 +1968,47 @@ Evidence: ignored `build/zone-plant-marker-properties-native-3440-v2/qualificati
 `zone-plant-marker-properties-clippy-v2.log` and
 `zone-plant-marker-properties-build-v2.log`. Editor SHA-256:
 `68a4a728c39a0f0685ae778d92218d378d54641d9428c5405db00c5b75f5a5df`.
+
+## Guide properties and point controls — 9 November 2026
+
+P5-17 / P3-15 / P1-10 follow-up, using the retained standard Bevy docked form,
+shared PutPath/InsertPathPoint/RemovePathPoint commands and whole-candidate history.
+Whole-guide properties show width (0.25..32 m); selected-point properties show
+exact global f64 XYZ metres plus width. One Apply groups both changes into one
+existing PutPath edit and undo entry, preserving ID/name/kind and every other
+point. Unchanged submissions and Cancel preserve history. Invalid width, position
+or segment geometry retains the buffer and source/history. Fields use existing
+finite-number parsing, explicit visibility for Tab navigation, revision checks and
+modal isolation. Primitive/plant/marker forms retain their existing layouts.
+
+Contextual properties buttons select Previous/Next point (cycling through points
+and the whole guide), Whole guide, Insert point and Remove point. Selection is
+editor-local and does not edit history; topology uses the existing shared commands.
+Buttons hide outside the guide workspace and refuse modal/pending/play changes.
+Insert requires a selected point and fewer than 64 points; Remove requires a
+selected point and more than two. Geometric constraints still use shared candidate
+validation. Width/point readouts are not new terrain carving or gameplay routes.
+No source schema, engine/plugin pin, export or gameplay-authority change.
+
+Acceptance covers roads/streams at local/far origins, exact width-only and grouped
+point/width command equivalence, unchanged round trips, preserved other points,
+segment/range refusal with pending redo and one-entry undo/redo. Native checks
+exercise the actual 3440x1440 controls, one/four/seven-field reuse, Tab wrapping,
+outliner paging, invalid correction, topology selection, two-point minimum and
+save; retained workspace/paint/primitive/playtest checks run in the same fixture.
+
+All acceptance checks above passed. The final source passes 79 focused Rust cases
+(51 domain / 28 editor), formatting and strict workspace/all-target Clippy.
+Native local 4 m road / far 2 m stream runs use RX 7900 XTX (RADV NAVI31), Vulkan
+device 29772, actual 3440x1440 and active Khronos validation, with zero GPU/resize
+diagnostics and no input retries. The local point-properties screenshot was
+visually inspected. Four guide edits match complete headless command documents;
+shared one-entry history, exact saved output, invalid correction, mouse topology
+and one/four/seven-field restoration pass. Windows/gameplay multiplayer were not
+requalified by this UI slice.
+
+Evidence: ignored `build/zone-guide-properties-native-3440-v2/qualification.json`,
+`*.guide-width-ready.png`, `*.guide-point-ready.png` and matching `.before.json` /
+`.commands.jsonl` / `.expected.json` pairs; `zone-guide-properties-tests-v2.log`,
+`zone-guide-properties-clippy-v2.log` and `zone-guide-properties-build-v2.log`.
+Editor SHA-256: `7b34a22aaf3c5ce4926f168f2cdc09fd962ae067512c8b2ce82f5605986d2394`.

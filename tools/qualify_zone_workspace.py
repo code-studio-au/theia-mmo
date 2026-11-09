@@ -11,11 +11,13 @@ from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 from qualify_zone_flatten import normalized
 
 
-def run(output,binary,scatter=False):
+def run(output,binary,scatter=False,guides=False):
+    assert not (scatter and guides), "Qualify scatter and guide extensions in separate fixtures"
     output=output.resolve()
     output.mkdir(parents=True,exist_ok=False)
     binary=binary.resolve()
     cases=[]
+    input_notes=[]
     env=dict(os.environ,WGPU_BACKEND='vulkan',VK_INSTANCE_LAYERS='VK_LAYER_KHRONOS_validation',VK_LOADER_DEBUG='layer')
     for name,axis,origin in [('coarse',33,[0,0,0]),('fine-far',65,[128000000000,20,-128000000000])]:
         source=output/f'{name}.source.json'
@@ -33,6 +35,12 @@ def run(output,binary,scatter=False):
             fixture['objects'] += [dict(id=i,name=f'Browser object {i}',primitive='box',pose=dict(
                 position=[origin[0]+i*3,origin[1]+1,origin[2]-24],yaw_degrees=0,size=[2,2,2]))
                 for i in range(2,32)]
+            source.write_text(json.dumps(fixture))
+        if guides:
+            fixture=json.loads(source.read_text())
+            fixture['paths']=[dict(id=1000,name='Property route',kind='road' if axis==33 else 'stream',
+                width_metres=4,points=[[origin[0]+48,origin[1]+.03,origin[2]+88],
+                    [origin[0]+64,origin[1]+.03,origin[2]+88],[origin[0]+72,origin[1]+.03,origin[2]+84]])]
             source.write_text(json.dumps(fixture))
         with logfile.open('w') as log:
             process=subprocess.Popen([str(binary),'--zone',str(source),'--save-path',str(saved),'--report',str(report)],
@@ -280,6 +288,116 @@ def run(output,binary,scatter=False):
                     control('Command(Save)');wait(lambda:not state()['unsaved_changes'])
                     assert normalized(json.loads(saved.read_text()))==normalized(placed['document'])
                     capture('scatter-result')
+                if guides:
+                    control('Mode(Guides)')
+                    if axis==33:
+                        click(next(b for b in state()['content_list']['controls'] if b['target']=='Next'))
+                        wait(lambda:state()['content_list']['page']==1)
+                    click(next(b for b in state()['content_list']['controls'] if b['target']=='Guide(1000)'))
+                    wait(lambda:state()['path_selected']==1000 and state()['path_point'] is None)
+                    def form_control(target):
+                        click(wait(lambda:next((b for b in state()['transform_controls'] if b['target']==target and all(x>0 for x in b['size'])),None)))
+                    def field(index,value):
+                        form_control(f'Field({index})')
+                        wait(lambda:state()['transform_edit']['active']==index)
+                        for attempt in range(3):
+                            desktop.key_state('Control_L',True)
+                            try:
+                                wait(lambda:state()['control_down'],1)
+                                break
+                            except TimeoutError:
+                                desktop.key_state('Control_L',False)
+                                input_notes.append(dict(case=name,modifier='Control_L',missed_attempt=attempt+1))
+                        else: raise AssertionError('Owned modifier was not delivered')
+                        try: desktop.key('a')
+                        finally: desktop.key_state('Control_L',False)
+                        wait(lambda:not state()['control_down'] and state()['transform_edit']['selection']==[0,len(state()['transform_edit']['fields'][index])])
+                        for character in value:
+                            desktop.key({'.':'period','-':'minus'}.get(character,character))
+                        wait(lambda:state()['transform_edit']['fields'][index]==value)
+                    def oracle(before,edit,label):
+                        prior=output/f'{name}.{label}.before.json';prior.write_text(json.dumps(before))
+                        commands=output/f'{name}.{label}.commands.jsonl'
+                        commands.write_text(json.dumps(dict(command='apply',expected_revision=0,edits=[edit]))+'\n')
+                        expected=output/f'{name}.{label}.expected.json'
+                        subprocess.run([str(binary),'--headless','--zone',str(prior),'--commands',str(commands),
+                            '--output',str(expected)],check=True,capture_output=True)
+                        assert normalized(json.loads(expected.read_text()))==normalized(state()['document'])
+                    before=state()['document']
+                    control('Transform');wait(lambda:state()['transform_edit'] is not None)
+                    assert len(state()['transform_edit']['fields'])==1
+                    field(0,'3.5')
+                    desktop.key('Tab');fresh();assert state()['transform_edit']['active']==0
+                    capture('guide-width-ready')
+                    form_control('Apply');wait(lambda:state()['revision']==8 and state()['transform_edit'] is None)
+                    wide=state()['document']
+                    oracle(before,dict(op='put_path',path=wide['paths'][0]),'guide-width')
+                    control('Command(Undo)');wait(lambda:state()['revision']==9)
+                    assert state()['document']==before
+                    control('Command(Redo)');wait(lambda:state()['revision']==10)
+                    assert state()['document']==wide
+                    control('Point(1)');wait(lambda:state()['path_point']==0)
+                    control('Transform');wait(lambda:state()['transform_edit'] is not None)
+                    assert len(state()['transform_edit']['fields'])==4
+                    # Collapsing the first segment must fail atomically.
+                    field(0,str(origin[0]+64))
+                    form_control('Apply');wait(lambda:'Path segments' in state()['status'])
+                    assert state()['document']==wide and state()['revision']==10
+                    field(0,str(origin[0]+48.125))
+                    field(3,'0.1');form_control('Apply')
+                    wait(lambda:'Path width' in state()['status'])
+                    assert state()['document']==wide and state()['history']==[2,0]
+                    field(3,'3.25')
+                    desktop.key('Tab');wait(lambda:state()['transform_edit']['active']==0)
+                    capture('guide-point-ready')
+                    form_control('Apply');wait(lambda:state()['revision']==11 and state()['transform_edit'] is None)
+                    moved=state()['document']
+                    assert moved['paths'][0]['points'][1:]==wide['paths'][0]['points'][1:]
+                    assert state()['history']==[3,0]
+                    oracle(wide,dict(op='put_path',path=moved['paths'][0]),'guide-point')
+                    control('Command(Undo)');wait(lambda:state()['revision']==12)
+                    assert state()['document']==wide
+                    control('Command(Redo)');wait(lambda:state()['revision']==13)
+                    assert state()['document']==moved
+                    # Mouse topology controls retain the shared one-entry history.
+                    control('Command(InsertPoint)');wait(lambda:state()['revision']==14)
+                    inserted=state()['document']
+                    assert len(inserted['paths'][0]['points'])==4 and state()['path_point']==1
+                    control('Command(RemovePoint)');wait(lambda:state()['revision']==15)
+                    assert state()['document']==moved
+                    control('Command(Undo)');wait(lambda:state()['revision']==16)
+                    assert state()['document']==inserted
+                    control('Command(Undo)');wait(lambda:state()['revision']==17)
+                    assert state()['document']==moved
+                    control('Command(Redo)');wait(lambda:state()['revision']==18)
+                    assert state()['document']==inserted
+                    control('Command(Redo)');wait(lambda:state()['revision']==19)
+                    assert state()['document']==moved
+                    # Explicit selection after topology reconciliation.
+                    control('WholePath');control('Point(1)');wait(lambda:state()['path_point']==0)
+                    control('Command(RemovePoint)');wait(lambda:state()['revision']==20)
+                    assert len(state()['document']['paths'][0]['points'])==2
+                    control('Command(RemovePoint)');fresh()
+                    assert state()['revision']==20
+                    control('Command(Undo)');wait(lambda:state()['revision']==21)
+                    assert state()['document']==moved
+                    control('WholePath');control('Point(-1)');wait(lambda:state()['path_point']==2)
+                    control('Point(1)');wait(lambda:state()['path_point'] is None)
+                    assert state()['revision']==21
+                    control('Command(Save)');wait(lambda:not state()['unsaved_changes'])
+                    assert normalized(json.loads(saved.read_text()))==normalized(moved)
+                    control('Mode(Objects)');fresh()
+                    assert all(not all(x>0 for x in b['size']) for b in state()['workspace_controls']
+                        if b['target'] in ('Point(-1)','Point(1)','WholePath','Command(InsertPoint)','Command(RemovePoint)'))
+                    if axis==33:
+                        click(next(b for b in state()['content_list']['controls'] if b['target']=='Previous'))
+                        wait(lambda:state()['content_list']['page']==0)
+                    click(next(b for b in state()['content_list']['controls'] if b['target']=='Object(1)'))
+                    control('Transform');wait(lambda:state()['transform_edit'] is not None)
+                    assert len(state()['transform_edit']['fields'])==7
+                    form_control('Field(6)');wait(lambda:state()['transform_edit']['active']==6)
+                    form_control('Cancel');wait(lambda:state()['transform_edit'] is None)
+                    assert state()['revision']==21 and state()['document']==moved
                 final=state()
                 subprocess.run(['wmctrl','-ic',hex(window)],check=True)
                 process.wait(timeout=20)
@@ -291,10 +409,11 @@ def run(output,binary,scatter=False):
         assert 'Insert instance layer "VK_LAYER_KHRONOS_validation"' in logs
         diagnostics=check_gpu_diagnostics(logs,allow_surface_resize=False)
         cases.append(dict(name=name,gpu=final['gpu'],viewport=final['viewport'],validation_layer_active=True,gpu_diagnostics=diagnostics))
-    result=dict(cases=cases,checks=['mouse workspace buttons, snap checkbox, contextual standard slider click and drag',
+    result=dict(cases=cases,input_notes=input_notes,checks=['mouse workspace buttons, snap checkbox, contextual standard slider click and drag',
         'settings preserve history; actual paint stamp equals headless command, one-entry undo/redo/save',
         'outliner selection, docked numeric transform matches headless command with one-entry undo/redo, name action, framing and playtest isolation'],scope='Linux native 3440x1440 only; first application-shell slice')
     if scatter: result['checks'].append('vegetation slider boundaries, integer count, tool visibility, history isolation and seeded scatter/headless equality, one-entry undo/redo/save')
+    if guides: result['checks'].append('guide width and point properties, segment/range validation, exact headless equivalence, one-entry undo/redo/save, mouse point selection/topology, two-point minimum and primitive row restoration')
     (output/'qualification.json').write_text(json.dumps(result,indent=2)+'\n')
     print(json.dumps(result,indent=2))
 
@@ -303,4 +422,5 @@ if __name__=='__main__':
     parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--binary',type=Path,default=Path('target/debug/theia-zone-editor'))
     parser.add_argument('--scatter',action='store_true')
-    args=parser.parse_args();run(args.output,args.binary,args.scatter)
+    parser.add_argument('--guides',action='store_true')
+    args=parser.parse_args();run(args.output,args.binary,args.scatter,args.guides)

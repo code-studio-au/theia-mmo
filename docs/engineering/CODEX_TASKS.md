@@ -1,3 +1,10 @@
+Guide properties and point controls, 9 November 2026 (P5-17 / P3-15 / P1-10):
+The docked properties form now exposes whole-guide width or selected-point XYZ
+and width, through existing validated PutPath commands. Mouse Previous/Next point,
+Whole guide, Insert and Remove controls expose point selection/topology directly.
+Undo/redo and pending/modal/playtest isolation remain shared. See [the zone record](../ZONE_EDITOR.md#guide-properties-and-point-controls--9-november-2026)
+for prerequisites and acceptance. Continue after local commits until stopped; no push.
+
 Plant and marker properties, 9 November 2026 (P5-17 / P3-15 / P1-10):
 The docked Transform form now edits plants and NPC/quest authoring markers as
 well as primitives. Five relevant fields expose position/yaw and scale or radius;
