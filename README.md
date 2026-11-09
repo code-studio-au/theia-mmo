@@ -18,7 +18,7 @@ Choose **Top, Front or Right** for orthographic authoring, or **Perspective**.
 The **Grid** checkbox shows/hides references and displays their spacing in metres.
 Front/Right use adaptive vertical grids; zones without terrain also use an
 adaptive ground grid. Terrain keeps its surface-following sample grid in Top
-and Perspective. Grid spacing is visual; movement snapping stays at 1 m.
+and Perspective. Grid spacing is visual and independent of the movement/placement step.
 Drag **middle mouse** to pan the scene in the current view plane. Start inside
 the viewport; reaching a panel or pressing Escape cancels the pan. The wheel
 zooms; WASD pans along the canonical view axes. RMB orbit returns to
@@ -29,12 +29,17 @@ Select a primitive to reveal **red X, green Y and blue Z move arrows**. Drag an
 arrow to preview movement along that world axis, then release for one undo entry.
 Escape cancels. Choose **Move**, **Rotate Y** or **Scale uniformly** in the command bar. Rotation
 uses a green ring; drag the scale cube up/down to preserve proportions. **Snap**
-uses a 1 m move grid, 15-degree rotation steps or 10% scale steps, and
+uses the selected move grid (1 m by default), 15-degree rotation steps or 10%
+scale steps, and
 **Handles** shows/hides them.
 The numeric Transform form remains available for exact values. In Move mode,
 you can also drag an already selected object body across its XZ plane. Stationary
 clicks preserve fractional coordinates; invalid previews retain the last valid pose.
 
+In Properties, **Move / placement step** chooses 0.125, 0.25, 0.5, 1, 2, 4 or 8 m.
+Snapped placement and move handles align to the zone origin; movement keys use
+the chosen relative increment. With Snap off, keys retain 0.1 m nudges. Exact
+numeric properties remain unsnapped, and changing the step preserves undo/redo.
 Terrain properties use sliders for radius, strength, blend and flatten level.
 In Vegetation, choose **Scatter trees** or **Scatter shrubs** to adjust scatter
 radius and plants per click in Properties. One ground click places the group

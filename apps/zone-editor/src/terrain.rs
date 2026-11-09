@@ -424,7 +424,7 @@ I: sample flatten level
 P: spawn at ground cursor
 Level is relative to zone origin
 Flatten PgUp/Dn: level +/-
-G: 1 m / 0.1 m level steps
+G: grid / 0.1 m level steps
 Borders locked flat
 Offline collision sandbox"
                 .into()

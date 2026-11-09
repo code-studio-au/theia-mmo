@@ -39,6 +39,7 @@ pub(super) enum Control {
 }
 #[derive(Component, Clone, Copy, Debug)]
 pub(super) enum Setting {
+    MoveGrid,
     Radius,
     Strength,
     Blend,
@@ -224,13 +225,13 @@ pub(super) fn setup(mut commands: Commands) {
                 (Control::WholePath,"Whole guide"),(Control::Command(Action::InsertPoint),"Insert point"),
                 (Control::Command(Action::RemovePoint),"Remove point")] { row.spawn(button(control,label)); }
         });
-        for setting in [Setting::Radius,Setting::Strength,Setting::Blend,Setting::Level,Setting::ScatterRadius,Setting::ScatterCount] {
+        for setting in [Setting::MoveGrid,Setting::Radius,Setting::Strength,Setting::Blend,Setting::Level,Setting::ScatterRadius,Setting::ScatterCount] {
             let (minimum,maximum) = setting.range();
             panel.spawn((SettingRow(setting), Node { flex_direction:FlexDirection::Column,row_gap:px(6),..default() }))
                 .with_children(|row| {
                     row.spawn((SettingLabel(setting),text("",15.)));
                     row.spawn((setting, Slider { track_click:TrackClick::Snap,..default() },SliderValue(minimum),
-                        SliderRange::new(minimum,maximum),SliderStep(match setting { Setting::ScatterCount=>1.,Setting::Level|Setting::ScatterRadius=>0.1,_=>0.05 }),SliderPrecision(if matches!(setting,Setting::ScatterCount){0}else{3}),
+                        SliderRange::new(minimum,maximum),SliderStep(match setting { Setting::ScatterCount|Setting::MoveGrid=>1.,Setting::Level|Setting::ScatterRadius=>0.1,_=>0.05 }),SliderPrecision(if matches!(setting,Setting::ScatterCount|Setting::MoveGrid){0}else{3}),
                         Hovered::default(),Node {width:percent(100),height:px(24),..default()},
                         BackgroundColor(Color::srgb(0.09,0.12,0.16))))
                     .with_children(|track| {
@@ -302,6 +303,7 @@ impl Control {
 impl Setting {
     fn range(self) -> (f32, f32) {
         match self {
+            Self::MoveGrid => (0., (snapping::STEPS.len() - 1) as f32),
             Self::Radius => (4., 32.),
             Self::Strength => (0.05, 8.),
             Self::Blend => (5., 100.),
@@ -312,6 +314,10 @@ impl Setting {
     }
     fn value(self, session: &Session) -> f32 {
         match self {
+            Self::MoveGrid => snapping::STEPS
+                .iter()
+                .position(|&step| step == session.move_step)
+                .unwrap_or(3) as f32,
             Self::Radius => session.brush_radius as f32,
             Self::Strength => session.brush_strength,
             Self::Blend => {
@@ -328,6 +334,7 @@ impl Setting {
     }
     fn visible(self, session: &Session) -> bool {
         match self {
+            Self::MoveGrid => true,
             Self::ScatterRadius | Self::ScatterCount => {
                 session.vegetation_mode && session.plant_scatter && session.plant_palette.is_some()
             }
@@ -354,6 +361,7 @@ impl Setting {
     fn label(self, session: &Session) -> String {
         let value = self.value(session);
         match self {
+            Self::MoveGrid => format!("Move / placement step  {} m", session.move_step),
             Self::Radius => format!("Brush radius  {value:.1} m"),
             Self::Strength => format!("Strength  {value:.3} m / stamp"),
             Self::Blend => format!("Blend  {value:.2}%"),
@@ -458,6 +466,7 @@ pub(super) fn change(
     let (minimum, maximum) = setting.range();
     let value = event.value.clamp(minimum, maximum);
     match setting {
+        Setting::MoveGrid => session.move_step = snapping::STEPS[value.round() as usize],
         Setting::Radius => session.brush_radius = f64::from(value),
         Setting::Strength => session.brush_strength = value,
         Setting::Blend => {
@@ -600,13 +609,14 @@ pub(super) fn sync(
                 ""
             }
         );
+        let snap_caption = format!(
+            "[{}] Snap ({} m / 15 deg / 10%)",
+            if session.snap { "x" } else { " " },
+            session.move_step
+        );
         let caption = match control {
             Control::Grid => Some(grid_caption.as_str()),
-            Control::Snap => Some(if session.snap {
-                "[x] Snap (1 m / 15 deg / 10%)"
-            } else {
-                "[ ] Snap (1 m / 15 deg / 10%)"
-            }),
+            Control::Snap => Some(snap_caption.as_str()),
             Control::Handles => Some(if session.show_move_handles {
                 "[x] Handles"
             } else {

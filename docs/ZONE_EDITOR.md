@@ -2425,3 +2425,55 @@ Evidence: ignored build/zone-pointer-pan-native-3440-v1/qualification.json,
 local/front.png; zone-pointer-pan-tests-v2.log, zone-pointer-pan-clippy-v2.log and
 zone-pointer-pan-build.log. Editor SHA-256:
 `7311b34ea6ae23f03967d04f20160dffa22e1b2ea893a81a660c42d5157895e7`.
+
+## Placement and move grid presets — 9 November 2026
+
+P5-17 / P3-15 / P1-10; prerequisites are the shared checked zone snap helper,
+standard properties sliders, validated move/body gestures and grouped history.
+A discrete standard Bevy slider chooses 0.125/0.25/0.5/1/2/4/8 metres, with 1 m
+retained as the default. Integer preset selection avoids storing a promoted f32
+approximation of the metre step. The checkbox caption and properties label show
+actual metres, while the visual reference-grid spacing remains independent.
+
+Object, plant, marker and guide placement share zone-origin-relative quantization.
+Primitive world-axis/body previews capture the same grid at gesture start; changed
+axes quantize through the existing checked helper. Stationary clicks preserve
+all original f64 values and unaffected fields remain exact. This also reconciles
+the previous absolute-zero handle rounding with the placement helper at fractional
+origins and half-step ties. Ties round away from the zone anchor. Rotation remains
+15 degrees and uniform scale remains 10%; numeric properties remain exact and
+unsnapped. Shared whole-candidate commands still validate every changed preview
+and commit, including zone bounds and primitive constraints.
+
+Movement keys for primitives/plants/markers/guides use the selected relative
+increment when snapped, retaining 0.1 m precise nudges otherwise. Flatten-level
+key increments use the selected linear step too. Terrain-cursor spawn placement
+quantizes X/Z but retains surface height plus its existing 0.1 m clearance offset.
+Brush stamp centres/resolution and numeric brush sliders retain their contracts.
+Settings are editor-local and do not enter source/export, revision/history or
+undo/redo. Existing modal/playtest/gesture/draft guards refuse slider changes
+while busy. Explicit structured commands remain exact values, sharing validation
+and undo with the resolved visual edits. Engine pins and source schema unchanged.
+
+Acceptance passes: 96 focused Rust cases (51 domain / 45 editor), final focused
+custom-gesture and half-step checks, formatting and strict workspace/all-target
+Clippy. Native actual 3440x1440 local/far fractional-origin walkthroughs pass
+slider endpoints/presets, source/history/redo isolation, a 0.125 m axis drag,
+keyboard nudges and primitive/plant/marker/guide placement, with eighteen complete
+headless document pairs and exact save. Retained default 1 m axis/body-drag
+walkthroughs pass stationary/precise fields, bounds refusal, undo/redo and save.
+Terrain paint and vegetation scatter/property walkthroughs also pass at 4 m local
+and 2 m far resolution. All six runs use AMD RX 7900 XTX (RADV NAVI31), Vulkan
+device 29772, active Khronos validation and zero GPU/resize diagnostics. The paint
+properties capture was visually inspected before desktop access was withdrawn.
+Windows and physical-device input remain unqualified. Further work is headless
+while the desktop is unavailable.
+
+Evidence: ignored build/zone-move-grid-native-3440-v2/qualification.json and
+*.commands.jsonl / *.expected.json pairs;
+zone-move-grid-default-native-3440-v1/qualification.json;
+zone-move-grid-workspace-native-3440-v1/qualification.json and
+coarse.paint-properties.png; zone-move-grid-tests-v2.log,
+zone-move-grid-focused.log, zone-move-grid-ties.log,
+zone-move-grid-clippy-v4.log and zone-move-grid-build-v2.log. Editor SHA-256:
+`5489d3d7231216e7286f9a6e2334f6ef5cecb2b7b36be6f4c56771290f23102d`.

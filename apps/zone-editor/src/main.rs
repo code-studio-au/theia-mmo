@@ -14,6 +14,7 @@ mod paths;
 mod playtest;
 mod properties;
 mod selection;
+mod snapping;
 mod spawn;
 mod terrain;
 mod vegetation;
@@ -54,6 +55,7 @@ struct Session {
     selected: Option<u64>,
     palette: Option<Primitive>,
     snap: bool,
+    move_step: f64,
     show_move_handles: bool,
     gizmo_tool: gizmo::Tool,
     status: String,
@@ -225,10 +227,17 @@ impl Session {
             edits,
         });
     }
+    fn grid(&self) -> snapping::Grid {
+        snapping::Grid {
+            origin: self.editor.zone().origin,
+            step: self.move_step,
+        }
+    }
     fn snapped(&self, position: [f64; 3]) -> [f64; 3] {
         if self.snap {
             std::array::from_fn(|i| {
-                theia_zone::snap(position[i], self.editor.zone().origin[i], 1.)
+                self.grid()
+                    .coordinate(position[i], i)
                     .unwrap_or(position[i])
             })
         } else {
@@ -343,6 +352,7 @@ fn run() -> Result<(), String> {
         selected: None,
         palette: None,
         snap: true,
+        move_step: 1.,
         show_move_handles: true,
         gizmo_tool: gizmo::Tool::Move,
         status: "Ready - choose a primitive, then click the ground".into(),
@@ -488,7 +498,7 @@ fn object_actions() -> [(Action, &'static str); 12] {
         (Action::Place(Primitive::Box), "Place box [1]"),
         (Action::Place(Primitive::Sphere), "Place sphere [2]"),
         (Action::Place(Primitive::Cylinder), "Place cylinder [3]"),
-        (Action::Snap, "Toggle 1 m snap [G]"),
+        (Action::Snap, "Toggle grid snap [G]"),
         (Action::Undo, "Undo [Ctrl Z]"),
         (Action::Redo, "Redo [Ctrl Y]"),
         (Action::Delete, "Delete selected [Del]"),
@@ -739,10 +749,12 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
                 session.edit(vec![Edit::Delete { id }]);
             }
         }
-        Action::Spawn => match spawn::position(session.editor.zone(), view.target, false) {
-            Ok(position) => session.edit(vec![Edit::SetSpawn { position }]),
-            Err(error) => session.status = error,
-        },
+        Action::Spawn => {
+            match spawn::position(session.editor.zone(), view.target, false, session.move_step) {
+                Ok(position) => session.edit(vec![Edit::SetSpawn { position }]),
+                Err(error) => session.status = error,
+            }
+        }
         Action::NewPath(_)
         | Action::FinishPath
         | Action::GradePath
@@ -806,7 +818,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
             );
         }
         Action::FlattenHeight(direction) => {
-            let increment = if session.snap { 1. } else { 0.1 };
+            let increment = if session.snap { session.move_step } else { 0.1 };
             session.flatten_height =
                 (session.flatten_height + f64::from(direction) * increment).clamp(-64., 64.);
             session.status = format!(
@@ -993,7 +1005,7 @@ fn keyboard(
     };
     let id = object.id;
     let mut pose = object.pose.clone();
-    let increment = if session.snap { 1. } else { 0.1 };
+    let increment = if session.snap { session.move_step } else { 0.1 };
     for (key, axis, sign) in [
         (KeyCode::ArrowLeft, 0, -1.),
         (KeyCode::ArrowRight, 0, 1.),

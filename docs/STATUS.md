@@ -1,3 +1,15 @@
+Execution constraint, 9 November 2026: desktop input/display is unavailable at
+the user’s request. Continue headless work only; do not resume mouse, keyboard,
+display use or native window checks without renewed authorization. The grid-step
+native checks below completed before this constraint.
+
+Placement/move grid presets, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Properties now exposes a discrete 0.125/0.25/0.5/1/2/4/8 m step slider. Shared
+zone-origin snapping covers placement and primitive move/body gestures; nudges
+use the chosen increment. Settings preserve history/redo; rotation and scale
+snapping retain their contracts. See [the zone record](ZONE_EDITOR.md#placement-and-move-grid-presets--9-november-2026).
+Continue after each local commit; no push.
+
 Pointer viewport panning, 9 November 2026 (P5-17 / P3-15 / P1-10):
 Middle-mouse drags now pan in the current view plane with projection/zoom-aware
 logical cursor tracking. Pans must begin inside the viewport; panels, Escape,

@@ -23,7 +23,7 @@ pub(super) fn actions() -> [(Action, &'static str); 12] {
         (Action::DeleteMarker, "Delete marker [Del]"),
         (Action::MarkerRadius(1), "Larger footprint (+0.5 m)"),
         (Action::MarkerRadius(-1), "Smaller footprint (-0.5 m)"),
-        (Action::Snap, "Toggle 1 m snap [G]"),
+        (Action::Snap, "Toggle grid snap [G]"),
         (Action::Undo, "Undo [Ctrl Z]"),
         (Action::Redo, "Redo [Ctrl Y]"),
         (Action::Save, "Save zone [Ctrl S]"),
@@ -279,7 +279,7 @@ pub(super) fn transform(keys: &ButtonInput<KeyCode>, session: &mut Session) {
         return;
     };
     let mut next = marker.clone();
-    let increment = if session.snap { 1. } else { 0.1 };
+    let increment = if session.snap { session.move_step } else { 0.1 };
     for (key, axis, sign) in [
         (KeyCode::ArrowLeft, 0, -1.),
         (KeyCode::ArrowRight, 0, 1.),

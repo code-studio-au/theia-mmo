@@ -289,7 +289,7 @@ pub(super) fn pointer(
                         before: object.pose.clone(),
                         preview: object.pose.clone(),
                         revision: session.editor.revision(),
-                        gesture,
+                        gesture: gesture.with_grid(session.grid()),
                     });
                     session.status = match handle.tool {
                         gizmo::Tool::Move => "Moving world axis - release applies; Escape cancels",
@@ -324,7 +324,7 @@ pub(super) fn pointer(
                         before: object.pose.clone(),
                         preview: object.pose.clone(),
                         revision: session.editor.revision(),
-                        gesture,
+                        gesture: gesture.with_grid(session.grid()),
                     });
                     session.status = "Moving XZ plane - release applies; Escape cancels".into();
                 }
@@ -535,6 +535,7 @@ pub(super) fn report(
         "gpu":{"name":adapter.name,"backend":format!("{:?}",adapter.backend),"device":adapter.device}});
     value["grid"] = serde_json::json!({"enabled":view.show_grid,"spacing":authoring_grid::spacing(&session,&view),"surface":authoring_grid::surface(&session,&view),"surface_visible":scene_visuals.iter().any(|(_,_,_,v,_,_,_,_,grid)|grid && *v!=Visibility::Hidden),
         "lines":scene_visuals.iter().filter_map(|(_,_,_,visibility,_,transform,_,line,..)|line.map(|line|serde_json::json!({"slot":line.slot,"along_first":line.along_first,"visible":*visibility!=Visibility::Hidden,"position":transform.map(|t|t.translation.to_array()),"scale":transform.map(|t|t.scale.to_array())}))).collect::<Vec<_>>()});
+    value["move_step_metres"] = session.move_step.into();
     value["middle_mouse_down"] = mouse.pressed(MouseButton::Middle).into();
     value["window_title"] = serde_json::json!(window.title);
     value["plant_point"] = serde_json::json!(session.plant_point);

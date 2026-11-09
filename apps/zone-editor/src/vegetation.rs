@@ -349,7 +349,7 @@ pub(super) fn keyboard(keys: &ButtonInput<KeyCode>, session: &mut Session) {
         return;
     };
     let mut p = plant.clone();
-    let increment = if session.snap { 1. } else { 0.1 };
+    let increment = if session.snap { session.move_step } else { 0.1 };
     for (key, axis, sign) in [
         (KeyCode::ArrowLeft, 0, -1.),
         (KeyCode::ArrowRight, 0, 1.),

@@ -593,7 +593,7 @@ pub(super) fn translate(keys: &ButtonInput<KeyCode>, session: &mut Session, view
         return;
     }
     let mut delta = [0.; 3];
-    let step = if session.snap { 1. } else { 0.1 };
+    let step = if session.snap { session.move_step } else { 0.1 };
     for (key, axis, sign) in [
         (KeyCode::ArrowLeft, 0, -1.),
         (KeyCode::ArrowRight, 0, 1.),

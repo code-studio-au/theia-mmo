@@ -1,11 +1,16 @@
 //! Surface spawn authoring through checked coordinates and the retained SetSpawn edit.
 use super::*;
 
-pub(super) fn position(zone: &Zone, local: Vec3, snap: bool) -> Result<[f64; 3], String> {
+pub(super) fn position(
+    zone: &Zone,
+    local: Vec3,
+    snap: bool,
+    step: f64,
+) -> Result<[f64; 3], String> {
     let mut global = zone.global(local.to_array())?;
     if snap {
         for axis in [0, 2] {
-            global[axis] = theia_zone::snap(global[axis], zone.origin[axis], 1.)?;
+            global[axis] = theia_zone::snap(global[axis], zone.origin[axis], step)?;
         }
     }
     let mut surface = zone.surface_position([global[0], global[2]])?;
@@ -20,7 +25,7 @@ pub(super) fn at_cursor(session: &mut Session, point: Option<Vec3>, held: bool) 
     }
     let result = point
         .ok_or_else(|| "Point at ground to place the playtest spawn".into())
-        .and_then(|p| position(session.editor.zone(), p, session.snap));
+        .and_then(|p| position(session.editor.zone(), p, session.snap, session.move_step));
     match result {
         Ok(position) if position == session.editor.zone().spawn => {
             session.status = "Spawn already at this surface position".into();
@@ -35,6 +40,28 @@ mod tests {
     use super::*;
     use theia_zone::terrain::{HeightPatch, Resolution};
 
+    #[test]
+    fn selected_grid_step_quantizes_spawn_xz_without_quantizing_surface_height() {
+        for origin in [
+            [0.125, 0.25, -0.5],
+            [128_000_000_000.125, 20.25, -128_000_000_000.5],
+        ] {
+            let zone = Zone {
+                origin,
+                spawn: origin,
+                ..default()
+            };
+            let local = Vec3::new(1.31, 30., 2.8);
+            for step in snapping::STEPS {
+                let result = position(&zone, local, true, step).unwrap();
+                for axis in [0, 2] {
+                    assert_eq!(((result[axis] - origin[axis]) / step).fract(), 0.);
+                }
+                assert_eq!(result[1], origin[1] + 0.1);
+            }
+            assert!(position(&zone, local, true, 0.).is_err());
+        }
+    }
     #[test]
     fn snapped_and_precise_spawn_use_exact_surface_in_both_far_frames() {
         for resolution in [Resolution::FourMetres, Resolution::TwoMetres] {
@@ -66,7 +93,7 @@ mod tests {
                 };
                 zone.validate().unwrap();
                 for snap in [true, false] {
-                    let result = position(&zone, Vec3::new(64.25, -30., 63.75), snap).unwrap();
+                    let result = position(&zone, Vec3::new(64.25, -30., 63.75), snap, 1.).unwrap();
                     let xz = if snap {
                         [origin[0] + 64., origin[2] + 64.]
                     } else {
@@ -102,7 +129,7 @@ mod tests {
             ..default()
         };
         assert_eq!(
-            position(&zone, Vec3::new(1.25, -50., 2.75), false).unwrap(),
+            position(&zone, Vec3::new(1.25, -50., 2.75), false, 1.).unwrap(),
             [128000000001.25, 20.1, -127999999997.25]
         );
         for point in [
@@ -111,7 +138,7 @@ mod tests {
             Vec3::new(0., 0., -513.),
             Vec3::new(0., 4097., 0.),
         ] {
-            assert!(position(&zone, point, false).is_err());
+            assert!(position(&zone, point, false, 1.).is_err());
         }
     }
 }

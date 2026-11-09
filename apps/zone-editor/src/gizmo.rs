@@ -16,6 +16,14 @@ pub(super) enum Gesture {
     Scale(ScaleDrag),
 }
 impl Gesture {
+    pub fn with_grid(mut self, grid: snapping::Grid) -> Self {
+        match &mut self {
+            Self::Plane(d) => d.grid = grid,
+            Self::Move(d) => d.grid = grid,
+            _ => {}
+        }
+        self
+    }
     pub fn begin(
         tool: Tool,
         ray: Ray3d,
@@ -40,6 +48,7 @@ impl Gesture {
         Some(Self::Plane(PlaneDrag {
             height: anchor.y,
             start: plane_point(ray, anchor.y)?,
+            grid: default(),
         }))
     }
     pub fn tool(self) -> Tool {
@@ -75,7 +84,7 @@ impl Gesture {
                 for axis in [0, 2] {
                     pose.position[axis] += f64::from(delta[axis]);
                     if snap {
-                        pose.position[axis] = pose.position[axis].round();
+                        pose.position[axis] = d.grid.coordinate(pose.position[axis], axis)?;
                     }
                 }
             }
@@ -111,6 +120,7 @@ pub(super) struct YawDrag {
 }
 #[derive(Clone, Copy)]
 pub(super) struct PlaneDrag {
+    grid: snapping::Grid,
     height: f32,
     start: Vec3,
 }
@@ -162,6 +172,7 @@ pub(super) struct Scene {
 }
 #[derive(Clone, Copy)]
 pub(super) struct AxisDrag {
+    grid: snapping::Grid,
     pub axis: usize,
     anchor: Vec3,
     start: f32,
@@ -186,6 +197,7 @@ impl AxisDrag {
             axis,
             anchor,
             start: parameter(ray, anchor, axis)?,
+            grid: default(),
         })
     }
     pub fn position(self, ray: Ray3d, before: [f64; 3], snap: bool) -> Option<[f64; 3]> {
@@ -196,7 +208,7 @@ impl AxisDrag {
         let mut position = before;
         position[self.axis] += delta;
         if snap {
-            position[self.axis] = position[self.axis].round();
+            position[self.axis] = self.grid.coordinate(position[self.axis], self.axis)?;
         }
         Some(position)
     }
@@ -377,6 +389,60 @@ pub(super) fn sync(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn custom_move_grids_quantize_only_active_axes_and_preserve_stationary_values() {
+        for origin in [
+            [0.125, 0.25, -0.5],
+            [128_000_000_000.125, 20.25, -128_000_000_000.5],
+        ] {
+            let before = Pose {
+                position: [origin[0] + 8.123, origin[1] + 1.25, origin[2] - 8.5],
+                yaw_degrees: 17.25,
+                size: [2., 3., 4.],
+            };
+            let zone = Zone {
+                origin,
+                spawn: origin,
+                ..default()
+            };
+            let anchor = Vec3::from_array(zone.local(before.position).unwrap());
+            let ray = |target: Vec3| {
+                let eye = target + Vec3::new(6., 8., 10.);
+                Ray3d::new(eye, Dir3::new(target - eye).unwrap())
+            };
+            for step in snapping::STEPS {
+                let grid = snapping::Grid { origin, step };
+                for (axis, grid_origin) in origin.into_iter().enumerate() {
+                    let mut gesture = Gesture::begin(Tool::Move, ray(anchor), anchor, axis, 1.)
+                        .unwrap()
+                        .with_grid(grid);
+                    assert_eq!(gesture.preview(ray(anchor), &before, true).unwrap(), before);
+                    let pose = gesture
+                        .preview(ray(anchor + Vec3::AXES[axis] * 2.3), &before, true)
+                        .unwrap();
+                    assert_eq!(((pose.position[axis] - grid_origin) / step).fract(), 0.);
+                    for other in 0..3 {
+                        if other != axis {
+                            assert_eq!(pose.position[other], before.position[other]);
+                        }
+                    }
+                    assert_eq!(pose.yaw_degrees, before.yaw_degrees);
+                    assert_eq!(pose.size, before.size);
+                }
+                let mut plane = Gesture::plane(ray(anchor), anchor).unwrap().with_grid(grid);
+                assert_eq!(plane.preview(ray(anchor), &before, true).unwrap(), before);
+                let pose = plane
+                    .preview(ray(anchor + Vec3::new(2.3, 0., -1.3)), &before, true)
+                    .unwrap();
+                for axis in [0, 2] {
+                    assert_eq!(((pose.position[axis] - origin[axis]) / step).fract(), 0.);
+                }
+                assert_eq!(pose.position[1], before.position[1]);
+                assert_eq!(pose.yaw_degrees, before.yaw_degrees);
+                assert_eq!(pose.size, before.size);
+            }
+        }
+    }
     #[test]
     fn body_plane_drag_preserves_stationary_f64_values_and_moves_relative_to_original() {
         let origin = [128_000_000_000., 20., -128_000_000_000.];
