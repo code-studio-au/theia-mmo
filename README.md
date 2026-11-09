@@ -48,6 +48,9 @@ and Ground are also available there. **Shortcuts** reveals the
 keyboard reference. Visual and structured agent edits retain shared validation
 and undo; pending drafts are protected by workspace controls.
 
+**Edit spawn...** opens exact world X/Y/Z fields in Properties. Apply creates one
+validated undo entry; Cancel leaves the spawn unchanged. Clearance is checked
+when entering playtest.
 F5 enters/leaves offline Avian playtest. In Sculpt/Paint, P places the spawn at
 the ground cursor; the green pointer marks it and hides during playtest. Fast
 drags fill brush strokes every 2 m, with a visible 128-stamp cap. Earlier keyboard

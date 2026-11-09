@@ -30,6 +30,7 @@ pub(super) struct FieldRow(usize);
 pub(super) struct FieldLabel(usize);
 #[derive(Clone, Debug, PartialEq)]
 enum Target {
+    Spawn([f64; 3]),
     Object(Pose),
     Plant(Plant),
     Marker(Marker),
@@ -42,6 +43,7 @@ impl Target {
     fn labels(&self) -> &'static [&'static str] {
         match self {
             Self::Object(_) => &LABELS,
+            Self::Spawn(_) => &["World X (m)", "World Y (m)", "World Z (m)"],
             Self::Plant(_) => &[
                 "World X (m)",
                 "World Y (m)",
@@ -65,6 +67,7 @@ impl Target {
     fn values(&self) -> Vec<String> {
         match self {
             Self::Object(pose) => values(pose).to_vec(),
+            Self::Spawn(position) => position.map(|v| v.to_string()).to_vec(),
             Self::Plant(p) => [
                 p.position[0],
                 p.position[1],
@@ -91,11 +94,19 @@ impl Target {
             }
         }
     }
-    fn edit(&self, id: u64, fields: &[String]) -> Result<Option<Edit>, String> {
+    fn edit(&self, id: Option<u64>, fields: &[String]) -> Result<Option<Edit>, String> {
         match self {
+            Self::Spawn(original) => {
+                let v = numbers(fields, self.labels())?;
+                let position = [v[0], v[1], v[2]];
+                Ok((position != *original).then_some(Edit::SetSpawn { position }))
+            }
             Self::Object(original) => {
                 let pose = parse(fields)?;
-                Ok((pose != *original).then_some(Edit::Transform { id, pose }))
+                Ok((pose != *original).then_some(Edit::Transform {
+                    id: id.ok_or("Missing object ID")?,
+                    pose,
+                }))
             }
             Self::Plant(original) => {
                 let v = numbers(fields, self.labels())?;
@@ -137,7 +148,7 @@ pub(super) enum Control {
     Cancel,
 }
 pub(super) struct Draft {
-    pub id: u64,
+    pub id: Option<u64>,
     revision: u64,
     original: Target,
     subject: String,
@@ -324,6 +335,7 @@ pub(super) fn keyboard(
     mut requests: ResMut<workspace::Requests>,
 ) {
     let requested = std::mem::take(&mut requests.transform);
+    let spawn_requested = std::mem::take(&mut requests.spawn_transform);
     if !windows.single().is_ok_and(|w| w.focused) {
         return;
     }
@@ -349,7 +361,7 @@ pub(super) fn keyboard(
         }
         return;
     }
-    if !(keys.just_pressed(KeyCode::F9) || requested) || session.has_modal() {
+    if !(keys.just_pressed(KeyCode::F9) || requested || spawn_requested) || session.has_modal() {
         return;
     }
     if session.play.is_some()
@@ -361,57 +373,62 @@ pub(super) fn keyboard(
         return;
     }
     let zone = session.editor.zone();
-    let (id, original, subject) =
-        if let Some(object) = zone.objects.iter().find(|o| Some(o.id) == session.selected) {
-            (
-                object.id,
-                Target::Object(object.pose.clone()),
-                format!("{:?} #{} | {}", object.primitive, object.id, object.name),
-            )
-        } else if let Some(plant) = zone
-            .plants
-            .iter()
-            .find(|p| Some(p.id) == session.plant_selected)
-        {
-            (
-                plant.id,
-                Target::Plant(plant.clone()),
-                format!("{:?} #{} | {}", plant.kind, plant.id, plant.name),
-            )
-        } else if let Some(marker) = zone
-            .markers
-            .iter()
-            .find(|m| Some(m.id) == session.marker_selected)
-        {
-            (
-                marker.id,
-                Target::Marker(marker.clone()),
-                format!("{:?} #{} | {}", marker.kind, marker.id, marker.name),
-            )
-        } else if let Some(path) = zone
-            .paths
-            .iter()
-            .find(|p| Some(p.id) == session.path_selected)
-        {
-            let point = session.path_point.filter(|i| *i < path.points.len());
-            (
+    let (id, original, subject) = if spawn_requested {
+        (
+            None,
+            Target::Spawn(zone.spawn),
+            "Playtest spawn | world metres\nClearance checked on playtest".into(),
+        )
+    } else if let Some(object) = zone.objects.iter().find(|o| Some(o.id) == session.selected) {
+        (
+            Some(object.id),
+            Target::Object(object.pose.clone()),
+            format!("{:?} #{} | {}", object.primitive, object.id, object.name),
+        )
+    } else if let Some(plant) = zone
+        .plants
+        .iter()
+        .find(|p| Some(p.id) == session.plant_selected)
+    {
+        (
+            Some(plant.id),
+            Target::Plant(plant.clone()),
+            format!("{:?} #{} | {}", plant.kind, plant.id, plant.name),
+        )
+    } else if let Some(marker) = zone
+        .markers
+        .iter()
+        .find(|m| Some(m.id) == session.marker_selected)
+    {
+        (
+            Some(marker.id),
+            Target::Marker(marker.clone()),
+            format!("{:?} #{} | {}", marker.kind, marker.id, marker.name),
+        )
+    } else if let Some(path) = zone
+        .paths
+        .iter()
+        .find(|p| Some(p.id) == session.path_selected)
+    {
+        let point = session.path_point.filter(|i| *i < path.points.len());
+        (
+            Some(path.id),
+            Target::Path {
+                path: path.clone(),
+                point,
+            },
+            format!(
+                "{:?} #{} | {}{}",
+                path.kind,
                 path.id,
-                Target::Path {
-                    path: path.clone(),
-                    point,
-                },
-                format!(
-                    "{:?} #{} | {}{}",
-                    path.kind,
-                    path.id,
-                    path.name,
-                    point.map_or_else(String::new, |i| format!("\nPoint {}", i + 1))
-                ),
-            )
-        } else {
-            session.status = "Select an object, plant, marker or guide to edit properties".into();
-            return;
-        };
+                path.name,
+                point.map_or_else(String::new, |i| format!("\nPoint {}", i + 1))
+            ),
+        )
+    } else {
+        session.status = "Select an object, plant, marker or guide to edit properties".into();
+        return;
+    };
     let draft = Draft {
         id,
         revision: session.editor.revision(),
@@ -568,6 +585,67 @@ pub(super) fn finish(
 mod tests {
     use super::*;
     #[test]
+    fn spawn_fields_preserve_exact_world_values_and_share_bounds_and_history() {
+        for origin in [[0.; 3], [128_000_000_000., 20., -128_000_000_000.]] {
+            let zone = Zone {
+                origin,
+                spawn: [origin[0] + 8.125, origin[1] + 0.125, origin[2] + 6.5],
+                ..default()
+            };
+            let target = Target::Spawn(zone.spawn);
+            assert_eq!(target.labels().len(), 3);
+            let mut fields = target.values();
+            assert!(target.edit(None, &fields).unwrap().is_none());
+            assert!(target.edit(None, &fields[..2]).is_err());
+            for invalid in ["NaN", "inf", "", "one"] {
+                fields[0] = invalid.into();
+                assert!(target.edit(None, &fields).is_err());
+            }
+            fields = target.values();
+            let mut editor = Editor::new(zone.clone()).unwrap();
+            fields[0] = (origin[0] + 12.375).to_string();
+            let edit = target.edit(None, &fields).unwrap().unwrap();
+            editor
+                .execute(Command::Apply {
+                    expected_revision: 0,
+                    edits: vec![edit],
+                })
+                .unwrap();
+            let changed = editor.zone().clone();
+            assert_eq!(
+                changed.spawn,
+                [origin[0] + 12.375, zone.spawn[1], zone.spawn[2]]
+            );
+            assert_eq!(editor.history(), (1, 0));
+            editor
+                .execute(Command::Undo {
+                    expected_revision: 1,
+                })
+                .unwrap();
+            assert_eq!(editor.zone(), &zone);
+            let history = editor.history();
+            fields[0] = (origin[0] + 999.).to_string();
+            assert!(
+                editor
+                    .execute(Command::Apply {
+                        expected_revision: 2,
+                        edits: vec![target.edit(None, &fields).unwrap().unwrap()]
+                    })
+                    .is_err()
+            );
+            assert_eq!(editor.zone(), &zone);
+            assert_eq!(editor.revision(), 2);
+            assert_eq!(editor.history(), history);
+            assert!(target.edit(None, &target.values()).unwrap().is_none());
+            editor
+                .execute(Command::Redo {
+                    expected_revision: 2,
+                })
+                .unwrap();
+            assert_eq!(editor.zone(), &changed);
+        }
+    }
+    #[test]
     fn guide_width_and_point_properties_share_validation_and_preserve_other_points() {
         use theia_zone::paths::PathKind;
         for origin in [[0.; 3], [128_000_000_000., 20., -128_000_000_000.]] {
@@ -589,8 +667,8 @@ mod tests {
                         point,
                     };
                     let mut fields = target.values();
-                    assert!(target.edit(9, &fields).unwrap().is_none());
-                    assert!(target.edit(9, &[]).is_err());
+                    assert!(target.edit(Some(9), &fields).unwrap().is_none());
+                    assert!(target.edit(Some(9), &[]).is_err());
                     let mut zone = Zone {
                         schema: 7,
                         origin,
@@ -608,7 +686,7 @@ mod tests {
                     editor
                         .execute(Command::Apply {
                             expected_revision: 0,
-                            edits: vec![target.edit(9, &fields).unwrap().unwrap()],
+                            edits: vec![target.edit(Some(9), &fields).unwrap().unwrap()],
                         })
                         .unwrap();
                     let changed = editor.zone().clone();
@@ -638,7 +716,7 @@ mod tests {
                         editor
                             .execute(Command::Apply {
                                 expected_revision: 2,
-                                edits: vec![target.edit(9, &invalid).unwrap().unwrap()]
+                                edits: vec![target.edit(Some(9), &invalid).unwrap().unwrap()]
                             })
                             .is_err()
                     );
@@ -651,7 +729,7 @@ mod tests {
                             editor
                                 .execute(Command::Apply {
                                     expected_revision: 2,
-                                    edits: vec![target.edit(9, &invalid).unwrap().unwrap()]
+                                    edits: vec![target.edit(Some(9), &invalid).unwrap().unwrap()]
                                 })
                                 .is_err()
                         );
@@ -722,14 +800,14 @@ mod tests {
                 }
                 let mut editor = Editor::new(zone.clone()).unwrap();
                 let mut fields = target.values();
-                assert!(target.edit(7, &fields).unwrap().is_none());
-                assert!(target.edit(7, &fields[..4]).is_err());
+                assert!(target.edit(Some(7), &fields).unwrap().is_none());
+                assert!(target.edit(Some(7), &fields[..4]).is_err());
                 for index in 0..5 {
                     let mut invalid = fields.clone();
                     invalid[index] = "NaN".into();
                     assert!(
                         target
-                            .edit(7, &invalid)
+                            .edit(Some(7), &invalid)
                             .unwrap_err()
                             .contains(target.labels()[index])
                     );
@@ -742,7 +820,7 @@ mod tests {
                 editor
                     .execute(Command::Apply {
                         expected_revision: 0,
-                        edits: vec![target.edit(7, &fields).unwrap().unwrap()],
+                        edits: vec![target.edit(Some(7), &fields).unwrap().unwrap()],
                     })
                     .unwrap();
                 let changed = editor.zone().clone();
@@ -775,7 +853,7 @@ mod tests {
                     editor
                         .execute(Command::Apply {
                             expected_revision: 2,
-                            edits: vec![target.edit(7, &fields).unwrap().unwrap()]
+                            edits: vec![target.edit(Some(7), &fields).unwrap().unwrap()]
                         })
                         .is_err()
                 );

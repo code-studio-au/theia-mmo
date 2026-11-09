@@ -2352,3 +2352,40 @@ zone-file-context-native-3440-v2/local/unsaved-file-context.png and state.json;
 zone-file-context-far-native-3440-v3/qualification.json; zone-file-context-tests.log,
 zone-file-context-clippy-v2.log and zone-file-context-build.log. Editor SHA-256:
 `7487ad72ca6d873c605562e900bd3180fd198697bf8a313c50b240eefe69f691`.
+
+## Exact spawn properties — 9 November 2026
+
+P5-17 / P3-15 / P1-10 application workflow follow-up, depending on the retained
+SetSpawn edit, checked global coordinates and standard docked numeric form.
+Edit spawn in the command bar opens three exact f64 world X/Y/Z fields, retaining
+existing entry selection. Spawn has no entry ID; the form/report represents it
+as absent rather than allocating an object ID. Unused rows are hidden from layout
+and focus navigation. Shared field parsing rejects non-finite values, and Apply
+runs SetSpawn through the existing whole-candidate validation/revision guard,
+creating one undo entry. Unchanged Apply skips commands and preserves redo.
+Cancel/Escape/focus loss leave source unchanged, with retained modal input/agent
+isolation. Busy playtest, transform, stroke and guide drafts refuse opening.
+Existing view-centre and terrain-cursor placement are unchanged. Clearance is
+checked on entering the offline Avian playtest, separately from source bounds.
+
+Acceptance: 91 focused Rust tests (51 domain / 40 editor), formatting and strict
+workspace/all-target Clippy pass, covering exact local/far values, finite/field
+count refusal, candidate bounds, one-entry undo/redo and rejected/no-op edits
+preserving redo. Native actual 3440x1440 walkthroughs pass at local/far origins on
+AMD RX 7900 XTX (RADV NAVI31), Vulkan device 29772, with active Khronos validation
+and zero GPU/resize diagnostics. Four complete native documents match the shared
+headless SetSpawn command. Three fields/hidden unused rows, finite/range refusal,
+unchanged Apply preserving redo, Apply/Cancel, one-entry undo/redo, exact save and
+busy playtest/guide-draft refusal pass. Native checks explicitly refuse a source-
+valid spawn 12.5 cm above the floor (outside the retained 10 cm support probe),
+then correct Y to 6.25 cm and enter actual Avian playtest at the authored X/Z.
+The far-origin field capture was visually inspected. Windows and maximum-budget
+interactive performance remain unqualified; gameplay controls/authority, engine
+pins and source schema are unchanged.
+
+Evidence: ignored build/zone-spawn-properties-native-3440-v3/qualification.json,
+far/spawn-fields.png, local/unsupported-spawn.png and *.commands.jsonl /
+*.expected.json complete-document pairs; zone-spawn-properties-tests.log,
+zone-spawn-properties-clippy-v2.log and zone-spawn-properties-build.log.
+Editor SHA-256:
+`a073beaed76c132ce234bf6780e5b87e9c00a8a49616a62bb8dca8e240a5735e`.

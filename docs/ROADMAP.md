@@ -1,3 +1,10 @@
+Exact spawn properties, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Edit spawn opens three exact world-coordinate fields in the existing docked
+properties form. Apply uses shared SetSpawn validation and one-entry undo;
+unchanged values preserve redo. Existing placement actions remain available.
+See [the zone record](ZONE_EDITOR.md#exact-spawn-properties--9-november-2026).
+Continue after each local commit; no push.
+
 Active document context, 9 November 2026 (P5-17 / P3-15 / P1-10):
 The footer now persistently identifies the active save path and saved/unsaved
 state; the window title identifies the zone/file and marks dirty content. Older

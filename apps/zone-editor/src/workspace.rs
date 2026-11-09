@@ -13,6 +13,7 @@ pub(super) const INSPECTOR: f32 = 600.;
 pub(super) struct Requests {
     pub name: bool,
     pub transform: bool,
+    pub spawn_transform: bool,
     pub help: bool,
     pub file_open: bool,
     pub file_save_as: bool,
@@ -24,6 +25,7 @@ pub(super) enum Control {
     Frame,
     Rename,
     Transform,
+    SpawnTransform,
     FileOpen,
     FileSaveAs,
     Point(i8),
@@ -127,6 +129,7 @@ pub(super) fn setup(mut commands: Commands) {
                     (Control::Command(Action::Redo), "Redo"),
                     (Control::Frame, "Frame selection"),
                     (Control::Command(Action::Spawn), "Spawn at view centre"),
+                    (Control::SpawnTransform, "Edit spawn..."),
                     (Control::Command(Action::Play), "Playtest"),
                     (Control::Help, "Shortcuts"),
                 ] {
@@ -431,6 +434,7 @@ pub(super) fn activate(
         Control::Help => requests.help = !requests.help,
         Control::Rename => requests.name = true,
         Control::Transform => requests.transform = true,
+        Control::SpawnTransform => requests.spawn_transform = true,
         Control::FileOpen => requests.file_open = true,
         Control::FileSaveAs => requests.file_save_as = true,
         Control::Snap | Control::Handles | Control::Grid => {}
