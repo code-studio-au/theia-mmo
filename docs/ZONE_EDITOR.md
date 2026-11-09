@@ -2848,3 +2848,38 @@ no-op/redo/save checks. It was compiled but not run under the user’s desktop
 restriction. Native UI/input/GPU and Windows acceptance remain pending; the
 earlier wheel-delivery gap remains open. No display, mouse or keyboard input was
 used. Source schema, engine pins and gameplay behavior are unchanged.
+
+## Property keyboard routing and yaw endpoints — 9 November 2026
+
+P5-17 / P3-15 / P1-10; prerequisites are the controlled property sliders and
+modal field navigation. A real in-memory Bevy InputPlugin/InputFocusPlugin/
+InputDispatchPlugin route now qualifies property Tab/Shift-Tab, arrows and
+Home/End. Standard CPU asset/mesh/transform/visibility plugins supply inherited
+visibility, so hidden rows and controls are excluded by actual TabNavigation.
+No Winit, renderer, GPU, clipboard plugin or OS input backend is added. Keyboard
+messages are written into the ECS test app rather than sent to a desktop.
+
+The new key-route regression exposed a presentation bug: End set the yaw field
+to +180, but wrapped display immediately moved the thumb to -180. Wrapped yaw
+now retains positive authored half turns at +180 and negative half turns at
+-180, keeping both inclusive endpoints stable. Original full-turn strings and
+no-op precision remain intact; source and existing shared Apply semantics are
+unchanged. Native physical key delivery is a separate pending check.
+
+Acceptance: all 115 focused Rust tests (55 domain / 60 editor), strict workspace/
+all-target Clippy, formatting, Python compilation and an editor build pass. Tab
+and Shift-Tab visit exactly the visible fields and relevant sliders, wrap within
+the form and skip hidden controls for all six form targets. Actual dispatched
+ArrowRight/Home/End messages change the expected pending yaw/scale/radius/whole-
+and point-guide width, retain slider focus and keep widget/field endpoints equal.
+Complete source, revision and pending redo stay unchanged; Escape cancels.
+
+Evidence: ignored build/zone-properties-keyboard-{tests,all-tests,clippy,build}.log.
+The initial failing +180 expectation is retained separately in
+build/zone-properties-keyboard-before-fix.log. Final all-tests acceptance includes
+the fixed endpoint behavior and all earlier UI/domain regressions. The owned
+native qualifier accepts --keyboard (also with --values) for future Home/End and
+restored-drag checks. It was compiled but not run under the desktop restriction.
+Native UI/input/GPU and Windows acceptance remain pending; the earlier wheel-
+delivery gap remains open. No display, mouse or keyboard input was used. Engine
+pins, schema, simulation and gameplay-facing rules unchanged.

@@ -1,3 +1,10 @@
+Property keyboard routing, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Headless real input/focus/visibility tests cover Tab/Shift-Tab and slider keys
+without OS input. They caught and fixed a yaw +180/-180 thumb jump. All 115
+focused Rust tests pass; native key delivery/UI/GPU acceptance remains pending.
+See [the zone record](../ZONE_EDITOR.md#property-keyboard-routing-and-yaw-endpoints--9-november-2026).
+Continue headlessly after local commits; no desktop input/display use; no push.
+
 Bounded property sliders, 9 November 2026 (P5-17 / P3-15 / P1-10):
 Plant scale, marker radius and whole/point-guide width now use quarter-step
 sliders in the retained exact form. Shared controlled-widget handling preserves

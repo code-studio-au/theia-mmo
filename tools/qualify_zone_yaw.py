@@ -14,7 +14,7 @@ from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def run(output, binary, selected_case, values=False):
+def run(output, binary, selected_case, values=False, keyboard=False):
     output = output.resolve(); output.mkdir(parents=True, exist_ok=False)
     binary = binary.resolve(); cases = []
     env = dict(os.environ, WGPU_BACKEND='vulkan', VK_INSTANCE_LAYERS='VK_LAYER_KHRONOS_validation', VK_LOADER_DEBUG='layer')
@@ -106,6 +106,16 @@ def run(output, binary, selected_case, values=False):
                     finally:
                         desktop.button(1, False)
                     wait(lambda: not state()['left_mouse_down']); current = fresh()
+                    if keyboard:
+                        for key_name, endpoint in [('Home', limits[0]), ('End', limits[1])]:
+                            desktop.key(key_name)
+                            wait(lambda: float(state()['transform_edit']['fields'][field]) == endpoint
+                                 and next(c for c in state()['transform_controls'] if c['target'] == control_name)['value'] == endpoint)
+                            assert state()['document'] == document and state()['revision'] == before['revision']
+                        desktop.move(window, point, 1); desktop.button(1, True)
+                        try: wait(lambda: state()['left_mouse_down'])
+                        finally: desktop.button(1, False)
+                        wait(lambda: not state()['left_mouse_down']); current = fresh()
                     fields = current['transform_edit']['fields']; yaw = float(fields[field])
                     assert yaw % step == 0 and abs(yaw - desired) <= (step if values else 0 if snap else 2)
                     assert fields[:field] == original_fields[:field] and fields[field + 1:] == original_fields[field + 1:]
@@ -145,7 +155,7 @@ def run(output, binary, selected_case, values=False):
         text = logfile.read_text(); assert 'Insert instance layer "VK_LAYER_KHRONOS_validation"' in text
         case = dict(name=name, viewport=final['viewport'], gpu=final['gpu'], validation_layer_active=True, gpu_diagnostics=check_gpu_diagnostics(text, allow_surface_resize=False), records=records)
         (folder / 'qualification.json').write_text(json.dumps(case, indent=2) + '\n'); cases.append(case)
-    result = dict(mode='values' if values else 'yaw', cases=cases, editor_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(), scope='Linux owned synthetic input, native 3440x1440 only; no Windows or multiplayer claim')
+    result = dict(keyboard=keyboard, mode='values' if values else 'yaw', cases=cases, editor_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(), scope='Linux owned synthetic input, native 3440x1440 only; no Windows or multiplayer claim')
     (output / 'qualification.json').write_text(json.dumps(result, indent=2) + '\n'); print(json.dumps(result, indent=2))
 
 
@@ -153,6 +163,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--binary', type=Path, default=Path('target/debug/theia-zone-editor'))
+    parser.add_argument('--keyboard', action='store_true', help='also qualify native Home/End while the slider owns keyboard focus')
     parser.add_argument('--values', action='store_true', help='qualify plant scale, marker radius and whole/point guide width instead of yaw')
     parser.add_argument('--case', choices=['both', 'local', 'far'], default='both')
-    args = parser.parse_args(); run(args.output, args.binary, args.case, args.values)
+    args = parser.parse_args(); run(args.output, args.binary, args.case, args.values, args.keyboard)

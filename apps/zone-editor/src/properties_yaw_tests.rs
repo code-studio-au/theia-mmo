@@ -2,6 +2,14 @@
 use super::*;
 
 pub(super) fn fixture(origin: [f64; 3], target: u8, snap: bool) -> (App, Entity) {
+    fixture_with_input(origin, target, snap, false)
+}
+pub(super) fn fixture_with_input(
+    origin: [f64; 3],
+    target: u8,
+    snap: bool,
+    input: bool,
+) -> (App, Entity) {
     let mut seed = Editor::new(Zone::default()).unwrap();
     seed.execute(
         serde_json::from_slice(include_bytes!(
@@ -63,6 +71,19 @@ pub(super) fn fixture(origin: [f64; 3], target: u8, snap: bool) -> (App, Entity)
         _ => {}
     }
     let mut app = App::new();
+    if input {
+        // Match the production input/focus route without Winit or any OS device.
+        app.add_plugins((
+            bevy::app::TaskPoolPlugin::default(),
+            bevy::asset::AssetPlugin::default(),
+            bevy::mesh::MeshPlugin,
+            bevy::transform::TransformPlugin,
+            bevy::camera::visibility::VisibilityPlugin,
+            bevy::input::InputPlugin,
+            bevy::input_focus::InputFocusPlugin,
+            bevy::input_focus::InputDispatchPlugin,
+        ));
+    }
     app.add_plugins(bevy::ui_widgets::SliderPlugin);
     app.insert_resource(session)
         .init_resource::<ButtonInput<KeyCode>>()
@@ -77,12 +98,24 @@ pub(super) fn fixture(origin: [f64; 3], target: u8, snap: bool) -> (App, Entity)
         .add_systems(Startup, setup)
         .add_systems(Update, keyboard)
         .add_systems(PostUpdate, (finish, slider_sync).chain());
-    app.world_mut().spawn(Window {
-        resolution: (3440, 1440).into(),
-        focused: true,
-        ..default()
-    });
+    let window = app
+        .world_mut()
+        .spawn(Window {
+            resolution: (3440, 1440).into(),
+            focused: true,
+            ..default()
+        })
+        .id();
+    if input {
+        app.world_mut()
+            .entity_mut(window)
+            .insert(bevy::window::PrimaryWindow);
+    }
     app.update();
+    if input {
+        app.update();
+        app.update();
+    }
     let slider = app
         .world_mut()
         .query_filtered::<Entity, With<YawSlider>>()

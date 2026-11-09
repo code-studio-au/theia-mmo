@@ -754,9 +754,16 @@ pub(super) fn finish(
 // authoritative for Apply, including f64 yaw values outside this display range.
 fn displayed_yaw(value: &str) -> Option<f32> {
     let value = value.parse::<f64>().ok()?;
-    value
-        .is_finite()
-        .then(|| ((value + 180.).rem_euclid(360.) - 180.) as f32)
+    value.is_finite().then(|| {
+        let wrapped = (value + 180.).rem_euclid(360.) - 180.;
+        // Keep both inclusive track endpoints stable. Positive authored half
+        // turns belong at +180; negative half turns belong at -180.
+        if wrapped == -180. && value > 0. {
+            180.
+        } else {
+            wrapped as f32
+        }
+    })
 }
 
 pub(super) fn slider_change(
@@ -1320,3 +1327,7 @@ mod yaw_tests;
 #[cfg(test)]
 #[path = "properties_value_tests.rs"]
 mod value_tests;
+
+#[cfg(test)]
+#[path = "properties_keyboard_tests.rs"]
+mod keyboard_tests;
