@@ -2165,3 +2165,42 @@ Evidence: ignored `build/zone-scale-handles-native-3440-v1/qualification.json`,
 `.commands.jsonl` / `.expected.json` pairs; `zone-scale-handles-tests-v2.log`,
 `zone-scale-handles-clippy.log` and `zone-scale-handles-build.log`.
 Editor SHA-256: `687798a4124d6e84927f1091cb5b9705fda8497906f6c0aa9ea77fdc198877f9`.
+
+## Canonical authoring views — 9 November 2026
+
+P5-17 / P3-15 / P1-10 follow-up using standard Bevy Projection,
+OrthographicProjection and the existing editor View/picking/frame pipeline.
+Perspective, Top, Front and Right buttons share workspace pending/modal/play
+refusal. Canonical views use exact camera directions/up axes and orthographic
+fixed-vertical span. Wheel zoom changes the span, while a 1024 m camera stand-off
+and 4096 m far plane keep the camera outside the authored zone. Ray-gesture limits
+also cover the bounded 4096 m local frame. Perspective retains the prior orbit.
+Handles derive orthographic size from view span rather than physical stand-off.
+
+WASD pans along each canonical view's screen axes (Top: X/-Z, Front: X/Y,
+Right: -Z/Y); existing perspective XZ panning remains. RMB motion returns to
+perspective, and Perspective resets the usual isometric orientation. Framing
+works with either projection. Pointer processing precedes camera controls so an
+active transform freezes keyboard pan, orbit and wheel zoom from its first frame.
+Projection/target/tool settings do not change source/revision/history. Offline
+Avian playtest always uses the retained perspective camera and restores the stored
+editor projection on return. Normal gameplay controls/facing are unchanged.
+
+All acceptance checks pass: 85 focused Rust cases (51 domain / 34 editor),
+formatting, strict workspace/all-target Clippy and actual 3440x1440 native local
+4 m / far 2 m runs. These use RX 7900 XTX (RADV NAVI31), Vulkan device 29772, active
+Khronos validation and zero GPU/resize diagnostics, with no input retries. Exact
+axis/up/projection and zoom/restore math, all view controls, top sculpt and front
+Y movement match the shared headless commands (four new complete document pairs).
+The held transform also refuses real W/RMB/wheel camera motion. Pan/zoom, fixed
+camera position during ortho zoom, reachable handles, orbit-to-perspective,
+modal/draft/play isolation, return projection and exact save pass. Retained
+workspace/paint/primitive editing also passes. The front active-move screenshot
+was visually inspected. Windows, adaptive vertical grids, arbitrary projection
+controls and maximum-budget performance remain unqualified; no multiplayer claim.
+
+Evidence: ignored `build/zone-camera-views-native-3440-v3/qualification.json`,
+`*.top-sculpt.png`, `*.front-move.png`, `*.right-view.png` and matching
+`.before.json` / `.commands.jsonl` / `.expected.json` pairs;
+`zone-camera-views-tests-v3.log`, `zone-camera-views-clippy-v3.log` and
+`zone-camera-views-build-v3.log`. Editor SHA-256: `2af9a103d87e0540be26a91df325218954c7ed837d43bb7bda59a75de637f497`.

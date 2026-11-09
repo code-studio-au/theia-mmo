@@ -27,6 +27,7 @@ pub(super) enum Control {
     Snap,
     Handles,
     GizmoTool(gizmo::Tool),
+    View(camera_views::Preset),
     Help,
 }
 #[derive(Component, Clone, Copy, Debug)]
@@ -172,6 +173,15 @@ pub(super) fn setup(mut commands: Commands) {
                     (EditorMode::Plants, "Vegetation"),
                 ] {
                     row.spawn(button(Control::Mode(mode), label));
+                }
+                row.spawn(text("   VIEW", 13.));
+                for (preset, label) in [
+                    (camera_views::Preset::Perspective, "Perspective"),
+                    (camera_views::Preset::Top, "Top"),
+                    (camera_views::Preset::Front, "Front"),
+                    (camera_views::Preset::Right, "Right"),
+                ] {
+                    row.spawn(button(Control::View(preset), label));
                 }
             });
         });
@@ -394,6 +404,7 @@ pub(super) fn activate(
             }
         }
         Control::WholePath => session.path_point = None,
+        Control::View(preset) => preset.select(&mut view),
         Control::GizmoTool(tool) => {
             session.gizmo_tool = tool;
             session.palette = None;
@@ -457,6 +468,7 @@ pub(super) fn sync(
     mut commands: Commands,
     session: Res<Session>,
     requests: Res<Requests>,
+    view: Res<View>,
     mut help: Query<
         &mut Node,
         (
@@ -527,6 +539,7 @@ pub(super) fn sync(
             Control::Snap => session.snap,
             Control::Handles => session.show_move_handles,
             Control::GizmoTool(tool) => session.gizmo_tool == tool,
+            Control::View(preset) => view.preset == preset,
             Control::Help => requests.help,
             Control::WholePath => session.path_selected.is_some() && session.path_point.is_none(),
             Control::Command(Action::Play) => session.play.is_some(),

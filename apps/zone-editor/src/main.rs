@@ -1,6 +1,7 @@
 //! P5-17/P3-15: standard Bevy greybox authoring; no trusted gameplay authority.
 mod agent;
 mod brush_preview;
+mod camera_views;
 mod cli;
 mod export;
 mod gizmo;
@@ -289,6 +290,7 @@ struct View {
     yaw: f32,
     pitch: f32,
     distance: f32,
+    preset: camera_views::Preset,
 }
 
 fn main() {
@@ -378,6 +380,7 @@ fn run() -> Result<(), String> {
         yaw: 0.6,
         pitch: 0.8,
         distance: if initial_target.is_some() { 120. } else { 32. },
+        preset: camera_views::Preset::Perspective,
     })
     .insert_resource(Time::<Fixed>::from_hz(30.))
     .insert_resource(bevy::winit::WinitSettings::continuous())
@@ -422,12 +425,12 @@ fn run() -> Result<(), String> {
             naming::keyboard,
             properties::keyboard,
             keyboard,
-            camera_controls,
             vegetation::pointer,
             markers::pointer,
             paths::pointer,
             terrain::pointer,
             viewport::pointer,
+            camera_controls,
             terrain::sync,
             terrain::palette,
             (viewport::sync, gizmo::sync).chain(),
@@ -1012,14 +1015,15 @@ fn camera_controls(
     windows: Query<&Window>,
     session: Res<Session>,
     mut view: ResMut<View>,
-    mut camera: Query<&mut Transform, With<Camera3d>>,
+    mut camera: Query<(&mut Transform, &mut Projection), With<Camera3d>>,
 ) {
     let Ok(window) = windows.single() else {
         return;
     };
-    if window.focused && session.play.is_none() && !session.has_modal() {
+    if window.focused && session.play.is_none() && !session.has_modal() && session.drag.is_none() {
         let outside = canvas_cursor(window).is_some();
-        if outside && mouse.pressed(MouseButton::Right) {
+        if outside && mouse.pressed(MouseButton::Right) && motion.delta != Vec2::ZERO {
+            view.preset = camera_views::Preset::Perspective;
             view.yaw -= motion.delta.x * 0.005;
             view.pitch = (view.pitch + motion.delta.y * 0.005).clamp(0.15, 1.5);
         }
@@ -1028,13 +1032,12 @@ fn camera_controls(
                 .clamp(3., selection::MAX_VIEW_DISTANCE);
         }
         if !keys.pressed(KeyCode::ControlLeft) && !keys.pressed(KeyCode::ControlRight) {
-            let axis = Vec3::new(
-                (i32::from(keys.pressed(KeyCode::KeyD)) as f32)
-                    - (i32::from(keys.pressed(KeyCode::KeyA)) as f32),
-                0.,
-                (i32::from(keys.pressed(KeyCode::KeyS)) as f32)
-                    - (i32::from(keys.pressed(KeyCode::KeyW)) as f32),
-            );
+            let (right, up) = view.preset.pan_axes();
+            let horizontal = (i32::from(keys.pressed(KeyCode::KeyD))
+                - i32::from(keys.pressed(KeyCode::KeyA))) as f32;
+            let vertical = (i32::from(keys.pressed(KeyCode::KeyW))
+                - i32::from(keys.pressed(KeyCode::KeyS))) as f32;
+            let axis = right * horizontal + up * vertical;
             view.target =
                 (view.target + axis.normalize_or_zero() * time.delta_secs().min(0.1) * 16.).clamp(
                     Vec3::splat(-theia_zone::ZONE_EXTENT as f32),
@@ -1042,7 +1045,12 @@ fn camera_controls(
                 );
         }
     }
-    if let Ok(mut transform) = camera.single_mut() {
+    if let Ok((mut transform, mut projection)) = camera.single_mut() {
+        camera_views::projection(&view, session.play.is_some(), &mut projection);
+        if session.play.is_none() {
+            *transform = camera_views::transform(&view);
+            return;
+        }
         let (target, yaw, pitch, distance) = if let Some(play) = &session.play {
             (
                 Vec3::from_array(play.feet.metres()) + Vec3::Y,

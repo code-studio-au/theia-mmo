@@ -195,7 +195,7 @@ fn plane(ray: Ray3d, height: f32) -> Option<Vec3> {
         return None;
     }
     let t = (height - ray.origin.y) / ray.direction.y;
-    (0. ..2000.).contains(&t).then(|| ray.get_point(t))
+    (0. ..4096.).contains(&t).then(|| ray.get_point(t))
 }
 #[allow(clippy::too_many_arguments)]
 pub(super) fn pointer(
@@ -505,7 +505,7 @@ pub(super) fn report(
     session: Res<Session>,
     view: Res<View>,
     windows: Query<&Window>,
-    cameras: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
+    cameras: Query<(&Camera, &GlobalTransform, &Projection), With<Camera3d>>,
     controls: ReportControls,
     scale: Res<bevy::ui::UiScale>,
     mouse: Res<ButtonInput<MouseButton>>,
@@ -546,7 +546,7 @@ pub(super) fn report(
         return;
     }
     report.elapsed = 0.;
-    let Ok((camera, transform)) = cameras.single() else {
+    let Ok((camera, transform, projection)) = cameras.single() else {
         return;
     };
     let project = |point: Vec3| {
@@ -578,6 +578,14 @@ pub(super) fn report(
         "gpu":{"name":adapter.name,"backend":format!("{:?}",adapter.backend),"device":adapter.device}});
     value["plant_point"] = serde_json::json!(session.plant_point);
     value["show_move_handles"] = session.show_move_handles.into();
+    value["camera_position"] = serde_json::json!(transform.translation().to_array());
+    value["camera_projection"] = match projection {
+        Projection::Orthographic(o) => {
+            serde_json::json!({"kind":"Orthographic","height":match o.scaling_mode { bevy::camera::ScalingMode::FixedVertical {viewport_height}=>Some(viewport_height),_=>None }})
+        }
+        Projection::Perspective(_) => serde_json::json!({"kind":"Perspective"}),
+        _ => serde_json::json!({"kind":"Custom"}),
+    };
     value["move_preview"] = serde_json::json!(session.drag.as_ref().map(|d| &d.preview));
     value["move_handles"] = serde_json::json!(
         scene_visuals
@@ -702,7 +710,7 @@ pub(super) fn report(
         Some(serde_json::json!({"visible":*visibility!=Visibility::Hidden,"mesh":format!("{:?}",handle.0.id()),"vertices":positions.len(),"triangles":mesh.indices().map_or(0,|i|i.len()/3),"samples":samples}))
     }));
     value["brush_point"] = serde_json::json!(session.brush_point.map(|p| p.to_array()));
-    value["view"] = serde_json::json!({"target":view.target.to_array(),"distance":view.distance,"yaw":view.yaw,"pitch":view.pitch});
+    value["view"] = serde_json::json!({"target":view.target.to_array(),"distance":view.distance,"yaw":view.yaw,"pitch":view.pitch,"preset":format!("{:?}",view.preset)});
     let temp = report.path.with_extension("tmp");
     if let Err(error) = std::fs::write(&temp, serde_json::to_vec_pretty(&value).unwrap())
         .and_then(|()| std::fs::rename(temp, &report.path))

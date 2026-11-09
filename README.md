@@ -10,6 +10,10 @@ Choose **Objects, Sculpt, Paint, Paths / streams, NPC / quest markers, or Vegeta
 from the workspace bar. The left panel contains tools; the right column contains
 zone content and properties. **Save, Open saved, Undo, Redo, Frame selection and
 Playtest** are in the command bar, alongside the snap checkbox.
+Choose **Top, Front or Right** for orthographic authoring, or **Perspective**.
+The wheel zooms; WASD pans along the canonical view axes. RMB orbit returns to
+perspective. The camera stays still during a transform drag. Playtest uses its
+normal perspective camera and restores the editor view when you return.
 
 Select a primitive to reveal **red X, green Y and blue Z move arrows**. Drag an
 arrow to preview movement along that world axis, then release for one undo entry.

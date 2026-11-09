@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Exercise the application shell and standard sliders with owned ultrawide input."""
 import argparse
+import copy
 import json
 import os
 from pathlib import Path
@@ -11,8 +12,8 @@ from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 from qualify_zone_flatten import normalized
 
 
-def run(output,binary,scatter=False,guides=False):
-    assert not (scatter and guides), "Qualify scatter and guide extensions in separate fixtures"
+def run(output,binary,scatter=False,guides=False,views=False):
+    assert sum((scatter,guides,views))<=1, "Qualify workspace extensions in separate fixtures"
     output=output.resolve()
     output.mkdir(parents=True,exist_ok=False)
     binary=binary.resolve()
@@ -398,6 +399,116 @@ def run(output,binary,scatter=False,guides=False):
                     form_control('Field(6)');wait(lambda:state()['transform_edit']['active']==6)
                     form_control('Cancel');wait(lambda:state()['transform_edit'] is None)
                     assert state()['revision']==21 and state()['document']==moved
+                if views:
+                    before=copy.deepcopy(state()['document'])
+                    def view(preset):
+                        control(f'View({preset})')
+                        wait(lambda:state()['view']['preset']==preset and state()['camera_projection']['kind']==
+                            ('Perspective' if preset=='Perspective' else 'Orthographic'))
+                    def oracle(prior_document,edit,label):
+                        prior=output/f'{name}.{label}.before.json';prior.write_text(json.dumps(prior_document))
+                        commands=output/f'{name}.{label}.commands.jsonl'
+                        commands.write_text(json.dumps(dict(command='apply',expected_revision=0,edits=[edit]))+'\n')
+                        expected=output/f'{name}.{label}.expected.json'
+                        subprocess.run([str(binary),'--headless','--zone',str(prior),'--commands',str(commands),
+                            '--output',str(expected)],check=True,capture_output=True)
+                        assert normalized(json.loads(expected.read_text()))==normalized(state()['document'])
+                    for preset in ['Top','Front','Right','Perspective']:
+                        view(preset)
+                        assert state()['document']==before and state()['revision']==7 and state()['history']==[1,1]
+                    control('Mode(Sculpt)');control('Frame');view('Top')
+                    wait(lambda:state()['camera_projection']['height']==state()['view']['distance'])
+                    # Canonical pan/zoom settings do not create source history.
+                    target=state()['view']['target']
+                    desktop.key_state('w',True)
+                    try:wait(lambda:state()['view']['target'][2]<target[2])
+                    finally:desktop.key_state('w',False)
+                    control('Frame')
+                    desktop.move(window,[1720,720],1)
+                    height=state()['camera_projection']['height']
+                    position=state()['camera_position']
+                    desktop.button(4,True);desktop.button(4,False)
+                    wait(lambda:state()['camera_projection']['height']<height)
+                    assert state()['camera_position']==position
+                    control('Frame');fresh()
+                    point=state()['terrain_points'][1]
+                    desktop.move(window,point,1);hit=wait(lambda:state()['brush_point'])
+                    settings=state()
+                    desktop.button(1,True)
+                    try:wait(lambda:state()['stroke_progress'] and state()['stroke_progress']['stamps']==1)
+                    finally:desktop.button(1,False)
+                    wait(lambda:state()['revision']==8)
+                    sculpted=copy.deepcopy(state()['document'])
+                    oracle(before,dict(op='brush',brush=dict(centre=[origin[0]+hit[0],origin[2]+hit[2]],
+                        radius_metres=settings['brush_radius'],operation=dict(kind='raise',metres=settings['brush_strength']))),'top-sculpt')
+                    capture('top-sculpt')
+                    control('Command(Undo)');wait(lambda:state()['revision']==9)
+                    assert state()['document']==before
+                    control('Command(Redo)');wait(lambda:state()['revision']==10)
+                    assert state()['document']==sculpted
+                    control('Command(Undo)');wait(lambda:state()['revision']==11)
+                    assert state()['document']==before
+                    control('Mode(Objects)')
+                    click(next(b for b in state()['content_list']['controls'] if b['target']=='Object(1)'))
+                    control('Frame');view('Front');fresh()
+                    arrow=wait(lambda:next((h for h in state()['move_handles'] if h['visible'] and h['axis']==1),None))
+                    for point in [arrow['screen'],arrow['target']]:
+                        assert point and 300<point[0]<3140 and 92<point[1]<1388, point
+                    desktop.move(window,arrow['screen'],1);desktop.button(1,True)
+                    try:
+                        wait(lambda:state()['dragging']);desktop.move(window,arrow['target'],1)
+                        preview=wait(lambda:state()['move_preview'] if state()['move_preview'] and state()['move_preview']!=before['objects'][0]['pose'] else None)
+                        camera=copy.deepcopy(state()['view'])
+                        desktop.key_state('w',True);desktop.button(3,True)
+                        try:
+                            desktop.move(window,[arrow['target'][0]+20,arrow['target'][1]],1)
+                            desktop.button(4,True);desktop.button(4,False);fresh()
+                            assert state()['view']==camera and state()['camera_projection']['kind']=='Orthographic'
+                        finally:desktop.button(3,False);desktop.key_state('w',False)
+                        assert state()['document']==before and state()['revision']==11
+                        capture('front-move')
+                    finally:desktop.button(1,False)
+                    wait(lambda:state()['revision']==12 and not state()['dragging'])
+                    moved=copy.deepcopy(state()['document'])
+                    assert moved['objects'][0]['pose']==preview
+                    for other in [0,2]: assert preview['position'][other]==before['objects'][0]['pose']['position'][other]
+                    assert preview['position'][1]==before['objects'][0]['pose']['position'][1]+2
+                    oracle(before,dict(op='transform',id=1,pose=preview),'front-move')
+                    control('Command(Undo)');wait(lambda:state()['revision']==13)
+                    assert state()['document']==before
+                    control('Command(Redo)');wait(lambda:state()['revision']==14)
+                    assert state()['document']==moved
+                    view('Right');control('Frame')
+                    target=state()['view']['target']
+                    desktop.key_state('d',True)
+                    try:wait(lambda:state()['view']['target'][2]<target[2])
+                    finally:desktop.key_state('d',False)
+                    target=state()['view']['target']
+                    desktop.key_state('w',True)
+                    try:wait(lambda:state()['view']['target'][1]>target[1])
+                    finally:desktop.key_state('w',False)
+                    control('Frame');capture('right-view')
+                    # Orbiting canonical views returns to perspective.
+                    desktop.move(window,[1720,720],1);desktop.button(3,True)
+                    try:
+                        desktop.move(window,[1740,730],1)
+                        wait(lambda:state()['view']['preset']=='Perspective' and state()['camera_projection']['kind']=='Perspective')
+                    finally:desktop.button(3,False)
+                    view('Top');control('Transform')
+                    wait(lambda:state()['transform_edit'] is not None)
+                    control('View(Front)');assert state()['view']['preset']=='Top'
+                    desktop.key('Escape');wait(lambda:state()['transform_edit'] is None)
+                    control('Mode(Guides)');tool('NewPath(Road)')
+                    wait(lambda:state()['path_draft_points']==0)
+                    control('View(Front)');assert state()['view']['preset']=='Top' and state()['path_draft_points']==0
+                    desktop.key('Escape');wait(lambda:state()['path_draft_points'] is None)
+                    view('Right');control('Command(Play)')
+                    wait(lambda:state()['play_feet'] is not None and state()['camera_projection']['kind']=='Perspective')
+                    control('View(Front)');assert state()['view']['preset']=='Right'
+                    control('Command(Play)');wait(lambda:state()['play_feet'] is None and state()['camera_projection']['kind']=='Orthographic')
+                    assert state()['view']['preset']=='Right' and state()['revision']==14 and state()['document']==moved
+                    control('Command(Save)');wait(lambda:not state()['unsaved_changes'])
+                    assert normalized(json.loads(saved.read_text()))==normalized(moved)
                 final=state()
                 subprocess.run(['wmctrl','-ic',hex(window)],check=True)
                 process.wait(timeout=20)
@@ -414,6 +525,7 @@ def run(output,binary,scatter=False,guides=False):
         'outliner selection, docked numeric transform matches headless command with one-entry undo/redo, name action, framing and playtest isolation'],scope='Linux native 3440x1440 only; first application-shell slice')
     if scatter: result['checks'].append('vegetation slider boundaries, integer count, tool visibility, history isolation and seeded scatter/headless equality, one-entry undo/redo/save')
     if guides: result['checks'].append('guide width and point properties, segment/range validation, exact headless equivalence, one-entry undo/redo/save, mouse point selection/topology, two-point minimum and primitive row restoration')
+    if views: result['checks'].append('orthographic top/front/right projections, canonical pan/zoom, top sculpt and front Y move equal exact agent commands, camera frozen during held transform, orbit perspective, modal/draft/play isolation and restored projection/save')
     (output/'qualification.json').write_text(json.dumps(result,indent=2)+'\n')
     print(json.dumps(result,indent=2))
 
@@ -423,4 +535,5 @@ if __name__=='__main__':
     parser.add_argument('--binary',type=Path,default=Path('target/debug/theia-zone-editor'))
     parser.add_argument('--scatter',action='store_true')
     parser.add_argument('--guides',action='store_true')
-    args=parser.parse_args();run(args.output,args.binary,args.scatter,args.guides)
+    parser.add_argument('--views',action='store_true')
+    args=parser.parse_args();run(args.output,args.binary,args.scatter,args.guides,args.views)

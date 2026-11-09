@@ -94,7 +94,7 @@ fn angle(ray: Ray3d, anchor: Vec3) -> Option<f32> {
         return None;
     }
     let distance = (anchor.y - ray.origin.y) / ray.direction.y;
-    if !(0. ..2000.).contains(&distance) {
+    if !(0. ..4096.).contains(&distance) {
         return None;
     }
     let offset = ray.get_point(distance) - anchor;
@@ -150,7 +150,7 @@ fn parameter(ray: Ray3d, anchor: Vec3, axis: usize) -> Option<f32> {
     let offset = ray.origin - anchor;
     let value = (offset.dot(direction) - dot * offset.dot(*ray.direction)) / denominator;
     let distance = dot * value - offset.dot(*ray.direction);
-    (value.is_finite() && (0. ..2000.).contains(&distance)).then_some(value)
+    (value.is_finite() && (0. ..4096.).contains(&distance)).then_some(value)
 }
 impl AxisDrag {
     pub fn begin(ray: Ray3d, anchor: Vec3, axis: usize) -> Option<Self> {
@@ -247,7 +247,7 @@ pub(super) fn setup(
 pub(super) fn sync(
     session: Res<Session>,
     scene: Res<Scene>,
-    camera: Query<&GlobalTransform, With<Camera3d>>,
+    camera: Query<(&GlobalTransform, &Projection), With<Camera3d>>,
     mut handles: Query<(
         &TransformHandle,
         &mut Transform,
@@ -290,11 +290,19 @@ pub(super) fn sync(
                 .local(pose.position)
                 .expect("Validated preview"),
         );
-        let Ok(camera) = camera.single() else {
+        let Ok((camera, projection)) = camera.single() else {
             *visibility = Visibility::Hidden;
             continue;
         };
-        let size = (camera.translation().distance(centre) * 0.06).clamp(1.2, 24.);
+        let size = match projection {
+            Projection::Orthographic(o) => match o.scaling_mode {
+                bevy::camera::ScalingMode::FixedVertical { viewport_height } => {
+                    (viewport_height * o.scale * 0.06).clamp(0.05, 24.)
+                }
+                _ => (camera.translation().distance(centre) * 0.06).clamp(1.2, 24.),
+            },
+            _ => (camera.translation().distance(centre) * 0.06).clamp(1.2, 24.),
+        };
         let length = (pose.size.iter().copied().fold(0., f64::max) as f32 * 0.5 + size * 0.7)
             .max(size * 1.5);
         let length = session

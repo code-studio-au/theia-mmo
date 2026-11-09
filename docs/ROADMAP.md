@@ -1,3 +1,11 @@
+Canonical authoring views, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Standard Bevy orthographic Top/Front/Right views and a Perspective control now
+support terrain and greybox authoring. Canonical pan/zoom, stable orthographic
+camera distance, projection-aware handle sizing and camera locking during drags
+are implemented; playtest retains its perspective camera and restores the editor
+view. See [the zone record](ZONE_EDITOR.md#canonical-authoring-views--9-november-2026) for acceptance.
+Continue after each local commit until stopped; no push.
+
 Primitive uniform scale handle, 9 November 2026 (P5-17 / P3-15 / P1-10):
 Scale uniformly joins Move/Rotate Y in the application toolbar. A standard Bevy
 cube/stem scales all dimensions by one factor, with optional 10% snapping, keeping
