@@ -17,6 +17,10 @@ Use **Open** (Ctrl+O) or **Save As** (Ctrl+Shift+S) to browse folders and zone
 JSON files. Save As asks before overwriting; Open remains undoable. **Reload**
 (Ctrl+Shift+O) reloads the active file. The footer always shows the active save
 path and saved/unsaved state, and the window title marks unsaved content with *.
+When placing primitives, Properties shows size sliders in metres (0.25–32 m).
+Boxes have X/Y/Z sizes, cylinders diameter/height, and spheres one diameter.
+These affect new stamps; existing objects use **Transform...**. New stamps rest
+on the ground or terrain at half their chosen height.
 Choose **Top, Front or Right** for orthographic authoring, or **Perspective**.
 The **Grid** checkbox shows/hides references and displays their spacing in metres.
 Front/Right use adaptive vertical grids; zones without terrain also use an

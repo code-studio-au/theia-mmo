@@ -56,6 +56,7 @@ struct Session {
     saved_zone: Option<Zone>,
     selected: Option<u64>,
     palette: Option<Primitive>,
+    placement_size: [f64; 3],
     snap: bool,
     move_step: f64,
     show_move_handles: bool,
@@ -116,6 +117,7 @@ impl Session {
             saved_zone,
             selected: None,
             palette: None,
+            placement_size: [1.; 3],
             snap: true,
             move_step: 1.,
             show_move_handles: true,
@@ -155,6 +157,47 @@ impl Session {
             name_edit: None,
             transform_edit: None,
             file_dialog: None,
+        }
+    }
+    fn placement_dimensions(&self, primitive: Primitive) -> [f64; 3] {
+        let [x, y, z] = self.placement_size;
+        match primitive {
+            Primitive::Box => [x, y, z],
+            Primitive::Sphere => [x; 3],
+            Primitive::Cylinder => [x, y, x],
+        }
+    }
+    fn place_primitive(&mut self, primitive: Primitive, hit: [f64; 3]) {
+        let point = self.snapped(hit);
+        let mut position = match self.editor.zone().surface_position([point[0], point[2]]) {
+            Ok(position) => position,
+            Err(error) => {
+                self.status = error;
+                return;
+            }
+        };
+        let size = self.placement_dimensions(primitive);
+        position[1] += size[1] / 2.;
+        let id = self.next_id;
+        let Some(next) = id.checked_add(1) else {
+            self.status = "Object IDs exhausted".into();
+            return;
+        };
+        self.next_id = next;
+        self.edit(vec![Edit::Place {
+            object: Object {
+                id,
+                name: format!("{primitive:?} {id}"),
+                primitive,
+                pose: Pose {
+                    position,
+                    yaw_degrees: 0.,
+                    size,
+                },
+            },
+        }]);
+        if self.editor.zone().objects.iter().any(|o| o.id == id) {
+            self.selected = Some(id);
         }
     }
     fn path_label(&self) -> std::borrow::Cow<'_, str> {
@@ -1311,6 +1354,10 @@ fn present(
                         s.stamps(),
                         theia_zone::MAX_EDITS
                     ))
+                )
+            } else if let Some(primitive) = session.palette {
+                format!(
+                    "Placing {primitive:?}\nClick ground | Esc selects\nSize applies to new objects"
                 )
             } else {
                 selected.map_or("No selection".into(), |o| {

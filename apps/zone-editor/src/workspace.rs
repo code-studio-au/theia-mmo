@@ -42,6 +42,7 @@ pub(super) enum Control {
 #[derive(Component, Clone, Copy, Debug)]
 pub(super) enum Setting {
     MoveGrid,
+    PlacementSize(usize),
     Radius,
     Strength,
     Blend,
@@ -239,13 +240,13 @@ pub(super) fn setup(mut commands: Commands) {
                 (Control::WholePath,"Whole guide"),(Control::Command(Action::InsertPoint),"Insert point"),
                 (Control::Command(Action::RemovePoint),"Remove point")] { row.spawn(button(control,label)); }
         });
-        for setting in [Setting::MoveGrid,Setting::Radius,Setting::Strength,Setting::Blend,Setting::Level,Setting::ScatterRadius,Setting::ScatterCount] {
+        for setting in [Setting::MoveGrid,Setting::PlacementSize(0),Setting::PlacementSize(1),Setting::PlacementSize(2),Setting::Radius,Setting::Strength,Setting::Blend,Setting::Level,Setting::ScatterRadius,Setting::ScatterCount] {
             let (minimum,maximum) = setting.range();
             panel.spawn((SettingRow(setting), Node { flex_direction:FlexDirection::Column,row_gap:px(6),..default() }))
                 .with_children(|row| {
                     row.spawn((SettingLabel(setting),text("",15.)));
                     row.spawn((setting, Slider { track_click:TrackClick::Snap,..default() },SliderValue(minimum),
-                        SliderRange::new(minimum,maximum),SliderStep(match setting { Setting::ScatterCount|Setting::MoveGrid=>1.,Setting::Level|Setting::ScatterRadius=>0.1,_=>0.05 }),SliderPrecision(if matches!(setting,Setting::ScatterCount|Setting::MoveGrid){0}else{3}),
+                        SliderRange::new(minimum,maximum),SliderStep(match setting { Setting::ScatterCount|Setting::MoveGrid=>1.,Setting::Level|Setting::ScatterRadius=>0.1,Setting::PlacementSize(_)=>0.25,_=>0.05 }),SliderPrecision(if matches!(setting,Setting::ScatterCount|Setting::MoveGrid){0}else{3}),
                         Hovered::default(),Node {width:percent(100),height:px(24),..default()},
                         BackgroundColor(Color::srgb(0.09,0.12,0.16))))
                     .with_children(|track| {
@@ -319,6 +320,7 @@ impl Setting {
     fn range(self) -> (f32, f32) {
         match self {
             Self::MoveGrid => (0., (snapping::STEPS.len() - 1) as f32),
+            Self::PlacementSize(_) => (0.25, 32.),
             Self::Radius => (4., 32.),
             Self::Strength => (0.05, 8.),
             Self::Blend => (5., 100.),
@@ -333,6 +335,7 @@ impl Setting {
                 .iter()
                 .position(|&step| step == session.move_step)
                 .unwrap_or(3) as f32,
+            Self::PlacementSize(axis) => session.placement_size[axis] as f32,
             Self::Radius => session.brush_radius as f32,
             Self::Strength => session.brush_strength,
             Self::Blend => {
@@ -350,6 +353,15 @@ impl Setting {
     fn visible(self, session: &Session) -> bool {
         match self {
             Self::MoveGrid => true,
+            Self::PlacementSize(axis) => {
+                mode(session) == EditorMode::Objects
+                    && match session.palette {
+                        Some(Primitive::Box) => true,
+                        Some(Primitive::Sphere) => axis == 0,
+                        Some(Primitive::Cylinder) => axis < 2,
+                        None => false,
+                    }
+            }
             Self::ScatterRadius | Self::ScatterCount => {
                 session.vegetation_mode && session.plant_scatter && session.plant_palette.is_some()
             }
@@ -377,6 +389,14 @@ impl Setting {
         let value = self.value(session);
         match self {
             Self::MoveGrid => format!("Move / placement step  {} m", session.move_step),
+            Self::PlacementSize(axis) => match session.palette {
+                Some(Primitive::Sphere) => format!("New sphere diameter  {value:.2} m"),
+                Some(Primitive::Cylinder) => format!(
+                    "New cylinder {}  {value:.2} m",
+                    if axis == 0 { "diameter" } else { "height" }
+                ),
+                _ => format!("New box {}  {value:.2} m", ["X", "Y", "Z"][axis]),
+            },
             Self::Radius => format!("Brush radius  {value:.1} m"),
             Self::Strength => format!("Strength  {value:.3} m / stamp"),
             Self::Blend => format!("Blend  {value:.2}%"),
@@ -485,6 +505,9 @@ pub(super) fn change(
     let value = event.value.clamp(minimum, maximum);
     match setting {
         Setting::MoveGrid => session.move_step = snapping::STEPS[value.round() as usize],
+        Setting::PlacementSize(axis) => {
+            session.placement_size[*axis] = f64::from((value * 4.).round() / 4.);
+        }
         Setting::Radius => session.brush_radius = f64::from(value),
         Setting::Strength => session.brush_strength = value,
         Setting::Blend => {
@@ -693,3 +716,7 @@ pub(super) fn sync(
         **text = format!("PROPERTIES  /  {:?}", mode(&session));
     }
 }
+
+#[cfg(test)]
+#[path = "placement_tests.rs"]
+mod placement_tests;

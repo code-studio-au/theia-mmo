@@ -206,42 +206,10 @@ pub(super) fn pointer(
                 .first()
                 .map(|(_, hit)| ray.get_point(hit.distance));
             if let Some(hit) = hit {
-                let origin = session.editor.zone().origin;
-                let mut position = session.snapped(
-                    session
-                        .editor
-                        .zone()
-                        .global(hit.to_array())
-                        .expect("Bounded ground hit"),
-                );
-                let height = session
-                    .editor
-                    .zone()
-                    .terrain
-                    .as_ref()
-                    .and_then(|patch| patch.height(position[0], position[2]).ok().flatten())
-                    .unwrap_or(0.);
-                position[1] = origin[1] + f64::from(height) + 0.5;
-                let id = session.next_id;
-                if let Some(next) = id.checked_add(1) {
-                    session.next_id = next;
-                    session.edit(vec![Edit::Place {
-                        object: Object {
-                            id,
-                            name: format!("{primitive:?} {id}"),
-                            primitive,
-                            pose: Pose {
-                                position,
-                                yaw_degrees: 0.,
-                                size: [1.; 3],
-                            },
-                        },
-                    }]);
-                    if session.editor.zone().objects.iter().any(|o| o.id == id) {
-                        session.selected = Some(id);
-                    }
-                } else {
-                    session.status = "Object IDs exhausted".into();
+                let point = session.editor.zone().global(hit.to_array());
+                match point {
+                    Ok(point) => session.place_primitive(primitive, point),
+                    Err(error) => session.status = error,
                 }
             }
             return;

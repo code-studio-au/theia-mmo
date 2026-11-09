@@ -1,3 +1,12 @@
+Primitive placement dimensions, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Properties has quarter-step size sliders for new box X/Y/Z, cylinder diameter/
+height and sphere diameter. Preferences preserve source/history; stamps use
+checked snapping/surface support and one shared edit. All 123 focused Rust tests,
+formatting, strict Clippy and build pass. Native local/far shape controls,
+placement, full-document command oracles, undo/redo and Save pass at 3440 x 1440
+with zero Vulkan diagnostics. See [the record](../ZONE_EDITOR.md#primitive-placement-dimensions--9-november-2026).
+Continue after local commits; desktop access authorized; do not push.
+
 Application shortcuts, 9 November 2026 (P5-17 / P3-15 / P1-10):
 Ctrl+N invokes shared New; Ctrl+F opens content search without framing. Modal,
 preview, playtest and focus guards remain. All 119 focused Rust tests, strict

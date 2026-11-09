@@ -3032,3 +3032,49 @@ insertion and zero strict GPU diagnostics. Editor SHA-256:
 af927d2a9df618c898dca0104dc1dd3587519b41dc4748e87e4c9bb7898bfd5b.
 Windows execution remains pending. Schema, engine pins, networking and gameplay
 controls are unchanged. No push.
+
+## Primitive placement dimensions — 9 November 2026
+
+P5-17 / P3-15 / P1-10; prerequisites are shared primitive placement, standard
+workspace sliders and checked origin-relative surface sampling. Properties now
+exposes box X/Y/Z sizes, cylinder diameter/height or sphere diameter while a
+placement tool is active. All use 0.25 m steps from 0.25 to 32 m. Sphere dimensions
+remain uniform and cylinder X/Z diameters remain equal. Hidden shape dimensions
+retain their prior box values when switching tools. These session preferences
+do not edit source, dirty state, history or pending redo. They persist across
+New/Open within the session and return to 1 m on a fresh launch. Existing objects
+retain the exact Transform form and gizmos. The placement summary is concise so
+the controls fit after a stamp selects its new object.
+
+Actual placement uses the selected dimensions, origin-relative X/Z snapping and
+surface support plus half the chosen height. One stamp is one existing shared
+Edit::Place transaction. Invalid dimensions/extent or exhausted IDs refuse a
+stamp without changing source/history. Ground ray conversion now reports errors
+instead of assuming every hit converts. No schema or engine changes.
+
+CPU acceptance: 123 focused Rust tests (55 domain / 68 editor), formatting,
+denied-warning workspace/all-target Clippy and build pass. Actual ValueChange
+observers cover shape-dependent visibility, focus/preview refusal, finite bounds,
+quarter steps and source/save/history isolation. Complete box/sphere/cylinder
+placements at local/far fractional origins equal shared command results; support,
+undo/redo and settings changes with pending redo pass. Additional tests cover
+raised terrain at local/far origins, invalid/bounded/exhausted-ID refusal and
+embedded-font CPU layout for all shape controls inside Properties at 3440 x 1440.
+Evidence: ignored build/zone-placement-size-{tests,all-tests,clippy,build}.log.
+Native acceptance follows after owned mouse input execution.
+
+Native acceptance passes for all three primitives at local/far fractional
+origins, at 3440 x 1440 only. Actual held pointer drags preserve source/history;
+shape-specific controls and their bounds are checked. Ground clicks produce the
+chosen dimensions, origin-relative snapped X/Z and half-height support. All six
+complete documents equal the headless shared-command oracle. Undo/redo retains
+the exact stamp while changing defaults preserves pending redo. Escape hides
+placement controls, and Save writes the exact final source. App-only screenshots
+were inspected. Evidence: ignored build/zone-placement-size-native-3440-v1/
+with per-case reports/logs/screenshots/oracles and qualification.json. AMD Radeon
+RX 7900 XTX (RADV NAVI31), Vulkan device 29772; active validation-layer insertion
+is confirmed in each log with zero strict GPU diagnostics. Editor SHA-256:
+06612d754a1e945e198135a4a0f5ddacd19e369a00fa77e621fad8ad5d33f691.
+Raised-terrain support has CPU/shared-validation coverage here; native terrain
+brush rendering and Windows execution are not newly claimed. Engine pins,
+source schema, networking and gameplay authority remain unchanged. No push.
