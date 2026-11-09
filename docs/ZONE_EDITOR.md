@@ -2915,3 +2915,43 @@ under the user’s desktop restriction. Native UI/input/GPU and Windows acceptan
 remain pending, including the earlier wheel-delivery gap. No display, mouse or
 keyboard input was used. Schema, shared commands, engine pins and gameplay remain
 unchanged. Reset is a form-local action and creates no document undo entry.
+
+## New untitled zones — 9 November 2026
+
+P5-17 / P3-15 / P1-10; prerequisites are shared validated document replacement,
+undo/redo and the retained file browser. The command bar now has New zone. It
+creates the default empty zone as one shared undo entry, clears selection and
+browser filters/search, and recentres the current view without changing its
+preset or grid/editor settings. The identifier allocator remains monotonic.
+Prior unsaved source stays undoable; the original file is never written. File
+identity is separate from source history: Undo restores prior content into the
+untitled document. Save first chooses a filename through Save As, using the
+previous directory; only a successful write assigns the new path and saved
+snapshot. Cancellation, validation failures and failed writes retain untitled
+state. Existing overwrite review remains in force. Reload is disabled until a
+path exists. Playtest works before saving; New is disabled during playtest,
+forms and previews. Repeating New on an already empty untitled zone is a no-op
+that preserves revision and pending redo.
+
+CPU acceptance: all 118 focused Rust tests (55 domain / 63 editor), formatting,
+strict workspace/all-target Clippy and the editor build pass. Real Bevy observers
+and file controllers cover local/far origins, exact prior unsaved source,
+undo/redo, safe first Save, cancellation, failed writes, overwrite confirmation,
+repeated-New no-ops and actual Avian playtest construction. Evidence is ignored
+build/zone-new-document-{tests,all-tests,clippy,build}.log. Native acceptance is
+recorded separately below after execution; Windows execution remains pending.
+
+Native acceptance: tools/qualify_zone_new.py passes both local/far starting
+origins at 3440 x 1440. It checks the command header bounds, untitled footer/title,
+Reload refusal, New no-op, source undo/redo with retained file identity, Save As
+cancellation, failed-write correction, exact saved bytes and clean/dirty state.
+The actual Avian playtest runs in the unsaved default zone and New stays blocked
+until leaving playtest. App-only screenshots were inspected. Evidence: ignored
+build/zone-new-native-3440-v2/{local,far}/ with editor.log, state.json, screenshots
+and qualification.json. AMD Radeon RX 7900 XTX (RADV NAVI31), Vulkan device 29772;
+VK_LAYER_KHRONOS_validation is confirmed inserted in each log, with zero GPU
+diagnostics under the strict checker. Editor SHA-256:
+1af86253478939ecbe80e9eae259e4d77f0f9617176387d3e8db4e785f7d0bcb.
+The initial v1 run stopped on a qualifier-only missing report key before the
+remaining interactions; it is not acceptance evidence. No Windows or multiplayer
+claim. Engine pins, schemas and gameplay authority are unchanged.

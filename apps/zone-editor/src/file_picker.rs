@@ -265,7 +265,9 @@ pub(super) fn keyboard(
     let shift = keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight);
     let open = std::mem::take(&mut requests.file_open)
         || (ctrl && !shift && keys.just_pressed(KeyCode::KeyO));
+    let implicit_save_as = std::mem::take(&mut session.save_as_requested);
     let save_as = std::mem::take(&mut requests.file_save_as)
+        || implicit_save_as
         || (ctrl && shift && keys.just_pressed(KeyCode::KeyS));
     let mode = if open {
         Some(Mode::Open)
@@ -289,7 +291,8 @@ pub(super) fn keyboard(
             "Finish or cancel the preview, or leave playtest, before choosing a file".into();
         return;
     }
-    let Some(folder) = session.path.parent() else {
+    let base = session.picker_path();
+    let Some(folder) = base.parent() else {
         session.status = "Current save path has no folder".into();
         return;
     };
@@ -297,9 +300,7 @@ pub(super) fn keyboard(
         mode,
         folder: folder.into(),
         text: if mode == Mode::SaveAs {
-            session
-                .path
-                .file_name()
+            base.file_name()
                 .map_or_else(String::new, |s| s.to_string_lossy().into_owned())
         } else {
             String::new()
@@ -360,15 +361,15 @@ fn submit(draft: &mut Draft, session: &mut Session, view: &mut View) -> Result<b
                 return Ok(false);
             }
             session.editor.zone().save(&path)?;
-            session.path = path;
+            session.assign_path(path);
             session.saved_zone = Some(session.editor.zone().clone());
-            session.status = format!("Saved {}", session.path.display());
+            session.status = format!("Saved {}", session.path_label());
         }
         Mode::Open => {
             let zone = Zone::load(&path)?;
             session.editor.replace(zone, draft.revision)?;
             session.set_mode(EditorMode::Objects);
-            session.path = path;
+            session.assign_path(path);
             session.reconcile();
             session.saved_zone = Some(session.editor.zone().clone());
             view.target =
@@ -377,7 +378,7 @@ fn submit(draft: &mut Draft, session: &mut Session, view: &mut View) -> Result<b
             camera_views::Preset::Perspective.select(view);
             session.status = format!(
                 "Opened {} (undo restores prior document)",
-                session.path.display()
+                session.path_label()
             );
         }
     }
@@ -642,3 +643,7 @@ mod tests {
         assert!(d.text.is_empty());
     }
 }
+
+#[cfg(test)]
+#[path = "document_tests.rs"]
+mod document_tests;

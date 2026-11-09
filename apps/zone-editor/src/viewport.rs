@@ -526,7 +526,7 @@ pub(super) fn report(
         let factor = node.inverse_scale_factor() * scale.0;
         Some(serde_json::json!({"action":format!("{action:?}"),"hovered":hovered.0,"centre":(t.affine().translation * factor).to_array(),"size":(node.size()*factor).to_array()}))
     }).collect();
-    let mut value = serde_json::json!({"save_path":session.path.to_string_lossy(),"left_mouse_down":mouse.pressed(MouseButton::Left),"revision":session.editor.revision(),"mesh_assets":meshes.len(),"history":session.editor.history(),
+    let mut value = serde_json::json!({"save_path":session.path.as_ref().map(|path|path.to_string_lossy()),"left_mouse_down":mouse.pressed(MouseButton::Left),"revision":session.editor.revision(),"mesh_assets":meshes.len(),"history":session.editor.history(),
         "document":session.editor.zone(),"selected":session.selected,"snap":session.snap,"status":session.status,
         "dragging":session.drag.is_some() || session.stroke.is_some(),"vegetation_mode":session.vegetation_mode,"plant_selected":session.plant_selected,"scatter_radius":session.scatter_radius,"scatter_count":session.scatter_count,
         "plants":session.editor.zone().plants.iter().map(|p|serde_json::json!({"id":p.id,"screen":project(Vec3::from_array(session.editor.zone().local(p.position).unwrap())+Vec3::Y*if p.kind==theia_zone::vegetation::PlantKind::Tree{3.2*p.scale as f32}else{0.6*p.scale as f32})})).collect::<Vec<_>>(),

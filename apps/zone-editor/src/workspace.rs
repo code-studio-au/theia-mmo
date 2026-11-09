@@ -21,6 +21,7 @@ pub(super) struct Requests {
 }
 #[derive(Component, Clone, Copy, Debug)]
 pub(super) enum Control {
+    New,
     Mode(EditorMode),
     Command(Action),
     Frame,
@@ -123,6 +124,7 @@ pub(super) fn setup(mut commands: Commands) {
             .with_children(|row| {
                 row.spawn(text("THEIA  /  ZONE STUDIO", 18.));
                 for (control, label) in [
+                    (Control::New, "New zone"),
                     (Control::Command(Action::Save), "Save"),
                     (Control::FileSaveAs, "Save As..."),
                     (Control::FileOpen, "Open..."),
@@ -297,6 +299,7 @@ impl Control {
             Self::Command(Action::Duplicate | Action::Ground) => selected,
             Self::Command(Action::Undo) => session.editor.history().0 > 0,
             Self::Command(Action::Redo) => session.editor.history().1 > 0,
+            Self::Command(Action::Load) => session.path.is_some(),
             _ => true,
         }
     }
@@ -372,6 +375,7 @@ impl Setting {
         }
     }
 }
+#[allow(clippy::too_many_arguments)]
 pub(super) fn activate(
     event: On<PointerPress>,
     controls: Query<&Control>,
@@ -379,6 +383,7 @@ pub(super) fn activate(
     mut session: ResMut<Session>,
     mut view: ResMut<View>,
     mut requests: ResMut<Requests>,
+    mut content: ResMut<outliner::Content>,
 ) {
     if event.button != PointerButton::Primary || !windows.single().is_ok_and(|w| w.focused) {
         return;
@@ -403,6 +408,11 @@ pub(super) fn activate(
         return;
     }
     match *control {
+        Control::New => match session.new_document(&mut view) {
+            Ok(true) => *content = outliner::Content::default(),
+            Ok(false) => {}
+            Err(error) => session.status = error,
+        },
         Control::Mode(next) => {
             if mode(&session) != next {
                 session.set_mode(next);

@@ -1,3 +1,13 @@
+New untitled zones, 9 November 2026 (P5-17 / P3-15 / P1-10):
+New zone creates an undoable empty document. Its first Save chooses a filename;
+cancel/failed writes preserve untitled state and the prior file is never written.
+All 118 focused Rust tests, formatting, strict Clippy and the editor build pass.
+Native New/save/playtest checks pass at 3440 x 1440 from local/far origins,
+with active Vulkan validation and zero GPU diagnostics.
+See [the zone record](../ZONE_EDITOR.md#new-untitled-zones--9-november-2026).
+Desktop access is authorized again for native 3440 x 1440 checks; continue after
+local commits and do not push. Historical headless limits below remain historical.
+
 Reset transform fields, 9 November 2026 (P5-17 / P3-15 / P1-10):
 A Reset fields button restores the open form’s exact original numbers and
 sliders, retaining the form, original revision and pending redo. Apply/Cancel

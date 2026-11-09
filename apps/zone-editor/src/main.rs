@@ -61,7 +61,9 @@ struct Session {
     show_move_handles: bool,
     gizmo_tool: gizmo::Tool,
     status: String,
-    path: PathBuf,
+    path: Option<PathBuf>,
+    last_directory: PathBuf,
+    save_as_requested: bool,
     next_id: u64,
     drag: Option<Drag>,
     play: Option<playtest::Playtest>,
@@ -104,6 +106,11 @@ struct Drag {
 impl Session {
     fn new(editor: Editor, path: PathBuf, saved_zone: Option<Zone>) -> Self {
         let next_id = editor.zone().next_id().unwrap_or(u64::MAX);
+        let last_directory = path
+            .parent()
+            .filter(|path| !path.as_os_str().is_empty())
+            .unwrap_or_else(|| std::path::Path::new("."))
+            .to_path_buf();
         Session {
             editor,
             saved_zone,
@@ -114,7 +121,9 @@ impl Session {
             show_move_handles: true,
             gizmo_tool: gizmo::Tool::Move,
             status: "Ready - choose a primitive, then click the ground".into(),
-            path,
+            path: Some(path),
+            last_directory,
+            save_as_requested: false,
             next_id,
             drag: None,
             play: None,
@@ -147,6 +156,54 @@ impl Session {
             transform_edit: None,
             file_dialog: None,
         }
+    }
+    fn path_label(&self) -> std::borrow::Cow<'_, str> {
+        self.path
+            .as_ref()
+            .map_or_else(|| "Untitled".into(), |path| path.to_string_lossy())
+    }
+    fn picker_path(&self) -> PathBuf {
+        self.path
+            .clone()
+            .unwrap_or_else(|| self.last_directory.join("untitled.zone.json"))
+    }
+    fn assign_path(&mut self, path: PathBuf) {
+        self.last_directory = path
+            .parent()
+            .filter(|path| !path.as_os_str().is_empty())
+            .unwrap_or_else(|| std::path::Path::new("."))
+            .to_path_buf();
+        self.path = Some(path);
+        self.save_as_requested = false;
+    }
+    fn new_document(&mut self, view: &mut View) -> Result<bool, String> {
+        if self.has_modal()
+            || self.play.is_some()
+            || self.drag.is_some()
+            || self.stroke.is_some()
+            || self.path_draft.is_some()
+        {
+            return Err(
+                "Finish or cancel the preview / form and leave playtest before creating a zone"
+                    .into(),
+            );
+        }
+        let zone = Zone::default();
+        if self.path.is_none() && self.editor.zone() == &zone {
+            self.status = "Already an empty untitled zone".into();
+            return Ok(false);
+        }
+        self.editor.replace(zone, self.editor.revision())?;
+        self.path = None;
+        self.saved_zone = None;
+        self.save_as_requested = false;
+        self.set_mode(EditorMode::Objects);
+        self.reconcile();
+        view.target = Vec3::ZERO;
+        view.distance = 32.;
+        self.status =
+            "New untitled zone - Save chooses a filename; Undo restores prior content".into();
+        Ok(true)
     }
     fn has_modal(&self) -> bool {
         self.name_edit.is_some() || self.transform_edit.is_some() || self.file_dialog.is_some()
@@ -734,12 +791,17 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
             expected_revision: session.editor.revision(),
         }),
         Action::Save => {
-            session.status = match session.editor.zone().save(&session.path) {
+            let Some(path) = session.path.clone() else {
+                session.save_as_requested = true;
+                session.status = "Choose a filename with Save As".into();
+                return;
+            };
+            session.status = match session.editor.zone().save(&path) {
                 Ok(()) => {
                     session.saved_zone = Some(session.editor.zone().clone());
                     format!(
                         "Saved {}{}",
-                        session.path.display(),
+                        path.display(),
                         if session.path_draft.is_some() {
                             " (guide draft still pending)"
                         } else {
@@ -751,7 +813,11 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
             };
         }
         Action::Load => {
-            session.status = match Zone::load(&session.path)
+            let Some(path) = session.path.clone() else {
+                session.status = "Save the untitled zone before reloading it".into();
+                return;
+            };
+            session.status = match Zone::load(&path)
                 .and_then(|zone| session.editor.replace(zone, session.editor.revision()))
             {
                 Ok(()) => {
@@ -1150,7 +1216,7 @@ fn present(
     mut info: Query<&mut Text, (With<Info>, Without<Summary>)>,
 ) {
     let dirty = session.is_dirty();
-    let path = session.path.to_string_lossy();
+    let path = session.path_label();
     let safe_path: String = path
         .chars()
         .map(|c| if c.is_control() { '�' } else { c })
@@ -1179,9 +1245,13 @@ fn present(
     if let Ok(mut window) = windows.single_mut() {
         let filename = session
             .path
-            .file_name()
-            .unwrap_or(session.path.as_os_str())
-            .to_string_lossy();
+            .as_ref()
+            .map(|path| {
+                path.file_name()
+                    .unwrap_or(path.as_os_str())
+                    .to_string_lossy()
+            })
+            .unwrap_or_else(|| "Untitled".into());
         let title = format!(
             "{}{} — {} — Theia Zone Studio",
             if dirty { "* " } else { "" },

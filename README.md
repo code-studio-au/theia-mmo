@@ -8,8 +8,11 @@ It saves separately to `build/wayfarer-hollow.zone.json` and reopens your edits.
 
 Choose **Objects, Sculpt, Paint, Paths / streams, NPC / quest markers, or Vegetation**
 from the workspace bar. The left panel contains tools; the right column contains
-zone content and properties. **Save, Save As, Open, Reload, Undo, Redo, Frame selection and
+zone content and properties. **New zone, Save, Save As, Open, Reload, Undo, Redo, Frame selection and
 Playtest** are in the command bar, alongside the snap checkbox.
+**New zone** creates an untitled empty zone; Undo restores the prior content.
+Its first **Save** opens Save As in the previous folder. It never writes to the
+previous file, and the active filename stays untitled through undo/redo until saved.
 Use **Open** (Ctrl+O) or **Save As** (Ctrl+Shift+S) to browse folders and zone
 JSON files. Save As asks before overwriting; Open remains undoable. **Reload**
 (Ctrl+Shift+O) reloads the active file. The footer always shows the active save
