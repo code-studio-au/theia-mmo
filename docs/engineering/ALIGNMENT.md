@@ -1,3 +1,11 @@
+Workspace slider keyboard ownership, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Workspace sliders now take focus on click. Left/Right/Home/End adjust that widget
+without also editing the selection through raw keyboard polling; ordinary nudges
+resume when focus clears. All 124 focused Rust tests, formatting, strict Clippy
+and build pass. Native grid/size keys preserve selected source and redo at local/
+far origins, 3440 x 1440, with zero Vulkan diagnostics. See [the record](../ZONE_EDITOR.md#workspace-slider-keyboard-ownership--9-november-2026).
+Continue after local commits; desktop access authorized; do not push.
+
 Primitive placement dimensions, 9 November 2026 (P5-17 / P3-15 / P1-10):
 Properties has quarter-step size sliders for new box X/Y/Z, cylinder diameter/
 height and sphere diameter. Preferences preserve source/history; stamps use

@@ -245,7 +245,7 @@ pub(super) fn setup(mut commands: Commands) {
             panel.spawn((SettingRow(setting), Node { flex_direction:FlexDirection::Column,row_gap:px(6),..default() }))
                 .with_children(|row| {
                     row.spawn((SettingLabel(setting),text("",15.)));
-                    row.spawn((setting, Slider { track_click:TrackClick::Snap,..default() },SliderValue(minimum),
+                    row.spawn((bevy::input_focus::tab_navigation::TabIndex(-1), setting, Slider { track_click:TrackClick::Snap,..default() },SliderValue(minimum),
                         SliderRange::new(minimum,maximum),SliderStep(match setting { Setting::ScatterCount|Setting::MoveGrid=>1.,Setting::Level|Setting::ScatterRadius=>0.1,Setting::PlacementSize(_)=>0.25,_=>0.05 }),SliderPrecision(if matches!(setting,Setting::ScatterCount|Setting::MoveGrid){0}else{3}),
                         Hovered::default(),Node {width:percent(100),height:px(24),..default()},
                         BackgroundColor(Color::srgb(0.09,0.12,0.16))))
@@ -717,6 +717,9 @@ pub(super) fn sync(
     }
 }
 
+#[cfg(test)]
+#[path = "workspace_keyboard_tests.rs"]
+mod keyboard_tests;
 #[cfg(test)]
 #[path = "placement_tests.rs"]
 mod placement_tests;

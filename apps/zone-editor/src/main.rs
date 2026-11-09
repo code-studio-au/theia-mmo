@@ -961,6 +961,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
         Action::Play => unreachable!(),
     }
 }
+#[allow(clippy::too_many_arguments)]
 fn keyboard(
     keys: Res<ButtonInput<KeyCode>>,
     windows: Query<&Window>,
@@ -968,6 +969,14 @@ fn keyboard(
     mut view: ResMut<View>,
     mut content: ResMut<outliner::Content>,
     mut requests: ResMut<workspace::Requests>,
+    focus: Res<bevy::input_focus::InputFocus>,
+    sliders: Query<
+        (),
+        (
+            With<bevy::ui_widgets::Slider>,
+            Without<bevy::ui::InteractionDisabled>,
+        ),
+    >,
 ) {
     if session.has_modal() {
         return;
@@ -1116,6 +1125,21 @@ fn keyboard(
     };
     if let Some(action) = action {
         perform(action, &mut session, &mut view);
+        return;
+    }
+    // Focused widgets consume their keys through InputDispatch, while the
+    // editor also polls ButtonInput. Respect that ownership before authoring
+    // shortcuts can turn a slider adjustment into a second document edit.
+    if focus.get().is_some_and(|entity| sliders.contains(entity))
+        && [
+            KeyCode::ArrowLeft,
+            KeyCode::ArrowRight,
+            KeyCode::Home,
+            KeyCode::End,
+        ]
+        .into_iter()
+        .any(|key| keys.just_pressed(key))
+    {
         return;
     }
     if selection::keyboard(&keys, &mut session, &mut view) {

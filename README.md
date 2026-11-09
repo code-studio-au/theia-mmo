@@ -19,6 +19,7 @@ JSON files. Save As asks before overwriting; Open remains undoable. **Reload**
 path and saved/unsaved state, and the window title marks unsaved content with *.
 When placing primitives, Properties shows size sliders in metres (0.25–32 m).
 Boxes have X/Y/Z sizes, cylinders diameter/height, and spheres one diameter.
+Focused sliders use Left/Right and Home/End to adjust their values.
 These affect new stamps; existing objects use **Transform...**. New stamps rest
 on the ground or terrain at half their chosen height.
 Choose **Top, Front or Right** for orthographic authoring, or **Perspective**.

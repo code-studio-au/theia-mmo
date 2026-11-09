@@ -3078,3 +3078,46 @@ is confirmed in each log with zero strict GPU diagnostics. Editor SHA-256:
 Raised-terrain support has CPU/shared-validation coverage here; native terrain
 brush rendering and Windows execution are not newly claimed. Engine pins,
 source schema, networking and gameplay authority remain unchanged. No push.
+
+## Workspace slider keyboard ownership — 9 November 2026
+
+P5-17 / P3-15 / P1-10; prerequisites are standard Bevy focus/input dispatch,
+workspace sliders and the existing keyboard authoring controls. A real-dispatch
+regression exposed that Right changed the focused movement-grid slider and
+nudged the selected box from X=8 to X=10, creating a document edit and losing redo.
+Bevy's focused event stops propagation, but the editor also polls ButtonInput.
+The editor now reserves Left/Right/Home/End for the focused enabled slider before
+selection/authoring controls run. Global commands retain their existing priority.
+Workspace sliders now opt into click-to-focus with standard TabIndex(-1);
+they remain outside Tab traversal. The first native check exposed that missing
+focus opt-in when its End input left the slider unchanged. Pointer focus and
+key ownership are both needed for this path. Disabled/hidden sliders do not
+capture authoring keys; clearing focus restores
+normal selection nudges. Up/Down and PageUp/Down remain existing authoring keys;
+standard horizontal Bevy sliders do not consume those keys.
+
+CPU acceptance: all 124 focused Rust tests (55 domain / 69 editor), formatting,
+strict workspace/all-target Clippy and build pass. The new regression uses the standard AcquireFocus resolver (including its
+TabIndex opt-in), actual InputPlugin KeyboardInput messages, InputDispatch and
+SliderPlugin, with a
+selected object and pending redo, for both grid and placement-size sliders. Right
+changes the expected setting; End/Home/Left retain full source/revision/redo.
+Clearing focus restores one normal shared nudge. The original failing evidence is
+ignored build/zone-workspace-keyboard-before-fix.log; final acceptance is
+build/zone-workspace-keyboard-{all-tests,clippy,build}.log. Native evidence is
+recorded after owned key execution below.
+
+Native acceptance passes at both local/far fractional origins in ignored
+build/zone-workspace-keyboard-native-3440-v2/ with --keyboard. A real object is
+selected before focusing the grid and each shape's placement-size sliders.
+Click-to-focus followed by End/Home/Right/Left reaches the expected widget
+values while complete source, revision and history stay unchanged, including
+pending redo. The subsequent six shared placement oracles, undo/redo and exact
+Save checks pass as well. These runs use 3440 x 1440, AMD Radeon RX 7900 XTX
+(RADV NAVI31), Vulkan device 29772, explicitly inserted validation layer and zero
+strict GPU diagnostics. Editor SHA-256:
+fb7187f0ad3cb79851af64d3e0959cc20c9d192fb7f8a65528c0507e0246662c.
+The v1 native run stopped on missing pointer-focus opt-in and is excluded from
+acceptance. Windows, terrain-slider native keys and workspace Tab traversal are
+not newly claimed. Schema, engine pins, networking and gameplay remain unchanged.
+No push.

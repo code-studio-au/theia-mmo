@@ -11,7 +11,7 @@ from gpu_validation import check_gpu_diagnostics
 from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 
 
-def run(output,binary,only_case=None):
+def run(output,binary,only_case=None,keyboard=False):
     output=output.resolve();output.mkdir(parents=True,exist_ok=False);binary=binary.resolve()
     cases=[];oracles=0
     env=dict(os.environ,WGPU_BACKEND='vulkan',VK_INSTANCE_LAYERS='VK_LAYER_KHRONOS_validation',VK_LOADER_DEBUG='layer')
@@ -60,6 +60,19 @@ def run(output,binary,only_case=None):
                     assert json.loads(expected.read_text())==state()['document'];oracles+=1
                 initial=copy.deepcopy(fresh()['document'])
                 records=[]
+                def keyboard_check(target,restore):
+                    before=copy.deepcopy(fresh())
+                    item=next(c for c in before['workspace_controls'] if c['target']==target)
+                    low,high=item['range'];step=1 if target=='MoveGrid' else .25
+                    x,y=item['centre'];w=item['size'][0]
+                    click([x-w/2+7+(w-14)*(item['value']-low)/(high-low),y])
+                    for key,expected in [('End',high),('Home',low),('Right',low+step),('Left',low)]:
+                        desktop.key(key)
+                        wait(lambda:next(c for c in state()['workspace_controls'] if c['target']==target)['value']==expected)
+                        assert state()['document']==before['document'] and state()['revision']==before['revision'] and state()['history']==before['history']
+                    click([x-w/2+7+(w-14)*(restore-low)/(high-low),y])
+                    wait(lambda:next(c for c in state()['workspace_controls'] if c['target']==target)['value']==restore)
+                    assert state()['document']==before['document'] and state()['history']==before['history']
                 def size(axis,desired):
                     before=copy.deepcopy(fresh())
                     target=f'PlacementSize({axis})'
@@ -78,10 +91,17 @@ def run(output,binary,only_case=None):
                     wait(lambda:not state()['left_mouse_down'])
                     wait(lambda:next(c for c in state()['workspace_controls'] if c['target']==target)['value']==desired)
                     assert state()['document']==before['document'] and state()['history']==before['history'] and state()['revision']==before['revision']
+                if keyboard:
+                    control('Object(1)','content');wait(lambda:state()['selected']==1)
+                    keyboard_check('MoveGrid',3)
                 for shape,dimensions in [('Box',[8.,3.25,2.5]),('Sphere',[4.25]*3),('Cylinder',[6.5,2.,6.5])]:
+                    if keyboard:
+                        control('Object(1)','content');wait(lambda:state()['selected']==1)
                     tool(f'Place({shape})');fresh()
                     axes=3 if shape=='Box' else 1 if shape=='Sphere' else 2
-                    for axis in range(axes):size(axis,dimensions[axis])
+                    for axis in range(axes):
+                        size(axis,dimensions[axis])
+                        if keyboard:keyboard_check(f'PlacementSize({axis})',dimensions[axis])
                     current=fresh()
                     controls={c['target']:c for c in current['workspace_controls']}
                     for axis in range(3):assert (controls[f'PlacementSize({axis})']['size'][1]>0)==(axis<axes)
@@ -116,7 +136,7 @@ def run(output,binary,only_case=None):
         logs=logfile.read_text();assert 'Insert instance layer "VK_LAYER_KHRONOS_validation"' in logs
         cases.append(dict(name=name,gpu=final['gpu'],viewport=final['viewport'],records=records,validation_layer_active=True,gpu_diagnostics=check_gpu_diagnostics(logs,allow_surface_resize=False)))
         (folder/'qualification.json').write_text(json.dumps(cases[-1],indent=2)+'\n')
-    result=dict(cases=cases,editor_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),oracles=oracles,checks=[
+    result=dict(keyboard=keyboard,cases=cases,editor_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),oracles=oracles,checks=[
         'shape-specific quarter-step dimension sliders fit Properties and preserve source/revision/redo during held drags',
         'native box/sphere/cylinder placement uses chosen dimensions and half-height support with origin-relative snapping',
         'complete documents equal shared structured commands; undo/redo and exact saves retain placed dimensions'],scope='Linux owned input at 3440x1440; local/far fractional origins; no Windows or multiplayer claim')
@@ -125,4 +145,5 @@ def run(output,binary,only_case=None):
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--binary',type=Path,default=Path('target/debug/theia-zone-editor'));parser.add_argument('--case',choices=['local','far'])
-    args=parser.parse_args();run(args.output,args.binary,args.case)
+    parser.add_argument('--keyboard',action='store_true',help='Check focused grid/size keys with an actual selected object')
+    args=parser.parse_args();run(args.output,args.binary,args.case,args.keyboard)
