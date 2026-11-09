@@ -387,7 +387,7 @@ pub(super) fn summary(session: &Session) -> String {
         .iter()
         .find(|p| Some(p.id) == session.plant_selected);
     format!(
-        "{} plants | scatter {} / {} m\n{}",
+        "{} plants | scatter {} / {:.1} m\n{}",
         session.editor.zone().plants.len(),
         session.scatter_count,
         session.scatter_radius,

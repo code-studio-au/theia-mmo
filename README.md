@@ -12,6 +12,9 @@ zone content and properties. **Save, Open saved, Undo, Redo, Frame selection and
 Playtest** are in the command bar, alongside the snap checkbox.
 
 Terrain properties use sliders for radius, strength, blend and flatten level.
+In Vegetation, choose **Scatter trees** or **Scatter shrubs** to adjust scatter
+radius and plants per click in Properties. One ground click places the group
+as one undo entry.
 Select an object in the content list, then use **Edit transform** for exact numeric
 fields in the docked properties area; Apply commits one validated undo entry.
 Rename, Duplicate and Ground are also available there. **Shortcuts** reveals the

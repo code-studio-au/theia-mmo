@@ -11,7 +11,7 @@ from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 from qualify_zone_flatten import normalized
 
 
-def run(output,binary):
+def run(output,binary,scatter=False):
     output=output.resolve()
     output.mkdir(parents=True,exist_ok=False)
     binary=binary.resolve()
@@ -224,6 +224,62 @@ def run(output,binary):
                 control('Mode(Paint)');assert not state()['terrain_mode']
                 control('Command(Play)');wait(lambda:state()['play_feet'] is None)
                 assert state()['revision']==7 and state()['history']==[1,1]
+                if scatter:
+                    # Editor-local scatter sliders feed one shared seeded command.
+                    before=state()
+                    control('Mode(Plants)')
+                    wait(lambda:state()['vegetation_mode'])
+                    kind='Tree' if axis==33 else 'Shrub'
+                    tool(f'Plant({kind}, true)')
+                    slider('ScatterRadius',.3)
+                    assert abs(state()['scatter_radius']-10.3)<.2
+                    slider('ScatterCount',1.,True)
+                    assert state()['scatter_count']==64
+                    slider('ScatterCount',0.,True)
+                    assert state()['scatter_count']==1
+                    slider('ScatterCount',.25,True)
+                    assert state()['scatter_count']==17
+                    presets=state()
+                    assert presets['document']==before['document'] and presets['history']==before['history']
+                    assert presets['brush_radius']==before['brush_radius']
+                    assert presets['sculpt_blend']==before['sculpt_blend'] and presets['paint_blend']==before['paint_blend']
+                    # Single placement hides the scatter-specific settings.
+                    tool(f'Plant({kind}, false)')
+                    fresh()
+                    assert all(b['size'][0]==0 or b['size'][1]==0 for b in state()['workspace_controls']
+                        if b['target'] in ('ScatterRadius','ScatterCount'))
+                    tool(f'Plant({kind}, true)')
+                    capture('scatter-properties')
+                    # Frame terrain for a safe central surface hit.
+                    control('Mode(Sculpt)');control('Frame')
+                    wait(lambda:state()['view']['distance']>100)
+                    control('Mode(Plants)');tool(f'Plant({kind}, true)')
+                    point=state()['terrain_points'][0]
+                    desktop.move(window,point,1)
+                    hit=wait(lambda:state()['plant_point'])
+                    click(dict(centre=point))
+                    placed=wait(lambda:state() if state()['revision']==8 else None)
+                    assert len(placed['document']['plants'])==17 and placed['history']==[2,0]
+                    # The cancelled guide reserved one ID; all fresh plant IDs
+                    # must follow the original objects and that reserved draft.
+                    first_id=max(o['id'] for o in initial['document']['objects'])+2
+                    assert [p['id'] for p in placed['document']['plants']]==list(range(first_id,first_id+17))
+                    prior=output/f'{name}.scatter.before.json';prior.write_text(json.dumps(before['document']))
+                    commands=output/f'{name}.scatter.commands.jsonl'
+                    commands.write_text(json.dumps(dict(command='apply',expected_revision=0,edits=[dict(
+                        op='scatter_vegetation',scatter=dict(first_id=first_id,seed=first_id,kind=kind.lower(),
+                            centre=[hit[0],hit[2]],radius_metres=presets['scatter_radius'],count=17))]))+'\n')
+                    expected=output/f'{name}.scatter.expected.json'
+                    subprocess.run([str(binary),'--headless','--zone',str(prior),'--commands',str(commands),
+                        '--output',str(expected)],check=True,capture_output=True)
+                    assert normalized(json.loads(expected.read_text()))==normalized(placed['document'])
+                    control('Command(Undo)');wait(lambda:state()['revision']==9)
+                    assert state()['document']==before['document']
+                    control('Command(Redo)');wait(lambda:state()['revision']==10)
+                    assert state()['document']==placed['document']
+                    control('Command(Save)');wait(lambda:not state()['unsaved_changes'])
+                    assert normalized(json.loads(saved.read_text()))==normalized(placed['document'])
+                    capture('scatter-result')
                 final=state()
                 subprocess.run(['wmctrl','-ic',hex(window)],check=True)
                 process.wait(timeout=20)
@@ -238,6 +294,7 @@ def run(output,binary):
     result=dict(cases=cases,checks=['mouse workspace buttons, snap checkbox, contextual standard slider click and drag',
         'settings preserve history; actual paint stamp equals headless command, one-entry undo/redo/save',
         'outliner selection, docked numeric transform matches headless command with one-entry undo/redo, name action, framing and playtest isolation'],scope='Linux native 3440x1440 only; first application-shell slice')
+    if scatter: result['checks'].append('vegetation slider boundaries, integer count, tool visibility, history isolation and seeded scatter/headless equality, one-entry undo/redo/save')
     (output/'qualification.json').write_text(json.dumps(result,indent=2)+'\n')
     print(json.dumps(result,indent=2))
 
@@ -245,4 +302,5 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--binary',type=Path,default=Path('target/debug/theia-zone-editor'))
-    args=parser.parse_args();run(args.output,args.binary)
+    parser.add_argument('--scatter',action='store_true')
+    args=parser.parse_args();run(args.output,args.binary,args.scatter)

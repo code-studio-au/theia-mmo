@@ -31,6 +31,8 @@ pub(super) enum Setting {
     Strength,
     Blend,
     Level,
+    ScatterRadius,
+    ScatterCount,
 }
 #[derive(Component)]
 pub(super) struct SettingRow(Setting);
@@ -162,13 +164,13 @@ pub(super) fn setup(mut commands: Commands) {
                 (Control::Command(Action::Duplicate),"Duplicate"),(Control::Command(Action::Ground),"Ground"),
                 (Control::Frame,"Frame")] { row.spawn(button(control,label)); }
         });
-        for setting in [Setting::Radius,Setting::Strength,Setting::Blend,Setting::Level] {
+        for setting in [Setting::Radius,Setting::Strength,Setting::Blend,Setting::Level,Setting::ScatterRadius,Setting::ScatterCount] {
             let (minimum,maximum) = setting.range();
             panel.spawn((SettingRow(setting), Node { flex_direction:FlexDirection::Column,row_gap:px(6),..default() }))
                 .with_children(|row| {
                     row.spawn((SettingLabel(setting),text("",15.)));
                     row.spawn((setting, Slider { track_click:TrackClick::Snap,..default() },SliderValue(minimum),
-                        SliderRange::new(minimum,maximum),SliderStep(if matches!(setting,Setting::Level){0.1}else{0.05}),SliderPrecision(3),
+                        SliderRange::new(minimum,maximum),SliderStep(match setting { Setting::ScatterCount=>1.,Setting::Level|Setting::ScatterRadius=>0.1,_=>0.05 }),SliderPrecision(if matches!(setting,Setting::ScatterCount){0}else{3}),
                         Hovered::default(),Node {width:percent(100),height:px(24),..default()},
                         BackgroundColor(Color::srgb(0.09,0.12,0.16))))
                     .with_children(|track| {
@@ -179,7 +181,7 @@ pub(super) fn setup(mut commands: Commands) {
                     });
                 });
         }
-        panel.spawn(text("Settings affect the next stroke.\nDrag to preview; release commits.\nCtrl Z / Ctrl Y: undo / redo",13.));
+        panel.spawn(text("Tool settings affect the next edit.\nCtrl S saves the zone.\nCtrl Z / Ctrl Y: undo / redo",13.));
     });
 }
 impl Control {
@@ -215,6 +217,8 @@ impl Setting {
             Self::Strength => (0.05, 8.),
             Self::Blend => (5., 100.),
             Self::Level => (-64., 64.),
+            Self::ScatterRadius => (1., 32.),
+            Self::ScatterCount => (1., 64.),
         }
     }
     fn value(self, session: &Session) -> f32 {
@@ -229,22 +233,34 @@ impl Setting {
                 }
             }
             Self::Level => session.flatten_height as f32,
+            Self::ScatterRadius => session.scatter_radius as f32,
+            Self::ScatterCount => session.scatter_count as f32,
         }
     }
     fn visible(self, session: &Session) -> bool {
-        session.terrain_mode
-            && match self {
-                Self::Radius => true,
-                Self::Strength => matches!(
-                    session.brush_tool,
-                    terrain::Tool::Raise | terrain::Tool::Lower
-                ),
-                Self::Blend => !matches!(
-                    session.brush_tool,
-                    terrain::Tool::Raise | terrain::Tool::Lower
-                ),
-                Self::Level => matches!(session.brush_tool, terrain::Tool::Flatten),
+        match self {
+            Self::ScatterRadius | Self::ScatterCount => {
+                session.vegetation_mode && session.plant_scatter && session.plant_palette.is_some()
             }
+            Self::Radius => session.terrain_mode,
+            Self::Strength => {
+                session.terrain_mode
+                    && matches!(
+                        session.brush_tool,
+                        terrain::Tool::Raise | terrain::Tool::Lower
+                    )
+            }
+            Self::Blend => {
+                session.terrain_mode
+                    && !matches!(
+                        session.brush_tool,
+                        terrain::Tool::Raise | terrain::Tool::Lower
+                    )
+            }
+            Self::Level => {
+                session.terrain_mode && matches!(session.brush_tool, terrain::Tool::Flatten)
+            }
+        }
     }
     fn label(self, session: &Session) -> String {
         let value = self.value(session);
@@ -253,6 +269,8 @@ impl Setting {
             Self::Strength => format!("Strength  {value:.3} m / stamp"),
             Self::Blend => format!("Blend  {value:.2}%"),
             Self::Level => format!("Flatten level  {value:.2} m"),
+            Self::ScatterRadius => format!("Scatter radius  {value:.1} m"),
+            Self::ScatterCount => format!("Plants per click  {value:.0}"),
         }
     }
 }
@@ -334,6 +352,8 @@ pub(super) fn change(
             }
         }
         Setting::Level => session.flatten_height = f64::from(value),
+        Setting::ScatterRadius => session.scatter_radius = f64::from(value),
+        Setting::ScatterCount => session.scatter_count = value.round() as u32,
     }
     session.status = setting.label(&session);
 }

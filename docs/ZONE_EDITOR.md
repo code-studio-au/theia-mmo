@@ -1883,3 +1883,39 @@ paint/transform `.before.json` / `.commands.jsonl` / `.expected.json` pairs,
 `zone-workspace-tests-v2.log`, `zone-workspace-build-v5.log` and
 `zone-workspace-clippy-v3.log`. Editor SHA-256:
 `1ebf50076ee77c9418bb2a33a20c7a5633863269ce3c77f9cc97c46ea6dfa00b`.
+
+## Vegetation scatter properties — 9 November 2026
+
+P5-17 / P3-15 / P1-10 follow-up to the application shell. Prerequisites are
+its standard Bevy sliders and the existing bounded seeded ScatterVegetation
+command. No source-schema, renderer, engine/plugin-pin or gameplay change.
+Choosing Scatter trees or Scatter shrubs reveals radius 1..32 m and plants per
+click 1..64 in Properties. Count uses integer step/precision and rounds accepted
+values; radius uses a 0.1 m widget step. Single-plant placement and other
+workspaces hide these settings. Existing bracket/comma/period presets remain
+synchronized. Editor-local settings preserve document, revision and undo/redo;
+actual placement retains candidate validation and one scatter undo entry. Existing
+focus, modal, pending-preview and playtest guards apply to both new settings.
+The vegetation readout rounds radius to a useful one decimal place rather than
+showing binary floating-point noise. The optional report adds the checked global
+plant cursor point for native command-equivalence checks.
+
+Acceptance: retained 77 focused Rust cases, formatting, strict workspace/all-target
+Clippy, actual local 4 m and far-origin 2 m native 3440x1440 walkthroughs. Mouse
+track click and thumb drag, 1/64 count bounds, integer 17-plant setting, contextual
+visibility, unchanged history/document and independent terrain presets are checked.
+Actual tree and shrub groups match complete headless shared-command documents,
+with one-entry undo/redo and exact saved output. The existing application-shell,
+paint, docked transform and playtest walkthrough is retained in the same run.
+This qualifies scatter proxy authoring; production vegetation assets/collision,
+Windows execution and a complete Blender-style editor remain separate work.
+
+All acceptance checks above passed on the final build. Both runs used RX 7900 XTX
+(RADV NAVI31), Vulkan device 29772, with active Khronos validation and zero GPU/
+resize diagnostics. The final properties screenshot was visually inspected.
+Evidence: ignored `build/zone-scatter-controls-native-3440-v2/qualification.json`,
+`*.scatter-properties.png`, `*.scatter-result.png` and matching
+`*.scatter.before.json` / `*.scatter.commands.jsonl` / `*.scatter.expected.json`;
+`zone-scatter-controls-tests-v2.log`, `zone-scatter-controls-clippy-v2.log` and
+`zone-scatter-controls-build-v4.log`. Editor SHA-256:
+`1afef7ed59db50b90be09b981277589c460c2f433db7a01d17fbc4687b2201a7`.

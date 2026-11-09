@@ -491,6 +491,7 @@ pub(super) fn report(
         "terrain_points":[project(Vec3::new(64.,0.,64.)),project(Vec3::new(72.,0.,64.)),project(Vec3::new(48.,0.,64.))],
         "ground":[project(Vec3::new(3.,0.,4.)),project(Vec3::new(5.,0.,4.))],
         "gpu":{"name":adapter.name,"backend":format!("{:?}",adapter.backend),"device":adapter.device}});
+    value["plant_point"] = serde_json::json!(session.plant_point);
     let mut content_buttons = vec![];
     if session.play.is_none() {
         for (control, node, computed, transform, hovered) in &content_controls {

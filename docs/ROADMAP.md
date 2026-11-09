@@ -1,3 +1,12 @@
+Vegetation properties, 9 November 2026 (P5-17 / P3-15 / P1-10):
+The application properties area now exposes contextual scatter radius (1..32 m)
+and integer plants-per-click (1..64) sliders for tree/shrub scatter tools.
+Presets remain editor-local; a ground click uses the existing seeded shared
+ScatterVegetation edit, with whole-candidate validation and one-entry undo.
+Source schema, gameplay and engine/plugin pins are unchanged. Native local/far
+3440x1440 acceptance and exact evidence are in [the zone record](ZONE_EDITOR.md#vegetation-scatter-properties--9-november-2026).
+Continue local implementation and commits; no push.
+
 Application-style editor work resumed, 9 November 2026 (P5-17 / P3-15 / P1-10):
 The user chooses to continue the in-repository editor and prioritizes Blender-like
 application workflows: direct sliders, buttons, toggles and a properties area,
