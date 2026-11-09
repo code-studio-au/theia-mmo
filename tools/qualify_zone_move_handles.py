@@ -12,7 +12,7 @@ from gpu_validation import check_gpu_diagnostics
 from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 
 
-def run(output, binary, rotate=False):
+def run(output, binary, rotate=False, scale=False):
     output = output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     binary = binary.resolve()
@@ -28,9 +28,10 @@ def run(output, binary, rotate=False):
         source.write_text(json.dumps(dict(schema=1,name='Move handles',origin=origin,
             spawn=[origin[0],origin[1]+.1,origin[2]+6],objects=[dict(id=1,name='Move box',primitive='box',
                 pose=dict(position=[origin[0]+8.125,origin[1]+1.25,origin[2]-8.5],yaw_degrees=15,size=[2,2,2]))])))
-        if rotate:
+        if rotate or scale:
             fixture=json.loads(source.read_text())
             fixture['objects'][0]['pose']['yaw_degrees']=17.25
+            if scale: fixture['objects'][0]['pose']['size']=[2,3,4]
             for identifier,primitive,offset,size in [(2,'sphere',[-8.5,1.25,8.125],[2,2,2]),(3,'cylinder',[16.125,1.25,8.5],[2,3,2])]:
                 fixture['objects'].append(dict(id=identifier,name=f'Rotate {primitive}',primitive=primitive,
                     pose=dict(position=[o+p for o,p in zip(origin,offset)],yaw_degrees=17.25,size=size)))
@@ -216,6 +217,70 @@ def run(output, binary, rotate=False):
                     assert state()['document']==document and state()['revision']==revision
                     control('Command(Save)');wait(lambda:not state()['unsaved_changes'])
                     assert json.loads(saved.read_text())==document
+                if scale:
+                    control('GizmoTool(Scale)');wait(lambda:len(handles())==1 and handles()[0]['tool']=='Scale')
+                    for identifier in [1,2,3]:
+                        select(identifier);control('Frame');fresh()
+                        if not state()['snap']: control('Snap');wait(lambda:state()['snap'])
+                        before=copy.deepcopy(state()['document']);revision=state()['revision']
+                        click(handles()[0]['screen'])
+                        assert state()['revision']==revision and state()['document']==before and state()['status']=='Size unchanged'
+                        for snapped in [True,False]:
+                            if not snapped: control('Snap');wait(lambda:not state()['snap'])
+                            control('Frame');fresh()
+                            before=copy.deepcopy(state()['document']);revision=state()['revision'];history=state()['history']
+                            old_pose=next(o['pose'] for o in before['objects'] if o['id']==identifier)
+                            cube=handles()[0]
+                            desktop.move(window,cube['screen'],1);desktop.button(1,True)
+                            try:
+                                wait(lambda:state()['dragging']);desktop.move(window,cube['target'],1)
+                                preview=wait(lambda:state()['move_preview'] if state()['move_preview'] and state()['move_preview']!=old_pose else None)
+                                assert preview['position']==old_pose['position'] and preview['yaw_degrees']==old_pose['yaw_degrees']
+                                ratios=[s/b for s,b in zip(preview['size'],old_pose['size'])]
+                                assert max(ratios)-min(ratios)<1e-12
+                                if snapped: assert abs(ratios[0]-1.5)<1e-12
+                                else: assert abs(ratios[0]-1.5)<.02
+                                assert state()['document']==before and state()['revision']==revision
+                                capture(f'scale-{identifier}-{snapped}-preview')
+                            finally: desktop.button(1,False)
+                            wait(lambda:not state()['dragging'] and state()['revision']==revision+1)
+                            changed=copy.deepcopy(state()['document'])
+                            assert next(o['pose'] for o in changed['objects'] if o['id']==identifier)==preview
+                            assert state()['history']==[history[0]+1,0]
+                            prefix=output/f'{name}.scale-{identifier}-{snapped}'
+                            prior=Path(str(prefix)+'.before.json');prior.write_text(json.dumps(before))
+                            commands=Path(str(prefix)+'.commands.jsonl')
+                            commands.write_text(json.dumps(dict(command='apply',expected_revision=0,edits=[dict(op='transform',id=identifier,pose=preview)]))+'\n')
+                            expected=Path(str(prefix)+'.expected.json')
+                            subprocess.run([str(binary),'--headless','--zone',str(prior),'--commands',str(commands),'--output',str(expected)],check=True,capture_output=True)
+                            assert json.loads(expected.read_text())==changed
+                            control('Command(Undo)');wait(lambda:state()['revision']==revision+2)
+                            assert state()['document']==before
+                            control('Command(Redo)');wait(lambda:state()['revision']==revision+3)
+                            assert state()['document']==changed
+                    document=copy.deepcopy(state()['document']);revision=state()['revision'];history=state()['history']
+                    control('Frame');fresh();cube=handles()[0]
+                    desktop.move(window,cube['screen'],1);desktop.button(1,True)
+                    try:
+                        wait(lambda:state()['dragging']);desktop.move(window,cube['invalid_target'],1)
+                        wait(lambda:'Size must' in state()['status'])
+                        assert state()['move_preview']==document['objects'][-1]['pose']
+                        assert state()['document']==document and state()['revision']==revision
+                        capture('invalid-scale')
+                    finally: desktop.button(1,False)
+                    wait(lambda:not state()['dragging'])
+                    assert state()['revision']==revision and state()['history']==history and state()['document']==document
+                    cube=handles()[0];desktop.move(window,cube['screen'],1);desktop.button(1,True)
+                    try:
+                        wait(lambda:state()['dragging']);desktop.move(window,cube['target'],1)
+                        wait(lambda:state()['move_preview']!=document['objects'][-1]['pose']);desktop.key('Escape')
+                    finally: desktop.button(1,False)
+                    wait(lambda:not state()['dragging'])
+                    assert state()['revision']==revision and state()['document']==document
+                    select(3);control('Transform');wait(lambda:state()['transform_edit'] is not None and not handles())
+                    desktop.key('Escape');wait(lambda:state()['transform_edit'] is None and len(handles())==1)
+                    control('Command(Save)');wait(lambda:not state()['unsaved_changes'])
+                    assert json.loads(saved.read_text())==document
                 final=state()
                 subprocess.run(['wmctrl','-ic',hex(window)],check=True);process.wait(timeout=20)
                 assert process.returncode==0
@@ -231,6 +296,7 @@ def run(output, binary, rotate=False):
         'axis-only snapping preserves other f64 coordinates; stationary click preserves fractional pose',
         'one-entry undo/redo, Escape/panel cancellation, checkbox/modal/play isolation and save'])
     if rotate: result['checks'].append('box/sphere/cylinder yaw rings with 15-degree and unsnapped gestures, stationary click, exact headless equality, unchanged XYZ/size, one-entry undo/redo, cancel and tool/modal isolation')
+    if scale: result['checks'].append('box/sphere/cylinder uniform scale, 10-percent and precise gestures, unchanged position/yaw/proportions, exact headless equality, range-refused preview, undo/redo, cancel, modal isolation and save')
     (output/'qualification.json').write_text(json.dumps(result,indent=2)+'\n')
     print(json.dumps(result,indent=2))
 
@@ -240,4 +306,5 @@ if __name__=='__main__':
     parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--binary',type=Path,default=Path('target/debug/theia-zone-editor'))
     parser.add_argument('--rotate',action='store_true')
-    args=parser.parse_args();run(args.output,args.binary,args.rotate)
+    parser.add_argument('--scale',action='store_true')
+    args=parser.parse_args();run(args.output,args.binary,args.rotate,args.scale)

@@ -6,29 +6,54 @@ pub(super) enum Tool {
     #[default]
     Move,
     Rotate,
+    Scale,
 }
 #[derive(Clone, Copy)]
 pub(super) enum Gesture {
     Move(AxisDrag),
     Rotate(YawDrag),
+    Scale(ScaleDrag),
 }
 impl Gesture {
-    pub fn begin(tool: Tool, ray: Ray3d, anchor: Vec3, axis: usize) -> Option<Self> {
+    pub fn begin(
+        tool: Tool,
+        ray: Ray3d,
+        anchor: Vec3,
+        axis: usize,
+        reference: f32,
+    ) -> Option<Self> {
         match tool {
             Tool::Move => AxisDrag::begin(ray, anchor, axis).map(Self::Move),
             Tool::Rotate => YawDrag::begin(ray, anchor).map(Self::Rotate),
+            Tool::Scale => (reference.is_finite() && reference > 0.01)
+                .then_some(reference)
+                .and_then(|reference| {
+                    Some(Self::Scale(ScaleDrag {
+                        axis: AxisDrag::begin(ray, anchor, 1)?,
+                        reference: f64::from(reference),
+                    }))
+                }),
         }
     }
     pub fn tool(self) -> Tool {
         match self {
             Self::Move(_) => Tool::Move,
             Self::Rotate(_) => Tool::Rotate,
+            Self::Scale(_) => Tool::Scale,
         }
     }
     pub fn axis(self) -> usize {
         match self {
             Self::Move(d) => d.axis,
-            Self::Rotate(_) => 1,
+            Self::Rotate(_) | Self::Scale(_) => 1,
+        }
+    }
+    fn scale_extent(self, before: &Pose, preview: &Pose) -> Option<f32> {
+        match self {
+            Self::Scale(d) => {
+                Some((d.reference * preview.size[0] / before.size[0]).clamp(0.1, 2048.) as f32)
+            }
+            _ => None,
         }
     }
     pub fn preview(&mut self, ray: Ray3d, before: &Pose, snap: bool) -> Option<Pose> {
@@ -36,9 +61,27 @@ impl Gesture {
         match self {
             Self::Move(d) => pose.position = d.position(ray, before.position, snap)?,
             Self::Rotate(d) => pose.yaw_degrees = d.yaw(ray, before.yaw_degrees, snap)?,
+            Self::Scale(d) => {
+                let delta = f64::from(parameter(ray, d.axis.anchor, 1)? - d.axis.start);
+                if delta.abs() < 0.00001 {
+                    return Some(pose);
+                }
+                let factor = 1. + delta / d.reference;
+                let factor = if snap {
+                    (factor * 10.).round() / 10.
+                } else {
+                    factor
+                };
+                pose.size = before.size.map(|v| v * factor);
+            }
         }
         Some(pose)
     }
+}
+#[derive(Clone, Copy)]
+pub(super) struct ScaleDrag {
+    axis: AxisDrag,
+    reference: f64,
 }
 #[derive(Clone, Copy)]
 pub(super) struct YawDrag {
@@ -87,6 +130,7 @@ pub(super) struct TransformHandle {
 pub(super) struct Scene {
     colours: [Handle<StandardMaterial>; 3],
     active: Handle<StandardMaterial>,
+    uniform: Handle<StandardMaterial>,
 }
 #[derive(Clone, Copy)]
 pub(super) struct AxisDrag {
@@ -178,7 +222,27 @@ pub(super) fn setup(
         bevy::light::NotShadowCaster,
         bevy::light::NotShadowReceiver,
     ));
-    commands.insert_resource(Scene { colours, active });
+    let uniform = materials.add(material(Color::srgb(0.65, 0.85, 1.)));
+    for (is_head, mesh) in [(false, shaft), (true, meshes.add(Cuboid::new(1., 1., 1.)))] {
+        commands.spawn((
+            TransformHandle {
+                axis: 1,
+                head: is_head,
+                tool: Tool::Scale,
+            },
+            Mesh3d(mesh),
+            MeshMaterial3d(uniform.clone()),
+            Transform::default(),
+            Visibility::Hidden,
+            bevy::light::NotShadowCaster,
+            bevy::light::NotShadowReceiver,
+        ));
+    }
+    commands.insert_resource(Scene {
+        colours,
+        active,
+        uniform,
+    });
 }
 pub(super) fn sync(
     session: Res<Session>,
@@ -233,13 +297,23 @@ pub(super) fn sync(
         let size = (camera.translation().distance(centre) * 0.06).clamp(1.2, 24.);
         let length = (pose.size.iter().copied().fold(0., f64::max) as f32 * 0.5 + size * 0.7)
             .max(size * 1.5);
+        let length = session
+            .drag
+            .as_ref()
+            .and_then(|d| {
+                d.gesture
+                    .and_then(|g| g.scale_extent(&d.before, &d.preview))
+            })
+            .unwrap_or(length);
         let direction = Vec3::AXES[handle.axis];
-        let (offset, scale) = if handle.head {
+        let (offset, scale) = if handle.head && handle.tool == Tool::Scale {
+            (length, Vec3::splat(size * 0.22))
+        } else if handle.head {
             (length, Vec3::new(size * 0.16, size * 0.5, size * 0.16))
         } else {
             (
-                (length - size * 0.25) * 0.5,
-                Vec3::new(size * 0.045, length - size * 0.25, size * 0.045),
+                (length - size * 0.25).max(0.02) * 0.5,
+                Vec3::new(size * 0.045, (length - size * 0.25).max(0.02), size * 0.045),
             )
         };
         *transform = if handle.tool == Tool::Rotate {
@@ -259,6 +333,8 @@ pub(super) fn sync(
             .is_some_and(|g| g.tool() == handle.tool && g.axis() == handle.axis)
         {
             scene.active.clone()
+        } else if handle.tool == Tool::Scale {
+            scene.uniform.clone()
         } else {
             scene.colours[handle.axis].clone()
         };
@@ -268,6 +344,36 @@ pub(super) fn sync(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn uniform_scale_keeps_position_yaw_and_proportions_with_relative_snapping() {
+        let anchor = Vec3::new(8., 1., -8.);
+        let camera = anchor + Vec3::splat(20.);
+        let ray = |height: f32| {
+            Ray3d::new(
+                camera,
+                Dir3::new(anchor + Vec3::Y * height - camera).unwrap(),
+            )
+        };
+        for size in [[2., 3., 4.], [2.; 3], [2., 3., 2.]] {
+            let before = Pose {
+                position: [128_000_000_008.125, 21.25, -128_000_000_008.5],
+                yaw_degrees: 17.25,
+                size,
+            };
+            let mut gesture = Gesture::begin(Tool::Scale, ray(3.), anchor, 1, 3.).unwrap();
+            assert_eq!(gesture.preview(ray(3.), &before, true).unwrap(), before);
+            let scaled = gesture.preview(ray(4.35), &before, false).unwrap();
+            assert_eq!(scaled.position, before.position);
+            assert_eq!(scaled.yaw_degrees, before.yaw_degrees);
+            for (actual, initial) in scaled.size.into_iter().zip(size) {
+                assert!((actual / initial - 1.45).abs() < 0.00001);
+            }
+            let snapped = gesture.preview(ray(4.38), &before, true).unwrap();
+            assert_eq!(snapped.size, size.map(|v| v * 1.5));
+            assert!((gesture.scale_extent(&before, &snapped).unwrap() - 4.5).abs() < 0.00001);
+        }
+        assert!(Gesture::begin(Tool::Scale, ray(3.), anchor, 1, 0.).is_none());
+    }
     #[test]
     fn yaw_gestures_unwrap_and_snap_without_changing_pose_coordinates_or_size() {
         let anchor = Vec3::new(8., 1., -8.);
@@ -282,7 +388,7 @@ mod tests {
             yaw_degrees: 17.25,
             size: [2.5, 3., 1.5],
         };
-        let mut gesture = Gesture::begin(Tool::Rotate, ray(170.), anchor, 1).unwrap();
+        let mut gesture = Gesture::begin(Tool::Rotate, ray(170.), anchor, 1, 3.).unwrap();
         assert_eq!(gesture.preview(ray(170.), &before, true).unwrap(), before);
         let changed = gesture.preview(ray(-170.), &before, false).unwrap();
         assert!((changed.yaw_degrees - 37.25).abs() < 0.001);
@@ -295,13 +401,14 @@ mod tests {
         }
         let full = gesture.preview(ray(170.), &before, false).unwrap();
         assert!((full.yaw_degrees - before.yaw_degrees - 360.).abs() < 0.001);
-        assert!(Gesture::begin(Tool::Rotate, Ray3d::new(camera, Dir3::X), anchor, 1).is_none());
+        assert!(Gesture::begin(Tool::Rotate, Ray3d::new(camera, Dir3::X), anchor, 1, 3.).is_none());
         assert!(
             Gesture::begin(
                 Tool::Rotate,
                 Ray3d::new(camera, Dir3::new(anchor - camera).unwrap()),
                 anchor,
-                1
+                1,
+                3.
             )
             .is_none()
         );

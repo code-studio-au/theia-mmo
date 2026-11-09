@@ -203,7 +203,7 @@ pub(super) fn pointer(
     windows: Query<&Window>,
     camera: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
     objects: Query<&Authored>,
-    handles: Query<(&gizmo::TransformHandle, &Visibility)>,
+    handles: Query<(&gizmo::TransformHandle, &Visibility, &Transform)>,
     ground: Query<(), With<terrain::GroundPart>>,
     mut raycast: MeshRayCast,
     mut session: ResMut<Session>,
@@ -287,14 +287,15 @@ pub(super) fn pointer(
                 || ground.contains(entity)
                 || handles
                     .get(entity)
-                    .is_ok_and(|(_, v)| *v != Visibility::Hidden)
+                    .is_ok_and(|(_, v, _)| *v != Visibility::Hidden)
         };
         let settings = MeshRayCastSettings::default().with_filter(&filter);
         let hit = raycast
             .cast_ray(ray, &settings)
             .first()
             .map(|(entity, _)| *entity);
-        if let Some((handle, _)) = hit.and_then(|entity| handles.get(entity).ok()) {
+        if let Some((handle, _, handle_transform)) = hit.and_then(|entity| handles.get(entity).ok())
+        {
             if let Some(object) = session
                 .editor
                 .zone()
@@ -304,7 +305,21 @@ pub(super) fn pointer(
             {
                 let local =
                     Vec3::from_array(session.editor.zone().local(object.pose.position).unwrap());
-                if let Some(gesture) = gizmo::Gesture::begin(handle.tool, ray, local, handle.axis) {
+                let reference = if handle.tool == gizmo::Tool::Scale {
+                    handles
+                        .iter()
+                        .find(|(h, v, _)| {
+                            h.tool == gizmo::Tool::Scale && h.head && **v != Visibility::Hidden
+                        })
+                        .map_or(0., |(_, _, transform)| {
+                            transform.translation.distance(local)
+                        })
+                } else {
+                    handle_transform.translation.distance(local)
+                };
+                if let Some(gesture) =
+                    gizmo::Gesture::begin(handle.tool, ray, local, handle.axis, reference)
+                {
                     session.drag = Some(Drag {
                         id: object.id,
                         before: object.pose.clone(),
@@ -316,6 +331,7 @@ pub(super) fn pointer(
                     session.status = match handle.tool {
                         gizmo::Tool::Move => "Moving world axis - release applies; Escape cancels",
                         gizmo::Tool::Rotate => "Rotating yaw - release applies; Escape cancels",
+                        gizmo::Tool::Scale => "Scaling uniformly - release applies; Escape cancels",
                     }
                     .into();
                 } else {
@@ -394,6 +410,7 @@ pub(super) fn pointer(
                 session.status = match gesture.tool() {
                     gizmo::Tool::Move => "Position unchanged",
                     gizmo::Tool::Rotate => "Yaw unchanged",
+                    gizmo::Tool::Scale => "Size unchanged",
                 }
                 .into();
             }
@@ -571,12 +588,19 @@ pub(super) fn report(
                     return None;
                 }
                 let transform = transform?;
+                let mut invalid_target=None;
                 let (screen,target)=if handle.tool==gizmo::Tool::Rotate {
                     let radius=transform.scale.x;
                     (transform.translation+Vec3::X*radius,transform.translation+Vec3::new(radius,0.,-radius)*std::f32::consts::FRAC_1_SQRT_2)
+                } else if handle.tool==gizmo::Tool::Scale {
+                    let centre=session.editor.zone().objects.iter().find(|o|Some(o.id)==session.selected)
+                        .and_then(|o|session.editor.zone().local(o.pose.position).ok()).map(Vec3::from_array).unwrap_or(transform.translation);
+                    let extent=transform.translation.distance(centre);
+                    invalid_target=project(centre-Vec3::Y*extent*0.25);
+                    (transform.translation,transform.translation+Vec3::Y*extent*0.5)
                 } else { (transform.translation,transform.translation+Vec3::AXES[handle.axis]*2.) };
                 Some(serde_json::json!({"axis":handle.axis,"tool":format!("{:?}",handle.tool),"visible":*visibility!=Visibility::Hidden,
-                    "mesh":mesh.map(|m|format!("{:?}",m.0.id())),"screen":project(screen),"target":project(target)}))
+                    "mesh":mesh.map(|m|format!("{:?}",m.0.id())),"screen":project(screen),"target":project(target),"invalid_target":invalid_target}))
             })
             .collect::<Vec<_>>()
     );

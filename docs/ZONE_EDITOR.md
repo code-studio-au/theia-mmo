@@ -2114,3 +2114,54 @@ Evidence: ignored `build/zone-rotation-handles-native-3440-v3/qualification.json
 `.expected.json` pairs; `zone-rotation-handles-tests-v3.log`,
 `zone-rotation-handles-clippy-v3.log` and `zone-rotation-handles-build-v4.log`.
 Editor SHA-256: `4643118e4a96023f71173e5f0844151b3696de23c7ce46941a18e4164b007679`.
+
+## Primitive uniform scale handle — 9 November 2026
+
+P5-17 / P3-15 / P1-10 continuation using the retained standard transform gesture,
+whole-candidate Transform previews and validation. Scale uniformly selects an
+editor-local tool with a pale-blue cube/stem above the primitive; drag up/down
+along world Y to multiply all dimensions by one factor. One resident Cuboid mesh,
+one shared standard unlit material and two noncolliding/nonshadowing entities
+reuse existing picking. The stem and cube share one initial head-distance reference.
+The active handle tracks the accepted relative scale and has a bounded 2048 m
+visual extension; its shaft retains positive render scale when shrinking.
+
+Snapping uses 10% steps relative to the gesture's initial dimensions; unsnapped
+values retain the calculated factor. Position and yaw are copied exactly from
+the original f64 pose, as are dimension ratios. This respects existing sphere
+uniform-size and cylinder X/Z constraints while allowing proportional box edits.
+Stationary clicks preserve values/history and report Size unchanged. Negative,
+too-small/large or out-of-zone candidates fail shared validation before rendering,
+retaining the last valid preview. A held gesture never changes the live document;
+release commits one revision-checked Transform entry. Escape, panel release,
+focus loss, modal/playtest and tool-selection boundaries remain shared. The scale
+tool disarms placement; body clicks only select, and legacy body XZ dragging remains
+Move-only. Numeric box fields still allow existing validated nonuniform dimensions.
+
+The snap control now identifies move / rotate / scale steps. Tool/visibility/snap
+settings do not create source/history entries. Scale widgets do not enter export
+or physics, and source schema/engine/plugin pins/network/gameplay are unchanged.
+Non-primitive handles, individual-axis box scale and broader application views/
+docking remain follow-ups.
+
+Acceptance covers proportional box/sphere/cylinder scaling, exact position/yaw,
+stationary values, snapped/precise factors, invalid scale previews, whole-command
+equality, cancel, modal isolation, undo/redo and save at local/far origins. The
+same actual 3440x1440 native fixture also retains all move/yaw checks.
+
+Final acceptance passes: 83 focused Rust cases (51 domain / 32 editor), formatting,
+strict workspace/all-target Clippy and actual 3440x1440 native local/far runs on
+RX 7900 XTX (RADV NAVI31), Vulkan device 29772, with active Khronos validation and
+zero GPU/resize diagnostics. Twelve new scale edits plus six retained move and
+twelve yaw edits match complete headless documents. Proportions, unchanged pose
+fields, snapped/precise values, invalid negative-scale preview refusal, stationary
+click, cancellation, one-entry undo/redo, modal isolation and exact save pass.
+The local active scale-cube view was visually inspected. Windows, non-primitive
+handles, independent-axis scale and maximum-document editing performance remain
+unqualified; this adds no gameplay multiplayer claim.
+
+Evidence: ignored `build/zone-scale-handles-native-3440-v1/qualification.json`,
+`*.scale-*-preview.png`, `*.invalid-scale.png` and matching `.before.json` /
+`.commands.jsonl` / `.expected.json` pairs; `zone-scale-handles-tests-v2.log`,
+`zone-scale-handles-clippy.log` and `zone-scale-handles-build.log`.
+Editor SHA-256: `687798a4124d6e84927f1091cb5b9705fda8497906f6c0aa9ea77fdc198877f9`.

@@ -134,7 +134,7 @@ pub(super) fn setup(mut commands: Commands) {
                         ..default()
                     },
                     BackgroundColor(Color::srgb(0.10, 0.14, 0.19)),
-                    children![(ButtonLabel, text("[x] Snap (1 m / 15 deg)", 15.))],
+                    children![(ButtonLabel, text("[x] Snap (1 m / 15 deg / 10%)", 15.))],
                 ));
                 row.spawn((
                     Control::Handles,
@@ -151,6 +151,7 @@ pub(super) fn setup(mut commands: Commands) {
                 for (tool, label) in [
                     (gizmo::Tool::Move, "Move"),
                     (gizmo::Tool::Rotate, "Rotate Y"),
+                    (gizmo::Tool::Scale, "Scale uniformly"),
                 ] {
                     row.spawn(button(Control::GizmoTool(tool), label));
                 }
@@ -549,9 +550,9 @@ pub(super) fn sync(
         }
         let caption = match control {
             Control::Snap => Some(if session.snap {
-                "[x] Snap (1 m / 15 deg)"
+                "[x] Snap (1 m / 15 deg / 10%)"
             } else {
-                "[ ] Snap (1 m / 15 deg)"
+                "[ ] Snap (1 m / 15 deg / 10%)"
             }),
             Control::Handles => Some(if session.show_move_handles {
                 "[x] Handles"

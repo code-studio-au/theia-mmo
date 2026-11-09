@@ -1,3 +1,11 @@
+Primitive uniform scale handle, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Scale uniformly joins Move/Rotate Y in the application toolbar. A standard Bevy
+cube/stem scales all dimensions by one factor, with optional 10% snapping, keeping
+position/yaw exact and preserving sphere/cylinder constraints. Changed previews and
+release share existing whole-candidate Transform validation and one-entry undo.
+See [the zone record](ZONE_EDITOR.md#primitive-uniform-scale-handle--9-november-2026) for acceptance.
+Continue after local commits until stopped; no push.
+
 Primitive yaw rotation handles, 9 November 2026 (P5-17 / P3-15 / P1-10):
 The application toolbar now chooses Move or Rotate Y. A standard Bevy torus
 provides a yaw ring, with 15-degree snapping and unsnapped editing; angle unwrapping
