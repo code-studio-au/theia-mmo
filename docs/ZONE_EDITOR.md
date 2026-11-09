@@ -2643,3 +2643,17 @@ retains explicit delivery/routing diagnostics without retrying a mutating input.
 It must only be run after renewed desktop authorization. No display, mouse or
 keyboard input was used while adding the headless tests. Windows execution and
 multiplayer capacity remain unqualified; engine pins and source schema unchanged.
+
+Headless layout addendum, 9 November 2026: an additional regression uses Bevy’s
+public CPU layout, target propagation and text-measurement systems, following
+its own pinned 0.20.0 layout test harness. It loads Bevy’s embedded default font
+into an in-memory Assets collection and uses a dummy camera render-target
+metadata record, without a window backend, UI/input plugins, clipboard plugin,
+renderer or GPU. All three pages’ actual ComputedNode and UiGlobalTransform
+bounds fit inside the content area at 3440 x 1440; the long-name footer remains
+44 px high and wholly above Properties. Text title height is also measured.
+This verifies layout geometry rather than pixels, OS wheel delivery or hardware.
+All 105 focused Rust tests (55 domain / 50 editor), formatting and strict
+workspace/all-target Clippy pass. Evidence: ignored
+build/zone-content-layout-{tests,all-tests,clippy}.log. Native acceptance remains
+pending as described above. No desktop input or display use.
