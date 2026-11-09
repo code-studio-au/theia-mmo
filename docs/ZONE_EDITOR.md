@@ -2563,3 +2563,44 @@ Evidence: ignored build/zone-translation-headless-v1/qualification.json, source/
 command/output pairs and refusal stderr; zone-translation-tests-v2.log,
 zone-translation-clippy-v2.log and zone-translation-build-v2.log. Editor SHA-256:
 `e080ab4d8e7125314a9b66e99798db9251d9d76e58c7549f5956e4e4793ab5c5`.
+
+## Piped structured commands — 9 November 2026
+
+P5-17 / P3-15 / P1-10; prerequisites are the shared command/validation/history
+engine and read-only playtest preflight. `--commands -` now reads JSONL from stdin
+through EOF. Command files retain their existing behavior, including addressing
+a literal dash filename using `./-`. The launcher forwards stdin directly.
+
+```sh
+python3 tools/edit_zone.py --no-build --zone SOURCE --headless --commands - --output DESTINATION < COMMANDS.jsonl
+python3 tools/edit_zone.py --no-build --zone SOURCE --check-playtest --commands - < COMMANDS.jsonl
+```
+
+Both readers use the same bounded line parser: at most 1 MiB and 1024 commands,
+with the existing 128-edit Apply bound and 64-entry history. UTF-8, JSON, stale
+revision, unknown-ID and candidate failures abort preparation. Explicit output
+is written only after every command succeeds; read-only preflight changes no
+files. Empty EOF is accepted, as is a final command without a newline. As with
+the existing file path, budget accounting conservatively charges one newline
+byte per parsed line, including a final unterminated line. An open producer must
+close stdin before processing can finish. No asynchronous live stream or GUI
+control is introduced; the existing mailbox remains the live editor interface.
+
+Acceptance passes: all 100 focused Rust tests, seven launcher unit tests,
+formatting, Python compilation and strict workspace/all-target Clippy. Twenty-four
+Linux process cases with X11/Wayland connections disabled cover equivalent
+complete file/piped documents and revision/history at fractional local/far
+origins, one-entry history roundtrips, actual Avian preflight and launcher
+stdin inheritance. Unicode, empty EOF, unterminated final commands, exactly
+1024 commands, exactly 1 MiB and literal dash filenames pass. Malformed JSON,
+invalid UTF-8, late stale revisions, unknown IDs, excessive Apply edits and byte/
+command overflow (including CRLF accounting and a truncated valid prefix)
+preserve original source and existing output byte-for-byte.
+
+Evidence: ignored build/zone-stdin-headless-v2/qualification.json and per-case
+stdout/stderr, zone-stdin-tests.log, zone-stdin-clippy.log, zone-stdin-build.log
+and zone-stdin-launcher-tests.log. Editor SHA-256:
+`29ea933d7d2d749d61b3d615a26c51d3a12b9014d559ab30d9d2be22ab34ebb1`.
+No desktop input, display or native GPU checks were used for this CLI-only slice.
+Windows cross-build/native execution and multiplayer remain unqualified. Source
+schema, standard Bevy infrastructure and engine pins are unchanged.

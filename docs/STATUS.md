@@ -3,6 +3,13 @@ the user’s request. Continue headless work only; do not resume mouse, keyboard
 display use or native window checks without renewed authorization. The grid-step
 native checks below completed before this constraint.
 
+Piped structured commands, 9 November 2026 (P5-17 / P3-15 / P1-10):
+--commands - reads bounded JSONL from stdin through EOF using the same command
+validation/history path as files and the viewport. Headless output is written
+only after all commands succeed; read-only playtest preflight accepts the same
+stream. See [the zone record](ZONE_EDITOR.md#piped-structured-commands--9-november-2026).
+Continue headless after local commits; no desktop input/display use; no push.
+
 Structured entry translation, 9 November 2026 (P5-17 / P3-15 / P1-10):
 The shared translate edit offsets primitive/plant/marker anchors or every point
 of a whole guide, preserving identity and metadata. Mixed Apply batches retain

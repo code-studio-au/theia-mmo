@@ -74,7 +74,9 @@ For structured commands, use `python3 tools/edit_zone.py --commands JSONL
 --content-id ID --revision N` for the existing server/client world pipeline.
 Inside an Apply command, `{"op":"translate","id":1,"offset":[0.25,0,-0.5]}`
 moves an object, plant, marker or whole guide without reconstructing its metadata.
-Batch several edits for one undo entry.
+Batch several edits for one undo entry. Use `--commands -` to pipe JSONL through
+stdin instead of creating a command file; finish the stream with EOF. This works
+with both headless output and read-only `--check-playtest`.
 [Controls, contracts and qualification](docs/ZONE_EDITOR.md). Normal multiplayer
 uses the existing game launcher. Chat composer and speech bubbles are deferred.
 

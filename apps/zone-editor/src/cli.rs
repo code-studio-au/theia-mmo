@@ -27,8 +27,11 @@ impl Options {
             match arg.as_str() {
                 "--zone" => result.zone = Some(args.next().ok_or("--zone needs a path")?.into()),
                 "--commands" => {
-                    result.commands =
-                        Some(args.next().ok_or("--commands needs a JSONL path")?.into())
+                    result.commands = Some(
+                        args.next()
+                            .ok_or("--commands needs a JSONL path or - for stdin")?
+                            .into(),
+                    )
                 }
                 "--save-path" => {
                     result.save_path = Some(args.next().ok_or("--save-path needs a path")?.into());
@@ -70,7 +73,7 @@ impl Options {
                 }
                 "--help" => {
                     println!(
-                        "theia-zone-editor [--zone FILE] [--commands JSONL] [--output FILE] [--save-path FILE] [--headless] [--check-playtest] [--capture PNG] [--report JSON] [--mailbox DIR] [--export NEW_DIR --content-id ID --revision N]\n\nCommands use the same transaction/undo engine as the viewport. Headless mode validates and prints the final revision without opening a window. Check-playtest is read-only: it builds the actual offline collision scene, checks the requested capsule spawn and prints JSON without opening a window. It cannot be combined with --output or --export. Output writes only after every command succeeds. Save-path changes the later editor save target without writing at startup."
+                        "theia-zone-editor [--zone FILE] [--commands JSONL] [--output FILE] [--save-path FILE] [--headless] [--check-playtest] [--capture PNG] [--report JSON] [--mailbox DIR] [--export NEW_DIR --content-id ID --revision N]\n\nCommands use the same transaction/undo engine as the viewport. Use --commands - to read bounded JSONL from stdin through EOF, with the same byte/line limits as a command file. Headless mode validates and prints the final revision without opening a window. Check-playtest is read-only: it builds the actual offline collision scene, checks the requested capsule spawn and prints JSON without opening a window. It cannot be combined with --output or --export. Output writes only after every command succeeds. Save-path changes the later editor save target without writing at startup."
                     );
                     std::process::exit(0);
                 }
@@ -110,15 +113,27 @@ impl Options {
         };
         let mut editor = Editor::new(zone)?;
         if let Some(path) = &self.commands {
-            let bytes = std::fs::metadata(path).map_err(|e| e.to_string())?.len();
-            if bytes > MAX_DOCUMENT_BYTES {
-                return Err("Command file too large".into());
-            }
-            let reader = BufReader::new(
-                std::fs::File::open(path)
-                    .map_err(|e| e.to_string())?
-                    .take(MAX_DOCUMENT_BYTES + 1),
-            );
+            let reader: Box<dyn BufRead> = if path == std::path::Path::new("-") {
+                let mut bytes = Vec::new();
+                std::io::stdin()
+                    .take(MAX_DOCUMENT_BYTES + 1)
+                    .read_to_end(&mut bytes)
+                    .map_err(|e| e.to_string())?;
+                if bytes.len() as u64 > MAX_DOCUMENT_BYTES {
+                    return Err("Command stream too large".into());
+                }
+                Box::new(std::io::Cursor::new(bytes))
+            } else {
+                let bytes = std::fs::metadata(path).map_err(|e| e.to_string())?.len();
+                if bytes > MAX_DOCUMENT_BYTES {
+                    return Err("Command file too large".into());
+                }
+                Box::new(BufReader::new(
+                    std::fs::File::open(path)
+                        .map_err(|e| e.to_string())?
+                        .take(MAX_DOCUMENT_BYTES + 1),
+                ))
+            };
             let mut total = 0;
             for (index, line) in reader.lines().enumerate() {
                 let line = line.map_err(|e| e.to_string())?;
