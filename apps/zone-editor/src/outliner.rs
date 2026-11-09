@@ -16,6 +16,29 @@ pub(super) enum Target {
     Marker(u64),
     Plant(u64),
 }
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub(super) enum Filter {
+    #[default]
+    All,
+    Objects,
+    Guides,
+    Markers,
+    Plants,
+    Terrain,
+}
+impl Filter {
+    fn accepts(self, target: Target) -> bool {
+        matches!(
+            (self, target),
+            (Self::All, _)
+                | (Self::Objects, Target::Object(_))
+                | (Self::Guides, Target::Guide(_))
+                | (Self::Markers, Target::Marker(_))
+                | (Self::Plants, Target::Plant(_))
+                | (Self::Terrain, Target::Terrain)
+        )
+    }
+}
 #[derive(Clone)]
 pub(super) struct Entry {
     pub target: Target,
@@ -25,6 +48,9 @@ pub(super) struct Entry {
 pub(super) struct Content {
     pub entries: Vec<Entry>,
     pub page: usize,
+    pub filter: Filter,
+    pub total: usize,
+    applied_filter: Option<Filter>,
     revision: Option<u64>,
     selection: Option<Target>,
     selection_index: Option<usize>,
@@ -41,11 +67,12 @@ impl Content {
 }
 #[derive(Component)]
 pub(super) struct Root;
-#[derive(Component, Clone, Copy, Debug)]
+#[derive(Component, Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Control {
     Previous,
     Next,
     Row(usize),
+    Filter(Filter),
 }
 #[derive(Component)]
 pub(super) enum Label {
@@ -133,6 +160,38 @@ pub(super) fn setup(mut commands: Commands) {
         ))
         .with_children(|panel| {
             panel.spawn((Label::Title, text("ZONE CONTENT", 20.)));
+            panel
+                .spawn(Node {
+                    flex_wrap: FlexWrap::Wrap,
+                    column_gap: px(6),
+                    row_gap: px(6),
+                    ..default()
+                })
+                .with_children(|filters| {
+                    for (filter, caption) in [
+                        (Filter::All, "All"),
+                        (Filter::Objects, "Objects"),
+                        (Filter::Guides, "Guides"),
+                        (Filter::Markers, "Markers"),
+                        (Filter::Plants, "Plants"),
+                        (Filter::Terrain, "Terrain"),
+                    ] {
+                        filters.spawn((
+                            Control::Filter(filter),
+                            Button,
+                            ActivateOnPress,
+                            Hovered::default(),
+                            Node {
+                                width: px(86),
+                                min_height: px(26),
+                                padding: UiRect::all(px(4)),
+                                ..default()
+                            },
+                            BackgroundColor(Color::srgb(0.10, 0.16, 0.22)),
+                            children![text(caption, 13.)],
+                        ));
+                    }
+                });
             panel
                 .spawn(Node {
                     flex_direction: FlexDirection::Row,
@@ -223,6 +282,10 @@ pub(super) fn activate(
         return;
     }
     match *control {
+        Control::Filter(filter) => {
+            content.filter = filter;
+            content.page = 0;
+        }
         Control::Previous => content.page = content.page.saturating_sub(1),
         Control::Next => content.page = (content.page + 1).min(content.pages() - 1),
         Control::Row(index) => {
@@ -343,9 +406,19 @@ pub(super) fn sync(
             Display::None
         };
     }
-    if content.revision != Some(session.editor.revision()) {
-        content.entries = entries(session.editor.zone());
+    let filtering = content.applied_filter != Some(content.filter);
+    if content.revision != Some(session.editor.revision()) || filtering {
+        let all = entries(session.editor.zone());
+        content.total = all.len();
+        content.entries = all
+            .into_iter()
+            .filter(|entry| content.filter.accepts(entry.target))
+            .collect();
         content.revision = Some(session.editor.revision());
+        content.applied_filter = Some(content.filter);
+        if filtering {
+            content.page = 0;
+        }
     }
     let selected = selection(&session);
     let index = selected.and_then(|target| {
@@ -354,13 +427,13 @@ pub(super) fn sync(
             .iter()
             .position(|entry| entry.target == target)
     });
-    if selected != content.selection || index != content.selection_index {
-        if let Some(index) = index {
-            content.page = index / ROWS;
-        }
-        content.selection = selected;
-        content.selection_index = index;
+    if (selected != content.selection || (index != content.selection_index && !filtering))
+        && let Some(index) = index
+    {
+        content.page = index / ROWS;
     }
+    content.selection = selected;
+    content.selection_index = index;
     content.page = content.page.min(content.pages() - 1);
     for (entity, control, hovered, mut node, mut background) in &mut controls {
         let disabled = busy(&session)
@@ -368,6 +441,7 @@ pub(super) fn sync(
                 Control::Previous => content.page == 0,
                 Control::Next => content.page + 1 == content.pages(),
                 Control::Row(index) => content.row(index).is_none(),
+                Control::Filter(_) => false,
             };
         if disabled {
             commands.entity(entity).insert(InteractionDisabled);
@@ -384,6 +458,7 @@ pub(super) fn sync(
                 };
                 entry.is_some_and(|entry| Some(entry.target) == selected)
             }
+            Control::Filter(filter) => content.filter == filter,
             _ => false,
         };
         background.0 = if disabled {
@@ -398,10 +473,22 @@ pub(super) fn sync(
     }
     for (label, mut value) in &mut labels {
         let next = match *label {
-            Label::Title => format!("ZONE CONTENT | {}", content.entries.len()),
+            Label::Title => {
+                if content.filter == Filter::All {
+                    format!("ZONE CONTENT | {}", content.entries.len())
+                } else {
+                    format!("ZONE CONTENT | {}/{}", content.entries.len(), content.total)
+                }
+            }
             Label::Page => format!("{}/{}", content.page + 1, content.pages()),
             Label::Footer => index.map_or(
-                "Select content | F frames\nSpawn row frames the spawn".into(),
+                if selected.is_some() {
+                    "Selection hidden by filter\nChoose All to reveal".into()
+                } else if content.entries.is_empty() {
+                    "No matching content\nChoose another filter".into()
+                } else {
+                    "Select content | F frames\nSpawn row frames the spawn".into()
+                },
                 |index| {
                     format!(
                         "{}\n{}",
@@ -469,6 +556,15 @@ mod tests {
             .init_resource::<ButtonInput<KeyCode>>()
             .init_resource::<InputFocus>()
             .init_resource::<workspace::Requests>()
+            .insert_resource(View {
+                target: Vec3::ZERO,
+                yaw: 0.6,
+                pitch: 0.8,
+                distance: 32.,
+                preset: camera_views::Preset::Perspective,
+                show_grid: true,
+            })
+            .add_observer(activate)
             .add_systems(Startup, (setup, naming::setup))
             .add_systems(Update, (naming::keyboard, scroll, sync).chain());
         let mut window = Window {
@@ -503,6 +599,151 @@ mod tests {
             })
             .unwrap()
             .1
+    }
+    fn press(app: &mut App, window: Entity, control: Control) {
+        use bevy::picking::{
+            backend::HitData,
+            events::Pointer,
+            pointer::{Location, PointerId},
+        };
+        let entity = app
+            .world_mut()
+            .query::<(Entity, &Control)>()
+            .iter(app.world())
+            .find(|(_, found)| **found == control)
+            .unwrap()
+            .0;
+        app.world_mut().trigger(PointerPress {
+            entity,
+            button: PointerButton::Primary,
+            count: 1,
+            pointer: Pointer::new(
+                PointerId::Mouse,
+                Location {
+                    target: bevy::camera::RenderTarget::Window(bevy::window::WindowRef::Entity(
+                        window,
+                    ))
+                    .normalize(Some(window))
+                    .unwrap(),
+                    position: Vec2::new(3290., 150.),
+                },
+            ),
+            hit: HitData::new(window, 0., None, None),
+        });
+        wheel(app, 0.);
+    }
+    #[test]
+    fn filter_buttons_select_each_content_kind_without_dirtying_or_losing_redo() {
+        let (mut app, window) = app([0.; 3]);
+        let mut template = Editor::new(Zone::default()).unwrap();
+        template
+            .execute(
+                serde_json::from_slice(include_bytes!(
+                    "../../../content/zones/selection.commands.jsonl"
+                ))
+                .unwrap(),
+            )
+            .unwrap();
+        let mut source = app.world().resource::<Session>().editor.zone().clone();
+        source.paths = template.zone().paths.clone();
+        source.markers = template.zone().markers.clone();
+        source.plants = template.zone().plants.clone();
+        source.schema = 7;
+        source.terrain = Some(theia_zone::terrain::HeightPatch::flat([0, 0]));
+        let mut editor = Editor::new(source.clone()).unwrap();
+        editor
+            .execute(Command::Apply {
+                expected_revision: 0,
+                edits: vec![Edit::RenameZone {
+                    name: "Temporary name".into(),
+                }],
+            })
+            .unwrap();
+        editor
+            .execute(Command::Undo {
+                expected_revision: 1,
+            })
+            .unwrap();
+        {
+            let mut session = app.world_mut().resource_mut::<Session>();
+            session.editor = editor;
+            session.saved_zone = Some(source.clone());
+            session.selected = Some(43);
+        }
+        // Different source data can have the same revision after replacement
+        // of the test fixture. In normal use revisions are strictly monotonic.
+        app.world_mut().resource_mut::<Content>().revision = None;
+        wheel(&mut app, 0.);
+        for (filter, count, target) in [
+            (Filter::Objects, 43, Target::Object(1)),
+            (Filter::Guides, 1, Target::Guide(1002)),
+            (Filter::Markers, 1, Target::Marker(1000)),
+            (Filter::Plants, 1, Target::Plant(1001)),
+            (Filter::Terrain, 1, Target::Terrain),
+            (Filter::All, 48, Target::Terrain),
+        ] {
+            press(&mut app, window, Control::Filter(filter));
+            // A filter change is not a new selection: later frames must retain
+            // its first page rather than jumping back to the old selected ID.
+            wheel(&mut app, 0.);
+            wheel(&mut app, 0.);
+            let content = app.world().resource::<Content>();
+            assert_eq!(content.filter, filter);
+            assert_eq!(content.page, 0);
+            assert_eq!(content.entries.len(), count);
+            assert_eq!(content.total, 48);
+            assert_eq!(content.row(0).unwrap().target, target);
+            let session = app.world().resource::<Session>();
+            assert_eq!(session.selected, Some(43));
+            assert_eq!(session.editor.zone(), &source);
+            assert_eq!(session.editor.revision(), 2);
+            assert_eq!(session.editor.history(), (0, 1));
+            assert!(!session.is_dirty());
+        }
+        press(&mut app, window, Control::Filter(Filter::Markers));
+        press(&mut app, window, Control::Row(0));
+        assert_eq!(
+            app.world().resource::<Session>().marker_selected,
+            Some(1000)
+        );
+        assert!(app.world().resource::<Session>().marker_mode);
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .press(KeyCode::F8);
+        wheel(&mut app, 0.);
+        assert!(app.world().resource::<Session>().name_edit.is_some());
+        press(&mut app, window, Control::Filter(Filter::All));
+        assert_eq!(app.world().resource::<Content>().filter, Filter::Markers);
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .clear();
+        app.world_mut().resource_mut::<Session>().name_edit = None;
+        app.world_mut()
+            .resource_mut::<Session>()
+            .editor
+            .execute(Command::Apply {
+                expected_revision: 2,
+                edits: vec![Edit::DeleteMarker { id: 1000 }],
+            })
+            .unwrap();
+        wheel(&mut app, 0.);
+        assert_eq!(app.world().resource::<Content>().entries.len(), 0);
+        assert_eq!(page(&app), 0);
+        assert!(disabled(&mut app, Control::Previous));
+        assert!(disabled(&mut app, Control::Next));
+        app.world_mut()
+            .resource_mut::<Session>()
+            .editor
+            .execute(Command::Undo {
+                expected_revision: 3,
+            })
+            .unwrap();
+        wheel(&mut app, 0.);
+        assert_eq!(
+            app.world().resource::<Content>().row(0).unwrap().target,
+            Target::Marker(1000)
+        );
+        assert_eq!(app.world().resource::<Session>().editor.zone(), &source);
     }
     #[test]
     fn real_bevy_systems_page_all_rows_preserving_source_revision_and_pending_redo() {
@@ -793,6 +1034,14 @@ mod tests {
                 .query::<(&Control, &Node, &ComputedNode, &bevy::ui::UiGlobalTransform)>()
                 .iter(app.world())
             {
+                if matches!(control, Control::Filter(_)) {
+                    assert_eq!(computed.size().x, 86.);
+                    assert!(computed.size().y >= 26.);
+                    let position = transform.affine().translation;
+                    let half = computed.size() * 0.5;
+                    assert!(position.x - half.x >= 3140. && position.x + half.x <= 3440.);
+                    assert!(position.y - half.y >= 92. && position.y + half.y <= 840.);
+                }
                 if !matches!(control, Control::Row(_)) || node.display == Display::None {
                     continue;
                 }

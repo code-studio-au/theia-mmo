@@ -2,6 +2,13 @@ Headless work resumed, 9 November 2026: the user reserves the display and
 mouse. Continue without desktop input, display inspection or native window
 checks until renewed authorization. Commit locally; do not push.
 
+Content-type filters, 9 November 2026 (P5-17 / P3-15 / P1-10):
+All/Objects/Guides/Markers/Plants/Terrain buttons narrow the content list while
+preserving source, selection and pending redo. Actual Bevy observer/sync and
+CPU font/layout checks pass; native UI/input/GPU acceptance remains pending.
+See [the zone record](ZONE_EDITOR.md#content-type-filter-buttons--9-november-2026).
+Continue headlessly after local commits; no desktop input/display use; no push.
+
 Content-list paging, native acceptance pending, 9 November 2026
 (P5-17 / P3-15 / P1-10): the row pool reserves space above Properties; wheel
 paging and disabled boundary buttons have headless Bevy-system coverage.

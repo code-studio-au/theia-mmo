@@ -2657,3 +2657,37 @@ All 105 focused Rust tests (55 domain / 50 editor), formatting and strict
 workspace/all-target Clippy pass. Evidence: ignored
 build/zone-content-layout-{tests,all-tests,clippy}.log. Native acceptance remains
 pending as described above. No desktop input or display use.
+
+## Content-type filter buttons — 9 November 2026
+
+P5-17 / P3-15 / P1-10; prerequisites are the bounded content browser, shared
+selection and the CPU layout harness. Six standard Bevy buttons expose All,
+Objects, Guides, Markers, Plants and Terrain. All includes the playtest-spawn row;
+Objects includes every primitive shape, and Markers includes NPC and quest
+annotations. These filter only the browser. World presentation, picking,
+source, current selection, save state and undo/redo are unchanged. Filters remain
+editor-local and retain their chosen type across document edits/reloads.
+
+Choosing a type starts on its first page and shows matching/total counts. Later
+frames retain that page even when the old selected entry lies on another page;
+a genuinely changed visible selection still reveals itself. A hidden selection
+is identified in the footer, while an empty category gives an explicit empty
+state and disables Previous/Next. Selecting a filtered row uses the existing
+mode/selection path. Preview/form/playtest/focus guards apply to filter buttons.
+
+Headless acceptance: 106 focused Rust tests (55 domain / 51 editor), formatting,
+strict workspace/all-target Clippy and an editor build. A real Bevy PointerPress
+observer test covers all categories against mixed source with terrain and spawn,
+correct counts, unchanged source/revision/clean state/pending redo/selection,
+retained first-page browsing across frames, marker-row selection, rename-modal
+refusal and filtered deletion/Undo restoration. PointerPress events are injected
+only into the in-memory ECS test app; no OS input is sent. The existing actual
+font/CPU layout regression now also checks all six button bounds and all rows/
+footer at 3440 x 1440. No new source schema, engine pins or dependency changes.
+
+Evidence: ignored build/zone-content-filter-{tests,all-tests,clippy,build}.log.
+The owned native qualifier has corresponding filter/empty-category checks for a
+future authorized run. It was not run for this slice. Native UI/input/GPU and
+Windows acceptance remain pending; no display, mouse or keyboard input was used.
+The earlier wheel-delivery gap remains open and is not claimed fixed by these
+CPU checks. No multiplayer authority or capacity claim.

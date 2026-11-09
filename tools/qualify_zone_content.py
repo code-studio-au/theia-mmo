@@ -63,7 +63,7 @@ def run(output, binary, selected_case):
                     current = fresh()
                     content = current['content_list']
                     assert content['page'] == index
-                    rows = [c for c in content['controls'] if c['target'] not in ['Previous', 'Next']]
+                    rows = [c for c in content['controls'] if c['target'] not in ['Previous', 'Next'] and not c['target'].startswith('Filter(')]
                     rows.sort(key=lambda row: row['centre'][1])
                     expected = (['Spawn'] + [f'Object({i})' for i in range(1, 44)])[index * 18:(index + 1) * 18]
                     assert [c['target'] for c in rows] == expected
@@ -111,6 +111,19 @@ def run(output, binary, selected_case):
                 wheel(-1, 2)
                 click('Next'); assert fresh()['content_list']['page'] == 2
                 wheel(1, 1)
+                click('Filter(Objects)')
+                wait(lambda: state()['content_list']['filter'] == 'Objects')
+                for _ in range(3):
+                    filtered = fresh()['content_list']
+                    assert filtered['page'] == 0 and filtered['count'] == 43 and filtered['total'] == 44
+                click('Filter(Markers)')
+                wait(lambda: state()['content_list']['filter'] == 'Markers')
+                filtered = fresh()['content_list']
+                assert filtered['count'] == 0 and filtered['pages'] == 1
+                assert all(c['disabled'] for c in filtered['controls'] if c['target'] in ['Previous', 'Next'])
+                click('Filter(All)')
+                wait(lambda: state()['content_list']['filter'] == 'All')
+                wheel(-1, 1)
                 click('SpawnTransform', 'workspace_controls')
                 wait(lambda: state()['transform_edit'] is not None)
                 wheel(-1, 1)
@@ -130,7 +143,7 @@ def run(output, binary, selected_case):
         assert 'Insert instance layer "VK_LAYER_KHRONOS_validation"' in text
         diagnostics = check_gpu_diagnostics(text, allow_surface_resize=False)
         record = dict(name=name, gpu=final['gpu'], viewport=final['viewport'], visible_targets=seen, gpu_diagnostics=diagnostics, validation_layer_active=True,
-                      checks=['all 44 targets reachable with every row wholly above Properties', 'last row selected on all three pages; disabled boundary buttons', 'Linux wheel paging preserves view/source/history and isolates exact-properties modal'])
+                      checks=['all 44 targets reachable with every row wholly above Properties', 'last row selected on all three pages; disabled boundary buttons', 'Linux wheel paging and type filters preserve view/source/history and isolate exact-properties modal'])
         (folder / 'qualification.json').write_text(json.dumps(record, indent=2) + '\n')
         cases.append(record)
     result = dict(cases=cases, binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(), scope='Linux native synthetic input, 3440x1440; no Windows or multiplayer claim')

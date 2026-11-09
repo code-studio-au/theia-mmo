@@ -594,6 +594,9 @@ pub(super) fn report(
                 },
                 outliner::Control::Previous => ("Previous".into(), "Previous".into()),
                 outliner::Control::Next => ("Next".into(), "Next".into()),
+                outliner::Control::Filter(filter) => {
+                    (format!("Filter({filter:?})"), format!("{filter:?}"))
+                }
             };
             content_buttons.push(serde_json::json!({"target":target,"label":label,"hovered":hovered.0,"disabled":disabled,
                 "centre":(transform.affine().translation*factor).to_array(),"size":(computed.size()*factor).to_array()}));
@@ -601,6 +604,7 @@ pub(super) fn report(
     }
     value["content_list"] = serde_json::json!({"visible":session.play.is_none(),"page":content.page,
         "pages":content.pages(),"count":content.entries.len(),"controls":content_buttons,
+        "filter":format!("{:?}",content.filter),"total":content.total,
         "scroll_events":content.scroll_events,"last_scroll":content.last_scroll});
     value["workspace_controls"] = serde_json::json!(controls.iter().filter_map(|(_,_,_,_,node,t,hovered,control,setting,value,range,..)| {
         let target = match (control,setting) { (Some(c),_)=>format!("{c:?}"),(_,Some(s))=>format!("{s:?}"),_=>return None };
