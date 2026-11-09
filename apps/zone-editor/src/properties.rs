@@ -6,7 +6,11 @@ use bevy::input_focus::{
 };
 use bevy::picking::{events::PointerPress, pointer::PointerButton};
 use bevy::text::{EditableText, TextCursorStyle};
-use bevy::ui_widgets::{SelectAllOnFocus, TextInput};
+use bevy::ui::InteractionDisabled;
+use bevy::ui_widgets::{
+    SelectAllOnFocus, Slider, SliderPrecision, SliderRange, SliderStep, SliderThumb, SliderValue,
+    TextInput, TrackClick, ValueChange,
+};
 use theia_zone::{markers::Marker, paths::GuidePath, vegetation::Plant};
 
 const LABELS: [&str; 7] = [
@@ -27,6 +31,14 @@ pub(super) struct Field(pub usize);
 #[derive(Component)]
 pub(super) struct FieldRow(usize);
 #[derive(Component)]
+pub(super) struct YawRow;
+#[derive(Component)]
+pub(super) struct YawSlider;
+#[derive(Component)]
+pub(super) struct YawThumb;
+#[derive(Component)]
+pub(super) struct YawLabel;
+#[derive(Component)]
 pub(super) struct FieldLabel(usize);
 #[derive(Clone, Debug, PartialEq)]
 enum Target {
@@ -40,6 +52,9 @@ enum Target {
     },
 }
 impl Target {
+    fn has_yaw(&self) -> bool {
+        matches!(self, Self::Object(_) | Self::Plant(_) | Self::Marker(_))
+    }
     fn labels(&self) -> &'static [&'static str] {
         match self {
             Self::Object(_) => &LABELS,
@@ -146,6 +161,7 @@ impl Target {
 pub(super) enum Control {
     Apply,
     Cancel,
+    YawSlider,
 }
 pub(super) struct Draft {
     pub id: Option<u64>,
@@ -281,6 +297,63 @@ pub(super) fn setup(mut commands: Commands) {
                             ));
                         });
                 }
+                panel
+                    .spawn((
+                        YawRow,
+                        Visibility::Hidden,
+                        Node {
+                            display: Display::None,
+                            flex_direction: FlexDirection::Column,
+                            row_gap: px(4),
+                            ..default()
+                        },
+                    ))
+                    .with_children(|row| {
+                        row.spawn((YawLabel, text("Yaw slider | 15 deg snap", 13.)));
+                        row.spawn((
+                            YawSlider,
+                            Control::YawSlider,
+                            Slider {
+                                track_click: TrackClick::Snap,
+                                ..default()
+                            },
+                            SliderValue(0.),
+                            SliderRange::new(-180., 180.),
+                            SliderStep(15.),
+                            SliderPrecision(0),
+                            TabIndex(7),
+                            Hovered::default(),
+                            Node {
+                                width: percent(100),
+                                height: px(24),
+                                ..default()
+                            },
+                            BackgroundColor(Color::srgb(0.09, 0.12, 0.16)),
+                        ))
+                        .with_children(|track| {
+                            track
+                                .spawn(Node {
+                                    position_type: PositionType::Absolute,
+                                    left: px(0),
+                                    right: px(14),
+                                    top: px(0),
+                                    bottom: px(0),
+                                    ..default()
+                                })
+                                .with_child((
+                                    YawThumb,
+                                    SliderThumb,
+                                    Node {
+                                        position_type: PositionType::Absolute,
+                                        width: px(14),
+                                        height: px(24),
+                                        left: percent(50),
+                                        ..default()
+                                    },
+                                    BackgroundColor(Color::srgb(0.2, 0.65, 0.8)),
+                                ));
+                        });
+                    });
                 panel.spawn(text(
                     "Enter applies all fields.\nEscape cancels. Tab changes field.",
                     13.,
@@ -463,6 +536,7 @@ pub(super) fn finish(
     mut captions: Query<&mut Text, With<Caption>>,
     mut rows: Query<(&FieldRow, &mut Node, &mut Visibility), Without<Root>>,
     mut labels: Query<(&FieldLabel, &mut Text), Without<Caption>>,
+    yaw_sliders: Query<(), With<YawSlider>>,
 ) {
     let Some(mut draft) = session.transform_edit.take() else {
         if let Ok(mut root) = roots.single_mut() {
@@ -567,6 +641,9 @@ pub(super) fn finish(
     } else {
         if let Some(entity) = active_entity
             && focus.get() != Some(entity)
+            && !focus
+                .get()
+                .is_some_and(|focused| yaw_sliders.contains(focused))
         {
             focus.set(entity, FocusCause::Navigated);
         }
@@ -578,6 +655,117 @@ pub(super) fn finish(
         }
         draft.action = None;
         session.transform_edit = Some(draft);
+    }
+}
+
+// Slider presentation wraps full turns; untouched exact numeric strings remain
+// authoritative for Apply, including f64 yaw values outside this display range.
+fn displayed_yaw(value: &str) -> Option<f32> {
+    let value = value.parse::<f64>().ok()?;
+    value
+        .is_finite()
+        .then(|| ((value + 180.).rem_euclid(360.) - 180.) as f32)
+}
+
+pub(super) fn yaw_change(
+    event: On<ValueChange<f32>>,
+    sliders: Query<(), With<YawSlider>>,
+    windows: Query<&Window>,
+    session: Res<Session>,
+    mut fields: Query<(&Field, &mut EditableText)>,
+) {
+    if !sliders.contains(event.source)
+        || !windows.single().is_ok_and(|w| w.focused)
+        || !event.value.is_finite()
+        || !(-180. ..=180.).contains(&event.value)
+        || session.play.is_some()
+        || session.drag.is_some()
+        || session.stroke.is_some()
+        || session.path_draft.is_some()
+        || session.name_edit.is_some()
+        || session.file_dialog.is_some()
+    {
+        return;
+    }
+    let Some(draft) = &session.transform_edit else {
+        return;
+    };
+    if !draft.original.has_yaw() {
+        return;
+    }
+    let Some((_, mut field)) = fields.iter_mut().find(|(field, _)| field.0 == 3) else {
+        return;
+    };
+    if field.is_composing() || displayed_yaw(&field.value().to_string()) == Some(event.value) {
+        return;
+    }
+    let original = draft.original.values()[3].clone();
+    let value = if displayed_yaw(&original) == Some(event.value) {
+        original
+    } else {
+        let step = if session.snap { 15. } else { 1. };
+        (f64::from((event.value / step).round() * step)).to_string()
+    };
+    field.clear();
+    field.editor_mut().set_text(&value);
+}
+
+pub(super) fn yaw_sync(
+    mut commands: Commands,
+    session: Res<Session>,
+    mut rows: Query<(&mut Node, &mut Visibility), With<YawRow>>,
+    sliders: Query<(Entity, &SliderValue, &SliderStep, Has<InteractionDisabled>), With<YawSlider>>,
+    mut thumbs: Query<&mut Node, (With<YawThumb>, Without<YawRow>)>,
+    mut labels: Query<&mut Text, With<YawLabel>>,
+) {
+    let draft = session
+        .transform_edit
+        .as_ref()
+        .filter(|draft| draft.original.has_yaw());
+    let visible = draft.is_some();
+    for (mut node, mut visibility) in &mut rows {
+        node.display = if visible {
+            Display::Flex
+        } else {
+            Display::None
+        };
+        *visibility = if visible {
+            Visibility::Inherited
+        } else {
+            Visibility::Hidden
+        };
+    }
+    let value = draft.and_then(|draft| displayed_yaw(&draft.fields[3]));
+    for (entity, current, step, disabled) in &sliders {
+        if disabled == visible {
+            if visible {
+                commands.entity(entity).remove::<InteractionDisabled>();
+            } else {
+                commands.entity(entity).insert(InteractionDisabled);
+            }
+        }
+        if let Some(value) = value
+            && current.0 != value
+        {
+            commands.entity(entity).insert(SliderValue(value));
+        }
+        let actual_step = if session.snap { 15. } else { 1. };
+        if step.0 != actual_step {
+            commands.entity(entity).insert(SliderStep(actual_step));
+        }
+    }
+    if let Some(value) = value {
+        for mut thumb in &mut thumbs {
+            thumb.left = percent((value + 180.) / 360. * 100.);
+        }
+    }
+    for mut label in &mut labels {
+        **label = if session.snap {
+            "Yaw slider | 15 deg snap"
+        } else {
+            "Yaw slider | 1 deg step"
+        }
+        .into();
     }
 }
 
@@ -1001,3 +1189,7 @@ mod tests {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "properties_yaw_tests.rs"]
+mod yaw_tests;

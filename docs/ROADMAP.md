@@ -1,3 +1,10 @@
+Transform yaw slider, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Object/plant/marker properties now expose a standard Bevy yaw slider alongside
+exact fields. It edits the pending form; Apply remains one shared validated undo
+entry. Precision, no-op/redo, cancellation and 3440 x 1440 CPU layout pass;
+native UI/input/GPU acceptance remains pending. See [the zone record](ZONE_EDITOR.md#transform-yaw-slider--9-november-2026).
+Continue headlessly after local commits; no desktop input/display use; no push.
+
 Content double-click framing, 9 November 2026 (P5-17 / P3-15 / P1-10):
 Double-clicking an entry selects and frames it through the existing checked
 Frame helpers. Single-click behavior, view preset, source and redo are preserved.

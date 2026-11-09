@@ -2762,3 +2762,44 @@ reserved. Native repeated-click delivery, UI/GPU and Windows acceptance remain
 pending, including the earlier wheel-delivery gap. No display, mouse or keyboard
 input was used. Source schema, engine pins and world presentation are unchanged;
 this adds an input route to existing editor camera behavior. No multiplayer claim.
+
+## Transform yaw slider — 9 November 2026
+
+P5-17 / P3-15 / P1-10; prerequisites are the retained exact properties form,
+standard Bevy controlled Slider infrastructure and shared candidate Apply.
+Object, plant and NPC/quest marker forms expose a yaw track/thumb. It displays
+one wrapped turn (-180..180 degrees); exact numeric fields retain the original
+full-turn f64 value. Snap uses 15-degree steps; disabling it uses one-degree
+steps. Spawn and guide/point forms hide and disable this control. Its keyboard
+focus is retained inside the modal form alongside existing field navigation.
+
+Intermediate and final widget notifications update only the pending yaw field,
+leaving other field strings exact. Apply continues through existing Transform/
+PutPlant/PutMarker candidate validation and one undo entry. Cancel/focus loss
+preserve source/history. Unchanged slider values retain the exact original
+numeric string; dragging back to the original displayed angle also restores it.
+Programmatic slider initialization does not quantize authored yaw. Invalid or
+foreign events are ignored, and invalid unrelated fields still refuse Apply.
+There is no new live scene preview or implicit commit on slider release; the
+retained Apply/Cancel form remains the editing boundary.
+
+Acceptance: all 111 focused Rust tests (55 domain / 56 editor), formatting,
+strict workspace/all-target Clippy, Python compilation and an editor build.
+Three headless integration regressions use the real Bevy SliderPlugin and
+SetSliderValue/ValueChange route plus actual field/finish systems. Object/plant/
+marker cases at fractional local/far origins preserve complete source metadata,
+untouched f64 fields, pending redo during edits and one-entry Apply/Undo/Redo.
+No-op/return-to-origin, invalid event/range/field, foreign source, cancellation,
+focus loss and hidden spawn/guide controls pass. A shared test-only CPU harness
+now supplies embedded-font, editable-text sizing, target propagation and layout
+systems to both browser and properties regressions, without a window backend,
+renderer, GPU or clipboard plugin. All exact field, yaw track and Apply/Cancel
+bounds fit inside the 300 x 600 Properties region at 3440 x 1440.
+
+Evidence: ignored build/zone-yaw-slider-{tests,integration-tests,all-tests,clippy,
+build}.log. Opt-in transform-control reports now include slider value/range.
+tools/qualify_zone_yaw.py prepares owned local/far native drag, complete headless
+command-oracle, no-op/redo and save checks for a future authorized run. It was
+compiled but not run while the user reserves mouse/display access. Native UI/
+input/GPU and Windows acceptance remain pending; no desktop input or display
+use occurred. Source schema, Bevy/Avian/Renet pins and gameplay are unchanged.

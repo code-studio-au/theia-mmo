@@ -628,14 +628,15 @@ pub(super) fn report(
         let factor = node.inverse_scale_factor() * scale.0;
         Some(serde_json::json!({"action":format!("{control:?}"),"hovered":hovered.0,"centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array()}))
     }).collect::<Vec<_>>());
-    value["transform_controls"] = serde_json::json!(controls.iter().filter_map(|(_,_,control,field,node,t,hovered,..)| {
+    value["transform_controls"] = serde_json::json!(controls.iter().filter_map(|(_,_,control,field,node,t,hovered,_,_,value,range,_)| {
         let target = match (control,field) {
             (Some(control),_) => format!("{control:?}"),
             (_,Some(field)) => format!("Field({})",field.0),
             _ => return None,
         };
         let factor = node.inverse_scale_factor() * scale.0;
-        Some(serde_json::json!({"target":target,"hovered":hovered.0,"centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array()}))
+        Some(serde_json::json!({"target":target,"hovered":hovered.0,"centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array(),
+            "value":value.map(|value|value.0),"range":range.map(|range|[range.start(),range.end()])}))
     }).collect::<Vec<_>>());
     value["transform_edit"] = serde_json::json!(session.transform_edit.as_ref().map(|d| serde_json::json!({"id":d.id,"fields":d.fields,"active":d.active,"selection":d.selection})));
     value["input_elapsed"] = time.elapsed_secs_f64().into();

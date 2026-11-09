@@ -7,6 +7,8 @@ mod cli;
 mod export;
 mod file_picker;
 mod gizmo;
+#[cfg(test)]
+mod headless_ui;
 mod markers;
 mod naming;
 mod outliner;
@@ -433,6 +435,7 @@ fn run() -> Result<(), String> {
     .add_observer(outliner::activate)
     .add_observer(naming::activate)
     .add_observer(properties::activate)
+    .add_observer(properties::yaw_change)
     .add_observer(file_picker::activate)
     .add_systems(
         Startup,
@@ -480,7 +483,11 @@ fn run() -> Result<(), String> {
     )
     .add_systems(
         PostUpdate,
-        (naming::finish, properties::finish, file_picker::finish)
+        (
+            naming::finish,
+            (properties::finish, properties::yaw_sync).chain(),
+            file_picker::finish,
+        )
             .chain()
             .after(bevy::text::EditableTextSystems),
     )
