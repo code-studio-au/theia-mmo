@@ -73,6 +73,33 @@ pub(super) fn projection(view: &View, play: bool, projection: &mut Projection) {
     }
 }
 
+/// Drag the scene with the pointer in the camera plane through its target.
+/// This changes only the editor's bounded local view, never authored positions.
+pub(super) fn pan(view: &mut View, delta: Vec2, viewport_height: f32) {
+    if !delta.is_finite() || !viewport_height.is_finite() || viewport_height <= 0. {
+        return;
+    }
+    let span = if view.preset == Preset::Perspective {
+        2. * view.distance * (PerspectiveProjection::default().fov * 0.5).tan()
+    } else {
+        view.distance
+    };
+    let (right, up) = if view.preset == Preset::Perspective {
+        let rotation = transform(view).rotation;
+        (rotation * Vec3::X, rotation * Vec3::Y)
+    } else {
+        view.preset.pan_axes()
+    };
+    let offset = (-right * delta.x + up * delta.y) * (span / viewport_height);
+    if !offset.is_finite() {
+        return;
+    }
+    view.target = (view.target + offset).clamp(
+        Vec3::splat(-theia_zone::ZONE_EXTENT as f32),
+        Vec3::splat(theia_zone::ZONE_EXTENT as f32),
+    );
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -85,6 +112,56 @@ mod tests {
             distance: 180.,
             preset: Preset::Perspective,
         }
+    }
+    #[test]
+    fn pointer_pan_uses_the_projection_plane_and_zoom_scale() {
+        for preset in [
+            Preset::Top,
+            Preset::Front,
+            Preset::Right,
+            Preset::Perspective,
+        ] {
+            let mut view = view();
+            preset.select(&mut view);
+            let before = view.target;
+            let rotation = transform(&view).rotation;
+            let span = if preset == Preset::Perspective {
+                2. * view.distance * (PerspectiveProjection::default().fov * 0.5).tan()
+            } else {
+                view.distance
+            };
+            let expected =
+                before + (rotation * Vec3::X * (-100.) + rotation * Vec3::Y * 50.) * (span / 1440.);
+            pan(&mut view, Vec2::new(100., 50.), 1440.);
+            assert!((view.target - expected).length() < 0.0001);
+            let offset = view.target - before;
+            match preset {
+                Preset::Top => assert_eq!(view.target.y, before.y),
+                Preset::Front => assert_eq!(view.target.z, before.z),
+                Preset::Right => assert_eq!(view.target.x, before.x),
+                Preset::Perspective => {}
+            }
+            view.target = before;
+            view.distance *= 0.5;
+            pan(&mut view, Vec2::new(100., 50.), 1440.);
+            assert!((view.target - before - offset * 0.5).length() < 0.0001);
+        }
+    }
+    #[test]
+    fn pointer_pan_rejects_bad_input_and_bounds_the_local_target() {
+        let mut view = view();
+        Preset::Front.select(&mut view);
+        let before = view.target;
+        for (delta, height) in [
+            (Vec2::splat(f32::NAN), 1440.),
+            (Vec2::ONE, 0.),
+            (Vec2::ONE, f32::INFINITY),
+        ] {
+            pan(&mut view, delta, height);
+            assert_eq!(view.target, before);
+        }
+        pan(&mut view, Vec2::new(-100_000., 100_000.), 1440.);
+        assert_eq!(view.target, Vec3::new(512., 512., before.z));
     }
     #[test]
     fn canonical_views_have_exact_axes_and_look_at_the_existing_target() {

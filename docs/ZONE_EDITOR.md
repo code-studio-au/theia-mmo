@@ -2389,3 +2389,39 @@ far/spawn-fields.png, local/unsupported-spawn.png and *.commands.jsonl /
 zone-spawn-properties-clippy-v2.log and zone-spawn-properties-build.log.
 Editor SHA-256:
 `a073beaed76c132ce234bf6780e5b87e9c00a8a49616a62bb8dca8e240a5735e`.
+
+## Pointer viewport panning — 9 November 2026
+
+P5-17 / P3-15 / P1-10 follow-up; prerequisites are canonical view projections and
+standard Bevy window/input. Middle-mouse drags pan the editor camera in its screen
+plane through the target, with exact canonical axes in orthographic views and
+projection FOV/span scaling. Logical window cursor deltas and viewport height
+keep motion tied to the visible pointer rather than raw-device scaling. The
+target remains within the existing bounded local authoring frame. Source/global
+positions, selection, revision/history and gameplay controls remain unchanged.
+
+A pan must start inside the viewport. Crossing into a panel, loss of focus,
+Escape, primary/secondary-button input, a transform gesture, modal form or
+playtest cancels/refuses it; re-entering while held does not reacquire the pan.
+RMB orbit, wheel zoom and keyboard pan retain their existing controls. Pan uses
+standard Bevy middle-button/window input without cursor capture or custom engine
+infrastructure. Existing normal-client Classic controls and offline player
+movement are unchanged.
+
+Acceptance: 93 focused Rust tests (51 domain / 42 editor), formatting and strict
+workspace/all-target Clippy pass. Tests cover canonical/perspective plane math,
+zoom scaling, exact unaffected orthographic coordinate, input rejection and local
+bounds. Native actual 3440x1440 local/far runs pass on AMD RX 7900 XTX
+(RADV NAVI31), Vulkan device 29772, with active Khronos validation and zero
+GPU/resize diagnostics. Sixteen positive drags (four views, two zooms, two origins)
+match projected plane math; twelve orthographic drags additionally preserve exact
+screen displacement within 0.05 pixels. Panel-origin presses, panel exit/re-entry,
+held-transform cancellation, modal and playtest refusal preserve camera/source
+as required. Retained grid/keyboard-pan/playtest restore checks pass. The local
+Front capture was visually inspected. Windows, physical device input and display
+scaling beyond the actual 3440x1440 Linux setup remain unqualified.
+
+Evidence: ignored build/zone-pointer-pan-native-3440-v1/qualification.json,
+local/front.png; zone-pointer-pan-tests-v2.log, zone-pointer-pan-clippy-v2.log and
+zone-pointer-pan-build.log. Editor SHA-256:
+`7311b34ea6ae23f03967d04f20160dffa22e1b2ea893a81a660c42d5157895e7`.

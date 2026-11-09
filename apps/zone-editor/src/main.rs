@@ -1033,13 +1033,34 @@ fn camera_controls(
     windows: Query<&Window>,
     session: Res<Session>,
     mut view: ResMut<View>,
+    mut panning: Local<Option<Vec2>>,
     mut camera: Query<(&mut Transform, &mut Projection), With<Camera3d>>,
 ) {
     let Ok(window) = windows.single() else {
         return;
     };
-    if window.focused && session.play.is_none() && !session.has_modal() && session.drag.is_none() {
-        let outside = canvas_cursor(window).is_some();
+    let enabled =
+        window.focused && session.play.is_none() && !session.has_modal() && session.drag.is_none();
+    let cursor = canvas_cursor(window);
+    let outside = cursor.is_some();
+    if !enabled
+        || !outside
+        || !(mouse.pressed(MouseButton::Middle) || mouse.just_released(MouseButton::Middle))
+        || mouse.pressed(MouseButton::Left)
+        || mouse.pressed(MouseButton::Right)
+        || keys.just_pressed(KeyCode::Escape)
+    {
+        *panning = None;
+    } else if mouse.just_pressed(MouseButton::Middle) {
+        *panning = cursor;
+    } else if let (Some(previous), Some(current)) = (*panning, cursor) {
+        camera_views::pan(&mut view, current - previous, window.height());
+        *panning = Some(current);
+    }
+    if mouse.just_released(MouseButton::Middle) {
+        *panning = None;
+    }
+    if enabled {
         if outside && mouse.pressed(MouseButton::Right) && motion.delta != Vec2::ZERO {
             view.preset = camera_views::Preset::Perspective;
             view.yaw -= motion.delta.x * 0.005;

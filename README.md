@@ -19,7 +19,9 @@ The **Grid** checkbox shows/hides references and displays their spacing in metre
 Front/Right use adaptive vertical grids; zones without terrain also use an
 adaptive ground grid. Terrain keeps its surface-following sample grid in Top
 and Perspective. Grid spacing is visual; movement snapping stays at 1 m.
-The wheel zooms; WASD pans along the canonical view axes. RMB orbit returns to
+Drag **middle mouse** to pan the scene in the current view plane. Start inside
+the viewport; reaching a panel or pressing Escape cancels the pan. The wheel
+zooms; WASD pans along the canonical view axes. RMB orbit returns to
 perspective. The camera stays still during a transform drag. Playtest uses its
 normal perspective camera and restores the editor view when you return.
 

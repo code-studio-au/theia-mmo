@@ -535,6 +535,7 @@ pub(super) fn report(
         "gpu":{"name":adapter.name,"backend":format!("{:?}",adapter.backend),"device":adapter.device}});
     value["grid"] = serde_json::json!({"enabled":view.show_grid,"spacing":authoring_grid::spacing(&session,&view),"surface":authoring_grid::surface(&session,&view),"surface_visible":scene_visuals.iter().any(|(_,_,_,v,_,_,_,_,grid)|grid && *v!=Visibility::Hidden),
         "lines":scene_visuals.iter().filter_map(|(_,_,_,visibility,_,transform,_,line,..)|line.map(|line|serde_json::json!({"slot":line.slot,"along_first":line.along_first,"visible":*visibility!=Visibility::Hidden,"position":transform.map(|t|t.translation.to_array()),"scale":transform.map(|t|t.scale.to_array())}))).collect::<Vec<_>>()});
+    value["middle_mouse_down"] = mouse.pressed(MouseButton::Middle).into();
     value["window_title"] = serde_json::json!(window.title);
     value["plant_point"] = serde_json::json!(session.plant_point);
     value["show_move_handles"] = session.show_move_handles.into();
@@ -543,7 +544,7 @@ pub(super) fn report(
         Projection::Orthographic(o) => {
             serde_json::json!({"kind":"Orthographic","height":match o.scaling_mode { bevy::camera::ScalingMode::FixedVertical {viewport_height}=>Some(viewport_height),_=>None }})
         }
-        Projection::Perspective(_) => serde_json::json!({"kind":"Perspective"}),
+        Projection::Perspective(p) => serde_json::json!({"kind":"Perspective","fov":p.fov}),
         _ => serde_json::json!({"kind":"Custom"}),
     };
     value["move_preview"] = serde_json::json!(session.drag.as_ref().map(|d| &d.preview));

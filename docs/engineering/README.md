@@ -1,3 +1,10 @@
+Pointer viewport panning, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Middle-mouse drags now pan in the current view plane with projection/zoom-aware
+logical cursor tracking. Pans must begin inside the viewport; panels, Escape,
+focus loss, editing gestures, modals and playtest cancel/refuse them. Source and
+history stay unchanged. See [the zone record](../ZONE_EDITOR.md#pointer-viewport-panning--9-november-2026).
+Continue after each local commit; no push.
+
 Exact spawn properties, 9 November 2026 (P5-17 / P3-15 / P1-10):
 Edit spawn opens three exact world-coordinate fields in the existing docked
 properties form. Apply uses shared SetSpawn validation and one-entry undo;

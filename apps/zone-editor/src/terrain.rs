@@ -414,7 +414,7 @@ Click/drag: brush stroke
 Release: one undo entry
 Up to 128 stamps per stroke
 Esc: cancel preview
-WASD pan | RMB orbit
+WASD / MMB pan | RMB orbit
 F: frame terrain
 Wheel zoom | F5 playtest
 [ / ]: halve/double brush amount
@@ -429,7 +429,7 @@ Borders locked flat
 Offline collision sandbox"
                 .into()
         } else {
-            "WASD pan | RMB orbit | wheel zoom
+            "WASD / MMB pan | RMB orbit | wheel zoom
 Drag selected: X/Z | H: ground
 Tab / Shift Tab: cycle objects
 Ctrl D: duplicate object
