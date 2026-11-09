@@ -10,6 +10,7 @@ pub(super) enum Tool {
 }
 #[derive(Clone, Copy)]
 pub(super) enum Gesture {
+    Plane(PlaneDrag),
     Move(AxisDrag),
     Rotate(YawDrag),
     Scale(ScaleDrag),
@@ -35,17 +36,24 @@ impl Gesture {
                 }),
         }
     }
+    pub fn plane(ray: Ray3d, anchor: Vec3) -> Option<Self> {
+        Some(Self::Plane(PlaneDrag {
+            height: anchor.y,
+            start: plane_point(ray, anchor.y)?,
+        }))
+    }
     pub fn tool(self) -> Tool {
         match self {
-            Self::Move(_) => Tool::Move,
+            Self::Plane(_) | Self::Move(_) => Tool::Move,
             Self::Rotate(_) => Tool::Rotate,
             Self::Scale(_) => Tool::Scale,
         }
     }
-    pub fn axis(self) -> usize {
+    pub fn axis(self) -> Option<usize> {
         match self {
-            Self::Move(d) => d.axis,
-            Self::Rotate(_) | Self::Scale(_) => 1,
+            Self::Plane(_) => None,
+            Self::Move(d) => Some(d.axis),
+            Self::Rotate(_) | Self::Scale(_) => Some(1),
         }
     }
     fn scale_extent(self, before: &Pose, preview: &Pose) -> Option<f32> {
@@ -59,6 +67,18 @@ impl Gesture {
     pub fn preview(&mut self, ray: Ray3d, before: &Pose, snap: bool) -> Option<Pose> {
         let mut pose = before.clone();
         match self {
+            Self::Plane(d) => {
+                let delta = plane_point(ray, d.height)? - d.start;
+                if delta.x.hypot(delta.z) < 0.00001 {
+                    return Some(pose);
+                }
+                for axis in [0, 2] {
+                    pose.position[axis] += f64::from(delta[axis]);
+                    if snap {
+                        pose.position[axis] = pose.position[axis].round();
+                    }
+                }
+            }
             Self::Move(d) => pose.position = d.position(ray, before.position, snap)?,
             Self::Rotate(d) => pose.yaw_degrees = d.yaw(ray, before.yaw_degrees, snap)?,
             Self::Scale(d) => {
@@ -89,17 +109,25 @@ pub(super) struct YawDrag {
     last: f32,
     total: f64,
 }
-fn angle(ray: Ray3d, anchor: Vec3) -> Option<f32> {
+#[derive(Clone, Copy)]
+pub(super) struct PlaneDrag {
+    height: f32,
+    start: Vec3,
+}
+fn plane_point(ray: Ray3d, height: f32) -> Option<Vec3> {
     if ray.direction.y.abs() < 0.00001 {
         return None;
     }
-    let distance = (anchor.y - ray.origin.y) / ray.direction.y;
-    if !(0. ..4096.).contains(&distance) {
-        return None;
-    }
-    let offset = ray.get_point(distance) - anchor;
+    let distance = (height - ray.origin.y) / ray.direction.y;
+    (0. ..4096.)
+        .contains(&distance)
+        .then(|| ray.get_point(distance))
+}
+fn angle(ray: Ray3d, anchor: Vec3) -> Option<f32> {
+    let offset = plane_point(ray, anchor.y)? - anchor;
     (offset.x.hypot(offset.z) > 0.01).then(|| (-offset.z).atan2(offset.x))
 }
+
 impl YawDrag {
     fn begin(ray: Ray3d, anchor: Vec3) -> Option<Self> {
         Some(Self {
@@ -308,10 +336,7 @@ pub(super) fn sync(
         let length = session
             .drag
             .as_ref()
-            .and_then(|d| {
-                d.gesture
-                    .and_then(|g| g.scale_extent(&d.before, &d.preview))
-            })
+            .and_then(|d| d.gesture.scale_extent(&d.before, &d.preview))
             .unwrap_or(length);
         let direction = Vec3::AXES[handle.axis];
         let (offset, scale) = if handle.head && handle.tool == Tool::Scale {
@@ -337,8 +362,8 @@ pub(super) fn sync(
         material.0 = if session
             .drag
             .as_ref()
-            .and_then(|d| d.gesture)
-            .is_some_and(|g| g.tool() == handle.tool && g.axis() == handle.axis)
+            .map(|d| d.gesture)
+            .is_some_and(|g| g.tool() == handle.tool && g.axis() == Some(handle.axis))
         {
             scene.active.clone()
         } else if handle.tool == Tool::Scale {
@@ -352,6 +377,51 @@ pub(super) fn sync(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn body_plane_drag_preserves_stationary_f64_values_and_moves_relative_to_original() {
+        let origin = [128_000_000_000., 20., -128_000_000_000.];
+        let before = Pose {
+            position: [
+                origin[0] + 400.012345,
+                origin[1] + 1.23456789,
+                origin[2] - 300.98765,
+            ],
+            yaw_degrees: 17.25,
+            size: [2., 3., 4.],
+        };
+        let zone = Zone {
+            origin,
+            spawn: origin,
+            ..default()
+        };
+        let anchor = Vec3::from_array(zone.local(before.position).unwrap());
+        let camera = anchor + Vec3::splat(20.);
+        let ray = |point: Vec3| Ray3d::new(camera, Dir3::new(point - camera).unwrap());
+        let mut gesture = Gesture::plane(ray(anchor), anchor).unwrap();
+        for snap in [false, true] {
+            assert_eq!(gesture.preview(ray(anchor), &before, snap).unwrap(), before);
+        }
+        let precise = gesture
+            .preview(ray(anchor + Vec3::new(2.25, 0., -1.5)), &before, false)
+            .unwrap();
+        assert!((precise.position[0] - before.position[0] - 2.25).abs() < 0.0002);
+        assert!((precise.position[2] - before.position[2] + 1.5).abs() < 0.0002);
+        assert_eq!(precise.position[1], before.position[1]);
+        assert_eq!(precise.yaw_degrees, before.yaw_degrees);
+        assert_eq!(precise.size, before.size);
+        let snapped = gesture
+            .preview(ray(anchor + Vec3::new(2.25, 0., -1.5)), &before, true)
+            .unwrap();
+        assert_eq!(
+            snapped.position,
+            [
+                precise.position[0].round(),
+                before.position[1],
+                precise.position[2].round()
+            ]
+        );
+        assert!(Gesture::plane(Ray3d::new(camera, Dir3::X), anchor).is_none());
+    }
     #[test]
     fn uniform_scale_keeps_position_yaw_and_proportions_with_relative_snapping() {
         let anchor = Vec3::new(8., 1., -8.);

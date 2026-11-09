@@ -21,7 +21,9 @@ Escape cancels. Choose **Move**, **Rotate Y** or **Scale uniformly** in the comm
 uses a green ring; drag the scale cube up/down to preserve proportions. **Snap**
 uses a 1 m move grid, 15-degree rotation steps or 10% scale steps, and
 **Handles** shows/hides them.
-The numeric Transform form remains available for exact values.
+The numeric Transform form remains available for exact values. In Move mode,
+you can also drag an already selected object body across its XZ plane. Stationary
+clicks preserve fractional coordinates; invalid previews retain the last valid pose.
 
 Terrain properties use sliders for radius, strength, blend and flatten level.
 In Vegetation, choose **Scatter trees** or **Scatter shrubs** to adjust scatter

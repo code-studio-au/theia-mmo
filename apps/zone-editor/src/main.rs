@@ -92,8 +92,7 @@ struct Drag {
     before: Pose,
     preview: Pose,
     revision: u64,
-    offset: Vec3,
-    gesture: Option<gizmo::Gesture>,
+    gesture: gizmo::Gesture,
 }
 impl Session {
     fn has_modal(&self) -> bool {

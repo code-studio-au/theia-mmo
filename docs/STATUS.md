@@ -1,3 +1,10 @@
+Shared body-drag previews, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Selected-body XZ dragging now shares the same validated gesture path as axis,
+yaw and scale handles. Relative local deltas preserve original f64 values on a
+stationary click, with unchanged Y/yaw/size. Invalid candidates never replace the
+last valid preview, live source or undo/redo. See [the zone record](ZONE_EDITOR.md#validated-body-plane-drag--9-november-2026) for acceptance.
+Continue after each local commit until stopped; no push.
+
 Canonical authoring views, 9 November 2026 (P5-17 / P3-15 / P1-10):
 Standard Bevy orthographic Top/Front/Right views and a Perspective control now
 support terrain and greybox authoring. Canonical pan/zoom, stable orthographic

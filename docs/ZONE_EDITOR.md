@@ -2204,3 +2204,42 @@ Evidence: ignored `build/zone-camera-views-native-3440-v3/qualification.json`,
 `.before.json` / `.commands.jsonl` / `.expected.json` pairs;
 `zone-camera-views-tests-v3.log`, `zone-camera-views-clippy-v3.log` and
 `zone-camera-views-build-v3.log`. Editor SHA-256: `2af9a103d87e0540be26a91df325218954c7ed837d43bb7bda59a75de637f497`.
+
+## Validated body-plane drag — 9 November 2026
+
+P5-17 / P3-15 / P1-10 quality follow-up to transform gestures. The selected-body
+XZ drag now uses the same Gesture preview/validation path as axis, yaw and scale,
+instead of directly writing an unchecked preview. Its initial local ray-plane hit
+anchors a delta added to the original f64 X/Z values; Y/yaw/size are copied exactly.
+A stationary click skips grid snapping and preserves all original values/history.
+Changed plane drags retain existing optional absolute 1 m XZ snapping.
+
+All changed previews run the existing Transform command in a disposable Editor.
+Invalid positions retain the last valid preview and typed status, leaving the
+live document/revision/history untouched. Release commits once if changed;
+unchanged/invalid-only release skips commands, preserving pending redo. The shared
+plane intersection also serves yaw gestures, with parallel/forward-ray bounds.
+Body dragging remains Move-only, and existing camera freeze, modal/play/pending
+isolation, cancellation and final revision checks remain. Source schema, export,
+engine/plugin pins and gameplay are unchanged.
+
+Acceptance covers stationary snapped/precise f64 fields, relative plane deltas,
+exact unaffected fields, native body click/drag and shared command equality,
+one-entry undo/redo, out-of-zone preview refusal with pending redo, save and
+retained move/yaw/scale checks at local/far origins and actual 3440x1440.
+
+Final acceptance passes: 86 focused Rust cases (51 domain / 35 editor), formatting,
+strict workspace/all-target Clippy and native actual 3440x1440 local/far runs on
+RX 7900 XTX (RADV NAVI31), Vulkan device 29772, with active Khronos validation and
+zero GPU/resize diagnostics. Two new body-plane edits and thirty retained
+move/yaw/scale edits match complete headless documents. Fractional stationary
+clicks, preserved fields, source-free previews, one-entry undo/redo, bounded-zone
+refusal with pending redo and exact save pass. The local refused-preview capture
+was visually inspected. Windows and maximum-budget interactive performance remain
+unqualified; no gameplay multiplayer change is claimed.
+
+Evidence: ignored `build/zone-body-drag-native-3440-v1/qualification.json`,
+`*.body-plane-preview.png`, `*.body-out-of-bounds.png`, `*.body.before.json` /
+`*.body.commands.jsonl` / `*.body.expected.json`; `zone-body-drag-tests-v2.log`,
+`zone-body-drag-clippy-v2.log` and `zone-body-drag-build.log`.
+Editor SHA-256: `c61007ad9e3b43c8228508596918cd8a94d354ab9d3895af095be2a7251a1fc1`.

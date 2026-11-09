@@ -190,13 +190,6 @@ pub(super) fn sync(
         };
     }
 }
-fn plane(ray: Ray3d, height: f32) -> Option<Vec3> {
-    if ray.direction.y.abs() < 0.00001 {
-        return None;
-    }
-    let t = (height - ray.origin.y) / ray.direction.y;
-    (0. ..4096.).contains(&t).then(|| ray.get_point(t))
-}
 #[allow(clippy::too_many_arguments)]
 pub(super) fn pointer(
     mouse: Res<ButtonInput<MouseButton>>,
@@ -325,8 +318,7 @@ pub(super) fn pointer(
                         before: object.pose.clone(),
                         preview: object.pose.clone(),
                         revision: session.editor.revision(),
-                        offset: Vec3::ZERO,
-                        gesture: Some(gesture),
+                        gesture,
                     });
                     session.status = match handle.tool {
                         gizmo::Tool::Move => "Moving world axis - release applies; Escape cancels",
@@ -355,47 +347,38 @@ pub(super) fn pointer(
                     .unwrap();
                 let local =
                     Vec3::from_array(session.editor.zone().local(object.pose.position).unwrap());
-                if let Some(hit) = plane(ray, local.y) {
+                if let Some(gesture) = gizmo::Gesture::plane(ray, local) {
                     session.drag = Some(Drag {
                         id,
                         before: object.pose.clone(),
                         preview: object.pose.clone(),
                         revision: session.editor.revision(),
-                        offset: local - hit,
-                        gesture: None,
+                        gesture,
                     });
+                    session.status = "Moving XZ plane - release applies; Escape cancels".into();
                 }
             }
         }
     }
     if let Some(mut drag) = session.drag.take() {
         let zone = session.editor.zone();
-        let height = zone.local(drag.before.position).unwrap()[1];
-        if let Some(gesture) = &mut drag.gesture {
-            if let Some(pose) = gesture.preview(ray, &drag.before, session.snap)
-                && pose != drag.preview
-            {
-                // The same whole-candidate command validates every new
-                // preview, without changing the live document or history.
-                let valid = Editor::new(zone.clone()).and_then(|mut candidate| {
-                    candidate.execute(Command::Apply {
-                        expected_revision: 0,
-                        edits: vec![Edit::Transform {
-                            id: drag.id,
-                            pose: pose.clone(),
-                        }],
-                    })
-                });
-                match valid {
-                    Ok(()) => drag.preview = pose,
-                    Err(error) => session.status = error,
-                }
+        if let Some(pose) = drag.gesture.preview(ray, &drag.before, session.snap)
+            && pose != drag.preview
+        {
+            // Body, axis, rotation and scale all share candidate validation.
+            let valid = Editor::new(zone.clone()).and_then(|mut candidate| {
+                candidate.execute(Command::Apply {
+                    expected_revision: 0,
+                    edits: vec![Edit::Transform {
+                        id: drag.id,
+                        pose: pose.clone(),
+                    }],
+                })
+            });
+            match valid {
+                Ok(()) => drag.preview = pose,
+                Err(error) => session.status = error,
             }
-        } else if let Some(hit) = plane(ray, height) {
-            let point = hit + drag.offset;
-            let position =
-                session.snapped(zone.global(point.to_array()).expect("Bounded drag plane"));
-            drag.preview.position = [position[0], drag.before.position[1], position[2]];
         }
         if mouse.just_released(MouseButton::Left) {
             if drag.preview != drag.before {
@@ -406,8 +389,8 @@ pub(super) fn pointer(
                         pose: drag.preview,
                     }],
                 });
-            } else if let Some(gesture) = drag.gesture {
-                session.status = match gesture.tool() {
+            } else {
+                session.status = match drag.gesture.tool() {
                     gizmo::Tool::Move => "Position unchanged",
                     gizmo::Tool::Rotate => "Yaw unchanged",
                     gizmo::Tool::Scale => "Size unchanged",

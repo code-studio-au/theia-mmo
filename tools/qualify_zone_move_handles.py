@@ -12,7 +12,7 @@ from gpu_validation import check_gpu_diagnostics
 from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 
 
-def run(output, binary, rotate=False, scale=False):
+def run(output, binary, rotate=False, scale=False, body=False):
     output = output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     binary = binary.resolve()
@@ -82,6 +82,12 @@ def run(output, binary, rotate=False, scale=False):
                 select();control('Frame')
                 wait(lambda:len(handles())==3)
                 initial=state()['document']
+                if body:
+                    control('Handles');wait(lambda:not handles())
+                    click(next(o['screen'] for o in state()['objects'] if o['id']==1))
+                    assert state()['document']==initial and state()['revision']==0 and not state()['dragging']
+                    assert state()['status']=='Position unchanged'
+                    control('Handles');wait(lambda:len(handles())==3)
                 control('Handles');wait(lambda:not state()['show_move_handles'] and not handles())
                 control('Handles');wait(lambda:state()['show_move_handles'] and len(handles())==3)
                 assert state()['document']==initial and state()['revision']==0
@@ -281,6 +287,57 @@ def run(output, binary, rotate=False, scale=False):
                     desktop.key('Escape');wait(lambda:state()['transform_edit'] is None and len(handles())==1)
                     control('Command(Save)');wait(lambda:not state()['unsaved_changes'])
                     assert json.loads(saved.read_text())==document
+                if body:
+                    control('GizmoTool(Move)');select(1);control('Frame')
+                    control('Handles');wait(lambda:not handles())
+                    before=copy.deepcopy(state()['document']);revision=state()['revision'];history=state()['history']
+                    pose=before['objects'][0]['pose']
+                    centre=next(o['screen'] for o in state()['objects'] if o['id']==1)
+                    desktop.move(window,centre,1);desktop.button(1,True)
+                    try:
+                        wait(lambda:state()['dragging']);desktop.move(window,[centre[0]+120,centre[1]+50],1)
+                        preview=wait(lambda:state()['move_preview'] if state()['move_preview'] and state()['move_preview']!=pose else None)
+                        assert preview['position'][1]==pose['position'][1] and preview['yaw_degrees']==pose['yaw_degrees'] and preview['size']==pose['size']
+                        assert state()['document']==before and state()['revision']==revision
+                        capture('body-plane-preview')
+                    finally:desktop.button(1,False)
+                    wait(lambda:state()['revision']==revision+1 and not state()['dragging'])
+                    moved=copy.deepcopy(state()['document'])
+                    assert moved['objects'][0]['pose']==preview and state()['history']==[history[0]+1,0]
+                    prior=output/f'{name}.body.before.json';prior.write_text(json.dumps(before))
+                    commands=output/f'{name}.body.commands.jsonl'
+                    commands.write_text(json.dumps(dict(command='apply',expected_revision=0,edits=[dict(op='transform',id=1,pose=preview)]))+'\n')
+                    expected=output/f'{name}.body.expected.json'
+                    subprocess.run([str(binary),'--headless','--zone',str(prior),'--commands',str(commands),'--output',str(expected)],check=True,capture_output=True)
+                    assert json.loads(expected.read_text())==moved
+                    control('Command(Undo)');wait(lambda:state()['revision']==revision+2)
+                    assert state()['document']==before
+                    control('Command(Redo)');wait(lambda:state()['revision']==revision+3)
+                    assert state()['document']==moved
+                    control('Command(Undo)');wait(lambda:state()['revision']==revision+4)
+                    assert state()['document']==before and state()['history']==[history[0],1]
+                    # Zoom out before grabbing, then attempt an out-of-zone
+                    # plane preview while the redo entry is pending.
+                    select(1);desktop.move(window,[1720,720],1)
+                    for _ in range(50):
+                        if state()['view']['distance']>=512:break
+                        desktop.button(5,True);desktop.button(5,False)
+                    wait(lambda:state()['view']['distance']==512)
+                    fresh();centre=next(o['screen'] for o in state()['objects'] if o['id']==1)
+                    desktop.move(window,centre,1);desktop.button(1,True)
+                    try:
+                        wait(lambda:state()['dragging']);desktop.move(window,[3130,110],1)
+                        wait(lambda:'Outside bounded' in state()['status'])
+                        assert state()['move_preview']==pose and state()['document']==before
+                        assert state()['revision']==revision+4 and state()['history']==[history[0],1]
+                        capture('body-out-of-bounds')
+                    finally:desktop.button(1,False)
+                    wait(lambda:not state()['dragging'])
+                    assert state()['document']==before and state()['revision']==revision+4 and state()['history']==[history[0],1]
+                    control('Command(Redo)');wait(lambda:state()['revision']==revision+5)
+                    assert state()['document']==moved
+                    control('Command(Save)');wait(lambda:not state()['unsaved_changes'])
+                    assert json.loads(saved.read_text())==moved
                 final=state()
                 subprocess.run(['wmctrl','-ic',hex(window)],check=True);process.wait(timeout=20)
                 assert process.returncode==0
@@ -297,6 +354,7 @@ def run(output, binary, rotate=False, scale=False):
         'one-entry undo/redo, Escape/panel cancellation, checkbox/modal/play isolation and save'])
     if rotate: result['checks'].append('box/sphere/cylinder yaw rings with 15-degree and unsnapped gestures, stationary click, exact headless equality, unchanged XYZ/size, one-entry undo/redo, cancel and tool/modal isolation')
     if scale: result['checks'].append('box/sphere/cylinder uniform scale, 10-percent and precise gestures, unchanged position/yaw/proportions, exact headless equality, range-refused preview, undo/redo, cancel, modal isolation and save')
+    if body: result['checks'].append('stationary body click preserves fractional f64 pose; XZ plane drag matches exact headless command with one-entry undo/redo; out-of-zone preview refuses without source/history/redo changes')
     (output/'qualification.json').write_text(json.dumps(result,indent=2)+'\n')
     print(json.dumps(result,indent=2))
 
@@ -307,4 +365,5 @@ if __name__=='__main__':
     parser.add_argument('--binary',type=Path,default=Path('target/debug/theia-zone-editor'))
     parser.add_argument('--rotate',action='store_true')
     parser.add_argument('--scale',action='store_true')
-    args=parser.parse_args();run(args.output,args.binary,args.rotate,args.scale)
+    parser.add_argument('--body',action='store_true')
+    args=parser.parse_args();run(args.output,args.binary,args.rotate,args.scale,args.body)
