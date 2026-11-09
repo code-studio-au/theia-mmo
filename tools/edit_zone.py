@@ -64,7 +64,7 @@ def main():
         print(f'Editor built: {binary}')
         return 0
     arguments = example_arguments(forwarded, draft) if options.example else editor_arguments(forwarded, draft)
-    if not any(arg.split('=', 1)[0] in AUTHORING_FLAGS for arg in forwarded):
+    if '--check-playtest' not in forwarded and not any(arg.split('=', 1)[0] in AUTHORING_FLAGS for arg in forwarded):
         draft.parent.mkdir(parents=True, exist_ok=True)
     # Preserve caller-relative explicit paths. On Linux, exec preserves the owned PID
     # for the native input qualifier and leaves no launcher/child pair to clean up.

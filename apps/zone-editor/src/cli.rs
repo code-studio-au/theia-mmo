@@ -11,6 +11,7 @@ pub struct Options {
     pub output: Option<PathBuf>,
     pub save_path: Option<PathBuf>,
     pub headless: bool,
+    pub check_playtest: bool,
     pub capture: Option<PathBuf>,
     pub report: Option<PathBuf>,
     pub mailbox: Option<PathBuf>,
@@ -63,14 +64,21 @@ impl Options {
                     )
                 }
                 "--headless" => result.headless = true,
+                "--check-playtest" => {
+                    result.check_playtest = true;
+                    result.headless = true;
+                }
                 "--help" => {
                     println!(
-                        "theia-zone-editor [--zone FILE] [--commands JSONL] [--output FILE] [--save-path FILE] [--headless] [--capture PNG] [--report JSON] [--mailbox DIR] [--export NEW_DIR --content-id ID --revision N]\n\nCommands use the same transaction/undo engine as the viewport. Headless mode validates and prints the final revision without opening a window. Output writes only after every command succeeds. Save-path changes the later editor save target without writing at startup."
+                        "theia-zone-editor [--zone FILE] [--commands JSONL] [--output FILE] [--save-path FILE] [--headless] [--check-playtest] [--capture PNG] [--report JSON] [--mailbox DIR] [--export NEW_DIR --content-id ID --revision N]\n\nCommands use the same transaction/undo engine as the viewport. Headless mode validates and prints the final revision without opening a window. Check-playtest is read-only: it builds the actual offline collision scene, checks the requested capsule spawn and prints JSON without opening a window. It cannot be combined with --output or --export. Output writes only after every command succeeds. Save-path changes the later editor save target without writing at startup."
                     );
                     std::process::exit(0);
                 }
                 _ => return Err(format!("Unknown argument: {arg}")),
             }
+        }
+        if result.check_playtest && (result.output.is_some() || result.export.is_some()) {
+            return Err("--check-playtest is read-only; omit --output and --export".into());
         }
         if result.export.is_some() {
             if result.content_id.is_none() || result.revision.is_none_or(|r| r == 0) {
@@ -130,6 +138,10 @@ impl Options {
         }
         Ok(editor)
     }
+}
+
+pub(super) fn summary(editor: &Editor) -> serde_json::Value {
+    serde_json::json!({"revision":editor.revision(),"objects":editor.zone().objects.len(),"paths":editor.zone().paths.len(),"markers":editor.zone().markers.len(),"plants":editor.zone().plants.len(),"history":editor.history(),"valid":true})
 }
 
 #[cfg(test)]

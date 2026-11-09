@@ -63,6 +63,12 @@ the ground cursor; the green pointer marks it and hides during playtest. Fast
 drags fill brush strokes every 2 m, with a visible 128-stamp cap. Earlier keyboard
 shortcuts remain available.
 
+Check a saved zone without opening a window using
+`python3 tools/edit_zone.py --zone FILE --check-playtest`. It reports source
+validity and actual offline capsule-spawn readiness as JSON, exits nonzero on
+refusal, and leaves files unchanged. Add `--commands JSONL` to check proposed
+edits in memory. This read-only mode excludes `--output` and `--export`.
+
 For structured commands, use `python3 tools/edit_zone.py --commands JSONL
 --headless --output FILE`. Export a saved zone with `--zone FILE --export NEW_DIR
 --content-id ID --revision N` for the existing server/client world pipeline.

@@ -314,6 +314,17 @@ fn main() {
 fn run() -> Result<(), String> {
     let options = cli::Options::parse()?;
     let editor = options.prepare()?;
+    if options.check_playtest {
+        let checked = playtest::Playtest::new(editor.zone())
+            .and_then(|play| editor.zone().global(play.feet.metres()));
+        let mut report = cli::summary(&editor);
+        report["playtest"] = serde_json::json!({
+            "ready":checked.is_ok(),"requested_spawn":editor.zone().spawn,
+            "resolved_spawn":checked.as_ref().ok(),"error":checked.as_ref().err(),
+        });
+        println!("{report}");
+        return checked.map(|_| ());
+    }
     if let Some(path) = &options.export {
         let report = export::publish(
             editor.zone(),
@@ -328,10 +339,7 @@ fn run() -> Result<(), String> {
         return Ok(());
     }
     if options.headless {
-        println!(
-            "{}",
-            serde_json::json!({"revision":editor.revision(),"objects":editor.zone().objects.len(),"paths":editor.zone().paths.len(),"markers":editor.zone().markers.len(),"plants":editor.zone().plants.len(),"history":editor.history(),"valid":true})
-        );
+        println!("{}", cli::summary(&editor));
         return Ok(());
     }
     let next_id = editor.zone().next_id().unwrap_or(u64::MAX);

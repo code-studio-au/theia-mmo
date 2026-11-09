@@ -2477,3 +2477,43 @@ coarse.paint-properties.png; zone-move-grid-tests-v2.log,
 zone-move-grid-focused.log, zone-move-grid-ties.log,
 zone-move-grid-clippy-v4.log and zone-move-grid-build-v2.log. Editor SHA-256:
 `5489d3d7231216e7286f9a6e2334f6ef5cecb2b7b36be6f4c56771290f23102d`.
+
+## Headless playtest preflight — 9 November 2026
+
+P5-17 / P3-15 / P1-10 quality follow-up while desktop access is unavailable.
+Prerequisites are retained CLI candidate validation, checked origin conversion
+and the actual offline Playtest/Avian static scene and capsule resolver.
+`--check-playtest` implies headless execution before any window/app creation.
+It reports the existing source counts/revision/history/validity plus
+`playtest.ready`, requested global spawn, resolved global feet or an error.
+Successful resolution exits 0; a source-valid but unsupported/blocked spawn prints
+structured readiness=false and exits 1 with the existing refusal reason. Malformed
+source/commands/arguments retain normal nonzero errors. Normal --headless source
+validation remains independent of physical readiness and keeps its old output.
+
+The check is read-only and rejects --output/--export. Window capture/report/mailbox
+options remain incompatible with headless operation. Optional --commands are
+validated/applied only in memory through the same transaction/history engine;
+input files are unchanged. The launcher reopens a default/specified draft or
+checks the in-memory editable example as usual, but does not create missing draft
+parents in this mode. A build may still produce normal build outputs unless
+--no-build is used.
+
+Acceptance passes: all 96 focused Rust tests, seven launcher unit tests, Python
+compilation, formatting and strict workspace/all-target Clippy. Fifteen actual
+Linux CPU/headless cases run with X11/Wayland connections disabled. Safe,
+unsupported and blocked spawns at fractional local/far origins, in-memory
+SetSpawn repair with revision/history and unchanged source bytes, raised terrain
+at both 4 m/2 m resolutions and local/far origins, and empty/reopened/example
+launcher drafts pass. Six forbidden writer/window-mode combinations preserve
+existing destinations and create no output/export/report/mailbox paths.
+
+This checks the initial offline collision scene and player spawn, rather than
+certifying navigation routes, gameplay or multiplayer capacity. No visual changes
+or new native GPU checks were made while the desktop is reserved by the user.
+Windows execution remains unqualified. Engine pins and source schema unchanged.
+
+Evidence: ignored build/zone-preflight-headless-v1/qualification.json with per-case
+stdout/stderr, zone-preflight-tests.log, zone-preflight-launcher-tests.log,
+zone-preflight-clippy.log and zone-preflight-build.log. Editor SHA-256:
+`45ef8bf8c7fc0d3137ccc2e691b2e6574754accdb908012ac5f292ed640c820e`.
