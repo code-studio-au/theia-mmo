@@ -1,3 +1,10 @@
+Primitive move handles, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Selected primitives now expose standard Bevy red X / green Y / blue Z move arrows.
+Axis drags preview through shared Transform validation and commit once on release;
+Escape, focus loss and release over panels cancel. A Move XYZ checkbox controls
+visibility. Exact f64 coordinates on the other axes remain untouched. See [the zone record](ZONE_EDITOR.md#primitive-world-axis-move-handles--9-november-2026)
+for constraints and acceptance. Continue after each local commit; no push.
+
 Guide properties and point controls, 9 November 2026 (P5-17 / P3-15 / P1-10):
 The docked properties form now exposes whole-guide width or selected-point XYZ
 and width, through existing validated PutPath commands. Mouse Previous/Next point,

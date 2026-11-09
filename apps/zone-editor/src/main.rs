@@ -3,6 +3,7 @@ mod agent;
 mod brush_preview;
 mod cli;
 mod export;
+mod gizmo;
 mod markers;
 mod naming;
 mod outliner;
@@ -50,6 +51,7 @@ struct Session {
     selected: Option<u64>,
     palette: Option<Primitive>,
     snap: bool,
+    show_move_handles: bool,
     status: String,
     path: PathBuf,
     next_id: u64,
@@ -89,6 +91,7 @@ struct Drag {
     preview: Pose,
     revision: u64,
     offset: Vec3,
+    axis: Option<gizmo::AxisDrag>,
 }
 impl Session {
     fn has_modal(&self) -> bool {
@@ -334,6 +337,7 @@ fn run() -> Result<(), String> {
         selected: None,
         palette: None,
         snap: true,
+        show_move_handles: true,
         status: "Ready - choose a primitive, then click the ground".into(),
         path,
         next_id,
@@ -397,6 +401,7 @@ fn run() -> Result<(), String> {
         Startup,
         (
             viewport::setup,
+            gizmo::setup,
             terrain::setup,
             paths::setup,
             markers::setup,
@@ -423,7 +428,7 @@ fn run() -> Result<(), String> {
             viewport::pointer,
             terrain::sync,
             terrain::palette,
-            viewport::sync,
+            (viewport::sync, gizmo::sync).chain(),
             paths::sync,
             markers::sync,
             vegetation::sync,

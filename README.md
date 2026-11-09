@@ -11,6 +11,11 @@ from the workspace bar. The left panel contains tools; the right column contains
 zone content and properties. **Save, Open saved, Undo, Redo, Frame selection and
 Playtest** are in the command bar, alongside the snap checkbox.
 
+Select a primitive to reveal **red X, green Y and blue Z move arrows**. Drag an
+arrow to preview movement along that world axis, then release for one undo entry.
+Escape cancels. **Snap** uses the 1 m grid; **Move XYZ** shows/hides the handles.
+The numeric Transform form remains available for exact values.
+
 Terrain properties use sliders for radius, strength, blend and flatten level.
 In Vegetation, choose **Scatter trees** or **Scatter shrubs** to adjust scatter
 radius and plants per click in Properties. One ground click places the group

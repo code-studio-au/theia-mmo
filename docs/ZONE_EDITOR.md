@@ -2012,3 +2012,56 @@ Evidence: ignored `build/zone-guide-properties-native-3440-v2/qualification.json
 `.commands.jsonl` / `.expected.json` pairs; `zone-guide-properties-tests-v2.log`,
 `zone-guide-properties-clippy-v2.log` and `zone-guide-properties-build-v2.log`.
 Editor SHA-256: `7b34a22aaf3c5ce4926f168f2cdc09fd962ae067512c8b2ce82f5605986d2394`.
+
+## Primitive world-axis move handles — 9 November 2026
+
+P5-17 / P3-15 / P1-10 follow-up. Prerequisites are retained primitive picking,
+transactional Drag/Transform, checked local/global coordinates and standard Bevy
+PBR meshes. Two resident cylinder/cone meshes, four unlit materials and six
+noncolliding, nonshadowing entities render red X, green Y and blue Z arrows around
+the selected primitive. Handles use normal world depth/picking rather than an
+overlay renderer. Size follows bounded camera distance and object dimensions;
+near-parallel view rays refuse a poorly constrained gesture. Rotate/scale and
+non-primitive handles remain subsequent work.
+
+A primary drag solves the closest view-ray/world-axis parameter in the bounded
+local frame, adding its delta only to the original global f64 coordinate on that
+axis. Other axes retain their exact original values. With snapping, only the
+active global coordinate rounds to 1 m. A stationary click preserves fractional
+values/history and reports Position unchanged. Every changed preview passes the
+existing Transform command in a disposable Editor; invalid candidates retain the
+last valid preview and cannot reach rendering as unchecked positions. The live
+source/revision/history remains unchanged while held. Release in the viewport
+commits one revision-checked Transform entry; Escape, focus loss or release outside
+the viewport cancels using the existing drag boundary. The active axis renders
+white. The existing selected-body XZ-plane drag remains available.
+
+A standard Bevy Move XYZ checkbox stores editor-local visibility; modal, pending
+and playtest guards match the snap control. Handles hide for other workspaces,
+armed placement, modal forms and playtest. They are neither exported content nor
+physics colliders. The optional qualification report exposes actual head entities,
+mesh identities, projected centres and test targets plus the active preview.
+No source schema, plugin pin, authority or networking change.
+
+Acceptance covers closest-axis mathematics, near-parallel/behind-ray refusal,
+f64 preservation and active-axis-only snapping; actual native local/far X/Y/Z
+mouse previews and exact shared headless Transform equality; unchanged click,
+one-entry undo/redo, Escape/panel cancellation, checkbox and modal/play isolation,
+save, standard rendering and GPU validation at actual 3440x1440.
+
+All acceptance checks above passed on the final build: 81 focused Rust cases
+(51 domain / 30 editor), formatting, strict workspace/all-target Clippy and actual
+3440x1440 native local/far runs on RX 7900 XTX (RADV NAVI31), Vulkan device 29772.
+Khronos validation is active with zero GPU/resize diagnostics. Six real axis edits
+match complete headless Transform documents. Stationary clicks preserve fractional
+coordinates/revision and report Position unchanged. Both cancel paths, the standard
+visibility checkbox, modal/play isolation, grouped undo/redo and exact saves pass.
+The local coloured-handle view was visually inspected. Windows, rotate/scale and
+non-primitive handles, and editor performance at maximum document budgets remain
+unqualified; no new gameplay multiplayer claim is made.
+
+Evidence: ignored `build/zone-move-handles-native-3440-v2/qualification.json`,
+`*.handles.png`, `*.axis-*-preview.png` and `.before.json` / `.commands.jsonl` /
+`.expected.json` pairs; `zone-move-handles-tests-v3.log`,
+`zone-move-handles-clippy-v2.log` and `zone-move-handles-build-v2.log`.
+Editor SHA-256: `184018297dd68b19c5cea3fb4a5ebdfb7adef3165d02b5b172602f878251c212`.

@@ -25,6 +25,7 @@ pub(super) enum Control {
     Point(i8),
     WholePath,
     Snap,
+    Handles,
     Help,
 }
 #[derive(Component, Clone, Copy, Debug)]
@@ -133,6 +134,18 @@ pub(super) fn setup(mut commands: Commands) {
                     },
                     BackgroundColor(Color::srgb(0.10, 0.14, 0.19)),
                     children![(ButtonLabel, text("[x] Snap to 1 m", 15.))],
+                ));
+                row.spawn((
+                    Control::Handles,
+                    Checkbox,
+                    Hovered::default(),
+                    Node {
+                        min_height: px(30),
+                        padding: UiRect::axes(px(10), px(6)),
+                        ..default()
+                    },
+                    BackgroundColor(Color::srgb(0.10, 0.14, 0.19)),
+                    children![(ButtonLabel, text("[x] Move XYZ", 15.))],
                 ));
             });
             root.spawn(Node {
@@ -323,7 +336,7 @@ pub(super) fn activate(
     let Ok(control) = controls.get(event.entity) else {
         return;
     };
-    if matches!(control, Control::Snap) {
+    if matches!(control, Control::Snap | Control::Handles) {
         return;
     }
     if session.has_modal() {
@@ -375,7 +388,7 @@ pub(super) fn activate(
         Control::Help => requests.help = !requests.help,
         Control::Rename => requests.name = true,
         Control::Transform => requests.transform = true,
-        Control::Snap => {}
+        Control::Snap | Control::Handles => {}
     }
 }
 pub(super) fn change(
@@ -420,8 +433,10 @@ pub(super) fn toggle(
     if busy(&session) || !windows.single().is_ok_and(|w| w.focused) {
         return;
     }
-    if matches!(controls.get(event.source), Ok(Control::Snap)) {
-        session.snap = event.value;
+    match controls.get(event.source) {
+        Ok(Control::Snap) => session.snap = event.value,
+        Ok(Control::Handles) => session.show_move_handles = event.value,
+        _ => {}
     }
 }
 #[allow(clippy::too_many_arguments, clippy::type_complexity)]
@@ -497,6 +512,7 @@ pub(super) fn sync(
         let active = match *control {
             Control::Mode(m) => m == mode(&session),
             Control::Snap => session.snap,
+            Control::Handles => session.show_move_handles,
             Control::Help => requests.help,
             Control::WholePath => session.path_selected.is_some() && session.path_point.is_none(),
             Control::Command(Action::Play) => session.play.is_some(),
@@ -511,8 +527,8 @@ pub(super) fn sync(
         } else {
             Color::srgb(0.10, 0.14, 0.19)
         };
-        if matches!(control, Control::Snap) && checked != session.snap {
-            if session.snap {
+        if matches!(control, Control::Snap | Control::Handles) && checked != active {
+            if active {
                 commands.entity(entity).insert(Checked);
             } else {
                 commands.entity(entity).remove::<Checked>();
@@ -523,6 +539,11 @@ pub(super) fn sync(
                 "[x] Snap to 1 m"
             } else {
                 "[ ] Snap to 1 m"
+            }),
+            Control::Handles => Some(if session.show_move_handles {
+                "[x] Move XYZ"
+            } else {
+                "[ ] Move XYZ"
             }),
             Control::Command(Action::Play) => Some(if session.play.is_some() {
                 "Return to editing"

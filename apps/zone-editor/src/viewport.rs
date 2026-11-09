@@ -203,6 +203,7 @@ pub(super) fn pointer(
     windows: Query<&Window>,
     camera: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
     objects: Query<&Authored>,
+    handles: Query<(&gizmo::MoveHandle, &Visibility)>,
     ground: Query<(), With<terrain::GroundPart>>,
     mut raycast: MeshRayCast,
     mut session: ResMut<Session>,
@@ -281,40 +282,93 @@ pub(super) fn pointer(
             }
             return;
         }
-        let filter = |entity| objects.contains(entity) || ground.contains(entity);
+        let filter = |entity| {
+            objects.contains(entity)
+                || ground.contains(entity)
+                || handles
+                    .get(entity)
+                    .is_ok_and(|(_, v)| *v != Visibility::Hidden)
+        };
         let settings = MeshRayCastSettings::default().with_filter(&filter);
         let hit = raycast
             .cast_ray(ray, &settings)
             .first()
             .map(|(entity, _)| *entity);
-        let id = hit.and_then(|entity| objects.get(entity).ok()).map(|o| o.0);
-        let already_selected = id == session.selected;
-        session.selected = id;
-        if already_selected && let Some(id) = id {
-            let object = session
+        if let Some((handle, _)) = hit.and_then(|entity| handles.get(entity).ok()) {
+            if let Some(object) = session
                 .editor
                 .zone()
                 .objects
                 .iter()
-                .find(|o| o.id == id)
-                .unwrap();
-            let local =
-                Vec3::from_array(session.editor.zone().local(object.pose.position).unwrap());
-            if let Some(hit) = plane(ray, local.y) {
-                session.drag = Some(Drag {
-                    id,
-                    before: object.pose.clone(),
-                    preview: object.pose.clone(),
-                    revision: session.editor.revision(),
-                    offset: local - hit,
-                });
+                .find(|o| Some(o.id) == session.selected)
+            {
+                let local =
+                    Vec3::from_array(session.editor.zone().local(object.pose.position).unwrap());
+                if let Some(axis) = gizmo::AxisDrag::begin(ray, local, handle.axis) {
+                    session.drag = Some(Drag {
+                        id: object.id,
+                        before: object.pose.clone(),
+                        preview: object.pose.clone(),
+                        revision: session.editor.revision(),
+                        offset: Vec3::ZERO,
+                        axis: Some(axis),
+                    });
+                    session.status = "Moving world axis - release applies; Escape cancels".into();
+                }
+            }
+        } else {
+            let id = hit.and_then(|entity| objects.get(entity).ok()).map(|o| o.0);
+            let already_selected = id == session.selected;
+            session.selected = id;
+            if already_selected && let Some(id) = id {
+                let object = session
+                    .editor
+                    .zone()
+                    .objects
+                    .iter()
+                    .find(|o| o.id == id)
+                    .unwrap();
+                let local =
+                    Vec3::from_array(session.editor.zone().local(object.pose.position).unwrap());
+                if let Some(hit) = plane(ray, local.y) {
+                    session.drag = Some(Drag {
+                        id,
+                        before: object.pose.clone(),
+                        preview: object.pose.clone(),
+                        revision: session.editor.revision(),
+                        offset: local - hit,
+                        axis: None,
+                    });
+                }
             }
         }
     }
     if let Some(mut drag) = session.drag.take() {
         let zone = session.editor.zone();
         let height = zone.local(drag.before.position).unwrap()[1];
-        if let Some(hit) = plane(ray, height) {
+        if let Some(axis) = drag.axis {
+            if let Some(position) = axis.position(ray, drag.before.position, session.snap) {
+                let mut pose = drag.before.clone();
+                pose.position = position;
+                if pose != drag.preview {
+                    // The same whole-candidate command validates every new
+                    // preview, without changing the live document or history.
+                    let valid = Editor::new(zone.clone()).and_then(|mut candidate| {
+                        candidate.execute(Command::Apply {
+                            expected_revision: 0,
+                            edits: vec![Edit::Transform {
+                                id: drag.id,
+                                pose: pose.clone(),
+                            }],
+                        })
+                    });
+                    match valid {
+                        Ok(()) => drag.preview = pose,
+                        Err(error) => session.status = error,
+                    }
+                }
+            }
+        } else if let Some(hit) = plane(ray, height) {
             let point = hit + drag.offset;
             let position =
                 session.snapped(zone.global(point.to_array()).expect("Bounded drag plane"));
@@ -329,6 +383,8 @@ pub(super) fn pointer(
                         pose: drag.preview,
                     }],
                 });
+            } else if drag.axis.is_some() {
+                session.status = "Position unchanged".into();
             }
         } else if mouse.pressed(MouseButton::Left) {
             session.drag = Some(drag);
@@ -409,6 +465,7 @@ type SceneVisuals<'w, 's> = Query<
         &'static Visibility,
         Option<&'static Mesh3d>,
         Option<&'static Transform>,
+        Option<&'static gizmo::MoveHandle>,
     ),
 >;
 #[allow(clippy::too_many_arguments)]
@@ -482,7 +539,7 @@ pub(super) fn report(
         "document":session.editor.zone(),"selected":session.selected,"snap":session.snap,"status":session.status,
         "dragging":session.drag.is_some() || session.stroke.is_some(),"vegetation_mode":session.vegetation_mode,"plant_selected":session.plant_selected,"scatter_radius":session.scatter_radius,"scatter_count":session.scatter_count,
         "plants":session.editor.zone().plants.iter().map(|p|serde_json::json!({"id":p.id,"screen":project(Vec3::from_array(session.editor.zone().local(p.position).unwrap())+Vec3::Y*if p.kind==theia_zone::vegetation::PlantKind::Tree{3.2*p.scale as f32}else{0.6*p.scale as f32})})).collect::<Vec<_>>(),
-        "marker_visible_entities":scene_visuals.iter().filter(|(marker,_,_,v,_,_)|*marker && **v != Visibility::Hidden).count(),"marker_mode":session.marker_mode,"marker_selected":session.marker_selected,"marker_palette":format!("{:?}",session.marker_palette),"terrain_mode":session.terrain_mode,"terrain_paint":session.terrain_paint,"path_mode":session.path_mode,"path_selected":session.path_selected,"path_point":session.path_point,
+        "marker_visible_entities":scene_visuals.iter().filter(|(marker,_,_,v,..)|*marker && **v != Visibility::Hidden).count(),"marker_mode":session.marker_mode,"marker_selected":session.marker_selected,"marker_palette":format!("{:?}",session.marker_palette),"terrain_mode":session.terrain_mode,"terrain_paint":session.terrain_paint,"path_mode":session.path_mode,"path_selected":session.path_selected,"path_point":session.path_point,
         "path_handles":session.editor.zone().paths.iter().find(|p|Some(p.id)==session.path_selected).map(|p|p.points.iter().map(|&point|project(Vec3::from_array(session.editor.zone().local(point).unwrap()))).collect::<Vec<_>>()),"path_draft_points":session.path_draft.as_ref().map(|d|d.path.points.len()),"brush_radius":session.brush_radius,"brush_tool":format!("{:?}",session.brush_tool),"play_feet":session.play.as_ref().map(|p| p.feet.metres()),
         "objects":objects,"buttons":buttons,"viewport":[window.width(),window.height()],
         "markers":session.editor.zone().markers.iter().map(|m|serde_json::json!({"id":m.id,"screen":project(Vec3::from_array(session.editor.zone().local(m.position).unwrap())+Vec3::Y*0.5)})).collect::<Vec<_>>(),
@@ -492,6 +549,25 @@ pub(super) fn report(
         "ground":[project(Vec3::new(3.,0.,4.)),project(Vec3::new(5.,0.,4.))],
         "gpu":{"name":adapter.name,"backend":format!("{:?}",adapter.backend),"device":adapter.device}});
     value["plant_point"] = serde_json::json!(session.plant_point);
+    value["show_move_handles"] = session.show_move_handles.into();
+    value["move_preview"] = serde_json::json!(session.drag.as_ref().map(|d| &d.preview));
+    value["move_handles"] = serde_json::json!(
+        scene_visuals
+            .iter()
+            .filter_map(|(_, _, _, visibility, mesh, transform, handle)| {
+                let handle = handle?;
+                if !handle.head {
+                    return None;
+                }
+                let transform = transform?;
+                Some(
+                    serde_json::json!({"axis":handle.axis,"visible":*visibility!=Visibility::Hidden,
+            "mesh":mesh.map(|m|format!("{:?}",m.0.id())),"screen":project(transform.translation),
+            "target":project(transform.translation+Vec3::AXES[handle.axis]*2.)}),
+                )
+            })
+            .collect::<Vec<_>>()
+    );
     let mut content_buttons = vec![];
     if session.play.is_none() {
         for (control, node, computed, transform, hovered) in &content_controls {
@@ -561,7 +637,7 @@ pub(super) fn report(
             .as_ref()
             .and_then(|s| s.draft.zone().terrain.as_ref().map(|p| &p.heights))
     );
-    value["spawn_visual"] = serde_json::json!(scene_visuals.iter().find_map(|(_,_,spawn,visibility,handle,transform)| {
+    value["spawn_visual"] = serde_json::json!(scene_visuals.iter().find_map(|(_,_,spawn,visibility,handle,transform,..)| {
         if !spawn { return None; }
         let transform = transform?;
         let handle = handle?;
@@ -577,7 +653,7 @@ pub(super) fn report(
         Some(serde_json::json!({"visible":*visibility!=Visibility::Hidden,"mesh":format!("{:?}",handle.0.id()),"bounds":[minimum.to_array(),maximum.to_array()],
             "screen":project(Vec3::from_array(session.editor.zone().local(session.editor.zone().spawn).ok()?)+Vec3::Y*1.2)}))
     }));
-    value["brush_preview"] = serde_json::json!(scene_visuals.iter().find_map(|(_,cursor,_,visibility,handle,_)| {
+    value["brush_preview"] = serde_json::json!(scene_visuals.iter().find_map(|(_,cursor,_,visibility,handle,..)| {
         if !cursor { return None; }
         let handle = handle?;
         let mesh = meshes.get(&handle.0)?;
