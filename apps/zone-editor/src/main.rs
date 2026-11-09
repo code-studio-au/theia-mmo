@@ -1378,9 +1378,15 @@ fn present(
                     ))
                 )
             } else if let Some(primitive) = session.palette {
-                format!(
-                    "Placing {primitive:?}\nClick ground | Esc selects\nSize applies to new objects"
-                )
+                let hint = session
+                    .placement_preview
+                    .as_ref()
+                    .and_then(|preview| preview.error.as_deref())
+                    .map_or_else(
+                        || "Preview then click | Esc selects".into(),
+                        |error| format!("Cannot place: {error}"),
+                    );
+                format!("Placing {primitive:?}\n{hint}\nSize applies to new objects")
             } else {
                 selected.map_or("No selection".into(), |o| {
                     let pose = session.drag.as_ref().filter(|d|d.id==o.id).map_or(&o.pose,|d|&d.preview);

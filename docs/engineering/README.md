@@ -1,3 +1,11 @@
+Placement hints and renderer guards, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Properties explains refused candidates. The renderer hides cached ghosts during
+forms/playtest or when the tool no longer matches, independently of pointer order.
+All 127 focused Rust tests, formatting, strict Clippy and build pass; long-name/
+refusal layout fits. Native local/far Find/playtest/preview checks pass at
+3440 x 1440 with zero Vulkan diagnostics. See [the record](../ZONE_EDITOR.md#placement-refusal-hints-and-renderer-guards--9-november-2026).
+Continue after local commits; desktop access authorized; do not push.
+
 Read-only primitive placement preview, 9 November 2026 (P5-17 / P3-15 / P1-10):
 A standard Bevy ghost shows the prospective stamp: blue for valid, red for a
 refused candidate. It shares pose/object construction and command validation

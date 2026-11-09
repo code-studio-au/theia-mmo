@@ -117,6 +117,15 @@ pub(super) fn sync(
     let Some(preview) = &session.placement_preview else {
         return;
     };
+    if session.play.is_some()
+        || session.has_modal()
+        || session.drag.is_some()
+        || session.stroke.is_some()
+        || session.path_draft.is_some()
+        || session.palette != Some(preview.object.primitive)
+    {
+        return;
+    }
     let Ok(position) = session.editor.zone().local(preview.object.pose.position) else {
         return;
     };

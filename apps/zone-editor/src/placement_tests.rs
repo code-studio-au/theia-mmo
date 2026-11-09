@@ -242,6 +242,19 @@ fn sized_placement_uses_terrain_support_and_refuses_invalid_or_out_of_bounds_sta
 #[test]
 fn placement_controls_fit_properties_for_each_shape_and_hide_when_selecting() {
     let mut app = fixture([0.; 3]);
+    {
+        let mut session = app.world_mut().resource_mut::<Session>();
+        session
+            .editor
+            .execute(Command::Apply {
+                expected_revision: 0,
+                edits: vec![Edit::RenameZone {
+                    name: "Long courtyard ".repeat(5),
+                }],
+            })
+            .unwrap();
+        session.placement_size = [32.; 3];
+    }
     crate::headless_ui::add_layout(&mut app);
     for primitive in [
         Some(Primitive::Box),
@@ -250,8 +263,27 @@ fn placement_controls_fit_properties_for_each_shape_and_hide_when_selecting() {
         None,
     ] {
         app.world_mut().resource_mut::<Session>().palette = primitive;
+        let candidate = primitive.and_then(|p| {
+            placement::preview(app.world().resource::<Session>(), p, [511., 0., 0.], None)
+        });
+        app.world_mut().resource_mut::<Session>().placement_preview = candidate;
+
         for _ in 0..3 {
             app.update();
+        }
+        for (text, node, transform) in app
+            .world_mut()
+            .query::<(&Text, &ComputedNode, &bevy::ui::UiGlobalTransform)>()
+            .iter(app.world())
+        {
+            if text.0.starts_with("Click sliders to focus") {
+                let centre = transform.affine().translation;
+                let half = node.size() * 0.5;
+                assert!(
+                    centre.y - half.y >= 840. && centre.y + half.y <= 1440.,
+                    "footer overflow: {centre:?} {half:?}"
+                );
+            }
         }
         for (setting, node, transform) in app
             .world_mut()

@@ -20,7 +20,7 @@ def run(output,binary,only_case=None,keyboard=False,preview=False):
         folder=output/name;folder.mkdir();report=folder/'state.json';logfile=folder/'editor.log'
         source=folder/'source.json';saved=folder/'saved.json'
         source.write_text(json.dumps(dict(schema=1,name='Placement dimensions',origin=origin,
-            spawn=[origin[0],origin[1]+.1,origin[2]+6],objects=[dict(id=1,name='Precise box',primitive='box',
+            spawn=[origin[0]-8,origin[1]+.0625,origin[2]+8],objects=[dict(id=1,name='Precise box',primitive='box',
                 pose=dict(position=[origin[0]+8.125,origin[1]+1.25,origin[2]-8.5],yaw_degrees=17.25,size=[2,2,2]))])))
         with logfile.open('w') as log:
             mailbox=folder/'mailbox'
@@ -120,6 +120,18 @@ def run(output,binary,only_case=None,keyboard=False,preview=False):
                         assert max(abs(a-(b-c)) for a,b,c in zip(current['placement_ghost']['position'],candidate['pose']['position'],origin))<1e-4
                         assert current['document']==before['document'] and current['revision']==before['revision'] and current['history']==before['history']
                         capture(f'{shape.lower()}-placement-preview')
+                        if shape=='Box':
+                            desktop.key_state('Control_L',True)
+                            try:
+                                wait(lambda:state()['control_down'])
+                                desktop.key('f')
+                            finally:desktop.key_state('Control_L',False)
+                            wait(lambda:state()['name_edit'] is not None and not state()['placement_ghost']['visible'])
+                            desktop.move(window,before['ground'][0],1);fresh()
+                            assert not state()['placement_ghost']['visible'] and state()['placement_preview'] is None
+                            assert state()['document']==before['document'] and state()['revision']==before['revision']
+                            desktop.key('Escape');wait(lambda:state()['name_edit'] is None)
+                            wait(lambda:state()['placement_preview'] is not None and state()['placement_ghost']['visible'])
                         desktop.move(window,[3290,350],1)
                         wait(lambda:state()['placement_preview'] is None and not state()['placement_ghost']['visible'])
                     click(before['ground'][0])
@@ -146,6 +158,15 @@ def run(output,binary,only_case=None,keyboard=False,preview=False):
                 control('Command(Save)');wait(lambda:not state()['unsaved_changes'])
                 assert json.loads(saved.read_text())==placed
                 if preview:
+                    snapshot=copy.deepcopy(fresh())
+                    tool('Place(Box)');desktop.move(window,snapshot['ground'][0],1)
+                    wait(lambda:state()['placement_preview'] is not None and state()['placement_ghost']['visible'])
+                    control('Command(Play)');wait(lambda:state()['play_feet'] is not None)
+                    desktop.move(window,[1720,720],1);fresh()
+                    assert state()['placement_preview'] is None and not state()['placement_ghost']['visible']
+                    assert state()['document']==snapshot['document'] and state()['revision']==snapshot['revision'] and state()['history']==snapshot['history']
+                    capture('playtest-no-placement-ghost')
+                    control('Command(Play)');wait(lambda:state()['play_feet'] is None)
                     snapshot=copy.deepcopy(fresh())
                     bridge=wait(lambda:json.loads((mailbox/'state.json').read_text()) if (mailbox/'state.json').exists() else None)
                     fixture=dict(id=18446744073709551614,name='ID exhaustion fixture',primitive='box',pose=dict(position=[origin[0]+32,origin[1]+1,origin[2]+32],yaw_degrees=0,size=[2,2,2]))

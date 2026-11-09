@@ -105,10 +105,30 @@ fn invalid_candidates_share_stamp_refusals_and_budget_or_id_changes_invalidate_t
 fn one_nonpickable_nonshadowing_ghost_reuses_palette_meshes_and_hides_without_a_candidate() {
     let mut app = App::new();
     app.insert_resource(session([128_000_000_000.125, 20.25, -128_000_000_000.5]))
+        .insert_resource(View {
+            target: Vec3::ZERO,
+            yaw: 0.6,
+            pitch: 0.8,
+            distance: 32.,
+            preset: camera_views::Preset::Perspective,
+            show_grid: true,
+        })
+        .init_resource::<ButtonInput<KeyCode>>()
+        .init_resource::<bevy::input_focus::InputFocus>()
+        .init_resource::<workspace::Requests>()
+        .init_resource::<outliner::Content>()
         .init_resource::<Assets<Mesh>>()
         .init_resource::<Assets<StandardMaterial>>()
-        .add_systems(Startup, (viewport::setup, setup.after(viewport::setup)))
-        .add_systems(Update, sync);
+        .add_systems(
+            Startup,
+            (viewport::setup, setup.after(viewport::setup), naming::setup),
+        )
+        .add_systems(Update, (naming::keyboard, sync).chain())
+        .add_systems(PostUpdate, naming::finish);
+    app.world_mut().spawn(Window {
+        focused: true,
+        ..default()
+    });
     app.update();
     let ghost = app
         .world_mut()
@@ -140,6 +160,7 @@ fn one_nonpickable_nonshadowing_ghost_reuses_palette_meshes_and_hides_without_a_
             .unwrap();
             assert_eq!(candidate.error.is_some(), invalid);
             let pose = candidate.object.pose.clone();
+            app.world_mut().resource_mut::<Session>().palette = Some(primitive);
             app.world_mut().resource_mut::<Session>().placement_preview = Some(candidate);
             app.update();
             assert_eq!(
@@ -188,6 +209,66 @@ fn one_nonpickable_nonshadowing_ghost_reuses_palette_meshes_and_hides_without_a_
             assert_eq!(app.world().resource::<Session>().editor.history(), (0, 1));
         }
     }
+    let source = app.world().resource::<Session>().editor.zone().clone();
+    app.world_mut().resource_mut::<workspace::Requests>().find = true;
+    app.update();
+    assert!(app.world().resource::<Session>().name_edit.is_some());
+    assert!(
+        app.world()
+            .resource::<Session>()
+            .placement_preview
+            .is_some()
+    );
+    assert_eq!(
+        *app.world().get::<Visibility>(ghost).unwrap(),
+        Visibility::Hidden
+    );
+    app.world_mut()
+        .resource_mut::<ButtonInput<KeyCode>>()
+        .press(KeyCode::Escape);
+    app.update();
+    app.world_mut()
+        .resource_mut::<ButtonInput<KeyCode>>()
+        .reset_all();
+    app.update();
+    assert_eq!(
+        *app.world().get::<Visibility>(ghost).unwrap(),
+        Visibility::Visible
+    );
+    for playing in [true, false] {
+        app.world_mut()
+            .resource_scope(|world, mut session: Mut<Session>| {
+                perform(
+                    Action::Play,
+                    &mut session,
+                    &mut world.resource_mut::<View>(),
+                )
+            });
+        app.update();
+        assert_eq!(app.world().resource::<Session>().play.is_some(), playing);
+        assert!(
+            app.world()
+                .resource::<Session>()
+                .placement_preview
+                .is_some()
+        );
+        assert_eq!(
+            *app.world().get::<Visibility>(ghost).unwrap(),
+            if playing {
+                Visibility::Hidden
+            } else {
+                Visibility::Visible
+            }
+        );
+        assert_eq!(app.world().resource::<Session>().editor.zone(), &source);
+        assert_eq!(app.world().resource::<Session>().editor.history(), (0, 1));
+    }
+    app.world_mut().resource_mut::<Session>().palette = None;
+    app.update();
+    assert_eq!(
+        *app.world().get::<Visibility>(ghost).unwrap(),
+        Visibility::Hidden
+    );
     app.world_mut().resource_mut::<Session>().placement_preview = None;
     app.update();
     assert_eq!(

@@ -3198,3 +3198,42 @@ Native terrain support and Windows execution are not newly claimed. The 1024-
 object refusal and resident asset checks are CPU evidence, not a scale benchmark.
 Schemas, engine pins, physics/gameplay authority and networking are unchanged.
 No push.
+
+## Placement refusal hints and renderer guards — 9 November 2026
+
+P5-17 / P3-15 / P1-10; prerequisites are the read-only candidate and existing
+forms/playtest. Properties now explains a refused candidate before clicking;
+valid candidates retain a concise preview/click hint. The renderer also checks
+forms, playtest, active drags/strokes/path drafts and matching placement tool
+before showing a cached candidate. This avoids depending on pointer-system order
+to hide a stale ghost. These checks do not change validation, source or history.
+
+All 127 focused Rust tests, formatting, strict workspace/all-target Clippy and
+build pass. The existing real ECS renderer test now opens/cancels the actual
+Find form and enters/leaves actual Avian playtest while deliberately retaining
+its cached candidate and not running the pointer system. The ghost hides during
+the form/playtest, returns when appropriate, and hides when the placement tool
+is cleared; source/history remain exact. Evidence: ignored
+build/zone-placement-preview-guards-{tests,all-tests,clippy,build}.log.
+Native tests additionally exercise the Find modal and playtest with a placement
+tool armed, using a fixture spawn away from geometry at 6.25 cm support offset.
+Their final acceptance is recorded below after execution.
+
+Native acceptance passes local/far fractional origins at 3440 x 1440 in ignored
+build/zone-placement-preview-guards-native-3440-v1/ (--keyboard --preview).
+Find hides the ghost even with the pointer back over the ground; cancelling
+restores normal preview. The actual Avian playtest runs with a placement tool
+armed and keeps the ghost hidden. Returning to editing retains source/history.
+The refused-ID preview shows its reason in Properties, and the existing six
+command oracles, panel hiding, exact stamped poses, refused-click isolation,
+undo/redo and Save still pass. App-only far refusal and local playtest captures
+were inspected. AMD Radeon RX 7900 XTX (RADV NAVI31), Vulkan device 29772;
+validation-layer insertion is confirmed, with zero strict GPU diagnostics.
+Editor SHA-256:
+e414864415581f3f96c0add7590108b92b6bd2b50c718b9d74c690a4cb51bddc.
+The CPU layout flow additionally uses a 75-character spaced zone name, maximum
+size values and a wrapped bounded-zone refusal; every shape slider and the
+four-line key footer remain inside Properties. Evidence is in
+build/zone-placement-preview-hint-layout.log and the final all-tests log.
+No new Windows or multiplayer acceptance. Schema, engine pins and gameplay
+remain unchanged. No push.
