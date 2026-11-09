@@ -26,6 +26,7 @@ pub(super) enum Control {
     WholePath,
     Snap,
     Handles,
+    GizmoTool(gizmo::Tool),
     Help,
 }
 #[derive(Component, Clone, Copy, Debug)]
@@ -133,7 +134,7 @@ pub(super) fn setup(mut commands: Commands) {
                         ..default()
                     },
                     BackgroundColor(Color::srgb(0.10, 0.14, 0.19)),
-                    children![(ButtonLabel, text("[x] Snap to 1 m", 15.))],
+                    children![(ButtonLabel, text("[x] Snap (1 m / 15 deg)", 15.))],
                 ));
                 row.spawn((
                     Control::Handles,
@@ -145,8 +146,14 @@ pub(super) fn setup(mut commands: Commands) {
                         ..default()
                     },
                     BackgroundColor(Color::srgb(0.10, 0.14, 0.19)),
-                    children![(ButtonLabel, text("[x] Move XYZ", 15.))],
+                    children![(ButtonLabel, text("[x] Handles", 15.))],
                 ));
+                for (tool, label) in [
+                    (gizmo::Tool::Move, "Move"),
+                    (gizmo::Tool::Rotate, "Rotate Y"),
+                ] {
+                    row.spawn(button(Control::GizmoTool(tool), label));
+                }
             });
             root.spawn(Node {
                 column_gap: px(8),
@@ -219,6 +226,7 @@ impl Control {
             .or(session.plant_selected)
             .is_some();
         match self {
+            Self::GizmoTool(_) => mode(session) == EditorMode::Objects,
             Self::Transform => session
                 .selected
                 .or(session.plant_selected)
@@ -385,6 +393,10 @@ pub(super) fn activate(
             }
         }
         Control::WholePath => session.path_point = None,
+        Control::GizmoTool(tool) => {
+            session.gizmo_tool = tool;
+            session.palette = None;
+        }
         Control::Help => requests.help = !requests.help,
         Control::Rename => requests.name = true,
         Control::Transform => requests.transform = true,
@@ -513,6 +525,7 @@ pub(super) fn sync(
             Control::Mode(m) => m == mode(&session),
             Control::Snap => session.snap,
             Control::Handles => session.show_move_handles,
+            Control::GizmoTool(tool) => session.gizmo_tool == tool,
             Control::Help => requests.help,
             Control::WholePath => session.path_selected.is_some() && session.path_point.is_none(),
             Control::Command(Action::Play) => session.play.is_some(),
@@ -536,14 +549,14 @@ pub(super) fn sync(
         }
         let caption = match control {
             Control::Snap => Some(if session.snap {
-                "[x] Snap to 1 m"
+                "[x] Snap (1 m / 15 deg)"
             } else {
-                "[ ] Snap to 1 m"
+                "[ ] Snap (1 m / 15 deg)"
             }),
             Control::Handles => Some(if session.show_move_handles {
-                "[x] Move XYZ"
+                "[x] Handles"
             } else {
-                "[ ] Move XYZ"
+                "[ ] Handles"
             }),
             Control::Command(Action::Play) => Some(if session.play.is_some() {
                 "Return to editing"

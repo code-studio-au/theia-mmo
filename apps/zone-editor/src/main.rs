@@ -52,6 +52,7 @@ struct Session {
     palette: Option<Primitive>,
     snap: bool,
     show_move_handles: bool,
+    gizmo_tool: gizmo::Tool,
     status: String,
     path: PathBuf,
     next_id: u64,
@@ -91,7 +92,7 @@ struct Drag {
     preview: Pose,
     revision: u64,
     offset: Vec3,
-    axis: Option<gizmo::AxisDrag>,
+    gesture: Option<gizmo::Gesture>,
 }
 impl Session {
     fn has_modal(&self) -> bool {
@@ -338,6 +339,7 @@ fn run() -> Result<(), String> {
         palette: None,
         snap: true,
         show_move_handles: true,
+        gizmo_tool: gizmo::Tool::Move,
         status: "Ready - choose a primitive, then click the ground".into(),
         path,
         next_id,

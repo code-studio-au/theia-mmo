@@ -203,7 +203,7 @@ pub(super) fn pointer(
     windows: Query<&Window>,
     camera: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
     objects: Query<&Authored>,
-    handles: Query<(&gizmo::MoveHandle, &Visibility)>,
+    handles: Query<(&gizmo::TransformHandle, &Visibility)>,
     ground: Query<(), With<terrain::GroundPart>>,
     mut raycast: MeshRayCast,
     mut session: ResMut<Session>,
@@ -304,23 +304,32 @@ pub(super) fn pointer(
             {
                 let local =
                     Vec3::from_array(session.editor.zone().local(object.pose.position).unwrap());
-                if let Some(axis) = gizmo::AxisDrag::begin(ray, local, handle.axis) {
+                if let Some(gesture) = gizmo::Gesture::begin(handle.tool, ray, local, handle.axis) {
                     session.drag = Some(Drag {
                         id: object.id,
                         before: object.pose.clone(),
                         preview: object.pose.clone(),
                         revision: session.editor.revision(),
                         offset: Vec3::ZERO,
-                        axis: Some(axis),
+                        gesture: Some(gesture),
                     });
-                    session.status = "Moving world axis - release applies; Escape cancels".into();
+                    session.status = match handle.tool {
+                        gizmo::Tool::Move => "Moving world axis - release applies; Escape cancels",
+                        gizmo::Tool::Rotate => "Rotating yaw - release applies; Escape cancels",
+                    }
+                    .into();
+                } else {
+                    session.status = "Orbit the view to drag this handle".into();
                 }
             }
         } else {
             let id = hit.and_then(|entity| objects.get(entity).ok()).map(|o| o.0);
             let already_selected = id == session.selected;
             session.selected = id;
-            if already_selected && let Some(id) = id {
+            if already_selected
+                && session.gizmo_tool == gizmo::Tool::Move
+                && let Some(id) = id
+            {
                 let object = session
                     .editor
                     .zone()
@@ -337,7 +346,7 @@ pub(super) fn pointer(
                         preview: object.pose.clone(),
                         revision: session.editor.revision(),
                         offset: local - hit,
-                        axis: None,
+                        gesture: None,
                     });
                 }
             }
@@ -346,26 +355,24 @@ pub(super) fn pointer(
     if let Some(mut drag) = session.drag.take() {
         let zone = session.editor.zone();
         let height = zone.local(drag.before.position).unwrap()[1];
-        if let Some(axis) = drag.axis {
-            if let Some(position) = axis.position(ray, drag.before.position, session.snap) {
-                let mut pose = drag.before.clone();
-                pose.position = position;
-                if pose != drag.preview {
-                    // The same whole-candidate command validates every new
-                    // preview, without changing the live document or history.
-                    let valid = Editor::new(zone.clone()).and_then(|mut candidate| {
-                        candidate.execute(Command::Apply {
-                            expected_revision: 0,
-                            edits: vec![Edit::Transform {
-                                id: drag.id,
-                                pose: pose.clone(),
-                            }],
-                        })
-                    });
-                    match valid {
-                        Ok(()) => drag.preview = pose,
-                        Err(error) => session.status = error,
-                    }
+        if let Some(gesture) = &mut drag.gesture {
+            if let Some(pose) = gesture.preview(ray, &drag.before, session.snap)
+                && pose != drag.preview
+            {
+                // The same whole-candidate command validates every new
+                // preview, without changing the live document or history.
+                let valid = Editor::new(zone.clone()).and_then(|mut candidate| {
+                    candidate.execute(Command::Apply {
+                        expected_revision: 0,
+                        edits: vec![Edit::Transform {
+                            id: drag.id,
+                            pose: pose.clone(),
+                        }],
+                    })
+                });
+                match valid {
+                    Ok(()) => drag.preview = pose,
+                    Err(error) => session.status = error,
                 }
             }
         } else if let Some(hit) = plane(ray, height) {
@@ -383,8 +390,12 @@ pub(super) fn pointer(
                         pose: drag.preview,
                     }],
                 });
-            } else if drag.axis.is_some() {
-                session.status = "Position unchanged".into();
+            } else if let Some(gesture) = drag.gesture {
+                session.status = match gesture.tool() {
+                    gizmo::Tool::Move => "Position unchanged",
+                    gizmo::Tool::Rotate => "Yaw unchanged",
+                }
+                .into();
             }
         } else if mouse.pressed(MouseButton::Left) {
             session.drag = Some(drag);
@@ -465,7 +476,7 @@ type SceneVisuals<'w, 's> = Query<
         &'static Visibility,
         Option<&'static Mesh3d>,
         Option<&'static Transform>,
-        Option<&'static gizmo::MoveHandle>,
+        Option<&'static gizmo::TransformHandle>,
     ),
 >;
 #[allow(clippy::too_many_arguments)]
@@ -560,11 +571,12 @@ pub(super) fn report(
                     return None;
                 }
                 let transform = transform?;
-                Some(
-                    serde_json::json!({"axis":handle.axis,"visible":*visibility!=Visibility::Hidden,
-            "mesh":mesh.map(|m|format!("{:?}",m.0.id())),"screen":project(transform.translation),
-            "target":project(transform.translation+Vec3::AXES[handle.axis]*2.)}),
-                )
+                let (screen,target)=if handle.tool==gizmo::Tool::Rotate {
+                    let radius=transform.scale.x;
+                    (transform.translation+Vec3::X*radius,transform.translation+Vec3::new(radius,0.,-radius)*std::f32::consts::FRAC_1_SQRT_2)
+                } else { (transform.translation,transform.translation+Vec3::AXES[handle.axis]*2.) };
+                Some(serde_json::json!({"axis":handle.axis,"tool":format!("{:?}",handle.tool),"visible":*visibility!=Visibility::Hidden,
+                    "mesh":mesh.map(|m|format!("{:?}",m.0.id())),"screen":project(screen),"target":project(target)}))
             })
             .collect::<Vec<_>>()
     );

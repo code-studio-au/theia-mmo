@@ -13,7 +13,9 @@ Playtest** are in the command bar, alongside the snap checkbox.
 
 Select a primitive to reveal **red X, green Y and blue Z move arrows**. Drag an
 arrow to preview movement along that world axis, then release for one undo entry.
-Escape cancels. **Snap** uses the 1 m grid; **Move XYZ** shows/hides the handles.
+Escape cancels. Choose **Move** or **Rotate Y** in the command bar; rotation uses
+a green ring. **Snap** uses a 1 m move grid or 15-degree rotation steps, and
+**Handles** shows/hides them.
 The numeric Transform form remains available for exact values.
 
 Terrain properties use sliders for radius, strength, blend and flatten level.

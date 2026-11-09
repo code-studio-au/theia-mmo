@@ -2065,3 +2065,52 @@ Evidence: ignored `build/zone-move-handles-native-3440-v2/qualification.json`,
 `.expected.json` pairs; `zone-move-handles-tests-v3.log`,
 `zone-move-handles-clippy-v2.log` and `zone-move-handles-build-v2.log`.
 Editor SHA-256: `184018297dd68b19c5cea3fb4a5ebdfb7adef3165d02b5b172602f878251c212`.
+
+## Primitive yaw rotation ring — 9 November 2026
+
+P5-17 / P3-15 / P1-10 continuation. Prerequisites are the validated move-handle
+preview/commit path, standard Bevy Torus geometry and the existing Pose yaw field.
+Move/Rotate Y toolbar buttons now select an editor-local tool and disarm pending
+primitive placement while retaining selection. Selected-body XZ dragging remains
+exclusive to Move; body clicks in Rotate only select. Handles toggles
+visibility for either tool; the snap label identifies 1 m / 15 degree steps.
+Rotate Y shows one green ring at the selected primitive centre, with normal world
+depth, shared unlit/active-white materials and one resident torus mesh/entity.
+This is yaw rotation, matching the existing source pose; pitch/roll, scale and
+non-primitive transform handles remain future work.
+
+Horizontal-plane ray intersections produce angles around world Y. Incremental
+wrapped deltas accumulate across the ±180-degree seam and full turns. A stationary
+click preserves fractional yaw; snapping rounds changed yaw to 15 degrees, while
+unsnapped drags retain the calculated value. Position and XYZ size are copied
+unchanged from the original f64 pose. Parallel/centre rays refuse a poorly
+constrained gesture, with an orbit-view hint when beginning fails. Shared candidate
+Transform validation checks each changed preview and the final revision-checked
+commit. The existing cancel, UI/pending/modal/playtest isolation and one-entry
+undo/redo boundaries apply. The ring does not enter source/export/collision, and
+neither tool choice nor snapping changes source/history. No engine/plugin pin,
+source-schema, network or authority change.
+
+Acceptance covers yaw seam/full-turn mathematics, stationary fractional values,
+unchanged position/size, parallel/centre refusal, snapped and precise native yaw
+edits for all three primitives at local/far origins, exact headless Transform
+equivalence, cancel, tool/modal isolation, undo/redo and save. Retained move-handle
+interaction and standard native GPU checks run in the same fixture.
+
+Final acceptance passes: 82 focused Rust cases (51 domain / 31 editor), formatting,
+strict workspace/all-target Clippy and actual 3440x1440 native local/far runs on
+RX 7900 XTX (RADV NAVI31), Vulkan device 29772. Khronos validation is active with
+zero GPU/resize diagnostics. Twelve new yaw edits plus six retained axis edits
+match complete headless documents. Snapped/unsnapped values, stationary fractional
+yaw, exact other fields, cancel, one-entry undo/redo, save, placement disarming,
+body-selection isolation and modal/tool switching pass. The local active ring
+view was visually inspected. Unsnapped 45-degree nominal targets allow one degree
+for integer screen-pixel rounding; document equality remains exact. Windows,
+non-primitive handles, scale and maximum-document editing performance remain
+separate qualification; this UI slice adds no multiplayer claim.
+
+Evidence: ignored `build/zone-rotation-handles-native-3440-v3/qualification.json`,
+`*.rotate-*-preview.png` and matching `.before.json` / `.commands.jsonl` /
+`.expected.json` pairs; `zone-rotation-handles-tests-v3.log`,
+`zone-rotation-handles-clippy-v3.log` and `zone-rotation-handles-build-v4.log`.
+Editor SHA-256: `4643118e4a96023f71173e5f0844151b3696de23c7ce46941a18e4164b007679`.

@@ -1,3 +1,11 @@
+Primitive yaw rotation handles, 9 November 2026 (P5-17 / P3-15 / P1-10):
+The application toolbar now chooses Move or Rotate Y. A standard Bevy torus
+provides a yaw ring, with 15-degree snapping and unsnapped editing; angle unwrapping
+supports crossing the ±180-degree seam and full turns. Position and size remain
+exact. Both tools share validated previews and one-entry Transform history.
+See [the zone record](../ZONE_EDITOR.md#primitive-yaw-rotation-ring--9-november-2026) for acceptance.
+Continue after local commits until stopped; no push.
+
 Primitive move handles, 9 November 2026 (P5-17 / P3-15 / P1-10):
 Selected primitives now expose standard Bevy red X / green Y / blue Z move arrows.
 Axis drags preview through shared Transform validation and commit once on release;
