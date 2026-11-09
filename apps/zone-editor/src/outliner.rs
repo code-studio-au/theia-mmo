@@ -2,7 +2,7 @@
 use super::*;
 use bevy::picking::{events::PointerPress, pointer::PointerButton};
 pub(super) const WIDTH: f32 = 300.;
-const ROWS: usize = 40;
+const ROWS: usize = 24;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Target {
@@ -114,9 +114,9 @@ pub(super) fn setup(mut commands: Commands) {
             GlobalZIndex(3),
             Node {
                 position_type: PositionType::Absolute,
-                top: px(0),
+                top: px(workspace::HEADER),
                 right: px(0),
-                bottom: px(0),
+                bottom: px(workspace::INSPECTOR),
                 width: px(WIDTH),
                 padding: UiRect::all(px(12)),
                 flex_direction: FlexDirection::Column,

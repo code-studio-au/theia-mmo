@@ -577,23 +577,7 @@ pub(super) fn translate(keys: &ButtonInput<KeyCode>, session: &mut Session, view
         return;
     };
     if keys.just_pressed(KeyCode::KeyF) {
-        if let Some(index) = session.path_point {
-            view.target =
-                Vec3::from_array(session.editor.zone().local(path.points[index]).unwrap());
-            view.distance = 12.;
-        } else {
-            let mut minimum = Vec3::splat(f32::INFINITY);
-            let mut maximum = Vec3::splat(f32::NEG_INFINITY);
-            for &p in &path.points {
-                let p = Vec3::from_array(session.editor.zone().local(p).unwrap());
-                minimum = minimum.min(p);
-                maximum = maximum.max(p);
-            }
-            view.target = (minimum + maximum) / 2.;
-            view.distance =
-                ((maximum - minimum).length() * 1.5 + path.width_metres as f32 * 2. + 8.)
-                    .clamp(8., selection::MAX_VIEW_DISTANCE);
-        }
+        focus(session, view);
         return;
     }
     if keys.just_pressed(KeyCode::Tab) {
@@ -640,5 +624,32 @@ pub(super) fn translate(keys: &ButtonInput<KeyCode>, session: &mut Session, view
             }
         }
         session.edit(vec![Edit::PutPath { path }]);
+    }
+}
+
+pub(super) fn focus(session: &Session, view: &mut View) {
+    let Some(path) = session
+        .editor
+        .zone()
+        .paths
+        .iter()
+        .find(|p| Some(p.id) == session.path_selected)
+    else {
+        return;
+    };
+    if let Some(index) = session.path_point {
+        view.target = Vec3::from_array(session.editor.zone().local(path.points[index]).unwrap());
+        view.distance = 12.;
+    } else {
+        let mut minimum = Vec3::splat(f32::INFINITY);
+        let mut maximum = Vec3::splat(f32::NEG_INFINITY);
+        for &p in &path.points {
+            let p = Vec3::from_array(session.editor.zone().local(p).unwrap());
+            minimum = minimum.min(p);
+            maximum = maximum.max(p);
+        }
+        view.target = (minimum + maximum) / 2.;
+        view.distance = ((maximum - minimum).length() * 1.5 + path.width_metres as f32 * 2. + 8.)
+            .clamp(8., selection::MAX_VIEW_DISTANCE);
     }
 }

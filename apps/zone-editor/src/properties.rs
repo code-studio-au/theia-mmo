@@ -76,20 +76,23 @@ pub(super) fn setup(mut commands: Commands) {
             Node {
                 display: Display::None,
                 position_type: PositionType::Absolute,
-                width: percent(100),
-                height: percent(100),
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
+                right: px(0),
+                bottom: px(0),
+                width: px(outliner::WIDTH),
+                height: px(workspace::INSPECTOR),
+                align_items: AlignItems::Stretch,
+                justify_content: JustifyContent::FlexStart,
+                overflow: Overflow::clip(),
                 ..default()
             },
-            BackgroundColor(Color::srgba(0.01, 0.02, 0.035, 0.82)),
+            BackgroundColor(Color::srgb(0.04, 0.065, 0.1)),
         ))
         .with_children(|root| {
             root.spawn((
                 Node {
-                    width: px(960),
-                    padding: px(28).all(),
-                    row_gap: px(14),
+                    width: percent(100),
+                    padding: px(12).all(),
+                    row_gap: px(6),
                     flex_direction: FlexDirection::Column,
                     border: px(2).all(),
                     ..default()
@@ -98,23 +101,20 @@ pub(super) fn setup(mut commands: Commands) {
                 BackgroundColor(Color::srgb(0.04, 0.065, 0.1)),
             ))
             .with_children(|panel| {
-                panel.spawn((Caption, text("Object transform", 22.)));
-                panel.spawn(text(
-                    "Global metres | Y-up | sphere: equal XYZ | cylinder: equal XZ",
-                    16.,
-                ));
+                panel.spawn((Caption, text("TRANSFORM", 16.), TextLayout::no_wrap()));
+                panel.spawn(text("World metres | Y-up | yaw degrees", 13.));
                 for (index, label) in LABELS.iter().enumerate() {
                     panel
                         .spawn(Node {
-                            column_gap: px(18),
+                            column_gap: px(6),
                             align_items: AlignItems::Center,
                             ..default()
                         })
                         .with_children(|row| {
                             row.spawn((
-                                text(label, 19.),
+                                text(label, 13.),
                                 Node {
-                                    width: px(190),
+                                    width: px(88),
                                     ..default()
                                 },
                             ));
@@ -132,14 +132,14 @@ pub(super) fn setup(mut commands: Commands) {
                                 Node {
                                     flex_grow: 1.,
                                     min_width: px(0),
-                                    min_height: px(52),
+                                    min_height: px(32),
                                     border: px(2).all(),
                                     ..default()
                                 },
                                 BorderColor::all(Color::srgb(0.35, 0.85, 1.)),
                                 BackgroundColor(Color::srgb(0.015, 0.025, 0.04)),
                                 TextFont {
-                                    font_size: FontSize::Px(23.),
+                                    font_size: FontSize::Px(16.),
                                     ..default()
                                 },
                                 TextColor(Color::WHITE),
@@ -149,12 +149,12 @@ pub(super) fn setup(mut commands: Commands) {
                         });
                 }
                 panel.spawn(text(
-                    "Tab / Shift-Tab: next / previous field | Enter applies all | Escape cancels",
-                    16.,
+                    "Enter applies all fields.\nEscape cancels. Tab changes field.",
+                    13.,
                 ));
                 panel
                     .spawn(Node {
-                        column_gap: px(14),
+                        column_gap: px(6),
                         ..default()
                     })
                     .with_children(|row| {
@@ -167,12 +167,12 @@ pub(super) fn setup(mut commands: Commands) {
                                 Button,
                                 Hovered::default(),
                                 Node {
-                                    padding: px(14).all(),
+                                    padding: px(8).all(),
                                     ..default()
                                 },
                                 BackgroundColor(Color::srgb(0.1, 0.24, 0.3)),
                             ))
-                            .with_child(text(label, 19.));
+                            .with_child(text(label, 14.));
                         }
                     });
             });
@@ -199,7 +199,9 @@ pub(super) fn keyboard(
     mut focus: ResMut<InputFocus>,
     nav: TabNavigation,
     mut fields: Query<(Entity, &Field, &mut EditableText)>,
+    mut requests: ResMut<workspace::Requests>,
 ) {
+    let requested = std::mem::take(&mut requests.transform);
     if !windows.single().is_ok_and(|w| w.focused) {
         return;
     }
@@ -225,7 +227,7 @@ pub(super) fn keyboard(
         }
         return;
     }
-    if !keys.just_pressed(KeyCode::F9) || session.has_modal() {
+    if !(keys.just_pressed(KeyCode::F9) || requested) || session.has_modal() {
         return;
     }
     if session.play.is_some()
@@ -362,7 +364,7 @@ pub(super) fn finish(
             root.display = Display::Flex;
         }
         if let Ok(mut caption) = captions.single_mut() {
-            caption.0 = format!("Object transform | {}\n{}", draft.subject, session.status);
+            caption.0 = format!("TRANSFORM\n{}", draft.subject);
         }
         draft.action = None;
         session.transform_edit = Some(draft);

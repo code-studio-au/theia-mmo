@@ -1,3 +1,15 @@
+Application-style editor work resumed, 9 November 2026 (P5-17 / P3-15 / P1-10):
+The user chooses to continue the in-repository editor and prioritizes Blender-like
+application workflows: direct sliders, buttons, toggles and a properties area,
+rather than larger controls or additional shortcut-driven features. Standard Bevy
+widgets now provide workspace buttons, a command bar, a snap checkbox and
+contextual terrain sliders. The right column splits a 24-row outliner from a
+properties area; exact transform editing docks there with existing transactional
+Apply/Cancel validation. Pending previews and modal/playtest isolation remain
+protected. The first shell slice has 77 focused Rust checks and native actual
+3440x1440 local/far evidence; see the zone record for exact scope. Keep changes
+local and do not push. The earlier safe-stop record below is historical.
+
 Safe stop, 8 November 2026 (P5-17 / P3-15 / P1-10; P2-06/07):
 The user requested stopping after the current slice. Terrain-conforming brush
 feedback, accepted stroke counts/cap feedback, 2 m spatial drag sampling,

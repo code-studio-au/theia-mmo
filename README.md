@@ -6,23 +6,22 @@ open the lightweight Bevy editor at **3440x1440 fullscreen**. It reopens
 Try the original editable example with `python3 tools/edit_zone.py --example`.
 It saves separately to `build/wayfarer-hollow.zone.json` and reopens your edits.
 
-F1 objects · F2 sculpt · F3 road/stream guides and points · F4 NPC/quest markers ·
-F6 vegetation · F7 terrain paint. F5 enters/leaves the offline Avian playtest.
-Tab/Shift-Tab cycle objects; F frames a selection or terrain; Ctrl-D duplicates a selection.
-H grounds the selected placement or guide points on terrain.
-Visual editing and structured agent commands share validation and undo.
-The summary marks unsaved changes, including pending drafts.
-In Sculpt, I samples a flatten level; PageUp/Down adjusts it.
-In Sculpt/Paint, P places the playtest spawn at the ground cursor (G toggles snapping).
-A green downward pointer marks the spawn and hides during playtest.
-In terrain tools, [ / ] halves/doubles stamp strength or the selected blend.
-The amber brush overlay follows the terrain and shows potential grid-sample influence.
-Fast drags fill the path with stamps every 2 m; leaving the canvas/patch breaks continuity.
-Held strokes show their stamp count; at 128, release to commit or Escape to cancel.
-In Guides, Insert adds a midpoint; Backspace removes a selected point.
-The right-side content list selects named entries across modes; F frames them.
-F8 renames a selection; Shift-F8 edits the zone name through shared undo.
-F9 opens numeric position/yaw/size fields for a selected primitive.
+Choose **Objects, Sculpt, Paint, Paths / streams, NPC / quest markers, or Vegetation**
+from the workspace bar. The left panel contains tools; the right column contains
+zone content and properties. **Save, Open saved, Undo, Redo, Frame selection and
+Playtest** are in the command bar, alongside the snap checkbox.
+
+Terrain properties use sliders for radius, strength, blend and flatten level.
+Select an object in the content list, then use **Edit transform** for exact numeric
+fields in the docked properties area; Apply commits one validated undo entry.
+Rename, Duplicate and Ground are also available there. **Shortcuts** reveals the
+keyboard reference. Visual and structured agent edits retain shared validation
+and undo; pending drafts are protected by workspace controls.
+
+F5 enters/leaves offline Avian playtest. In Sculpt/Paint, P places the spawn at
+the ground cursor; the green pointer marks it and hides during playtest. Fast
+drags fill brush strokes every 2 m, with a visible 128-stamp cap. Earlier keyboard
+shortcuts remain available.
 
 For structured commands, use `python3 tools/edit_zone.py --commands JSONL
 --headless --output FILE`. Export a saved zone with `--zone FILE --export NEW_DIR

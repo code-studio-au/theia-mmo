@@ -1,3 +1,16 @@
+## 9 November 2026 — retain our editor and adopt application-style controls
+
+After reviewing external editor options, the user chooses continued work on our
+editor. Prioritize Blender-like application workflows using standard Bevy UI:
+visible workspaces, a command bar, outliner/properties regions and direct sliders,
+buttons and toggles. Increasing control size does not address this request.
+Keep visual/agent validation and undo underneath the presentation. The first
+slice uses built-in Slider/Checkbox widgets for editor-local terrain presets and
+moves the exact numeric Transform transaction into a docked properties region.
+Source/schema/runtime pins remain unchanged. Names remain a conventional dialog;
+full docking, file browsing and viewport transform handles are subsequent work.
+[Contract/evidence](ZONE_EDITOR.md#application-style-workspaces-and-properties--9-november-2026).
+
 ## 8 November 2026 — editor marker visibility and terrain asset reuse
 
 Keep the spawn marker a standard unlit, noncolliding Bevy primitive, anchored

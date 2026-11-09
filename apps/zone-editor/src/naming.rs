@@ -136,9 +136,11 @@ pub(super) fn keyboard(
     mut session: ResMut<Session>,
     mut focus: ResMut<InputFocus>,
     mut fields: Query<(Entity, &mut EditableText), With<Field>>,
+    mut requests: ResMut<workspace::Requests>,
 ) {
+    let requested = std::mem::take(&mut requests.name);
     if session.has_modal()
-        || !keys.just_pressed(KeyCode::F8)
+        || !(keys.just_pressed(KeyCode::F8) || requested)
         || !windows.single().is_ok_and(|w| w.focused)
     {
         return;
@@ -151,7 +153,8 @@ pub(super) fn keyboard(
         session.status = "Finish or cancel the preview before renaming".into();
         return;
     }
-    let zone = keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight);
+    let zone =
+        !requested && (keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight));
     let id = session
         .selected
         .or(session.path_selected)

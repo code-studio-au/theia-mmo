@@ -14,6 +14,7 @@ mod spawn;
 mod terrain;
 mod vegetation;
 mod viewport;
+mod workspace;
 use bevy::picking::hover::Hovered;
 use bevy::{
     input::mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll},
@@ -25,11 +26,14 @@ use theia_zone::{Command, Edit, Editor, Object, Pose, Primitive, Zone};
 
 const PANEL: f32 = 300.;
 fn canvas_cursor(window: &Window) -> Option<Vec2> {
-    window
-        .cursor_position()
-        .filter(|p| p.x > PANEL && p.x < window.width() - outliner::WIDTH)
+    window.cursor_position().filter(|p| {
+        p.x > PANEL
+            && p.x < window.width() - outliner::WIDTH
+            && p.y > workspace::HEADER
+            && p.y < window.height() - 52.
+    })
 }
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum EditorMode {
     Objects,
     Sculpt,
@@ -382,6 +386,9 @@ fn run() -> Result<(), String> {
         }),
         ..default()
     }))
+    .add_observer(workspace::activate)
+    .add_observer(workspace::change)
+    .add_observer(workspace::toggle)
     .add_observer(activate)
     .add_observer(outliner::activate)
     .add_observer(naming::activate)
@@ -395,6 +402,7 @@ fn run() -> Result<(), String> {
             markers::setup,
             vegetation::setup,
             setup_ui,
+            workspace::setup,
             outliner::setup,
             naming::setup,
             properties::setup,
@@ -420,6 +428,7 @@ fn run() -> Result<(), String> {
             markers::sync,
             vegetation::sync,
             outliner::sync,
+            workspace::sync,
             present,
             viewport::capture,
         )
@@ -477,7 +486,7 @@ fn setup_ui(mut commands: Commands) {
             Node {
                 position_type: PositionType::Absolute,
                 left: px(0),
-                top: px(0),
+                top: px(workspace::HEADER),
                 bottom: px(0),
                 width: px(PANEL),
                 padding: UiRect::all(px(14)),
@@ -488,10 +497,10 @@ fn setup_ui(mut commands: Commands) {
             BackgroundColor(Color::srgb(0.035, 0.05, 0.075)),
         ))
         .with_children(|panel| {
-            panel.spawn(text("THEIA / ZONE STUDIO", 22.));
+            panel.spawn(text("TOOLS", 22.));
             panel.spawn(text(
-                "F1 Objects | F2 Terrain\nF3 Guides | F4 Markers\nF6 Plants | F7 Terrain paint\nF8 Rename | Shift F8 Zone name\nF9 Object transform",
-                12.,
+                "Choose a workspace above.\nSettings are in Properties.",
+                13.,
             ));
             for (index, (action, title)) in object_actions().into_iter().enumerate() {
                 panel
@@ -512,8 +521,14 @@ fn setup_ui(mut commands: Commands) {
                         button.spawn((PaletteLabel, text(title, 15.)));
                     });
             }
-            panel.spawn((Info, text("", 14.)));
-            panel.spawn((Help, text("", 13.)));
+            panel.spawn((
+                Help,
+                text("", 13.),
+                Node {
+                    display: Display::None,
+                    ..default()
+                },
+            ));
         });
     commands.spawn((
         Summary,
@@ -522,7 +537,7 @@ fn setup_ui(mut commands: Commands) {
             position_type: PositionType::Absolute,
             left: px(PANEL + 12.),
             bottom: px(12),
-            right: px(12),
+            right: px(outliner::WIDTH + 12.),
             padding: UiRect::all(px(10)),
             ..default()
         },
@@ -1055,17 +1070,13 @@ fn present(
         .find(|o| Some(o.id) == session.selected);
     for mut text in &mut info {
         **text = format!(
-            "{}\n{} | rev {} | {} objects\nundo/redo {:?} | snap {}\n{}",
+            "{}\n{}\n{}",
             session.editor.zone().name,
             if session.is_dirty() {
                 "Unsaved"
             } else {
                 "Saved"
             },
-            session.editor.revision(),
-            session.editor.zone().objects.len(),
-            session.editor.history(),
-            session.snap,
             if session.vegetation_mode {
                 vegetation::summary(&session)
             } else if session.marker_mode {
@@ -1074,9 +1085,8 @@ fn present(
                 paths::summary(&session)
             } else if session.terrain_mode {
                 format!(
-                    "Terrain {:?} | radius {} m\n{}{}",
+                    "Terrain {:?}\n{}{}",
                     session.brush_tool,
-                    session.brush_radius,
                     session.editor.zone().terrain.as_ref().map_or(
                         "No terrain patch".into(),
                         |p| format!("128 m patch | {} m samples", p.sample_metres())
@@ -1089,10 +1099,10 @@ fn present(
                 )
             } else {
                 selected.map_or("No selection".into(), |o| {
-                    format!(
-                        "#{} {}\npos {:.2?}\nsize {:.2?}\nyaw {:.0} deg",
-                        o.id, o.name, o.pose.position, o.pose.size, o.pose.yaw_degrees
-                    )
+                    let pose = session.drag.as_ref().filter(|d|d.id==o.id).map_or(&o.pose,|d|&d.preview);
+                    format!("{}\nPosition (world metres)\n X {:.3}\n Y {:.3}\n Z {:.3}\nYaw {:.2} degrees\nSize (metres)\n X {:.3}  Y {:.3}  Z {:.3}",
+                        o.name,pose.position[0],pose.position[1],pose.position[2],pose.yaw_degrees,
+                        pose.size[0],pose.size[1],pose.size[2])
                 })
             }
         );

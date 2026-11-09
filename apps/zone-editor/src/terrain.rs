@@ -408,6 +408,7 @@ pub(super) fn palette(
         &Children,
         &Hovered,
         &mut BackgroundColor,
+        &mut Node,
     )>,
     mut labels: Query<&mut Text, With<PaletteLabel>>,
     mut help: Query<&mut Text, (With<Help>, Without<PaletteLabel>)>,
@@ -469,8 +470,23 @@ Offline collision sandbox"
     } else {
         object_actions()
     };
-    for (slot, mut action, children, hovered, mut color) in &mut buttons {
+    for (slot, mut action, children, hovered, mut color, mut node) in &mut buttons {
         *action = actions[slot.0].0;
+        node.display = if matches!(
+            *action,
+            Action::Undo
+                | Action::Redo
+                | Action::Save
+                | Action::Load
+                | Action::Play
+                | Action::Snap
+                | Action::Spawn
+                | Action::Radius(_)
+        ) {
+            Display::None
+        } else {
+            Display::Flex
+        };
         let active = match *action {
             Action::Brush(tool) => session.terrain_mode && tool == session.brush_tool,
             Action::NewPath(kind) => session

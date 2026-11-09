@@ -48,6 +48,10 @@ pub(super) fn keyboard(
     if !keys.just_pressed(KeyCode::KeyF) {
         return false;
     }
+    frame(session, view)
+}
+
+pub(super) fn frame(session: &mut Session, view: &mut View) -> bool {
     let zone = session.editor.zone();
     let framing = if session.terrain_mode {
         zone.terrain.as_ref().and_then(|patch| {

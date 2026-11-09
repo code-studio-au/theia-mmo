@@ -1813,3 +1813,73 @@ Evidence: ignored `build/zone-spawn-marker-native-3440-v2/{qualification.json,*.
 `zone-spawn-marker-tests-v2.log`, `zone-spawn-marker-build-v2.log` and
 `zone-spawn-marker-clippy-v2.log`. Editor SHA-256:
 `858fb83c1def1f89a4984c0a855188cfaa480fbc47a0590bfb81dce870af687e`.
+
+## Application-style workspaces and properties — 9 November 2026
+
+P5-17 / P3-15 / P1-10; terrain P2-06/07. The user explicitly retains our editor,
+with Blender-like application workflows rather than larger controls. Actual
+prerequisites are the existing shared commands/presets, Bevy UI widgets, standard
+focus bridge and checked coordinate pipeline. No external editor/UI framework,
+engine/plugin pin, source schema or gameplay-authority change is introduced.
+
+A standard Bevy command bar exposes Save, Open saved (the existing draft path),
+Undo, Redo, Frame selection, Spawn at view centre, Playtest/Return and a Shortcuts
+reference toggle. Workspace buttons select Objects, Sculpt, Paint, Paths/streams,
+NPC/quest markers and Vegetation. Active modes are highlighted. A built-in Checkbox
+controls 1 m snapping and reflects keyboard changes. Relevant command buttons
+are disabled for absent selections/history and during modal/pending/play states;
+returning from playtest remains available. Workspace controls refuse pending
+previews instead of discarding them. Shared shortcuts remain available.
+
+The left palette now contains tools rather than duplicated global commands or
+radius increment buttons. The right column splits its existing bounded content
+browser (24 rows per page, reduced from 40) above a 600 px properties region.
+Readouts show authored values and live object-drag previews, with explicit axes
+and units rather than revision/debug counters. Numeric transforms open in this
+region rather than a full-window scrim. They retain standard TextInput/Tab focus,
+f64 round-trip strings, grouped Apply/Cancel validation, modal input isolation
+while editing, and one existing Transform undo entry. Rename remains a conventional
+modal dialog. The inspector also exposes Rename, Duplicate, Ground and Frame.
+
+Built-in Bevy Slider/SliderThumb/SliderRange widgets edit terrain radius 4..32 m,
+raise/lower strength 0.05..8 m, independent sculpt/paint blend 5..100%, and flatten
+level -64..64 m relative to origin. Only relevant settings appear. Track clicks,
+thumb dragging and labels are synchronized with existing keyboard presets.
+These settings are editor-local and never create source/history entries; actual
+strokes retain shared command validation/undo. Sliders and the snap checkbox
+refuse modal/pending/playtest changes. World pointer actions and camera mouse
+input exclude the header, side panels and bottom status region. The optional
+report adds actual workspace/slider bounds, values and ranges without changing
+the mailbox protocol.
+
+All 77 focused Rust cases (51 domain / 26 editor), formatting and denied-warning
+workspace/all-target Clippy pass. Native local 4 m / far 2 m qualification uses
+actual 3440x1440 on RX 7900 XTX (RADV NAVI31), device 29772, with Vulkan validation
+active and zero GPU/resize diagnostics. Mouse workspace selection, snap toggles,
+slider track clicks/thumb drags, independent blends and clean history pass.
+Actual paint stamps from slider presets match full headless command documents;
+one-entry undo/redo/save, protected guide drafts, header/world isolation,
+content selection/paging, docked exact transform editing and playtest isolation
+also pass. The docked transform's numeric edit matches the shared headless
+Transform document exactly, with one-entry undo/redo. Screenshots cover both
+properties modes. Earlier fixed-layout UI qualification retains historical scope;
+this does not claim Windows execution, multiplayer or final human usability.
+The retained full naming/properties walkthrough also passes at local/far origins
+and saved reopen, with actual docked fields for boxes/spheres/cylinders, exact
+six-command equivalence, parse/shape refusal, correction, mutual modal/agent
+isolation and unchanged submission. Both local and far dock screenshots were
+visually inspected. All three runs observe active Vulkan validation and zero GPU/
+resize diagnostics. One missed Control modifier was re-pressed before select-all;
+no mutating clicks or commands were retried.
+
+The first slice does not yet provide resizable docking, file-picker/Save As,
+automatic inline transform commits, viewport move/rotate/scale handles, or direct
+properties for every guide/marker/plant field. Those are subsequent application
+workflow work; this is not a complete Blender-style editor implementation.
+
+Evidence: ignored `build/zone-workspace-native-3440-v4/{qualification.json,*.png}`,
+paint/transform `.before.json` / `.commands.jsonl` / `.expected.json` pairs,
+`build/zone-workspace-properties-native-3440-v1/qualification.json` and dock screenshots,
+`zone-workspace-tests-v2.log`, `zone-workspace-build-v5.log` and
+`zone-workspace-clippy-v3.log`. Editor SHA-256:
+`1ebf50076ee77c9418bb2a33a20c7a5633863269ce3c77f9cc97c46ea6dfa00b`.
