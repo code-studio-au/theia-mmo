@@ -39,6 +39,40 @@ pub(super) struct YawThumb;
 #[derive(Component)]
 pub(super) struct YawLabel;
 #[derive(Component)]
+pub(super) struct SliderRow(Control);
+#[derive(Component)]
+pub(super) struct SliderLabel(Control);
+#[derive(Component)]
+pub(super) struct SliderHandle(Control);
+#[derive(Clone, Copy)]
+struct SliderSpec {
+    field: usize,
+    min: f32,
+    max: f32,
+    step: f32,
+    label: &'static str,
+    yaw: bool,
+}
+impl SliderSpec {
+    fn display(self, text: &str) -> Option<f32> {
+        if self.yaw {
+            return displayed_yaw(text);
+        }
+        let value = text.parse::<f64>().ok()?;
+        (value.is_finite() && (value as f32).is_finite()).then_some(value as f32)
+    }
+    fn valid(self, text: &str) -> bool {
+        text.parse::<f64>().is_ok_and(|value| {
+            value.is_finite()
+                && if self.yaw {
+                    value.abs() <= 3600.
+                } else {
+                    (f64::from(self.min)..=f64::from(self.max)).contains(&value)
+                }
+        })
+    }
+}
+#[derive(Component)]
 pub(super) struct FieldLabel(usize);
 #[derive(Clone, Debug, PartialEq)]
 enum Target {
@@ -52,6 +86,45 @@ enum Target {
     },
 }
 impl Target {
+    fn slider(&self, control: Control, snap: bool) -> Option<SliderSpec> {
+        let (field, min, max, step, label, yaw) = match (control, self) {
+            (Control::YawSlider, _) if self.has_yaw() => (
+                3,
+                -180.,
+                180.,
+                if snap { 15. } else { 1. },
+                if snap {
+                    "Yaw slider | 15 deg snap"
+                } else {
+                    "Yaw slider | 1 deg step"
+                },
+                true,
+            ),
+            (Control::ValueSlider, Self::Plant(_)) => {
+                (4, 0.25, 8., 0.25, "Plant scale | step 0.25", false)
+            }
+            (Control::ValueSlider, Self::Marker(_)) => {
+                (4, 0.25, 64., 0.25, "Radius (m) | step 0.25", false)
+            }
+            (Control::ValueSlider, Self::Path { point, .. }) => (
+                if point.is_some() { 3 } else { 0 },
+                0.25,
+                32.,
+                0.25,
+                "Guide width (m) | step 0.25",
+                false,
+            ),
+            _ => return None,
+        };
+        Some(SliderSpec {
+            field,
+            min,
+            max,
+            step,
+            label,
+            yaw,
+        })
+    }
     fn has_yaw(&self) -> bool {
         matches!(self, Self::Object(_) | Self::Plant(_) | Self::Marker(_))
     }
@@ -157,11 +230,12 @@ impl Target {
         }
     }
 }
-#[derive(Component, Clone, Copy, Debug)]
+#[derive(Component, Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Control {
     Apply,
     Cancel,
     YawSlider,
+    ValueSlider,
 }
 pub(super) struct Draft {
     pub id: Option<u64>,
@@ -297,9 +371,10 @@ pub(super) fn setup(mut commands: Commands) {
                             ));
                         });
                 }
-                panel
-                    .spawn((
-                        YawRow,
+                for control in [Control::YawSlider, Control::ValueSlider] {
+                    let yaw = control == Control::YawSlider;
+                    let mut container = panel.spawn((
+                        SliderRow(control),
                         Visibility::Hidden,
                         Node {
                             display: Display::None,
@@ -307,21 +382,29 @@ pub(super) fn setup(mut commands: Commands) {
                             row_gap: px(4),
                             ..default()
                         },
-                    ))
-                    .with_children(|row| {
-                        row.spawn((YawLabel, text("Yaw slider | 15 deg snap", 13.)));
-                        row.spawn((
-                            YawSlider,
-                            Control::YawSlider,
+                    ));
+                    if yaw {
+                        container.insert(YawRow);
+                    }
+                    container.with_children(|row| {
+                        let mut label = row.spawn((SliderLabel(control), text("", 13.)));
+                        if yaw {
+                            label.insert(YawLabel);
+                        }
+                        let mut slider = row.spawn((
+                            control,
                             Slider {
                                 track_click: TrackClick::Snap,
                                 ..default()
                             },
-                            SliderValue(0.),
-                            SliderRange::new(-180., 180.),
-                            SliderStep(15.),
-                            SliderPrecision(0),
-                            TabIndex(7),
+                            SliderValue(if yaw { 0. } else { 1. }),
+                            SliderRange::new(
+                                if yaw { -180. } else { 0.25 },
+                                if yaw { 180. } else { 8. },
+                            ),
+                            SliderStep(if yaw { 15. } else { 0.25 }),
+                            SliderPrecision(if yaw { 0 } else { 2 }),
+                            TabIndex(if yaw { 7 } else { 8 }),
                             Hovered::default(),
                             Node {
                                 width: percent(100),
@@ -329,8 +412,11 @@ pub(super) fn setup(mut commands: Commands) {
                                 ..default()
                             },
                             BackgroundColor(Color::srgb(0.09, 0.12, 0.16)),
-                        ))
-                        .with_children(|track| {
+                        ));
+                        if yaw {
+                            slider.insert(YawSlider);
+                        }
+                        slider.with_children(|track| {
                             track
                                 .spawn(Node {
                                     position_type: PositionType::Absolute,
@@ -340,20 +426,26 @@ pub(super) fn setup(mut commands: Commands) {
                                     bottom: px(0),
                                     ..default()
                                 })
-                                .with_child((
-                                    YawThumb,
-                                    SliderThumb,
-                                    Node {
-                                        position_type: PositionType::Absolute,
-                                        width: px(14),
-                                        height: px(24),
-                                        left: percent(50),
-                                        ..default()
-                                    },
-                                    BackgroundColor(Color::srgb(0.2, 0.65, 0.8)),
-                                ));
+                                .with_children(|travel| {
+                                    let mut thumb = travel.spawn((
+                                        SliderHandle(control),
+                                        SliderThumb,
+                                        Node {
+                                            position_type: PositionType::Absolute,
+                                            width: px(14),
+                                            height: px(24),
+                                            left: percent(50),
+                                            ..default()
+                                        },
+                                        BackgroundColor(Color::srgb(0.2, 0.65, 0.8)),
+                                    ));
+                                    if yaw {
+                                        thumb.insert(YawThumb);
+                                    }
+                                });
                         });
                     });
+                }
                 panel.spawn(text(
                     "Enter applies all fields.\nEscape cancels. Tab changes field.",
                     13.,
@@ -536,7 +628,7 @@ pub(super) fn finish(
     mut captions: Query<&mut Text, With<Caption>>,
     mut rows: Query<(&FieldRow, &mut Node, &mut Visibility), Without<Root>>,
     mut labels: Query<(&FieldLabel, &mut Text), Without<Caption>>,
-    yaw_sliders: Query<(), With<YawSlider>>,
+    form_sliders: Query<(), (With<Slider>, With<Control>)>,
 ) {
     let Some(mut draft) = session.transform_edit.take() else {
         if let Ok(mut root) = roots.single_mut() {
@@ -643,7 +735,7 @@ pub(super) fn finish(
             && focus.get() != Some(entity)
             && !focus
                 .get()
-                .is_some_and(|focused| yaw_sliders.contains(focused))
+                .is_some_and(|focused| form_sliders.contains(focused))
         {
             focus.set(entity, FocusCause::Navigated);
         }
@@ -667,17 +759,15 @@ fn displayed_yaw(value: &str) -> Option<f32> {
         .then(|| ((value + 180.).rem_euclid(360.) - 180.) as f32)
 }
 
-pub(super) fn yaw_change(
+pub(super) fn slider_change(
     event: On<ValueChange<f32>>,
-    sliders: Query<(), With<YawSlider>>,
+    sliders: Query<&Control, With<Slider>>,
     windows: Query<&Window>,
     session: Res<Session>,
     mut fields: Query<(&Field, &mut EditableText)>,
 ) {
-    if !sliders.contains(event.source)
-        || !windows.single().is_ok_and(|w| w.focused)
+    if !windows.single().is_ok_and(|w| w.focused)
         || !event.value.is_finite()
-        || !(-180. ..=180.).contains(&event.value)
         || session.play.is_some()
         || session.drag.is_some()
         || session.stroke.is_some()
@@ -687,43 +777,71 @@ pub(super) fn yaw_change(
     {
         return;
     }
-    let Some(draft) = &session.transform_edit else {
+    let (Ok(control), Some(draft)) = (sliders.get(event.source), &session.transform_edit) else {
         return;
     };
-    if !draft.original.has_yaw() {
-        return;
-    }
-    let Some((_, mut field)) = fields.iter_mut().find(|(field, _)| field.0 == 3) else {
+    let Some(spec) = draft.original.slider(*control, session.snap) else {
         return;
     };
-    if field.is_composing() || displayed_yaw(&field.value().to_string()) == Some(event.value) {
+    if !(spec.min..=spec.max).contains(&event.value) {
         return;
     }
-    let original = draft.original.values()[3].clone();
-    let value = if displayed_yaw(&original) == Some(event.value) {
+    let Some((_, mut field)) = fields.iter_mut().find(|(field, _)| field.0 == spec.field) else {
+        return;
+    };
+    let current = field.value().to_string();
+    if field.is_composing() || (spec.valid(&current) && spec.display(&current) == Some(event.value))
+    {
+        return;
+    }
+    let original = draft.original.values()[spec.field].clone();
+    let value = if spec.display(&original) == Some(event.value) {
         original
     } else {
-        let step = if session.snap { 15. } else { 1. };
-        (f64::from((event.value / step).round() * step)).to_string()
+        f64::from(((event.value / spec.step).round() * spec.step).clamp(spec.min, spec.max))
+            .to_string()
     };
     field.clear();
     field.editor_mut().set_text(&value);
 }
 
-pub(super) fn yaw_sync(
+type FormSliders<'w, 's> = Query<
+    'w,
+    's,
+    (
+        Entity,
+        &'static Control,
+        &'static SliderValue,
+        &'static SliderRange,
+        &'static SliderStep,
+        Has<InteractionDisabled>,
+    ),
+    With<Slider>,
+>;
+
+pub(super) fn slider_sync(
     mut commands: Commands,
     session: Res<Session>,
-    mut rows: Query<(&mut Node, &mut Visibility), With<YawRow>>,
-    sliders: Query<(Entity, &SliderValue, &SliderStep, Has<InteractionDisabled>), With<YawSlider>>,
-    mut thumbs: Query<&mut Node, (With<YawThumb>, Without<YawRow>)>,
-    mut labels: Query<&mut Text, With<YawLabel>>,
+    mut rows: Query<(&SliderRow, &mut Node, &mut Visibility)>,
+    sliders: FormSliders,
+    mut thumbs: Query<(&SliderHandle, &mut Node), Without<SliderRow>>,
+    mut labels: Query<(&SliderLabel, &mut Text)>,
 ) {
-    let draft = session
-        .transform_edit
-        .as_ref()
-        .filter(|draft| draft.original.has_yaw());
-    let visible = draft.is_some();
-    for (mut node, mut visibility) in &mut rows {
+    let spec = |control| {
+        session
+            .transform_edit
+            .as_ref()
+            .and_then(|draft| draft.original.slider(control, session.snap))
+    };
+    let value = |spec: SliderSpec| {
+        session
+            .transform_edit
+            .as_ref()
+            .and_then(|draft| spec.display(&draft.fields[spec.field]))
+            .map(|value| value.clamp(spec.min, spec.max))
+    };
+    for (row, mut node, mut visibility) in &mut rows {
+        let visible = spec(row.0).is_some();
         node.display = if visible {
             Display::Flex
         } else {
@@ -735,37 +853,42 @@ pub(super) fn yaw_sync(
             Visibility::Hidden
         };
     }
-    let value = draft.and_then(|draft| displayed_yaw(&draft.fields[3]));
-    for (entity, current, step, disabled) in &sliders {
-        if disabled == visible {
-            if visible {
+    for (entity, control, current, range, step, disabled) in &sliders {
+        let actual = spec(*control);
+        if disabled == actual.is_some() {
+            if actual.is_some() {
                 commands.entity(entity).remove::<InteractionDisabled>();
             } else {
                 commands.entity(entity).insert(InteractionDisabled);
             }
         }
-        if let Some(value) = value
-            && current.0 != value
+        if let Some(spec) = actual {
+            if let Some(value) = value(spec)
+                && current.0 != value
+            {
+                commands.entity(entity).insert(SliderValue(value));
+            }
+            if range.start() != spec.min || range.end() != spec.max {
+                commands
+                    .entity(entity)
+                    .insert(SliderRange::new(spec.min, spec.max));
+            }
+            if step.0 != spec.step {
+                commands.entity(entity).insert(SliderStep(spec.step));
+            }
+        }
+    }
+    for (thumb, mut node) in &mut thumbs {
+        if let Some(spec) = spec(thumb.0)
+            && let Some(value) = value(spec)
         {
-            commands.entity(entity).insert(SliderValue(value));
-        }
-        let actual_step = if session.snap { 15. } else { 1. };
-        if step.0 != actual_step {
-            commands.entity(entity).insert(SliderStep(actual_step));
+            node.left = percent((value - spec.min) / (spec.max - spec.min) * 100.);
         }
     }
-    if let Some(value) = value {
-        for mut thumb in &mut thumbs {
-            thumb.left = percent((value + 180.) / 360. * 100.);
+    for (label, mut text) in &mut labels {
+        if let Some(spec) = spec(label.0) {
+            **text = spec.label.into();
         }
-    }
-    for mut label in &mut labels {
-        **label = if session.snap {
-            "Yaw slider | 15 deg snap"
-        } else {
-            "Yaw slider | 1 deg step"
-        }
-        .into();
     }
 }
 
@@ -1193,3 +1316,7 @@ mod tests {
 #[cfg(test)]
 #[path = "properties_yaw_tests.rs"]
 mod yaw_tests;
+
+#[cfg(test)]
+#[path = "properties_value_tests.rs"]
+mod value_tests;

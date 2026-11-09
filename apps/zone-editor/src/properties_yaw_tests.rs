@@ -1,7 +1,7 @@
 //! Real Bevy field/slider observer checks without a window or input backend.
 use super::*;
 
-fn fixture(origin: [f64; 3], target: u8, snap: bool) -> (App, Entity) {
+pub(super) fn fixture(origin: [f64; 3], target: u8, snap: bool) -> (App, Entity) {
     let mut seed = Editor::new(Zone::default()).unwrap();
     seed.execute(
         serde_json::from_slice(include_bytes!(
@@ -21,13 +21,16 @@ fn fixture(origin: [f64; 3], target: u8, snap: bool) -> (App, Entity) {
     for plant in &mut zone.plants {
         plant.position = shift(plant.position);
         plant.yaw_degrees = 225.123456789;
+        plant.scale = 1.234567891;
     }
     for marker in &mut zone.markers {
         marker.position = shift(marker.position);
         marker.yaw_degrees = 225.123456789;
+        marker.radius_metres = 12.345678901;
         marker.definition = Some("quest.precision-fixture".into());
     }
     for path in &mut zone.paths {
+        path.width_metres = 4.123456789;
         for point in &mut path.points {
             *point = shift(*point);
         }
@@ -56,6 +59,7 @@ fn fixture(origin: [f64; 3], target: u8, snap: bool) -> (App, Entity) {
             session.path_selected = Some(1002);
             session.path_point = Some(0);
         }
+        5 => session.path_selected = Some(1002),
         _ => {}
     }
     let mut app = App::new();
@@ -68,11 +72,11 @@ fn fixture(origin: [f64; 3], target: u8, snap: bool) -> (App, Entity) {
             spawn_transform: target == 4,
             ..default()
         })
-        .add_observer(yaw_change)
+        .add_observer(slider_change)
         .add_observer(activate)
         .add_systems(Startup, setup)
         .add_systems(Update, keyboard)
-        .add_systems(PostUpdate, (finish, yaw_sync).chain());
+        .add_systems(PostUpdate, (finish, slider_sync).chain());
     app.world_mut().spawn(Window {
         resolution: (3440, 1440).into(),
         focused: true,
@@ -86,7 +90,7 @@ fn fixture(origin: [f64; 3], target: u8, snap: bool) -> (App, Entity) {
         .unwrap();
     (app, slider)
 }
-fn change(app: &mut App, slider: Entity, value: f32, is_final: bool) {
+pub(super) fn change(app: &mut App, slider: Entity, value: f32, is_final: bool) {
     app.world_mut().trigger(ValueChange {
         source: slider,
         value,
@@ -94,7 +98,7 @@ fn change(app: &mut App, slider: Entity, value: f32, is_final: bool) {
     });
     app.update();
 }
-fn key(app: &mut App, key: KeyCode) {
+pub(super) fn key(app: &mut App, key: KeyCode) {
     app.world_mut()
         .resource_mut::<ButtonInput<KeyCode>>()
         .press(key);
@@ -214,7 +218,7 @@ fn noops_cancel_hidden_targets_invalid_events_and_focus_loss_preserve_source_and
     assert_eq!(app.world().resource::<Session>().editor.zone(), &before);
     assert_eq!(app.world().resource::<Session>().editor.revision(), 2);
     assert_eq!(app.world().resource::<Session>().editor.history(), (0, 1));
-    for target in 0..5 {
+    for target in 0..6 {
         let (mut app, slider) = fixture([0.; 3], target, true);
         let before = app.world().resource::<Session>().editor.zone().clone();
         let original = app
@@ -276,7 +280,7 @@ fn noops_cancel_hidden_targets_invalid_events_and_focus_loss_preserve_source_and
 }
 #[test]
 fn cpu_layout_keeps_yaw_slider_exact_fields_and_apply_controls_inside_properties() {
-    for target in 0..5 {
+    for target in 0..6 {
         let (mut app, slider) = fixture([0.; 3], target, true);
         crate::headless_ui::add_layout(&mut app);
         for _ in 0..3 {
@@ -295,7 +299,10 @@ fn cpu_layout_keeps_yaw_slider_exact_fields_and_apply_controls_inside_properties
             .query::<(&Control, &ComputedNode, &bevy::ui::UiGlobalTransform)>()
             .iter(app.world())
         {
-            if matches!(control, Control::YawSlider) && !visible {
+            if (matches!(control, Control::YawSlider) && !visible)
+                || (matches!(control, Control::ValueSlider) && !matches!(target, 1 | 2 | 3 | 5))
+            {
+                assert_eq!(computed.size(), Vec2::ZERO);
                 continue;
             }
             let centre = transform.affine().translation;

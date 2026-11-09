@@ -14,7 +14,7 @@ from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def run(output, binary, selected_case):
+def run(output, binary, selected_case, values=False):
     output = output.resolve(); output.mkdir(parents=True, exist_ok=False)
     binary = binary.resolve(); cases = []
     env = dict(os.environ, WGPU_BACKEND='vulkan', VK_INSTANCE_LAYERS='VK_LAYER_KHRONOS_validation', VK_LOADER_DEBUG='layer')
@@ -25,7 +25,11 @@ def run(output, binary, selected_case):
             continue
         folder = output / name; folder.mkdir()
         source, saved, report, logfile = [folder / part for part in ['source.json', 'saved.json', 'state.json', 'editor.log']]
-        zone = json.loads(seed.read_text()); zone['origin'] = origin; zone['paths'] = []
+        zone = json.loads(seed.read_text()); zone['origin'] = origin
+        if not values: zone['paths'] = []
+        else:
+            zone['paths'][0]['points'] = [[origin[0] - 8, origin[1] + .03, origin[2] - 8], [origin[0] + 8, origin[1] + .03, origin[2] - 8]]
+            zone['paths'][0]['width_metres'] = 4.123456789
         zone['spawn'] = [origin[0], origin[1] + .0625, origin[2] + 6]
         zone['objects'] = zone['objects'][:1]
         obj = zone['objects'][0]
@@ -34,7 +38,8 @@ def run(output, binary, selected_case):
             for entry in entries:
                 entry['position'] = [a + b for a, b in zip(origin, offset)]
                 entry['yaw_degrees'] = 225.123456789
-        zone['plants'][0]['scale'] = 1.25; zone['markers'][0]['radius_metres'] = 2.5
+        zone['plants'][0]['scale'] = 1.234567891 if values else 1.25
+        zone['markers'][0]['radius_metres'] = 12.345678901 if values else 2.5
         zone['markers'][0]['definition'] = 'quest.precision-fixture'
         source.write_text(json.dumps(zone)); original_bytes = source.read_bytes()
         with logfile.open('w') as log:
@@ -66,24 +71,33 @@ def run(output, binary, selected_case):
                     desktop.key('F12'); wait(lambda: capture_ready(picture), 30)
                     picture.replace(folder / f'{label}.png')
                 records = []
-                for index, (target, key, selection, desired, snap) in enumerate([
-                    ('Object(1)', 'objects', 'selected', 90., True),
-                    ('Plant(1001)', 'plants', 'plant_selected', 23., False),
-                    ('Marker(1000)', 'markers', 'marker_selected', 45., True),
-                ]):
+                scenarios = [
+                    ('Object(1)', 'objects', 'selected', 90., True, 3, [-180., 180.], 15., False),
+                    ('Plant(1001)', 'plants', 'plant_selected', 23., False, 3, [-180., 180.], 1., False),
+                    ('Marker(1000)', 'markers', 'marker_selected', 45., True, 3, [-180., 180.], 15., False),
+                ] if not values else [
+                    ('Plant(1001)', 'plants', 'plant_selected', 1.5, True, 4, [.25, 8.], .25, False),
+                    ('Marker(1000)', 'markers', 'marker_selected', 3.25, True, 4, [.25, 64.], .25, False),
+                    ('Guide(1002)', 'paths', 'path_selected', 6., True, 0, [.25, 32.], .25, False),
+                    ('Guide(1002)', 'paths', 'path_selected', 8., True, 3, [.25, 32.], .25, True),
+                ]
+                control_name = 'ValueSlider' if values else 'YawSlider'
+                for index, (target, key, selection, desired, snap, field, limits, step, point) in enumerate(scenarios):
                     control(target, 'content')
-                    wait(lambda: state()[selection] == (1 if index == 0 else 1001 if index == 1 else 1000))
+                    wait(lambda: state()[selection] == int(target.split('(')[1][:-1]))
+                    if point:
+                        control('Point(1)'); wait(lambda: state()['path_point'] is not None)
                     if state()['snap'] != snap:
                         control('Snap'); wait(lambda: state()['snap'] == snap)
                     control('Frame'); before = fresh(); document = copy.deepcopy(before['document'])
                     control('Transform'); wait(lambda: state()['transform_edit'] is not None)
                     original_fields = state()['transform_edit']['fields']
-                    assert original_fields[3] == '225.123456789'
-                    item = wait(lambda: next((c for c in state()['transform_controls'] if c['target'] == 'YawSlider' and all(v > 0 for v in c['size'])), None))
-                    assert item['range'] == [-180., 180.]
+                    if not values: assert original_fields[3] == '225.123456789'
+                    item = wait(lambda: next((c for c in state()['transform_controls'] if c['target'] == control_name and all(v > 0 for v in c['size'])), None))
+                    assert item['range'] == limits
                     x, y = item['centre']; width = item['size'][0]
-                    thumb = [x - width / 2 + 7 + (width - 14) * (item['value'] + 180) / 360, y]
-                    point = [x - width / 2 + 7 + (width - 14) * (desired + 180) / 360, y]
+                    thumb = [x - width / 2 + 7 + (width - 14) * (item['value'] - limits[0]) / (limits[1] - limits[0]), y]
+                    point = [x - width / 2 + 7 + (width - 14) * (desired - limits[0]) / (limits[1] - limits[0]), y]
                     desktop.move(window, thumb, 1); desktop.button(1, True)
                     try:
                         wait(lambda: state()['left_mouse_down'])
@@ -92,11 +106,11 @@ def run(output, binary, selected_case):
                     finally:
                         desktop.button(1, False)
                     wait(lambda: not state()['left_mouse_down']); current = fresh()
-                    fields = current['transform_edit']['fields']; yaw = float(fields[3]); step = 15 if snap else 1
-                    assert yaw % step == 0 and abs(yaw - desired) <= (0 if snap else 2)
-                    assert fields[:3] == original_fields[:3] and fields[4:] == original_fields[4:]
+                    fields = current['transform_edit']['fields']; yaw = float(fields[field])
+                    assert yaw % step == 0 and abs(yaw - desired) <= (step if values else 0 if snap else 2)
+                    assert fields[:field] == original_fields[:field] and fields[field + 1:] == original_fields[field + 1:]
                     assert current['document'] == document and current['revision'] == before['revision']
-                    capture(f'{index}-pending-yaw')
+                    capture(f'{index}-pending-property')
                     control('Apply', 'transform_controls')
                     wait(lambda: state()['revision'] == before['revision'] + 1 and state()['transform_edit'] is None)
                     expected = copy.deepcopy(document)
@@ -104,8 +118,10 @@ def run(output, binary, selected_case):
                         expected[key][0]['pose']['yaw_degrees'] = yaw
                         edit = dict(op='transform', id=1, pose=expected[key][0]['pose'])
                     else:
-                        expected[key][0]['yaw_degrees'] = yaw
-                        edit = dict(op='put_plant' if key == 'plants' else 'put_marker', **({'plant': expected[key][0]} if key == 'plants' else {'marker': expected[key][0]}))
+                        property_name = ('scale' if key == 'plants' else 'radius_metres' if key == 'markers' else 'width_metres') if values else 'yaw_degrees'
+                        expected[key][0][property_name] = yaw
+                        singular = {'plants': 'plant', 'markers': 'marker', 'paths': 'path'}[key]
+                        edit = dict(op='put_' + singular, **{singular: expected[key][0]})
                     assert state()['document'] == expected and state()['history'] == [index + 1, 0]
                     prior, commands, oracle = [folder / f'{index}.{suffix}' for suffix in ['prior.json', 'commands.jsonl', 'oracle.json']]
                     prior.write_text(json.dumps(document)); commands.write_text(json.dumps(dict(command='apply', expected_revision=0, edits=[edit])) + '\n')
@@ -115,11 +131,11 @@ def run(output, binary, selected_case):
                     # Opening and applying the initialized slider without touching
                     # it must retain the exact f64 original and pending redo.
                     control('Transform'); wait(lambda: state()['transform_edit'] is not None)
-                    assert state()['transform_edit']['fields'][3] == '225.123456789'
+                    assert state()['transform_edit']['fields'][field] == original_fields[field]
                     control('Apply', 'transform_controls'); wait(lambda: state()['transform_edit'] is None)
                     assert state()['revision'] == before['revision'] + 2 and state()['history'] == [index, 1]
                     control('Command(Redo)'); wait(lambda: state()['document'] == expected and state()['revision'] == before['revision'] + 3)
-                    records.append(dict(target=target, yaw=yaw, snap=snap, complete_headless_document_equal=True, history_roundtrip=True))
+                    records.append(dict(target=target, control=control_name, field=field, value=yaw, snap=snap, complete_headless_document_equal=True, history_roundtrip=True))
                 control('Command(Save)'); wait(lambda: not state()['unsaved_changes'])
                 assert json.loads(saved.read_text()) == expected and source.read_bytes() == original_bytes
                 final = fresh(); subprocess.run(['wmctrl', '-ic', hex(window)], check=True); process.wait(timeout=20); assert process.returncode == 0
@@ -129,7 +145,7 @@ def run(output, binary, selected_case):
         text = logfile.read_text(); assert 'Insert instance layer "VK_LAYER_KHRONOS_validation"' in text
         case = dict(name=name, viewport=final['viewport'], gpu=final['gpu'], validation_layer_active=True, gpu_diagnostics=check_gpu_diagnostics(text, allow_surface_resize=False), records=records)
         (folder / 'qualification.json').write_text(json.dumps(case, indent=2) + '\n'); cases.append(case)
-    result = dict(cases=cases, editor_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(), scope='Linux owned synthetic input, native 3440x1440 only; no Windows or multiplayer claim')
+    result = dict(mode='values' if values else 'yaw', cases=cases, editor_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(), scope='Linux owned synthetic input, native 3440x1440 only; no Windows or multiplayer claim')
     (output / 'qualification.json').write_text(json.dumps(result, indent=2) + '\n'); print(json.dumps(result, indent=2))
 
 
@@ -137,5 +153,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--binary', type=Path, default=Path('target/debug/theia-zone-editor'))
+    parser.add_argument('--values', action='store_true', help='qualify plant scale, marker radius and whole/point guide width instead of yaw')
     parser.add_argument('--case', choices=['both', 'local', 'far'], default='both')
-    args = parser.parse_args(); run(args.output, args.binary, args.case)
+    args = parser.parse_args(); run(args.output, args.binary, args.case, args.values)

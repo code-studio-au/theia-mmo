@@ -2803,3 +2803,48 @@ command-oracle, no-op/redo and save checks for a future authorized run. It was
 compiled but not run while the user reserves mouse/display access. Native UI/
 input/GPU and Windows acceptance remain pending; no desktop input or display
 use occurred. Source schema, Bevy/Avian/Renet pins and gameplay are unchanged.
+
+## Bounded property sliders — 9 November 2026
+
+P5-17 / P3-15 / P1-10; prerequisites are the exact plant/marker/guide forms,
+shared candidate Apply and the standard Bevy controlled-widget yaw slice.
+The properties form now also exposes plant scale (0.25..8), marker authoring
+radius (0.25..64 metres) and guide width (0.25..32 metres), with 0.25 steps.
+Guide width works in both whole-guide and selected-point forms; moving it changes
+only width. These fixed steps are independent of the movement/rotation Snap
+preference. Labels identify scale versus metres; exact numeric fields remain
+available. Object and spawn forms hide/disable this second slider; objects retain
+their existing uniform scale gizmo and exact size fields.
+
+Both tracks share the same internal controlled-widget/form path. Range, step,
+field index and label derive from the original target, while the retained
+Transform/PutPlant/PutMarker/PutPath commands remain authoritative. Slider
+notifications edit only pending fields; Apply validates the complete candidate
+and makes one undo entry. Unchanged/returned values preserve their original f64
+strings; bad typed numbers can be repaired with a valid slider edit. Foreign,
+nonfinite, out-of-range and unsupported-target notifications are ignored. Neither
+slider release nor initialization commits source. Existing yaw snapping and
+modal focus behavior are retained, including support for keyboard slider focus.
+
+Acceptance: 113 focused Rust tests (55 domain / 58 editor), formatting, strict
+workspace/all-target Clippy, Python compilation and an editor build pass. Actual
+Bevy SliderPlugin event/form tests cover all three values and both guide forms
+at fractional local/far origins. Complete documents preserve positions, yaw,
+names, kinds, definition keys and every guide point; one-entry Apply/Undo/Redo,
+exact no-ops/return-to-original, pending redo, hidden targets, invalid events and
+invalid-number recovery pass. Existing yaw regressions also pass with precise
+scale/radius/width fixtures. Embedded-font/editable-text CPU layout now checks
+all six form targets (object, plant, marker, guide point, spawn, whole guide),
+including every visible numeric field and both relevant tracks plus Apply/Cancel
+inside the 300 x 600 Properties region at 3440 x 1440.
+
+Evidence: ignored build/zone-value-slider-{yaw-regression-tests,integration-tests,
+all-tests,clippy,build}.log; the first intermediate yaw layout run failed because
+its test did not yet exclude the newly hidden value control, and is not final
+acceptance. The final all-tests run includes the updated visible/hidden geometry
+checks. tools/qualify_zone_yaw.py --values prepares a future owned local/far native
+scale/radius/whole/point width workflow with full headless command oracles and
+no-op/redo/save checks. It was compiled but not run under the user’s desktop
+restriction. Native UI/input/GPU and Windows acceptance remain pending; the
+earlier wheel-delivery gap remains open. No display, mouse or keyboard input was
+used. Source schema, engine pins and gameplay behavior are unchanged.

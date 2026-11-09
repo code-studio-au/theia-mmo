@@ -435,7 +435,7 @@ fn run() -> Result<(), String> {
     .add_observer(outliner::activate)
     .add_observer(naming::activate)
     .add_observer(properties::activate)
-    .add_observer(properties::yaw_change)
+    .add_observer(properties::slider_change)
     .add_observer(file_picker::activate)
     .add_systems(
         Startup,
@@ -485,7 +485,7 @@ fn run() -> Result<(), String> {
         PostUpdate,
         (
             naming::finish,
-            (properties::finish, properties::yaw_sync).chain(),
+            (properties::finish, properties::slider_sync).chain(),
             file_picker::finish,
         )
             .chain()

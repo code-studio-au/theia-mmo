@@ -2,6 +2,13 @@ Headless work resumed, 9 November 2026: the user reserves the display and
 mouse. Continue without desktop input, display inspection or native window
 checks until renewed authorization. Commit locally; do not push.
 
+Bounded property sliders, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Plant scale, marker radius and whole/point-guide width now use quarter-step
+sliders in the retained exact form. Shared controlled-widget handling preserves
+precision, validation and one-entry undo. All 113 focused Rust tests and CPU
+layout pass; native UI/input/GPU acceptance remains pending. See [the zone record](ZONE_EDITOR.md#bounded-property-sliders--9-november-2026).
+Continue headlessly after local commits; no desktop input/display use; no push.
+
 Transform yaw slider, 9 November 2026 (P5-17 / P3-15 / P1-10):
 Object/plant/marker properties now expose a standard Bevy yaw slider alongside
 exact fields. It edits the pending form; Apply remains one shared validated undo

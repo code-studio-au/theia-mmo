@@ -55,7 +55,8 @@ Select an object, plant or NPC/quest marker in the content list, then use
 expose position, yaw and XYZ size; plants expose position, yaw and scale; markers
 expose position, yaw and authoring radius. The yaw slider edits the pending form
 in 15-degree steps with Snap enabled or one-degree steps otherwise; exact numeric
-values remain available. Apply commits one validated undo entry.
+values remain available. Plant scale, marker radius and guide width also have
+quarter-step sliders. Apply commits one validated undo entry.
 For guides, **Whole guide** exposes width; **Previous point / Next point** select
 a point for exact XYZ and width editing. **Insert point / Remove point** expose
 topology edits directly, with the same validation and undo. Rename, Duplicate
