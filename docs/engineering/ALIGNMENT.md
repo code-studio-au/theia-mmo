@@ -1,3 +1,11 @@
+Plant and marker properties, 9 November 2026 (P5-17 / P3-15 / P1-10):
+The docked Transform form now edits plants and NPC/quest authoring markers as
+well as primitives. Five relevant fields expose position/yaw and scale or radius;
+shared candidate commands preserve names, kinds and marker definition keys.
+Apply/Cancel, exact f64 values, modal input isolation and one-entry history remain.
+The primitive form still exposes all seven fields. See [the zone record](../ZONE_EDITOR.md#plant-and-marker-transform-properties--9-november-2026)
+for prerequisites, acceptance and evidence. Continue locally; no push.
+
 Vegetation properties, 9 November 2026 (P5-17 / P3-15 / P1-10):
 The application properties area now exposes contextual scatter radius (1..32 m)
 and integer plants-per-click (1..64) sliders for tree/shrub scatter tools.

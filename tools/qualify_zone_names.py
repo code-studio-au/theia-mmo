@@ -14,7 +14,7 @@ from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def run(output, binary, properties=False, feedback_only=False):
+def run(output, binary, properties=False, feedback_only=False, annotations=False):
     output = output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     binary = binary.resolve()
@@ -26,6 +26,11 @@ def run(output, binary, properties=False, feedback_only=False):
         for identifier, primitive, position in [(4,'sphere',[16,1,8]),(5,'cylinder',[-8,1,12])]:
             base['objects'].append(dict(id=identifier, name=f'Numeric {primitive}', primitive=primitive,
                                         pose=dict(position=position,yaw_degrees=0,size=[2,2,2])))
+    if annotations:
+        base['plants'].append(dict(id=1003,name='Small shrub',kind='shrub',position=[12,0,16],yaw_degrees=0,scale=1))
+        base['markers'][0]['definition']='quest.note'
+        base['markers'].append(dict(id=1004,name='Guide NPC',kind='npc',position=[-12,0,16],yaw_degrees=0,
+                                    radius_metres=1,definition='npc.guide'))
     cases = []
     checks = []
     final_documents = {}
@@ -396,6 +401,71 @@ def run(output, binary, properties=False, feedback_only=False):
             assert state()['document'] == expected
             key('f')
             capture(f'properties-{identifier}-applied')
+        if annotations:
+            for target,selected,identifier,group,op,extent,value in [
+                ('Plant(1001)','plant_selected',1001,'plants','put_plant','scale',1.25),
+                ('Plant(1003)','plant_selected',1003,'plants','put_plant','scale',.75),
+                ('Marker(1000)','marker_selected',1000,'markers','put_marker','radius_metres',2.75),
+                ('Marker(1004)','marker_selected',1004,'markers','put_marker','radius_metres',1.5),
+            ]:
+                select(target,selected,identifier)
+                before=copy.deepcopy(state()['document'])
+                revision=state()['revision']; history=state()['history']
+                item=copy.deepcopy(next(i for i in before[group] if i['id']==identifier))
+                item['position']=[origin[0]+24.125,origin[1]+1.5,origin[2]+32.25]
+                item['yaw_degrees']=-22.5;item[extent]=value
+                command=dict(op=op,**{op[4:]:item})
+                prefix=output/f'{label}.transform-{identifier}'
+                source=Path(str(prefix)+'.before.json');source.write_text(json.dumps(before))
+                commands=Path(str(prefix)+'.commands.jsonl')
+                commands.write_text(json.dumps(dict(command='apply',expected_revision=0,edits=[command]))+'\n')
+                expected_path=Path(str(prefix)+'.expected.json')
+                subprocess.run([str(binary),'--headless','--zone',str(source),'--commands',str(commands),
+                    '--output',str(expected_path)],check=True,capture_output=True)
+                expected=json.loads(expected_path.read_text())
+                click(next(b for b in state()['workspace_controls'] if b['target']=='Transform'))
+                wait(lambda:state()['transform_edit'] is not None)
+                assert len(draft()['fields'])==5
+                wait(lambda:draft()['selection']==[0,len(draft()['fields'][0])])
+                visible=[b for b in state()['transform_controls'] if b['target'].startswith('Field(') and all(x>0 for x in b['size'])]
+                assert len(visible)==5 and all(b['centre'][0]>3140 and b['centre'][1]>840 for b in visible)
+                field(4,'65')
+                control('Apply')
+                wait(lambda:'0.25..8' in state()['status'] if group=='plants' else '0.25..64' in state()['status'])
+                assert state()['document']==before and state()['revision']==revision and state()['history']==history
+                assert draft()['fields'][4]=='65'
+                receipt=agent([command]);assert not receipt['accepted'] and receipt['revision']==revision
+                for index,number in enumerate([*item['position'],item['yaw_degrees'],item[extent]]):
+                    field(index,str(number))
+                    if index<4:
+                        key('Tab');wait(lambda:draft()['active']==index+1)
+                key('Tab');wait(lambda:draft()['active']==0)
+                chord('Shift_L','Tab');wait(lambda:draft()['active']==4)
+                assert state()['status'].startswith('Editing transform')
+                capture(f'properties-{identifier}-ready')
+                control('Apply')
+                wait(lambda:state()['transform_edit'] is None and state()['revision']==revision+1)
+                assert state()['document']==expected and state()['history']==[history[0]+1,0]
+                chord('Control_L','z');wait(lambda:state()['revision']==revision+2)
+                assert state()['document']==before
+                # Cancelling a five-field form must preserve a pending redo.
+                key('F9');wait(lambda:state()['transform_edit'] is not None)
+                field(4,'bad');control('Cancel')
+                wait(lambda:state()['transform_edit'] is None)
+                assert state()['history']==[history[0],1] and state()['revision']==revision+2
+                chord('Control_L','y');wait(lambda:state()['revision']==revision+3)
+                assert state()['document']==expected
+                key('F9');wait(lambda:state()['transform_edit'] is not None)
+                control('Apply');wait(lambda:state()['transform_edit'] is None)
+                assert state()['document']==expected and state()['revision']==revision+3
+                assert state()['history']==[history[0]+1,0]
+            checks.append('tree/shrub and NPC/quest five-field properties: visible rows and tab wrap, range refusal/correction, metadata-preserving headless equivalence, modal agent refusal, one-entry undo/redo, cancel preserves redo and unchanged Apply')
+            # Reusing the form for a primitive restores all seven fields.
+            select('Object(5)','selected',5)
+            key('F9');wait(lambda:state()['transform_edit'] is not None)
+            assert len(draft()['fields'])==7
+            control('Field(6)');wait(lambda:draft()['active']==6)
+            control('Cancel');wait(lambda:state()['transform_edit'] is None)
         # Unchanged submit and both cancellation paths preserve history and values.
         expected = copy.deepcopy(state()['document'])
         revision = state()['revision']
@@ -524,7 +594,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--binary', type=Path, default=ROOT/'target/debug/theia-zone-editor')
+    parser.add_argument('--annotations',action='store_true',help='Also qualify plant and marker property forms')
     parser.add_argument('--properties', action='store_true', help='Also qualify numeric primitive transform fields')
     parser.add_argument('--feedback-only', action='store_true', help='Run the focused correction-feedback desktop case')
     args = parser.parse_args()
-    print(json.dumps(run(args.output,args.binary,args.properties,args.feedback_only),indent=2))
+    print(json.dumps(run(args.output,args.binary,args.properties or args.annotations,args.feedback_only,args.annotations),indent=2))

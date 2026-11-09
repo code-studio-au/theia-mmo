@@ -15,8 +15,10 @@ Terrain properties use sliders for radius, strength, blend and flatten level.
 In Vegetation, choose **Scatter trees** or **Scatter shrubs** to adjust scatter
 radius and plants per click in Properties. One ground click places the group
 as one undo entry.
-Select an object in the content list, then use **Edit transform** for exact numeric
-fields in the docked properties area; Apply commits one validated undo entry.
+Select an object, plant or NPC/quest marker in the content list, then use
+**Transform...** for exact numeric fields in the docked properties area. Objects
+expose position, yaw and XYZ size; plants expose position, yaw and scale; markers
+expose position, yaw and authoring radius. Apply commits one validated undo entry.
 Rename, Duplicate and Ground are also available there. **Shortcuts** reveals the
 keyboard reference. Visual and structured agent edits retain shared validation
 and undo; pending drafts are protected by workspace controls.

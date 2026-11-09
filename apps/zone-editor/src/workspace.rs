@@ -199,7 +199,11 @@ impl Control {
             .or(session.plant_selected)
             .is_some();
         match self {
-            Self::Transform => session.selected.is_some(),
+            Self::Transform => session
+                .selected
+                .or(session.plant_selected)
+                .or(session.marker_selected)
+                .is_some(),
             Self::Frame => {
                 (session.terrain_mode && session.editor.zone().terrain.is_some()) || selected
             }

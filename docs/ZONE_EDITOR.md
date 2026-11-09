@@ -1919,3 +1919,52 @@ Evidence: ignored `build/zone-scatter-controls-native-3440-v2/qualification.json
 `zone-scatter-controls-tests-v2.log`, `zone-scatter-controls-clippy-v2.log` and
 `zone-scatter-controls-build-v4.log`. Editor SHA-256:
 `1afef7ed59db50b90be09b981277589c460c2f433db7a01d17fbc4687b2201a7`.
+
+## Plant and marker transform properties — 9 November 2026
+
+P5-17 / P3-15 / P1-10 follow-up. Actual prerequisites are the retained standard
+Bevy docked TextInput form and shared PutPlant/PutMarker commands. The Transform
+button and F9 now open relevant fields for selected tree/shrub proxies or NPC/
+quest annotations. These show exact global f64 XYZ metres, yaw degrees and either
+dimensionless uniform scale or authoring radius in metres. Unused size rows hide
+through both Display::None and Visibility::Hidden, since standard TabNavigation
+follows inherited visibility. Tab/Shift-Tab navigation skips them. Reopening a primitive restores
+all seven position/yaw/size fields and their labels. Field buffers retain round-trip
+numeric strings. All values parse as finite f64 numbers; shared whole-candidate
+validation still owns bounds and ranges. Invalid Apply keeps the typed buffer and
+history, and actual edits clear stale errors. Apply commits one existing command;
+unchanged Apply and Cancel preserve source/revision/history, including pending
+redo. Name, kind, ID and optional marker definition are retained by cloning the
+selected source record. Marker radius remains an authoring footprint, and plant
+scale changes fixed visual proxies; neither creates gameplay behavior/collision.
+
+Existing modal focus/window-loss cancellation, pending-preview/playtest refusal,
+agent-mailbox busy refusal and atomic undo/redo are retained. This adds no source
+schema, transport or engine/plugin dependency change. Path/point numeric properties,
+catalogue pickers, resizable docking and viewport transform handles remain future
+application work.
+
+Acceptance covers all four plant/marker kinds at local and far origins, invalid
+and nonfinite fields, exact unchanged round trips, preserved metadata, shared
+candidate range refusal with pending redo, and one-entry undo/redo. Retained
+primitive and naming checks plus native actual 3440x1440 properties interaction
+qualify the reusable row/focus layout, Apply/Cancel, save and reopen. All these acceptance checks passed.
+
+The final source passes 78 focused Rust cases (51 domain / 27 editor), formatting
+and denied-warning workspace/all-target Clippy. Native local/far/reopen Linux
+runs use actual 3440x1440, RX 7900 XTX (RADV NAVI31), Vulkan device 29772 and active
+Khronos validation, with zero GPU/resize diagnostics in all three. Eight new
+plant/marker edits and six retained primitive edits match complete headless
+command documents. Saved reopen is exact with fresh zero history. Standard
+five-field Tab/Shift-Tab wrapping and restoration of all seven primitive fields
+pass; local/far plant and far NPC screenshots were visually inspected. One missed
+Control modifier was re-pressed before select-all; no mutating action was retried.
+Windows execution and gameplay multiplayer were not requalified by this UI slice.
+
+Evidence: ignored `build/zone-plant-marker-properties-native-3440-v2/qualification.json`,
+`*.properties-100{0,1,3,4}-ready.png` and all matching transform
+`.before.json` / `.commands.jsonl` / `.expected.json` pairs;
+`zone-plant-marker-properties-tests-v2.log`,
+`zone-plant-marker-properties-clippy-v2.log` and
+`zone-plant-marker-properties-build-v2.log`. Editor SHA-256:
+`68a4a728c39a0f0685ae778d92218d378d54641d9428c5405db00c5b75f5a5df`.
