@@ -1,3 +1,12 @@
+Native application controls accepted, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Content paging/wheel, filters, search, double-click framing and yaw/scale/radius/
+guide-width sliders pass native 3440 x 1440 checks at local/far origins, including
+Reset, Home/End, exact source/oracle equality and undo/redo. Vulkan validation is
+active with zero diagnostics. The earlier wheel-delivery gap is closed for these
+accepted runs after pre-launch synthetic-device creation. See [the record](../ZONE_EDITOR.md#native-application-controls-acceptance--9-november-2026).
+Continue after local commits; desktop access authorized; no push. Historical
+headless records below retain their original execution limitations.
+
 New untitled zones, 9 November 2026 (P5-17 / P3-15 / P1-10):
 New zone creates an undoable empty document. Its first Save chooses a filename;
 cancel/failed writes preserve untitled state and the prior file is never written.

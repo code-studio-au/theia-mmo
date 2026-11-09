@@ -124,6 +124,19 @@ class Desktop:
         """Guarded Linux wheel-axis input; XTEST wheel buttons may be ignored."""
         self.owned_focus(pointer=True)
         assert isinstance(lines,int) and 0<abs(lines)<=8
+        self.prepare_wheel()
+        self.owned_focus(pointer=True)
+        # Native input_event: timeval, type, code, value; REL_WHEEL + SYN_REPORT.
+        payload=struct.pack('llHHi',0,0,2,8,lines)+struct.pack('llHHi',0,0,0,0,0)
+        assert os.write(self.wheel_fd,payload)==len(payload)
+        time.sleep(.12)
+    def prepare_wheel(self):
+        """Create the input device before launching an event loop that uses it.
+
+        Enumeration by XInput does not prove a running Winit client has processed
+        its hierarchy change. Pre-launch creation avoids dropping its first wheel.
+        This method creates a device; it sends no mouse or keyboard events.
+        """
         if self.wheel_fd is None:
             descriptor=os.open('/dev/uinput',os.O_WRONLY|os.O_NONBLOCK|os.O_CLOEXEC)
             try:
@@ -140,11 +153,6 @@ class Desktop:
                 os.close(descriptor)
                 raise
             self.wheel_fd=descriptor
-        self.owned_focus(pointer=True)
-        # Native input_event: timeval, type, code, value; REL_WHEEL + SYN_REPORT.
-        payload=struct.pack('llHHi',0,0,2,8,lines)+struct.pack('llHHi',0,0,0,0,0)
-        assert os.write(self.wheel_fd,payload)==len(payload)
-        time.sleep(.12)
     def key_state(self,name,pressed):
         if pressed:self.owned_focus();self.held_keys.add(name)
         else:self.held_keys.discard(name)

@@ -28,11 +28,11 @@ def run(output, binary, selected_case):
         source.write_text(json.dumps(dict(schema=1, name='Content browsing', origin=origin, spawn=[origin[0], origin[1] + .0625, origin[2] + 6], objects=objects)))
         original = source.read_bytes()
         with logfile.open('w') as log:
+            desktop = Desktop()
+            desktop.prepare_wheel()
             process = subprocess.Popen([str(binary), '--zone', str(source), '--save-path', str(folder / 'unused.json'), '--report', str(report), '--mailbox', str(mailbox)], env=env, stdout=log, stderr=log)
-            desktop = None
             try:
                 window = wait(lambda: owned_window(process.pid), 45)
-                desktop = Desktop()
                 desktop.focus(window)
                 def state():
                     assert process.poll() is None, 'Editor exited'

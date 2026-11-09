@@ -2955,3 +2955,50 @@ diagnostics under the strict checker. Editor SHA-256:
 The initial v1 run stopped on a qualifier-only missing report key before the
 remaining interactions; it is not acceptance evidence. No Windows or multiplayer
 claim. Engine pins, schemas and gameplay authority are unchanged.
+
+## Native application controls acceptance — 9 November 2026
+
+P5-17 / P3-15 / P1-10. Following renewed desktop authorization, the current
+editor was exercised through owned-window mouse/keyboard input at 3440 x 1440.
+Earlier headless-only records retain their original limits; this is new native
+evidence. Content acceptance covers all 44 targets across three pages, wholly
+bounded rows, last-row selection, disabled boundary buttons, Linux wheel paging,
+type filters, Find/Clear search, search cancellation, property-modal isolation
+and double-click framing. Source, saved-state indicators and history remain
+unchanged by browsing. App-only screenshots were inspected.
+
+The initial renewed run passed local-origin checks but the far-origin run
+received no first wheel event, with focus/cursor still present. Creating the
+synthetic uinput device before launching Winit removes that startup dependency;
+no mutating event is retried. The new driver separates device creation from
+scroll delivery and retains focus/owned-pointer checks. The far-origin rerun
+passes. This is qualification infrastructure; no production wheel behavior was
+changed. Evidence is ignored build/zone-content-native-3440-v2/local/ and
+build/zone-content-native-3440-v3/far/, aggregated in
+build/zone-content-native-qualification.json. Failed v1/v2 far evidence is
+retained and excluded from acceptance.
+
+Native yaw acceptance passes object/plant/marker forms at both local/far
+fractional origins: held slider drags leave the full source/history untouched,
+Reset restores exact original fields, Home/End keep widget/field endpoints equal,
+and Apply makes one shared undo entry. Complete documents equal the structured
+headless-command oracle, Undo restores the exact prior source, untouched Apply
+preserves original f64 strings and pending redo, and Redo/Save reproduce the
+expected document. Evidence: ignored build/zone-yaw-native-3440-v1/ with
+--keyboard --reset, logs, reports, pending-property screenshots and manifests.
+
+Native scalar acceptance also passes plant scale, marker radius, whole-guide
+width and point-guide width at both local/far fractional origins. The same
+held-drag, Reset, Home/End, exact untouched-field, one-Apply, full-document oracle,
+undo/no-op/redo and exact-save checks pass. Evidence: ignored
+build/zone-values-native-3440-v1/ with --values --keyboard --reset, reports,
+logs, screenshots and qualification.json. All accepted content/yaw/scalar cases
+used AMD Radeon RX 7900 XTX (RADV NAVI31), Vulkan device 29772, with the validation
+layer explicitly confirmed inserted and zero strict GPU diagnostics. Their
+common editor SHA-256 is
+1af86253478939ecbe80e9eae259e4d77f0f9617176387d3e8db4e785f7d0bcb.
+The current 118 focused Rust tests, denied-warning workspace/all-target Clippy,
+formatting and build pass; Python qualification files compile. Native Tab routing
+is not claimed here (headless real-dispatch coverage remains); native Home/End
+and pointer routing are evidenced. Windows execution remains pending. Schema,
+engine pins, gameplay authority and networking are unchanged. No push.
