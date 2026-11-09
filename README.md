@@ -10,7 +10,7 @@ Choose **Objects, Sculpt, Paint, Paths / streams, NPC / quest markers, or Vegeta
 from the workspace bar. The left panel contains tools; the right column contains
 zone content and properties. **New zone, Save, Save As, Open, Reload, Undo, Redo, Frame selection and
 Playtest** are in the command bar, alongside the snap checkbox.
-**New zone** creates an untitled empty zone; Undo restores the prior content.
+**New zone** (Ctrl+N) creates an untitled empty zone; Undo restores the prior content.
 Its first **Save** opens Save As in the previous folder. It never writes to the
 previous file, and the active filename stays untitled through undo/redo until saved.
 Use **Open** (Ctrl+O) or **Save As** (Ctrl+Shift+S) to browse folders and zone
@@ -49,7 +49,7 @@ radius and plants per click in Properties. One ground click places the group
 as one undo entry.
 The content list has All / Objects / Guides / Markers / Plants / Terrain filters.
 They narrow the list while retaining the world and current selection.
-Use **Find...** for a name, kind or `#ID` substring; Apply updates the list and
+Use **Find...** (Ctrl+F) for a name, kind or `#ID` substring; Apply updates the list and
 **Clear search** restores entries within the current type filter. Double-click
 an entry to select and frame it; a single click selects it. The spawn row
 continues to frame the spawn immediately.

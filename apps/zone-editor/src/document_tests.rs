@@ -64,9 +64,19 @@ fn fixture(root: &Sandbox, origin: [f64; 3]) -> App {
         .init_resource::<outliner::Content>()
         .add_observer(workspace::activate)
         .add_observer(activate)
-        .add_systems(Startup, (workspace::setup, setup))
-        .add_systems(Update, (keyboard, workspace::sync, present).chain())
-        .add_systems(PostUpdate, finish);
+        .add_systems(Startup, (workspace::setup, setup, naming::setup))
+        .add_systems(
+            Update,
+            (
+                crate::keyboard,
+                keyboard,
+                naming::keyboard,
+                workspace::sync,
+                present,
+            )
+                .chain(),
+        )
+        .add_systems(PostUpdate, (finish, naming::finish).chain());
     app.world_mut().spawn(Window {
         resolution: (3440, 1440).into(),
         focused: true,
@@ -363,4 +373,86 @@ fn repeated_blank_new_preserves_redo_and_playtest_or_drafts_refuse_new() {
         app.world().resource::<Session>().editor.revision(),
         revision
     );
+}
+
+fn chord(app: &mut App, key: KeyCode) {
+    let mut keys = app.world_mut().resource_mut::<ButtonInput<KeyCode>>();
+    keys.press(KeyCode::ControlLeft);
+    keys.press(key);
+    app.update();
+    app.world_mut()
+        .resource_mut::<ButtonInput<KeyCode>>()
+        .reset_all();
+    app.update();
+}
+#[test]
+fn application_shortcuts_share_new_and_search_guards_without_framing_or_writing() {
+    for origin in [
+        [0.125, 0.25, -0.5],
+        [128_000_000_000.125, 20.25, -128_000_000_000.5],
+    ] {
+        let root = Sandbox::new();
+        let mut app = fixture(&root, origin);
+        let source = app.world().resource::<Session>().editor.zone().clone();
+        let target = app.world().resource::<View>().target;
+        let bytes = std::fs::read(root.0.join("original.zone.json")).unwrap();
+        chord(&mut app, KeyCode::KeyF);
+        assert!(
+            app.world()
+                .resource::<Session>()
+                .name_edit
+                .as_ref()
+                .is_some_and(|draft| !draft.is_authoring())
+        );
+        assert_eq!(app.world().resource::<View>().target, target);
+        assert!(!app.world().resource::<Session>().is_dirty());
+        chord(&mut app, KeyCode::KeyN);
+        assert_eq!(app.world().resource::<Session>().editor.zone(), &source);
+        assert_eq!(app.world().resource::<Session>().editor.revision(), 0);
+        cancel(&mut app);
+        chord(&mut app, KeyCode::KeyN);
+        assert_eq!(
+            app.world().resource::<Session>().editor.zone(),
+            &Zone::default()
+        );
+        assert!(app.world().resource::<Session>().path.is_none());
+        assert_eq!(app.world().resource::<Session>().editor.history(), (1, 0));
+        chord(&mut app, KeyCode::KeyN);
+        assert_eq!(app.world().resource::<Session>().editor.revision(), 1);
+        action(&mut app, Action::Play);
+        for key in [KeyCode::KeyN, KeyCode::KeyF] {
+            chord(&mut app, key);
+        }
+        assert!(app.world().resource::<Session>().play.is_some());
+        assert!(app.world().resource::<Session>().name_edit.is_none());
+        assert_eq!(app.world().resource::<Session>().editor.revision(), 1);
+        action(&mut app, Action::Play);
+        paths::perform(
+            Action::NewPath(theia_zone::paths::PathKind::Road),
+            &mut app.world_mut().resource_mut::<Session>(),
+        );
+        for key in [KeyCode::KeyN, KeyCode::KeyF] {
+            chord(&mut app, key);
+        }
+        assert!(app.world().resource::<Session>().path_draft.is_some());
+        assert!(app.world().resource::<Session>().name_edit.is_none());
+        assert_eq!(app.world().resource::<Session>().editor.history(), (1, 0));
+        cancel(&mut app);
+        action(&mut app, Action::Undo);
+        app.world_mut()
+            .query::<&mut Window>()
+            .single_mut(app.world_mut())
+            .unwrap()
+            .focused = false;
+        for key in [KeyCode::KeyN, KeyCode::KeyF] {
+            chord(&mut app, key);
+        }
+        assert_eq!(app.world().resource::<Session>().editor.zone(), &source);
+        assert_eq!(app.world().resource::<Session>().editor.history(), (0, 1));
+        assert!(app.world().resource::<Session>().name_edit.is_none());
+        assert_eq!(
+            std::fs::read(root.0.join("original.zone.json")).unwrap(),
+            bytes
+        );
+    }
 }

@@ -60,12 +60,23 @@ pub(super) struct Caption;
 #[derive(Component)]
 pub(super) struct ButtonLabel;
 
-fn busy(session: &Session) -> bool {
+pub(super) fn busy(session: &Session) -> bool {
     session.has_modal()
         || session.play.is_some()
         || session.drag.is_some()
         || session.stroke.is_some()
         || session.path_draft.is_some()
+}
+pub(super) fn new_document(
+    session: &mut Session,
+    view: &mut View,
+    content: &mut outliner::Content,
+) {
+    match session.new_document(view) {
+        Ok(true) => *content = outliner::Content::default(),
+        Ok(false) => {}
+        Err(error) => session.status = error,
+    }
 }
 fn mode(session: &Session) -> EditorMode {
     if session.terrain_paint {
@@ -408,11 +419,7 @@ pub(super) fn activate(
         return;
     }
     match *control {
-        Control::New => match session.new_document(&mut view) {
-            Ok(true) => *content = outliner::Content::default(),
-            Ok(false) => {}
-            Err(error) => session.status = error,
-        },
+        Control::New => new_document(&mut session, &mut view, &mut content),
         Control::Mode(next) => {
             if mode(&session) != next {
                 session.set_mode(next);

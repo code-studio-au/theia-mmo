@@ -923,6 +923,8 @@ fn keyboard(
     windows: Query<&Window>,
     mut session: ResMut<Session>,
     mut view: ResMut<View>,
+    mut content: ResMut<outliner::Content>,
+    mut requests: ResMut<workspace::Requests>,
 ) {
     if session.has_modal() {
         return;
@@ -958,6 +960,19 @@ fn keyboard(
         return;
     }
     let ctrl = keys.pressed(KeyCode::ControlLeft) || keys.pressed(KeyCode::ControlRight);
+    let shift = keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight);
+    if ctrl && !shift && keys.just_pressed(KeyCode::KeyN) {
+        workspace::new_document(&mut session, &mut view, &mut content);
+        return;
+    }
+    if ctrl && !shift && keys.just_pressed(KeyCode::KeyF) {
+        if workspace::busy(&session) {
+            session.status = "Finish the preview or leave playtest before finding content".into();
+        } else {
+            requests.find = true;
+        }
+        return;
+    }
     let action = if keys.just_pressed(KeyCode::F5) {
         Some(Action::Play)
     } else if keys.just_pressed(KeyCode::Escape) {

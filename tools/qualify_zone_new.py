@@ -12,7 +12,7 @@ from gpu_validation import check_gpu_diagnostics
 from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 
 
-def run(output,binary,only_case=None):
+def run(output,binary,only_case=None,shortcuts=False):
     output=output.resolve();output.mkdir(parents=True,exist_ok=False)
     binary=binary.resolve();binary_hash=hashlib.sha256(binary.read_bytes()).hexdigest()
     cases=[];input_notes=[]
@@ -91,7 +91,17 @@ def run(output,binary,only_case=None):
                     if item['centre'][1]<92 and all(v>0 for v in item['size']):
                         x,y=item['centre'];w,h=item['size']
                         assert x-w/2>=0 and x+w/2<=3440 and y-h/2>=0 and y+h/2<=92,item
-                control('New');wait(lambda:state()['save_path'] is None)
+                if shortcuts:
+                    view=copy.deepcopy(state()['view'])
+                    chord(['Control_L'],'f');wait(lambda:state()['name_edit'] is not None)
+                    assert state()['text_form_kind']=='search' and state()['view']==view
+                    chord(['Control_L'],'n');fresh()
+                    assert state()['document']==initial and state()['revision']==0 and state()['name_edit'] is not None
+                    desktop.key('Escape');wait(lambda:state()['name_edit'] is None)
+                    chord(['Control_L'],'n')
+                else:
+                    control('New')
+                wait(lambda:state()['save_path'] is None)
                 blank=copy.deepcopy(state()['document'])
                 assert blank['objects']==[] and blank['origin']==[0,0,0]
                 assert state()['revision']==1 and state()['history']==[1,0] and state()['unsaved_changes']
@@ -114,7 +124,12 @@ def run(output,binary,only_case=None):
                 assert state()['save_path'] is None and state()['document']==blank
                 control('Command(Play)');wait(lambda:state()['play_feet'] is not None)
                 capture('untitled-playtest')
-                control('New');fresh()
+                if shortcuts:
+                    chord(['Control_L'],'n');chord(['Control_L'],'f')
+                    assert state()['name_edit'] is None
+                else:
+                    control('New')
+                fresh()
                 assert state()['play_feet'] is not None and state()['revision']==3
                 control('Command(Play)');wait(lambda:state()['play_feet'] is None)
                 control('Command(Save)');wait(lambda:state()['file_dialog'] is not None)
@@ -141,7 +156,7 @@ def run(output,binary,only_case=None):
         cases.append(dict(name=name,viewport=final['viewport'],gpu=final['gpu'],validation_layer_active=True,
             gpu_diagnostics=check_gpu_diagnostics(logs,allow_surface_resize=False)))
         (folder/'qualification.json').write_text(json.dumps(dict(case=cases[-1],editor_sha256=binary_hash),indent=2)+'\n')
-    result=dict(passed=True,cases=cases,input_notes=input_notes,editor_sha256=binary_hash,checks=[
+    result=dict(passed=True,shortcuts=shortcuts,cases=cases,input_notes=input_notes,editor_sha256=binary_hash,checks=[
         'New creates untitled source with one undo, preserves the original file and keeps header controls inside 3440x92',
         'Undo/redo restores prior content while retaining untitled file identity; repeated empty New preserves history',
         'first Save opens Save As in previous directory; cancel and failed save preserve untitled source',
@@ -154,4 +169,5 @@ if __name__=='__main__':
     parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--binary',type=Path,default=Path('target/debug/theia-zone-editor'))
     parser.add_argument('--case',choices=['local','far'])
-    args=parser.parse_args();run(args.output,args.binary,args.case)
+    parser.add_argument('--shortcuts',action='store_true',help='Exercise Ctrl+N/Ctrl+F and modal/play guards')
+    args=parser.parse_args();run(args.output,args.binary,args.case,args.shortcuts)

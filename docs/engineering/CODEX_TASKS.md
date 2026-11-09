@@ -1,3 +1,11 @@
+Application shortcuts, 9 November 2026 (P5-17 / P3-15 / P1-10):
+Ctrl+N invokes shared New; Ctrl+F opens content search without framing. Modal,
+preview, playtest and focus guards remain. All 119 focused Rust tests, strict
+Clippy, formatting and build pass; native key delivery and full New/save/play
+workflow pass at 3440 x 1440 from local/far origins with zero Vulkan diagnostics.
+See [the record](../ZONE_EDITOR.md#application-document-and-search-shortcuts--9-november-2026).
+Continue after local commits; desktop access authorized; do not push.
+
 Native application controls accepted, 9 November 2026 (P5-17 / P3-15 / P1-10):
 Content paging/wheel, filters, search, double-click framing and yaw/scale/radius/
 guide-width sliders pass native 3440 x 1440 checks at local/far origins, including

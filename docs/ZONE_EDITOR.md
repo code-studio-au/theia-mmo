@@ -3002,3 +3002,33 @@ formatting and build pass; Python qualification files compile. Native Tab routin
 is not claimed here (headless real-dispatch coverage remains); native Home/End
 and pointer routing are evidenced. Windows execution remains pending. Schema,
 engine pins, gameplay authority and networking are unchanged. No push.
+
+## Application document and search shortcuts — 9 November 2026
+
+P5-17 / P3-15 / P1-10; prerequisites are New zone and the retained Find form.
+Ctrl+N invokes the same New helper as the command-bar button, including browser
+reset on an actual replacement and preservation on a no-op. Ctrl+F opens Find
+without invoking selection framing. Both require the focused editor and respect
+forms, playtest and authoring-preview guards. They neither write files nor bypass
+shared validation/history. Shifted chords retain their previous behavior.
+
+CPU acceptance: 119 focused Rust tests (55 domain / 64 editor), strict workspace/
+all-target Clippy, formatting and build pass. Real Bevy controller flows at
+local/far origins check search's unchanged view/source/save state, Ctrl+N while
+search is open, New and repeated-New history, playtest/guide-draft refusal and
+unfocused input with pending redo. Evidence: ignored
+build/zone-application-shortcuts-{tests,all-tests,clippy,build}.log.
+The native New qualifier accepts --shortcuts for owned-key delivery and modal/
+play guards; its results are recorded below after execution.
+
+Native acceptance passes at both local/far starting origins in ignored
+build/zone-shortcuts-native-3440-v1/ (--shortcuts): Ctrl+F opens the search form
+without moving the view, Ctrl+N is isolated while it is open, Escape cancels,
+and Ctrl+N creates the untitled zone through the shared helper. Both chords are
+refused during the running Avian playtest. The subsequent first-save, failed-write
+recovery and undo/redo workflow also passes. Each manifest confirms 3440 x 1440,
+AMD Radeon RX 7900 XTX (RADV NAVI31), Vulkan device 29772, active validation-layer
+insertion and zero strict GPU diagnostics. Editor SHA-256:
+af927d2a9df618c898dca0104dc1dd3587519b41dc4748e87e4c9bb7898bfd5b.
+Windows execution remains pending. Schema, engine pins, networking and gameplay
+controls are unchanged. No push.
