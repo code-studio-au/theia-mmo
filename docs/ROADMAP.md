@@ -1,3 +1,10 @@
+Workspace slider focus cue, 9 November 2026 (P5-17 / P3-15 / P1-10):
+A pale thumb identifies the focused slider; the footer explains its keys.
+All 124 focused Rust tests, strict Clippy, formatting and build pass. Native
+local-origin 3440 x 1440 rendering/keys/placement pass with zero Vulkan diagnostics;
+app captures were inspected. See [the record](ZONE_EDITOR.md#workspace-slider-focus-cue--9-november-2026).
+Continue after local commits; desktop access authorized; do not push.
+
 Workspace slider keyboard ownership, 9 November 2026 (P5-17 / P3-15 / P1-10):
 Workspace sliders now take focus on click. Left/Right/Home/End adjust that widget
 without also editing the selection through raw keyboard polling; ordinary nudges

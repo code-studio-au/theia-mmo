@@ -257,7 +257,7 @@ pub(super) fn setup(mut commands: Commands) {
                     });
                 });
         }
-        panel.spawn(text("Tool settings affect the next edit.\nCtrl S saves the zone.\nCtrl Z / Ctrl Y: undo / redo",13.));
+        panel.spawn(text("Click sliders to focus.\nLeft/right, Home/End: adjust\nCtrl S saves the zone.\nCtrl Z / Ctrl Y: undo / redo",13.));
     });
 }
 impl Control {
@@ -546,6 +546,7 @@ pub(super) fn sync(
     session: Res<Session>,
     requests: Res<Requests>,
     view: Res<View>,
+    focus: Option<Res<bevy::input_focus::InputFocus>>,
     mut help: Query<
         &mut Node,
         (
@@ -693,10 +694,15 @@ pub(super) fn sync(
         }
         for child in hierarchy.iter_descendants(entity) {
             if let Ok((mut node, mut color)) = thumbs.get_mut(child) {
-                color.0 = if enabled {
-                    Color::srgb(0.2, 0.65, 0.8)
-                } else {
+                color.0 = if !enabled {
                     Color::srgb(0.2, 0.25, 0.3)
+                } else if focus
+                    .as_ref()
+                    .is_some_and(|focus| focus.get() == Some(entity))
+                {
+                    Color::srgb(0.65, 0.9, 1.)
+                } else {
+                    Color::srgb(0.2, 0.65, 0.8)
                 };
                 node.left = percent(range.thumb_position(actual) * 100.);
             }

@@ -3121,3 +3121,29 @@ The v1 native run stopped on missing pointer-focus opt-in and is excluded from
 acceptance. Windows, terrain-slider native keys and workspace Tab traversal are
 not newly claimed. Schema, engine pins, networking and gameplay remain unchanged.
 No push.
+
+## Workspace slider focus cue — 9 November 2026
+
+P5-17 / P3-15 / P1-10; prerequisites are click-to-focus and slider key ownership.
+The focused workspace slider now has a pale blue thumb; other enabled sliders
+keep their cyan thumbs and disabled sliders remain grey. The Properties footer
+explains click-to-focus and Left/Right/Home/End. This is presentation only; it
+uses Bevy InputFocus and retains the source/undo/input boundaries above.
+
+All 124 focused Rust tests, formatting, strict workspace/all-target Clippy and
+build pass. Existing CPU layout checks retain the shape-control bounds. Evidence:
+ignored build/zone-slider-focus-cue-{all-tests,clippy,build}.log. Native rendering
+and key checks are recorded below after execution.
+
+Native acceptance: the local-origin 3440 x 1440 --keyboard placement workflow
+passes for the grid and all shape sizes, retaining selected source/redo and the
+three shared command oracles. App-only captures were inspected: the focused Z
+thumb is visibly pale while other thumbs stay cyan, and the four-line key hint
+fits below the controls. Evidence: ignored build/zone-slider-focus-cue-native-
+3440-v1/local/ and its qualification.json. AMD Radeon RX 7900 XTX (RADV NAVI31),
+Vulkan device 29772, confirmed active validation-layer insertion and zero strict
+GPU diagnostics. Editor SHA-256:
+bea3000222275ca90ccef1267439fad1faaf27a0955963c30207bb74cd576a19.
+This presentation change has native local-origin coverage; the earlier far-origin
+keyboard evidence remains tied to its own binary. No new Windows acceptance.
+Schema, engine pins and gameplay unchanged. No push.
