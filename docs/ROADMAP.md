@@ -1,3 +1,11 @@
+Zone file browser, 9 November 2026 (P5-17 / P3-15 / P1-10):
+The command bar now exposes Open and Save As with a standard Bevy folder/file
+browser, filename input, paging and explicit overwrite confirmation. Open uses
+validated document replacement with undo; Save As changes the active path only
+after success and preserves history. Ctrl+O opens, Ctrl+Shift+S saves as and
+Ctrl+Shift+O reloads the active file. See [the zone record](ZONE_EDITOR.md#zone-file-browser--9-november-2026)
+for acceptance and limitations. Continue after each local commit; no push.
+
 Shared body-drag previews, 9 November 2026 (P5-17 / P3-15 / P1-10):
 Selected-body XZ dragging now shares the same validated gesture path as axis,
 yaw and scale handles. Relative local deltas preserve original f64 values on a

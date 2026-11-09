@@ -1,0 +1,644 @@
+//! Bounded standard-Bevy zone browser, over the retained validated file APIs.
+use super::*;
+use bevy::input_focus::{FocusCause, InputFocus};
+use bevy::picking::{events::PointerPress, pointer::PointerButton};
+use bevy::text::{EditableText, TextCursorStyle, TextEdit};
+use bevy::ui_widgets::{SelectAllOnFocus, TextInput};
+
+const ROWS: usize = 12;
+const SCAN_LIMIT: usize = 4096;
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum Mode {
+    Open,
+    SaveAs,
+}
+#[derive(Clone)]
+pub(super) struct Entry {
+    pub name: String,
+    pub path: PathBuf,
+    pub directory: bool,
+}
+pub(super) struct Draft {
+    pub mode: Mode,
+    pub folder: PathBuf,
+    pub text: String,
+    pub selection: [usize; 2],
+    pub page: usize,
+    pub entries: Vec<Entry>,
+    pub overwrite: bool,
+    truncated: bool,
+    revision: u64,
+    action: Option<Control>,
+}
+impl Draft {
+    fn refresh(&mut self, folder: PathBuf) -> Result<(), String> {
+        let folder = std::fs::canonicalize(folder).map_err(|e| e.to_string())?;
+        let mut entries = vec![];
+        let mut truncated = false;
+        let listing = std::fs::read_dir(&folder).map_err(|e| e.to_string())?;
+        for (index, entry) in listing.take(SCAN_LIMIT + 1).enumerate() {
+            if index == SCAN_LIMIT {
+                truncated = true;
+                break;
+            }
+            let entry = entry.map_err(|e| e.to_string())?;
+            let Some(name) = entry.file_name().to_str().map(str::to_owned) else {
+                continue;
+            };
+            let path = entry.path();
+            let directory = path.is_dir();
+            if directory || is_json(&path) {
+                entries.push(Entry {
+                    name,
+                    path,
+                    directory,
+                });
+            }
+        }
+        entries.sort_by(|a, b| b.directory.cmp(&a.directory).then(a.name.cmp(&b.name)));
+        self.folder = folder;
+        self.entries = entries;
+        self.truncated = truncated;
+        self.page = 0;
+        self.overwrite = false;
+        Ok(())
+    }
+    fn browse(&mut self, folder: PathBuf) -> Result<(), String> {
+        let name = if self.mode == Mode::SaveAs {
+            std::path::Path::new(&self.text)
+                .file_name()
+                .map_or_else(String::new, |s| s.to_string_lossy().into_owned())
+        } else {
+            String::new()
+        };
+        self.overwrite = false;
+        self.refresh(folder)?;
+        self.text = name;
+        Ok(())
+    }
+    pub fn pages(&self) -> usize {
+        self.entries.len().div_ceil(ROWS).max(1)
+    }
+    pub fn row(&self, index: usize) -> Option<&Entry> {
+        self.entries.get(self.page * ROWS + index)
+    }
+    fn path(&self) -> Result<PathBuf, String> {
+        if self.text.trim().is_empty() || self.text.contains(['\n', '\r', '\0']) {
+            return Err("Enter a zone filename or directory".into());
+        }
+        let mut path = self.folder.join(&self.text);
+        if self.mode == Mode::SaveAs && path.extension().is_none() && !path.is_dir() {
+            path.set_extension("zone.json");
+        }
+        if !path.is_dir() && !is_json(&path) {
+            return Err("Zone files use a .json extension".into());
+        }
+        Ok(path)
+    }
+}
+fn tail(value: &str, limit: usize) -> String {
+    if value.chars().count() <= limit {
+        value.into()
+    } else {
+        format!(
+            "…{}",
+            value
+                .chars()
+                .rev()
+                .take(limit)
+                .collect::<Vec<_>>()
+                .into_iter()
+                .rev()
+                .collect::<String>()
+        )
+    }
+}
+fn is_json(path: &std::path::Path) -> bool {
+    path.extension()
+        .and_then(|x| x.to_str())
+        .is_some_and(|x| x.eq_ignore_ascii_case("json"))
+}
+#[derive(Component)]
+pub(super) struct Root;
+#[derive(Component)]
+pub(super) struct Field;
+#[derive(Component)]
+pub(super) struct Caption;
+#[derive(Component)]
+pub(super) struct Label(Control);
+#[derive(Component, Clone, Copy, Debug)]
+pub(super) enum Control {
+    Field,
+    Row(usize),
+    Up,
+    Previous,
+    Next,
+    Apply,
+    Cancel,
+}
+fn button(control: Control, label: &str) -> impl Bundle {
+    (
+        control,
+        Button,
+        Hovered::default(),
+        Node {
+            min_height: px(28),
+            padding: UiRect::axes(px(10), px(5)),
+            overflow: Overflow::clip(),
+            ..default()
+        },
+        BackgroundColor(Color::srgb(0.10, 0.14, 0.19)),
+        children![(Label(control), text(label, 15.), TextLayout::no_wrap())],
+    )
+}
+pub(super) fn setup(mut commands: Commands) {
+    commands
+        .spawn((
+            Root,
+            GlobalZIndex(30),
+            Node {
+                display: Display::None,
+                position_type: PositionType::Absolute,
+                width: percent(100),
+                height: percent(100),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                ..default()
+            },
+            BackgroundColor(Color::srgba(0.01, 0.02, 0.035, 0.82)),
+        ))
+        .with_children(|root| {
+            root.spawn((
+                Node {
+                    width: px(900),
+                    padding: UiRect::all(px(20)),
+                    row_gap: px(10),
+                    flex_direction: FlexDirection::Column,
+                    ..default()
+                },
+                BackgroundColor(Color::srgb(0.04, 0.065, 0.1)),
+            ))
+            .with_children(|panel| {
+                panel.spawn((Caption, text("ZONE FILES", 17.)));
+                panel
+                    .spawn(Node {
+                        column_gap: px(8),
+                        ..default()
+                    })
+                    .with_children(|row| {
+                        for (control, label) in [
+                            (Control::Up, "Up folder"),
+                            (Control::Previous, "Previous page"),
+                            (Control::Next, "Next page"),
+                        ] {
+                            row.spawn(button(control, label));
+                        }
+                    });
+                for index in 0..ROWS {
+                    panel.spawn(button(Control::Row(index), ""));
+                }
+                panel.spawn(text(
+                    "Filename or path (.json) | Enter opens/saves | Escape cancels",
+                    14.,
+                ));
+                panel.spawn((
+                    Field,
+                    Control::Field,
+                    TextInput,
+                    SelectAllOnFocus,
+                    Hovered::default(),
+                    EditableText {
+                        max_characters: Some(4096),
+                        allow_newlines: false,
+                        ..default()
+                    },
+                    Node {
+                        width: percent(100),
+                        min_height: px(42),
+                        border: UiRect::all(px(2)),
+                        ..default()
+                    },
+                    BorderColor::all(Color::srgb(0.35, 0.85, 1.)),
+                    BackgroundColor(Color::srgb(0.015, 0.025, 0.04)),
+                    TextFont {
+                        font_size: FontSize::Px(18.),
+                        ..default()
+                    },
+                    TextColor(Color::WHITE),
+                    TextLayout::no_wrap(),
+                    TextCursorStyle::default(),
+                ));
+                panel
+                    .spawn(Node {
+                        column_gap: px(8),
+                        ..default()
+                    })
+                    .with_children(|row| {
+                        row.spawn(button(Control::Apply, "Open"));
+                        row.spawn(button(Control::Cancel, "Cancel"));
+                    });
+            });
+        });
+}
+pub(super) fn activate(
+    event: On<PointerPress>,
+    controls: Query<&Control>,
+    mut session: ResMut<Session>,
+) {
+    if event.button == PointerButton::Primary
+        && let Ok(control) = controls.get(event.entity)
+        && !matches!(control, Control::Field)
+        && let Some(draft) = &mut session.file_dialog
+    {
+        draft.action = Some(*control);
+    }
+}
+pub(super) fn keyboard(
+    keys: Res<ButtonInput<KeyCode>>,
+    windows: Query<&Window>,
+    mut session: ResMut<Session>,
+    mut focus: ResMut<InputFocus>,
+    mut fields: Query<(Entity, &mut EditableText), With<Field>>,
+    mut requests: ResMut<workspace::Requests>,
+) {
+    let ctrl = keys.pressed(KeyCode::ControlLeft) || keys.pressed(KeyCode::ControlRight);
+    let shift = keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight);
+    let open = std::mem::take(&mut requests.file_open)
+        || (ctrl && !shift && keys.just_pressed(KeyCode::KeyO));
+    let save_as = std::mem::take(&mut requests.file_save_as)
+        || (ctrl && shift && keys.just_pressed(KeyCode::KeyS));
+    let mode = if open {
+        Some(Mode::Open)
+    } else if save_as {
+        Some(Mode::SaveAs)
+    } else {
+        None
+    };
+    let Some(mode) = mode else {
+        return;
+    };
+    if session.has_modal() || !windows.single().is_ok_and(|w| w.focused) {
+        return;
+    }
+    if session.play.is_some()
+        || session.drag.is_some()
+        || session.stroke.is_some()
+        || session.path_draft.is_some()
+    {
+        session.status =
+            "Finish or cancel the preview, or leave playtest, before choosing a file".into();
+        return;
+    }
+    let Some(folder) = session.path.parent() else {
+        session.status = "Current save path has no folder".into();
+        return;
+    };
+    let mut draft = Draft {
+        mode,
+        folder: folder.into(),
+        text: if mode == Mode::SaveAs {
+            session
+                .path
+                .file_name()
+                .map_or_else(String::new, |s| s.to_string_lossy().into_owned())
+        } else {
+            String::new()
+        },
+        selection: [0; 2],
+        page: 0,
+        entries: vec![],
+        overwrite: false,
+        truncated: false,
+        revision: session.editor.revision(),
+        action: None,
+    };
+    let folder = if folder.as_os_str().is_empty() {
+        PathBuf::from(".")
+    } else {
+        folder.into()
+    };
+    if let Err(error) = draft.refresh(folder) {
+        session.status = error;
+        return;
+    }
+    let Ok((entity, mut field)) = fields.single_mut() else {
+        return;
+    };
+    field.clear();
+    field.editor_mut().set_text(&draft.text);
+    field.queue_edit(TextEdit::SelectAll);
+    focus.set(entity, FocusCause::Navigated);
+    session.status = match mode {
+        Mode::Open => "Choose a zone file; undo can restore the previous document",
+        Mode::SaveAs => "Choose a new zone filename",
+    }
+    .into();
+    session.file_dialog = Some(draft);
+}
+fn submit(draft: &mut Draft, session: &mut Session, view: &mut View) -> Result<bool, String> {
+    if session.editor.revision() != draft.revision {
+        return Err("Stale file dialog; cancel and reopen".into());
+    }
+    let path = draft.path()?;
+    if path.is_dir() {
+        if draft.mode == Mode::Open {
+            draft.refresh(path)?;
+            draft.text.clear();
+            session.status = "Choose a zone file".into();
+            return Ok(false);
+        }
+        return Err("Save As needs a filename, not a directory".into());
+    }
+    match draft.mode {
+        Mode::SaveAs => {
+            if path.exists() && !draft.overwrite {
+                draft.overwrite = true;
+                session.status = format!(
+                    "File exists: {}. Click Overwrite file to replace it.",
+                    path.display()
+                );
+                return Ok(false);
+            }
+            session.editor.zone().save(&path)?;
+            session.path = path;
+            session.saved_zone = Some(session.editor.zone().clone());
+            session.status = format!("Saved {}", session.path.display());
+        }
+        Mode::Open => {
+            let zone = Zone::load(&path)?;
+            session.editor.replace(zone, draft.revision)?;
+            session.set_mode(EditorMode::Objects);
+            session.path = path;
+            session.reconcile();
+            session.saved_zone = Some(session.editor.zone().clone());
+            view.target =
+                Vec3::from_array(session.editor.zone().local(session.editor.zone().spawn)?);
+            view.distance = 32.;
+            camera_views::Preset::Perspective.select(view);
+            session.status = format!(
+                "Opened {} (undo restores prior document)",
+                session.path.display()
+            );
+        }
+    }
+    Ok(true)
+}
+#[allow(clippy::too_many_arguments)]
+pub(super) fn finish(
+    keys: Res<ButtonInput<KeyCode>>,
+    windows: Query<&Window>,
+    mut session: ResMut<Session>,
+    mut view: ResMut<View>,
+    mut focus: ResMut<InputFocus>,
+    mut fields: Query<(Entity, &mut EditableText), With<Field>>,
+    mut roots: Query<&mut Node, With<Root>>,
+    mut controls: Query<(&Control, &Hovered, &mut Node, &mut BackgroundColor), Without<Root>>,
+    mut labels: Query<(&Label, &mut Text)>,
+    mut captions: Query<&mut Text, (With<Caption>, Without<Label>)>,
+) {
+    let Some(mut draft) = session.file_dialog.take() else {
+        if let Ok(mut root) = roots.single_mut() {
+            root.display = Display::None;
+        }
+        return;
+    };
+    let Ok((entity, mut field)) = fields.single_mut() else {
+        session.file_dialog = Some(draft);
+        return;
+    };
+    let typed = field.value().to_string();
+    if typed != draft.text {
+        draft.text = typed;
+        draft.overwrite = false;
+        session.status = "Choose a zone file".into();
+    }
+    let range = field.editor().raw_selection().text_range();
+    draft.selection = [range.start, range.end];
+    let cancel = !windows.single().is_ok_and(|w| w.focused)
+        || keys.just_pressed(KeyCode::Escape)
+        || matches!(draft.action, Some(Control::Cancel));
+    let apply = !field.is_composing()
+        && (keys.just_pressed(KeyCode::Enter)
+            || keys.just_pressed(KeyCode::NumpadEnter)
+            || matches!(draft.action, Some(Control::Apply)));
+    let mut close = cancel;
+    let mut reset = false;
+    if cancel {
+        session.status = "File dialog cancelled".into();
+    } else if apply {
+        let old = draft.text.clone();
+        match submit(&mut draft, &mut session, &mut view) {
+            Ok(done) => close = done,
+            Err(error) => session.status = error,
+        }
+        reset = draft.text != old;
+    } else {
+        let folder = match draft.action {
+            Some(Control::Up) => draft.folder.parent().map(std::path::Path::to_path_buf),
+            Some(Control::Row(index)) => draft
+                .row(index)
+                .filter(|e| e.directory)
+                .map(|e| e.path.clone()),
+            _ => None,
+        };
+        if let Some(folder) = folder {
+            match draft.browse(folder) {
+                Ok(()) => {
+                    reset = true;
+                    session.status = "Choose a zone file".into();
+                }
+                Err(error) => session.status = error,
+            }
+        } else {
+            match draft.action {
+                Some(Control::Previous) => draft.page = draft.page.saturating_sub(1),
+                Some(Control::Next) => draft.page = (draft.page + 1).min(draft.pages() - 1),
+                Some(Control::Row(index)) => {
+                    if let Some(entry) = draft.row(index) {
+                        draft.text = entry.name.clone();
+                        draft.overwrite = false;
+                        reset = true;
+                        session.status = "Choose a zone file".into();
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+    if close {
+        focus.clear();
+        if let Ok(mut root) = roots.single_mut() {
+            root.display = Display::None;
+        }
+    } else {
+        if reset {
+            field.clear();
+            field.editor_mut().set_text(&draft.text);
+            field.queue_edit(TextEdit::SelectAll);
+        }
+        if focus.get() != Some(entity) {
+            focus.set(entity, FocusCause::Navigated);
+        }
+        if let Ok(mut root) = roots.single_mut() {
+            root.display = Display::Flex;
+        }
+        for (control, hovered, mut node, mut background) in &mut controls {
+            if !matches!(control, Control::Field) {
+                let selected = matches!(control,Control::Row(index) if draft.row(*index).is_some_and(|e|!e.directory && e.name==draft.text));
+                let unavailable = matches!(control,Control::Previous if draft.page==0)
+                    || matches!(control,Control::Next if draft.page+1==draft.pages())
+                    || matches!(control,Control::Up if draft.folder.parent().is_none());
+                background.0 = if unavailable {
+                    Color::srgb(0.055, 0.07, 0.09)
+                } else if matches!(control, Control::Apply) && draft.overwrite {
+                    Color::srgb(0.35, 0.19, 0.07)
+                } else if selected {
+                    Color::srgb(0.13, 0.35, 0.46)
+                } else if hovered.0 {
+                    Color::srgb(0.19, 0.25, 0.32)
+                } else {
+                    Color::srgb(0.10, 0.14, 0.19)
+                };
+            }
+            node.display = if matches!(control,Control::Row(index) if draft.row(*index).is_none()) {
+                Display::None
+            } else {
+                Display::Flex
+            };
+        }
+        for (label, mut text) in &mut labels {
+            **text = match label.0 {
+                Control::Row(index) => draft.row(index).map_or_else(String::new, |e| {
+                    format!(
+                        "{} {}",
+                        if e.directory { "[Folder]" } else { "[JSON]" },
+                        e.name
+                    )
+                }),
+                Control::Apply => if draft.overwrite {
+                    "Overwrite file"
+                } else if draft.mode == Mode::Open {
+                    "Open zone"
+                } else {
+                    "Save As"
+                }
+                .into(),
+                Control::Up => "Up folder".into(),
+                Control::Previous => "Previous page".into(),
+                Control::Next => "Next page".into(),
+                Control::Cancel => "Cancel".into(),
+                Control::Field => String::new(),
+            };
+        }
+        if let Ok(mut caption) = captions.single_mut() {
+            **caption = format!(
+                "{} zone | Page {} / {}{}\n{}\n{}",
+                if draft.mode == Mode::Open {
+                    "Open"
+                } else {
+                    "Save As"
+                },
+                draft.page + 1,
+                draft.pages(),
+                if draft.truncated {
+                    " (directory scan limited)"
+                } else {
+                    ""
+                },
+                tail(&draft.folder.to_string_lossy(), 180),
+                tail(&session.status, 240)
+            );
+        }
+        draft.action = None;
+        session.file_dialog = Some(draft);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    struct Scratch(PathBuf);
+    impl Scratch {
+        fn new() -> Self {
+            let path = std::env::temp_dir().join(format!(
+                "theia-zone-browser-{}-{}",
+                std::process::id(),
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_nanos()
+            ));
+            std::fs::create_dir(&path).unwrap();
+            Self(path)
+        }
+    }
+    impl Drop for Scratch {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+    fn draft(mode: Mode, folder: &std::path::Path, text: &str) -> Draft {
+        Draft {
+            mode,
+            folder: folder.into(),
+            text: text.into(),
+            selection: [0; 2],
+            page: 0,
+            entries: vec![],
+            overwrite: false,
+            truncated: false,
+            revision: 0,
+            action: None,
+        }
+    }
+    #[test]
+    fn zone_paths_preserve_literal_names_and_append_only_missing_save_extension() {
+        let root = Scratch::new();
+        let mut d = draft(Mode::SaveAs, &root.0, "my zone");
+        assert_eq!(d.path().unwrap(), root.0.join("my zone.zone.json"));
+        d.text = "existing.JSON".into();
+        assert_eq!(d.path().unwrap(), root.0.join("existing.JSON"));
+        for value in ["", " ", "bad.glb", "line\nfile.json", "null\0file.json"] {
+            d.text = value.into();
+            assert!(d.path().is_err());
+        }
+        d.mode = Mode::Open;
+        d.text = "literal name.json".into();
+        assert_eq!(d.path().unwrap(), root.0.join("literal name.json"));
+        d.text = ".".into();
+        assert!(d.path().unwrap().is_dir());
+    }
+    #[test]
+    fn browser_pages_filters_navigates_and_retains_save_filename_without_partial_refresh() {
+        let root = Scratch::new();
+        let nested = root.0.join("nested");
+        std::fs::create_dir(&nested).unwrap();
+        for index in 0..20 {
+            std::fs::write(root.0.join(format!("zone-{index:02}.json")), b"{}").unwrap();
+        }
+        std::fs::write(root.0.join("ignore.txt"), b"not a zone").unwrap();
+        let mut d = draft(Mode::SaveAs, &root.0, "copy.zone.json");
+        d.refresh(root.0.clone()).unwrap();
+        assert_eq!(d.entries.len(), 21);
+        assert_eq!(d.pages(), 2);
+        assert!(d.row(0).unwrap().directory);
+        assert_eq!(d.row(1).unwrap().name, "zone-00.json");
+        d.page = 1;
+        assert_eq!(d.row(0).unwrap().name, "zone-11.json");
+        let folder = d.folder.clone();
+        assert!(d.refresh(root.0.join("missing")).is_err());
+        assert_eq!(d.folder, folder);
+        assert_eq!(d.page, 1);
+        d.overwrite = true;
+        d.browse(nested.clone()).unwrap();
+        assert_eq!(d.text, "copy.zone.json");
+        assert!(!d.overwrite);
+        assert_eq!(d.page, 0);
+        assert_eq!(d.pages(), 1);
+        assert!(d.row(0).is_none());
+        assert_eq!(d.path().unwrap(), nested.join("copy.zone.json"));
+        d.mode = Mode::Open;
+        d.browse(root.0.clone()).unwrap();
+        assert!(d.text.is_empty());
+    }
+}

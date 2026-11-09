@@ -464,6 +464,7 @@ type ReportControls<'w, 's> = Query<
         Option<&'static workspace::Setting>,
         Option<&'static bevy::ui_widgets::SliderValue>,
         Option<&'static bevy::ui_widgets::SliderRange>,
+        Option<&'static file_picker::Control>,
     ),
 >;
 type SceneVisuals<'w, 's> = Query<
@@ -616,12 +617,20 @@ pub(super) fn report(
     }
     value["content_list"] = serde_json::json!({"visible":session.play.is_none(),"page":content.page,
         "pages":content.pages(),"count":content.entries.len(),"controls":content_buttons});
-    value["workspace_controls"] = serde_json::json!(controls.iter().filter_map(|(_,_,_,_,node,t,hovered,control,setting,value,range)| {
+    value["workspace_controls"] = serde_json::json!(controls.iter().filter_map(|(_,_,_,_,node,t,hovered,control,setting,value,range,..)| {
         let target = match (control,setting) { (Some(c),_)=>format!("{c:?}"),(_,Some(s))=>format!("{s:?}"),_=>return None };
         let factor = node.inverse_scale_factor() * scale.0;
         Some(serde_json::json!({"target":target,"hovered":hovered.0,"centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array(),
             "value":value.map(|v|v.0),"range":range.map(|r|[r.start(),r.end()])}))
     }).collect::<Vec<_>>());
+    value["file_controls"] = serde_json::json!(controls.iter().filter_map(|(_,_,_,_,node,t,hovered,_,_,_,_,control)| {
+        let control=control?;
+        let factor=node.inverse_scale_factor()*scale.0;
+        let entry=match control { file_picker::Control::Row(index)=>session.file_dialog.as_ref().and_then(|d|d.row(*index)),_=>None };
+        Some(serde_json::json!({"target":format!("{control:?}"),"hovered":hovered.0,"centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array(),
+            "entry":entry.map(|e|serde_json::json!({"name":e.name,"path":e.path.to_string_lossy(),"directory":e.directory}))}))
+    }).collect::<Vec<_>>());
+    value["file_dialog"] = serde_json::json!(session.file_dialog.as_ref().map(|d|serde_json::json!({"mode":format!("{:?}",d.mode),"folder":d.folder.to_string_lossy(),"text":d.text,"selection":d.selection,"page":d.page,"pages":d.pages(),"overwrite":d.overwrite})));
     value["name_controls"] = serde_json::json!(controls.iter().filter_map(|(_,control,_,_,node,t,hovered,..)| {
         let control = control?;
         let factor = node.inverse_scale_factor() * scale.0;

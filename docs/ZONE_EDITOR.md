@@ -2243,3 +2243,43 @@ Evidence: ignored `build/zone-body-drag-native-3440-v1/qualification.json`,
 `*.body.commands.jsonl` / `*.body.expected.json`; `zone-body-drag-tests-v2.log`,
 `zone-body-drag-clippy-v2.log` and `zone-body-drag-build.log`.
 Editor SHA-256: `c61007ad9e3b43c8228508596918cd8a94d354ab9d3895af095be2a7251a1fc1`.
+
+## Zone file browser — 9 November 2026
+
+P5-17 / P3-15 / P1-10 application workflow follow-up. Prerequisites are the
+existing validated zone load/save and Editor replacement/history. Standard Bevy
+buttons, TextInput and a modal scrim provide Open and Save As with folder
+navigation, sorted directory/JSON rows, twelve rows per page and a literal path
+field. Ctrl+O opens; Ctrl+Shift+S saves as; Ctrl+Shift+O retains active-file Reload.
+A filename without an extension gains .zone.json on Save As. Other non-JSON
+extensions are refused. Existing destinations require a second explicit Apply;
+typing/navigation resets this review, and Cancel does not write.
+
+Open loads and validates before one undoable Editor replacement, reconciles IDs
+and frames the loaded origin. Undo restores the previous document while the
+opened path remains active; dirty state compares content with the saved snapshot.
+Save As changes path/saved metadata only after a successful write and preserves
+revision, undo and redo. Failed operations preserve the document, active path and
+history. Modal input blocks world/camera/agent edits; playtest and pending
+gestures/drafts refuse browser shortcuts. IME composition blocks Apply. Directory
+scanning is synchronous and bounded to 4096 entries, with a visible truncation
+notice; non-UTF8 names are omitted. No recursive asset index, shell expansion,
+folder creation or native OS picker is claimed.
+
+Acceptance passes: 88 focused Rust tests (51 domain / 37 editor), formatting,
+strict workspace/all-target Clippy and actual 3440x1440 native local/far browser
+walkthroughs on AMD RX 7900 XTX (RADV NAVI31), Vulkan device 29772, with active
+Khronos validation and zero GPU/resize diagnostics. Checks cover folder/paging,
+filename correction, overwrite review/cancel/confirmation, malformed load,
+cross-origin Open/undo/redo, fresh placement IDs, Save As preserving redo, failed
+write metadata preservation and busy shortcuts without accidental Save. The
+retained native save-state suite also passes fresh/reopen/failed-write cases.
+The open browser capture was visually inspected. Windows native file replacement
+and maximum-budget directory performance remain unqualified. No multiplayer
+authority, gameplay, schema or dependency changes.
+
+Evidence: ignored build/zone-file-picker-native-3440-v2/qualification.json and
+local/open-ready.png; build/zone-file-picker-save-state-native-3440-v1/qualification.json;
+zone-file-picker-tests-v2.log, zone-file-picker-clippy-v2.log and
+zone-file-picker-build-v2.log. Editor SHA-256:
+`b100d0279a4cc590bafba89f4d2edd098c90492315632bcd36cc0a310a36c84c`.

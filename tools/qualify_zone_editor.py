@@ -76,9 +76,11 @@ def run(output, binary, size, agent=False, terrain=False, guides=False, markers=
                 desktop.key(name)
             def chord(name):
                 desktop.key_state('Control_L', True)
+                if name == 'o': desktop.key_state('Shift_L', True)  # Reload; Ctrl O opens the browser.
                 try:
                     key(name)
                 finally:
+                    if name == 'o': desktop.key_state('Shift_L', False)
                     desktop.key_state('Control_L', False)
             def revision(previous):
                 return wait(lambda: state() if state()['revision'] == previous + 1 else None)

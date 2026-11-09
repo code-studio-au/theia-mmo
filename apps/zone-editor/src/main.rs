@@ -4,6 +4,7 @@ mod brush_preview;
 mod camera_views;
 mod cli;
 mod export;
+mod file_picker;
 mod gizmo;
 mod markers;
 mod naming;
@@ -86,6 +87,7 @@ struct Session {
     path_draft: Option<paths::Draft>,
     name_edit: Option<naming::Draft>,
     transform_edit: Option<properties::Draft>,
+    file_dialog: Option<file_picker::Draft>,
 }
 struct Drag {
     id: u64,
@@ -96,7 +98,7 @@ struct Drag {
 }
 impl Session {
     fn has_modal(&self) -> bool {
-        self.name_edit.is_some() || self.transform_edit.is_some()
+        self.name_edit.is_some() || self.transform_edit.is_some() || self.file_dialog.is_some()
     }
     fn set_mode(&mut self, mode: EditorMode) {
         self.terrain_mode = matches!(mode, EditorMode::Sculpt | EditorMode::Paint);
@@ -373,6 +375,7 @@ fn run() -> Result<(), String> {
         path_draft: None,
         name_edit: None,
         transform_edit: None,
+        file_dialog: None,
     })
     .insert_resource(View {
         target: initial_target.unwrap_or(Vec3::ZERO),
@@ -401,6 +404,7 @@ fn run() -> Result<(), String> {
     .add_observer(outliner::activate)
     .add_observer(naming::activate)
     .add_observer(properties::activate)
+    .add_observer(file_picker::activate)
     .add_systems(
         Startup,
         (
@@ -415,12 +419,13 @@ fn run() -> Result<(), String> {
             outliner::setup,
             naming::setup,
             properties::setup,
+            file_picker::setup,
         ),
     )
     .add_systems(
         Update,
         (
-            agent::poll,
+            (agent::poll, file_picker::keyboard).chain(),
             naming::keyboard,
             properties::keyboard,
             keyboard,
@@ -445,7 +450,7 @@ fn run() -> Result<(), String> {
     )
     .add_systems(
         PostUpdate,
-        (naming::finish, properties::finish)
+        (naming::finish, properties::finish, file_picker::finish)
             .chain()
             .after(bevy::text::EditableTextSystems),
     )
@@ -485,7 +490,7 @@ fn object_actions() -> [(Action, &'static str); 12] {
         (Action::Delete, "Delete selected [Del]"),
         (Action::Spawn, "Spawn at view centre"),
         (Action::Save, "Save zone [Ctrl S]"),
-        (Action::Load, "Load zone [Ctrl O]"),
+        (Action::Load, "Reload zone [Ctrl Shift O]"),
         (Action::Play, "Enter / leave playtest [F5]"),
     ]
 }
@@ -853,11 +858,18 @@ fn keyboard(
         Some(Action::Undo)
     } else if ctrl && keys.just_pressed(KeyCode::KeyY) {
         Some(Action::Redo)
-    } else if ctrl && keys.just_pressed(KeyCode::KeyS) {
+    } else if ctrl
+        && !keys.pressed(KeyCode::ShiftLeft)
+        && !keys.pressed(KeyCode::ShiftRight)
+        && keys.just_pressed(KeyCode::KeyS)
+    {
         Some(Action::Save)
     } else if ctrl && keys.just_pressed(KeyCode::KeyD) {
         Some(Action::Duplicate)
-    } else if ctrl && keys.just_pressed(KeyCode::KeyO) {
+    } else if ctrl
+        && (keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight))
+        && keys.just_pressed(KeyCode::KeyO)
+    {
         Some(Action::Load)
     } else if !ctrl
         && session.terrain_mode

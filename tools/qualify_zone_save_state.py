@@ -44,9 +44,11 @@ def run(output, binary):
 
                 def chord(name):
                     desktop.key_state('Control_L', True)
+                    if name == 'o': desktop.key_state('Shift_L', True)  # Reload; Ctrl O opens the browser.
                     try:
                         key(name)
                     finally:
+                        if name == 'o': desktop.key_state('Shift_L', False)
                         desktop.key_state('Control_L', False)
 
                 def button(action):

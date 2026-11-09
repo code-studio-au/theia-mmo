@@ -14,6 +14,8 @@ pub(super) struct Requests {
     pub name: bool,
     pub transform: bool,
     pub help: bool,
+    pub file_open: bool,
+    pub file_save_as: bool,
 }
 #[derive(Component, Clone, Copy, Debug)]
 pub(super) enum Control {
@@ -22,6 +24,8 @@ pub(super) enum Control {
     Frame,
     Rename,
     Transform,
+    FileOpen,
+    FileSaveAs,
     Point(i8),
     WholePath,
     Snap,
@@ -115,7 +119,9 @@ pub(super) fn setup(mut commands: Commands) {
                 row.spawn(text("THEIA  /  ZONE STUDIO", 18.));
                 for (control, label) in [
                     (Control::Command(Action::Save), "Save"),
-                    (Control::Command(Action::Load), "Open saved"),
+                    (Control::FileSaveAs, "Save As..."),
+                    (Control::FileOpen, "Open..."),
+                    (Control::Command(Action::Load), "Reload"),
                     (Control::Command(Action::Undo), "Undo"),
                     (Control::Command(Action::Redo), "Redo"),
                     (Control::Frame, "Frame selection"),
@@ -412,6 +418,8 @@ pub(super) fn activate(
         Control::Help => requests.help = !requests.help,
         Control::Rename => requests.name = true,
         Control::Transform => requests.transform = true,
+        Control::FileOpen => requests.file_open = true,
+        Control::FileSaveAs => requests.file_save_as = true,
         Control::Snap | Control::Handles => {}
     }
 }

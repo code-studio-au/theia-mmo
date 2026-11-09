@@ -8,8 +8,11 @@ It saves separately to `build/wayfarer-hollow.zone.json` and reopens your edits.
 
 Choose **Objects, Sculpt, Paint, Paths / streams, NPC / quest markers, or Vegetation**
 from the workspace bar. The left panel contains tools; the right column contains
-zone content and properties. **Save, Open saved, Undo, Redo, Frame selection and
+zone content and properties. **Save, Save As, Open, Reload, Undo, Redo, Frame selection and
 Playtest** are in the command bar, alongside the snap checkbox.
+Use **Open** (Ctrl+O) or **Save As** (Ctrl+Shift+S) to browse folders and zone
+JSON files. Save As asks before overwriting; Open remains undoable. **Reload**
+(Ctrl+Shift+O) reloads the active file.
 Choose **Top, Front or Right** for orthographic authoring, or **Perspective**.
 The wheel zooms; WASD pans along the canonical view axes. RMB orbit returns to
 perspective. The camera stays still during a transform drag. Playtest uses its
