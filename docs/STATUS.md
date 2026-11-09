@@ -1,7 +1,13 @@
-Execution constraint, 9 November 2026: desktop input/display is unavailable at
-the user’s request. Continue headless work only; do not resume mouse, keyboard,
-display use or native window checks without renewed authorization. The grid-step
-native checks below completed before this constraint.
+Headless work resumed, 9 November 2026: the user reserves the display and
+mouse. Continue without desktop input, display inspection or native window
+checks until renewed authorization. Commit locally; do not push.
+
+Content-list paging, native acceptance pending, 9 November 2026
+(P5-17 / P3-15 / P1-10): the row pool reserves space above Properties; wheel
+paging and disabled boundary buttons have headless Bevy-system coverage.
+The earlier native wheel check timed out; do not claim GPU/input acceptance.
+See [the zone record](ZONE_EDITOR.md#content-list-paging-headless-coverage--9-november-2026).
+Continue headlessly after local commits; no mouse, keyboard/display use or push.
 
 Piped structured commands, 9 November 2026 (P5-17 / P3-15 / P1-10):
 --commands - reads bounded JSONL from stdin through EOF using the same command

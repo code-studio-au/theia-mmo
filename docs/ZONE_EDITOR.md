@@ -2604,3 +2604,42 @@ and zone-stdin-launcher-tests.log. Editor SHA-256:
 No desktop input, display or native GPU checks were used for this CLI-only slice.
 Windows cross-build/native execution and multiplayer remain unqualified. Source
 schema, standard Bevy infrastructure and engine pins are unchanged.
+
+## Content-list paging: headless coverage — 9 November 2026
+
+P5-17 / P3-15 / P1-10; prerequisites are the existing application shell,
+shared bounded content list, selection reconciliation and draft isolation.
+Implementation now reserves 18 rows per page above the 600 px Properties area,
+with a bounded two-line no-wrap footer. Previous/Next and row controls use standard
+Bevy InteractionDisabled state during previews/forms/playtest; Previous and Next
+also disable at their respective boundaries. Scrolling vertically over the
+content panel requests one page per nonzero accumulated wheel frame, clamped to
+existing pages. Other panels and the viewport do not route wheel input here.
+This is paging, rather than continuous row scrolling or a searchable outliner.
+
+Four new headless tests run the actual Bevy setup, scroll, rename-opening and
+sync systems with a data-only Window at 3440 x 1440. No Winit, renderer, display
+connection or OS input is involved. Shared Session construction keeps the test
+and normal editor defaults identical. All 44 targets are visited exactly once
+across three pages at fractional local/far origins. Wheel browsing preserves
+source, revision, clean state, selection and pending redo. Tests cover panel
+edges, missing cursor, focus loss, nonfinite/zero deltas, active guide drafts,
+a real rename draft, held transforms, actual Avian playtest hide/restore,
+disabled page boundaries, content shrink/clamping and Undo
+restoration. Opt-in reports retain observed wheel-event counts and the last
+delta, cursor, focus, gating and before/after page to diagnose later native runs.
+
+All 104 focused Rust tests (55 domain / 49 editor), strict workspace/all-target
+Clippy, formatting, Python compilation and an editor build pass. Evidence is
+ignored build/zone-content-headless-{tests,all-tests,clippy,build}.log.
+
+**Native acceptance remains pending.** Before the user stopped desktop use,
+build/zone-content-paging-native-3440-v1 selected the first page’s last object,
+but its first Linux wheel-paging wait timed out. The final saved report was
+unfocused; this does not establish whether input delivery or focus caused the
+failure. The qualifier released input and closed its owned editor. No successful
+native wheel or complete local/far/GPU acceptance is claimed. The qualifier now
+retains explicit delivery/routing diagnostics without retrying a mutating input.
+It must only be run after renewed desktop authorization. No display, mouse or
+keyboard input was used while adding the headless tests. Windows execution and
+multiplayer capacity remain unqualified; engine pins and source schema unchanged.

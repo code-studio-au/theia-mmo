@@ -1,8 +1,11 @@
 //! A fixed row pool for browsing bounded zone content with standard Bevy UI.
 use super::*;
 use bevy::picking::{events::PointerPress, pointer::PointerButton};
+use bevy::ui::InteractionDisabled;
 pub(super) const WIDTH: f32 = 300.;
-const ROWS: usize = 24;
+// Leave room for the title, paging and a two-line footer above Properties at
+// the supported 3440 x 1440 authoring size. Every pooled row must be clickable.
+const ROWS: usize = 18;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Target {
@@ -25,6 +28,8 @@ pub(super) struct Content {
     revision: Option<u64>,
     selection: Option<Target>,
     selection_index: Option<usize>,
+    pub scroll_events: u64,
+    pub last_scroll: Option<serde_json::Value>,
 }
 impl Content {
     pub fn pages(&self) -> usize {
@@ -186,7 +191,17 @@ pub(super) fn setup(mut commands: Commands) {
                         });
                     }
                 });
-            panel.spawn((Label::Footer, text("Select content | F frames", 13.)));
+            panel.spawn((
+                Label::Footer,
+                text("Select content | F frames", 13.),
+                TextLayout::no_wrap(),
+                Node {
+                    height: px(44),
+                    min_height: px(44),
+                    overflow: Overflow::clip(),
+                    ..default()
+                },
+            ));
         });
 }
 
@@ -204,17 +219,13 @@ pub(super) fn activate(
     let Ok(control) = controls.get(event.entity) else {
         return;
     };
-    if session.has_modal() || session.play.is_some() || !windows.single().is_ok_and(|w| w.focused) {
+    if busy(&session) || !windows.single().is_ok_and(|w| w.focused) {
         return;
     }
     match *control {
         Control::Previous => content.page = content.page.saturating_sub(1),
         Control::Next => content.page = (content.page + 1).min(content.pages() - 1),
         Control::Row(index) => {
-            if session.drag.is_some() || session.stroke.is_some() || session.path_draft.is_some() {
-                session.status = "Finish or cancel the preview before selecting content".into();
-                return;
-            }
             let Some(entry) = content.row(index) else {
                 return;
             };
@@ -271,11 +282,57 @@ pub(super) fn activate(
     }
 }
 
+fn busy(session: &Session) -> bool {
+    session.has_modal()
+        || session.play.is_some()
+        || session.drag.is_some()
+        || session.stroke.is_some()
+        || session.path_draft.is_some()
+}
+
+pub(super) fn scroll(
+    scroll: Res<AccumulatedMouseScroll>,
+    windows: Query<&Window>,
+    session: Res<Session>,
+    mut content: ResMut<Content>,
+) {
+    let Ok(window) = windows.single() else { return };
+    if scroll.delta.y == 0. || !scroll.delta.y.is_finite() {
+        return;
+    }
+    let cursor = window.cursor_position();
+    let over_panel = cursor.is_some_and(|p| {
+        p.x >= window.width() - WIDTH
+            && p.x < window.width()
+            && p.y >= workspace::HEADER
+            && p.y < window.height() - workspace::INSPECTOR
+    });
+    let before = content.page;
+    let blocked = !window.focused || busy(&session);
+    if over_panel && !blocked {
+        if scroll.delta.y < 0. {
+            content.page = (content.page + 1).min(content.pages() - 1);
+        } else if scroll.delta.y > 0. {
+            content.page = content.page.saturating_sub(1);
+        }
+    }
+    content.scroll_events = content.scroll_events.saturating_add(1);
+    content.last_scroll = Some(serde_json::json!({
+        "delta":scroll.delta.y,"cursor":cursor.map(|point| point.to_array()),
+        "focused":window.focused,"blocked":blocked,"over_panel":over_panel,
+        "page_before":before,"page_after":content.page,
+    }));
+}
+
 pub(super) fn sync(
+    mut commands: Commands,
     session: Res<Session>,
     mut content: ResMut<Content>,
     mut root: Query<&mut Node, With<Root>>,
-    mut controls: Query<(&Control, &Hovered, &mut Node, &mut BackgroundColor), Without<Root>>,
+    mut controls: Query<
+        (Entity, &Control, &Hovered, &mut Node, &mut BackgroundColor),
+        Without<Root>,
+    >,
     mut labels: Query<(&Label, &mut Text)>,
 ) {
     let visible = session.play.is_none();
@@ -305,7 +362,18 @@ pub(super) fn sync(
         content.selection_index = index;
     }
     content.page = content.page.min(content.pages() - 1);
-    for (control, hovered, mut node, mut background) in &mut controls {
+    for (entity, control, hovered, mut node, mut background) in &mut controls {
+        let disabled = busy(&session)
+            || match *control {
+                Control::Previous => content.page == 0,
+                Control::Next => content.page + 1 == content.pages(),
+                Control::Row(index) => content.row(index).is_none(),
+            };
+        if disabled {
+            commands.entity(entity).insert(InteractionDisabled);
+        } else {
+            commands.entity(entity).remove::<InteractionDisabled>();
+        }
         let active = match *control {
             Control::Row(index) => {
                 let entry = content.row(index);
@@ -318,7 +386,9 @@ pub(super) fn sync(
             }
             _ => false,
         };
-        background.0 = if active {
+        background.0 = if disabled {
+            Color::srgb(0.045, 0.06, 0.08)
+        } else if active {
             Color::srgb(0.20, 0.34, 0.43)
         } else if hovered.0 {
             Color::srgb(0.16, 0.25, 0.33)
@@ -351,5 +421,272 @@ pub(super) fn sync(
         if **value != next {
             **value = next;
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bevy::input_focus::InputFocus;
+
+    // This app runs the actual UI setup/sync/input systems, with a data-only
+    // Window. It has no Winit, renderer, display connection or OS input driver.
+    fn app(origin: [f64; 3]) -> (App, Entity) {
+        let mut zone = Zone {
+            origin,
+            spawn: [origin[0], origin[1] + 0.0625, origin[2] + 6.],
+            ..Zone::default()
+        };
+        for id in 1..=43 {
+            zone.objects.push(Object {
+                id,
+                name: format!("Block {id}"),
+                primitive: Primitive::Box,
+                pose: Pose {
+                    position: [origin[0] + id as f64 * 4., origin[1] + 1., origin[2]],
+                    yaw_degrees: 0.,
+                    size: [2.; 3],
+                },
+            });
+        }
+        let mut editor = Editor::new(zone.clone()).unwrap();
+        editor
+            .execute(Command::Apply {
+                expected_revision: 0,
+                edits: vec![Edit::RenameZone {
+                    name: "Temporary name".into(),
+                }],
+            })
+            .unwrap();
+        editor
+            .execute(Command::Undo {
+                expected_revision: 1,
+            })
+            .unwrap();
+        let mut app = App::new();
+        app.insert_resource(Session::new(editor, PathBuf::new(), Some(zone)))
+            .init_resource::<AccumulatedMouseScroll>()
+            .init_resource::<ButtonInput<KeyCode>>()
+            .init_resource::<InputFocus>()
+            .init_resource::<workspace::Requests>()
+            .add_systems(Startup, (setup, naming::setup))
+            .add_systems(Update, (naming::keyboard, scroll, sync).chain());
+        let mut window = Window {
+            resolution: (3440, 1440).into(),
+            focused: true,
+            ..default()
+        };
+        window.set_cursor_position(Some(Vec2::new(3290., 350.)));
+        let window = app.world_mut().spawn(window).id();
+        app.update();
+        (app, window)
+    }
+    fn wheel(app: &mut App, delta: f32) {
+        app.world_mut()
+            .resource_mut::<AccumulatedMouseScroll>()
+            .delta
+            .y = delta;
+        app.update();
+    }
+    fn page(app: &App) -> usize {
+        app.world().resource::<Content>().page
+    }
+    fn disabled(app: &mut App, target: Control) -> bool {
+        app.world_mut()
+            .query::<(&Control, Has<InteractionDisabled>)>()
+            .iter(app.world())
+            .find(|(control, _)| {
+                matches!(
+                    (control, target),
+                    (Control::Previous, Control::Previous) | (Control::Next, Control::Next)
+                )
+            })
+            .unwrap()
+            .1
+    }
+    #[test]
+    fn real_bevy_systems_page_all_rows_preserving_source_revision_and_pending_redo() {
+        for origin in [
+            [0.125, 0.25, -0.5],
+            [128_000_000_000.125, 20.25, -128_000_000_000.5],
+        ] {
+            let (mut app, _) = app(origin);
+            let before = app.world().resource::<Session>().editor.zone().clone();
+            assert_eq!(app.world().resource::<Content>().pages(), 3);
+            assert!(disabled(&mut app, Control::Previous));
+            let mut ids = vec![];
+            for index in 0..3 {
+                assert_eq!(page(&app), index);
+                ids.extend(
+                    (0..ROWS)
+                        .filter_map(|i| app.world().resource::<Content>().row(i).map(|e| e.target)),
+                );
+                // Keeping an earlier selected entry must not pull wheel browsing
+                // back to its page when selection/source have not changed.
+                if index == 0 {
+                    app.world_mut().resource_mut::<Session>().selected = Some(17);
+                    wheel(&mut app, 0.);
+                }
+                wheel(&mut app, -1.);
+            }
+            assert_eq!(page(&app), 2);
+            assert!(disabled(&mut app, Control::Next));
+            assert_eq!(
+                ids,
+                std::iter::once(Target::Spawn)
+                    .chain((1..=43).map(Target::Object))
+                    .collect::<Vec<_>>()
+            );
+            wheel(&mut app, 1.);
+            wheel(&mut app, 1.);
+            wheel(&mut app, 1.);
+            assert_eq!(page(&app), 0);
+            let session = app.world().resource::<Session>();
+            assert_eq!(session.editor.zone(), &before);
+            assert_eq!(session.editor.revision(), 2);
+            assert_eq!(session.editor.history(), (0, 1));
+            assert!(!session.is_dirty());
+        }
+    }
+    #[test]
+    fn focus_panel_edges_invalid_input_and_editor_drafts_gate_wheel_routing() {
+        let (mut app, window) = app([0.; 3]);
+        for point in [
+            None,
+            Some(Vec2::new(3139., 350.)),
+            Some(Vec2::new(3290., 91.)),
+            Some(Vec2::new(3290., 840.)),
+            Some(Vec2::new(3440., 350.)),
+        ] {
+            app.world_mut()
+                .entity_mut(window)
+                .get_mut::<Window>()
+                .unwrap()
+                .set_cursor_position(point);
+            wheel(&mut app, -1.);
+            assert_eq!(page(&app), 0);
+        }
+        app.world_mut()
+            .entity_mut(window)
+            .get_mut::<Window>()
+            .unwrap()
+            .set_cursor_position(Some(Vec2::new(3140., 92.)));
+        app.world_mut()
+            .entity_mut(window)
+            .get_mut::<Window>()
+            .unwrap()
+            .focused = false;
+        wheel(&mut app, -1.);
+        assert_eq!(page(&app), 0);
+        assert_eq!(
+            app.world()
+                .resource::<Content>()
+                .last_scroll
+                .as_ref()
+                .unwrap()["blocked"],
+            true
+        );
+        app.world_mut()
+            .entity_mut(window)
+            .get_mut::<Window>()
+            .unwrap()
+            .focused = true;
+        for delta in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY, 0.] {
+            wheel(&mut app, delta);
+            assert_eq!(page(&app), 0);
+        }
+        paths::perform(
+            Action::NewPath(theia_zone::paths::PathKind::Road),
+            &mut app.world_mut().resource_mut::<Session>(),
+        );
+        wheel(&mut app, -1.);
+        assert_eq!(page(&app), 0);
+        assert!(disabled(&mut app, Control::Next));
+        app.world_mut().resource_mut::<Session>().path_draft = None;
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .press(KeyCode::F8);
+        wheel(&mut app, -1.);
+        assert!(app.world().resource::<Session>().name_edit.is_some());
+        assert_eq!(page(&app), 0);
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .clear();
+        app.world_mut().resource_mut::<Session>().name_edit = None;
+        wheel(&mut app, -0.125);
+        assert_eq!(page(&app), 1);
+        assert!(!disabled(&mut app, Control::Previous));
+        assert!(!disabled(&mut app, Control::Next));
+    }
+    #[test]
+    fn held_transform_and_actual_offline_playtest_block_content_navigation() {
+        let (mut app, _) = app([0.; 3]);
+        let original = app.world().resource::<Session>().editor.zone().clone();
+        let pose = original.objects[0].pose.clone();
+        let gesture = gizmo::Gesture::plane(
+            Ray3d::new(Vec3::new(4., 8., 0.), Dir3::NEG_Y),
+            Vec3::new(4., 1., 0.),
+        )
+        .unwrap();
+        app.world_mut().resource_mut::<Session>().drag = Some(Drag {
+            id: 1,
+            before: pose.clone(),
+            preview: pose,
+            revision: 2,
+            gesture,
+        });
+        wheel(&mut app, -1.);
+        assert_eq!(page(&app), 0);
+        assert!(disabled(&mut app, Control::Next));
+        app.world_mut().resource_mut::<Session>().drag = None;
+        let play = playtest::Playtest::new(&original).unwrap();
+        app.world_mut().resource_mut::<Session>().play = Some(play);
+        wheel(&mut app, -1.);
+        assert_eq!(page(&app), 0);
+        assert_eq!(
+            app.world_mut()
+                .query_filtered::<&Node, With<Root>>()
+                .single(app.world())
+                .unwrap()
+                .display,
+            Display::None
+        );
+        app.world_mut().resource_mut::<Session>().play = None;
+        wheel(&mut app, -1.);
+        assert_eq!(page(&app), 1);
+        assert!(!disabled(&mut app, Control::Next));
+        assert_eq!(app.world().resource::<Session>().editor.zone(), &original);
+        assert_eq!(app.world().resource::<Session>().editor.history(), (0, 1));
+    }
+    #[test]
+    fn deletion_clamps_to_existing_page_and_undo_restores_complete_content() {
+        let (mut app, _) = app([0.; 3]);
+        wheel(&mut app, -1.);
+        wheel(&mut app, -1.);
+        assert_eq!(page(&app), 2);
+        let original = app.world().resource::<Session>().editor.zone().clone();
+        app.world_mut()
+            .resource_mut::<Session>()
+            .editor
+            .execute(Command::Apply {
+                expected_revision: 2,
+                edits: (1..=43).map(|id| Edit::Delete { id }).collect(),
+            })
+            .unwrap();
+        wheel(&mut app, 0.);
+        assert_eq!(page(&app), 0);
+        assert_eq!(app.world().resource::<Content>().entries.len(), 1);
+        assert!(disabled(&mut app, Control::Previous));
+        assert!(disabled(&mut app, Control::Next));
+        app.world_mut()
+            .resource_mut::<Session>()
+            .editor
+            .execute(Command::Undo {
+                expected_revision: 3,
+            })
+            .unwrap();
+        wheel(&mut app, 0.);
+        assert_eq!(app.world().resource::<Content>().pages(), 3);
+        assert_eq!(app.world().resource::<Session>().editor.zone(), &original);
     }
 }

@@ -1,3 +1,10 @@
+Content-list paging, native acceptance pending, 9 November 2026
+(P5-17 / P3-15 / P1-10): the row pool reserves space above Properties; wheel
+paging and disabled boundary buttons have headless Bevy-system coverage.
+The earlier native wheel check timed out; do not claim GPU/input acceptance.
+See [the zone record](ZONE_EDITOR.md#content-list-paging-headless-coverage--9-november-2026).
+Continue headlessly after local commits; no mouse, keyboard/display use or push.
+
 Piped structured commands, 9 November 2026 (P5-17 / P3-15 / P1-10):
 --commands - reads bounded JSONL from stdin through EOF using the same command
 validation/history path as files and the viewport. Headless output is written

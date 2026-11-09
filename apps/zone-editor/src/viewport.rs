@@ -438,6 +438,18 @@ type ReportControls<'w, 's> = Query<
         Option<&'static file_picker::Control>,
     ),
 >;
+type ContentControls<'w, 's> = Query<
+    'w,
+    's,
+    (
+        &'static outliner::Control,
+        &'static Node,
+        &'static ComputedNode,
+        &'static bevy::ui::UiGlobalTransform,
+        &'static Hovered,
+        Has<bevy::ui::InteractionDisabled>,
+    ),
+>;
 type SceneVisuals<'w, 's> = Query<
     'w,
     's,
@@ -470,13 +482,7 @@ pub(super) fn report(
     meshes: Res<Assets<Mesh>>,
     scene_visuals: SceneVisuals,
     content: Res<outliner::Content>,
-    content_controls: Query<(
-        &outliner::Control,
-        &Node,
-        &ComputedNode,
-        &bevy::ui::UiGlobalTransform,
-        &Hovered,
-    )>,
+    content_controls: ContentControls,
 ) {
     let Some(mut report) = report else {
         return;
@@ -576,7 +582,7 @@ pub(super) fn report(
     );
     let mut content_buttons = vec![];
     if session.play.is_none() {
-        for (control, node, computed, transform, hovered) in &content_controls {
+        for (control, node, computed, transform, hovered, disabled) in &content_controls {
             if node.display == Display::None {
                 continue;
             }
@@ -589,12 +595,13 @@ pub(super) fn report(
                 outliner::Control::Previous => ("Previous".into(), "Previous".into()),
                 outliner::Control::Next => ("Next".into(), "Next".into()),
             };
-            content_buttons.push(serde_json::json!({"target":target,"label":label,"hovered":hovered.0,
+            content_buttons.push(serde_json::json!({"target":target,"label":label,"hovered":hovered.0,"disabled":disabled,
                 "centre":(transform.affine().translation*factor).to_array(),"size":(computed.size()*factor).to_array()}));
         }
     }
     value["content_list"] = serde_json::json!({"visible":session.play.is_none(),"page":content.page,
-        "pages":content.pages(),"count":content.entries.len(),"controls":content_buttons});
+        "pages":content.pages(),"count":content.entries.len(),"controls":content_buttons,
+        "scroll_events":content.scroll_events,"last_scroll":content.last_scroll});
     value["workspace_controls"] = serde_json::json!(controls.iter().filter_map(|(_,_,_,_,node,t,hovered,control,setting,value,range,..)| {
         let target = match (control,setting) { (Some(c),_)=>format!("{c:?}"),(_,Some(s))=>format!("{s:?}"),_=>return None };
         let factor = node.inverse_scale_factor() * scale.0;

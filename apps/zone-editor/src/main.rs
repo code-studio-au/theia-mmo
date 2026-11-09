@@ -100,6 +100,52 @@ struct Drag {
     gesture: gizmo::Gesture,
 }
 impl Session {
+    fn new(editor: Editor, path: PathBuf, saved_zone: Option<Zone>) -> Self {
+        let next_id = editor.zone().next_id().unwrap_or(u64::MAX);
+        Session {
+            editor,
+            saved_zone,
+            selected: None,
+            palette: None,
+            snap: true,
+            move_step: 1.,
+            show_move_handles: true,
+            gizmo_tool: gizmo::Tool::Move,
+            status: "Ready - choose a primitive, then click the ground".into(),
+            path,
+            next_id,
+            drag: None,
+            play: None,
+            heading: 0.,
+            terrain_mode: false,
+            terrain_paint: false,
+            brush_tool: terrain::Tool::Raise,
+            brush_radius: 12.,
+            brush_strength: 2.,
+            sculpt_blend: 0.5,
+            paint_blend: 1.,
+            flatten_height: 0.,
+            brush_point: None,
+            stroke: None,
+            path_mode: false,
+            marker_mode: false,
+            vegetation_mode: false,
+            plant_selected: None,
+            plant_palette: None,
+            plant_scatter: false,
+            scatter_radius: 8.,
+            scatter_count: 8,
+            plant_point: None,
+            marker_selected: None,
+            marker_palette: None,
+            path_selected: None,
+            path_point: None,
+            path_draft: None,
+            name_edit: None,
+            transform_edit: None,
+            file_dialog: None,
+        }
+    }
     fn has_modal(&self) -> bool {
         self.name_edit.is_some() || self.transform_edit.is_some() || self.file_dialog.is_some()
     }
@@ -342,7 +388,6 @@ fn run() -> Result<(), String> {
         println!("{}", cli::summary(&editor));
         return Ok(());
     }
-    let next_id = editor.zone().next_id().unwrap_or(u64::MAX);
     let initial_target = editor.zone().terrain.as_ref().map(|patch| {
         let start = patch.origin().expect("Validated terrain");
         let local = editor
@@ -354,50 +399,8 @@ fn run() -> Result<(), String> {
     let path = options.editor_path();
     let saved_zone = Zone::load(&path).ok();
     let mut app = App::new();
-    app.insert_resource(Session {
-        editor,
-        saved_zone,
-        selected: None,
-        palette: None,
-        snap: true,
-        move_step: 1.,
-        show_move_handles: true,
-        gizmo_tool: gizmo::Tool::Move,
-        status: "Ready - choose a primitive, then click the ground".into(),
-        path,
-        next_id,
-        drag: None,
-        play: None,
-        heading: 0.,
-        terrain_mode: false,
-        terrain_paint: false,
-        brush_tool: terrain::Tool::Raise,
-        brush_radius: 12.,
-        brush_strength: 2.,
-        sculpt_blend: 0.5,
-        paint_blend: 1.,
-        flatten_height: 0.,
-        brush_point: None,
-        stroke: None,
-        path_mode: false,
-        marker_mode: false,
-        vegetation_mode: false,
-        plant_selected: None,
-        plant_palette: None,
-        plant_scatter: false,
-        scatter_radius: 8.,
-        scatter_count: 8,
-        plant_point: None,
-        marker_selected: None,
-        marker_palette: None,
-        path_selected: None,
-        path_point: None,
-        path_draft: None,
-        name_edit: None,
-        transform_edit: None,
-        file_dialog: None,
-    })
-    .insert_resource(View {
+    app.insert_resource(Session::new(editor, path, saved_zone));
+    app.insert_resource(View {
         target: initial_target.unwrap_or(Vec3::ZERO),
         yaw: 0.6,
         pitch: 0.8,
@@ -463,7 +466,7 @@ fn run() -> Result<(), String> {
             paths::sync,
             markers::sync,
             vegetation::sync,
-            outliner::sync,
+            (outliner::scroll, outliner::sync).chain(),
             workspace::sync,
             present,
             viewport::capture,
