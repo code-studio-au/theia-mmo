@@ -3820,3 +3820,17 @@ Clippy and editor build pass. Evidence: `build/sprinkles-review/shared-sliders-t
 slider keyboard behavior, exact draft/source preservation and the complete
 selected-inspector layout matrix. Native pointer/visual/GPU acceptance remains
 pending while desktop use is stopped.
+
+## Aligned tool-setting names and values — 10 November 2026
+
+Aligned tool-setting values, 10 November 2026 (P5-17): tool settings
+now present 10 px medium muted names beside right-aligned 12 px tabular values
+and units, above the retained native sliders. Exact-form slider labels share
+the same field typography. Existing setting captions still supply status text,
+units and precision; no range, keyboard mapping, source edit or transaction changed.
+
+All 154 focused Rust tests, formatting, denied-warning workspace/all-target
+Clippy and editor build pass. Evidence: `build/sprinkles-review/setting-labels-tests.log`,
+`setting-labels-clippy.log` and `setting-labels-build.log`. CPU layout includes all
+selected-inspector widths/heights and slider/exact-draft checks. Native visual/
+input/GPU acceptance remains pending while desktop use is stopped.

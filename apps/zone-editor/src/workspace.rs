@@ -63,6 +63,8 @@ pub(super) struct SettingRow(Setting);
 #[derive(Component)]
 pub(super) struct SettingLabel(Setting);
 #[derive(Component)]
+pub(super) struct SettingValue;
+#[derive(Component)]
 pub(super) struct Thumb;
 #[derive(Component)]
 pub(super) struct Caption;
@@ -306,7 +308,28 @@ pub(super) fn setup(mut commands: Commands, icons: Option<Res<sidebar::Icons>>) 
                                 },
                             ))
                             .with_children(|row| {
-                                row.spawn((SettingLabel(setting), text("", 15.)));
+                                row.spawn(Node {
+                                    justify_content: JustifyContent::SpaceBetween,
+                                    align_items: AlignItems::Center,
+                                    column_gap: px(12),
+                                    ..default()
+                                })
+                                .with_children(|header| {
+                                    header.spawn((SettingLabel(setting), theme::field_label("")));
+                                    header.spawn((
+                                        SettingLabel(setting),
+                                        SettingValue,
+                                        Text::new(""),
+                                        theme::input_font(),
+                                        TextColor(theme::BODY),
+                                        TextLayout::no_wrap(),
+                                        Pickable::IGNORE,
+                                        Node {
+                                            flex_shrink: 0.,
+                                            ..default()
+                                        },
+                                    ));
+                                });
                                 row.spawn((
                                     bevy::input_focus::tab_navigation::TabIndex(-1),
                                     setting,
@@ -709,7 +732,7 @@ pub(super) fn sync(
     hierarchy: Query<&Children>,
     mut thumbs: Query<(&mut Node, &mut BackgroundColor), With<Thumb>>,
     mut rows: Query<(&SettingRow, &mut Node), (Without<Thumb>, Without<Control>)>,
-    mut labels: Query<(&SettingLabel, &mut Text), Without<ButtonLabel>>,
+    mut labels: Query<(&SettingLabel, &mut Text, Has<SettingValue>), Without<ButtonLabel>>,
     mut captions: Query<&mut Text, (With<Caption>, Without<ButtonLabel>, Without<SettingLabel>)>,
     mut section_roots: Query<
         &mut Node,
@@ -864,8 +887,10 @@ pub(super) fn sync(
             Display::None
         };
     }
-    for (setting, mut text) in &mut labels {
-        **text = setting.0.label(&session);
+    for (setting, mut text, value) in &mut labels {
+        let caption = setting.0.label(&session);
+        let (label, number) = caption.split_once("  ").unwrap_or((&caption, ""));
+        **text = if value { number } else { label }.into();
     }
     for mut text in &mut captions {
         **text = if session.play.is_some() {

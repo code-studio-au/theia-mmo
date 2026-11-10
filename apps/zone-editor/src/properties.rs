@@ -369,7 +369,8 @@ pub(super) fn setup(mut commands: Commands) {
                             container.insert(YawRow);
                         }
                         container.with_children(|row| {
-                            let mut label = row.spawn((SliderLabel(control), text("", 13.)));
+                            let mut label =
+                                row.spawn((SliderLabel(control), theme::field_label("")));
                             if yaw {
                                 label.insert(YawLabel);
                             }

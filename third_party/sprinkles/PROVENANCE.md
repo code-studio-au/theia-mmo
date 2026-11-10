@@ -171,3 +171,7 @@ and live brush-value descriptions remain the source for this presentation.
 widgets contain no slider. Thin Zinc track, rounded blue thumb and shared
 hover/focus/disabled colors follow the adopted tokens. Standard Bevy slider
 input, original horizontal geometry and Theia validation/controllers are retained.
+
+Shared field-label typography also covers settings and exact-form sliders:
+10 px medium muted labels with 12 px tabular setting values/units, following
+the pinned inspector-field tokens while retaining Theia setting captions.

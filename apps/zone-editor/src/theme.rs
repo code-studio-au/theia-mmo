@@ -87,6 +87,18 @@ pub(super) fn label(value: &str, size: f32, color: Color) -> impl Bundle {
     };
     (Text::new(value), font, TextColor(color))
 }
+pub(super) fn field_label(value: &str) -> impl Bundle {
+    (
+        Text::new(value),
+        TextFont {
+            weight: FontWeight::MEDIUM,
+            ..font(10.)
+        },
+        TextColor(MUTED),
+        Pickable::IGNORE,
+    )
+}
+
 pub(super) fn button_node() -> Node {
     Node {
         height: px(28),

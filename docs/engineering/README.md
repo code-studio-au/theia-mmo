@@ -1,3 +1,9 @@
+P5-17, 10 November 2026: tool settings separate compact muted names from
+right-aligned tabular values/units; exact-form slider labels share the field type.
+Setting captions, input and source semantics remain. All 154 focused tests,
+formatting, denied-warning Clippy and editor build pass. Native acceptance remains
+pending while desktop use is stopped. See STATUS/ZONE_EDITOR for scope/evidence.
+
 P5-17, 10 November 2026: settings/forms share a thin-track, compact-thumb
 native slider in Sprinkles colors, including hover/focus/disabled feedback.
 Native input and horizontal value mapping are retained. All 154 focused tests,
