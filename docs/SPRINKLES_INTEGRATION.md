@@ -241,22 +241,13 @@ marked dirty until saved. This protects explicit saves; recoverable drafts and
 recovery after an interruption are still pending. Native Windows execution and
 filesystem-specific behavior have not been qualified.
 
-A draft-store foundation keeps independently identified session snapshots in a
-separate directory, uses create-only and atomic replacement writes, bounds each
-file, preserves corrupt drafts for inspection and refuses additional drafts at
-its configured count limit. It is not yet wired to capture edits or offer
-recovery, so it provides no crash recovery to users yet. The count check assumes
-a single editor process; concurrent processes are not yet coordinated.
-
-Draft loading also validates the asset with the normal project migration and
-material checks before returning it for restoration. Recovery callers must open
-it as an unsaved project; its recorded original path is informational. There is
-still no user-facing restore command or automatic snapshot lifecycle.
-
-The internal restore event rejects unsaved or actively edited projects and opens
-a validated draft with no assigned path and a dirty state. It has no visible
-selector yet; snapshot capture and recovery UI remain pending.
-
-The storage API can discard a specifically selected draft without following a
-symbolic link or touching the original project. A user-facing discard control is
-still pending alongside the recovery selector.
+The separate draft store keeps independently identified session snapshots,
+uses create-only and atomic replacement writes, bounds each file, preserves
+corrupt drafts and refuses additional drafts at its configured count limit.
+The project menu offers a recovery list, loaded in the background. Drafts are
+validated with the usual migration and material checks and restore as dirty
+projects without assigned paths. Restoration rejects unsaved or actively edited
+projects. Automatic snapshot capture and a user-facing discard control remain
+pending, so this does not yet provide crash recovery. The storage API can remove
+a selected draft without following a symbolic link. Its count check assumes a
+single editor process; concurrent processes are not yet coordinated.

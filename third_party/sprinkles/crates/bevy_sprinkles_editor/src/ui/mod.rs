@@ -39,6 +39,7 @@ impl Plugin for EditorUiPlugin {
             .add_plugins(components::playback_controls::plugin)
             .add_plugins(components::examples_dialog::plugin)
             .add_plugins(components::project_selector::plugin)
+            .add_plugins(components::recovery_dialog::plugin)
             .add_plugins(widgets::dialog::plugin)
             .add_plugins(components::sidebar::plugin)
             .add_plugins(components::fps_overlay::plugin)

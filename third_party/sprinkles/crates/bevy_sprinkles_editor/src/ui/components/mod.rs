@@ -5,6 +5,7 @@ pub mod fps_overlay;
 pub mod inspector;
 pub mod playback_controls;
 pub mod project_selector;
+pub mod recovery_dialog;
 pub mod seekbar;
 pub mod sidebar;
 pub mod toasts;

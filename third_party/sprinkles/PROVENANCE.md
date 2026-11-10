@@ -250,3 +250,7 @@ local project_save_tests.rs is additional Theia regression coverage.
 Theia adds drafts.rs as a separate draft-storage foundation with temporary-file
 replacement and bounded reads. It is not connected to the imported editor UI or
 lifecycle yet and does not provide user-facing recovery.
+
+The local recovery dialog is additional Theia UI composed from Sprinkles buttons,
+dialogs and scroll controls. It scans draft files off the UI thread and restores
+through the guarded local recovery event. Automatic draft capture is pending.

@@ -1,3 +1,12 @@
+P5-17 particle recovery list, 11 November 2026: the Sprinkles project menu
+lists separately stored drafts with background loading and guarded restore as a
+dirty, pathless project. Storage and restore tests, 30 particle-editor tests,
+122 zone-editor tests, fmt and strict workspace/all-target Clippy pass. A far
+origin input-free llvmpipe Vulkan startup capture has zero GPU diagnostics; it
+does not exercise the recovery dialog. Native interaction remains unqualified.
+Automatic snapshots and visible discard remain pending, so crash recovery is not
+complete. See [particle integration](../SPRINKLES_INTEGRATION.md).
+
 P5-17 particle Save integrity, 11 November 2026: explicit Save commits a valid
 focused field, serializes writes and keeps the project dirty until a successful
 replacement; intervening edits, failed writes, migration and existing new-project

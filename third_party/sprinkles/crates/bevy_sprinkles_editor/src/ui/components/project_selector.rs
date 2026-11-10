@@ -251,6 +251,15 @@ fn handle_trigger_click(
         .insert(crate::ui::components::examples_dialog::ExamplesButton)
         .insert(ChildOf(actions_wrapper));
 
+    commands
+        .spawn_scene(button(
+            ButtonProps::new("Recover drafts...")
+                .with_variant(ButtonVariant::Ghost)
+                .align_left(),
+        ))
+        .insert(crate::ui::components::recovery_dialog::RecoveryButton)
+        .insert(ChildOf(actions_wrapper));
+
     commands.entity(popover_entity).add_child(actions_wrapper);
 
     commands.entity(popover_entity).with_child((
