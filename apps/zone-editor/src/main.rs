@@ -18,6 +18,7 @@ mod paths;
 mod placement;
 mod playtest;
 mod properties;
+mod scrolling;
 mod sections;
 mod selection;
 mod sidebar;
@@ -532,6 +533,7 @@ fn run() -> Result<(), String> {
     }))
     .add_plugins(theme::plugin)
     .add_plugins(sidebar::plugin)
+    .add_plugins(scrolling::plugin)
     .add_plugins(menus::plugin)
     .add_observer(workspace::activate)
     .add_observer(workspace::change)

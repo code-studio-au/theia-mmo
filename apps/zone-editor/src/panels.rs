@@ -75,6 +75,7 @@ pub(super) fn resize(
     mouse: Res<ButtonInput<MouseButton>>,
     keys: Res<ButtonInput<KeyCode>>,
     mut session: ResMut<Session>,
+    scrollbars: Query<&Hovered, With<bevy::ui_widgets::Scrollbar>>,
 ) {
     let Ok(window) = windows.single() else { return };
     let allowed = window.focused
@@ -101,7 +102,10 @@ pub(super) fn resize(
         if !mouse.pressed(MouseButton::Left) {
             layout.drag = None;
         }
-    } else if allowed && mouse.just_pressed(MouseButton::Left) {
+    } else if allowed
+        && mouse.just_pressed(MouseButton::Left)
+        && !scrollbars.iter().any(|hovered| hovered.0)
+    {
         let Some(cursor) = cursor else { return };
         if cursor.y <= workspace::HEADER || cursor.y >= window.height() - 52. {
             return;

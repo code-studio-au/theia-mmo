@@ -1,3 +1,27 @@
+Sprinkles inspector scrolling and button reflow, 10 November 2026 (P5-17):
+implements a scrolling inspector with Sprinkles' wheel units and slim hover/drag
+thumb, native Bevy scrollbar behavior, bounds/shrink clamping and exclusive UI
+gesture ownership beside panel resize grips. Fixes a reproduced stale Pressed
+state when tool activation reflows the inspector before pointer release. Cleanup
+never replays commands and preserves held mouse/touch gestures.
+
+All 136 focused tests, formatting, denied-warning workspace/all-target Clippy
+and build pass. Linux native local/far runs on AMD Radeon RX 7900 XTX (RADV NAVI31),
+Vulkan validation enabled, pass six placement command oracles, exact saves,
+keyboard sliders, preview/modal/panel/refusal/playtest isolation and return-to-edit
+preferences. The final UI binary separately passes menus, sections, resizing,
+numeric dragging and undo, real 24 px wheel input, scrollbar dragging in a
+3440 x 600 owned window, unchanged panel widths/documents/history, and restored
+3440 x 1440 playtest entry/return. Zero GPU diagnostics in both runs.
+
+Evidence: `build/zone-rearm-probe-20261110-v2/`,
+`build/zone-sprinkles-placement-native-20261110-v3/`,
+`build/zone-sprinkles-scroll-native-20261110-v2/` and
+`build/sprinkles-review/scrolling-*.log`. Native evidence records exact binary
+hashes. No Windows or multiplayer claim. Desktop use remains authorized; work
+continues across local commits. Next: reuse scrolling for exact attributes,
+including keyboard focus reveal and neutral inspector framing.
+
 Desktop use stopped again at the user's request, 10 November 2026.
 No editor or desktop-input process remains. Continue headlessly. The completed
 sidebar/menu/resize/numeric native run remains valid. A separate placement run

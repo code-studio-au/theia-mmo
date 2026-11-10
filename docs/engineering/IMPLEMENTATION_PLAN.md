@@ -1,3 +1,10 @@
+P5-17, 10 November 2026: Sprinkles inspector scrolling and reflow-safe button
+activation pass 136 focused Rust tests and local/far native UI/placement/playtest
+checks (RX 7900 XTX Vulkan, zero GPU diagnostics). Desktop use is authorized and
+work continues across local commits. See `docs/STATUS.md` and the inspector
+scroll contract in `docs/ZONE_EDITOR.md` for exact scope, binary hashes and
+pending attribute-editor work.
+
 Sprinkles-style workspace sidebar, 10 November 2026 (P5-17): replaces
 the top workspace row with a 72 px vertical rail using Sprinkles' icon plates,
 labels, spacing and active/hover feedback. Six unmodified Remix icons are embedded

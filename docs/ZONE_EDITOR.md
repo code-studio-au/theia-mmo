@@ -3395,3 +3395,38 @@ re-arming the placement tool before playtest. The qualifier now waits for actual
 tool hover before pressing; this is a harness change awaiting rerun. Desktop
 use was stopped again at the user's request. No native processes remain;
 preview/playtest requalification and far placement remain incomplete. No Windows execution or multiplayer claim.
+
+## Sprinkles inspector scroll and button reflow — 10 November 2026
+
+P5-17 replaces inspector clipping with a reusable scrolling pane. It follows the
+pinned Sprinkles `scroll.rs`: 24 logical pixels per wheel line, unscaled pixel
+deltas for trackpads, a hover-only 3 px Zinc-600 thumb with 3 px edge margin and
+24 px minimum length. Standard Bevy ScrollPosition, Scrollbar and ScrollbarThumb
+own layout and drag behavior. Finite-input, focus, modal and authoring-gesture
+guards retain Theia's command/history boundaries. Pane offsets clamp when content
+shrinks. The scrollbar remains visible during hover/drag, takes precedence over
+the adjacent resize grip, and owns input through release/focus loss/Escape.
+
+The independent re-arm probe reproduced a pinned Bevy 0.20 interaction: a tool
+button can move after activation, before release is delivered to the previously
+hovered entity. The original button can remain Pressed, suppressing its next
+activation. Presentation cleanup after physical mouse/touch release or focus
+loss clears residual Button state without emitting another Activate. Read-only
+qualification telemetry includes the pressed flag.
+
+CPU acceptance: 136 focused tests including the actual ButtonPlugin event path,
+held/released/focus-loss states, shorter inspector layout, real PointerScroll
+unit conversion, bounds, shrink clamping and exact read-only source/history.
+Formatting, denied-warning workspace/all-target Clippy and build pass. Native
+probe: `build/zone-rearm-probe-20261110-v2/records.json`. The placement run at
+`build/zone-sprinkles-placement-native-20261110-v3/` passes six full-document
+command oracles at local/far origins, shape-specific keyboard sliders,
+preview/modal/panel/playtest isolation, return-to-editor preference restoration,
+refused ID-exhaustion preview and exact save/undo/redo on AMD RX 7900 XTX Vulkan,
+validation enabled, zero diagnostics. The final inspector-scroll UI run
+`build/zone-sprinkles-scroll-native-20261110-v2/qualification.json` also passes
+at local/far origins on binary `9a585151e5d17f5840e1c3ae1669f4080ffb25a271096ba1c6caa68d8a519abf`:
+24 px wheel steps, bounded scrolling, thumb drag beside the panel grip with
+unchanged width/document/history in a 3440 x 600 owned window, restored
+3440 x 1440, playtest entry/return and all prior shell checks. Zero GPU
+diagnostics including the forced resizes. Native captures were reviewed. No Windows native execution or multiplayer claim.

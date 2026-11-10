@@ -13,7 +13,7 @@ from launch_environment import client_environment
 from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 
 
-def run(output, binary, only_case=None):
+def run(output, binary, only_case=None, scroll=False):
     output = output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     binary = binary.resolve()
@@ -38,12 +38,16 @@ def run(output, binary, only_case=None):
             VK_INSTANCE_LAYERS='VK_LAYER_KHRONOS_validation', VK_LOADER_DEBUG='layer'))
         logfile = folder / 'editor.log'
         desktop = None
+        if scroll:
+            desktop = Desktop()
+            desktop.prepare_wheel()
         with logfile.open('w') as log:
             process = subprocess.Popen([str(binary), '--zone', str(source), '--report', str(report)],
                                        env=env, stdout=log, stderr=log)
             try:
                 window = wait(lambda: owned_window(process.pid), 45)
-                desktop = Desktop()
+                if desktop is None:
+                    desktop = Desktop()
                 desktop.focus(window)
 
                 def state():
@@ -215,6 +219,45 @@ def run(output, binary, only_case=None):
                 assert [state()['ui_layout']['browser'][2], state()['ui_layout']['inspector'][2]] == [420, 480]
                 assert json.loads(source.read_text()) == initial
                 capture('restored-document')
+                if scroll:
+                    before_scroll = copy.deepcopy(fresh())
+                    control('Mode(Plants)')
+                    subprocess.run(['wmctrl','-ir',hex(window),'-b','remove,fullscreen'],check=True)
+                    subprocess.run(['wmctrl','-ir',hex(window),'-e','0,0,0,3440,600'],check=True)
+                    wait(lambda: state()['viewport'] == [3440,600])
+                    pane = wait(lambda: next((p for p in state()['scroll_panes'] if p['limit'][1] > 24), None))
+                    move([pane['centre'][0],400])
+                    desktop.scroll(-1)
+                    wait(lambda: state()['scroll_panes'][0]['position'][1] == 24)
+                    desktop.scroll(-8)
+                    wait(lambda: abs(state()['scroll_panes'][0]['position'][1] - min(216,pane['limit'][1])) < .1)
+                    desktop.scroll(8)
+                    wait(lambda: state()['scroll_panes'][0]['position'][1] == 0)
+                    inspector = state()['ui_layout']['inspector']
+                    track_height = inspector[3]-6
+                    thumb_height = max(24,track_height*pane['size'][1]/(pane['size'][1]+pane['limit'][1]))
+                    offset = state()['scroll_panes'][0]['position'][1]/pane['limit'][1]*(track_height-thumb_height)
+                    thumb_x = inspector[0]+inspector[2]-4.5
+                    move([thumb_x,inspector[1]+3+offset+thumb_height/2])
+                    press()
+                    move([thumb_x,590])
+                    wait(lambda:abs(state()['scroll_panes'][0]['position'][1]-pane['limit'][1])<.1)
+                    release()
+                    wait(lambda:not state()['ui_layout']['resizing'])
+                    assert state()['ui_layout']['inspector'][2] == inspector[2]
+                    capture('scrolled-short-inspector')
+                    assert state()['document'] == before_scroll['document']
+                    assert state()['history'] == before_scroll['history'] and state()['revision'] == before_scroll['revision']
+                    subprocess.run(['wmctrl','-ir',hex(window),'-b','add,fullscreen'],check=True)
+                    wait(lambda:state()['viewport']==[3440,1440])
+                    control('Command(Play)')
+                    wait(lambda:state()['play_feet'] is not None)
+                    capture('playtest-after-scroll')
+                    control('Command(Play)')
+                    wait(lambda:state()['play_feet'] is None)
+                    assert state()['document'] == before_scroll['document']
+                    assert state()['history'] == before_scroll['history']
+
                 cases.append(dict(case=name, gpu=state()['gpu'], revision=state()['revision'],
                     panels=[420, 480], exact_source_restored=True, source_file_unchanged=True))
             finally:
@@ -224,10 +267,10 @@ def run(output, binary, only_case=None):
                 process.wait(timeout=15)
         text = logfile.read_text()
         assert 'Insert instance layer "VK_LAYER_KHRONOS_validation"' in text
-        cases[-1]['gpu_diagnostics'] = check_gpu_diagnostics(text)
+        cases[-1]['gpu_diagnostics'] = check_gpu_diagnostics(text, allow_surface_resize=scroll)
     assert hashlib.sha256(binary.read_bytes()).hexdigest() == binary_hash, 'Binary changed during native qualification'
-    result = dict(cases=cases, editor_sha256=binary_hash,
-        scope='Linux native 3440x1440; real OS input, Vulkan; no Windows or multiplayer claim')
+    result = dict(cases=cases, scrolling=scroll, editor_sha256=binary_hash,
+        scope='Linux native 3440x1440; shorter 3440x600 scroll check when enabled; real OS input, Vulkan; no Windows or multiplayer claim')
     (output / 'qualification.json').write_text(json.dumps(result, indent=2)+'\n')
     print(json.dumps(result, indent=2))
 
@@ -237,5 +280,6 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--binary', type=Path, default=Path('target/debug/theia-zone-editor'))
     parser.add_argument('--case', choices=['local', 'far'])
+    parser.add_argument('--scroll', action='store_true', help='Check real wheel and scrollbar dragging in a shorter owned window')
     args = parser.parse_args()
-    run(args.output, args.binary, args.case)
+    run(args.output, args.binary, args.case, args.scroll)

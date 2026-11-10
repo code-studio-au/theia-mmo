@@ -1,3 +1,10 @@
+## 10 November 2026 — continue P5-17 through commits, desktop use renewed
+
+The user reauthorizes mouse and display use as needed and explicitly requests
+continuous progress until stopped, including across local commits. Resume owned
+native-window qualification; keep changes local without pushing. Prior desktop
+restrictions are historical and do not apply while this authorization remains.
+
 ## 10 November 2026 — desktop use stopped again
 
 The user needs the mouse and display. Stop desktop input, capture inspection and

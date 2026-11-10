@@ -1,3 +1,10 @@
+P5-17, 10 November 2026: Sprinkles inspector scrolling and reflow-safe button
+activation pass 136 focused Rust tests and local/far native UI/placement/playtest
+checks (RX 7900 XTX Vulkan, zero GPU diagnostics). Desktop use is authorized and
+work continues across local commits. See `docs/STATUS.md` and the inspector
+scroll contract in `docs/ZONE_EDITOR.md` for exact scope, binary hashes and
+pending attribute-editor work.
+
 Desktop use stopped again at the user's request, 10 November 2026.
 No editor or desktop-input process remains. Continue headlessly. The completed
 sidebar/menu/resize/numeric native run remains valid. A separate placement run

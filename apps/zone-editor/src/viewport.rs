@@ -436,7 +436,12 @@ type ReportControls<'w, 's> = Query<
     'w,
     's,
     (
-        Option<&'static Action>,
+        (
+            Option<&'static Action>,
+            Has<bevy::ui::Pressed>,
+            Option<&'static ScrollPosition>,
+            Has<scrolling::Pane>,
+        ),
         Option<&'static naming::Control>,
         Option<&'static properties::Control>,
         Option<&'static properties::Field>,
@@ -539,10 +544,10 @@ pub(super) fn report(
     let objects: Vec<_> = session.editor.zone().objects.iter().map(|object| {
         serde_json::json!({"id":object.id,"screen":project(Vec3::from_array(session.editor.zone().local(object.pose.position).unwrap()))})
     }).collect();
-    let buttons: Vec<_> = controls.iter().filter_map(|(action,_,_,_,node,t,hovered,..)| {
+    let buttons: Vec<_> = controls.iter().filter_map(|((action,pressed,..),_,_,_,node,t,hovered,..)| {
         let action = action?;
         let factor = node.inverse_scale_factor() * scale.0;
-        Some(serde_json::json!({"action":format!("{action:?}"),"hovered":hovered.0,"centre":(t.affine().translation * factor).to_array(),"size":(node.size()*factor).to_array()}))
+        Some(serde_json::json!({"action":format!("{action:?}"),"pressed":pressed,"hovered":hovered.0,"centre":(t.affine().translation * factor).to_array(),"size":(node.size()*factor).to_array()}))
     }).collect();
     let mut value = serde_json::json!({"save_path":session.path.as_ref().map(|path|path.to_string_lossy()),"left_mouse_down":mouse.pressed(MouseButton::Left),"revision":session.editor.revision(),"mesh_assets":meshes.len(),"history":session.editor.history(),
         "document":session.editor.zone(),"selected":session.selected,"snap":session.snap,"status":session.status,
@@ -641,6 +646,13 @@ pub(super) fn report(
         let factor = node.inverse_scale_factor() * scale.0;
         Some(serde_json::json!({"target":target,"hovered":hovered.0,"centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array(),
             "value":value.map(|v|v.0),"range":range.map(|r|[r.start(),r.end()])}))
+    }).collect::<Vec<_>>());
+    value["scroll_panes"] = serde_json::json!(controls.iter().filter_map(|((_,_,position,pane),_,_,_,node,t,hovered,..)| {
+        if !pane { return None; }
+        let factor = node.inverse_scale_factor() * scale.0;
+        Some(serde_json::json!({"position":position.map(|p|p.0.to_array()),"hovered":hovered.0,
+            "centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array(),
+            "limit":((node.content_size()-node.size())*factor).max(Vec2::ZERO).to_array()}))
     }).collect::<Vec<_>>());
     value["ui_layout"] = serde_json::json!({
         "sidebar":[0.,workspace::HEADER,sidebar::WIDTH,window.height()-workspace::HEADER],

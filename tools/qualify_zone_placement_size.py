@@ -62,6 +62,7 @@ def run(output,binary,only_case=None,keyboard=False,preview=False):
                     desktop.move(window,item['centre'],1)
                     wait(lambda:any(b['action']==action and b['hovered'] for b in state()['buttons']))
                     press()
+                    wait(lambda:all(not b.get('pressed', False) for b in state()['buttons']))
                 def capture(label):
                     desktop.key('F12');screenshot=report.with_suffix('.png');wait(lambda:capture_ready(screenshot),30);screenshot.rename(folder/f'{label}.png')
                 def oracle(before,edits,label):

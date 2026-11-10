@@ -82,9 +82,37 @@ pub(super) fn load_font(mut fonts: ResMut<Assets<Font>>) {
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(Startup, load_font).add_systems(
         PostUpdate,
-        (decorate_buttons, simple_buttons, text_states, input_states).chain(),
+        (
+            release_buttons,
+            decorate_buttons,
+            simple_buttons,
+            text_states,
+            input_states,
+        )
+            .chain(),
     );
 }
+// Bevy 0.20 sends release to the previously hovered entity. Activating a tool
+// can reflow the inspector before release, leaving the original button Pressed.
+// Clear residual state after native click observers run, once all pointers are
+// physically up (or focus is lost). This never emits an activation.
+fn release_buttons(
+    mut commands: Commands,
+    mouse: Res<ButtonInput<MouseButton>>,
+    touches: Res<bevy::input::touch::Touches>,
+    windows: Query<&Window>,
+    buttons: Query<Entity, (With<Button>, With<bevy::ui::Pressed>)>,
+) {
+    if windows.iter().any(|window| window.focused)
+        && (mouse.get_pressed().next().is_some() || touches.iter().next().is_some())
+    {
+        return;
+    }
+    for entity in &buttons {
+        commands.entity(entity).remove::<bevy::ui::Pressed>();
+    }
+}
+
 type NewButton = Or<(Added<Button>, Added<bevy::ui_widgets::Checkbox>)>;
 fn decorate_buttons(
     mut commands: Commands,
@@ -183,5 +211,86 @@ fn input_states(
         } else {
             BORDER
         });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bevy::picking::{
+        backend::HitData,
+        events::{Pointer, PointerPress, PointerRelease},
+        pointer::{Location, PointerButton, PointerId},
+    };
+    #[derive(Resource, Default)]
+    struct Activations(u32);
+    #[test]
+    fn reflowed_buttons_release_and_can_activate_again_without_replaying_commands() {
+        let mut app = App::new();
+        app.init_resource::<ButtonInput<MouseButton>>()
+            .init_resource::<bevy::input::touch::Touches>()
+            .init_resource::<Activations>()
+            .add_plugins(bevy::ui_widgets::ButtonPlugin)
+            .add_systems(PostUpdate, release_buttons)
+            .add_observer(|_: On<Activate>, mut count: ResMut<Activations>| count.0 += 1);
+        let window = app
+            .world_mut()
+            .spawn(Window {
+                focused: true,
+                ..default()
+            })
+            .id();
+        let original = app
+            .world_mut()
+            .spawn((Button, ActivateOnPress, Node::default()))
+            .id();
+        let under_release = app.world_mut().spawn((Button, Node::default())).id();
+        let pointer = Pointer::new(
+            PointerId::Mouse,
+            Location {
+                target: bevy::camera::RenderTarget::Window(bevy::window::WindowRef::Entity(window))
+                    .normalize(Some(window))
+                    .unwrap(),
+                position: Vec2::new(500., 350.),
+            },
+        );
+        for expected in [1, 2] {
+            app.world_mut()
+                .resource_mut::<ButtonInput<MouseButton>>()
+                .press(MouseButton::Left);
+            app.world_mut().trigger(PointerPress {
+                entity: original,
+                pointer: pointer.clone(),
+                button: PointerButton::Primary,
+                count: 1,
+                hit: HitData::new(window, 0., None, None),
+            });
+            app.update();
+            assert!(app.world().get::<bevy::ui::Pressed>(original).is_some());
+            assert_eq!(app.world().resource::<Activations>().0, expected);
+            app.world_mut().trigger(PointerRelease {
+                entity: under_release,
+                pointer: pointer.clone(),
+                button: PointerButton::Primary,
+                hit: HitData::new(window, 0., None, None),
+            });
+            assert!(app.world().get::<bevy::ui::Pressed>(original).is_some());
+            app.world_mut()
+                .resource_mut::<ButtonInput<MouseButton>>()
+                .release(MouseButton::Left);
+            app.update();
+            assert!(app.world().get::<bevy::ui::Pressed>(original).is_none());
+            assert_eq!(app.world().resource::<Activations>().0, expected);
+        }
+        app.world_mut()
+            .resource_mut::<ButtonInput<MouseButton>>()
+            .press(MouseButton::Left);
+        app.world_mut()
+            .entity_mut(original)
+            .insert(bevy::ui::Pressed);
+        app.world_mut().get_mut::<Window>(window).unwrap().focused = false;
+        app.update();
+        assert!(app.world().get::<bevy::ui::Pressed>(original).is_none());
+        assert_eq!(app.world().resource::<Activations>().0, 2);
     }
 }

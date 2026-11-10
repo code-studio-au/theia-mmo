@@ -48,3 +48,10 @@ Remix Icon License v1.0 is retained as `LICENSE-REMIX-ICON`, obtained from
 https://github.com/Remix-Design/RemixIcon/blob/master/License
 (Git blob `996917ee688557176a34e369fa1a37a0a4ef77a2`). They are functional
 editor controls, not branding or a redistributed icon-library product.
+
+`scrolling.rs` adapts `ui/widgets/scroll.rs` presentation and wheel units:
+24 logical pixels per line, pixel deltas for trackpads, a 3 px Zinc-600 thumb,
+3 px edge margin and 24 px minimum thumb length. It uses Bevy 0.20's native
+ScrollPosition/Scrollbar/ScrollbarThumb. Theia adds retained authoring/focus
+guards, finite-input checks and drag/hover visibility. No custom renderer or
+engine/plugin version change is introduced.

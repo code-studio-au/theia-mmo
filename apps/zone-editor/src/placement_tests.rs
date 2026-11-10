@@ -449,3 +449,123 @@ fn sprinkles_browser_inspector_and_tools_have_separate_full_height_regions() {
         }
     }
 }
+
+#[test]
+fn sprinkles_inspector_scroll_reaches_overflow_controls_without_authoring_edits() {
+    use bevy::input::{mouse::MouseScrollUnit, touch::TouchPhase};
+    use bevy::picking::{
+        backend::HitData,
+        events::{Pointer, PointerScroll},
+        pointer::{Location, PointerId},
+    };
+    let mut app = fixture([128_000_000_000.125, 20.25, -128_000_000_000.5]);
+    app.world_mut()
+        .resource_mut::<Session>()
+        .set_mode(EditorMode::Plants);
+    app.init_resource::<ButtonInput<MouseButton>>()
+        .init_resource::<ButtonInput<KeyCode>>()
+        .add_plugins(scrolling::plugin)
+        .add_systems(Update, terrain::palette);
+    crate::headless_ui::add_layout(&mut app);
+    let window = app
+        .world_mut()
+        .query_filtered::<Entity, With<Window>>()
+        .single(app.world())
+        .unwrap();
+    app.world_mut()
+        .get_mut::<Window>(window)
+        .unwrap()
+        .resolution
+        .set_physical_resolution(3440, 600);
+    for mut camera in app
+        .world_mut()
+        .query::<&mut Camera>()
+        .iter_mut(app.world_mut())
+    {
+        camera
+            .computed
+            .target_info
+            .as_mut()
+            .unwrap()
+            .physical_size
+            .y = 600;
+        camera.viewport.as_mut().unwrap().physical_size.y = 600;
+    }
+    for _ in 0..3 {
+        app.update();
+    }
+    let pane = app
+        .world_mut()
+        .query_filtered::<Entity, With<scrolling::Pane>>()
+        .single(app.world())
+        .unwrap();
+    let computed = app.world().get::<ComputedNode>(pane).unwrap();
+    let limit = (computed.content_size().y - computed.size().y) * computed.inverse_scale_factor();
+    assert!(limit > 100.);
+    let source = app.world().resource::<Session>().editor.zone().clone();
+    let wheel = |app: &mut App, y, unit| {
+        app.world_mut().trigger(PointerScroll {
+            entity: pane,
+            pointer: Pointer::new(
+                PointerId::Mouse,
+                Location {
+                    target: bevy::camera::RenderTarget::Window(bevy::window::WindowRef::Entity(
+                        window,
+                    ))
+                    .normalize(Some(window))
+                    .unwrap(),
+                    position: Vec2::new(500., 400.),
+                },
+            ),
+            hit: HitData::new(window, 0., None, None),
+            unit,
+            x: 0.,
+            y,
+            phase: TouchPhase::Moved,
+        });
+        app.update();
+    };
+    wheel(&mut app, -10_000., MouseScrollUnit::Pixel);
+    assert_eq!(app.world().get::<ScrollPosition>(pane).unwrap().y, limit);
+    let (hint, pose) = app
+        .world_mut()
+        .query_filtered::<(&ComputedNode, &bevy::ui::UiGlobalTransform), With<SettingsHint>>()
+        .single(app.world())
+        .unwrap();
+    assert!(pose.affine().translation.y + hint.size().y / 2. <= 600.);
+    assert!(pose.affine().translation.y - hint.size().y / 2. >= HEADER);
+    wheel(&mut app, 1., MouseScrollUnit::Line);
+    assert_eq!(
+        app.world().get::<ScrollPosition>(pane).unwrap().y,
+        limit - 24.
+    );
+    wheel(&mut app, 3.25, MouseScrollUnit::Pixel);
+    let position = app.world().get::<ScrollPosition>(pane).unwrap().y;
+    assert_eq!(position, limit - 27.25);
+    app.world_mut().get_mut::<Window>(window).unwrap().focused = false;
+    wheel(&mut app, 1., MouseScrollUnit::Line);
+    assert_eq!(app.world().get::<ScrollPosition>(pane).unwrap().y, position);
+    app.world_mut().get_mut::<Window>(window).unwrap().focused = true;
+    for delta in [f32::NAN, f32::INFINITY] {
+        wheel(&mut app, delta, MouseScrollUnit::Pixel);
+        assert_eq!(app.world().get::<ScrollPosition>(pane).unwrap().y, position);
+    }
+    wheel(&mut app, 10_000., MouseScrollUnit::Pixel);
+    assert_eq!(app.world().get::<ScrollPosition>(pane).unwrap().y, 0.);
+    wheel(&mut app, -10_000., MouseScrollUnit::Pixel);
+    app.world_mut()
+        .resource_mut::<Session>()
+        .set_mode(EditorMode::Objects);
+    for _ in 0..3 {
+        app.update();
+    }
+    let computed = app.world().get::<ComputedNode>(pane).unwrap();
+    let shorter_limit =
+        ((computed.content_size().y - computed.size().y) * computed.inverse_scale_factor()).max(0.);
+    assert!(app.world().get::<ScrollPosition>(pane).unwrap().y <= shorter_limit);
+    let session = app.world().resource::<Session>();
+    assert_eq!(session.editor.zone(), &source);
+    assert_eq!(session.editor.history(), (0, 0));
+    assert_eq!(session.editor.revision(), 0);
+    assert!(!session.is_dirty());
+}
