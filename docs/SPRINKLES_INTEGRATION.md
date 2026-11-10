@@ -247,11 +247,14 @@ corrupt drafts and refuses additional drafts at its configured count limit.
 The project menu offers a recovery list, loaded in the background. Drafts are
 validated with the usual migration and material checks and restore as dirty
 projects without assigned paths. Restoration rejects unsaved or actively edited
-projects. Automatic snapshot capture and a user-facing discard control remain
-pending, so this does not yet provide crash recovery. The storage API can remove
+projects. While the particle workspace is active, committed changes are captured in the
+background at five-second intervals. This is best-effort recovery: edits still in
+text fields, changes just before a workspace or project switch, and shutdown are
+not yet guaranteed to reach a draft. Drafts remain after an explicit Save; a
+user-facing discard control remains pending. The storage API can remove
 a selected draft without following a symbolic link. Its count check assumes a
 single editor process; concurrent processes are not yet coordinated.
 
-A bounded background draft writer serializes updates for each editing session
-and reports write errors. It is not yet connected to editor changes or shutdown;
-accepting a queued snapshot does not mean that it has reached storage.
+A bounded background writer serializes snapshots for each editing session and
+reports write errors. Accepting a queued snapshot does not mean that it has
+reached storage; orderly shutdown handling is still pending.

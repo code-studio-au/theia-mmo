@@ -18,8 +18,14 @@ use crate::ui::widgets::text_edit::{self, SaveTextInputs, TextEditCommitEvent};
 use crate::utils::{MAX_DISPLAY_PATH_LEN, simplify_path, truncate_path};
 
 pub fn plugin(app: &mut App) {
-    app.init_resource::<crate::drafts::RecoveryStore>()
-        .add_observer(crate::drafts::restore_draft)
+    app.init_resource::<crate::drafts::RecoveryStore>();
+    let draft_store = app
+        .world()
+        .resource::<crate::drafts::RecoveryStore>()
+        .0
+        .clone();
+    app.insert_non_send(crate::draft_capture::DraftCapture::new(draft_store));
+    app.add_observer(crate::drafts::restore_draft)
         .init_resource::<SaveCoordinator>()
         .init_resource::<TextFocusTracker>()
         .add_observer(on_open_project_event)
@@ -33,7 +39,7 @@ pub fn plugin(app: &mut App) {
             track_text_focus.before(text_edit::handle_unfocus),
         ))
         // A write may complete while the integrated host is on the Zone workspace.
-        .add_systems(Update, poll_save);
+        .add_systems(Update, (poll_save, crate::draft_capture::capture_drafts));
 }
 
 #[derive(Event)]
@@ -139,7 +145,7 @@ impl SaveCoordinator {
     }
 }
 
-fn serialize_snapshot(asset: &ParticlesAsset) -> Result<String, String> {
+pub(crate) fn serialize_snapshot(asset: &ParticlesAsset) -> Result<String, String> {
     ron::ser::to_string_pretty(asset, ron::ser::PrettyConfig::default())
         .map_err(|_| "Cannot save project with invalid data".into())
 }

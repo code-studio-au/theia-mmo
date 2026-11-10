@@ -953,6 +953,9 @@ mod save_tests {
         let path = dir.join("existing.ron");
         std::fs::write(&path, b"existing project").unwrap();
         let mut app = App::new();
+        app.insert_resource(crate::drafts::RecoveryStore(
+            crate::drafts::DraftStore::new(dir.join("drafts")),
+        ));
         app.add_plugins((bevy::app::TaskPoolPlugin::default(), AuthoringHostPlugin))
             .init_resource::<ButtonInput<KeyCode>>()
             .init_resource::<EditorState>()
@@ -962,6 +965,9 @@ mod save_tests {
             .init_resource::<InputFocus>()
             .add_plugins(crate::project::plugin)
             .add_observer(handle_create_project);
+        app.world_mut()
+            .non_send_mut::<crate::draft_capture::DraftCapture>()
+            .disabled = true;
         let mut name = EditableText::default();
         name.editor_mut().set_text("New effect");
         let name = app.world_mut().spawn((EditorTextEdit, name)).id();

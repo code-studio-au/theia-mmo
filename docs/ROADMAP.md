@@ -1,3 +1,11 @@
+P5-17 periodic particle drafts, 11 November 2026: committed changes in an
+active particle workspace are captured to separate draft files every five seconds
+using the bounded background writer. Explicit Save still writes the project.
+33 particle-editor tests, 122 zone-editor tests, fmt and strict workspace/all-target
+Clippy pass; input-free far-origin llvmpipe Vulkan startup has zero GPU diagnostics.
+Quick switches, shutdown and visible draft removal remain pending; native dialog
+interaction and Windows are not qualified. See [integration](SPRINKLES_INTEGRATION.md).
+
 P5-17 particle recovery list, 11 November 2026: the Sprinkles project menu
 lists separately stored drafts with background loading and guarded restore as a
 dirty, pathless project. Storage and restore tests, 30 particle-editor tests,

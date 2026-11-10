@@ -30,6 +30,10 @@ fn asset(name: &str) -> ParticlesAsset {
 struct Messages(Vec<String>);
 fn fixture(path: PathBuf) -> (App, Handle<ParticlesAsset>) {
     let mut app = App::new();
+    let draft_dir = path.parent().unwrap().join("drafts");
+    app.insert_resource(crate::drafts::RecoveryStore(
+        crate::drafts::DraftStore::new(draft_dir),
+    ));
     app.add_plugins((bevy::app::TaskPoolPlugin::default(), AuthoringHostPlugin))
         .init_resource::<ButtonInput<KeyCode>>()
         .init_resource::<InputFocus>()
@@ -42,6 +46,9 @@ fn fixture(path: PathBuf) -> (App, Handle<ParticlesAsset>) {
         .add_observer(|event: On<ToastEvent>, mut messages: ResMut<Messages>| {
             messages.0.push(event.content.clone())
         });
+    app.world_mut()
+        .non_send_mut::<crate::draft_capture::DraftCapture>()
+        .disabled = true;
     let handle = app
         .world_mut()
         .resource_mut::<Assets<ParticlesAsset>>()
