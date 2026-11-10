@@ -1,3 +1,14 @@
+## 10 November 2026 — accept a close Sprinkles match and begin direct integration
+
+The user accepts a close, usable Sprinkles style/layout/function match without a
+pixel-perfect side-by-side review. Mouse, keyboard and display use are renewed.
+Finish native functional/GPU checks and fix material issues, then begin Sprinkles
+particle/editor integration. Prefer reuse of reviewed upstream runtime and editor
+source; adapt where Bevy 0.19/0.20 APIs or Theia's authoring model require it. Keep
+Theia's current engine/physics pins and guarded source/history semantics. A first
+editor integration slice does not complete authoritative spell VFX/audio P2-13 or
+establish MMO-scale particle budgets. Keep changes local; no push is authorized.
+
 ## 10 November 2026 — P5-17 shell follows Sprinkles top bar
 
 Continue the adopted UI migration with upstream's 52 px top bar, primary Save

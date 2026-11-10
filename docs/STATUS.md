@@ -1,3 +1,28 @@
+P5-17 Sprinkles-style UI migration accepted on Linux, 10 November 2026:
+the user accepts a close, usable match without pixel-perfect comparison. Native
+local/far runs pass menus/selectors/context actions, direct attribute entry,
+exact-edit/undo preservation, panel/section behavior, resize, dialog and attribute
+focus scrolling, real wheel/thumb input in short windows and playtest return.
+Both runs restore exact source content and preserve the source file, with zero
+Vulkan diagnostics on AMD Radeon RX 7900 XTX (RADV NAVI31). Native sizes include
+3440x1440, 3440x600 and 3440x420. The qualified binary SHA-256 is
+8bbfefa2104ec5f0167abc964febf61c8fed24e6480518a81bd4085d6279e550.
+
+Evidence: `build/zone-sprinkles-close-enough-20261110-v2/qualification.json` and
+`build/zone-sprinkles-close-enough-far-20261110-v2/qualification.json`. Harness
+fixes keep wheel batches within the desktop helper's bound and wait for applied
+focus-reveal geometry after resize. Earlier failed runs were harness failures,
+not acceptance. All 156 focused Rust tests, formatting, denied-warning workspace/
+all-target Clippy and the editor build previously pass for this production code.
+Windows cross/native execution remains unverified; no multiplayer claim is made.
+
+The UI migration slice is complete at this Linux acceptance scope. Begin the
+next Sprinkles integration slice by porting reviewed runtime/editor source to
+Bevy 0.20. The compatibility probe is under ignored build/sprinkles-port; no
+particle runtime or authoring workspace has yet been added to the Theia editor.
+Full authoritative spell VFX/audio P2-13 remains separate. Desktop use is renewed;
+keep working locally without pushing.
+
 Consistent resize affordances, 10 November 2026 (P5-17): divider
 highlight/cursor feedback now shares the drag controller's window/menu/modal/
 playtest/preview availability checks. A hovered scrollbar suppresses idle resize

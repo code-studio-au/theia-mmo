@@ -266,11 +266,13 @@ def run(output, binary, only_case=None, scroll=False, attributes=False, dialogs=
                         return next(p for p in state()['scroll_panes'] if p['scope']=='Dialog' and min(p['size']) > 0)
                     wait(lambda: dialog_pane()['position'][1] > 24)
                     def onscreen(entry):
-                        assert min(entry['size']) > 0
-                        assert entry['centre'][1]-entry['size'][1]/2 >= 12
-                        assert entry['centre'][1]+entry['size'][1]/2 <= 408
+                        return (min(entry['size']) > 0
+                                and entry['centre'][1]-entry['size'][1]/2 >= 12
+                                and entry['centre'][1]+entry['size'][1]/2 <= 408)
+                    # Focus reveal updates ScrollPosition after layout; observe
+                    # the next applied geometry before checking visibility.
                     for target in ['Field','Apply','Cancel']:
-                        onscreen(next(c for c in state()['file_controls'] if c['target']==target))
+                        wait(lambda: onscreen(next(c for c in state()['file_controls'] if c['target']==target)))
                     before = copy.deepcopy(fresh())
                     pane = dialog_pane()
                     move(pane['centre'])
@@ -284,8 +286,7 @@ def run(output, binary, only_case=None, scroll=False, attributes=False, dialogs=
                 if dialogs:
                     desktop.key('F8')
                     wait(lambda: state()['name_edit'] is not None)
-                    for entry in state()['name_controls']:
-                        onscreen(entry)
+                    wait(lambda: state()['name_controls'] and all(onscreen(entry) for entry in state()['name_controls']))
                     capture('short-name-dialog')
                     desktop.key('Escape')
                     wait(lambda: state()['name_edit'] is None)
@@ -421,7 +422,14 @@ def run(output, binary, only_case=None, scroll=False, attributes=False, dialogs=
                     wait(lambda: pane_state()['position'][1] == 24)
                     desktop.scroll(-8)
                     wait(lambda: abs(pane_state()['position'][1] - min(216,pane['limit'][1])) < .1)
-                    desktop.scroll(int(pane_state()['position'][1]/24)+1)
+                    for _ in range(64):
+                        position = pane_state()['position'][1]
+                        if position <= 0:
+                            break
+                        desktop.scroll(min(8, int(position/24)+1))
+                        wait(lambda: pane_state()['position'][1] < position)
+                    else:
+                        raise AssertionError('Inspector did not return to its top within bounded wheel batches')
                     wait(lambda: pane_state()['position'][1] == 0)
                     inspector = state()['ui_layout']['inspector']
                     track_height = inspector[3]-6

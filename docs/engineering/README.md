@@ -1,3 +1,11 @@
+P5-17 UI migration, 10 November 2026: accepted at the user's close-enough
+style/usability target. Local/far native Linux checks pass full/short layouts,
+menus, attributes, resize, scrolling and playtest return with exact source/file
+preservation and zero Vulkan diagnostics on RX 7900 XTX. All 156 focused Rust
+checks and strict lint/build checks pass for that production code. Windows remains
+unverified. Begin direct Sprinkles runtime/editor source compatibility work;
+no particle integration is claimed yet. See STATUS/ZONE_EDITOR for exact evidence.
+
 P5-17, 10 November 2026: divider hover/cursor feedback follows the same
 availability rules as resizing, including menu/scrollbar ownership and lost
 window focus. The cursor matches Sprinkles' native column-resize icon. All 156

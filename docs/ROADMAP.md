@@ -1,3 +1,10 @@
+P5-17 current direction, 10 November 2026: the user accepts close-enough
+Sprinkles styling and usability; finish native functional/GPU acceptance without
+pixel-perfect comparison. Desktop input is authorized again. Then begin a direct
+Sprinkles runtime/editor source integration slice, adapting to Bevy 0.20 rather
+than recreating compatible functionality. Full gameplay VFX P2-13 remains separate.
+Keep work local and do not push.
+
 P5-17 current execution, 10 November 2026: continue the adopted Sprinkles UI
 migration headlessly across local commits while the user needs the desktop.
 Implemented slices and their checks are in STATUS/ZONE_EDITOR. Native checks
