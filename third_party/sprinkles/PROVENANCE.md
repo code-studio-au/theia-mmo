@@ -246,3 +246,7 @@ same-directory temporary files; create-new refuses existing destinations. It
 also preserves migration dirtiness. These changes do not implement draft
 recovery. Original imported file hashes are updated in source-files.json; the
 local project_save_tests.rs is additional Theia regression coverage.
+
+Theia adds drafts.rs as a separate draft-storage foundation with temporary-file
+replacement and bounded reads. It is not connected to the imported editor UI or
+lifecycle yet and does not provide user-facing recovery.

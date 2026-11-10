@@ -3,6 +3,7 @@
 // Bevy 0.20 scene macros generate unit bindings for nested scenes.
 #![allow(clippy::let_unit_value)]
 pub mod assets;
+pub mod drafts;
 pub mod hosting;
 pub mod io;
 pub mod plugin;

@@ -159,7 +159,7 @@ fn start_write(path: PathBuf, snapshot: String, create_only: bool) -> WriteResul
 
 // Write a new sibling, flush it, and replace only after the complete write.
 // Resolve existing symlinks so saving through a link does not replace the link.
-fn atomic_write(path: &Path, contents: &[u8], create_only: bool) -> std::io::Result<()> {
+pub(crate) fn atomic_write(path: &Path, contents: &[u8], create_only: bool) -> std::io::Result<()> {
     let target = match std::fs::symlink_metadata(path) {
         Ok(metadata) if metadata.file_type().is_symlink() => path.canonicalize()?,
         Ok(_) => path.to_path_buf(),

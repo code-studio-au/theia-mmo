@@ -240,3 +240,10 @@ a project cannot overwrite an existing file. Migrated 0.2 projects remain
 marked dirty until saved. This protects explicit saves; recoverable drafts and
 recovery after an interruption are still pending. Native Windows execution and
 filesystem-specific behavior have not been qualified.
+
+A draft-store foundation keeps independently identified session snapshots in a
+separate directory, uses create-only and atomic replacement writes, bounds each
+file, preserves corrupt drafts for inspection and refuses additional drafts at
+its configured count limit. It is not yet wired to capture edits or offer
+recovery, so it provides no crash recovery to users yet. The count check assumes
+a single editor process; concurrent processes are not yet coordinated.
