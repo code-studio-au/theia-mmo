@@ -134,3 +134,8 @@ name, unsaved '* ' prefix and right chevron. Theia uses its existing zone file
 commands rather than importing Sprinkles' project storage/recent-project manager.
 The 320 px bound/clipped label protects the shared top bar; explicit zone rename
 uses the retained validated naming controller and transaction/history boundary.
+
+Browser/property headings also follow pinned panel_section.rs typography:
+12 px semibold display-colored titles. Theia's selection/tool summaries keep
+its own metadata and safety feedback, with document state in the shared header
+and footer rather than repeated before each inspector description.

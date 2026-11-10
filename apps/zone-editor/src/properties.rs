@@ -338,7 +338,16 @@ pub(super) fn setup(mut commands: Commands) {
                     BackgroundColor(theme::PANEL),
                 ))
                 .with_children(|panel| {
-                    panel.spawn((Caption, text("PROPERTIES", 16.), TextLayout::no_wrap()));
+                    panel.spawn((
+                        Caption,
+                        Text::new("Properties"),
+                        TextFont {
+                            weight: FontWeight::SEMIBOLD,
+                            ..theme::font(12.)
+                        },
+                        TextColor(theme::DISPLAY),
+                        TextLayout::no_wrap(),
+                    ));
                     panel.spawn(text("Drag labels | click values for exact input", 13.));
                     fields_ui::spawn(panel);
                     for control in [Control::YawSlider, Control::ValueSlider] {
@@ -760,7 +769,7 @@ pub(super) fn finish(
             root.display = Display::Flex;
         }
         if let Ok(mut caption) = captions.single_mut() {
-            caption.0 = format!("PROPERTIES\n{}", draft.subject);
+            caption.0 = format!("Properties\n{}", draft.subject);
         }
         draft.action = None;
         session.transform_edit = Some(draft);

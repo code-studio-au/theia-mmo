@@ -1384,54 +1384,45 @@ fn present(
         .iter()
         .find(|o| Some(o.id) == session.selected);
     for mut text in &mut info {
-        **text = format!(
-            "{}\n{}\n{}",
-            session.editor.zone().name,
-            if session.is_dirty() {
-                "Unsaved"
-            } else {
-                "Saved"
-            },
-            if session.play.is_some() {
-                "Offline playtest\nW / S: forward / back\nA / D: turn\nQ / E: strafe\nSpace: jump\nF5: return to editing".into()
-            } else if session.vegetation_mode {
-                vegetation::summary(&session)
-            } else if session.marker_mode {
-                markers::summary(&session)
-            } else if session.path_mode {
-                paths::summary(&session)
-            } else if session.terrain_mode {
-                format!(
-                    "Terrain {:?}\n{}{}",
-                    session.brush_tool,
-                    session.editor.zone().terrain.as_ref().map_or(
-                        "No terrain patch".into(),
-                        |p| format!("128 m patch | {} m samples", p.sample_metres())
-                    ),
-                    session.stroke.as_ref().map_or(String::new(), |s| format!(
-                        "\nStroke {}/{} stamps",
-                        s.stamps(),
-                        theia_zone::MAX_EDITS
-                    ))
-                )
-            } else if let Some(primitive) = session.palette {
-                let hint = session
-                    .placement_preview
-                    .as_ref()
-                    .and_then(|preview| preview.error.as_deref())
-                    .map_or_else(
-                        || "Preview then click | Esc selects".into(),
-                        |error| format!("Cannot place: {error}"),
-                    );
-                format!("Placing {primitive:?}\n{hint}\nSize applies to new objects")
-            } else {
-                selected.map_or("No selection".into(), |o| {
+        **text = if session.play.is_some() {
+            "Offline playtest\nW / S: forward / back\nA / D: turn\nQ / E: strafe\nSpace: jump\nF5: return to editing".into()
+        } else if session.vegetation_mode {
+            vegetation::summary(&session)
+        } else if session.marker_mode {
+            markers::summary(&session)
+        } else if session.path_mode {
+            paths::summary(&session)
+        } else if session.terrain_mode {
+            format!(
+                "Terrain {:?}\n{}{}",
+                session.brush_tool,
+                session.editor.zone().terrain.as_ref().map_or(
+                    "No terrain patch".into(),
+                    |p| format!("128 m patch | {} m samples", p.sample_metres())
+                ),
+                session.stroke.as_ref().map_or(String::new(), |s| format!(
+                    "\nStroke {}/{} stamps",
+                    s.stamps(),
+                    theia_zone::MAX_EDITS
+                ))
+            )
+        } else if let Some(primitive) = session.palette {
+            let hint = session
+                .placement_preview
+                .as_ref()
+                .and_then(|preview| preview.error.as_deref())
+                .map_or_else(
+                    || "Preview then click | Esc selects".into(),
+                    |error| format!("Cannot place: {error}"),
+                );
+            format!("Placing {primitive:?}\n{hint}\nSize applies to new objects")
+        } else {
+            selected.map_or("No selection".into(), |o| {
                     let pose = session.drag.as_ref().filter(|d|d.id==o.id).map_or(&o.pose,|d|&d.preview);
                     format!("{}\nPosition (world metres)\n X {:.3}\n Y {:.3}\n Z {:.3}\nYaw {:.2} degrees\nSize (metres)\n X {:.3}  Y {:.3}  Z {:.3}",
                         o.name,pose.position[0],pose.position[1],pose.position[2],pose.yaw_degrees,
                         pose.size[0],pose.size[1],pose.size[2])
                 })
-            }
-        );
+        };
     }
 }

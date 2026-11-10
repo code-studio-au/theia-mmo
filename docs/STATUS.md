@@ -1,3 +1,18 @@
+Sprinkles panel heading/summary cleanup, 10 November 2026 (P5-17):
+browser and property headings now use compact 12 px semibold display text and
+title case, matching the shared panel-section typography. Inspector summaries
+lead with selected content/tool information; document name/save state stay in
+the document selector, window title and footer. Offline-playtest controls,
+placement refusal reasons, global-position summaries and tool metadata remain.
+The exact-attribute form uses the same property heading style.
+
+All 148 focused Rust tests, formatting, denied-warning workspace/all-target
+Clippy and editor build pass. Evidence:
+`build/sprinkles-review/panel-headings-tests-final.log`,
+`panel-headings-clippy.log` and `panel-headings-build.log`.
+Native rendering/input/GPU acceptance remains pending while desktop use is stopped;
+no native window, OS input or image inspection was used for this slice.
+
 Sprinkles document selector, 10 November 2026 (P5-17): the top-left
 header now shows the current zone name, upstream unsaved '* ' prefix and chevron
 through the shared native dropdown. Its ghost trigger follows pinned

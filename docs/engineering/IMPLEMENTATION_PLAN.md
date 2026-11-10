@@ -1,3 +1,9 @@
+P5-17, 10 November 2026: panel headings use shared compact Sprinkles
+typography; inspector summaries focus on selected content/tools while document
+state stays in the selector/footer. All 148 focused tests, formatting, denied-
+warning Clippy and editor build pass. Native acceptance remains pending while
+desktop use is stopped. See STATUS and ZONE_EDITOR for scope/evidence.
+
 P5-17, 10 November 2026: top-left document selection now shows the zone
 name/unsaved marker and shared file actions in Sprinkles project-selector style.
 Explicit zone rename is visually available with selection preserved. All 148

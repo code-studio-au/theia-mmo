@@ -176,7 +176,15 @@ pub(super) fn setup(mut commands: Commands) {
         ))
         .with_children(|root| {
             scrolling::pane(root, 12., scrolling::Pane::Browser, |panel| {
-                panel.spawn((Label::Title, text("ZONE CONTENT", 20.)));
+                panel.spawn((
+                    Label::Title,
+                    Text::new("Zone content"),
+                    TextFont {
+                        weight: FontWeight::SEMIBOLD,
+                        ..theme::font(12.)
+                    },
+                    TextColor(theme::DISPLAY),
+                ));
                 panel
                     .spawn(Node {
                         column_gap: px(6),
@@ -597,9 +605,9 @@ pub(super) fn sync(
         let next = match *label {
             Label::Title => {
                 if content.filter == Filter::All && content.query.is_empty() {
-                    format!("ZONE CONTENT | {}", content.entries.len())
+                    format!("Zone content · {}", content.entries.len())
                 } else {
-                    format!("ZONE CONTENT | {}/{}", content.entries.len(), content.total)
+                    format!("Zone content · {}/{}", content.entries.len(), content.total)
                 }
             }
             Label::Page => format!("{}/{}", content.page + 1, content.pages()),

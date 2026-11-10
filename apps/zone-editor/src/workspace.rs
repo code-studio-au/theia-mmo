@@ -215,7 +215,15 @@ pub(super) fn setup(mut commands: Commands, icons: Option<Res<sidebar::Icons>>) 
         ))
         .with_children(|root| {
             scrolling::pane(root, 12., scrolling::Pane::Workspace, |panel| {
-                panel.spawn((Caption, text("PROPERTIES", 19.)));
+                panel.spawn((
+                    Caption,
+                    Text::new("Properties"),
+                    TextFont {
+                        weight: FontWeight::SEMIBOLD,
+                        ..theme::font(12.)
+                    },
+                    TextColor(theme::DISPLAY),
+                ));
                 panel.spawn((Info, text("", 14.)));
                 sections::spawn(panel, "Selection", |panel| {
                     panel
@@ -868,9 +876,9 @@ pub(super) fn sync(
     }
     for mut text in &mut captions {
         **text = if session.play.is_some() {
-            "PLAYTEST CONTROLS".into()
+            "Playtest controls".into()
         } else {
-            format!("PROPERTIES  /  {:?}", mode(&session))
+            format!("Properties · {:?}", mode(&session))
         };
     }
     for mut text in &mut hints {
