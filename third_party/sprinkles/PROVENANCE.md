@@ -25,3 +25,7 @@ into native Bevy 0.20 bundles and retained Theia commands.
 
 `panels.rs` follows the resizable-panel interaction from `ui/widgets/panel.rs`,
 with Theia-specific logical bounds, world-input shielding and cancellation.
+
+The standard `ViewportNode` arrangement follows `ui/components/viewport.rs`;
+Theia adds an explicit window UI camera, standard image target and checked
+window/image coordinate conversion for its retained authoring tools.

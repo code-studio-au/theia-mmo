@@ -117,6 +117,8 @@ fn one_nonpickable_nonshadowing_ghost_reuses_palette_meshes_and_hides_without_a_
         .init_resource::<bevy::input_focus::InputFocus>()
         .init_resource::<workspace::Requests>()
         .init_resource::<outliner::Content>()
+        .init_resource::<bevy::picking::pointer::PointerMap>()
+        .init_resource::<Assets<Image>>()
         .init_resource::<Assets<Mesh>>()
         .init_resource::<Assets<StandardMaterial>>()
         .add_systems(

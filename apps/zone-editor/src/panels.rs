@@ -34,6 +34,12 @@ impl Layout {
     pub fn canvas_left(&self) -> f32 {
         self.browser + self.inspector
     }
+    pub fn window_to_viewport(&self, point: Vec2, scale: f32) -> Vec2 {
+        (point - Vec2::new(self.canvas_left(), workspace::HEADER)) * scale
+    }
+    pub fn viewport_to_window(&self, point: Vec2, scale: f32) -> Vec2 {
+        point / scale + Vec2::new(self.canvas_left(), workspace::HEADER)
+    }
 }
 
 #[derive(Component, Clone, Copy)]
@@ -41,6 +47,7 @@ pub(super) enum Region {
     Browser,
     Inspector,
     Footer,
+    Canvas,
 }
 #[derive(Component)]
 pub(super) struct Grip(Edge);
@@ -129,6 +136,7 @@ pub(super) fn apply(
             Region::Browser => (0., Some(session.ui.browser)),
             Region::Inspector => (session.ui.browser, Some(session.ui.inspector)),
             Region::Footer => (session.ui.canvas_left() + 12., None),
+            Region::Canvas => (session.ui.canvas_left(), None),
         };
         if node.left != px(left) {
             node.left = px(left);
@@ -291,5 +299,82 @@ mod tests {
         assert_eq!(session.editor.revision(), 2);
         assert_eq!(session.palette, Some(Primitive::Box));
         assert!(!session.is_dirty());
+    }
+    #[test]
+    fn embedded_viewport_projection_and_picking_round_trip_after_resizing_and_dpi_changes() {
+        use bevy::camera::{ComputedCameraValues, RenderTargetInfo};
+        for scale in [1., 1.5, 2.] {
+            for (browser, inspector) in [(300., 300.), (480., 600.), (420., 480.)] {
+                let mut session = Session::new(
+                    Editor::new(Zone::default()).unwrap(),
+                    "unused.json".into(),
+                    None,
+                );
+                session.ui.browser = browser;
+                session.ui.inspector = inspector;
+                let mut window = Window::default();
+                window
+                    .resolution
+                    .set_physical_resolution((3440. * scale) as u32, (1440. * scale) as u32);
+                window.resolution.set_scale_factor_override(Some(scale));
+                let size =
+                    Vec2::new(3440. - browser - inspector, 1440. - workspace::HEADER - 52.) * scale;
+                for preset in [
+                    camera_views::Preset::Perspective,
+                    camera_views::Preset::Top,
+                    camera_views::Preset::Front,
+                    camera_views::Preset::Right,
+                ] {
+                    let mut view = View {
+                        target: Vec3::new(16., 3., -8.),
+                        yaw: 0.6,
+                        pitch: 0.8,
+                        distance: 32.,
+                        preset,
+                        show_grid: true,
+                    };
+                    preset.select(&mut view);
+                    let mut projection = Projection::default();
+                    camera_views::projection(&view, false, &mut projection);
+                    projection.update(size.x, size.y);
+                    let camera = Camera {
+                        computed: ComputedCameraValues {
+                            clip_from_view: projection.get_clip_from_view(),
+                            target_info: Some(RenderTargetInfo {
+                                physical_size: size.as_uvec2(),
+                                scale_factor: 1.,
+                            }),
+                            ..default()
+                        },
+                        ..default()
+                    };
+                    let transform = camera_views::transform(&view);
+                    let global = GlobalTransform::from(transform);
+                    for offset in [Vec3::ZERO, Vec3::new(3., 2., 0.), Vec3::new(-4., -1., 0.)] {
+                        let point = view.target + transform.rotation * offset;
+                        let image = camera.world_to_viewport(&global, point).unwrap();
+                        let screen = session.ui.viewport_to_window(image, scale);
+                        assert!(
+                            screen.x > session.ui.canvas_left()
+                                && screen.x < 3440.
+                                && screen.y > workspace::HEADER
+                                && screen.y < 1388.
+                        );
+                        window.set_cursor_position(Some(screen));
+                        let local = canvas_cursor(&window, &session).unwrap();
+                        assert!(local.abs_diff_eq(image, 0.001));
+                        let ray = camera.viewport_to_world(&global, local).unwrap();
+                        let normal = transform.rotation * Vec3::Z;
+                        let distance = (point - ray.origin).dot(normal) / ray.direction.dot(normal);
+                        assert!(
+                            ray.get_point(distance).abs_diff_eq(point, 0.002),
+                            "{preset:?} / scale {scale}"
+                        );
+                    }
+                }
+                window.set_cursor_position(Some(Vec2::new(browser + inspector / 2., 300.)));
+                assert!(canvas_cursor(&window, &session).is_none());
+            }
+        }
     }
 }

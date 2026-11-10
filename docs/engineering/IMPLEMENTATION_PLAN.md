@@ -1,3 +1,19 @@
+Standard Bevy embedded viewport, 10 November 2026 (P5-17): adopts the same
+ViewportNode mechanism used by Sprinkles. A separate window UI camera presents
+the panels and the scene camera renders into the widget's standard image target;
+Bevy resizes it to the canvas rectangle. Shared input conversion maps logical
+window coordinates into image pixels, and report projection maps back to window
+coordinates. Panning uses the actual canvas height. No custom renderer or new
+engine/plugin version is introduced.
+
+All 132 focused Rust tests, formatting, denied-warning workspace/all-target
+Clippy and build pass. Real Bevy camera projection/ray round trips cover all four
+views, three panel-width pairs and 1x/1.5x/2x scale factors, including panel input
+exclusion. The scene/ghost data-only test initializes the real viewport and its
+pointer map. Native rendering, GPU/input, resize and playtest acceptance remain
+pending while mouse/display use are stopped. Earlier partial native evidence is
+for the pre-ViewportNode binary only. Evidence: `build/sprinkles-review/viewport-*.log`.
+
 Sprinkles-style panel resizing, 10 November 2026 (P5-17): browser and
 inspector boundaries expose bounded 12 px grips, hover/drag feedback and standard
 resize cursors. Browser width is 300..480 px and inspector width 300..600 px.

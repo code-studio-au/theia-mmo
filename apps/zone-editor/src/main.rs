@@ -38,13 +38,16 @@ use theia_zone::{Command, Edit, Editor, Object, Pose, Primitive, Zone};
 
 const CANVAS_LEFT: f32 = outliner::WIDTH + workspace::INSPECTOR_WIDTH;
 fn canvas_cursor(window: &Window, session: &Session) -> Option<Vec2> {
-    window.cursor_position().filter(|p| {
-        !session.ui.input_owned
-            && p.x > session.ui.canvas_left() + 6.
-            && p.x < window.width()
-            && p.y > workspace::HEADER
-            && p.y < window.height() - 52.
-    })
+    window
+        .cursor_position()
+        .filter(|p| {
+            !session.ui.input_owned
+                && p.x > session.ui.canvas_left() + 6.
+                && p.x < window.width()
+                && p.y > workspace::HEADER
+                && p.y < window.height() - 52.
+        })
+        .map(|p| session.ui.window_to_viewport(p, window.scale_factor()))
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum EditorMode {
@@ -1259,7 +1262,11 @@ fn camera_controls(
     } else if mouse.just_pressed(MouseButton::Middle) {
         *panning = cursor;
     } else if let (Some(previous), Some(current)) = (*panning, cursor) {
-        camera_views::pan(&mut view, current - previous, window.height());
+        camera_views::pan(
+            &mut view,
+            current - previous,
+            (window.height() - workspace::HEADER - 52.) * window.scale_factor(),
+        );
         *panning = Some(current);
     }
     if mouse.just_released(MouseButton::Middle) {

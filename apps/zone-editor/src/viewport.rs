@@ -29,6 +29,7 @@ pub(super) fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    mut images: ResMut<Assets<Image>>,
 ) {
     let pawn = materials.add(Color::srgb(0.25, 0.65, 0.95));
     commands.insert_resource(Palette {
@@ -68,10 +69,46 @@ pub(super) fn setup(
         },
         Transform::from_xyz(20., 40., 15.).looking_at(Vec3::ZERO, Vec3::Y),
     ));
+    // Sprinkles uses the standard ViewportNode, which resizes this target to
+    // its actual UI rectangle and routes native picking into the scene camera.
+    // Keep the UI camera on the window so panels retain whole-window layout.
     commands.spawn((
-        Camera3d::default(),
-        bevy::core_pipeline::tonemapping::Tonemapping::ReinhardLuminance,
-        Transform::from_xyz(20., 28., 30.).looking_at(Vec3::ZERO, Vec3::Y),
+        Camera2d,
+        Camera {
+            order: 1,
+            ..default()
+        },
+        bevy::ui::IsDefaultUiCamera,
+    ));
+    let image = images.add(Image::new_target_texture(
+        1,
+        1,
+        bevy::render::render_resource::TextureFormat::Bgra8UnormSrgb,
+        None,
+    ));
+    let camera = commands
+        .spawn((
+            Camera3d::default(),
+            Camera {
+                order: -1,
+                ..default()
+            },
+            bevy::camera::RenderTarget::Image(image.into()),
+            bevy::core_pipeline::tonemapping::Tonemapping::ReinhardLuminance,
+            Transform::from_xyz(20., 28., 30.).looking_at(Vec3::ZERO, Vec3::Y),
+        ))
+        .id();
+    commands.spawn((
+        panels::Region::Canvas,
+        Node {
+            position_type: PositionType::Absolute,
+            left: px(CANVAS_LEFT),
+            right: px(0),
+            top: px(workspace::HEADER),
+            bottom: px(52),
+            ..default()
+        },
+        bevy::ui::widget::ViewportNode::new(camera),
     ));
 }
 fn transform(zone: &Zone, pose: &Pose) -> Transform {
@@ -492,10 +529,12 @@ pub(super) fn report(
         return;
     };
     let project = |point: Vec3| {
-        camera
-            .world_to_viewport(transform, point)
-            .ok()
-            .map(|p| p.to_array())
+        camera.world_to_viewport(transform, point).ok().map(|p| {
+            session
+                .ui
+                .viewport_to_window(p, window.scale_factor())
+                .to_array()
+        })
     };
     let objects: Vec<_> = session.editor.zone().objects.iter().map(|object| {
         serde_json::json!({"id":object.id,"screen":project(Vec3::from_array(session.editor.zone().local(object.pose.position).unwrap()))})
