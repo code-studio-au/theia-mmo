@@ -643,8 +643,9 @@ pub(super) fn report(
             "value":value.map(|v|v.0),"range":range.map(|r|[r.start(),r.end()])}))
     }).collect::<Vec<_>>());
     value["ui_layout"] = serde_json::json!({
-        "browser":[0.,workspace::HEADER,session.ui.browser,window.height()-workspace::HEADER-52.],
-        "inspector":[session.ui.browser,workspace::HEADER,session.ui.inspector,window.height()-workspace::HEADER],
+        "sidebar":[0.,workspace::HEADER,sidebar::WIDTH,window.height()-workspace::HEADER],
+        "browser":[sidebar::WIDTH,workspace::HEADER,session.ui.browser,window.height()-workspace::HEADER-52.],
+        "inspector":[sidebar::WIDTH+session.ui.browser,workspace::HEADER,session.ui.inspector,window.height()-workspace::HEADER],
         "canvas":[session.ui.canvas_left(),workspace::HEADER,window.width()-session.ui.canvas_left(),window.height()-workspace::HEADER-52.],
         "resizing":session.ui.input_owned
     });

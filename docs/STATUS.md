@@ -1,3 +1,38 @@
+Desktop use stopped again at the user's request, 10 November 2026.
+No editor or desktop-input process remains. Continue headlessly. The completed
+sidebar/menu/resize/numeric native run remains valid. A separate placement run
+passed local box/sphere/cylinder dimensions, keyboard sliders, preview/placement
+command oracles, undo/redo and exact save, then timed out while re-arming a tool
+before playtest. This does not qualify playtest or the far placement case.
+The qualifier now waits for the intended tool's actual hover before pressing,
+as it already did for other controls; this harness change needs a native rerun.
+No application fix is inferred from the timeout. Local log GPU diagnostics: zero.
+Evidence: `build/zone-sprinkles-placement-native-20261110-v1/` and
+`build/sprinkles-review/sidebar-placement-native-v1.log`.
+
+Sprinkles-style workspace sidebar, 10 November 2026 (P5-17): replaces
+the top workspace row with a 72 px vertical rail using Sprinkles' icon plates,
+labels, spacing and active/hover feedback. Six unmodified Remix icons are embedded
+through Bevy's standard asset system with license and exact hashes retained.
+Existing guarded workspace commands remain authoritative for mode changes.
+Browser, inspector, canvas projection/input, wheel routing, grips and telemetry
+include the rail offset; the future native qualifier reads that offset.
+
+All 134 focused Rust tests pass, including actual Bevy CPU layout across all six
+workspaces and three panel-width pairs, viewport/ray conversion across DPI scales,
+resize cancellation and browser wheel exclusion over the rail. Formatting,
+denied-warning workspace/all-target Clippy and build pass. With desktop use
+renewed, Linux native 3440 x 1440 checks pass at local/far fractional origins on
+AMD Radeon RX 7900 XTX (RADV NAVI31), Vulkan with validation enabled: six workspace
+rail buttons, resize/cancel, sections, mouse/keyboard menus, file browser,
+stationary exact attributes, numeric drag/Cancel/Apply/undo and New/undo preserve
+full documents. Zero GPU diagnostics. Visual review found unsupported font
+chevrons; standard Bevy UI border geometry now renders them consistently.
+Evidence: `build/sprinkles-review/sidebar-*.log` and
+`build/zone-sprinkles-native-20261110-v3/qualification.json`.
+Placement/preview/playtest requalification remains incomplete; desktop use is
+stopped again. See STATUS for partial local placement evidence. No Windows claim.
+
 Sprinkles-style numeric attribute dragging, 10 November 2026 (P5-17):
 visible ↔ labels scrub their exact field values while ordinary text input remains
 available. Normal drag steps by 0.1 per 5 logical pixels; Alt/Super uses 1 per 10.

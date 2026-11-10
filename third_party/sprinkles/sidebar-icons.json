@@ -1,0 +1,32 @@
+[
+  {
+    "file": "ri-box-2-fill.png",
+    "sha256": "27013b3795c43f21a0175b5bc755c1d49ff6ac09f9cabcf0c6d721314fc8edf5",
+    "bytes": 823
+  },
+  {
+    "file": "ri-hashtag.png",
+    "sha256": "80bcc4d84cd1e056e02b819e576b778fa81fa3557670d055d52e26db9e4beef2",
+    "bytes": 688
+  },
+  {
+    "file": "ri-folder-image-line.png",
+    "sha256": "a698111b2035cec31f99c1d8e98949043db6887db4cad7c8a46c1e3e3224c7b4",
+    "bytes": 605
+  },
+  {
+    "file": "ri-node-tree.png",
+    "sha256": "125fd955d9ce9de0a9dc1098e7a80663c87d9957e0aa16a2f3e02bc0f5fc7abb",
+    "bytes": 362
+  },
+  {
+    "file": "ri-information-fill.png",
+    "sha256": "af05047c9539e3801d50a4b4cb235fc051a911718686e7bbe6549c8f34ce140c",
+    "bytes": 932
+  },
+  {
+    "file": "ri-seedling-fill.png",
+    "sha256": "331f660707202e51b2d0311fa3d7971ca4419fd5942bafc945bdddd42554efdc",
+    "bytes": 770
+  }
+]

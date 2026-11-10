@@ -299,7 +299,7 @@ pub(super) fn setup(mut commands: Commands) {
             Node {
                 display: Display::None,
                 position_type: PositionType::Absolute,
-                left: px(outliner::WIDTH),
+                left: px(sidebar::WIDTH + outliner::WIDTH),
                 top: px(workspace::HEADER),
                 bottom: px(0),
                 width: px(workspace::INSPECTOR_WIDTH),

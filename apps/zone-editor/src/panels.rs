@@ -32,7 +32,7 @@ impl Default for Layout {
 }
 impl Layout {
     pub fn canvas_left(&self) -> f32 {
-        self.browser + self.inspector
+        sidebar::WIDTH + self.browser + self.inspector
     }
     pub fn window_to_viewport(&self, point: Vec2, scale: f32) -> Vec2 {
         (point - Vec2::new(self.canvas_left(), workspace::HEADER)) * scale
@@ -106,7 +106,7 @@ pub(super) fn resize(
         if cursor.y <= workspace::HEADER || cursor.y >= window.height() - 52. {
             return;
         }
-        let edge = if (cursor.x - layout.browser).abs() <= GRIP / 2. {
+        let edge = if (cursor.x - sidebar::WIDTH - layout.browser).abs() <= GRIP / 2. {
             Some(Edge::Browser)
         } else if (cursor.x - layout.canvas_left()).abs() <= GRIP / 2. {
             Some(Edge::Inspector)
@@ -133,8 +133,11 @@ pub(super) fn apply(
 ) {
     for (region, mut node) in &mut regions {
         let (left, width) = match region {
-            Region::Browser => (0., Some(session.ui.browser)),
-            Region::Inspector => (session.ui.browser, Some(session.ui.inspector)),
+            Region::Browser => (sidebar::WIDTH, Some(session.ui.browser)),
+            Region::Inspector => (
+                sidebar::WIDTH + session.ui.browser,
+                Some(session.ui.inspector),
+            ),
             Region::Footer => (session.ui.canvas_left() + 12., None),
             Region::Canvas => (session.ui.canvas_left(), None),
         };
@@ -156,7 +159,7 @@ pub(super) fn apply(
             Display::Flex
         };
         let edge = match grip.0 {
-            Edge::Browser => session.ui.browser,
+            Edge::Browser => sidebar::WIDTH + session.ui.browser,
             Edge::Inspector => session.ui.canvas_left(),
         };
         if node.left != px(edge - GRIP / 2.) {
@@ -253,9 +256,9 @@ mod tests {
             resolution: (3440, 1440).into(),
             ..default()
         });
-        press(&mut app, Vec2::new(300., 350.));
+        press(&mut app, Vec2::new(sidebar::WIDTH + 300., 350.));
         assert!(app.world().resource::<Session>().ui.input_owned);
-        cursor(&mut app, Vec2::new(450., 350.));
+        cursor(&mut app, Vec2::new(sidebar::WIDTH + 450., 350.));
         app.update();
         assert_eq!(app.world().resource::<Session>().ui.browser, 450.);
         let mut windows = app.world_mut().query::<&Window>();
@@ -263,12 +266,12 @@ mod tests {
         let s = app.world().resource::<Session>();
         assert!(canvas_cursor(w, s).is_none());
         release(&mut app);
-        press(&mut app, Vec2::new(810., 350.));
+        press(&mut app, Vec2::new(sidebar::WIDTH + 810., 350.));
         cursor(&mut app, Vec2::new(2000., 350.));
         app.update();
         assert_eq!(app.world().resource::<Session>().ui.inspector, 600.);
         release(&mut app);
-        press(&mut app, Vec2::new(450., 350.));
+        press(&mut app, Vec2::new(sidebar::WIDTH + 450., 350.));
         cursor(&mut app, Vec2::new(100., 350.));
         app.update();
         assert_eq!(app.world().resource::<Session>().ui.browser, 300.);
@@ -281,8 +284,8 @@ mod tests {
             .resource_mut::<ButtonInput<KeyCode>>()
             .reset_all();
         release(&mut app);
-        press(&mut app, Vec2::new(1050., 350.));
-        cursor(&mut app, Vec2::new(800., 350.));
+        press(&mut app, Vec2::new(sidebar::WIDTH + 1050., 350.));
+        cursor(&mut app, Vec2::new(sidebar::WIDTH + 800., 350.));
         app.update();
         assert_eq!(app.world().resource::<Session>().ui.inspector, 350.);
         app.world_mut()
@@ -317,8 +320,10 @@ mod tests {
                     .resolution
                     .set_physical_resolution((3440. * scale) as u32, (1440. * scale) as u32);
                 window.resolution.set_scale_factor_override(Some(scale));
-                let size =
-                    Vec2::new(3440. - browser - inspector, 1440. - workspace::HEADER - 52.) * scale;
+                let size = Vec2::new(
+                    3440. - sidebar::WIDTH - browser - inspector,
+                    1440. - workspace::HEADER - 52.,
+                ) * scale;
                 for preset in [
                     camera_views::Preset::Perspective,
                     camera_views::Preset::Top,

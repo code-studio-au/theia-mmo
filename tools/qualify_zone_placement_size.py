@@ -8,13 +8,14 @@ import os
 from pathlib import Path
 import subprocess
 from gpu_validation import check_gpu_diagnostics
+from launch_environment import client_environment
 from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 
 
 def run(output,binary,only_case=None,keyboard=False,preview=False):
     output=output.resolve();output.mkdir(parents=True,exist_ok=False);binary=binary.resolve()
     cases=[];oracles=0
-    env=dict(os.environ,WGPU_BACKEND='vulkan',VK_INSTANCE_LAYERS='VK_LAYER_KHRONOS_validation',VK_LOADER_DEBUG='layer')
+    env=client_environment(dict(os.environ,WGPU_BACKEND='vulkan',VK_INSTANCE_LAYERS='VK_LAYER_KHRONOS_validation',VK_LOADER_DEBUG='layer'))
     for name,origin in [('local',[.125,.25,-.5]),('far',[128000000000.125,20.25,-128000000000.5])]:
         if only_case and name!=only_case:continue
         folder=output/name;folder.mkdir();report=folder/'state.json';logfile=folder/'editor.log'
@@ -48,11 +49,19 @@ def run(output,binary,only_case=None,keyboard=False,preview=False):
                     wait(lambda:state()['cursor'] and max(abs(a-b) for a,b in zip(state()['cursor'],point))<2)
                     press()
                 def control(target,group='workspace_controls'):
+                    if target in ['Command(Undo)', 'Command(Redo)']:
+                        menu = next(c for c in state()['menus'] if c['name']=='Edit' and c['role']=='button')
+                        click(menu['centre'])
+                        wait(lambda:any(c['name']=='Edit' and c['role']=='popup' and min(c['size'])>0 for c in state()['menus']))
                     item=wait(lambda:next((b for b in entries(group) if b['target']==target and all(v>0 for v in b['size'])),None))
                     desktop.move(window,item['centre'],1)
                     wait(lambda:any(b['target']==target and b['hovered'] for b in entries(group)))
                     press()
-                def tool(action):click(next(b['centre'] for b in state()['buttons'] if b['action']==action and all(v>0 for v in b['size'])))
+                def tool(action):
+                    item=wait(lambda:next((b for b in state()['buttons'] if b['action']==action and all(v>0 for v in b['size'])),None))
+                    desktop.move(window,item['centre'],1)
+                    wait(lambda:any(b['action']==action and b['hovered'] for b in state()['buttons']))
+                    press()
                 def capture(label):
                     desktop.key('F12');screenshot=report.with_suffix('.png');wait(lambda:capture_ready(screenshot),30);screenshot.rename(folder/f'{label}.png')
                 def oracle(before,edits,label):
@@ -82,7 +91,8 @@ def run(output,binary,only_case=None,keyboard=False,preview=False):
                     item=wait(lambda:next((c for c in state()['workspace_controls'] if c['target']==target and c['size'][1]>0),None))
                     assert item['range']==[.25,32.]
                     x,y=item['centre'];w,h=item['size']
-                    assert x-w/2>=3140 and x+w/2<=3440 and y-h/2>=840 and y+h/2<=1440
+                    left,top,width,height=state()['ui_layout']['inspector']
+                    assert x-w/2>=left and x+w/2<=left+width and y-h/2>=top and y+h/2<=top+height
                     thumb=[x-w/2+7+(w-14)*(item['value']-.25)/31.75,y]
                     end=[x-w/2+7+(w-14)*(desired-.25)/31.75,y]
                     desktop.move(window,thumb,1);desktop.button(1,True)
@@ -132,7 +142,8 @@ def run(output,binary,only_case=None,keyboard=False,preview=False):
                             assert state()['document']==before['document'] and state()['revision']==before['revision']
                             desktop.key('Escape');wait(lambda:state()['name_edit'] is None)
                             wait(lambda:state()['placement_preview'] is not None and state()['placement_ghost']['visible'])
-                        desktop.move(window,[3290,350],1)
+                        panel=state()['ui_layout']['inspector']
+                        desktop.move(window,[panel[0]+panel[2]/2,350],1)
                         wait(lambda:state()['placement_preview'] is None and not state()['placement_ghost']['visible'])
                     click(before['ground'][0])
                     wait(lambda:state()['revision']==before['revision']+1)

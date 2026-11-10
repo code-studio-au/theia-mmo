@@ -85,7 +85,7 @@ pub(super) fn new_document(
         Err(error) => session.status = error,
     }
 }
-fn mode(session: &Session) -> EditorMode {
+pub(super) fn mode(session: &Session) -> EditorMode {
     if session.terrain_paint {
         EditorMode::Paint
     } else if session.terrain_mode {
@@ -115,7 +115,8 @@ fn button(control: Control, caption: &str) -> impl Bundle {
         children![(ButtonLabel, text(caption, 15.))],
     )
 }
-pub(super) fn setup(mut commands: Commands) {
+pub(super) fn setup(mut commands: Commands, icons: Option<Res<sidebar::Icons>>) {
+    sidebar::setup(&mut commands, icons.as_deref());
     commands.init_resource::<Requests>();
     commands
         .spawn((
@@ -232,18 +233,7 @@ pub(super) fn setup(mut commands: Commands) {
                 ..default()
             })
             .with_children(|row| {
-                row.spawn(text("WORKSPACE", 13.));
-                for (mode, label) in [
-                    (EditorMode::Objects, "Objects"),
-                    (EditorMode::Sculpt, "Sculpt"),
-                    (EditorMode::Paint, "Paint"),
-                    (EditorMode::Guides, "Paths / streams"),
-                    (EditorMode::Markers, "NPC / quest markers"),
-                    (EditorMode::Plants, "Vegetation"),
-                ] {
-                    row.spawn(button(Control::Mode(mode), label));
-                }
-                row.spawn(text("   VIEW", 13.));
+                row.spawn(text("VIEW", 13.));
                 for (preset, label) in [
                     (camera_views::Preset::Perspective, "Perspective"),
                     (camera_views::Preset::Top, "Top"),
@@ -273,7 +263,7 @@ pub(super) fn setup(mut commands: Commands) {
             panels::Region::Inspector,
             Node {
                 position_type: PositionType::Absolute,
-                left: px(outliner::WIDTH),
+                left: px(sidebar::WIDTH + outliner::WIDTH),
                 top: px(HEADER),
                 bottom: px(0),
                 width: px(INSPECTOR_WIDTH),
@@ -413,7 +403,7 @@ pub(super) fn setup(mut commands: Commands) {
         });
 }
 impl Control {
-    fn enabled(self, session: &Session) -> bool {
+    pub(super) fn enabled(self, session: &Session) -> bool {
         if matches!(self, Self::Command(Action::Play)) && session.play.is_some() {
             return !session.has_modal();
         }
@@ -564,7 +554,13 @@ impl Setting {
 #[allow(clippy::too_many_arguments)]
 pub(super) fn activate(
     event: On<PointerPress>,
-    controls: Query<&Control, Without<bevy::ui_widgets::MenuItem>>,
+    controls: Query<
+        &Control,
+        (
+            Without<bevy::ui_widgets::MenuItem>,
+            Without<sidebar::RailButton>,
+        ),
+    >,
     windows: Query<&Window>,
     mut session: ResMut<Session>,
     mut view: ResMut<View>,
@@ -736,6 +732,7 @@ pub(super) fn sync(
             &mut Node,
             Has<Checked>,
             Has<InteractionDisabled>,
+            Has<sidebar::RailButton>,
         ),
         Without<Thumb>,
     >,
@@ -786,7 +783,7 @@ pub(super) fn sync(
             Display::None
         };
     }
-    for (entity, control, children, hovered, mut background, mut node, checked, disabled) in
+    for (entity, control, children, hovered, mut background, mut node, checked, disabled, rail) in
         &mut controls
     {
         node.display = if matches!(
@@ -820,7 +817,9 @@ pub(super) fn sync(
             Control::Command(Action::Play) => session.play.is_some(),
             _ => false,
         };
-        background.0 = if !enabled {
+        background.0 = if rail {
+            Color::NONE
+        } else if !enabled {
             theme::Variant::Disabled.background(false)
         } else if active {
             theme::Variant::Active.background(false)

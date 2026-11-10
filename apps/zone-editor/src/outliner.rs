@@ -161,7 +161,7 @@ pub(super) fn setup(mut commands: Commands) {
             Node {
                 position_type: PositionType::Absolute,
                 top: px(workspace::HEADER),
-                left: px(0),
+                left: px(sidebar::WIDTH),
                 bottom: px(52),
                 width: px(WIDTH),
                 padding: UiRect::all(px(12)),
@@ -431,8 +431,8 @@ pub(super) fn scroll(
     }
     let cursor = window.cursor_position();
     let over_panel = cursor.is_some_and(|p| {
-        p.x >= 0.
-            && p.x < session.ui.browser
+        p.x >= sidebar::WIDTH
+            && p.x < sidebar::WIDTH + session.ui.browser
             && p.y >= workspace::HEADER
             && p.y < window.height() - 52.
     });
@@ -1117,9 +1117,10 @@ mod tests {
         for point in [
             None,
             Some(Vec2::new(-1., 350.)),
+            Some(Vec2::new(sidebar::WIDTH - 1., 350.)),
             Some(Vec2::new(150., 91.)),
             Some(Vec2::new(150., 1388.)),
-            Some(Vec2::new(300., 350.)),
+            Some(Vec2::new(sidebar::WIDTH + WIDTH, 350.)),
         ] {
             app.world_mut()
                 .entity_mut(window)
@@ -1133,7 +1134,7 @@ mod tests {
             .entity_mut(window)
             .get_mut::<Window>()
             .unwrap()
-            .set_cursor_position(Some(Vec2::new(0., 92.)));
+            .set_cursor_position(Some(Vec2::new(sidebar::WIDTH, 92.)));
         app.world_mut()
             .entity_mut(window)
             .get_mut::<Window>()
@@ -1297,7 +1298,10 @@ mod tests {
                     assert!(computed.size().y >= 26.);
                     let position = transform.affine().translation;
                     let half = computed.size() * 0.5;
-                    assert!(position.x - half.x >= 0. && position.x + half.x <= WIDTH);
+                    assert!(
+                        position.x - half.x >= sidebar::WIDTH
+                            && position.x + half.x <= sidebar::WIDTH + WIDTH
+                    );
                     assert!(position.y - half.y >= 92. && position.y + half.y <= 1388.);
                 }
                 if !matches!(control, Control::Row(_)) || node.display == Display::None {
@@ -1306,7 +1310,10 @@ mod tests {
                 let position = transform.affine().translation;
                 let half = computed.size() * 0.5;
                 assert_eq!(computed.size().y, 24.);
-                assert!(position.x - half.x >= 0. && position.x + half.x <= WIDTH);
+                assert!(
+                    position.x - half.x >= sidebar::WIDTH
+                        && position.x + half.x <= sidebar::WIDTH + WIDTH
+                );
                 assert!(position.y - half.y >= 92. && position.y + half.y <= 1388.);
                 visible += 1;
             }

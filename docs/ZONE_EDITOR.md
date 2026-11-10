@@ -3353,3 +3353,45 @@ precision, local/far object/plant/marker/guide-point/spawn/guide-width drags,
 command-oracle equality, one-entry Apply, malformed fields and cancellation.
 Native mouse/UI/GPU acceptance remains pending while desktop use is stopped.
 Evidence: `build/sprinkles-review/scrub-*.log`.
+
+## Sprinkles workspace rail — 10 November 2026
+
+P5-17 uses the upstream 72 px sidebar with 12 px padding/gap, 28 px rounded icon
+plates, 16 px artwork and 10 px labels. Objects, Sculpt, Paint, Guides, Markers
+and Plants use the retained workspace controls; mode switching keeps existing
+modal, focus, preview and playtest guards. Only icon plates receive the blue
+active/hover fill. Six original Remix icons are embedded into the editor, with
+license and hashes under `third_party/sprinkles/`.
+
+The browser starts after the rail; inspector and canvas follow the two resizable
+columns. Shared panel/input conversion, initial layout, wheel bounds, grips,
+footer and report coordinates account for the rail. A pointer over the rail
+cannot page the browser or edit the world. The native qualifier derives its
+resize positions from the reported browser origin rather than old constants.
+
+Acceptance: all 134 focused Rust tests, actual CPU layout for six workspaces and
+three width pairs, DPI/projection/picking round trips, resize cancellation,
+wheel exclusion, formatting, denied-warning workspace/all-target Clippy and
+build. Evidence: `build/sprinkles-review/sidebar-*.log`. No native windows,
+desktop input or capture inspection were used. Visual/input/GPU checks remain
+pending; previously qualified theme evidence does not qualify this binary.
+
+Desktop use renewed after this slice's headless checks. Native qualification
+`build/zone-sprinkles-native-20261110-v3/qualification.json` now covers both
+local and far fractional origins at 3440 x 1440 on AMD Radeon RX 7900 XTX
+(RADV NAVI31), Vulkan validation enabled, zero GPU diagnostics. It exercises
+all six workspace buttons, bounded resizing/cancellation, collapse/expand,
+File/Edit menus including keyboard Open, file browsing, exact stationary
+attribute clicks, numeric dragging with Cancel and one-entry Apply/undo, and
+New/undo. Full documents and source files are checked, not screenshots alone.
+Reviewed native captures confirm sidebar icons, panel bounds, menus, file
+browser, embedded scene, fields and distant-coordinate numeric values.
+
+Visual review found the Inter font lacks the section chevron glyphs. Headers
+now draw chevrons using standard Bevy UI borders and rotation, without another
+font dependency. A later local placement run passed three shape placements, keyboard sliders,
+preview/command equality, undo/redo and exact save, then timed out while
+re-arming the placement tool before playtest. The qualifier now waits for actual
+tool hover before pressing; this is a harness change awaiting rerun. Desktop
+use was stopped again at the user's request. No native processes remain;
+preview/playtest requalification and far placement remain incomplete. No Windows execution or multiplayer claim.

@@ -46,7 +46,26 @@ pub(super) fn spawn(
                         ..default()
                     },
                     BackgroundColor(theme::Variant::Ghost.background(false)),
-                    children![(text(title, 14.)), (Chevron, text("▾", 14.))],
+                    children![
+                        (text(title, 14.)),
+                        (
+                            Chevron,
+                            Pickable::IGNORE,
+                            Node {
+                                width: px(6),
+                                height: px(6),
+                                border: UiRect {
+                                    right: px(1),
+                                    bottom: px(1),
+                                    ..default()
+                                },
+                                margin: UiRect::right(px(4)),
+                                ..default()
+                            },
+                            BorderColor::all(theme::BODY),
+                            UiTransform::from_rotation(Rot2::degrees(45.))
+                        ),
+                    ],
                 ))
                 .observe(toggle)
                 .id();
@@ -74,7 +93,7 @@ fn toggle(
     windows: Query<&Window>,
     mut sections: Query<(&mut Section, &Children)>,
     mut nodes: Query<&mut Node>,
-    mut chevrons: Query<&mut Text, With<Chevron>>,
+    mut chevrons: Query<&mut UiTransform, With<Chevron>>,
     mut focus: Option<ResMut<bevy::input_focus::InputFocus>>,
 ) {
     if workspace::busy(&session) || !windows.single().is_ok_and(|window| window.focused) {
@@ -98,8 +117,8 @@ fn toggle(
         focus.set(event.entity, bevy::input_focus::FocusCause::Navigated);
     }
     for child in children.iter() {
-        if let Ok(mut text) = chevrons.get_mut(child) {
-            **text = if section.expanded { "▾" } else { "▸" }.into();
+        if let Ok(mut transform) = chevrons.get_mut(child) {
+            transform.rotation = Rot2::degrees(if section.expanded { 45. } else { -45. });
         }
     }
 }
@@ -150,7 +169,10 @@ mod tests {
                 .id();
             let body = app.world_mut().spawn(Node::default()).id();
             let hidden_field = app.world_mut().spawn_empty().id();
-            let chevron = app.world_mut().spawn((Chevron, Text::new("▾"))).id();
+            let chevron = app
+                .world_mut()
+                .spawn((Chevron, UiTransform::from_rotation(Rot2::degrees(45.))))
+                .id();
             let header = app
                 .world_mut()
                 .spawn(Section {

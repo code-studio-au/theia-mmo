@@ -17,8 +17,9 @@ are in `apps/zone-editor/assets/fonts/OFL.txt`, obtained from
 https://github.com/rsms/inter/blob/master/LICENSE.txt
 (Git blob `9b2ca37b3ffc77391d8b2ebef4a974ef32bf46ea`).
 
-No upstream Blender/Remix icons, example effects or particle runtime are included
-in this first adaptation. Theia-specific controls follow the same visual tokens.
+The initial adaptation included no upstream icons. The sidebar slice below adds
+six Remix icons; no Blender icons, example effects or particle runtime are included.
+Theia-specific controls follow the same visual tokens.
 
 `apps/zone-editor/src/sections.rs` adapts `ui/widgets/panel_section.rs`
 into native Bevy 0.20 bundles and retained Theia commands.
@@ -34,3 +35,16 @@ window/image coordinate conversion for its retained authoring tools.
 It retains the upstream normal/Alt/Super increments but preserves exact original
 f64 text and uses symmetric truncation rather than absolute decimal rounding.
 Theia retains whole-candidate validation and one-entry Apply/Cancel history.
+
+`sidebar.rs` adapts `ui/components/sidebar.rs`: 72 px rail, 12 px padding/gap,
+28 px icon plates, 16 px icons, 10 px labels and active/hover feedback. The six
+workspaces retain Theia's guarded commands. PNGs are copied unmodified from
+`crates/bevy_sprinkles_editor/src/assets/icons/` at the pinned revision and
+embedded using Bevy's asset system. Exact filenames, byte counts and SHA-256
+hashes are recorded in `sidebar-icons.json`.
+
+These icons originate from Remix Icon, copyright Remix Design. The full
+Remix Icon License v1.0 is retained as `LICENSE-REMIX-ICON`, obtained from
+https://github.com/Remix-Design/RemixIcon/blob/master/License
+(Git blob `996917ee688557176a34e369fa1a37a0a4ef77a2`). They are functional
+editor controls, not branding or a redistributed icon-library product.

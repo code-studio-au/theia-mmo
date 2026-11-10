@@ -1,3 +1,16 @@
+## 10 November 2026 — desktop use stopped again
+
+The user needs the mouse and display. Stop desktop input, capture inspection and
+native windows; continue headlessly. No editor/input process remains. Keep
+completed native evidence separate from pending preview/playtest checks.
+
+## 10 November 2026 — desktop use renewed for P5-17
+
+The user reauthorizes mouse and display use as needed. Resume guarded native
+editor input, screenshot review and GPU qualification. Prior headless-only
+restrictions remain historical; do not infer native acceptance from CPU checks.
+Keep all changes local and do not push.
+
 ## 10 November 2026 — match Sprinkles layout and interaction closely
 
 The user explicitly extends the adopted direction beyond styling: match

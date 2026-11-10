@@ -20,6 +20,7 @@ mod playtest;
 mod properties;
 mod sections;
 mod selection;
+mod sidebar;
 mod snapping;
 mod spawn;
 mod terrain;
@@ -36,7 +37,7 @@ use bevy::{
 use std::path::PathBuf;
 use theia_zone::{Command, Edit, Editor, Object, Pose, Primitive, Zone};
 
-const CANVAS_LEFT: f32 = outliner::WIDTH + workspace::INSPECTOR_WIDTH;
+const CANVAS_LEFT: f32 = sidebar::WIDTH + outliner::WIDTH + workspace::INSPECTOR_WIDTH;
 fn canvas_cursor(window: &Window, session: &Session) -> Option<Vec2> {
     window
         .cursor_position()
@@ -530,6 +531,7 @@ fn run() -> Result<(), String> {
         ..default()
     }))
     .add_plugins(theme::plugin)
+    .add_plugins(sidebar::plugin)
     .add_plugins(menus::plugin)
     .add_observer(workspace::activate)
     .add_observer(workspace::change)

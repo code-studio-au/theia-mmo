@@ -98,9 +98,25 @@ def run(output, binary, only_case=None):
                 control('Object(1)', 'content')
                 wait(lambda: state()['selected'] == 1)
 
+                baseline_revision, baseline_history = 0, [0, 0]
+
                 def unchanged():
                     current = fresh()
-                    assert current['document'] == initial and current['revision'] == 0 and current['history'] == [0, 0]
+                    assert current['document'] == initial and current['revision'] == baseline_revision and current['history'] == baseline_history
+
+                for mode, flags in [
+                    ('Sculpt', [True, False, False, False, False]),
+                    ('Paint', [True, True, False, False, False]),
+                    ('Guides', [False, False, True, False, False]),
+                    ('Markers', [False, False, False, True, False]),
+                    ('Plants', [False, False, False, False, True]),
+                    ('Objects', [False, False, False, False, False]),
+                ]:
+                    control(f'Mode({mode})')
+                    wait(lambda: [state()[key] for key in ['terrain_mode', 'terrain_paint', 'path_mode', 'marker_mode', 'vegetation_mode']] == flags)
+                    unchanged()
+                control('Object(1)', 'content')
+                wait(lambda: state()['selected'] == 1)
 
                 def resize(edge, target, expected):
                     move([edge, 700])
@@ -113,11 +129,12 @@ def run(output, binary, only_case=None):
                     wait(lambda: not state()['ui_layout']['resizing'])
                     unchanged()
 
-                resize(300, 420, [420, 360])
-                resize(780, 900, [420, 480])
-                move([900, 700])
+                browser_left = state()['ui_layout']['browser'][0]
+                resize(browser_left + 300, browser_left + 420, [420, 360])
+                resize(browser_left + 780, browser_left + 900, [420, 480])
+                move([browser_left + 900, 700])
                 press()
-                move([1000, 700])
+                move([browser_left + 1000, 700])
                 wait(lambda: state()['ui_layout']['inspector'][2] == 580)
                 desktop.key('Escape')
                 wait(lambda: state()['ui_layout']['inspector'][2] == 480)
@@ -151,18 +168,49 @@ def run(output, binary, only_case=None):
                 control('Transform')
                 wait(lambda: state()['transform_edit'] is not None)
                 capture('exact-attributes')
+                original_fields = state()['transform_edit']['fields'][:]
+                field = next(c for c in state()['transform_controls'] if c['target'] == 'Field(0)')
+                label = [field['centre'][0] - field['size'][0]/2 - 50, field['centre'][1]]
+                click(label)
+                assert fresh()['transform_edit']['fields'] == original_fields
+                move(label)
+                press()
+                move([label[0]+25, label[1]])
+                expected_x = float(original_fields[0]) + .5
+                wait(lambda: float(state()['transform_edit']['fields'][0]) == expected_x)
+                release()
+                unchanged()
+                capture('numeric-label-drag')
                 control('Cancel', 'transform_controls')
                 wait(lambda: state()['transform_edit'] is None)
+                unchanged()
+                control('Transform')
+                wait(lambda: state()['transform_edit'] is not None)
+                assert state()['transform_edit']['fields'] == original_fields
+                move(label)
+                press()
+                move([label[0]+25, label[1]])
+                wait(lambda: float(state()['transform_edit']['fields'][0]) == expected_x)
+                release()
+                control('Apply', 'transform_controls')
+                wait(lambda: state()['revision'] == 1 and state()['transform_edit'] is None)
+                expected = copy.deepcopy(initial)
+                expected['objects'][0]['pose']['position'][0] = expected_x
+                assert state()['document'] == expected and state()['history'] == [1, 0]
+                menu('Edit')
+                control('Command(Undo)')
+                wait(lambda: state()['revision'] == 2)
+                baseline_revision, baseline_history = 2, [0, 1]
                 unchanged()
 
                 menu('File')
                 control('New')
-                wait(lambda: state()['revision'] == 1)
+                wait(lambda: state()['revision'] == baseline_revision + 1)
                 assert state()['document']['objects'] == [] and state()['history'] == [1, 0]
                 menu('Edit')
                 capture('edit-menu')
                 control('Command(Undo)')
-                wait(lambda: state()['revision'] == 2)
+                wait(lambda: state()['revision'] == baseline_revision + 2)
                 assert state()['document'] == initial and state()['history'] == [0, 1]
                 assert [state()['ui_layout']['browser'][2], state()['ui_layout']['inspector'][2]] == [420, 480]
                 assert json.loads(source.read_text()) == initial

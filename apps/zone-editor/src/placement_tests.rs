@@ -306,7 +306,10 @@ fn placement_controls_fit_properties_for_each_shape_and_hide_when_selecting() {
             assert!(node.size().min_element() > 0.);
             let centre = transform.affine().translation;
             let half = node.size() * 0.5;
-            assert!(centre.x - half.x >= outliner::WIDTH && centre.x + half.x <= CANVAS_LEFT);
+            assert!(
+                centre.x - half.x >= sidebar::WIDTH + outliner::WIDTH
+                    && centre.x + half.x <= CANVAS_LEFT
+            );
             assert!(centre.y - half.y >= workspace::HEADER && centre.y + half.y <= 1440.);
         }
     }
@@ -340,7 +343,7 @@ fn placement_controls_fit_properties_for_each_shape_and_hide_when_selecting() {
     for (node,transform) in app.world_mut().query_filtered::<(&ComputedNode,&bevy::ui::UiGlobalTransform),Or<(With<Caption>,With<Info>,With<SettingsHint>)>>().iter(app.world()) {
         let centre=transform.affine().translation;let half=node.size()*0.5;
         assert!(node.size().min_element()>0.);
-        assert!(centre.x-half.x>=outliner::WIDTH && centre.x+half.x<=CANVAS_LEFT);
+        assert!(centre.x-half.x>=sidebar::WIDTH+outliner::WIDTH && centre.x+half.x<=CANVAS_LEFT);
         assert!(centre.y-half.y>=workspace::HEADER && centre.y+half.y<=1440.);
     }
     app.world_mut()
@@ -373,7 +376,8 @@ fn sprinkles_browser_inspector_and_tools_have_separate_full_height_regions() {
     use bevy::ecs::system::RunSystemOnce;
     let mut app = fixture([128_000_000_000.125, 20.25, -128_000_000_000.5]);
     app.world_mut().run_system_once(outliner::setup).unwrap();
-    app.add_systems(Update, outliner::sync);
+    app.add_observer(sidebar::activate)
+        .add_systems(Update, outliner::sync);
     crate::headless_ui::add_layout(&mut app);
     let source = app.world().resource::<Session>().editor.zone().clone();
     app.add_systems(Update, (panels::apply, terrain::palette).chain());
@@ -388,9 +392,21 @@ fn sprinkles_browser_inspector_and_tools_have_separate_full_height_regions() {
             EditorMode::Markers,
             EditorMode::Plants,
         ] {
-            app.world_mut().resource_mut::<Session>().set_mode(mode);
+            let button = app.world_mut().query_filtered::<(Entity, &Control), With<sidebar::RailButton>>()
+                .iter(app.world()).find(|(_, control)| matches!(control, Control::Mode(candidate) if *candidate == mode)).unwrap().0;
+            app.world_mut().trigger(Activate { entity: button });
+            assert_eq!(super::mode(app.world().resource::<Session>()), mode);
             for _ in 0..3 {
                 app.update();
+            }
+            let rail_buttons: Vec<_> = app.world_mut()
+                .query_filtered::<(&ComputedNode, &bevy::ui::UiGlobalTransform), With<sidebar::RailButton>>()
+                .iter(app.world()).map(|(node, pose)| (node.size(), pose.affine().translation)).collect();
+            assert_eq!(rail_buttons.len(), 6);
+            for (size, centre) in rail_buttons {
+                assert!(size.x > 0. && size.y >= 40.);
+                assert!(centre.x - size.x / 2. >= 0. && centre.x + size.x / 2. <= sidebar::WIDTH);
+                assert!(centre.y - size.y / 2. >= HEADER && centre.y + size.y / 2. <= 1440.);
             }
             let (browser, browser_pose) = app
             .world_mut()
@@ -403,7 +419,10 @@ fn sprinkles_browser_inspector_and_tools_have_separate_full_height_regions() {
             );
             assert_eq!(
                 browser_pose.affine().translation,
-                Vec2::new(browser_width / 2., HEADER + browser.size().y / 2.)
+                Vec2::new(
+                    sidebar::WIDTH + browser_width / 2.,
+                    HEADER + browser.size().y / 2.
+                )
             );
             let (inspector, inspector_pose) = app
                 .world_mut()
@@ -413,7 +432,7 @@ fn sprinkles_browser_inspector_and_tools_have_separate_full_height_regions() {
             assert_eq!(inspector.size(), Vec2::new(inspector_width, 1440. - HEADER));
             assert_eq!(
                 inspector_pose.affine().translation.x,
-                browser_width + inspector_width / 2.
+                sidebar::WIDTH + browser_width + inspector_width / 2.
             );
             let mut visible = 0;
             for (style,node,pose) in app.world_mut().query_filtered::<(&Node,&ComputedNode,&bevy::ui::UiGlobalTransform),With<PaletteSlot>>().iter(app.world()) {
@@ -421,7 +440,7 @@ fn sprinkles_browser_inspector_and_tools_have_separate_full_height_regions() {
             visible+=1;
             let p=pose.affine().translation;let half=node.size()/2.;
             assert!(node.size().min_element()>0.);
-            assert!(p.x-half.x>=browser_width && p.x+half.x<=browser_width+inspector_width);
+            assert!(p.x-half.x>=sidebar::WIDTH+browser_width && p.x+half.x<=sidebar::WIDTH+browser_width+inspector_width);
             assert!(p.y-half.y>=HEADER && p.y+half.y<=1440.);
         }
             assert!(visible > 0);
