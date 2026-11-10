@@ -484,3 +484,102 @@ fn cpu_layout_keeps_yaw_slider_exact_fields_and_apply_controls_inside_properties
         }
     }
 }
+
+#[test]
+fn native_track_presses_reach_range_ends_without_applying_exact_attribute_drafts() {
+    use bevy::picking::{
+        backend::HitData,
+        events::{Pointer, PointerRelease},
+        pointer::{Location, PointerId},
+    };
+    for origin in [
+        [0.125, 0.25, -0.5],
+        [128_000_000_000.125, 20.25, -128_000_000_000.5],
+    ] {
+        for (target, control, field, minimum, maximum) in [
+            (0, Control::YawSlider, 3, -180., 180.),
+            (1, Control::ValueSlider, 4, 0.25, 8.),
+            (2, Control::ValueSlider, 4, 0.25, 64.),
+            (3, Control::ValueSlider, 3, 0.25, 32.),
+            (5, Control::ValueSlider, 0, 0.25, 32.),
+        ] {
+            let (mut app, _) = fixture_with_input(origin, target, false, true);
+            app.add_plugins(bevy::input_focus::pointer_focus::PointerFocusPlugin);
+            crate::headless_ui::add_layout(&mut app);
+            for _ in 0..4 {
+                app.update();
+            }
+            let session = app.world().resource::<Session>();
+            let source = session.editor.zone().clone();
+            let revision = session.editor.revision();
+            let history = session.editor.history();
+            let dirty = session.is_dirty();
+            let original = session.transform_edit.as_ref().unwrap().fields.clone();
+            let slider = app
+                .world_mut()
+                .query::<(Entity, &Control)>()
+                .iter(app.world())
+                .find(|(_, candidate)| **candidate == control)
+                .unwrap()
+                .0;
+            let window = app
+                .world_mut()
+                .query_filtered::<Entity, With<Window>>()
+                .single(app.world())
+                .unwrap();
+            for (fraction, expected) in [(0., minimum), (1., maximum)] {
+                let node = app.world().get::<ComputedNode>(slider).unwrap();
+                let pose = app
+                    .world()
+                    .get::<bevy::ui::UiGlobalTransform>(slider)
+                    .unwrap();
+                let size = node.size();
+                let centre = pose.affine().translation;
+                // The visible end of the track must clamp to the authored range,
+                // including the half-thumb inset used by Bevy's pointer mapping.
+                let position = Vec2::new(centre.x + (fraction - 0.5) * size.x, centre.y);
+                let pointer = Pointer::new(
+                    PointerId::Mouse,
+                    Location {
+                        target: bevy::camera::RenderTarget::Window(
+                            bevy::window::WindowRef::Entity(window),
+                        )
+                        .normalize(Some(window))
+                        .unwrap(),
+                        position,
+                    },
+                );
+                app.world_mut().trigger(PointerPress {
+                    entity: slider,
+                    button: PointerButton::Primary,
+                    count: 1,
+                    pointer: pointer.clone(),
+                    hit: HitData::new(window, 0., None, None),
+                });
+                app.update();
+                assert!(app.world().get::<bevy::ui::Pressed>(slider).is_some());
+                assert_eq!(app.world().resource::<InputFocus>().get(), Some(slider));
+                let session = app.world().resource::<Session>();
+                let draft = session.transform_edit.as_ref().unwrap();
+                assert_eq!(draft.fields[field].parse::<f64>().unwrap(), expected);
+                for (index, text) in draft.fields.iter().enumerate() {
+                    if index != field {
+                        assert_eq!(text, &original[index]);
+                    }
+                }
+                assert_eq!(session.editor.zone(), &source);
+                assert_eq!(session.editor.revision(), revision);
+                assert_eq!(session.editor.history(), history);
+                assert_eq!(session.is_dirty(), dirty);
+                app.world_mut().trigger(PointerRelease {
+                    entity: slider,
+                    button: PointerButton::Primary,
+                    pointer,
+                    hit: HitData::new(window, 0., None, None),
+                });
+                app.update();
+                assert!(app.world().get::<bevy::ui::Pressed>(slider).is_none());
+            }
+        }
+    }
+}

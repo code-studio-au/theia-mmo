@@ -1,3 +1,17 @@
+Native Bevy slider-event headless checks, 10 November 2026 (P5-17):
+a new CPU font/layout case sends actual PointerPress/PointerRelease events
+through Bevy's native slider and pointer-focus observers. At local/far origins,
+yaw, plant scale, marker radius and point/whole-guide width reach both authored
+range ends, acquire focus and clear Pressed on release. Only the selected draft
+field changes; all other original strings, source document, revision, dirty
+state and pending redo stay unchanged. No production code changed.
+
+All 155 focused Rust tests, formatting and denied-warning workspace/all-target
+Clippy pass. Evidence: `build/sprinkles-review/native-track-focused.log`,
+`native-track-tests.log` and `native-track-clippy.log`. This is Linux CPU event/
+layout evidence without an OS input device, Winit window, renderer or GPU.
+Native visual/input/GPU acceptance remains pending while desktop use is stopped.
+
 Naming/property native qualifier preparation, 10 November 2026 (P5-17):
 `tools/qualify_zone_names.py` now checks exact fields against the current
 inspector rectangle and chooses the visible inspector Transform action rather

@@ -1,3 +1,9 @@
+P5-17, 10 November 2026: CPU tests send native Bevy pointer press/release
+through all exact-form slider types at local/far origins. Range endpoints,
+focus/release and draft/source/redo preservation pass. All 155 focused tests,
+formatting and denied-warning Clippy pass. No production change or OS/GPU input
+occurred; native acceptance remains pending. See STATUS/ZONE_EDITOR.
+
 P5-17, 10 November 2026: naming/property native checks are prepared for
 current inspector geometry and duplicate menu/action telemetry. Syntax/--help
 checks pass; no native run or production change occurred while desktop use is
