@@ -1,3 +1,11 @@
+P5-17 same-window preparation, 10 November 2026: all original Sprinkles Update
+systems share an activity gate, defaulting active for the qualified companion.
+An actual save-shortcut regression proves inactive Sprinkles cannot save its
+project on Ctrl S. Four editor tests, fmt and strict workspace Clippy pass, as
+does the full native widget-edit/save flow with zero Vulkan diagnostics. UI,
+focus, camera/layer isolation and Theia input suspension remain to be connected;
+this does not yet claim a same-window workspace. See ../SPRINKLES_INTEGRATION.md.
+
 P5-17 original Sprinkles widget commits, 10 November 2026: curve range, gradient
 stop and colour edits pass real native input and exact asset/source comparisons
 with zero Vulkan diagnostics. Correct the curve range root/child lookup and

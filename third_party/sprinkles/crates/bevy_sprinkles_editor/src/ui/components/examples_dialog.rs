@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 use bevy::color::palettes::tailwind;
 use bevy::picking::hover::Hovered;
 use bevy::prelude::*;
@@ -23,10 +24,7 @@ pub fn plugin(app: &mut App) {
     app.add_observer(handle_examples_button_click)
         .add_observer(handle_example_card_click)
         .add_observer(handle_open_example)
-        .add_systems(
-            Update,
-            (setup_examples_dialog_content, cleanup_examples_dialog_state),
-        );
+        .add_authoring_systems((setup_examples_dialog_content, cleanup_examples_dialog_state));
 }
 
 #[derive(Component)]

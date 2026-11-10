@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 use bevy::color::palettes::tailwind;
 use bevy::prelude::*;
 use bevy::text::{FontFeatureTag, FontFeatures, FontSourceTemplate};
@@ -12,7 +13,7 @@ const SEEKBAR_WIDTH: f32 = 192.0;
 const LABEL_SIZE: f32 = 12.0;
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(Update, (update_seekbar, setup_seekbar_observers))
+    app.add_authoring_systems((update_seekbar, setup_seekbar_observers))
         .add_observer(on_seekbar_drag);
 }
 

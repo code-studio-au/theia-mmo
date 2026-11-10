@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 pub mod components;
 pub mod icons;
 pub mod tokens;
@@ -44,7 +45,7 @@ impl Plugin for EditorUiPlugin {
             .add_plugins(components::toasts::plugin)
             .add_plugins(components::topbar::plugin)
             .add_systems(Startup, setup_ui)
-            .add_systems(Update, setup_viewport);
+            .add_authoring_systems(setup_viewport);
     }
 }
 

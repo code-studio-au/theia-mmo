@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 use bevy::prelude::*;
 use bevy_sprinkles::prelude::*;
 
@@ -29,8 +30,7 @@ struct SubEmitterTargetComboBox;
 pub fn plugin(app: &mut App) {
     app.add_observer(handle_sub_emitter_mode_change)
         .add_observer(handle_sub_emitter_target_change)
-        .add_systems(
-            Update,
+        .add_authoring_systems(
             setup_sub_emitter_content.after(super::update_inspected_emitter_tracker),
         );
 }

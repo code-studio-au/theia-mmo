@@ -1,4 +1,5 @@
 //! Bevy 0.20 adapter: standard line meshes avoid native gizmo upload hazards.
+use crate::hosting::AuthoringAppExt;
 use crate::{
     state::{EditorState, Inspectable},
     ui::tokens::PRIMARY_COLOR,
@@ -24,10 +25,8 @@ struct Geometry {
 }
 
 pub(crate) fn plugin(app: &mut App) {
-    app.add_systems(Startup, setup).add_systems(
-        Update,
-        sync.after(crate::viewport::sync_inspected_emitter_aabb),
-    );
+    app.add_systems(Startup, setup)
+        .add_authoring_systems(sync.after(crate::viewport::sync_inspected_emitter_aabb));
 }
 
 fn setup(
@@ -176,7 +175,7 @@ mod tests {
             .init_resource::<Assets<StandardMaterial>>()
             .init_resource::<EditorState>()
             .add_systems(Startup, setup)
-            .add_systems(Update, sync);
+            .add_authoring_systems(sync);
         let source = app
             .world_mut()
             .spawn((

@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 use std::path::PathBuf;
 
 use bevy::prelude::*;
@@ -12,7 +13,7 @@ pub fn plugin(app: &mut App) {
         .init_resource::<DirtyState>()
         .init_resource::<ActiveSidebarTab>()
         .add_systems(PostStartup, update_window_title)
-        .add_systems(Update, update_window_title);
+        .add_authoring_systems(update_window_title);
 }
 
 #[derive(Resource, Default)]

@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 use crate::ui::widgets::button::CompatButton as Button;
 use bevy::color::palettes::tailwind;
 use bevy::picking::hover::Hovered;
@@ -62,7 +63,7 @@ struct AlertConfig {
 }
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(Update, setup_alert);
+    app.add_authoring_systems(setup_alert);
 }
 
 pub fn alert(variant: AlertVariant, spans: Vec<AlertSpan>) -> impl Scene {

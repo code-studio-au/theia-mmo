@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 mod materials;
 mod presets;
 
@@ -94,26 +95,23 @@ pub fn plugin(app: &mut App) {
         .add_observer(handle_axis_tab_click)
         .add_observer(handle_flip_click)
         .add_observer(handle_point_mode_change)
-        .add_systems(
-            Update,
-            (
-                setup_curve_edit,
-                setup_curve_edit_content,
-                update_curve_visuals,
-                respawn_handles_on_point_change,
-                update_handle_colors,
-                sync_trigger_label,
-                sync_range_inputs_to_state,
-                handle_range_blur,
-                handle_canvas_right_click,
-                handle_point_right_click,
-                handle_tension_right_click,
-                sync_axis_tabs_visibility,
-                sync_axis_tab_styles,
-                sync_axis_tab_text_alignment,
-                sync_axes_combobox_to_state,
-            ),
-        );
+        .add_authoring_systems((
+            setup_curve_edit,
+            setup_curve_edit_content,
+            update_curve_visuals,
+            respawn_handles_on_point_change,
+            update_handle_colors,
+            sync_trigger_label,
+            sync_range_inputs_to_state,
+            handle_range_blur,
+            handle_canvas_right_click,
+            handle_point_right_click,
+            handle_tension_right_click,
+            sync_axis_tabs_visibility,
+            sync_axis_tab_styles,
+            sync_axis_tab_text_alignment,
+            sync_axes_combobox_to_state,
+        ));
 }
 
 #[derive(Component, Default, Clone)]
@@ -1539,10 +1537,7 @@ mod range_tests {
         let mut app = App::new();
         app.init_resource::<InputFocus>()
             .init_resource::<Commits>()
-            .add_systems(
-                Update,
-                (handle_range_blur, sync_range_inputs_to_state).chain(),
-            )
+            .add_authoring_systems((handle_range_blur, sync_range_inputs_to_state).chain())
             .add_observer(
                 |event: On<CurveEditCommitEvent>, mut commits: ResMut<Commits>| {
                     commits.0.push(event.curve.clone())

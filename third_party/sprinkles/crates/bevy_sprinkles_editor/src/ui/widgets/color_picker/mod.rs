@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 mod color_math;
 pub mod materials;
 
@@ -43,18 +44,15 @@ pub fn plugin(app: &mut App) {
         .add_plugins(UiMaterialPlugin::<CheckerboardMaterial>::default())
         .add_observer(handle_trigger_click)
         .add_observer(handle_input_mode_change)
-        .add_systems(
-            Update,
-            (
-                setup_color_picker,
-                setup_trigger_swatch,
-                setup_color_picker_content,
-                update_color_picker_visuals,
-                handle_input_field_blur,
-                update_trigger_display,
-                sync_text_inputs_to_state,
-            ),
-        );
+        .add_authoring_systems((
+            setup_color_picker,
+            setup_trigger_swatch,
+            setup_color_picker_content,
+            update_color_picker_visuals,
+            handle_input_field_blur,
+            update_trigger_display,
+            sync_text_inputs_to_state,
+        ));
 }
 
 #[derive(Component, Default, Clone)]

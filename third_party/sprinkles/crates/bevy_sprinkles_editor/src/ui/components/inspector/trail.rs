@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 use bevy::prelude::*;
 use bevy_sprinkles::prelude::*;
 
@@ -19,14 +20,11 @@ struct TrailOptions;
 struct TrailNoMeshAlert;
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(
-        Update,
-        (
-            setup_trail_options,
-            toggle_trail_options,
-            sync_trail_no_mesh_alert,
-        ),
-    );
+    app.add_authoring_systems((
+        setup_trail_options,
+        toggle_trail_options,
+        sync_trail_no_mesh_alert,
+    ));
 }
 
 pub fn trail_section() -> (impl Bundle, InspectorSection) {

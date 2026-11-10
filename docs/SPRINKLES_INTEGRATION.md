@@ -135,3 +135,24 @@ Run `tools/qualify_sprinkles_port.py --widgets` to include these checks.
 All 16 runtime/editor tests and three runtime doctests pass for the widget fix,
 along with formatting and denied-warning workspace/all-target Clippy. Retained
 zone/host behavior is unchanged; earlier host proof applies to its recorded binary.
+
+## Same-window preparation: activity scheduling
+
+`hosting::AuthoringHost` defaults to active for the retained standalone tool.
+All original editor Update registrations share `AuthoringUpdate`, whose run
+condition reads that resource. A native-keyboard regression observes the actual
+SaveProjectEvent: Ctrl S belongs to Sprinkles while active, produces no particle
+save while inactive, and works again after reactivation. No test writes projects
+or accesses a user data directory. All four editor tests, formatting and strict
+workspace/all-target Clippy pass.
+
+The original native preview/playback/count/range/gradient/colour/save flow also
+passes after this scheduling refactor, with zero Vulkan diagnostics:
+`build/sprinkles-authoring-gates-20261110-v1/qualification.json`, validation hash
+`e08d79a3cb121bde1a2eda56611321f53ab7253f0b319106b5858c76f13a1fea`. The companion remains usable.
+
+This is preparation, not yet an embedded workspace. The host must still switch
+UI roots, clear focus/cursor ownership, suspend its own authoring input, manage
+preview/camera lifetime and isolate render layers before offering a same-window
+mode. Startup title/UI/scene setup and harmless text presentation post-update
+work are not governed by the Update set.

@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 use bevy::prelude::*;
 use bevy_sprinkles::prelude::*;
 
@@ -27,8 +28,7 @@ const ANIMATED_VELOCITY_FIELDS: &[&str] = &[
 ];
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(
-        Update,
+    app.add_authoring_systems(
         (setup_velocity_list, update_add_button_state)
             .after(super::update_inspected_emitter_tracker),
     )

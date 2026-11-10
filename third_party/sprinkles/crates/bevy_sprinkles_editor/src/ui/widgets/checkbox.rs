@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 use crate::ui::widgets::button::CompatButton as Button;
 use bevy::picking::hover::Hovered;
 use bevy::prelude::*;
@@ -13,14 +14,11 @@ pub struct CheckboxCommitEvent {
 }
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(
-        Update,
-        (
-            handle_checkbox_hover,
-            handle_checkbox_click,
-            sync_checkbox_icon,
-        ),
-    );
+    app.add_authoring_systems((
+        handle_checkbox_hover,
+        handle_checkbox_click,
+        sync_checkbox_icon,
+    ));
 }
 
 #[derive(Component, Default, Clone)]

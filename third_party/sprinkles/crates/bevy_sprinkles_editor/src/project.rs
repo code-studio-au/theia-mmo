@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
@@ -18,15 +19,12 @@ pub fn plugin(app: &mut App) {
         .add_observer(on_browse_open_project_event)
         .add_observer(on_save_project_event)
         .add_observer(on_save_project_as_event)
-        .add_systems(
-            Update,
-            (
-                handle_save_keyboard_shortcut,
-                poll_browse_open_result,
-                poll_save_as_result,
-                poll_save_result,
-            ),
-        );
+        .add_authoring_systems((
+            handle_save_keyboard_shortcut,
+            poll_browse_open_result,
+            poll_save_as_result,
+            poll_save_result,
+        ));
 }
 
 #[derive(Event)]
@@ -379,5 +377,33 @@ fn handle_save_keyboard_shortcut(keyboard: Res<ButtonInput<KeyCode>>, mut comman
 
     if ctrl_or_cmd && keyboard.just_pressed(KeyCode::KeyS) {
         commands.trigger(SaveProjectEvent);
+    }
+}
+
+#[cfg(test)]
+mod hosting_tests {
+    use super::*;
+    use crate::hosting::{AuthoringHost, AuthoringHostPlugin};
+
+    #[derive(Resource, Default)]
+    struct Saves(usize);
+
+    #[test]
+    fn inactive_authoring_cannot_steal_the_hosts_save_shortcut() {
+        let mut app = App::new();
+        app.add_plugins(AuthoringHostPlugin)
+            .init_resource::<ButtonInput<KeyCode>>()
+            .init_resource::<Saves>()
+            .add_authoring_systems(handle_save_keyboard_shortcut)
+            .add_observer(|_: On<SaveProjectEvent>, mut saves: ResMut<Saves>| saves.0 += 1);
+        for (active, expected) in [(true, 1), (false, 1), (false, 1), (true, 2)] {
+            app.world_mut().resource_mut::<AuthoringHost>().active = active;
+            let mut keys = app.world_mut().resource_mut::<ButtonInput<KeyCode>>();
+            keys.reset_all();
+            keys.press(KeyCode::ControlLeft);
+            keys.press(KeyCode::KeyS);
+            app.update();
+            assert_eq!(app.world().resource::<Saves>().0, expected);
+        }
     }
 }

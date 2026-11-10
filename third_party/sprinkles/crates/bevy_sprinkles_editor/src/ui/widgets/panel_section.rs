@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 use bevy::prelude::*;
 use bevy::text::FontSourceTemplate;
 
@@ -6,7 +7,7 @@ use crate::ui::tokens::{BORDER_COLOR, FONT_PATH, TEXT_DISPLAY_COLOR, TEXT_SIZE};
 use crate::ui::widgets::button::{ButtonClickEvent, ButtonVariant, IconButtonProps, icon_button};
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(Update, setup_panel_section_buttons);
+    app.add_authoring_systems(setup_panel_section_buttons);
 }
 
 #[derive(Component, Default, Clone)]

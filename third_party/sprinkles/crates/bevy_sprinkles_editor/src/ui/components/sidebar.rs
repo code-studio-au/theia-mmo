@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 use crate::ui::widgets::button::CompatButton as Button;
 use bevy::picking::hover::Hovered;
 use bevy::prelude::*;
@@ -25,15 +26,12 @@ struct SidebarButtonIcon;
 struct SidebarButtonImage;
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(
-        Update,
-        (
-            setup_sidebar,
-            handle_sidebar_click,
-            update_sidebar_buttons,
-            toggle_data_panel,
-        ),
-    );
+    app.add_authoring_systems((
+        setup_sidebar,
+        handle_sidebar_click,
+        update_sidebar_buttons,
+        toggle_data_panel,
+    ));
 }
 
 pub fn sidebar() -> impl Scene {

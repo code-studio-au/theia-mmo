@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 use bevy::input_focus::{FocusCause, InputFocus};
 use bevy::picking::hover::Hovered;
 use bevy::prelude::*;
@@ -30,18 +31,15 @@ pub fn plugin(app: &mut App) {
         .add_observer(on_delete_confirmed)
         .add_observer(on_add_emitter)
         .add_observer(on_add_collider)
-        .add_systems(
-            Update,
-            (
-                setup_data_panel,
-                rebuild_lists,
-                update_items,
-                handle_item_right_click,
-                handle_item_double_click,
-                focus_rename_input,
-                cleanup_pending_delete,
-            ),
-        );
+        .add_authoring_systems((
+            setup_data_panel,
+            rebuild_lists,
+            update_items,
+            handle_item_right_click,
+            handle_item_double_click,
+            focus_rename_input,
+            cleanup_pending_delete,
+        ));
 }
 
 #[derive(Resource, Default)]

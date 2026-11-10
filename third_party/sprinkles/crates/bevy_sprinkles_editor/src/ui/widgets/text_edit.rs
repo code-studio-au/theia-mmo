@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 use std::time::Duration;
 
 use bevy::input_focus::{FocusCause, InputFocus};
@@ -41,19 +42,16 @@ const INPUT_HEIGHT: f32 = 28.0;
 const AFFIX_SIZE: u64 = 16;
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(Update, setup_text_edit_input)
-        .add_systems(
-            Update,
-            (
-                handle_focus_style,
-                handle_numeric_increment,
-                handle_tab_navigation,
-                handle_unfocus,
-                handle_drag_value,
-                handle_click_to_focus,
-                handle_clamp_on_unfocus,
-            ),
-        )
+    app.add_authoring_systems(setup_text_edit_input)
+        .add_authoring_systems((
+            handle_focus_style,
+            handle_numeric_increment,
+            handle_tab_navigation,
+            handle_unfocus,
+            handle_drag_value,
+            handle_click_to_focus,
+            handle_clamp_on_unfocus,
+        ))
         .add_systems(PostUpdate, (apply_default_value, handle_suffix).chain())
         .add_systems(PostUpdate, sync_placeholder_visibility);
 }

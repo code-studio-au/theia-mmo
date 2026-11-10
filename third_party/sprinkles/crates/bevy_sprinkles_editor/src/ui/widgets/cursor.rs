@@ -1,10 +1,11 @@
+use crate::hosting::AuthoringAppExt;
 use bevy::picking::hover::Hovered;
 use bevy::prelude::*;
 use bevy::window::{CursorIcon, SystemCursorIcon};
 
 pub fn plugin(app: &mut App) {
     app.init_resource::<ManagedCursor>()
-        .add_systems(Update, update_cursors);
+        .add_authoring_systems(update_cursors);
 }
 
 #[derive(Component)]

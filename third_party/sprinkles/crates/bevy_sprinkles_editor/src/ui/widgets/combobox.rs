@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 use bevy::math::Rot2;
 use bevy::prelude::*;
 
@@ -12,14 +13,11 @@ use crate::ui::widgets::utils::is_descendant_of;
 pub fn plugin(app: &mut App) {
     app.add_observer(handle_trigger_click)
         .add_observer(handle_option_click)
-        .add_systems(
-            Update,
-            (
-                setup_combobox,
-                handle_combobox_popover_closed,
-                sync_combobox_selection,
-            ),
-        );
+        .add_authoring_systems((
+            setup_combobox,
+            handle_combobox_popover_closed,
+            sync_combobox_selection,
+        ));
 }
 
 #[derive(Component, Default, Clone)]

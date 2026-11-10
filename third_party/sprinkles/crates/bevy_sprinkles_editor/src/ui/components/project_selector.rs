@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
@@ -43,20 +44,17 @@ pub fn plugin(app: &mut App) {
         .add_observer(handle_popover_option_click)
         .add_observer(handle_create_project)
         .add_observer(handle_browse_location_click)
-        .add_systems(
-            Update,
-            (
-                setup_project_selector,
-                update_project_label,
-                handle_popover_closed,
-                setup_new_project_dialog_content,
-                focus_new_project_name,
-                update_location_placeholder,
-                poll_browse_location_result,
-                cleanup_new_project_state,
-                update_remove_button_visibility,
-            ),
-        );
+        .add_authoring_systems((
+            setup_project_selector,
+            update_project_label,
+            handle_popover_closed,
+            setup_new_project_dialog_content,
+            focus_new_project_name,
+            update_location_placeholder,
+            poll_browse_location_result,
+            cleanup_new_project_state,
+            update_remove_button_visibility,
+        ));
 }
 
 #[derive(Component, Default, Clone)]

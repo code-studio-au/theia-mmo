@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 use bevy::prelude::*;
 use bevy_sprinkles::prelude::*;
 
@@ -21,10 +22,10 @@ struct CollisionModeComboBox;
 struct CollisionContent;
 
 pub fn plugin(app: &mut App) {
-    app.add_observer(handle_collision_mode_change).add_systems(
-        Update,
-        setup_collision_content.after(super::update_inspected_emitter_tracker),
-    );
+    app.add_observer(handle_collision_mode_change)
+        .add_authoring_systems(
+            setup_collision_content.after(super::update_inspected_emitter_tracker),
+        );
 }
 
 pub fn collision_section() -> (impl Bundle, InspectorSection) {

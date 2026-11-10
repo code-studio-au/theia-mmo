@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 use bevy::prelude::*;
 use bevy_sprinkles::prelude::*;
 
@@ -15,10 +16,7 @@ struct TurbulenceSection;
 struct TurbulenceOptions;
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(
-        Update,
-        (setup_turbulence_options, toggle_turbulence_options),
-    );
+    app.add_authoring_systems((setup_turbulence_options, toggle_turbulence_options));
 }
 
 pub fn turbulence_section() -> (impl Bundle, InspectorSection) {

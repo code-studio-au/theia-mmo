@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 use crate::ui::components::binding::FieldBinding;
 use crate::ui::components::inspector::{FieldKind, VariantField, name_to_label, path_to_label};
 use bevy::picking::hover::Hovered;
@@ -140,7 +141,7 @@ impl VariantDefinition {
 pub fn plugin(app: &mut App) {
     app.add_observer(handle_variant_edit_click)
         .add_observer(handle_variant_combobox_change)
-        .add_systems(Update, (setup_variant_edit, sync_variant_edit_button));
+        .add_authoring_systems((setup_variant_edit, sync_variant_edit_button));
 }
 
 #[derive(Component, Default, Clone)]

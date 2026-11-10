@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 use crate::ui::widgets::button::CompatButton as Button;
 use bevy::picking::prelude::Pickable;
 use bevy::prelude::*;
@@ -23,8 +24,7 @@ struct AlphaOpaqueAlert;
 struct AlphaDisabledOverlay;
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(
-        Update,
+    app.add_authoring_systems(
         (setup_alpha_alert, sync_alpha_disabled).after(super::update_inspected_emitter_tracker),
     );
 }

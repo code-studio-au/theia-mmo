@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 use std::time::Duration;
 
 use bevy::ecs::system::SystemParam;
@@ -26,17 +27,14 @@ pub fn plugin(app: &mut App) {
         .add_observer(on_cancel_button_click)
         .add_observer(on_close_button_click)
         .add_observer(on_close_dialog)
-        .add_systems(
-            Update,
-            (
-                bevy_easings::custom_ease_system::<(), DialogVisual>,
-                sync_dialog_visual,
-                sync_children_slot_visibility,
-                handle_backdrop_click,
-                handle_esc_key,
-                handle_dialog_despawn,
-            ),
-        );
+        .add_authoring_systems((
+            bevy_easings::custom_ease_system::<(), DialogVisual>,
+            sync_dialog_visual,
+            sync_children_slot_visibility,
+            handle_backdrop_click,
+            handle_esc_key,
+            handle_dialog_despawn,
+        ));
 }
 
 #[derive(Component, Default, Clone)]

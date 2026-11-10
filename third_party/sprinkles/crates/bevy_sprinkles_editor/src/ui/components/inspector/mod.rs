@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 mod accelerations;
 mod angle;
 mod collider_properties;
@@ -62,24 +63,21 @@ pub fn plugin(app: &mut App) {
         ))
         .add_plugins(project_properties::plugin)
         .add_plugins(visibility_aabb::plugin)
-        .add_systems(
-            Update,
+        .add_authoring_systems((
             (
-                (
-                    update_inspected_emitter_tracker,
-                    update_inspected_collider_tracker,
-                ),
-                (
-                    cleanup_dynamic_sections,
-                    setup_inspector_panel,
-                    update_panel_title,
-                    setup_inspector_section_fields,
-                    toggle_inspector_content,
-                )
-                    .after(update_inspected_emitter_tracker)
-                    .after(update_inspected_collider_tracker),
+                update_inspected_emitter_tracker,
+                update_inspected_collider_tracker,
             ),
-        );
+            (
+                cleanup_dynamic_sections,
+                setup_inspector_panel,
+                update_panel_title,
+                setup_inspector_section_fields,
+                toggle_inspector_content,
+            )
+                .after(update_inspected_emitter_tracker)
+                .after(update_inspected_collider_tracker),
+        ));
 }
 
 #[derive(Resource, Default)]

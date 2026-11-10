@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 use crate::ui::widgets::button::CompatButton as Button;
 use bevy::picking::prelude::Pickable;
 use bevy::prelude::*;
@@ -22,11 +23,8 @@ struct GenerateAabbButton;
 struct GenerateAabbOverlay;
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(
-        Update,
-        (setup_generate_aabb_button, sync_generate_aabb_button),
-    )
-    .add_observer(handle_generate_aabb_click);
+    app.add_authoring_systems((setup_generate_aabb_button, sync_generate_aabb_button))
+        .add_observer(handle_generate_aabb_click);
 }
 
 pub fn visibility_aabb_section() -> (impl Bundle, InspectorSection) {

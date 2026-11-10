@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 use bevy::prelude::*;
 
 use crate::project::SaveProjectEvent;
@@ -9,7 +10,7 @@ use crate::ui::widgets::button::{ButtonClickEvent, ButtonProps, ButtonVariant, b
 use crate::ui::widgets::separator::EditorSeparator;
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(Update, setup_save_button_observer);
+    app.add_authoring_systems(setup_save_button_observer);
 }
 
 #[derive(Component)]

@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 use crate::ui::tokens::TEXT_BODY_COLOR;
 use crate::ui::widgets::button::CompatButton as Button;
 use crate::ui::widgets::button::{ButtonClickEvent, EditorButton};
@@ -85,23 +86,20 @@ pub fn plugin(app: &mut App) {
         .add_observer(on_dismiss_toast_event)
         .add_observer(on_close_button_click)
         .add_systems(Startup, setup_toasts_container)
-        .add_systems(
-            Update,
-            (
-                bevy_easings::custom_ease_system::<(), ToastVisual>,
-                bevy_easings::custom_ease_system::<(), ToastPosition>,
-                bevy_easings::custom_ease_system::<(), ToastStackScale>,
-                sync_toast_visual,
-                sync_toast_position,
-                sync_toast_stack_scale,
-                setup_toast_close_buttons,
-                update_hitbox_size,
-                update_expanded_state,
-                update_toast_stacking,
-                handle_toast_timer,
-                handle_toast_despawn,
-            ),
-        );
+        .add_authoring_systems((
+            bevy_easings::custom_ease_system::<(), ToastVisual>,
+            bevy_easings::custom_ease_system::<(), ToastPosition>,
+            bevy_easings::custom_ease_system::<(), ToastStackScale>,
+            sync_toast_visual,
+            sync_toast_position,
+            sync_toast_stack_scale,
+            setup_toast_close_buttons,
+            update_hitbox_size,
+            update_expanded_state,
+            update_toast_stacking,
+            handle_toast_timer,
+            handle_toast_despawn,
+        ));
 }
 
 fn sync_toast_visual(

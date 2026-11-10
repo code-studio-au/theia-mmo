@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 use bevy::input::mouse::MouseMotion;
 use bevy::picking::hover::Hovered;
 use bevy::prelude::*;
@@ -10,14 +11,11 @@ use crate::ui::widgets::cursor::{ActiveCursor, HoverCursor};
 const RESIZE_HANDLE_WIDTH: u32 = 12;
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(
-        Update,
-        (
-            spawn_resize_handles,
-            sync_resize_handle_positions,
-            handle_resize_drag,
-        ),
-    );
+    app.add_authoring_systems((
+        spawn_resize_handles,
+        sync_resize_handle_positions,
+        handle_resize_drag,
+    ));
 }
 
 #[derive(Component, Default, Clone)]

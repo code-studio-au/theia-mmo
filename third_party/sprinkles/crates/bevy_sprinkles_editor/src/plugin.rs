@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 use bevy::color::palettes::tailwind::ZINC_950;
 use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
 use bevy::prelude::*;
@@ -32,7 +33,8 @@ pub struct SprinklesEditorPlugin;
 
 impl Plugin for SprinklesEditorPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(CliArgs::from_env())
+        app.add_plugins(crate::hosting::AuthoringHostPlugin)
+            .insert_resource(CliArgs::from_env())
             .add_plugins(crate::assets::plugin)
             .add_plugins(SprinklesPlugin)
             .add_plugins(crate::viewport_bounds::plugin)
@@ -52,19 +54,16 @@ impl Plugin for SprinklesEditorPlugin {
             .add_observer(handle_playback_seek_event)
             .add_observer(handle_generate_aabb_request)
             .add_systems(Startup, (setup_camera, setup_floor, load_initial_project))
-            .add_systems(
-                Update,
-                (
-                    orbit_camera,
-                    zoom_camera,
-                    spawn_preview_particle_system,
-                    despawn_preview_on_project_change,
-                    sync_playback_state,
-                    sync_viewport_settings,
-                    sync_inspected_emitter_aabb,
-                    tick_aabb_generation,
-                ),
-            );
+            .add_authoring_systems((
+                orbit_camera,
+                zoom_camera,
+                spawn_preview_particle_system,
+                despawn_preview_on_project_change,
+                sync_playback_state,
+                sync_viewport_settings,
+                sync_inspected_emitter_aabb,
+                tick_aabb_generation,
+            ));
     }
 }
 

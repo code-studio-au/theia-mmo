@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 use std::time::Duration;
 
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
@@ -19,14 +20,11 @@ struct FpsOverlay;
 struct FpsText;
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(
-        Update,
-        (
-            setup_fps_overlay,
-            toggle_fps_overlay,
-            update_fps_text.run_if(on_timer(REFRESH_INTERVAL)),
-        ),
-    );
+    app.add_authoring_systems((
+        setup_fps_overlay,
+        toggle_fps_overlay,
+        update_fps_text.run_if(on_timer(REFRESH_INTERVAL)),
+    ));
 }
 
 fn setup_fps_overlay(

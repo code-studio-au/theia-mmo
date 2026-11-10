@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 use std::path::{Path, PathBuf};
 
 use bevy::prelude::*;
@@ -33,7 +34,7 @@ struct ProjectRuntimeContent;
 struct RevealFileButton(PathBuf);
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(Update, (setup_properties_content, setup_runtime_content))
+    app.add_authoring_systems((setup_properties_content, setup_runtime_content))
         .add_observer(handle_reveal_file_click);
 }
 

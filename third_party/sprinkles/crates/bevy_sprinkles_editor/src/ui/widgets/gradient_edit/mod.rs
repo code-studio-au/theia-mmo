@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 pub mod materials;
 
 use bevy::picking::events::PointerClick;
@@ -66,23 +67,20 @@ pub fn plugin(app: &mut App) {
         .add_observer(handle_handle_color_change)
         .add_observer(handle_handle_color_commit)
         .add_observer(handle_trigger_click)
-        .add_systems(
-            Update,
-            (
-                setup_gradient_edit,
-                setup_gradient_edit_content,
-                setup_trigger_swatch,
-                sync_trigger_swatch,
-                fix_stop_row_sizing,
-                update_gradient_visuals,
-                update_handle_positions,
-                update_handle_colors,
-                update_stop_position_inputs,
-                handle_bar_right_click,
-                handle_handle_right_click,
-                respawn_stops_on_change,
-            ),
-        );
+        .add_authoring_systems((
+            setup_gradient_edit,
+            setup_gradient_edit_content,
+            setup_trigger_swatch,
+            sync_trigger_swatch,
+            fix_stop_row_sizing,
+            update_gradient_visuals,
+            update_handle_positions,
+            update_handle_colors,
+            update_stop_position_inputs,
+            handle_bar_right_click,
+            handle_handle_right_click,
+            respawn_stops_on_change,
+        ));
 }
 
 #[derive(Component, Default, Clone)]

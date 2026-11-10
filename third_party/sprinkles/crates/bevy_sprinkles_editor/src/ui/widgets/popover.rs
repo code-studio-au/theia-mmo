@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 use bevy::picking::hover::Hovered;
 use bevy::prelude::*;
 use bevy::text::FontSourceTemplate;
@@ -13,14 +14,12 @@ use crate::ui::widgets::utils::is_descendant_of;
 const POPOVER_GAP: f32 = 4.0;
 
 pub fn plugin(app: &mut App) {
-    app.add_observer(handle_popover_close_click).add_systems(
-        Update,
-        (
+    app.add_observer(handle_popover_close_click)
+        .add_authoring_systems((
             handle_popover_position,
             handle_popover_dismiss,
             cleanup_tracked_popovers,
-        ),
-    );
+        ));
 }
 
 #[derive(Component, Default, Clone)]

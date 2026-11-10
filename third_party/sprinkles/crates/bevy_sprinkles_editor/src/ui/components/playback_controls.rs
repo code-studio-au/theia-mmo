@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 use bevy::color::palettes::tailwind;
 use bevy::prelude::*;
 use bevy_sprinkles::prelude::*;
@@ -11,16 +12,13 @@ use crate::ui::widgets::button::{
 use crate::viewport::EditorParticlePreview;
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(
-        Update,
-        (
-            handle_play_pause_click,
-            handle_stop_click,
-            handle_loop_click,
-            update_play_pause_icon,
-            update_loop_button_style,
-        ),
-    );
+    app.add_authoring_systems((
+        handle_play_pause_click,
+        handle_stop_click,
+        handle_loop_click,
+        update_play_pause_icon,
+        update_loop_button_style,
+    ));
 }
 
 #[derive(Component, Default, Clone)]

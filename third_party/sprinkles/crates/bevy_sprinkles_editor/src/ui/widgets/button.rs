@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 use crate::ui::widgets::button::CompatButton as Button;
 use bevy::color::palettes::tailwind;
 use bevy::picking::hover::Hovered;
@@ -26,7 +27,7 @@ pub struct ButtonClickEvent {
 }
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(Update, (handle_hover, handle_button_click));
+    app.add_authoring_systems((handle_hover, handle_button_click));
 }
 
 #[derive(Component, Default, Clone)]

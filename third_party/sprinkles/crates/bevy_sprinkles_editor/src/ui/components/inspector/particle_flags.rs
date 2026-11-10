@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 use bevy::prelude::*;
 use bevy_sprinkles::prelude::*;
 
@@ -24,7 +25,7 @@ struct ParticleFlagCheckbox {
 
 pub fn plugin(app: &mut App) {
     app.add_observer(handle_particle_flag_checkbox)
-        .add_systems(Update, (setup_particle_flags_content, sync_particle_flags));
+        .add_authoring_systems((setup_particle_flags_content, sync_particle_flags));
 }
 
 pub fn particle_flags_section() -> (impl Bundle, InspectorSection) {

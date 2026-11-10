@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
@@ -110,15 +111,12 @@ struct TextureFilePickResult {
 pub fn plugin(app: &mut App) {
     app.add_observer(handle_preset_click)
         .add_observer(handle_select_file_click)
-        .add_systems(
-            Update,
-            (
-                setup_texture_content,
-                respawn_texture_content_on_switch,
-                update_texture_scrollbar,
-                poll_texture_file_pick,
-            ),
-        );
+        .add_authoring_systems((
+            setup_texture_content,
+            respawn_texture_content_on_switch,
+            update_texture_scrollbar,
+            poll_texture_file_pick,
+        ));
 }
 
 fn is_texture_ref_variant_edit(entity: Entity, bindings: &Query<&FieldBinding>) -> bool {

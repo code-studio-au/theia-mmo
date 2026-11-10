@@ -1,3 +1,4 @@
+use crate::hosting::AuthoringAppExt;
 use crate::ui::widgets::button::CompatButton as Button;
 use bevy::picking::hover::Hovered;
 use bevy::prelude::*;
@@ -18,10 +19,7 @@ pub struct LinkHitbox {
 }
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(
-        Update,
-        (position_link_hitboxes, handle_link_click, update_link_hover),
-    );
+    app.add_authoring_systems((position_link_hitboxes, handle_link_click, update_link_hover));
 }
 
 pub fn spawn_link_hitbox(
