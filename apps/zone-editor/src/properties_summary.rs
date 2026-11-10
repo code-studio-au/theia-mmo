@@ -44,7 +44,10 @@ pub(super) fn snapshot(session: &Session) -> Option<(Option<u64>, Target, String
     if session.play.is_some() || session.palette.is_some() || session.path_draft.is_some() {
         return None;
     }
-    let (id, mut target, subject) = capture(session, false)?;
+    let (id, mut target, subject) = capture(
+        session,
+        outliner::selection(session) == Some(outliner::Target::Spawn),
+    )?;
     if let Target::Object(pose) = &mut target
         && let Some(drag) = session.drag.as_ref().filter(|drag| Some(drag.id) == id)
     {

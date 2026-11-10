@@ -22,6 +22,7 @@ fn fixture(target: u8) -> App {
             0 => session.selected = Some(1),
             1 => session.plant_selected = Some(1001),
             2 => session.marker_selected = Some(1000),
+            4 => session.inspect_spawn = true,
             _ => {
                 session.path_selected = Some(1002);
                 session.path_point = (target == 3).then_some(0);
@@ -67,7 +68,7 @@ fn fixture(target: u8) -> App {
 }
 #[test]
 fn complete_selected_inspector_reveals_each_control_at_short_full_and_narrow_wide_layouts() {
-    for target in [0, 1, 2, 3, 5] {
+    for target in [0, 1, 2, 3, 4, 5] {
         let mut app = fixture(target);
         let source = app.world().resource::<Session>().editor.zone().clone();
         let window = app

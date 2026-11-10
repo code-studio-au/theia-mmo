@@ -395,3 +395,129 @@ fn permanent_names_apply_enter_and_blur_validate_cancel_and_share_exact_undo() {
         }
     }
 }
+
+#[test]
+fn spawn_request_focuses_permanent_exact_fields_and_saves_only_on_explicit_save() {
+    for origin in [
+        [0.125, 0.25, -0.5],
+        [128_000_000_000.125, 20.25, -128_000_000_000.5],
+    ] {
+        let (mut app, _) = super::tests::fixture(origin, 0);
+        app.insert_resource(View {
+            target: Vec3::ZERO,
+            yaw: 0.6,
+            pitch: 0.8,
+            distance: 32.,
+            preset: camera_views::Preset::Perspective,
+            show_grid: true,
+        });
+        let source = app.world().resource::<Session>().editor.zone().clone();
+        let path = std::env::temp_dir().join(format!(
+            "theia-inline-spawn-{}-{}.json",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        source.save(&path).unwrap();
+        let before = std::fs::read(&path).unwrap();
+        app.world_mut().resource_mut::<Session>().path = Some(path.clone());
+        app.world_mut()
+            .resource_mut::<Session>()
+            .ui
+            .properties_collapsed = true;
+        app.world_mut()
+            .resource_mut::<workspace::Requests>()
+            .spawn_transform = true;
+        for _ in 0..4 {
+            app.update();
+        }
+        let session = app.world().resource::<Session>();
+        assert_eq!(outliner::selection(session), Some(outliner::Target::Spawn));
+        assert!(!session.ui.properties_collapsed);
+        assert!(session.transform_edit.is_none());
+        assert_eq!(session.editor.zone(), &source);
+        assert_eq!(session.editor.history(), (0, 1));
+        let input = button(&mut app, 0);
+        assert_eq!(app.world().resource::<InputFocus>().get(), Some(input));
+        assert_eq!(
+            app.world()
+                .get::<EditableText>(input)
+                .unwrap()
+                .value()
+                .to_string(),
+            source.spawn[0].to_string()
+        );
+        let visible: Vec<_> = app
+            .world_mut()
+            .query::<(&Value, &ComputedNode)>()
+            .iter(app.world())
+            .filter(|(_, node)| node.size().min_element() > 0.)
+            .map(|(v, _)| v.0)
+            .collect();
+        assert_eq!(visible, vec![0, 1, 2]);
+        let names: Vec<_> = app
+            .world_mut()
+            .query_filtered::<&ComputedNode, With<Name>>()
+            .iter(app.world())
+            .filter(|node| node.size().min_element() > 0.)
+            .collect();
+        assert!(names.is_empty());
+        let changed = origin[0] + 9.375;
+        type_value(&mut app, input, &changed.to_string());
+        key(&mut app, KeyCode::Enter, Key::Enter);
+        assert_eq!(
+            app.world().resource::<Session>().editor.zone().spawn[0],
+            changed
+        );
+        assert_eq!(std::fs::read(&path).unwrap(), before);
+        let input = open(&mut app, 1);
+        type_value(&mut app, input, "NaN");
+        key(&mut app, KeyCode::Enter, Key::Enter);
+        assert_eq!(app.world().resource::<InputFocus>().get(), Some(input));
+        assert_eq!(
+            app.world().resource::<Session>().editor.zone().spawn[1],
+            source.spawn[1]
+        );
+        assert_eq!(std::fs::read(&path).unwrap(), before);
+        key(&mut app, KeyCode::Escape, Key::Escape);
+        let input = open(&mut app, 2);
+        let next = origin[2] + 8.625;
+        type_value(&mut app, input, &next.to_string());
+        app.world_mut()
+            .resource_scope(|world, mut session: Mut<Session>| {
+                perform(
+                    Action::Save,
+                    &mut session,
+                    &mut world.resource_mut::<View>(),
+                );
+            });
+        assert_eq!(std::fs::read(&path).unwrap(), before);
+        app.update();
+        let saved = Zone::load(&path).unwrap();
+        std::fs::remove_file(path).unwrap();
+        assert_eq!(saved.spawn, [changed, source.spawn[1], next]);
+        assert_eq!(saved.objects, source.objects);
+        assert!(!app.world().resource::<Session>().is_dirty());
+        assert_eq!(app.world().resource::<Session>().editor.history(), (2, 0));
+        app.world_mut()
+            .resource_scope(|world, mut session: Mut<Session>| {
+                perform(
+                    Action::Undo,
+                    &mut session,
+                    &mut world.resource_mut::<View>(),
+                );
+                perform(
+                    Action::Undo,
+                    &mut session,
+                    &mut world.resource_mut::<View>(),
+                );
+            });
+        assert_eq!(app.world().resource::<Session>().editor.zone(), &source);
+        assert_eq!(
+            outliner::selection(app.world().resource::<Session>()),
+            Some(outliner::Target::Spawn)
+        );
+    }
+}

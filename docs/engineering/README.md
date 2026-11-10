@@ -1,3 +1,12 @@
+P5-17 inline player spawn, 11 November 2026: explorer selection and Zone → Edit
+spawn show permanent exact X/Y/Z fields in the left inspector; shared validation,
+undo and explicit Save apply. All 114 editor tests, fmt and strict workspace/
+all-target Clippy pass. Isolated virtual-X startup renders on llvmpipe Vulkan pass
+at local/far origins with zero GPU diagnostics and no OS input. RX 7900 XTX could
+not present to virtual X without DRI3; selected-spawn native/hardware interaction
+checks remain pending while the user reserves mouse and keyboard. Action-popup
+refinement remains. See [record](../EDITOR_UI_REFINEMENT.md).
+
 P5-17 permanent content names, 11 November 2026: Name joins numeric attributes
 in the left inspector. F8/menu Rename focuses it; Enter/blur/Tab use one validated
 shared command, Escape restores source and explicit Save commits valid focused

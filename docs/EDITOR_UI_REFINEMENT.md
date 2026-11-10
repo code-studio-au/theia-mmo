@@ -209,12 +209,55 @@ Evidence (ignored):
 Use `--names --inline --categories` to reproduce. Both native runs close their
 owned editor. Spawn attributes and action/popover cleanup remain to follow.
 
+## Implemented checkpoint: inline player spawn — 11 November 2026
+
+Player spawn is selectable in the explorer and retains its existing single-click
+camera framing. Its exact world X/Y/Z coordinates appear as permanent textboxes
+under Position in the left Attributes tab. Zone → Edit spawn selects it, unfolds
+the inspector and focuses the first field. The Name field and selected-object
+viewport toolbar are hidden for spawn; selecting an object clears spawn selection.
+Enter/blur/Tab apply validated edits through the existing SetSpawn command,
+Escape cancels, undo/redo is shared and explicit Save commits a valid focused
+field first. World positions retain f64 precision. The retained exact form is
+still available to internal regression fixtures; the integrated spawn workflow no
+longer opens it.
+
+Validation: **114 editor tests**, fmt/diff checks and strict workspace/all-target
+Clippy pass. Headless Bevy input/focus tests cover local/far exact values, the
+menu request, explorer selection transitions, three visible fields, validation,
+undo/redo, unchanged disk until Save and focused Save. CPU layout/scroll checks
+also include spawn at narrow/wide and short/full sizes.
+
+With the user's mouse and keyboard reserved, isolated Xvfb startup captures were
+rendered without OS input on **llvmpipe (LLVM 21.1.8, 256 bits), Vulkan** at local
+and far origins, both zero GPU diagnostics and unchanged source. These are
+software-rendered startup smoke checks; they do not show the selected spawn or
+qualify native input. The RX 7900 XTX could not present to Xvfb because the virtual
+server lacks DRI3; hardware and native spawn interaction checks remain pending.
+Executable SHA-256:
+`579517e6b2eaafbadc50fcec4b68618f4dba4f57d88688f534f2a861c845c868`.
+
+Evidence and reproduction (ignored output; Xvfb is extracted locally):
+
+- `build/sprinkles-review/inline-spawn-tests-final-v2.log`
+- `build/sprinkles-review/inline-spawn-clippy-final.log`
+- `build/zone-inline-spawn-virtual-gpu-20261111-local-lvp-v1/qualification.json`
+- `build/zone-inline-spawn-virtual-gpu-20261111-far-lvp-v1/qualification.json`
+- `build/zone-inline-spawn-virtual-gpu-20261111-local-v1/editor.log` records the
+  failed hardware presentation attempt. Virtual-server and editor processes close
+  on success and failure.
+
+`tools/qualify_zone_virtual_gpu.py --xvfb PATH --output NEW_DIR --case local|far`
+provides the input-free startup smoke check. Set `VK_ICD_FILENAMES` to the local
+software Vulkan ICD when the virtual server lacks DRI3. A future native check is
+prepared with `tools/qualify_zone_dock.py --spawn --inline --categories --names`;
+its spawn path has only been syntax/help checked, not executed.
+
 ## Remaining requested refinement
 
-This does **not** complete the reopened UI refinement. Finish inline spawn
-workflows where applicable, and three-dot accessors/popup cleanup.
-The retained exact form currently serves the separate spawn command and internal
-regression fixtures; it is not the normal selected-object numeric workflow.
+This does **not** complete the reopened UI refinement. Finish three-dot accessors and popup cleanup.
+The retained exact form serves internal regression fixtures; it is not the normal
+selected-object or spawn numeric workflow.
 Reuse actual Sprinkles components where compatible; retain exact f64 adapters
 instead of its f32-formatting controls. Do not expose colors/curves for zone
 objects whose schema has no such property; the actual particle workspace already

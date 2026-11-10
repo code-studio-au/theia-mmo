@@ -319,6 +319,7 @@ pub(super) fn pointer(
         } else {
             let id = hit.and_then(|entity| objects.get(entity).ok()).map(|o| o.0);
             let already_selected = id == session.selected;
+            session.inspect_spawn = false;
             session.selected = id;
             if already_selected
                 && session.gizmo_tool == gizmo::Tool::Move

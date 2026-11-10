@@ -75,6 +75,7 @@ struct Session {
     editor: Editor,
     saved_zone: Option<Zone>,
     selected: Option<u64>,
+    inspect_spawn: bool,
     palette: Option<Primitive>,
     placement_size: [f64; 3],
     placement_preview: Option<placement::Preview>,
@@ -144,6 +145,7 @@ impl Session {
             editor,
             saved_zone,
             selected: None,
+            inspect_spawn: false,
             palette: None,
             placement_size: [1.; 3],
             placement_preview: None,
@@ -271,6 +273,7 @@ impl Session {
         self.name_edit.is_some() || self.transform_edit.is_some() || self.file_dialog.is_some()
     }
     fn set_mode(&mut self, mode: EditorMode) {
+        self.inspect_spawn = false;
         self.placement_preview = None;
         self.terrain_mode = matches!(mode, EditorMode::Sculpt | EditorMode::Paint);
         self.terrain_paint = mode == EditorMode::Paint;
@@ -827,6 +830,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
         | Action::DeleteMarker
         | Action::MarkerRadius(_) => markers::perform(action, session),
         Action::Place(primitive) => {
+            session.inspect_spawn = false;
             session.terrain_mode = false;
             session.terrain_paint = false;
             session.path_mode = false;
@@ -918,6 +922,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
             {
                 Ok(()) => {
                     session.selected = None;
+                    session.inspect_spawn = false;
                     session.path_selected = None;
                     session.path_point = None;
                     session.marker_selected = None;

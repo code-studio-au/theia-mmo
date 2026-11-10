@@ -506,7 +506,7 @@ pub(super) fn keyboard(
     inline: Option<Res<inline::State>>,
     inputs: InlineFields,
     mut commands: Commands,
-    tabs: Option<ResMut<property_tabs::State>>,
+    mut tabs: Option<ResMut<property_tabs::State>>,
 ) {
     let requested = std::mem::take(&mut requests.transform);
     let requested_field = std::mem::take(&mut requests.transform_field);
@@ -571,14 +571,31 @@ pub(super) fn keyboard(
         session.status = "Finish or cancel the preview before editing properties".into();
         return;
     }
-    let Some((id, original, subject)) = capture(&session, spawn_requested) else {
+    if spawn_requested
+        && inline.is_some()
+        && outliner::selection(&session) != Some(outliner::Target::Spawn)
+    {
+        // Let the summary refresh to the spawn snapshot before focusing a field.
+        session.set_mode(EditorMode::Objects);
+        session.inspect_spawn = true;
+        session.ui.properties_collapsed = false;
+        if let Some(tabs) = tabs.as_deref_mut() {
+            tabs.active = property_tabs::Tab::Attributes;
+        }
+        requests.transform = true;
+        return;
+    }
+    let Some((id, original, subject)) = capture(
+        &session,
+        spawn_requested || outliner::selection(&session) == Some(outliner::Target::Spawn),
+    ) else {
         session.status = "Select an object, plant, marker or guide to edit properties".into();
         return;
     };
     let active = requested_field
         .unwrap_or(0)
         .min(original.labels().len().saturating_sub(1));
-    if inline.is_some() && !spawn_requested {
+    if inline.is_some() {
         if let Some((entity, _, _)) = inputs
             .iter()
             .find(|(_, input, _)| input.is_some_and(|value| value.0 == active))

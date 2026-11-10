@@ -435,13 +435,19 @@ impl Control {
             .or(session.plant_selected)
             .is_some();
         match self {
-            Self::GizmoTool(_) => mode(session) == EditorMode::Objects,
-            Self::Transform => session
-                .selected
-                .or(session.plant_selected)
-                .or(session.marker_selected)
-                .or(session.path_selected)
-                .is_some(),
+            Self::GizmoTool(_) => {
+                mode(session) == EditorMode::Objects
+                    && outliner::selection(session) != Some(outliner::Target::Spawn)
+            }
+            Self::Transform => {
+                session.inspect_spawn
+                    || session
+                        .selected
+                        .or(session.plant_selected)
+                        .or(session.marker_selected)
+                        .or(session.path_selected)
+                        .is_some()
+            }
             Self::Point(_) | Self::WholePath => {
                 session.path_mode && session.path_selected.is_some()
             }

@@ -120,7 +120,7 @@ fn entries(zone: &Zone) -> Vec<Entry> {
     }
     rows.push(Entry {
         target: Target::Spawn,
-        label: "Frame playtest spawn".into(),
+        label: "Player spawn".into(),
     });
     rows.extend(zone.objects.iter().map(|o| Entry {
         target: Target::Object(o.id),
@@ -162,8 +162,12 @@ pub(super) fn selection(session: &Session) -> Option<Target> {
         session.marker_selected.map(Target::Marker)
     } else if session.vegetation_mode {
         session.plant_selected.map(Target::Plant)
+    } else if let Some(id) = session.selected {
+        Some(Target::Object(id))
+    } else if session.inspect_spawn {
+        Some(Target::Spawn)
     } else {
-        session.selected.map(Target::Object)
+        None
     }
 }
 pub(super) fn setup(mut commands: Commands) {
@@ -367,8 +371,11 @@ pub(super) fn select_row(
             }
         }
         Target::Spawn => {
-            view.target =
+            let target =
                 Vec3::from_array(zone.local(zone.spawn).expect("Validated spawn")) + Vec3::Y;
+            session.set_mode(EditorMode::Objects);
+            session.inspect_spawn = true;
+            view.target = target;
             view.distance = 12.;
         }
         Target::Object(id) => {
@@ -389,7 +396,7 @@ pub(super) fn select_row(
         }
     }
     session.status = if target == Target::Spawn {
-        "Focused playtest spawn".into()
+        "Selected player spawn".into()
     } else {
         format!("Selected {label}")
     };
@@ -805,13 +812,29 @@ pub(crate) mod tests {
                 assert_eq!(view.preset, camera_views::Preset::Front);
             }
             // Spawn already frames on a single click; a double click must keep
-            // framing the spawn even when the previous terrain mode remains active.
+            // framing the spawn while also selecting it for inline properties.
             press(&mut app, window, Control::Filter(Filter::All));
             press(&mut app, window, Control::Row(1));
             let spawn_target = Vec3::from_array(source.local(source.spawn).unwrap()) + Vec3::Y;
             assert_eq!(app.world().resource::<View>().target, spawn_target);
+            assert_eq!(
+                selection(app.world().resource::<Session>()),
+                Some(Target::Spawn)
+            );
+            assert!(app.world().resource::<Session>().selected.is_none());
             press_count(&mut app, window, Control::Row(1), 2);
             assert_eq!(app.world().resource::<View>().target, spawn_target);
+            press(&mut app, window, Control::Row(2));
+            assert!(matches!(
+                selection(app.world().resource::<Session>()),
+                Some(Target::Object(_))
+            ));
+            assert!(!app.world().resource::<Session>().inspect_spawn);
+            press(&mut app, window, Control::Row(1));
+            assert_eq!(
+                selection(app.world().resource::<Session>()),
+                Some(Target::Spawn)
+            );
             paths::perform(
                 Action::NewPath(theia_zone::paths::PathKind::Road),
                 &mut app.world_mut().resource_mut::<Session>(),

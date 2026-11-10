@@ -23,6 +23,7 @@ pub(super) fn keyboard(
         && !session.vegetation_mode
         && !session.terrain_mode
     {
+        session.inspect_spawn = false;
         let objects = &session.editor.zone().objects;
         let reverse = keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight);
         session.selected = if objects.is_empty() {

@@ -13,6 +13,7 @@ parser.add_argument('--inline', action='store_true')
 parser.add_argument('--categories', action='store_true')
 parser.add_argument('--toolbar', action='store_true')
 parser.add_argument('--names', action='store_true')
+parser.add_argument('--spawn', action='store_true')
 args = parser.parse_args()
 out = args.output.resolve()
 out.mkdir(parents=True, exist_ok=False)
@@ -217,6 +218,51 @@ try:
             original = source.read_bytes()
             revision = state()['revision']
             history = state()['history']
+        if args.spawn:
+            click(next(c for c in state()['content_list']['controls'] if c['target'] == 'Spawn')['centre'])
+            wait(lambda: state()['selected'] is None and len(state()['inline_attributes']) == 3 and not state()['inline_names'])
+            assert state()['transform_edit'] is None
+            assert state()['document'] == initial and source.read_bytes() == original
+            capture('inline-spawn.png')
+            def edit_spawn(index, value):
+                field = next(c for c in state()['attribute_summary'] if c['field'] == index)
+                click(field['centre'])
+                wait(lambda: any(c['field'] == index and c['focused'] for c in state()['inline_attributes']))
+                chord('a')
+                for char in value:
+                    desktop.key({'.': 'period', '-': 'minus'}.get(char, char))
+                wait(lambda: any(c['value'] == value for c in state()['inline_attributes']))
+            first = initial['spawn'][0] + 0.125
+            edit_spawn(0, str(first))
+            desktop.key('Return')
+            wait(lambda: state()['document']['spawn'][0] == first)
+            assert source.read_bytes() == original
+            second = initial['spawn'][2] + 0.25
+            edit_spawn(2, str(second))
+            chord('s')
+            wait(lambda: not state()['unsaved_changes'] and not any(c['focused'] for c in state()['inline_attributes']))
+            assert json.loads(source.read_text())['spawn'] == [first, initial['spawn'][1], second]
+            chord('z')
+            chord('z')
+            wait(lambda: state()['document'] == initial)
+            chord('s')
+            wait(lambda: not state()['unsaved_changes'])
+            original = source.read_bytes()
+            revision = state()['revision']
+            history = state()['history']
+            click(next(c for c in state()['content_list']['controls'] if c['target'] == 'Object(1)')['centre'])
+            wait(lambda: state()['selected'] == 1)
+            trigger = next(c for c in state()['menus'] if c['name'] == 'Zone' and c['role'] == 'button')
+            click(trigger['centre'])
+            wait(lambda: any(c['target'] == 'SpawnTransform' and c['menu_item'] and min(c['size']) > 0 for c in state()['workspace_controls']))
+            item = next(c for c in state()['workspace_controls'] if c['target'] == 'SpawnTransform' and c['menu_item'] and min(c['size']) > 0)
+            click(item['centre'])
+            wait(lambda: len(state()['inline_attributes']) == 3 and any(c['field'] == 0 and c['focused'] for c in state()['inline_attributes']))
+            assert state()['transform_edit'] is None and not state()['inline_names']
+            desktop.key('Escape')
+            fresh()
+            click(next(c for c in state()['content_list']['controls'] if c['target'] == 'Object(1)')['centre'])
+            wait(lambda: state()['selected'] == 1 and len(state()['inline_attributes']) == 7)
         if args.inline:
 
             def edit_field(index, value):
@@ -290,7 +336,7 @@ try:
         click(next((c for c in state()['content_list']['controls'] if c['target'] == 'Object(1)'))['centre'])
         wait(lambda: state()['selected'] == 1)
         capture('status-bar-final.png')
-        result = dict(names_verified=args.names, toolbar_verified=args.toolbar, categories_verified=args.categories, inline_verified=args.inline, binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(), adapter=state()['gpu'], layout=state()['ui_layout'], revision=state()['revision'], history=state()['history'], source_preserved_before_save=True, source_json_preserved=json.loads(source.read_text()) == initial)
+        result = dict(spawn_verified=args.spawn, names_verified=args.names, toolbar_verified=args.toolbar, categories_verified=args.categories, inline_verified=args.inline, binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(), adapter=state()['gpu'], layout=state()['ui_layout'], revision=state()['revision'], history=state()['history'], source_preserved_before_save=True, source_json_preserved=json.loads(source.read_text()) == initial)
 finally:
     desktop.close()
     if process is not None and process.poll() is None:
