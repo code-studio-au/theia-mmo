@@ -1,3 +1,48 @@
+Desktop restriction, 10 November 2026: the user stopped mouse and display
+use. Continue headlessly; do not launch native windows, inspect captures or send
+OS desktop input until authorization changes. No qualifier/editor process was
+running when the restriction was applied. Existing native evidence below belongs
+only to the binaries already checked; subsequent UI changes need new acceptance.
+
+Sprinkles theme foundation, 10 November 2026 (P5-17): shared upstream
+zinc/blue tokens, adapted button states and embedded licensed Inter now style the
+palette, command bar, workspaces, content list, properties and dialogs. Focused
+inputs use 1 px blue borders; inactive inputs use zinc borders. Rename uses a
+compact matching dialog. The retained playtest context/settings restoration is
+included. All 127 focused Rust tests, formatting and denied-warning workspace/
+all-target Clippy pass. Linux RX 7900 XTX / Vulkan at 3440 x 1440 passes local/far
+placement, focused keys, preview hiding, undo/redo, exact document command oracles,
+Save and playtest/settings restoration, with zero GPU diagnostics. Native captures
+were inspected. Native local/far invalid/corrected naming and numeric-form input checks also pass;
+those dialog captures have not been visually inspected. This is a styling
+foundation; collapsible sections and panel resizing follow. No particle runtime
+or Bevy version change. Evidence: `build/sprinkles-review/` and
+`build/zone-sprinkles-theme-native-20261110/`; provenance:
+`third_party/sprinkles/PROVENANCE.md`. Keep working locally; do not push.
+
+## 10 November 2026 — adopted Sprinkles editor UI direction (P5-17)
+
+The user adopts Sprinkles as the concrete look, feel and interaction reference
+for the full Theia editor. Adapt its native Bevy UI components where practical;
+create matching controls for Theia-specific functions. Keep the existing validated
+command/history, exact f64 fields, source schemas, agent interface and offline
+playtest underneath the presentation. Continue local implementation and commits
+until stopped; mouse, keyboard and display use are authorized. Do not push.
+
+Reviewed upstream: `doceazedo/sprinkles` commit
+`0e978f5a9afc6b456b3693c8761e73a6c7e155bd` (Bevy 0.19). Adapt to Theia's
+existing Bevy 0.20 pin; no engine downgrade. MIT-selected UI provenance is in
+`third_party/sprinkles/`. Particle runtime remains a candidate requiring its own
+P2-13 compatibility, rebasing, budget and native GPU qualification.
+
+Initial UI prerequisites are the retained editor command/history, standard Bevy
+widgets and existing 3440 x 1440 layout. First slice: shared Sprinkles tokens,
+button states and Inter typography across workspaces, palette, outliner,
+properties and dialogs. Follow with resizable panels and section/inspector
+interaction. Acceptance: formatting, denied-warning Clippy, retained focused
+Rust tests, CPU layout and actual Linux 3440 x 1440 input/GPU checks. Planned
+migration is not a claim of completed UI or particle adoption.
+
 Placement hints and renderer guards, 9 November 2026 (P5-17 / P3-15 / P1-10):
 Properties explains refused candidates. The renderer hides cached ghosts during
 forms/playtest or when the tool no longer matches, independently of pointer order.

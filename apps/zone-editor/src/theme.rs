@@ -1,0 +1,172 @@
+//! Sprinkles UI adaptation, upstream 0e978f5 (MIT); see third_party/sprinkles.
+//! Presentation only: all edits retain Theia's validated command/history path.
+use super::*;
+use bevy::asset::uuid_handle;
+use bevy::color::palettes::tailwind;
+
+pub(super) const FONT: Handle<Font> = uuid_handle!("581fa8f8-a50c-4a6b-9b7c-b18200da7483");
+pub(super) const PRIMARY: Color = Color::Srgba(tailwind::BLUE_500);
+pub(super) const PANEL: Color = Color::Srgba(tailwind::ZINC_800);
+pub(super) const BORDER: Color = Color::Srgba(tailwind::ZINC_700);
+pub(super) const BODY: Color = Color::Srgba(tailwind::ZINC_200);
+pub(super) const MUTED: Color = Color::Srgba(tailwind::ZINC_400);
+pub(super) const DISPLAY: Color = Color::Srgba(tailwind::ZINC_50);
+pub(super) const INPUT: Color = Color::Srgba(tailwind::ZINC_900);
+pub(super) const OVERLAY: Color = Color::srgba(0., 0., 0., 0.6);
+
+// Adapted from Sprinkles' ButtonVariant. Keeping the native Bevy Button and
+// Checkbox behavior avoids replacing Theia's focus, activation or edit guards.
+#[derive(Clone, Copy)]
+pub(super) enum Variant {
+    Default,
+    Primary,
+    Active,
+    Ghost,
+    Disabled,
+}
+impl Variant {
+    pub fn background(self, hovered: bool) -> Color {
+        let (color, alpha) = match (self, hovered) {
+            (Self::Default, false) => (BORDER, 0.5),
+            (Self::Default, true) => (BORDER, 0.8),
+            (Self::Primary, false) => (PRIMARY, 1.),
+            (Self::Primary, true) => (PRIMARY, 0.9),
+            (Self::Active, false) => (PRIMARY, 0.1),
+            (Self::Active, true) => (PRIMARY, 0.15),
+            (Self::Ghost, true) => (BODY, 0.05),
+            (Self::Ghost | Self::Disabled, false) | (Self::Disabled, true) => (BODY, 0.),
+        };
+        color.with_alpha(alpha)
+    }
+    fn foreground(self) -> Color {
+        match self {
+            Self::Primary => DISPLAY,
+            Self::Active => PRIMARY,
+            Self::Disabled => MUTED,
+            _ => BODY,
+        }
+    }
+}
+pub(super) fn button_color(enabled: bool, active: bool, hovered: bool) -> Color {
+    variant(enabled, active).background(hovered)
+}
+fn variant(enabled: bool, active: bool) -> Variant {
+    if !enabled {
+        Variant::Disabled
+    } else if active {
+        Variant::Active
+    } else {
+        Variant::Default
+    }
+}
+pub(super) fn font(size: f32) -> TextFont {
+    TextFont {
+        font: FONT.clone().into(),
+        font_size: bevy::text::FontSize::Px(size),
+        weight: if size >= 14. {
+            FontWeight::SEMIBOLD
+        } else {
+            FontWeight::NORMAL
+        },
+        ..default()
+    }
+}
+pub(super) fn load_font(mut fonts: ResMut<Assets<Font>>) {
+    fonts
+        .insert(
+            FONT.id(),
+            Font::from_bytes(include_bytes!("../assets/fonts/InterVariable.ttf").to_vec()),
+        )
+        .expect("embedded Inter font has a stable asset ID");
+}
+pub(super) fn plugin(app: &mut App) {
+    app.add_systems(Startup, load_font).add_systems(
+        PostUpdate,
+        (decorate_buttons, simple_buttons, text_states, input_states).chain(),
+    );
+}
+type NewButton = Or<(Added<Button>, Added<bevy::ui_widgets::Checkbox>)>;
+fn decorate_buttons(mut commands: Commands, mut buttons: Query<(Entity, &mut Node), NewButton>) {
+    for (entity, mut node) in &mut buttons {
+        node.border = UiRect::all(px(1));
+        node.align_items = AlignItems::Center;
+        node.border_radius = BorderRadius::all(px(4));
+        commands.entity(entity).insert(BorderColor::all(BORDER));
+    }
+}
+#[allow(clippy::type_complexity)]
+fn simple_buttons(
+    mut buttons: Query<
+        (
+            &Hovered,
+            &mut BackgroundColor,
+            Option<&properties::Control>,
+            Option<&naming::Control>,
+        ),
+        (
+            With<Button>,
+            Without<workspace::Control>,
+            Without<outliner::Control>,
+            Without<file_picker::Control>,
+            Without<Action>,
+        ),
+    >,
+) {
+    for (hovered, mut background, property, name) in &mut buttons {
+        let primary = matches!(property, Some(properties::Control::Apply))
+            || matches!(name, Some(naming::Control::Apply));
+        background.0 = if primary {
+            Variant::Primary
+        } else {
+            Variant::Default
+        }
+        .background(hovered.0);
+    }
+}
+#[allow(clippy::type_complexity)]
+fn text_states(
+    buttons: Query<
+        (&BackgroundColor, Has<bevy::ui::InteractionDisabled>),
+        Or<(With<Button>, With<bevy::ui_widgets::Checkbox>)>,
+    >,
+    parents: Query<&ChildOf>,
+    mut texts: Query<(Entity, &mut TextColor), With<Text>>,
+) {
+    for (entity, mut color) in &mut texts {
+        for ancestor in parents.iter_ancestors(entity) {
+            if let Ok((background, disabled)) = buttons.get(ancestor) {
+                let state = if disabled {
+                    Variant::Disabled
+                } else if background.0 == Variant::Primary.background(false)
+                    || background.0 == Variant::Primary.background(true)
+                {
+                    Variant::Primary
+                } else if background.0 == Variant::Active.background(false)
+                    || background.0 == Variant::Active.background(true)
+                {
+                    Variant::Active
+                } else {
+                    Variant::Default
+                };
+                color.0 = state.foreground();
+                break;
+            }
+        }
+    }
+}
+
+fn input_states(
+    focus: Option<Res<bevy::input_focus::InputFocus>>,
+    mut fields: Query<(Entity, &mut Node, &mut BorderColor), With<bevy::ui_widgets::TextInput>>,
+) {
+    for (entity, mut node, mut border) in &mut fields {
+        node.border = UiRect::all(px(1));
+        node.border_radius = BorderRadius::all(px(2));
+        node.padding = UiRect::axes(px(8), px(5));
+        *border = BorderColor::all(if focus.as_ref().is_some_and(|f| f.get() == Some(entity)) {
+            PRIMARY
+        } else {
+            BORDER
+        });
+    }
+}

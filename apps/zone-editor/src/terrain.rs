@@ -489,11 +489,7 @@ Offline collision sandbox"
             Action::Select => session.palette.is_none(),
             _ => false,
         };
-        color.0 = if active || hovered.0 {
-            Color::srgb(0.20, 0.30, 0.38)
-        } else {
-            Color::srgb(0.10, 0.16, 0.22)
-        };
+        color.0 = theme::button_color(true, active, hovered.0);
         for child in children.iter() {
             if let Ok(mut text) = labels.get_mut(child) {
                 **text = if matches!(*action, Action::Brush(Tool::Flatten)) {

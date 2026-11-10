@@ -20,6 +20,7 @@ mod selection;
 mod snapping;
 mod spawn;
 mod terrain;
+mod theme;
 mod vegetation;
 mod viewport;
 mod workspace;
@@ -519,6 +520,7 @@ fn run() -> Result<(), String> {
         }),
         ..default()
     }))
+    .add_plugins(theme::plugin)
     .add_observer(workspace::activate)
     .add_observer(workspace::change)
     .add_observer(workspace::toggle)
@@ -606,10 +608,14 @@ fn run() -> Result<(), String> {
 fn text(value: &str, size: f32) -> impl Bundle {
     (
         Text::new(value),
-        TextFont {
-            font_size: bevy::text::FontSize::Px(size),
-            ..default()
-        },
+        theme::font(if size >= 18. {
+            14.
+        } else if size >= 14. {
+            12.
+        } else {
+            11.
+        }),
+        TextColor(theme::BODY),
         bevy::picking::Pickable::IGNORE,
     )
 }
@@ -643,7 +649,7 @@ fn setup_ui(mut commands: Commands) {
                 row_gap: px(6),
                 ..default()
             },
-            BackgroundColor(Color::srgb(0.035, 0.05, 0.075)),
+            BackgroundColor(theme::PANEL),
         ))
         .with_children(|panel| {
             panel.spawn(text("TOOLS", 22.));
@@ -664,7 +670,7 @@ fn setup_ui(mut commands: Commands) {
                             padding: UiRect::all(px(4)),
                             ..default()
                         },
-                        BackgroundColor(Color::srgb(0.10, 0.16, 0.22)),
+                        BackgroundColor(theme::Variant::Default.background(false)),
                     ))
                     .with_children(|button| {
                         button.spawn((PaletteLabel, text(title, 15.)));
@@ -693,7 +699,7 @@ fn setup_ui(mut commands: Commands) {
             overflow: Overflow::clip(),
             ..default()
         },
-        BackgroundColor(Color::srgba(0.035, 0.05, 0.075, 0.9)),
+        BackgroundColor(theme::PANEL),
     ));
 }
 fn activate(
@@ -1357,7 +1363,9 @@ fn present(
             } else {
                 "Saved"
             },
-            if session.vegetation_mode {
+            if session.play.is_some() {
+                "Offline playtest\nW / S: forward / back\nA / D: turn\nQ / E: strafe\nSpace: jump\nF5: return to editing".into()
+            } else if session.vegetation_mode {
                 vegetation::summary(&session)
             } else if session.marker_mode {
                 markers::summary(&session)

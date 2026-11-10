@@ -9,6 +9,9 @@ use bevy::ui_widgets::{
 
 pub(super) const HEADER: f32 = 92.;
 pub(super) const INSPECTOR: f32 = 600.;
+const SETTINGS_HINT: &str = "Click sliders to focus.\nLeft/right, Home/End: adjust\nCtrl S saves the zone.\nCtrl Z / Ctrl Y: undo / redo";
+#[derive(Component)]
+pub(super) struct SettingsHint;
 #[derive(Resource, Default)]
 pub(super) struct Requests {
     pub name: bool,
@@ -105,7 +108,7 @@ fn button(control: Control, caption: &str) -> impl Bundle {
             align_items: AlignItems::Center,
             ..default()
         },
-        BackgroundColor(Color::srgb(0.10, 0.14, 0.19)),
+        BackgroundColor(theme::Variant::Default.background(false)),
         children![(ButtonLabel, text(caption, 15.))],
     )
 }
@@ -125,7 +128,7 @@ pub(super) fn setup(mut commands: Commands) {
                 row_gap: px(5),
                 ..default()
             },
-            BackgroundColor(Color::srgb(0.025, 0.035, 0.05)),
+            BackgroundColor(theme::INPUT),
         ))
         .with_children(|root| {
             root.spawn(Node {
@@ -160,7 +163,7 @@ pub(super) fn setup(mut commands: Commands) {
                         padding: UiRect::axes(px(10), px(6)),
                         ..default()
                     },
-                    BackgroundColor(Color::srgb(0.10, 0.14, 0.19)),
+                    BackgroundColor(theme::Variant::Default.background(false)),
                     children![(ButtonLabel, text("[x] Snap (1 m / 15 deg / 10%)", 15.))],
                 ));
                 row.spawn((
@@ -172,7 +175,7 @@ pub(super) fn setup(mut commands: Commands) {
                         padding: UiRect::axes(px(10), px(6)),
                         ..default()
                     },
-                    BackgroundColor(Color::srgb(0.10, 0.14, 0.19)),
+                    BackgroundColor(theme::Variant::Default.background(false)),
                     children![(ButtonLabel, text("[x] Handles", 15.))],
                 ));
                 for (tool, label) in [
@@ -218,47 +221,150 @@ pub(super) fn setup(mut commands: Commands) {
                         padding: UiRect::axes(px(10), px(6)),
                         ..default()
                     },
-                    BackgroundColor(Color::srgb(0.10, 0.14, 0.19)),
+                    BackgroundColor(theme::Variant::Default.background(false)),
                     children![(ButtonLabel, text("[x] Grid", 15.))],
                 ));
             });
         });
-    commands.spawn((GlobalZIndex(4), Node {
-        position_type:PositionType::Absolute,right:px(0),bottom:px(0),width:px(outliner::WIDTH),height:px(INSPECTOR),
-        padding:UiRect::all(px(12)),flex_direction:FlexDirection::Column,row_gap:px(8),overflow:Overflow::clip(),..default()
-    },BackgroundColor(Color::srgb(0.045,0.06,0.08))))
-    .with_children(|panel| {
-        panel.spawn((Caption,text("PROPERTIES",19.)));
-        panel.spawn((Info,text("",14.)));
-        panel.spawn(Node { flex_wrap:FlexWrap::Wrap,column_gap:px(6),row_gap:px(6),..default() }).with_children(|row| {
-            for (control,label) in [(Control::Rename,"Rename"),(Control::Transform,"Transform..."),
-                (Control::Command(Action::Duplicate),"Duplicate"),(Control::Command(Action::Ground),"Ground"),
-                (Control::Frame,"Frame")] { row.spawn(button(control,label)); }
-        });
-        panel.spawn(Node { flex_wrap:FlexWrap::Wrap,column_gap:px(6),row_gap:px(6),..default() }).with_children(|row| {
-            for (control,label) in [(Control::Point(-1),"Previous point"),(Control::Point(1),"Next point"),
-                (Control::WholePath,"Whole guide"),(Control::Command(Action::InsertPoint),"Insert point"),
-                (Control::Command(Action::RemovePoint),"Remove point")] { row.spawn(button(control,label)); }
-        });
-        for setting in [Setting::MoveGrid,Setting::PlacementSize(0),Setting::PlacementSize(1),Setting::PlacementSize(2),Setting::Radius,Setting::Strength,Setting::Blend,Setting::Level,Setting::ScatterRadius,Setting::ScatterCount] {
-            let (minimum,maximum) = setting.range();
-            panel.spawn((SettingRow(setting), Node { flex_direction:FlexDirection::Column,row_gap:px(6),..default() }))
+    commands
+        .spawn((
+            GlobalZIndex(4),
+            Node {
+                position_type: PositionType::Absolute,
+                right: px(0),
+                bottom: px(0),
+                width: px(outliner::WIDTH),
+                height: px(INSPECTOR),
+                padding: UiRect::all(px(12)),
+                flex_direction: FlexDirection::Column,
+                row_gap: px(8),
+                overflow: Overflow::clip(),
+                ..default()
+            },
+            BackgroundColor(theme::PANEL),
+        ))
+        .with_children(|panel| {
+            panel.spawn((Caption, text("PROPERTIES", 19.)));
+            panel.spawn((Info, text("", 14.)));
+            panel
+                .spawn(Node {
+                    flex_wrap: FlexWrap::Wrap,
+                    column_gap: px(6),
+                    row_gap: px(6),
+                    ..default()
+                })
                 .with_children(|row| {
-                    row.spawn((SettingLabel(setting),text("",15.)));
-                    row.spawn((bevy::input_focus::tab_navigation::TabIndex(-1), setting, Slider { track_click:TrackClick::Snap,..default() },SliderValue(minimum),
-                        SliderRange::new(minimum,maximum),SliderStep(match setting { Setting::ScatterCount|Setting::MoveGrid=>1.,Setting::Level|Setting::ScatterRadius=>0.1,Setting::PlacementSize(_)=>0.25,_=>0.05 }),SliderPrecision(if matches!(setting,Setting::ScatterCount|Setting::MoveGrid){0}else{3}),
-                        Hovered::default(),Node {width:percent(100),height:px(24),..default()},
-                        BackgroundColor(Color::srgb(0.09,0.12,0.16))))
-                    .with_children(|track| {
-                        track.spawn(Node { position_type:PositionType::Absolute,left:px(0),right:px(14),top:px(0),bottom:px(0),..default() })
-                            .with_children(|travel| {travel.spawn((Thumb,SliderThumb,Node {
-                                position_type:PositionType::Absolute,width:px(14),height:px(24),left:percent(0),..default()
-                            },BackgroundColor(Color::srgb(0.2,0.65,0.8))));});
-                    });
+                    for (control, label) in [
+                        (Control::Rename, "Rename"),
+                        (Control::Transform, "Transform..."),
+                        (Control::Command(Action::Duplicate), "Duplicate"),
+                        (Control::Command(Action::Ground), "Ground"),
+                        (Control::Frame, "Frame"),
+                    ] {
+                        row.spawn(button(control, label));
+                    }
                 });
-        }
-        panel.spawn(text("Click sliders to focus.\nLeft/right, Home/End: adjust\nCtrl S saves the zone.\nCtrl Z / Ctrl Y: undo / redo",13.));
-    });
+            panel
+                .spawn(Node {
+                    flex_wrap: FlexWrap::Wrap,
+                    column_gap: px(6),
+                    row_gap: px(6),
+                    ..default()
+                })
+                .with_children(|row| {
+                    for (control, label) in [
+                        (Control::Point(-1), "Previous point"),
+                        (Control::Point(1), "Next point"),
+                        (Control::WholePath, "Whole guide"),
+                        (Control::Command(Action::InsertPoint), "Insert point"),
+                        (Control::Command(Action::RemovePoint), "Remove point"),
+                    ] {
+                        row.spawn(button(control, label));
+                    }
+                });
+            for setting in [
+                Setting::MoveGrid,
+                Setting::PlacementSize(0),
+                Setting::PlacementSize(1),
+                Setting::PlacementSize(2),
+                Setting::Radius,
+                Setting::Strength,
+                Setting::Blend,
+                Setting::Level,
+                Setting::ScatterRadius,
+                Setting::ScatterCount,
+            ] {
+                let (minimum, maximum) = setting.range();
+                panel
+                    .spawn((
+                        SettingRow(setting),
+                        Node {
+                            flex_direction: FlexDirection::Column,
+                            row_gap: px(6),
+                            ..default()
+                        },
+                    ))
+                    .with_children(|row| {
+                        row.spawn((SettingLabel(setting), text("", 15.)));
+                        row.spawn((
+                            bevy::input_focus::tab_navigation::TabIndex(-1),
+                            setting,
+                            Slider {
+                                track_click: TrackClick::Snap,
+                                ..default()
+                            },
+                            SliderValue(minimum),
+                            SliderRange::new(minimum, maximum),
+                            SliderStep(match setting {
+                                Setting::ScatterCount | Setting::MoveGrid => 1.,
+                                Setting::Level | Setting::ScatterRadius => 0.1,
+                                Setting::PlacementSize(_) => 0.25,
+                                _ => 0.05,
+                            }),
+                            SliderPrecision(
+                                if matches!(setting, Setting::ScatterCount | Setting::MoveGrid) {
+                                    0
+                                } else {
+                                    3
+                                },
+                            ),
+                            Hovered::default(),
+                            Node {
+                                width: percent(100),
+                                height: px(24),
+                                ..default()
+                            },
+                            BackgroundColor(theme::INPUT),
+                        ))
+                        .with_children(|track| {
+                            track
+                                .spawn(Node {
+                                    position_type: PositionType::Absolute,
+                                    left: px(0),
+                                    right: px(14),
+                                    top: px(0),
+                                    bottom: px(0),
+                                    ..default()
+                                })
+                                .with_children(|travel| {
+                                    travel.spawn((
+                                        Thumb,
+                                        SliderThumb,
+                                        Node {
+                                            position_type: PositionType::Absolute,
+                                            width: px(14),
+                                            height: px(24),
+                                            left: percent(0),
+                                            ..default()
+                                        },
+                                        BackgroundColor(theme::PRIMARY),
+                                    ));
+                                });
+                        });
+                    });
+            }
+            panel.spawn((SettingsHint, text(SETTINGS_HINT, 13.)));
+        });
 }
 impl Control {
     fn enabled(self, session: &Session) -> bool {
@@ -351,6 +457,9 @@ impl Setting {
         }
     }
     fn visible(self, session: &Session) -> bool {
+        if session.play.is_some() {
+            return false;
+        }
         match self {
             Self::MoveGrid => true,
             Self::PlacementSize(axis) => {
@@ -582,6 +691,15 @@ pub(super) fn sync(
     mut rows: Query<(&SettingRow, &mut Node), (Without<Thumb>, Without<Control>)>,
     mut labels: Query<(&SettingLabel, &mut Text), Without<ButtonLabel>>,
     mut captions: Query<&mut Text, (With<Caption>, Without<ButtonLabel>, Without<SettingLabel>)>,
+    mut hints: Query<
+        &mut Text,
+        (
+            With<SettingsHint>,
+            Without<ButtonLabel>,
+            Without<SettingLabel>,
+            Without<Caption>,
+        ),
+    >,
 ) {
     for mut node in &mut help {
         node.display = if requests.help {
@@ -625,13 +743,13 @@ pub(super) fn sync(
             _ => false,
         };
         background.0 = if !enabled {
-            Color::srgb(0.055, 0.07, 0.09)
+            theme::Variant::Disabled.background(false)
         } else if active {
-            Color::srgb(0.13, 0.35, 0.46)
+            theme::Variant::Active.background(false)
         } else if hovered.0 {
-            Color::srgb(0.19, 0.25, 0.32)
+            theme::Variant::Default.background(true)
         } else {
-            Color::srgb(0.10, 0.14, 0.19)
+            theme::Variant::Default.background(false)
         };
         if matches!(control, Control::Snap | Control::Handles | Control::Grid) && checked != active
         {
@@ -695,14 +813,14 @@ pub(super) fn sync(
         for child in hierarchy.iter_descendants(entity) {
             if let Ok((mut node, mut color)) = thumbs.get_mut(child) {
                 color.0 = if !enabled {
-                    Color::srgb(0.2, 0.25, 0.3)
+                    theme::MUTED
                 } else if focus
                     .as_ref()
                     .is_some_and(|focus| focus.get() == Some(entity))
                 {
-                    Color::srgb(0.65, 0.9, 1.)
+                    theme::DISPLAY
                 } else {
-                    Color::srgb(0.2, 0.65, 0.8)
+                    theme::PRIMARY
                 };
                 node.left = percent(range.thumb_position(actual) * 100.);
             }
@@ -719,7 +837,19 @@ pub(super) fn sync(
         **text = setting.0.label(&session);
     }
     for mut text in &mut captions {
-        **text = format!("PROPERTIES  /  {:?}", mode(&session));
+        **text = if session.play.is_some() {
+            "PLAYTEST CONTROLS".into()
+        } else {
+            format!("PROPERTIES  /  {:?}", mode(&session))
+        };
+    }
+    for mut text in &mut hints {
+        **text = if session.play.is_some() {
+            "F5 returns to editing.\nAuthoring pauses during playtest."
+        } else {
+            SETTINGS_HINT
+        }
+        .into();
     }
 }
 

@@ -3237,3 +3237,21 @@ four-line key footer remain inside Properties. Evidence is in
 build/zone-placement-preview-hint-layout.log and the final all-tests log.
 No new Windows or multiplayer acceptance. Schema, engine pins and gameplay
 remain unchanged. No push.
+
+## Sprinkles UI foundation — 10 November 2026
+
+Sprinkles theme foundation, 10 November 2026 (P5-17): shared upstream
+zinc/blue tokens, adapted button states and embedded licensed Inter now style the
+palette, command bar, workspaces, content list, properties and dialogs. Focused
+inputs use 1 px blue borders; inactive inputs use zinc borders. Rename uses a
+compact matching dialog. The retained playtest context/settings restoration is
+included. All 127 focused Rust tests, formatting and denied-warning workspace/
+all-target Clippy pass. Linux RX 7900 XTX / Vulkan at 3440 x 1440 passes local/far
+placement, focused keys, preview hiding, undo/redo, exact document command oracles,
+Save and playtest/settings restoration, with zero GPU diagnostics. Native captures
+were inspected. Native local/far invalid/corrected naming and numeric-form input checks also pass;
+those dialog captures have not been visually inspected. This is a styling
+foundation; collapsible sections and panel resizing follow. No particle runtime
+or Bevy version change. Evidence: `build/sprinkles-review/` and
+`build/zone-sprinkles-theme-native-20261110/`; provenance:
+`third_party/sprinkles/PROVENANCE.md`. Keep working locally; do not push.

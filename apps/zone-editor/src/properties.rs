@@ -304,7 +304,7 @@ pub(super) fn setup(mut commands: Commands) {
                 overflow: Overflow::clip(),
                 ..default()
             },
-            BackgroundColor(Color::srgb(0.04, 0.065, 0.1)),
+            BackgroundColor(theme::PANEL),
         ))
         .with_children(|root| {
             root.spawn((
@@ -316,8 +316,8 @@ pub(super) fn setup(mut commands: Commands) {
                     border: px(2).all(),
                     ..default()
                 },
-                BorderColor::all(Color::srgb(0.2, 0.65, 0.8)),
-                BackgroundColor(Color::srgb(0.04, 0.065, 0.1)),
+                BorderColor::all(theme::PRIMARY),
+                BackgroundColor(theme::PANEL),
             ))
             .with_children(|panel| {
                 panel.spawn((Caption, text("TRANSFORM", 16.), TextLayout::no_wrap()));
@@ -360,13 +360,10 @@ pub(super) fn setup(mut commands: Commands) {
                                     border: px(2).all(),
                                     ..default()
                                 },
-                                BorderColor::all(Color::srgb(0.35, 0.85, 1.)),
-                                BackgroundColor(Color::srgb(0.015, 0.025, 0.04)),
-                                TextFont {
-                                    font_size: FontSize::Px(16.),
-                                    ..default()
-                                },
-                                TextColor(Color::WHITE),
+                                BorderColor::all(theme::PRIMARY),
+                                BackgroundColor(theme::INPUT),
+                                theme::font(12.),
+                                TextColor(theme::BODY),
                                 TextLayout::no_wrap(),
                                 TextCursorStyle::default(),
                             ));
@@ -412,7 +409,7 @@ pub(super) fn setup(mut commands: Commands) {
                                 height: px(24),
                                 ..default()
                             },
-                            BackgroundColor(Color::srgb(0.09, 0.12, 0.16)),
+                            BackgroundColor(theme::INPUT),
                         ));
                         if yaw {
                             slider.insert(YawSlider);
@@ -438,7 +435,7 @@ pub(super) fn setup(mut commands: Commands) {
                                             left: percent(50),
                                             ..default()
                                         },
-                                        BackgroundColor(Color::srgb(0.2, 0.65, 0.8)),
+                                        BackgroundColor(theme::PRIMARY),
                                     ));
                                     if yaw {
                                         thumb.insert(YawThumb);
@@ -470,7 +467,7 @@ pub(super) fn setup(mut commands: Commands) {
                                     padding: px(8).all(),
                                     ..default()
                                 },
-                                BackgroundColor(Color::srgb(0.1, 0.24, 0.3)),
+                                BackgroundColor(theme::Variant::Default.background(false)),
                             ))
                             .with_child(text(label, 14.));
                         }

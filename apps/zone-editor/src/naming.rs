@@ -58,20 +58,20 @@ pub(super) fn setup(mut commands: Commands) {
                 justify_content: JustifyContent::Center,
                 ..default()
             },
-            BackgroundColor(Color::srgba(0.01, 0.02, 0.035, 0.82)),
+            BackgroundColor(theme::OVERLAY),
         ))
         .with_children(|root| {
             root.spawn((
                 Node {
-                    width: px(800),
-                    padding: px(28).all(),
-                    row_gap: px(18),
+                    width: px(480),
+                    padding: px(24).all(),
+                    row_gap: px(12),
                     flex_direction: FlexDirection::Column,
-                    border: px(2).all(),
+                    border: px(1).all(),
                     ..default()
                 },
-                BorderColor::all(Color::srgb(0.2, 0.65, 0.8)),
-                BackgroundColor(Color::srgb(0.04, 0.065, 0.1)),
+                BorderColor::all(theme::BORDER),
+                BackgroundColor(theme::PANEL),
             ))
             .with_children(|panel| {
                 panel.spawn((Caption, text("Rename", 22.)));
@@ -86,17 +86,14 @@ pub(super) fn setup(mut commands: Commands) {
                     },
                     Node {
                         width: percent(100),
-                        min_height: px(60),
-                        border: px(2).all(),
+                        min_height: px(32),
+                        border: px(1).all(),
                         ..default()
                     },
-                    BorderColor::all(Color::srgb(0.35, 0.85, 1.)),
-                    BackgroundColor(Color::srgb(0.015, 0.025, 0.04)),
-                    TextFont {
-                        font_size: FontSize::Px(25.),
-                        ..default()
-                    },
-                    TextColor(Color::WHITE),
+                    BorderColor::all(theme::PRIMARY),
+                    BackgroundColor(theme::INPUT),
+                    theme::font(14.),
+                    TextColor(theme::BODY),
                     TextLayout::no_wrap(),
                     TextCursorStyle::default(),
                 ));
@@ -118,10 +115,10 @@ pub(super) fn setup(mut commands: Commands) {
                                 Button,
                                 Hovered::default(),
                                 Node {
-                                    padding: px(14).all(),
+                                    padding: UiRect::axes(px(12), px(6)),
                                     ..default()
                                 },
-                                BackgroundColor(Color::srgb(0.1, 0.24, 0.3)),
+                                BackgroundColor(theme::Variant::Default.background(false)),
                             ))
                             .with_child(text(label, 19.));
                         }

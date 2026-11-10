@@ -147,7 +147,7 @@ fn button(control: Control, label: &str) -> impl Bundle {
             overflow: Overflow::clip(),
             ..default()
         },
-        BackgroundColor(Color::srgb(0.10, 0.14, 0.19)),
+        BackgroundColor(theme::Variant::Default.background(false)),
         children![(Label(control), text(label, 15.), TextLayout::no_wrap())],
     )
 }
@@ -165,7 +165,7 @@ pub(super) fn setup(mut commands: Commands) {
                 justify_content: JustifyContent::Center,
                 ..default()
             },
-            BackgroundColor(Color::srgba(0.01, 0.02, 0.035, 0.82)),
+            BackgroundColor(theme::OVERLAY),
         ))
         .with_children(|root| {
             root.spawn((
@@ -176,7 +176,7 @@ pub(super) fn setup(mut commands: Commands) {
                     flex_direction: FlexDirection::Column,
                     ..default()
                 },
-                BackgroundColor(Color::srgb(0.04, 0.065, 0.1)),
+                BackgroundColor(theme::PANEL),
             ))
             .with_children(|panel| {
                 panel.spawn((Caption, text("ZONE FILES", 17.)));
@@ -218,13 +218,10 @@ pub(super) fn setup(mut commands: Commands) {
                         border: UiRect::all(px(2)),
                         ..default()
                     },
-                    BorderColor::all(Color::srgb(0.35, 0.85, 1.)),
-                    BackgroundColor(Color::srgb(0.015, 0.025, 0.04)),
-                    TextFont {
-                        font_size: FontSize::Px(18.),
-                        ..default()
-                    },
-                    TextColor(Color::WHITE),
+                    BorderColor::all(theme::PRIMARY),
+                    BackgroundColor(theme::INPUT),
+                    theme::font(14.),
+                    TextColor(theme::BODY),
                     TextLayout::no_wrap(),
                     TextCursorStyle::default(),
                 ));
@@ -490,15 +487,15 @@ pub(super) fn finish(
                     || matches!(control,Control::Next if draft.page+1==draft.pages())
                     || matches!(control,Control::Up if draft.folder.parent().is_none());
                 background.0 = if unavailable {
-                    Color::srgb(0.055, 0.07, 0.09)
+                    theme::Variant::Disabled.background(false)
                 } else if matches!(control, Control::Apply) && draft.overwrite {
                     Color::srgb(0.35, 0.19, 0.07)
                 } else if selected {
-                    Color::srgb(0.13, 0.35, 0.46)
+                    theme::Variant::Active.background(false)
                 } else if hovered.0 {
-                    Color::srgb(0.19, 0.25, 0.32)
+                    theme::Variant::Default.background(true)
                 } else {
-                    Color::srgb(0.10, 0.14, 0.19)
+                    theme::Variant::Default.background(false)
                 };
             }
             node.display = if matches!(control,Control::Row(index) if draft.row(*index).is_none()) {

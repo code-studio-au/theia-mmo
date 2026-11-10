@@ -60,6 +60,13 @@ pub(super) fn add_layout(app: &mut App) {
             Font::from_bytes(bevy::text::DEFAULT_FONT_DATA.to_vec()),
         )
         .unwrap();
+    app.world_mut()
+        .resource_mut::<Assets<Font>>()
+        .insert(
+            theme::FONT.id(),
+            Font::from_bytes(include_bytes!("../assets/fonts/InterVariable.ttf").to_vec()),
+        )
+        .unwrap();
     app.world_mut().spawn((
         Camera2d,
         Camera {

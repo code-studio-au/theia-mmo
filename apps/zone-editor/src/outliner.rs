@@ -169,7 +169,7 @@ pub(super) fn setup(mut commands: Commands) {
                 overflow: Overflow::clip(),
                 ..default()
             },
-            BackgroundColor(Color::srgb(0.035, 0.05, 0.075)),
+            BackgroundColor(theme::PANEL),
         ))
         .with_children(|panel| {
             panel.spawn((Label::Title, text("ZONE CONTENT", 20.)));
@@ -195,7 +195,7 @@ pub(super) fn setup(mut commands: Commands) {
                                 overflow: Overflow::clip(),
                                 ..default()
                             },
-                            BackgroundColor(Color::srgb(0.10, 0.16, 0.22)),
+                            BackgroundColor(theme::Variant::Default.background(false)),
                         ))
                         .with_children(|button| {
                             if matches!(control, Control::Search) {
@@ -237,7 +237,7 @@ pub(super) fn setup(mut commands: Commands) {
                                 padding: UiRect::all(px(4)),
                                 ..default()
                             },
-                            BackgroundColor(Color::srgb(0.10, 0.16, 0.22)),
+                            BackgroundColor(theme::Variant::Default.background(false)),
                             children![text(caption, 13.)],
                         ));
                     }
@@ -264,7 +264,7 @@ pub(super) fn setup(mut commands: Commands) {
                                 padding: UiRect::all(px(4)),
                                 ..default()
                             },
-                            BackgroundColor(Color::srgb(0.10, 0.16, 0.22)),
+                            BackgroundColor(theme::Variant::Default.background(false)),
                         ))
                         .with_children(|button| {
                             button.spawn(text(caption, 13.));
@@ -293,7 +293,7 @@ pub(super) fn setup(mut commands: Commands) {
                                 display: Display::None,
                                 ..default()
                             },
-                            BackgroundColor(Color::srgb(0.08, 0.11, 0.16)),
+                            BackgroundColor(theme::Variant::Ghost.background(false)),
                         ))
                         .with_children(|button| {
                             button.spawn((Label::Row(index), text("", 13.), TextLayout::no_wrap()));
@@ -532,13 +532,13 @@ pub(super) fn sync(
             _ => false,
         };
         background.0 = if disabled {
-            Color::srgb(0.045, 0.06, 0.08)
+            theme::PANEL
         } else if active {
-            Color::srgb(0.20, 0.34, 0.43)
+            theme::Variant::Active.background(false)
         } else if hovered.0 {
-            Color::srgb(0.16, 0.25, 0.33)
+            theme::Variant::Ghost.background(true)
         } else {
-            Color::srgb(0.08, 0.11, 0.16)
+            theme::Variant::Ghost.background(false)
         };
     }
     for (label, mut value) in &mut labels {
@@ -1308,7 +1308,7 @@ mod tests {
                 .iter(app.world())
             {
                 if matches!(label, Label::Title) {
-                    assert!(computed.size().y >= 20.);
+                    assert!(computed.size().y >= 14.);
                 }
                 if matches!(label, Label::Footer) {
                     assert_eq!(computed.size().y, 44.);

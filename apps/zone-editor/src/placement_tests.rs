@@ -310,4 +310,60 @@ fn placement_controls_fit_properties_for_each_shape_and_hide_when_selecting() {
             assert!(centre.y - half.y >= 840. && centre.y + half.y <= 1440.);
         }
     }
+    let before: Vec<_> = app
+        .world_mut()
+        .query::<(Entity, &SettingRow, &Node)>()
+        .iter(app.world())
+        .map(|(entity, _, node)| (entity, node.display))
+        .collect();
+    let source = app.world().resource::<Session>().editor.zone().clone();
+    let preferences = app.world().resource::<Session>().placement_size;
+    app.world_mut()
+        .resource_scope(|world, mut session: Mut<Session>| {
+            perform(
+                Action::Play,
+                &mut session,
+                &mut world.resource_mut::<View>(),
+            )
+        });
+    for _ in 0..3 {
+        app.update();
+    }
+    assert!(app.world().resource::<Session>().play.is_some());
+    for (_, computed) in app
+        .world_mut()
+        .query::<(&Setting, &ComputedNode)>()
+        .iter(app.world())
+    {
+        assert_eq!(computed.size(), Vec2::ZERO);
+    }
+    for (node,transform) in app.world_mut().query_filtered::<(&ComputedNode,&bevy::ui::UiGlobalTransform),Or<(With<Caption>,With<Info>,With<SettingsHint>)>>().iter(app.world()) {
+        let centre=transform.affine().translation;let half=node.size()*0.5;
+        assert!(node.size().min_element()>0.);
+        assert!(centre.x-half.x>=3140. && centre.x+half.x<=3440.);
+        assert!(centre.y-half.y>=840. && centre.y+half.y<=1440.);
+    }
+    app.world_mut()
+        .resource_scope(|world, mut session: Mut<Session>| {
+            perform(
+                Action::Play,
+                &mut session,
+                &mut world.resource_mut::<View>(),
+            )
+        });
+    for _ in 0..3 {
+        app.update();
+    }
+    let after: Vec<_> = app
+        .world_mut()
+        .query::<(Entity, &SettingRow, &Node)>()
+        .iter(app.world())
+        .map(|(entity, _, node)| (entity, node.display))
+        .collect();
+    assert_eq!(before, after);
+    assert_eq!(
+        app.world().resource::<Session>().placement_size,
+        preferences
+    );
+    assert_eq!(app.world().resource::<Session>().editor.zone(), &source);
 }

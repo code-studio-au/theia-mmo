@@ -161,12 +161,16 @@ def run(output,binary,only_case=None,keyboard=False,preview=False):
                     snapshot=copy.deepcopy(fresh())
                     tool('Place(Box)');desktop.move(window,snapshot['ground'][0],1)
                     wait(lambda:state()['placement_preview'] is not None and state()['placement_ghost']['visible'])
+                    settings_before={c['target']:c['value'] for c in state()['workspace_controls'] if c['range'] is not None}
                     control('Command(Play)');wait(lambda:state()['play_feet'] is not None)
+                    wait(lambda:all(c['size']==[0,0] for c in state()['workspace_controls'] if c['range'] is not None))
                     desktop.move(window,[1720,720],1);fresh()
                     assert state()['placement_preview'] is None and not state()['placement_ghost']['visible']
                     assert state()['document']==snapshot['document'] and state()['revision']==snapshot['revision'] and state()['history']==snapshot['history']
                     capture('playtest-no-placement-ghost')
                     control('Command(Play)');wait(lambda:state()['play_feet'] is None)
+                    wait(lambda:next(c for c in state()['workspace_controls'] if c['target']=='MoveGrid')['size'][1]>0)
+                    assert {c['target']:c['value'] for c in state()['workspace_controls'] if c['range'] is not None}==settings_before
                     snapshot=copy.deepcopy(fresh())
                     bridge=wait(lambda:json.loads((mailbox/'state.json').read_text()) if (mailbox/'state.json').exists() else None)
                     fixture=dict(id=18446744073709551614,name='ID exhaustion fixture',primitive='box',pose=dict(position=[origin[0]+32,origin[1]+1,origin[2]+32],yaw_degrees=0,size=[2,2,2]))
