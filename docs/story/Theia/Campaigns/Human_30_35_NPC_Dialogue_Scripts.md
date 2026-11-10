@@ -4,7 +4,7 @@
 
 ## Narrative and reveal boundaries
 
-The Grey Surveyor's true identity as Oth'varen is **not revealed** until the level 40–45 arc. He may demonstrate unusual expertise but is not publicly identified here. The Guardians are named and introduced but their surviving gate and Kel'vari contacts remain secret. The player encounters Oma'vira as the first Conclave founder; she knows she serves Nhal but does not explain the full plan. The first inversion is a bounded scientific achievement, not proof that divine essence can be destroyed. The Anchor network is not the Seven's Binding.
+The Elder's true identity as Oth'varen is **not revealed** until the level 40–45 arc. He may demonstrate unusual expertise but is not publicly identified here. The Guardians are named and introduced but their surviving gate and Kel'vari contacts remain secret. The player encounters Oma'vira as the first Conclave founder; she knows she serves Nhal but does not explain the full plan. The first inversion is a bounded scientific achievement, not proof that divine essence can be destroyed. The Anchor network is not the Seven's Binding.
 
 ## Q063 — Urodan
 
@@ -54,7 +54,7 @@ The Grey Surveyor's true identity as Oth'varen is **not revealed** until the lev
 
 **In-progress:** “Finish the agreed work and bring back what you can verify. Don't take risks for a guess.”
 
-## Q067 — Grey Surveyor
+## Q067 — Elder
 
 **Offer / opening scene:** “The shutdown order refers to a diagram that isn't here. Someone has mistaken a partial instruction for a complete one.”
 
@@ -90,7 +90,7 @@ The Grey Surveyor's true identity as Oth'varen is **not revealed** until the lev
 
 **In-progress:** “Finish the agreed work and bring back what you can verify. Don't take risks for a guess.”
 
-## Q070 — Grey Surveyor
+## Q070 — Elder
 
 **Offer / opening scene:** “Those who work near these installations deserve the full safety instructions, not a shortened version that makes the experts look clever.”
 
@@ -114,7 +114,7 @@ The Grey Surveyor's true identity as Oth'varen is **not revealed** until the lev
 
 **In-progress:** “Finish the agreed work and bring back what you can verify. Don't take risks for a guess.”
 
-## Q072 — Grey Surveyor
+## Q072 — Elder
 
 **Offer / opening scene:** “Start the trial. Watch the readings, not the spectacle. End it at the agreed threshold even if it seems stable.”
 
@@ -214,7 +214,7 @@ The Grey Surveyor's true identity as Oth'varen is **not revealed** until the lev
 
 - **Halden:** principled but impatient, not a secret Unmade agent. His mistake is a credible safety dispute, and he acknowledges the evidence afterward.
 - **Sera:** scientifically careful and increasingly uncomfortable about the gate evidence. She should not casually disclose the Kel'vari in Q079.
-- **Grey Surveyor:** restrained, observant and sometimes unusually precise. Do not use his later name in player-facing quest text before the identity reveal.
+- **Elder:** restrained, observant and sometimes unusually precise. Do not use his later name in player-facing quest text before the identity reveal.
 - **Oma'vira:** deliberate and corrupted, not ignorant of Nhal's objective. Her dialogue must not disclose Nhal's name or the Binding's full history to the player yet.
 - **Q073:** player preference changes later acknowledgement, not whether the first inversion occurs.
 - **Q077–Q078:** preserve captive rescue, Oma'vira's permanent defeat and the controlled Major Anchor reversal in the correct order.
