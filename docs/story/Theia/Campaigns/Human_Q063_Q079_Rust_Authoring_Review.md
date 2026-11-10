@@ -14,11 +14,11 @@ The current Rust catalogue accepts ordered stages with `all`, `any`, or `at_leas
 | **Q064 Water and Memory** | Tarek's tunnel permission → reach store and defend crew → preserve warning copy | Crew survival and warning provenance persist through retry; rescue and inspection planned |
 | **Q065 The Missing Margin** | Authenticate original warning and missing margin in either order → Dromak grants restricted access | Two independent archive facts; don't infer identity of the person who removed text |
 | **Q066 A Name for the Guardians** | Meet Sera → read Guardian charter → accept limited associate cooperation | Distinguish introduction, charter acknowledgement and association; no forced Guardian membership |
-| **Q067 The Instruction Without Its Diagram** | Compare Regional Anchor plan and Halden's incomplete order in any order → Grey Surveyor identifies missing safeguard | Technical inspection planned; no premature identity reveal |
+| **Q067 The Instruction Without Its Diagram** | Compare Regional Anchor plan and Halden's incomplete order in any order → Elder identifies missing safeguard | Technical inspection planned; no premature identity reveal |
 | **Q068 Reach Them Before the Charge** | Arrive at freight works → warn Halden → disable premature charge → report to Sera | Warning alone cannot complete the cutoff. Need server-authorized interrupt event; no timed softlock |
 | **Q069 The Broken Measure** | Enter solo instance → rescue researchers → isolate Regional supports → shut down core | Defend/interaction/instance objectives planned; encounter checkpoint and committed rescue credit |
 | **Q070 Copies for the People at Risk** | Collect complete instructions → distribute to at-risk crew → deposit independent measurement copy | Distribution requires a semantic handover, not greeting a team NPC |
-| **Q071 Make the Measure Small** | Inspect isolation and reserve limits in either order → fit cutoff → receive Sera's bounded-trial authorization | **Reveal guardrail:** current canonical contact is Grey Surveyor / Brynja; keep the Surveyor unnamed until Q097. Brynja's participation still needs verified location/contact |
+| **Q071 Make the Measure Small** | Inspect isolation and reserve limits in either order → fit cutoff → receive Sera's bounded-trial authorization | **Reveal guardrail:** current canonical contact is Elder / Brynja; keep the Surveyor unnamed until Q097. Brynja's participation still needs verified location/contact |
 | **Q072 A Brief Reversal** | Start bounded trial → measure reversal → activate cutoff at threshold → archive result | Trial success and cutoff require authoritative experiment outcomes; no claim that divine essence can yet be shattered |
 | **Q073 The Safer Argument** | Hear Halden and Sera in any order → compare risk assessment → record revisable preference | Choice persistence planned. Both scientific positions credible; no permanent main-story fork |
 | **Q074 The Pattern Beneath** | Independently compare disturbance datasets → synchronize timing overlay → report coordinated signal | Six signatures remain an observed network pattern, not proof of the full cosmic mechanism |
@@ -30,7 +30,7 @@ The current Rust catalogue accepts ordered stages with `all`, `any`, or `at_leas
 
 ## Cross-chapter continuity and high-priority corrections
 
-1. **Q071–Q073 player-facing names:** The Grey Surveyor is not publicly revealed as Oth'varen until Q097. The current canonical Q071/Q072 contacts now use Grey Surveyor, and [Current Human Campaign](CURRENT_HUMAN_CAMPAIGN.md) records the spoiler-safe manifest correction. The earlier live-name-leak finding is superseded; preserve this reveal gate in future player-facing material without treating an internal actor identity as a display name.
+1. **Q071–Q073 player-facing names:** The Elder is not publicly revealed as Oth'varen until Q097. The current canonical Q071/Q072 contacts now use Elder, and [Current Human Campaign](CURRENT_HUMAN_CAMPAIGN.md) records the spoiler-safe manifest correction. The earlier live-name-leak finding is superseded; preserve this reveal gate in future player-facing material without treating an internal actor identity as a display name.
 2. **Q068–Q069 retry:** Halden's premature charge is interrupted before the Broken Measure instance. Failure inside Q069 must not rewind that already committed action.
 3. **Q071–Q072 trial semantics:** This is the first **bounded Minor Resonator inversion**. The result supports a reversal hypothesis, not a proven solution to Nhal.
 4. **Q073 choice:** Persist provisional severance-versus-inversion preference for later dialogue, while preserving the mandatory experimental result and canonical storyline.
@@ -60,4 +60,4 @@ The current Rust catalogue accepts ordered stages with `all`, `any`, or `at_leas
 
 ## Next pass
 
-Review Q080–Q103 (Sera's gate disclosure, Kel'vari consent and first contact, archive access, Grey Surveyor identity). Preserve the corrected Q071/Q072 Grey Surveyor labels in every player-facing export. Do not create a second quest inventory: approved changes belong in the single current manifest.
+Review Q080–Q103 (Sera's gate disclosure, Kel'vari consent and first contact, archive access, Elder identity). Preserve the corrected Q071/Q072 Elder labels in every player-facing export. Do not create a second quest inventory: approved changes belong in the single current manifest.
