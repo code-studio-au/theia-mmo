@@ -1,3 +1,11 @@
+Naming/property native qualifier preparation, 10 November 2026 (P5-17):
+`tools/qualify_zone_names.py` now checks exact fields against the current
+inspector rectangle and chooses the visible inspector Transform action rather
+than a hidden menu item with the same command. It records layout geometry,
+filters native client environment and verifies a stable binary hash. Python
+syntax and --help checks pass. No native run, window, capture or desktop input
+was performed; production code and native acceptance are unchanged.
+
 Grid/pan native qualifier preparation, 10 November 2026 (P5-17):
 `tools/qualify_zone_grids.py` now uses current canvas height for projected pan
 expectations, actual browser/inspector rectangles for gesture-ownership checks,

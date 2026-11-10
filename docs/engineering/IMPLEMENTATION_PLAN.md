@@ -1,3 +1,8 @@
+P5-17, 10 November 2026: naming/property native checks are prepared for
+current inspector geometry and duplicate menu/action telemetry. Syntax/--help
+checks pass; no native run or production change occurred while desktop use is
+stopped. See STATUS/ZONE_EDITOR; native acceptance remains pending.
+
 P5-17, 10 November 2026: the grid/pan qualifier is prepared for current
 canvas/panel geometry and View/Zone menus. Syntax/--help checks pass; it has not
 run while desktop use is stopped. No production behavior changed and no native

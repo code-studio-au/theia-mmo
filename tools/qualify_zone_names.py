@@ -9,6 +9,7 @@ from pathlib import Path
 import subprocess
 
 from gpu_validation import check_gpu_diagnostics
+from launch_environment import client_environment
 from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,6 +19,7 @@ def run(output, binary, properties=False, feedback_only=False, annotations=False
     output = output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     binary = binary.resolve()
+    binary_hash = hashlib.sha256(binary.read_bytes()).hexdigest()
     seed = output/'seed.json'
     subprocess.run([str(binary), '--headless', '--commands', str(ROOT/'content/zones/selection.commands.jsonl'),
                     '--output', str(seed)], check=True, capture_output=True)
@@ -35,8 +37,8 @@ def run(output, binary, properties=False, feedback_only=False, annotations=False
     checks = []
     final_documents = {}
     input_notes = []
-    env = dict(os.environ, WGPU_BACKEND='vulkan', VK_INSTANCE_LAYERS='VK_LAYER_KHRONOS_validation',
-               VK_LOADER_DEBUG='layer')
+    env = client_environment(dict(os.environ, WGPU_BACKEND='vulkan', VK_INSTANCE_LAYERS='VK_LAYER_KHRONOS_validation',
+               VK_LOADER_DEBUG='layer'))
 
     def case(name, source, verify):
         report = output/f'{name}.state.json'
@@ -161,7 +163,7 @@ def run(output, binary, properties=False, feedback_only=False, annotations=False
         text = logfile.read_text()
         assert 'Insert instance layer "VK_LAYER_KHRONOS_validation"' in text
         diagnostics = check_gpu_diagnostics(text, allow_surface_resize=False)
-        cases.append(dict(name=name, gpu=final['gpu'], viewport=final['viewport'],
+        cases.append(dict(name=name, gpu=final['gpu'], viewport=final['viewport'], ui_layout=final['ui_layout'],
                           validation_layer_active=True, allowed_resize_diagnostics=diagnostics))
 
     def edit(state, key, chord, replace_text, select, modal_button, capture, agent, desktop, window, click):
@@ -423,12 +425,17 @@ def run(output, binary, properties=False, feedback_only=False, annotations=False
                 subprocess.run([str(binary),'--headless','--zone',str(source),'--commands',str(commands),
                     '--output',str(expected_path)],check=True,capture_output=True)
                 expected=json.loads(expected_path.read_text())
-                click(next(b for b in state()['workspace_controls'] if b['target']=='Transform'))
+                click(next(b for b in state()['workspace_controls'] if b['target']=='Transform' and not b['menu_item'] and min(b['size'])>0))
                 wait(lambda:state()['transform_edit'] is not None)
                 assert len(draft()['fields'])==5
                 wait(lambda:draft()['selection']==[0,len(draft()['fields'][0])])
                 visible=[b for b in state()['transform_controls'] if b['target'].startswith('Field(') and all(x>0 for x in b['size'])]
-                assert len(visible)==5 and all(b['centre'][0]>3140 and b['centre'][1]>840 for b in visible)
+                assert len(visible)==5
+                ix,iy,iw,ih=state()['ui_layout']['inspector']
+                for entry in visible:
+                    x,y=entry['centre'];w,h=entry['size']
+                    assert x-w/2>=ix-1 and x+w/2<=ix+iw+1,entry
+                    assert y-h/2>=iy-1 and y+h/2<=iy+ih+1,entry
                 field(4,'65')
                 control('Apply')
                 wait(lambda:'0.25..8' in state()['status'] if group=='plants' else '0.25..64' in state()['status'])
@@ -584,8 +591,9 @@ def run(output, binary, properties=False, feedback_only=False, annotations=False
 
     if not feedback_only:
         case('reopen', output/'far.zone.json', reopened)
+    assert hashlib.sha256(binary.read_bytes()).hexdigest()==binary_hash, 'Binary changed during native qualification'
     result = dict(passed=True, checks=checks, cases=cases, input_notes=input_notes,
-                  editor_sha256=hashlib.sha256(binary.read_bytes()).hexdigest())
+                  editor_sha256=binary_hash)
     (output/'qualification.json').write_text(json.dumps(result, indent=2)+'\n')
     return result
 

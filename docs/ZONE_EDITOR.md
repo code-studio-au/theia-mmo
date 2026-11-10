@@ -3856,3 +3856,13 @@ uses the shared client environment filter and guards the binary hash. Python
 syntax and --help checks pass. No native run, window, capture or desktop input
 was performed. Existing recorded GPU evidence remains limited to its binaries;
 this script preparation adds no visual/input/GPU acceptance or production change.
+
+## Current naming/property native qualifier preparation — 10 November 2026
+
+Naming/property native qualifier preparation, 10 November 2026 (P5-17):
+`tools/qualify_zone_names.py` now checks exact fields against the current
+inspector rectangle and chooses the visible inspector Transform action rather
+than a hidden menu item with the same command. It records layout geometry,
+filters native client environment and verifies a stable binary hash. Python
+syntax and --help checks pass. No native run, window, capture or desktop input
+was performed; production code and native acceptance are unchanged.
