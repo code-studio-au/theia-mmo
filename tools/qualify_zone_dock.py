@@ -11,6 +11,7 @@ parser.add_argument('--output', required=True, type=Path)
 parser.add_argument('--case', choices=['local', 'far'], default='local')
 parser.add_argument('--inline', action='store_true')
 parser.add_argument('--categories', action='store_true')
+parser.add_argument('--toolbar', action='store_true')
 args = parser.parse_args()
 out = args.output.resolve()
 out.mkdir(parents=True, exist_ok=False)
@@ -77,6 +78,40 @@ try:
         started = state()['input_elapsed']
         wait(lambda: state()['input_elapsed'] > started + 3)
         capture('status-bar-selected.png')
+        if args.toolbar:
+            toolbar_document = state()['document']
+            toolbar_history = state()['history']
+            toolbar_revision = state()['revision']
+            bounds = state()['viewport_toolbar']['bounds']
+            assert bounds and bounds[0] > state()['ui_layout']['canvas'][0]
+            def toolbar_control(target):
+                return next(c for c in state()['workspace_controls'] if c['target'] == target and min(c['size']) > 0 and bounds[0] <= c['centre'][0] <= bounds[0] + bounds[2])
+            for tool in ['Rotate', 'Scale', 'Move']:
+                click(toolbar_control('GizmoTool(' + tool + ')')['centre'])
+                wait(lambda: state()['viewport_toolbar']['tool'] == tool)
+                wait(lambda: any(c['tool'] == tool and c['visible'] for c in state()['move_handles']))
+                assert state()['document'] == toolbar_document
+                assert state()['history'] == toolbar_history
+            capture('viewport-toolbar.png')
+            for button in [1, 2, 3]:
+                camera = state()['camera_position']
+                desktop.move(window, toolbar_control('GizmoTool(Move)')['centre'], 1)
+                desktop.button(button, True)
+                wait(lambda: state()['viewport_toolbar']['owns_pointer'])
+                point = next(c['screen'] for c in state()['objects'] if c['id'] == 1)
+                desktop.move(window, point, 1)
+                fresh()
+                assert state()['viewport_toolbar']['owns_pointer']
+                assert not state()['dragging']
+                assert state()['camera_position'] == camera
+                desktop.button(button, False)
+                wait(lambda: not state()['viewport_toolbar']['owns_pointer'])
+                assert state()['selected'] == 1
+                assert state()['document'] == toolbar_document
+                assert state()['revision'] == toolbar_revision
+                assert state()['history'] == toolbar_history
+            click(toolbar_control('Frame')['centre'])
+            assert state()['document'] == toolbar_document and source.read_bytes() == original
         if args.categories:
             category_document = state()['document']
             category_revision = state()['revision']
@@ -208,7 +243,7 @@ try:
         click(next((c for c in state()['content_list']['controls'] if c['target'] == 'Object(1)'))['centre'])
         wait(lambda: state()['selected'] == 1)
         capture('status-bar-final.png')
-        result = dict(categories_verified=args.categories, inline_verified=args.inline, binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(), adapter=state()['gpu'], layout=state()['ui_layout'], revision=state()['revision'], history=state()['history'], source_preserved_before_save=True, source_json_preserved=json.loads(source.read_text()) == initial)
+        result = dict(toolbar_verified=args.toolbar, categories_verified=args.categories, inline_verified=args.inline, binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(), adapter=state()['gpu'], layout=state()['ui_layout'], revision=state()['revision'], history=state()['history'], source_preserved_before_save=True, source_json_preserved=json.loads(source.read_text()) == initial)
 finally:
     desktop.close()
     if process is not None and process.poll() is None:

@@ -22,6 +22,7 @@ pub(super) struct Layout {
     pub properties_collapsed: bool,
     drag: Option<Resize>,
     pub input_owned: bool,
+    pub overlay_owned: bool,
 }
 impl Default for Layout {
     fn default() -> Self {
@@ -32,6 +33,7 @@ impl Default for Layout {
             properties_collapsed: false,
             drag: None,
             input_owned: false,
+            overlay_owned: false,
         }
     }
 }

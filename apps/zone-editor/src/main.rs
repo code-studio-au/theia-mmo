@@ -32,6 +32,7 @@ mod terrain;
 mod theme;
 mod vegetation;
 mod viewport;
+mod viewport_tools;
 mod workspace;
 use crate::particle_workspace::ZoneAppExt;
 use bevy::picking::hover::Hovered;
@@ -49,6 +50,7 @@ fn canvas_cursor(window: &Window, session: &Session) -> Option<Vec2> {
         .cursor_position()
         .filter(|p| {
             !session.ui.input_owned
+                && !viewport_tools::blocks(window, session)
                 && !session.inline_editing
                 && p.x > session.ui.canvas_left() + 6.
                 && p.x < window.width()
@@ -559,6 +561,7 @@ fn run() -> Result<(), String> {
     .add_plugins(theme::plugin)
     .add_plugins(sidebar::plugin)
     .add_plugins(property_tabs::plugin)
+    .add_plugins(viewport_tools::plugin)
     .add_plugins(browser_icons::plugin)
     .add_plugins(scrolling::plugin)
     .add_plugins(properties::summary_plugin)
@@ -1298,6 +1301,7 @@ fn camera_controls(
         && !session.inline_editing
         && session.drag.is_none()
         && !session.ui.input_owned
+        && !session.ui.overlay_owned
         && !focus
             .get()
             .is_some_and(|entity| menu_items.contains(entity));

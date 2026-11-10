@@ -1,3 +1,11 @@
+P5-17 selected-content viewport toolbar, 11 November 2026: shared Move/Rotate/
+Scale/Frame/Ground actions use Sprinkles icons beside the left dock. Guard the
+whole strip and retain left/middle/right gesture ownership through release,
+including when the pointer leaves it. All 112 editor tests, fmt and strict
+workspace/all-target Clippy pass; native local/far tool and camera/source/history
+isolation checks pass on RX 7900 XTX / RADV NAVI31 / Vulkan with zero diagnostics.
+Inline name/spawn workflows and popup refinement remain. See [record](../EDITOR_UI_REFINEMENT.md).
+
 P5-17 property categories, 11 November 2026: the stacked left inspector now
 uses Sprinkles icon tabs for Attributes, Tools and View. Hide inactive controls
 from layout/focus, retain manual tab choice across edits, preserve explorer scroll

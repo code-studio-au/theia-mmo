@@ -143,11 +143,42 @@ Use `--inline --categories` with the reproduction commands above. Owned native
 processes are closed after qualification. The viewport toolbar, inline name/spawn
 workflows and popup refinement remain separate follow-on work.
 
+## Implemented checkpoint: selected-content viewport toolbar — 11 November 2026
+
+A compact strip at the viewport's upper left provides Move, Rotate, Scale, Frame
+and Ground using the actual Sprinkles artwork and the existing shared commands.
+It follows the dock width and appears for selected content; unsupported gizmo
+modes remain disabled. Hide it for placement, terrain, modal dialogs, playtest or
+windows too small to contain the strip. The world hit-test rectangle matches its
+layout. Pointer gestures started in the strip retain ownership outside it and
+through release; left/middle/right buttons cannot leak selection, transforms,
+panning or orbiting to the viewport. Lost window focus cancels that ownership.
+
+Validation: **112 editor tests**, fmt/diff checks, strict workspace/all-target
+Clippy and editor build pass. CPU regressions cover all three mouse buttons at
+local/far origins, release/focus cancellation and exact source/redo preservation.
+Native local/far checks pass actual tool changes and visible gizmos, camera/source/
+selection/history preservation while dragging away with every mouse button,
+Frame, category switching, numeric editing and dock/dropdown/explicit Save checks.
+Linux RX 7900 XTX / RADV NAVI31 / Vulkan, 3440 × 1440; zero GPU diagnostics.
+No Windows execution claim. Executable SHA-256:
+`fd41010e9a09865fdbb22e686781a942bafdd06936fd1d27d9b70e850b9f9517`.
+
+Evidence (ignored):
+
+- `build/sprinkles-review/viewport-tools-tests.log`
+- `build/sprinkles-review/viewport-tools-clippy.log`
+- `build/zone-toolbar-native-20261111-local-v1/qualification.json`
+- `build/zone-toolbar-native-20261111-far-v1/qualification.json`
+
+Add `--toolbar` alongside `--inline --categories` to reproduce. Both native
+runs close the owned editor process. Inline name/spawn workflows and popup
+refinement remain to follow.
+
 ## Remaining requested refinement
 
 This does **not** complete the reopened UI refinement. Finish inline name/spawn
-workflows where applicable, the selected-object
-viewport tool strip with input isolation, and three-dot accessors/popup cleanup.
+workflows where applicable, and three-dot accessors/popup cleanup.
 The retained exact form currently serves the separate spawn command and internal
 regression fixtures; it is not the normal selected-object numeric workflow.
 Reuse actual Sprinkles components where compatible; retain exact f64 adapters

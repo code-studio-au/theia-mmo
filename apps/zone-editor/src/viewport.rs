@@ -703,6 +703,11 @@ pub(super) fn report(
             "centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array(),
             "limit":((node.content_size()-node.size())*factor).max(Vec2::ZERO).to_array()}))
     }).collect::<Vec<_>>());
+    value["viewport_toolbar"] = serde_json::json!({
+        "bounds": viewport_tools::bounds(window, &session).map(|rect| [rect.min.x, rect.min.y, rect.width(), rect.height()]),
+        "owns_pointer": session.ui.overlay_owned,
+        "tool": format!("{:?}", session.gizmo_tool)
+    });
     value["property_tabs"] = serde_json::json!({
         "active": format!("{:?}", tabs.active),
         "controls": tab_controls.iter().map(|(tab, node, pose)| {
