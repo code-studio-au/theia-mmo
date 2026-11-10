@@ -246,7 +246,6 @@ pub(super) fn setup(
                                         })
                                         .with_children(|row| {
                                             for (control, label) in [
-                                                (Control::Rename, "Rename"),
                                                 (Control::Command(Action::Duplicate), "Duplicate"),
                                                 (Control::Command(Action::Ground), "Ground"),
                                                 (Control::Frame, "Frame"),

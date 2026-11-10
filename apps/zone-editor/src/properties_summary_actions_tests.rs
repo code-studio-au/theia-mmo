@@ -276,3 +276,122 @@ fn tab_commits_the_previous_permanent_field_and_focuses_the_next_without_a_modal
     assert_eq!(app.world().resource::<Session>().editor.history(), (1, 0));
     key(&mut app, KeyCode::Escape, Key::Escape);
 }
+
+#[test]
+fn permanent_names_apply_enter_and_blur_validate_cancel_and_share_exact_undo() {
+    for origin in [
+        [0.125, 0.25, -0.5],
+        [128_000_000_000.125, 20.25, -128_000_000_000.5],
+    ] {
+        for target in [0, 1, 2, 3, 5] {
+            let (mut app, _) = super::tests::fixture(origin, target);
+            app.insert_resource(View {
+                target: Vec3::ZERO,
+                yaw: 0.6,
+                pitch: 0.8,
+                distance: 32.,
+                preset: camera_views::Preset::Perspective,
+                show_grid: true,
+            });
+            let source = app.world().resource::<Session>().editor.zone().clone();
+            let (id, _, _) = snapshot(app.world().resource::<Session>()).unwrap();
+            let id = id.unwrap();
+            let field = app
+                .world_mut()
+                .query_filtered::<Entity, With<Name>>()
+                .single(app.world())
+                .unwrap();
+            let original = source.authoring_name(id).unwrap();
+            assert_eq!(
+                app.world()
+                    .get::<EditableText>(field)
+                    .unwrap()
+                    .value()
+                    .to_string(),
+                original
+            );
+            app.world_mut()
+                .resource_mut::<InputFocus>()
+                .set(field, FocusCause::Navigated);
+            app.update();
+            type_value(&mut app, field, "Étoile 树 🌿");
+            assert_eq!(app.world().resource::<Session>().editor.zone(), &source);
+            key(&mut app, KeyCode::Enter, Key::Enter);
+            assert_eq!(
+                app.world()
+                    .resource::<Session>()
+                    .editor
+                    .zone()
+                    .authoring_name(id),
+                Some("Étoile 树 🌿")
+            );
+            assert_eq!(app.world().resource::<Session>().editor.history(), (1, 0));
+            assert!(app.world().resource::<Session>().name_edit.is_none());
+            app.world_mut()
+                .resource_scope(|world, mut session: Mut<Session>| {
+                    perform(
+                        Action::Undo,
+                        &mut session,
+                        &mut world.resource_mut::<View>(),
+                    );
+                });
+            app.update();
+            assert_eq!(app.world().resource::<Session>().editor.zone(), &source);
+            app.world_mut()
+                .resource_mut::<InputFocus>()
+                .set(field, FocusCause::Navigated);
+            app.update();
+            type_value(&mut app, field, "");
+            key(&mut app, KeyCode::Enter, Key::Enter);
+            assert_eq!(app.world().resource::<InputFocus>().get(), Some(field));
+            assert_eq!(app.world().resource::<Session>().editor.zone(), &source);
+            assert_eq!(app.world().resource::<Session>().editor.history(), (0, 1));
+            key(&mut app, KeyCode::Escape, Key::Escape);
+            assert_eq!(
+                app.world()
+                    .get::<EditableText>(field)
+                    .unwrap()
+                    .value()
+                    .to_string(),
+                original
+            );
+            assert!(!app.world().resource::<Session>().is_dirty());
+            app.world_mut()
+                .resource_mut::<InputFocus>()
+                .set(field, FocusCause::Navigated);
+            app.update();
+            type_value(&mut app, field, "Blur committed");
+            app.world_mut().resource_mut::<InputFocus>().clear();
+            app.update();
+            assert_eq!(
+                app.world()
+                    .resource::<Session>()
+                    .editor
+                    .zone()
+                    .authoring_name(id),
+                Some("Blur committed")
+            );
+            assert_eq!(app.world().resource::<Session>().editor.history(), (1, 0));
+            app.world_mut()
+                .resource_mut::<InputFocus>()
+                .set(field, FocusCause::Navigated);
+            app.update();
+            type_value(&mut app, field, "Tab committed");
+            key(&mut app, KeyCode::Tab, Key::Tab);
+            assert_eq!(
+                app.world().resource::<InputFocus>().get(),
+                Some(button(&mut app, 0))
+            );
+            assert_eq!(
+                app.world()
+                    .resource::<Session>()
+                    .editor
+                    .zone()
+                    .authoring_name(id),
+                Some("Tab committed")
+            );
+            assert_eq!(app.world().resource::<Session>().editor.history(), (2, 0));
+            key(&mut app, KeyCode::Escape, Key::Escape);
+        }
+    }
+}

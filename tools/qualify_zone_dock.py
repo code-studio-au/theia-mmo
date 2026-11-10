@@ -12,6 +12,7 @@ parser.add_argument('--case', choices=['local', 'far'], default='local')
 parser.add_argument('--inline', action='store_true')
 parser.add_argument('--categories', action='store_true')
 parser.add_argument('--toolbar', action='store_true')
+parser.add_argument('--names', action='store_true')
 args = parser.parse_args()
 out = args.output.resolve()
 out.mkdir(parents=True, exist_ok=False)
@@ -170,6 +171,52 @@ try:
         click(item['centre'])
         wait(lambda: state()['content_list']['filter'] == 'All')
         assert state()['document'] == initial and state()['history'] == history and (source.read_bytes() == original)
+        if args.names:
+            assert len(state()['inline_names']) == 1
+            assert min(state()['inline_names'][0]['size']) > 0
+            desktop.key('F8')
+            wait(lambda: state()['inline_names'][0]['focused'])
+            assert state()['name_edit'] is None
+            def type_name(text):
+                chord('a')
+                desktop.key('BackSpace')
+                for char in text:
+                    desktop.key('space' if char == ' ' else char)
+                wait(lambda: state()['inline_names'][0]['value'] == text)
+            type_name('renamed inline')
+            desktop.key('Tab')
+            wait(lambda: any(c['field'] == 0 and c['focused'] for c in state()['inline_attributes']))
+            desktop.key('Escape')
+            wait(lambda: not state()['inline_names'][0]['focused'])
+            assert state()['document']['objects'][0]['name'] == 'renamed inline'
+            assert source.read_bytes() == original
+            capture('inline-name.png')
+            chord('z')
+            wait(lambda: state()['document'] == initial)
+            chord('y')
+            wait(lambda: state()['document']['objects'][0]['name'] == 'renamed inline')
+            click(state()['inline_names'][0]['centre'])
+            type_name('')
+            invalid_revision = state()['revision']
+            desktop.key('Return')
+            fresh()
+            assert state()['inline_names'][0]['focused']
+            assert state()['revision'] == invalid_revision and source.read_bytes() == original
+            desktop.key('Escape')
+            wait(lambda: not state()['inline_names'][0]['focused'])
+            click(state()['inline_names'][0]['centre'])
+            type_name('saved inline')
+            chord('s')
+            wait(lambda: not state()['inline_names'][0]['focused'] and not state()['unsaved_changes'])
+            assert json.loads(source.read_text())['objects'][0]['name'] == 'saved inline'
+            chord('z')
+            chord('z')
+            wait(lambda: state()['document'] == initial)
+            chord('s')
+            wait(lambda: not state()['unsaved_changes'])
+            original = source.read_bytes()
+            revision = state()['revision']
+            history = state()['history']
         if args.inline:
 
             def edit_field(index, value):
@@ -243,7 +290,7 @@ try:
         click(next((c for c in state()['content_list']['controls'] if c['target'] == 'Object(1)'))['centre'])
         wait(lambda: state()['selected'] == 1)
         capture('status-bar-final.png')
-        result = dict(toolbar_verified=args.toolbar, categories_verified=args.categories, inline_verified=args.inline, binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(), adapter=state()['gpu'], layout=state()['ui_layout'], revision=state()['revision'], history=state()['history'], source_preserved_before_save=True, source_json_preserved=json.loads(source.read_text()) == initial)
+        result = dict(names_verified=args.names, toolbar_verified=args.toolbar, categories_verified=args.categories, inline_verified=args.inline, binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(), adapter=state()['gpu'], layout=state()['ui_layout'], revision=state()['revision'], history=state()['history'], source_preserved_before_save=True, source_json_preserved=json.loads(source.read_text()) == initial)
 finally:
     desktop.close()
     if process is not None and process.poll() is None:

@@ -22,6 +22,7 @@ use bevy::ui_widgets::{
 pub(super) use inline::Input as InlineInput;
 pub(super) use numeric::scrub;
 pub(super) use summary::Frame as InlineFrame;
+pub(super) use summary::Name as InlineName;
 pub(super) use summary::Value as SummaryValue;
 use theia_zone::{markers::Marker, paths::GuidePath, vegetation::Plant};
 
@@ -483,6 +484,16 @@ pub(super) fn summary_subject(session: &Session) -> Option<String> {
     summary::description(session)
 }
 
+type InlineFields<'w, 's> = Query<
+    'w,
+    's,
+    (
+        Entity,
+        Option<&'static summary::Value>,
+        &'static EditableText,
+    ),
+    (With<inline::Input>, Without<Field>),
+>;
 #[allow(clippy::too_many_arguments)]
 pub(super) fn keyboard(
     keys: Res<ButtonInput<KeyCode>>,
@@ -493,7 +504,7 @@ pub(super) fn keyboard(
     mut fields: Query<(Entity, &Field, &mut EditableText)>,
     mut requests: ResMut<workspace::Requests>,
     inline: Option<Res<inline::State>>,
-    inputs: Query<(Entity, &summary::Value, &EditableText), Without<Field>>,
+    inputs: InlineFields,
     mut commands: Commands,
     tabs: Option<ResMut<property_tabs::State>>,
 ) {
@@ -568,7 +579,10 @@ pub(super) fn keyboard(
         .unwrap_or(0)
         .min(original.labels().len().saturating_sub(1));
     if inline.is_some() && !spawn_requested {
-        if let Some((entity, _, _)) = inputs.iter().find(|(_, input, _)| input.0 == active) {
+        if let Some((entity, _, _)) = inputs
+            .iter()
+            .find(|(_, input, _)| input.is_some_and(|value| value.0 == active))
+        {
             session.ui.properties_collapsed = false;
             if let Some(mut tabs) = tabs {
                 tabs.active = property_tabs::Tab::Attributes;

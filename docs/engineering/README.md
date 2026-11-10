@@ -1,3 +1,12 @@
+P5-17 permanent content names, 11 November 2026: Name joins numeric attributes
+in the left inspector. F8/menu Rename focuses it; Enter/blur/Tab use one validated
+shared command, Escape restores source and explicit Save commits valid focused
+text first. Keep exact f64 values/history. All 113 editor tests plus the added
+name-to-numeric Tab check, fmt and strict workspace/all-target Clippy pass;
+native local/far naming/numeric/category checks pass on RX 7900 XTX / RADV
+NAVI31 / Vulkan, zero GPU diagnostics. Spawn/action-popup refinement remains.
+See [record](../EDITOR_UI_REFINEMENT.md).
+
 P5-17 selected-content viewport toolbar, 11 November 2026: shared Move/Rotate/
 Scale/Frame/Ground actions use Sprinkles icons beside the left dock. Guard the
 whole strip and retain left/middle/right gesture ownership through release,

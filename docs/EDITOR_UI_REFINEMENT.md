@@ -175,9 +175,43 @@ Add `--toolbar` alongside `--inline --categories` to reproduce. Both native
 runs close the owned editor process. Inline name/spawn workflows and popup
 refinement remain to follow.
 
+## Implemented checkpoint: permanent content names — 11 November 2026
+
+Objects, plants, markers and guides have a permanent Name textbox above their
+numeric sections. It reuses the exact same single-frame input and guarded inline
+transaction as numbers. F8 and menu Rename focus that field, open Attributes and
+unfold properties; no separate name dialog is used for selected content. Keep
+zone naming and search dialogs separate. Remove the redundant inspector Rename
+button and duplicated name in metadata; the explorer/status context updates on
+commit. Enter or blur applies one shared Rename command; Tab applies the name
+and advances to the first numeric attribute. Invalid focused names remain for
+correction; Escape restores source text. Explicit Save commits a valid focused
+name before writing disk. Names never convert or otherwise change f64 attributes.
+
+Validation: **113 editor tests** pass, including local/far Unicode names across
+all content kinds, validation, cancellation, blur and shared undo; the added
+Name→numeric Tab regression also passes. Formatting, diff checks and strict
+workspace/all-target Clippy pass. Native local/far checks exercise the permanent
+name, F8, Tab, explorer update, undo/redo, empty-name rejection, Escape and focused
+Ctrl S, plus numeric/category/dock regressions and source/history preservation.
+Linux RX 7900 XTX / RADV NAVI31 / Vulkan, 3440 × 1440, zero GPU diagnostics.
+No Windows execution claim. Executable SHA-256:
+`8eeba636287a9c2c892017c672d8f1ef3b1122af5e8859435fff5712571fde24`.
+
+Evidence (ignored):
+
+- `build/sprinkles-review/inline-name-tests-v4.log`
+- `build/sprinkles-review/inline-name-tab-test.log`
+- `build/sprinkles-review/inline-name-clippy-final.log`
+- `build/zone-inline-name-native-20261111-local-v1/qualification.json`
+- `build/zone-inline-name-native-20261111-far-v1/qualification.json`
+
+Use `--names --inline --categories` to reproduce. Both native runs close their
+owned editor. Spawn attributes and action/popover cleanup remain to follow.
+
 ## Remaining requested refinement
 
-This does **not** complete the reopened UI refinement. Finish inline name/spawn
+This does **not** complete the reopened UI refinement. Finish inline spawn
 workflows where applicable, and three-dot accessors/popup cleanup.
 The retained exact form currently serves the separate spawn command and internal
 regression fixtures; it is not the normal selected-object numeric workflow.

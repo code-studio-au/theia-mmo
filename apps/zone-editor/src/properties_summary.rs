@@ -28,6 +28,10 @@ impl Key {
 #[derive(Component)]
 pub(crate) struct Frame;
 #[derive(Component)]
+pub(crate) struct Name;
+#[derive(Component)]
+struct NameRow;
+#[derive(Component)]
 struct Row(usize);
 #[derive(Component)]
 struct Heading(usize);
@@ -49,7 +53,19 @@ pub(super) fn snapshot(session: &Session) -> Option<(Option<u64>, Target, String
     Some((id, target, subject))
 }
 pub(super) fn description(session: &Session) -> Option<String> {
-    let (_, target, mut subject) = snapshot(session)?;
+    let (id, target, mut subject) = snapshot(session)?;
+    if id.is_some() {
+        // The editable name has its own permanent field below this metadata.
+        subject = subject
+            .split_once(" | ")
+            .map_or(subject.clone(), |(kind, _)| kind.into());
+        if let Target::Path {
+            point: Some(index), ..
+        } = &target
+        {
+            subject.push_str(&format!("\nPoint {}", index + 1));
+        }
+    }
     match target {
         Target::Marker(marker) => subject.push_str(&format!(
             "\nDefinition: {}\nAuthoring annotation",
@@ -86,6 +102,28 @@ pub(super) fn spawn(parent: &mut ChildSpawnerCommands) {
             },
         ))
         .with_children(|root| {
+            root.spawn((
+                NameRow,
+                Visibility::Inherited,
+                Node {
+                    width: percent(100),
+                    column_gap: px(8),
+                    align_items: AlignItems::Center,
+                    flex_shrink: 0.,
+                    ..default()
+                },
+            ))
+            .with_children(|row| {
+                row.spawn((
+                    theme::field_label("Name"),
+                    Node {
+                        width: px(88),
+                        flex_shrink: 0.,
+                        ..default()
+                    },
+                ));
+                field(row, super::inline::Input::Name, 0);
+            });
             for index in 0..7 {
                 if matches!(index, 0 | 3 | 4) {
                     root.spawn((
@@ -130,53 +168,70 @@ pub(super) fn spawn(parent: &mut ChildSpawnerCommands) {
                             ..default()
                         },
                     ));
-                    row.spawn((
-                        Frame,
-                        Node {
-                            min_width: px(0),
-                            width: px(0),
-                            flex_grow: 1.,
-                            padding: UiRect::horizontal(px(6)),
-                            height: px(28),
-                            min_height: px(28),
-                            align_items: AlignItems::Center,
-                            border: UiRect::all(px(1)),
-                            border_radius: BorderRadius::all(px(2)),
-                            overflow: Overflow::clip(),
-                            ..default()
-                        },
-                        BorderColor::all(theme::BORDER),
-                        BackgroundColor(theme::Variant::Default.background(false)),
-                    ))
-                    .with_child((
-                        Value(index),
-                        super::inline::Input(index),
-                        FramedInput,
-                        TextInput,
-                        SelectAllOnFocus,
-                        TabIndex(index as i32),
-                        Hovered::default(),
-                        EditableText {
-                            max_characters: Some(64),
-                            allow_newlines: false,
-                            ..default()
-                        },
-                        Node {
-                            min_width: px(0),
-                            flex_grow: 1.,
-                            height: Val::Auto,
-                            min_height: px(16),
-                            overflow: Overflow::clip(),
-                            ..default()
-                        },
-                        BorderColor::all(Color::NONE),
-                        BackgroundColor(Color::NONE),
-                        theme::input_font(),
-                        TextColor(theme::BODY),
-                        TextLayout::no_wrap(),
-                        theme::text_cursor(),
-                    ));
+                    field(row, super::inline::Input::Number(index), index as i32 + 1);
                 });
+            }
+        });
+}
+fn field(parent: &mut ChildSpawnerCommands, input: super::inline::Input, order: i32) {
+    parent
+        .spawn((
+            Frame,
+            Node {
+                min_width: px(0),
+                width: px(0),
+                flex_grow: 1.,
+                padding: UiRect::horizontal(px(6)),
+                height: px(28),
+                min_height: px(28),
+                align_items: AlignItems::Center,
+                border: UiRect::all(px(1)),
+                border_radius: BorderRadius::all(px(2)),
+                overflow: Overflow::clip(),
+                ..default()
+            },
+            BorderColor::all(theme::BORDER),
+            BackgroundColor(theme::Variant::Default.background(false)),
+        ))
+        .with_children(|frame| {
+            let mut entity = frame.spawn((
+                input,
+                FramedInput,
+                TextInput,
+                SelectAllOnFocus,
+                TabIndex(order),
+                Hovered::default(),
+                EditableText {
+                    max_characters: Some(if matches!(input, super::inline::Input::Name) {
+                        80
+                    } else {
+                        64
+                    }),
+                    allow_newlines: false,
+                    ..default()
+                },
+                Node {
+                    min_width: px(0),
+                    flex_grow: 1.,
+                    height: Val::Auto,
+                    min_height: px(16),
+                    overflow: Overflow::clip(),
+                    ..default()
+                },
+                BorderColor::all(Color::NONE),
+                BackgroundColor(Color::NONE),
+                theme::input_font(),
+                TextColor(theme::BODY),
+                TextLayout::no_wrap(),
+                theme::text_cursor(),
+            ));
+            match input {
+                super::inline::Input::Number(index) => {
+                    entity.insert(Value(index));
+                }
+                super::inline::Input::Name => {
+                    entity.insert(Name);
+                }
             }
         });
 }
@@ -188,16 +243,27 @@ pub(super) fn plugin(app: &mut App) {
 fn sync(
     session: Res<Session>,
     mut roots: Query<(&mut Root, &mut Node, &mut Visibility)>,
-    mut rows: Query<(&Row, &mut Node, &mut Visibility), Without<Root>>,
+    mut rows: Query<(&Row, &mut Node, &mut Visibility), (Without<Root>, Without<NameRow>)>,
     mut labels: Query<(&Label, &mut Text)>,
-    mut values: Query<(Entity, &Value, &mut EditableText), Without<Label>>,
-    inputs: Query<(Entity, Has<InteractionDisabled>), With<Value>>,
+    mut values: Query<(Entity, &Value, &mut EditableText), (Without<Label>, Without<Name>)>,
+    mut names: Query<(Entity, &mut EditableText), (With<Name>, Without<Value>)>,
+    mut name_rows: Query<
+        (&mut Node, &mut Visibility),
+        (With<NameRow>, Without<Root>, Without<Row>, Without<Heading>),
+    >,
+    inputs: Query<(Entity, Has<InteractionDisabled>), With<super::inline::Input>>,
     mut commands: Commands,
     focus: Res<InputFocus>,
     editing: Res<super::inline::State>,
     mut headings: Query<
         (&Heading, &mut Node, &mut Text),
-        (Without<Root>, Without<Row>, Without<Label>, Without<Value>),
+        (
+            Without<Root>,
+            Without<Row>,
+            Without<Label>,
+            Without<Value>,
+            Without<NameRow>,
+        ),
     >,
 ) {
     let snapshot = snapshot(&session);
@@ -226,6 +292,28 @@ fn sync(
                 commands.entity(entity).remove::<InteractionDisabled>();
             } else {
                 commands.entity(entity).insert(InteractionDisabled);
+            }
+        }
+    }
+    let name = snapshot
+        .as_ref()
+        .and_then(|(id, _, _)| session.editor.zone().authoring_name((*id)?));
+    for (mut node, mut visibility) in &mut name_rows {
+        node.display = if name.is_some() {
+            Display::Flex
+        } else {
+            Display::None
+        };
+        *visibility = if name.is_some() {
+            Visibility::Inherited
+        } else {
+            Visibility::Hidden
+        };
+    }
+    if let Some(name) = name {
+        for (entity, mut text) in &mut names {
+            if focus.get() != Some(entity) && !editing.owns(entity) && text.value() != name {
+                text.editor_mut().set_text(name);
             }
         }
     }

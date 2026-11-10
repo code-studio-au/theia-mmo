@@ -690,11 +690,18 @@ pub(super) fn report(
             "centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array()}))
     }).collect::<Vec<_>>());
     value["inline_attributes"] = serde_json::json!(controls.iter().filter_map(|((_,_,_,_,entity,_,_,_,_,_,field,text),_,_,_,node,t,..)| {
-        let field = field?; let text = text?;
+        let properties::InlineInput::Number(field) = field? else { return None }; let text = text?;
         if node.size().min_element() <= 0. { return None; }
         let factor = node.inverse_scale_factor() * scale.0;
-        Some(serde_json::json!({"field":field.0,"value":text.value().to_string(),"focused":focus.get()==Some(entity),
+        Some(serde_json::json!({"field":field,"value":text.value().to_string(),"focused":focus.get()==Some(entity),
             "centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array()}))
+    }).collect::<Vec<_>>());
+    value["inline_names"] = serde_json::json!(controls.iter().filter_map(|((_,_,_,_,entity,_,_,_,_,_,field,text),_,_,_,node,t,..)| {
+        if !matches!(field?, properties::InlineInput::Name) || node.size().min_element() <= 0. { return None; }
+        let text = text?;
+        let factor = node.inverse_scale_factor() * scale.0;
+        Some(serde_json::json!({"value":text.value().to_string(), "focused":focus.get()==Some(entity),
+            "centre":(t.affine().translation*factor).to_array(), "size":(node.size()*factor).to_array()}))
     }).collect::<Vec<_>>());
     value["scroll_panes"] = serde_json::json!(controls.iter().filter_map(|((_,_,position,pane,..),_,_,_,node,t,hovered,..)| {
         let pane = pane?;

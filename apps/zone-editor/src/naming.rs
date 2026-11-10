@@ -135,6 +135,7 @@ pub(super) fn activate(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(super) fn keyboard(
     keys: Res<ButtonInput<KeyCode>>,
     windows: Query<&Window>,
@@ -143,6 +144,9 @@ pub(super) fn keyboard(
     mut fields: Query<(Entity, &mut EditableText), With<Field>>,
     mut requests: ResMut<workspace::Requests>,
     content: Res<outliner::Content>,
+    inline_names: Query<Entity, With<properties::InlineName>>,
+    tabs: Option<ResMut<property_tabs::State>>,
+    mut commands: Commands,
 ) {
     let requested = std::mem::take(&mut requests.name);
     let requested_zone = std::mem::take(&mut requests.name_zone);
@@ -175,6 +179,17 @@ pub(super) fn keyboard(
     } else {
         id.map_or(Target::Zone, Target::Entry)
     };
+    if matches!(target, Target::Entry(_))
+        && let Ok(entity) = inline_names.single()
+    {
+        session.ui.properties_collapsed = false;
+        if let Some(mut tabs) = tabs {
+            tabs.active = property_tabs::Tab::Attributes;
+        }
+        focus.set(entity, FocusCause::Navigated);
+        commands.trigger(bevy::ui_widgets::ScrollIntoView { entity });
+        return;
+    }
     let original = match target {
         Target::Zone => session.editor.zone().name.clone(),
         Target::Search => content.query.clone(),
