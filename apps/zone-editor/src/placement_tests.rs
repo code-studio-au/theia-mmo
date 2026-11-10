@@ -383,7 +383,7 @@ fn sprinkles_browser_inspector_and_tools_have_separate_full_height_regions() {
     app.init_resource::<ButtonInput<MouseButton>>()
         .init_resource::<bevy::input::touch::Touches>()
         .init_resource::<bevy::input_focus::InputFocus>()
-        .add_plugins((theme::plugin, menus::plugin));
+        .add_plugins((theme::plugin, menus::plugin, properties::summary_plugin));
     let source = app.world().resource::<Session>().editor.zone().clone();
     app.add_systems(Update, (panels::apply, terrain::palette).chain());
     for (browser_width, inspector_width) in [(300., 300.), (480., 600.), (450., 350.)] {

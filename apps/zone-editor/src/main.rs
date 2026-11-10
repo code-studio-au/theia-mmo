@@ -534,6 +534,7 @@ fn run() -> Result<(), String> {
     .add_plugins(theme::plugin)
     .add_plugins(sidebar::plugin)
     .add_plugins(scrolling::plugin)
+    .add_plugins(properties::summary_plugin)
     .add_plugins(menus::plugin)
     .add_observer(workspace::activate)
     .add_observer(workspace::change)
@@ -1384,7 +1385,9 @@ fn present(
         .iter()
         .find(|o| Some(o.id) == session.selected);
     for mut text in &mut info {
-        **text = if session.play.is_some() {
+        **text = if let Some(subject) = properties::summary_subject(&session) {
+            subject
+        } else if session.play.is_some() {
             "Offline playtest\nW / S: forward / back\nA / D: turn\nQ / E: strafe\nSpace: jump\nF5: return to editing".into()
         } else if session.vegetation_mode {
             vegetation::summary(&session)

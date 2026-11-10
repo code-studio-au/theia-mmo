@@ -225,6 +225,7 @@ pub(super) fn setup(mut commands: Commands, icons: Option<Res<sidebar::Icons>>) 
                     TextColor(theme::DISPLAY),
                 ));
                 panel.spawn((Info, text("", 14.)));
+                properties::setup_summary(panel);
                 sections::spawn(panel, "Selection", |panel| {
                     panel
                         .spawn(Node {

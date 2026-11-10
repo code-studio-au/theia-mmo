@@ -105,6 +105,11 @@ def run(output, binary, only_case=None, scroll=False, attributes=False, dialogs=
                 control('Object(1)', 'content')
                 wait(lambda: state()['selected'] == 1)
 
+                expected_summary = initial['objects'][0]['pose']['position'] + [initial['objects'][0]['pose']['yaw_degrees']] + initial['objects'][0]['pose']['size']
+                def summary_matches():
+                    fields = sorted(state()['attribute_summary'], key=lambda entry:entry['field'])
+                    return len(fields)==7 and [float(entry['value']) for entry in fields] == expected_summary
+                wait(summary_matches)
                 baseline_revision, baseline_history = 0, [0, 0]
 
                 def unchanged():

@@ -1,3 +1,10 @@
+P5-17, 10 November 2026: default attribute summaries use aligned compact
+Sprinkles-style labels/tabular values over the exact editor's shared f64 capture.
+Preview/annotation/guide metadata and the existing edit transaction stay explicit.
+All 150 focused tests, formatting, denied-warning Clippy and editor build pass;
+native acceptance remains pending while desktop use is stopped. See STATUS and
+ZONE_EDITOR for scope/evidence.
+
 P5-17, 10 November 2026: panel headings use shared compact Sprinkles
 typography; inspector summaries focus on selected content/tools while document
 state stays in the selector/footer. All 148 focused tests, formatting, denied-

@@ -139,3 +139,10 @@ Browser/property headings also follow pinned panel_section.rs typography:
 12 px semibold display-colored titles. Theia's selection/tool summaries keep
 its own metadata and safety feedback, with document state in the shared header
 and footer rather than repeated before each inspector description.
+
+`properties_summary.rs` creates the Theia-specific read-only counterpart to the
+pinned inspector-field/text-edit presentation: 10 px medium muted labels and
+12 px tabular body values in aligned columns. It reuses Theia's exact f64 target
+capture rather than importing f32 particle bindings. Actual values, candidate
+pose/annotation/guide metadata and transaction/validation semantics remain
+Theia-owned; these rows have no editable-input affordance or source write path.

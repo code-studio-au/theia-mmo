@@ -1,3 +1,25 @@
+Sprinkles-style aligned attribute summaries, 10 November 2026 (P5-17):
+selected objects, plants, markers and guide points/widths now show aligned label/
+value rows in the default inspector. Shared capture supplies the same original
+f64 values as the exact editor: 10 px medium muted labels, 12 px tabular values,
+20 px minimum rows and bounded label/value columns. Full global coordinates are
+shown without formatting them through local f32 positions or three-decimal
+rounding. Names/kinds/IDs, marker definition/annotation and guide-point metadata
+stay in the selection description. Object drags show the candidate pose with an
+explicit preview label; source data remains untouched. Summaries hide during
+offline playtest. Attribute edits retain the existing Apply/Cancel form.
+
+All 150 focused Rust tests, formatting, denied-warning workspace/all-target
+Clippy and editor build pass. New CPU layout checks cover all six exact-editor
+fixtures at local/far origins, correct visible fields/labels, readable bounded
+columns, exact draft/summary consistency, preview/source transitions, playtest
+hiding and complete source/revision/history/dirty preservation. Evidence:
+`build/sprinkles-review/attribute-summary-tests-final-v3.log`,
+`attribute-summary-clippy-final.log` and `attribute-summary-build.log`.
+Native rendering/input/GPU acceptance remains pending while desktop use is stopped.
+The prepared qualifier reads actual rendered-value Text components via telemetry
+and compares all seven object values with source; it is syntax-checked only.
+
 Sprinkles panel heading/summary cleanup, 10 November 2026 (P5-17):
 browser and property headings now use compact 12 px semibold display text and
 title case, matching the shared panel-section typography. Inspector summaries

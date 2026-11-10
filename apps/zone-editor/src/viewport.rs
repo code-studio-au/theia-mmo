@@ -445,6 +445,8 @@ type ReportControls<'w, 's> = Query<
             Option<&'static properties::FieldLabel>,
             Has<bevy::ui_widgets::MenuItem>,
             Option<&'static menus::SelectTrigger>,
+            Option<&'static properties::SummaryValue>,
+            Option<&'static Text>,
         ),
         Option<&'static naming::Control>,
         Option<&'static properties::Control>,
@@ -656,11 +658,18 @@ pub(super) fn report(
         Some(serde_json::json!({"target":target,"hovered":hovered.0,"centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array(),
             "menu_item":menu_item,"value":value.map(|v|v.0),"range":range.map(|r|[r.start(),r.end()])}))
     }).collect::<Vec<_>>());
-    value["selectors"] = serde_json::json!(controls.iter().filter_map(|((..,selector),_,_,_,node,t,hovered,..)| {
+    value["selectors"] = serde_json::json!(controls.iter().filter_map(|((_,_,_,_,_,_,_,selector,..),_,_,_,node,t,hovered,..)| {
         let selector = selector?;
         let factor = node.inverse_scale_factor() * scale.0;
         Some(serde_json::json!({"target":format!("{:?}",selector.kind),"menu":selector.kind.title(),
             "value":selector.kind.value(&session,&view),"enabled":selector.kind.enabled(&session,&view),"hovered":hovered.0,
+            "centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array()}))
+    }).collect::<Vec<_>>());
+    value["attribute_summary"] = serde_json::json!(controls.iter().filter_map(|((_,_,_,_,_,_,_,_,field,text),_,_,_,node,t,..)| {
+        let field = field?; let text = text?;
+        if node.size().min_element() <= 0. { return None; }
+        let factor = node.inverse_scale_factor() * scale.0;
+        Some(serde_json::json!({"field":field.0,"value":text.0,
             "centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array()}))
     }).collect::<Vec<_>>());
     value["scroll_panes"] = serde_json::json!(controls.iter().filter_map(|((_,_,position,pane,..),_,_,_,node,t,hovered,..)| {

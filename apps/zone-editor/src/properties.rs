@@ -4,6 +4,8 @@ use super::*;
 mod fields_ui;
 #[path = "properties_scrub.rs"]
 mod numeric;
+#[path = "properties_summary.rs"]
+mod summary;
 use bevy::input_focus::{
     FocusCause, InputFocus,
     tab_navigation::{NavAction, TabGroup, TabIndex, TabNavigation},
@@ -16,6 +18,7 @@ use bevy::ui_widgets::{
     TextInput, TrackClick, ValueChange,
 };
 pub(super) use numeric::scrub;
+pub(super) use summary::Value as SummaryValue;
 use theia_zone::{markers::Marker, paths::GuidePath, vegetation::Plant};
 
 const LABELS: [&str; 7] = [
@@ -474,6 +477,16 @@ pub(super) fn activate(
     }
 }
 
+pub(super) fn summary_plugin(app: &mut App) {
+    app.add_plugins(summary::plugin);
+}
+pub(super) fn setup_summary(parent: &mut ChildSpawnerCommands) {
+    summary::spawn(parent);
+}
+pub(super) fn summary_subject(session: &Session) -> Option<String> {
+    summary::description(session)
+}
+
 pub(super) fn keyboard(
     keys: Res<ButtonInput<KeyCode>>,
     windows: Query<&Window>,
@@ -521,8 +534,36 @@ pub(super) fn keyboard(
         session.status = "Finish or cancel the preview before editing properties".into();
         return;
     }
+    let Some((id, original, subject)) = capture(&session, spawn_requested) else {
+        session.status = "Select an object, plant, marker or guide to edit properties".into();
+        return;
+    };
+    let draft = Draft {
+        id,
+        revision: session.editor.revision(),
+        fields: original.values(),
+        original,
+        subject,
+        active: 0,
+        selection: [0; 2],
+        action: None,
+    };
+    for (entity, field, mut text) in &mut fields {
+        // Preserve the font/layout styles Bevy prepared for this reusable field.
+        text.clear();
+        text.editor_mut()
+            .set_text(draft.fields.get(field.0).map_or("", String::as_str));
+        if field.0 == 0 {
+            focus.set(entity, FocusCause::Navigated);
+        }
+    }
+    session.transform_edit = Some(draft);
+    session.status = "Editing transform - Apply validates all fields together".into();
+}
+
+fn capture(session: &Session, spawn_requested: bool) -> Option<(Option<u64>, Target, String)> {
     let zone = session.editor.zone();
-    let (id, original, subject) = if spawn_requested {
+    let result = if spawn_requested {
         (
             None,
             Target::Spawn(zone.spawn),
@@ -554,11 +595,11 @@ pub(super) fn keyboard(
             Target::Marker(marker.clone()),
             format!("{:?} #{} | {}", marker.kind, marker.id, marker.name),
         )
-    } else if let Some(path) = zone
-        .paths
-        .iter()
-        .find(|p| Some(p.id) == session.path_selected)
-    {
+    } else {
+        let path = zone
+            .paths
+            .iter()
+            .find(|p| Some(p.id) == session.path_selected)?;
         let point = session.path_point.filter(|i| *i < path.points.len());
         (
             Some(path.id),
@@ -574,31 +615,8 @@ pub(super) fn keyboard(
                 point.map_or_else(String::new, |i| format!("\nPoint {}", i + 1))
             ),
         )
-    } else {
-        session.status = "Select an object, plant, marker or guide to edit properties".into();
-        return;
     };
-    let draft = Draft {
-        id,
-        revision: session.editor.revision(),
-        fields: original.values(),
-        original,
-        subject,
-        active: 0,
-        selection: [0; 2],
-        action: None,
-    };
-    for (entity, field, mut text) in &mut fields {
-        // Preserve the font/layout styles Bevy prepared for this reusable field.
-        text.clear();
-        text.editor_mut()
-            .set_text(draft.fields.get(field.0).map_or("", String::as_str));
-        if field.0 == 0 {
-            focus.set(entity, FocusCause::Navigated);
-        }
-    }
-    session.transform_edit = Some(draft);
-    session.status = "Editing transform - Apply validates all fields together".into();
+    Some(result)
 }
 
 #[allow(clippy::too_many_arguments, clippy::type_complexity)]
