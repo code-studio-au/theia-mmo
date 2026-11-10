@@ -56,7 +56,7 @@ The historical register contains **92 principal quests**, five solo story climax
 | H2-10 | 25–27 | The Defender's Coast | Nessa | H2-09 | Scout Rukhan's military posts and civilian boundaries; select a patrol-avoidance or guarded approach without entering civilian homes. |
 | H2-11 | 26–28 | A Loss Before the Raid | Mara's expedition clerk | H2-10 | Recover depot accounting from a military store; compare Nemi's serial records with a private consignment removed before the reported attack. |
 | H2-12 | 27–28 | The Surveyor at the Signal House | Sera | H2-11 | Find Sera, secure an unstable observation position and compare the small device's housing with Brynja's report. |
-| H2-13 | 27–29 | Keep the Evidence Safe | Sera / Grey Surveyor | H2-12 | Choose sealed sample preservation or safe sample destruction after copying measurements; both retain the critical technical record. |
+| H2-13 | 27–29 | Keep the Evidence Safe | Sera / Elder | H2-12 | Choose sealed sample preservation or safe sample destruction after copying measurements; both retain the critical technical record. |
 | H2-14 | 28–29 | Instructions With Limits | Brynja | H2-13 | Prepare separate mechanical isolators and a documented shutdown procedure; the Surveyor states its limits and emergency cutoff. |
 | H2-15 | 29–30 | The Silent Signal | Sera | H2-14 | Complete the solo dungeon; defeat Halvek and disable the Minor Resonator while protecting essential observations and available captives. |
 | H2-16 | 30 | A Landing Still at War | Nessa / Garrick | H2-15 | Support an NPC defensive action or equivalent instanced task; report the hidden operation separately from the continuing Dominion attack. |
@@ -80,10 +80,10 @@ The historical register contains **92 principal quests**, five solo story climax
 | H3-11 | 37–38 | Water and Memory | Urodan / Tarek | H3-10 | Secure the existing maintenance route and retrieve records from the endangered store; obtain the omitted warning. |
 | H3-12 | 37–39 | The Missing Margin | Dromak | H3-11 | Authenticate the warning and obtain council permission for restricted comparison; no definitive judgment on the Vorrath exile. |
 | H3-13 | 38–39 | A Name for the Guardians | Sera | H3-12 | Receive a private account of the order and its multiracial origins; accept associate status without compulsory membership. |
-| H3-14 | 38–39 | The Instruction Without Its Diagram | Grey Surveyor | H3-13 | Compare the Regional Anchor plan with Halden's incomplete shutdown order; obtain the missing stability material. |
+| H3-14 | 38–39 | The Instruction Without Its Diagram | Elder | H3-13 | Compare the Regional Anchor plan with Halden's incomplete shutdown order; obtain the missing stability material. |
 | H3-15 | 39–40 | Reach Them Before the Charge | Sera | H3-14 | Reach the freight works and interrupt Halden's premature destruction attempt in a retryable story scene. |
 | H3-16 | 39–40 | The Broken Measure | Halden / Sera | H3-15 | Complete the solo dungeon, rescue the cell and isolate the Regional Anchor's supports before core shutdown. |
-| H3-17 | 40 | Copies for the People at Risk | Grey Surveyor | H3-16 | Receive and distribute full safety instructions to the cleared team; lodge the measured evidence independently. |
+| H3-17 | 40 | Copies for the People at Risk | Elder | H3-16 | Receive and distribute full safety instructions to the cleared team; lodge the measured evidence independently. |
 | H3-18 | 40 | The Route That Never Closed | Tarek / Dromak | H3-17 | Survey the separate low-capacity Passage, test a small-group return path and deliver an expedition proposal to Corven. |
 
 ## Act IV — Echoes of the Sundering
