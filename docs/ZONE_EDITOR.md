@@ -3297,3 +3297,23 @@ Raw menu focus blocks authoring navigation, camera movement and browser wheel
 paging; closed menu buttons retain global shortcuts. All 130 focused Rust tests
 pass. Native visual/input/GPU acceptance remains pending while desktop use is
 stopped. Evidence: `build/sprinkles-review/menu-*.log`.
+
+## Sprinkles-style panel resizing — 10 November 2026
+
+Sprinkles-style panel resizing, 10 November 2026 (P5-17): browser and
+inspector boundaries expose bounded 12 px grips, hover/drag feedback and standard
+resize cursors. Browser width is 300..480 px and inspector width 300..600 px.
+Settings remain session-local; cancellation/focus loss restores the original
+widths, and gesture ownership shields world/camera/keyboard edits through release.
+Shared canvas bounds, wheel routing, exact form placement and footer track the
+widths. All 131 focused Rust tests, CPU layouts at narrow/wide/intermediate widths,
+formatting, denied-warning workspace/all-target Clippy and build pass.
+
+A partial Linux RX 7900 XTX/Vulkan 3440 x 1440 run exercised resizing, Escape
+cancellation, source/history preservation and section collapse/expansion with zero
+GPU diagnostics. It stopped safely when focus left the owned window before File
+menu input. Full native menu/form/local/far acceptance remains pending; its two
+captures have not been visually inspected. Mouse/display use is stopped again.
+Evidence: `build/sprinkles-review/panels-*.log` and
+`build/zone-sprinkles-native-20261110-v1/`. New native harness:
+`tools/qualify_zone_sprinkles.py`. Keep working headlessly; do not push.

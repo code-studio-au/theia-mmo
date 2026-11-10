@@ -13,6 +13,7 @@ mod markers;
 mod menus;
 mod naming;
 mod outliner;
+mod panels;
 mod paths;
 mod placement;
 mod playtest;
@@ -36,9 +37,10 @@ use std::path::PathBuf;
 use theia_zone::{Command, Edit, Editor, Object, Pose, Primitive, Zone};
 
 const CANVAS_LEFT: f32 = outliner::WIDTH + workspace::INSPECTOR_WIDTH;
-fn canvas_cursor(window: &Window) -> Option<Vec2> {
+fn canvas_cursor(window: &Window, session: &Session) -> Option<Vec2> {
     window.cursor_position().filter(|p| {
-        p.x > CANVAS_LEFT
+        !session.ui.input_owned
+            && p.x > session.ui.canvas_left() + 6.
             && p.x < window.width()
             && p.y > workspace::HEADER
             && p.y < window.height() - 52.
@@ -56,6 +58,7 @@ enum EditorMode {
 
 #[derive(Resource)]
 struct Session {
+    ui: panels::Layout,
     editor: Editor,
     saved_zone: Option<Zone>,
     selected: Option<u64>,
@@ -118,6 +121,7 @@ impl Session {
             .unwrap_or_else(|| std::path::Path::new("."))
             .to_path_buf();
         Session {
+            ui: panels::Layout::default(),
             editor,
             saved_zone,
             selected: None,
@@ -546,6 +550,7 @@ fn run() -> Result<(), String> {
             vegetation::setup,
             setup_ui,
             workspace::setup,
+            panels::setup,
             outliner::setup,
             naming::setup,
             properties::setup,
@@ -555,7 +560,13 @@ fn run() -> Result<(), String> {
     .add_systems(
         Update,
         (
-            (agent::poll, file_picker::keyboard).chain(),
+            (
+                panels::resize,
+                panels::apply,
+                agent::poll,
+                file_picker::keyboard,
+            )
+                .chain(),
             naming::keyboard,
             properties::keyboard,
             keyboard,
@@ -672,6 +683,7 @@ fn setup_tools(panel: &mut ChildSpawnerCommands) {
 fn setup_ui(mut commands: Commands) {
     commands.spawn((
         Summary,
+        panels::Region::Footer,
         text("", 14.),
         TextLayout::no_wrap(),
         Node {
@@ -972,6 +984,7 @@ fn keyboard(
     >,
 ) {
     if session.has_modal()
+        || session.ui.input_owned
         || focus
             .get()
             .is_some_and(|entity| menu_focus.contains(entity))
@@ -1229,10 +1242,11 @@ fn camera_controls(
         && session.play.is_none()
         && !session.has_modal()
         && session.drag.is_none()
+        && !session.ui.input_owned
         && !focus
             .get()
             .is_some_and(|entity| menu_items.contains(entity));
-    let cursor = canvas_cursor(window);
+    let cursor = canvas_cursor(window, &session);
     let outside = cursor.is_some();
     if !enabled
         || !outside

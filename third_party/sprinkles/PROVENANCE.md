@@ -22,3 +22,6 @@ in this first adaptation. Theia-specific controls follow the same visual tokens.
 
 `apps/zone-editor/src/sections.rs` adapts `ui/widgets/panel_section.rs`
 into native Bevy 0.20 bundles and retained Theia commands.
+
+`panels.rs` follows the resizable-panel interaction from `ui/widgets/panel.rs`,
+with Theia-specific logical bounds, world-input shielding and cancellation.

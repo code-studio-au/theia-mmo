@@ -376,53 +376,57 @@ fn sprinkles_browser_inspector_and_tools_have_separate_full_height_regions() {
     app.add_systems(Update, outliner::sync);
     crate::headless_ui::add_layout(&mut app);
     let source = app.world().resource::<Session>().editor.zone().clone();
-    app.add_systems(Update, terrain::palette);
-    for mode in [
-        EditorMode::Objects,
-        EditorMode::Sculpt,
-        EditorMode::Paint,
-        EditorMode::Guides,
-        EditorMode::Markers,
-        EditorMode::Plants,
-    ] {
-        app.world_mut().resource_mut::<Session>().set_mode(mode);
-        for _ in 0..3 {
-            app.update();
-        }
-        let (browser, browser_pose) = app
+    app.add_systems(Update, (panels::apply, terrain::palette).chain());
+    for (browser_width, inspector_width) in [(300., 300.), (480., 600.), (450., 350.)] {
+        app.world_mut().resource_mut::<Session>().ui.browser = browser_width;
+        app.world_mut().resource_mut::<Session>().ui.inspector = inspector_width;
+        for mode in [
+            EditorMode::Objects,
+            EditorMode::Sculpt,
+            EditorMode::Paint,
+            EditorMode::Guides,
+            EditorMode::Markers,
+            EditorMode::Plants,
+        ] {
+            app.world_mut().resource_mut::<Session>().set_mode(mode);
+            for _ in 0..3 {
+                app.update();
+            }
+            let (browser, browser_pose) = app
             .world_mut()
             .query_filtered::<(&ComputedNode, &bevy::ui::UiGlobalTransform), With<outliner::Root>>()
             .single(app.world())
             .unwrap();
-        assert_eq!(
-            browser.size(),
-            Vec2::new(outliner::WIDTH, 1440. - HEADER - 52.)
-        );
-        assert_eq!(
-            browser_pose.affine().translation,
-            Vec2::new(outliner::WIDTH / 2., HEADER + browser.size().y / 2.)
-        );
-        let (inspector, inspector_pose) = app
-            .world_mut()
-            .query_filtered::<(&ComputedNode, &bevy::ui::UiGlobalTransform), With<Inspector>>()
-            .single(app.world())
-            .unwrap();
-        assert_eq!(inspector.size(), Vec2::new(INSPECTOR_WIDTH, 1440. - HEADER));
-        assert_eq!(
-            inspector_pose.affine().translation.x,
-            outliner::WIDTH + INSPECTOR_WIDTH / 2.
-        );
-        let mut visible = 0;
-        for (style,node,pose) in app.world_mut().query_filtered::<(&Node,&ComputedNode,&bevy::ui::UiGlobalTransform),With<PaletteSlot>>().iter(app.world()) {
+            assert_eq!(
+                browser.size(),
+                Vec2::new(browser_width, 1440. - HEADER - 52.)
+            );
+            assert_eq!(
+                browser_pose.affine().translation,
+                Vec2::new(browser_width / 2., HEADER + browser.size().y / 2.)
+            );
+            let (inspector, inspector_pose) = app
+                .world_mut()
+                .query_filtered::<(&ComputedNode, &bevy::ui::UiGlobalTransform), With<Inspector>>()
+                .single(app.world())
+                .unwrap();
+            assert_eq!(inspector.size(), Vec2::new(inspector_width, 1440. - HEADER));
+            assert_eq!(
+                inspector_pose.affine().translation.x,
+                browser_width + inspector_width / 2.
+            );
+            let mut visible = 0;
+            for (style,node,pose) in app.world_mut().query_filtered::<(&Node,&ComputedNode,&bevy::ui::UiGlobalTransform),With<PaletteSlot>>().iter(app.world()) {
             if style.display==Display::None {continue;}
             visible+=1;
             let p=pose.affine().translation;let half=node.size()/2.;
             assert!(node.size().min_element()>0.);
-            assert!(p.x-half.x>=outliner::WIDTH && p.x+half.x<=CANVAS_LEFT);
+            assert!(p.x-half.x>=browser_width && p.x+half.x<=browser_width+inspector_width);
             assert!(p.y-half.y>=HEADER && p.y+half.y<=1440.);
         }
-        assert!(visible > 0);
-        assert_eq!(app.world().resource::<Session>().editor.zone(), &source);
-        assert_eq!(app.world().resource::<Session>().editor.history(), (0, 0));
+            assert!(visible > 0);
+            assert_eq!(app.world().resource::<Session>().editor.zone(), &source);
+            assert_eq!(app.world().resource::<Session>().editor.history(), (0, 0));
+        }
     }
 }

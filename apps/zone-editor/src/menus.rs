@@ -6,6 +6,11 @@ use bevy::input_focus::{
 };
 use bevy::ui_widgets::{MenuAction, MenuButton, MenuEvent, MenuFocusState, MenuItem, MenuPopup};
 
+#[derive(Component)]
+pub(super) struct Trigger(pub &'static str);
+#[derive(Component)]
+pub(super) struct Popup(pub &'static str);
+
 pub(super) fn plugin(app: &mut App) {
     app.add_observer(activate);
 }
@@ -24,6 +29,7 @@ pub(super) fn spawn(
             .spawn((
                 Button,
                 MenuButton,
+                Trigger(title),
                 Hovered::default(),
                 theme::Variant::Ghost,
                 Node {
@@ -39,6 +45,8 @@ pub(super) fn spawn(
         popup = root
             .spawn((
                 MenuPopup::default(),
+                Popup(title),
+                Hovered::default(),
                 GlobalZIndex(15),
                 Node {
                     display: Display::None,

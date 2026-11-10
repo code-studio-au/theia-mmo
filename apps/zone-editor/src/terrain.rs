@@ -543,7 +543,7 @@ pub(super) fn pointer(
         session.stroke = None;
         return;
     }
-    let Some(cursor) = canvas_cursor(window) else {
+    let Some(cursor) = canvas_cursor(window, &session) else {
         if mouse.just_released(MouseButton::Left) {
             session.stroke = None;
         } else if let Some(stroke) = &mut session.stroke {

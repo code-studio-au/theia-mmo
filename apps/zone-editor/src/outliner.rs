@@ -156,6 +156,7 @@ pub(super) fn setup(mut commands: Commands) {
     commands
         .spawn((
             Root,
+            panels::Region::Browser,
             GlobalZIndex(3),
             Node {
                 position_type: PositionType::Absolute,
@@ -430,10 +431,14 @@ pub(super) fn scroll(
     }
     let cursor = window.cursor_position();
     let over_panel = cursor.is_some_and(|p| {
-        p.x >= 0. && p.x < WIDTH && p.y >= workspace::HEADER && p.y < window.height() - 52.
+        p.x >= 0.
+            && p.x < session.ui.browser
+            && p.y >= workspace::HEADER
+            && p.y < window.height() - 52.
     });
     let before = content.page;
     let blocked = !window.focused
+        || session.ui.input_owned
         || busy(&session)
         || focus
             .as_ref()

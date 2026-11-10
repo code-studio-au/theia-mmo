@@ -67,7 +67,8 @@ pub(super) struct Caption;
 pub(super) struct ButtonLabel;
 
 pub(super) fn busy(session: &Session) -> bool {
-    session.has_modal()
+    session.ui.input_owned
+        || session.has_modal()
         || session.play.is_some()
         || session.drag.is_some()
         || session.stroke.is_some()
@@ -269,6 +270,7 @@ pub(super) fn setup(mut commands: Commands) {
         .spawn((
             GlobalZIndex(4),
             Inspector,
+            panels::Region::Inspector,
             Node {
                 position_type: PositionType::Absolute,
                 left: px(outliner::WIDTH),

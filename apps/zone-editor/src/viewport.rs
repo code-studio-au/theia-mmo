@@ -186,7 +186,7 @@ pub(super) fn pointer(
         session.drag = None;
         return;
     }
-    let Some(cursor) = canvas_cursor(window) else {
+    let Some(cursor) = canvas_cursor(window, &session) else {
         if mouse.just_released(MouseButton::Left) {
             session.drag = None;
         }
@@ -412,6 +412,8 @@ type ReportControls<'w, 's> = Query<
         Option<&'static bevy::ui_widgets::SliderRange>,
         Option<&'static file_picker::Control>,
         Option<&'static sections::Section>,
+        Option<&'static menus::Trigger>,
+        Option<&'static menus::Popup>,
     ),
 >;
 type ContentControls<'w, 's> = Query<
@@ -602,17 +604,23 @@ pub(super) fn report(
             "value":value.map(|v|v.0),"range":range.map(|r|[r.start(),r.end()])}))
     }).collect::<Vec<_>>());
     value["ui_layout"] = serde_json::json!({
-        "browser":[0.,workspace::HEADER,outliner::WIDTH,window.height()-workspace::HEADER-52.],
-        "inspector":[outliner::WIDTH,workspace::HEADER,workspace::INSPECTOR_WIDTH,window.height()-workspace::HEADER],
-        "canvas":[CANVAS_LEFT,workspace::HEADER,window.width()-CANVAS_LEFT,window.height()-workspace::HEADER-52.]
+        "browser":[0.,workspace::HEADER,session.ui.browser,window.height()-workspace::HEADER-52.],
+        "inspector":[session.ui.browser,workspace::HEADER,session.ui.inspector,window.height()-workspace::HEADER],
+        "canvas":[session.ui.canvas_left(),workspace::HEADER,window.width()-session.ui.canvas_left(),window.height()-workspace::HEADER-52.],
+        "resizing":session.ui.input_owned
     });
-    value["sections"] = serde_json::json!(controls.iter().filter_map(|(_,_,_,_,node,t,hovered,_,_,_,_,_,section)| {
+    value["menus"] = serde_json::json!(controls.iter().filter_map(|(_,_,_,_,node,t,hovered,_,_,_,_,_,_,trigger,popup)| {
+        let (name,role)=trigger.map(|m|(m.0,"button")).or_else(||popup.map(|m|(m.0,"popup")))?;
+        let factor=node.inverse_scale_factor()*scale.0;
+        Some(serde_json::json!({"name":name,"role":role,"hovered":hovered.0,"centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array()}))
+    }).collect::<Vec<_>>());
+    value["sections"] = serde_json::json!(controls.iter().filter_map(|(_,_,_,_,node,t,hovered,_,_,_,_,_,section,..)| {
         let section=section?;
         let factor=node.inverse_scale_factor()*scale.0;
         Some(serde_json::json!({"title":section.title,"expanded":section.expanded,"hovered":hovered.0,
             "centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array()}))
     }).collect::<Vec<_>>());
-    value["file_controls"] = serde_json::json!(controls.iter().filter_map(|(_,_,_,_,node,t,hovered,_,_,_,_,control,_)| {
+    value["file_controls"] = serde_json::json!(controls.iter().filter_map(|(_,_,_,_,node,t,hovered,_,_,_,_,control,..)| {
         let control=control?;
         let factor=node.inverse_scale_factor()*scale.0;
         let entry=match control { file_picker::Control::Row(index)=>session.file_dialog.as_ref().and_then(|d|d.row(*index)),_=>None };
@@ -625,7 +633,7 @@ pub(super) fn report(
         let factor = node.inverse_scale_factor() * scale.0;
         Some(serde_json::json!({"action":format!("{control:?}"),"hovered":hovered.0,"centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array()}))
     }).collect::<Vec<_>>());
-    value["transform_controls"] = serde_json::json!(controls.iter().filter_map(|(_,_,control,field,node,t,hovered,_,_,value,range,_,_)| {
+    value["transform_controls"] = serde_json::json!(controls.iter().filter_map(|(_,_,control,field,node,t,hovered,_,_,value,range,..)| {
         let target = match (control,field) {
             (Some(control),_) => format!("{control:?}"),
             (_,Some(field)) => format!("Field({})",field.0),

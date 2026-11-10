@@ -290,6 +290,7 @@ pub(super) fn setup(mut commands: Commands) {
     commands
         .spawn((
             Root,
+            panels::Region::Inspector,
             TabGroup::modal(),
             GlobalZIndex(20),
             Node {

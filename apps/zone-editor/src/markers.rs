@@ -204,7 +204,7 @@ pub(super) fn pointer(
     if !window.focused {
         return;
     }
-    let Some(cursor) = canvas_cursor(window) else {
+    let Some(cursor) = canvas_cursor(window, &session) else {
         return;
     };
     let Ok((camera, transform)) = camera.single() else {
