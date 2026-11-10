@@ -26,11 +26,11 @@ No quest is deleted, renumbered or assigned a runtime ID in this review. Level b
 
 ## Q042–Q045 — Signal House and first Guardian contact
 
-**Narrative purpose:** Q042 introduces Sera and the unidentified Grey Surveyor; Q043 presents the preserve-or-destroy sample choice; Q044 uses Brynja's preliminary remote safety note; Q045 is the solo Silent Signal encounter and Minor Resonator cutoff.
+**Narrative purpose:** Q042 introduces Sera and the unidentified Elder; Q043 presents the preserve-or-destroy sample choice; Q044 uses Brynja's preliminary remote safety note; Q045 is the solo Silent Signal encounter and Minor Resonator cutoff.
 
 **Proposed objective/stage treatment:** Q043 requires persistent choice and conditional safe procedure; both branches preserve identical essential measurements. Q044 installation/cutoff checks need authoritative interaction facts. Q045 must distinguish Halvek defeat, cutoff activation and preservation of readings; dungeon reset must not erase already authenticated evidence.
 
-**Continuity and availability:** Grey Surveyor must not be called Oth'varen in player-visible UI. Brynja is not personally met until Q049. Q043 choices and boss phases are planned beyond the current native catalogue.
+**Continuity and availability:** Elder must not be called Oth'varen in player-visible UI. Brynja is not personally met until Q049. Q043 choices and boss phases are planned beyond the current native catalogue.
 
 ## Q046–Q048 — independent regional content and evidence handoff
 
