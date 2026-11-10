@@ -220,6 +220,18 @@ impl DraftStore {
         Ok(draft)
     }
 
+    /// Remove one explicitly selected draft; never follow a symbolic link.
+    pub fn discard(&self, id: &DraftId) -> io::Result<()> {
+        let path = self.path(id);
+        if !std::fs::symlink_metadata(&path)?.file_type().is_file() {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "Draft is not a regular file",
+            ));
+        }
+        std::fs::remove_file(path)
+    }
+
     /// Validate the complete asset before callers replace the current project.
     pub fn recover(&self, id: &DraftId) -> Result<RecoveredDraft, RecoveryError> {
         let draft = self.load(id).map_err(RecoveryError::Storage)?;
@@ -452,6 +464,37 @@ mod tests {
         assert!(app.world().resource::<DirtyState>().has_unsaved_changes);
         assert_eq!(std::fs::read(path).unwrap(), b"original");
         assert_eq!(store.list().unwrap(), vec![id]);
+        std::fs::remove_dir_all(store.directory()).unwrap();
+    }
+
+    #[test]
+    fn discarding_one_selected_draft_preserves_the_other_draft_and_original() {
+        let store = store();
+        std::fs::create_dir_all(store.directory()).unwrap();
+        let original = store.directory().join("original.ron");
+        std::fs::write(&original, b"original").unwrap();
+        let draft = Draft::new(Some(original.clone()), "snapshot".into());
+        let first = store.create(&draft).unwrap();
+        let second = store.create(&draft).unwrap();
+        store.discard(&first).unwrap();
+        assert_eq!(store.list().unwrap(), vec![second.clone()]);
+        assert_eq!(store.load(&second).unwrap(), draft);
+        assert_eq!(std::fs::read(original).unwrap(), b"original");
+        assert!(store.discard(&first).is_err());
+        std::fs::remove_dir_all(store.directory()).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn discard_refuses_a_symbolic_link() {
+        let store = store();
+        std::fs::create_dir_all(store.directory()).unwrap();
+        let original = store.directory().join("original.ron");
+        std::fs::write(&original, b"original").unwrap();
+        let id = DraftId("abc".into());
+        std::os::unix::fs::symlink(&original, store.path(&id)).unwrap();
+        assert!(store.discard(&id).is_err());
+        assert_eq!(std::fs::read(original).unwrap(), b"original");
         std::fs::remove_dir_all(store.directory()).unwrap();
     }
 

@@ -256,3 +256,7 @@ still no user-facing restore command or automatic snapshot lifecycle.
 The internal restore event rejects unsaved or actively edited projects and opens
 a validated draft with no assigned path and a dirty state. It has no visible
 selector yet; snapshot capture and recovery UI remain pending.
+
+The storage API can discard a specifically selected draft without following a
+symbolic link or touching the original project. A user-facing discard control is
+still pending alongside the recovery selector.
