@@ -3803,3 +3803,20 @@ Clippy and editor build pass. Evidence: `build/sprinkles-review/tool-captions-te
 `tool-captions-clippy.log` and `tool-captions-build.log`. The complete selected-
 inspector CPU layout matrix passes. Native visual/input/GPU acceptance remains
 pending while desktop use is stopped.
+
+## Shared matching native sliders — 10 November 2026
+
+Shared Sprinkles-style native sliders, 10 November 2026 (P5-17):
+tool settings and exact-attribute forms now share a thin 4 px Zinc track and
+compact rounded blue thumb. Hover, keyboard focus and disabled track states use
+the adopted palette. The full 24 px control area, 14 px horizontal thumb width,
+travel bounds, native Bevy input, step/range/precision and validated draft/source
+controllers are retained. This is a Theia-specific matching component, not an
+imported upstream slider; the reviewed upstream widgets have no slider.
+
+All 154 focused Rust tests, formatting, denied-warning workspace/all-target
+Clippy and editor build pass. Evidence: `build/sprinkles-review/shared-sliders-tests.log`,
+`shared-sliders-clippy.log` and `shared-sliders-build.log`. CPU checks include
+slider keyboard behavior, exact draft/source preservation and the complete
+selected-inspector layout matrix. Native pointer/visual/GPU acceptance remains
+pending while desktop use is stopped.

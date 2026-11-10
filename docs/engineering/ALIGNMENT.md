@@ -1,3 +1,9 @@
+P5-17, 10 November 2026: settings/forms share a thin-track, compact-thumb
+native slider in Sprinkles colors, including hover/focus/disabled feedback.
+Native input and horizontal value mapping are retained. All 154 focused tests,
+formatting, denied-warning Clippy and editor build pass; native acceptance remains
+pending while desktop use is stopped. See STATUS/ZONE_EDITOR for scope/evidence.
+
 P5-17, 10 November 2026: tool rows separate action names from right-aligned
 muted shortcut hints, preserving workspace actions and live brush labels. All
 154 focused tests, formatting, denied-warning Clippy and editor build pass.

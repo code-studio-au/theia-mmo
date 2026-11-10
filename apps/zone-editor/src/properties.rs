@@ -388,17 +388,14 @@ pub(super) fn setup(mut commands: Commands) {
                                 SliderPrecision(if yaw { 0 } else { 2 }),
                                 TabIndex(if yaw { 7 } else { 8 }),
                                 Hovered::default(),
-                                Node {
-                                    width: percent(100),
-                                    height: px(24),
-                                    ..default()
-                                },
-                                BackgroundColor(theme::INPUT),
+                                theme::slider::node(),
+                                BackgroundColor(Color::NONE),
                             ));
                             if yaw {
                                 slider.insert(YawSlider);
                             }
                             slider.with_children(|track| {
+                                track.spawn(theme::slider::track());
                                 track
                                     .spawn(Node {
                                         position_type: PositionType::Absolute,
@@ -412,13 +409,7 @@ pub(super) fn setup(mut commands: Commands) {
                                         let mut thumb = travel.spawn((
                                             SliderHandle(control),
                                             SliderThumb,
-                                            Node {
-                                                position_type: PositionType::Absolute,
-                                                width: px(14),
-                                                height: px(24),
-                                                left: percent(50),
-                                                ..default()
-                                            },
+                                            theme::slider::thumb(50.),
                                             BackgroundColor(theme::PRIMARY),
                                         ));
                                         if yaw {

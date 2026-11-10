@@ -333,14 +333,11 @@ pub(super) fn setup(mut commands: Commands, icons: Option<Res<sidebar::Icons>>) 
                                         },
                                     ),
                                     Hovered::default(),
-                                    Node {
-                                        width: percent(100),
-                                        height: px(24),
-                                        ..default()
-                                    },
-                                    BackgroundColor(theme::INPUT),
+                                    theme::slider::node(),
+                                    BackgroundColor(Color::NONE),
                                 ))
                                 .with_children(|track| {
+                                    track.spawn(theme::slider::track());
                                     track
                                         .spawn(Node {
                                             position_type: PositionType::Absolute,
@@ -354,13 +351,7 @@ pub(super) fn setup(mut commands: Commands, icons: Option<Res<sidebar::Icons>>) 
                                             travel.spawn((
                                                 Thumb,
                                                 SliderThumb,
-                                                Node {
-                                                    position_type: PositionType::Absolute,
-                                                    width: px(14),
-                                                    height: px(24),
-                                                    left: percent(0),
-                                                    ..default()
-                                                },
+                                                theme::slider::thumb(0.),
                                                 BackgroundColor(theme::PRIMARY),
                                             ));
                                         });

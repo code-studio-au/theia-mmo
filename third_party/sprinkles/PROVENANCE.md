@@ -166,3 +166,8 @@ sizing/type. Menu keyboard hints retain muted secondary text through live states
 Theia Tools rows reuse the menu secondary-typography treatment: action names
 left, muted 10 px keyboard hints right. Existing per-workspace action captions
 and live brush-value descriptions remain the source for this presentation.
+
+`theme_slider.rs` is a Theia-specific matching component: the reviewed upstream
+widgets contain no slider. Thin Zinc track, rounded blue thumb and shared
+hover/focus/disabled colors follow the adopted tokens. Standard Bevy slider
+input, original horizontal geometry and Theia validation/controllers are retained.

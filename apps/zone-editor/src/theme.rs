@@ -5,6 +5,8 @@ use super::*;
 pub(super) mod checkbox;
 #[path = "theme_dialog.rs"]
 pub(super) mod dialog;
+#[path = "theme_slider.rs"]
+pub(super) mod slider;
 use bevy::asset::uuid_handle;
 use bevy::color::palettes::tailwind;
 
@@ -15,7 +17,6 @@ pub(super) const BORDER: Color = Color::Srgba(tailwind::ZINC_700);
 pub(super) const BODY: Color = Color::Srgba(tailwind::ZINC_200);
 pub(super) const MUTED: Color = Color::Srgba(tailwind::ZINC_400);
 pub(super) const DISPLAY: Color = Color::Srgba(tailwind::ZINC_50);
-pub(super) const INPUT: Color = Color::Srgba(tailwind::ZINC_900);
 
 // Adapted from Sprinkles' ButtonVariant. Keeping the native Bevy Button and
 // Checkbox behavior avoids replacing Theia's focus, activation or edit guards.
@@ -199,6 +200,7 @@ pub(super) fn plugin(app: &mut App) {
             input_states,
             numeric_frames,
             checkbox::sync,
+            slider::sync,
         )
             .chain(),
     );
