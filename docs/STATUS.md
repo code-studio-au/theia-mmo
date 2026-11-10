@@ -1,3 +1,18 @@
+Consistent resize affordances, 10 November 2026 (P5-17): divider
+highlight/cursor feedback now shares the drag controller's window/menu/modal/
+playtest/preview availability checks. A hovered scrollbar suppresses idle resize
+feedback as well as new resize acquisition. Active permitted resizing keeps
+feedback while crossing a scrollbar. The cursor uses Sprinkles' native column-
+resize icon. Width limits, retained drag/cancel handling and source/history stay.
+
+All 156 focused Rust tests, formatting, denied-warning workspace/all-target
+Clippy and editor build pass. A CPU regression covers cursor/highlight removal
+and blocked acquisition while menus/scrollbars own input, restoration when
+available, focus-loss cleanup and source/width/history preservation. Evidence:
+`build/sprinkles-review/resize-feedback-tests.log`, `resize-feedback-clippy.log`
+and `resize-feedback-build.log`. No OS input/window/renderer was used; native
+visual/input/GPU acceptance remains pending while desktop use is stopped.
+
 Native Bevy slider-event headless checks, 10 November 2026 (P5-17):
 a new CPU font/layout case sends actual PointerPress/PointerRelease events
 through Bevy's native slider and pointer-focus observers. At local/far origins,

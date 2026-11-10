@@ -1,3 +1,9 @@
+P5-17, 10 November 2026: divider hover/cursor feedback follows the same
+availability rules as resizing, including menu/scrollbar ownership and lost
+window focus. The cursor matches Sprinkles' native column-resize icon. All 156
+focused tests, formatting, denied-warning Clippy and editor build pass; native
+acceptance remains pending. See STATUS/ZONE_EDITOR for scope/evidence.
+
 P5-17, 10 November 2026: CPU tests send native Bevy pointer press/release
 through all exact-form slider types at local/far origins. Range endpoints,
 focus/release and draft/source/redo preservation pass. All 155 focused tests,

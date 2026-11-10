@@ -175,3 +175,7 @@ input, original horizontal geometry and Theia validation/controllers are retaine
 Shared field-label typography also covers settings and exact-form sliders:
 10 px medium muted labels with 12 px tabular setting values/units, following
 the pinned inspector-field tokens while retaining Theia setting captions.
+
+Panel dividers also use the pinned panel.rs native ColResize cursor. Theia adds
+shared interaction-availability guards for feedback and resize acquisition so
+menus, scrollbars, modal/preview/playtest ownership and window focus agree.

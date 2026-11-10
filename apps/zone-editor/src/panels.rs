@@ -70,6 +70,16 @@ pub(super) fn setup(mut commands: Commands) {
     }
 }
 
+fn can_resize(window: &Window, session: &Session, menu_open: bool) -> bool {
+    window.focused
+        && !menu_open
+        && !session.has_modal()
+        && session.play.is_none()
+        && session.drag.is_none()
+        && session.stroke.is_none()
+        && session.path_draft.is_none()
+}
+
 pub(super) fn resize(
     windows: Query<&Window>,
     mouse: Res<ButtonInput<MouseButton>>,
@@ -79,15 +89,13 @@ pub(super) fn resize(
     menus: Query<&bevy::ui_widgets::MenuFocusState, With<bevy::ui_widgets::MenuPopup>>,
 ) {
     let Ok(window) = windows.single() else { return };
-    let allowed = window.focused
-        && menus
+    let allowed = can_resize(
+        window,
+        &session,
+        menus
             .iter()
-            .all(|state| matches!(state, bevy::ui_widgets::MenuFocusState::Closed))
-        && !session.has_modal()
-        && session.play.is_none()
-        && session.drag.is_none()
-        && session.stroke.is_none()
-        && session.path_draft.is_none();
+            .any(|state| !matches!(state, bevy::ui_widgets::MenuFocusState::Closed)),
+    );
     let cursor = window.cursor_position();
     let layout = &mut session.ui;
     layout.input_owned = false;
@@ -138,7 +146,16 @@ pub(super) fn apply(
     session: Res<Session>,
     mut regions: Query<(&Region, &mut Node)>,
     mut grips: Query<(&Grip, &Hovered, &mut Node, &mut BackgroundColor), Without<Region>>,
+    menus: Query<&bevy::ui_widgets::MenuFocusState, With<bevy::ui_widgets::MenuPopup>>,
+    scrollbars: Query<&Hovered, With<bevy::ui_widgets::Scrollbar>>,
 ) {
+    let menu_open = menus
+        .iter()
+        .any(|state| !matches!(state, bevy::ui_widgets::MenuFocusState::Closed));
+    let allowed = windows
+        .single()
+        .is_ok_and(|(_, window, _)| can_resize(window, &session, menu_open));
+    let over_scrollbar = scrollbars.iter().any(|hovered| hovered.0);
     for (region, mut node) in &mut regions {
         let (left, width) = match region {
             Region::Browser => (sidebar::WIDTH, Some(session.ui.browser)),
@@ -160,7 +177,8 @@ pub(super) fn apply(
     }
     let mut over_grip = false;
     for (grip, hovered, mut node, mut background) in &mut grips {
-        over_grip |= hovered.0;
+        let hovered = allowed && hovered.0 && !over_scrollbar;
+        over_grip |= hovered;
         node.display = if session.play.is_some() {
             Display::None
         } else {
@@ -173,21 +191,18 @@ pub(super) fn apply(
         if node.left != px(edge - GRIP / 2.) {
             node.left = px(edge - GRIP / 2.);
         }
-        background.0 = if session.ui.drag.is_some_and(|drag| drag.edge == grip.0) {
+        background.0 = if allowed && session.ui.drag.is_some_and(|drag| drag.edge == grip.0) {
             theme::PRIMARY.with_alpha(0.5)
-        } else if hovered.0 {
+        } else if hovered {
             theme::BORDER
         } else {
             Color::NONE
         };
     }
-    if let Ok((entity, window, cursor)) = windows.single() {
+    if let Ok((entity, _, cursor)) = windows.single() {
         let resize_cursor =
-            bevy::window::CursorIcon::System(bevy::window::SystemCursorIcon::EwResize);
-        let active = window.focused
-            && session.play.is_none()
-            && !session.has_modal()
-            && (over_grip || session.ui.drag.is_some());
+            bevy::window::CursorIcon::System(bevy::window::SystemCursorIcon::ColResize);
+        let active = allowed && (over_grip || session.ui.drag.is_some());
         if active && cursor != Some(&resize_cursor) {
             commands.entity(entity).insert(resize_cursor);
         } else if !active && cursor == Some(&resize_cursor) {
@@ -311,6 +326,103 @@ mod tests {
         assert_eq!(session.palette, Some(Primitive::Box));
         assert!(!session.is_dirty());
     }
+    #[test]
+    fn resize_feedback_respects_menu_scrollbar_and_window_ownership() {
+        use bevy::ui_widgets::{MenuFocusState, MenuPopup, Scrollbar};
+        use bevy::window::{CursorIcon, SystemCursorIcon};
+        let zone = Zone::default();
+        let mut app = App::new();
+        app.insert_resource(Session::new(
+            Editor::new(zone.clone()).unwrap(),
+            "unused.json".into(),
+            Some(zone.clone()),
+        ))
+        .init_resource::<ButtonInput<MouseButton>>()
+        .init_resource::<ButtonInput<KeyCode>>()
+        .add_systems(Startup, setup)
+        .add_systems(Update, (resize, apply).chain());
+        let window = app
+            .world_mut()
+            .spawn(Window {
+                focused: true,
+                resolution: (3440, 1440).into(),
+                ..default()
+            })
+            .id();
+        app.update();
+        let grip = app
+            .world_mut()
+            .query::<(Entity, &Grip)>()
+            .iter(app.world())
+            .find(|(_, grip)| grip.0 == Edge::Browser)
+            .unwrap()
+            .0;
+        app.world_mut().entity_mut(grip).insert(Hovered(true));
+        cursor(&mut app, Vec2::new(sidebar::WIDTH + outliner::WIDTH, 350.));
+        app.update();
+        let resize_cursor = CursorIcon::System(SystemCursorIcon::ColResize);
+        assert_eq!(app.world().get::<CursorIcon>(window), Some(&resize_cursor));
+        let popup = app
+            .world_mut()
+            .spawn((MenuPopup::default(), MenuFocusState::Open))
+            .id();
+        press(&mut app, Vec2::new(sidebar::WIDTH + outliner::WIDTH, 350.));
+        assert!(!app.world().resource::<Session>().ui.input_owned);
+        assert_eq!(
+            app.world().get::<CursorIcon>(window),
+            Some(&CursorIcon::default())
+        );
+        assert_eq!(
+            app.world().get::<BackgroundColor>(grip).unwrap().0,
+            Color::NONE
+        );
+        release(&mut app);
+        app.world_mut()
+            .entity_mut(popup)
+            .insert(MenuFocusState::Closed);
+        let scrollbar = app
+            .world_mut()
+            .spawn((
+                Scrollbar {
+                    target: grip,
+                    orientation: bevy::ui_widgets::ControlOrientation::Vertical,
+                    min_thumb_length: 24.,
+                },
+                Hovered(true),
+            ))
+            .id();
+        press(&mut app, Vec2::new(sidebar::WIDTH + outliner::WIDTH, 350.));
+        assert!(!app.world().resource::<Session>().ui.input_owned);
+        assert_eq!(
+            app.world().get::<CursorIcon>(window),
+            Some(&CursorIcon::default())
+        );
+        assert_eq!(
+            app.world().get::<BackgroundColor>(grip).unwrap().0,
+            Color::NONE
+        );
+        release(&mut app);
+        app.world_mut().entity_mut(scrollbar).insert(Hovered(false));
+        app.update();
+        assert_eq!(app.world().get::<CursorIcon>(window), Some(&resize_cursor));
+        app.world_mut().get_mut::<Window>(window).unwrap().focused = false;
+        app.update();
+        assert_eq!(
+            app.world().get::<CursorIcon>(window),
+            Some(&CursorIcon::default())
+        );
+        assert_eq!(
+            app.world().get::<BackgroundColor>(grip).unwrap().0,
+            Color::NONE
+        );
+        let session = app.world().resource::<Session>();
+        assert_eq!(session.ui.browser, outliner::WIDTH);
+        assert_eq!(session.editor.zone(), &zone);
+        assert_eq!(session.editor.revision(), 0);
+        assert_eq!(session.editor.history(), (0, 0));
+        assert!(!session.is_dirty());
+    }
+
     #[test]
     fn embedded_viewport_projection_and_picking_round_trip_after_resizing_and_dpi_changes() {
         use bevy::camera::{ComputedCameraValues, RenderTargetInfo};
