@@ -131,6 +131,7 @@ fn wheel(
     mut event: On<PointerScroll>,
     session: Res<Session>,
     windows: Query<&Window>,
+    menus: Query<&bevy::ui_widgets::MenuFocusState, With<bevy::ui_widgets::MenuPopup>>,
     mut panes: Query<(&Pane, &ComputedNode, &mut ScrollPosition)>,
 ) {
     let Ok((scope, node, mut position)) = panes.get_mut(event.entity) else {
@@ -138,6 +139,9 @@ fn wheel(
     };
     event.propagate(false);
     if !scope.allowed(&session)
+        || menus
+            .iter()
+            .any(|state| !matches!(state, bevy::ui_widgets::MenuFocusState::Closed))
         || !windows.single().is_ok_and(|w| w.focused)
         || !event.y.is_finite()
     {

@@ -443,6 +443,7 @@ type ReportControls<'w, 's> = Query<
             Option<&'static scrolling::Pane>,
             Entity,
             Option<&'static properties::FieldLabel>,
+            Has<bevy::ui_widgets::MenuItem>,
         ),
         Option<&'static naming::Control>,
         Option<&'static properties::Control>,
@@ -572,6 +573,7 @@ pub(super) fn report(
         "lines":scene_visuals.iter().filter_map(|(_,_,_,visibility,_,transform,_,line,..)|line.map(|line|serde_json::json!({"slot":line.slot,"along_first":line.along_first,"visible":*visibility!=Visibility::Hidden,"position":transform.map(|t|t.translation.to_array()),"scale":transform.map(|t|t.scale.to_array())}))).collect::<Vec<_>>()});
     value["move_step_metres"] = session.move_step.into();
     value["middle_mouse_down"] = mouse.pressed(MouseButton::Middle).into();
+    value["right_mouse_down"] = mouse.pressed(MouseButton::Right).into();
     value["window_title"] = serde_json::json!(window.title);
     value["plant_point"] = serde_json::json!(session.plant_point);
     value["show_move_handles"] = session.show_move_handles.into();
@@ -647,11 +649,11 @@ pub(super) fn report(
         "filter":format!("{:?}",content.filter),"total":content.total,
         "query":content.query,
         "scroll_events":content.scroll_events,"last_scroll":content.last_scroll});
-    value["workspace_controls"] = serde_json::json!(controls.iter().filter_map(|(_,_,_,_,node,t,hovered,control,setting,value,range,..)| {
+    value["workspace_controls"] = serde_json::json!(controls.iter().filter_map(|((..,menu_item),_,_,_,node,t,hovered,control,setting,value,range,..)| {
         let target = match (control,setting) { (Some(c),_)=>format!("{c:?}"),(_,Some(s))=>format!("{s:?}"),_=>return None };
         let factor = node.inverse_scale_factor() * scale.0;
         Some(serde_json::json!({"target":target,"hovered":hovered.0,"centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array(),
-            "value":value.map(|v|v.0),"range":range.map(|r|[r.start(),r.end()])}))
+            "menu_item":menu_item,"value":value.map(|v|v.0),"range":range.map(|r|[r.start(),r.end()])}))
     }).collect::<Vec<_>>());
     value["scroll_panes"] = serde_json::json!(controls.iter().filter_map(|((_,_,position,pane,..),_,_,_,node,t,hovered,..)| {
         let pane = pane?;
@@ -691,7 +693,7 @@ pub(super) fn report(
         let factor = node.inverse_scale_factor() * scale.0;
         Some(serde_json::json!({"action":format!("{control:?}"),"hovered":hovered.0,"centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array()}))
     }).collect::<Vec<_>>());
-    value["transform_controls"] = serde_json::json!(controls.iter().filter_map(|((_,_,_,_,entity,label),_,control,field,node,t,hovered,_,_,value,range,..)| {
+    value["transform_controls"] = serde_json::json!(controls.iter().filter_map(|((_,_,_,_,entity,label,..),_,control,field,node,t,hovered,_,_,value,range,..)| {
         let target = match (control,field,label) {
             (Some(control),_,_) => format!("{control:?}"),
             (_,Some(field),_) => format!("Field({})",field.0),

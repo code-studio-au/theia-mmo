@@ -111,6 +111,41 @@ def run(output, binary, only_case=None, scroll=False, attributes=False, dialogs=
                     current = fresh()
                     assert current['document'] == initial and current['revision'] == baseline_revision and current['history'] == baseline_history
 
+                def content_popup():
+                    return next((entry for entry in state()['menus'] if entry['name']=='Content actions' and entry['role']=='popup' and min(entry['size'])>0), None)
+
+                def context_control(target):
+                    popup = content_popup()
+                    assert popup
+                    def inside(entry):
+                        return all(abs(entry['centre'][axis]-popup['centre'][axis]) < popup['size'][axis]/2 for axis in [0,1])
+                    entry = wait(lambda: next((entry for entry in state()['workspace_controls'] if entry['target']==target and entry['menu_item'] and min(entry['size'])>0 and inside(entry)), None))
+                    click(entry['centre'])
+
+                row = next(entry for entry in state()['content_list']['controls'] if entry['target']=='Object(1)')
+                more = next(entry for entry in state()['menus'] if entry['name']=='Content actions' and entry['role']=='button' and min(entry['size'])>0 and abs(entry['centre'][1]-row['centre'][1])<3)
+                click(more['centre'])
+                wait(content_popup)
+                unchanged()
+                capture('content-row-actions')
+                context_control('Frame')
+                wait(lambda:not content_popup())
+                unchanged()
+                move(row['centre'])
+                desktop.button(3,True)
+                try:
+                    wait(lambda:state()['right_mouse_down'])
+                finally:
+                    desktop.button(3,False)
+                wait(lambda:not state()['right_mouse_down'] and content_popup())
+                context_control('Rename')
+                wait(lambda:state()['name_edit'] is not None)
+                capture('content-context-rename')
+                unchanged()
+                desktop.key('Escape')
+                wait(lambda:state()['name_edit'] is None)
+                unchanged()
+
                 for mode, flags in [
                     ('Sculpt', [True, False, False, False, False]),
                     ('Paint', [True, True, False, False, False]),

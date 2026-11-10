@@ -1,3 +1,28 @@
+Sprinkles content-row action menus, 10 November 2026 (P5-17): objects,
+guides, markers and plants now expose a compact ellipsis menu and secondary-click
+access following pinned data_panel.rs. Actions reuse the native application-menu
+items and guarded Rename/attributes/Duplicate/Ground/Frame/Delete commands.
+Opening selects the row through the existing validated selection path, then binds
+the context to its exact target, source revision and row mapping. Stale selection,
+revision, paging or filtering cannot redirect an action to a different target.
+Busy/unfocused contexts close; native focus returns to the trigger on dismissal.
+
+Native Bevy Popover placements keep the popup within the window; OverrideClip
+lets it escape the scrolling browser. Open menus own wheel/panel-edge gestures,
+and focus reveal treats popup items independently of the underlying scroll pane.
+Menu-item text state now respects its own active/disabled state. Row labels use
+exact 12 px text and reserve space for the 24 px trigger. The row pool stays bounded.
+
+All 143 focused Rust tests pass, including native menu event dispatch, local/far
+complete-document duplicate oracles, replay/stale guards, exact undo, short-window
+popup bounds/unclipping and raw panel-edge ownership. Formatting, denied-warning
+workspace/all-target Clippy and editor build pass. Evidence:
+`build/sprinkles-review/context-tests-final-v3.log`, `context-clippy-final-v2.log`
+and `context-build.log`.
+Native rendering/input/GPU acceptance remains pending while desktop use is stopped.
+The prepared Sprinkles qualifier now covers ellipsis/secondary-click, Frame and
+rename cancellation using explicit menu-item telemetry; it is syntax-checked only.
+
 Sprinkles 52 px top bar and viewport section, 10 November 2026 (P5-17):
 the editor now uses pinned topbar.rs height, 12 px inset, panel background and
 bottom border. Menus/brand sit left; Playtest and primary-blue Save sit right.

@@ -26,10 +26,10 @@ pub(super) fn request(
 }
 
 pub(super) fn reveal(
-    focus: Option<Res<InputFocus>>,
+    input: (Option<Res<InputFocus>>, Query<&Window>),
     session: Res<Session>,
-    windows: Query<&Window>,
     parents: Query<&ChildOf>,
+    popups: Query<(), With<bevy::ui_widgets::MenuPopup>>,
     nodes: Query<(&ComputedNode, &bevy::ui::UiGlobalTransform)>,
     mut panes: Query<(
         &Pane,
@@ -39,7 +39,16 @@ pub(super) fn reveal(
     )>,
     mut state: ResMut<Reveal>,
 ) {
-    let current = focus.as_ref().and_then(|focus| focus.get());
+    let (focus, windows) = input;
+    let current = focus
+        .as_ref()
+        .and_then(|focus| focus.get())
+        .filter(|entity| {
+            !popups.contains(*entity)
+                && !parents
+                    .iter_ancestors(*entity)
+                    .any(|ancestor| popups.contains(ancestor))
+        });
     let bounds = current.and_then(|target| {
         parents.iter_ancestors(target).find_map(|ancestor| {
             panes

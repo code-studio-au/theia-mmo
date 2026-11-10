@@ -277,7 +277,11 @@ fn simple_buttons(
 fn text_states(
     buttons: Query<
         (&BackgroundColor, Has<bevy::ui::InteractionDisabled>),
-        Or<(With<Button>, With<bevy::ui_widgets::Checkbox>)>,
+        Or<(
+            With<Button>,
+            With<bevy::ui_widgets::Checkbox>,
+            With<bevy::ui_widgets::MenuItem>,
+        )>,
     >,
     parents: Query<&ChildOf>,
     mut texts: Query<(Entity, &mut TextColor), (With<Text>, Without<sections::Title>)>,

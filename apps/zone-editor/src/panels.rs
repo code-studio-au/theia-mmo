@@ -76,9 +76,13 @@ pub(super) fn resize(
     keys: Res<ButtonInput<KeyCode>>,
     mut session: ResMut<Session>,
     scrollbars: Query<&Hovered, With<bevy::ui_widgets::Scrollbar>>,
+    menus: Query<&bevy::ui_widgets::MenuFocusState, With<bevy::ui_widgets::MenuPopup>>,
 ) {
     let Ok(window) = windows.single() else { return };
     let allowed = window.focused
+        && menus
+            .iter()
+            .all(|state| matches!(state, bevy::ui_widgets::MenuFocusState::Closed))
         && !session.has_modal()
         && session.play.is_none()
         && session.drag.is_none()

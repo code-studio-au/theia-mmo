@@ -110,3 +110,12 @@ Playtest action instead of importing particle timeline/playback semantics. Its
 camera/grid/snapping/handles/gizmo controls use the shared panel-section styling
 in a named Viewport section. All picking/render-image conversions retain the
 central shared header boundary rather than duplicating screen-space offsets.
+
+`menus_context.rs` adapts the interaction structure of pinned
+`ui/components/data_panel.rs`: a small per-item ellipsis action menu, opened
+by its trigger or secondary click, with Duplicate/Rename/Delete plus Theia's
+retained attributes/Ground/Frame actions. Shared native MenuItem presentation
+comes from `menus.rs`; native Bevy 0.20 Popover and OverrideClip handle placement
+and scrolling-panel clipping. Theia keeps a bounded row pool and validated
+selection/command/history APIs, with target/revision/row snapshots to refuse
+stale contexts. This does not import Sprinkles' particle respawn/state controller.

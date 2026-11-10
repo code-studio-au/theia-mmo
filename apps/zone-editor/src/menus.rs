@@ -1,5 +1,7 @@
 //! Native Bevy application menus using the Sprinkles visual vocabulary.
 use super::*;
+#[path = "menus_context.rs"]
+mod context;
 use bevy::input_focus::{
     FocusCause, InputFocus,
     tab_navigation::{NavAction, TabIndex},
@@ -12,7 +14,11 @@ pub(super) struct Trigger(pub &'static str);
 pub(super) struct Popup(pub &'static str);
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_observer(activate);
+    app.add_observer(activate).add_plugins(context::plugin);
+}
+
+pub(super) fn spawn_content(parent: &mut ChildSpawnerCommands, row: usize) {
+    context::spawn(parent, row);
 }
 
 pub(super) fn spawn(
@@ -64,33 +70,7 @@ pub(super) fn spawn(
                 BackgroundColor(theme::PANEL),
             ))
             .with_children(|menu| {
-                for &(control, label, shortcut) in items {
-                    menu.spawn((
-                        control,
-                        MenuItem,
-                        Hovered::default(),
-                        TabIndex(0),
-                        Node {
-                            width: percent(100),
-                            min_height: px(28),
-                            padding: UiRect::axes(px(8), px(5)),
-                            align_items: AlignItems::Center,
-                            justify_content: JustifyContent::SpaceBetween,
-                            border_radius: BorderRadius::all(px(2)),
-                            ..default()
-                        },
-                        BackgroundColor(theme::Variant::Ghost.background(false)),
-                        children![
-                            text(label, 14.),
-                            (
-                                Text::new(shortcut),
-                                theme::font(11.),
-                                TextColor(theme::MUTED),
-                                bevy::picking::Pickable::IGNORE
-                            )
-                        ],
-                    ));
-                }
+                spawn_items(menu, items);
             })
             .id();
     });
@@ -130,6 +110,39 @@ pub(super) fn spawn(
     );
 }
 
+pub(super) fn spawn_items(
+    menu: &mut ChildSpawnerCommands,
+    items: &[(workspace::Control, &'static str, &'static str)],
+) {
+    for &(control, label, shortcut) in items {
+        menu.spawn((
+            control,
+            MenuItem,
+            Hovered::default(),
+            TabIndex(0),
+            Node {
+                width: percent(100),
+                min_height: px(28),
+                padding: UiRect::axes(px(8), px(5)),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::SpaceBetween,
+                border_radius: BorderRadius::all(px(2)),
+                ..default()
+            },
+            BackgroundColor(theme::Variant::Ghost.background(false)),
+            children![
+                text(label, 14.),
+                (
+                    Text::new(shortcut),
+                    theme::font(11.),
+                    TextColor(theme::MUTED),
+                    bevy::picking::Pickable::IGNORE
+                )
+            ],
+        ));
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 fn activate(
     event: On<Activate>,
@@ -140,6 +153,8 @@ fn activate(
     mut requests: ResMut<workspace::Requests>,
     mut content: ResMut<outliner::Content>,
     mut commands: Commands,
+    parents: Query<&ChildOf>,
+    contexts: Query<&context::State>,
 ) {
     if !windows.single().is_ok_and(|w| w.focused) {
         return;
@@ -147,6 +162,18 @@ fn activate(
     let Ok(control) = items.get(event.entity) else {
         return;
     };
+    if parents
+        .iter_ancestors(event.entity)
+        .find_map(|entity| contexts.get(entity).ok())
+        .is_some_and(|context| !context.valid(&session, &content))
+    {
+        session.status = "Content changed; reopen its actions menu".into();
+        commands.trigger(MenuEvent {
+            source: event.entity,
+            action: MenuAction::CloseAll,
+        });
+        return;
+    }
     workspace::execute(
         *control,
         &mut session,

@@ -1,3 +1,10 @@
+P5-17, 10 November 2026: content rows gain Sprinkles ellipsis/secondary-
+click menus over native Bevy menus, popup placement and clipping. Shared command
+routing binds actions to the target/revision/row snapshot and rejects stale views.
+All 143 focused tests, formatting, denied-warning Clippy and editor build pass.
+Native acceptance
+remains pending while desktop use is stopped. See STATUS and ZONE_EDITOR.
+
 P5-17, 10 November 2026: the shell adopts Sprinkles' single 52 px top bar.
 Menus/Playtest/primary Save remain at top; camera/grid/snap/handles/gizmo controls
 have a named collapsible Viewport inspector section. Shared viewport/panel/input

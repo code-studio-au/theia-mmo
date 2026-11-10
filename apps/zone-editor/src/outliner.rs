@@ -135,7 +135,7 @@ fn entries(zone: &Zone) -> Vec<Entry> {
     }));
     rows
 }
-fn selection(session: &Session) -> Option<Target> {
+pub(super) fn selection(session: &Session) -> Option<Target> {
     if session.play.is_some() {
         None
     } else if session.terrain_mode {
@@ -292,7 +292,11 @@ pub(super) fn setup(mut commands: Commands) {
                                 Node {
                                     height: px(24),
                                     min_height: px(24),
-                                    padding: UiRect::horizontal(px(4)),
+                                    padding: UiRect {
+                                        left: px(4),
+                                        right: px(28),
+                                        ..default()
+                                    },
                                     overflow: Overflow::clip_x(),
                                     display: Display::None,
                                     ..default()
@@ -302,9 +306,10 @@ pub(super) fn setup(mut commands: Commands) {
                             .with_children(|button| {
                                 button.spawn((
                                     Label::Row(index),
-                                    text("", 13.),
+                                    theme::label("", 12., theme::BODY),
                                     TextLayout::no_wrap(),
                                 ));
+                                menus::spawn_content(button, index);
                             });
                         }
                     });
@@ -353,68 +358,79 @@ pub(super) fn activate(
         Control::Previous => content.page = content.page.saturating_sub(1),
         Control::Next => content.page = (content.page + 1).min(content.pages() - 1),
         Control::Row(index) => {
-            let Some(entry) = content.row(index) else {
-                return;
-            };
-            let target = entry.target;
-            let label = entry.label.clone();
-            let zone = session.editor.zone();
-            let present = match target {
-                Target::Terrain => zone.terrain.is_some(),
-                Target::Spawn => true,
-                Target::Object(id) => zone.objects.iter().any(|v| v.id == id),
-                Target::Guide(id) => zone.paths.iter().any(|v| v.id == id),
-                Target::Marker(id) => zone.markers.iter().any(|v| v.id == id),
-                Target::Plant(id) => zone.plants.iter().any(|v| v.id == id),
-            };
-            if !present {
-                session.status = "Content changed; select an updated row".into();
-                return;
-            }
-            match target {
-                Target::Terrain => {
-                    if !session.terrain_mode {
-                        session.set_mode(EditorMode::Sculpt);
-                    }
-                }
-                Target::Spawn => {
-                    view.target =
-                        Vec3::from_array(zone.local(zone.spawn).expect("Validated spawn"))
-                            + Vec3::Y;
-                    view.distance = 12.;
-                }
-                Target::Object(id) => {
-                    session.set_mode(EditorMode::Objects);
-                    session.selected = Some(id);
-                }
-                Target::Guide(id) => {
-                    session.set_mode(EditorMode::Guides);
-                    session.path_selected = Some(id);
-                }
-                Target::Marker(id) => {
-                    session.set_mode(EditorMode::Markers);
-                    session.marker_selected = Some(id);
-                }
-                Target::Plant(id) => {
-                    session.set_mode(EditorMode::Plants);
-                    session.plant_selected = Some(id);
-                }
-            }
-            session.status = if target == Target::Spawn {
-                "Focused playtest spawn".into()
-            } else {
-                format!("Selected {label}")
-            };
-            if event.count >= 2 && target != Target::Spawn {
-                if session.path_mode {
-                    paths::focus(&session, &mut view);
-                    session.status = format!("Focused {label}");
-                } else {
-                    selection::frame(&mut session, &mut view);
-                }
-            }
+            select_row(index, event.count, &content, &mut session, &mut view);
         }
     }
+}
+
+pub(super) fn select_row(
+    index: usize,
+    click_count: u8,
+    content: &Content,
+    session: &mut Session,
+    view: &mut View,
+) -> Option<Target> {
+    if workspace::busy(session) {
+        return None;
+    }
+    let entry = content.row(index)?;
+    let target = entry.target;
+    let label = entry.label.clone();
+    let zone = session.editor.zone();
+    let present = match target {
+        Target::Terrain => zone.terrain.is_some(),
+        Target::Spawn => true,
+        Target::Object(id) => zone.objects.iter().any(|v| v.id == id),
+        Target::Guide(id) => zone.paths.iter().any(|v| v.id == id),
+        Target::Marker(id) => zone.markers.iter().any(|v| v.id == id),
+        Target::Plant(id) => zone.plants.iter().any(|v| v.id == id),
+    };
+    if !present {
+        session.status = "Content changed; select an updated row".into();
+        return None;
+    }
+    match target {
+        Target::Terrain => {
+            if !session.terrain_mode {
+                session.set_mode(EditorMode::Sculpt);
+            }
+        }
+        Target::Spawn => {
+            view.target =
+                Vec3::from_array(zone.local(zone.spawn).expect("Validated spawn")) + Vec3::Y;
+            view.distance = 12.;
+        }
+        Target::Object(id) => {
+            session.set_mode(EditorMode::Objects);
+            session.selected = Some(id);
+        }
+        Target::Guide(id) => {
+            session.set_mode(EditorMode::Guides);
+            session.path_selected = Some(id);
+        }
+        Target::Marker(id) => {
+            session.set_mode(EditorMode::Markers);
+            session.marker_selected = Some(id);
+        }
+        Target::Plant(id) => {
+            session.set_mode(EditorMode::Plants);
+            session.plant_selected = Some(id);
+        }
+    }
+    session.status = if target == Target::Spawn {
+        "Focused playtest spawn".into()
+    } else {
+        format!("Selected {label}")
+    };
+    if click_count >= 2 && target != Target::Spawn {
+        if session.path_mode {
+            paths::focus(session, view);
+            session.status = format!("Focused {label}");
+        } else {
+            selection::frame(session, view);
+        }
+    }
+    Some(target)
 }
 
 fn busy(session: &Session) -> bool {
@@ -625,13 +641,13 @@ pub(super) fn sync(
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use bevy::input_focus::InputFocus;
 
     // This app runs the actual UI setup/sync/input systems, with a data-only
     // Window. It has no Winit, renderer, display connection or OS input driver.
-    pub(super) fn app(origin: [f64; 3]) -> (App, Entity) {
+    pub(crate) fn app(origin: [f64; 3]) -> (App, Entity) {
         let mut zone = Zone {
             origin,
             spawn: [origin[0], origin[1] + 0.0625, origin[2] + 6.],
