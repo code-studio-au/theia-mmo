@@ -1,3 +1,13 @@
+P5-17 upstream Sprinkles audit, 10 November 2026: reviewed all 28 issues
+against the imported source. Fix obsolete curve/gradient/mesh cache retention,
+apply authored bounds to every emitter and move the preview culling toggle onto
+meshes. Guard unsupported custom-shader project loads/menu choices to prevent
+shared-host panics. Regressions cover reclamation, sharing, bounds, rejected-load
+preservation and 0.2 save/reload stamping. Validation and remaining priorities (draft recovery,
+long idle memory investigation, per-instance
+controls and gameplay integration) are recorded in the
+[issue review](SPRINKLES_UPSTREAM_REVIEW.md). No full idle-leak/Windows/MMO qualification claim.
+
 P5-17 same-window Sprinkles authoring accepted on Linux, 10 November 2026:
 File → Particles workspace opens the actual upstream UI inside Theia; Zone in
 its top bar returns. Original editing/playback/save, project/pause retention and

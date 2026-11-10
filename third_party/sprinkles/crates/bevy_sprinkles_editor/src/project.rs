@@ -56,6 +56,7 @@ pub enum SaveResultStatus {
 #[derive(Resource, Clone)]
 pub struct SaveResult(pub Arc<Mutex<Option<SaveResultStatus>>>);
 
+#[derive(Debug)]
 pub(crate) enum LoadProjectError {
     /// The file could not be read from disk.
     Read(std::io::Error),
@@ -63,6 +64,8 @@ pub(crate) enum LoadProjectError {
     Parse,
     /// The file has an unrecognized format version.
     UnknownVersion,
+    /// This project requires a material the runtime cannot render.
+    UnsupportedMaterial,
 }
 
 pub(crate) fn load_project_from_path(
@@ -74,7 +77,7 @@ pub(crate) fn load_project_from_path(
         LoadProjectError::Read(err)
     })?;
 
-    bevy_sprinkles::asset::versions::migrate_str(&contents).map_err(|err| {
+    let result = bevy_sprinkles::asset::versions::migrate_str(&contents).map_err(|err| {
         error!("Failed to parse project file: {path:?}");
         error!("{err}");
         match err {
@@ -83,7 +86,16 @@ pub(crate) fn load_project_from_path(
             }
             _ => LoadProjectError::Parse,
         }
-    })
+    })?;
+    if result.asset.emitters.iter().any(|emitter| {
+        matches!(
+            emitter.draw_pass.material,
+            DrawPassMaterial::CustomShader { .. }
+        )
+    }) {
+        return Err(LoadProjectError::UnsupportedMaterial);
+    }
+    Ok(result)
 }
 
 fn on_open_project_event(
@@ -114,6 +126,11 @@ fn on_open_project_event(
                 },
                 LoadProjectError::Parse => {
                     format!("Project \"{display}\" is corrupted or invalid")
+                }
+                LoadProjectError::UnsupportedMaterial => {
+                    format!(
+                        "Project \"{display}\" uses custom shader materials, which are not supported yet"
+                    )
                 }
                 LoadProjectError::UnknownVersion => {
                     format!(
@@ -405,5 +422,132 @@ mod hosting_tests {
             app.update();
             assert_eq!(app.world().resource::<Saves>().0, expected);
         }
+    }
+}
+
+#[cfg(test)]
+mod material_load_tests {
+    use super::*;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[derive(Resource, Default)]
+    struct Errors(Vec<String>);
+
+    #[test]
+    fn unsupported_material_load_preserves_current_project_dirty_state_and_files() {
+        let folder = std::env::temp_dir().join(format!(
+            "theia-sprinkles-load-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir(&folder).unwrap();
+        let path = folder.join("unsupported.ron");
+        let mut asset = ParticlesAsset::new(
+            "Unsupported".into(),
+            ParticlesDimension::D3,
+            default(),
+            vec![EmitterData::default()],
+            vec![],
+            false,
+            default(),
+        );
+        // Verify the regular startup/cache loader still accepts supported effects.
+        std::fs::write(&path, ron::to_string(&asset).unwrap()).unwrap();
+        assert!(load_project_from_path(&path).is_ok());
+        asset.emitters[0].draw_pass.material = DrawPassMaterial::CustomShader {
+            vertex_shader: None,
+            fragment_shader: None,
+        };
+        let bytes = ron::to_string(&asset).unwrap();
+        std::fs::write(&path, &bytes).unwrap();
+        assert!(matches!(
+            load_project_from_path(&path),
+            Err(LoadProjectError::UnsupportedMaterial)
+        ));
+
+        let mut app = App::new();
+        app.init_resource::<EditorState>()
+            .init_resource::<EditorData>()
+            .init_resource::<DirtyState>()
+            .init_resource::<Assets<ParticlesAsset>>()
+            .init_resource::<Errors>()
+            .add_observer(on_open_project_event)
+            .add_observer(|event: On<ToastEvent>, mut errors: ResMut<Errors>| {
+                errors.0.push(event.content.clone())
+            });
+        let handle = app
+            .world_mut()
+            .resource_mut::<Assets<ParticlesAsset>>()
+            .add(ParticlesAsset::new(
+                "Unsaved work".into(),
+                ParticlesDimension::D3,
+                default(),
+                vec![EmitterData::default()],
+                vec![],
+                false,
+                default(),
+            ));
+        let original = ron::to_string(
+            app.world()
+                .resource::<Assets<ParticlesAsset>>()
+                .get(&handle)
+                .unwrap(),
+        )
+        .unwrap();
+        {
+            let mut state = app.world_mut().resource_mut::<EditorState>();
+            state.current_project = Some(handle.clone());
+            state.current_project_path = Some(folder.join("existing.ron"));
+            state.inspecting = Some(Inspecting {
+                kind: Inspectable::Emitter,
+                index: 0,
+            });
+        }
+        for dirty in [false, true] {
+            app.world_mut()
+                .resource_mut::<DirtyState>()
+                .has_unsaved_changes = dirty;
+            app.world_mut()
+                .trigger(OpenProjectEvent(path.to_string_lossy().into_owned()));
+            app.update();
+            let state = app.world().resource::<EditorState>();
+            assert_eq!(state.current_project.as_ref().unwrap().id(), handle.id());
+            assert_eq!(
+                state.current_project_path.as_ref().unwrap(),
+                &folder.join("existing.ron")
+            );
+            assert_eq!(state.inspecting.as_ref().unwrap().index, 0);
+            assert_eq!(
+                app.world().resource::<DirtyState>().has_unsaved_changes,
+                dirty
+            );
+            let assets = app.world().resource::<Assets<ParticlesAsset>>();
+            assert_eq!(assets.len(), 1);
+            assert_eq!(
+                ron::to_string(assets.get(&handle).unwrap()).unwrap(),
+                original
+            );
+            assert_eq!(std::fs::read_to_string(&path).unwrap(), bytes);
+            assert!(!folder.join("existing.ron").exists());
+            assert!(
+                app.world()
+                    .resource::<Errors>()
+                    .0
+                    .last()
+                    .unwrap()
+                    .contains("not supported")
+            );
+            assert!(
+                app.world()
+                    .resource::<EditorData>()
+                    .cache
+                    .recent_projects
+                    .is_empty()
+            );
+        }
+        std::fs::remove_dir_all(folder).unwrap();
     }
 }

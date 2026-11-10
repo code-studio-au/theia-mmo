@@ -290,3 +290,17 @@ fn test_unknown_version_fails_to_load() {
 fn test_current_format_version() {
     assert_eq!(versions::current_format_version(), "0.3");
 }
+
+#[test]
+fn migrated_v02_save_reload_has_current_stamp_and_needs_no_second_migration() {
+    let source = fixture("valid_particle_system.ron").replace("\"0.3\"", "\"0.2\"");
+    let first = versions::migrate_str(&source).unwrap();
+    assert!(first.was_migrated);
+    let saved = ron::to_string(&first.asset).unwrap();
+    let second = versions::migrate_str(&saved).unwrap();
+    assert!(!second.was_migrated);
+    assert!(saved.contains(&format!(
+        "sprinkles_version:\"{}\"",
+        versions::current_format_version()
+    )));
+}

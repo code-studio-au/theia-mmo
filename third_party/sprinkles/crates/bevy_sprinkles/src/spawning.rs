@@ -468,6 +468,42 @@ pub fn cleanup_particle_entities(
     }
 }
 
+// Apply authored visibility bounds to every emitter, independently of editor
+// selection. Mesh bounds describe the unexpanded base mesh, not GPU particles.
+pub(crate) fn sync_particle_visibility_bounds(
+    mut commands: Commands,
+    particle_systems: Query<&Particles3d>,
+    assets: Res<Assets<ParticlesAsset>>,
+    emitters: Query<(
+        Entity,
+        &EmitterEntity,
+        &EmitterRuntime,
+        Option<&bevy::camera::primitives::Aabb>,
+    )>,
+) {
+    for (entity, emitter, runtime, current) in &emitters {
+        let Some(data) = get_emitter_data(
+            emitter.parent_system,
+            runtime.emitter_index,
+            &particle_systems,
+            &assets,
+        ) else {
+            continue;
+        };
+        let bounds = data.draw_pass.visibility_aabb;
+        if current.is_none_or(|aabb| {
+            aabb.center != bounds.center || aabb.half_extents != bounds.half_extents
+        }) {
+            commands
+                .entity(entity)
+                .insert(bevy::camera::primitives::Aabb {
+                    center: bounds.center,
+                    half_extents: bounds.half_extents,
+                });
+        }
+    }
+}
+
 pub fn sync_collider_data(
     particle_systems: Query<&Particles3d>,
     assets: Res<Assets<ParticlesAsset>>,
@@ -798,6 +834,65 @@ mod theia_port_tests {
         assert!(actual.contains(&(isolated_owner, vec![7])));
         app.update();
         assert_eq!(emitters.iter(app.world()).count(), 2);
+    }
+
+    #[test]
+    fn all_emitters_receive_authored_bounds_and_live_updates_without_an_inspector() {
+        use bevy::{camera::primitives::Aabb, math::Vec3A};
+        let mut app = App::new();
+        app.init_resource::<Assets<ParticlesAsset>>()
+            .add_systems(Update, sync_particle_visibility_bounds);
+        let mut emitters = vec![EmitterData::default(), EmitterData::default()];
+        for (index, emitter) in emitters.iter_mut().enumerate() {
+            emitter.draw_pass.visibility_aabb.center = Vec3A::splat(index as f32 + 2.);
+            emitter.draw_pass.visibility_aabb.half_extents = Vec3A::splat(index as f32 + 20.);
+        }
+        let handle = app
+            .world_mut()
+            .resource_mut::<Assets<ParticlesAsset>>()
+            .add(ParticlesAsset::new(
+                "Bounds test".into(),
+                crate::asset::ParticlesDimension::D3,
+                default(),
+                emitters,
+                vec![],
+                false,
+                default(),
+            ));
+        let parent = app.world_mut().spawn(Particles3d(handle.clone())).id();
+        let children: Vec<_> = (0..2)
+            .map(|index| {
+                app.world_mut()
+                    .spawn((
+                        EmitterEntity {
+                            parent_system: parent,
+                        },
+                        EmitterRuntime::new(index, None),
+                        Aabb::default(),
+                    ))
+                    .id()
+            })
+            .collect();
+        for change in 0..3 {
+            app.world_mut()
+                .resource_mut::<Assets<ParticlesAsset>>()
+                .get_mut(&handle)
+                .unwrap()
+                .emitters[1]
+                .draw_pass
+                .visibility_aabb
+                .half_extents = Vec3A::splat(30. + change as f32);
+            app.update();
+            let assets = app.world().resource::<Assets<ParticlesAsset>>();
+            for (index, entity) in children.iter().enumerate() {
+                let actual = app.world().get::<Aabb>(*entity).unwrap();
+                let expected = assets.get(&handle).unwrap().emitters[index]
+                    .draw_pass
+                    .visibility_aabb;
+                assert_eq!(actual.center, expected.center);
+                assert_eq!(actual.half_extents, expected.half_extents);
+            }
+        }
     }
 
     #[test]

@@ -221,7 +221,8 @@ impl Plugin for SprinklesPlugin {
             .add_systems(Startup, create_fallback_curve_texture)
             .add_systems(PostUpdate, prepare_curve_textures);
 
-        app.init_resource::<ParticleMeshCache>();
+        app.init_resource::<ParticleMeshCache>()
+            .add_systems(PostUpdate, mesh::prune_particle_mesh_cache);
 
         app.add_plugins(MaterialPlugin::<runtime::ParticleMaterial>::default());
 
@@ -240,6 +241,12 @@ impl Plugin for SprinklesPlugin {
         );
 
         app.add_systems(PostUpdate, write_emitter_uniforms);
+        app.add_systems(
+            PostUpdate,
+            spawning::sync_particle_visibility_bounds
+                .after(bevy::camera::visibility::VisibilitySystems::CalculateBounds)
+                .before(bevy::camera::visibility::VisibilitySystems::CheckVisibility),
+        );
 
         app.add_plugins((
             ParticleComputePlugin,

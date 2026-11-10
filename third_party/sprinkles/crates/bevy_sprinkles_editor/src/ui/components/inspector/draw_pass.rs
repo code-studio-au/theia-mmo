@@ -159,65 +159,61 @@ fn mesh_variants() -> Vec<VariantDefinition> {
 }
 
 fn material_variants() -> Vec<VariantDefinition> {
-    variants_from_reflect::<DrawPassMaterial>(&[
-        (
-            "Standard",
-            VariantConfig::default()
-                .fields_from::<StandardParticleMaterial>()
-                .override_combobox::<SerializableAlphaMode>("alpha_mode")
-                .override_optional_combobox::<SerializableFace>("cull_mode")
-                .override_field(
-                    "perceptual_roughness",
-                    VariantField::f32("perceptual_roughness")
-                        .with_min(0.089)
-                        .with_max(1.0),
-                )
-                .override_field("metallic", VariantField::percent("metallic"))
-                .override_field("reflectance", VariantField::percent("reflectance"))
-                .override_field(
-                    "attenuation_distance",
-                    VariantField::new("attenuation_distance").with_kind(FieldKind::F32OrInfinity),
-                )
-                .override_rows(vec![
-                    vec!["base_color", "base_color_texture"],
-                    vec!["emissive", "emissive_texture"],
-                    vec!["emissive_exposure_weight"],
-                    vec!["alpha_mode"],
-                    vec!["perceptual_roughness"],
-                    vec!["metallic"],
-                    vec!["reflectance"],
-                    vec!["metallic_roughness_texture"],
-                    vec!["normal_map_texture"],
-                    vec!["flip_normal_map_y"],
-                    vec!["occlusion_texture"],
-                    vec!["specular_tint"],
-                    vec!["diffuse_transmission"],
-                    vec!["specular_transmission"],
-                    vec!["thickness"],
-                    vec!["ior"],
-                    vec!["attenuation_distance"],
-                    vec!["attenuation_color"],
-                    vec!["clearcoat"],
-                    vec!["clearcoat_perceptual_roughness"],
-                    vec!["anisotropy_strength", "anisotropy_rotation"],
-                    vec!["double_sided"],
-                    vec!["cull_mode"],
-                    vec!["unlit"],
-                    vec!["fog_enabled"],
-                    vec!["depth_bias"],
-                ])
-                .default_value(DrawPassMaterial::Standard(
-                    StandardParticleMaterial::default(),
-                )),
-        ),
-        (
-            "CustomShader",
-            VariantConfig::default().default_value(DrawPassMaterial::CustomShader {
-                vertex_shader: None,
-                fragment_shader: None,
-            }),
-        ),
-    ])
+    variants_from_reflect::<DrawPassMaterial>(&[(
+        "Standard",
+        VariantConfig::default()
+            .fields_from::<StandardParticleMaterial>()
+            .override_combobox::<SerializableAlphaMode>("alpha_mode")
+            .override_optional_combobox::<SerializableFace>("cull_mode")
+            .override_field(
+                "perceptual_roughness",
+                VariantField::f32("perceptual_roughness")
+                    .with_min(0.089)
+                    .with_max(1.0),
+            )
+            .override_field("metallic", VariantField::percent("metallic"))
+            .override_field("reflectance", VariantField::percent("reflectance"))
+            .override_field(
+                "attenuation_distance",
+                VariantField::new("attenuation_distance").with_kind(FieldKind::F32OrInfinity),
+            )
+            .override_rows(vec![
+                vec!["base_color", "base_color_texture"],
+                vec!["emissive", "emissive_texture"],
+                vec!["emissive_exposure_weight"],
+                vec!["alpha_mode"],
+                vec!["perceptual_roughness"],
+                vec!["metallic"],
+                vec!["reflectance"],
+                vec!["metallic_roughness_texture"],
+                vec!["normal_map_texture"],
+                vec!["flip_normal_map_y"],
+                vec!["occlusion_texture"],
+                vec!["specular_tint"],
+                vec!["diffuse_transmission"],
+                vec!["specular_transmission"],
+                vec!["thickness"],
+                vec!["ior"],
+                vec!["attenuation_distance"],
+                vec!["attenuation_color"],
+                vec!["clearcoat"],
+                vec!["clearcoat_perceptual_roughness"],
+                vec!["anisotropy_strength", "anisotropy_rotation"],
+                vec!["double_sided"],
+                vec!["cull_mode"],
+                vec!["unlit"],
+                vec!["fog_enabled"],
+                vec!["depth_bias"],
+            ])
+            .default_value(DrawPassMaterial::Standard(
+                StandardParticleMaterial::default(),
+            )),
+    )])
+    // The serialized enum retains compatibility, but the runtime has no custom
+    // shader implementation. Never offer a choice that would panic the host.
+    .into_iter()
+    .filter(|variant| variant.name != "CustomShader")
+    .collect()
 }
 
 fn find_ancestor_child_of(
@@ -400,5 +396,17 @@ fn sync_trail_mesh_alert(
 
     for mut node in &mut alert_nodes {
         super::set_display_visible(&mut node, should_show);
+    }
+}
+
+#[cfg(test)]
+mod material_choice_tests {
+    use super::*;
+
+    #[test]
+    fn material_menu_only_offers_supported_rendering() {
+        let variants = material_variants();
+        assert_eq!(variants.len(), 1);
+        assert_eq!(variants[0].name, "Standard");
     }
 }

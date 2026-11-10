@@ -5,7 +5,7 @@ use bevy::{
         render_resource::{Extent3d, TextureDimension, TextureFormat, TextureUsages},
     },
 };
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::asset::{
     CurveTexture, Gradient, GradientInterpolation, ParticlesAsset, SolidOrGradientColor,
@@ -140,17 +140,22 @@ pub fn prepare_gradient_textures(
     particle_systems: Query<&Particles3d>,
     assets: Res<Assets<ParticlesAsset>>,
 ) {
+    let mut used = HashSet::new();
     for system in &particle_systems {
         let Some(asset) = assets.get(system) else {
             continue;
         };
         for emitter in &asset.emitters {
             if let SolidOrGradientColor::Gradient { gradient } = &emitter.colors.initial_color {
+                used.insert(gradient.cache_key());
                 cache.get_or_create(gradient, &mut images);
             }
+            used.insert(emitter.colors.color_over_lifetime.cache_key());
             cache.get_or_create(&emitter.colors.color_over_lifetime, &mut images);
         }
     }
+    // Drop obsolete strong handles after edits/project changes; Bevy releases the assets.
+    cache.cache.retain(|key, _| used.contains(key));
 }
 
 /// Cache for baked curve textures, avoiding redundant texture creation.
@@ -216,8 +221,14 @@ pub struct FallbackCurveTexture {
 }
 
 impl CurveTextureCache {
-    fn prepare_optional(&mut self, curve: &Option<CurveTexture>, images: &mut Assets<Image>) {
+    fn prepare_optional(
+        &mut self,
+        curve: &Option<CurveTexture>,
+        images: &mut Assets<Image>,
+        used: &mut HashSet<u64>,
+    ) {
         if let Some(c) = curve.as_ref().filter(|c| !c.is_constant()) {
+            used.insert(c.cache_key());
             self.get_or_create(c, images);
         }
     }
@@ -230,27 +241,39 @@ pub fn prepare_curve_textures(
     particle_systems: Query<&Particles3d>,
     assets: Res<Assets<ParticlesAsset>>,
 ) {
+    let mut used = HashSet::new();
     for system in &particle_systems {
         let Some(asset) = assets.get(system) else {
             continue;
         };
         for emitter in &asset.emitters {
-            cache.prepare_optional(&emitter.scale.scale_over_lifetime, &mut images);
-            cache.prepare_optional(&emitter.colors.alpha_over_lifetime, &mut images);
-            cache.prepare_optional(&emitter.colors.emission_over_lifetime, &mut images);
-            cache.prepare_optional(&emitter.turbulence.influence_over_lifetime, &mut images);
-            cache.prepare_optional(&emitter.angle.angle_over_lifetime, &mut images);
+            cache.prepare_optional(&emitter.scale.scale_over_lifetime, &mut images, &mut used);
+            cache.prepare_optional(&emitter.colors.alpha_over_lifetime, &mut images, &mut used);
+            cache.prepare_optional(
+                &emitter.colors.emission_over_lifetime,
+                &mut images,
+                &mut used,
+            );
+            cache.prepare_optional(
+                &emitter.turbulence.influence_over_lifetime,
+                &mut images,
+                &mut used,
+            );
+            cache.prepare_optional(&emitter.angle.angle_over_lifetime, &mut images, &mut used);
             cache.prepare_optional(
                 &emitter.velocities.radial_velocity.velocity_over_lifetime,
                 &mut images,
+                &mut used,
             );
             cache.prepare_optional(
                 &emitter.velocities.angular_velocity.velocity_over_lifetime,
                 &mut images,
+                &mut used,
             );
             cache.prepare_optional(
                 &emitter.velocities.orbit_velocity.velocity_over_lifetime,
                 &mut images,
+                &mut used,
             );
             cache.prepare_optional(
                 &emitter
@@ -258,9 +281,11 @@ pub fn prepare_curve_textures(
                     .directional_velocity
                     .velocity_over_lifetime,
                 &mut images,
+                &mut used,
             );
         }
     }
+    cache.cache.retain(|key, _| used.contains(key));
 }
 
 fn create_1d_texture(data: Vec<u8>, format: TextureFormat) -> Image {
@@ -307,4 +332,90 @@ pub fn create_fallback_gradient_texture(mut commands: Commands, mut images: ResM
 pub fn create_fallback_curve_texture(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
     let handle = images.add(create_fallback_texture(TextureFormat::Rgba8Unorm));
     commands.insert_resource(FallbackCurveTexture { handle });
+}
+
+#[cfg(test)]
+mod theia_cache_tests {
+    use super::*;
+    use crate::asset::{EmitterData, ParticlesDimension};
+
+    #[test]
+    fn editing_and_closing_projects_releases_obsolete_baked_textures() {
+        let mut app = App::new();
+        app.add_plugins((MinimalPlugins, AssetPlugin::default()))
+            .init_asset::<Image>()
+            .init_asset::<ParticlesAsset>()
+            .init_resource::<GradientTextureCache>()
+            .init_resource::<CurveTextureCache>()
+            .add_systems(
+                PostUpdate,
+                (prepare_gradient_textures, prepare_curve_textures),
+            );
+        let handle = app
+            .world_mut()
+            .resource_mut::<Assets<ParticlesAsset>>()
+            .add(ParticlesAsset::new(
+                "Cache test".into(),
+                ParticlesDimension::D3,
+                default(),
+                vec![EmitterData::default()],
+                vec![],
+                false,
+                default(),
+            ));
+        let first = app.world_mut().spawn(Particles3d(handle.clone())).id();
+        let second = app.world_mut().spawn(Particles3d(handle.clone())).id();
+        let mut previous = None;
+        for edit in 0..128 {
+            {
+                let mut assets = app.world_mut().resource_mut::<Assets<ParticlesAsset>>();
+                let emitter = &mut assets.get_mut(&handle).unwrap().emitters[0];
+                emitter.colors.color_over_lifetime.stops[0].color[0] = edit as f32 / 128.;
+                let mut curve = CurveTexture::default();
+                curve.x.points[0].value = edit as f64 / 128.;
+                curve.x.points[1].value = 1.;
+                emitter.scale.scale_over_lifetime = Some(curve);
+            }
+            app.update();
+            assert_eq!(
+                app.world().resource::<GradientTextureCache>().cache.len(),
+                1
+            );
+            assert_eq!(app.world().resource::<CurveTextureCache>().cache.len(), 1);
+            let current = app
+                .world()
+                .resource::<GradientTextureCache>()
+                .cache
+                .values()
+                .next()
+                .unwrap()
+                .id();
+            if let Some(old) = previous {
+                // Give Bevy's normal asset lifecycle time to process dropped handles.
+                app.update();
+                app.update();
+                assert!(!app.world().resource::<Assets<Image>>().contains(old));
+            }
+            previous = Some(current);
+            assert!(app.world().resource::<Assets<Image>>().len() <= 4);
+        }
+        app.world_mut().despawn(first);
+        app.update();
+        assert_eq!(
+            app.world().resource::<GradientTextureCache>().cache.len(),
+            1
+        );
+        app.world_mut().despawn(second);
+        for _ in 0..4 {
+            app.update();
+        }
+        assert!(
+            app.world()
+                .resource::<GradientTextureCache>()
+                .cache
+                .is_empty()
+        );
+        assert!(app.world().resource::<CurveTextureCache>().cache.is_empty());
+        assert!(app.world().resource::<Assets<Image>>().is_empty());
+    }
 }

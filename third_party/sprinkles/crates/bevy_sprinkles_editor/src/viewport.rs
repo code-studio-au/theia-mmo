@@ -4,7 +4,6 @@ use std::ops::Range;
 use bevy::anti_alias::smaa::{Smaa, SmaaPreset};
 use bevy::asset::RenderAssetUsages;
 use bevy::camera::RenderTarget;
-use bevy::camera::primitives::Aabb;
 use bevy::camera::visibility::NoFrustumCulling;
 use bevy::color::palettes::tailwind::ZINC_950;
 use bevy::core_pipeline::tonemapping::Tonemapping;
@@ -501,28 +500,19 @@ pub fn sync_inspected_emitter_aabb(
         .filter(|i| i.kind == Inspectable::Emitter)
         .map(|i| i.index as usize);
 
-    let visibility_aabb = inspected.and_then(|index| {
-        let handle = editor_state.current_project.as_ref()?;
-        let asset = assets.get(handle)?;
-        asset
-            .emitters
-            .get(index)
-            .map(|e| e.draw_pass.visibility_aabb)
-    });
-
     for (entity, emitter, runtime) in &emitters {
-        let is_inspected =
-            inspected == Some(runtime.emitter_index) && preview.get(emitter.parent_system).is_ok();
-        let aabb = is_inspected.then_some(visibility_aabb).flatten();
-
-        if let Some(aabb) = aabb {
-            commands.entity(entity).insert(Aabb {
-                center: aabb.center,
-                half_extents: aabb.half_extents,
-            });
+        if preview.get(emitter.parent_system).is_err() {
+            continue;
+        }
+        let is_inspected = inspected == Some(runtime.emitter_index);
+        // Bevy checks this marker on renderable meshes, not on the camera.
+        if editor_data.settings.frustum_culling {
+            commands.entity(entity).remove::<NoFrustumCulling>();
+        } else {
+            commands.entity(entity).insert(NoFrustumCulling);
         }
 
-        if aabb.is_some() && show_gizmos {
+        if is_inspected && show_gizmos {
             commands
                 .entity(entity)
                 .insert(crate::viewport_bounds::ShowBounds);
@@ -911,10 +901,70 @@ pub fn sync_viewport_settings(
         }
         (None, None) => {}
     }
+}
 
-    if settings.frustum_culling {
-        commands.entity(entity).remove::<NoFrustumCulling>();
-    } else {
-        commands.entity(entity).insert(NoFrustumCulling);
+#[cfg(test)]
+mod theia_visibility_tests {
+    use super::*;
+    use crate::state::Inspecting;
+
+    #[test]
+    fn preview_culling_toggle_applies_to_every_emitter_and_preserves_foreign_scenes() {
+        let mut app = App::new();
+        app.init_resource::<EditorState>()
+            .init_resource::<EditorData>()
+            .init_resource::<Assets<ParticlesAsset>>()
+            .add_systems(Update, sync_inspected_emitter_aabb);
+        let parent = app.world_mut().spawn(EditorParticlePreview).id();
+        let foreign_parent = app.world_mut().spawn_empty().id();
+        let emitters: Vec<_> = (0..2)
+            .map(|index| {
+                app.world_mut()
+                    .spawn((
+                        EmitterEntity {
+                            parent_system: parent,
+                        },
+                        EmitterRuntime::new(index, None),
+                    ))
+                    .id()
+            })
+            .collect();
+        let foreign = app
+            .world_mut()
+            .spawn((
+                EmitterEntity {
+                    parent_system: foreign_parent,
+                },
+                EmitterRuntime::new(0, None),
+                NoFrustumCulling,
+            ))
+            .id();
+        for selected in [Some(0), Some(1), None] {
+            app.world_mut().resource_mut::<EditorState>().inspecting =
+                selected.map(|index| Inspecting {
+                    kind: Inspectable::Emitter,
+                    index,
+                });
+            for culling in [false, true] {
+                app.world_mut()
+                    .resource_mut::<EditorData>()
+                    .settings
+                    .frustum_culling = culling;
+                app.update();
+                for (index, entity) in emitters.iter().enumerate() {
+                    assert_eq!(
+                        app.world().get::<NoFrustumCulling>(*entity).is_some(),
+                        !culling
+                    );
+                    assert_eq!(
+                        app.world()
+                            .get::<crate::viewport_bounds::ShowBounds>(*entity)
+                            .is_some(),
+                        selected == Some(index as u8)
+                    );
+                }
+                assert!(app.world().get::<NoFrustumCulling>(foreign).is_some());
+            }
+        }
     }
 }

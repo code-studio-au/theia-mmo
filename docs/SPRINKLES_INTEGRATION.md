@@ -11,6 +11,10 @@ Bevy 0.20.0 engine. Upstream targets Bevy 0.19.0. Both imported crates use our
 workspace engine; introducing a second Bevy engine or downgrading Theia is not
 part of this slice. Avian remains pinned independently and unchanged.
 
+Upstream issue audit and local cache/culling fixes: see
+[SPRINKLES_UPSTREAM_REVIEW.md](SPRINKLES_UPSTREAM_REVIEW.md), including remaining
+autosave, idle-memory and gameplay integration work.
+
 ## Current use: original UI in Theia's window
 
 Build the zone editor and optional companion:

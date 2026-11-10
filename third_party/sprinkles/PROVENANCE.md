@@ -216,3 +216,26 @@ explicit render layers on creation. Theia's existing theme excludes retained
 source widgets. These are host adapters; the original project/inspector/curve/
 gradient/colour/playback functionality remains directly reused. Native local/far
 shared-window and standalone acceptance is in `docs/SPRINKLES_INTEGRATION.md`.
+
+
+## Upstream issue audit — 10 November 2026
+
+Review all 28 upstream issues against the retained revision. Local corrections
+release obsolete strong curve/gradient/expanded-mesh cache handles while preserving
+live sharing, apply authored AABBs to every emitter after mesh-bound calculation
+and before visibility checking, and put the preview NoFrustumCulling marker on
+emitter meshes instead of its camera. Add actual Bevy asset-lifecycle, multi-emitter
+bounds/selection/culling-toggle and migration-save-reload regressions. These are
+local adaptations; the upstream revision stays unchanged. Source-file hashes are
+refreshed in source-files.json. See docs/SPRINKLES_UPSTREAM_REVIEW.md in Theia for
+issue links, validation evidence and explicit remaining scope. This does not
+claim the original hour-long idle-memory report is fully resolved. The audit
+also guards the imported custom-shader panic path: remove the unimplemented menu
+choice and reject unsupported projects before changing the current document;
+regressions prove clean/dirty project and source preservation. The RON enum and
+runtime format remain compatible; custom shader rendering is not implemented.
+
+Source review during qualification additionally exposed a viewport readiness race.
+Retain the editor camera query until the delayed UI scene container can bind;
+a delayed-container regression covers that path. No source UI look or runtime
+shader algorithm changes are involved.

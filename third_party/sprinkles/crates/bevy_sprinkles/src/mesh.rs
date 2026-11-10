@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use bevy::{
     asset::RenderAssetUsages,
@@ -26,6 +26,16 @@ impl ParticleMeshCache {
             .or_insert_with(|| build_particle_mesh(config, particle_count, meshes))
             .clone()
     }
+}
+
+// Mesh configurations/counts change while authoring. Keep sharing live meshes, but
+// release historical configurations rather than pinning every edit for app lifetime.
+pub(crate) fn prune_particle_mesh_cache(
+    mut cache: ResMut<ParticleMeshCache>,
+    meshes: Query<&Mesh3d>,
+) {
+    let used: HashSet<_> = meshes.iter().map(|mesh| mesh.0.id()).collect();
+    cache.cache.retain(|_, mesh| used.contains(&mesh.id()));
 }
 
 fn create_cylinder_mesh(
@@ -754,4 +764,49 @@ fn extract_float32x3(
         VertexAttributeValues::Float32x3(v) => Some(v.clone()),
         _ => None,
     })
+}
+
+#[cfg(test)]
+mod theia_cache_tests {
+    use super::*;
+
+    #[test]
+    fn mesh_edits_share_live_meshes_and_release_previous_counts() {
+        let mut app = App::new();
+        app.add_plugins((MinimalPlugins, AssetPlugin::default()))
+            .init_asset::<Mesh>()
+            .init_resource::<ParticleMeshCache>()
+            .add_systems(PostUpdate, prune_particle_mesh_cache);
+        let owner = app.world_mut().spawn_empty().id();
+        let peer = app.world_mut().spawn_empty().id();
+        for count in 1..128 {
+            let handle =
+                app.world_mut()
+                    .resource_scope(|world, mut cache: Mut<ParticleMeshCache>| {
+                        let mut meshes = world.resource_mut::<Assets<Mesh>>();
+                        let a = cache.get_or_create(&ParticleMesh::default(), count, &mut meshes);
+                        let b = cache.get_or_create(&ParticleMesh::default(), count, &mut meshes);
+                        assert_eq!(a.id(), b.id());
+                        a
+                    });
+            app.world_mut()
+                .entity_mut(owner)
+                .insert(Mesh3d(handle.clone()));
+            app.world_mut().entity_mut(peer).insert(Mesh3d(handle));
+            for _ in 0..4 {
+                app.update();
+            }
+            assert_eq!(app.world().resource::<ParticleMeshCache>().cache.len(), 1);
+            assert_eq!(app.world().resource::<Assets<Mesh>>().len(), 1);
+        }
+        app.world_mut().despawn(owner);
+        app.update();
+        assert_eq!(app.world().resource::<ParticleMeshCache>().cache.len(), 1);
+        app.world_mut().despawn(peer);
+        for _ in 0..4 {
+            app.update();
+        }
+        assert!(app.world().resource::<ParticleMeshCache>().cache.is_empty());
+        assert!(app.world().resource::<Assets<Mesh>>().is_empty());
+    }
 }
