@@ -213,8 +213,7 @@ def run(output, binary, only_case=None, scroll=False, attributes=False):
                     wait(lambda:state()['transform_edit'] is not None)
                     assert state()['transform_edit']['fields']==exact
                 original_fields = state()['transform_edit']['fields'][:]
-                field = next(c for c in state()['transform_controls'] if c['target'] == 'Field(0)')
-                label = [field['centre'][0] - field['size'][0]/2 - 50, field['centre'][1]]
+                label = next(c['centre'] for c in state()['transform_controls'] if c['target']=='Label(0)')
                 click(label)
                 assert fresh()['transform_edit']['fields'] == original_fields
                 move(label)

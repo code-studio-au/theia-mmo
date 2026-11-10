@@ -1,3 +1,22 @@
+Sprinkles numeric field frames, 10 November 2026 (P5-17): exact attributes
+now use the upstream 28 px transparent frame, 1 px border, 2 px radius, compact
+drag prefixes, suffixes and tabular digits. Object size is grouped as an X/Y/Z
+row with 12 px spacing. Position remains three full-width world-f64 fields so
+large coordinates stay readable; scalar yaw/scale/radius/width retain explicit
+labels/units. Parser/error labels, values, command validation and Apply/Cancel
+remain unchanged. Focus colors belong to the shared frame.
+
+All 137 focused Rust tests and denied-warning workspace/all-target Clippy pass.
+CPU layout checks include grouped size, sufficient full-precision position width,
+short-window focus reveal and all retained exact edit/undo/cancel checks. Native
+qualification now reads real drag-label rectangles rather than hardcoded label
+geometry. Native rendering/input/GPU acceptance remains pending: desktop use is
+stopped and no native window/input/capture inspection was used for this slice.
+Evidence: `build/sprinkles-review/shared-inputs-tests.log`,
+`shared-inputs-clippy-final.log` and `shared-inputs-build.log`. Editor build passes.
+Rename, search and file-path inputs share the same compact transparent input
+frame, Inter/tabular font and source cursor/selection colors.
+
 Headless validation passes: 137 focused Rust tests, formatting,
 denied-warning workspace/all-target Clippy and editor build. Evidence:
 `build/sprinkles-review/attributes-scroll-tests-final-v2.log`,

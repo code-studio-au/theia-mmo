@@ -59,3 +59,14 @@ engine/plugin version change is introduced.
 The shared scrolling presentation is also used for exact attribute drafts.
 `scrolling_focus.rs` adds Theia-specific minimal focus reveal and draft/workspace
 ownership while retaining byte-exact f64 strings and Apply/Cancel transactions.
+
+`properties_fields.rs` adapts `ui/widgets/text_edit.rs` frame/prefix/typography
+and `ui/widgets/vector_edit.rs` equal-width vector layout/12 px gap. Theia uses
+these for exact property fields, retains full-width world-f64 coordinates and
+its validated transaction, and exposes units separately from the editable text.
+Original source formatting/rounding, f32 narrowing and character filters are
+not adopted for Theia's global coordinates.
+
+Shared plain inputs in `theme.rs`, `naming.rs` and `file_picker.rs` also adapt
+the pinned text_edit transparent frame, font and cursor/selection presentation.
+Theia retains its native validated input handlers and field length limits.

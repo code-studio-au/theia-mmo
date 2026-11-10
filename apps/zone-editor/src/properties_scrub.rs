@@ -43,7 +43,7 @@ pub(crate) fn scrub(
         color.0 = if allowed && visible && (hovered.0 || active) {
             theme::PRIMARY
         } else {
-            theme::MUTED
+            theme::BODY.with_alpha(0.5)
         };
         over_handle |= allowed && visible && hovered.0;
         if allowed && visible && hovered.0 && mouse.just_pressed(MouseButton::Left) {

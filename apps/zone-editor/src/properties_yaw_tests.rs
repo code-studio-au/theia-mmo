@@ -417,7 +417,10 @@ fn cpu_layout_keeps_yaw_slider_exact_fields_and_apply_controls_inside_properties
             let centre = transform.affine().translation;
             let half = computed.size() * 0.5;
             assert!(computed.size().min_element() > 0.);
-            assert!(centre.x - half.x >= outliner::WIDTH && centre.x + half.x <= CANVAS_LEFT);
+            assert!(
+                centre.x - half.x >= sidebar::WIDTH + outliner::WIDTH
+                    && centre.x + half.x <= CANVAS_LEFT
+            );
             assert!(centre.y - half.y >= workspace::HEADER && centre.y + half.y <= 1440.);
         }
         let fields = app
@@ -438,9 +441,40 @@ fn cpu_layout_keeps_yaw_slider_exact_fields_and_apply_controls_inside_properties
             }
             let centre = transform.affine().translation;
             let half = computed.size() * 0.5;
-            assert!(computed.size().y >= 32.);
+            assert!(computed.size().y >= 26.);
             assert!(centre.x - half.x >= outliner::WIDTH && centre.x + half.x <= CANVAS_LEFT);
             assert!(centre.y - half.y >= workspace::HEADER && centre.y + half.y <= 1440.);
+        }
+        if target == 0 {
+            let mut vector: Vec<_> = app
+                .world_mut()
+                .query::<(&Field, &ComputedNode, &bevy::ui::UiGlobalTransform)>()
+                .iter(app.world())
+                .filter(|(field, _, _)| field.0 >= 4)
+                .map(|(field, node, pose)| (field.0, node.size(), pose.affine().translation))
+                .collect();
+            vector.sort_by_key(|(index, _, _)| *index);
+            assert_eq!(vector.len(), 3);
+            assert!(
+                vector
+                    .windows(2)
+                    .all(|pair| pair[0].2.y == pair[1].2.y && pair[0].2.x < pair[1].2.x)
+            );
+            assert!(vector.iter().all(|(_, size, _)| size.x >= 40.));
+        }
+        if target != 5 {
+            for (field, node) in app
+                .world_mut()
+                .query::<(&Field, &ComputedNode)>()
+                .iter(app.world())
+            {
+                if field.0 < 3 {
+                    assert!(
+                        node.size().x >= 200.,
+                        "full precision position field {target}"
+                    );
+                }
+            }
         }
         if visible {
             assert_eq!(

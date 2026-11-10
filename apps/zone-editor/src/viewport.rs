@@ -442,6 +442,7 @@ type ReportControls<'w, 's> = Query<
             Option<&'static ScrollPosition>,
             Option<&'static scrolling::Pane>,
             Entity,
+            Option<&'static properties::FieldLabel>,
         ),
         Option<&'static naming::Control>,
         Option<&'static properties::Control>,
@@ -690,10 +691,11 @@ pub(super) fn report(
         let factor = node.inverse_scale_factor() * scale.0;
         Some(serde_json::json!({"action":format!("{control:?}"),"hovered":hovered.0,"centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array()}))
     }).collect::<Vec<_>>());
-    value["transform_controls"] = serde_json::json!(controls.iter().filter_map(|((_,_,_,_,entity),_,control,field,node,t,hovered,_,_,value,range,..)| {
-        let target = match (control,field) {
-            (Some(control),_) => format!("{control:?}"),
-            (_,Some(field)) => format!("Field({})",field.0),
+    value["transform_controls"] = serde_json::json!(controls.iter().filter_map(|((_,_,_,_,entity,label),_,control,field,node,t,hovered,_,_,value,range,..)| {
+        let target = match (control,field,label) {
+            (Some(control),_,_) => format!("{control:?}"),
+            (_,Some(field),_) => format!("Field({})",field.0),
+            (_,_,Some(label)) => format!("Label({})",label.0),
             _ => return None,
         };
         let factor = node.inverse_scale_factor() * scale.0;

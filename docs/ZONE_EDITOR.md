@@ -3459,3 +3459,31 @@ workspace/all-target Clippy and editor build pass. Evidence:
 `build/sprinkles-review/attributes-scroll-tests-final-v2.log`,
 `attributes-scroll-clippy-final.log` and `attributes-scroll-build-final.log`.
 Native acceptance remains pending while desktop use is stopped.
+
+## Sprinkles numeric field frames and vectors — 10 November 2026
+
+P5-17 adapts the pinned `widgets/text_edit.rs` and `widgets/vector_edit.rs`
+presentation: 28 px transparent frames, 1 px border, 2 px corner radius,
+6 px internal spacing, compact drag prefixes, units, tabular figures and a
+12 px gap in the size-vector row. Native TextInput and the retained exact field
+values remain underneath. The frame, including its drag prefix, shows focus.
+Object size X/Y/Z shares a row; global position X/Y/Z stays in full-width rows
+to expose distant f64 values without replacing them with local f32 numbers.
+Scalar yaw, scale, radius and guide width retain explicit Theia labels/units.
+Numeric parsing, errors, no-op behavior, validation and one-entry Apply/Cancel
+remain unchanged. Report telemetry exposes actual drag-label rectangles so the
+native qualifier no longer assumes a particular label width.
+
+All 137 focused Rust tests and denied-warning workspace/all-target Clippy pass.
+CPU font/layout checks verify positive readable size components in one row,
+full-width world-position fields and reachable fields/actions across all six
+forms. Existing local/far exact values, malformed input, numeric scrubbing,
+keyboard navigation, undo/redo and cancellation tests still pass. Native
+rendering/input/GPU acceptance remains pending while desktop use is stopped;
+no native window, input or capture inspection was used for this slice.
+
+Rename, search and file-path inputs also use the shared 28 px transparent
+frame, 12 px Inter/tabular font and upstream cursor/selection colors; retained
+length limits and validation are unchanged. Final headless evidence:
+`build/sprinkles-review/shared-inputs-tests.log` (137 tests),
+`shared-inputs-clippy-final.log` and `shared-inputs-build.log` all pass.

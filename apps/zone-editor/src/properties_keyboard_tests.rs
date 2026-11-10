@@ -256,6 +256,9 @@ fn tab_reveals_exact_attributes_in_a_short_inspector_without_editing_source_or_r
             let limit = ((computed.content_size().y - computed.size().y)
                 * computed.inverse_scale_factor())
             .max(0.);
+            if target == 0 {
+                assert!(limit > 24., "object form must exercise actual overflow");
+            }
             let expected = (app.world().get::<ScrollPosition>(pane).unwrap().y + 24.).min(limit);
             app.world_mut()
                 .trigger(bevy::picking::events::PointerScroll {

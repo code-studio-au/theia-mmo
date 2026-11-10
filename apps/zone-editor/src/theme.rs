@@ -71,6 +71,30 @@ pub(super) fn font(size: f32) -> TextFont {
         ..default()
     }
 }
+pub(super) fn input_font() -> TextFont {
+    let mut value = font(12.);
+    value.font_features = [bevy::text::FontFeatureTag::TABULAR_FIGURES].into();
+    value
+}
+pub(super) fn input_node() -> Node {
+    Node {
+        min_height: px(28),
+        padding: UiRect::all(px(6)),
+        border: UiRect::all(px(1)),
+        border_radius: BorderRadius::all(px(2)),
+        ..default()
+    }
+}
+pub(super) fn text_cursor() -> bevy::text::TextCursorStyle {
+    bevy::text::TextCursorStyle {
+        color: BODY,
+        selection_color: PRIMARY.with_alpha(0.35),
+        unfocused_selection_color: Color::NONE,
+        selected_text_color: None,
+        ..default()
+    }
+}
+
 pub(super) fn load_font(mut fonts: ResMut<Assets<Font>>) {
     fonts
         .insert(
@@ -88,6 +112,7 @@ pub(super) fn plugin(app: &mut App) {
             simple_buttons,
             text_states,
             input_states,
+            numeric_frames,
         )
             .chain(),
     );
@@ -193,24 +218,59 @@ fn text_states(
     }
 }
 
+#[allow(clippy::type_complexity)]
 fn input_states(
     focus: Option<Res<bevy::input_focus::InputFocus>>,
-    mut fields: Query<(Entity, &mut Node, &mut BorderColor), With<bevy::ui_widgets::TextInput>>,
+    mut fields: Query<
+        (
+            Entity,
+            &mut Node,
+            &mut BorderColor,
+            Has<properties::FramedInput>,
+            &mut BackgroundColor,
+        ),
+        With<bevy::ui_widgets::TextInput>,
+    >,
 ) {
-    for (entity, mut node, mut border) in &mut fields {
+    for (entity, mut node, mut border, framed, mut background) in &mut fields {
+        if framed {
+            continue;
+        }
         if node.border != UiRect::all(px(1))
             || node.border_radius != BorderRadius::all(px(2))
-            || node.padding != UiRect::axes(px(8), px(5))
+            || node.padding != UiRect::all(px(6))
+            || node.min_height != px(28)
         {
             node.border = UiRect::all(px(1));
             node.border_radius = BorderRadius::all(px(2));
-            node.padding = UiRect::axes(px(8), px(5));
+            node.padding = UiRect::all(px(6));
+            node.min_height = px(28);
+        }
+        if background.0 != Color::NONE {
+            background.0 = Color::NONE;
         }
         *border = BorderColor::all(if focus.as_ref().is_some_and(|f| f.get() == Some(entity)) {
             PRIMARY
         } else {
             BORDER
         });
+    }
+}
+
+fn numeric_frames(
+    focus: Option<Res<bevy::input_focus::InputFocus>>,
+    mut frames: Query<(&Children, &mut BorderColor), With<properties::FieldRow>>,
+) {
+    let active = focus.as_ref().and_then(|focus| focus.get());
+    for (children, mut border) in &mut frames {
+        let color = if active.is_some_and(|entity| children.contains(&entity)) {
+            PRIMARY
+        } else {
+            BORDER
+        };
+        if *border != BorderColor::all(color) {
+            *border = BorderColor::all(color);
+        }
     }
 }
 

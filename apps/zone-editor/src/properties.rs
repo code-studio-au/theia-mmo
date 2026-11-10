@@ -1,5 +1,7 @@
 //! Numeric object, plant and marker transforms; standard text/focus widgets, existing commands.
 use super::*;
+#[path = "properties_fields.rs"]
+mod fields_ui;
 #[path = "properties_scrub.rs"]
 mod numeric;
 use bevy::input_focus::{
@@ -7,7 +9,7 @@ use bevy::input_focus::{
     tab_navigation::{NavAction, TabGroup, TabIndex, TabNavigation},
 };
 use bevy::picking::{events::PointerPress, pointer::PointerButton};
-use bevy::text::{EditableText, TextCursorStyle};
+use bevy::text::EditableText;
 use bevy::ui::InteractionDisabled;
 use bevy::ui_widgets::{
     SelectAllOnFocus, Slider, SliderPrecision, SliderRange, SliderStep, SliderThumb, SliderValue,
@@ -76,7 +78,17 @@ impl SliderSpec {
     }
 }
 #[derive(Component)]
-pub(super) struct FieldLabel(usize);
+pub(super) struct FieldLabel(pub(super) usize);
+#[derive(Component)]
+pub(super) struct FramedInput;
+#[derive(Component)]
+pub(super) struct FieldUnit(usize);
+#[derive(Component)]
+pub(super) enum FieldGroup {
+    PositionHeading,
+    SizeHeading,
+    Tail,
+}
 #[derive(Clone, Debug, PartialEq)]
 enum Target {
     Spawn([f64; 3]),
@@ -326,59 +338,9 @@ pub(super) fn setup(mut commands: Commands) {
                     BackgroundColor(theme::PANEL),
                 ))
                 .with_children(|panel| {
-                    panel.spawn((Caption, text("TRANSFORM", 16.), TextLayout::no_wrap()));
-                    panel.spawn(text("Drag ↔ labels | click fields for exact values", 13.));
-                    for (index, label) in LABELS.iter().enumerate() {
-                        panel
-                            .spawn((
-                                FieldRow(index),
-                                Visibility::Inherited,
-                                Node {
-                                    column_gap: px(6),
-                                    align_items: AlignItems::Center,
-                                    ..default()
-                                },
-                            ))
-                            .with_children(|row| {
-                                row.spawn((
-                                    FieldLabel(index),
-                                    numeric::Handle(index),
-                                    Text::new(format!("↔ {label}")),
-                                    theme::font(11.),
-                                    TextColor(theme::MUTED),
-                                    Hovered::default(),
-                                    Node {
-                                        width: px(88),
-                                        ..default()
-                                    },
-                                ));
-                                row.spawn((
-                                    Field(index),
-                                    TextInput,
-                                    SelectAllOnFocus,
-                                    TabIndex(index as i32),
-                                    Hovered::default(),
-                                    EditableText {
-                                        max_characters: Some(64),
-                                        allow_newlines: false,
-                                        ..default()
-                                    },
-                                    Node {
-                                        flex_grow: 1.,
-                                        min_width: px(0),
-                                        min_height: px(32),
-                                        border: px(2).all(),
-                                        ..default()
-                                    },
-                                    BorderColor::all(theme::PRIMARY),
-                                    BackgroundColor(theme::INPUT),
-                                    theme::font(12.),
-                                    TextColor(theme::BODY),
-                                    TextLayout::no_wrap(),
-                                    TextCursorStyle::default(),
-                                ));
-                            });
-                    }
+                    panel.spawn((Caption, text("PROPERTIES", 16.), TextLayout::no_wrap()));
+                    panel.spawn(text("Drag labels | click values for exact input", 13.));
+                    fields_ui::spawn(panel);
                     for control in [Control::YawSlider, Control::ValueSlider] {
                         let yaw = control == Control::YawSlider;
                         let mut container = panel.spawn((
@@ -629,7 +591,7 @@ pub(super) fn keyboard(
     session.status = "Editing transform - Apply validates all fields together".into();
 }
 
-#[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 pub(super) fn finish(
     keys: Res<ButtonInput<KeyCode>>,
     windows: Query<&Window>,
@@ -638,8 +600,13 @@ pub(super) fn finish(
     mut fields: Query<(Entity, &Field, &mut EditableText)>,
     mut roots: Query<&mut Node, With<Root>>,
     mut captions: Query<&mut Text, With<Caption>>,
-    mut rows: Query<(&FieldRow, &mut Node, &mut Visibility), Without<Root>>,
-    mut labels: Query<(&FieldLabel, &mut Text), Without<Caption>>,
+    mut rows: Query<(&FieldRow, &mut Node, &mut Visibility), (Without<Root>, Without<FieldLabel>)>,
+    mut labels: Query<(&FieldLabel, &mut Text, &mut Node), (Without<Caption>, Without<Root>)>,
+    mut units: Query<(&FieldUnit, &mut Text), (Without<Caption>, Without<FieldLabel>)>,
+    mut groups: Query<
+        (&FieldGroup, &mut Node),
+        (Without<Root>, Without<FieldRow>, Without<FieldLabel>),
+    >,
     form_sliders: Query<(), (With<Slider>, With<Control>)>,
 ) {
     let Some(mut draft) = session.transform_edit.take() else {
@@ -680,10 +647,30 @@ pub(super) fn finish(
             Display::None
         };
     }
-    for (label, mut text) in &mut labels {
-        if let Some(value) = draft.original.labels().get(label.0) {
-            **text = format!("↔ {value}");
+    for (label, mut text, mut node) in &mut labels {
+        if let Some((prefix, width, _)) = fields_ui::prefix(&draft.original, label.0) {
+            **text = prefix.into();
+            node.width = px(width);
         }
+    }
+    for (unit, mut text) in &mut units {
+        if let Some((_, _, suffix)) = fields_ui::prefix(&draft.original, unit.0) {
+            **text = suffix.into();
+        }
+    }
+    for (group, mut node) in &mut groups {
+        let visible = match group {
+            FieldGroup::PositionHeading => {
+                !matches!(draft.original, Target::Path { point: None, .. })
+            }
+            FieldGroup::SizeHeading => matches!(draft.original, Target::Object(_)),
+            FieldGroup::Tail => draft.fields.len() > 4,
+        };
+        node.display = if visible {
+            Display::Flex
+        } else {
+            Display::None
+        };
     }
     for (entity, field, text) in &fields {
         if field.0 >= draft.fields.len() {
@@ -772,7 +759,7 @@ pub(super) fn finish(
             root.display = Display::Flex;
         }
         if let Ok(mut caption) = captions.single_mut() {
-            caption.0 = format!("TRANSFORM\n{}", draft.subject);
+            caption.0 = format!("PROPERTIES\n{}", draft.subject);
         }
         draft.action = None;
         session.transform_edit = Some(draft);

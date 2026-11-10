@@ -2,7 +2,7 @@
 use super::*;
 use bevy::input_focus::{FocusCause, InputFocus};
 use bevy::picking::{events::PointerPress, pointer::PointerButton};
-use bevy::text::{EditableText, TextCursorStyle, TextEdit};
+use bevy::text::{EditableText, TextEdit};
 use bevy::ui_widgets::{SelectAllOnFocus, TextInput};
 
 #[derive(Clone, Copy, Debug)]
@@ -86,16 +86,14 @@ pub(super) fn setup(mut commands: Commands) {
                     },
                     Node {
                         width: percent(100),
-                        min_height: px(32),
-                        border: px(1).all(),
-                        ..default()
+                        ..theme::input_node()
                     },
-                    BorderColor::all(theme::PRIMARY),
-                    BackgroundColor(theme::INPUT),
-                    theme::font(14.),
+                    BorderColor::all(theme::BORDER),
+                    BackgroundColor(Color::NONE),
+                    theme::input_font(),
                     TextColor(theme::BODY),
                     TextLayout::no_wrap(),
-                    TextCursorStyle::default(),
+                    theme::text_cursor(),
                 ));
                 panel.spawn(text(
                     "Enter applies | Escape cancels | 1–80 UTF-8 bytes",
