@@ -95,7 +95,7 @@ fn load_initial_project(
         if let Ok(result) = load_project_from_path(&path) {
             let has_emitters = !result.asset.emitters.is_empty();
             let handle = assets.add(result.asset);
-            editor_state.open_project(handle, path, &mut dirty_state);
+            editor_state.open_project(handle, path, &mut dirty_state, result.was_migrated);
             if has_emitters {
                 editor_state.inspecting = Some(Inspecting {
                     kind: Inspectable::Emitter,
@@ -115,7 +115,7 @@ fn load_initial_project(
         {
             let has_emitters = !result.asset.emitters.is_empty();
             let handle = assets.add(result.asset);
-            editor_state.open_project(handle, path, &mut dirty_state);
+            editor_state.open_project(handle, path, &mut dirty_state, result.was_migrated);
             if has_emitters {
                 editor_state.inspecting = Some(Inspecting {
                     kind: Inspectable::Emitter,
@@ -136,7 +136,7 @@ fn load_initial_project(
         {
             let has_emitters = !result.asset.emitters.is_empty();
             let handle = assets.add(result.asset);
-            editor_state.open_project(handle, demo_path, &mut dirty_state);
+            editor_state.open_project(handle, demo_path, &mut dirty_state, result.was_migrated);
             if has_emitters {
                 editor_state.inspecting = Some(Inspecting {
                     kind: Inspectable::Emitter,
@@ -169,4 +169,64 @@ fn load_initial_project(
         kind: Inspectable::Emitter,
         index: 0,
     });
+}
+
+#[cfg(test)]
+mod migration_tests {
+    use super::*;
+    use bevy::ecs::system::RunSystemOnce;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[test]
+    fn cached_migrated_project_stays_dirty_until_saved_without_rewriting_source() {
+        let dir = std::env::temp_dir().join(format!(
+            "theia-particle-migration-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir(&dir).unwrap();
+        let path = dir.join("old.ron");
+        let asset = ParticlesAsset::new(
+            "Migrated".into(),
+            ParticlesDimension::D3,
+            default(),
+            vec![EmitterData::default()],
+            vec![],
+            false,
+            default(),
+        );
+        let current = ron::ser::to_string(&asset).unwrap();
+        assert!(current.contains("sprinkles_version:\"0.3\""));
+        let original = current.replace("sprinkles_version:\"0.3\"", "sprinkles_version:\"0.2\"");
+        std::fs::write(&path, &original).unwrap();
+        let mut data = EditorData::default();
+        data.cache.last_opened_project = Some(path.to_string_lossy().into_owned());
+        let mut app = App::new();
+        app.init_resource::<CliArgs>()
+            .init_resource::<EditorState>()
+            .init_resource::<DirtyState>()
+            .init_resource::<Assets<ParticlesAsset>>()
+            .insert_resource(data);
+        app.world_mut()
+            .run_system_once(load_initial_project)
+            .unwrap();
+        let state = app.world().resource::<EditorState>();
+        assert_eq!(state.current_project_path.as_deref(), Some(path.as_path()));
+        assert!(app.world().resource::<DirtyState>().has_unsaved_changes);
+        assert!(
+            ron::ser::to_string(
+                app.world()
+                    .resource::<Assets<ParticlesAsset>>()
+                    .get(state.current_project.as_ref().unwrap())
+                    .unwrap()
+            )
+            .unwrap()
+            .contains("sprinkles_version:\"0.3\"")
+        );
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), original);
+        std::fs::remove_dir_all(dir).unwrap();
+    }
 }

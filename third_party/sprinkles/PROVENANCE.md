@@ -239,3 +239,10 @@ Source review during qualification additionally exposed a viewport readiness rac
 Retain the editor camera query until the delayed UI scene container can bind;
 a delayed-container regression covers that path. No source UI look or runtime
 shader algorithm changes are involved.
+
+The local project-save adaptation commits focused valid text before taking its
+snapshot, serializes writes and preserves dirty state until success. Writes use
+same-directory temporary files; create-new refuses existing destinations. It
+also preserves migration dirtiness. These changes do not implement draft
+recovery. Original imported file hashes are updated in source-files.json; the
+local project_save_tests.rs is additional Theia regression coverage.

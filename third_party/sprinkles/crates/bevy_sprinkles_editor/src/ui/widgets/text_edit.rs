@@ -30,6 +30,56 @@ pub struct TextEditCommitEvent {
     pub text: String,
 }
 
+#[derive(bevy::ecs::system::SystemParam)]
+pub(crate) struct SaveTextInputs<'w, 's> {
+    inputs: Query<
+        'w,
+        's,
+        (
+            &'static EditableText,
+            &'static TextEditVariant,
+            Option<&'static TextEditSuffix>,
+            Option<&'static NumericRange>,
+            Has<AllowEmpty>,
+        ),
+        With<EditorTextEdit>,
+    >,
+}
+
+impl SaveTextInputs<'_, '_> {
+    pub(crate) fn contains(&self, entity: Entity) -> bool {
+        self.inputs.contains(entity)
+    }
+    pub(crate) fn text_for_save(&self, entity: Entity) -> Result<String, &'static str> {
+        let (editable, variant, suffix, range, allow_empty) = self
+            .inputs
+            .get(entity)
+            .map_err(|_| "The text field changed; save again")?;
+        if editable.is_composing() {
+            return Err("Finish text composition before saving");
+        }
+        let text = strip_suffix(&editable.value().to_string(), suffix);
+        if variant.is_numeric() && !(allow_empty && text.trim().is_empty()) {
+            let value = text
+                .trim()
+                .parse::<f64>()
+                .map_err(|_| "Enter a valid number before saving")?;
+            let valid_integer = !matches!(variant, TextEditVariant::NumericI32)
+                || text.trim().parse::<i32>().is_ok();
+            let valid_f32 = !matches!(variant, TextEditVariant::NumericF32)
+                || text.trim().parse::<f32>().is_ok_and(f32::is_finite);
+            if !value.is_finite()
+                || !valid_integer
+                || !valid_f32
+                || range.is_some_and(|range| value < range.min || value > range.max)
+            {
+                return Err("Enter a valid number within the field range before saving");
+            }
+        }
+        Ok(text)
+    }
+}
+
 #[derive(Component)]
 pub struct Placeholder {
     pub text: String,
@@ -60,7 +110,7 @@ pub fn plugin(app: &mut App) {
 pub struct EditorTextEdit;
 
 #[derive(Component)]
-struct TextEditWrapper(Entity);
+pub(crate) struct TextEditWrapper(Entity);
 
 #[derive(Component, Default, Clone, Copy, PartialEq)]
 pub enum TextEditVariant {
@@ -660,7 +710,7 @@ fn handle_click_to_focus(
     }
 }
 
-fn handle_unfocus(
+pub(crate) fn handle_unfocus(
     mut focus: ResMut<InputFocus>,
     keyboard: Res<ButtonInput<KeyCode>>,
     mouse: Res<ButtonInput<MouseButton>>,

@@ -1,3 +1,12 @@
+P5-17 particle Save integrity, 11 November 2026: explicit Save commits a valid
+focused field, serializes writes and keeps the project dirty until a successful
+replacement; intervening edits, failed writes, migration and existing new-project
+targets are protected. Headless save regressions, fmt, strict workspace/all-target
+Clippy and the runtime/editor suites pass. An input-free far-origin virtual-X
+startup capture on llvmpipe Vulkan reports zero GPU diagnostics; native interaction
+and Windows remain unqualified. Separate recoverable drafts remain pending. See
+[particle integration](SPRINKLES_INTEGRATION.md).
+
 P5-17 property action popover, 11 November 2026: a Sprinkles more icon opens
 one unclipped native popover over shared selection actions; guide point controls
 appear only for guides. Guard document/revision/selection/point, including the

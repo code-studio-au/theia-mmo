@@ -12,8 +12,7 @@ use bevy_sprinkles::prelude::*;
 
 use crate::io::{EditorData, data_dir, project_path, projects_dir, save_editor_data};
 use crate::project::{
-    BrowseOpenProjectEvent, OpenProjectEvent, SaveResult, load_project_from_path,
-    save_project_to_path,
+    BrowseOpenProjectEvent, OpenProjectEvent, SaveCoordinator, load_project_from_path,
 };
 use crate::state::{DirtyState, EditorState, Inspectable, Inspecting};
 use crate::ui::icons::{
@@ -766,7 +765,7 @@ fn handle_create_project(
     _event: On<DialogActionEvent>,
     state: Option<Res<NewProjectDialogState>>,
     mut editor_state: ResMut<EditorState>,
-    mut editor_data: ResMut<EditorData>,
+    mut saves: ResMut<SaveCoordinator>,
     mut assets: ResMut<Assets<ParticlesAsset>>,
     mut dirty_state: ResMut<DirtyState>,
     children_query: Query<&Children>,
@@ -821,21 +820,18 @@ fn handle_create_project(
         Default::default(),
     );
 
-    let result = Arc::new(Mutex::new(None));
-    save_project_to_path(path.clone(), &asset, result.clone());
-    commands.insert_resource(SaveResult(result));
-
-    let handle = assets.add(asset);
-    editor_state.current_project = Some(handle);
-    editor_state.current_project_path = Some(path.clone());
+    let handle = assets.add(asset.clone());
+    editor_state.current_project = Some(handle.clone());
+    // A newly created project remains unsaved until its first write succeeds.
+    editor_state.current_project_path = None;
     editor_state.inspecting = Some(Inspecting {
         kind: Inspectable::Emitter,
         index: 0,
     });
-    dirty_state.has_unsaved_changes = false;
-
-    editor_data.cache.add_recent_project(simplify_path(&path));
-    save_editor_data(&editor_data);
+    dirty_state.has_unsaved_changes = true;
+    if let Err(error) = saves.save_to_path(handle, &asset, path, true, true) {
+        commands.trigger(crate::ui::components::toasts::ToastEvent::error(error));
+    }
 
     commands.remove_resource::<NewProjectDialogState>();
 }
@@ -925,5 +921,79 @@ fn cleanup_new_project_state(
 ) {
     if state.is_some() && dialogs.is_empty() {
         commands.remove_resource::<NewProjectDialogState>();
+    }
+}
+
+#[cfg(test)]
+mod save_tests {
+    use super::*;
+    use crate::hosting::AuthoringHostPlugin;
+    use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+
+    #[test]
+    fn new_project_keeps_its_unsaved_data_if_the_chosen_file_already_exists() {
+        let dir = std::env::temp_dir().join(format!(
+            "theia-new-particle-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir(&dir).unwrap();
+        let path = dir.join("existing.ron");
+        std::fs::write(&path, b"existing project").unwrap();
+        let mut app = App::new();
+        app.add_plugins((bevy::app::TaskPoolPlugin::default(), AuthoringHostPlugin))
+            .init_resource::<ButtonInput<KeyCode>>()
+            .init_resource::<EditorState>()
+            .init_resource::<DirtyState>()
+            .init_resource::<EditorData>()
+            .init_resource::<Assets<ParticlesAsset>>()
+            .init_resource::<InputFocus>()
+            .add_plugins(crate::project::plugin)
+            .add_observer(handle_create_project);
+        let mut name = EditableText::default();
+        name.editor_mut().set_text("New effect");
+        let name = app.world_mut().spawn((EditorTextEdit, name)).id();
+        let mut location = EditableText::default();
+        location.editor_mut().set_text(&path.to_string_lossy());
+        let location = app.world_mut().spawn((EditorTextEdit, location)).id();
+        app.insert_resource(NewProjectDialogState {
+            default_name: "New project".into(),
+            default_slug: "new-project".into(),
+            name_entity: Some(name),
+            location_entity: Some(location),
+            focused: false,
+        });
+        let dialog = app.world_mut().spawn_empty().id();
+        app.world_mut()
+            .trigger(DialogActionEvent { entity: dialog });
+        assert!(app.world().resource::<DirtyState>().has_unsaved_changes);
+        assert!(
+            app.world()
+                .resource::<EditorState>()
+                .current_project_path
+                .is_none()
+        );
+        let deadline = Instant::now() + Duration::from_secs(10);
+        while app.world().resource::<SaveCoordinator>().busy() {
+            assert!(Instant::now() < deadline);
+            app.update();
+            std::thread::sleep(Duration::from_millis(2));
+        }
+        let state = app.world().resource::<EditorState>();
+        assert!(state.current_project_path.is_none());
+        assert!(app.world().resource::<DirtyState>().has_unsaved_changes);
+        assert_eq!(
+            app.world()
+                .resource::<Assets<ParticlesAsset>>()
+                .get(state.current_project.as_ref().unwrap())
+                .unwrap()
+                .name,
+            "New effect"
+        );
+        assert_eq!(std::fs::read(&path).unwrap(), b"existing project");
+        std::fs::remove_dir_all(dir).unwrap();
     }
 }

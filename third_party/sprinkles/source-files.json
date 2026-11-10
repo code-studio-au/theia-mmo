@@ -1265,21 +1265,21 @@
       "path": "crates/bevy_sprinkles_editor/src/plugin.rs",
       "upstream_path": "crates/bevy_sprinkles_editor/src/plugin.rs",
       "upstream_sha256": "b5fb34d613886bc7305cf2becfd5fe40f90a4d604ed2606ff1aacb827c293e63",
-      "imported_sha256": "49414d225b04abacc2132bb6d477f0d8d414d62669f155d411cc61feb008482a",
+      "imported_sha256": "ef037f97d553690b7e75879921b913c4c69d915049253a7fbf8f7e51d4d65f57",
       "changed": true
     },
     {
       "path": "crates/bevy_sprinkles_editor/src/project.rs",
       "upstream_path": "crates/bevy_sprinkles_editor/src/project.rs",
       "upstream_sha256": "f349f24cff2a96c052ca8295533942e1e9dcf346744dc16e7f2036918ef591b3",
-      "imported_sha256": "684a4527b4f0432bed722c181e51407f5e1ec551525517ae956c18df859c2a5f",
+      "imported_sha256": "c242e6c30cabfd4e4e7b83ab0b31d7b5d2f36a0af2f5ffc943e132e07b447c05",
       "changed": true
     },
     {
       "path": "crates/bevy_sprinkles_editor/src/state.rs",
       "upstream_path": "crates/bevy_sprinkles_editor/src/state.rs",
       "upstream_sha256": "9dc027c297d8aa306c9ae39e93294fe61e1ccaed702b067b618a2f4152f2e7b3",
-      "imported_sha256": "2c3c7f68e0ef66f4349d13c63abf59aed23e85d950f0438729ae11dc22610c99",
+      "imported_sha256": "1093bb918329f725fd00f5d969f9170cf523a9ef0f79c72993ab7abe0469897c",
       "changed": true
     },
     {
@@ -1496,7 +1496,7 @@
       "path": "crates/bevy_sprinkles_editor/src/ui/components/project_selector.rs",
       "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/project_selector.rs",
       "upstream_sha256": "cbda66c259ce0aa5800a85baecc821b920b4fef575d4a84df07872ac441f77c7",
-      "imported_sha256": "d2bf481fa4656581b35e2f30da04c15e379654cb75094e5a57ec44fb8816ab21",
+      "imported_sha256": "ce1cc28ec514685a2ac4adffabe4537ee0d8d0d2a3504b97942adcc8f20484ed",
       "changed": true
     },
     {
@@ -1713,7 +1713,7 @@
       "path": "crates/bevy_sprinkles_editor/src/ui/widgets/text_edit.rs",
       "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/text_edit.rs",
       "upstream_sha256": "c148ad62ee77ed9eb5ef9df3896efe035a81723b83f4fbfb9a9aa47f26fa90c0",
-      "imported_sha256": "34789884e8ed0fa598ee4828f95a0b8c425fb28c8ddb9bdd2022a148589eda4e",
+      "imported_sha256": "5ed03b639891c9bb8844fcbabf824b289abdf5d0abf9beace2649cb23f0614f3",
       "changed": true
     },
     {

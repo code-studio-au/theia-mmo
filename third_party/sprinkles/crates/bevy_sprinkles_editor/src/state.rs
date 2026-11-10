@@ -29,11 +29,12 @@ impl EditorState {
         handle: Handle<ParticlesAsset>,
         path: PathBuf,
         dirty_state: &mut DirtyState,
+        was_migrated: bool,
     ) {
         let is_example = is_example_path(&path);
         self.current_project = Some(handle);
         self.current_project_path = if is_example { None } else { Some(path) };
-        dirty_state.has_unsaved_changes = is_example;
+        dirty_state.has_unsaved_changes = is_example || was_migrated;
     }
 }
 

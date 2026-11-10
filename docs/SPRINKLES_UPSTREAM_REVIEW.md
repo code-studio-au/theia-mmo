@@ -8,6 +8,14 @@ Compared against our imported revision
 Upstream issue status is evidence of upstream disposition, not proof of our
 platform/runtime behavior. No wholesale upstream update or engine change.
 
+## Save integrity prerequisite for recovery
+
+Explicit particle saves now commit a valid focused field first, serialize writes,
+and retain dirty state until a successful replacement. Failed writes, concurrent
+edits, project switches, existing create-new targets, and migrated projects are
+covered by headless regression tests. This is separate from issue #7 recovery:
+no automatic draft or shutdown recovery is implemented yet.
+
 ## Confirmed local fixes
 
 - [#26 memory growth](https://github.com/doceazedo/sprinkles/issues/26): found

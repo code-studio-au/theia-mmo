@@ -229,3 +229,14 @@ UI roots, clear focus/cursor ownership, suspend its own authoring input, manage
 preview/camera lifetime and isolate render layers before offering a same-window
 mode. Startup title/UI/scene setup and harmless text presentation post-update
 work are not governed by the Update set.
+
+## Particle project save integrity
+
+Particle Save remains explicit: it first commits the active valid text field,
+then writes a same-directory temporary file and replaces the destination only
+after the write succeeds. The project stays dirty on failure or if it changes
+while the write is in progress. Save As assigns its path after success; creating
+a project cannot overwrite an existing file. Migrated 0.2 projects remain
+marked dirty until saved. This protects explicit saves; recoverable drafts and
+recovery after an interruption are still pending. Native Windows execution and
+filesystem-specific behavior have not been qualified.

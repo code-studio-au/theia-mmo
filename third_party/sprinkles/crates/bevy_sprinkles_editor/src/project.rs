@@ -1,9 +1,11 @@
 use crate::hosting::AuthoringAppExt;
-use std::fs::File;
+use std::fs::OpenOptions;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
+use bevy::input_focus::{FocusCause, InputFocus};
 use bevy::prelude::*;
 use bevy::tasks::IoTaskPool;
 use bevy_sprinkles::prelude::*;
@@ -12,19 +14,24 @@ use inflector::Inflector;
 use crate::io::{EditorData, is_example_path, project_path, projects_dir, save_editor_data};
 use crate::state::{DirtyState, EditorState, Inspectable, Inspecting};
 use crate::ui::components::toasts::ToastEvent;
+use crate::ui::widgets::text_edit::{self, SaveTextInputs, TextEditCommitEvent};
 use crate::utils::{MAX_DISPLAY_PATH_LEN, simplify_path, truncate_path};
 
 pub fn plugin(app: &mut App) {
-    app.add_observer(on_open_project_event)
+    app.init_resource::<SaveCoordinator>()
+        .init_resource::<TextFocusTracker>()
+        .add_observer(on_open_project_event)
         .add_observer(on_browse_open_project_event)
         .add_observer(on_save_project_event)
         .add_observer(on_save_project_as_event)
+        .add_observer(continue_save_after_text_commit)
         .add_authoring_systems((
             handle_save_keyboard_shortcut,
             poll_browse_open_result,
-            poll_save_as_result,
-            poll_save_result,
-        ));
+            track_text_focus.before(text_edit::handle_unfocus),
+        ))
+        // A write may complete while the integrated host is on the Zone workspace.
+        .add_systems(Update, poll_save);
 }
 
 #[derive(Event)]
@@ -42,19 +49,195 @@ pub struct SaveProjectAsEvent;
 #[derive(Resource, Clone)]
 pub struct BrowseOpenResult(pub Arc<Mutex<Option<PathBuf>>>);
 
-#[derive(Resource, Clone)]
-pub struct SaveAsResult(pub Arc<Mutex<Option<PathBuf>>>);
-
-#[derive(Clone)]
-pub enum SaveResultStatus {
-    Success(String),
-    SerializationError,
-    WriteError(String),
-    CreateError,
+#[derive(Resource, Default)]
+pub(crate) struct SaveCoordinator {
+    pending: Option<PendingSave>,
+    committing: bool,
 }
 
-#[derive(Resource, Clone)]
-pub struct SaveResult(pub Arc<Mutex<Option<SaveResultStatus>>>);
+struct PendingSave {
+    handle: Handle<ParticlesAsset>,
+    snapshot: String,
+    phase: SavePhase,
+}
+
+type DialogResult = Arc<Mutex<Option<Option<PathBuf>>>>;
+type WriteResult = Arc<Mutex<Option<Result<(), String>>>>;
+
+enum SavePhase {
+    Choosing(DialogResult),
+    Writing {
+        path: PathBuf,
+        assign_path: bool,
+        result: WriteResult,
+    },
+}
+
+impl SaveCoordinator {
+    pub(crate) fn busy(&self) -> bool {
+        self.pending.is_some() || self.committing
+    }
+
+    pub(crate) fn save_to_path(
+        &mut self,
+        handle: Handle<ParticlesAsset>,
+        asset: &ParticlesAsset,
+        path: PathBuf,
+        assign_path: bool,
+        create_only: bool,
+    ) -> Result<(), String> {
+        if self.busy() {
+            return Err("A particle project save is already in progress".into());
+        }
+        let snapshot = serialize_snapshot(asset)?;
+        let result = start_write(path.clone(), snapshot.clone(), create_only);
+        self.pending = Some(PendingSave {
+            handle,
+            snapshot,
+            phase: SavePhase::Writing {
+                path,
+                assign_path,
+                result,
+            },
+        });
+        Ok(())
+    }
+
+    fn choose_path(
+        &mut self,
+        handle: Handle<ParticlesAsset>,
+        asset: &ParticlesAsset,
+    ) -> Result<(), String> {
+        if self.busy() {
+            return Err("A particle project save is already in progress".into());
+        }
+        let snapshot = serialize_snapshot(asset)?;
+        let result: DialogResult = Arc::new(Mutex::new(None));
+        let completed = result.clone();
+        let task = rfd::AsyncFileDialog::new()
+            .set_title("Save Project As")
+            .set_directory(projects_dir())
+            .set_file_name(format!("{}.ron", asset.name.to_kebab_case()))
+            .add_filter("RON files", &["ron"])
+            .save_file();
+        IoTaskPool::get()
+            .spawn(async move {
+                let selected = task.await.map(|file| file.path().to_path_buf());
+                if let Ok(mut guard) = completed.lock() {
+                    *guard = Some(selected);
+                }
+            })
+            .detach();
+        self.pending = Some(PendingSave {
+            handle,
+            snapshot,
+            phase: SavePhase::Choosing(result),
+        });
+        Ok(())
+    }
+}
+
+fn serialize_snapshot(asset: &ParticlesAsset) -> Result<String, String> {
+    ron::ser::to_string_pretty(asset, ron::ser::PrettyConfig::default())
+        .map_err(|_| "Cannot save project with invalid data".into())
+}
+
+fn start_write(path: PathBuf, snapshot: String, create_only: bool) -> WriteResult {
+    let result: WriteResult = Arc::new(Mutex::new(None));
+    let completed = result.clone();
+    IoTaskPool::get()
+        .spawn(async move {
+            let status = atomic_write(&path, snapshot.as_bytes(), create_only)
+                .map_err(|error| error.to_string());
+            if let Ok(mut guard) = completed.lock() {
+                *guard = Some(status);
+            }
+        })
+        .detach();
+    result
+}
+
+// Write a new sibling, flush it, and replace only after the complete write.
+// Resolve existing symlinks so saving through a link does not replace the link.
+fn atomic_write(path: &Path, contents: &[u8], create_only: bool) -> std::io::Result<()> {
+    let target = match std::fs::symlink_metadata(path) {
+        Ok(metadata) if metadata.file_type().is_symlink() => path.canonicalize()?,
+        Ok(_) => path.to_path_buf(),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => path.to_path_buf(),
+        Err(error) => return Err(error),
+    };
+    let parent = target
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."));
+    let permissions = match std::fs::metadata(&target) {
+        Ok(_) if create_only => {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::AlreadyExists,
+                "Project file already exists",
+            ));
+        }
+        Ok(metadata) => {
+            if !metadata.is_file() {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    "Save target is not a regular file",
+                ));
+            }
+            if metadata.permissions().readonly() {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::PermissionDenied,
+                    "Project file is read-only",
+                ));
+            }
+            // Check access without truncating the existing project.
+            drop(OpenOptions::new().write(true).open(&target)?);
+            Some(metadata.permissions())
+        }
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
+        Err(error) => return Err(error),
+    };
+    static NEXT_TEMP: AtomicU64 = AtomicU64::new(1);
+    for _ in 0..32 {
+        let nonce = NEXT_TEMP.fetch_add(1, Ordering::Relaxed);
+        let temporary = parent.join(format!(
+            ".theia-particle-save-{}-{nonce}.tmp",
+            std::process::id()
+        ));
+        let mut file = match OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&temporary)
+        {
+            Ok(file) => file,
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
+            Err(error) => return Err(error),
+        };
+        let result = (|| {
+            if let Some(permissions) = permissions.clone() {
+                file.set_permissions(permissions)?;
+            }
+            file.write_all(contents)?;
+            file.sync_all()?;
+            drop(file);
+            if create_only {
+                // Linking is atomic and fails if another process created the target.
+                std::fs::hard_link(&temporary, &target)?;
+                std::fs::remove_file(&temporary)
+            } else {
+                std::fs::rename(&temporary, &target)
+            }
+        })();
+        if result.is_err() {
+            let _ = std::fs::remove_file(&temporary);
+        }
+        return result;
+    }
+    Err(std::io::Error::new(
+        std::io::ErrorKind::AlreadyExists,
+        "Could not allocate a temporary save file",
+    ))
+}
 
 #[derive(Debug)]
 pub(crate) enum LoadProjectError {
@@ -152,7 +335,6 @@ fn on_open_project_event(
 
     if result.was_migrated {
         let current = bevy_sprinkles::asset::versions::current_format_version();
-        dirty_state.has_unsaved_changes = true;
         commands.trigger(ToastEvent::success(format!(
             "Project \"{filename}\" will be updated to {current} on the next save"
         )));
@@ -160,7 +342,7 @@ fn on_open_project_event(
 
     let has_emitters = !asset.emitters.is_empty();
     let handle = assets.add(asset);
-    editor_state.open_project(handle, path, &mut dirty_state);
+    editor_state.open_project(handle, path, &mut dirty_state, result.was_migrated);
     editor_state.inspecting = if has_emitters {
         Some(Inspecting {
             kind: Inspectable::Emitter,
@@ -220,169 +402,270 @@ fn poll_browse_open_result(result: Option<Res<BrowseOpenResult>>, mut commands: 
     }
 }
 
-pub fn save_project_to_path(
-    path: PathBuf,
-    asset: &bevy_sprinkles::asset::ParticlesAsset,
-    result: Arc<Mutex<Option<SaveResultStatus>>>,
+#[derive(Resource, Default)]
+struct TextFocusTracker(Option<Entity>);
+
+fn track_text_focus(
+    focus: Res<InputFocus>,
+    inputs: SaveTextInputs,
+    mut tracker: ResMut<TextFocusTracker>,
 ) {
-    let Ok(contents) = ron::ser::to_string_pretty(asset, ron::ser::PrettyConfig::default()) else {
-        if let Ok(mut guard) = result.lock() {
-            *guard = Some(SaveResultStatus::SerializationError);
+    tracker.0 = focus.get().filter(|entity| inputs.contains(*entity));
+}
+
+#[derive(Clone, Copy)]
+enum SaveKind {
+    Current,
+    As,
+}
+#[derive(Event)]
+struct ContinueSave {
+    kind: SaveKind,
+    handle: Handle<ParticlesAsset>,
+    path: Option<PathBuf>,
+}
+
+fn begin_save(
+    kind: SaveKind,
+    state: &EditorState,
+    assets: &Assets<ParticlesAsset>,
+    saves: &mut SaveCoordinator,
+) -> Result<(), String> {
+    let Some(handle) = &state.current_project else {
+        return Ok(());
+    };
+    let Some(asset) = assets.get(handle) else {
+        return Ok(());
+    };
+    match (kind, &state.current_project_path) {
+        (SaveKind::Current, Some(path)) => {
+            saves.save_to_path(handle.clone(), asset, path.clone(), false, false)
         }
+        _ => saves.choose_path(handle.clone(), asset),
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn request_save(
+    kind: SaveKind,
+    state: &EditorState,
+    assets: &Assets<ParticlesAsset>,
+    saves: &mut SaveCoordinator,
+    focus: &mut InputFocus,
+    tracker: &mut TextFocusTracker,
+    inputs: &SaveTextInputs,
+    commands: &mut Commands,
+) {
+    if saves.busy() {
+        commands.trigger(ToastEvent::error(
+            "A particle project save is already in progress",
+        ));
+        return;
+    }
+    let Some(handle) = state.current_project.as_ref() else {
         return;
     };
-
-    IoTaskPool::get()
-        .spawn(async move {
-            let status = match File::create(&path) {
-                Ok(mut file) => {
-                    let filename = path
-                        .file_name()
-                        .map(|n| n.to_string_lossy().to_string())
-                        .unwrap_or_default();
-                    if file.write_all(contents.as_bytes()).is_ok() {
-                        SaveResultStatus::Success(filename)
-                    } else {
-                        SaveResultStatus::WriteError(filename)
-                    }
+    let focused = focus
+        .get()
+        .filter(|entity| inputs.contains(*entity))
+        .or(tracker.0);
+    if let Some(entity) = focused {
+        let text = match inputs.text_for_save(entity) {
+            Ok(text) => text,
+            Err(error) => {
+                if inputs.contains(entity) {
+                    focus.set(entity, FocusCause::Navigated);
                 }
-                Err(_) => SaveResultStatus::CreateError,
-            };
-            if let Ok(mut guard) = result.lock() {
-                *guard = Some(status);
+                commands.trigger(ToastEvent::error(error));
+                return;
             }
-        })
-        .detach();
+        };
+        saves.committing = true;
+        tracker.0 = None;
+        if focus.get() == Some(entity) {
+            focus.clear();
+        }
+        // Bevy dispatches the field binding before continuing the save. Reserve
+        // the coordinator meanwhile so a second request cannot save old data.
+        commands.trigger(TextEditCommitEvent { entity, text });
+        commands.trigger(ContinueSave {
+            kind,
+            handle: handle.clone(),
+            path: state.current_project_path.clone(),
+        });
+    } else if let Err(error) = begin_save(kind, state, assets, saves) {
+        commands.trigger(ToastEvent::error(error));
+    }
 }
 
 fn on_save_project_event(
     _event: On<SaveProjectEvent>,
     editor_state: Res<EditorState>,
     assets: Res<Assets<ParticlesAsset>>,
-    mut dirty_state: ResMut<DirtyState>,
+    mut saves: ResMut<SaveCoordinator>,
+    mut focus: ResMut<InputFocus>,
+    mut tracker: ResMut<TextFocusTracker>,
+    inputs: SaveTextInputs,
     mut commands: Commands,
 ) {
-    let Some(handle) = &editor_state.current_project else {
-        return;
-    };
-    let Some(asset) = assets.get(handle) else {
-        return;
-    };
-
-    if let Some(path) = &editor_state.current_project_path {
-        let result = Arc::new(Mutex::new(None));
-        save_project_to_path(path.clone(), asset, result.clone());
-        commands.insert_resource(SaveResult(result));
-        dirty_state.has_unsaved_changes = false;
-    } else {
-        commands.trigger(SaveProjectAsEvent);
-    }
+    request_save(
+        SaveKind::Current,
+        &editor_state,
+        &assets,
+        &mut saves,
+        &mut focus,
+        &mut tracker,
+        &inputs,
+        &mut commands,
+    );
 }
-
 fn on_save_project_as_event(
     _event: On<SaveProjectAsEvent>,
     editor_state: Res<EditorState>,
     assets: Res<Assets<ParticlesAsset>>,
+    mut saves: ResMut<SaveCoordinator>,
+    mut focus: ResMut<InputFocus>,
+    mut tracker: ResMut<TextFocusTracker>,
+    inputs: SaveTextInputs,
     mut commands: Commands,
 ) {
-    let Some(handle) = &editor_state.current_project else {
-        return;
-    };
-    let Some(asset) = assets.get(handle) else {
-        return;
-    };
-
-    let projects_dir = projects_dir();
-    let default_name = format!("{}.ron", asset.name.to_kebab_case());
-    let asset_clone = asset.clone();
-
-    let path_result = Arc::new(Mutex::new(None));
-    let path_result_clone = path_result.clone();
-
-    let save_result = Arc::new(Mutex::new(None));
-    let save_result_clone = save_result.clone();
-
-    let task = rfd::AsyncFileDialog::new()
-        .set_title("Save Project As")
-        .set_directory(&projects_dir)
-        .set_file_name(&default_name)
-        .add_filter("RON files", &["ron"])
-        .save_file();
-
-    IoTaskPool::get()
-        .spawn(async move {
-            if let Some(file_handle) = task.await {
-                let path = file_handle.path().to_path_buf();
-                save_project_to_path(path.clone(), &asset_clone, save_result_clone);
-                if let Ok(mut guard) = path_result_clone.lock() {
-                    *guard = Some(path);
-                }
-            }
-        })
-        .detach();
-
-    commands.insert_resource(SaveAsResult(path_result));
-    commands.insert_resource(SaveResult(save_result));
+    request_save(
+        SaveKind::As,
+        &editor_state,
+        &assets,
+        &mut saves,
+        &mut focus,
+        &mut tracker,
+        &inputs,
+        &mut commands,
+    );
 }
-
-fn poll_save_as_result(
-    result: Option<Res<SaveAsResult>>,
-    mut editor_state: ResMut<EditorState>,
-    mut editor_data: ResMut<EditorData>,
-    mut dirty_state: ResMut<DirtyState>,
+fn continue_save_after_text_commit(
+    event: On<ContinueSave>,
+    editor_state: Res<EditorState>,
+    assets: Res<Assets<ParticlesAsset>>,
+    mut saves: ResMut<SaveCoordinator>,
     mut commands: Commands,
 ) {
-    let Some(result) = result else {
+    if !saves.committing {
         return;
-    };
-
-    let path = {
-        let Ok(mut guard) = result.0.lock() else {
-            return;
-        };
-        guard.take()
-    };
-
-    if let Some(path) = path {
-        editor_state.current_project_path = Some(path.clone());
-
-        editor_data.cache.add_recent_project(simplify_path(&path));
-        save_editor_data(&editor_data);
-        dirty_state.has_unsaved_changes = false;
-        commands.remove_resource::<SaveAsResult>();
+    }
+    saves.committing = false;
+    if editor_state.current_project.as_ref() != Some(&event.handle)
+        || (matches!(event.kind, SaveKind::Current)
+            && editor_state.current_project_path != event.path)
+    {
+        commands.trigger(ToastEvent::error("The project changed; save again"));
+        return;
+    }
+    if let Err(error) = begin_save(event.kind, &editor_state, &assets, &mut saves) {
+        commands.trigger(ToastEvent::error(error));
     }
 }
 
-fn poll_save_result(result: Option<Res<SaveResult>>, mut commands: Commands) {
-    let Some(result) = result else {
+// Only the exact in-memory asset that completed a successful write can become clean.
+// A different active document, a changed path, or intervening edits stay untouched.
+fn finish_write(
+    pending: &PendingSave,
+    path: &Path,
+    assign_path: bool,
+    success: bool,
+    editor_state: &mut EditorState,
+    dirty_state: &mut DirtyState,
+    assets: &Assets<ParticlesAsset>,
+) -> bool {
+    if editor_state.current_project.as_ref() != Some(&pending.handle)
+        || (!assign_path && editor_state.current_project_path.as_deref() != Some(path))
+    {
+        return false;
+    }
+    if !success {
+        dirty_state.has_unsaved_changes = true;
+        return false;
+    }
+    if assign_path {
+        editor_state.current_project_path = Some(path.to_path_buf());
+    }
+    dirty_state.has_unsaved_changes = assets
+        .get(&pending.handle)
+        .and_then(|asset| serialize_snapshot(asset).ok())
+        .is_none_or(|current| current != pending.snapshot);
+    assign_path
+}
+
+fn poll_save(
+    mut saves: ResMut<SaveCoordinator>,
+    mut editor_state: ResMut<EditorState>,
+    mut dirty_state: ResMut<DirtyState>,
+    mut editor_data: ResMut<EditorData>,
+    assets: Res<Assets<ParticlesAsset>>,
+    mut commands: Commands,
+) {
+    let Some(mut pending) = saves.pending.take() else {
         return;
     };
-
-    let status = {
-        let Ok(mut guard) = result.0.lock() else {
-            return;
-        };
-        guard.take()
-    };
-
-    if let Some(status) = status {
-        match status {
-            SaveResultStatus::Success(filename) => {
-                commands.trigger(ToastEvent::success(format!("Saved \"{filename}\"")));
-            }
-            SaveResultStatus::SerializationError => {
-                commands.trigger(ToastEvent::error("Cannot save project with invalid data"));
-            }
-            SaveResultStatus::WriteError(filename) => {
-                commands.trigger(ToastEvent::error(format!(
-                    "Failed to write to \"{filename}\""
-                )));
-            }
-            SaveResultStatus::CreateError => {
-                commands.trigger(ToastEvent::error("Failed to create project file"));
+    match &pending.phase {
+        SavePhase::Choosing(result) => {
+            let selected = result.lock().map(|mut guard| guard.take()).map_err(|_| ());
+            match selected {
+                Ok(None) => saves.pending = Some(pending),
+                Ok(Some(None)) => {}
+                Ok(Some(Some(path))) => {
+                    let result = start_write(path.clone(), pending.snapshot.clone(), false);
+                    pending.phase = SavePhase::Writing {
+                        path,
+                        assign_path: true,
+                        result,
+                    };
+                    saves.pending = Some(pending);
+                }
+                Err(_) => {
+                    commands.trigger(ToastEvent::error("Save dialog failed"));
+                }
             }
         }
-        commands.remove_resource::<SaveResult>();
+        SavePhase::Writing {
+            path,
+            assign_path,
+            result,
+        } => {
+            let outcome = result.lock().map(|mut guard| guard.take()).map_err(|_| ());
+            match outcome {
+                Ok(None) => saves.pending = Some(pending),
+                completed => {
+                    let status = completed
+                        .unwrap_or_else(|_| Some(Err("Save worker failed".into())))
+                        .expect("A completed save has a result");
+                    let cache_path = finish_write(
+                        &pending,
+                        path,
+                        *assign_path,
+                        status.is_ok(),
+                        &mut editor_state,
+                        &mut dirty_state,
+                        &assets,
+                    );
+                    if cache_path {
+                        editor_data.cache.add_recent_project(simplify_path(path));
+                        save_editor_data(&editor_data);
+                    }
+                    match status {
+                        Ok(()) => {
+                            let name = path
+                                .file_name()
+                                .map(|n| n.to_string_lossy())
+                                .unwrap_or_default();
+                            commands.trigger(ToastEvent::success(format!("Saved \"{name}\"")));
+                        }
+                        Err(error) => {
+                            commands.trigger(ToastEvent::error(format!(
+                                "Could not save project: {error}"
+                            )));
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -551,3 +834,7 @@ mod material_load_tests {
         std::fs::remove_dir_all(folder).unwrap();
     }
 }
+
+#[cfg(test)]
+#[path = "project_save_tests.rs"]
+mod save_tests;
