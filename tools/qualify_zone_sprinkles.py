@@ -13,7 +13,7 @@ from launch_environment import client_environment
 from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 
 
-def run(output, binary, only_case=None, scroll=False):
+def run(output, binary, only_case=None, scroll=False, attributes=False):
     output = output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     binary = binary.resolve()
@@ -38,7 +38,7 @@ def run(output, binary, only_case=None, scroll=False):
             VK_INSTANCE_LAYERS='VK_LAYER_KHRONOS_validation', VK_LOADER_DEBUG='layer'))
         logfile = folder / 'editor.log'
         desktop = None
-        if scroll:
+        if scroll or attributes:
             desktop = Desktop()
             desktop.prepare_wheel()
         with logfile.open('w') as log:
@@ -172,6 +172,46 @@ def run(output, binary, only_case=None, scroll=False):
                 control('Transform')
                 wait(lambda: state()['transform_edit'] is not None)
                 capture('exact-attributes')
+                if attributes:
+                    exact = state()['transform_edit']['fields'][:]
+                    subprocess.run(['wmctrl','-ir',hex(window),'-b','remove,fullscreen'],check=True)
+                    subprocess.run(['wmctrl','-ir',hex(window),'-e','0,0,0,3440,420'],check=True)
+                    wait(lambda:state()['viewport']==[3440,420])
+                    first = next(c for c in state()['transform_controls'] if c['target']=='Field(0)')['entity']
+                    visited=[]
+                    while True:
+                        focused=state()['focus']
+                        if focused in visited:
+                            assert focused==first
+                            break
+                        visited.append(focused)
+                        def visible_focus():
+                            c=next(c for c in state()['transform_controls'] if c['entity']==focused)
+                            return c['centre'][1]-c['size'][1]/2 >= 92 and c['centre'][1]+c['size'][1]/2 <= 420
+                        wait(visible_focus)
+                        assert state()['transform_edit']['fields']==exact
+                        desktop.key('Tab')
+                        wait(lambda:state()['focus']!=focused)
+                    wait(visible_focus)
+                    assert len(visited)==len(exact)+1
+                    def attribute_pane():
+                        return next(p for p in state()['scroll_panes'] if p['scope']=='Attributes')
+                    p=attribute_pane()
+                    move([p['centre'][0],300])
+                    desktop.scroll(-1)
+                    expected=min(p['limit'][1],p['position'][1]+24)
+                    wait(lambda:attribute_pane()['position'][1]==expected)
+                    assert fresh()['transform_edit']['fields']==exact
+                    unchanged()
+                    capture('scrolled-exact-attributes')
+                    desktop.key('Escape')
+                    wait(lambda:state()['transform_edit'] is None)
+                    unchanged()
+                    subprocess.run(['wmctrl','-ir',hex(window),'-b','add,fullscreen'],check=True)
+                    wait(lambda:state()['viewport']==[3440,1440])
+                    control('Transform')
+                    wait(lambda:state()['transform_edit'] is not None)
+                    assert state()['transform_edit']['fields']==exact
                 original_fields = state()['transform_edit']['fields'][:]
                 field = next(c for c in state()['transform_controls'] if c['target'] == 'Field(0)')
                 label = [field['centre'][0] - field['size'][0]/2 - 50, field['centre'][1]]
@@ -225,23 +265,25 @@ def run(output, binary, only_case=None, scroll=False):
                     subprocess.run(['wmctrl','-ir',hex(window),'-b','remove,fullscreen'],check=True)
                     subprocess.run(['wmctrl','-ir',hex(window),'-e','0,0,0,3440,600'],check=True)
                     wait(lambda: state()['viewport'] == [3440,600])
-                    pane = wait(lambda: next((p for p in state()['scroll_panes'] if p['limit'][1] > 24), None))
+                    def pane_state():
+                        return next(p for p in state()['scroll_panes'] if p['scope']=='Workspace')
+                    pane = wait(lambda: pane_state() if pane_state()['limit'][1] > 24 else None)
                     move([pane['centre'][0],400])
                     desktop.scroll(-1)
-                    wait(lambda: state()['scroll_panes'][0]['position'][1] == 24)
+                    wait(lambda: pane_state()['position'][1] == 24)
                     desktop.scroll(-8)
-                    wait(lambda: abs(state()['scroll_panes'][0]['position'][1] - min(216,pane['limit'][1])) < .1)
+                    wait(lambda: abs(pane_state()['position'][1] - min(216,pane['limit'][1])) < .1)
                     desktop.scroll(8)
-                    wait(lambda: state()['scroll_panes'][0]['position'][1] == 0)
+                    wait(lambda: pane_state()['position'][1] == 0)
                     inspector = state()['ui_layout']['inspector']
                     track_height = inspector[3]-6
                     thumb_height = max(24,track_height*pane['size'][1]/(pane['size'][1]+pane['limit'][1]))
-                    offset = state()['scroll_panes'][0]['position'][1]/pane['limit'][1]*(track_height-thumb_height)
+                    offset = pane_state()['position'][1]/pane['limit'][1]*(track_height-thumb_height)
                     thumb_x = inspector[0]+inspector[2]-4.5
                     move([thumb_x,inspector[1]+3+offset+thumb_height/2])
                     press()
                     move([thumb_x,590])
-                    wait(lambda:abs(state()['scroll_panes'][0]['position'][1]-pane['limit'][1])<.1)
+                    wait(lambda:abs(pane_state()['position'][1]-pane['limit'][1])<.1)
                     release()
                     wait(lambda:not state()['ui_layout']['resizing'])
                     assert state()['ui_layout']['inspector'][2] == inspector[2]
@@ -267,9 +309,9 @@ def run(output, binary, only_case=None, scroll=False):
                 process.wait(timeout=15)
         text = logfile.read_text()
         assert 'Insert instance layer "VK_LAYER_KHRONOS_validation"' in text
-        cases[-1]['gpu_diagnostics'] = check_gpu_diagnostics(text, allow_surface_resize=scroll)
+        cases[-1]['gpu_diagnostics'] = check_gpu_diagnostics(text, allow_surface_resize=scroll or attributes)
     assert hashlib.sha256(binary.read_bytes()).hexdigest() == binary_hash, 'Binary changed during native qualification'
-    result = dict(cases=cases, scrolling=scroll, editor_sha256=binary_hash,
+    result = dict(cases=cases, scrolling=scroll, attribute_scrolling=attributes, editor_sha256=binary_hash,
         scope='Linux native 3440x1440; shorter 3440x600 scroll check when enabled; real OS input, Vulkan; no Windows or multiplayer claim')
     (output / 'qualification.json').write_text(json.dumps(result, indent=2)+'\n')
     print(json.dumps(result, indent=2))
@@ -281,5 +323,6 @@ if __name__ == '__main__':
     parser.add_argument('--binary', type=Path, default=Path('target/debug/theia-zone-editor'))
     parser.add_argument('--case', choices=['local', 'far'])
     parser.add_argument('--scroll', action='store_true', help='Check real wheel and scrollbar dragging in a shorter owned window')
+    parser.add_argument('--attributes-scroll', action='store_true', help='Check Tab focus reveal and exact draft scrolling in a short owned window')
     args = parser.parse_args()
-    run(args.output, args.binary, args.case, args.scroll)
+    run(args.output, args.binary, args.case, args.scroll, args.attributes_scroll)

@@ -1,3 +1,25 @@
+Headless validation passes: 137 focused Rust tests, formatting,
+denied-warning workspace/all-target Clippy and editor build. Evidence:
+`build/sprinkles-review/attributes-scroll-tests-final-v2.log`,
+`attributes-scroll-clippy-final.log` and `attributes-scroll-build-final.log`.
+Native visual/input/GPU acceptance remains pending; desktop use is stopped.
+
+Sprinkles exact-attribute scrolling, 10 November 2026 (P5-17): the exact
+attribute editor now reuses the inspector scroll pane with neutral panel framing.
+Pane ownership distinguishes an active attribute draft from ordinary workspace
+controls, so its wheel/scrollbar stays usable while underlying authoring remains
+guarded. Newly focused controls scroll into view; manual scrolling is retained
+until focus changes. Focus pending before visible layout is handled explicitly.
+
+Headless InputPlugin/CPU-layout checks cover all six forms at local/far origins
+in a 420 px-high layout: every field and slider is visible when Tab focuses it;
+wheel input inside the draft is bounded and does not fight focus; exact strings,
+source, revision and redo stay unchanged; Escape restores the prior saved state.
+Native qualification now has a prepared `--attributes-scroll` path using actual
+reported focus/entity rectangles. No desktop access was used for this slice.
+Native rendering/input/GPU acceptance remains pending while the user needs the
+mouse and display. Earlier native evidence belongs to its recorded binaries.
+
 Sprinkles inspector scrolling and button reflow, 10 November 2026 (P5-17):
 implements a scrolling inspector with Sprinkles' wheel units and slim hover/drag
 thumb, native Bevy scrollbar behavior, bounds/shrink clamping and exclusive UI

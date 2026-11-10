@@ -1,3 +1,9 @@
+P5-17, 10 November 2026: exact attributes now share inspector scrolling,
+neutral framing and keyboard focus reveal. Headless checks cover six forms,
+local/far precision and short layouts; native checks are prepared but pending
+because desktop use is stopped. Continue headlessly across local commits. See
+STATUS and ZONE_EDITOR for evidence and the distinction from qualified binaries.
+
 P5-17, 10 November 2026: Sprinkles inspector scrolling and reflow-safe button
 activation pass 136 focused Rust tests and local/far native UI/placement/playtest
 checks (RX 7900 XTX Vulkan, zero GPU diagnostics). Desktop use is authorized and

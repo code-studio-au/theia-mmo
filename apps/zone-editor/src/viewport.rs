@@ -440,7 +440,8 @@ type ReportControls<'w, 's> = Query<
             Option<&'static Action>,
             Has<bevy::ui::Pressed>,
             Option<&'static ScrollPosition>,
-            Has<scrolling::Pane>,
+            Option<&'static scrolling::Pane>,
+            Entity,
         ),
         Option<&'static naming::Control>,
         Option<&'static properties::Control>,
@@ -491,7 +492,10 @@ pub(super) fn report(
     mut commands: Commands,
     report: Option<ResMut<Report>>,
     time: Res<Time>,
-    keys: Res<ButtonInput<KeyCode>>,
+    input: (
+        Res<ButtonInput<KeyCode>>,
+        Res<bevy::input_focus::InputFocus>,
+    ),
     session: Res<Session>,
     view: Res<View>,
     windows: Query<&Window>,
@@ -505,6 +509,7 @@ pub(super) fn report(
     content: Res<outliner::Content>,
     content_controls: ContentControls,
 ) {
+    let (keys, focus) = input;
     let Some(mut report) = report else {
         return;
     };
@@ -647,10 +652,10 @@ pub(super) fn report(
         Some(serde_json::json!({"target":target,"hovered":hovered.0,"centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array(),
             "value":value.map(|v|v.0),"range":range.map(|r|[r.start(),r.end()])}))
     }).collect::<Vec<_>>());
-    value["scroll_panes"] = serde_json::json!(controls.iter().filter_map(|((_,_,position,pane),_,_,_,node,t,hovered,..)| {
-        if !pane { return None; }
+    value["scroll_panes"] = serde_json::json!(controls.iter().filter_map(|((_,_,position,pane,..),_,_,_,node,t,hovered,..)| {
+        let pane = pane?;
         let factor = node.inverse_scale_factor() * scale.0;
-        Some(serde_json::json!({"position":position.map(|p|p.0.to_array()),"hovered":hovered.0,
+        Some(serde_json::json!({"scope":format!("{pane:?}"),"position":position.map(|p|p.0.to_array()),"hovered":hovered.0,
             "centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array(),
             "limit":((node.content_size()-node.size())*factor).max(Vec2::ZERO).to_array()}))
     }).collect::<Vec<_>>());
@@ -685,17 +690,18 @@ pub(super) fn report(
         let factor = node.inverse_scale_factor() * scale.0;
         Some(serde_json::json!({"action":format!("{control:?}"),"hovered":hovered.0,"centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array()}))
     }).collect::<Vec<_>>());
-    value["transform_controls"] = serde_json::json!(controls.iter().filter_map(|(_,_,control,field,node,t,hovered,_,_,value,range,..)| {
+    value["transform_controls"] = serde_json::json!(controls.iter().filter_map(|((_,_,_,_,entity),_,control,field,node,t,hovered,_,_,value,range,..)| {
         let target = match (control,field) {
             (Some(control),_) => format!("{control:?}"),
             (_,Some(field)) => format!("Field({})",field.0),
             _ => return None,
         };
         let factor = node.inverse_scale_factor() * scale.0;
-        Some(serde_json::json!({"target":target,"hovered":hovered.0,"centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array(),
+        Some(serde_json::json!({"target":target,"entity":entity.to_bits(),"hovered":hovered.0,"centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array(),
             "value":value.map(|value|value.0),"range":range.map(|range|[range.start(),range.end()])}))
     }).collect::<Vec<_>>());
     value["transform_edit"] = serde_json::json!(session.transform_edit.as_ref().map(|d| serde_json::json!({"id":d.id,"fields":d.fields,"active":d.active,"selection":d.selection})));
+    value["focus"] = serde_json::json!(focus.get().map(Entity::to_bits));
     value["input_elapsed"] = time.elapsed_secs_f64().into();
     value["control_down"] =
         (keys.pressed(KeyCode::ControlLeft) || keys.pressed(KeyCode::ControlRight)).into();

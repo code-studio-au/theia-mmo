@@ -3430,3 +3430,32 @@ at local/far origins on binary `9a585151e5d17f5840e1c3ae1669f4080ffb25a271096ba1
 unchanged width/document/history in a 3440 x 600 owned window, restored
 3440 x 1440, playtest entry/return and all prior shell checks. Zero GPU
 diagnostics including the forced resizes. Native captures were reviewed. No Windows native execution or multiplayer claim.
+
+## Exact attributes in the shared scroll pane — 10 November 2026
+
+P5-17 reuses inspector scrolling in the retained exact-attribute transaction.
+Workspace and Attributes pane scopes keep background controls blocked while
+allowing the active draft's wheel and scrollbar. The attribute frame uses the
+shared neutral border; focused fields retain the blue indication. On focus
+changes, the nearest pane scrolls only enough to show the control. A field
+focused before its first visible layout remains pending until geometry exists;
+manual scrolling does not repeatedly snap back to an unchanged focus. Existing
+Apply/Cancel, numeric scrubbing and exact world-f64 interpretation are retained.
+
+A real headless InputPlugin/CPU font-layout test Tabs through all fields and
+sliders for six forms (object, plant, marker, guide point, spawn and guide width),
+at both local/far fractional origins, in a 420 px-high window. It checks visible
+focus rectangles, bounded wheel scrolling within a modal draft, stable exact
+strings, unchanged source/revision/redo, and cancellation back to the prior saved
+state. The native qualifier's `--attributes-scroll` path uses actual focus and
+control entity IDs from read-only report telemetry. That path is prepared and
+syntax-checked, not executed: desktop use was stopped again by the user.
+
+Native rendering/input/GPU acceptance remains pending for this presentation.
+Completed earlier native runs qualify their recorded hashes, not this binary.
+
+Validation for this slice: all 137 focused Rust tests, formatting, denied-warning
+workspace/all-target Clippy and editor build pass. Evidence:
+`build/sprinkles-review/attributes-scroll-tests-final-v2.log`,
+`attributes-scroll-clippy-final.log` and `attributes-scroll-build-final.log`.
+Native acceptance remains pending while desktop use is stopped.

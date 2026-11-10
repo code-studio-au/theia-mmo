@@ -55,3 +55,7 @@ editor controls, not branding or a redistributed icon-library product.
 ScrollPosition/Scrollbar/ScrollbarThumb. Theia adds retained authoring/focus
 guards, finite-input checks and drag/hover visibility. No custom renderer or
 engine/plugin version change is introduced.
+
+The shared scrolling presentation is also used for exact attribute drafts.
+`scrolling_focus.rs` adds Theia-specific minimal focus reveal and draft/workspace
+ownership while retaining byte-exact f64 strings and Apply/Cancel transactions.

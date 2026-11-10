@@ -274,7 +274,7 @@ pub(super) fn setup(mut commands: Commands, icons: Option<Res<sidebar::Icons>>) 
             BackgroundColor(theme::PANEL),
         ))
         .with_children(|root| {
-            scrolling::pane(root, 12., |panel| {
+            scrolling::pane(root, 12., scrolling::Pane::Workspace, |panel| {
                 panel.spawn((Caption, text("PROPERTIES", 19.)));
                 panel.spawn((Info, text("", 14.)));
                 panel

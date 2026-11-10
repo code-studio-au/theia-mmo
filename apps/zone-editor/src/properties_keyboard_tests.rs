@@ -167,3 +167,132 @@ fn arrow_home_end_keep_slider_focus_and_endpoints_without_committing_source() {
         assert_eq!(app.world().resource::<Session>().editor.zone(), &source);
     }
 }
+
+#[test]
+fn tab_reveals_exact_attributes_in_a_short_inspector_without_editing_source_or_redo() {
+    for origin in [
+        [0.125, 0.25, -0.5],
+        [128_000_000_000.125, 20.25, -128_000_000_000.5],
+    ] {
+        for target in 0..6 {
+            let (mut app, _) = fixture_with_input(origin, target, true, true);
+            app.add_plugins(scrolling::plugin);
+            crate::headless_ui::add_layout(&mut app);
+            let window = app
+                .world_mut()
+                .query_filtered::<Entity, With<Window>>()
+                .single(app.world())
+                .unwrap();
+            app.world_mut()
+                .get_mut::<Window>(window)
+                .unwrap()
+                .resolution
+                .set_physical_resolution(3440, 420);
+            for mut camera in app
+                .world_mut()
+                .query::<&mut Camera>()
+                .iter_mut(app.world_mut())
+            {
+                camera
+                    .computed
+                    .target_info
+                    .as_mut()
+                    .unwrap()
+                    .physical_size
+                    .y = 420;
+                camera.viewport.as_mut().unwrap().physical_size.y = 420;
+            }
+            for _ in 0..3 {
+                app.update();
+            }
+            let source = app.world().resource::<Session>().editor.zone().clone();
+            let dirty = app.world().resource::<Session>().is_dirty();
+            let original = app
+                .world()
+                .resource::<Session>()
+                .transform_edit
+                .as_ref()
+                .unwrap()
+                .fields
+                .clone();
+            let pane = app
+                .world_mut()
+                .query_filtered::<Entity, With<scrolling::Pane>>()
+                .single(app.world())
+                .unwrap();
+            let mut focused = Vec::new();
+            loop {
+                let entity = app.world().resource::<InputFocus>().get().unwrap();
+                if focused.contains(&entity) {
+                    break;
+                }
+                focused.push(entity);
+                let node = app.world().get::<ComputedNode>(entity).unwrap();
+                let pose = app
+                    .world()
+                    .get::<bevy::ui::UiGlobalTransform>(entity)
+                    .unwrap();
+                let first = pose.affine().translation.y - node.size().y / 2.;
+                let last = pose.affine().translation.y + node.size().y / 2.;
+                assert!(
+                    first >= workspace::HEADER && last <= 420.,
+                    "target {target}, focus {entity:?}: {first}..{last}"
+                );
+                press(&mut app, KeyCode::Tab, Key::Tab);
+                for _ in 0..2 {
+                    app.update();
+                }
+            }
+            assert!(focused.len() >= original.len());
+            let entity = app.world().resource::<InputFocus>().get().unwrap();
+            let node = app.world().get::<ComputedNode>(entity).unwrap();
+            let pose = app
+                .world()
+                .get::<bevy::ui::UiGlobalTransform>(entity)
+                .unwrap();
+            assert!(pose.affine().translation.y - node.size().y / 2. >= workspace::HEADER);
+            assert!(pose.affine().translation.y + node.size().y / 2. <= 420.);
+            let computed = app.world().get::<ComputedNode>(pane).unwrap();
+            let limit = ((computed.content_size().y - computed.size().y)
+                * computed.inverse_scale_factor())
+            .max(0.);
+            let expected = (app.world().get::<ScrollPosition>(pane).unwrap().y + 24.).min(limit);
+            app.world_mut()
+                .trigger(bevy::picking::events::PointerScroll {
+                    entity: pane,
+                    pointer: bevy::picking::events::Pointer::new(
+                        bevy::picking::pointer::PointerId::Mouse,
+                        bevy::picking::pointer::Location {
+                            target: bevy::camera::RenderTarget::Window(
+                                bevy::window::WindowRef::Entity(window),
+                            )
+                            .normalize(Some(window))
+                            .unwrap(),
+                            position: Vec2::new(500., 300.),
+                        },
+                    ),
+                    hit: bevy::picking::backend::HitData::new(window, 0., None, None),
+                    unit: bevy::input::mouse::MouseScrollUnit::Line,
+                    x: 0.,
+                    y: -1.,
+                    phase: bevy::input::touch::TouchPhase::Moved,
+                });
+            for _ in 0..3 {
+                app.update();
+            }
+            assert_eq!(app.world().get::<ScrollPosition>(pane).unwrap().y, expected);
+            let session = app.world().resource::<Session>();
+            assert_eq!(session.transform_edit.as_ref().unwrap().fields, original);
+            assert_eq!(session.editor.zone(), &source);
+            assert_eq!(session.editor.history(), (0, 1));
+            assert_eq!(session.editor.revision(), 2);
+            assert_eq!(session.is_dirty(), dirty);
+            press(&mut app, KeyCode::Escape, Key::Escape);
+            let session = app.world().resource::<Session>();
+            assert!(session.transform_edit.is_none());
+            assert_eq!(session.editor.zone(), &source);
+            assert_eq!(session.editor.history(), (0, 1));
+            assert!(!session.is_dirty());
+        }
+    }
+}

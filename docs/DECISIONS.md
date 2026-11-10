@@ -1,3 +1,11 @@
+## 10 November 2026 — desktop use stopped; continue headlessly
+
+The user needs the mouse and display again. Stop native windows, desktop input
+and capture inspection. No native editor/input process remains. Continue P5-17
+headlessly across local commits; attribute-scroll native acceptance must wait
+for renewed desktop authorization. Completed native evidence remains valid for
+its recorded binaries.
+
 ## 10 November 2026 — continue P5-17 through commits, desktop use renewed
 
 The user reauthorizes mouse and display use as needed and explicitly requests

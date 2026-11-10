@@ -303,6 +303,7 @@ pub(super) fn setup(mut commands: Commands) {
                 top: px(workspace::HEADER),
                 bottom: px(0),
                 width: px(workspace::INSPECTOR_WIDTH),
+                flex_direction: FlexDirection::Column,
                 align_items: AlignItems::Stretch,
                 justify_content: JustifyContent::FlexStart,
                 overflow: Overflow::clip(),
@@ -311,175 +312,177 @@ pub(super) fn setup(mut commands: Commands) {
             BackgroundColor(theme::PANEL),
         ))
         .with_children(|root| {
-            root.spawn((
-                Node {
-                    width: percent(100),
-                    padding: px(12).all(),
-                    row_gap: px(6),
-                    flex_direction: FlexDirection::Column,
-                    border: px(2).all(),
-                    ..default()
-                },
-                BorderColor::all(theme::PRIMARY),
-                BackgroundColor(theme::PANEL),
-            ))
-            .with_children(|panel| {
-                panel.spawn((Caption, text("TRANSFORM", 16.), TextLayout::no_wrap()));
-                panel.spawn(text("Drag ↔ labels | click fields for exact values", 13.));
-                for (index, label) in LABELS.iter().enumerate() {
-                    panel
-                        .spawn((
-                            FieldRow(index),
-                            Visibility::Inherited,
-                            Node {
-                                column_gap: px(6),
-                                align_items: AlignItems::Center,
-                                ..default()
-                            },
-                        ))
-                        .with_children(|row| {
-                            row.spawn((
-                                FieldLabel(index),
-                                numeric::Handle(index),
-                                Text::new(format!("↔ {label}")),
-                                theme::font(11.),
-                                TextColor(theme::MUTED),
-                                Hovered::default(),
+            scrolling::pane(root, 0., scrolling::Pane::Attributes, |root| {
+                root.spawn((
+                    Node {
+                        width: percent(100),
+                        padding: px(12).all(),
+                        row_gap: px(6),
+                        flex_direction: FlexDirection::Column,
+                        border: px(1).all(),
+                        ..default()
+                    },
+                    BorderColor::all(theme::BORDER),
+                    BackgroundColor(theme::PANEL),
+                ))
+                .with_children(|panel| {
+                    panel.spawn((Caption, text("TRANSFORM", 16.), TextLayout::no_wrap()));
+                    panel.spawn(text("Drag ↔ labels | click fields for exact values", 13.));
+                    for (index, label) in LABELS.iter().enumerate() {
+                        panel
+                            .spawn((
+                                FieldRow(index),
+                                Visibility::Inherited,
                                 Node {
-                                    width: px(88),
+                                    column_gap: px(6),
+                                    align_items: AlignItems::Center,
                                     ..default()
                                 },
-                            ));
-                            row.spawn((
-                                Field(index),
-                                TextInput,
-                                SelectAllOnFocus,
-                                TabIndex(index as i32),
-                                Hovered::default(),
-                                EditableText {
-                                    max_characters: Some(64),
-                                    allow_newlines: false,
-                                    ..default()
-                                },
-                                Node {
-                                    flex_grow: 1.,
-                                    min_width: px(0),
-                                    min_height: px(32),
-                                    border: px(2).all(),
-                                    ..default()
-                                },
-                                BorderColor::all(theme::PRIMARY),
-                                BackgroundColor(theme::INPUT),
-                                theme::font(12.),
-                                TextColor(theme::BODY),
-                                TextLayout::no_wrap(),
-                                TextCursorStyle::default(),
-                            ));
-                        });
-                }
-                for control in [Control::YawSlider, Control::ValueSlider] {
-                    let yaw = control == Control::YawSlider;
-                    let mut container = panel.spawn((
-                        SliderRow(control),
-                        Visibility::Hidden,
-                        Node {
-                            display: Display::None,
-                            flex_direction: FlexDirection::Column,
-                            row_gap: px(4),
-                            ..default()
-                        },
-                    ));
-                    if yaw {
-                        container.insert(YawRow);
+                            ))
+                            .with_children(|row| {
+                                row.spawn((
+                                    FieldLabel(index),
+                                    numeric::Handle(index),
+                                    Text::new(format!("↔ {label}")),
+                                    theme::font(11.),
+                                    TextColor(theme::MUTED),
+                                    Hovered::default(),
+                                    Node {
+                                        width: px(88),
+                                        ..default()
+                                    },
+                                ));
+                                row.spawn((
+                                    Field(index),
+                                    TextInput,
+                                    SelectAllOnFocus,
+                                    TabIndex(index as i32),
+                                    Hovered::default(),
+                                    EditableText {
+                                        max_characters: Some(64),
+                                        allow_newlines: false,
+                                        ..default()
+                                    },
+                                    Node {
+                                        flex_grow: 1.,
+                                        min_width: px(0),
+                                        min_height: px(32),
+                                        border: px(2).all(),
+                                        ..default()
+                                    },
+                                    BorderColor::all(theme::PRIMARY),
+                                    BackgroundColor(theme::INPUT),
+                                    theme::font(12.),
+                                    TextColor(theme::BODY),
+                                    TextLayout::no_wrap(),
+                                    TextCursorStyle::default(),
+                                ));
+                            });
                     }
-                    container.with_children(|row| {
-                        let mut label = row.spawn((SliderLabel(control), text("", 13.)));
-                        if yaw {
-                            label.insert(YawLabel);
-                        }
-                        let mut slider = row.spawn((
-                            control,
-                            Slider {
-                                track_click: TrackClick::Snap,
-                                ..default()
-                            },
-                            SliderValue(if yaw { 0. } else { 1. }),
-                            SliderRange::new(
-                                if yaw { -180. } else { 0.25 },
-                                if yaw { 180. } else { 8. },
-                            ),
-                            SliderStep(if yaw { 15. } else { 0.25 }),
-                            SliderPrecision(if yaw { 0 } else { 2 }),
-                            TabIndex(if yaw { 7 } else { 8 }),
-                            Hovered::default(),
+                    for control in [Control::YawSlider, Control::ValueSlider] {
+                        let yaw = control == Control::YawSlider;
+                        let mut container = panel.spawn((
+                            SliderRow(control),
+                            Visibility::Hidden,
                             Node {
-                                width: percent(100),
-                                height: px(24),
+                                display: Display::None,
+                                flex_direction: FlexDirection::Column,
+                                row_gap: px(4),
                                 ..default()
                             },
-                            BackgroundColor(theme::INPUT),
                         ));
                         if yaw {
-                            slider.insert(YawSlider);
+                            container.insert(YawRow);
                         }
-                        slider.with_children(|track| {
-                            track
-                                .spawn(Node {
-                                    position_type: PositionType::Absolute,
-                                    left: px(0),
-                                    right: px(14),
-                                    top: px(0),
-                                    bottom: px(0),
-                                    ..default()
-                                })
-                                .with_children(|travel| {
-                                    let mut thumb = travel.spawn((
-                                        SliderHandle(control),
-                                        SliderThumb,
-                                        Node {
-                                            position_type: PositionType::Absolute,
-                                            width: px(14),
-                                            height: px(24),
-                                            left: percent(50),
-                                            ..default()
-                                        },
-                                        BackgroundColor(theme::PRIMARY),
-                                    ));
-                                    if yaw {
-                                        thumb.insert(YawThumb);
-                                    }
-                                });
-                        });
-                    });
-                }
-                panel.spawn(text(
-                    "Enter applies all fields.\nEscape cancels. Tab changes field.",
-                    13.,
-                ));
-                panel
-                    .spawn(Node {
-                        column_gap: px(6),
-                        ..default()
-                    })
-                    .with_children(|row| {
-                        for (control, label) in [
-                            (Control::Apply, "Apply"),
-                            (Control::Reset, "Reset fields"),
-                            (Control::Cancel, "Cancel"),
-                        ] {
-                            row.spawn((
+                        container.with_children(|row| {
+                            let mut label = row.spawn((SliderLabel(control), text("", 13.)));
+                            if yaw {
+                                label.insert(YawLabel);
+                            }
+                            let mut slider = row.spawn((
                                 control,
-                                Button,
-                                Hovered::default(),
-                                Node {
-                                    padding: px(8).all(),
+                                Slider {
+                                    track_click: TrackClick::Snap,
                                     ..default()
                                 },
-                                BackgroundColor(theme::Variant::Default.background(false)),
-                            ))
-                            .with_child(text(label, 14.));
-                        }
-                    });
+                                SliderValue(if yaw { 0. } else { 1. }),
+                                SliderRange::new(
+                                    if yaw { -180. } else { 0.25 },
+                                    if yaw { 180. } else { 8. },
+                                ),
+                                SliderStep(if yaw { 15. } else { 0.25 }),
+                                SliderPrecision(if yaw { 0 } else { 2 }),
+                                TabIndex(if yaw { 7 } else { 8 }),
+                                Hovered::default(),
+                                Node {
+                                    width: percent(100),
+                                    height: px(24),
+                                    ..default()
+                                },
+                                BackgroundColor(theme::INPUT),
+                            ));
+                            if yaw {
+                                slider.insert(YawSlider);
+                            }
+                            slider.with_children(|track| {
+                                track
+                                    .spawn(Node {
+                                        position_type: PositionType::Absolute,
+                                        left: px(0),
+                                        right: px(14),
+                                        top: px(0),
+                                        bottom: px(0),
+                                        ..default()
+                                    })
+                                    .with_children(|travel| {
+                                        let mut thumb = travel.spawn((
+                                            SliderHandle(control),
+                                            SliderThumb,
+                                            Node {
+                                                position_type: PositionType::Absolute,
+                                                width: px(14),
+                                                height: px(24),
+                                                left: percent(50),
+                                                ..default()
+                                            },
+                                            BackgroundColor(theme::PRIMARY),
+                                        ));
+                                        if yaw {
+                                            thumb.insert(YawThumb);
+                                        }
+                                    });
+                            });
+                        });
+                    }
+                    panel.spawn(text(
+                        "Enter applies all fields.\nEscape cancels. Tab changes field.",
+                        13.,
+                    ));
+                    panel
+                        .spawn(Node {
+                            column_gap: px(6),
+                            ..default()
+                        })
+                        .with_children(|row| {
+                            for (control, label) in [
+                                (Control::Apply, "Apply"),
+                                (Control::Reset, "Reset fields"),
+                                (Control::Cancel, "Cancel"),
+                            ] {
+                                row.spawn((
+                                    control,
+                                    Button,
+                                    Hovered::default(),
+                                    Node {
+                                        padding: px(8).all(),
+                                        ..default()
+                                    },
+                                    BackgroundColor(theme::Variant::Default.background(false)),
+                                ))
+                                .with_child(text(label, 14.));
+                            }
+                        });
+                });
             });
         });
 }

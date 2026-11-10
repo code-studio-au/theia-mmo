@@ -1,23 +1,46 @@
 //! Sprinkles scroll.rs presentation over Bevy 0.20's standard scroll widgets.
 //! Upstream 0e978f5, MIT; see third_party/sprinkles/PROVENANCE.md.
 use super::*;
+#[path = "scrolling_focus.rs"]
+mod focus;
 use bevy::input::mouse::MouseScrollUnit;
 use bevy::picking::events::PointerScroll;
 use bevy::ui_widgets::{ControlOrientation, Scrollbar, ScrollbarThumb};
 
-#[derive(Component)]
-pub(super) struct Pane;
+#[derive(Component, Clone, Copy, Debug)]
+pub(super) enum Pane {
+    Workspace,
+    Attributes,
+}
+impl Pane {
+    fn allowed(self, session: &Session) -> bool {
+        !session.ui.input_owned
+            && session.play.is_none()
+            && session.drag.is_none()
+            && session.stroke.is_none()
+            && session.path_draft.is_none()
+            && match self {
+                Self::Workspace => !session.has_modal(),
+                Self::Attributes => {
+                    session.transform_edit.is_some()
+                        && session.name_edit.is_none()
+                        && session.file_dialog.is_none()
+                }
+            }
+    }
+}
 #[derive(Component)]
 struct Track(Entity);
 
 pub(super) fn pane(
     parent: &mut ChildSpawnerCommands,
     padding: f32,
+    scope: Pane,
     body: impl FnOnce(&mut ChildSpawnerCommands),
 ) {
     let area = parent
         .spawn((
-            Pane,
+            scope,
             ScrollPosition::default(),
             Hovered::default(),
             Node {
@@ -44,7 +67,11 @@ pub(super) fn pane(
     parent
         .spawn((
             Track(area),
-            GlobalZIndex(17),
+            GlobalZIndex(if matches!(scope, Pane::Attributes) {
+                21
+            } else {
+                17
+            }),
             Hovered::default(),
             Scrollbar::new(area, ControlOrientation::Vertical, 24.),
             Node {
@@ -73,13 +100,13 @@ fn wheel(
     mut event: On<PointerScroll>,
     session: Res<Session>,
     windows: Query<&Window>,
-    mut panes: Query<(&ComputedNode, &mut ScrollPosition), With<Pane>>,
+    mut panes: Query<(&Pane, &ComputedNode, &mut ScrollPosition)>,
 ) {
-    let Ok((node, mut position)) = panes.get_mut(event.entity) else {
+    let Ok((scope, node, mut position)) = panes.get_mut(event.entity) else {
         return;
     };
     event.propagate(false);
-    if workspace::busy(&session)
+    if !scope.allowed(&session)
         || !windows.single().is_ok_and(|w| w.focused)
         || !event.y.is_finite()
     {
@@ -96,29 +123,42 @@ fn wheel(
 }
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(PostUpdate, feedback.after(bevy::ui::UiSystems::Layout))
-        .add_systems(
-            Update,
-            ownership.after(panels::resize).before(panels::apply),
-        );
+    app.add_systems(
+        PostUpdate,
+        (focus::reveal, feedback)
+            .chain()
+            .after(bevy::ui::UiSystems::Layout)
+            .after(bevy::ui::ui_layout_system)
+            .after(properties::finish),
+    )
+    .add_systems(
+        Update,
+        ownership.after(panels::resize).before(panels::apply),
+    );
 }
 
 // Preserve one UI gesture across the narrow scrollbar/panel boundary and release.
 fn ownership(
     mut session: ResMut<Session>,
     windows: Query<&Window>,
-    mouse: Res<ButtonInput<MouseButton>>,
-    keys: Res<ButtonInput<KeyCode>>,
-    tracks: Query<&Hovered, With<Scrollbar>>,
+    input: (Res<ButtonInput<MouseButton>>, Res<ButtonInput<KeyCode>>),
+    tracks: Query<(&Hovered, &Scrollbar)>,
+    panes: Query<&Pane>,
     mut thumbs: Query<&mut bevy::ui_widgets::ScrollbarDragState>,
     mut active: Local<bool>,
 ) {
+    let (mouse, keys) = input;
     let focused = windows.single().is_ok_and(|window| window.focused);
     if !*active
         && focused
-        && !workspace::busy(&session)
+        && !session.ui.input_owned
         && mouse.just_pressed(MouseButton::Left)
-        && tracks.iter().any(|hover| hover.0)
+        && tracks.iter().any(|(hover, bar)| {
+            hover.0
+                && panes
+                    .get(bar.target)
+                    .is_ok_and(|pane| pane.allowed(&session))
+        })
     {
         *active = true;
     }
