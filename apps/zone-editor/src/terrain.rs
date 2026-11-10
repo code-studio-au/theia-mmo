@@ -396,7 +396,7 @@ pub(super) fn palette(
         &mut BackgroundColor,
         &mut Node,
     )>,
-    mut labels: Query<&mut Text, With<PaletteLabel>>,
+    mut labels: Query<(&mut Text, Has<PaletteShortcut>), With<PaletteLabel>>,
     mut help: Query<&mut Text, (With<Help>, Without<PaletteLabel>)>,
 ) {
     for mut text in &mut help {
@@ -491,8 +491,10 @@ Offline collision sandbox"
         };
         color.0 = theme::button_color(true, active, hovered.0);
         for child in children.iter() {
-            if let Ok(mut text) = labels.get_mut(child) {
-                **text = if matches!(*action, Action::Brush(Tool::Flatten)) {
+            if let Ok((mut text, shortcut)) = labels.get_mut(child) {
+                **text = if shortcut {
+                    tool_caption(actions[slot.0].1).1.into()
+                } else if matches!(*action, Action::Brush(Tool::Flatten)) {
                     format!(
                         "Flatten {:.2} m ({:.2}%)",
                         session.flatten_height,
@@ -512,7 +514,7 @@ Offline collision sandbox"
                         Action::Brush(Tool::Paint(surface)) => {
                             format!("Paint {surface:?} ({:.2}%)", session.paint_blend * 100.)
                         }
-                        _ => actions[slot.0].1.into(),
+                        _ => tool_caption(actions[slot.0].1).0.into(),
                     }
                 };
             }

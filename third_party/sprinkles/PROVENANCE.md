@@ -162,3 +162,7 @@ byte counts and upstream Git blob identities. The retained
 filenames and shared Ghost/Active button states; bounded browsing and validated
 file operations remain Theia-owned. Browser actions also use shared MD button
 sizing/type. Menu keyboard hints retain muted secondary text through live states.
+
+Theia Tools rows reuse the menu secondary-typography treatment: action names
+left, muted 10 px keyboard hints right. Existing per-workspace action captions
+and live brush-value descriptions remain the source for this presentation.

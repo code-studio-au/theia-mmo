@@ -447,6 +447,8 @@ struct PaletteSlot(usize);
 #[derive(Component)]
 struct PaletteLabel;
 #[derive(Component)]
+struct PaletteShortcut;
+#[derive(Component)]
 struct Help;
 #[derive(Component)]
 struct Summary;
@@ -659,6 +661,13 @@ fn object_actions() -> [(Action, &'static str); 12] {
         (Action::Play, "Enter / leave playtest [F5]"),
     ]
 }
+fn tool_caption(title: &str) -> (&str, &str) {
+    title
+        .strip_suffix(']')
+        .and_then(|title| title.rsplit_once(" ["))
+        .unwrap_or((title, ""))
+}
+
 fn setup_tools(panel: &mut ChildSpawnerCommands) {
     sections::spawn(panel, "Tools", |panel| {
         for (index, (action, title)) in object_actions().into_iter().enumerate() {
@@ -671,13 +680,26 @@ fn setup_tools(panel: &mut ChildSpawnerCommands) {
                     Hovered::default(),
                     Node {
                         height: Val::Auto,
-                        justify_content: JustifyContent::Start,
+                        justify_content: JustifyContent::SpaceBetween,
+                        column_gap: px(8),
                         ..theme::button_node()
                     },
                     BackgroundColor(theme::Variant::Default.background(false)),
                 ))
                 .with_children(|button| {
-                    button.spawn((PaletteLabel, theme::label(title, 12., theme::BODY)));
+                    let (label, shortcut) = tool_caption(title);
+                    button.spawn((PaletteLabel, theme::label(label, 12., theme::BODY)));
+                    button.spawn((
+                        PaletteLabel,
+                        PaletteShortcut,
+                        theme::Secondary,
+                        theme::label(shortcut, 10., theme::MUTED),
+                        TextLayout::no_wrap(),
+                        Node {
+                            flex_shrink: 0.,
+                            ..default()
+                        },
+                    ));
                 });
         }
     });

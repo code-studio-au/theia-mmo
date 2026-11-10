@@ -1,3 +1,8 @@
+P5-17, 10 November 2026: tool rows separate action names from right-aligned
+muted shortcut hints, preserving workspace actions and live brush labels. All
+154 focused tests, formatting, denied-warning Clippy and editor build pass.
+Native acceptance remains pending while desktop use is stopped. See STATUS/ZONE_EDITOR.
+
 P5-17, 10 November 2026: browser actions use shared Sprinkles MD sizing/type;
 file rows use original pinned folder/file icons, filenames and Ghost/Active
 states. Menu shortcuts retain muted secondary type. All 154 focused tests,

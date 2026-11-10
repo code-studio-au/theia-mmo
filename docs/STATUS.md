@@ -1,3 +1,16 @@
+Sprinkles-style tool shortcut columns, 10 November 2026 (P5-17):
+Tools rows now separate action names from right-aligned 10 px muted keyboard
+hints, using the same secondary typography as native menus. Each workspace keeps
+its existing action bindings, visibility/active states and live brush-value
+labels. The retained action captions supply shortcuts; no keyboard mapping or
+source transaction changed.
+
+All 154 focused Rust tests, formatting, denied-warning workspace/all-target
+Clippy and editor build pass. Evidence: `build/sprinkles-review/tool-captions-tests.log`,
+`tool-captions-clippy.log` and `tool-captions-build.log`. The complete selected-
+inspector CPU layout matrix passes. Native visual/input/GPU acceptance remains
+pending while desktop use is stopped.
+
 Sprinkles browser controls and file rows, 10 November 2026 (P5-17):
 content search/filter/paging actions now use shared 28 px MD button geometry and
 12 px labels. File rows pair original pinned Sprinkles/Remix 16 px folder/file
