@@ -116,6 +116,15 @@ def run(output, binary, only_case=None, scroll=False, attributes=False, dialogs=
                     current = fresh()
                     assert current['document'] == initial and current['revision'] == baseline_revision and current['history'] == baseline_history
 
+                for field_index in range(7):
+                    value = next(entry for entry in state()['attribute_summary'] if entry['field']==field_index)
+                    click(value['centre'])
+                    wait(lambda:state()['transform_edit'] is not None and state()['transform_edit']['active']==field_index)
+                    assert [float(value) for value in state()['transform_edit']['fields']] == expected_summary
+                    control('Cancel', 'transform_controls')
+                    wait(lambda:state()['transform_edit'] is None)
+                    unchanged()
+
                 def content_popup():
                     return next((entry for entry in state()['menus'] if entry['name']=='Content actions' and entry['role']=='popup' and min(entry['size'])>0), None)
 

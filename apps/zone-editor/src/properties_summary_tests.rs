@@ -13,7 +13,7 @@ fn setup(mut commands: Commands) {
         })
         .with_children(spawn);
 }
-fn fixture(origin: [f64; 3], target: u8) -> (App, Vec<String>) {
+pub(super) fn fixture(origin: [f64; 3], target: u8) -> (App, Vec<String>) {
     let (mut app, _) = super::super::yaw_tests::fixture_with_input(origin, target, true, true);
     let fields = app
         .world()
@@ -60,7 +60,7 @@ fn selected_attribute_rows_keep_exact_editor_values_labels_geometry_source_and_p
                 for (index, value) in values {
                     assert_eq!(value, expected[index]);
                 }
-                let capture = snapshot(app.world().resource::<Session>()).unwrap().0;
+                let capture = snapshot(app.world().resource::<Session>()).unwrap().1;
                 for (label, text, node) in app
                     .world_mut()
                     .query::<(&Label, &Text, &ComputedNode)>()

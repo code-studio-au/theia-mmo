@@ -1,3 +1,9 @@
+P5-17, 10 November 2026: inspector values now enter the exact edit form
+at the selected attribute, with target/revision/point guards and unchanged full
+transaction semantics. All 153 focused tests, formatting, denied-warning Clippy
+and editor build pass, including focus/cancel/reflow regressions. Native acceptance
+remains pending while desktop use is stopped. See STATUS and ZONE_EDITOR.
+
 P5-17, 10 November 2026: default attribute summaries use aligned compact
 Sprinkles-style labels/tabular values over the exact editor's shared f64 capture.
 Preview/annotation/guide metadata and the existing edit transaction stay explicit.

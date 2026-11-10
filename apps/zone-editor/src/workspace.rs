@@ -20,6 +20,7 @@ pub(super) struct Requests {
     pub name_zone: bool,
     pub find: bool,
     pub transform: bool,
+    pub transform_field: Option<usize>,
     pub spawn_transform: bool,
     pub help: bool,
     pub file_open: bool,

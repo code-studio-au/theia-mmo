@@ -497,6 +497,7 @@ pub(super) fn keyboard(
     mut requests: ResMut<workspace::Requests>,
 ) {
     let requested = std::mem::take(&mut requests.transform);
+    let requested_field = std::mem::take(&mut requests.transform_field);
     let spawn_requested = std::mem::take(&mut requests.spawn_transform);
     if !windows.single().is_ok_and(|w| w.focused) {
         return;
@@ -538,13 +539,16 @@ pub(super) fn keyboard(
         session.status = "Select an object, plant, marker or guide to edit properties".into();
         return;
     };
+    let active = requested_field
+        .unwrap_or(0)
+        .min(original.labels().len().saturating_sub(1));
     let draft = Draft {
         id,
         revision: session.editor.revision(),
         fields: original.values(),
         original,
         subject,
-        active: 0,
+        active,
         selection: [0; 2],
         action: None,
     };
@@ -553,7 +557,7 @@ pub(super) fn keyboard(
         text.clear();
         text.editor_mut()
             .set_text(draft.fields.get(field.0).map_or("", String::as_str));
-        if field.0 == 0 {
+        if field.0 == active {
             focus.set(entity, FocusCause::Navigated);
         }
     }

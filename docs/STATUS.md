@@ -1,3 +1,23 @@
+Direct attribute-value editing, 10 November 2026 (P5-17): selecting an
+inspector value now opens the retained exact editor at that field. Ghost value
+buttons use the shared 28 px interaction style and a short edit hint. Native
+ActivateOnPress opens the draft before release, preserving text-input ownership.
+The entry point binds to rendered target/type/revision/guide-point identity and
+refuses stale/hidden/unfocused/busy values. Normal F9/menu transform keeps its
+first-field entry. All values stage the existing full validated transaction;
+Apply/Cancel, no-op and undo/redo semantics remain.
+
+All 153 focused Rust tests, formatting, denied-warning workspace/all-target
+Clippy and editor build pass. Tests enter every field on all five selected-target
+fixtures at local/far origins, verify exact focus/draft strings and real Cancel
+redo preservation, reject stale/hidden input, and exercise held press/release
+reflow plus repeated reopening without source edits. Evidence:
+`build/sprinkles-review/attribute-actions-tests-final.log`,
+`attribute-actions-clippy.log` and `attribute-actions-build.log`.
+Native rendering/input/GPU acceptance remains pending while desktop use is stopped.
+The prepared native qualifier now clicks all seven object values and checks the
+focused field, exact draft and cancellation; it has only been syntax-checked.
+
 Sprinkles-style aligned attribute summaries, 10 November 2026 (P5-17):
 selected objects, plants, markers and guide points/widths now show aligned label/
 value rows in the default inspector. Shared capture supplies the same original

@@ -146,3 +146,9 @@ pinned inspector-field/text-edit presentation: 10 px medium muted labels and
 capture rather than importing f32 particle bindings. Actual values, candidate
 pose/annotation/guide metadata and transaction/validation semantics remain
 Theia-owned; these rows have no editable-input affordance or source write path.
+
+The aligned summary values further use shared native Ghost button presentation
+as Theia-specific entry points into its exact edit form. Native ActivateOnPress
+and the existing reflow release cleanup handle pointer ownership; target/revision/
+guide-point checks protect reused UI data. Full f64 validation, Apply/Cancel and
+history semantics stay in the retained Theia property controller.
