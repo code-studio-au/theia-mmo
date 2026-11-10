@@ -1,3 +1,23 @@
+Sprinkles viewport dropdowns, 10 November 2026 (P5-17): Camera and Gizmo
+mode now show current values in full-width combobox-style fields instead of
+button clusters. The pinned combobox.rs MD trigger presentation supplies 28 px
+height, 12 px text/padding, current-value label, right chevron and active-open
+feedback; shared field labels use 10 px medium text and 3 px spacing. Native
+Bevy menus reuse the existing four camera/three gizmo choices and guarded handlers.
+Popup placement flips above near the window bottom and escapes panel clipping.
+Gizmo mode reflects its existing Objects-only availability; busy/unfocused popups
+close while preserving a newly opened text form's focus.
+
+All 146 focused Rust tests, formatting, denied-warning workspace/all-target
+Clippy and editor build pass. Tests cover all choices at local/far origins,
+current-value labels, exact source/history/revision preservation, disabled/focus/
+modal guards, clipped short-window placement, and actual theme/menu/selector
+geometry across modes and supported panel widths. Evidence:
+`build/sprinkles-review/select-tests-final.log`, `select-clippy.log` and
+`select-build.log`. Native rendering/input/GPU acceptance remains pending while
+desktop use is stopped. The prepared native qualifier now covers all seven
+choices and gizmo availability; it has only been syntax-checked for this binary.
+
 Sprinkles content-row action menus, 10 November 2026 (P5-17): objects,
 guides, markers and plants now expose a compact ellipsis menu and secondary-click
 access following pinned data_panel.rs. Actions reuse the native application-menu

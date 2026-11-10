@@ -379,10 +379,11 @@ fn sprinkles_browser_inspector_and_tools_have_separate_full_height_regions() {
     app.add_observer(sidebar::activate)
         .add_systems(Update, outliner::sync);
     crate::headless_ui::add_layout(&mut app);
-    // Include actual theme/checkbox/border systems in the CPU geometry check.
+    // Include actual theme, checkbox, menu and selector systems in the CPU layout.
     app.init_resource::<ButtonInput<MouseButton>>()
         .init_resource::<bevy::input::touch::Touches>()
-        .add_plugins(theme::plugin);
+        .init_resource::<bevy::input_focus::InputFocus>()
+        .add_plugins((theme::plugin, menus::plugin));
     let source = app.world().resource::<Session>().editor.zone().clone();
     app.add_systems(Update, (panels::apply, terrain::palette).chain());
     for (browser_width, inspector_width) in [(300., 300.), (480., 600.), (450., 350.)] {
@@ -481,7 +482,28 @@ fn sprinkles_browser_inspector_and_tools_have_separate_full_height_regions() {
                     assert!(first.y >= 0. && last.y <= HEADER);
                 }
             }
-            assert_eq!(viewport_controls, 10);
+            assert_eq!(viewport_controls, 3);
+            let mut selectors = 0;
+            for (_, node, pose) in app
+                .world_mut()
+                .query::<(
+                    &menus::SelectTrigger,
+                    &ComputedNode,
+                    &bevy::ui::UiGlobalTransform,
+                )>()
+                .iter(app.world())
+            {
+                selectors += 1;
+                let first = pose.affine().translation - node.size() / 2.;
+                let last = pose.affine().translation + node.size() / 2.;
+                assert!(node.size().min_element() > 0.);
+                assert!(
+                    first.x >= sidebar::WIDTH + browser_width
+                        && last.x <= sidebar::WIDTH + browser_width + inspector_width
+                );
+                assert!(first.y >= HEADER && last.y <= 1440.);
+            }
+            assert_eq!(selectors, 2);
             assert_eq!(header_actions, 2);
 
             assert_eq!(app.world().resource::<Session>().editor.zone(), &source);

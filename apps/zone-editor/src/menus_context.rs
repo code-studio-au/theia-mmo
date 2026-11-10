@@ -254,4 +254,4 @@ fn sync(
 
 #[cfg(test)]
 #[path = "menus_context_tests.rs"]
-mod tests;
+pub(in crate::menus) mod tests;

@@ -2,11 +2,14 @@
 use super::*;
 #[path = "menus_context.rs"]
 mod context;
+#[path = "menus_select.rs"]
+mod select;
 use bevy::input_focus::{
     FocusCause, InputFocus,
     tab_navigation::{NavAction, TabIndex},
 };
 use bevy::ui_widgets::{MenuAction, MenuButton, MenuEvent, MenuFocusState, MenuItem, MenuPopup};
+pub(super) use select::{Kind as SelectKind, SelectTrigger};
 
 #[derive(Component)]
 pub(super) struct Trigger(pub &'static str);
@@ -14,7 +17,12 @@ pub(super) struct Trigger(pub &'static str);
 pub(super) struct Popup(pub &'static str);
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_observer(activate).add_plugins(context::plugin);
+    app.add_observer(activate)
+        .add_plugins((context::plugin, select::plugin));
+}
+
+pub(super) fn spawn_select(parent: &mut ChildSpawnerCommands, kind: SelectKind) {
+    select::spawn(parent, kind);
 }
 
 pub(super) fn spawn_content(parent: &mut ChildSpawnerCommands, row: usize) {

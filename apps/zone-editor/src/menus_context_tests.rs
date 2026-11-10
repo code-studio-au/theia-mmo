@@ -1,6 +1,6 @@
 //! Native menu events and CPU layout only; no OS UI/input or file writes.
 use super::*;
-fn fixture(origin: [f64; 3]) -> (App, Entity) {
+pub(in crate::menus) fn fixture(origin: [f64; 3]) -> (App, Entity) {
     let (mut app, window) = outliner::tests::app(origin);
     app.init_resource::<bevy::input_focus::InputFocusVisible>()
         .init_resource::<ButtonInput<MouseButton>>()

@@ -114,8 +114,8 @@ def run(output, binary, only_case=None, scroll=False, attributes=False, dialogs=
                 def content_popup():
                     return next((entry for entry in state()['menus'] if entry['name']=='Content actions' and entry['role']=='popup' and min(entry['size'])>0), None)
 
-                def context_control(target):
-                    popup = content_popup()
+                def popup_control(title, target):
+                    popup = next((entry for entry in state()['menus'] if entry['name']==title and entry['role']=='popup' and min(entry['size'])>0), None)
                     assert popup
                     def inside(entry):
                         return all(abs(entry['centre'][axis]-popup['centre'][axis]) < popup['size'][axis]/2 for axis in [0,1])
@@ -128,7 +128,7 @@ def run(output, binary, only_case=None, scroll=False, attributes=False, dialogs=
                 wait(content_popup)
                 unchanged()
                 capture('content-row-actions')
-                context_control('Frame')
+                popup_control('Content actions', 'Frame')
                 wait(lambda:not content_popup())
                 unchanged()
                 move(row['centre'])
@@ -138,13 +138,26 @@ def run(output, binary, only_case=None, scroll=False, attributes=False, dialogs=
                 finally:
                     desktop.button(3,False)
                 wait(lambda:not state()['right_mouse_down'] and content_popup())
-                context_control('Rename')
+                popup_control('Content actions', 'Rename')
                 wait(lambda:state()['name_edit'] is not None)
                 capture('content-context-rename')
                 unchanged()
                 desktop.key('Escape')
                 wait(lambda:state()['name_edit'] is None)
                 unchanged()
+
+                for selector_kind, option, label in [
+                    ('Camera','Top','Top'),('Camera','Front','Front'),('Camera','Right','Right'),('Camera','Perspective','Perspective'),
+                    ('Gizmo','Rotate','Rotate Y'),('Gizmo','Scale','Scale uniformly'),('Gizmo','Move','Move'),
+                ]:
+                    entry = next(entry for entry in state()['selectors'] if entry['target']==selector_kind)
+                    assert entry['enabled']
+                    click(entry['centre'])
+                    wait(lambda:any(p['name']==entry['menu'] and p['role']=='popup' and min(p['size'])>0 for p in state()['menus']))
+                    popup_control(entry['menu'], f"{'View' if selector_kind=='Camera' else 'GizmoTool'}({option})")
+                    wait(lambda:any(item['target']==selector_kind and item['value']==label for item in state()['selectors']))
+                    unchanged()
+                capture('viewport-selectors')
 
                 for mode, flags in [
                     ('Sculpt', [True, False, False, False, False]),
@@ -157,6 +170,7 @@ def run(output, binary, only_case=None, scroll=False, attributes=False, dialogs=
                     control(f'Mode({mode})')
                     wait(lambda: [state()[key] for key in ['terrain_mode', 'terrain_paint', 'path_mode', 'marker_mode', 'vegetation_mode']] == flags)
                     unchanged()
+                    assert next(item for item in state()['selectors'] if item['target']=='Gizmo')['enabled'] == (mode=='Objects')
                 control('Object(1)', 'content')
                 wait(lambda: state()['selected'] == 1)
 

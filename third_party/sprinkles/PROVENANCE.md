@@ -119,3 +119,11 @@ comes from `menus.rs`; native Bevy 0.20 Popover and OverrideClip handle placemen
 and scrolling-panel clipping. Theia keeps a bounded row pool and validated
 selection/command/history APIs, with target/revision/row snapshots to refuse
 stale contexts. This does not import Sprinkles' particle respawn/state controller.
+
+`menus_select.rs` adapts the default selected-value trigger in pinned
+`ui/widgets/combobox.rs`: full-width MD button, selected label, right arrow and
+active-open feedback. Shared labels follow the compact field presentation.
+Theia uses native Bevy MenuButton/MenuPopup/MenuItem, Popover and OverrideClip
+with existing camera/gizmo preference handlers. Current values and availability
+come from retained Session/View state; no particle settings or custom popover
+lifecycle are imported. The chevron uses standard UI borders.

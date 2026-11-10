@@ -254,23 +254,7 @@ pub(super) fn setup(mut commands: Commands, icons: Option<Res<sidebar::Icons>>) 
                         });
                 });
                 sections::spawn(panel, "Viewport", |panel| {
-                    panel
-                        .spawn(Node {
-                            flex_wrap: FlexWrap::Wrap,
-                            column_gap: px(6),
-                            row_gap: px(6),
-                            ..default()
-                        })
-                        .with_children(|row| {
-                            for (preset, label) in [
-                                (camera_views::Preset::Perspective, "Perspective"),
-                                (camera_views::Preset::Top, "Top"),
-                                (camera_views::Preset::Front, "Front"),
-                                (camera_views::Preset::Right, "Right"),
-                            ] {
-                                row.spawn(button(Control::View(preset), label));
-                            }
-                        });
+                    menus::spawn_select(panel, menus::SelectKind::Camera);
                     panel
                         .spawn(Node {
                             flex_wrap: FlexWrap::Wrap,
@@ -283,22 +267,7 @@ pub(super) fn setup(mut commands: Commands, icons: Option<Res<sidebar::Icons>>) 
                             theme::checkbox::spawn(row, Control::Handles, "Handles");
                         });
                     theme::checkbox::spawn(panel, Control::Snap, "Snap (1 m / 15 deg / 10%)");
-                    panel
-                        .spawn(Node {
-                            flex_wrap: FlexWrap::Wrap,
-                            column_gap: px(6),
-                            row_gap: px(6),
-                            ..default()
-                        })
-                        .with_children(|row| {
-                            for (tool, label) in [
-                                (gizmo::Tool::Move, "Move"),
-                                (gizmo::Tool::Rotate, "Rotate Y"),
-                                (gizmo::Tool::Scale, "Scale uniformly"),
-                            ] {
-                                row.spawn(button(Control::GizmoTool(tool), label));
-                            }
-                        });
+                    menus::spawn_select(panel, menus::SelectKind::Gizmo);
                 });
                 setup_tools(panel);
                 sections::spawn(panel, "Tool settings", |panel| {

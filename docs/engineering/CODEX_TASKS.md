@@ -1,3 +1,9 @@
+P5-17, 10 November 2026: Camera/Gizmo choices use current-value Sprinkles
+combobox-style fields over native menus and the existing guarded preferences.
+All 146 focused tests, formatting, denied-warning Clippy and editor build pass,
+including actual selector/menu geometry across modes/widths. Native acceptance
+remains pending while desktop use is stopped. See STATUS and ZONE_EDITOR.
+
 P5-17, 10 November 2026: content rows gain Sprinkles ellipsis/secondary-
 click menus over native Bevy menus, popup placement and clipping. Shared command
 routing binds actions to the target/revision/row snapshot and rejects stale views.

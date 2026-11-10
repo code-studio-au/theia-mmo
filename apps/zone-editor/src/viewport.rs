@@ -444,6 +444,7 @@ type ReportControls<'w, 's> = Query<
             Entity,
             Option<&'static properties::FieldLabel>,
             Has<bevy::ui_widgets::MenuItem>,
+            Option<&'static menus::SelectTrigger>,
         ),
         Option<&'static naming::Control>,
         Option<&'static properties::Control>,
@@ -649,11 +650,18 @@ pub(super) fn report(
         "filter":format!("{:?}",content.filter),"total":content.total,
         "query":content.query,
         "scroll_events":content.scroll_events,"last_scroll":content.last_scroll});
-    value["workspace_controls"] = serde_json::json!(controls.iter().filter_map(|((..,menu_item),_,_,_,node,t,hovered,control,setting,value,range,..)| {
+    value["workspace_controls"] = serde_json::json!(controls.iter().filter_map(|((_,_,_,_,_,_,menu_item,..),_,_,_,node,t,hovered,control,setting,value,range,..)| {
         let target = match (control,setting) { (Some(c),_)=>format!("{c:?}"),(_,Some(s))=>format!("{s:?}"),_=>return None };
         let factor = node.inverse_scale_factor() * scale.0;
         Some(serde_json::json!({"target":target,"hovered":hovered.0,"centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array(),
             "menu_item":menu_item,"value":value.map(|v|v.0),"range":range.map(|r|[r.start(),r.end()])}))
+    }).collect::<Vec<_>>());
+    value["selectors"] = serde_json::json!(controls.iter().filter_map(|((..,selector),_,_,_,node,t,hovered,..)| {
+        let selector = selector?;
+        let factor = node.inverse_scale_factor() * scale.0;
+        Some(serde_json::json!({"target":format!("{:?}",selector.kind),"menu":selector.kind.title(),
+            "value":selector.kind.value(&session,&view),"enabled":selector.kind.enabled(&session,&view),"hovered":hovered.0,
+            "centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array()}))
     }).collect::<Vec<_>>());
     value["scroll_panes"] = serde_json::json!(controls.iter().filter_map(|((_,_,position,pane,..),_,_,_,node,t,hovered,..)| {
         let pane = pane?;
