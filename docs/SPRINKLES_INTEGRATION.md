@@ -248,9 +248,10 @@ The project menu offers a recovery list, loaded in the background. Drafts are
 validated with the usual migration and material checks and restore as dirty
 projects without assigned paths. Restoration rejects unsaved or actively edited
 projects. While the particle workspace is active, committed changes are captured in the
-background at five-second intervals. This is best-effort recovery: edits still in
-text fields, changes just before a workspace or project switch, and shutdown are
-not yet guaranteed to reach a draft. Drafts remain after an explicit Save; a
+background at five-second intervals. This is best-effort recovery: edits still in text fields and shutdown are not yet guaranteed to reach a
+draft. Leaving the workspace or switching projects queues a final committed
+snapshot; a full queue or write error is reported, and queued work is not yet
+durable until the writer completes. Drafts remain after an explicit Save; a
 user-facing discard control remains pending. The storage API can remove
 a selected draft without following a symbolic link. Its count check assumes a
 single editor process; concurrent processes are not yet coordinated.

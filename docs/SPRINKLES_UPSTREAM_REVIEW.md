@@ -13,8 +13,7 @@ platform/runtime behavior. No wholesale upstream update or engine change.
 Explicit particle saves now commit a valid focused field first, serialize writes,
 and retain dirty state until a successful replacement. Failed writes, concurrent
 edits, project switches, existing create-new targets, and migrated projects are
-covered by headless regression tests. Issue #7 now has periodic separate drafts and guarded restoration; quick switches,
-shutdown and explicit draft disposal still require work.
+covered by headless regression tests. Issue #7 now has periodic separate drafts and guarded restoration; shutdown and explicit draft disposal still require work.
 
 ## Confirmed local fixes
 
@@ -67,7 +66,7 @@ validation evidence is recorded below after execution.
 
 | Issue | Local assessment and priority |
 | --- | --- |
-| [#7 autosave](https://github.com/doceazedo/sprinkles/issues/7) | Partially addressed: periodic separate drafts and a guarded recovery list exist for committed changes. Quick project/workspace switches, orderly shutdown and visible draft disposal remain unfinished; switching to Zone retains the in-memory project but is not itself disk recovery. |
+| [#7 autosave](https://github.com/doceazedo/sprinkles/issues/7) | Partially addressed: periodic separate drafts and a guarded recovery list exist for committed changes. Orderly shutdown and visible draft disposal remain unfinished; switching to Zone retains the in-memory project but is not itself disk recovery. |
 | [#26 idle memory](https://github.com/doceazedo/sprinkles/issues/26) | Keep open locally beyond the cache fix. Needs an instrumented long idle soak and repeated project/open/close runs, separating CPU assets, GPU allocations and process RSS. Maintainer also observed growth with compute and sorting disabled. |
 | [#27 per-instance controls](https://github.com/doceazedo/sprinkles/issues/27) | Relevant before gameplay VFX. Mutating the shared asset changes all users; that is not an independent intensity/count override. Design bounded per-instance controls once an actual spell/ambient-effect slice requires them. Existing stop-emitting control helps but is not a full override API. |
 | [#40 texture animation](https://github.com/doceazedo/sprinkles/issues/40) | Missing feature, useful for spell flipbooks. Add atlas/frame animation when an actual effect requires it; avoid per-frame asset-path changes. |

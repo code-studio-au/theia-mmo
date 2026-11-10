@@ -1,3 +1,10 @@
+P5-17 particle transition drafts, 11 November 2026: leaving the particle
+workspace or switching projects queues the last committed snapshot, including
+edits since the periodic capture; headless transition, particle-editor, fmt and
+strict workspace/all-target Clippy checks pass. Shutdown and user-facing draft
+disposal remain pending; queued work is not durable until its write completes.
+See [integration](../SPRINKLES_INTEGRATION.md).
+
 P5-17 periodic particle drafts, 11 November 2026: committed changes in an
 active particle workspace are captured to separate draft files every five seconds
 using the bounded background writer. Explicit Save still writes the project.

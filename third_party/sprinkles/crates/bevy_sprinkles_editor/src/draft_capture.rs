@@ -1,4 +1,6 @@
 //! Periodic, best-effort snapshots of the active particle project.
+use std::collections::VecDeque;
+use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
 use bevy::prelude::*;
@@ -16,6 +18,11 @@ pub(crate) struct DraftCapture {
     handle: Option<Handle<ParticlesAsset>>,
     session: u64,
     last_queued: Option<String>,
+    baseline: Option<String>,
+    previous_path: Option<PathBuf>,
+    previous_dirty: bool,
+    previous_active: bool,
+    transitions: VecDeque<(u64, Draft)>,
     next: Instant,
     startup_error: Option<String>,
     #[cfg(test)]
@@ -33,6 +40,11 @@ impl DraftCapture {
             handle: None,
             session: 0,
             last_queued: None,
+            baseline: None,
+            previous_path: None,
+            previous_dirty: false,
+            previous_active: false,
+            transitions: VecDeque::new(),
             next: Instant::now(),
             startup_error,
             #[cfg(test)]
@@ -68,16 +80,75 @@ pub(crate) fn capture_drafts(
             )));
         }
     }
+    while let Some((session, draft)) = capture.transitions.front() {
+        let Some(writer) = capture.writer.as_ref() else {
+            break;
+        };
+        match writer.capture(*session, draft.clone()) {
+            Ok(()) => {
+                capture.transitions.pop_front();
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => break,
+            Err(error) => {
+                commands.trigger(ToastEvent::error(format!(
+                    "Could not queue transition draft: {error}"
+                )));
+                capture.transitions.pop_front();
+            }
+        }
+    }
+    let switched = capture.handle != state.current_project;
+    let leaving = capture.previous_active && !host.active;
+    if (switched || leaving) && capture.previous_active {
+        let old_snapshot = capture
+            .handle
+            .as_ref()
+            .and_then(|handle| assets.get(handle))
+            .and_then(|asset| crate::project::serialize_snapshot(asset).ok());
+        if let Some(snapshot) = old_snapshot
+            && (capture.previous_dirty || capture.baseline.as_ref() != Some(&snapshot))
+            && capture.last_queued.as_ref() != Some(&snapshot)
+        {
+            let draft = Draft::new(capture.previous_path.clone(), snapshot);
+            let session = capture.session;
+            if capture.transitions.len() < 32 {
+                capture.transitions.push_back((session, draft));
+            } else {
+                commands.trigger(ToastEvent::error(
+                    "Too many pending particle drafts; save the project",
+                ));
+            }
+        }
+    }
+    capture.previous_active = host.active;
     if !host.active {
         return;
     }
-    if capture.handle != state.current_project {
+    if switched {
         capture.handle = state.current_project.clone();
         capture.session = capture.session.wrapping_add(1);
         capture.last_queued = None;
+        capture.baseline = state
+            .current_project
+            .as_ref()
+            .and_then(|handle| assets.get(handle))
+            .and_then(|asset| crate::project::serialize_snapshot(asset).ok());
         capture.next = Instant::now();
     }
-    if !dirty.has_unsaved_changes || Instant::now() < capture.next {
+    let became_clean = capture.previous_dirty && !dirty.has_unsaved_changes;
+    capture.previous_dirty = dirty.has_unsaved_changes;
+    capture.previous_path = state.current_project_path.clone();
+    if !dirty.has_unsaved_changes {
+        if became_clean {
+            capture.baseline = state
+                .current_project
+                .as_ref()
+                .and_then(|handle| assets.get(handle))
+                .and_then(|asset| crate::project::serialize_snapshot(asset).ok());
+        }
+        return;
+    }
+    if Instant::now() < capture.next {
         return;
     }
     capture.next = Instant::now() + INTERVAL;
@@ -179,6 +250,62 @@ mod tests {
         let restored = store.recover(&id).unwrap();
         assert_eq!(restored.asset.name, "Snapshot");
         assert_eq!(restored.original_path.as_deref(), Some(source.as_path()));
+        app.world_mut()
+            .resource_mut::<Assets<ParticlesAsset>>()
+            .get_mut(&handle)
+            .unwrap()
+            .name = "Before leaving".into();
+        app.world_mut()
+            .resource_mut::<crate::hosting::AuthoringHost>()
+            .active = false;
+        let deadline = Instant::now() + Duration::from_secs(10);
+        loop {
+            assert!(Instant::now() < deadline, "transition capture timed out");
+            app.update();
+            if store.recover(&id).unwrap().asset.name == "Before leaving" {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(2));
+        }
+        app.world_mut()
+            .resource_mut::<crate::hosting::AuthoringHost>()
+            .active = true;
+        app.update();
+        app.world_mut()
+            .resource_mut::<Assets<ParticlesAsset>>()
+            .get_mut(&handle)
+            .unwrap()
+            .name = "Before switching".into();
+        let replacement = app
+            .world_mut()
+            .resource_mut::<Assets<ParticlesAsset>>()
+            .add(ParticlesAsset::new(
+                "Other".into(),
+                ParticlesDimension::D3,
+                default(),
+                vec![],
+                vec![],
+                false,
+                default(),
+            ));
+        app.world_mut()
+            .resource_mut::<EditorState>()
+            .current_project = Some(replacement);
+        app.world_mut()
+            .resource_mut::<EditorState>()
+            .current_project_path = None;
+        let deadline = Instant::now() + Duration::from_secs(10);
+        loop {
+            assert!(
+                Instant::now() < deadline,
+                "project switch capture timed out"
+            );
+            app.update();
+            if store.recover(&id).unwrap().asset.name == "Before switching" {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(2));
+        }
         assert_eq!(std::fs::read(source).unwrap(), b"original");
         drop(app);
         std::fs::remove_dir_all(dir).unwrap();
