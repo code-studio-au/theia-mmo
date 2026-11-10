@@ -3514,3 +3514,19 @@ this extension has only been syntax-checked, not executed for the changed editor
 
 Editor build and formatting pass (`build/sprinkles-review/browser-scroll-build.log`).
 No native process or desktop input was started for this slice.
+
+## Sprinkles checkboxes — 10 November 2026
+
+Sprinkles checkboxes, 10 November 2026 (P5-17): Snap, Handles and Grid
+adopt the pinned checkbox.rs 16 px outlined box, 2 px radius, 6 px label gap,
+12 px text and hover border feedback. A native UI-border check mark replaces
+textual [x]/[ ] prefixes. Keyboard focus adds a blue border and disabled state
+uses muted colors. The existing native Bevy Checkbox, guarded ValueChange
+handler and Session/View state synchronization remain in use.
+
+All 139 focused tests and denied-warning workspace/all-target Clippy pass.
+Evidence: `build/sprinkles-review/checkbox-tests-final.log` and
+`checkbox-clippy-final.log`. Native visual/input/GPU acceptance remains pending
+while desktop use is stopped; this is presentation work checked headlessly.
+
+Checkbox slice editor build passes: `build/sprinkles-review/checkbox-build.log`.

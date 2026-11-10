@@ -1,6 +1,8 @@
 //! Sprinkles UI adaptation, upstream 0e978f5 (MIT); see third_party/sprinkles.
 //! Presentation only: all edits retain Theia's validated command/history path.
 use super::*;
+#[path = "theme_checkbox.rs"]
+pub(super) mod checkbox;
 use bevy::asset::uuid_handle;
 use bevy::color::palettes::tailwind;
 
@@ -113,6 +115,7 @@ pub(super) fn plugin(app: &mut App) {
             text_states,
             input_states,
             numeric_frames,
+            checkbox::sync,
         )
             .chain(),
     );
@@ -139,9 +142,10 @@ fn release_buttons(
 }
 
 type NewButton = Or<(Added<Button>, Added<bevy::ui_widgets::Checkbox>)>;
+#[allow(clippy::type_complexity)]
 fn decorate_buttons(
     mut commands: Commands,
-    mut buttons: Query<(Entity, &mut Node, Option<&Variant>), NewButton>,
+    mut buttons: Query<(Entity, &mut Node, Option<&Variant>), (NewButton, Without<checkbox::Root>)>,
 ) {
     for (entity, mut node, variant) in &mut buttons {
         node.border = UiRect::all(px(if matches!(variant, Some(Variant::Ghost)) {

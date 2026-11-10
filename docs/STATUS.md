@@ -1,3 +1,15 @@
+Sprinkles checkboxes, 10 November 2026 (P5-17): Snap, Handles and Grid
+adopt the pinned checkbox.rs 16 px outlined box, 2 px radius, 6 px label gap,
+12 px text and hover border feedback. A native UI-border check mark replaces
+textual [x]/[ ] prefixes. Keyboard focus adds a blue border and disabled state
+uses muted colors. The existing native Bevy Checkbox, guarded ValueChange
+handler and Session/View state synchronization remain in use.
+
+All 139 focused tests and denied-warning workspace/all-target Clippy pass.
+Evidence: `build/sprinkles-review/checkbox-tests-final.log` and
+`checkbox-clippy-final.log`. Native visual/input/GPU acceptance remains pending
+while desktop use is stopped; this is presentation work checked headlessly.
+
 Sprinkles browser scrolling, 10 November 2026 (P5-17): the content browser
 shares the 24 px wheel-step, hover-only thin scrollbar and bounded scroll pane
 used by the inspector. Short windows scroll within the current bounded page;
@@ -4568,3 +4580,5 @@ blacksmith entry/contact/exit/re-entry and normal launcher lifecycle checks pass
 on RX 7900 XTX / RADV with active Vulkan validation. Camera mesh retractions are
 observed on the actual blacksmith route. The forge annex and other unqualified
 buildings remain blocked. [Scope and evidence](MAP_BLACKSMITH.md).
+
+Checkbox slice editor build passes: `build/sprinkles-review/checkbox-build.log`.

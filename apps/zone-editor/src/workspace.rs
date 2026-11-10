@@ -3,8 +3,8 @@ use super::*;
 use bevy::picking::{events::PointerPress, pointer::PointerButton};
 use bevy::ui::{Checked, InteractionDisabled};
 use bevy::ui_widgets::{
-    Checkbox, Slider, SliderPrecision, SliderRange, SliderStep, SliderThumb, SliderValue,
-    TrackClick, ValueChange,
+    Slider, SliderPrecision, SliderRange, SliderStep, SliderThumb, SliderValue, TrackClick,
+    ValueChange,
 };
 
 pub(super) const HEADER: f32 = 92.;
@@ -195,30 +195,8 @@ pub(super) fn setup(mut commands: Commands, icons: Option<Res<sidebar::Icons>>) 
                 });
                 row.spawn(button(Control::Command(Action::Play), "Playtest"));
                 row.spawn(button(Control::Command(Action::Save), "Save"));
-                row.spawn((
-                    Control::Snap,
-                    Checkbox,
-                    Hovered::default(),
-                    Node {
-                        min_height: px(30),
-                        padding: UiRect::axes(px(10), px(6)),
-                        ..default()
-                    },
-                    BackgroundColor(theme::Variant::Default.background(false)),
-                    children![(ButtonLabel, text("[x] Snap (1 m / 15 deg / 10%)", 15.))],
-                ));
-                row.spawn((
-                    Control::Handles,
-                    Checkbox,
-                    Hovered::default(),
-                    Node {
-                        min_height: px(30),
-                        padding: UiRect::axes(px(10), px(6)),
-                        ..default()
-                    },
-                    BackgroundColor(theme::Variant::Default.background(false)),
-                    children![(ButtonLabel, text("[x] Handles", 15.))],
-                ));
+                theme::checkbox::spawn(row, Control::Snap, "Snap (1 m / 15 deg / 10%)");
+                theme::checkbox::spawn(row, Control::Handles, "Handles");
                 for (tool, label) in [
                     (gizmo::Tool::Move, "Move"),
                     (gizmo::Tool::Rotate, "Rotate Y"),
@@ -242,18 +220,7 @@ pub(super) fn setup(mut commands: Commands, icons: Option<Res<sidebar::Icons>>) 
                 ] {
                     row.spawn(button(Control::View(preset), label));
                 }
-                row.spawn((
-                    Control::Grid,
-                    Checkbox,
-                    Hovered::default(),
-                    Node {
-                        min_height: px(30),
-                        padding: UiRect::axes(px(10), px(6)),
-                        ..default()
-                    },
-                    BackgroundColor(theme::Variant::Default.background(false)),
-                    children![(ButtonLabel, text("[x] Grid", 15.))],
-                ));
+                theme::checkbox::spawn(row, Control::Grid, "Grid");
             });
         });
     commands
@@ -819,17 +786,18 @@ pub(super) fn sync(
             Control::Command(Action::Play) => session.play.is_some(),
             _ => false,
         };
-        background.0 = if rail {
-            Color::NONE
-        } else if !enabled {
-            theme::Variant::Disabled.background(false)
-        } else if active {
-            theme::Variant::Active.background(false)
-        } else if hovered.0 {
-            theme::Variant::Default.background(true)
-        } else {
-            theme::Variant::Default.background(false)
-        };
+        background.0 =
+            if rail || matches!(control, Control::Snap | Control::Handles | Control::Grid) {
+                Color::NONE
+            } else if !enabled {
+                theme::Variant::Disabled.background(false)
+            } else if active {
+                theme::Variant::Active.background(false)
+            } else if hovered.0 {
+                theme::Variant::Default.background(true)
+            } else {
+                theme::Variant::Default.background(false)
+            };
         if matches!(control, Control::Snap | Control::Handles | Control::Grid) && checked != active
         {
             if active {
@@ -839,8 +807,7 @@ pub(super) fn sync(
             }
         }
         let grid_caption = format!(
-            "[{}] Grid ({} m{})",
-            if view.show_grid { "x" } else { " " },
+            "Grid ({} m{})",
             authoring_grid::spacing(&session, &view),
             if authoring_grid::surface(&session, &view) {
                 " surface"
@@ -848,19 +815,11 @@ pub(super) fn sync(
                 ""
             }
         );
-        let snap_caption = format!(
-            "[{}] Snap ({} m / 15 deg / 10%)",
-            if session.snap { "x" } else { " " },
-            session.move_step
-        );
+        let snap_caption = format!("Snap ({} m / 15 deg / 10%)", session.move_step);
         let caption = match control {
             Control::Grid => Some(grid_caption.as_str()),
             Control::Snap => Some(snap_caption.as_str()),
-            Control::Handles => Some(if session.show_move_handles {
-                "[x] Handles"
-            } else {
-                "[ ] Handles"
-            }),
+            Control::Handles => Some("Handles"),
             Control::Command(Action::Play) => Some(if session.play.is_some() {
                 "Return to editing"
             } else {

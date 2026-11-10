@@ -74,3 +74,9 @@ Theia retains its native validated input handlers and field length limits.
 The shared scroll.rs presentation also wraps the bounded zone content browser
 in `outliner.rs`. Theia retains bounded row paging and adds Bevy ScrollIntoView
 selection reveal with checked source/history invariants.
+
+`theme_checkbox.rs` adapts `ui/widgets/checkbox.rs` at the same pinned revision:
+16 px outlined square, 1 px border, 2 px radius, 6 px label gap, 12 px label and
+hover-lightened border. Theia draws the check using standard UI borders rather
+than upstream's icon image, adds visible keyboard focus/disabled treatment, and
+retains Bevy 0.20 Checkbox/ValueChange behavior and guarded Session/View state.
