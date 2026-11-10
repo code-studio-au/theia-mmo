@@ -136,7 +136,7 @@ mod tests {
     fn setup(origin: [f64; 3], target: u8) -> App {
         let (mut app, _) = fixture_with_input(origin, target, false, false);
         app.init_resource::<ButtonInput<MouseButton>>()
-            .add_systems(Update, scrub.before(keyboard));
+            .add_zone_systems(scrub.before(keyboard));
         let handles: Vec<_> = app
             .world_mut()
             .query::<(Entity, &Handle)>()

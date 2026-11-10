@@ -1,3 +1,14 @@
+P5-17 same-window Sprinkles authoring accepted on Linux, 10 November 2026:
+File → Particles workspace opens the actual upstream UI inside Theia; Zone in
+its top bar returns. Original editing/playback/save, project/pause retention and
+exclusive input/camera/render-layer ownership pass native local/far checks with
+exact zone/source/revision/history preservation and zero Vulkan diagnostics on
+RX 7900 XTX / RADV NAVI31. All 177 focused tests, three doctests, fmt and strict
+workspace/all-target Clippy pass. The original standalone host remains qualified.
+The direct editor-integration slice is complete at this scope. Asset placement/
+world export/client VFX, full P2-13, Windows and MMO budgets remain separate.
+See [SPRINKLES_INTEGRATION](../SPRINKLES_INTEGRATION.md) for use and exact evidence.
+
 P5-17 original Sprinkles widget commits, 10 November 2026: curve range, gradient
 stop and colour edits pass real native input and exact asset/source comparisons
 with zero Vulkan diagnostics. Correct the curve range root/child lookup and

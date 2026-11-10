@@ -1,5 +1,6 @@
 //! Real Bevy field/slider observer checks without a window or input backend.
 use super::*;
+use crate::particle_workspace::ZoneAppExt;
 
 pub(super) fn fixture(origin: [f64; 3], target: u8, snap: bool) -> (App, Entity) {
     fixture_with_input(origin, target, snap, false)
@@ -97,7 +98,7 @@ pub(super) fn fixture_with_input(
         .add_observer(slider_change)
         .add_observer(activate)
         .add_systems(Startup, setup)
-        .add_systems(Update, keyboard)
+        .add_zone_systems(keyboard)
         .add_systems(PostUpdate, (finish, slider_sync).chain());
     let window = app
         .world_mut()

@@ -526,7 +526,7 @@ pub(super) fn pointer(
     keys: Res<ButtonInput<KeyCode>>,
     mouse: Res<ButtonInput<MouseButton>>,
     windows: Query<&Window>,
-    camera: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
+    camera: Query<(&Camera, &GlobalTransform), With<crate::viewport::ZoneCamera>>,
     ground: Query<(), With<GroundPart>>,
     mut raycast: MeshRayCast,
     mut session: ResMut<Session>,

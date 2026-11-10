@@ -209,6 +209,7 @@ pub fn popover(props: PopoverProps) -> impl Scene {
 
     bsn! {
         EditorPopover
+        crate::hosting::AuthoringUiRoot
         PopoverAnchor(anchor)
         PopoverLayoutReady
         @template_value(placement)

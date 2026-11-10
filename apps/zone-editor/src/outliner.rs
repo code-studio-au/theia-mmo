@@ -704,7 +704,7 @@ pub(crate) mod tests {
             })
             .add_observer(activate)
             .add_systems(Startup, (setup, naming::setup))
-            .add_systems(Update, (naming::keyboard, scroll, sync).chain());
+            .add_zone_systems((naming::keyboard, scroll, sync).chain());
         let mut window = Window {
             resolution: (3440, 1440).into(),
             focused: true,

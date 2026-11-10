@@ -1,5 +1,6 @@
 //! Real document/file controller flows, with owned temporary files and no OS UI.
 use super::*;
+use crate::particle_workspace::ZoneAppExt;
 use bevy::picking::{
     backend::HitData,
     events::Pointer,
@@ -66,8 +67,7 @@ fn fixture(root: &Sandbox, origin: [f64; 3]) -> App {
         .add_observer(workspace::activate)
         .add_observer(activate)
         .add_systems(Startup, (workspace::setup, setup, naming::setup))
-        .add_systems(
-            Update,
+        .add_zone_systems(
             (
                 crate::keyboard,
                 keyboard,

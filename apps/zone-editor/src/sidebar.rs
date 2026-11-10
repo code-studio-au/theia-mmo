@@ -1,6 +1,7 @@
 //! Sprinkles' compact icon/label sidebar, adapted to Theia's workspaces.
 //! Upstream MIT UI and Remix Icon artwork: third_party/sprinkles/PROVENANCE.md.
 use super::*;
+use crate::particle_workspace::ZoneAppExt;
 use bevy::asset::{embedded_asset, load_embedded_asset};
 
 pub(super) const WIDTH: f32 = 72.;
@@ -39,7 +40,7 @@ pub(super) fn plugin(app: &mut App) {
     ]);
     app.insert_resource(icons)
         .add_observer(activate)
-        .add_systems(Update, sync);
+        .add_zone_systems(sync);
 }
 
 pub(super) fn setup(commands: &mut Commands, icons: Option<&Icons>) {

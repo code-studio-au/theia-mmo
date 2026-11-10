@@ -254,7 +254,15 @@ fn bake_thickness_curve(trail: &EmitterTrail) -> [f32; TRAIL_THICKNESS_CURVE_SAM
 
 pub fn setup_particle_systems(
     mut commands: Commands,
-    query: Query<(Entity, &Particles3d, Has<EditorMode>), Without<ParticleSystemRuntime>>,
+    query: Query<
+        (
+            Entity,
+            &Particles3d,
+            Has<EditorMode>,
+            Option<&bevy::camera::visibility::RenderLayers>,
+        ),
+        Without<ParticleSystemRuntime>,
+    >,
     assets: Res<Assets<ParticlesAsset>>,
     asset_server: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -262,7 +270,7 @@ pub fn setup_particle_systems(
     mut buffers: ResMut<Assets<ShaderBuffer>>,
     mut materials: ResMut<Assets<ParticleMaterial>>,
 ) {
-    for (system_entity, particle_system, is_editor) in query.iter() {
+    for (system_entity, particle_system, is_editor, layers) in query.iter() {
         let Some(asset) = assets.get(particle_system) else {
             continue;
         };
@@ -364,6 +372,10 @@ pub fn setup_particle_systems(
                 emitter.initial_transform.to_transform(),
                 Visibility::default(),
             ));
+
+            if let Some(layers) = layers {
+                emitter_cmds.insert(layers.clone());
+            }
 
             if !shadow_caster {
                 emitter_cmds.insert(NotShadowCaster);
@@ -735,6 +747,58 @@ pub fn sync_particle_material(
 mod theia_port_tests {
     use super::*;
     use bevy::render::{render_resource::ShaderType, storage::ShaderBufferData};
+
+    #[test]
+    fn particle_meshes_keep_each_owners_render_layers_and_default_layer_behavior() {
+        use bevy::camera::visibility::RenderLayers;
+        let mut app = App::new();
+        app.add_plugins((MinimalPlugins, bevy::asset::AssetPlugin::default()))
+            .init_resource::<Assets<ParticlesAsset>>()
+            .init_resource::<Assets<Mesh>>()
+            .init_resource::<Assets<ShaderBuffer>>()
+            .init_resource::<Assets<ParticleMaterial>>()
+            .init_resource::<ParticleMeshCache>()
+            .add_systems(Update, setup_particle_systems);
+        let asset = app
+            .world_mut()
+            .resource_mut::<Assets<ParticlesAsset>>()
+            .add(ParticlesAsset::new(
+                "Layer test".into(),
+                crate::asset::ParticlesDimension::D3,
+                default(),
+                vec![EmitterData::default()],
+                vec![],
+                false,
+                default(),
+            ));
+        let default_owner = app.world_mut().spawn(Particles3d(asset.clone())).id();
+        let isolated_owner = app
+            .world_mut()
+            .spawn((Particles3d(asset), RenderLayers::layer(7)))
+            .id();
+        app.update();
+        let mut emitters = app
+            .world_mut()
+            .query::<(&EmitterEntity, Option<&RenderLayers>, &Mesh3d)>();
+        let actual: Vec<_> = emitters
+            .iter(app.world())
+            .map(|(emitter, layers, _)| {
+                (
+                    emitter.parent_system,
+                    layers
+                        .cloned()
+                        .unwrap_or_default()
+                        .iter()
+                        .collect::<Vec<_>>(),
+                )
+            })
+            .collect();
+        assert_eq!(actual.len(), 2);
+        assert!(actual.contains(&(default_owner, vec![0])));
+        assert!(actual.contains(&(isolated_owner, vec![7])));
+        app.update();
+        assert_eq!(emitters.iter(app.world()).count(), 2);
+    }
 
     #[test]
     fn replaced_emitter_uniform_bytes_keep_wgsl_storage_layout_and_values() {

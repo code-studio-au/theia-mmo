@@ -1,6 +1,9 @@
 //! Sprinkles UI adaptation, upstream 0e978f5 (MIT); see third_party/sprinkles.
 //! Presentation only: all edits retain Theia's validated command/history path.
 use super::*;
+use bevy_sprinkles_editor::ui::widgets::{
+    button::CompatButton as SprinklesButton, text_edit::EditorTextEdit as SprinklesTextInput,
+};
 #[path = "theme_checkbox.rs"]
 pub(super) mod checkbox;
 #[path = "theme_dialog.rs"]
@@ -138,7 +141,7 @@ fn button_borders(
             Option<&Variant>,
             Has<bevy::ui::InteractionDisabled>,
         ),
-        With<Button>,
+        (With<Button>, Without<SprinklesButton>),
     >,
 ) {
     for (background, mut border, mut node, variant, disabled) in &mut buttons {
@@ -221,12 +224,20 @@ pub(super) fn plugin(app: &mut App) {
 // can reflow the inspector before release, leaving the original button Pressed.
 // Clear residual state after native click observers run, once all pointers are
 // physically up (or focus is lost). This never emits an activation.
+#[allow(clippy::type_complexity)]
 fn release_buttons(
     mut commands: Commands,
     mouse: Res<ButtonInput<MouseButton>>,
     touches: Res<bevy::input::touch::Touches>,
     windows: Query<&Window>,
-    buttons: Query<Entity, (With<Button>, With<bevy::ui::Pressed>)>,
+    buttons: Query<
+        Entity,
+        (
+            With<Button>,
+            With<bevy::ui::Pressed>,
+            Without<SprinklesButton>,
+        ),
+    >,
 ) {
     if windows.iter().any(|window| window.focused)
         && (mouse.get_pressed().next().is_some() || touches.iter().next().is_some())
@@ -242,7 +253,10 @@ type NewButton = Or<(Added<Button>, Added<bevy::ui_widgets::Checkbox>)>;
 #[allow(clippy::type_complexity)]
 fn decorate_buttons(
     mut commands: Commands,
-    mut buttons: Query<(Entity, &mut Node, Option<&Variant>), (NewButton, Without<checkbox::Root>)>,
+    mut buttons: Query<
+        (Entity, &mut Node, Option<&Variant>),
+        (NewButton, Without<checkbox::Root>, Without<SprinklesButton>),
+    >,
 ) {
     for (entity, mut node, variant) in &mut buttons {
         node.border = UiRect::all(px(if matches!(variant, Some(Variant::Ghost)) {
@@ -271,6 +285,7 @@ fn simple_buttons(
             Without<outliner::Control>,
             Without<file_picker::Control>,
             Without<Action>,
+            Without<SprinklesButton>,
         ),
     >,
 ) {
@@ -294,11 +309,14 @@ pub(super) struct Secondary;
 fn text_states(
     buttons: Query<
         (&BackgroundColor, Has<bevy::ui::InteractionDisabled>),
-        Or<(
-            With<Button>,
-            With<bevy::ui_widgets::Checkbox>,
-            With<bevy::ui_widgets::MenuItem>,
-        )>,
+        (
+            Or<(
+                With<Button>,
+                With<bevy::ui_widgets::Checkbox>,
+                With<bevy::ui_widgets::MenuItem>,
+            )>,
+            Without<SprinklesButton>,
+        ),
     >,
     parents: Query<&ChildOf>,
     mut texts: Query<
@@ -328,7 +346,10 @@ fn input_states(
             Has<properties::FramedInput>,
             &mut BackgroundColor,
         ),
-        With<bevy::ui_widgets::TextInput>,
+        (
+            With<bevy::ui_widgets::TextInput>,
+            Without<SprinklesTextInput>,
+        ),
     >,
 ) {
     for (entity, mut node, mut border, framed, mut background) in &mut fields {
@@ -383,6 +404,105 @@ mod tests {
     };
     #[derive(Resource, Default)]
     struct Activations(u32);
+
+    #[test]
+    fn native_theia_styling_leaves_reused_sprinkles_widgets_untouched() {
+        let mut app = App::new();
+        app.add_systems(
+            Update,
+            (
+                decorate_buttons,
+                simple_buttons,
+                button_borders,
+                text_states,
+                input_states,
+            )
+                .chain(),
+        );
+        let original_color = Color::srgb(0.2, 0.4, 0.6);
+        let original_border = BorderColor::all(original_color);
+        let original_node = Node {
+            border_radius: BorderRadius::all(px(9)),
+            ..default()
+        };
+        let source_button = app
+            .world_mut()
+            .spawn((
+                SprinklesButton,
+                Hovered::default(),
+                original_node.clone(),
+                BackgroundColor(original_color),
+                original_border,
+            ))
+            .id();
+        let source_text = app
+            .world_mut()
+            .spawn((
+                Text::new("Original"),
+                TextColor(original_color),
+                ChildOf(source_button),
+            ))
+            .id();
+        let source_input = app
+            .world_mut()
+            .spawn((
+                SprinklesTextInput,
+                bevy::ui_widgets::TextInput,
+                bevy::text::EditableText::new("1.5"),
+                Node::default(),
+                BackgroundColor(original_color),
+                original_border,
+            ))
+            .id();
+        let zone_button = app
+            .world_mut()
+            .spawn((
+                Button,
+                Node::default(),
+                Hovered::default(),
+                BackgroundColor(Color::BLACK),
+            ))
+            .id();
+        for _ in 0..3 {
+            app.update();
+        }
+        assert_eq!(
+            app.world().get::<Node>(source_button).unwrap(),
+            &original_node
+        );
+        assert_eq!(
+            app.world().get::<BackgroundColor>(source_button).unwrap().0,
+            original_color
+        );
+        assert_eq!(
+            app.world().get::<BorderColor>(source_button).unwrap(),
+            &original_border
+        );
+        assert_eq!(
+            app.world().get::<TextColor>(source_text).unwrap().0,
+            original_color
+        );
+        assert_eq!(
+            app.world().get::<Node>(source_input).unwrap().padding,
+            UiRect::ZERO
+        );
+        assert_eq!(
+            app.world().get::<BorderColor>(source_input).unwrap(),
+            &original_border
+        );
+        assert_eq!(
+            app.world().get::<BackgroundColor>(source_input).unwrap().0,
+            original_color
+        );
+        assert_eq!(
+            app.world().get::<Node>(zone_button).unwrap().border,
+            UiRect::all(px(1))
+        );
+        assert_eq!(
+            app.world().get::<BackgroundColor>(zone_button).unwrap().0,
+            Variant::Default.background(false)
+        );
+    }
     #[test]
     fn reflowed_buttons_release_and_can_activate_again_without_replaying_commands() {
         let mut app = App::new();

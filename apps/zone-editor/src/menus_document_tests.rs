@@ -1,10 +1,11 @@
 //! Document selector over actual shared controllers; no OS UI or file writes.
 use super::*;
+use crate::particle_workspace::ZoneAppExt;
 use bevy::{ecs::system::RunSystemOnce, text::EditableText};
 fn fixture(origin: [f64; 3]) -> App {
     let (mut app, _) = super::super::context::tests::fixture(origin);
     app.world_mut().run_system_once(workspace::setup).unwrap();
-    app.add_systems(Update, workspace::sync)
+    app.add_zone_systems(workspace::sync)
         .add_systems(PostUpdate, naming::finish);
     app.update();
     app

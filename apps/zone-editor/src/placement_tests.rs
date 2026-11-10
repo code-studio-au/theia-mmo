@@ -1,5 +1,6 @@
 //! Placement settings and shared placement/undo, without OS input or a renderer.
 use super::*;
+use crate::particle_workspace::ZoneAppExt;
 
 fn fixture(origin: [f64; 3]) -> App {
     let zone = Zone {
@@ -26,7 +27,7 @@ fn fixture(origin: [f64; 3]) -> App {
         })
         .add_observer(change)
         .add_systems(Startup, (setup, crate::setup_ui))
-        .add_systems(Update, (sync, crate::present).chain());
+        .add_zone_systems((sync, crate::present).chain());
     app.world_mut().spawn(Window {
         focused: true,
         resolution: (3440, 1440).into(),
@@ -377,7 +378,7 @@ fn sprinkles_browser_inspector_and_tools_have_separate_full_height_regions() {
     let mut app = fixture([128_000_000_000.125, 20.25, -128_000_000_000.5]);
     app.world_mut().run_system_once(outliner::setup).unwrap();
     app.add_observer(sidebar::activate)
-        .add_systems(Update, outliner::sync);
+        .add_zone_systems(outliner::sync);
     crate::headless_ui::add_layout(&mut app);
     // Include actual theme, checkbox, menu and selector systems in the CPU layout.
     app.init_resource::<ButtonInput<MouseButton>>()
@@ -385,7 +386,7 @@ fn sprinkles_browser_inspector_and_tools_have_separate_full_height_regions() {
         .init_resource::<bevy::input_focus::InputFocus>()
         .add_plugins((theme::plugin, menus::plugin, properties::summary_plugin));
     let source = app.world().resource::<Session>().editor.zone().clone();
-    app.add_systems(Update, (panels::apply, terrain::palette).chain());
+    app.add_zone_systems((panels::apply, terrain::palette).chain());
     for (browser_width, inspector_width) in [(300., 300.), (480., 600.), (450., 350.)] {
         app.world_mut().resource_mut::<Session>().ui.browser = browser_width;
         app.world_mut().resource_mut::<Session>().ui.inspector = inspector_width;
@@ -535,7 +536,7 @@ fn sprinkles_inspector_scroll_reaches_overflow_controls_without_authoring_edits(
     app.init_resource::<ButtonInput<MouseButton>>()
         .init_resource::<ButtonInput<KeyCode>>()
         .add_plugins(scrolling::plugin)
-        .add_systems(Update, terrain::palette);
+        .add_zone_systems(terrain::palette);
     crate::headless_ui::add_layout(&mut app);
     let window = app
         .world_mut()

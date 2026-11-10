@@ -287,7 +287,7 @@ pub(super) fn setup(
 pub(super) fn sync(
     session: Res<Session>,
     scene: Res<Scene>,
-    camera: Query<(&GlobalTransform, &Projection), With<Camera3d>>,
+    camera: Query<(&GlobalTransform, &Projection), With<crate::viewport::ZoneCamera>>,
     mut handles: Query<(
         &TransformHandle,
         &mut Transform,

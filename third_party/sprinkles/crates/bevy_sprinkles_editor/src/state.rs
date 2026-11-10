@@ -96,12 +96,13 @@ pub struct PlaybackSeekEvent(pub f32);
 pub struct GenerateAabbRequest(pub usize);
 
 fn update_window_title(
+    host: Res<crate::hosting::AuthoringHost>,
     editor_state: Res<EditorState>,
     dirty_state: Res<DirtyState>,
     assets: Res<Assets<ParticlesAsset>>,
     mut window: Query<&mut Window, With<PrimaryWindow>>,
 ) {
-    if !editor_state.is_changed() && !dirty_state.is_changed() {
+    if host.embedded || (!editor_state.is_changed() && !dirty_state.is_changed()) {
         return;
     }
 

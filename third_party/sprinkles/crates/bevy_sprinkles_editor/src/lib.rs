@@ -46,8 +46,16 @@ pub fn standalone_app() -> App {
                 ..default()
             }),
     )
-    .add_plugins(bevy_easings::EasingsPlugin::default())
-    .add_plugins(SprinklesEditorPlugin)
-    .add_plugins(EditorUiPlugin);
+    .add_plugins(ParticleAuthoringPlugin);
     app
+}
+
+/// Original runtime/editor plugins, suitable for the standalone or shared-window host.
+pub struct ParticleAuthoringPlugin;
+impl Plugin for ParticleAuthoringPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_plugins(bevy_easings::EasingsPlugin::default())
+            .add_plugins(SprinklesEditorPlugin)
+            .add_plugins(EditorUiPlugin);
+    }
 }

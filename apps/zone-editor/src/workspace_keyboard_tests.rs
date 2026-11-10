@@ -1,5 +1,6 @@
 //! Standard focus/slider/input dispatch must not also edit the selected object.
 use super::*;
+use crate::particle_workspace::ZoneAppExt;
 use bevy::input::{
     ButtonState,
     keyboard::{Key, KeyboardInput},
@@ -64,7 +65,7 @@ fn focused_workspace_slider_owns_arrow_keys_and_preserves_selected_source_and_re
         .init_resource::<outliner::Content>()
         .add_observer(change)
         .add_systems(Startup, setup)
-        .add_systems(Update, (crate::keyboard, sync).chain());
+        .add_zone_systems((crate::keyboard, sync).chain());
         let window = app
             .world_mut()
             .spawn((

@@ -49,17 +49,25 @@ impl Plugin for EditorUiPlugin {
     }
 }
 
-fn setup_ui(mut commands: Commands) {
+fn setup_ui(mut commands: Commands, host: Res<crate::hosting::AuthoringHost>) {
     let root = commands
-        .spawn(Node {
-            width: percent(100),
-            height: percent(100),
-            flex_direction: FlexDirection::Column,
-            ..default()
-        })
+        .spawn((
+            crate::hosting::AuthoringUiRoot,
+            Node {
+                display: if host.active {
+                    Display::Flex
+                } else {
+                    Display::None
+                },
+                width: percent(100),
+                height: percent(100),
+                flex_direction: FlexDirection::Column,
+                ..default()
+            },
+        ))
         .id();
 
-    spawn_topbar(&mut commands, root);
+    spawn_topbar(&mut commands, root, host.embedded);
 
     let main_row = commands
         .spawn((

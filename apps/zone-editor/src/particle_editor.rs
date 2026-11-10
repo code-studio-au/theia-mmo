@@ -1,5 +1,6 @@
 //! Launch the retained Sprinkles authoring UI without changing the zone document.
 use super::*;
+use crate::particle_workspace::ZoneAppExt;
 use std::process::{Child, Command as ProcessCommand};
 
 #[derive(Resource, Default)]
@@ -7,7 +8,7 @@ struct AuthoringProcess(Option<Child>);
 
 pub(super) fn plugin(app: &mut App) {
     app.init_resource::<AuthoringProcess>()
-        .add_systems(Update, update.after(workspace::sync).before(present));
+        .add_zone_systems(update.after(workspace::sync).before(present));
 }
 
 fn update(

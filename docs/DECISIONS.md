@@ -1,3 +1,15 @@
+## 10 November 2026 — original Sprinkles UI in the shared editor window
+
+Use the retained `ParticleAuthoringPlugin` as an in-window workspace, alongside
+Theia's existing authoring tools. Keep mutually exclusive input/update ownership,
+explicit zone/source camera identities and isolated preview render layers.
+Preserve checked zone data and undo/redo while the original UI edits separate
+RON particle assets. Returning restores focus/cursor/root/camera/title and manual
+preview pause behavior; retain the standalone host until later workflow slices
+replace its role. This implements the user's direct-reuse direction, without
+claiming world placement or full gameplay VFX/audio P2-13.
+[Implementation and native evidence](SPRINKLES_INTEGRATION.md).
+
 ## 10 November 2026 — first direct Sprinkles source host
 
 Reuse the pinned original runtime/editor as local non-published workspace crates,

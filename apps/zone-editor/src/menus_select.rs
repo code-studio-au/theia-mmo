@@ -1,5 +1,6 @@
 //! Sprinkles combobox presentation over native Bevy menu selection.
 use super::*;
+use crate::particle_workspace::ZoneAppExt;
 use bevy::ui::{InteractionDisabled, OverrideClip};
 use bevy::ui_widgets::popover::{Popover, PopoverAlign, PopoverPlacement, PopoverSide};
 use std::borrow::Cow;
@@ -62,7 +63,7 @@ struct Label(Kind);
 struct Arrow(Kind);
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(Update, sync.after(workspace::sync));
+    app.add_zone_systems(sync.after(workspace::sync));
 }
 pub(super) fn spawn(parent: &mut ChildSpawnerCommands, kind: Kind) {
     let mut root = parent.spawn(Node {

@@ -54,11 +54,30 @@ fn topbar_right() -> impl Scene {
     }
 }
 
-pub fn spawn_topbar(commands: &mut Commands, parent: Entity) {
+pub fn spawn_topbar(commands: &mut Commands, parent: Entity, embedded: bool) {
     let bar = commands.spawn_scene(topbar()).insert(ChildOf(parent)).id();
 
     let selector = commands.spawn_scene(project_selector()).id();
-    commands.entity(bar).add_children(&[selector]);
+    if embedded {
+        let left = commands
+            .spawn((
+                Node {
+                    column_gap: px(12),
+                    align_items: AlignItems::Center,
+                    ..default()
+                },
+                ChildOf(bar),
+            ))
+            .id();
+        commands
+            .spawn_scene(button(
+                ButtonProps::new("Zone").with_variant(ButtonVariant::Ghost),
+            ))
+            .insert((crate::hosting::ReturnToHostButton, ChildOf(left)));
+        commands.entity(left).add_child(selector);
+    } else {
+        commands.entity(bar).add_child(selector);
+    }
 
     let right = commands
         .spawn_scene(topbar_right())

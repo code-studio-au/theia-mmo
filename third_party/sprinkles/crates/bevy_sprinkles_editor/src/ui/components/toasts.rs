@@ -263,6 +263,7 @@ fn setup_toasts_container(mut commands: Commands) {
     commands
         .spawn((
             ToastsContainer,
+            crate::hosting::AuthoringUiRoot,
             Node {
                 position_type: PositionType::Absolute,
                 width: Val::Percent(100.0),

@@ -273,7 +273,7 @@ mod tests {
         app.insert_resource(session)
             .init_resource::<ButtonInput<MouseButton>>()
             .init_resource::<ButtonInput<KeyCode>>()
-            .add_systems(Update, resize);
+            .add_zone_systems(resize);
         app.world_mut().spawn(Window {
             focused: true,
             resolution: (3440, 1440).into(),
@@ -340,7 +340,7 @@ mod tests {
         .init_resource::<ButtonInput<MouseButton>>()
         .init_resource::<ButtonInput<KeyCode>>()
         .add_systems(Startup, setup)
-        .add_systems(Update, (resize, apply).chain());
+        .add_zone_systems((resize, apply).chain());
         let window = app
             .world_mut()
             .spawn(Window {

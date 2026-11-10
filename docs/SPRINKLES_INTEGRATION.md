@@ -11,7 +11,75 @@ Bevy 0.20.0 engine. Upstream targets Bevy 0.19.0. Both imported crates use our
 workspace engine; introducing a second Bevy engine or downgrading Theia is not
 part of this slice. Avian remains pinned independently and unchanged.
 
-## First host integration
+## Current use: original UI in Theia's window
+
+Build the zone editor and optional companion:
+
+```sh
+cargo build --locked -p theia-zone-editor -p bevy_sprinkles_editor
+```
+
+Choose **File → Particles workspace…**. The existing window displays the original
+Sprinkles project selector, sidebar, outliner, inspector, property/attribute
+editors, settings, playback controls and particle preview. **Zone** in its top
+bar returns to the retained zone workspace. The particle project, unsaved data
+and manual pause state remain available when re-entering. Ctrl S belongs to the
+active workspace. Zone commands, source data, revision and undo/redo stay intact
+while editing a particle project. Effects save as original Sprinkles RON assets;
+this slice does not yet place them in the zone or export them into world packages.
+
+The companion remains accessible through **File → Particle editor…** and its
+standalone executable. This preserves the earlier working host while the asset
+workflow is extended. It uses the same library and original widgets.
+
+The host uses `ParticleAuthoringPlugin` and `AuthoringHost::embedded(1)`, not a
+second application/window. Original authoring updates and zone updates have
+mutually exclusive activity gates. Root visibility, native focus/cursor ownership,
+window title, camera activation and preview pause are managed on transitions.
+Return allows one active frame for original blur/commit handlers. The zone camera
+has an explicit marker; source cameras no longer break single-camera queries.
+Theia's broad native-widget styling excludes Sprinkles-owned buttons and inputs.
+
+Preview floor, light, particle meshes and bounds use render layer 1; the retained
+zone uses layer 0. Particle mesh creation honors an owner's explicit render layers
+while retaining default-layer behavior when absent. No global origin conversion,
+world collision, navigation or authority semantics change. The embedded plugin
+ignores Theia's CLI arguments, shares its default window UI camera and preserves
+the host clear color/title. Editor asset loading permits user-selected external
+paths, as the standalone source host does; server/client settings are unchanged.
+
+### Linux acceptance
+
+Both `build/zone-sprinkles-embedded-20261110-v1/qualification.json` and
+`build/zone-sprinkles-embedded-far-20261110-v1/qualification.json` pass on
+AMD Radeon RX 7900 XTX / RADV NAVI31 / Vulkan, 3440×1440, with zero diagnostics.
+The exact zone binary SHA-256 is
+`79204a1770fca52b7221cec4f0ac6233736edb6961e379cb7515a2968a841a8d`.
+
+Native checks cover the retained zone/menu/property flows, entering the original
+particle workspace, six emitters isolated to layer 1, exclusive scene cameras,
+blocked zone redo while in particle mode, exact particle-count editing, particle
+save without changing zone/source/revision/history, return and re-entry with
+project and manual pause retained. The source files remain untouched until their
+own explicit Save. These are functional checks, not a pixel-perfect comparison.
+
+`build/sprinkles-embedded-standalone-20261110-v1/qualification.json` additionally
+passes preview, playback, scrolling and original curve/gradient/colour value
+editing/save in the standalone host at 1366×768, also with zero diagnostics.
+All 177 focused Rust tests and three runtime doctests pass; formatting and
+workspace/all-target Clippy with denied warnings pass. CPU regressions cover
+real zone redo suppression/restoration at local/far origins, root/focus/camera/
+title/pause restoration, original widget-style ownership and runtime render-layer
+inheritance/default behavior. Dependency inspection still finds no Sprinkles,
+render or window dependency in the headless server.
+
+Reproduce the shared-window checks with `tools/qualify_zone_sprinkles.py
+--workspace --case local` and `--case far`, each with a new `--output` directory.
+All native data directories and fixtures are isolated under those owned outputs.
+Windows, the complete upstream preset/widget matrix, world asset placement/client
+integration, gameplay VFX/audio and MMO cosmetic-load budgets remain unqualified.
+
+## First host integration (retained history)
 
 Build the companion binary alongside the zone editor:
 

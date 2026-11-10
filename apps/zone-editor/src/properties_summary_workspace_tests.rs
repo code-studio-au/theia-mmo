@@ -1,5 +1,6 @@
 //! Whole-inspector CPU font/layout and native scroll requests; no OS UI or renderer.
 use super::*;
+use crate::particle_workspace::ZoneAppExt;
 use bevy::ecs::system::RunSystemOnce;
 fn fixture(target: u8) -> App {
     let (mut app, _) = super::super::yaw_tests::fixture_with_input(
@@ -51,8 +52,7 @@ fn fixture(target: u8) -> App {
     app.world_mut().run_system_once(workspace::setup).unwrap();
     app.world_mut().run_system_once(outliner::setup).unwrap();
     app.world_mut().run_system_once(crate::setup_ui).unwrap();
-    app.add_systems(
-        Update,
+    app.add_zone_systems(
         (
             panels::apply,
             workspace::sync,

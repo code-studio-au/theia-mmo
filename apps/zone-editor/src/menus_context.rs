@@ -1,5 +1,6 @@
 //! Sprinkles data-panel row actions using native Bevy menus and shared commands.
 use super::*;
+use crate::particle_workspace::ZoneAppExt;
 use bevy::picking::{events::PointerPress, pointer::PointerButton};
 use bevy::ui::OverrideClip;
 use bevy::ui_widgets::popover::{Popover, PopoverAlign, PopoverPlacement, PopoverSide};
@@ -33,7 +34,7 @@ fn editable(target: outliner::Target) -> bool {
 }
 pub(super) fn plugin(app: &mut App) {
     app.add_observer(right_click)
-        .add_systems(Update, sync.after(outliner::sync));
+        .add_zone_systems(sync.after(outliner::sync));
 }
 pub(super) fn spawn(parent: &mut ChildSpawnerCommands, row: usize) {
     let mut root = parent.spawn((

@@ -16,6 +16,7 @@ mod naming;
 mod outliner;
 mod panels;
 mod particle_editor;
+mod particle_workspace;
 mod paths;
 mod placement;
 mod playtest;
@@ -31,6 +32,7 @@ mod theme;
 mod vegetation;
 mod viewport;
 mod workspace;
+use crate::particle_workspace::ZoneAppExt;
 use bevy::picking::hover::Hovered;
 use bevy::{
     input::mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll},
@@ -524,17 +526,24 @@ fn run() -> Result<(), String> {
     })
     .insert_resource(Time::<Fixed>::from_hz(30.))
     .insert_resource(bevy::winit::WinitSettings::continuous())
-    .add_plugins(DefaultPlugins.set(WindowPlugin {
-        primary_window: Some(Window {
-            title: "Theia - Zone Editor".into(),
-            resolution: (3440, 1440).into(),
-            mode: bevy::window::WindowMode::BorderlessFullscreen(
-                bevy::window::MonitorSelection::Primary,
-            ),
-            ..default()
-        }),
-        ..default()
-    }))
+    .add_plugins(
+        DefaultPlugins
+            .set(AssetPlugin {
+                unapproved_path_mode: bevy::asset::UnapprovedPathMode::Allow,
+                ..default()
+            })
+            .set(WindowPlugin {
+                primary_window: Some(Window {
+                    title: "Theia - Zone Editor".into(),
+                    resolution: (3440, 1440).into(),
+                    mode: bevy::window::WindowMode::BorderlessFullscreen(
+                        bevy::window::MonitorSelection::Primary,
+                    ),
+                    ..default()
+                }),
+                ..default()
+            }),
+    )
     .add_plugins(theme::plugin)
     .add_plugins(sidebar::plugin)
     .add_plugins(browser_icons::plugin)
@@ -542,6 +551,7 @@ fn run() -> Result<(), String> {
     .add_plugins(properties::summary_plugin)
     .add_plugins(menus::plugin)
     .add_plugins(particle_editor::plugin)
+    .add_plugins(particle_workspace::plugin)
     .add_observer(workspace::activate)
     .add_observer(workspace::change)
     .add_observer(workspace::toggle)
@@ -571,8 +581,7 @@ fn run() -> Result<(), String> {
             file_picker::setup,
         ),
     )
-    .add_systems(
-        Update,
+    .add_zone_systems(
         (
             (
                 panels::resize,
@@ -605,7 +614,6 @@ fn run() -> Result<(), String> {
             (outliner::scroll, outliner::sync).chain(),
             workspace::sync,
             present,
-            viewport::capture,
         )
             .chain(),
     )
@@ -618,6 +626,12 @@ fn run() -> Result<(), String> {
         )
             .chain()
             .after(bevy::text::EditableTextSystems),
+    )
+    .add_systems(
+        Update,
+        viewport::capture
+            .after(particle_workspace::ZoneAuthoring)
+            .after(bevy_sprinkles_editor::hosting::AuthoringUpdate),
     )
     .add_systems(FixedUpdate, playtest::step)
     .add_systems(Last, viewport::report);
@@ -1267,7 +1281,7 @@ fn camera_controls(
     menu_items: Query<(), With<bevy::ui_widgets::MenuItem>>,
     mut view: ResMut<View>,
     mut panning: Local<Option<Vec2>>,
-    mut camera: Query<(&mut Transform, &mut Projection), With<Camera3d>>,
+    mut camera: Query<(&mut Transform, &mut Projection), With<crate::viewport::ZoneCamera>>,
 ) {
     let Ok(window) = windows.single() else {
         return;

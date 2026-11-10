@@ -1,6 +1,7 @@
 //! Sprinkles scroll.rs presentation over Bevy 0.20's standard scroll widgets.
 //! Upstream 0e978f5, MIT; see third_party/sprinkles/PROVENANCE.md.
 use super::*;
+use crate::particle_workspace::ZoneAppExt;
 #[path = "scrolling_focus.rs"]
 mod focus;
 use bevy::input::mouse::MouseScrollUnit;
@@ -170,10 +171,7 @@ pub(super) fn plugin(app: &mut App) {
                 .after(naming::finish)
                 .after(file_picker::finish),
         )
-        .add_systems(
-            Update,
-            ownership.after(panels::resize).before(panels::apply),
-        );
+        .add_zone_systems(ownership.after(panels::resize).before(panels::apply));
 }
 
 // Preserve one UI gesture across the narrow scrollbar/panel boundary and release.

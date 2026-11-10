@@ -431,7 +431,7 @@ pub(super) fn perform(action: Action, session: &mut Session) {
 pub(super) fn pointer(
     mouse: Res<ButtonInput<MouseButton>>,
     windows: Query<&Window>,
-    camera: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
+    camera: Query<(&Camera, &GlobalTransform), With<crate::viewport::ZoneCamera>>,
     ground: Query<(), With<terrain::GroundPart>>,
     mut raycast: MeshRayCast,
     visuals: Query<&GuideVisual>,

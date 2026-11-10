@@ -296,6 +296,7 @@ fn dialog_scene(event: &OpenDialogEvent) -> impl Scene {
 
     bsn! {
         EditorDialog
+        crate::hosting::AuthoringUiRoot
         @template_value(variant)
         @template_value(config)
         Node {

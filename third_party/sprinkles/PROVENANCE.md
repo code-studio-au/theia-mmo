@@ -207,3 +207,12 @@ vector-root lookup and rejects inverted/non-finite input without a commit. This
 upstream functionality correction retains the original curve/gradient/colour UI
 and effect representation. Native source-preserving value edits are recorded in
 `docs/SPRINKLES_INTEGRATION.md`.
+
+The shared-window host adds an original-plugin wrapper, embedded-host settings,
+activity/root markers and a Zone return action built with the original ghost
+button. Embedded startup shares the host UI camera and ignores host CLI arguments.
+Preview scene layers are isolated, and runtime emitter meshes honor their owner's
+explicit render layers on creation. Theia's existing theme excludes retained
+source widgets. These are host adapters; the original project/inspector/curve/
+gradient/colour/playback functionality remains directly reused. Native local/far
+shared-window and standalone acceptance is in `docs/SPRINKLES_INTEGRATION.md`.

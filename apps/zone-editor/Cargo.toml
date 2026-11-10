@@ -13,6 +13,8 @@ bevy = { workspace = true, features = [
     "bevy_color", "x11", "wayland", "bevy_ui", "bevy_ui_render", "bevy_text",
     "default_font", "png", "mesh_picking", "bevy_ui_widgets", "ui_picking",
 ] }
+bevy_sprinkles = { path = "../../third_party/sprinkles/crates/bevy_sprinkles" }
+bevy_sprinkles_editor = { path = "../../third_party/sprinkles/crates/bevy_sprinkles_editor" }
 avian3d.workspace = true
 serde_json.workspace = true
 theia-core.workspace = true

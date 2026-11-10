@@ -73,6 +73,7 @@ pub fn setup_camera(
     mut commands: Commands,
     mut images: ResMut<Assets<Image>>,
     editor_data: Res<EditorData>,
+    host: Res<crate::hosting::AuthoringHost>,
 ) {
     let mut image = Image::new_uninit(
         default(),
@@ -85,11 +86,13 @@ pub fn setup_camera(
     let image_handle = images.add(image);
 
     // Keep scene debug geometry out of the presentation-only UI camera.
-    commands.spawn((
-        Name::new("UiCamera"),
-        Camera2d,
-        bevy::camera::visibility::RenderLayers::layer(31),
-    ));
+    if !host.embedded {
+        commands.spawn((
+            Name::new("UiCamera"),
+            Camera2d,
+            bevy::camera::visibility::RenderLayers::layer(31),
+        ));
+    }
 
     let settings = &editor_data.settings;
     let initial_position = ORBIT_TARGET + ORBIT_OFFSET.normalize() * INITIAL_ORBIT_DISTANCE;
@@ -101,10 +104,12 @@ pub fn setup_camera(
 
     let mut camera = commands.spawn((
         EditorCamera,
+        bevy::camera::visibility::RenderLayers::layer(host.scene_layer),
         Name::new("ViewportCamera"),
         Camera3d::default(),
         Camera {
             order: -1,
+            is_active: host.active,
             clear_color: ClearColorConfig::Custom(ZINC_950.into()),
             ..default()
         },
@@ -132,6 +137,7 @@ pub fn setup_camera(
     }
 
     commands.spawn((
+        bevy::camera::visibility::RenderLayers::layer(host.scene_layer),
         DirectionalLight {
             shadow_maps_enabled: true,
             ..default()
@@ -145,6 +151,7 @@ pub fn setup_floor(
     asset_server: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    host: Res<crate::hosting::AuthoringHost>,
 ) {
     let mesh = meshes.add(Plane3d::new(*Dir3::Y, Vec2::splat(FLOOR_SIZE / 2.)));
     let material = materials.add(StandardMaterial {
@@ -168,6 +175,7 @@ pub fn setup_floor(
 
     commands.spawn((
         Mesh3d(mesh),
+        bevy::camera::visibility::RenderLayers::layer(host.scene_layer),
         MeshMaterial3d(material),
         Name::new("Floor"),
         Transform::from_xyz(0.0, -2.0, 0.0),
@@ -248,6 +256,7 @@ pub fn spawn_preview_particle_system(
     editor_state: Res<EditorState>,
     assets: Res<Assets<ParticlesAsset>>,
     existing: Query<Entity, With<EditorParticlePreview>>,
+    host: Res<crate::hosting::AuthoringHost>,
 ) {
     let Some(handle) = &editor_state.current_project else {
         for entity in existing.iter() {
@@ -266,6 +275,7 @@ pub fn spawn_preview_particle_system(
 
     commands.spawn((
         Particles3d(handle.clone()),
+        bevy::camera::visibility::RenderLayers::layer(host.scene_layer),
         asset.initial_transform.to_transform(),
         Visibility::default(),
         EditorMode,

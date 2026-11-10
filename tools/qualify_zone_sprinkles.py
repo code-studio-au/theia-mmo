@@ -15,7 +15,7 @@ from launch_environment import client_environment
 from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 
 
-def run(output, binary, only_case=None, scroll=False, attributes=False, dialogs=False, particles=False):
+def run(output, binary, only_case=None, scroll=False, attributes=False, dialogs=False, particles=False, workspace=False):
     output = output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     binary = binary.resolve()
@@ -43,17 +43,21 @@ def run(output, binary, only_case=None, scroll=False, attributes=False, dialogs=
                 (folder / f"dialog-fixture-{index}.zone.json").write_text(json.dumps(document))
         env = client_environment(dict(os.environ, WGPU_BACKEND='vulkan',
             VK_INSTANCE_LAYERS='VK_LAYER_KHRONOS_validation', VK_LOADER_DEBUG='layer'))
-        if particles:
+        if particles or workspace:
             effect = folder / 'effect.ron'
             shutil.copyfile('third_party/sprinkles/crates/bevy_sprinkles_editor/src/assets/examples/magic-puff.ron', effect)
             data = folder / 'particle-editor-data'
             data.mkdir()
             (data / 'editor.ron').write_text('(cache: (last_opened_project: Some(' + json.dumps(str(effect)) + '), recent_projects: []), settings: ())')
             env['THEIA_PARTICLE_EDITOR_DATA_DIR'] = str(data)
+        else:
+            data = folder / 'particle-editor-data'
+            data.mkdir()
+            env['THEIA_PARTICLE_EDITOR_DATA_DIR'] = str(data)
         logfile = folder / 'editor.log'
         desktop = None
         particle_pid = None
-        if scroll or attributes or dialogs:
+        if scroll or attributes or dialogs or workspace:
             desktop = Desktop()
             desktop.prepare_wheel()
         with logfile.open('w') as log:
@@ -468,6 +472,77 @@ def run(output, binary, only_case=None, scroll=False, attributes=False, dialogs=
                     assert state()['document'] == before_scroll['document']
                     assert state()['history'] == before_scroll['history']
 
+                if workspace:
+                    before_workspace = copy.deepcopy(fresh())
+                    effect_before = effect.read_bytes()
+                    def particle():
+                        return state()['particle_workspace']
+                    def camera_states():
+                        return {item['kind']:item['active'] for item in particle()['cameras']}
+                    def particle_click(kind):
+                        entry = wait(lambda:next((item for item in particle()['buttons'] if item['kind']==kind),None))
+                        click(entry['centre'])
+                    def chord(key):
+                        desktop.key_state('Control_L', True)
+                        try:
+                            desktop.key(key)
+                        finally:
+                            desktop.key_state('Control_L', False)
+                    def zone_preserved():
+                        current = fresh()
+                        assert current['document'] == before_workspace['document']
+                        assert current['history'] == before_workspace['history'] and current['revision'] == before_workspace['revision']
+                        assert source.read_text() == json.dumps(document)
+                    menu('File')
+                    popup_control('File', 'ParticleWorkspace')
+                    wait(lambda: particle()['active'] and len(particle()['emitter_layers']) == 6, 60)
+                    wait(lambda:camera_states() == {'zone':False,'particle':True})
+                    assert particle()['emitter_layers'] == [[1]] * 6
+                    def amount():
+                        return next((field for field in particle()['fields'] if field['field']=='emission.particles_amount'),None)
+                    field = wait(amount)
+                    for _ in range(32):
+                        field = amount()
+                        if 75 < field['centre'][1] < state()['viewport'][1]-40:
+                            break
+                        old_y = field['centre'][1]
+                        move([field['centre'][0], state()['viewport'][1]-100])
+                        desktop.scroll(-4 if old_y > state()['viewport'][1]-40 else 4)
+                        wait(lambda:amount()['centre'][1] != old_y)
+                    else:
+                        raise AssertionError('Embedded count field did not become visible')
+                    expected_effect = copy.deepcopy(particle()['project'])
+                    chord('y')
+                    zone_preserved()
+                    assert particle()['project'] == expected_effect
+                    click(field['centre'])
+                    chord('a')
+                    desktop.key('3'); desktop.key('2'); desktop.key('Return')
+                    wait(lambda:particle()['project']['emitters'][0]['emission']['particles_amount']==32)
+                    expected_effect['emitters'][0]['emission']['particles_amount'] = 32
+                    assert particle()['project'] == expected_effect and particle()['dirty']
+                    assert effect.read_bytes() == effect_before
+                    zone_preserved()
+                    capture('embedded-sprinkles-edit')
+                    chord('s')
+                    wait(lambda:not particle()['dirty'] and effect.read_bytes()!=effect_before)
+                    zone_preserved()
+                    particle_click('play')
+                    wait(lambda:particle()['runtime'] and all(item['paused'] for item in particle()['runtime']))
+                    particle_click('back')
+                    wait(lambda:not particle()['active'])
+                    wait(lambda:camera_states() == {'zone':True,'particle':False})
+                    zone_preserved()
+                    capture('zone-after-particle-workspace')
+                    menu('File')
+                    popup_control('File', 'ParticleWorkspace')
+                    wait(lambda:particle()['active'])
+                    assert particle()['project'] == expected_effect
+                    assert all(item['paused'] for item in particle()['runtime'])
+                    particle_click('back')
+                    wait(lambda:not particle()['active'])
+                    zone_preserved()
+
                 if particles:
                     before_tool = copy.deepcopy(fresh())
                     effect_bytes = effect.read_bytes()
@@ -520,7 +595,7 @@ def run(output, binary, only_case=None, scroll=False, attributes=False, dialogs=
     assert hashlib.sha256(binary.read_bytes()).hexdigest() == binary_hash, 'Binary changed during native qualification'
     if particles:
         assert hashlib.sha256(particle_binary.read_bytes()).hexdigest() == particle_hash
-    result = dict(particle_editor_sha256=particle_hash, cases=cases, scrolling=scroll, attribute_scrolling=attributes, dialogs=dialogs, particle_tool=particles, editor_sha256=binary_hash,
+    result = dict(particle_editor_sha256=particle_hash, cases=cases, scrolling=scroll, attribute_scrolling=attributes, dialogs=dialogs, particle_tool=particles, particle_workspace=workspace, editor_sha256=binary_hash,
         scope='Linux native 3440x1440; shorter 3440x600 scroll check when enabled; real OS input, Vulkan; no Windows or multiplayer claim')
     (output / 'qualification.json').write_text(json.dumps(result, indent=2)+'\n')
     print(json.dumps(result, indent=2))
@@ -535,5 +610,6 @@ if __name__ == '__main__':
     parser.add_argument('--attributes-scroll', action='store_true', help='Check Tab focus reveal and exact draft scrolling in a short owned window')
     parser.add_argument('--dialogs', action='store_true', help='Check file and naming dialog layout and wheel input in a short owned window')
     parser.add_argument('--particles', action='store_true', help='Check the directly reused authoring tool launch and zone preservation')
+    parser.add_argument('--workspace', action='store_true', help='Check the reused same-window particle workspace, guarded zone input and return')
     args = parser.parse_args()
-    run(args.output, args.binary, args.case, args.scroll, args.attributes_scroll, args.dialogs, args.particles)
+    run(args.output, args.binary, args.case, args.scroll, args.attributes_scroll, args.dialogs, args.particles, args.workspace)

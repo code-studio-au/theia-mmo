@@ -259,7 +259,7 @@ mod tests {
         .init_resource::<workspace::Requests>()
         .add_plugins(plugin)
         .add_systems(Startup, setup)
-        .add_systems(Update, crate::keyboard);
+        .add_zone_systems(crate::keyboard);
         app.world_mut().resource_mut::<Session>().selected = Some(1);
         let window = app
             .world_mut()

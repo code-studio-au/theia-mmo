@@ -1,4 +1,5 @@
 use super::*;
+use crate::particle_workspace::ZoneAppExt;
 fn session(origin: [f64; 3]) -> Session {
     let zone = Zone {
         origin,
@@ -125,7 +126,7 @@ fn one_nonpickable_nonshadowing_ghost_reuses_palette_meshes_and_hides_without_a_
             Startup,
             (viewport::setup, setup.after(viewport::setup), naming::setup),
         )
-        .add_systems(Update, (naming::keyboard, sync).chain())
+        .add_zone_systems((naming::keyboard, sync).chain())
         .add_systems(PostUpdate, naming::finish);
     app.world_mut().spawn(Window {
         focused: true,

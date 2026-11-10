@@ -33,8 +33,20 @@ pub struct SprinklesEditorPlugin;
 
 impl Plugin for SprinklesEditorPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(crate::hosting::AuthoringHostPlugin)
-            .insert_resource(CliArgs::from_env())
+        app.add_plugins(crate::hosting::AuthoringHostPlugin);
+        let embedded = app
+            .world()
+            .resource::<crate::hosting::AuthoringHost>()
+            .embedded;
+        if !embedded {
+            app.insert_resource(ClearColor(ZINC_950.into()));
+        }
+        let args = if embedded {
+            CliArgs { initial_file: None }
+        } else {
+            CliArgs::from_env()
+        };
+        app.insert_resource(args)
             .add_plugins(crate::assets::plugin)
             .add_plugins(SprinklesPlugin)
             .add_plugins(crate::viewport_bounds::plugin)
@@ -45,7 +57,6 @@ impl Plugin for SprinklesEditorPlugin {
             .init_resource::<CameraSettings>()
             .init_resource::<ViewportInputState>()
             .init_resource::<AabbGeneration>()
-            .insert_resource(ClearColor(ZINC_950.into()))
             .add_observer(respawn_preview_on_emitter_change)
             .add_observer(handle_respawn_emitters)
             .add_observer(handle_respawn_colliders)

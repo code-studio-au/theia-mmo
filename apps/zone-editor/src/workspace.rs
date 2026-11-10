@@ -26,6 +26,7 @@ pub(super) struct Requests {
     pub file_open: bool,
     pub file_save_as: bool,
     pub particle_editor: bool,
+    pub particle_workspace: bool,
 }
 #[derive(Component, Clone, Copy, Debug)]
 pub(super) enum Control {
@@ -40,6 +41,7 @@ pub(super) enum Control {
     FileOpen,
     FileSaveAs,
     ParticleEditor,
+    ParticleWorkspace,
     Point(i8),
     WholePath,
     Snap,
@@ -155,6 +157,7 @@ pub(super) fn setup(mut commands: Commands, icons: Option<Res<sidebar::Icons>>) 
                         (Control::Command(Action::Save), "Save", "Ctrl S"),
                         (Control::FileSaveAs, "Save as…", "Ctrl Shift S"),
                         (Control::Command(Action::Load), "Reload", "Ctrl Shift O"),
+                        (Control::ParticleWorkspace, "Particles workspace…", ""),
                         (Control::ParticleEditor, "Particle editor…", ""),
                     ],
                 );
@@ -638,6 +641,7 @@ pub(super) fn execute(
         Control::FileOpen => requests.file_open = true,
         Control::FileSaveAs => requests.file_save_as = true,
         Control::ParticleEditor => requests.particle_editor = true,
+        Control::ParticleWorkspace => requests.particle_workspace = true,
         Control::Snap | Control::Handles | Control::Grid => {}
     }
 }

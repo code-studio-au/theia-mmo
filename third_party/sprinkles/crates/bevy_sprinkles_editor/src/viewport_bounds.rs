@@ -85,6 +85,7 @@ fn setup(
 fn sync(
     mut commands: Commands,
     geometry: Res<Geometry>,
+    host: Res<crate::hosting::AuthoringHost>,
     state: Res<EditorState>,
     bounds: Query<(Entity, &Aabb, &GlobalTransform), With<ShowBounds>>,
     colliders: Query<(Entity, &ParticlesCollider3D, &ColliderEntity, &Transform), Without<Overlay>>,
@@ -154,6 +155,7 @@ fn sync(
     for (owner, pose, mesh, material) in wanted {
         commands.spawn((
             Overlay(owner),
+            bevy::camera::visibility::RenderLayers::layer(host.scene_layer),
             pose,
             Mesh3d(mesh),
             MeshMaterial3d(material),
@@ -174,6 +176,7 @@ mod tests {
         app.init_resource::<Assets<Mesh>>()
             .init_resource::<Assets<StandardMaterial>>()
             .init_resource::<EditorState>()
+            .init_resource::<crate::hosting::AuthoringHost>()
             .add_systems(Startup, setup)
             .add_authoring_systems(sync);
         let source = app

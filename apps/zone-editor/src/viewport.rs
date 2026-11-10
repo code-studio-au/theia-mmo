@@ -9,6 +9,8 @@ use bevy::{
 #[derive(Component)]
 pub(super) struct Authored(pub u64);
 #[derive(Component)]
+pub(super) struct ZoneCamera;
+#[derive(Component)]
 pub(super) struct SpawnMarker;
 #[derive(Component)]
 pub(super) struct Pawn;
@@ -89,6 +91,7 @@ pub(super) fn setup(
     let camera = commands
         .spawn((
             Camera3d::default(),
+            ZoneCamera,
             Camera {
                 order: -1,
                 ..default()
@@ -202,7 +205,7 @@ pub(super) fn sync(
 pub(super) fn pointer(
     mouse: Res<ButtonInput<MouseButton>>,
     windows: Query<&Window>,
-    camera: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
+    camera: Query<(&Camera, &GlobalTransform), With<crate::viewport::ZoneCamera>>,
     objects: Query<&Authored>,
     handles: Query<(&gizmo::TransformHandle, &Visibility, &Transform)>,
     ground: Query<(), With<terrain::GroundPart>>,
@@ -500,11 +503,12 @@ pub(super) fn report(
     input: (
         Res<ButtonInput<KeyCode>>,
         Res<bevy::input_focus::InputFocus>,
+        crate::particle_workspace::Report,
     ),
     session: Res<Session>,
     view: Res<View>,
     windows: Query<&Window>,
-    cameras: Query<(&Camera, &GlobalTransform, &Projection), With<Camera3d>>,
+    cameras: Query<(&Camera, &GlobalTransform, &Projection), With<crate::viewport::ZoneCamera>>,
     controls: ReportControls,
     scale: Res<bevy::ui::UiScale>,
     mouse: Res<ButtonInput<MouseButton>>,
@@ -514,7 +518,7 @@ pub(super) fn report(
     content: Res<outliner::Content>,
     content_controls: ContentControls,
 ) {
-    let (keys, focus) = input;
+    let (keys, focus, particles) = input;
     let Some(mut report) = report else {
         return;
     };
@@ -704,6 +708,7 @@ pub(super) fn report(
         Some(serde_json::json!({"target":format!("{control:?}"),"hovered":hovered.0,"centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array(),
             "entry":entry.map(|e|serde_json::json!({"name":e.name,"path":e.path.to_string_lossy(),"directory":e.directory}))}))
     }).collect::<Vec<_>>());
+    value["particle_workspace"] = particles.snapshot();
     value["file_dialog"] = serde_json::json!(session.file_dialog.as_ref().map(|d|serde_json::json!({"mode":format!("{:?}",d.mode),"folder":d.folder.to_string_lossy(),"text":d.text,"selection":d.selection,"page":d.page,"pages":d.pages(),"overwrite":d.overwrite})));
     value["name_controls"] = serde_json::json!(controls.iter().filter_map(|(_,control,_,_,node,t,hovered,..)| {
         let control = control?;

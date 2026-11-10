@@ -1,5 +1,6 @@
 //! Compact read-only attribute rows over the exact editor's validated snapshot.
 use super::*;
+use crate::particle_workspace::ZoneAppExt;
 #[derive(Component)]
 struct Root(Option<Key>);
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -147,7 +148,7 @@ pub(super) fn spawn(parent: &mut ChildSpawnerCommands) {
 }
 pub(super) fn plugin(app: &mut App) {
     app.add_observer(open_value)
-        .add_systems(Update, sync.after(crate::present));
+        .add_zone_systems(sync.after(crate::present));
 }
 fn open_value(
     event: On<Activate>,
