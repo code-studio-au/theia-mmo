@@ -1,3 +1,11 @@
+P5-17, 10 November 2026: naming/search and zone-file forms adopt shared
+Sprinkles dialog framing, separated titles/status, fixed right-aligned actions
+and bounded scrolling bodies. Native focus reveal responds to changed pane size
+without fighting manual scrolling. Headless checks include 140 focused tests;
+formatting, denied-warning Clippy and editor build pass. Native acceptance is
+pending while
+desktop use is stopped. See STATUS and ZONE_EDITOR for exact scope/evidence.
+
 P5-17, 10 November 2026: Snap/Handles/Grid use Sprinkles-style outlined
 checkboxes and plain labels over native Bevy Checkbox and existing guarded state.
 All 139 focused tests and denied-warning Clippy pass; native acceptance remains

@@ -125,6 +125,8 @@ pub(super) struct Field;
 #[derive(Component)]
 pub(super) struct Caption;
 #[derive(Component)]
+pub(super) struct Description;
+#[derive(Component)]
 pub(super) struct Label(Control);
 #[derive(Component, Clone, Copy, Debug)]
 pub(super) enum Control {
@@ -148,7 +150,11 @@ fn button(control: Control, label: &str) -> impl Bundle {
             ..default()
         },
         BackgroundColor(theme::Variant::Default.background(false)),
-        children![(Label(control), text(label, 15.), TextLayout::no_wrap())],
+        children![(
+            Label(control),
+            theme::label(label, 12., theme::BODY),
+            TextLayout::no_wrap()
+        )],
     )
 }
 pub(super) fn setup(mut commands: Commands) {
@@ -163,78 +169,74 @@ pub(super) fn setup(mut commands: Commands) {
                 height: percent(100),
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Center,
+                padding: UiRect::all(px(12)),
                 ..default()
             },
-            BackgroundColor(theme::OVERLAY),
+            BackgroundColor(theme::dialog::BACKDROP),
         ))
         .with_children(|root| {
-            root.spawn((
-                Node {
-                    width: px(900),
-                    padding: UiRect::all(px(20)),
-                    row_gap: px(10),
-                    flex_direction: FlexDirection::Column,
-                    ..default()
-                },
-                BackgroundColor(theme::PANEL),
-            ))
-            .with_children(|panel| {
-                panel.spawn((Caption, text("ZONE FILES", 17.)));
-                panel
-                    .spawn(Node {
-                        column_gap: px(8),
-                        ..default()
-                    })
-                    .with_children(|row| {
-                        for (control, label) in [
-                            (Control::Up, "Up folder"),
-                            (Control::Previous, "Previous page"),
-                            (Control::Next, "Next page"),
-                        ] {
-                            row.spawn(button(control, label));
+            root.spawn(theme::dialog::panel(900.))
+                .with_children(|panel| {
+                    panel
+                        .spawn(theme::dialog::header())
+                        .with_child((Caption, theme::label("Zone files", 18., theme::DISPLAY)));
+                    scrolling::pane(panel, 24., scrolling::Pane::Dialog, |body| {
+                        body.spawn((Description, theme::label("", 14., theme::MUTED)));
+                        body.spawn(Node {
+                            column_gap: px(6),
+                            flex_wrap: FlexWrap::Wrap,
+                            row_gap: px(6),
+                            ..default()
+                        })
+                        .with_children(|row| {
+                            for (control, label) in [
+                                (Control::Up, "Up folder"),
+                                (Control::Previous, "Previous page"),
+                                (Control::Next, "Next page"),
+                            ] {
+                                row.spawn(button(control, label));
+                            }
+                        });
+                        for index in 0..ROWS {
+                            body.spawn(button(Control::Row(index), ""));
                         }
+                        body.spawn((theme::label("Filename or path (.json)", 12., theme::MUTED),));
+                        body.spawn((
+                            Field,
+                            Control::Field,
+                            TextInput,
+                            SelectAllOnFocus,
+                            Hovered::default(),
+                            EditableText {
+                                max_characters: Some(4096),
+                                allow_newlines: false,
+                                ..default()
+                            },
+                            Node {
+                                width: percent(100),
+                                ..theme::input_node()
+                            },
+                            BorderColor::all(theme::BORDER),
+                            BackgroundColor(Color::NONE),
+                            theme::input_font(),
+                            TextColor(theme::BODY),
+                            TextLayout::no_wrap(),
+                            theme::text_cursor(),
+                        ));
+                        body.spawn((theme::label(
+                            "Enter opens/saves | Escape cancels",
+                            12.,
+                            theme::MUTED,
+                        ),));
                     });
-                for index in 0..ROWS {
-                    panel.spawn(button(Control::Row(index), ""));
-                }
-                panel.spawn(text(
-                    "Filename or path (.json) | Enter opens/saves | Escape cancels",
-                    14.,
-                ));
-                panel.spawn((
-                    Field,
-                    Control::Field,
-                    TextInput,
-                    SelectAllOnFocus,
-                    Hovered::default(),
-                    EditableText {
-                        max_characters: Some(4096),
-                        allow_newlines: false,
-                        ..default()
-                    },
-                    Node {
-                        width: percent(100),
-                        ..theme::input_node()
-                    },
-                    BorderColor::all(theme::BORDER),
-                    BackgroundColor(Color::NONE),
-                    theme::input_font(),
-                    TextColor(theme::BODY),
-                    TextLayout::no_wrap(),
-                    theme::text_cursor(),
-                ));
-                panel
-                    .spawn(Node {
-                        column_gap: px(8),
-                        ..default()
-                    })
-                    .with_children(|row| {
-                        row.spawn(button(Control::Apply, "Open"));
+                    panel.spawn(theme::dialog::footer()).with_children(|row| {
                         row.spawn(button(Control::Cancel, "Cancel"));
+                        row.spawn(button(Control::Apply, "Open"));
                     });
-            });
+                });
         });
 }
+
 pub(super) fn activate(
     event: On<PointerPress>,
     controls: Query<&Control>,
@@ -379,7 +381,7 @@ fn submit(draft: &mut Draft, session: &mut Session, view: &mut View) -> Result<b
     }
     Ok(true)
 }
-#[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 pub(super) fn finish(
     keys: Res<ButtonInput<KeyCode>>,
     windows: Query<&Window>,
@@ -391,6 +393,7 @@ pub(super) fn finish(
     mut controls: Query<(&Control, &Hovered, &mut Node, &mut BackgroundColor), Without<Root>>,
     mut labels: Query<(&Label, &mut Text)>,
     mut captions: Query<&mut Text, (With<Caption>, Without<Label>)>,
+    mut descriptions: Query<&mut Text, (With<Description>, Without<Caption>, Without<Label>)>,
 ) {
     let Some(mut draft) = session.file_dialog.take() else {
         if let Ok(mut root) = roots.single_mut() {
@@ -487,7 +490,9 @@ pub(super) fn finish(
                 background.0 = if unavailable {
                     theme::Variant::Disabled.background(false)
                 } else if matches!(control, Control::Apply) && draft.overwrite {
-                    Color::srgb(0.35, 0.19, 0.07)
+                    theme::Variant::Destructive.background(hovered.0)
+                } else if matches!(control, Control::Apply) {
+                    theme::Variant::Primary.background(hovered.0)
                 } else if selected {
                     theme::Variant::Active.background(false)
                 } else if hovered.0 {
@@ -527,13 +532,16 @@ pub(super) fn finish(
             };
         }
         if let Ok(mut caption) = captions.single_mut() {
-            **caption = format!(
-                "{} zone | Page {} / {}{}\n{}\n{}",
-                if draft.mode == Mode::Open {
-                    "Open"
-                } else {
-                    "Save As"
-                },
+            **caption = if draft.mode == Mode::Open {
+                "Open zone"
+            } else {
+                "Save zone as"
+            }
+            .into();
+        }
+        if let Ok(mut description) = descriptions.single_mut() {
+            **description = format!(
+                "Page {} / {}{}\n{}\n{}",
                 draft.page + 1,
                 draft.pages(),
                 if draft.truncated {

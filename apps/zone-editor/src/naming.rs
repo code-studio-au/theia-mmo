@@ -38,6 +38,10 @@ pub(super) struct Root;
 pub(super) struct Field;
 #[derive(Component)]
 pub(super) struct Caption;
+#[derive(Component)]
+pub(super) struct Description;
+#[derive(Component)]
+pub(super) struct ApplyLabel;
 #[derive(Component, Clone, Copy, Debug)]
 pub(super) enum Control {
     Apply,
@@ -56,72 +60,69 @@ pub(super) fn setup(mut commands: Commands) {
                 height: percent(100),
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Center,
+                padding: UiRect::all(px(12)),
                 ..default()
             },
-            BackgroundColor(theme::OVERLAY),
+            BackgroundColor(theme::dialog::BACKDROP),
         ))
         .with_children(|root| {
-            root.spawn((
-                Node {
-                    width: px(480),
-                    padding: px(24).all(),
-                    row_gap: px(12),
-                    flex_direction: FlexDirection::Column,
-                    border: px(1).all(),
-                    ..default()
-                },
-                BorderColor::all(theme::BORDER),
-                BackgroundColor(theme::PANEL),
-            ))
-            .with_children(|panel| {
-                panel.spawn((Caption, text("Rename", 22.)));
-                panel.spawn((
-                    Field,
-                    TextInput,
-                    SelectAllOnFocus,
-                    EditableText {
-                        max_characters: Some(80),
-                        allow_newlines: false,
-                        ..default()
-                    },
-                    Node {
-                        width: percent(100),
-                        ..theme::input_node()
-                    },
-                    BorderColor::all(theme::BORDER),
-                    BackgroundColor(Color::NONE),
-                    theme::input_font(),
-                    TextColor(theme::BODY),
-                    TextLayout::no_wrap(),
-                    theme::text_cursor(),
-                ));
-                panel.spawn(text(
-                    "Enter applies | Escape cancels | 1–80 UTF-8 bytes",
-                    16.,
-                ));
-                panel
-                    .spawn((Node {
-                        column_gap: px(14),
-                        ..default()
-                    },))
-                    .with_children(|row| {
+            root.spawn(theme::dialog::panel(448.))
+                .with_children(|panel| {
+                    panel
+                        .spawn(theme::dialog::header())
+                        .with_child((Caption, theme::label("Rename", 18., theme::DISPLAY)));
+                    scrolling::pane(panel, 24., scrolling::Pane::Dialog, |body| {
+                        body.spawn((Description, theme::label("", 14., theme::MUTED)));
+                        body.spawn((
+                            Field,
+                            TextInput,
+                            SelectAllOnFocus,
+                            EditableText {
+                                max_characters: Some(80),
+                                allow_newlines: false,
+                                ..default()
+                            },
+                            Node {
+                                width: percent(100),
+                                ..theme::input_node()
+                            },
+                            BorderColor::all(theme::BORDER),
+                            BackgroundColor(Color::NONE),
+                            theme::input_font(),
+                            TextColor(theme::BODY),
+                            TextLayout::no_wrap(),
+                            theme::text_cursor(),
+                        ));
+                        body.spawn((theme::label(
+                            "Enter applies | Escape cancels",
+                            12.,
+                            theme::MUTED,
+                        ),));
+                    });
+                    panel.spawn(theme::dialog::footer()).with_children(|row| {
                         for (control, label) in
-                            [(Control::Apply, "Apply name"), (Control::Cancel, "Cancel")]
+                            [(Control::Cancel, "Cancel"), (Control::Apply, "Apply name")]
                         {
                             row.spawn((
                                 control,
                                 Button,
                                 Hovered::default(),
                                 Node {
+                                    min_height: px(28),
                                     padding: UiRect::axes(px(12), px(6)),
                                     ..default()
                                 },
                                 BackgroundColor(theme::Variant::Default.background(false)),
                             ))
-                            .with_child(text(label, 19.));
+                            .with_children(|button| {
+                                let mut label = button.spawn(theme::label(label, 12., theme::BODY));
+                                if matches!(control, Control::Apply) {
+                                    label.insert(ApplyLabel);
+                                }
+                            });
                         }
                     });
-            });
+                });
         });
 }
 
@@ -227,7 +228,7 @@ pub(super) fn keyboard(
 }
 
 // Read after Bevy has applied queued text edits, including input received with Enter.
-#[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 pub(super) fn finish(
     keys: Res<ButtonInput<KeyCode>>,
     windows: Query<&Window>,
@@ -236,6 +237,8 @@ pub(super) fn finish(
     fields: Query<(Entity, &EditableText), With<Field>>,
     mut roots: Query<&mut Node, With<Root>>,
     mut captions: Query<&mut Text, With<Caption>>,
+    mut descriptions: Query<&mut Text, (With<Description>, Without<Caption>)>,
+    mut apply_labels: Query<&mut Text, (With<ApplyLabel>, Without<Caption>, Without<Description>)>,
     mut content: ResMut<outliner::Content>,
 ) {
     let Some(mut draft) = session.name_edit.take() else {
@@ -330,17 +333,30 @@ pub(super) fn finish(
         }
         if let Ok(mut caption) = captions.single_mut() {
             caption.0 = format!(
-                "{} {} | {} / {} bytes\n{}",
+                "{} {}",
                 if draft.is_authoring() {
                     "Rename"
                 } else {
                     "Find"
                 },
-                draft.subject,
+                draft.subject
+            );
+        }
+        if let Ok(mut description) = descriptions.single_mut() {
+            description.0 = format!(
+                "{} / {} UTF-8 bytes\n{}",
                 draft.text.len(),
                 if draft.is_authoring() { 80 } else { 128 },
                 session.status
             );
+        }
+        if let Ok(mut label) = apply_labels.single_mut() {
+            label.0 = if draft.is_authoring() {
+                "Apply name"
+            } else {
+                "Find"
+            }
+            .into();
         }
         draft.action = None;
         session.name_edit = Some(draft);

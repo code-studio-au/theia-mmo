@@ -65,7 +65,7 @@ pub(crate) fn spawn(parent: &mut ChildSpawnerCommands, control: workspace::Contr
             });
             row.spawn((
                 workspace::ButtonLabel,
-                text(label, 12.),
+                super::label(label, 12., BODY),
                 TextLayout::no_wrap(),
             ));
         });

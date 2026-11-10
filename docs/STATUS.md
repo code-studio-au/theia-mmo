@@ -1,3 +1,24 @@
+Sprinkles dialogs, 10 November 2026 (P5-17): naming/search and zone-file
+forms now share upstream dialog.rs framing: 6 px radius, 1 px border, 80% black
+backdrop, separated 24 px header/body/footer padding, exact 18 px semibold title,
+14 px regular status description and right-aligned 12 px action labels. Naming
+uses the upstream 448 px maximum width; the file browser retains 900 px for paths.
+Dialogs cap their height, scroll only the body and keep Cancel/Apply fixed.
+Native focus reveal handles viewport/pane size changes as well as focus changes,
+while unchanged bounds/focus preserve manual scrolling. Find has its own primary
+button label; file Open/Save use primary blue and overwrite uses upstream red.
+Existing draft validation, cancellation, guarded commands and file APIs remain.
+Checkbox labels also now request exactly 12 px without legacy size remapping.
+
+Headless checks include 140 focused tests; the short-window case opens at full
+height then resizes to 420 px with unchanged focus, checks filename and actions,
+manual scrolling, naming/search and exact source/history/bytes/file-count safety
+at local/far origins. Formatting, denied-warning workspace/all-target Clippy and
+editor build pass. Evidence: `build/sprinkles-review/dialog-tests-final-v3.log`,
+`dialog-clippy-final-v2.log` and `dialog-build-final.log`. Native rendering/input/
+GPU acceptance remains pending while desktop use is stopped. --dialogs native
+qualification is prepared and syntax-checked; it has not been executed.
+
 Sprinkles checkboxes, 10 November 2026 (P5-17): Snap, Handles and Grid
 adopt the pinned checkbox.rs 16 px outlined box, 2 px radius, 6 px label gap,
 12 px text and hover border feedback. A native UI-border check mark replaces

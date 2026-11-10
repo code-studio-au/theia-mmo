@@ -3,6 +3,8 @@
 use super::*;
 #[path = "theme_checkbox.rs"]
 pub(super) mod checkbox;
+#[path = "theme_dialog.rs"]
+pub(super) mod dialog;
 use bevy::asset::uuid_handle;
 use bevy::color::palettes::tailwind;
 
@@ -14,7 +16,6 @@ pub(super) const BODY: Color = Color::Srgba(tailwind::ZINC_200);
 pub(super) const MUTED: Color = Color::Srgba(tailwind::ZINC_400);
 pub(super) const DISPLAY: Color = Color::Srgba(tailwind::ZINC_50);
 pub(super) const INPUT: Color = Color::Srgba(tailwind::ZINC_900);
-pub(super) const OVERLAY: Color = Color::srgba(0., 0., 0., 0.6);
 
 // Adapted from Sprinkles' ButtonVariant. Keeping the native Bevy Button and
 // Checkbox behavior avoids replacing Theia's focus, activation or edit guards.
@@ -22,6 +23,7 @@ pub(super) const OVERLAY: Color = Color::srgba(0., 0., 0., 0.6);
 pub(super) enum Variant {
     Default,
     Primary,
+    Destructive,
     Active,
     Ghost,
     Disabled,
@@ -31,6 +33,8 @@ impl Variant {
         let (color, alpha) = match (self, hovered) {
             (Self::Default, false) => (BORDER, 0.5),
             (Self::Default, true) => (BORDER, 0.8),
+            (Self::Destructive, false) => (Color::Srgba(tailwind::RED_500), 1.),
+            (Self::Destructive, true) => (Color::Srgba(tailwind::RED_600), 0.9),
             (Self::Primary, false) => (PRIMARY, 1.),
             (Self::Primary, true) => (PRIMARY, 0.9),
             (Self::Active, false) => (PRIMARY, 0.1),
@@ -42,7 +46,7 @@ impl Variant {
     }
     fn foreground(self) -> Color {
         match self {
-            Self::Primary => DISPLAY,
+            Self::Primary | Self::Destructive => DISPLAY,
             Self::Active => PRIMARY,
             Self::Disabled => MUTED,
             _ => BODY,
@@ -72,6 +76,15 @@ pub(super) fn font(size: f32) -> TextFont {
         },
         ..default()
     }
+}
+pub(super) fn label(value: &str, size: f32, color: Color) -> impl Bundle {
+    let mut font = font(size);
+    font.weight = if size >= 18. {
+        FontWeight::SEMIBOLD
+    } else {
+        FontWeight::NORMAL
+    };
+    (Text::new(value), font, TextColor(color))
 }
 pub(super) fn input_font() -> TextFont {
     let mut value = font(12.);
@@ -204,6 +217,10 @@ fn text_states(
             if let Ok((background, disabled)) = buttons.get(ancestor) {
                 let state = if disabled {
                     Variant::Disabled
+                } else if background.0 == Variant::Destructive.background(false)
+                    || background.0 == Variant::Destructive.background(true)
+                {
+                    Variant::Destructive
                 } else if background.0 == Variant::Primary.background(false)
                     || background.0 == Variant::Primary.background(true)
                 {

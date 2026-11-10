@@ -6,6 +6,7 @@ use bevy::input_focus::InputFocus;
 pub(super) struct Reveal {
     last: Option<Entity>,
     pending: Option<Entity>,
+    bounds: Option<(Entity, Vec2)>,
 }
 
 // Use Bevy's standard request event, deferred until the visible layout is ready.
@@ -39,8 +40,17 @@ pub(super) fn reveal(
     mut state: ResMut<Reveal>,
 ) {
     let current = focus.as_ref().and_then(|focus| focus.get());
-    if current != state.last {
+    let bounds = current.and_then(|target| {
+        parents.iter_ancestors(target).find_map(|ancestor| {
+            panes
+                .get(ancestor)
+                .ok()
+                .map(|(_, node, _, _)| (ancestor, node.size()))
+        })
+    });
+    if current != state.last || bounds != state.bounds {
         state.last = current;
+        state.bounds = bounds;
         state.pending = current;
     }
     let Some(target) = state.pending else {

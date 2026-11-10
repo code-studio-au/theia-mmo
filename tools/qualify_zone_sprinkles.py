@@ -13,7 +13,7 @@ from launch_environment import client_environment
 from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 
 
-def run(output, binary, only_case=None, scroll=False, attributes=False):
+def run(output, binary, only_case=None, scroll=False, attributes=False, dialogs=False):
     output = output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     binary = binary.resolve()
@@ -34,11 +34,14 @@ def run(output, binary, only_case=None, scroll=False, attributes=False):
                                           origin[2]-8.5 if i == 1 else origin[2]-64+(i // 7)*5],
                                 yaw_degrees=17.25, size=[2, 2.5, 3])) for i in range(1, 44)])
         source.write_text(json.dumps(document))
+        if dialogs:
+            for index in range(14):
+                (folder / f"dialog-fixture-{index}.zone.json").write_text(json.dumps(document))
         env = client_environment(dict(os.environ, WGPU_BACKEND='vulkan',
             VK_INSTANCE_LAYERS='VK_LAYER_KHRONOS_validation', VK_LOADER_DEBUG='layer'))
         logfile = folder / 'editor.log'
         desktop = None
-        if scroll or attributes:
+        if scroll or attributes or dialogs:
             desktop = Desktop()
             desktop.prepare_wheel()
         with logfile.open('w') as log:
@@ -167,8 +170,40 @@ def run(output, binary, only_case=None, scroll=False, attributes=False):
                 wait(lambda: state()['file_dialog'] is not None)
                 unchanged()
                 capture('file-browser')
+                if dialogs:
+                    subprocess.run(['wmctrl','-ir',hex(window),'-b','remove,fullscreen'],check=True)
+                    subprocess.run(['wmctrl','-ir',hex(window),'-e','0,0,0,3440,420'],check=True)
+                    wait(lambda: state()['viewport'] == [3440,420])
+                    def dialog_pane():
+                        return next(p for p in state()['scroll_panes'] if p['scope']=='Dialog' and min(p['size']) > 0)
+                    wait(lambda: dialog_pane()['position'][1] > 24)
+                    def onscreen(entry):
+                        assert min(entry['size']) > 0
+                        assert entry['centre'][1]-entry['size'][1]/2 >= 12
+                        assert entry['centre'][1]+entry['size'][1]/2 <= 408
+                    for target in ['Field','Apply','Cancel']:
+                        onscreen(next(c for c in state()['file_controls'] if c['target']==target))
+                    before = copy.deepcopy(fresh())
+                    pane = dialog_pane()
+                    move(pane['centre'])
+                    desktop.scroll(1)
+                    wait(lambda: abs(dialog_pane()['position'][1] - max(0,pane['position'][1]-24)) < .1)
+                    assert state()['file_dialog']['text'] == before['file_dialog']['text']
+                    unchanged()
+                    capture('short-file-dialog')
                 desktop.key('Escape')
                 wait(lambda: state()['file_dialog'] is None)
+                if dialogs:
+                    desktop.key('F8')
+                    wait(lambda: state()['name_edit'] is not None)
+                    for entry in state()['name_controls']:
+                        onscreen(entry)
+                    capture('short-name-dialog')
+                    desktop.key('Escape')
+                    wait(lambda: state()['name_edit'] is None)
+                    unchanged()
+                    subprocess.run(['wmctrl','-ir',hex(window),'-b','add,fullscreen'],check=True)
+                    wait(lambda:state()['viewport']==[3440,1440])
                 control('Transform')
                 wait(lambda: state()['transform_edit'] is not None)
                 capture('exact-attributes')
@@ -332,9 +367,9 @@ def run(output, binary, only_case=None, scroll=False, attributes=False):
                 process.wait(timeout=15)
         text = logfile.read_text()
         assert 'Insert instance layer "VK_LAYER_KHRONOS_validation"' in text
-        cases[-1]['gpu_diagnostics'] = check_gpu_diagnostics(text, allow_surface_resize=scroll or attributes)
+        cases[-1]['gpu_diagnostics'] = check_gpu_diagnostics(text, allow_surface_resize=scroll or attributes or dialogs)
     assert hashlib.sha256(binary.read_bytes()).hexdigest() == binary_hash, 'Binary changed during native qualification'
-    result = dict(cases=cases, scrolling=scroll, attribute_scrolling=attributes, editor_sha256=binary_hash,
+    result = dict(cases=cases, scrolling=scroll, attribute_scrolling=attributes, dialogs=dialogs, editor_sha256=binary_hash,
         scope='Linux native 3440x1440; shorter 3440x600 scroll check when enabled; real OS input, Vulkan; no Windows or multiplayer claim')
     (output / 'qualification.json').write_text(json.dumps(result, indent=2)+'\n')
     print(json.dumps(result, indent=2))
@@ -347,5 +382,6 @@ if __name__ == '__main__':
     parser.add_argument('--case', choices=['local', 'far'])
     parser.add_argument('--scroll', action='store_true', help='Check real wheel and scrollbar dragging in a shorter owned window')
     parser.add_argument('--attributes-scroll', action='store_true', help='Check Tab focus reveal and exact draft scrolling in a short owned window')
+    parser.add_argument('--dialogs', action='store_true', help='Check file and naming dialog layout and wheel input in a short owned window')
     args = parser.parse_args()
-    run(args.output, args.binary, args.case, args.scroll, args.attributes_scroll)
+    run(args.output, args.binary, args.case, args.scroll, args.attributes_scroll, args.dialogs)

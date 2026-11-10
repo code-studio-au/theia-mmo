@@ -11,6 +11,7 @@ use bevy::ui_widgets::{ControlOrientation, Scrollbar, ScrollbarThumb};
 pub(super) enum Pane {
     Workspace,
     Browser,
+    Dialog,
     Attributes,
 }
 impl Pane {
@@ -22,6 +23,7 @@ impl Pane {
             && session.path_draft.is_none()
             && match self {
                 Self::Workspace | Self::Browser => !session.has_modal(),
+                Self::Dialog => session.name_edit.is_some() || session.file_dialog.is_some(),
                 Self::Attributes => {
                     session.transform_edit.is_some()
                         && session.name_edit.is_none()
@@ -34,6 +36,28 @@ impl Pane {
 struct Track(Entity);
 
 pub(super) fn pane(
+    parent: &mut ChildSpawnerCommands,
+    padding: f32,
+    scope: Pane,
+    body: impl FnOnce(&mut ChildSpawnerCommands),
+) {
+    if matches!(scope, Pane::Dialog) {
+        // Keep the scrollbar within the dialog body, clear of its fixed actions.
+        parent
+            .spawn(Node {
+                width: percent(100),
+                min_height: px(0),
+                flex_grow: 1.,
+                flex_direction: FlexDirection::Column,
+                position_type: PositionType::Relative,
+                ..default()
+            })
+            .with_children(|parent| spawn_pane(parent, padding, scope, body));
+    } else {
+        spawn_pane(parent, padding, scope, body);
+    }
+}
+fn spawn_pane(
     parent: &mut ChildSpawnerCommands,
     padding: f32,
     scope: Pane,
@@ -58,7 +82,11 @@ pub(super) fn pane(
             area.spawn(Node {
                 width: percent(100),
                 flex_direction: FlexDirection::Column,
-                row_gap: px(8),
+                row_gap: px(if matches!(scope, Pane::Dialog) {
+                    12.
+                } else {
+                    8.
+                }),
                 flex_shrink: 0.,
                 ..default()
             })
@@ -68,7 +96,9 @@ pub(super) fn pane(
     parent
         .spawn((
             Track(area),
-            GlobalZIndex(if matches!(scope, Pane::Attributes) {
+            GlobalZIndex(if matches!(scope, Pane::Dialog) {
+                31
+            } else if matches!(scope, Pane::Attributes) {
                 21
             } else {
                 17
@@ -132,7 +162,9 @@ pub(super) fn plugin(app: &mut App) {
                 .chain()
                 .after(bevy::ui::UiSystems::Layout)
                 .after(bevy::ui::ui_layout_system)
-                .after(properties::finish),
+                .after(properties::finish)
+                .after(naming::finish)
+                .after(file_picker::finish),
         )
         .add_systems(
             Update,

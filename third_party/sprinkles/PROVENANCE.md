@@ -80,3 +80,13 @@ selection reveal with checked source/history invariants.
 hover-lightened border. Theia draws the check using standard UI borders rather
 than upstream's icon image, adds visible keyboard focus/disabled treatment, and
 retains Bevy 0.20 Checkbox/ValueChange behavior and guarded Session/View state.
+
+`theme_dialog.rs`, `naming.rs` and `file_picker.rs` adapt static framing from
+`ui/widgets/dialog.rs` at the pinned revision: 6 px radius, 1 px border, black
+backdrop at 0.8 alpha, default max width 448 px, separated 24 px padded header,
+content and footer, 6 px action spacing and right-aligned Cancel/action buttons.
+Exact title/description/body sizes follow `ui/tokens.rs` (18/14/12 px). The file
+browser keeps a wider 900 px maximum for paths. Bevy scroll widgets and Theia's
+existing validation/cancellation/overwrite controllers remain; no easing crate,
+animated lifecycle or upstream file controller is imported. The shared dialog
+buttons also use upstream `button.rs` Primary and Destructive colors/foreground.

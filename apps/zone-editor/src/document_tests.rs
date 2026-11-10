@@ -466,3 +466,132 @@ fn application_shortcuts_share_new_and_search_guards_without_framing_or_writing(
         );
     }
 }
+
+#[test]
+fn short_dialogs_keep_actions_visible_and_reveal_path_without_writing_or_editing_source() {
+    for origin in [
+        [0.125, 0.25, -0.5],
+        [128_000_000_000.125, 20.25, -128_000_000_000.5],
+    ] {
+        let root = Sandbox::new();
+        for index in 0..14 {
+            Zone::default()
+                .save(&root.0.join(format!("example-{index}.zone.json")))
+                .unwrap();
+        }
+        let mut app = fixture(&root, origin);
+        let source = app.world().resource::<Session>().editor.zone().clone();
+        let bytes = std::fs::read(root.0.join("original.zone.json")).unwrap();
+        app.init_resource::<ButtonInput<MouseButton>>()
+            .add_plugins(scrolling::plugin);
+        crate::headless_ui::add_layout(&mut app);
+        app.world_mut()
+            .resource_mut::<workspace::Requests>()
+            .file_open = true;
+        for _ in 0..4 {
+            app.update();
+        }
+        // Resizing with unchanged focus must reveal the path as well as opening short.
+        let window = app
+            .world_mut()
+            .query_filtered::<Entity, With<Window>>()
+            .single(app.world())
+            .unwrap();
+        app.world_mut()
+            .get_mut::<Window>(window)
+            .unwrap()
+            .resolution
+            .set_physical_resolution(3440, 420);
+        for mut camera in app
+            .world_mut()
+            .query::<&mut Camera>()
+            .iter_mut(app.world_mut())
+        {
+            camera
+                .computed
+                .target_info
+                .as_mut()
+                .unwrap()
+                .physical_size
+                .y = 420;
+            camera.viewport.as_mut().unwrap().physical_size.y = 420;
+        }
+        for _ in 0..4 {
+            app.update();
+        }
+        let field = app
+            .world_mut()
+            .query_filtered::<Entity, With<Field>>()
+            .single(app.world())
+            .unwrap();
+        let visible = |world: &World, entity: Entity| {
+            let node = world.get::<ComputedNode>(entity).unwrap();
+            let pose = world.get::<bevy::ui::UiGlobalTransform>(entity).unwrap();
+            assert!(node.size().min_element() > 0.);
+            let top = pose.affine().translation.y - node.size().y / 2.;
+            let bottom = pose.affine().translation.y + node.size().y / 2.;
+            assert!(top >= 12. && bottom <= 408., "{entity:?}: {top}..{bottom}");
+        };
+        visible(app.world(), field);
+        assert_eq!(app.world().resource::<InputFocus>().get(), Some(field));
+        let mut cancel = None;
+        for (entity, control) in app
+            .world_mut()
+            .query::<(Entity, &Control)>()
+            .iter(app.world())
+        {
+            if matches!(control, Control::Apply | Control::Cancel) {
+                visible(app.world(), entity);
+            }
+            if matches!(control, Control::Cancel) {
+                cancel = Some(entity);
+            }
+        }
+        let pane = app
+            .world_mut()
+            .query::<(Entity, &scrolling::Pane, &ComputedNode)>()
+            .iter(app.world())
+            .find(|(_, scope, node)| matches!(scope, scrolling::Pane::Dialog) && node.size().y > 0.)
+            .unwrap()
+            .0;
+        assert!(app.world().get::<ScrollPosition>(pane).unwrap().y > 24.);
+        app.world_mut().get_mut::<ScrollPosition>(pane).unwrap().y = 0.;
+        for _ in 0..3 {
+            app.update();
+        }
+        assert_eq!(app.world().get::<ScrollPosition>(pane).unwrap().y, 0.);
+        click(&mut app, cancel.unwrap());
+        assert!(app.world().resource::<Session>().file_dialog.is_none());
+        app.world_mut().resource_mut::<workspace::Requests>().find = true;
+        for _ in 0..4 {
+            app.update();
+        }
+        let field = app
+            .world_mut()
+            .query_filtered::<Entity, With<naming::Field>>()
+            .single(app.world())
+            .unwrap();
+        visible(app.world(), field);
+        for (entity, _) in app
+            .world_mut()
+            .query::<(Entity, &naming::Control)>()
+            .iter(app.world())
+        {
+            visible(app.world(), entity);
+        }
+        let mut keys = app.world_mut().resource_mut::<ButtonInput<KeyCode>>();
+        keys.press(KeyCode::Escape);
+        app.update();
+        let session = app.world().resource::<Session>();
+        assert!(session.name_edit.is_none());
+        assert_eq!(session.editor.zone(), &source);
+        assert_eq!(session.editor.history(), (0, 0));
+        assert_eq!(session.editor.revision(), 0);
+        assert!(!session.is_dirty());
+        assert_eq!(
+            std::fs::read(root.0.join("original.zone.json")).unwrap(),
+            bytes
+        );
+        assert_eq!(std::fs::read_dir(&root.0).unwrap().count(), 15);
+    }
+}
