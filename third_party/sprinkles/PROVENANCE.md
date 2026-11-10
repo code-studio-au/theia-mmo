@@ -96,3 +96,9 @@ buttons also use upstream `button.rs` Primary and Destructive colors/foreground.
 bottom divider. The shared pane supplies the 12 px horizontal inset. Selection
 actions use the same section as Tools/Tool settings; session collapse state and
 native guarded activation/focus behavior remain Theia-owned.
+
+The shared action-button Node in `theme.rs` follows pinned button.rs MD sizing:
+28 px high, 12 px horizontal padding, 4 px radius and 12 px text. Default borders
+are 1 px; Primary, Destructive, Active, Ghost and Disabled are borderless with
+upstream state colors. Wrapped full-width tool actions keep automatic height;
+file rows keep left alignment. Native widget activation/guards are unchanged.

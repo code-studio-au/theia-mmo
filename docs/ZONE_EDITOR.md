@@ -3579,3 +3579,23 @@ all modes, placement settings and playtest return. Native rendering/input/GPU
 acceptance remains pending while desktop use is stopped. The prepared native
 qualifier now checks independent Selection/Tools collapse as well as Tool settings;
 it has only been syntax-checked, not run for this binary.
+
+## Sprinkles shared action button sizing and borders — 10 November 2026
+
+Sprinkles shared action buttons, 10 November 2026 (P5-17): workspace,
+exact-attribute, naming and file actions share upstream MD sizing (28 px height,
+12 px horizontal padding, 4 px radius and 12 px text). Full-width tool actions
+retain automatic height for wrapping and left alignment; file rows remain left
+aligned. Live variant borders now match upstream button.rs: default outline,
+borderless primary/destructive/active/ghost/disabled states and corresponding
+border/foreground colors. Bounded content rows, rail and section header sizing
+remain specific to those controls. Native Bevy activation and command guards stay.
+
+All 140 focused tests, formatting, denied-warning workspace/all-target Clippy and
+editor build pass. The CPU font/layout test now includes actual theme/checkbox/
+border systems across all modes and supported browser/inspector widths, while
+checking exact source/history preservation. Evidence:
+`build/sprinkles-review/button-style-tests-final.log`,
+`button-style-clippy-final.log` and `button-style-build.log`.
+Native rendering/input/GPU acceptance remains pending while desktop use is stopped;
+this slice used no native window, display capture or OS input.

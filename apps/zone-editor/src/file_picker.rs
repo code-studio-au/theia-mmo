@@ -144,10 +144,13 @@ fn button(control: Control, label: &str) -> impl Bundle {
         Button,
         Hovered::default(),
         Node {
-            min_height: px(28),
-            padding: UiRect::axes(px(10), px(5)),
+            justify_content: if matches!(control, Control::Row(_)) {
+                JustifyContent::Start
+            } else {
+                JustifyContent::Center
+            },
             overflow: Overflow::clip(),
-            ..default()
+            ..theme::button_node()
         },
         BackgroundColor(theme::Variant::Default.background(false)),
         children![(

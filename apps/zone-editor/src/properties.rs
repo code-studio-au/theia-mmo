@@ -435,13 +435,14 @@ pub(super) fn setup(mut commands: Commands) {
                                     control,
                                     Button,
                                     Hovered::default(),
-                                    Node {
-                                        padding: px(8).all(),
-                                        ..default()
-                                    },
+                                    theme::button_node(),
                                     BackgroundColor(theme::Variant::Default.background(false)),
                                 ))
-                                .with_child(text(label, 14.));
+                                .with_child(theme::label(
+                                    label,
+                                    12.,
+                                    theme::BODY,
+                                ));
                             }
                         });
                 });

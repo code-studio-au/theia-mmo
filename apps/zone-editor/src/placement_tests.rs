@@ -379,6 +379,10 @@ fn sprinkles_browser_inspector_and_tools_have_separate_full_height_regions() {
     app.add_observer(sidebar::activate)
         .add_systems(Update, outliner::sync);
     crate::headless_ui::add_layout(&mut app);
+    // Include actual theme/checkbox/border systems in the CPU geometry check.
+    app.init_resource::<ButtonInput<MouseButton>>()
+        .init_resource::<bevy::input::touch::Touches>()
+        .add_plugins(theme::plugin);
     let source = app.world().resource::<Session>().editor.zone().clone();
     app.add_systems(Update, (panels::apply, terrain::palette).chain());
     for (browser_width, inspector_width) in [(300., 300.), (480., 600.), (450., 350.)] {

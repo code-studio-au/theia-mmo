@@ -107,11 +107,7 @@ pub(super) fn setup(mut commands: Commands) {
                                 control,
                                 Button,
                                 Hovered::default(),
-                                Node {
-                                    min_height: px(28),
-                                    padding: UiRect::axes(px(12), px(6)),
-                                    ..default()
-                                },
+                                theme::button_node(),
                                 BackgroundColor(theme::Variant::Default.background(false)),
                             ))
                             .with_children(|button| {

@@ -667,14 +667,14 @@ fn setup_tools(panel: &mut ChildSpawnerCommands) {
                     ActivateOnPress,
                     Hovered::default(),
                     Node {
-                        min_height: px(26),
-                        padding: UiRect::all(px(4)),
-                        ..default()
+                        height: Val::Auto,
+                        justify_content: JustifyContent::Start,
+                        ..theme::button_node()
                     },
                     BackgroundColor(theme::Variant::Default.background(false)),
                 ))
                 .with_children(|button| {
-                    button.spawn((PaletteLabel, text(title, 15.)));
+                    button.spawn((PaletteLabel, theme::label(title, 12., theme::BODY)));
                 });
         }
     });

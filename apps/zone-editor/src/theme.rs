@@ -47,7 +47,7 @@ impl Variant {
     fn foreground(self) -> Color {
         match self {
             Self::Primary | Self::Destructive => DISPLAY,
-            Self::Active => PRIMARY,
+            Self::Active => PRIMARY.lighter(0.05),
             Self::Disabled => MUTED,
             _ => BODY,
         }
@@ -85,6 +85,75 @@ pub(super) fn label(value: &str, size: f32, color: Color) -> impl Bundle {
         FontWeight::NORMAL
     };
     (Text::new(value), font, TextColor(color))
+}
+pub(super) fn button_node() -> Node {
+    Node {
+        height: px(28),
+        min_height: px(28),
+        padding: UiRect::horizontal(px(12)),
+        border: UiRect::all(px(1)),
+        border_radius: BorderRadius::all(px(4)),
+        align_items: AlignItems::Center,
+        justify_content: JustifyContent::Center,
+        flex_shrink: 0.,
+        ..default()
+    }
+}
+fn color_variant(color: Color, disabled: bool) -> Variant {
+    if disabled {
+        return Variant::Disabled;
+    }
+    for variant in [
+        Variant::Destructive,
+        Variant::Primary,
+        Variant::Active,
+        Variant::Ghost,
+    ] {
+        if color == variant.background(false) || color == variant.background(true) {
+            return variant;
+        }
+    }
+    Variant::Default
+}
+#[allow(clippy::type_complexity)]
+fn button_borders(
+    mut buttons: Query<
+        (
+            &BackgroundColor,
+            &mut BorderColor,
+            &mut Node,
+            Option<&Variant>,
+            Has<bevy::ui::InteractionDisabled>,
+        ),
+        With<Button>,
+    >,
+) {
+    for (background, mut border, mut node, variant, disabled) in &mut buttons {
+        let variant = if disabled {
+            Variant::Disabled
+        } else {
+            variant
+                .copied()
+                .unwrap_or_else(|| color_variant(background.0, false))
+        };
+        let color = match variant {
+            Variant::Primary | Variant::Active => PRIMARY,
+            Variant::Destructive => Color::Srgba(tailwind::RED_500),
+            _ => BORDER,
+        };
+        let width = UiRect::all(px(if matches!(variant, Variant::Default) {
+            1.
+        } else {
+            0.
+        }));
+        if node.border != width {
+            node.border = width;
+        }
+        let next = BorderColor::all(color);
+        if *border != next {
+            *border = next;
+        }
+    }
 }
 pub(super) fn input_font() -> TextFont {
     let mut value = font(12.);
@@ -125,6 +194,7 @@ pub(super) fn plugin(app: &mut App) {
             release_buttons,
             decorate_buttons,
             simple_buttons,
+            button_borders,
             text_states,
             input_states,
             numeric_frames,
@@ -215,23 +285,7 @@ fn text_states(
     for (entity, mut color) in &mut texts {
         for ancestor in parents.iter_ancestors(entity) {
             if let Ok((background, disabled)) = buttons.get(ancestor) {
-                let state = if disabled {
-                    Variant::Disabled
-                } else if background.0 == Variant::Destructive.background(false)
-                    || background.0 == Variant::Destructive.background(true)
-                {
-                    Variant::Destructive
-                } else if background.0 == Variant::Primary.background(false)
-                    || background.0 == Variant::Primary.background(true)
-                {
-                    Variant::Primary
-                } else if background.0 == Variant::Active.background(false)
-                    || background.0 == Variant::Active.background(true)
-                {
-                    Variant::Active
-                } else {
-                    Variant::Default
-                };
+                let state = color_variant(background.0, disabled);
                 color.0 = state.foreground();
                 break;
             }

@@ -1,3 +1,9 @@
+P5-17, 10 November 2026: shared action buttons match Sprinkles MD size,
+padding, text and live variant borders. Actual theme/checkbox systems now run in
+the CPU panel-layout regression across modes/widths. All 140 focused tests,
+formatting, denied-warning Clippy and editor build pass; native acceptance remains
+pending while desktop use is stopped. See STATUS and ZONE_EDITOR for evidence.
+
 P5-17, 10 November 2026: Selection actions join Tools/Tool settings as an
 independently collapsible Sprinkles-style inspector section. Shared headers use
 upstream typography/spacing/dividers. All 140 focused tests and denied-warning

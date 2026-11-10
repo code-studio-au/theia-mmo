@@ -105,14 +105,9 @@ fn button(control: Control, caption: &str) -> impl Bundle {
         control,
         Button,
         Hovered::default(),
-        Node {
-            min_height: px(30),
-            padding: UiRect::axes(px(10), px(6)),
-            align_items: AlignItems::Center,
-            ..default()
-        },
+        theme::button_node(),
         BackgroundColor(theme::Variant::Default.background(false)),
-        children![(ButtonLabel, text(caption, 15.))],
+        children![(ButtonLabel, theme::label(caption, 12., theme::BODY))],
     )
 }
 pub(super) fn setup(mut commands: Commands, icons: Option<Res<sidebar::Icons>>) {
