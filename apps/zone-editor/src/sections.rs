@@ -12,6 +12,8 @@ pub(super) struct Section {
 pub(super) struct Root;
 #[derive(Component)]
 struct Chevron;
+#[derive(Component)]
+pub(super) struct Title;
 
 pub(super) fn spawn(
     parent: &mut ChildSpawnerCommands,
@@ -25,6 +27,8 @@ pub(super) fn spawn(
                 width: percent(100),
                 flex_direction: FlexDirection::Column,
                 border: UiRect::bottom(px(1)),
+                padding: UiRect::vertical(px(12)),
+                row_gap: px(12),
                 flex_shrink: 0.,
                 ..default()
             },
@@ -39,15 +43,22 @@ pub(super) fn spawn(
                     Hovered::default(),
                     Node {
                         width: percent(100),
-                        min_height: px(32),
-                        padding: UiRect::axes(px(4), px(8)),
+                        min_height: px(20),
                         justify_content: JustifyContent::SpaceBetween,
                         align_items: AlignItems::Center,
                         ..default()
                     },
                     BackgroundColor(theme::Variant::Ghost.background(false)),
                     children![
-                        (text(title, 14.)),
+                        (
+                            Title,
+                            Text::new(title),
+                            TextFont {
+                                weight: FontWeight::SEMIBOLD,
+                                ..theme::font(12.)
+                            },
+                            TextColor(theme::DISPLAY),
+                        ),
                         (
                             Chevron,
                             Pickable::IGNORE,
@@ -73,8 +84,7 @@ pub(super) fn spawn(
                 .spawn(Node {
                     width: percent(100),
                     flex_direction: FlexDirection::Column,
-                    row_gap: px(8),
-                    padding: UiRect::bottom(px(12)),
+                    row_gap: px(12),
                     ..default()
                 })
                 .with_children(body)

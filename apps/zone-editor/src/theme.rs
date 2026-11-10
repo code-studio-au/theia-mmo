@@ -210,7 +210,7 @@ fn text_states(
         Or<(With<Button>, With<bevy::ui_widgets::Checkbox>)>,
     >,
     parents: Query<&ChildOf>,
-    mut texts: Query<(Entity, &mut TextColor), With<Text>>,
+    mut texts: Query<(Entity, &mut TextColor), (With<Text>, Without<sections::Title>)>,
 ) {
     for (entity, mut color) in &mut texts {
         for ancestor in parents.iter_ancestors(entity) {

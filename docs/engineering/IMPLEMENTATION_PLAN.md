@@ -1,3 +1,9 @@
+P5-17, 10 November 2026: Selection actions join Tools/Tool settings as an
+independently collapsible Sprinkles-style inspector section. Shared headers use
+upstream typography/spacing/dividers. All 140 focused tests and denied-warning
+Clippy pass; native acceptance remains pending while desktop use is stopped.
+See STATUS and ZONE_EDITOR for exact scope/evidence.
+
 P5-17, 10 November 2026: naming/search and zone-file forms adopt shared
 Sprinkles dialog framing, separated titles/status, fixed right-aligned actions
 and bounded scrolling bodies. Native focus reveal responds to changed pane size

@@ -152,6 +152,19 @@ def run(output, binary, only_case=None, scroll=False, attributes=False, dialogs=
                 tool = next(c for c in state()['buttons'] if c['action'] == 'Place(Box)' and min(c['size']) > 0)
                 click(tool['centre'])
                 settings_before = {c['target']: c['value'] for c in state()['workspace_controls'] if c['range'] is not None}
+                for title in ['Selection', 'Tools']:
+                    other_sections = {c['title']:c['expanded'] for c in state()['sections'] if c['title'] != title}
+                    section = next(c for c in state()['sections'] if c['title'] == title)
+                    click(section['centre'])
+                    wait(lambda:any(c['title']==title and not c['expanded'] for c in state()['sections']))
+                    assert {c['title']:c['expanded'] for c in state()['sections'] if c['title'] != title} == other_sections
+                    unchanged()
+                    capture(f'collapsed-{title.lower()}')
+                    section = next(c for c in state()['sections'] if c['title'] == title)
+                    click(section['centre'])
+                    wait(lambda:any(c['title']==title and c['expanded'] for c in state()['sections']))
+                    assert {c['target']: c['value'] for c in state()['workspace_controls'] if c['range'] is not None} == settings_before
+                    unchanged()
                 section = next(c for c in state()['sections'] if c['title'] == 'Tool settings')
                 click(section['centre'])
                 wait(lambda: any(c['title'] == 'Tool settings' and not c['expanded'] for c in state()['sections']))

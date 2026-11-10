@@ -244,42 +244,44 @@ pub(super) fn setup(mut commands: Commands, icons: Option<Res<sidebar::Icons>>) 
             scrolling::pane(root, 12., scrolling::Pane::Workspace, |panel| {
                 panel.spawn((Caption, text("PROPERTIES", 19.)));
                 panel.spawn((Info, text("", 14.)));
-                panel
-                    .spawn(Node {
-                        flex_wrap: FlexWrap::Wrap,
-                        column_gap: px(6),
-                        row_gap: px(6),
-                        ..default()
-                    })
-                    .with_children(|row| {
-                        for (control, label) in [
-                            (Control::Rename, "Rename"),
-                            (Control::Transform, "Transform..."),
-                            (Control::Command(Action::Duplicate), "Duplicate"),
-                            (Control::Command(Action::Ground), "Ground"),
-                            (Control::Frame, "Frame"),
-                        ] {
-                            row.spawn(button(control, label));
-                        }
-                    });
-                panel
-                    .spawn(Node {
-                        flex_wrap: FlexWrap::Wrap,
-                        column_gap: px(6),
-                        row_gap: px(6),
-                        ..default()
-                    })
-                    .with_children(|row| {
-                        for (control, label) in [
-                            (Control::Point(-1), "Previous point"),
-                            (Control::Point(1), "Next point"),
-                            (Control::WholePath, "Whole guide"),
-                            (Control::Command(Action::InsertPoint), "Insert point"),
-                            (Control::Command(Action::RemovePoint), "Remove point"),
-                        ] {
-                            row.spawn(button(control, label));
-                        }
-                    });
+                sections::spawn(panel, "Selection", |panel| {
+                    panel
+                        .spawn(Node {
+                            flex_wrap: FlexWrap::Wrap,
+                            column_gap: px(6),
+                            row_gap: px(6),
+                            ..default()
+                        })
+                        .with_children(|row| {
+                            for (control, label) in [
+                                (Control::Rename, "Rename"),
+                                (Control::Transform, "Transform..."),
+                                (Control::Command(Action::Duplicate), "Duplicate"),
+                                (Control::Command(Action::Ground), "Ground"),
+                                (Control::Frame, "Frame"),
+                            ] {
+                                row.spawn(button(control, label));
+                            }
+                        });
+                    panel
+                        .spawn(Node {
+                            flex_wrap: FlexWrap::Wrap,
+                            column_gap: px(6),
+                            row_gap: px(6),
+                            ..default()
+                        })
+                        .with_children(|row| {
+                            for (control, label) in [
+                                (Control::Point(-1), "Previous point"),
+                                (Control::Point(1), "Next point"),
+                                (Control::WholePath, "Whole guide"),
+                                (Control::Command(Action::InsertPoint), "Insert point"),
+                                (Control::Command(Action::RemovePoint), "Remove point"),
+                            ] {
+                                row.spawn(button(control, label));
+                            }
+                        });
+                });
                 setup_tools(panel);
                 sections::spawn(panel, "Tool settings", |panel| {
                     for setting in [

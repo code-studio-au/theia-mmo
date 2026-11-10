@@ -90,3 +90,9 @@ browser keeps a wider 900 px maximum for paths. Bevy scroll widgets and Theia's
 existing validation/cancellation/overwrite controllers remain; no easing crate,
 animated lifecycle or upstream file controller is imported. The shared dialog
 buttons also use upstream `button.rs` Primary and Destructive colors/foreground.
+
+`sections.rs` further matches the pinned panel_section.rs MD presentation:
+12 px semibold display title, 12 px vertical spacing/padding, compact header and
+bottom divider. The shared pane supplies the 12 px horizontal inset. Selection
+actions use the same section as Tools/Tool settings; session collapse state and
+native guarded activation/focus behavior remain Theia-owned.

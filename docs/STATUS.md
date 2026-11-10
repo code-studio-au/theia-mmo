@@ -1,3 +1,20 @@
+Sprinkles inspector sections, 10 November 2026 (P5-17): selection actions
+now have their own independently collapsible Selection section beside the retained
+Tools and Tool settings sections. Shared headers use the pinned panel_section.rs
+12 px semibold display text, 12 px vertical padding/body spacing, compact 20 px
+header and bottom divider. Inspector status stays visible outside the sections,
+including during offline playtest. Existing commands and collapse/focus guards
+remain unchanged; section state is a session UI preference, not a source edit.
+
+All 140 focused tests and denied-warning workspace/all-target Clippy pass.
+Evidence: `build/sprinkles-review/inspector-sections-tests.log` and
+`inspector-sections-clippy.log`; editor build also passes
+(`inspector-sections-build.log`). Layout checks retain supported panel widths,
+all modes, placement settings and playtest return. Native rendering/input/GPU
+acceptance remains pending while desktop use is stopped. The prepared native
+qualifier now checks independent Selection/Tools collapse as well as Tool settings;
+it has only been syntax-checked, not run for this binary.
+
 Sprinkles dialogs, 10 November 2026 (P5-17): naming/search and zone-file
 forms now share upstream dialog.rs framing: 6 px radius, 1 px border, 80% black
 backdrop, separated 24 px header/body/footer padding, exact 18 px semibold title,
