@@ -2,21 +2,31 @@
 use super::*;
 use bevy::ui::{InteractionDisabled, OverrideClip};
 use bevy::ui_widgets::popover::{Popover, PopoverAlign, PopoverPlacement, PopoverSide};
+use std::borrow::Cow;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Kind {
+    Document,
     Camera,
     Gizmo,
 }
 impl Kind {
     pub(crate) fn title(self) -> &'static str {
         match self {
+            Self::Document => "Document",
             Self::Camera => "Camera",
             Self::Gizmo => "Gizmo mode",
         }
     }
-    pub(crate) fn value(self, session: &Session, view: &View) -> &'static str {
-        match self {
+    pub(crate) fn value<'a>(self, session: &'a Session, view: &View) -> Cow<'a, str> {
+        let value = match self {
+            Self::Document => {
+                return if session.is_dirty() {
+                    Cow::Owned(format!("* {}", session.editor.zone().name))
+                } else {
+                    Cow::Borrowed(session.editor.zone().name.as_str())
+                };
+            }
             Self::Camera => match view.preset {
                 camera_views::Preset::Perspective => "Perspective",
                 camera_views::Preset::Top => "Top",
@@ -28,10 +38,12 @@ impl Kind {
                 gizmo::Tool::Rotate => "Rotate Y",
                 gizmo::Tool::Scale => "Scale uniformly",
             },
-        }
+        };
+        Cow::Borrowed(value)
     }
     pub(crate) fn enabled(self, session: &Session, view: &View) -> bool {
         match self {
+            Self::Document => workspace::Control::New,
             Self::Camera => workspace::Control::View(view.preset),
             Self::Gizmo => workspace::Control::GizmoTool(session.gizmo_tool),
         }
@@ -54,7 +66,18 @@ pub(super) fn plugin(app: &mut App) {
 }
 pub(super) fn spawn(parent: &mut ChildSpawnerCommands, kind: Kind) {
     let mut root = parent.spawn(Node {
-        width: percent(100),
+        width: if kind == Kind::Document {
+            Val::Auto
+        } else {
+            percent(100)
+        },
+        max_width: if kind == Kind::Document {
+            px(320)
+        } else {
+            Val::Auto
+        },
+        min_width: px(0),
+        flex_shrink: 0.,
         flex_direction: FlexDirection::Column,
         row_gap: px(3),
         ..default()
@@ -63,23 +86,39 @@ pub(super) fn spawn(parent: &mut ChildSpawnerCommands, kind: Kind) {
     let mut button = Entity::PLACEHOLDER;
     let mut popup = Entity::PLACEHOLDER;
     root.with_children(|root| {
-        let mut label_font = theme::font(10.);
-        label_font.weight = FontWeight::MEDIUM;
-        root.spawn((
-            Text::new(kind.title()),
-            label_font,
-            TextColor(theme::MUTED),
-            Pickable::IGNORE,
-        ));
+        if kind != Kind::Document {
+            let mut label_font = theme::font(10.);
+            label_font.weight = FontWeight::MEDIUM;
+            root.spawn((
+                Text::new(kind.title()),
+                label_font,
+                TextColor(theme::MUTED),
+                Pickable::IGNORE,
+            ));
+        }
         button = root
             .spawn((
                 Button,
                 MenuButton,
                 Trigger(kind.title()),
-                theme::Variant::Default,
+                if kind == Kind::Document {
+                    theme::Variant::Ghost
+                } else {
+                    theme::Variant::Default
+                },
                 Hovered::default(),
                 Node {
-                    width: percent(100),
+                    width: if kind == Kind::Document {
+                        Val::Auto
+                    } else {
+                        percent(100)
+                    },
+                    max_width: if kind == Kind::Document {
+                        px(320)
+                    } else {
+                        Val::Auto
+                    },
+                    column_gap: px(6),
                     justify_content: JustifyContent::SpaceBetween,
                     ..theme::button_node()
                 },
@@ -87,17 +126,29 @@ pub(super) fn spawn(parent: &mut ChildSpawnerCommands, kind: Kind) {
                 BorderColor::all(theme::BORDER),
             ))
             .with_children(|button| {
-                button.spawn((
-                    Label(kind),
-                    theme::label("", 12., theme::BODY),
-                    Pickable::IGNORE,
-                ));
+                button
+                    .spawn((
+                        Pickable::IGNORE,
+                        Node {
+                            min_width: px(0),
+                            flex_grow: 1.,
+                            overflow: Overflow::clip_x(),
+                            ..default()
+                        },
+                    ))
+                    .with_child((
+                        Label(kind),
+                        theme::label("", 12., theme::BODY),
+                        TextLayout::no_wrap(),
+                        Pickable::IGNORE,
+                    ));
                 button
                     .spawn((
                         Pickable::IGNORE,
                         Node {
                             width: px(16),
                             height: px(16),
+                            flex_shrink: 0.,
                             align_items: AlignItems::Center,
                             justify_content: JustifyContent::Center,
                             ..default()
@@ -142,7 +193,11 @@ pub(super) fn spawn(parent: &mut ChildSpawnerCommands, kind: Kind) {
                 Node {
                     display: Display::None,
                     position_type: PositionType::Absolute,
-                    width: percent(100),
+                    width: if kind == Kind::Document {
+                        px(260)
+                    } else {
+                        percent(100)
+                    },
                     padding: UiRect::all(px(4)),
                     flex_direction: FlexDirection::Column,
                     border: UiRect::all(px(1)),
@@ -153,6 +208,20 @@ pub(super) fn spawn(parent: &mut ChildSpawnerCommands, kind: Kind) {
                 BorderColor::all(theme::BORDER),
             ))
             .with_children(|menu| match kind {
+                Kind::Document => spawn_items(
+                    menu,
+                    &[
+                        (workspace::Control::New, "New zone", "Ctrl N"),
+                        (workspace::Control::FileOpen, "Open…", "Ctrl O"),
+                        (workspace::Control::RenameZone, "Rename zone…", "Shift F8"),
+                        (workspace::Control::FileSaveAs, "Save as…", "Ctrl Shift S"),
+                        (
+                            workspace::Control::Command(Action::Load),
+                            "Reload",
+                            "Ctrl Shift O",
+                        ),
+                    ],
+                ),
                 Kind::Camera => spawn_items(
                     menu,
                     &[
@@ -270,12 +339,17 @@ fn sync(
             theme::Variant::Disabled
         } else if open {
             theme::Variant::Active
+        } else if selector.kind == Kind::Document {
+            theme::Variant::Ghost
         } else {
             theme::Variant::Default
         };
         for (label, mut text) in &mut labels {
-            if label.0 == selector.kind && **text != selector.kind.value(&session, &view) {
-                **text = selector.kind.value(&session, &view).into();
+            if label.0 == selector.kind {
+                let value = selector.kind.value(&session, &view);
+                if **text != value.as_ref() {
+                    **text = value.into_owned();
+                }
             }
         }
         for (arrow, mut pose, mut border) in &mut arrows {
@@ -309,3 +383,7 @@ fn sync(
 #[cfg(test)]
 #[path = "menus_select_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "menus_document_tests.rs"]
+mod document_tests;

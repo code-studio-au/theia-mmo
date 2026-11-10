@@ -17,6 +17,7 @@ pub(super) struct SettingsHint;
 #[derive(Resource, Default)]
 pub(super) struct Requests {
     pub name: bool,
+    pub name_zone: bool,
     pub find: bool,
     pub transform: bool,
     pub spawn_transform: bool,
@@ -31,6 +32,7 @@ pub(super) enum Control {
     Command(Action),
     Frame,
     Rename,
+    RenameZone,
     Transform,
     SpawnTransform,
     FileOpen,
@@ -138,7 +140,7 @@ pub(super) fn setup(mut commands: Commands, icons: Option<Res<sidebar::Icons>>) 
                 ..default()
             })
             .with_children(|row| {
-                row.spawn(text("THEIA  /  ZONE STUDIO", 18.));
+                menus::spawn_select(row, menus::SelectKind::Document);
                 menus::spawn(
                     row,
                     "File",
@@ -603,6 +605,7 @@ pub(super) fn execute(
         }
         Control::Help => requests.help = !requests.help,
         Control::Rename => requests.name = true,
+        Control::RenameZone => requests.name_zone = true,
         Control::Transform => requests.transform = true,
         Control::SpawnTransform => requests.spawn_transform = true,
         Control::FileOpen => requests.file_open = true,

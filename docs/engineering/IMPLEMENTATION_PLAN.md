@@ -1,3 +1,9 @@
+P5-17, 10 November 2026: top-left document selection now shows the zone
+name/unsaved marker and shared file actions in Sprinkles project-selector style.
+Explicit zone rename is visually available with selection preserved. All 148
+focused tests, formatting, denied-warning Clippy and editor build pass; native
+acceptance remains pending while desktop use is stopped. See STATUS/ZONE_EDITOR.
+
 P5-17, 10 November 2026: Camera/Gizmo choices use current-value Sprinkles
 combobox-style fields over native menus and the existing guarded preferences.
 All 146 focused tests, formatting, denied-warning Clippy and editor build pass,

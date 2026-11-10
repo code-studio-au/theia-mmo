@@ -3669,3 +3669,26 @@ geometry across modes and supported panel widths. Evidence:
 `select-build.log`. Native rendering/input/GPU acceptance remains pending while
 desktop use is stopped. The prepared native qualifier now covers all seven
 choices and gizmo availability; it has only been syntax-checked for this binary.
+
+## Sprinkles document selector and zone rename access — 10 November 2026
+
+Sprinkles document selector, 10 November 2026 (P5-17): the top-left
+header now shows the current zone name, upstream unsaved '* ' prefix and chevron
+through the shared native dropdown. Its ghost trigger follows pinned
+project_selector.rs and is bounded to 320 px; a clipped label wrapper protects
+long Unicode names and the arrow. The menu reuses New/Open/Save as/Reload and
+adds visual access to the retained zone-rename form. Explicit Rename zone targets
+the zone even while an object is selected; ordinary selection rename and Shift F8
+remain. File actions retain their existing guarded/undoable behavior.
+
+All 148 focused Rust tests, formatting, denied-warning workspace/all-target
+Clippy and editor build pass. Tests cover local/far zone rename with a selected
+object, exact document equality, dirty marker / rename undo, undoable New and
+restored unsaved content, and long Unicode header geometry with actual theme.
+New/Undo retains the existing file-binding behavior: a restored document remains
+unsaved after New cleared its binding. Evidence:
+`build/sprinkles-review/document-selector-tests-final.log`,
+`document-selector-clippy.log` and `document-selector-build.log`.
+Native rendering/input/GPU acceptance remains pending while desktop use is stopped.
+The prepared native qualifier now checks document-menu rename/cancel and marker
+transitions around apply/undo; it has only been syntax-checked for this binary.

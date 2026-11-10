@@ -127,3 +127,10 @@ Theia uses native Bevy MenuButton/MenuPopup/MenuItem, Popover and OverrideClip
 with existing camera/gizmo preference handlers. Current values and availability
 come from retained Session/View state; no particle settings or custom popover
 lifecycle are imported. The chevron uses standard UI borders.
+
+The Document kind in `menus_select.rs` further adapts pinned
+`ui/components/project_selector.rs`: a ghost trigger showing the current asset
+name, unsaved '* ' prefix and right chevron. Theia uses its existing zone file
+commands rather than importing Sprinkles' project storage/recent-project manager.
+The 320 px bound/clipped label protects the shared top bar; explicit zone rename
+uses the retained validated naming controller and transaction/history boundary.

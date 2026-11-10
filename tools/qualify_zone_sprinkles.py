@@ -146,6 +146,18 @@ def run(output, binary, only_case=None, scroll=False, attributes=False, dialogs=
                 wait(lambda:state()['name_edit'] is None)
                 unchanged()
 
+                document_selector = next(entry for entry in state()['selectors'] if entry['target']=='Document')
+                assert document_selector['value'] == initial['name']
+                click(document_selector['centre'])
+                wait(lambda:any(p['name']=='Document' and p['role']=='popup' and min(p['size'])>0 for p in state()['menus']))
+                capture('document-selector')
+                popup_control('Document', 'RenameZone')
+                wait(lambda:state()['name_edit'] == initial['name'])
+                unchanged()
+                desktop.key('Escape')
+                wait(lambda:state()['name_edit'] is None)
+                unchanged()
+
                 for selector_kind, option, label in [
                     ('Camera','Top','Top'),('Camera','Front','Front'),('Camera','Right','Right'),('Camera','Perspective','Perspective'),
                     ('Gizmo','Rotate','Rotate Y'),('Gizmo','Scale','Scale uniformly'),('Gizmo','Move','Move'),
@@ -337,11 +349,13 @@ def run(output, binary, only_case=None, scroll=False, attributes=False, dialogs=
                 expected = copy.deepcopy(initial)
                 expected['objects'][0]['pose']['position'][0] = expected_x
                 assert state()['document'] == expected and state()['history'] == [1, 0]
+                assert next(entry for entry in state()['selectors'] if entry['target']=='Document')['value'] == '* '+initial['name']
                 menu('Edit')
                 control('Command(Undo)')
                 wait(lambda: state()['revision'] == 2)
                 baseline_revision, baseline_history = 2, [0, 1]
                 unchanged()
+                assert next(entry for entry in state()['selectors'] if entry['target']=='Document')['value'] == initial['name']
 
                 menu('File')
                 control('New')

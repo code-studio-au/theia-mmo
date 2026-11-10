@@ -145,9 +145,10 @@ pub(super) fn keyboard(
     content: Res<outliner::Content>,
 ) {
     let requested = std::mem::take(&mut requests.name);
+    let requested_zone = std::mem::take(&mut requests.name_zone);
     let find = std::mem::take(&mut requests.find);
     if session.has_modal()
-        || !(keys.just_pressed(KeyCode::F8) || requested || find)
+        || !(keys.just_pressed(KeyCode::F8) || requested || requested_zone || find)
         || !windows.single().is_ok_and(|w| w.focused)
     {
         return;
@@ -160,8 +161,8 @@ pub(super) fn keyboard(
         session.status = "Finish or cancel the preview before editing text".into();
         return;
     }
-    let zone =
-        !requested && (keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight));
+    let zone = requested_zone
+        || (!requested && (keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight)));
     let id = session
         .selected
         .or(session.path_selected)

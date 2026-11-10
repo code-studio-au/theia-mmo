@@ -484,7 +484,8 @@ fn sprinkles_browser_inspector_and_tools_have_separate_full_height_regions() {
             }
             assert_eq!(viewport_controls, 3);
             let mut selectors = 0;
-            for (_, node, pose) in app
+            let mut document_selectors = 0;
+            for (selector, node, pose) in app
                 .world_mut()
                 .query::<(
                     &menus::SelectTrigger,
@@ -493,9 +494,15 @@ fn sprinkles_browser_inspector_and_tools_have_separate_full_height_regions() {
                 )>()
                 .iter(app.world())
             {
-                selectors += 1;
                 let first = pose.affine().translation - node.size() / 2.;
                 let last = pose.affine().translation + node.size() / 2.;
+                if selector.kind == menus::SelectKind::Document {
+                    document_selectors += 1;
+                    assert!(node.size().min_element() > 0. && node.size().x <= 320.);
+                    assert!(first.x >= 0. && last.x <= 3440. && first.y >= 0. && last.y <= HEADER);
+                    continue;
+                }
+                selectors += 1;
                 assert!(node.size().min_element() > 0.);
                 assert!(
                     first.x >= sidebar::WIDTH + browser_width
@@ -504,6 +511,7 @@ fn sprinkles_browser_inspector_and_tools_have_separate_full_height_regions() {
                 assert!(first.y >= HEADER && last.y <= 1440.);
             }
             assert_eq!(selectors, 2);
+            assert_eq!(document_selectors, 1);
             assert_eq!(header_actions, 2);
 
             assert_eq!(app.world().resource::<Session>().editor.zone(), &source);
