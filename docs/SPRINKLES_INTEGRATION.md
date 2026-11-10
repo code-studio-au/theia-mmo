@@ -251,3 +251,7 @@ projects. Automatic snapshot capture and a user-facing discard control remain
 pending, so this does not yet provide crash recovery. The storage API can remove
 a selected draft without following a symbolic link. Its count check assumes a
 single editor process; concurrent processes are not yet coordinated.
+
+A bounded background draft writer serializes updates for each editing session
+and reports write errors. It is not yet connected to editor changes or shutdown;
+accepting a queued snapshot does not mean that it has reached storage.
