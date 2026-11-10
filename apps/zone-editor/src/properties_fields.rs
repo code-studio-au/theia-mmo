@@ -94,7 +94,10 @@ fn field(parent: &mut ChildSpawnerCommands, index: usize, compact: bool) {
                 Node {
                     flex_grow: 1.,
                     min_width: px(0),
-                    height: percent(100),
+                    // Center the text line itself inside the 28 px outer frame.
+                    // A full-height text node leaves its glyphs at the top edge.
+                    height: Val::Auto,
+                    min_height: px(16),
                     overflow: Overflow::clip(),
                     ..default()
                 },

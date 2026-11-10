@@ -1,10 +1,11 @@
 //! A fixed row pool for browsing bounded zone content with standard Bevy UI.
 use super::*;
+#[path = "outliner_filter.rs"]
+mod filter_menu;
 use bevy::picking::{events::PointerPress, pointer::PointerButton};
 use bevy::ui::InteractionDisabled;
 pub(super) const WIDTH: f32 = 300.;
-// Leave room for the title, paging and a two-line footer above Properties at
-// the supported 3440 x 1440 authoring size. Every pooled row must be clickable.
+// Bounded page pool; the explorer scrolls inside its independently sized dock.
 const ROWS: usize = 18;
 #[cfg(test)]
 #[path = "outliner_scroll_tests.rs"]
@@ -30,6 +31,16 @@ pub(super) enum Filter {
     Terrain,
 }
 impl Filter {
+    fn caption(self) -> &'static str {
+        match self {
+            Self::All => "All types",
+            Self::Objects => "Objects",
+            Self::Guides => "Guides",
+            Self::Markers => "Markers",
+            Self::Plants => "Plants",
+            Self::Terrain => "Terrain",
+        }
+    }
     fn accepts(self, target: Target) -> bool {
         matches!(
             (self, target),
@@ -94,9 +105,9 @@ pub(super) enum Control {
 pub(super) enum Label {
     Title,
     Page,
-    Footer,
     Row(usize),
     Search,
+    FilterName,
 }
 
 fn entries(zone: &Zone) -> Vec<Entry> {
@@ -166,7 +177,7 @@ pub(super) fn setup(mut commands: Commands) {
                 position_type: PositionType::Absolute,
                 top: px(workspace::HEADER),
                 left: px(sidebar::WIDTH),
-                bottom: px(52),
+                bottom: px(status_bar::HEIGHT),
                 width: px(WIDTH),
                 flex_direction: FlexDirection::Column,
                 overflow: Overflow::clip(),
@@ -175,161 +186,116 @@ pub(super) fn setup(mut commands: Commands) {
             BackgroundColor(theme::PANEL),
         ))
         .with_children(|root| {
-            scrolling::pane(root, 12., scrolling::Pane::Browser, |panel| {
-                panel.spawn((
-                    Label::Title,
-                    Text::new("Zone content"),
-                    TextFont {
-                        weight: FontWeight::SEMIBOLD,
-                        ..theme::font(12.)
-                    },
-                    TextColor(theme::DISPLAY),
-                ));
-                panel
-                    .spawn(Node {
-                        column_gap: px(6),
-                        ..default()
-                    })
-                    .with_children(|row| {
-                        for (control, caption, width) in [
-                            (Control::Search, "Find...", 158),
-                            (Control::ClearSearch, "Clear search", 100),
-                        ] {
-                            row.spawn((
-                                control,
-                                Button,
-                                ActivateOnPress,
-                                Hovered::default(),
-                                Node {
-                                    width: px(width),
-                                    overflow: Overflow::clip(),
-                                    ..theme::button_node()
-                                },
-                                BackgroundColor(theme::Variant::Default.background(false)),
-                            ))
-                            .with_children(|button| {
-                                if matches!(control, Control::Search) {
-                                    button.spawn((
-                                        Label::Search,
-                                        theme::label(caption, 12., theme::BODY),
-                                        TextLayout::no_wrap(),
-                                    ));
-                                } else {
-                                    button.spawn((
-                                        theme::label(caption, 12., theme::BODY),
-                                        TextLayout::no_wrap(),
-                                    ));
-                                }
-                            });
-                        }
-                    });
-                panel
-                    .spawn(Node {
-                        flex_wrap: FlexWrap::Wrap,
-                        column_gap: px(6),
-                        row_gap: px(6),
-                        ..default()
-                    })
-                    .with_children(|filters| {
-                        for (filter, caption) in [
-                            (Filter::All, "All"),
-                            (Filter::Objects, "Objects"),
-                            (Filter::Guides, "Guides"),
-                            (Filter::Markers, "Markers"),
-                            (Filter::Plants, "Plants"),
-                            (Filter::Terrain, "Terrain"),
-                        ] {
-                            filters.spawn((
-                                Control::Filter(filter),
-                                Button,
-                                ActivateOnPress,
-                                Hovered::default(),
-                                Node {
-                                    width: px(86),
-                                    ..theme::button_node()
-                                },
-                                BackgroundColor(theme::Variant::Default.background(false)),
-                                children![theme::label(caption, 12., theme::BODY)],
-                            ));
-                        }
-                    });
-                panel
-                    .spawn(Node {
-                        flex_direction: FlexDirection::Row,
-                        column_gap: px(6),
-                        align_items: AlignItems::Center,
-                        ..default()
-                    })
-                    .with_children(|bar| {
-                        for (action, caption) in
-                            [(Control::Previous, "Previous"), (Control::Next, "Next")]
-                        {
-                            bar.spawn((
-                                action,
-                                Button,
-                                ActivateOnPress,
-                                Hovered::default(),
-                                Node {
-                                    width: px(80),
-                                    ..theme::button_node()
-                                },
-                                BackgroundColor(theme::Variant::Default.background(false)),
-                            ))
-                            .with_children(|button| {
-                                button.spawn(theme::label(caption, 12., theme::BODY));
-                            });
-                        }
-                        bar.spawn((Label::Page, text("", 13.)));
-                    });
-                panel
-                    .spawn(Node {
-                        flex_direction: FlexDirection::Column,
-                        row_gap: px(2),
-                        ..default()
-                    })
-                    .with_children(|list| {
-                        for index in 0..ROWS {
-                            list.spawn((
-                                Control::Row(index),
-                                Button,
-                                ActivateOnPress,
-                                Hovered::default(),
-                                Node {
-                                    height: px(24),
-                                    min_height: px(24),
-                                    padding: UiRect {
-                                        left: px(4),
-                                        right: px(28),
+            let caption = panels::header(root, panels::Region::Browser, "Explorer");
+            root.commands().entity(caption).insert(Label::Title);
+            panels::body(root, panels::Region::Browser, |root| {
+                scrolling::pane(root, 12., scrolling::Pane::Browser, |panel| {
+                    panel
+                        .spawn(Node {
+                            column_gap: px(6),
+                            ..default()
+                        })
+                        .with_children(|row| {
+                            for (control, caption, width) in [
+                                (Control::Search, "Find...", 158),
+                                (Control::ClearSearch, "Clear search", 100),
+                            ] {
+                                row.spawn((
+                                    control,
+                                    Button,
+                                    ActivateOnPress,
+                                    Hovered::default(),
+                                    Node {
+                                        width: px(width),
+                                        overflow: Overflow::clip(),
+                                        ..theme::button_node()
+                                    },
+                                    BackgroundColor(theme::Variant::Default.background(false)),
+                                ))
+                                .with_children(|button| {
+                                    if matches!(control, Control::Search) {
+                                        button.spawn((
+                                            Label::Search,
+                                            theme::label(caption, 12., theme::BODY),
+                                            TextLayout::no_wrap(),
+                                        ));
+                                    } else {
+                                        button.spawn((
+                                            theme::label(caption, 12., theme::BODY),
+                                            TextLayout::no_wrap(),
+                                        ));
+                                    }
+                                });
+                            }
+                        });
+                    filter_menu::spawn(panel);
+                    panel
+                        .spawn(Node {
+                            flex_direction: FlexDirection::Row,
+                            column_gap: px(6),
+                            align_items: AlignItems::Center,
+                            ..default()
+                        })
+                        .with_children(|bar| {
+                            for (action, caption) in
+                                [(Control::Previous, "Previous"), (Control::Next, "Next")]
+                            {
+                                bar.spawn((
+                                    action,
+                                    Button,
+                                    ActivateOnPress,
+                                    Hovered::default(),
+                                    Node {
+                                        width: px(80),
+                                        ..theme::button_node()
+                                    },
+                                    BackgroundColor(theme::Variant::Default.background(false)),
+                                ))
+                                .with_children(|button| {
+                                    button.spawn(theme::label(caption, 12., theme::BODY));
+                                });
+                            }
+                            bar.spawn((Label::Page, text("", 13.)));
+                        });
+                    panel
+                        .spawn(Node {
+                            flex_direction: FlexDirection::Column,
+                            row_gap: px(2),
+                            ..default()
+                        })
+                        .with_children(|list| {
+                            for index in 0..ROWS {
+                                list.spawn((
+                                    Control::Row(index),
+                                    Button,
+                                    ActivateOnPress,
+                                    Hovered::default(),
+                                    Node {
+                                        height: px(24),
+                                        min_height: px(24),
+                                        padding: UiRect {
+                                            left: px(4),
+                                            right: px(28),
+                                            ..default()
+                                        },
+                                        overflow: Overflow::clip_x(),
+                                        display: Display::None,
                                         ..default()
                                     },
-                                    overflow: Overflow::clip_x(),
-                                    display: Display::None,
-                                    ..default()
-                                },
-                                BackgroundColor(theme::Variant::Ghost.background(false)),
-                            ))
-                            .with_children(|button| {
-                                button.spawn((
-                                    Label::Row(index),
-                                    theme::label("", 12., theme::BODY),
-                                    TextLayout::no_wrap(),
-                                ));
-                                menus::spawn_content(button, index);
-                            });
-                        }
-                    });
-                panel.spawn((
-                    Label::Footer,
-                    text("Select content | F frames", 13.),
-                    TextLayout::no_wrap(),
-                    Node {
-                        height: px(44),
-                        min_height: px(44),
-                        overflow: Overflow::clip(),
-                        ..default()
-                    },
-                ));
-            })
+                                    BackgroundColor(theme::Variant::Ghost.background(false)),
+                                ))
+                                .with_children(|button| {
+                                    button.spawn((
+                                        Label::Row(index),
+                                        theme::label("", 12., theme::BODY),
+                                        TextLayout::no_wrap(),
+                                    ));
+                                    menus::spawn_content(button, index);
+                                });
+                            }
+                        });
+                });
+            });
         });
 }
 
@@ -462,9 +428,10 @@ pub(super) fn scroll(
     let cursor = window.cursor_position();
     let over_panel = cursor.is_some_and(|p| {
         p.x >= sidebar::WIDTH
-            && p.x < sidebar::WIDTH + session.ui.browser
+            && p.x < sidebar::WIDTH + session.ui.width
             && p.y >= workspace::HEADER
-            && p.y < window.height() - 52.
+            && !session.ui.explorer_collapsed
+            && p.y < workspace::HEADER + session.ui.explorer_height(window.height())
     });
     let before = content.page;
     let blocked = !window.focused
@@ -602,12 +569,13 @@ pub(super) fn sync(
         let next = match *label {
             Label::Title => {
                 if content.filter == Filter::All && content.query.is_empty() {
-                    format!("Zone content · {}", content.entries.len())
+                    format!("Explorer · {}", content.entries.len())
                 } else {
-                    format!("Zone content · {}/{}", content.entries.len(), content.total)
+                    format!("Explorer · {}/{}", content.entries.len(), content.total)
                 }
             }
             Label::Page => format!("{}/{}", content.page + 1, content.pages()),
+            Label::FilterName => content.filter.caption().into(),
             Label::Search => {
                 if content.query.is_empty() {
                     "Find...".into()
@@ -615,26 +583,6 @@ pub(super) fn sync(
                     format!("Find: {}", content.query)
                 }
             }
-            Label::Footer => index.map_or(
-                if selected.is_some() {
-                    "Selection hidden by filter\nChoose All to reveal".into()
-                } else if content.entries.is_empty() {
-                    "No matching content\nChoose another filter".into()
-                } else {
-                    "Double-click content to frame\nSpawn row frames the spawn".into()
-                },
-                |index| {
-                    format!(
-                        "{}\n{}",
-                        content.entries[index].label,
-                        if content.entries[index].target == Target::Terrain {
-                            "Double-click frames terrain"
-                        } else {
-                            "Double-click frames | F frames"
-                        }
-                    )
-                },
-            ),
             Label::Row(index) => content
                 .row(index)
                 .map_or(String::new(), |entry| entry.label.clone()),
@@ -1168,7 +1116,7 @@ pub(crate) mod tests {
             Some(Vec2::new(sidebar::WIDTH - 1., 350.)),
             Some(Vec2::new(150., workspace::HEADER - 1.)),
             Some(Vec2::new(150., 1388.)),
-            Some(Vec2::new(sidebar::WIDTH + WIDTH, 350.)),
+            Some(Vec2::new(sidebar::WIDTH + workspace::INSPECTOR_WIDTH, 350.)),
         ] {
             app.world_mut()
                 .entity_mut(window)
@@ -1302,7 +1250,7 @@ pub(crate) mod tests {
         assert_eq!(app.world().resource::<Session>().editor.zone(), &original);
     }
     #[test]
-    fn standard_bevy_cpu_layout_keeps_every_row_and_long_footer_above_properties() {
+    fn standard_bevy_cpu_layout_keeps_bounded_rows_and_search_controls_in_browser() {
         let (mut app, _) = app([0.; 3]);
         crate::headless_ui::add_layout(&mut app);
         app.world_mut()
@@ -1331,10 +1279,7 @@ pub(crate) mod tests {
                 .query::<(&Control, &Node, &ComputedNode, &bevy::ui::UiGlobalTransform)>()
                 .iter(app.world())
             {
-                if matches!(
-                    control,
-                    Control::Filter(_) | Control::Search | Control::ClearSearch
-                ) {
+                if matches!(control, Control::Search | Control::ClearSearch) {
                     assert_eq!(
                         computed.size().x,
                         match control {
@@ -1368,17 +1313,13 @@ pub(crate) mod tests {
                 visible += 1;
             }
             assert_eq!(visible, if expected_page == 2 { 8 } else { 18 });
-            for (label, computed, transform) in app
+            for (label, computed) in app
                 .world_mut()
-                .query::<(&Label, &ComputedNode, &bevy::ui::UiGlobalTransform)>()
+                .query::<(&Label, &ComputedNode)>()
                 .iter(app.world())
             {
                 if matches!(label, Label::Title) {
                     assert!(computed.size().y >= 14.);
-                }
-                if matches!(label, Label::Footer) {
-                    assert_eq!(computed.size().y, 44.);
-                    assert!(transform.affine().translation.y + computed.size().y / 2. <= 1388.);
                 }
             }
         }

@@ -15,7 +15,6 @@ mod menus;
 mod naming;
 mod outliner;
 mod panels;
-mod particle_editor;
 mod particle_workspace;
 mod paths;
 mod placement;
@@ -27,6 +26,7 @@ mod selection;
 mod sidebar;
 mod snapping;
 mod spawn;
+mod status_bar;
 mod terrain;
 mod theme;
 mod vegetation;
@@ -42,7 +42,7 @@ use bevy::{
 use std::path::PathBuf;
 use theia_zone::{Command, Edit, Editor, Object, Pose, Primitive, Zone};
 
-const CANVAS_LEFT: f32 = sidebar::WIDTH + outliner::WIDTH + workspace::INSPECTOR_WIDTH;
+const CANVAS_LEFT: f32 = sidebar::WIDTH + workspace::INSPECTOR_WIDTH;
 fn canvas_cursor(window: &Window, session: &Session) -> Option<Vec2> {
     window
         .cursor_position()
@@ -51,7 +51,7 @@ fn canvas_cursor(window: &Window, session: &Session) -> Option<Vec2> {
                 && p.x > session.ui.canvas_left() + 6.
                 && p.x < window.width()
                 && p.y > workspace::HEADER
-                && p.y < window.height() - 52.
+                && p.y < window.height() - status_bar::HEIGHT
         })
         .map(|p| session.ui.window_to_viewport(p, window.scale_factor()))
 }
@@ -550,7 +550,6 @@ fn run() -> Result<(), String> {
     .add_plugins(scrolling::plugin)
     .add_plugins(properties::summary_plugin)
     .add_plugins(menus::plugin)
-    .add_plugins(particle_editor::plugin)
     .add_plugins(particle_workspace::plugin)
     .add_observer(workspace::activate)
     .add_observer(workspace::change)
@@ -614,6 +613,7 @@ fn run() -> Result<(), String> {
             (outliner::scroll, outliner::sync).chain(),
             workspace::sync,
             present,
+            status_bar::sync,
         )
             .chain(),
     )
@@ -729,23 +729,7 @@ fn setup_tools(panel: &mut ChildSpawnerCommands) {
     ));
 }
 fn setup_ui(mut commands: Commands) {
-    commands.spawn((
-        Summary,
-        panels::Region::Footer,
-        text("", 14.),
-        TextLayout::no_wrap(),
-        Node {
-            position_type: PositionType::Absolute,
-            left: px(CANVAS_LEFT + 12.),
-            bottom: px(8),
-            right: px(12.),
-            height: px(44),
-            padding: UiRect::all(px(4)),
-            overflow: Overflow::clip(),
-            ..default()
-        },
-        BackgroundColor(theme::PANEL),
-    ));
+    status_bar::spawn(&mut commands);
 }
 fn activate(
     event: On<Activate>,
@@ -1310,7 +1294,7 @@ fn camera_controls(
         camera_views::pan(
             &mut view,
             current - previous,
-            (window.height() - workspace::HEADER - 52.) * window.scale_factor(),
+            (window.height() - workspace::HEADER - status_bar::HEIGHT) * window.scale_factor(),
         );
         *panning = Some(current);
     }
@@ -1372,31 +1356,8 @@ fn present(
     mut info: Query<&mut Text, (With<Info>, Without<Summary>)>,
 ) {
     let dirty = session.is_dirty();
-    let path = session.path_label();
-    let safe_path: String = path
-        .chars()
-        .map(|c| if c.is_control() { '�' } else { c })
-        .collect();
-    let suffix: String = safe_path
-        .chars()
-        .rev()
-        .take(180)
-        .collect::<Vec<_>>()
-        .into_iter()
-        .rev()
-        .collect();
-    let display_path = if safe_path.chars().count() > 180 {
-        format!("…{suffix}")
-    } else {
-        suffix
-    };
     for mut text in &mut summaries {
-        **text = format!(
-            "{}  |  {}\n{}",
-            if dirty { "Unsaved" } else { "Saved" },
-            display_path,
-            session.status
-        );
+        **text = status_bar::message(&session);
     }
     if let Ok(mut window) = windows.single_mut() {
         let filename = session
@@ -1418,54 +1379,37 @@ fn present(
             window.title = title;
         }
     }
-    let selected = session
-        .editor
-        .zone()
-        .objects
-        .iter()
-        .find(|o| Some(o.id) == session.selected);
     for mut text in &mut info {
+        // Context and keyboard hints belong to the status bar. Keep only compact
+        // authoring metadata here; editable values are rendered by the fields.
         **text = if let Some(subject) = properties::summary_subject(&session) {
             subject
         } else if session.play.is_some() {
-            "Offline playtest\nW / S: forward / back\nA / D: turn\nQ / E: strafe\nSpace: jump\nF5: return to editing".into()
+            "Offline playtest".into()
         } else if session.vegetation_mode {
             vegetation::summary(&session)
+                .lines()
+                .next()
+                .unwrap_or_default()
+                .into()
         } else if session.marker_mode {
             markers::summary(&session)
+                .lines()
+                .next()
+                .unwrap_or_default()
+                .into()
         } else if session.path_mode {
             paths::summary(&session)
+                .lines()
+                .next()
+                .unwrap_or_default()
+                .into()
         } else if session.terrain_mode {
-            format!(
-                "Terrain {:?}\n{}{}",
-                session.brush_tool,
-                session.editor.zone().terrain.as_ref().map_or(
-                    "No terrain patch".into(),
-                    |p| format!("128 m patch | {} m samples", p.sample_metres())
-                ),
-                session.stroke.as_ref().map_or(String::new(), |s| format!(
-                    "\nStroke {}/{} stamps",
-                    s.stamps(),
-                    theia_zone::MAX_EDITS
-                ))
-            )
+            format!("Terrain {:?}", session.brush_tool)
         } else if let Some(primitive) = session.palette {
-            let hint = session
-                .placement_preview
-                .as_ref()
-                .and_then(|preview| preview.error.as_deref())
-                .map_or_else(
-                    || "Preview then click | Esc selects".into(),
-                    |error| format!("Cannot place: {error}"),
-                );
-            format!("Placing {primitive:?}\n{hint}\nSize applies to new objects")
+            format!("Placing {primitive:?}")
         } else {
-            selected.map_or("No selection".into(), |o| {
-                    let pose = session.drag.as_ref().filter(|d|d.id==o.id).map_or(&o.pose,|d|&d.preview);
-                    format!("{}\nPosition (world metres)\n X {:.3}\n Y {:.3}\n Z {:.3}\nYaw {:.2} degrees\nSize (metres)\n X {:.3}  Y {:.3}  Z {:.3}",
-                        o.name,pose.position[0],pose.position[1],pose.position[2],pose.yaw_degrees,
-                        pose.size[0],pose.size[1],pose.size[2])
-                })
+            "Select an object to inspect its attributes".into()
         };
     }
 }

@@ -50,7 +50,7 @@ pub(super) fn setup(commands: &mut Commands, icons: Option<&Icons>) {
             Node {
                 position_type: PositionType::Absolute,
                 top: px(workspace::HEADER),
-                bottom: px(0),
+                bottom: px(status_bar::HEIGHT),
                 left: px(0),
                 width: px(WIDTH),
                 flex_direction: FlexDirection::Column,

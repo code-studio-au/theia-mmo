@@ -1,3 +1,21 @@
+P5-17 dock/status checkpoint, 10 November 2026: implement the stacked left
+explorer/properties dock, independent folding and width/split resizing, type
+filter dropdown and compact full-width status bar. Remove repeated explorer/help
+text and the companion launcher. All 107 zone-editor tests, fmt and strict
+workspace/all-target Clippy pass; native local/far checks pass with zero GPU
+diagnostics on RX 7900 XTX / RADV NAVI31 / Vulkan. Inline edits, category tabs,
+viewport toolbar and popup refinement remain active work, not completed behavior.
+See [refinement record](../EDITOR_UI_REFINEMENT.md).
+
+P5-17 current execution, 10 November 2026: refine the integrated editor again
+under the user's direct feedback. Target inline auto-applied values (explicit
+Save writes disk), explorer/attributes stacked with a horizontal divider and
+independent collapsible/resizable panels, dropdown filtering, meaningful property
+sections, Sprinkles-style popovers and correctly aligned input text. Remove the
+separate companion launch option. These are current requirements, not completed
+behavior; earlier close-enough acceptance remains historical. Preserve exact
+f64/validation/history. See [adoption](../DECISIONS.md).
+
 P5-17 upstream Sprinkles audit, 10 November 2026: reviewed all 28 issues
 against the imported source. Fix obsolete curve/gradient/mesh cache retention,
 apply authored bounds to every emitter and move the preview culling toggle onto

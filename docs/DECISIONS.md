@@ -1,3 +1,26 @@
+## 10 November 2026 — integrated editor refinement, inline values and split panels
+
+The user reopens P5-17 usability refinement after reviewing the integrated UI.
+Adopt inline value editing with immediate application and no separate Apply/edit
+panel in the normal workflow. Valid edits mark the document dirty; the user
+explicitly chooses Save for disk writes. Preserve exact f64 coordinates,
+validation and undo/redo. Keep the dock on the left, following the user's explicit correction. Stack a persistent object explorer above selected
+attributes with a draggable horizontal divider; both panels must be independently
+collapsible and resizable. Replace the filter-button grid with a dropdown,
+organize attributes under relevant section headings, use three-dot accessors and
+Sprinkles popovers where the underlying functionality exists, simplify popup
+frames/padding and correct input text alignment/baselines/clipping.
+
+Add a compact full-width bottom status bar for tool hints, selection context,
+feedback and save state. Move repeated instructions/selection summaries out of
+the explorer/property bodies; retain actual editable attributes and metadata.
+Use actual counts rather than invented renderer/memory statistics.
+
+Focus product work and native acceptance on the integrated Sprinkles workspace.
+Its runtime/UI library is shared with the retained standalone host, but separate
+standalone support/polish is no longer a requirement. Remove the companion launch
+option from Theia. Keep changes local and continue across commits until stopped.
+
 ## 10 November 2026 — original Sprinkles UI in the shared editor window
 
 Use the retained `ParticleAuthoringPlugin` as an in-window workspace, alongside

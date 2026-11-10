@@ -97,12 +97,14 @@ pub(super) fn spawn(
         });
 }
 
+#[allow(clippy::too_many_arguments)]
 fn toggle(
     event: On<Activate>,
     session: Res<Session>,
     windows: Query<&Window>,
     mut sections: Query<(&mut Section, &Children)>,
     mut nodes: Query<&mut Node>,
+    mut commands: Commands,
     mut chevrons: Query<&mut UiTransform, With<Chevron>>,
     mut focus: Option<ResMut<bevy::input_focus::InputFocus>>,
 ) {
@@ -121,6 +123,11 @@ fn toggle(
     } else {
         Display::None
     };
+    commands.entity(section.body).insert(if section.expanded {
+        Visibility::Inherited
+    } else {
+        Visibility::Hidden
+    });
     // A hidden field must never retain keyboard ownership. Section activation
     // itself is read-only and cannot create history or change tool preferences.
     if let Some(focus) = focus.as_mut() {

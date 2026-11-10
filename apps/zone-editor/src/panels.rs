@@ -1,12 +1,13 @@
-//! Bounded inspector/browser resizing following Sprinkles' panel interaction.
-//! UI preferences only; coordinates and validated authoring history are separate.
+//! A docked explorer over properties, with independent folding and a shared-width split.
 use super::*;
 
-const GRIP: f32 = 12.;
+const GRIP: f32 = 10.;
+pub(super) const TITLE_HEIGHT: f32 = 32.;
+const DIVIDER: f32 = 1.;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Edge {
-    Browser,
-    Inspector,
+    Width,
+    Split,
 }
 #[derive(Clone, Copy)]
 struct Resize {
@@ -15,16 +16,20 @@ struct Resize {
     original: [f32; 2],
 }
 pub(super) struct Layout {
-    pub browser: f32,
-    pub inspector: f32,
+    pub width: f32,
+    pub explorer_fraction: f32,
+    pub explorer_collapsed: bool,
+    pub properties_collapsed: bool,
     drag: Option<Resize>,
     pub input_owned: bool,
 }
 impl Default for Layout {
     fn default() -> Self {
         Self {
-            browser: outliner::WIDTH,
-            inspector: workspace::INSPECTOR_WIDTH,
+            width: workspace::INSPECTOR_WIDTH,
+            explorer_fraction: 0.4,
+            explorer_collapsed: false,
+            properties_collapsed: false,
             drag: None,
             input_owned: false,
         }
@@ -32,7 +37,24 @@ impl Default for Layout {
 }
 impl Layout {
     pub fn canvas_left(&self) -> f32 {
-        sidebar::WIDTH + self.browser + self.inspector
+        sidebar::WIDTH + self.width
+    }
+    pub fn explorer_height(&self, window_height: f32) -> f32 {
+        let available = (window_height - workspace::HEADER - status_bar::HEIGHT - DIVIDER)
+            .max(2. * TITLE_HEIGHT);
+        if self.explorer_collapsed {
+            TITLE_HEIGHT
+        } else if self.properties_collapsed {
+            available - TITLE_HEIGHT
+        } else {
+            let minimum = 96_f32.min(available / 2.);
+            (available * self.explorer_fraction)
+                .clamp(minimum, available - minimum)
+                .round()
+        }
+    }
+    pub fn properties_top(&self, height: f32) -> f32 {
+        workspace::HEADER + self.explorer_height(height) + DIVIDER
     }
     pub fn window_to_viewport(&self, point: Vec2, scale: f32) -> Vec2 {
         (point - Vec2::new(self.canvas_left(), workspace::HEADER)) * scale
@@ -40,9 +62,15 @@ impl Layout {
     pub fn viewport_to_window(&self, point: Vec2, scale: f32) -> Vec2 {
         point / scale + Vec2::new(self.canvas_left(), workspace::HEADER)
     }
+    fn collapsed(&self, region: Region) -> bool {
+        match region {
+            Region::Browser => self.explorer_collapsed,
+            Region::Inspector => self.properties_collapsed,
+            _ => false,
+        }
+    }
 }
-
-#[derive(Component, Clone, Copy)]
+#[derive(Component, Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Region {
     Browser,
     Inspector,
@@ -50,26 +78,135 @@ pub(super) enum Region {
     Canvas,
 }
 #[derive(Component)]
+pub(super) struct Toggle(pub(super) Region);
+#[derive(Component)]
 pub(super) struct Grip(Edge);
+#[derive(Component)]
+pub(super) struct Body(Region);
+#[derive(Component)]
+pub(super) struct Chevron(Region);
 
-pub(super) fn setup(mut commands: Commands) {
-    for edge in [Edge::Browser, Edge::Inspector] {
-        commands.spawn((
-            Grip(edge),
-            GlobalZIndex(16),
+pub(super) fn header(parent: &mut ChildSpawnerCommands, region: Region, title: &str) -> Entity {
+    let mut caption = Entity::PLACEHOLDER;
+    parent
+        .spawn((
+            Toggle(region),
+            Button,
+            ActivateOnPress,
             Hovered::default(),
+            theme::Variant::Ghost,
             Node {
-                position_type: PositionType::Absolute,
-                top: px(workspace::HEADER),
-                bottom: px(52),
-                width: px(GRIP),
+                width: percent(100),
+                height: px(TITLE_HEIGHT),
+                min_height: px(TITLE_HEIGHT),
+                flex_shrink: 0.,
+                padding: UiRect::horizontal(px(12)),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::SpaceBetween,
                 ..default()
             },
             BackgroundColor(Color::NONE),
-        ));
+        ))
+        .with_children(|header| {
+            caption = header
+                .spawn((theme::label(title, 12., theme::DISPLAY), Pickable::IGNORE))
+                .id();
+            header.spawn((
+                Chevron(region),
+                Pickable::IGNORE,
+                Node {
+                    width: px(6),
+                    height: px(6),
+                    border: UiRect {
+                        right: px(1),
+                        bottom: px(1),
+                        ..default()
+                    },
+                    ..default()
+                },
+                BorderColor::all(theme::MUTED),
+                UiTransform::from_rotation(Rot2::degrees(45.)),
+            ));
+        })
+        .observe(
+            |event: On<Activate>,
+             mut session: ResMut<Session>,
+             windows: Query<&Window>,
+             toggles: Query<&Toggle>| {
+                if !windows.single().is_ok_and(|w| w.focused) || workspace::busy(&session) {
+                    return;
+                }
+                let Ok(toggle) = toggles.get(event.entity) else {
+                    return;
+                };
+                match toggle.0 {
+                    Region::Browser => {
+                        session.ui.explorer_collapsed = !session.ui.explorer_collapsed
+                    }
+                    Region::Inspector => {
+                        session.ui.properties_collapsed = !session.ui.properties_collapsed
+                    }
+                    _ => {}
+                }
+            },
+        );
+    caption
+}
+pub(super) fn body(
+    parent: &mut ChildSpawnerCommands,
+    region: Region,
+    content: impl FnOnce(&mut ChildSpawnerCommands),
+) {
+    parent
+        .spawn((
+            Body(region),
+            Visibility::Inherited,
+            Node {
+                width: percent(100),
+                min_height: px(0),
+                flex_grow: 1.,
+                flex_basis: px(0),
+                flex_direction: FlexDirection::Column,
+                overflow: Overflow::clip(),
+                ..default()
+            },
+        ))
+        .with_children(content);
+}
+pub(super) fn setup(mut commands: Commands) {
+    for edge in [Edge::Width, Edge::Split] {
+        commands
+            .spawn((
+                Grip(edge),
+                GlobalZIndex(16),
+                Hovered::default(),
+                Node {
+                    position_type: PositionType::Absolute,
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    ..default()
+                },
+                BackgroundColor(Color::NONE),
+            ))
+            .with_child((
+                Pickable::IGNORE,
+                Node {
+                    width: if edge == Edge::Width {
+                        px(1)
+                    } else {
+                        percent(100)
+                    },
+                    height: if edge == Edge::Split {
+                        px(1)
+                    } else {
+                        percent(100)
+                    },
+                    ..default()
+                },
+                BackgroundColor(theme::BORDER),
+            ));
     }
 }
-
 fn can_resize(window: &Window, session: &Session, menu_open: bool) -> bool {
     window.focused
         && !menu_open
@@ -79,7 +216,6 @@ fn can_resize(window: &Window, session: &Session, menu_open: bool) -> bool {
         && session.stroke.is_none()
         && session.path_draft.is_none()
 }
-
 pub(super) fn resize(
     windows: Query<&Window>,
     mouse: Res<ButtonInput<MouseButton>>,
@@ -88,13 +224,15 @@ pub(super) fn resize(
     scrollbars: Query<&Hovered, With<bevy::ui_widgets::Scrollbar>>,
     menus: Query<&bevy::ui_widgets::MenuFocusState, With<bevy::ui_widgets::MenuPopup>>,
 ) {
-    let Ok(window) = windows.single() else { return };
+    let Ok(window) = windows.single() else {
+        return;
+    };
     let allowed = can_resize(
         window,
         &session,
         menus
             .iter()
-            .any(|state| !matches!(state, bevy::ui_widgets::MenuFocusState::Closed)),
+            .any(|s| !matches!(s, bevy::ui_widgets::MenuFocusState::Closed)),
     );
     let cursor = window.cursor_position();
     let layout = &mut session.ui;
@@ -102,30 +240,40 @@ pub(super) fn resize(
     if let Some(drag) = layout.drag {
         layout.input_owned = true;
         if !allowed || cursor.is_none() || keys.just_pressed(KeyCode::Escape) {
-            [layout.browser, layout.inspector] = drag.original;
+            [layout.width, layout.explorer_fraction] = drag.original;
             layout.drag = None;
             return;
         }
-        let delta = cursor.unwrap().x - drag.start.x;
+        let delta = cursor.unwrap() - drag.start;
         match drag.edge {
-            Edge::Browser => layout.browser = (drag.original[0] + delta).clamp(300., 480.),
-            Edge::Inspector => layout.inspector = (drag.original[1] + delta).clamp(300., 600.),
+            Edge::Width => layout.width = (drag.original[0] + delta.x).clamp(300., 720.),
+            Edge::Split => {
+                layout.explorer_fraction = (drag.original[1]
+                    + delta.y
+                        / (window.height() - workspace::HEADER - status_bar::HEIGHT - DIVIDER)
+                            .max(1.))
+                .clamp(0.05, 0.95)
+            }
         }
         if !mouse.pressed(MouseButton::Left) {
             layout.drag = None;
         }
-    } else if allowed
-        && mouse.just_pressed(MouseButton::Left)
-        && !scrollbars.iter().any(|hovered| hovered.0)
-    {
-        let Some(cursor) = cursor else { return };
-        if cursor.y <= workspace::HEADER || cursor.y >= window.height() - 52. {
+    } else if allowed && mouse.just_pressed(MouseButton::Left) && !scrollbars.iter().any(|h| h.0) {
+        let Some(cursor) = cursor else {
+            return;
+        };
+        if cursor.y <= workspace::HEADER || cursor.y >= window.height() - status_bar::HEIGHT {
             return;
         }
-        let edge = if (cursor.x - sidebar::WIDTH - layout.browser).abs() <= GRIP / 2. {
-            Some(Edge::Browser)
-        } else if (cursor.x - layout.canvas_left()).abs() <= GRIP / 2. {
-            Some(Edge::Inspector)
+        let edge = if (cursor.x - layout.canvas_left()).abs() <= GRIP / 2. {
+            Some(Edge::Width)
+        } else if cursor.x >= sidebar::WIDTH
+            && cursor.x < layout.canvas_left()
+            && !layout.explorer_collapsed
+            && !layout.properties_collapsed
+            && (cursor.y - layout.properties_top(window.height())).abs() <= GRIP / 2.
+        {
+            Some(Edge::Split)
         } else {
             None
         };
@@ -133,373 +281,139 @@ pub(super) fn resize(
             layout.drag = Some(Resize {
                 edge,
                 start: cursor,
-                original: [layout.browser, layout.inspector],
+                original: [layout.width, layout.explorer_fraction],
             });
             layout.input_owned = true;
         }
     }
 }
-
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 pub(super) fn apply(
     mut commands: Commands,
     windows: Query<(Entity, &Window, Option<&bevy::window::CursorIcon>)>,
     session: Res<Session>,
-    mut regions: Query<(&Region, &mut Node)>,
-    mut grips: Query<(&Grip, &Hovered, &mut Node, &mut BackgroundColor), Without<Region>>,
+    mut regions: Query<(&Region, &mut Node), (Without<Grip>, Without<Body>)>,
+    mut grips: Query<
+        (&Grip, &Hovered, &mut Node, &mut BackgroundColor),
+        (Without<Region>, Without<Body>),
+    >,
+    mut bodies: Query<(&Body, &mut Node, &mut Visibility), (Without<Region>, Without<Grip>)>,
+    mut chevrons: Query<(&Chevron, &mut UiTransform)>,
     menus: Query<&bevy::ui_widgets::MenuFocusState, With<bevy::ui_widgets::MenuPopup>>,
     scrollbars: Query<&Hovered, With<bevy::ui_widgets::Scrollbar>>,
 ) {
+    let Ok((window_entity, window, cursor)) = windows.single() else {
+        return;
+    };
     let menu_open = menus
         .iter()
-        .any(|state| !matches!(state, bevy::ui_widgets::MenuFocusState::Closed));
-    let allowed = windows
-        .single()
-        .is_ok_and(|(_, window, _)| can_resize(window, &session, menu_open));
-    let over_scrollbar = scrollbars.iter().any(|hovered| hovered.0);
+        .any(|s| !matches!(s, bevy::ui_widgets::MenuFocusState::Closed));
+    let allowed = can_resize(window, &session, menu_open);
+    let over_scrollbar = scrollbars.iter().any(|h| h.0);
+    let explorer_height = session.ui.explorer_height(window.height());
     for (region, mut node) in &mut regions {
-        let (left, width) = match region {
-            Region::Browser => (sidebar::WIDTH, Some(session.ui.browser)),
-            Region::Inspector => (
-                sidebar::WIDTH + session.ui.browser,
-                Some(session.ui.inspector),
-            ),
-            Region::Footer => (session.ui.canvas_left() + 12., None),
-            Region::Canvas => (session.ui.canvas_left(), None),
-        };
-        if node.left != px(left) {
-            node.left = px(left);
-        }
-        if let Some(width) = width
-            && node.width != px(width)
-        {
-            node.width = px(width);
+        match region {
+            Region::Browser => {
+                node.left = px(sidebar::WIDTH);
+                node.width = px(session.ui.width);
+                node.top = px(workspace::HEADER);
+                node.bottom = Val::Auto;
+                node.height = px(explorer_height);
+            }
+            Region::Inspector => {
+                node.left = px(sidebar::WIDTH);
+                node.width = px(session.ui.width);
+                node.top = px(session.ui.properties_top(window.height()));
+                node.bottom = if session.ui.properties_collapsed {
+                    Val::Auto
+                } else {
+                    px(status_bar::HEIGHT)
+                };
+                node.height = if session.ui.properties_collapsed {
+                    px(TITLE_HEIGHT)
+                } else {
+                    Val::Auto
+                };
+            }
+            Region::Footer => node.left = px(0),
+            Region::Canvas => node.left = px(session.ui.canvas_left()),
         }
     }
-    let mut over_grip = false;
-    for (grip, hovered, mut node, mut background) in &mut grips {
-        let hovered = allowed && hovered.0 && !over_scrollbar;
-        over_grip |= hovered;
-        node.display = if session.play.is_some() {
+    for (body, mut node, mut visibility) in &mut bodies {
+        *visibility = if session.ui.collapsed(body.0) {
+            Visibility::Hidden
+        } else {
+            Visibility::Inherited
+        };
+        node.display = if session.ui.collapsed(body.0) {
             Display::None
         } else {
             Display::Flex
         };
-        let edge = match grip.0 {
-            Edge::Browser => sidebar::WIDTH + session.ui.browser,
-            Edge::Inspector => session.ui.canvas_left(),
+    }
+    for (chevron, mut pose) in &mut chevrons {
+        *pose = UiTransform::from_rotation(Rot2::degrees(if session.ui.collapsed(chevron.0) {
+            -45.
+        } else {
+            45.
+        }));
+    }
+    let mut hovered_edge = None;
+    for (grip, hovered, mut node, mut background) in &mut grips {
+        let visible = session.play.is_none()
+            && (grip.0 == Edge::Width
+                || (!session.ui.explorer_collapsed && !session.ui.properties_collapsed));
+        node.display = if visible {
+            Display::Flex
+        } else {
+            Display::None
         };
-        if node.left != px(edge - GRIP / 2.) {
-            node.left = px(edge - GRIP / 2.);
+        if allowed && visible && hovered.0 && !over_scrollbar {
+            hovered_edge = Some(grip.0);
         }
-        background.0 = if allowed && session.ui.drag.is_some_and(|drag| drag.edge == grip.0) {
-            theme::PRIMARY.with_alpha(0.5)
-        } else if hovered {
-            theme::BORDER
+        match grip.0 {
+            Edge::Width => {
+                node.left = px(session.ui.canvas_left() - GRIP / 2.);
+                node.top = px(workspace::HEADER);
+                node.bottom = px(status_bar::HEIGHT);
+                node.width = px(GRIP);
+                node.height = Val::Auto;
+            }
+            Edge::Split => {
+                node.left = px(sidebar::WIDTH);
+                node.top = px(workspace::HEADER + explorer_height - GRIP / 2.);
+                node.bottom = Val::Auto;
+                node.width = px(session.ui.width);
+                node.height = px(GRIP);
+            }
+        }
+        background.0 = if allowed && session.ui.drag.is_some_and(|d| d.edge == grip.0) {
+            theme::PRIMARY.with_alpha(0.2)
+        } else if hovered_edge == Some(grip.0) {
+            theme::BORDER.with_alpha(0.4)
         } else {
             Color::NONE
         };
     }
-    if let Ok((entity, _, cursor)) = windows.single() {
-        let resize_cursor =
-            bevy::window::CursorIcon::System(bevy::window::SystemCursorIcon::ColResize);
-        let active = allowed && (over_grip || session.ui.drag.is_some());
-        if active && cursor != Some(&resize_cursor) {
-            commands.entity(entity).insert(resize_cursor);
-        } else if !active && cursor == Some(&resize_cursor) {
-            commands
-                .entity(entity)
-                .insert(bevy::window::CursorIcon::default());
-        }
+    let active = allowed
+        .then(|| session.ui.drag.map(|d| d.edge).or(hovered_edge))
+        .flatten();
+    let next = bevy::window::CursorIcon::System(match active {
+        Some(Edge::Width) => bevy::window::SystemCursorIcon::ColResize,
+        Some(Edge::Split) => bevy::window::SystemCursorIcon::RowResize,
+        None => bevy::window::SystemCursorIcon::Default,
+    });
+    let owned_cursor = matches!(
+        cursor,
+        Some(bevy::window::CursorIcon::System(
+            bevy::window::SystemCursorIcon::ColResize | bevy::window::SystemCursorIcon::RowResize
+        ))
+    );
+    if (active.is_some() || owned_cursor) && cursor != Some(&next) {
+        commands.entity(window_entity).insert(next);
     }
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    fn cursor(app: &mut App, position: Vec2) {
-        app.world_mut()
-            .query::<&mut Window>()
-            .single_mut(app.world_mut())
-            .unwrap()
-            .set_cursor_position(Some(position));
-    }
-    fn press(app: &mut App, position: Vec2) {
-        cursor(app, position);
-        app.world_mut()
-            .resource_mut::<ButtonInput<MouseButton>>()
-            .press(MouseButton::Left);
-        app.update();
-        app.world_mut()
-            .resource_mut::<ButtonInput<MouseButton>>()
-            .clear_just_pressed(MouseButton::Left);
-    }
-    fn release(app: &mut App) {
-        let active = app.world().resource::<Session>().ui.drag.is_some();
-        app.world_mut()
-            .resource_mut::<ButtonInput<MouseButton>>()
-            .release(MouseButton::Left);
-        app.update();
-        assert_eq!(app.world().resource::<Session>().ui.input_owned, active);
-        app.world_mut()
-            .resource_mut::<ButtonInput<MouseButton>>()
-            .clear_just_released(MouseButton::Left);
-        app.update();
-        assert!(!app.world().resource::<Session>().ui.input_owned);
-    }
-    #[test]
-    fn resize_owns_the_entire_gesture_preserves_exact_redo_and_cancels_preferences() {
-        let zone = Zone {
-            origin: [128_000_000_000.125, 20.25, -128_000_000_000.5],
-            spawn: [128_000_000_000.125, 20.35, -128_000_000_000.5],
-            ..default()
-        };
-        let mut editor = Editor::new(zone.clone()).unwrap();
-        editor
-            .execute(Command::Apply {
-                expected_revision: 0,
-                edits: vec![Edit::RenameZone {
-                    name: "Temporary".into(),
-                }],
-            })
-            .unwrap();
-        editor
-            .execute(Command::Undo {
-                expected_revision: 1,
-            })
-            .unwrap();
-        let mut session = Session::new(editor, "unused.json".into(), Some(zone.clone()));
-        session.palette = Some(Primitive::Box);
-        let mut app = App::new();
-        app.insert_resource(session)
-            .init_resource::<ButtonInput<MouseButton>>()
-            .init_resource::<ButtonInput<KeyCode>>()
-            .add_zone_systems(resize);
-        app.world_mut().spawn(Window {
-            focused: true,
-            resolution: (3440, 1440).into(),
-            ..default()
-        });
-        press(&mut app, Vec2::new(sidebar::WIDTH + 300., 350.));
-        assert!(app.world().resource::<Session>().ui.input_owned);
-        cursor(&mut app, Vec2::new(sidebar::WIDTH + 450., 350.));
-        app.update();
-        assert_eq!(app.world().resource::<Session>().ui.browser, 450.);
-        let mut windows = app.world_mut().query::<&Window>();
-        let w = windows.single(app.world()).unwrap();
-        let s = app.world().resource::<Session>();
-        assert!(canvas_cursor(w, s).is_none());
-        release(&mut app);
-        press(&mut app, Vec2::new(sidebar::WIDTH + 810., 350.));
-        cursor(&mut app, Vec2::new(2000., 350.));
-        app.update();
-        assert_eq!(app.world().resource::<Session>().ui.inspector, 600.);
-        release(&mut app);
-        press(&mut app, Vec2::new(sidebar::WIDTH + 450., 350.));
-        cursor(&mut app, Vec2::new(100., 350.));
-        app.update();
-        assert_eq!(app.world().resource::<Session>().ui.browser, 300.);
-        app.world_mut()
-            .resource_mut::<ButtonInput<KeyCode>>()
-            .press(KeyCode::Escape);
-        app.update();
-        assert_eq!(app.world().resource::<Session>().ui.browser, 450.);
-        app.world_mut()
-            .resource_mut::<ButtonInput<KeyCode>>()
-            .reset_all();
-        release(&mut app);
-        press(&mut app, Vec2::new(sidebar::WIDTH + 1050., 350.));
-        cursor(&mut app, Vec2::new(sidebar::WIDTH + 800., 350.));
-        app.update();
-        assert_eq!(app.world().resource::<Session>().ui.inspector, 350.);
-        app.world_mut()
-            .query::<&mut Window>()
-            .single_mut(app.world_mut())
-            .unwrap()
-            .focused = false;
-        app.update();
-        assert_eq!(app.world().resource::<Session>().ui.inspector, 600.);
-        release(&mut app);
-        let session = app.world().resource::<Session>();
-        assert_eq!(session.editor.zone(), &zone);
-        assert_eq!(session.editor.history(), (0, 1));
-        assert_eq!(session.editor.revision(), 2);
-        assert_eq!(session.palette, Some(Primitive::Box));
-        assert!(!session.is_dirty());
-    }
-    #[test]
-    fn resize_feedback_respects_menu_scrollbar_and_window_ownership() {
-        use bevy::ui_widgets::{MenuFocusState, MenuPopup, Scrollbar};
-        use bevy::window::{CursorIcon, SystemCursorIcon};
-        let zone = Zone::default();
-        let mut app = App::new();
-        app.insert_resource(Session::new(
-            Editor::new(zone.clone()).unwrap(),
-            "unused.json".into(),
-            Some(zone.clone()),
-        ))
-        .init_resource::<ButtonInput<MouseButton>>()
-        .init_resource::<ButtonInput<KeyCode>>()
-        .add_systems(Startup, setup)
-        .add_zone_systems((resize, apply).chain());
-        let window = app
-            .world_mut()
-            .spawn(Window {
-                focused: true,
-                resolution: (3440, 1440).into(),
-                ..default()
-            })
-            .id();
-        app.update();
-        let grip = app
-            .world_mut()
-            .query::<(Entity, &Grip)>()
-            .iter(app.world())
-            .find(|(_, grip)| grip.0 == Edge::Browser)
-            .unwrap()
-            .0;
-        app.world_mut().entity_mut(grip).insert(Hovered(true));
-        cursor(&mut app, Vec2::new(sidebar::WIDTH + outliner::WIDTH, 350.));
-        app.update();
-        let resize_cursor = CursorIcon::System(SystemCursorIcon::ColResize);
-        assert_eq!(app.world().get::<CursorIcon>(window), Some(&resize_cursor));
-        let popup = app
-            .world_mut()
-            .spawn((MenuPopup::default(), MenuFocusState::Open))
-            .id();
-        press(&mut app, Vec2::new(sidebar::WIDTH + outliner::WIDTH, 350.));
-        assert!(!app.world().resource::<Session>().ui.input_owned);
-        assert_eq!(
-            app.world().get::<CursorIcon>(window),
-            Some(&CursorIcon::default())
-        );
-        assert_eq!(
-            app.world().get::<BackgroundColor>(grip).unwrap().0,
-            Color::NONE
-        );
-        release(&mut app);
-        app.world_mut()
-            .entity_mut(popup)
-            .insert(MenuFocusState::Closed);
-        let scrollbar = app
-            .world_mut()
-            .spawn((
-                Scrollbar {
-                    target: grip,
-                    orientation: bevy::ui_widgets::ControlOrientation::Vertical,
-                    min_thumb_length: 24.,
-                },
-                Hovered(true),
-            ))
-            .id();
-        press(&mut app, Vec2::new(sidebar::WIDTH + outliner::WIDTH, 350.));
-        assert!(!app.world().resource::<Session>().ui.input_owned);
-        assert_eq!(
-            app.world().get::<CursorIcon>(window),
-            Some(&CursorIcon::default())
-        );
-        assert_eq!(
-            app.world().get::<BackgroundColor>(grip).unwrap().0,
-            Color::NONE
-        );
-        release(&mut app);
-        app.world_mut().entity_mut(scrollbar).insert(Hovered(false));
-        app.update();
-        assert_eq!(app.world().get::<CursorIcon>(window), Some(&resize_cursor));
-        app.world_mut().get_mut::<Window>(window).unwrap().focused = false;
-        app.update();
-        assert_eq!(
-            app.world().get::<CursorIcon>(window),
-            Some(&CursorIcon::default())
-        );
-        assert_eq!(
-            app.world().get::<BackgroundColor>(grip).unwrap().0,
-            Color::NONE
-        );
-        let session = app.world().resource::<Session>();
-        assert_eq!(session.ui.browser, outliner::WIDTH);
-        assert_eq!(session.editor.zone(), &zone);
-        assert_eq!(session.editor.revision(), 0);
-        assert_eq!(session.editor.history(), (0, 0));
-        assert!(!session.is_dirty());
-    }
-
-    #[test]
-    fn embedded_viewport_projection_and_picking_round_trip_after_resizing_and_dpi_changes() {
-        use bevy::camera::{ComputedCameraValues, RenderTargetInfo};
-        for scale in [1., 1.5, 2.] {
-            for (browser, inspector) in [(300., 300.), (480., 600.), (420., 480.)] {
-                let mut session = Session::new(
-                    Editor::new(Zone::default()).unwrap(),
-                    "unused.json".into(),
-                    None,
-                );
-                session.ui.browser = browser;
-                session.ui.inspector = inspector;
-                let mut window = Window::default();
-                window
-                    .resolution
-                    .set_physical_resolution((3440. * scale) as u32, (1440. * scale) as u32);
-                window.resolution.set_scale_factor_override(Some(scale));
-                let size = Vec2::new(
-                    3440. - sidebar::WIDTH - browser - inspector,
-                    1440. - workspace::HEADER - 52.,
-                ) * scale;
-                for preset in [
-                    camera_views::Preset::Perspective,
-                    camera_views::Preset::Top,
-                    camera_views::Preset::Front,
-                    camera_views::Preset::Right,
-                ] {
-                    let mut view = View {
-                        target: Vec3::new(16., 3., -8.),
-                        yaw: 0.6,
-                        pitch: 0.8,
-                        distance: 32.,
-                        preset,
-                        show_grid: true,
-                    };
-                    preset.select(&mut view);
-                    let mut projection = Projection::default();
-                    camera_views::projection(&view, false, &mut projection);
-                    projection.update(size.x, size.y);
-                    let camera = Camera {
-                        computed: ComputedCameraValues {
-                            clip_from_view: projection.get_clip_from_view(),
-                            target_info: Some(RenderTargetInfo {
-                                physical_size: size.as_uvec2(),
-                                scale_factor: 1.,
-                            }),
-                            ..default()
-                        },
-                        ..default()
-                    };
-                    let transform = camera_views::transform(&view);
-                    let global = GlobalTransform::from(transform);
-                    for offset in [Vec3::ZERO, Vec3::new(3., 2., 0.), Vec3::new(-4., -1., 0.)] {
-                        let point = view.target + transform.rotation * offset;
-                        let image = camera.world_to_viewport(&global, point).unwrap();
-                        let screen = session.ui.viewport_to_window(image, scale);
-                        assert!(
-                            screen.x > session.ui.canvas_left()
-                                && screen.x < 3440.
-                                && screen.y > workspace::HEADER
-                                && screen.y < 1388.
-                        );
-                        window.set_cursor_position(Some(screen));
-                        let local = canvas_cursor(&window, &session).unwrap();
-                        assert!(local.abs_diff_eq(image, 0.001));
-                        let ray = camera.viewport_to_world(&global, local).unwrap();
-                        let normal = transform.rotation * Vec3::Z;
-                        let distance = (point - ray.origin).dot(normal) / ray.direction.dot(normal);
-                        assert!(
-                            ray.get_point(distance).abs_diff_eq(point, 0.002),
-                            "{preset:?} / scale {scale}"
-                        );
-                    }
-                }
-                window.set_cursor_position(Some(Vec2::new(browser + inspector / 2., 300.)));
-                assert!(canvas_cursor(&window, &session).is_none());
-            }
-        }
-    }
-}
+#[path = "panels_tests.rs"]
+mod tests;

@@ -75,7 +75,7 @@ fn complete_selected_inspector_reveals_each_control_at_short_full_and_narrow_wid
             .single(app.world())
             .unwrap();
         for width in [300., 600.] {
-            app.world_mut().resource_mut::<Session>().ui.inspector = width;
+            app.world_mut().resource_mut::<Session>().ui.width = width;
             for height in [420, 1440] {
                 app.world_mut()
                     .get_mut::<Window>(window)
@@ -139,12 +139,17 @@ fn complete_selected_inspector_reveals_each_control_at_short_full_and_narrow_wid
                     let first = pose.affine().translation - node.size() / 2.;
                     let last = pose.affine().translation + node.size() / 2.;
                     assert!(
-                        first.x >= sidebar::WIDTH + outliner::WIDTH
-                            && last.x <= sidebar::WIDTH + outliner::WIDTH + width,
+                        first.x >= sidebar::WIDTH && last.x <= sidebar::WIDTH + width,
                         "target {target}, width {width}, entity {entity:?}: {first:?}..{last:?}"
                     );
                     assert!(
-                        first.y >= workspace::HEADER && last.y <= height as f32,
+                        first.y
+                            >= app
+                                .world()
+                                .resource::<Session>()
+                                .ui
+                                .properties_top(height as f32)
+                            && last.y <= height as f32 - status_bar::HEIGHT,
                         "target {target}, {width}x{height}, entity {entity:?}: {first:?}..{last:?}"
                     );
                 }

@@ -30,6 +30,16 @@ fn settle(app: &mut App) {
     }
 }
 fn pointer_wheel(app: &mut App, pane: Entity, window: Entity, y: f32) {
+    let position = app
+        .world()
+        .get::<bevy::ui::UiGlobalTransform>(pane)
+        .unwrap()
+        .affine()
+        .translation;
+    app.world_mut()
+        .get_mut::<Window>(window)
+        .unwrap()
+        .set_cursor_position(Some(position));
     app.world_mut()
         .trigger(bevy::picking::events::PointerScroll {
             entity: pane,
@@ -41,7 +51,7 @@ fn pointer_wheel(app: &mut App, pane: Entity, window: Entity, y: f32) {
                     ))
                     .normalize(Some(window))
                     .unwrap(),
-                    position: Vec2::new(150., 300.),
+                    position,
                 },
             ),
             hit: bevy::picking::backend::HitData::new(window, 0., None, None),
@@ -67,7 +77,8 @@ fn offset(app: &App, pane: Entity) -> f32 {
 fn fixture(origin: [f64; 3]) -> (App, Entity, Entity) {
     let (mut app, window) = tests::app(origin);
     app.init_resource::<ButtonInput<MouseButton>>()
-        .add_plugins(scrolling::plugin);
+        .add_plugins(scrolling::plugin)
+        .add_zone_systems(panels::apply.before(scroll));
     crate::headless_ui::add_layout(&mut app);
     resize(&mut app, window, 420);
     let pane = app
@@ -125,7 +136,10 @@ fn short_browser_scrolls_and_reveals_selection_without_paging_twice_or_stealing_
                 .unwrap();
             assert!(node.size().y >= 24.);
             assert!(pose.affine().translation.y - node.size().y / 2. >= workspace::HEADER);
-            assert!(pose.affine().translation.y + node.size().y / 2. <= 420. - 52.);
+            assert!(
+                pose.affine().translation.y + node.size().y / 2.
+                    <= app.world().resource::<Session>().ui.properties_top(420.) - 1.
+            );
             assert_eq!(app.world().resource::<InputFocus>().get(), focus);
         }
         let before = offset(&app, pane);
@@ -136,6 +150,10 @@ fn short_browser_scrolls_and_reveals_selection_without_paging_twice_or_stealing_
         settle(&mut app);
         assert_eq!(offset(&app, pane), (before - 24.).max(0.));
         // Full-height browsing keeps the established bounded wheel paging.
+        app.world_mut()
+            .resource_mut::<Session>()
+            .ui
+            .explorer_fraction = 0.9;
         resize(&mut app, window, 1440);
         assert_eq!(offset(&app, pane), 0.);
         pointer_wheel(&mut app, pane, window, 1.);

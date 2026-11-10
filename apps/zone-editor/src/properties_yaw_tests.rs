@@ -418,10 +418,7 @@ fn cpu_layout_keeps_yaw_slider_exact_fields_and_apply_controls_inside_properties
             let centre = transform.affine().translation;
             let half = computed.size() * 0.5;
             assert!(computed.size().min_element() > 0.);
-            assert!(
-                centre.x - half.x >= sidebar::WIDTH + outliner::WIDTH
-                    && centre.x + half.x <= CANVAS_LEFT
-            );
+            assert!(centre.x - half.x >= sidebar::WIDTH && centre.x + half.x <= CANVAS_LEFT);
             assert!(centre.y - half.y >= workspace::HEADER && centre.y + half.y <= 1440.);
         }
         let fields = app
@@ -432,9 +429,14 @@ fn cpu_layout_keeps_yaw_slider_exact_fields_and_apply_controls_inside_properties
             .unwrap()
             .fields
             .len();
-        for (field, computed, transform) in app
+        for (field, computed, transform, parent) in app
             .world_mut()
-            .query::<(&Field, &ComputedNode, &bevy::ui::UiGlobalTransform)>()
+            .query::<(
+                &Field,
+                &ComputedNode,
+                &bevy::ui::UiGlobalTransform,
+                &ChildOf,
+            )>()
             .iter(app.world())
         {
             if field.0 >= fields {
@@ -442,8 +444,15 @@ fn cpu_layout_keeps_yaw_slider_exact_fields_and_apply_controls_inside_properties
             }
             let centre = transform.affine().translation;
             let half = computed.size() * 0.5;
-            assert!(computed.size().y >= 26.);
-            assert!(centre.x - half.x >= outliner::WIDTH && centre.x + half.x <= CANVAS_LEFT);
+            let frame = app.world().get::<ComputedNode>(parent.parent()).unwrap();
+            let frame_pose = app
+                .world()
+                .get::<bevy::ui::UiGlobalTransform>(parent.parent())
+                .unwrap();
+            assert_eq!(frame.size().y, 28.);
+            assert!((centre.y - frame_pose.affine().translation.y).abs() <= 0.5);
+            assert!(computed.size().y >= 16. && computed.size().y <= 26.);
+            assert!(centre.x - half.x >= sidebar::WIDTH && centre.x + half.x <= CANVAS_LEFT);
             assert!(centre.y - half.y >= workspace::HEADER && centre.y + half.y <= 1440.);
         }
         if target == 0 {

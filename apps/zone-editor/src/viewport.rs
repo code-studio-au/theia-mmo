@@ -108,7 +108,7 @@ pub(super) fn setup(
             left: px(CANVAS_LEFT),
             right: px(0),
             top: px(workspace::HEADER),
-            bottom: px(52),
+            bottom: px(status_bar::HEIGHT),
             ..default()
         },
         bevy::ui::widget::ViewportNode::new(camera),
@@ -684,10 +684,12 @@ pub(super) fn report(
             "limit":((node.content_size()-node.size())*factor).max(Vec2::ZERO).to_array()}))
     }).collect::<Vec<_>>());
     value["ui_layout"] = serde_json::json!({
-        "sidebar":[0.,workspace::HEADER,sidebar::WIDTH,window.height()-workspace::HEADER],
-        "browser":[sidebar::WIDTH,workspace::HEADER,session.ui.browser,window.height()-workspace::HEADER-52.],
-        "inspector":[sidebar::WIDTH+session.ui.browser,workspace::HEADER,session.ui.inspector,window.height()-workspace::HEADER],
-        "canvas":[session.ui.canvas_left(),workspace::HEADER,window.width()-session.ui.canvas_left(),window.height()-workspace::HEADER-52.],
+        "sidebar":[0.,workspace::HEADER,sidebar::WIDTH,window.height()-workspace::HEADER-status_bar::HEIGHT],
+        "browser":[sidebar::WIDTH,workspace::HEADER,session.ui.width,session.ui.explorer_height(window.height())],
+        "inspector":[sidebar::WIDTH,session.ui.properties_top(window.height()),session.ui.width,if session.ui.properties_collapsed {panels::TITLE_HEIGHT} else {window.height()-status_bar::HEIGHT-session.ui.properties_top(window.height())}],
+        "panel_collapsed":{"explorer":session.ui.explorer_collapsed,"properties":session.ui.properties_collapsed},
+        "canvas":[session.ui.canvas_left(),workspace::HEADER,window.width()-session.ui.canvas_left(),window.height()-workspace::HEADER-status_bar::HEIGHT],
+        "status_bar":[0.,window.height()-status_bar::HEIGHT,window.width(),status_bar::HEIGHT],
         "resizing":session.ui.input_owned
     });
     value["menus"] = serde_json::json!(controls.iter().filter_map(|(_,_,_,_,node,t,hovered,_,_,_,_,_,_,trigger,popup)| {

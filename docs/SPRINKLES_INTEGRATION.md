@@ -32,9 +32,10 @@ active workspace. Zone commands, source data, revision and undo/redo stay intact
 while editing a particle project. Effects save as original Sprinkles RON assets;
 this slice does not yet place them in the zone or export them into world packages.
 
-The companion remains accessible through **File → Particle editor…** and its
-standalone executable. This preserves the earlier working host while the asset
-workflow is extended. It uses the same library and original widgets.
+Product work now focuses on this integrated workspace. The retained standalone
+host shares the same runtime/editor library and can remain an internal diagnostic
+tool; it is not a separate product/acceptance target. The separate companion
+launch option is removed from the normal File menu.
 
 The host uses `ParticleAuthoringPlugin` and `AuthoringHost::embedded(1)`, not a
 second application/window. Original authoring updates and zone updates have

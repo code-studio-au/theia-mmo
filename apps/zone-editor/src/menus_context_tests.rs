@@ -251,7 +251,7 @@ fn row_popup_uses_native_unclipping_and_window_edge_placement_inside_a_short_bro
     assert_eq!(app.world().resource::<Session>().editor.history(), (0, 1));
     assert_eq!(app.world().resource::<Session>().editor.revision(), 2);
     // A popup crossing the panel edge must own that click before raw resize input.
-    let browser = app.world().resource::<Session>().ui.browser;
+    let browser = app.world().resource::<Session>().ui.width;
     app.world_mut()
         .get_mut::<Window>(window)
         .unwrap()
@@ -262,5 +262,5 @@ fn row_popup_uses_native_unclipping_and_window_edge_placement_inside_a_short_bro
     use bevy::ecs::system::RunSystemOnce;
     app.world_mut().run_system_once(panels::resize).unwrap();
     assert!(!app.world().resource::<Session>().ui.input_owned);
-    assert_eq!(app.world().resource::<Session>().ui.browser, browser);
+    assert_eq!(app.world().resource::<Session>().ui.width, browser);
 }

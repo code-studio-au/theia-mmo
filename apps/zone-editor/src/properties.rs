@@ -314,7 +314,7 @@ pub(super) fn setup(mut commands: Commands) {
             Node {
                 display: Display::None,
                 position_type: PositionType::Absolute,
-                left: px(sidebar::WIDTH + outliner::WIDTH),
+                left: px(sidebar::WIDTH),
                 top: px(workspace::HEADER),
                 bottom: px(0),
                 width: px(workspace::INSPECTOR_WIDTH),

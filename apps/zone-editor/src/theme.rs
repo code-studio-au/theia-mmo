@@ -12,14 +12,15 @@ pub(super) mod dialog;
 pub(super) mod slider;
 use bevy::asset::uuid_handle;
 use bevy::color::palettes::tailwind;
+use bevy_sprinkles_editor::ui::tokens;
 
 pub(super) const FONT: Handle<Font> = uuid_handle!("581fa8f8-a50c-4a6b-9b7c-b18200da7483");
-pub(super) const PRIMARY: Color = Color::Srgba(tailwind::BLUE_500);
-pub(super) const PANEL: Color = Color::Srgba(tailwind::ZINC_800);
-pub(super) const BORDER: Color = Color::Srgba(tailwind::ZINC_700);
-pub(super) const BODY: Color = Color::Srgba(tailwind::ZINC_200);
-pub(super) const MUTED: Color = Color::Srgba(tailwind::ZINC_400);
-pub(super) const DISPLAY: Color = Color::Srgba(tailwind::ZINC_50);
+pub(super) const PRIMARY: Color = Color::Srgba(tokens::PRIMARY_COLOR);
+pub(super) const PANEL: Color = Color::Srgba(tokens::BACKGROUND_COLOR);
+pub(super) const BORDER: Color = Color::Srgba(tokens::BORDER_COLOR);
+pub(super) const BODY: Color = Color::Srgba(tokens::TEXT_BODY_COLOR);
+pub(super) const MUTED: Color = Color::Srgba(tokens::TEXT_MUTED_COLOR);
+pub(super) const DISPLAY: Color = Color::Srgba(tokens::TEXT_DISPLAY_COLOR);
 
 // Adapted from Sprinkles' ButtonVariant. Keeping the native Bevy Button and
 // Checkbox behavior avoids replacing Theia's focus, activation or edit guards.

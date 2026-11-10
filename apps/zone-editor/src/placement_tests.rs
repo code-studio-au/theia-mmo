@@ -307,10 +307,7 @@ fn placement_controls_fit_properties_for_each_shape_and_hide_when_selecting() {
             assert!(node.size().min_element() > 0.);
             let centre = transform.affine().translation;
             let half = node.size() * 0.5;
-            assert!(
-                centre.x - half.x >= sidebar::WIDTH + outliner::WIDTH
-                    && centre.x + half.x <= CANVAS_LEFT
-            );
+            assert!(centre.x - half.x >= sidebar::WIDTH && centre.x + half.x <= CANVAS_LEFT);
             assert!(centre.y - half.y >= workspace::HEADER && centre.y + half.y <= 1440.);
         }
     }
@@ -344,7 +341,7 @@ fn placement_controls_fit_properties_for_each_shape_and_hide_when_selecting() {
     for (node,transform) in app.world_mut().query_filtered::<(&ComputedNode,&bevy::ui::UiGlobalTransform),Or<(With<Caption>,With<Info>,With<SettingsHint>)>>().iter(app.world()) {
         let centre=transform.affine().translation;let half=node.size()*0.5;
         assert!(node.size().min_element()>0.);
-        assert!(centre.x-half.x>=sidebar::WIDTH+outliner::WIDTH && centre.x+half.x<=CANVAS_LEFT);
+        assert!(centre.x-half.x>=sidebar::WIDTH && centre.x+half.x<=CANVAS_LEFT);
         assert!(centre.y-half.y>=workspace::HEADER && centre.y+half.y<=1440.);
     }
     app.world_mut()
@@ -373,7 +370,7 @@ fn placement_controls_fit_properties_for_each_shape_and_hide_when_selecting() {
 }
 
 #[test]
-fn sprinkles_browser_inspector_and_tools_have_separate_full_height_regions() {
+fn sprinkles_browser_and_properties_share_a_stacked_left_dock() {
     use bevy::ecs::system::RunSystemOnce;
     let mut app = fixture([128_000_000_000.125, 20.25, -128_000_000_000.5]);
     app.world_mut().run_system_once(outliner::setup).unwrap();
@@ -387,9 +384,8 @@ fn sprinkles_browser_inspector_and_tools_have_separate_full_height_regions() {
         .add_plugins((theme::plugin, menus::plugin, properties::summary_plugin));
     let source = app.world().resource::<Session>().editor.zone().clone();
     app.add_zone_systems((panels::apply, terrain::palette).chain());
-    for (browser_width, inspector_width) in [(300., 300.), (480., 600.), (450., 350.)] {
-        app.world_mut().resource_mut::<Session>().ui.browser = browser_width;
-        app.world_mut().resource_mut::<Session>().ui.inspector = inspector_width;
+    for inspector_width in [300., 600., 350.] {
+        app.world_mut().resource_mut::<Session>().ui.width = inspector_width;
         for mode in [
             EditorMode::Objects,
             EditorMode::Sculpt,
@@ -421,12 +417,15 @@ fn sprinkles_browser_inspector_and_tools_have_separate_full_height_regions() {
             .unwrap();
             assert_eq!(
                 browser.size(),
-                Vec2::new(browser_width, 1440. - HEADER - 52.)
+                Vec2::new(
+                    inspector_width,
+                    app.world().resource::<Session>().ui.explorer_height(1440.)
+                )
             );
             assert_eq!(
                 browser_pose.affine().translation,
                 Vec2::new(
-                    sidebar::WIDTH + browser_width / 2.,
+                    sidebar::WIDTH + inspector_width / 2.,
                     HEADER + browser.size().y / 2.
                 )
             );
@@ -435,10 +434,18 @@ fn sprinkles_browser_inspector_and_tools_have_separate_full_height_regions() {
                 .query_filtered::<(&ComputedNode, &bevy::ui::UiGlobalTransform), With<Inspector>>()
                 .single(app.world())
                 .unwrap();
-            assert_eq!(inspector.size(), Vec2::new(inspector_width, 1440. - HEADER));
+            assert_eq!(
+                inspector.size(),
+                Vec2::new(
+                    inspector_width,
+                    1440.
+                        - status_bar::HEIGHT
+                        - app.world().resource::<Session>().ui.properties_top(1440.)
+                )
+            );
             assert_eq!(
                 inspector_pose.affine().translation.x,
-                sidebar::WIDTH + browser_width + inspector_width / 2.
+                sidebar::WIDTH + inspector_width / 2.
             );
             let mut visible = 0;
             for (style,node,pose) in app.world_mut().query_filtered::<(&Node,&ComputedNode,&bevy::ui::UiGlobalTransform),With<PaletteSlot>>().iter(app.world()) {
@@ -446,8 +453,9 @@ fn sprinkles_browser_inspector_and_tools_have_separate_full_height_regions() {
             visible+=1;
             let p=pose.affine().translation;let half=node.size()/2.;
             assert!(node.size().min_element()>0.);
-            assert!(p.x-half.x>=sidebar::WIDTH+browser_width && p.x+half.x<=sidebar::WIDTH+browser_width+inspector_width);
-            assert!(p.y-half.y>=HEADER && p.y+half.y<=1440.);
+            assert!(p.x-half.x>=sidebar::WIDTH && p.x+half.x<=sidebar::WIDTH+inspector_width);
+            // Overflow is clipped by the properties scroll pane; reveal coverage is below.
+            assert!(p.y-half.y>=HEADER);
         }
             assert!(visible > 0);
             let mut viewport_controls = 0;
@@ -472,10 +480,9 @@ fn sprinkles_browser_inspector_and_tools_have_separate_full_height_regions() {
                 ) {
                     viewport_controls += 1;
                     assert!(
-                        first.x >= sidebar::WIDTH + browser_width
-                            && last.x <= sidebar::WIDTH + browser_width + inspector_width
+                        first.x >= sidebar::WIDTH && last.x <= sidebar::WIDTH + inspector_width
                     );
-                    assert!(first.y >= HEADER && last.y <= 1440.);
+                    assert!(first.y >= HEADER);
                 }
                 if matches!(control, Control::Command(Action::Save | Action::Play)) {
                     header_actions += 1;
@@ -505,11 +512,8 @@ fn sprinkles_browser_inspector_and_tools_have_separate_full_height_regions() {
                 }
                 selectors += 1;
                 assert!(node.size().min_element() > 0.);
-                assert!(
-                    first.x >= sidebar::WIDTH + browser_width
-                        && last.x <= sidebar::WIDTH + browser_width + inspector_width
-                );
-                assert!(first.y >= HEADER && last.y <= 1440.);
+                assert!(first.x >= sidebar::WIDTH && last.x <= sidebar::WIDTH + inspector_width);
+                assert!(first.y >= HEADER);
             }
             assert_eq!(selectors, 2);
             assert_eq!(document_selectors, 1);
