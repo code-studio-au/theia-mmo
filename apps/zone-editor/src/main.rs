@@ -1,6 +1,7 @@
 //! P5-17/P3-15: standard Bevy greybox authoring; no trusted gameplay authority.
 mod agent;
 mod authoring_grid;
+mod browser_icons;
 mod brush_preview;
 mod camera_views;
 mod cli;
@@ -533,6 +534,7 @@ fn run() -> Result<(), String> {
     }))
     .add_plugins(theme::plugin)
     .add_plugins(sidebar::plugin)
+    .add_plugins(browser_icons::plugin)
     .add_plugins(scrolling::plugin)
     .add_plugins(properties::summary_plugin)
     .add_plugins(menus::plugin)

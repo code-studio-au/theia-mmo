@@ -202,10 +202,8 @@ pub(super) fn setup(mut commands: Commands) {
                                 Hovered::default(),
                                 Node {
                                     width: px(width),
-                                    min_height: px(26),
-                                    padding: UiRect::all(px(4)),
                                     overflow: Overflow::clip(),
-                                    ..default()
+                                    ..theme::button_node()
                                 },
                                 BackgroundColor(theme::Variant::Default.background(false)),
                             ))
@@ -213,11 +211,14 @@ pub(super) fn setup(mut commands: Commands) {
                                 if matches!(control, Control::Search) {
                                     button.spawn((
                                         Label::Search,
-                                        text(caption, 13.),
+                                        theme::label(caption, 12., theme::BODY),
                                         TextLayout::no_wrap(),
                                     ));
                                 } else {
-                                    button.spawn((text(caption, 13.), TextLayout::no_wrap()));
+                                    button.spawn((
+                                        theme::label(caption, 12., theme::BODY),
+                                        TextLayout::no_wrap(),
+                                    ));
                                 }
                             });
                         }
@@ -245,12 +246,10 @@ pub(super) fn setup(mut commands: Commands) {
                                 Hovered::default(),
                                 Node {
                                     width: px(86),
-                                    min_height: px(26),
-                                    padding: UiRect::all(px(4)),
-                                    ..default()
+                                    ..theme::button_node()
                                 },
                                 BackgroundColor(theme::Variant::Default.background(false)),
-                                children![text(caption, 13.)],
+                                children![theme::label(caption, 12., theme::BODY)],
                             ));
                         }
                     });
@@ -272,14 +271,12 @@ pub(super) fn setup(mut commands: Commands) {
                                 Hovered::default(),
                                 Node {
                                     width: px(80),
-                                    min_height: px(26),
-                                    padding: UiRect::all(px(4)),
-                                    ..default()
+                                    ..theme::button_node()
                                 },
                                 BackgroundColor(theme::Variant::Default.background(false)),
                             ))
                             .with_children(|button| {
-                                button.spawn(text(caption, 13.));
+                                button.spawn(theme::label(caption, 12., theme::BODY));
                             });
                         }
                         bar.spawn((Label::Page, text("", 13.)));

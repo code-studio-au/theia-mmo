@@ -128,6 +128,8 @@ pub(super) struct Caption;
 pub(super) struct Description;
 #[derive(Component)]
 pub(super) struct Label(Control);
+#[derive(Component)]
+pub(super) struct RowIcon(usize);
 #[derive(Component, Clone, Copy, Debug)]
 pub(super) enum Control {
     Field,
@@ -138,7 +140,7 @@ pub(super) enum Control {
     Apply,
     Cancel,
 }
-fn button(control: Control, label: &str) -> impl Bundle {
+fn button_base(control: Control) -> impl Bundle {
     (
         control,
         Button,
@@ -150,9 +152,15 @@ fn button(control: Control, label: &str) -> impl Bundle {
                 JustifyContent::Center
             },
             overflow: Overflow::clip(),
+            column_gap: px(6),
             ..theme::button_node()
         },
         BackgroundColor(theme::Variant::Default.background(false)),
+    )
+}
+fn button(control: Control, label: &str) -> impl Bundle {
+    (
+        button_base(control),
         children![(
             Label(control),
             theme::label(label, 12., theme::BODY),
@@ -160,7 +168,7 @@ fn button(control: Control, label: &str) -> impl Bundle {
         )],
     )
 }
-pub(super) fn setup(mut commands: Commands) {
+pub(super) fn setup(mut commands: Commands, icons: Option<Res<browser_icons::Icons>>) {
     commands
         .spawn((
             Root,
@@ -201,7 +209,33 @@ pub(super) fn setup(mut commands: Commands) {
                             }
                         });
                         for index in 0..ROWS {
-                            body.spawn(button(Control::Row(index), ""));
+                            body.spawn(button_base(Control::Row(index)))
+                                .with_children(|row| {
+                                    row.spawn((
+                                        RowIcon(index),
+                                        Pickable::IGNORE,
+                                        ImageNode {
+                                            image: icons
+                                                .as_ref()
+                                                .map_or_else(Handle::default, |icons| {
+                                                    icons.file.clone()
+                                                }),
+                                            color: theme::BODY,
+                                            ..default()
+                                        },
+                                        Node {
+                                            width: px(16),
+                                            height: px(16),
+                                            flex_shrink: 0.,
+                                            ..default()
+                                        },
+                                    ));
+                                    row.spawn((
+                                        Label(Control::Row(index)),
+                                        theme::label("", 12., theme::BODY),
+                                        TextLayout::no_wrap(),
+                                    ));
+                                });
                         }
                         body.spawn((theme::label("Filename or path (.json)", 12., theme::MUTED),));
                         body.spawn((
@@ -397,6 +431,8 @@ pub(super) fn finish(
     mut labels: Query<(&Label, &mut Text)>,
     mut captions: Query<&mut Text, (With<Caption>, Without<Label>)>,
     mut descriptions: Query<&mut Text, (With<Description>, Without<Caption>, Without<Label>)>,
+    icons: Option<Res<browser_icons::Icons>>,
+    mut row_icons: Query<(&RowIcon, &mut ImageNode)>,
 ) {
     let Some(mut draft) = session.file_dialog.take() else {
         if let Ok(mut root) = roots.single_mut() {
@@ -498,6 +534,8 @@ pub(super) fn finish(
                     theme::Variant::Primary.background(hovered.0)
                 } else if selected {
                     theme::Variant::Active.background(false)
+                } else if matches!(control, Control::Row(_)) {
+                    theme::Variant::Ghost.background(hovered.0)
                 } else if hovered.0 {
                     theme::Variant::Default.background(true)
                 } else {
@@ -510,15 +548,27 @@ pub(super) fn finish(
                 Display::Flex
             };
         }
+        for (RowIcon(index), mut image) in &mut row_icons {
+            if let Some(entry) = draft.row(*index) {
+                if let Some(icons) = &icons {
+                    image.image = if entry.directory {
+                        icons.folder.clone()
+                    } else {
+                        icons.file.clone()
+                    };
+                }
+                image.color = if !entry.directory && entry.name == draft.text {
+                    theme::Variant::Active.foreground()
+                } else {
+                    theme::BODY
+                };
+            }
+        }
         for (label, mut text) in &mut labels {
             **text = match label.0 {
-                Control::Row(index) => draft.row(index).map_or_else(String::new, |e| {
-                    format!(
-                        "{} {}",
-                        if e.directory { "[Folder]" } else { "[JSON]" },
-                        e.name
-                    )
-                }),
+                Control::Row(index) => draft
+                    .row(index)
+                    .map_or_else(String::new, |e| e.name.clone()),
                 Control::Apply => if draft.overwrite {
                     "Overwrite file"
                 } else if draft.mode == Mode::Open {

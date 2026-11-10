@@ -152,3 +152,13 @@ as Theia-specific entry points into its exact edit form. Native ActivateOnPress
 and the existing reflow release cleanup handle pointer ownership; target/revision/
 guide-point checks protect reused UI data. Full f64 validation, Apply/Cancel and
 history semantics stay in the retained Theia property controller.
+
+The file picker embeds two additional unchanged Remix icons from pinned
+`crates/bevy_sprinkles_editor/src/assets/icons/`: `ri-file-line.png` and
+`ri-folder-open-line.png`. They are stored under
+`apps/zone-editor/src/browser_icons/`; `browser-icons.json` records SHA-256,
+byte counts and upstream Git blob identities. The retained
+`LICENSE-REMIX-ICON` applies. Native ImageNode rows pair these 16 px icons with
+filenames and shared Ghost/Active button states; bounded browsing and validated
+file operations remain Theia-owned. Browser actions also use shared MD button
+sizing/type. Menu keyboard hints retain muted secondary text through live states.

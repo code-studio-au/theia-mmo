@@ -1,3 +1,16 @@
+Sprinkles browser controls and file rows, 10 November 2026 (P5-17):
+content search/filter/paging actions now use shared 28 px MD button geometry and
+12 px labels. File rows pair original pinned Sprinkles/Remix 16 px folder/file
+icons with bare filenames and shared Ghost/Active states. Bounded scan/paging,
+selection, filename validation and explicit overwrite confirmation are retained.
+Menu keyboard hints keep muted 10 px secondary typography through state updates.
+Icon hashes, upstream Git blobs and licensing are recorded under third_party.
+
+All 154 focused Rust tests, formatting, denied-warning workspace/all-target
+Clippy and editor build pass. Evidence: `build/sprinkles-review/browser-polish-tests.log`,
+`browser-polish-clippy.log` and `browser-polish-build.log`. Native visual/input/GPU acceptance remains pending;
+no windows or desktop input were used while the user needs the display.
+
 Complete inspector layout checks, 10 November 2026 (P5-17): a new CPU
 font/layout case assembles the production inspector, theme, selectors, menus,
 scrollbars, summaries, footer and exact-form controllers with real object/plant/

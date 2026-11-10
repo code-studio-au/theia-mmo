@@ -44,7 +44,7 @@ impl Variant {
         };
         color.with_alpha(alpha)
     }
-    fn foreground(self) -> Color {
+    pub(super) fn foreground(self) -> Color {
         match self {
             Self::Primary | Self::Destructive => DISPLAY,
             Self::Active => PRIMARY.lighter(0.05),
@@ -273,6 +273,9 @@ fn simple_buttons(
         .background(hovered.0);
     }
 }
+#[derive(Component)]
+pub(super) struct Secondary;
+
 #[allow(clippy::type_complexity)]
 fn text_states(
     buttons: Query<
@@ -284,13 +287,16 @@ fn text_states(
         )>,
     >,
     parents: Query<&ChildOf>,
-    mut texts: Query<(Entity, &mut TextColor), (With<Text>, Without<sections::Title>)>,
+    mut texts: Query<
+        (Entity, &mut TextColor, Has<Secondary>),
+        (With<Text>, Without<sections::Title>),
+    >,
 ) {
-    for (entity, mut color) in &mut texts {
+    for (entity, mut color, secondary) in &mut texts {
         for ancestor in parents.iter_ancestors(entity) {
             if let Ok((background, disabled)) = buttons.get(ancestor) {
                 let state = color_variant(background.0, disabled);
-                color.0 = state.foreground();
+                color.0 = if secondary { MUTED } else { state.foreground() };
                 break;
             }
         }

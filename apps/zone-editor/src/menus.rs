@@ -142,7 +142,8 @@ pub(super) fn spawn_items(
                 text(label, 14.),
                 (
                     Text::new(shortcut),
-                    theme::font(11.),
+                    theme::Secondary,
+                    theme::font(10.),
                     TextColor(theme::MUTED),
                     bevy::picking::Pickable::IGNORE
                 )
