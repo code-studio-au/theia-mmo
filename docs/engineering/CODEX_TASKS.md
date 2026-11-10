@@ -1,3 +1,9 @@
+P5-17, 10 November 2026: all 20 complete selected-inspector width/height
+cases pass native scroll-reveal CPU geometry checks with source/redo unchanged.
+All 154 focused tests, formatting and denied-warning Clippy pass. Native GPU/input
+acceptance remains pending while desktop use is stopped; Windows tooling is not
+installed, so no Windows claim is made. See STATUS and ZONE_EDITOR.
+
 P5-17, 10 November 2026: inspector values now enter the exact edit form
 at the selected attribute, with target/revision/point guards and unchanged full
 transaction semantics. All 153 focused tests, formatting, denied-warning Clippy

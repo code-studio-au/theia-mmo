@@ -1,3 +1,19 @@
+Complete inspector layout checks, 10 November 2026 (P5-17): a new CPU
+font/layout case assembles the production inspector, theme, selectors, menus,
+scrollbars, summaries, footer and exact-form controllers with real object/plant/
+marker/point-guide/whole-guide selections at a distant origin. All 20 combinations
+of selection, 300/600 px inspector widths and 420/1440 px window heights reveal
+each visible inspector button/slider/info block through native ScrollIntoView.
+Bounds stay within the panel/window and the complete document, revision, dirty
+state and pending redo remain unchanged. No production behavior changed here.
+
+All 154 focused Rust tests, formatting and denied-warning workspace/all-target
+Clippy pass. Evidence: `build/sprinkles-review/inspector-matrix-tests-final.log`
+and `inspector-matrix-clippy.log`. Native visual/input/GPU acceptance remains
+pending while desktop use is stopped. Windows cross/native execution is unverified:
+only x86_64-unknown-linux-gnu is installed and no MinGW cross compiler is present.
+This is headless Linux CPU layout evidence, without a renderer or OS input.
+
 Direct attribute-value editing, 10 November 2026 (P5-17): selecting an
 inspector value now opens the retained exact editor at that field. Ghost value
 buttons use the shared 28 px interaction style and a short edit hint. Native

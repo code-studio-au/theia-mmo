@@ -250,3 +250,7 @@ mod tests;
 #[cfg(test)]
 #[path = "properties_summary_actions_tests.rs"]
 mod action_tests;
+
+#[cfg(test)]
+#[path = "properties_summary_workspace_tests.rs"]
+mod workspace_tests;
