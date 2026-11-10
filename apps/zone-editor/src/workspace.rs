@@ -117,7 +117,12 @@ fn button(control: Control, caption: &str) -> impl Bundle {
         children![(ButtonLabel, theme::label(caption, 12., theme::BODY))],
     )
 }
-pub(super) fn setup(mut commands: Commands, icons: Option<Res<sidebar::Icons>>) {
+pub(super) fn setup(
+    mut commands: Commands,
+    icons: Option<Res<sidebar::Icons>>,
+    server: Option<Res<AssetServer>>,
+    images: Option<Res<Assets<Image>>>,
+) {
     sidebar::setup(&mut commands, icons.as_deref());
     commands.init_resource::<Requests>();
     commands
@@ -223,164 +228,196 @@ pub(super) fn setup(mut commands: Commands, icons: Option<Res<sidebar::Icons>>) 
             let caption = panels::header(root, panels::Region::Inspector, "Properties");
             root.commands().entity(caption).insert(Caption);
             panels::body(root, panels::Region::Inspector, |root| {
-                scrolling::pane(root, 12., scrolling::Pane::Workspace, |panel| {
-                    panel.spawn((Info, text("", 14.)));
-                    properties::setup_summary(panel);
-                    sections::spawn(panel, "Selection", |panel| {
-                        panel
-                            .spawn(Node {
-                                flex_wrap: FlexWrap::Wrap,
-                                column_gap: px(6),
-                                row_gap: px(6),
-                                ..default()
-                            })
-                            .with_children(|row| {
-                                for (control, label) in [
-                                    (Control::Rename, "Rename"),
-                                    (Control::Command(Action::Duplicate), "Duplicate"),
-                                    (Control::Command(Action::Ground), "Ground"),
-                                    (Control::Frame, "Frame"),
-                                ] {
-                                    row.spawn(button(control, label));
-                                }
-                            });
-                        panel
-                            .spawn(Node {
-                                flex_wrap: FlexWrap::Wrap,
-                                column_gap: px(6),
-                                row_gap: px(6),
-                                ..default()
-                            })
-                            .with_children(|row| {
-                                for (control, label) in [
-                                    (Control::Point(-1), "Previous point"),
-                                    (Control::Point(1), "Next point"),
-                                    (Control::WholePath, "Whole guide"),
-                                    (Control::Command(Action::InsertPoint), "Insert point"),
-                                    (Control::Command(Action::RemovePoint), "Remove point"),
-                                ] {
-                                    row.spawn(button(control, label));
-                                }
-                            });
-                    });
-                    sections::spawn(panel, "Viewport", |panel| {
-                        menus::spawn_select(panel, menus::SelectKind::Camera);
-                        panel
-                            .spawn(Node {
-                                flex_wrap: FlexWrap::Wrap,
-                                column_gap: px(12),
-                                row_gap: px(6),
-                                ..default()
-                            })
-                            .with_children(|row| {
-                                theme::checkbox::spawn(row, Control::Grid, "Grid");
-                                theme::checkbox::spawn(row, Control::Handles, "Handles");
-                            });
-                        theme::checkbox::spawn(panel, Control::Snap, "Snap (1 m / 15 deg / 10%)");
-                        menus::spawn_select(panel, menus::SelectKind::Gizmo);
-                    });
-                    setup_tools(panel);
-                    sections::spawn(panel, "Tool settings", |panel| {
-                        for setting in [
-                            Setting::MoveGrid,
-                            Setting::PlacementSize(0),
-                            Setting::PlacementSize(1),
-                            Setting::PlacementSize(2),
-                            Setting::Radius,
-                            Setting::Strength,
-                            Setting::Blend,
-                            Setting::Level,
-                            Setting::ScatterRadius,
-                            Setting::ScatterCount,
-                        ] {
-                            let (minimum, maximum) = setting.range();
-                            panel
-                                .spawn((
-                                    SettingRow(setting),
-                                    Node {
-                                        flex_direction: FlexDirection::Column,
-                                        row_gap: px(6),
-                                        ..default()
-                                    },
-                                ))
-                                .with_children(|row| {
-                                    row.spawn(Node {
-                                        justify_content: JustifyContent::SpaceBetween,
-                                        align_items: AlignItems::Center,
-                                        column_gap: px(12),
-                                        ..default()
-                                    })
-                                    .with_children(|header| {
-                                        header
-                                            .spawn((SettingLabel(setting), theme::field_label("")));
-                                        header.spawn((
-                                            SettingLabel(setting),
-                                            SettingValue,
-                                            Text::new(""),
-                                            theme::input_font(),
-                                            TextColor(theme::BODY),
-                                            TextLayout::no_wrap(),
-                                            Pickable::IGNORE,
-                                            Node {
-                                                flex_shrink: 0.,
-                                                ..default()
-                                            },
-                                        ));
-                                    });
-                                    row.spawn((
-                                        bevy::input_focus::tab_navigation::TabIndex(-1),
-                                        setting,
-                                        Slider {
-                                            track_click: TrackClick::Snap,
+                property_tabs::layout(
+                    root,
+                    server.as_deref().filter(|_| images.is_some()),
+                    |root| {
+                        scrolling::pane(root, 12., scrolling::Pane::Workspace, |panel| {
+                            property_tabs::group(panel, property_tabs::Tab::Attributes, |panel| {
+                                panel.spawn((Info, text("", 14.)));
+                                properties::setup_summary(panel);
+                                sections::spawn(panel, "Selection", |panel| {
+                                    panel
+                                        .spawn(Node {
+                                            flex_wrap: FlexWrap::Wrap,
+                                            column_gap: px(6),
+                                            row_gap: px(6),
                                             ..default()
-                                        },
-                                        SliderValue(minimum),
-                                        SliderRange::new(minimum, maximum),
-                                        SliderStep(match setting {
-                                            Setting::ScatterCount | Setting::MoveGrid => 1.,
-                                            Setting::Level | Setting::ScatterRadius => 0.1,
-                                            Setting::PlacementSize(_) => 0.25,
-                                            _ => 0.05,
-                                        }),
-                                        SliderPrecision(
-                                            if matches!(
-                                                setting,
-                                                Setting::ScatterCount | Setting::MoveGrid
-                                            ) {
-                                                0
-                                            } else {
-                                                3
-                                            },
-                                        ),
-                                        Hovered::default(),
-                                        theme::slider::node(),
-                                        BackgroundColor(Color::NONE),
-                                    ))
-                                    .with_children(|track| {
-                                        track.spawn(theme::slider::track());
-                                        track
-                                            .spawn(Node {
-                                                position_type: PositionType::Absolute,
-                                                left: px(0),
-                                                right: px(14),
-                                                top: px(0),
-                                                bottom: px(0),
-                                                ..default()
-                                            })
-                                            .with_children(|travel| {
-                                                travel.spawn((
-                                                    Thumb,
-                                                    SliderThumb,
-                                                    theme::slider::thumb(0.),
-                                                    BackgroundColor(theme::PRIMARY),
-                                                ));
-                                            });
-                                    });
+                                        })
+                                        .with_children(|row| {
+                                            for (control, label) in [
+                                                (Control::Rename, "Rename"),
+                                                (Control::Command(Action::Duplicate), "Duplicate"),
+                                                (Control::Command(Action::Ground), "Ground"),
+                                                (Control::Frame, "Frame"),
+                                            ] {
+                                                row.spawn(button(control, label));
+                                            }
+                                        });
+                                    panel
+                                        .spawn(Node {
+                                            flex_wrap: FlexWrap::Wrap,
+                                            column_gap: px(6),
+                                            row_gap: px(6),
+                                            ..default()
+                                        })
+                                        .with_children(|row| {
+                                            for (control, label) in [
+                                                (Control::Point(-1), "Previous point"),
+                                                (Control::Point(1), "Next point"),
+                                                (Control::WholePath, "Whole guide"),
+                                                (
+                                                    Control::Command(Action::InsertPoint),
+                                                    "Insert point",
+                                                ),
+                                                (
+                                                    Control::Command(Action::RemovePoint),
+                                                    "Remove point",
+                                                ),
+                                            ] {
+                                                row.spawn(button(control, label));
+                                            }
+                                        });
                                 });
-                        }
-                    });
-                    panel.spawn((SettingsHint, text(SETTINGS_HINT, 13.)));
-                });
+                            });
+                            property_tabs::group(panel, property_tabs::Tab::View, |panel| {
+                                sections::spawn(panel, "Viewport", |panel| {
+                                    menus::spawn_select(panel, menus::SelectKind::Camera);
+                                    panel
+                                        .spawn(Node {
+                                            flex_wrap: FlexWrap::Wrap,
+                                            column_gap: px(12),
+                                            row_gap: px(6),
+                                            ..default()
+                                        })
+                                        .with_children(|row| {
+                                            theme::checkbox::spawn(row, Control::Grid, "Grid");
+                                            theme::checkbox::spawn(
+                                                row,
+                                                Control::Handles,
+                                                "Handles",
+                                            );
+                                        });
+                                    theme::checkbox::spawn(
+                                        panel,
+                                        Control::Snap,
+                                        "Snap (1 m / 15 deg / 10%)",
+                                    );
+                                    menus::spawn_select(panel, menus::SelectKind::Gizmo);
+                                });
+                            });
+                            property_tabs::group(panel, property_tabs::Tab::Tools, |panel| {
+                                setup_tools(panel);
+                                sections::spawn(panel, "Tool settings", |panel| {
+                                    for setting in [
+                                        Setting::MoveGrid,
+                                        Setting::PlacementSize(0),
+                                        Setting::PlacementSize(1),
+                                        Setting::PlacementSize(2),
+                                        Setting::Radius,
+                                        Setting::Strength,
+                                        Setting::Blend,
+                                        Setting::Level,
+                                        Setting::ScatterRadius,
+                                        Setting::ScatterCount,
+                                    ] {
+                                        let (minimum, maximum) = setting.range();
+                                        panel
+                                            .spawn((
+                                                SettingRow(setting),
+                                                Node {
+                                                    flex_direction: FlexDirection::Column,
+                                                    row_gap: px(6),
+                                                    ..default()
+                                                },
+                                            ))
+                                            .with_children(|row| {
+                                                row.spawn(Node {
+                                                    justify_content: JustifyContent::SpaceBetween,
+                                                    align_items: AlignItems::Center,
+                                                    column_gap: px(12),
+                                                    ..default()
+                                                })
+                                                .with_children(|header| {
+                                                    header.spawn((
+                                                        SettingLabel(setting),
+                                                        theme::field_label(""),
+                                                    ));
+                                                    header.spawn((
+                                                        SettingLabel(setting),
+                                                        SettingValue,
+                                                        Text::new(""),
+                                                        theme::input_font(),
+                                                        TextColor(theme::BODY),
+                                                        TextLayout::no_wrap(),
+                                                        Pickable::IGNORE,
+                                                        Node {
+                                                            flex_shrink: 0.,
+                                                            ..default()
+                                                        },
+                                                    ));
+                                                });
+                                                row.spawn((
+                                                    bevy::input_focus::tab_navigation::TabIndex(-1),
+                                                    setting,
+                                                    Slider {
+                                                        track_click: TrackClick::Snap,
+                                                        ..default()
+                                                    },
+                                                    SliderValue(minimum),
+                                                    SliderRange::new(minimum, maximum),
+                                                    SliderStep(match setting {
+                                                        Setting::ScatterCount
+                                                        | Setting::MoveGrid => 1.,
+                                                        Setting::Level | Setting::ScatterRadius => {
+                                                            0.1
+                                                        }
+                                                        Setting::PlacementSize(_) => 0.25,
+                                                        _ => 0.05,
+                                                    }),
+                                                    SliderPrecision(
+                                                        if matches!(
+                                                            setting,
+                                                            Setting::ScatterCount
+                                                                | Setting::MoveGrid
+                                                        ) {
+                                                            0
+                                                        } else {
+                                                            3
+                                                        },
+                                                    ),
+                                                    Hovered::default(),
+                                                    theme::slider::node(),
+                                                    BackgroundColor(Color::NONE),
+                                                ))
+                                                .with_children(|track| {
+                                                    track.spawn(theme::slider::track());
+                                                    track
+                                                        .spawn(Node {
+                                                            position_type: PositionType::Absolute,
+                                                            left: px(0),
+                                                            right: px(14),
+                                                            top: px(0),
+                                                            bottom: px(0),
+                                                            ..default()
+                                                        })
+                                                        .with_children(|travel| {
+                                                            travel.spawn((
+                                                                Thumb,
+                                                                SliderThumb,
+                                                                theme::slider::thumb(0.),
+                                                                BackgroundColor(theme::PRIMARY),
+                                                            ));
+                                                        });
+                                                });
+                                            });
+                                    }
+                                });
+                                panel.spawn((SettingsHint, text(SETTINGS_HINT, 13.)));
+                            });
+                        });
+                    },
+                );
             });
         });
 }

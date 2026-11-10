@@ -497,6 +497,15 @@ type SceneVisuals<'w, 's> = Query<
         Has<placement::Ghost>,
     ),
 >;
+type TabControls<'w, 's> = Query<
+    'w,
+    's,
+    (
+        &'static property_tabs::Tab,
+        &'static ComputedNode,
+        &'static bevy::ui::UiGlobalTransform,
+    ),
+>;
 #[allow(clippy::too_many_arguments)]
 pub(super) fn report(
     mut commands: Commands,
@@ -506,6 +515,8 @@ pub(super) fn report(
         Res<ButtonInput<KeyCode>>,
         Res<bevy::input_focus::InputFocus>,
         crate::particle_workspace::Report,
+        Res<property_tabs::State>,
+        TabControls,
     ),
     session: Res<Session>,
     view: Res<View>,
@@ -520,7 +531,7 @@ pub(super) fn report(
     content: Res<outliner::Content>,
     content_controls: ContentControls,
 ) {
-    let (keys, focus, particles) = input;
+    let (keys, focus, particles, tabs, tab_controls) = input;
     let Some(mut report) = report else {
         return;
     };
@@ -692,6 +703,13 @@ pub(super) fn report(
             "centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array(),
             "limit":((node.content_size()-node.size())*factor).max(Vec2::ZERO).to_array()}))
     }).collect::<Vec<_>>());
+    value["property_tabs"] = serde_json::json!({
+        "active": format!("{:?}", tabs.active),
+        "controls": tab_controls.iter().map(|(tab, node, pose)| {
+            let factor = node.inverse_scale_factor() * scale.0;
+            serde_json::json!({"tab":format!("{tab:?}"), "centre":(pose.affine().translation*factor).to_array(), "size":(node.size()*factor).to_array()})
+        }).collect::<Vec<_>>()
+    });
     value["ui_layout"] = serde_json::json!({
         "sidebar":[0.,workspace::HEADER,sidebar::WIDTH,window.height()-workspace::HEADER-status_bar::HEIGHT],
         "browser":[sidebar::WIDTH,workspace::HEADER,session.ui.width,session.ui.explorer_height(window.height())],

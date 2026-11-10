@@ -110,10 +110,43 @@ Add `--inline` to the reproduction commands above to exercise direct inputs.
 The earlier click-to-reveal prototype was rejected by the user and is superseded
 by this implementation; its captures are not acceptance evidence.
 
+## Implemented checkpoint: property categories — 11 November 2026
+
+A fixed icon rail inside the left properties panel selects Attributes, Tools or
+View. Reuse the actual Sprinkles cube/settings/bounds icons and theme. Each
+category shares the existing scroll pane; switching resets only that pane's
+scroll, preserving the explorer position. Inactive categories have both hidden
+visibility and no layout so keyboard navigation cannot enter their fields.
+Selection changes open Attributes; unselected/placement workflows open Tools.
+Manual category choice survives source revisions and ordinary updates. F9 opens
+Attributes, unfolds properties and focuses the existing exact textbox. Leaving a
+numeric field via a category button applies its valid draft once, without saving
+disk or showing a separate editor.
+
+Validation: **111 zone-editor tests**, formatting, diff checks and strict
+workspace/all-target Clippy pass. Whole-inspector CPU checks exercise all three
+categories at narrow/wide and short/full layouts. Native local/far runs pass tab
+switching, pending-field blur, F9, direct editing, explicit Save, source/history
+preservation and the retained dock/dropdown checks. Linux RX 7900 XTX / RADV
+NAVI31 / Vulkan at 3440 × 1440; zero GPU diagnostics in both. No Windows claim.
+Executable SHA-256:
+`f4bab9a98030431d76144d12d160651aae8fa973da2e18e69d92fbe36ce8256d`.
+
+Evidence (ignored):
+
+- `build/sprinkles-review/category-tests-v3.log`
+- `build/sprinkles-review/category-clippy-v2.log`
+- `build/zone-category-native-20261111-final-local/qualification.json`
+- `build/zone-category-native-20261111-final-far/qualification.json`
+
+Use `--inline --categories` with the reproduction commands above. Owned native
+processes are closed after qualification. The viewport toolbar, inline name/spawn
+workflows and popup refinement remain separate follow-on work.
+
 ## Remaining requested refinement
 
 This does **not** complete the reopened UI refinement. Finish inline name/spawn
-workflows where applicable, property-category icon tabs, the selected-object
+workflows where applicable, the selected-object
 viewport tool strip with input isolation, and three-dot accessors/popup cleanup.
 The retained exact form currently serves the separate spawn command and internal
 regression fixtures; it is not the normal selected-object numeric workflow.

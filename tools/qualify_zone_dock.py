@@ -10,6 +10,7 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--output', required=True, type=Path)
 parser.add_argument('--case', choices=['local', 'far'], default='local')
 parser.add_argument('--inline', action='store_true')
+parser.add_argument('--categories', action='store_true')
 args = parser.parse_args()
 out = args.output.resolve()
 out.mkdir(parents=True, exist_ok=False)
@@ -76,6 +77,30 @@ try:
         started = state()['input_elapsed']
         wait(lambda: state()['input_elapsed'] > started + 3)
         capture('status-bar-selected.png')
+        if args.categories:
+            category_document = state()['document']
+            category_revision = state()['revision']
+            category_history = state()['history']
+            assert state()['property_tabs']['active'] == 'Attributes'
+            for tab in ['View', 'Tools', 'Attributes']:
+                control = next(c for c in state()['property_tabs']['controls'] if c['tab'] == tab)
+                assert min(control['size']) > 0
+                click(control['centre'])
+                wait(lambda: state()['property_tabs']['active'] == tab)
+                capture('category-' + tab.lower() + '.png')
+                assert state()['document'] == category_document
+                assert state()['revision'] == category_revision
+                assert state()['history'] == category_history
+                assert source.read_bytes() == original
+            control = next(c for c in state()['property_tabs']['controls'] if c['tab'] == 'View')
+            click(control['centre'])
+            wait(lambda: state()['property_tabs']['active'] == 'View')
+            desktop.key('F9')
+            wait(lambda: state()['property_tabs']['active'] == 'Attributes')
+            wait(lambda: any(c['focused'] for c in state()['inline_attributes']))
+            desktop.key('Escape')
+            fresh()
+
         click([1200, 1426])
         assert state()['revision'] == revision
         layout = state()['ui_layout']
@@ -124,7 +149,15 @@ try:
             first = initial['objects'][0]['pose']['position'][0] + 0.125
             edit_field(0, str(first))
             capture('inline-editing.png')
-            desktop.key('Return')
+            if args.categories:
+                click(next(c for c in state()['property_tabs']['controls'] if c['tab'] == 'View')['centre'])
+                wait(lambda: state()['property_tabs']['active'] == 'View')
+                wait(lambda: state()['document']['objects'][0]['pose']['position'][0] == first)
+                assert not state()['inline_attributes']
+                click(next(c for c in state()['property_tabs']['controls'] if c['tab'] == 'Attributes')['centre'])
+                wait(lambda: state()['property_tabs']['active'] == 'Attributes' and state()['inline_attributes'])
+            else:
+                desktop.key('Return')
             wait(lambda: not any(c['focused'] for c in state()['inline_attributes']))
             assert state()['document']['objects'][0]['pose']['position'][0] == first
             assert state()['unsaved_changes'] and source.read_bytes() == original
@@ -175,7 +208,7 @@ try:
         click(next((c for c in state()['content_list']['controls'] if c['target'] == 'Object(1)'))['centre'])
         wait(lambda: state()['selected'] == 1)
         capture('status-bar-final.png')
-        result = dict(inline_verified=args.inline, binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(), adapter=state()['gpu'], layout=state()['ui_layout'], revision=state()['revision'], history=state()['history'], source_preserved_before_save=True, source_json_preserved=json.loads(source.read_text()) == initial)
+        result = dict(categories_verified=args.categories, inline_verified=args.inline, binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(), adapter=state()['gpu'], layout=state()['ui_layout'], revision=state()['revision'], history=state()['history'], source_preserved_before_save=True, source_json_preserved=json.loads(source.read_text()) == initial)
 finally:
     desktop.close()
     if process is not None and process.poll() is None:

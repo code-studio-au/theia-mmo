@@ -20,6 +20,7 @@ mod paths;
 mod placement;
 mod playtest;
 mod properties;
+mod property_tabs;
 mod scrolling;
 mod sections;
 mod selection;
@@ -557,6 +558,7 @@ fn run() -> Result<(), String> {
     )
     .add_plugins(theme::plugin)
     .add_plugins(sidebar::plugin)
+    .add_plugins(property_tabs::plugin)
     .add_plugins(browser_icons::plugin)
     .add_plugins(scrolling::plugin)
     .add_plugins(properties::summary_plugin)

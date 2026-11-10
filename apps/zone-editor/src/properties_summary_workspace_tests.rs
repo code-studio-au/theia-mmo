@@ -39,6 +39,7 @@ fn fixture(target: u8) -> App {
     })
     .init_resource::<outliner::Content>()
     .add_plugins((
+        property_tabs::plugin,
         menus::plugin,
         theme::plugin,
         plugin,
@@ -106,59 +107,72 @@ fn complete_selected_inspector_reveals_each_control_at_short_full_and_narrow_wid
                     .find(|(_, scope)| matches!(scope, scrolling::Pane::Workspace))
                     .unwrap()
                     .0;
-                let candidates: Vec<_> = app
-                    .world_mut()
-                    .query::<(
-                        Entity,
-                        &ComputedNode,
-                        Has<Button>,
-                        Has<Slider>,
-                        Has<Info>,
-                        Has<TextInput>,
-                    )>()
-                    .iter(app.world())
-                    .filter(|(_, node, button, slider, info, input)| {
-                        node.size().min_element() > 0. && (*button || *slider || *info || *input)
-                    })
-                    .map(|(entity, ..)| entity)
-                    .collect();
-                let controls: Vec<_> = candidates
-                    .into_iter()
-                    .filter(|entity| {
-                        std::iter::successors(Some(*entity), |current| {
-                            app.world().get::<ChildOf>(*current).map(ChildOf::parent)
-                        })
-                        .any(|ancestor| ancestor == pane)
-                    })
-                    .collect();
-                assert!(controls.len() > 10);
-                for entity in controls {
+                for tab in [
+                    property_tabs::Tab::Attributes,
+                    property_tabs::Tab::Tools,
+                    property_tabs::Tab::View,
+                ] {
                     app.world_mut()
-                        .trigger(bevy::ui_widgets::ScrollIntoView { entity });
+                        .resource_mut::<property_tabs::State>()
+                        .active = tab;
                     for _ in 0..3 {
                         app.update();
                     }
-                    let node = app.world().get::<ComputedNode>(entity).unwrap();
-                    let pose = app
-                        .world()
-                        .get::<bevy::ui::UiGlobalTransform>(entity)
-                        .unwrap();
-                    let first = pose.affine().translation - node.size() / 2.;
-                    let last = pose.affine().translation + node.size() / 2.;
-                    assert!(
-                        first.x >= sidebar::WIDTH && last.x <= sidebar::WIDTH + width,
-                        "target {target}, width {width}, entity {entity:?}: {first:?}..{last:?}"
-                    );
-                    assert!(
-                        first.y
-                            >= app
-                                .world()
-                                .resource::<Session>()
-                                .ui
-                                .properties_top(height as f32)
-                            && last.y <= height as f32 - status_bar::HEIGHT,
-                        "target {target}, {width}x{height}, entity {entity:?}: {first:?}..{last:?}"
-                    );
+                    let candidates: Vec<_> = app
+                        .world_mut()
+                        .query::<(
+                            Entity,
+                            &ComputedNode,
+                            Has<Button>,
+                            Has<Slider>,
+                            Has<Info>,
+                            Has<TextInput>,
+                        )>()
+                        .iter(app.world())
+                        .filter(|(_, node, button, slider, info, input)| {
+                            node.size().min_element() > 0.
+                                && (*button || *slider || *info || *input)
+                        })
+                        .map(|(entity, ..)| entity)
+                        .collect();
+                    let controls: Vec<_> = candidates
+                        .into_iter()
+                        .filter(|entity| {
+                            std::iter::successors(Some(*entity), |current| {
+                                app.world().get::<ChildOf>(*current).map(ChildOf::parent)
+                            })
+                            .any(|ancestor| ancestor == pane)
+                        })
+                        .collect();
+                    assert!(!controls.is_empty());
+                    for entity in controls {
+                        app.world_mut()
+                            .trigger(bevy::ui_widgets::ScrollIntoView { entity });
+                        for _ in 0..3 {
+                            app.update();
+                        }
+                        let node = app.world().get::<ComputedNode>(entity).unwrap();
+                        let pose = app
+                            .world()
+                            .get::<bevy::ui::UiGlobalTransform>(entity)
+                            .unwrap();
+                        let first = pose.affine().translation - node.size() / 2.;
+                        let last = pose.affine().translation + node.size() / 2.;
+                        assert!(
+                            first.x >= sidebar::WIDTH && last.x <= sidebar::WIDTH + width,
+                            "target {target}, width {width}, entity {entity:?}: {first:?}..{last:?}"
+                        );
+                        assert!(
+                            first.y
+                                >= app
+                                    .world()
+                                    .resource::<Session>()
+                                    .ui
+                                    .properties_top(height as f32)
+                                && last.y <= height as f32 - status_bar::HEIGHT,
+                            "target {target}, {width}x{height}, entity {entity:?}: {first:?}..{last:?}"
+                        );
+                    }
                 }
                 let session = app.world().resource::<Session>();
                 assert_eq!(session.editor.zone(), &source);

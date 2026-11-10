@@ -1,3 +1,12 @@
+P5-17 property categories, 11 November 2026: the stacked left inspector now
+uses Sprinkles icon tabs for Attributes, Tools and View. Hide inactive controls
+from layout/focus, retain manual tab choice across edits, preserve explorer scroll
+and open/focus existing attributes with F9. All 111 editor tests, fmt and strict
+workspace/all-target Clippy pass; native local/far checks pass category switching,
+pending numeric edits and exact source/history preservation on RX 7900 XTX /
+RADV NAVI31 / Vulkan, zero GPU diagnostics. Toolbar, inline name/spawn and popup
+refinement remain follow-on work. See [record](EDITOR_UI_REFINEMENT.md).
+
 P5-17 permanent numeric attributes, 10 November 2026: selected objects/plants/
 markers/guides use always-visible textboxes with one aligned frame/background.
 No click-to-reveal or Apply panel; Enter/blur applies one validated exact edit,

@@ -495,6 +495,7 @@ pub(super) fn keyboard(
     inline: Option<Res<inline::State>>,
     inputs: Query<(Entity, &summary::Value, &EditableText), Without<Field>>,
     mut commands: Commands,
+    tabs: Option<ResMut<property_tabs::State>>,
 ) {
     let requested = std::mem::take(&mut requests.transform);
     let requested_field = std::mem::take(&mut requests.transform_field);
@@ -569,6 +570,9 @@ pub(super) fn keyboard(
     if inline.is_some() && !spawn_requested {
         if let Some((entity, _, _)) = inputs.iter().find(|(_, input, _)| input.0 == active) {
             session.ui.properties_collapsed = false;
+            if let Some(mut tabs) = tabs {
+                tabs.active = property_tabs::Tab::Attributes;
+            }
             focus.set(entity, FocusCause::Navigated);
             commands.trigger(bevy::ui_widgets::ScrollIntoView { entity });
         }
