@@ -25,6 +25,7 @@ pub(super) struct Requests {
     pub help: bool,
     pub file_open: bool,
     pub file_save_as: bool,
+    pub particle_editor: bool,
 }
 #[derive(Component, Clone, Copy, Debug)]
 pub(super) enum Control {
@@ -38,6 +39,7 @@ pub(super) enum Control {
     SpawnTransform,
     FileOpen,
     FileSaveAs,
+    ParticleEditor,
     Point(i8),
     WholePath,
     Snap,
@@ -153,6 +155,7 @@ pub(super) fn setup(mut commands: Commands, icons: Option<Res<sidebar::Icons>>) 
                         (Control::Command(Action::Save), "Save", "Ctrl S"),
                         (Control::FileSaveAs, "Save as…", "Ctrl Shift S"),
                         (Control::Command(Action::Load), "Reload", "Ctrl Shift O"),
+                        (Control::ParticleEditor, "Particle editor…", ""),
                     ],
                 );
                 menus::spawn(
@@ -634,6 +637,7 @@ pub(super) fn execute(
         Control::SpawnTransform => requests.spawn_transform = true,
         Control::FileOpen => requests.file_open = true,
         Control::FileSaveAs => requests.file_save_as = true,
+        Control::ParticleEditor => requests.particle_editor = true,
         Control::Snap | Control::Handles | Control::Grid => {}
     }
 }

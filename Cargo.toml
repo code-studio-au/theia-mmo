@@ -1,5 +1,5 @@
 [workspace]
-members = ["apps/zone-editor", "crates/zone", "apps/nav-bake", "apps/client", "apps/server", "crates/core", "crates/network", "crates/persistence", "crates/auth"]
+members = ["third_party/sprinkles/crates/bevy_sprinkles", "third_party/sprinkles/crates/bevy_sprinkles_editor", "apps/zone-editor", "crates/zone", "apps/nav-bake", "apps/client", "apps/server", "crates/core", "crates/network", "crates/persistence", "crates/auth"]
 resolver = "3"
 
 [workspace.package]
@@ -8,6 +8,11 @@ rust-version = "1.99"
 publish = false
 
 [workspace.dependencies]
+ron = "=0.10.1"
+thiserror = "2"
+bytemuck = { version = "1.14", features = ["derive"] }
+bitflags = { version = "2", features = ["serde"] }
+paste = "1"
 bevy = { version = "=0.20.0", default-features = false }
 avian3d = { git = "https://github.com/avianphysics/avian", rev = "1070759b2145dc078abedace91dc7fe78013a45c", default-features = false, features = ["3d", "parry-f32"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }

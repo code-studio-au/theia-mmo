@@ -7,17 +7,21 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import shutil
+import time
 
 from gpu_validation import check_gpu_diagnostics
 from launch_environment import client_environment
 from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 
 
-def run(output, binary, only_case=None, scroll=False, attributes=False, dialogs=False):
+def run(output, binary, only_case=None, scroll=False, attributes=False, dialogs=False, particles=False):
     output = output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     binary = binary.resolve()
     binary_hash = hashlib.sha256(binary.read_bytes()).hexdigest()
+    particle_binary = binary.with_name('theia-particle-editor')
+    particle_hash = hashlib.sha256(particle_binary.read_bytes()).hexdigest() if particles else None
     cases = []
     for name, origin in [('local', [.125, .25, -.5]),
                          ('far', [128000000000.125, 20.25, -128000000000.5])]:
@@ -39,8 +43,16 @@ def run(output, binary, only_case=None, scroll=False, attributes=False, dialogs=
                 (folder / f"dialog-fixture-{index}.zone.json").write_text(json.dumps(document))
         env = client_environment(dict(os.environ, WGPU_BACKEND='vulkan',
             VK_INSTANCE_LAYERS='VK_LAYER_KHRONOS_validation', VK_LOADER_DEBUG='layer'))
+        if particles:
+            effect = folder / 'effect.ron'
+            shutil.copyfile('third_party/sprinkles/crates/bevy_sprinkles_editor/src/assets/examples/magic-puff.ron', effect)
+            data = folder / 'particle-editor-data'
+            data.mkdir()
+            (data / 'editor.ron').write_text('(cache: (last_opened_project: Some(' + json.dumps(str(effect)) + '), recent_projects: []), settings: ())')
+            env['THEIA_PARTICLE_EDITOR_DATA_DIR'] = str(data)
         logfile = folder / 'editor.log'
         desktop = None
+        particle_pid = None
         if scroll or attributes or dialogs:
             desktop = Desktop()
             desktop.prepare_wheel()
@@ -456,9 +468,48 @@ def run(output, binary, only_case=None, scroll=False, attributes=False, dialogs=
                     assert state()['document'] == before_scroll['document']
                     assert state()['history'] == before_scroll['history']
 
+                if particles:
+                    before_tool = copy.deepcopy(fresh())
+                    effect_bytes = effect.read_bytes()
+                    def children():
+                        found = set()
+                        for task in Path(f'/proc/{process.pid}/task').glob('*/children'):
+                            try:
+                                found.update(int(pid) for pid in task.read_text().split())
+                            except FileNotFoundError:
+                                pass
+                        return sorted(found)
+                    menu('File')
+                    popup_control('File', 'ParticleEditor')
+                    particle_pid = wait(lambda: next(iter(children()), None), 20)
+                    particle_window = wait(lambda: owned_window(particle_pid), 60)
+                    desktop.focus(particle_window)
+                    title = wait(lambda: (value if 'Magic Puff' in value else None) if (value := subprocess.check_output(['xprop', '-id', hex(particle_window), '_NET_WM_NAME'], text=True)) else None, 30)
+                    assert 'Theia Particle Editor' in title and 'Sprinkles' in title
+                    warmup = time.monotonic()
+                    wait(lambda: time.monotonic() > warmup + 3, 10)
+                    desktop.focus(window)
+                    menu('File')
+                    popup_control('File', 'ParticleEditor')
+                    wait(lambda:'already open' in state()['status'])
+                    assert children() == [particle_pid], 'Duplicate authoring process launched'
+                    assert state()['document'] == before_tool['document']
+                    assert state()['history'] == before_tool['history'] and state()['revision'] == before_tool['revision']
+                    assert source.read_text() == json.dumps(document) and effect.read_bytes() == effect_bytes
+                    capture('particle-tool-launch-preserves-zone')
+                    subprocess.run(['wmctrl', '-ic', hex(particle_window)], check=True)
+                    wait(lambda: particle_pid not in children(), 30)
+                    particle_pid = None
+                    desktop.focus(window)
+                    assert state()['document'] == before_tool['document']
+
                 cases.append(dict(case=name, gpu=state()['gpu'], revision=state()['revision'],
                     panels=[420, 480], exact_source_restored=True, source_file_unchanged=True))
             finally:
+                if particle_pid is not None:
+                    owned = owned_window(particle_pid)
+                    if owned:
+                        subprocess.run(['wmctrl', '-ic', hex(owned)], check=False)
                 if desktop:
                     desktop.close()
                 process.terminate()
@@ -467,7 +518,9 @@ def run(output, binary, only_case=None, scroll=False, attributes=False, dialogs=
         assert 'Insert instance layer "VK_LAYER_KHRONOS_validation"' in text
         cases[-1]['gpu_diagnostics'] = check_gpu_diagnostics(text, allow_surface_resize=scroll or attributes or dialogs)
     assert hashlib.sha256(binary.read_bytes()).hexdigest() == binary_hash, 'Binary changed during native qualification'
-    result = dict(cases=cases, scrolling=scroll, attribute_scrolling=attributes, dialogs=dialogs, editor_sha256=binary_hash,
+    if particles:
+        assert hashlib.sha256(particle_binary.read_bytes()).hexdigest() == particle_hash
+    result = dict(particle_editor_sha256=particle_hash, cases=cases, scrolling=scroll, attribute_scrolling=attributes, dialogs=dialogs, particle_tool=particles, editor_sha256=binary_hash,
         scope='Linux native 3440x1440; shorter 3440x600 scroll check when enabled; real OS input, Vulkan; no Windows or multiplayer claim')
     (output / 'qualification.json').write_text(json.dumps(result, indent=2)+'\n')
     print(json.dumps(result, indent=2))
@@ -481,5 +534,6 @@ if __name__ == '__main__':
     parser.add_argument('--scroll', action='store_true', help='Check real wheel and scrollbar dragging in a shorter owned window')
     parser.add_argument('--attributes-scroll', action='store_true', help='Check Tab focus reveal and exact draft scrolling in a short owned window')
     parser.add_argument('--dialogs', action='store_true', help='Check file and naming dialog layout and wheel input in a short owned window')
+    parser.add_argument('--particles', action='store_true', help='Check the directly reused authoring tool launch and zone preservation')
     args = parser.parse_args()
-    run(args.output, args.binary, args.case, args.scroll, args.attributes_scroll, args.dialogs)
+    run(args.output, args.binary, args.case, args.scroll, args.attributes_scroll, args.dialogs, args.particles)

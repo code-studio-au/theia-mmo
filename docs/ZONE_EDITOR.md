@@ -1,3 +1,14 @@
+P5-17 direct Sprinkles source integration, 10 November 2026: the original
+runtime and editor are imported at the reviewed pin and ported to exact Bevy
+0.20.0. File → Particle editor opens the retained UI/preview/RON authoring tool
+in one companion window. Native editing/save and host launch/return checks pass
+on RX 7900 XTX / RADV NAVI31 / Vulkan with zero diagnostics and exact zone/source/
+history preservation. All 172 focused tests plus three runtime doctests, fmt and
+denied-warning workspace/all-target Clippy pass. Source and asset licenses/hashes
+are retained. This completes the first direct-reuse slice; same-window hosting,
+asset placement/client integration, Windows and full P2-13 remain pending.
+See [SPRINKLES_INTEGRATION.md](SPRINKLES_INTEGRATION.md) for exact evidence.
+
 # Zone authoring — 8 November 2026
 
 The current user direction prioritizes terrain, greyboxing and zone authoring.

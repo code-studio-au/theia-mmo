@@ -15,6 +15,7 @@ mod menus;
 mod naming;
 mod outliner;
 mod panels;
+mod particle_editor;
 mod paths;
 mod placement;
 mod playtest;
@@ -540,6 +541,7 @@ fn run() -> Result<(), String> {
     .add_plugins(scrolling::plugin)
     .add_plugins(properties::summary_plugin)
     .add_plugins(menus::plugin)
+    .add_plugins(particle_editor::plugin)
     .add_observer(workspace::activate)
     .add_observer(workspace::change)
     .add_observer(workspace::toggle)

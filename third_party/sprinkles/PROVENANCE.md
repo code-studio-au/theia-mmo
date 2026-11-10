@@ -7,7 +7,9 @@ Selected code license: MIT; the unmodified license is alongside this record.
 `apps/zone-editor/src/theme.rs` adapts `ui/tokens.rs` and the color, opacity,
 border and foreground behavior of `ui/widgets/button.rs`. Theia retains native
 Bevy 0.20 widgets and its own validated commands, input guards and history.
-The source editor targets Bevy 0.19 and is not added as a dependency.
+The initial UI adaptation used source targeting Bevy 0.19 without adding its
+editor as a dependency. The direct-source integration below supersedes that
+initial scope.
 
 The unmodified `InterVariable.ttf` comes from the source editor's
 `src/assets/InterVariable.ttf` at this revision, SHA-256
@@ -18,7 +20,8 @@ https://github.com/rsms/inter/blob/master/LICENSE.txt
 (Git blob `9b2ca37b3ffc77391d8b2ebef4a974ef32bf46ea`).
 
 The initial adaptation included no upstream icons. The sidebar slice below adds
-six Remix icons; no Blender icons, example effects or particle runtime are included.
+six Remix icons. At that stage no Blender icons, example effects or particle
+runtime were included. The later direct-source import below expands that scope.
 Theia-specific controls follow the same visual tokens.
 
 `apps/zone-editor/src/sections.rs` adapts `ui/widgets/panel_section.rs`
@@ -179,3 +182,22 @@ the pinned inspector-field tokens while retaining Theia setting captions.
 Panel dividers also use the pinned panel.rs native ColResize cursor. Theia adds
 shared interaction-availability guards for feedback and resize acquisition so
 menus, scrollbars, modal/preview/playtest ownership and window focus agree.
+
+
+## Direct runtime/editor source reuse — 10 November 2026
+
+`crates/bevy_sprinkles` and `crates/bevy_sprinkles_editor` import the runtime,
+original authoring UI, assets and asset-loader tests at the same pinned revision.
+Both are local, non-published workspace crates using exact Bevy 0.20.0.
+`ATTRIBUTIONS.md` records all code and separate asset licenses.
+`source-files.json` records the upstream and adapted file hashes, including
+renamed shaders and source additions. The upstream README is retained.
+
+Theia extracts the original editor entry point into a reusable library and a
+thin companion executable. Engine adaptations cover pointer/text/button APIs,
+scene composition, embedded asset paths, WESL shaders and encoded shader buffers.
+Preview bounds/collider outlines use standard Bevy line meshes after native
+gizmo synchronization failures; this is a measured compatibility adaptation,
+not replacement of the particle editor UI or simulation. User data is namespaced
+under `.theia/particles`. See `docs/SPRINKLES_INTEGRATION.md` for acceptance and
+remaining host/runtime integration boundaries.

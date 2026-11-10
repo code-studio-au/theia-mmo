@@ -1,3 +1,15 @@
+## 10 November 2026 — first direct Sprinkles source host
+
+Reuse the pinned original runtime/editor as local non-published workspace crates,
+with Bevy 0.20 adapters and selected MIT code licensing plus separate asset
+notices. The first host is a companion authoring window launched from the zone
+editor's File menu. Preserve the zone document/history and allow the particle
+window to finish saving if its parent closes. Keep standalone data under
+`.theia/particles`. This boundary establishes source reuse and native authoring;
+it is not same-window hosting or full gameplay VFX. Use standard Bevy line meshes
+for preview outlines after measured native gizmo upload synchronization hazards.
+[Implementation and evidence](SPRINKLES_INTEGRATION.md).
+
 ## 10 November 2026 — accept a close Sprinkles match and begin direct integration
 
 The user accepts a close, usable Sprinkles style/layout/function match without a
