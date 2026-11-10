@@ -260,8 +260,14 @@ pub(crate) fn load_project_from_path(
         LoadProjectError::Read(err)
     })?;
 
-    let result = bevy_sprinkles::asset::versions::migrate_str(&contents).map_err(|err| {
-        error!("Failed to parse project file: {path:?}");
+    parse_project(&contents)
+}
+
+pub(crate) fn parse_project(
+    contents: &str,
+) -> Result<bevy_sprinkles::asset::versions::MigrationResult, LoadProjectError> {
+    let result = bevy_sprinkles::asset::versions::migrate_str(contents).map_err(|err| {
+        error!("Failed to parse particle project data");
         error!("{err}");
         match err {
             bevy_sprinkles::asset::versions::MigrationError::UnknownVersion(_) => {

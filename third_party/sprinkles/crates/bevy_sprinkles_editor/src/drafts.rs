@@ -41,6 +41,21 @@ impl DraftId {
     }
 }
 
+/// A validated snapshot. The source path is informational; restoring must
+/// open the asset as an unsaved project until the user chooses Save As.
+pub struct RecoveredDraft {
+    pub original_path: Option<PathBuf>,
+    pub asset: bevy_sprinkles::prelude::ParticlesAsset,
+}
+
+#[derive(Debug)]
+pub enum RecoveryError {
+    Storage(io::Error),
+    InvalidProject,
+    UnknownVersion,
+    UnsupportedMaterial,
+}
+
 #[derive(Debug, Clone)]
 pub struct DraftStore {
     directory: PathBuf,
@@ -150,6 +165,24 @@ impl DraftStore {
         Ok(draft)
     }
 
+    /// Validate the complete asset before callers replace the current project.
+    pub fn recover(&self, id: &DraftId) -> Result<RecoveredDraft, RecoveryError> {
+        let draft = self.load(id).map_err(RecoveryError::Storage)?;
+        let result =
+            crate::project::parse_project(&draft.snapshot).map_err(|error| match error {
+                crate::project::LoadProjectError::UnknownVersion => RecoveryError::UnknownVersion,
+                crate::project::LoadProjectError::UnsupportedMaterial => {
+                    RecoveryError::UnsupportedMaterial
+                }
+                crate::project::LoadProjectError::Parse
+                | crate::project::LoadProjectError::Read(_) => RecoveryError::InvalidProject,
+            })?;
+        Ok(RecoveredDraft {
+            original_path: draft.original_path,
+            asset: result.asset,
+        })
+    }
+
     fn path(&self, id: &DraftId) -> PathBuf {
         self.directory.join(format!("{}.draft.ron", id.0))
     }
@@ -222,6 +255,55 @@ mod tests {
         let huge = Draft::new(None, "x".repeat(MAX_DRAFT_BYTES as usize));
         assert!(store.update(&id, &huge).is_err());
         assert_eq!(std::fs::read(store.path(&id)).unwrap(), b"corrupt");
+        std::fs::remove_dir_all(store.directory()).unwrap();
+    }
+
+    #[test]
+    fn recovery_validates_project_before_returning_an_unsaved_asset() {
+        use bevy::prelude::default;
+        use bevy_sprinkles::prelude::*;
+        let store = store();
+        let original = store.directory().join("original.ron");
+        std::fs::create_dir_all(store.directory()).unwrap();
+        std::fs::write(&original, b"original").unwrap();
+        let mut asset = ParticlesAsset::new(
+            "Recovered".into(),
+            ParticlesDimension::D3,
+            default(),
+            vec![EmitterData::default()],
+            vec![],
+            false,
+            default(),
+        );
+        let id = store
+            .create(&Draft::new(
+                Some(original.clone()),
+                ron::to_string(&asset).unwrap(),
+            ))
+            .unwrap();
+        let recovered = store.recover(&id).unwrap();
+        assert_eq!(recovered.asset.name, "Recovered");
+        assert_eq!(recovered.original_path.as_deref(), Some(original.as_path()));
+        asset.emitters[0].draw_pass.material = DrawPassMaterial::CustomShader {
+            vertex_shader: None,
+            fragment_shader: None,
+        };
+        store
+            .update(&id, &Draft::new(None, ron::to_string(&asset).unwrap()))
+            .unwrap();
+        assert!(matches!(
+            store.recover(&id),
+            Err(RecoveryError::UnsupportedMaterial)
+        ));
+        store
+            .update(&id, &Draft::new(None, "broken project".into()))
+            .unwrap();
+        assert!(matches!(
+            store.recover(&id),
+            Err(RecoveryError::InvalidProject)
+        ));
+        assert_eq!(std::fs::read(original).unwrap(), b"original");
+        assert_eq!(store.list().unwrap(), vec![id]);
         std::fs::remove_dir_all(store.directory()).unwrap();
     }
 

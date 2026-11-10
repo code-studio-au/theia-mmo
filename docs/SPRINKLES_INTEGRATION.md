@@ -247,3 +247,8 @@ file, preserves corrupt drafts for inspection and refuses additional drafts at
 its configured count limit. It is not yet wired to capture edits or offer
 recovery, so it provides no crash recovery to users yet. The count check assumes
 a single editor process; concurrent processes are not yet coordinated.
+
+Draft loading also validates the asset with the normal project migration and
+material checks before returning it for restoration. Recovery callers must open
+it as an unsaved project; its recorded original path is informational. There is
+still no user-facing restore command or automatic snapshot lifecycle.
