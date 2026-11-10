@@ -29,3 +29,8 @@ with Theia-specific logical bounds, world-input shielding and cancellation.
 The standard `ViewportNode` arrangement follows `ui/components/viewport.rs`;
 Theia adds an explicit window UI camera, standard image target and checked
 window/image coordinate conversion for its retained authoring tools.
+
+`properties_scrub.rs` adapts numeric dragging from `ui/widgets/text_edit.rs`.
+It retains the upstream normal/Alt/Super increments but preserves exact original
+f64 text and uses symmetric truncation rather than absolute decimal rounding.
+Theia retains whole-candidate validation and one-entry Apply/Cancel history.

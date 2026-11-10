@@ -1,5 +1,7 @@
 //! Numeric object, plant and marker transforms; standard text/focus widgets, existing commands.
 use super::*;
+#[path = "properties_scrub.rs"]
+mod numeric;
 use bevy::input_focus::{
     FocusCause, InputFocus,
     tab_navigation::{NavAction, TabGroup, TabIndex, TabNavigation},
@@ -11,6 +13,7 @@ use bevy::ui_widgets::{
     SelectAllOnFocus, Slider, SliderPrecision, SliderRange, SliderStep, SliderThumb, SliderValue,
     TextInput, TrackClick, ValueChange,
 };
+pub(super) use numeric::scrub;
 use theia_zone::{markers::Marker, paths::GuidePath, vegetation::Plant};
 
 const LABELS: [&str; 7] = [
@@ -322,7 +325,7 @@ pub(super) fn setup(mut commands: Commands) {
             ))
             .with_children(|panel| {
                 panel.spawn((Caption, text("TRANSFORM", 16.), TextLayout::no_wrap()));
-                panel.spawn(text("World metres | Y-up | yaw degrees", 13.));
+                panel.spawn(text("Drag ↔ labels | click fields for exact values", 13.));
                 for (index, label) in LABELS.iter().enumerate() {
                     panel
                         .spawn((
@@ -337,7 +340,11 @@ pub(super) fn setup(mut commands: Commands) {
                         .with_children(|row| {
                             row.spawn((
                                 FieldLabel(index),
-                                text(label, 13.),
+                                numeric::Handle(index),
+                                Text::new(format!("↔ {label}")),
+                                theme::font(11.),
+                                TextColor(theme::MUTED),
+                                Hovered::default(),
                                 Node {
                                     width: px(88),
                                     ..default()
@@ -672,7 +679,7 @@ pub(super) fn finish(
     }
     for (label, mut text) in &mut labels {
         if let Some(value) = draft.original.labels().get(label.0) {
-            **text = (*value).into();
+            **text = format!("↔ {value}");
         }
     }
     for (entity, field, text) in &fields {

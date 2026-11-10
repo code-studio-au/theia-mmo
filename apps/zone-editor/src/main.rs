@@ -571,7 +571,7 @@ fn run() -> Result<(), String> {
             )
                 .chain(),
             naming::keyboard,
-            properties::keyboard,
+            (properties::scrub, properties::keyboard).chain(),
             keyboard,
             vegetation::pointer,
             markers::pointer,

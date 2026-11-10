@@ -3335,3 +3335,21 @@ exclusion. The scene/ghost data-only test initializes the real viewport and its
 pointer map. Native rendering, GPU/input, resize and playtest acceptance remain
 pending while mouse/display use are stopped. Earlier partial native evidence is
 for the pre-ViewportNode binary only. Evidence: `build/sprinkles-review/viewport-*.log`.
+
+## Sprinkles-style numeric attribute dragging — 10 November 2026
+
+Sprinkles-style numeric attribute dragging, 10 November 2026 (P5-17):
+visible ↔ labels scrub their exact field values while ordinary text input remains
+available. Normal drag steps by 0.1 per 5 logical pixels; Alt/Super uses 1 per 10.
+The adapter preserves the starting f64 and exact original string at zero steps,
+uses a symmetric dead zone, and refuses invalid/composing input. It deliberately
+omits upstream absolute decimal rounding so distant global coordinates cannot
+lose precision. Changes remain pending until the retained Apply transaction;
+Escape/focus loss cancels without changing source or redo.
+
+All 134 focused Rust tests, formatting, denied-warning workspace/all-target
+Clippy and build pass. Headless real field-controller checks cover stationary
+precision, local/far object/plant/marker/guide-point/spawn/guide-width drags,
+command-oracle equality, one-entry Apply, malformed fields and cancellation.
+Native mouse/UI/GPU acceptance remains pending while desktop use is stopped.
+Evidence: `build/sprinkles-review/scrub-*.log`.
