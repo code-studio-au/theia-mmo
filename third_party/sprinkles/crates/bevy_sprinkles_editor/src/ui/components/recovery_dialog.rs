@@ -16,6 +16,7 @@ use crate::ui::widgets::scroll::scrollbar;
 pub fn plugin(app: &mut App) {
     app.add_observer(open_recovery)
         .add_observer(restore_selected)
+        .add_observer(discard_clicked)
         .add_observer(close_recovery)
         .add_authoring_systems((populate_recovery, cleanup_recovery));
 }
@@ -24,6 +25,21 @@ pub fn plugin(app: &mut App) {
 pub struct RecoveryButton;
 #[derive(Component)]
 struct RestoreButton(DraftId);
+#[derive(Clone, Copy)]
+enum DiscardAction {
+    Ask,
+    Confirm,
+    Cancel,
+}
+#[derive(Component)]
+struct DiscardChoice {
+    id: DraftId,
+    row: Entity,
+    ask: Entity,
+    confirm: Entity,
+    cancel: Entity,
+    action: DiscardAction,
+}
 struct Entry {
     id: DraftId,
     title: String,
@@ -134,7 +150,17 @@ fn populate_recovery(
     match loaded {
         Ok(entries) if !entries.is_empty() => {
             for entry in entries {
-                commands
+                let row = commands
+                    .spawn((
+                        Node {
+                            width: percent(100),
+                            align_items: AlignItems::Center,
+                            ..default()
+                        },
+                        ChildOf(scroll),
+                    ))
+                    .id();
+                let restore = commands
                     .spawn_scene(button(
                         ButtonProps::new(entry.title)
                             .with_variant(ButtonVariant::Ghost)
@@ -142,8 +168,54 @@ fn populate_recovery(
                             .with_direction(FlexDirection::Column)
                             .with_subtitle(&entry.subtitle),
                     ))
-                    .insert(RestoreButton(entry.id))
-                    .insert(ChildOf(scroll));
+                    .insert(RestoreButton(entry.id.clone()))
+                    .insert(ChildOf(row))
+                    .id();
+                commands
+                    .entity(restore)
+                    .entry::<Node>()
+                    .and_modify(|mut node| {
+                        node.flex_grow = 1.0;
+                        node.min_width = px(0);
+                    });
+                let ask = commands
+                    .spawn_scene(button(
+                        ButtonProps::new("Discard...").with_variant(ButtonVariant::Ghost),
+                    ))
+                    .insert(ChildOf(row))
+                    .id();
+                let confirm = commands
+                    .spawn_scene(button(
+                        ButtonProps::new("Confirm discard").with_variant(ButtonVariant::Ghost),
+                    ))
+                    .insert(ChildOf(row))
+                    .id();
+                let cancel = commands
+                    .spawn_scene(button(
+                        ButtonProps::new("Cancel").with_variant(ButtonVariant::Ghost),
+                    ))
+                    .insert(ChildOf(row))
+                    .id();
+                for (entity, action) in [
+                    (ask, DiscardAction::Ask),
+                    (confirm, DiscardAction::Confirm),
+                    (cancel, DiscardAction::Cancel),
+                ] {
+                    commands.entity(entity).insert(DiscardChoice {
+                        id: entry.id.clone(),
+                        row,
+                        ask,
+                        confirm,
+                        cancel,
+                        action,
+                    });
+                }
+                for entity in [confirm, cancel] {
+                    commands
+                        .entity(entity)
+                        .entry::<Node>()
+                        .and_modify(|mut node| node.display = Display::None);
+                }
             }
         }
         Ok(_) => {
@@ -167,6 +239,52 @@ fn restore_selected(
 ) {
     if let Ok(button) = buttons.get(event.entity) {
         commands.trigger(RestoreDraftEvent(button.0.clone()));
+    }
+}
+fn discard_clicked(
+    event: On<ButtonClickEvent>,
+    choices: Query<&DiscardChoice>,
+    mut nodes: Query<&mut Node>,
+    store: Res<RecoveryStore>,
+    mut commands: Commands,
+) {
+    let Ok(choice) = choices.get(event.entity) else {
+        return;
+    };
+    if !nodes
+        .get(event.entity)
+        .is_ok_and(|node| node.display != Display::None)
+    {
+        return;
+    }
+    match choice.action {
+        DiscardAction::Ask | DiscardAction::Cancel => {
+            let confirming = matches!(choice.action, DiscardAction::Ask);
+            for (entity, visible) in [
+                (choice.ask, !confirming),
+                (choice.confirm, confirming),
+                (choice.cancel, confirming),
+            ] {
+                if let Ok(mut node) = nodes.get_mut(entity) {
+                    node.display = if visible {
+                        Display::Flex
+                    } else {
+                        Display::None
+                    };
+                }
+            }
+        }
+        DiscardAction::Confirm => match store.0.discard(&choice.id) {
+            Ok(()) => {
+                commands.entity(choice.row).try_despawn();
+                commands.trigger(crate::ui::components::toasts::ToastEvent::success(
+                    "Draft discarded",
+                ));
+            }
+            Err(_) => commands.trigger(crate::ui::components::toasts::ToastEvent::error(
+                "Could not discard draft",
+            )),
+        },
     }
 }
 fn close_recovery(
@@ -230,6 +348,79 @@ mod tests {
                 .any(|entry| entry.id == bad && entry.title == "Unreadable draft")
         );
         assert_eq!(store.list().unwrap().len(), 2);
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn discard_requires_confirmation_and_preserves_other_drafts() {
+        let dir = std::env::temp_dir().join(format!(
+            "theia-draft-discard-ui-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let store = DraftStore::new(dir.clone());
+        let first = store.create(&Draft::new(None, "first".into())).unwrap();
+        let second = store.create(&Draft::new(None, "second".into())).unwrap();
+        let mut app = App::new();
+        app.insert_resource(RecoveryStore(store.clone()))
+            .add_observer(discard_clicked);
+        let row = app.world_mut().spawn(Node::default()).id();
+        let ask = app.world_mut().spawn(Node::default()).id();
+        let confirm = app
+            .world_mut()
+            .spawn(Node {
+                display: Display::None,
+                ..default()
+            })
+            .id();
+        let cancel = app
+            .world_mut()
+            .spawn(Node {
+                display: Display::None,
+                ..default()
+            })
+            .id();
+        for (entity, action) in [
+            (ask, DiscardAction::Ask),
+            (confirm, DiscardAction::Confirm),
+            (cancel, DiscardAction::Cancel),
+        ] {
+            app.world_mut().entity_mut(entity).insert(DiscardChoice {
+                id: first.clone(),
+                row,
+                ask,
+                confirm,
+                cancel,
+                action,
+            });
+        }
+        app.update();
+        app.world_mut()
+            .trigger(ButtonClickEvent { entity: confirm });
+        app.update();
+        assert_eq!(store.list().unwrap().len(), 2);
+        app.world_mut().trigger(ButtonClickEvent { entity: ask });
+        app.update();
+        assert_eq!(store.list().unwrap().len(), 2);
+        assert_eq!(
+            app.world().get::<Node>(confirm).unwrap().display,
+            Display::Flex
+        );
+        app.world_mut().trigger(ButtonClickEvent { entity: cancel });
+        app.update();
+        assert_eq!(store.list().unwrap().len(), 2);
+        assert_eq!(
+            app.world().get::<Node>(confirm).unwrap().display,
+            Display::None
+        );
+        app.world_mut().trigger(ButtonClickEvent { entity: ask });
+        app.world_mut()
+            .trigger(ButtonClickEvent { entity: confirm });
+        app.update();
+        assert_eq!(store.list().unwrap(), vec![second]);
         std::fs::remove_dir_all(dir).unwrap();
     }
 

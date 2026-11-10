@@ -2,15 +2,16 @@
 use std::collections::HashMap;
 use std::io;
 use std::sync::mpsc::{self, Receiver, SyncSender, TrySendError};
+use std::time::{Duration, Instant};
 
 use crate::drafts::{Draft, DraftId, DraftStore};
 
 const MAX_QUEUED: usize = 8;
 const MAX_SNAPSHOT_BYTES: usize = 16 * 1024 * 1024;
 
-struct Job {
-    session: u64,
-    draft: Draft,
+enum Job {
+    Capture { session: u64, draft: Draft },
+    Flush(mpsc::Sender<()>),
 }
 
 /// Completion is reported to the editor; an accepted job is not yet durable.
@@ -33,21 +34,33 @@ impl DraftWriter {
             .spawn(move || {
                 let mut sessions: HashMap<u64, DraftId> = HashMap::new();
                 while let Ok(job) = jobs.recv() {
-                    let result = match sessions.get(&job.session) {
-                        Some(id) => store.update(id, &job.draft).map(|()| id.clone()),
-                        None => store.create(&job.draft),
-                    };
-                    if let Ok(id) = &result {
-                        sessions.insert(job.session, id.clone());
-                    }
-                    if finished
-                        .send(CaptureResult {
-                            session: job.session,
-                            result: result.map_err(|error| error.to_string()),
-                        })
-                        .is_err()
-                    {
-                        break;
+                    match job {
+                        Job::Flush(done) => {
+                            let _ = done.send(());
+                        }
+                        Job::Capture { session, draft } => {
+                            let result = match sessions.get(&session) {
+                                Some(id) => match store.update(id, &draft) {
+                                    Err(error) if error.kind() == io::ErrorKind::NotFound => {
+                                        store.create(&draft)
+                                    }
+                                    result => result.map(|()| id.clone()),
+                                },
+                                None => store.create(&draft),
+                            };
+                            if let Ok(id) = &result {
+                                sessions.insert(session, id.clone());
+                            }
+                            if finished
+                                .send(CaptureResult {
+                                    session,
+                                    result: result.map_err(|error| error.to_string()),
+                                })
+                                .is_err()
+                            {
+                                break;
+                            }
+                        }
                     }
                 }
             })?;
@@ -63,7 +76,7 @@ impl DraftWriter {
             ));
         }
         self.sender
-            .try_send(Job { session, draft })
+            .try_send(Job::Capture { session, draft })
             .map_err(|error| match error {
                 TrySendError::Full(_) => {
                     io::Error::new(io::ErrorKind::WouldBlock, "Draft writer is busy")
@@ -72,6 +85,37 @@ impl DraftWriter {
                     io::Error::new(io::ErrorKind::BrokenPipe, "Draft writer stopped")
                 }
             })
+    }
+
+    /// Wait a bounded time for jobs already accepted by the writer.
+    pub fn flush(&self, timeout: Duration) -> io::Result<()> {
+        let deadline = Instant::now() + timeout;
+        let (done, receiver) = mpsc::channel();
+        let mut job = Job::Flush(done);
+        loop {
+            match self.sender.try_send(job) {
+                Ok(()) => break,
+                Err(TrySendError::Full(returned)) if Instant::now() < deadline => {
+                    job = returned;
+                    std::thread::sleep(Duration::from_millis(1));
+                }
+                Err(TrySendError::Full(_)) => {
+                    return Err(io::Error::new(
+                        io::ErrorKind::TimedOut,
+                        "Draft writer queue did not drain",
+                    ));
+                }
+                Err(TrySendError::Disconnected(_)) => {
+                    return Err(io::Error::new(
+                        io::ErrorKind::BrokenPipe,
+                        "Draft writer stopped",
+                    ));
+                }
+            }
+        }
+        receiver
+            .recv_timeout(deadline.saturating_duration_since(Instant::now()))
+            .map_err(|_| io::Error::new(io::ErrorKind::TimedOut, "Draft writer did not finish"))
     }
 
     pub fn try_result(&self) -> Option<CaptureResult> {
@@ -164,6 +208,14 @@ mod tests {
         assert_ne!(latest, other);
         assert_eq!(store.load(&latest).unwrap().snapshot, "latest");
         assert_eq!(store.load(&other).unwrap().snapshot, "untitled");
+        store.discard(&latest).unwrap();
+        writer
+            .capture(1, Draft::new(Some(source.clone()), "after discard".into()))
+            .unwrap();
+        assert!(writer.flush(Duration::from_secs(10)).is_ok());
+        let recreated = writer.try_result().unwrap().result.unwrap();
+        assert_ne!(recreated, latest);
+        assert_eq!(store.load(&recreated).unwrap().snapshot, "after discard");
         assert_eq!(std::fs::read(source).unwrap(), b"original");
         drop(writer);
         std::fs::remove_dir_all(dir).unwrap();

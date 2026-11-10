@@ -1,3 +1,12 @@
+P5-17 particle draft recovery, 11 November 2026: separate periodic and
+transition snapshots, a bounded exit flush and guarded restore/discard are in
+place. Explicit Save still owns project-file writes. 34 particle-editor tests,
+122 zone-editor tests, fmt and strict workspace/all-target Clippy pass. Input-free
+far-origin llvmpipe Vulkan startup has zero GPU diagnostics. The recovery dialog
+has not been visually or interactively qualified on native hardware; Windows is
+unverified. Recovery remains best-effort for uncommitted fields, abrupt process
+termination and storage failures. See [integration](../SPRINKLES_INTEGRATION.md).
+
 P5-17 particle transition drafts, 11 November 2026: leaving the particle
 workspace or switching projects queues the last committed snapshot, including
 edits since the periodic capture; headless transition, particle-editor, fmt and

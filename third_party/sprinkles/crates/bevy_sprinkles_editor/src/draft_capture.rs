@@ -178,6 +178,74 @@ pub(crate) fn capture_drafts(
     }
 }
 
+/// Best-effort bounded flush when an AppExit message is visible in the last schedule.
+pub(crate) fn capture_on_exit(
+    exits: Option<Res<bevy::ecs::message::Messages<bevy::app::AppExit>>>,
+    mut capture: NonSendMut<DraftCapture>,
+    state: Res<EditorState>,
+    dirty: Res<DirtyState>,
+    assets: Res<Assets<ParticlesAsset>>,
+) {
+    if exits.as_ref().is_none_or(|exits| exits.is_empty()) {
+        return;
+    }
+    let Some(writer) = capture.writer.as_ref() else {
+        return;
+    };
+    // Drain earlier work before submitting the final snapshot to the bounded queue.
+    if let Err(error) = writer.flush(Duration::from_secs(2)) {
+        warn!("Particle draft flush failed: {error}");
+        return;
+    }
+    while let Some((session, draft)) = capture.transitions.pop_front() {
+        let Some(writer) = capture.writer.as_ref() else {
+            return;
+        };
+        if let Err(error) = writer.capture(session, draft.clone()) {
+            if error.kind() == std::io::ErrorKind::WouldBlock {
+                if let Err(error) = writer
+                    .flush(Duration::from_secs(2))
+                    .and_then(|()| writer.capture(session, draft))
+                {
+                    warn!("Particle transition draft failed on exit: {error}");
+                }
+            } else {
+                warn!("Particle transition draft failed on exit: {error}");
+            }
+        }
+    }
+    if let Some(writer) = capture.writer.as_ref()
+        && let Err(error) = writer.flush(Duration::from_secs(2))
+    {
+        warn!("Particle transition draft flush failed: {error}");
+    }
+    if dirty.has_unsaved_changes
+        && capture.handle == state.current_project
+        && let Some(asset) = state
+            .current_project
+            .as_ref()
+            .and_then(|handle| assets.get(handle))
+        && let Ok(snapshot) = crate::project::serialize_snapshot(asset)
+        && let Some(writer) = capture.writer.as_ref()
+        && let Err(error) = writer.capture(
+            capture.session,
+            Draft::new(state.current_project_path.clone(), snapshot),
+        )
+    {
+        warn!("Particle draft could not be queued on exit: {error}");
+    }
+    if let Some(writer) = capture.writer.as_ref() {
+        if let Err(error) = writer.flush(Duration::from_secs(2)) {
+            warn!("Particle draft flush failed: {error}");
+        }
+        while let Some(result) = writer.try_result() {
+            if let Err(error) = result.result {
+                warn!("Particle draft write failed on exit: {error}");
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -204,7 +272,9 @@ mod tests {
             .init_resource::<EditorState>()
             .init_resource::<DirtyState>()
             .init_resource::<Assets<ParticlesAsset>>()
-            .add_systems(Update, capture_drafts);
+            .add_message::<bevy::app::AppExit>()
+            .add_systems(Update, capture_drafts)
+            .add_systems(Last, capture_on_exit);
         let asset = ParticlesAsset::new(
             "Snapshot".into(),
             ParticlesDimension::D3,
@@ -306,6 +376,26 @@ mod tests {
             }
             std::thread::sleep(Duration::from_millis(2));
         }
+        let active = app
+            .world()
+            .resource::<EditorState>()
+            .current_project
+            .clone()
+            .unwrap();
+        app.world_mut()
+            .resource_mut::<Assets<ParticlesAsset>>()
+            .get_mut(&active)
+            .unwrap()
+            .name = "At exit".into();
+        app.world_mut().write_message(bevy::app::AppExit::Success);
+        app.update();
+        assert!(
+            store
+                .list()
+                .unwrap()
+                .iter()
+                .any(|id| store.recover(id).unwrap().asset.name == "At exit")
+        );
         assert_eq!(std::fs::read(source).unwrap(), b"original");
         drop(app);
         std::fs::remove_dir_all(dir).unwrap();

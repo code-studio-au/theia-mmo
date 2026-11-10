@@ -247,15 +247,19 @@ corrupt drafts and refuses additional drafts at its configured count limit.
 The project menu offers a recovery list, loaded in the background. Drafts are
 validated with the usual migration and material checks and restore as dirty
 projects without assigned paths. Restoration rejects unsaved or actively edited
-projects. While the particle workspace is active, committed changes are captured in the
-background at five-second intervals. This is best-effort recovery: edits still in text fields and shutdown are not yet guaranteed to reach a
-draft. Leaving the workspace or switching projects queues a final committed
+projects. While the particle workspace is active, committed changes are captured
+in the background at five-second intervals. This is best-effort recovery: edits
+still in text fields and abrupt termination are not guaranteed to reach a draft.
+When Bevy delivers an exit message before the final schedule, the editor queues a
+final committed snapshot and waits a bounded time for writes. Leaving the
+workspace or switching projects queues a final committed
 snapshot; a full queue or write error is reported, and queued work is not yet
-durable until the writer completes. Drafts remain after an explicit Save; a
-user-facing discard control remains pending. The storage API can remove
-a selected draft without following a symbolic link. Its count check assumes a
+durable until the writer completes. Drafts remain after an explicit Save;
+the recovery list provides a two-step discard control for each draft. The
+storage API removes only the selected draft without following a symbolic link. Its count check assumes a
 single editor process; concurrent processes are not yet coordinated.
 
 A bounded background writer serializes snapshots for each editing session and
 reports write errors. Accepting a queued snapshot does not mean that it has
-reached storage; orderly shutdown handling is still pending.
+reached storage. Exit flushing is bounded and is not a guarantee against forced
+termination, power loss or storage errors.

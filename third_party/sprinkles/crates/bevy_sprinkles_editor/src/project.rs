@@ -39,7 +39,8 @@ pub fn plugin(app: &mut App) {
             track_text_focus.before(text_edit::handle_unfocus),
         ))
         // A write may complete while the integrated host is on the Zone workspace.
-        .add_systems(Update, (poll_save, crate::draft_capture::capture_drafts));
+        .add_systems(Update, (poll_save, crate::draft_capture::capture_drafts))
+        .add_systems(Last, crate::draft_capture::capture_on_exit);
 }
 
 #[derive(Event)]
