@@ -252,3 +252,7 @@ Draft loading also validates the asset with the normal project migration and
 material checks before returning it for restoration. Recovery callers must open
 it as an unsaved project; its recorded original path is informational. There is
 still no user-facing restore command or automatic snapshot lifecycle.
+
+The internal restore event rejects unsaved or actively edited projects and opens
+a validated draft with no assigned path and a dirty state. It has no visible
+selector yet; snapshot capture and recovery UI remain pending.

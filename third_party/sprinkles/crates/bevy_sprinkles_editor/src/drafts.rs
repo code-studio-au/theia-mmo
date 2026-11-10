@@ -7,6 +7,9 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use crate::state::{DirtyState, EditorState, Inspectable, Inspecting};
+use crate::ui::components::toasts::ToastEvent;
+use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
 const MAX_DRAFT_BYTES: u64 = 16 * 1024 * 1024;
@@ -54,6 +57,58 @@ pub enum RecoveryError {
     InvalidProject,
     UnknownVersion,
     UnsupportedMaterial,
+}
+
+#[derive(Resource)]
+pub struct RecoveryStore(pub DraftStore);
+
+impl Default for RecoveryStore {
+    fn default() -> Self {
+        Self(DraftStore::new(crate::io::data_dir().join("drafts")))
+    }
+}
+
+#[derive(Event)]
+pub struct RestoreDraftEvent(pub DraftId);
+
+pub(crate) fn restore_draft(
+    event: On<RestoreDraftEvent>,
+    store: Res<RecoveryStore>,
+    mut state: ResMut<EditorState>,
+    focus: Res<bevy::input_focus::InputFocus>,
+    tracker: Res<crate::project::TextFocusTracker>,
+    inputs: crate::ui::widgets::text_edit::SaveTextInputs,
+    mut dirty: ResMut<DirtyState>,
+    mut assets: ResMut<Assets<bevy_sprinkles::prelude::ParticlesAsset>>,
+    mut commands: Commands,
+) {
+    if dirty.has_unsaved_changes
+        || focus.get().is_some_and(|entity| inputs.contains(entity))
+        || tracker.0.is_some()
+    {
+        commands.trigger(ToastEvent::error(
+            "Finish editing and save the current particle project before restoring a draft",
+        ));
+        return;
+    }
+    let recovered = match store.0.recover(&event.0) {
+        Ok(recovered) => recovered,
+        Err(_) => {
+            commands.trigger(ToastEvent::error(
+                "Could not restore this particle draft; the draft was kept",
+            ));
+            return;
+        }
+    };
+    let has_emitters = !recovered.asset.emitters.is_empty();
+    state.current_project = Some(assets.add(recovered.asset));
+    state.current_project_path = None;
+    state.inspecting = has_emitters.then_some(Inspecting {
+        kind: Inspectable::Emitter,
+        index: 0,
+    });
+    dirty.has_unsaved_changes = true;
+    commands.trigger(ToastEvent::success("Draft restored as an unsaved project"));
 }
 
 #[derive(Debug, Clone)]
@@ -303,6 +358,99 @@ mod tests {
             Err(RecoveryError::InvalidProject)
         ));
         assert_eq!(std::fs::read(original).unwrap(), b"original");
+        assert_eq!(store.list().unwrap(), vec![id]);
+        std::fs::remove_dir_all(store.directory()).unwrap();
+    }
+
+    #[test]
+    fn restore_rejects_unsaved_work_and_opens_valid_draft_without_a_path() {
+        use bevy_sprinkles::prelude::*;
+        let store = store();
+        let path = store.directory().join("original.ron");
+        std::fs::create_dir_all(store.directory()).unwrap();
+        std::fs::write(&path, b"original").unwrap();
+        let asset = ParticlesAsset::new(
+            "Recovered".into(),
+            ParticlesDimension::D3,
+            default(),
+            vec![EmitterData::default()],
+            vec![],
+            false,
+            default(),
+        );
+        let id = store
+            .create(&Draft::new(
+                Some(path.clone()),
+                ron::to_string(&asset).unwrap(),
+            ))
+            .unwrap();
+        let mut app = App::new();
+        app.insert_resource(RecoveryStore(store.clone()))
+            .init_resource::<bevy::input_focus::InputFocus>()
+            .init_resource::<crate::project::TextFocusTracker>()
+            .init_resource::<EditorState>()
+            .init_resource::<DirtyState>()
+            .init_resource::<Assets<ParticlesAsset>>()
+            .add_observer(restore_draft);
+        let current = app
+            .world_mut()
+            .resource_mut::<Assets<ParticlesAsset>>()
+            .add(asset);
+        app.world_mut()
+            .resource_mut::<EditorState>()
+            .current_project = Some(current.clone());
+        app.world_mut()
+            .resource_mut::<DirtyState>()
+            .has_unsaved_changes = true;
+        app.world_mut().trigger(RestoreDraftEvent(id.clone()));
+        assert_eq!(
+            app.world()
+                .resource::<EditorState>()
+                .current_project
+                .as_ref(),
+            Some(&current)
+        );
+        assert!(app.world().resource::<DirtyState>().has_unsaved_changes);
+        app.world_mut()
+            .resource_mut::<DirtyState>()
+            .has_unsaved_changes = false;
+        let field = app
+            .world_mut()
+            .spawn((
+                crate::ui::widgets::text_edit::EditorTextEdit,
+                crate::ui::widgets::text_edit::TextEditVariant::Default,
+                bevy::text::EditableText::default(),
+            ))
+            .id();
+        app.world_mut()
+            .resource_mut::<bevy::input_focus::InputFocus>()
+            .set(field, bevy::input_focus::FocusCause::Navigated);
+        app.world_mut().trigger(RestoreDraftEvent(id.clone()));
+        assert_eq!(
+            app.world()
+                .resource::<EditorState>()
+                .current_project
+                .as_ref(),
+            Some(&current)
+        );
+        app.world_mut()
+            .resource_mut::<bevy::input_focus::InputFocus>()
+            .clear();
+        app.world_mut().trigger(RestoreDraftEvent(id.clone()));
+        let state = app.world().resource::<EditorState>();
+        let restored = state.current_project.as_ref().unwrap();
+        assert_ne!(restored, &current);
+        assert!(state.current_project_path.is_none());
+        assert_eq!(
+            app.world()
+                .resource::<Assets<ParticlesAsset>>()
+                .get(restored)
+                .unwrap()
+                .name,
+            "Recovered"
+        );
+        assert!(app.world().resource::<DirtyState>().has_unsaved_changes);
+        assert_eq!(std::fs::read(path).unwrap(), b"original");
         assert_eq!(store.list().unwrap(), vec![id]);
         std::fs::remove_dir_all(store.directory()).unwrap();
     }

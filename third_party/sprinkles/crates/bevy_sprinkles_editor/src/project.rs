@@ -18,7 +18,9 @@ use crate::ui::widgets::text_edit::{self, SaveTextInputs, TextEditCommitEvent};
 use crate::utils::{MAX_DISPLAY_PATH_LEN, simplify_path, truncate_path};
 
 pub fn plugin(app: &mut App) {
-    app.init_resource::<SaveCoordinator>()
+    app.init_resource::<crate::drafts::RecoveryStore>()
+        .add_observer(crate::drafts::restore_draft)
+        .init_resource::<SaveCoordinator>()
         .init_resource::<TextFocusTracker>()
         .add_observer(on_open_project_event)
         .add_observer(on_browse_open_project_event)
@@ -409,7 +411,7 @@ fn poll_browse_open_result(result: Option<Res<BrowseOpenResult>>, mut commands: 
 }
 
 #[derive(Resource, Default)]
-struct TextFocusTracker(Option<Entity>);
+pub(crate) struct TextFocusTracker(pub(crate) Option<Entity>);
 
 fn track_text_focus(
     focus: Res<InputFocus>,
