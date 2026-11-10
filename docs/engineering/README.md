@@ -1,3 +1,12 @@
+P5-17 property action popover, 11 November 2026: a Sprinkles more icon opens
+one unclipped native popover over shared selection actions; guide point controls
+appear only for guides. Guard document/revision/selection/point, including the
+explorer row menu, and commit a focused field before opening. All 122 editor
+tests, fmt and strict workspace/all-target Clippy pass. Input-free virtual-X
+captures of the far spawn and open popup pass on llvmpipe Vulkan with zero GPU
+diagnostics. Actual RX 7900 XTX/native input checks remain pending while the user
+reserves mouse and keyboard. See [record](../EDITOR_UI_REFINEMENT.md).
+
 P5-17 inline player spawn, 11 November 2026: explorer selection and Zone → Edit
 spawn show permanent exact X/Y/Z fields in the left inspector; shared validation,
 undo and explicit Save apply. All 114 editor tests, fmt and strict workspace/

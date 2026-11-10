@@ -145,7 +145,7 @@ fn native_row_menu_selects_context_and_duplicates_exactly_once_through_shared_co
 }
 #[test]
 fn row_context_refuses_stale_selection_revision_and_unfocused_or_owned_gestures() {
-    for cause in 0..6 {
+    for cause in 0..8 {
         let (mut app, window) = fixture([0.; 3]);
         let popup = open(&mut app, 7, cause % 2 == 0);
         let delete = item(&mut app, popup, workspace::Control::Command(Action::Delete));
@@ -166,13 +166,15 @@ fn row_context_refuses_stale_selection_revision_and_unfocused_or_owned_gestures(
             2 => app.world_mut().get_mut::<Window>(window).unwrap().focused = false,
             3 => app.world_mut().resource_mut::<Session>().ui.input_owned = true,
             4 => app.world_mut().resource_mut::<outliner::Content>().page = 1,
-            _ => {
+            5 => {
                 app.world_mut()
                     .resource_mut::<outliner::Content>()
                     .set_query("Block 8")
                     .unwrap();
                 app.update();
             }
+            6 => app.world_mut().resource_mut::<Session>().document_id += 1,
+            _ => app.world_mut().resource_mut::<Session>().path_point = Some(1),
         }
         let source = app.world().resource::<Session>().editor.zone().clone();
         let history = app.world().resource::<Session>().editor.history();

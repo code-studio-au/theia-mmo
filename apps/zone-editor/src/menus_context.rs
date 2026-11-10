@@ -8,17 +8,20 @@ use bevy::ui_widgets::popover::{Popover, PopoverAlign, PopoverPlacement, Popover
 #[derive(Component)]
 pub(super) struct State {
     row: usize,
-    snapshot: Option<(outliner::Target, u64)>,
+    snapshot: Option<(outliner::Target, u64, u64, Option<usize>)>,
 }
 impl State {
     pub(super) fn valid(&self, session: &Session, content: &outliner::Content) -> bool {
-        self.snapshot.is_some_and(|(target, revision)| {
-            session.editor.revision() == revision
-                && outliner::selection(session) == Some(target)
-                && content
-                    .row(self.row)
-                    .is_some_and(|entry| entry.target == target)
-        })
+        self.snapshot
+            .is_some_and(|(target, revision, document_id, point)| {
+                session.editor.revision() == revision
+                    && session.document_id == document_id
+                    && session.path_point == point
+                    && outliner::selection(session) == Some(target)
+                    && content
+                        .row(self.row)
+                        .is_some_and(|entry| entry.target == target)
+            })
     }
 }
 #[derive(Component)]
@@ -174,7 +177,12 @@ pub(super) fn spawn(parent: &mut ChildSpawnerCommands, row: usize) {
                 if let Some(target) =
                     outliner::select_row(row, 1, &content, &mut session, &mut view)
                 {
-                    context.snapshot = Some((target, session.editor.revision()));
+                    context.snapshot = Some((
+                        target,
+                        session.editor.revision(),
+                        session.document_id,
+                        session.path_point,
+                    ));
                     node.display = Display::Flex;
                     *menu_focus = MenuFocusState::Opening(nav);
                 }

@@ -16,6 +16,7 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--output', required=True, type=Path)
 parser.add_argument('--xvfb', default=shutil.which('Xvfb'))
 parser.add_argument('--case', choices=['local', 'far'], default='local')
+parser.add_argument('--view', choices=['startup', 'spawn', 'property-actions'], default='startup')
 args = parser.parse_args()
 if not args.xvfb:
     parser.error('Provide --xvfb or install Xvfb')
@@ -54,8 +55,11 @@ try:
                                       THEIA_PARTICLE_EDITOR_DATA_DIR=str(data)))
         env.pop('WAYLAND_DISPLAY', None)
         with (out / 'editor.log').open('w') as log:
-            editor = subprocess.Popen([str(binary), '--zone', str(source), '--capture', str(out / 'capture.png'),
-                                       '--report', str(out / 'state.json')], env=env, stdout=log, stderr=log)
+            command = [str(binary), '--zone', str(source), '--capture', str(out / 'capture.png'),
+                       '--report', str(out / 'state.json')]
+            if args.view != 'startup':
+                command.extend(['--capture-view', args.view])
+            editor = subprocess.Popen(command, env=env, stdout=log, stderr=log)
             editor.wait(timeout=120)
         if editor.returncode != 0:
             raise RuntimeError(f'Editor exited with code {editor.returncode}')
@@ -64,10 +68,18 @@ try:
         state = json.loads((out / 'state.json').read_text())
         assert state['document'] == document
         assert state['revision'] == 0
+        if args.view == 'spawn':
+            assert len(state['inline_attributes']) == 3 and not state['inline_names']
+            actual = {field['field']: float(field['value']) for field in state['inline_attributes']}
+            assert [actual[i] for i in range(3)] == document['spawn']
+        if args.view == 'property-actions':
+            assert state['selected'] == 1
+            assert any(menu['name'] == 'Property actions' and menu['role'] == 'popup'
+                       and min(menu['size']) > 0 for menu in state['menus'])
         assert (out / 'capture.png').stat().st_size > 0
-        result = dict(case=args.case, binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),
+        result = dict(case=args.case, view=args.view, binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),
                       gpu=state['gpu'], viewport=state['viewport'], source_preserved=True,
-                      input='none', scope='startup rendering only; no selected spawn or native interaction',
+                      input='none', scope='rendered capture with programmatic setup; no native interaction',
                       gpu_diagnostics=gpu_diagnostics)
         (out / 'qualification.json').write_text(json.dumps(result, indent=2))
         print(json.dumps(result))

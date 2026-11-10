@@ -532,7 +532,23 @@ fn run() -> Result<(), String> {
     let path = options.editor_path();
     let saved_zone = Zone::load(&path).ok();
     let mut app = App::new();
-    app.insert_resource(Session::new(editor, path, saved_zone));
+    let mut session = Session::new(editor, path, saved_zone);
+    match options.capture_view {
+        Some(cli::CaptureView::Spawn) => session.inspect_spawn = true,
+        Some(cli::CaptureView::PropertyActions) => {
+            session.selected = Some(
+                session
+                    .editor
+                    .zone()
+                    .objects
+                    .first()
+                    .ok_or("--capture-view property-actions requires an object")?
+                    .id,
+            );
+        }
+        None => {}
+    }
+    app.insert_resource(session);
     app.insert_resource(View {
         target: initial_target.unwrap_or(Vec3::ZERO),
         yaw: 0.6,
@@ -655,7 +671,11 @@ fn run() -> Result<(), String> {
     .add_systems(FixedUpdate, playtest::step)
     .add_systems(Last, viewport::report);
     if let Some(path) = options.capture {
-        app.insert_resource(viewport::Capture { path, frames: 0 });
+        app.insert_resource(viewport::Capture {
+            path,
+            frames: 0,
+            view: options.capture_view,
+        });
     }
     if let Some(path) = options.report {
         app.insert_resource(viewport::Report { path, elapsed: 0. });

@@ -253,9 +253,53 @@ software Vulkan ICD when the virtual server lacks DRI3. A future native check is
 prepared with `tools/qualify_zone_dock.py --spawn --inline --categories --names`;
 its spawn path has only been syntax/help checked, not executed.
 
+## Implemented checkpoint: property action popover — 11 November 2026
+
+The selected-content inspector uses the original Sprinkles more icon to open one
+native Bevy popover beside its compact metadata. Rename, focus attributes,
+duplicate, ground, frame and delete use existing validated commands. Guide point
+controls have their own Path points section and appear only for a selected guide;
+the redundant Selection button row is gone. Menu items use transparent Ghost
+backgrounds and the popover owns a single one-pixel frame. It can escape the
+scroll clip and chooses a window-safe placement in a short/narrow inspector.
+
+An open menu snapshots target, document identity, revision and selected guide point;
+selection/document/point/revision changes, panel collapse, category changes or
+window focus loss invalidate it. The explorer row menu now also guards document
+identity and guide point. Opening the property menu while editing first blurs and
+commits the valid field, then snapshots the updated target; if focus moves away
+before that transition it cancels the pending open. Rename focuses the permanent
+Name field. No action or menu change writes the source file without Save.
+
+Validation: **122 editor tests**, fmt/diff and strict workspace/all-target Clippy
+pass. Headless native Bevy event and layout tests cover direct and deferred menu
+opening, rename, one duplicate, undo, replay/stale guards, guide visibility,
+short-window placement, clipping and one-frame/transparent-item styling. The new
+capture view sets selection and opens the popup through an internal Bevy event;
+it does not generate OS input. Separate isolated Xvfb renders at the far origin
+show the selected spawn and open property popover on **llvmpipe (LLVM 21.1.8,
+256 bits), Vulkan**, both with zero GPU diagnostics and preserved source. The
+hardware RX 7900 XTX/native mouse/keyboard checks remain pending: Xvfb lacks
+DRI3 and the user has reserved their input devices. No Windows execution claim.
+Executable SHA-256:
+`1802eb25f3c0f7c35c93439ac387aca2e4ccc973b272e4a7bd7eb4c85b858fd5`.
+
+Evidence (ignored):
+
+- `build/sprinkles-review/property-actions-tests-final-v3.log`
+- `build/sprinkles-review/property-actions-clippy-final.log`
+- `build/zone-property-actions-virtual-20261111-far-v1/qualification.json`
+- `build/zone-inline-spawn-virtual-20261111-far-v2/qualification.json`
+
+Use `tools/qualify_zone_virtual_gpu.py --view property-actions|spawn` with the
+virtual-X arguments above. The future native qualifier supports
+`tools/qualify_zone_dock.py --property-actions --spawn --inline --categories --names`;
+the new native paths are prepared and syntax/help checked, not run. Owned virtual
+servers and editor processes close after each run.
+
 ## Remaining requested refinement
 
-This does **not** complete the reopened UI refinement. Finish three-dot accessors and popup cleanup.
+This does **not** complete the reopened UI refinement. Qualify the new spawn and property popover on the native hardware once input devices are available.
 The retained exact form serves internal regression fixtures; it is not the normal
 selected-object or spawn numeric workflow.
 Reuse actual Sprinkles components where compatible; retain exact f64 adapters

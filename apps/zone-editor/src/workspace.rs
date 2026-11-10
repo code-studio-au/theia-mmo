@@ -234,50 +234,69 @@ pub(super) fn setup(
                     |root| {
                         scrolling::pane(root, 12., scrolling::Pane::Workspace, |panel| {
                             property_tabs::group(panel, property_tabs::Tab::Attributes, |panel| {
-                                panel.spawn((Info, text("", 14.)));
+                                panel
+                                    .spawn(Node {
+                                        width: percent(100),
+                                        align_items: AlignItems::Center,
+                                        column_gap: px(8),
+                                        ..default()
+                                    })
+                                    .with_children(|row| {
+                                        row.spawn((
+                                            Info,
+                                            text("", 14.),
+                                            Node {
+                                                width: px(0),
+                                                min_width: px(0),
+                                                flex_grow: 1.,
+                                                ..default()
+                                            },
+                                        ));
+                                        menus::spawn_property_actions(
+                                            row,
+                                            server.as_deref().filter(|_| images.is_some()),
+                                        );
+                                    });
                                 properties::setup_summary(panel);
-                                sections::spawn(panel, "Selection", |panel| {
-                                    panel
-                                        .spawn(Node {
-                                            flex_wrap: FlexWrap::Wrap,
-                                            column_gap: px(6),
-                                            row_gap: px(6),
+                                panel
+                                    .spawn((
+                                        menus::GuideControls,
+                                        Visibility::Hidden,
+                                        Node {
+                                            display: Display::None,
+                                            width: percent(100),
+                                            flex_direction: FlexDirection::Column,
                                             ..default()
-                                        })
-                                        .with_children(|row| {
-                                            for (control, label) in [
-                                                (Control::Command(Action::Duplicate), "Duplicate"),
-                                                (Control::Command(Action::Ground), "Ground"),
-                                                (Control::Frame, "Frame"),
-                                            ] {
-                                                row.spawn(button(control, label));
-                                            }
+                                        },
+                                    ))
+                                    .with_children(|panel| {
+                                        sections::spawn(panel, "Path points", |panel| {
+                                            panel
+                                                .spawn(Node {
+                                                    flex_wrap: FlexWrap::Wrap,
+                                                    column_gap: px(6),
+                                                    row_gap: px(6),
+                                                    ..default()
+                                                })
+                                                .with_children(|row| {
+                                                    for (control, label) in [
+                                                        (Control::Point(-1), "Previous point"),
+                                                        (Control::Point(1), "Next point"),
+                                                        (Control::WholePath, "Whole guide"),
+                                                        (
+                                                            Control::Command(Action::InsertPoint),
+                                                            "Insert point",
+                                                        ),
+                                                        (
+                                                            Control::Command(Action::RemovePoint),
+                                                            "Remove point",
+                                                        ),
+                                                    ] {
+                                                        row.spawn(button(control, label));
+                                                    }
+                                                });
                                         });
-                                    panel
-                                        .spawn(Node {
-                                            flex_wrap: FlexWrap::Wrap,
-                                            column_gap: px(6),
-                                            row_gap: px(6),
-                                            ..default()
-                                        })
-                                        .with_children(|row| {
-                                            for (control, label) in [
-                                                (Control::Point(-1), "Previous point"),
-                                                (Control::Point(1), "Next point"),
-                                                (Control::WholePath, "Whole guide"),
-                                                (
-                                                    Control::Command(Action::InsertPoint),
-                                                    "Insert point",
-                                                ),
-                                                (
-                                                    Control::Command(Action::RemovePoint),
-                                                    "Remove point",
-                                                ),
-                                            ] {
-                                                row.spawn(button(control, label));
-                                            }
-                                        });
-                                });
+                                    });
                             });
                             property_tabs::group(panel, property_tabs::Tab::View, |panel| {
                                 sections::spawn(panel, "Viewport", |panel| {
@@ -759,6 +778,7 @@ pub(super) fn sync(
             Has<Checked>,
             Has<InteractionDisabled>,
             Has<sidebar::RailButton>,
+            Has<bevy::ui_widgets::MenuItem>,
         ),
         Without<Thumb>,
     >,
@@ -809,8 +829,18 @@ pub(super) fn sync(
             Display::None
         };
     }
-    for (entity, control, children, hovered, mut background, mut node, checked, disabled, rail) in
-        &mut controls
+    for (
+        entity,
+        control,
+        children,
+        hovered,
+        mut background,
+        mut node,
+        checked,
+        disabled,
+        rail,
+        menu_item,
+    ) in &mut controls
     {
         node.display = if matches!(
             control,
@@ -850,6 +880,8 @@ pub(super) fn sync(
                 theme::Variant::Disabled.background(false)
             } else if active {
                 theme::Variant::Active.background(false)
+            } else if menu_item {
+                theme::Variant::Ghost.background(hovered.0)
             } else if hovered.0 {
                 theme::Variant::Default.background(true)
             } else {

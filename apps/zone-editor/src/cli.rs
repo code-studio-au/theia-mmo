@@ -4,6 +4,12 @@ use std::{
 };
 use theia_zone::{Command, Editor, MAX_DOCUMENT_BYTES, Result, Zone};
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CaptureView {
+    Spawn,
+    PropertyActions,
+}
+
 #[derive(Default)]
 pub struct Options {
     pub zone: Option<PathBuf>,
@@ -13,6 +19,7 @@ pub struct Options {
     pub headless: bool,
     pub check_playtest: bool,
     pub capture: Option<PathBuf>,
+    pub capture_view: Option<CaptureView>,
     pub report: Option<PathBuf>,
     pub mailbox: Option<PathBuf>,
     pub export: Option<PathBuf>,
@@ -41,6 +48,13 @@ impl Options {
                 }
                 "--capture" => {
                     result.capture = Some(args.next().ok_or("--capture needs a PNG path")?.into())
+                }
+                "--capture-view" => {
+                    result.capture_view = Some(match args.next().as_deref() {
+                        Some("spawn") => CaptureView::Spawn,
+                        Some("property-actions") => CaptureView::PropertyActions,
+                        _ => return Err("--capture-view requires spawn or property-actions".into()),
+                    });
                 }
                 "--report" => {
                     result.report = Some(args.next().ok_or("--report needs a path")?.into())
@@ -73,7 +87,7 @@ impl Options {
                 }
                 "--help" => {
                     println!(
-                        "theia-zone-editor [--zone FILE] [--commands JSONL] [--output FILE] [--save-path FILE] [--headless] [--check-playtest] [--capture PNG] [--report JSON] [--mailbox DIR] [--export NEW_DIR --content-id ID --revision N]\n\nCommands use the same transaction/undo engine as the viewport. Use --commands - to read bounded JSONL from stdin through EOF, with the same byte/line limits as a command file. Headless mode validates and prints the final revision without opening a window. Check-playtest is read-only: it builds the actual offline collision scene, checks the requested capsule spawn and prints JSON without opening a window. It cannot be combined with --output or --export. Output writes only after every command succeeds. Save-path changes the later editor save target without writing at startup."
+                        "theia-zone-editor [--zone FILE] [--commands JSONL] [--output FILE] [--save-path FILE] [--headless] [--check-playtest] [--capture PNG] [--capture-view spawn|property-actions] [--report JSON] [--mailbox DIR] [--export NEW_DIR --content-id ID --revision N]\n\nCommands use the same transaction/undo engine as the viewport. Use --commands - to read bounded JSONL from stdin through EOF, with the same byte/line limits as a command file. Headless mode validates and prints the final revision without opening a window. Check-playtest is read-only: it builds the actual offline collision scene, checks the requested capsule spawn and prints JSON without opening a window. It cannot be combined with --output or --export. Output writes only after every command succeeds. Save-path changes the later editor save target without writing at startup."
                     );
                     std::process::exit(0);
                 }
@@ -90,6 +104,9 @@ impl Options {
             result.headless = true;
         } else if result.content_id.is_some() || result.revision.is_some() {
             return Err("Content identity options require --export".into());
+        }
+        if result.capture_view.is_some() && result.capture.is_none() {
+            return Err("--capture-view requires --capture".into());
         }
         if result.headless
             && (result.capture.is_some() || result.report.is_some() || result.mailbox.is_some())

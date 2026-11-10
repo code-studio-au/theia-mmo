@@ -2,6 +2,8 @@
 use super::*;
 #[path = "menus_context.rs"]
 mod context;
+#[path = "menus_property_actions.rs"]
+mod property_actions;
 #[path = "menus_select.rs"]
 mod select;
 use bevy::input_focus::{
@@ -17,9 +19,20 @@ pub(super) struct Trigger(pub &'static str);
 pub(super) struct Popup(pub &'static str);
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_observer(activate)
-        .add_plugins((context::plugin, select::plugin));
+    app.add_observer(activate).add_plugins((
+        context::plugin,
+        property_actions::plugin,
+        select::plugin,
+    ));
 }
+
+pub(super) fn spawn_property_actions(
+    parent: &mut ChildSpawnerCommands,
+    server: Option<&AssetServer>,
+) {
+    property_actions::spawn(parent, server);
+}
+pub(super) use property_actions::GuideControls;
 
 pub(super) fn spawn_select(parent: &mut ChildSpawnerCommands, kind: SelectKind) {
     select::spawn(parent, kind);
@@ -164,6 +177,8 @@ fn activate(
     mut commands: Commands,
     parents: Query<&ChildOf>,
     contexts: Query<&context::State>,
+    property_contexts: Query<&property_actions::State>,
+    tabs: Option<Res<property_tabs::State>>,
 ) {
     if !windows.single().is_ok_and(|w| w.focused) {
         return;
@@ -175,6 +190,10 @@ fn activate(
         .iter_ancestors(event.entity)
         .find_map(|entity| contexts.get(entity).ok())
         .is_some_and(|context| !context.valid(&session, &content))
+        || parents
+            .iter_ancestors(event.entity)
+            .find_map(|entity| property_contexts.get(entity).ok())
+            .is_some_and(|context| !context.valid(&session, tabs.as_deref()))
     {
         session.status = "Content changed; reopen its actions menu".into();
         commands.trigger(MenuEvent {

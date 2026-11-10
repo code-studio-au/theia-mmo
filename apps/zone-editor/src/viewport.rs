@@ -393,17 +393,32 @@ pub(super) fn pointer(
 pub(super) struct Capture {
     pub path: PathBuf,
     pub frames: u32,
+    pub view: Option<cli::CaptureView>,
 }
 pub(super) fn capture(
     mut commands: Commands,
     capture: Option<ResMut<Capture>>,
     adapter: Res<RenderAdapterInfo>,
     session: Res<Session>,
+    triggers: Query<(Entity, &menus::Trigger)>,
 ) {
     let Some(mut capture) = capture else {
         return;
     };
     capture.frames += 1;
+    if capture.frames == 30
+        && capture.view == Some(cli::CaptureView::PropertyActions)
+        && let Some((entity, _)) = triggers
+            .iter()
+            .find(|(_, trigger)| trigger.0 == "Property actions")
+    {
+        commands.trigger(bevy::ui_widgets::MenuEvent {
+            source: entity,
+            action: bevy::ui_widgets::MenuAction::Open(
+                bevy::input_focus::tab_navigation::NavAction::First,
+            ),
+        });
+    }
     if capture.frames == 90 {
         let path = capture.path.clone();
         info!(

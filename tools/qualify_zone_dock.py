@@ -14,6 +14,7 @@ parser.add_argument('--categories', action='store_true')
 parser.add_argument('--toolbar', action='store_true')
 parser.add_argument('--names', action='store_true')
 parser.add_argument('--spawn', action='store_true')
+parser.add_argument('--property-actions', action='store_true')
 args = parser.parse_args()
 out = args.output.resolve()
 out.mkdir(parents=True, exist_ok=False)
@@ -263,6 +264,45 @@ try:
             fresh()
             click(next(c for c in state()['content_list']['controls'] if c['target'] == 'Object(1)')['centre'])
             wait(lambda: state()['selected'] == 1 and len(state()['inline_attributes']) == 7)
+        if args.property_actions:
+            assert state()['selected'] == 1
+            name_field = state()['inline_names'][0]
+            click(name_field['centre'])
+            chord('a')
+            desktop.key('BackSpace')
+            for char in 'menu text':
+                desktop.key('space' if char == ' ' else char)
+            wait(lambda: state()['inline_names'][0]['value'] == 'menu text')
+            def open_property_actions():
+                trigger = next(c for c in state()['menus'] if c['name'] == 'Property actions' and c['role'] == 'button' and min(c['size']) > 0)
+                click(trigger['centre'])
+                wait(lambda: any(c['name'] == 'Property actions' and c['role'] == 'popup' and min(c['size']) > 0 for c in state()['menus']))
+                return next(c for c in state()['menus'] if c['name'] == 'Property actions' and c['role'] == 'popup')
+            def property_item(popup, target):
+                x, y = popup['centre']
+                w, h = popup['size']
+                return next(c for c in state()['workspace_controls'] if c['target'] == target and c['menu_item']
+                            and min(c['size']) > 0 and abs(c['centre'][0] - x) < w / 2 and abs(c['centre'][1] - y) < h / 2)
+            popup = open_property_actions()
+            wait(lambda: state()['document']['objects'][0]['name'] == 'menu text')
+            assert source.read_bytes() == original and state()['transform_edit'] is None
+            capture('property-actions.png')
+            click(property_item(popup, 'Command(Duplicate)')['centre'])
+            wait(lambda: len(state()['document']['objects']) == len(initial['objects']) + 1)
+            chord('z')
+            chord('z')
+            wait(lambda: state()['document'] == initial)
+            assert source.read_bytes() == original
+            click(next(c for c in state()['content_list']['controls'] if c['target'] == 'Object(1)')['centre'])
+            wait(lambda: state()['selected'] == 1)
+            popup = open_property_actions()
+            click(property_item(popup, 'Rename')['centre'])
+            wait(lambda: state()['inline_names'] and state()['inline_names'][0]['focused'])
+            assert state()['name_edit'] is None and state()['document'] == initial
+            desktop.key('Escape')
+            fresh()
+            revision = state()['revision']
+            history = state()['history']
         if args.inline:
 
             def edit_field(index, value):
@@ -336,7 +376,7 @@ try:
         click(next((c for c in state()['content_list']['controls'] if c['target'] == 'Object(1)'))['centre'])
         wait(lambda: state()['selected'] == 1)
         capture('status-bar-final.png')
-        result = dict(spawn_verified=args.spawn, names_verified=args.names, toolbar_verified=args.toolbar, categories_verified=args.categories, inline_verified=args.inline, binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(), adapter=state()['gpu'], layout=state()['ui_layout'], revision=state()['revision'], history=state()['history'], source_preserved_before_save=True, source_json_preserved=json.loads(source.read_text()) == initial)
+        result = dict(property_actions_verified=args.property_actions, spawn_verified=args.spawn, names_verified=args.names, toolbar_verified=args.toolbar, categories_verified=args.categories, inline_verified=args.inline, binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(), adapter=state()['gpu'], layout=state()['ui_layout'], revision=state()['revision'], history=state()['history'], source_preserved_before_save=True, source_json_preserved=json.loads(source.read_text()) == initial)
 finally:
     desktop.close()
     if process is not None and process.poll() is None:

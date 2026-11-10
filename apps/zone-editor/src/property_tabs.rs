@@ -140,7 +140,7 @@ fn activate(
     focus.set(event.entity, FocusCause::Navigated);
 }
 
-fn sync(
+pub(super) fn sync(
     session: Res<Session>,
     mut state: ResMut<State>,
     mut groups: Query<(&Group, &mut Node, &mut Visibility)>,
