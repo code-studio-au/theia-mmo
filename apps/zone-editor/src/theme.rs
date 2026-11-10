@@ -378,9 +378,13 @@ fn input_states(
     }
 }
 
+#[allow(clippy::type_complexity)]
 fn numeric_frames(
     focus: Option<Res<bevy::input_focus::InputFocus>>,
-    mut frames: Query<(&Children, &mut BorderColor), With<properties::FieldRow>>,
+    mut frames: Query<
+        (&Children, &mut BorderColor),
+        Or<(With<properties::FieldRow>, With<properties::InlineFrame>)>,
+    >,
 ) {
     let active = focus.as_ref().and_then(|focus| focus.get());
     for (children, mut border) in &mut frames {

@@ -2,7 +2,10 @@
 
 The user reopens P5-17 usability refinement after reviewing the integrated UI.
 Adopt inline value editing with immediate application and no separate Apply/edit
-panel in the normal workflow. Valid edits mark the document dirty; the user
+panel in the normal workflow. Numeric attributes must be permanent visible
+textboxes, directly editable without a click-to-reveal state. A single outer
+frame owns background/border; its transparent text area must remain centred
+inside the frame in both focused and unfocused states. Valid edits mark the document dirty; the user
 explicitly chooses Save for disk writes. Preserve exact f64 coordinates,
 validation and undo/redo. Keep the dock on the left, following the user's explicit correction. Stack a persistent object explorer above selected
 attributes with a draggable horizontal divider; both panels must be independently

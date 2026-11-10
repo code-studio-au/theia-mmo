@@ -130,7 +130,7 @@ pub(super) fn spawn(parent: &mut ChildSpawnerCommands, row: usize) {
                     menu,
                     &[
                         (workspace::Control::Rename, "Rename…", "F8"),
-                        (workspace::Control::Transform, "Edit attributes…", "F9"),
+                        (workspace::Control::Transform, "Focus attributes", "F9"),
                         (
                             workspace::Control::Command(Action::Duplicate),
                             "Duplicate",

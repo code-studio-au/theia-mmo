@@ -1,21 +1,23 @@
-//! Compact read-only attribute rows over the exact editor's validated snapshot.
+//! Grouped attributes with inline editors over the validated exact snapshot.
 use super::*;
 use crate::particle_workspace::ZoneAppExt;
 #[derive(Component)]
-struct Root(Option<Key>);
+pub(super) struct Root(pub(super) Option<Key>);
 #[derive(Clone, Copy, PartialEq, Eq)]
-struct Key {
+pub(super) struct Key {
     id: Option<u64>,
     kind: std::mem::Discriminant<Target>,
     point: Option<usize>,
     revision: u64,
+    document_id: u64,
 }
 impl Key {
-    fn new(id: Option<u64>, target: &Target, session: &Session) -> Self {
+    pub(super) fn new(id: Option<u64>, target: &Target, session: &Session) -> Self {
         Self {
             id,
             kind: std::mem::discriminant(target),
             revision: session.editor.revision(),
+            document_id: session.document_id,
             point: match target {
                 Target::Path { point, .. } => *point,
                 _ => None,
@@ -24,15 +26,17 @@ impl Key {
     }
 }
 #[derive(Component)]
-struct ValueButton(usize);
+pub(crate) struct Frame;
 #[derive(Component)]
 struct Row(usize);
+#[derive(Component)]
+struct Heading(usize);
 #[derive(Component)]
 struct Label(usize);
 #[derive(Component)]
 pub(crate) struct Value(pub(crate) usize);
 
-fn snapshot(session: &Session) -> Option<(Option<u64>, Target, String)> {
+pub(super) fn snapshot(session: &Session) -> Option<(Option<u64>, Target, String)> {
     if session.play.is_some() || session.palette.is_some() || session.path_draft.is_some() {
         return None;
     }
@@ -68,6 +72,9 @@ pub(super) fn spawn(parent: &mut ChildSpawnerCommands) {
     parent
         .spawn((
             Root(None),
+            // Keep Tab within the visible numeric form; mouse focus can leave it.
+            TabGroup::modal(),
+            Visibility::Hidden,
             Pickable::IGNORE,
             Node {
                 display: Display::None,
@@ -80,8 +87,21 @@ pub(super) fn spawn(parent: &mut ChildSpawnerCommands) {
         ))
         .with_children(|root| {
             for index in 0..7 {
+                if matches!(index, 0 | 3 | 4) {
+                    root.spawn((
+                        Heading(index),
+                        theme::label("", 12., theme::DISPLAY),
+                        Pickable::IGNORE,
+                        Node {
+                            display: Display::None,
+                            margin: UiRect::top(px(8)),
+                            ..default()
+                        },
+                    ));
+                }
                 root.spawn((
                     Row(index),
+                    Visibility::Hidden,
                     Pickable::IGNORE,
                     Node {
                         display: Display::None,
@@ -111,11 +131,7 @@ pub(super) fn spawn(parent: &mut ChildSpawnerCommands) {
                         },
                     ));
                     row.spawn((
-                        ValueButton(index),
-                        Button,
-                        ActivateOnPress,
-                        Hovered::default(),
-                        theme::Variant::Ghost,
+                        Frame,
                         Node {
                             min_width: px(0),
                             width: px(0),
@@ -124,74 +140,73 @@ pub(super) fn spawn(parent: &mut ChildSpawnerCommands) {
                             height: px(28),
                             min_height: px(28),
                             align_items: AlignItems::Center,
-                            overflow: Overflow::clip_x(),
+                            border: UiRect::all(px(1)),
+                            border_radius: BorderRadius::all(px(2)),
+                            overflow: Overflow::clip(),
                             ..default()
                         },
-                        BackgroundColor(theme::Variant::Ghost.background(false)),
+                        BorderColor::all(theme::BORDER),
+                        BackgroundColor(theme::Variant::Default.background(false)),
                     ))
                     .with_child((
                         Value(index),
+                        super::inline::Input(index),
+                        FramedInput,
+                        TextInput,
+                        SelectAllOnFocus,
+                        TabIndex(index as i32),
                         Hovered::default(),
-                        Text::new(""),
+                        EditableText {
+                            max_characters: Some(64),
+                            allow_newlines: false,
+                            ..default()
+                        },
+                        Node {
+                            min_width: px(0),
+                            flex_grow: 1.,
+                            height: Val::Auto,
+                            min_height: px(16),
+                            overflow: Overflow::clip(),
+                            ..default()
+                        },
+                        BorderColor::all(Color::NONE),
+                        BackgroundColor(Color::NONE),
                         theme::input_font(),
                         TextColor(theme::BODY),
                         TextLayout::no_wrap(),
-                        Pickable::IGNORE,
+                        theme::text_cursor(),
                     ));
                 });
             }
-        })
-        .with_child((
-            theme::label("Select a value to edit attributes", 10., theme::MUTED),
-            Pickable::IGNORE,
-        ));
+        });
 }
 pub(super) fn plugin(app: &mut App) {
-    app.add_observer(open_value)
+    app.add_plugins(super::inline::plugin)
         .add_zone_systems(sync.after(crate::present));
 }
-fn open_value(
-    event: On<Activate>,
-    buttons: Query<&ValueButton>,
-    roots: Query<&Root>,
-    windows: Query<&Window>,
-    mut session: ResMut<Session>,
-    mut requests: ResMut<workspace::Requests>,
-) {
-    let Ok(button) = buttons.get(event.entity) else {
-        return;
-    };
-    if workspace::busy(&session) || !windows.single().is_ok_and(|window| window.focused) {
-        return;
-    }
-    let Some((id, target, _)) = snapshot(&session) else {
-        return;
-    };
-    if button.0 >= target.labels().len() {
-        return;
-    }
-    if !roots
-        .single()
-        .is_ok_and(|root| root.0 == Some(Key::new(id, &target, &session)))
-    {
-        session.status = "Selection changed; choose an updated attribute".into();
-        return;
-    }
-    requests.transform = true;
-    requests.transform_field = Some(button.0);
-}
-#[allow(clippy::type_complexity)]
+#[allow(clippy::type_complexity, clippy::too_many_arguments)]
 fn sync(
     session: Res<Session>,
-    mut roots: Query<(&mut Root, &mut Node)>,
-    mut rows: Query<(&Row, &mut Node), Without<Root>>,
+    mut roots: Query<(&mut Root, &mut Node, &mut Visibility)>,
+    mut rows: Query<(&Row, &mut Node, &mut Visibility), Without<Root>>,
     mut labels: Query<(&Label, &mut Text)>,
-    mut values: Query<(&Value, &mut Text), Without<Label>>,
-    buttons: Query<(Entity, Has<InteractionDisabled>), With<ValueButton>>,
+    mut values: Query<(Entity, &Value, &mut EditableText), Without<Label>>,
+    inputs: Query<(Entity, Has<InteractionDisabled>), With<Value>>,
     mut commands: Commands,
+    focus: Res<InputFocus>,
+    editing: Res<super::inline::State>,
+    mut headings: Query<
+        (&Heading, &mut Node, &mut Text),
+        (Without<Root>, Without<Row>, Without<Label>, Without<Value>),
+    >,
 ) {
     let snapshot = snapshot(&session);
-    for (mut root, mut node) in &mut roots {
+    for (mut root, mut node, mut visibility) in &mut roots {
+        *visibility = if snapshot.is_some() {
+            Visibility::Inherited
+        } else {
+            Visibility::Hidden
+        };
         root.0 = snapshot
             .as_ref()
             .map(|(id, target, _)| Key::new(*id, target, &session));
@@ -205,7 +220,7 @@ fn sync(
         }
     }
     let enabled = !workspace::busy(&session);
-    for (entity, disabled) in &buttons {
+    for (entity, disabled) in &inputs {
         if disabled == enabled {
             if enabled {
                 commands.entity(entity).remove::<InteractionDisabled>();
@@ -218,7 +233,30 @@ fn sync(
         return;
     };
     let fields = target.values();
-    for (row, mut node) in &mut rows {
+    for (heading, mut node, mut text) in &mut headings {
+        let title = match (&target, heading.0) {
+            (Target::Path { point: None, .. }, 0) => "Path",
+            (_, 0) => "Position",
+            (Target::Path { point: Some(_), .. }, 3) => "Path",
+            (_, 3) => "Rotation",
+            (Target::Object(_), 4) => "Dimensions",
+            (Target::Plant(_), 4) => "Scale",
+            (Target::Marker(_), 4) => "Area",
+            _ => "",
+        };
+        node.display = if heading.0 < fields.len() && !title.is_empty() {
+            Display::Flex
+        } else {
+            Display::None
+        };
+        **text = title.into();
+    }
+    for (row, mut node, mut visibility) in &mut rows {
+        *visibility = if row.0 < fields.len() {
+            Visibility::Inherited
+        } else {
+            Visibility::Hidden
+        };
         let display = if row.0 < fields.len() {
             Display::Flex
         } else {
@@ -235,11 +273,13 @@ fn sync(
             **text = (*next).into();
         }
     }
-    for (value, mut text) in &mut values {
-        if let Some(next) = fields.get(value.0)
-            && **text != *next
+    for (entity, value, mut text) in &mut values {
+        if focus.get() != Some(entity)
+            && !editing.owns(entity)
+            && let Some(next) = fields.get(value.0)
+            && text.value() != next.as_str()
         {
-            **text = next.clone();
+            text.editor_mut().set_text(next);
         }
     }
 }

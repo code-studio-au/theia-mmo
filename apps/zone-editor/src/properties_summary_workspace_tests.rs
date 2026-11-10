@@ -108,10 +108,17 @@ fn complete_selected_inspector_reveals_each_control_at_short_full_and_narrow_wid
                     .0;
                 let candidates: Vec<_> = app
                     .world_mut()
-                    .query::<(Entity, &ComputedNode, Has<Button>, Has<Slider>, Has<Info>)>()
+                    .query::<(
+                        Entity,
+                        &ComputedNode,
+                        Has<Button>,
+                        Has<Slider>,
+                        Has<Info>,
+                        Has<TextInput>,
+                    )>()
                     .iter(app.world())
-                    .filter(|(_, node, button, slider, info)| {
-                        node.size().min_element() > 0. && (*button || *slider || *info)
+                    .filter(|(_, node, button, slider, info, input)| {
+                        node.size().min_element() > 0. && (*button || *slider || *info || *input)
                     })
                     .map(|(entity, ..)| entity)
                     .collect();

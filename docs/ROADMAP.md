@@ -1,3 +1,12 @@
+P5-17 permanent numeric attributes, 10 November 2026: selected objects/plants/
+markers/guides use always-visible textboxes with one aligned frame/background.
+No click-to-reveal or Apply panel; Enter/blur applies one validated exact edit,
+Escape cancels, Tab advances and explicit Save commits valid focused text first.
+Keep f64/history and reject stale/replaced-document drafts. All 110 zone-editor
+tests, fmt and strict workspace/all-target Clippy pass; local/far native checks
+pass on RX 7900 XTX / RADV NAVI31 / Vulkan with zero diagnostics. Further P5-17
+refinement remains active. See [record](EDITOR_UI_REFINEMENT.md).
+
 P5-17 dock/status checkpoint, 10 November 2026: implement the stacked left
 explorer/properties dock, independent folding and width/split resizing, type
 filter dropdown and compact full-width status bar. Remove repeated explorer/help

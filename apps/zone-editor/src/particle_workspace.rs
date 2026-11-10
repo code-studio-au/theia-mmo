@@ -49,7 +49,7 @@ pub(super) fn plugin(app: &mut App) {
         .add_systems(Update, switch.before(ZoneAuthoring).before(AuthoringUpdate));
 }
 
-fn zone_active(host: Option<Res<AuthoringHost>>) -> bool {
+pub(super) fn zone_active(host: Option<Res<AuthoringHost>>) -> bool {
     host.is_none_or(|host| !host.active)
 }
 

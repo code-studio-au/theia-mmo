@@ -26,7 +26,7 @@ pub(super) fn fixture(origin: [f64; 3], target: u8) -> (App, Vec<String>) {
     app.world_mut().resource_mut::<Session>().transform_edit = None;
     app.world_mut().resource_mut::<InputFocus>().clear();
     app.world_mut().run_system_once(setup).unwrap();
-    app.add_plugins(plugin);
+    app.add_plugins((plugin, theme::plugin));
     crate::headless_ui::add_layout(&mut app);
     for _ in 0..3 {
         app.update();
@@ -44,13 +44,44 @@ fn selected_attribute_rows_keep_exact_editor_values_labels_geometry_source_and_p
             let source = app.world().resource::<Session>().editor.zone().clone();
             let values: Vec<_> = app
                 .world_mut()
-                .query::<(&Value, &Text, &ComputedNode, &ChildOf, &Hovered)>()
+                .query::<(
+                    Entity,
+                    &Value,
+                    &EditableText,
+                    &ComputedNode,
+                    &ChildOf,
+                    &Hovered,
+                )>()
                 .iter(app.world())
-                .filter(|(_, _, node, _, _)| node.size().min_element() > 0.)
-                .map(|(value, text, _, parent, _)| {
+                .filter(|(_, _, _, node, _, _)| node.size().min_element() > 0.)
+                .map(|(entity, value, text, _, parent, _)| {
                     let wrapper = app.world().get::<ComputedNode>(parent.parent()).unwrap();
                     assert!(wrapper.size().x >= 170.);
-                    (value.0, text.0.clone())
+                    let input = app.world().get::<Node>(entity).unwrap();
+                    assert_eq!(input.border, UiRect::ZERO);
+                    assert_eq!(input.padding, UiRect::ZERO);
+                    assert_eq!(
+                        app.world().get::<BackgroundColor>(entity).unwrap().0,
+                        Color::NONE
+                    );
+                    let input_pose = app
+                        .world()
+                        .get::<bevy::ui::UiGlobalTransform>(entity)
+                        .unwrap()
+                        .affine()
+                        .translation;
+                    let frame_pose = app
+                        .world()
+                        .get::<bevy::ui::UiGlobalTransform>(parent.parent())
+                        .unwrap()
+                        .affine()
+                        .translation;
+                    let size = app.world().get::<ComputedNode>(entity).unwrap().size();
+                    assert_eq!(wrapper.size().y, 28.);
+                    assert!((input_pose.y - frame_pose.y).abs() <= 0.5);
+                    assert!(size.y <= wrapper.size().y - 2.);
+                    assert!(size.x <= wrapper.size().x - 12.);
+                    (value.0, text.value().to_string())
                 })
                 .collect();
             if target == 4 {
@@ -70,6 +101,23 @@ fn selected_attribute_rows_keep_exact_editor_values_labels_geometry_source_and_p
                         assert_eq!(text.0, capture.labels()[label.0]);
                     }
                 }
+                let mut headings: Vec<_> = app
+                    .world_mut()
+                    .query::<(&Heading, &Text, &ComputedNode)>()
+                    .iter(app.world())
+                    .filter(|(_, _, node)| node.size().min_element() > 0.)
+                    .map(|(heading, text, _)| (heading.0, text.0.as_str()))
+                    .collect();
+                headings.sort_by_key(|(index, _)| *index);
+                let actual: Vec<_> = headings.iter().map(|(_, text)| *text).collect();
+                let expected = match target {
+                    0 => vec!["Position", "Rotation", "Dimensions"],
+                    1 => vec!["Position", "Rotation", "Scale"],
+                    2 => vec!["Position", "Rotation", "Area"],
+                    3 => vec!["Position", "Path"],
+                    _ => vec!["Path"],
+                };
+                assert_eq!(actual, expected);
                 if target == 2 {
                     assert!(
                         description(app.world().resource::<Session>())
@@ -103,8 +151,12 @@ fn summary_shows_exact_drag_preview_then_source_again_and_hides_for_offline_play
         gesture: gizmo::Gesture::plane(Ray3d::new(Vec3::Y * 10., Dir3::NEG_Y), Vec3::ZERO).unwrap(),
     });
     app.update();
-    for (field, text) in app.world_mut().query::<(&Value, &Text)>().iter(app.world()) {
-        assert_eq!(text.0, expected[field.0]);
+    for (field, text) in app
+        .world_mut()
+        .query::<(&Value, &EditableText)>()
+        .iter(app.world())
+    {
+        assert_eq!(text.value().to_string(), expected[field.0]);
     }
     assert!(
         description(app.world().resource::<Session>())
@@ -115,8 +167,12 @@ fn summary_shows_exact_drag_preview_then_source_again_and_hides_for_offline_play
     app.world_mut().resource_mut::<Session>().drag = None;
     app.update();
     let expected = Target::Object(source.objects[0].pose.clone()).values();
-    for (field, text) in app.world_mut().query::<(&Value, &Text)>().iter(app.world()) {
-        assert_eq!(text.0, expected[field.0]);
+    for (field, text) in app
+        .world_mut()
+        .query::<(&Value, &EditableText)>()
+        .iter(app.world())
+    {
+        assert_eq!(text.value().to_string(), expected[field.0]);
     }
     app.world_mut().resource_mut::<Session>().play =
         Some(playtest::Playtest::new(&source).unwrap());

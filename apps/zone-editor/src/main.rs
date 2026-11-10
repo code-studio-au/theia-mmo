@@ -48,6 +48,7 @@ fn canvas_cursor(window: &Window, session: &Session) -> Option<Vec2> {
         .cursor_position()
         .filter(|p| {
             !session.ui.input_owned
+                && !session.inline_editing
                 && p.x > session.ui.canvas_left() + 6.
                 && p.x < window.width()
                 && p.y > workspace::HEADER
@@ -112,6 +113,10 @@ struct Session {
     path_draft: Option<paths::Draft>,
     name_edit: Option<naming::Draft>,
     transform_edit: Option<properties::Draft>,
+    document_id: u64,
+    inline_editing: bool,
+    inline_dirty: bool,
+    inline_action: Option<Action>,
     file_dialog: Option<file_picker::Draft>,
 }
 struct Drag {
@@ -129,7 +134,9 @@ impl Session {
             .filter(|path| !path.as_os_str().is_empty())
             .unwrap_or_else(|| std::path::Path::new("."))
             .to_path_buf();
+        static DOCUMENT_IDS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
         Session {
+            document_id: DOCUMENT_IDS.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
             ui: panels::Layout::default(),
             editor,
             saved_zone,
@@ -175,6 +182,9 @@ impl Session {
             path_draft: None,
             name_edit: None,
             transform_edit: None,
+            inline_editing: false,
+            inline_dirty: false,
+            inline_action: None,
             file_dialog: None,
         }
     }
@@ -303,6 +313,7 @@ impl Session {
                 .name_edit
                 .as_ref()
                 .is_some_and(naming::Draft::is_authoring)
+            || self.inline_dirty
             || self.transform_edit.is_some()
             || self.file_dialog.is_some()
     }
@@ -746,6 +757,10 @@ fn activate(
     }
 }
 fn perform(action: Action, session: &mut Session, view: &mut View) {
+    if session.inline_editing {
+        session.inline_action = Some(action);
+        return;
+    }
     if session.has_modal() {
         return;
     }
@@ -1002,6 +1017,7 @@ fn keyboard(
     mut view: ResMut<View>,
     mut content: ResMut<outliner::Content>,
     mut requests: ResMut<workspace::Requests>,
+    text_inputs: Query<(), With<bevy::text::EditableText>>,
     focus: Res<bevy::input_focus::InputFocus>,
     menu_focus: Query<(), With<bevy::ui_widgets::MenuItem>>,
     sliders: Query<
@@ -1015,7 +1031,11 @@ fn keyboard(
         ),
     >,
 ) {
-    if session.has_modal()
+    if focus
+        .get()
+        .is_some_and(|entity| text_inputs.contains(entity))
+        || session.has_modal()
+        || session.inline_editing
         || session.ui.input_owned
         || focus
             .get()
@@ -1273,6 +1293,7 @@ fn camera_controls(
     let enabled = window.focused
         && session.play.is_none()
         && !session.has_modal()
+        && !session.inline_editing
         && session.drag.is_none()
         && !session.ui.input_owned
         && !focus

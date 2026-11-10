@@ -9,6 +9,7 @@ from gpu_validation import check_gpu_diagnostics
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--output', required=True, type=Path)
 parser.add_argument('--case', choices=['local', 'far'], default='local')
+parser.add_argument('--inline', action='store_true')
 args = parser.parse_args()
 out = args.output.resolve()
 out.mkdir(parents=True, exist_ok=False)
@@ -109,6 +110,58 @@ try:
         click(item['centre'])
         wait(lambda: state()['content_list']['filter'] == 'All')
         assert state()['document'] == initial and state()['history'] == history and (source.read_bytes() == original)
+        if args.inline:
+
+            def edit_field(index, value):
+                field = next((c for c in state()['attribute_summary'] if c['field'] == index))
+                click(field['centre'])
+                wait(lambda: any((c['field'] == index and c['focused'] for c in state()['inline_attributes'])))
+                assert state()['transform_edit'] is None
+                chord('a')
+                for char in value:
+                    desktop.key({'.': 'period', '-': 'minus'}.get(char, char))
+                wait(lambda: any((c['value'] == value for c in state()['inline_attributes'])))
+            first = initial['objects'][0]['pose']['position'][0] + 0.125
+            edit_field(0, str(first))
+            capture('inline-editing.png')
+            desktop.key('Return')
+            wait(lambda: not any(c['focused'] for c in state()['inline_attributes']))
+            assert state()['document']['objects'][0]['pose']['position'][0] == first
+            assert state()['unsaved_changes'] and source.read_bytes() == original
+            field = next(c for c in state()['attribute_summary'] if c['field'] == 0)
+            click(field['centre'])
+            desktop.key('Tab')
+            wait(lambda: any(c['field'] == 1 and c['focused'] for c in state()['inline_attributes']))
+            desktop.key('Escape')
+            wait(lambda: not any(c['focused'] for c in state()['inline_attributes']))
+            chord('z')
+            wait(lambda: state()['document'] == initial)
+            chord('y')
+            wait(lambda: state()['document']['objects'][0]['pose']['position'][0] == first)
+            second = first + 0.25
+            edit_field(0, str(second))
+            chord('s')
+            wait(lambda: not any(c['focused'] for c in state()['inline_attributes']) and (not state()['unsaved_changes']))
+            assert json.loads(source.read_text())['objects'][0]['pose']['position'][0] == second
+            saved = source.read_bytes()
+            saved_revision = state()['revision']
+            edit_field(4, '-1')
+            desktop.key('Return')
+            fresh()
+            assert any(c['focused'] for c in state()['inline_attributes']) and state()['revision'] == saved_revision
+            assert source.read_bytes() == saved
+            capture('inline-invalid.png')
+            desktop.key('Escape')
+            wait(lambda: not any(c['focused'] for c in state()['inline_attributes']))
+            assert source.read_bytes() == saved
+            chord('z')
+            chord('z')
+            wait(lambda: state()['document'] == initial)
+            chord('s')
+            wait(lambda: not state()['unsaved_changes'])
+            original = source.read_bytes()
+            revision = state()['revision']
+            history = state()['history']
         chord('d')
         wait(lambda: state()['revision'] > revision)
         assert state()['unsaved_changes']
@@ -122,7 +175,7 @@ try:
         click(next((c for c in state()['content_list']['controls'] if c['target'] == 'Object(1)'))['centre'])
         wait(lambda: state()['selected'] == 1)
         capture('status-bar-final.png')
-        result = dict(binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(), adapter=state()['gpu'], layout=state()['ui_layout'], revision=state()['revision'], history=state()['history'], source_preserved_before_save=True, source_json_preserved=json.loads(source.read_text()) == initial)
+        result = dict(inline_verified=args.inline, binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(), adapter=state()['gpu'], layout=state()['ui_layout'], revision=state()['revision'], history=state()['history'], source_preserved_before_save=True, source_json_preserved=json.loads(source.read_text()) == initial)
 finally:
     desktop.close()
     if process is not None and process.poll() is None:

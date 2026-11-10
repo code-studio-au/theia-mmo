@@ -450,6 +450,8 @@ type ReportControls<'w, 's> = Query<
             Option<&'static menus::SelectTrigger>,
             Option<&'static properties::SummaryValue>,
             Option<&'static Text>,
+            Option<&'static properties::InlineInput>,
+            Option<&'static bevy::text::EditableText>,
         ),
         Option<&'static naming::Control>,
         Option<&'static properties::Control>,
@@ -669,11 +671,18 @@ pub(super) fn report(
             "value":selector.kind.value(&session,&view),"enabled":selector.kind.enabled(&session,&view),"hovered":hovered.0,
             "centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array()}))
     }).collect::<Vec<_>>());
-    value["attribute_summary"] = serde_json::json!(controls.iter().filter_map(|((_,_,_,_,_,_,_,_,field,text),_,_,_,node,t,..)| {
+    value["attribute_summary"] = serde_json::json!(controls.iter().filter_map(|((_,_,_,_,_,_,_,_,field,_,_,text),_,_,_,node,t,..)| {
         let field = field?; let text = text?;
         if node.size().min_element() <= 0. { return None; }
         let factor = node.inverse_scale_factor() * scale.0;
-        Some(serde_json::json!({"field":field.0,"value":text.0,
+        Some(serde_json::json!({"field":field.0,"value":text.value().to_string(),
+            "centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array()}))
+    }).collect::<Vec<_>>());
+    value["inline_attributes"] = serde_json::json!(controls.iter().filter_map(|((_,_,_,_,entity,_,_,_,_,_,field,text),_,_,_,node,t,..)| {
+        let field = field?; let text = text?;
+        if node.size().min_element() <= 0. { return None; }
+        let factor = node.inverse_scale_factor() * scale.0;
+        Some(serde_json::json!({"field":field.0,"value":text.value().to_string(),"focused":focus.get()==Some(entity),
             "centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array()}))
     }).collect::<Vec<_>>());
     value["scroll_panes"] = serde_json::json!(controls.iter().filter_map(|((_,_,position,pane,..),_,_,_,node,t,hovered,..)| {

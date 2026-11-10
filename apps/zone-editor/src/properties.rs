@@ -2,6 +2,8 @@
 use super::*;
 #[path = "properties_fields.rs"]
 mod fields_ui;
+#[path = "properties_inline.rs"]
+mod inline;
 #[path = "properties_scrub.rs"]
 mod numeric;
 #[path = "properties_summary.rs"]
@@ -17,7 +19,9 @@ use bevy::ui_widgets::{
     SelectAllOnFocus, Slider, SliderPrecision, SliderRange, SliderStep, SliderThumb, SliderValue,
     TextInput, TrackClick, ValueChange,
 };
+pub(super) use inline::Input as InlineInput;
 pub(super) use numeric::scrub;
+pub(super) use summary::Frame as InlineFrame;
 pub(super) use summary::Value as SummaryValue;
 use theia_zone::{markers::Marker, paths::GuidePath, vegetation::Plant};
 
@@ -479,6 +483,7 @@ pub(super) fn summary_subject(session: &Session) -> Option<String> {
     summary::description(session)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(super) fn keyboard(
     keys: Res<ButtonInput<KeyCode>>,
     windows: Query<&Window>,
@@ -487,11 +492,38 @@ pub(super) fn keyboard(
     nav: TabNavigation,
     mut fields: Query<(Entity, &Field, &mut EditableText)>,
     mut requests: ResMut<workspace::Requests>,
+    inline: Option<Res<inline::State>>,
+    inputs: Query<(Entity, &summary::Value, &EditableText), Without<Field>>,
+    mut commands: Commands,
 ) {
     let requested = std::mem::take(&mut requests.transform);
     let requested_field = std::mem::take(&mut requests.transform_field);
     let spawn_requested = std::mem::take(&mut requests.spawn_transform);
     if !windows.single().is_ok_and(|w| w.focused) {
+        return;
+    }
+    if session.inline_editing && keys.just_pressed(KeyCode::Tab) {
+        if focus
+            .get()
+            .and_then(|entity| inputs.get(entity).ok())
+            .is_some_and(|(_, _, text)| !text.is_composing())
+        {
+            let previous = keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight);
+            match nav.navigate(
+                &focus,
+                if previous {
+                    NavAction::Previous
+                } else {
+                    NavAction::Next
+                },
+            ) {
+                Ok(entity) => {
+                    focus.set(entity, FocusCause::Navigated);
+                    commands.trigger(bevy::ui_widgets::ScrollIntoView { entity });
+                }
+                Err(error) => session.status = format!("Field navigation: {error}"),
+            }
+        }
         return;
     }
     if session.transform_edit.is_some() {
@@ -534,6 +566,14 @@ pub(super) fn keyboard(
     let active = requested_field
         .unwrap_or(0)
         .min(original.labels().len().saturating_sub(1));
+    if inline.is_some() && !spawn_requested {
+        if let Some((entity, _, _)) = inputs.iter().find(|(_, input, _)| input.0 == active) {
+            session.ui.properties_collapsed = false;
+            focus.set(entity, FocusCause::Navigated);
+            commands.trigger(bevy::ui_widgets::ScrollIntoView { entity });
+        }
+        return;
+    }
     let draft = Draft {
         id,
         revision: session.editor.revision(),

@@ -165,7 +165,7 @@ pub(super) fn setup(mut commands: Commands, icons: Option<Res<sidebar::Icons>>) 
                         (Control::Command(Action::Undo), "Undo", "Ctrl Z"),
                         (Control::Command(Action::Redo), "Redo", "Ctrl Y"),
                         (Control::Rename, "Rename…", "F8"),
-                        (Control::Transform, "Edit attributes…", "F9"),
+                        (Control::Transform, "Focus attributes", "F9"),
                         (Control::Command(Action::Duplicate), "Duplicate", "Ctrl D"),
                         (Control::Command(Action::Delete), "Delete", "Del"),
                     ],
@@ -237,7 +237,6 @@ pub(super) fn setup(mut commands: Commands, icons: Option<Res<sidebar::Icons>>) 
                             .with_children(|row| {
                                 for (control, label) in [
                                     (Control::Rename, "Rename"),
-                                    (Control::Transform, "Transform..."),
                                     (Control::Command(Action::Duplicate), "Duplicate"),
                                     (Control::Command(Action::Ground), "Ground"),
                                     (Control::Frame, "Frame"),
