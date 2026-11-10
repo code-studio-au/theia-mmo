@@ -1,3 +1,9 @@
+P5-17, 10 November 2026: the content browser now shares Sprinkles-style
+scrolling and native ScrollIntoView selection reveal. Short-window wheel routing
+preserves bounded paging without double actions or changing keyboard focus.
+All 139 focused tests and denied-warning Clippy pass; native acceptance remains
+pending while desktop use is stopped. See STATUS and ZONE_EDITOR for evidence.
+
 P5-17, 10 November 2026: numeric attributes adopt Sprinkles' compact framed
 inputs, tabular figures, drag prefixes/units and grouped X/Y/Z size. World-f64
 position fields stay full width. All 137 focused tests and denied-warning Clippy

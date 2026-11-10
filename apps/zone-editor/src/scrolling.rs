@@ -10,6 +10,7 @@ use bevy::ui_widgets::{ControlOrientation, Scrollbar, ScrollbarThumb};
 #[derive(Component, Clone, Copy, Debug)]
 pub(super) enum Pane {
     Workspace,
+    Browser,
     Attributes,
 }
 impl Pane {
@@ -20,7 +21,7 @@ impl Pane {
             && session.stroke.is_none()
             && session.path_draft.is_none()
             && match self {
-                Self::Workspace => !session.has_modal(),
+                Self::Workspace | Self::Browser => !session.has_modal(),
                 Self::Attributes => {
                     session.transform_edit.is_some()
                         && session.name_edit.is_none()
@@ -123,18 +124,20 @@ fn wheel(
 }
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(
-        PostUpdate,
-        (focus::reveal, feedback)
-            .chain()
-            .after(bevy::ui::UiSystems::Layout)
-            .after(bevy::ui::ui_layout_system)
-            .after(properties::finish),
-    )
-    .add_systems(
-        Update,
-        ownership.after(panels::resize).before(panels::apply),
-    );
+    app.init_resource::<focus::Reveal>()
+        .add_observer(focus::request)
+        .add_systems(
+            PostUpdate,
+            (focus::reveal, feedback)
+                .chain()
+                .after(bevy::ui::UiSystems::Layout)
+                .after(bevy::ui::ui_layout_system)
+                .after(properties::finish),
+        )
+        .add_systems(
+            Update,
+            ownership.after(panels::resize).before(panels::apply),
+        );
 }
 
 // Preserve one UI gesture across the narrow scrollbar/panel boundary and release.

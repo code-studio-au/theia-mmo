@@ -1,3 +1,21 @@
+Sprinkles browser scrolling, 10 November 2026 (P5-17): the content browser
+shares the 24 px wheel-step, hover-only thin scrollbar and bounded scroll pane
+used by the inspector. Short windows scroll within the current bounded page;
+full-height pages retain existing wheel paging. One wheel gesture never both
+scrolls and pages. Explicit page/filter changes reset the pane; selection changes
+use Bevy ScrollIntoView to reveal the selected row after layout without changing
+keyboard focus. Manual scrolling stays put until selection/focus changes.
+
+All 139 focused Rust tests and denied-warning workspace/all-target Clippy pass.
+CPU layout/event tests cover short/local/far selection, full-height page routing,
+modal/focus/gesture guards, filter reset and exact source/revision/history/dirty
+preservation. Evidence: `build/sprinkles-review/browser-scroll-tests-final.log`
+and `browser-scroll-clippy.log`; editor build passes (`browser-scroll-build.log`).
+Native rendering/input/GPU
+acceptance remains pending while desktop use is stopped. The existing --scroll
+qualifier now prepares browser wheel/thumb and width/source guards as well as
+inspector checks; it has only been syntax-checked, not run for this binary.
+
 Sprinkles numeric field frames, 10 November 2026 (P5-17): exact attributes
 now use the upstream 28 px transparent frame, 1 px border, 2 px radius, compact
 drag prefixes, suffixes and tabular digits. Object size is grouped as an X/Y/Z

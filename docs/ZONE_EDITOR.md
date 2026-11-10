@@ -3487,3 +3487,30 @@ frame, 12 px Inter/tabular font and upstream cursor/selection colors; retained
 length limits and validation are unchanged. Final headless evidence:
 `build/sprinkles-review/shared-inputs-tests.log` (137 tests),
 `shared-inputs-clippy-final.log` and `shared-inputs-build.log` all pass.
+
+## Sprinkles content browser scrolling — 10 November 2026
+
+P5-17 shares the existing Sprinkles-style scroll pane with the content browser:
+24 logical pixels per wheel line, native pixel deltas, a 3 px hover-only native
+Scrollbar, finite bounded positions and the existing authoring/focus/gesture
+guards. The bounded 18-row pool and explicit Previous/Next controls remain.
+Short windows scroll the current page; pages that fit retain existing wheel
+paging. Raw page routing detects actual computed overflow to prevent a single
+wheel gesture from scrolling and paging together. Page/filter changes reset the
+pane. Changes in source selection request standard Bevy ScrollIntoView; reveal
+runs after visible layout, moves only as far as needed and preserves InputFocus.
+Unchanged selection does not pull the pane back after a manual scroll.
+
+All 139 focused Rust tests and workspace/all-target denied-warning Clippy pass.
+New CPU font/layout and pointer-dispatch cases cover local/far world coordinates,
+short and restored full-height windows, selected rows across all three fixture
+pages, modal/focus/gesture guards, filter reset and exact source/history/revision/
+dirty preservation. Existing full-height paging and long-label layout tests pass.
+Evidence: `build/sprinkles-review/browser-scroll-tests-final.log` and
+`browser-scroll-clippy.log`. Native visual/input/GPU checks remain pending while
+desktop use is stopped. `tools/qualify_zone_sprinkles.py --scroll` now prepares
+browser wheel/thumb, width and source/history checks alongside inspector checks;
+this extension has only been syntax-checked, not executed for the changed editor.
+
+Editor build and formatting pass (`build/sprinkles-review/browser-scroll-build.log`).
+No native process or desktop input was started for this slice.

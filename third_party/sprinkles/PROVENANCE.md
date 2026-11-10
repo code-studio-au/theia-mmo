@@ -70,3 +70,7 @@ not adopted for Theia's global coordinates.
 Shared plain inputs in `theme.rs`, `naming.rs` and `file_picker.rs` also adapt
 the pinned text_edit transparent frame, font and cursor/selection presentation.
 Theia retains its native validated input handlers and field length limits.
+
+The shared scroll.rs presentation also wraps the bounded zone content browser
+in `outliner.rs`. Theia retains bounded row paging and adds Bevy ScrollIntoView
+selection reveal with checked source/history invariants.

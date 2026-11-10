@@ -264,6 +264,30 @@ def run(output, binary, only_case=None, scroll=False, attributes=False):
                     subprocess.run(['wmctrl','-ir',hex(window),'-b','remove,fullscreen'],check=True)
                     subprocess.run(['wmctrl','-ir',hex(window),'-e','0,0,0,3440,600'],check=True)
                     wait(lambda: state()['viewport'] == [3440,600])
+                    def browser_pane():
+                        return next(p for p in state()['scroll_panes'] if p['scope']=='Browser')
+                    browser = wait(lambda: browser_pane() if browser_pane()['limit'][1] > 24 else None)
+                    browser_page = state()['content_list']['page']
+                    move([browser['centre'][0],400])
+                    desktop.scroll(-1)
+                    wait(lambda: browser_pane()['position'][1] == 24)
+                    assert state()['content_list']['page'] == browser_page
+                    browser_rect = state()['ui_layout']['browser']
+                    track_height = browser_rect[3]-6
+                    thumb_height = max(24,track_height*browser['size'][1]/(browser['size'][1]+browser['limit'][1]))
+                    thumb_offset = 24/browser['limit'][1]*(track_height-thumb_height)
+                    thumb_x = browser_rect[0]+browser_rect[2]-4.5
+                    move([thumb_x,browser_rect[1]+3+thumb_offset+thumb_height/2])
+                    press()
+                    move([thumb_x,540])
+                    wait(lambda:abs(browser_pane()['position'][1]-browser['limit'][1])<.1)
+                    release()
+                    wait(lambda:not state()['ui_layout']['resizing'])
+                    assert state()['ui_layout']['browser'][2] == browser_rect[2]
+                    assert state()['content_list']['page'] == browser_page
+                    capture('scrolled-short-browser')
+                    assert state()['document'] == before_scroll['document']
+                    assert state()['history'] == before_scroll['history'] and state()['revision'] == before_scroll['revision']
                     def pane_state():
                         return next(p for p in state()['scroll_panes'] if p['scope']=='Workspace')
                     pane = wait(lambda: pane_state() if pane_state()['limit'][1] > 24 else None)

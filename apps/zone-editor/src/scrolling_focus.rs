@@ -1,11 +1,27 @@
-//! Reveal newly focused inspector controls without fighting manual scrolling.
+//! Reveal newly focused controls or selected rows without fighting manual scrolling.
 use super::*;
 use bevy::input_focus::InputFocus;
 
-#[derive(Default)]
+#[derive(Resource, Default)]
 pub(super) struct Reveal {
     last: Option<Entity>,
     pending: Option<Entity>,
+}
+
+// Use Bevy's standard request event, deferred until the visible layout is ready.
+pub(super) fn request(
+    mut event: On<bevy::ui_widgets::ScrollIntoView>,
+    parents: Query<&ChildOf>,
+    panes: Query<(), With<Pane>>,
+    mut state: ResMut<Reveal>,
+) {
+    if parents
+        .iter_ancestors(event.entity)
+        .any(|entity| panes.contains(entity))
+    {
+        state.pending = Some(event.entity);
+        event.propagate(false);
+    }
 }
 
 pub(super) fn reveal(
@@ -20,7 +36,7 @@ pub(super) fn reveal(
         &bevy::ui::UiGlobalTransform,
         &mut ScrollPosition,
     )>,
-    mut state: Local<Reveal>,
+    mut state: ResMut<Reveal>,
 ) {
     let current = focus.as_ref().and_then(|focus| focus.get());
     if current != state.last {
