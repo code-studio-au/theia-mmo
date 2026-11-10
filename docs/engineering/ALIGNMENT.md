@@ -1,3 +1,8 @@
+P5-17, 10 November 2026: the content-browser native qualifier is prepared
+for current layout telemetry and Zone-menu access. Syntax/--help checks pass;
+it has not run while desktop use is stopped. No production code changed and no
+new native acceptance is claimed. See STATUS/ZONE_EDITOR.
+
 P5-17, 10 November 2026: tool settings separate compact muted names from
 right-aligned tabular values/units; exact-form slider labels share the field type.
 Setting captions, input and source semantics remain. All 154 focused tests,

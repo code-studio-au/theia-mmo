@@ -3834,3 +3834,14 @@ Clippy and editor build pass. Evidence: `build/sprinkles-review/setting-labels-t
 `setting-labels-clippy.log` and `setting-labels-build.log`. CPU layout includes all
 selected-inspector widths/heights and slider/exact-draft checks. Native visual/
 input/GPU acceptance remains pending while desktop use is stopped.
+
+## Current content-browser native qualifier preparation — 10 November 2026
+
+Content-browser native qualifier preparation, 10 November 2026 (P5-17):
+`tools/qualify_zone_content.py` now reads current browser/inspector rectangles
+instead of the retired right-hand coordinates, routes wheel input into that
+browser and opens Edit spawn through the Zone menu. It records layout geometry,
+uses the shared client environment filter and verifies the binary hash remains
+unchanged through a run. Python syntax and --help checks pass. No native run,
+window, screenshot or desktop input was performed; this is prepared coverage,
+not new visual/input/GPU acceptance. Production code did not change.

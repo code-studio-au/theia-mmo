@@ -8,6 +8,7 @@ from pathlib import Path
 import subprocess
 
 from gpu_validation import check_gpu_diagnostics
+from launch_environment import client_environment
 from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 
 
@@ -15,8 +16,9 @@ def run(output, binary, selected_case):
     output = output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     binary = binary.resolve()
+    binary_hash = hashlib.sha256(binary.read_bytes()).hexdigest()
     cases = []
-    env = dict(os.environ, WGPU_BACKEND='vulkan', VK_INSTANCE_LAYERS='VK_LAYER_KHRONOS_validation', VK_LOADER_DEBUG='layer')
+    env = client_environment(dict(os.environ, WGPU_BACKEND='vulkan', VK_INSTANCE_LAYERS='VK_LAYER_KHRONOS_validation', VK_LOADER_DEBUG='layer'))
     for name, origin in [('local', [.125, .25, -.5]), ('far', [128000000000.125, 20.25, -128000000000.5])]:
         if selected_case != 'both' and name != selected_case:
             continue
@@ -46,7 +48,12 @@ def run(output, binary, selected_case):
                     return state()
                 def click(target, group='content_list'):
                     def controls():
-                        return state()['content_list']['controls'] if group == 'content_list' else state()['workspace_controls']
+                        current = state()
+                        if group == 'content_list':
+                            return current['content_list']['controls']
+                        if group == 'menus':
+                            return [dict(entry, target=entry['name']) for entry in current['menus'] if entry['role'] == 'button']
+                        return current['workspace_controls']
                     entry = wait(lambda: next((c for c in controls() if c['target'] == target and all(v > 0 for v in c['size'])), None))
                     desktop.move(window, entry['centre'], 1)
                     wait(lambda: any(c['target'] == target and c['hovered'] for c in controls()))
@@ -69,8 +76,11 @@ def run(output, binary, selected_case):
                     assert [c['target'] for c in rows] == expected
                     for row in rows:
                         x, y = row['centre']; w, h = row['size']
-                        assert x - w / 2 >= 3140 and x + w / 2 <= 3440
-                        assert y - h / 2 >= 92 and y + h / 2 <= 840, row
+                        bx, by, bw, bh = current['ui_layout']['browser']
+                        ix, _, _, _ = current['ui_layout']['inspector']
+                        assert bx + bw <= ix + 1, 'Browser must remain beside the inspector'
+                        assert x - w / 2 >= bx - 1 and x + w / 2 <= bx + bw + 1, row
+                        assert y - h / 2 >= by - 1 and y + h / 2 <= by + bh + 1, row
                         assert not row['disabled']
                     buttons = {c['target']: c for c in content['controls']}
                     assert buttons['Previous']['disabled'] == (index == 0)
@@ -80,7 +90,8 @@ def run(output, binary, selected_case):
                     seen.extend(expected)
                     return rows
                 def wheel(lines, expected):
-                    desktop.move(window, [3290, 350], 1)
+                    bx, by, bw, bh = state()['ui_layout']['browser']
+                    desktop.move(window, [bx + bw / 2, by + min(300, bh / 2)], 1)
                     before = fresh()['content_list']['scroll_events']
                     assert state()['focused'] and state()['cursor'] is not None, 'Owned editor lost focus/cursor before wheel delivery'
                     desktop.scroll(lines)
@@ -140,6 +151,8 @@ def run(output, binary, selected_case):
                 click('ClearSearch')
                 wait(lambda: state()['content_list']['query'] == '' and state()['content_list']['count'] == 44)
                 wheel(-1, 1)
+                click('Zone', 'menus')
+                wait(lambda: any(entry['name'] == 'Zone' and entry['role'] == 'popup' and min(entry['size']) > 0 for entry in state()['menus']))
                 click('SpawnTransform', 'workspace_controls')
                 wait(lambda: state()['transform_edit'] is not None)
                 wheel(-1, 1)
@@ -168,11 +181,12 @@ def run(output, binary, selected_case):
         text = logfile.read_text()
         assert 'Insert instance layer "VK_LAYER_KHRONOS_validation"' in text
         diagnostics = check_gpu_diagnostics(text, allow_surface_resize=False)
-        record = dict(name=name, gpu=final['gpu'], viewport=final['viewport'], visible_targets=seen, gpu_diagnostics=diagnostics, validation_layer_active=True,
-                      checks=['all 44 targets reachable with every row wholly above Properties', 'last row selected on all three pages; disabled boundary buttons', 'Linux wheel paging, type filters and search preserve source/history and isolate exact-properties modal', 'double-click frames an entry through the existing checked local-coordinate path'])
+        record = dict(name=name, gpu=final['gpu'], viewport=final['viewport'], ui_layout=final['ui_layout'], visible_targets=seen, gpu_diagnostics=diagnostics, validation_layer_active=True,
+                      checks=['all 44 targets reachable with every row wholly inside the adjacent left browser', 'last row selected on all three pages; disabled boundary buttons', 'Linux wheel paging, type filters and search preserve source/history and isolate exact-properties modal', 'double-click frames an entry through the existing checked local-coordinate path'])
         (folder / 'qualification.json').write_text(json.dumps(record, indent=2) + '\n')
         cases.append(record)
-    result = dict(cases=cases, binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(), scope='Linux native synthetic input, 3440x1440; no Windows or multiplayer claim')
+    assert hashlib.sha256(binary.read_bytes()).hexdigest() == binary_hash, 'Binary changed during native qualification'
+    result = dict(cases=cases, binary_sha256=binary_hash, scope='Linux native synthetic input, 3440x1440; no Windows or multiplayer claim')
     (output / 'qualification.json').write_text(json.dumps(result, indent=2) + '\n')
     print(json.dumps(result, indent=2))
 

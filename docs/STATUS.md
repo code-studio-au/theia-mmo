@@ -1,3 +1,12 @@
+Content-browser native qualifier preparation, 10 November 2026 (P5-17):
+`tools/qualify_zone_content.py` now reads current browser/inspector rectangles
+instead of the retired right-hand coordinates, routes wheel input into that
+browser and opens Edit spawn through the Zone menu. It records layout geometry,
+uses the shared client environment filter and verifies the binary hash remains
+unchanged through a run. Python syntax and --help checks pass. No native run,
+window, screenshot or desktop input was performed; this is prepared coverage,
+not new visual/input/GPU acceptance. Production code did not change.
+
 Aligned tool-setting values, 10 November 2026 (P5-17): tool settings
 now present 10 px medium muted names beside right-aligned 12 px tabular values
 and units, above the retained native sliders. Exact-form slider labels share
