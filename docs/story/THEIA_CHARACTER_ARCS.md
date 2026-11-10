@@ -8,7 +8,7 @@
 
 Follow the [story hierarchy and status definitions](README.md#approval-and-precedence). The overarching arcs retain their dated **LOCKED** approval. Their old milestone bands are thematic source context, not an instruction to change current quest order or revelation timing. Specific unapproved scenes/mechanics remain **WORKING**. The [canonical Human 1–80 campaign](Theia/Campaigns/Human_1_80_Canonical_Campaign.md#non-negotiable-story-rules) governs the **CANONICAL** launch sequence and permanent outcomes, subject to later creator decisions.
 
-Oth'varen's launch-survival restriction, undecided founder fates, post-launch death placement and continued founder appearances after their permanent endings are **SUPERSEDED**. Use the [current decision ledger](DECISIONS.md) for the explicit supersession. His public identity is the Grey Surveyor until the Q097 reveal; do not disclose Oth'varen prematurely. Narrative truth and player knowledge remain distinct.
+Oth'varen's launch-survival restriction, undecided founder fates, post-launch death placement and continued founder appearances after their permanent endings are **SUPERSEDED**. Use the [current decision ledger](DECISIONS.md) for the explicit supersession. His public identity is the Elder until the Q097 reveal; do not disclose Oth'varen prematurely. Narrative truth and player knowledge remain distinct.
 
 The [pre-consolidation arc record](https://github.com/code-studio-au/theia-mmo/blob/399561a1f7645b481961f56ef115c6572bdec86b/docs/story/THEIA_CHARACTER_ARCS.md) preserves earlier wording and proposal provenance. Superseded outcomes are not future creative alternatives.
 
