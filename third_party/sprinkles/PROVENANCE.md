@@ -19,3 +19,6 @@ https://github.com/rsms/inter/blob/master/LICENSE.txt
 
 No upstream Blender/Remix icons, example effects or particle runtime are included
 in this first adaptation. Theia-specific controls follow the same visual tokens.
+
+`apps/zone-editor/src/sections.rs` adapts `ui/widgets/panel_section.rs`
+into native Bevy 0.20 bundles and retained Theia commands.

@@ -16,7 +16,7 @@ pub(super) const OVERLAY: Color = Color::srgba(0., 0., 0., 0.6);
 
 // Adapted from Sprinkles' ButtonVariant. Keeping the native Bevy Button and
 // Checkbox behavior avoids replacing Theia's focus, activation or edit guards.
-#[derive(Clone, Copy)]
+#[derive(Component, Clone, Copy)]
 pub(super) enum Variant {
     Default,
     Primary,
@@ -86,9 +86,16 @@ pub(super) fn plugin(app: &mut App) {
     );
 }
 type NewButton = Or<(Added<Button>, Added<bevy::ui_widgets::Checkbox>)>;
-fn decorate_buttons(mut commands: Commands, mut buttons: Query<(Entity, &mut Node), NewButton>) {
-    for (entity, mut node) in &mut buttons {
-        node.border = UiRect::all(px(1));
+fn decorate_buttons(
+    mut commands: Commands,
+    mut buttons: Query<(Entity, &mut Node, Option<&Variant>), NewButton>,
+) {
+    for (entity, mut node, variant) in &mut buttons {
+        node.border = UiRect::all(px(if matches!(variant, Some(Variant::Ghost)) {
+            0
+        } else {
+            1
+        }));
         node.align_items = AlignItems::Center;
         node.border_radius = BorderRadius::all(px(4));
         commands.entity(entity).insert(BorderColor::all(BORDER));
@@ -102,6 +109,7 @@ fn simple_buttons(
             &mut BackgroundColor,
             Option<&properties::Control>,
             Option<&naming::Control>,
+            Option<&Variant>,
         ),
         (
             With<Button>,
@@ -112,10 +120,12 @@ fn simple_buttons(
         ),
     >,
 ) {
-    for (hovered, mut background, property, name) in &mut buttons {
+    for (hovered, mut background, property, name, variant) in &mut buttons {
         let primary = matches!(property, Some(properties::Control::Apply))
             || matches!(name, Some(naming::Control::Apply));
-        background.0 = if primary {
+        background.0 = if let Some(variant) = variant {
+            *variant
+        } else if primary {
             Variant::Primary
         } else {
             Variant::Default
@@ -160,9 +170,14 @@ fn input_states(
     mut fields: Query<(Entity, &mut Node, &mut BorderColor), With<bevy::ui_widgets::TextInput>>,
 ) {
     for (entity, mut node, mut border) in &mut fields {
-        node.border = UiRect::all(px(1));
-        node.border_radius = BorderRadius::all(px(2));
-        node.padding = UiRect::axes(px(8), px(5));
+        if node.border != UiRect::all(px(1))
+            || node.border_radius != BorderRadius::all(px(2))
+            || node.padding != UiRect::axes(px(8), px(5))
+        {
+            node.border = UiRect::all(px(1));
+            node.border_radius = BorderRadius::all(px(2));
+            node.padding = UiRect::axes(px(8), px(5));
+        }
         *border = BorderColor::all(if focus.as_ref().is_some_and(|f| f.get() == Some(entity)) {
             PRIMARY
         } else {

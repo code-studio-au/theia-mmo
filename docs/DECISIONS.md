@@ -1,3 +1,12 @@
+## 10 November 2026 — match Sprinkles layout and interaction closely
+
+The user explicitly extends the adopted direction beyond styling: match
+Sprinkles as closely as practical in panel arrangement, property/attribute
+presentation and editing, menus and visual feature access. The browser,
+inspector and viewport structure replaces the old stacked right-hand layout.
+Retain the Theia authoring domain and exact validated transactions. Native
+acceptance remains pending while mouse and display use are stopped.
+
 ## 10 November 2026 — adopted Sprinkles editor UI direction (P5-17)
 
 The user adopts Sprinkles as the concrete look, feel and interaction reference

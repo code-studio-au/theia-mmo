@@ -16,6 +16,7 @@ mod paths;
 mod placement;
 mod playtest;
 mod properties;
+mod sections;
 mod selection;
 mod snapping;
 mod spawn;

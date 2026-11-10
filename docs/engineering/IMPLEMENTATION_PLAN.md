@@ -1,3 +1,15 @@
+Sprinkles collapsible tool settings, 10 November 2026 (P5-17): a native Bevy
+section header now collapses/expands the retained tool settings with Sprinkles'
+chevron, spacing, ghost hover and separator styling. Activation moves focus to
+the header so hidden sliders cannot own keys. Actual observer checks at local/far
+fractional origins preserve exact source, redo, preferences and saved state;
+unfocused/playtest activation is refused. Section telemetry supports later native
+qualification. CPU layout and all 128 focused Rust tests pass; denied-warning
+workspace/all-target Clippy passes. Native UI/input/GPU acceptance is pending:
+mouse and display use are stopped. The previously qualified theme binary remains
+available until the new presentation passes native checks. Evidence:
+`build/sprinkles-review/sections-tests.log` and `sections-clippy.log`.
+
 Sprinkles theme foundation, 10 November 2026 (P5-17): shared upstream
 zinc/blue tokens, adapted button states and embedded licensed Inter now style the
 palette, command bar, workspaces, content list, properties and dialogs. Focused

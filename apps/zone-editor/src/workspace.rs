@@ -282,87 +282,90 @@ pub(super) fn setup(mut commands: Commands) {
                         row.spawn(button(control, label));
                     }
                 });
-            for setting in [
-                Setting::MoveGrid,
-                Setting::PlacementSize(0),
-                Setting::PlacementSize(1),
-                Setting::PlacementSize(2),
-                Setting::Radius,
-                Setting::Strength,
-                Setting::Blend,
-                Setting::Level,
-                Setting::ScatterRadius,
-                Setting::ScatterCount,
-            ] {
-                let (minimum, maximum) = setting.range();
-                panel
-                    .spawn((
-                        SettingRow(setting),
-                        Node {
-                            flex_direction: FlexDirection::Column,
-                            row_gap: px(6),
-                            ..default()
-                        },
-                    ))
-                    .with_children(|row| {
-                        row.spawn((SettingLabel(setting), text("", 15.)));
-                        row.spawn((
-                            bevy::input_focus::tab_navigation::TabIndex(-1),
-                            setting,
-                            Slider {
-                                track_click: TrackClick::Snap,
-                                ..default()
-                            },
-                            SliderValue(minimum),
-                            SliderRange::new(minimum, maximum),
-                            SliderStep(match setting {
-                                Setting::ScatterCount | Setting::MoveGrid => 1.,
-                                Setting::Level | Setting::ScatterRadius => 0.1,
-                                Setting::PlacementSize(_) => 0.25,
-                                _ => 0.05,
-                            }),
-                            SliderPrecision(
-                                if matches!(setting, Setting::ScatterCount | Setting::MoveGrid) {
-                                    0
-                                } else {
-                                    3
-                                },
-                            ),
-                            Hovered::default(),
+            sections::spawn(panel, "Tool settings", |panel| {
+                for setting in [
+                    Setting::MoveGrid,
+                    Setting::PlacementSize(0),
+                    Setting::PlacementSize(1),
+                    Setting::PlacementSize(2),
+                    Setting::Radius,
+                    Setting::Strength,
+                    Setting::Blend,
+                    Setting::Level,
+                    Setting::ScatterRadius,
+                    Setting::ScatterCount,
+                ] {
+                    let (minimum, maximum) = setting.range();
+                    panel
+                        .spawn((
+                            SettingRow(setting),
                             Node {
-                                width: percent(100),
-                                height: px(24),
+                                flex_direction: FlexDirection::Column,
+                                row_gap: px(6),
                                 ..default()
                             },
-                            BackgroundColor(theme::INPUT),
                         ))
-                        .with_children(|track| {
-                            track
-                                .spawn(Node {
-                                    position_type: PositionType::Absolute,
-                                    left: px(0),
-                                    right: px(14),
-                                    top: px(0),
-                                    bottom: px(0),
+                        .with_children(|row| {
+                            row.spawn((SettingLabel(setting), text("", 15.)));
+                            row.spawn((
+                                bevy::input_focus::tab_navigation::TabIndex(-1),
+                                setting,
+                                Slider {
+                                    track_click: TrackClick::Snap,
                                     ..default()
-                                })
-                                .with_children(|travel| {
-                                    travel.spawn((
-                                        Thumb,
-                                        SliderThumb,
-                                        Node {
-                                            position_type: PositionType::Absolute,
-                                            width: px(14),
-                                            height: px(24),
-                                            left: percent(0),
-                                            ..default()
-                                        },
-                                        BackgroundColor(theme::PRIMARY),
-                                    ));
-                                });
+                                },
+                                SliderValue(minimum),
+                                SliderRange::new(minimum, maximum),
+                                SliderStep(match setting {
+                                    Setting::ScatterCount | Setting::MoveGrid => 1.,
+                                    Setting::Level | Setting::ScatterRadius => 0.1,
+                                    Setting::PlacementSize(_) => 0.25,
+                                    _ => 0.05,
+                                }),
+                                SliderPrecision(
+                                    if matches!(setting, Setting::ScatterCount | Setting::MoveGrid)
+                                    {
+                                        0
+                                    } else {
+                                        3
+                                    },
+                                ),
+                                Hovered::default(),
+                                Node {
+                                    width: percent(100),
+                                    height: px(24),
+                                    ..default()
+                                },
+                                BackgroundColor(theme::INPUT),
+                            ))
+                            .with_children(|track| {
+                                track
+                                    .spawn(Node {
+                                        position_type: PositionType::Absolute,
+                                        left: px(0),
+                                        right: px(14),
+                                        top: px(0),
+                                        bottom: px(0),
+                                        ..default()
+                                    })
+                                    .with_children(|travel| {
+                                        travel.spawn((
+                                            Thumb,
+                                            SliderThumb,
+                                            Node {
+                                                position_type: PositionType::Absolute,
+                                                width: px(14),
+                                                height: px(24),
+                                                left: percent(0),
+                                                ..default()
+                                            },
+                                            BackgroundColor(theme::PRIMARY),
+                                        ));
+                                    });
+                            });
                         });
-                    });
-            }
+                }
+            });
             panel.spawn((SettingsHint, text(SETTINGS_HINT, 13.)));
         });
 }
@@ -691,6 +694,16 @@ pub(super) fn sync(
     mut rows: Query<(&SettingRow, &mut Node), (Without<Thumb>, Without<Control>)>,
     mut labels: Query<(&SettingLabel, &mut Text), Without<ButtonLabel>>,
     mut captions: Query<&mut Text, (With<Caption>, Without<ButtonLabel>, Without<SettingLabel>)>,
+    mut section_roots: Query<
+        &mut Node,
+        (
+            With<sections::Root>,
+            Without<Help>,
+            Without<Thumb>,
+            Without<SettingRow>,
+            Without<Control>,
+        ),
+    >,
     mut hints: Query<
         &mut Text,
         (
@@ -701,6 +714,13 @@ pub(super) fn sync(
         ),
     >,
 ) {
+    for mut node in &mut section_roots {
+        node.display = if session.play.is_some() {
+            Display::None
+        } else {
+            Display::Flex
+        };
+    }
     for mut node in &mut help {
         node.display = if requests.help {
             Display::Flex

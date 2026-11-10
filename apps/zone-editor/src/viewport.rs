@@ -411,6 +411,7 @@ type ReportControls<'w, 's> = Query<
         Option<&'static bevy::ui_widgets::SliderValue>,
         Option<&'static bevy::ui_widgets::SliderRange>,
         Option<&'static file_picker::Control>,
+        Option<&'static sections::Section>,
     ),
 >;
 type ContentControls<'w, 's> = Query<
@@ -600,7 +601,13 @@ pub(super) fn report(
         Some(serde_json::json!({"target":target,"hovered":hovered.0,"centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array(),
             "value":value.map(|v|v.0),"range":range.map(|r|[r.start(),r.end()])}))
     }).collect::<Vec<_>>());
-    value["file_controls"] = serde_json::json!(controls.iter().filter_map(|(_,_,_,_,node,t,hovered,_,_,_,_,control)| {
+    value["sections"] = serde_json::json!(controls.iter().filter_map(|(_,_,_,_,node,t,hovered,_,_,_,_,_,section)| {
+        let section=section?;
+        let factor=node.inverse_scale_factor()*scale.0;
+        Some(serde_json::json!({"title":section.title,"expanded":section.expanded,"hovered":hovered.0,
+            "centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array()}))
+    }).collect::<Vec<_>>());
+    value["file_controls"] = serde_json::json!(controls.iter().filter_map(|(_,_,_,_,node,t,hovered,_,_,_,_,control,_)| {
         let control=control?;
         let factor=node.inverse_scale_factor()*scale.0;
         let entry=match control { file_picker::Control::Row(index)=>session.file_dialog.as_ref().and_then(|d|d.row(*index)),_=>None };
@@ -613,7 +620,7 @@ pub(super) fn report(
         let factor = node.inverse_scale_factor() * scale.0;
         Some(serde_json::json!({"action":format!("{control:?}"),"hovered":hovered.0,"centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array()}))
     }).collect::<Vec<_>>());
-    value["transform_controls"] = serde_json::json!(controls.iter().filter_map(|(_,_,control,field,node,t,hovered,_,_,value,range,_)| {
+    value["transform_controls"] = serde_json::json!(controls.iter().filter_map(|(_,_,control,field,node,t,hovered,_,_,value,range,_,_)| {
         let target = match (control,field) {
             (Some(control),_) => format!("{control:?}"),
             (_,Some(field)) => format!("Field({})",field.0),
