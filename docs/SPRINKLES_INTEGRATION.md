@@ -105,3 +105,33 @@ world collision/navigation behavior, protected critical telegraphs, audio,
 network replication or MMO population/cosmetic-load capacity. Full P2-13 remains
 separate. Windows build/native rendering and the complete upstream preset/widget
 matrix still require qualification.
+
+## Original widget commits — 10 November 2026
+
+`build/sprinkles-original-widgets-20261110-v6/qualification.json` extends native
+validation to the original curve, gradient and nested colour popovers. It changes
+the scale curve maximum through native input, removes its preset name as
+upstream custom-curve behavior requires, edits/restores a gradient stop and
+changes/restores a colour through the RGB/Hex selector. Full expected asset
+comparisons pass after each operation; the source file stays untouched until
+Ctrl S. Preview, playback, scrolling and clean close still pass, with zero Vulkan
+diagnostics on the same RX 7900 XTX / RADV NAVI31 at 1366×768.
+Validation binary SHA-256: `1a45e0414cd7c9e3dfc496f95926c91ea898971db95027485d9069235da47390`.
+
+The native test exposed an existing range-handler hierarchy assumption: the
+range marker is on the vector root, with fields as direct children, whereas the
+handler expected another vector layer. Synchronization and commit now follow
+the actual hierarchy. Valid changes commit once, clamp existing points to the
+new range and mark the curve custom. Invalid/inverted/non-finite values restore
+the canonical input without committing or panicking. A CPU regression exercises
+this tree, one-time commits, clamping and rejection. This is a targeted source
+functionality fix, not a change to the effect format.
+
+The earlier widget probe failures are not acceptance: first two probes used
+incorrect harness assumptions about nesting/visible margins; v4 exposed the
+range bug, and v5 assumed Hex rather than the actual default RGB mode.
+Run `tools/qualify_sprinkles_port.py --widgets` to include these checks.
+
+All 16 runtime/editor tests and three runtime doctests pass for the widget fix,
+along with formatting and denied-warning workspace/all-target Clippy. Retained
+zone/host behavior is unchanged; earlier host proof applies to its recorded binary.

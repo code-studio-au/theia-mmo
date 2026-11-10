@@ -1,3 +1,12 @@
+P5-17 original Sprinkles widgets, 10 November 2026: native curve/gradient/colour
+popovers render and commit actual values through the reused UI, preserving exact
+expected effect data and the source file until Save. Fix the range handler's
+incorrect hierarchy lookup; add finite/inverted-range rejection and a regression
+for one-time commits and clamping. Native GPU validation remains clean on
+RX 7900 XTX / RADV NAVI31. All 16 focused runtime/editor tests and three doctests pass, as do formatting
+and strict workspace Clippy; see SPRINKLES_INTEGRATION for evidence.
+Same-window hosting remains next; no gameplay VFX/Windows/MMO capacity claim.
+
 P5-17 direct Sprinkles source integration, 10 November 2026: the original
 runtime and editor are imported at the reviewed pin and ported to exact Bevy
 0.20.0. File → Particle editor opens the retained UI/preview/RON authoring tool

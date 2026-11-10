@@ -5,6 +5,7 @@ import copy
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -14,7 +15,7 @@ from launch_environment import client_environment
 from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 
 
-def run(output, binary, settings_fixture=None):
+def run(output, binary, settings_fixture=None, widgets=False):
     output = output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     binary = binary.resolve()
@@ -107,6 +108,86 @@ def run(output, binary, settings_fixture=None):
             assert state()['project'] == expected and state()['dirty']
             assert fixture.read_bytes() == original
             capture('reused-emission-edit')
+            def replace_text(field, value):
+                desktop.click(window, field['centre'], 1, 1)
+                desktop.key_state('Control_L', True)
+                try:
+                    desktop.key('a')
+                finally:
+                    desktop.key_state('Control_L', False)
+                for character in value:
+                    desktop.key(character)
+                desktop.key('Return')
+
+            if widgets:
+                before_widgets = copy.deepcopy(state()['project'])
+                for kind, path in [('curve', 'scale.scale_over_lifetime'),
+                                   ('gradient', 'colors.color_over_lifetime'),
+                                   ('color', 'colors.initial_color.color')]:
+                    if kind == 'color':
+                        variant = next(item for item in state()['buttons'] if item['field'] == 'colors.initial_color' and item['text'] == 'Solid')
+                        desktop.click(window, variant['centre'], 1, 1)
+                        wait(lambda: state()['popovers'] == 1)
+                    def trigger():
+                        return next((item for item in state()['buttons']
+                            if item['widget'] == kind and item['field'] == path), None)
+                    button = wait(trigger)
+                    for _ in range(64):
+                        button = trigger()
+                        height = state()['viewport'][1]
+                        if 16 < button['centre'][1] < height - 16:
+                            break
+                        prior = button['centre'][1]
+                        desktop.move(window, [button['centre'][0], height - 100], 1)
+                        desktop.scroll(-4 if prior >= height - 16 else 4)
+                        wait(lambda: trigger()['centre'][1] != prior)
+                    else:
+                        raise AssertionError(f'{kind} trigger did not become visible')
+                    previous_popovers = state()['popovers']
+                    desktop.click(window, button['centre'], 1, 1)
+                    wait(lambda: state()['popovers'] > previous_popovers)
+                    opened = state()['elapsed']
+                    wait(lambda: state()['elapsed'] > opened + 2)
+                    capture(f'original-{kind}-editor')
+                    if kind == 'curve':
+                        maximum = next(field for field in state()['fields'] if field['field'] is None and float(field['value']) == 1.)
+                        replace_text(maximum, '2')
+                        wait(lambda: state()['project']['emitters'][0]['scale']['scale_over_lifetime']['x']['range']['max'] == 2)
+                        curve = before_widgets['emitters'][0]['scale']['scale_over_lifetime']
+                        curve['x']['range']['max'] = 2
+                        curve.pop('name', None)
+                    if kind == 'gradient':
+                        def position_input(value):
+                            return next(field for field in state()['fields'] if field['field'] is None and float(field['value'].rstrip('%')) == value)
+                        replace_text(position_input(0), '25')
+                        wait(lambda: state()['project']['emitters'][0]['colors']['color_over_lifetime']['stops'][0]['position'] == .25)
+                        replace_text(position_input(25), '0')
+                        wait(lambda: state()['project'] == before_widgets)
+                    if kind == 'color':
+                        alpha = next(field for field in state()['fields'] if field['field'] is None and field['value'].rstrip('%') == '100')
+                        mode = next(item for item in state()['buttons'] if item['kind'] == 'button' and item['text'] == '' and item['centre'][0] > alpha['centre'][0] and abs(item['centre'][1] - alpha['centre'][1]) < 1)
+                        desktop.click(window, mode['centre'], 1, 1)
+                        option = wait(lambda: next((item for item in state()['buttons'] if item['text'] == 'Hex'), None))
+                        desktop.click(window, option['centre'], 1, 1)
+                        wait(lambda: any(field['field'] is None and field['value'].lower() == 'ffffff' for field in state()['fields']))
+                        assert state()['project'] == before_widgets
+                        def hex_input(value):
+                            return next(field for field in state()['fields'] if field['field'] is None and field['value'].lower() == value)
+                        replace_text(hex_input('ffffff'), 'ff0000')
+                        wait(lambda: state()['project']['emitters'][0]['colors']['initial_color']['Solid']['color'] == [1,0,0,1])
+                        replace_text(hex_input('ff0000'), 'ffffff')
+                        wait(lambda: state()['project'] == before_widgets)
+                    capture(f'original-{kind}-edit')
+                    for _ in range(4):
+                        if state()['popovers'] == 0:
+                            break
+                        previous_popovers = state()['popovers']
+                        click_kind('close')
+                        wait(lambda: state()['popovers'] < previous_popovers)
+                    assert state()['popovers'] == 0
+                    assert state()['project'] == before_widgets, f'Opening/closing {kind} changed the asset'
+                    assert fixture.read_bytes() == original
+
             desktop.key_state('Control_L', True)
             try:
                 desktop.key('s')
@@ -125,13 +206,16 @@ def run(output, binary, settings_fixture=None):
     logs = (output / 'editor.log').read_text()
     assert 'Insert instance layer "VK_LAYER_KHRONOS_validation"' in logs
     diagnostics = check_gpu_diagnostics(logs, allow_surface_resize=False)
+    assert not re.search(r'\bERROR\b', logs), 'Unexpected editor error; inspect editor.log'
     assert hashlib.sha256(binary.read_bytes()).hexdigest() == binary_hash
     result = dict(gpu=final['gpu'], gpu_diagnostics=diagnostics, validation_layer_active=True,
         binary_sha256=binary_hash, viewport=final['viewport'], emitter_count=final['emitter_count'],
         checks=['original Sprinkles UI and particle preview', 'native pause/resume and loop controls preserve asset/file',
                 'original emission field commits only particle count through native text input', 'Ctrl S saves the RON asset'],
-        settings_fixture=str(settings_fixture) if settings_fixture else None,
+        widgets=widgets, settings_fixture=str(settings_fixture) if settings_fixture else None,
         scope='Linux native ported authoring tool; no embedded workspace, gameplay VFX or MMO capacity claim')
+    if widgets:
+        result['checks'].extend(['original curve range commits through native input', 'gradient stop position edits and restores exactly', 'colour hex edits and restores exactly', 'popover close preserves the expected effect and leaves source untouched until Save'])
     (output / 'qualification.json').write_text(json.dumps(result, indent=2) + '\n')
     print(json.dumps(result, indent=2))
 
@@ -141,5 +225,6 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--binary', type=Path, default=Path('target/debug/examples/theia_validate'))
     parser.add_argument('--settings-fixture', type=Path)
+    parser.add_argument('--widgets', action='store_true', help='Open and close the original curve, gradient and colour editors through native input')
     args = parser.parse_args()
-    run(args.output, args.binary, args.settings_fixture)
+    run(args.output, args.binary, args.settings_fixture, args.widgets)

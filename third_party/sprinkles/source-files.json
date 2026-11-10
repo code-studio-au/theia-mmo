@@ -796,7 +796,7 @@
       "path": "crates/bevy_sprinkles_editor/examples/theia_validate.rs",
       "upstream_path": null,
       "upstream_sha256": null,
-      "imported_sha256": "e5d7d4c0de230c59c4216ddd0910bc9296d8252257657cbc99f0387941dbdba6",
+      "imported_sha256": "0db9fb254ee74cd446baaddfca1d3b383d1bbb4062faf99c44e6570d14cab6ba",
       "changed": true
     },
     {
@@ -1615,7 +1615,7 @@
       "path": "crates/bevy_sprinkles_editor/src/ui/widgets/curve_edit/mod.rs",
       "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/curve_edit/mod.rs",
       "upstream_sha256": "b33704648c4e9331488777d532837646788a3fbeee61e11947eefede10cb7dd6",
-      "imported_sha256": "96bc1099dc4fab4b068d775737ce76b91c10d755d7a5d94ada41d2b7d9a93557",
+      "imported_sha256": "812665bb0173efb5e417110c22a71ad79e4bbb116467443ef7af4a63066e2348",
       "changed": true
     },
     {

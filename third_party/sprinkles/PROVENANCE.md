@@ -201,3 +201,9 @@ gizmo synchronization failures; this is a measured compatibility adaptation,
 not replacement of the particle editor UI or simulation. User data is namespaced
 under `.theia/particles`. See `docs/SPRINKLES_INTEGRATION.md` for acceptance and
 remaining host/runtime integration boundaries.
+
+The original-widget acceptance slice also corrects the curve range handler's
+vector-root lookup and rejects inverted/non-finite input without a commit. This
+upstream functionality correction retains the original curve/gradient/colour UI
+and effect representation. Native source-preserving value edits are recorded in
+`docs/SPRINKLES_INTEGRATION.md`.

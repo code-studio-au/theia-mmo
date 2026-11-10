@@ -1,3 +1,10 @@
+P5-17 original Sprinkles widget commits, 10 November 2026: curve range, gradient
+stop and colour edits pass real native input and exact asset/source comparisons
+with zero Vulkan diagnostics. Correct the curve range root/child lookup and
+reject invalid ranges without commits or panics. All 16 runtime/editor tests,
+three doctests, fmt and strict workspace Clippy pass. Same-window hosting is
+next. See [SPRINKLES_INTEGRATION](../SPRINKLES_INTEGRATION.md) for evidence.
+
 P5-17 direct Sprinkles source integration, 10 November 2026: the original
 runtime and editor are imported at the reviewed pin and ported to exact Bevy
 0.20.0. File → Particle editor opens the retained UI/preview/RON authoring tool

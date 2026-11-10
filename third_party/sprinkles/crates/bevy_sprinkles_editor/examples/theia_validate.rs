@@ -16,6 +16,12 @@ use bevy_sprinkles_editor::{
         binding::{FieldAccessor, FieldBinding},
         playback_controls::{LoopButton, PlayPauseButton, StopButton},
     },
+    ui::widgets::{
+        color_picker::EditorColorPicker,
+        curve_edit::EditorCurveEdit,
+        gradient_edit::EditorGradientEdit,
+        popover::{EditorPopover, PopoverCloseButton},
+    },
 };
 use std::path::PathBuf;
 
@@ -75,10 +81,17 @@ fn report(
     hierarchy: Query<&Children>,
     parents: Query<&ChildOf>,
     texts: Query<&Text>,
-    (bindings, hover, scrolls): (
+    (bindings, hover, scrolls, widgets): (
         Query<&FieldBinding>,
         Res<bevy::picking::hover::HoverMap>,
         Query<(Entity, &ScrollPosition, &ComputedNode, &Node)>,
+        Query<(
+            Has<EditorColorPicker>,
+            Has<EditorGradientEdit>,
+            Has<EditorCurveEdit>,
+            Has<EditorPopover>,
+            Has<PopoverCloseButton>,
+        )>,
     ),
 ) {
     let Ok(window) = windows.single() else { return };
@@ -88,7 +101,11 @@ fn report(
         .and_then(|handle| assets.get(handle));
     let button_data: Vec<_> = buttons.iter().filter(|(_, node, ..)| node.size().min_element() > 0.).map(|(entity, node, pose, play, stop, repeat, hovered)| {
         let label = hierarchy.iter_descendants(entity).filter_map(|child| texts.get(child).ok()).map(|text| text.0.as_str()).collect::<Vec<_>>().join(" ");
-        serde_json::json!({"entity": entity.to_bits(), "kind": if play { "play" } else if stop { "stop" } else if repeat { "loop" } else { "button" },
+        let ancestry:Vec<_> = std::iter::once(entity).chain(parents.iter_ancestors(entity)).collect();
+        let widget = ancestry.iter().find_map(|e| widgets.get(*e).ok().and_then(|(color,gradient,curve,_,_)| if color {Some("color")} else if gradient {Some("gradient")} else if curve {Some("curve")} else {None}));
+        let field = ancestry.iter().find_map(|e| bindings.get(*e).ok()).map(binding_path);
+        let close = widgets.get(entity).is_ok_and(|(_,_,_,_,close)|close);
+        serde_json::json!({"entity": entity.to_bits(), "widget":widget, "field":field, "kind": if play { "play" } else if stop { "stop" } else if repeat { "loop" } else if close {"close"} else { "button" },
             "text": label, "hovered": hovered.is_some_and(|h| h.0), "centre": pose.affine().translation.to_array(), "size": node.size().to_array()})
     }).collect();
     let field_data: Vec<_> = fields.iter().filter(|(_, _, node, _)| node.size().min_element() > 0.).map(|(entity, text, node, pose)| {
@@ -106,6 +123,7 @@ fn report(
         "dirty":dirty.has_unsaved_changes,"project":asset.and_then(|asset|serde_json::to_value(asset).ok()),
         "runtime":runtime.iter().map(|r|serde_json::json!({"paused":r.paused,"loop":r.force_loop})).collect::<Vec<_>>(),
         "emitter_count":emitters.iter().count(),"buttons":button_data,"fields":field_data,
+        "popovers":widgets.iter().filter(|(_,_,_,popover,_)|*popover).count(),
         "hover":hover.values().flat_map(|h|h.keys()).map(|e|e.to_bits()).collect::<Vec<_>>(),
         "scrolls":scrolls.iter().filter(|(_,_,_,n)|n.overflow.y==OverflowAxis::Scroll).map(|(e,s,c,_)|serde_json::json!({"entity":e.to_bits(),"y":s.y,"size":c.size().to_array(),"content":c.content_size().to_array()})).collect::<Vec<_>>(),
     });
@@ -114,5 +132,12 @@ fn report(
         if std::fs::write(&temporary, bytes).is_ok() {
             let _ = std::fs::rename(temporary, &path.0);
         }
+    }
+}
+
+fn binding_path(binding: &FieldBinding) -> String {
+    match &binding.accessor {
+        FieldAccessor::Direct(path) => path.clone(),
+        FieldAccessor::VariantField { path, field_name } => format!("{path}.{field_name}"),
     }
 }

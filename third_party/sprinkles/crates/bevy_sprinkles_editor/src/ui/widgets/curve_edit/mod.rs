@@ -38,9 +38,7 @@ use crate::ui::widgets::popover::{
 use crate::ui::widgets::text_edit::EditorTextEdit;
 use crate::ui::widgets::text_edit::set_text_input_value;
 use crate::ui::widgets::utils::is_descendant_of;
-use crate::ui::widgets::vector_edit::{
-    EditorVectorEdit, VectorEditProps, VectorSize, VectorSuffixes, vector_edit,
-};
+use crate::ui::widgets::vector_edit::{VectorEditProps, VectorSize, VectorSuffixes, vector_edit};
 use bevy::text::EditableText;
 
 #[derive(Clone, Copy, PartialEq, Default)]
@@ -1439,39 +1437,25 @@ fn sync_trigger_label(
 fn sync_range_inputs_to_state(
     input_focus: Res<InputFocus>,
     states: Query<(Entity, &CurveEditState), Changed<CurveEditState>>,
-    range_edits: Query<(Entity, &RangeEdit, &Children)>,
-    vector_edits: Query<&Children, With<EditorVectorEdit>>,
+    range_edits: Query<(&RangeEdit, &Children)>,
     mut text_inputs: Query<(Entity, &mut EditableText), With<EditorTextEdit>>,
     parents: Query<&ChildOf>,
 ) {
     for (curve_edit_entity, state) in &states {
-        for (_range_edit_entity, range_edit, range_children) in &range_edits {
+        for (range_edit, components) in &range_edits {
             if range_edit.0 != curve_edit_entity {
                 continue;
             }
-
             let channel = state.active_curve();
-            let values = [channel.range.min, channel.range.max];
-
-            for range_child in range_children.iter() {
-                let Ok(vector_children) = vector_edits.get(range_child) else {
-                    continue;
-                };
-
-                for (i, vector_child) in vector_children.iter().enumerate() {
-                    let Some(&value) = values.get(i) else {
-                        continue;
-                    };
-                    let text = value.to_string();
-
-                    for (text_input_entity, mut editable) in &mut text_inputs {
-                        if input_focus.get() == Some(text_input_entity) {
-                            continue;
-                        }
-
-                        if is_descendant_of(text_input_entity, vector_child, &parents) {
-                            set_text_input_value(&mut editable, text.clone());
-                        }
+            for (component, value) in components
+                .iter()
+                .zip([channel.range.min, channel.range.max])
+            {
+                for (entity, mut editable) in &mut text_inputs {
+                    if input_focus.get() != Some(entity)
+                        && is_descendant_of(entity, component, &parents)
+                    {
+                        set_text_input_value(&mut editable, value.to_string());
                     }
                 }
             }
@@ -1484,80 +1468,145 @@ fn handle_range_blur(
     mut last_focus: Local<Option<Entity>>,
     mut commands: Commands,
     mut states: Query<&mut CurveEditState>,
-    range_edits: Query<(Entity, &RangeEdit, &Children)>,
-    vector_edits: Query<&Children, With<EditorVectorEdit>>,
+    range_edits: Query<(&RangeEdit, &Children)>,
     text_inputs: Query<&EditableText, With<EditorTextEdit>>,
     parents: Query<&ChildOf>,
 ) {
-    let current_focus = input_focus.get();
-    let previous_focus = *last_focus;
-    *last_focus = current_focus;
-
-    let Some(blurred_entity) = previous_focus else {
+    let previous_focus = std::mem::replace(&mut *last_focus, input_focus.get());
+    let Some(blurred) = previous_focus.filter(|entity| Some(*entity) != input_focus.get()) else {
         return;
     };
-    if current_focus == Some(blurred_entity) {
-        return;
-    }
-
-    let Ok(editable) = text_inputs.get(blurred_entity) else {
+    let Ok(editable) = text_inputs.get(blurred) else {
         return;
     };
-
-    for (_range_edit_entity, range_edit, range_children) in &range_edits {
+    for (range_edit, components) in &range_edits {
+        let Some(index) = components
+            .iter()
+            .position(|component| is_descendant_of(blurred, component, &parents))
+        else {
+            continue;
+        };
         let Ok(mut state) = states.get_mut(range_edit.0) else {
             continue;
         };
-
-        for range_child in range_children.iter() {
-            let Ok(vector_children) = vector_edits.get(range_child) else {
-                continue;
-            };
-
-            for (field_index, vector_child) in vector_children.iter().enumerate() {
-                let is_descendant = is_descendant_of(blurred_entity, vector_child, &parents);
-                if !is_descendant {
-                    continue;
+        let parsed = editable.value().to_string().parse::<f32>().ok();
+        let channel = state.active_curve();
+        let valid = parsed.is_some_and(|value| {
+            value.is_finite()
+                && if index == 0 {
+                    value <= channel.range.max
+                } else {
+                    value >= channel.range.min
                 }
+        });
+        if !valid {
+            // Restore the canonical display without mutating or committing the curve.
+            state.set_changed();
+            return;
+        }
+        let value = parsed.expect("validated finite range value");
+        let channel = state.active_curve_mut();
+        let bound = if index == 0 {
+            &mut channel.range.min
+        } else {
+            &mut channel.range.max
+        };
+        if (*bound - value).abs() <= f32::EPSILON {
+            return;
+        }
+        *bound = value;
+        for point in &mut channel.points {
+            point.value = point
+                .value
+                .clamp(channel.range.min as f64, channel.range.max as f64);
+        }
+        state.mark_custom();
+        trigger_curve_events(&mut commands, range_edit.0, &state.curve);
+        return;
+    }
+}
 
-                let text = editable.value().to_string();
-                if text.is_empty() {
-                    return;
-                }
+#[cfg(test)]
+mod range_tests {
+    use super::*;
+    use bevy::{input_focus::FocusCause, text::EditableText};
 
-                let Ok(value) = text.parse::<f32>() else {
-                    return;
-                };
+    #[derive(Resource, Default)]
+    struct Commits(Vec<CurveTexture>);
 
-                let mut changed = false;
-                {
-                    let channel = state.active_curve_mut();
-                    if field_index == 0 {
-                        if (channel.range.min - value).abs() > f32::EPSILON {
-                            channel.range.min = value;
-                            changed = true;
-                        }
-                    } else if (channel.range.max - value).abs() > f32::EPSILON {
-                        channel.range.max = value;
-                        changed = true;
-                    }
-
-                    if changed {
-                        let range_min = channel.range.min as f64;
-                        let range_max = channel.range.max as f64;
-                        for point in &mut channel.points {
-                            point.value = point.value.clamp(range_min, range_max);
-                        }
-                    }
-                }
-
-                if changed {
-                    state.mark_custom();
-                    trigger_curve_events(&mut commands, range_edit.0, &state.curve);
-                }
-
-                return;
-            }
+    #[test]
+    fn actual_vector_range_children_commit_once_and_reject_invalid_ranges_without_panics() {
+        let mut app = App::new();
+        app.init_resource::<InputFocus>()
+            .init_resource::<Commits>()
+            .add_systems(
+                Update,
+                (handle_range_blur, sync_range_inputs_to_state).chain(),
+            )
+            .add_observer(
+                |event: On<CurveEditCommitEvent>, mut commits: ResMut<Commits>| {
+                    commits.0.push(event.curve.clone())
+                },
+            );
+        let curve = app
+            .world_mut()
+            .spawn(CurveEditState::from_curve(CurveTexture {
+                name: Some("Original".into()),
+                ..default()
+            }))
+            .id();
+        let vector = app
+            .world_mut()
+            .spawn((
+                RangeEdit(curve),
+                crate::ui::widgets::vector_edit::EditorVectorEdit,
+            ))
+            .id();
+        let inputs: Vec<_> = ["0", "1"]
+            .into_iter()
+            .map(|value| {
+                let component = app.world_mut().spawn(ChildOf(vector)).id();
+                app.world_mut()
+                    .spawn((EditorTextEdit, EditableText::new(value), ChildOf(component)))
+                    .id()
+            })
+            .collect();
+        app.update();
+        for (index, value, expected_commits) in [
+            (1, "2", 1),
+            (0, "3", 1),
+            (1, "NaN", 1),
+            (1, "inf", 1),
+            (1, "-1", 1),
+            (1, "0.5", 2),
+        ] {
+            app.world_mut()
+                .entity_mut(inputs[index])
+                .insert(EditableText::new(value));
+            app.world_mut()
+                .resource_mut::<InputFocus>()
+                .set(inputs[index], FocusCause::Pressed);
+            app.update();
+            app.world_mut().resource_mut::<InputFocus>().clear();
+            app.update();
+            assert_eq!(app.world().resource::<Commits>().0.len(), expected_commits);
+            let state = app.world().get::<CurveEditState>(curve).unwrap();
+            assert_eq!(state.curve.name, None);
+            assert_eq!(state.curve.x.range.min, 0.);
+            assert_eq!(
+                state.curve.x.range.max,
+                if expected_commits == 1 { 2. } else { 0.5 }
+            );
+            assert!(
+                state
+                    .curve
+                    .x
+                    .points
+                    .iter()
+                    .all(|point| point.value <= state.curve.x.range.max as f64)
+            );
+            app.update();
+            assert_eq!(app.world().resource::<Commits>().0.len(), expected_commits);
         }
     }
 }
