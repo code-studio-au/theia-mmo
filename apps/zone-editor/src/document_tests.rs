@@ -62,6 +62,7 @@ fn fixture(root: &Sandbox, origin: [f64; 3]) -> App {
         .init_resource::<ButtonInput<KeyCode>>()
         .init_resource::<InputFocus>()
         .init_resource::<outliner::Content>()
+        .add_plugins(menus::plugin)
         .add_observer(workspace::activate)
         .add_observer(activate)
         .add_systems(Startup, (workspace::setup, setup, naming::setup))
@@ -87,6 +88,15 @@ fn fixture(root: &Sandbox, origin: [f64; 3]) -> App {
     app
 }
 fn click(app: &mut App, entity: Entity) {
+    if app
+        .world()
+        .get::<bevy::ui_widgets::MenuItem>(entity)
+        .is_some()
+    {
+        app.world_mut().trigger(Activate { entity });
+        app.update();
+        return;
+    }
     let window = app
         .world_mut()
         .query_filtered::<Entity, With<Window>>()

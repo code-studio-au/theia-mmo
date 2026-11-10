@@ -10,6 +10,7 @@ mod gizmo;
 #[cfg(test)]
 mod headless_ui;
 mod markers;
+mod menus;
 mod naming;
 mod outliner;
 mod paths;
@@ -522,6 +523,7 @@ fn run() -> Result<(), String> {
         ..default()
     }))
     .add_plugins(theme::plugin)
+    .add_plugins(menus::plugin)
     .add_observer(workspace::activate)
     .add_observer(workspace::change)
     .add_observer(workspace::toggle)
@@ -948,7 +950,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
         Action::Play => unreachable!(),
     }
 }
-#[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 fn keyboard(
     keys: Res<ButtonInput<KeyCode>>,
     windows: Query<&Window>,
@@ -957,15 +959,23 @@ fn keyboard(
     mut content: ResMut<outliner::Content>,
     mut requests: ResMut<workspace::Requests>,
     focus: Res<bevy::input_focus::InputFocus>,
+    menu_focus: Query<(), With<bevy::ui_widgets::MenuItem>>,
     sliders: Query<
         (),
         (
-            With<bevy::ui_widgets::Slider>,
+            Or<(
+                With<bevy::ui_widgets::Slider>,
+                With<bevy::ui_widgets::MenuButton>,
+            )>,
             Without<bevy::ui::InteractionDisabled>,
         ),
     >,
 ) {
-    if session.has_modal() {
+    if session.has_modal()
+        || focus
+            .get()
+            .is_some_and(|entity| menu_focus.contains(entity))
+    {
         return;
     }
     if !windows.single().is_ok_and(|w| w.focused) {
@@ -1121,6 +1131,10 @@ fn keyboard(
         && [
             KeyCode::ArrowLeft,
             KeyCode::ArrowRight,
+            KeyCode::ArrowUp,
+            KeyCode::ArrowDown,
+            KeyCode::PageUp,
+            KeyCode::PageDown,
             KeyCode::Home,
             KeyCode::End,
         ]
@@ -1202,6 +1216,8 @@ fn camera_controls(
     scroll: Res<AccumulatedMouseScroll>,
     windows: Query<&Window>,
     session: Res<Session>,
+    focus: Res<bevy::input_focus::InputFocus>,
+    menu_items: Query<(), With<bevy::ui_widgets::MenuItem>>,
     mut view: ResMut<View>,
     mut panning: Local<Option<Vec2>>,
     mut camera: Query<(&mut Transform, &mut Projection), With<Camera3d>>,
@@ -1209,8 +1225,13 @@ fn camera_controls(
     let Ok(window) = windows.single() else {
         return;
     };
-    let enabled =
-        window.focused && session.play.is_none() && !session.has_modal() && session.drag.is_none();
+    let enabled = window.focused
+        && session.play.is_none()
+        && !session.has_modal()
+        && session.drag.is_none()
+        && !focus
+            .get()
+            .is_some_and(|entity| menu_items.contains(entity));
     let cursor = canvas_cursor(window);
     let outside = cursor.is_some();
     if !enabled

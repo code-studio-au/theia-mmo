@@ -140,22 +140,59 @@ pub(super) fn setup(mut commands: Commands) {
             })
             .with_children(|row| {
                 row.spawn(text("THEIA  /  ZONE STUDIO", 18.));
-                for (control, label) in [
-                    (Control::New, "New zone"),
-                    (Control::Command(Action::Save), "Save"),
-                    (Control::FileSaveAs, "Save As..."),
-                    (Control::FileOpen, "Open..."),
-                    (Control::Command(Action::Load), "Reload"),
-                    (Control::Command(Action::Undo), "Undo"),
-                    (Control::Command(Action::Redo), "Redo"),
-                    (Control::Frame, "Frame selection"),
-                    (Control::Command(Action::Spawn), "Spawn at view centre"),
-                    (Control::SpawnTransform, "Edit spawn..."),
-                    (Control::Command(Action::Play), "Playtest"),
-                    (Control::Help, "Shortcuts"),
-                ] {
-                    row.spawn(button(control, label));
-                }
+                menus::spawn(
+                    row,
+                    "File",
+                    &[
+                        (Control::New, "New zone", "Ctrl N"),
+                        (Control::FileOpen, "Open…", "Ctrl O"),
+                        (Control::Command(Action::Save), "Save", "Ctrl S"),
+                        (Control::FileSaveAs, "Save as…", "Ctrl Shift S"),
+                        (Control::Command(Action::Load), "Reload", "Ctrl Shift O"),
+                    ],
+                );
+                menus::spawn(
+                    row,
+                    "Edit",
+                    &[
+                        (Control::Command(Action::Undo), "Undo", "Ctrl Z"),
+                        (Control::Command(Action::Redo), "Redo", "Ctrl Y"),
+                        (Control::Rename, "Rename…", "F8"),
+                        (Control::Transform, "Edit attributes…", "F9"),
+                        (Control::Command(Action::Duplicate), "Duplicate", "Ctrl D"),
+                        (Control::Command(Action::Delete), "Delete", "Del"),
+                    ],
+                );
+                menus::spawn(
+                    row,
+                    "View",
+                    &[
+                        (Control::Frame, "Frame selection", "F"),
+                        (
+                            Control::View(camera_views::Preset::Perspective),
+                            "Perspective",
+                            "",
+                        ),
+                        (Control::View(camera_views::Preset::Top), "Top", ""),
+                        (Control::View(camera_views::Preset::Front), "Front", ""),
+                        (Control::View(camera_views::Preset::Right), "Right", ""),
+                        (Control::Help, "Keyboard shortcuts", ""),
+                    ],
+                );
+                menus::spawn(
+                    row,
+                    "Zone",
+                    &[
+                        (Control::Command(Action::Spawn), "Spawn at view centre", ""),
+                        (Control::SpawnTransform, "Edit spawn…", ""),
+                    ],
+                );
+                row.spawn(Node {
+                    flex_grow: 1.,
+                    ..default()
+                });
+                row.spawn(button(Control::Command(Action::Play), "Playtest"));
+                row.spawn(button(Control::Command(Action::Save), "Save"));
                 row.spawn((
                     Control::Snap,
                     Checkbox,
@@ -525,7 +562,7 @@ impl Setting {
 #[allow(clippy::too_many_arguments)]
 pub(super) fn activate(
     event: On<PointerPress>,
-    controls: Query<&Control>,
+    controls: Query<&Control, Without<bevy::ui_widgets::MenuItem>>,
     windows: Query<&Window>,
     mut session: ResMut<Session>,
     mut view: ResMut<View>,
@@ -538,35 +575,50 @@ pub(super) fn activate(
     let Ok(control) = controls.get(event.entity) else {
         return;
     };
+    execute(
+        *control,
+        &mut session,
+        &mut view,
+        &mut requests,
+        &mut content,
+    );
+}
+pub(super) fn execute(
+    control: Control,
+    session: &mut Session,
+    view: &mut View,
+    requests: &mut Requests,
+    content: &mut outliner::Content,
+) {
     if matches!(control, Control::Snap | Control::Handles | Control::Grid) {
         return;
     }
     if session.has_modal() {
         return;
     }
-    if busy(&session)
+    if busy(session)
         && !(session.play.is_some() && matches!(control, Control::Command(Action::Play)))
     {
         session.status =
             "Finish or cancel the preview / leave playtest before using workspace controls".into();
         return;
     }
-    if !control.enabled(&session) {
+    if !control.enabled(session) {
         return;
     }
-    match *control {
-        Control::New => new_document(&mut session, &mut view, &mut content),
+    match control {
+        Control::New => new_document(session, view, content),
         Control::Mode(next) => {
-            if mode(&session) != next {
+            if mode(session) != next {
                 session.set_mode(next);
             }
         }
-        Control::Command(action) => perform(action, &mut session, &mut view),
+        Control::Command(action) => perform(action, session, view),
         Control::Frame => {
             if session.path_mode {
-                paths::focus(&session, &mut view);
+                paths::focus(session, view);
             } else {
-                selection::frame(&mut session, &mut view);
+                selection::frame(session, view);
             }
         }
         Control::Point(direction) => {
@@ -588,7 +640,7 @@ pub(super) fn activate(
             }
         }
         Control::WholePath => session.path_point = None,
-        Control::View(preset) => preset.select(&mut view),
+        Control::View(preset) => preset.select(view),
         Control::GizmoTool(tool) => {
             session.gizmo_tool = tool;
             session.palette = None;

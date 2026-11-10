@@ -1,0 +1,331 @@
+//! Native Bevy application menus using the Sprinkles visual vocabulary.
+use super::*;
+use bevy::input_focus::{
+    FocusCause, InputFocus,
+    tab_navigation::{NavAction, TabIndex},
+};
+use bevy::ui_widgets::{MenuAction, MenuButton, MenuEvent, MenuFocusState, MenuItem, MenuPopup};
+
+pub(super) fn plugin(app: &mut App) {
+    app.add_observer(activate);
+}
+
+pub(super) fn spawn(
+    parent: &mut ChildSpawnerCommands,
+    title: &'static str,
+    items: &[(workspace::Control, &'static str, &'static str)],
+) {
+    let mut owner = parent.spawn(Node::default());
+    let anchor = owner.id();
+    let mut button = Entity::PLACEHOLDER;
+    let mut popup = Entity::PLACEHOLDER;
+    owner.with_children(|root| {
+        button = root
+            .spawn((
+                Button,
+                MenuButton,
+                Hovered::default(),
+                theme::Variant::Ghost,
+                Node {
+                    min_height: px(28),
+                    padding: UiRect::axes(px(12), px(4)),
+                    align_items: AlignItems::Center,
+                    ..default()
+                },
+                BackgroundColor(theme::Variant::Ghost.background(false)),
+                children![text(title, 14.)],
+            ))
+            .id();
+        popup = root
+            .spawn((
+                MenuPopup::default(),
+                GlobalZIndex(15),
+                Node {
+                    display: Display::None,
+                    position_type: PositionType::Absolute,
+                    top: px(34),
+                    left: px(0),
+                    width: px(260),
+                    padding: UiRect::all(px(4)),
+                    flex_direction: FlexDirection::Column,
+                    border: UiRect::all(px(1)),
+                    border_radius: BorderRadius::all(px(4)),
+                    ..default()
+                },
+                BorderColor::all(theme::BORDER),
+                BackgroundColor(theme::PANEL),
+            ))
+            .with_children(|menu| {
+                for &(control, label, shortcut) in items {
+                    menu.spawn((
+                        control,
+                        MenuItem,
+                        Hovered::default(),
+                        TabIndex(0),
+                        Node {
+                            width: percent(100),
+                            min_height: px(28),
+                            padding: UiRect::axes(px(8), px(5)),
+                            align_items: AlignItems::Center,
+                            justify_content: JustifyContent::SpaceBetween,
+                            border_radius: BorderRadius::all(px(2)),
+                            ..default()
+                        },
+                        BackgroundColor(theme::Variant::Ghost.background(false)),
+                        children![
+                            text(label, 14.),
+                            (
+                                Text::new(shortcut),
+                                theme::font(11.),
+                                TextColor(theme::MUTED),
+                                bevy::picking::Pickable::IGNORE
+                            )
+                        ],
+                    ));
+                }
+            })
+            .id();
+    });
+    parent.commands().entity(anchor).observe(
+        move |event: On<MenuEvent>,
+              session: Res<Session>,
+              windows: Query<&Window>,
+              mut popups: Query<(&mut Node, &mut MenuFocusState), With<MenuPopup>>,
+              mut focus: ResMut<InputFocus>| {
+            let Ok((mut node, mut state)) = popups.get_mut(popup) else {
+                return;
+            };
+            let allowed =
+                !workspace::busy(&session) && windows.single().is_ok_and(|window| window.focused);
+            match event.action {
+                MenuAction::Open(direction) if allowed => {
+                    node.display = Display::Flex;
+                    *state = MenuFocusState::Opening(direction);
+                }
+                MenuAction::Toggle if allowed => {
+                    if node.display == Display::None {
+                        node.display = Display::Flex;
+                        *state = MenuFocusState::Opening(NavAction::First);
+                    } else {
+                        node.display = Display::None;
+                        *state = MenuFocusState::Closed;
+                    }
+                }
+                MenuAction::CloseAll => {
+                    node.display = Display::None;
+                    *state = MenuFocusState::Closed;
+                }
+                MenuAction::FocusRoot => focus.set(button, FocusCause::Navigated),
+                _ => {}
+            }
+        },
+    );
+}
+
+#[allow(clippy::too_many_arguments)]
+fn activate(
+    event: On<Activate>,
+    items: Query<&workspace::Control, With<MenuItem>>,
+    windows: Query<&Window>,
+    mut session: ResMut<Session>,
+    mut view: ResMut<View>,
+    mut requests: ResMut<workspace::Requests>,
+    mut content: ResMut<outliner::Content>,
+    mut commands: Commands,
+) {
+    if !windows.single().is_ok_and(|w| w.focused) {
+        return;
+    }
+    let Ok(control) = items.get(event.entity) else {
+        return;
+    };
+    workspace::execute(
+        *control,
+        &mut session,
+        &mut view,
+        &mut requests,
+        &mut content,
+    );
+    commands.trigger(MenuEvent {
+        source: event.entity,
+        action: MenuAction::CloseAll,
+    });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use workspace::Control;
+    fn setup(mut commands: Commands) {
+        commands.spawn(Node::default()).with_children(|root| {
+            spawn(
+                root,
+                "Edit",
+                &[
+                    (Control::Command(Action::Undo), "Undo", "Ctrl Z"),
+                    (Control::Command(Action::Redo), "Redo", "Ctrl Y"),
+                    (Control::FileOpen, "Open…", "Ctrl O"),
+                ],
+            )
+        });
+    }
+    #[test]
+    fn menu_events_open_close_focus_and_dispatch_the_shared_edit_exactly_once() {
+        let zone = Zone {
+            origin: [128_000_000_000.125, 20.25, -128_000_000_000.5],
+            spawn: [128_000_000_000.125, 20.35, -128_000_000_000.5],
+            objects: vec![Object {
+                id: 1,
+                name: "Exact menu selection".into(),
+                primitive: Primitive::Box,
+                pose: Pose {
+                    position: [128_000_000_008.25, 21.5, -128_000_000_007.],
+                    yaw_degrees: 17.25,
+                    size: [2., 2.5, 3.],
+                },
+            }],
+            ..default()
+        };
+        let mut editor = Editor::new(zone.clone()).unwrap();
+        editor
+            .execute(Command::Apply {
+                expected_revision: 0,
+                edits: vec![Edit::RenameZone {
+                    name: "Menu edit".into(),
+                }],
+            })
+            .unwrap();
+        let mut app = App::new();
+        app.insert_resource(Session::new(
+            editor,
+            "unused.json".into(),
+            Some(zone.clone()),
+        ))
+        .insert_resource(View {
+            target: Vec3::ZERO,
+            yaw: 0.6,
+            pitch: 0.8,
+            distance: 32.,
+            preset: camera_views::Preset::Perspective,
+            show_grid: true,
+        })
+        .init_resource::<ButtonInput<KeyCode>>()
+        .init_resource::<InputFocus>()
+        .init_resource::<outliner::Content>()
+        .init_resource::<workspace::Requests>()
+        .add_plugins(plugin)
+        .add_systems(Startup, setup)
+        .add_systems(Update, crate::keyboard);
+        app.world_mut().resource_mut::<Session>().selected = Some(1);
+        let window = app
+            .world_mut()
+            .spawn(Window {
+                focused: true,
+                ..default()
+            })
+            .id();
+        app.update();
+        let button = app
+            .world_mut()
+            .query_filtered::<Entity, With<MenuButton>>()
+            .single(app.world())
+            .unwrap();
+        let popup = app
+            .world_mut()
+            .query_filtered::<Entity, With<MenuPopup>>()
+            .single(app.world())
+            .unwrap();
+        let mut item = |action: Action| {
+            app.world_mut().query::<(Entity,&Control)>().iter(app.world()).find(|(_,control)|matches!(control,Control::Command(a) if std::mem::discriminant(a)==std::mem::discriminant(&action))).unwrap().0
+        };
+        let undo = item(Action::Undo);
+        let redo = item(Action::Redo);
+        app.world_mut().trigger(MenuEvent {
+            source: button,
+            action: MenuAction::Toggle,
+        });
+        app.update();
+        assert_eq!(
+            app.world().get::<Node>(popup).unwrap().display,
+            Display::Flex
+        );
+        assert_eq!(app.world().resource::<Session>().editor.revision(), 1);
+        app.world_mut()
+            .resource_mut::<InputFocus>()
+            .set(undo, FocusCause::Navigated);
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .press(KeyCode::ArrowRight);
+        app.update();
+        assert_eq!(app.world().resource::<Session>().editor.revision(), 1);
+        assert_eq!(
+            app.world().resource::<Session>().editor.zone().objects,
+            zone.objects
+        );
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .reset_all();
+        app.world_mut().trigger(Activate { entity: undo });
+        app.update();
+        assert_eq!(
+            app.world().get::<Node>(popup).unwrap().display,
+            Display::None
+        );
+        assert_eq!(app.world().resource::<Session>().editor.zone(), &zone);
+        assert_eq!(app.world().resource::<Session>().editor.history(), (0, 1));
+        app.world_mut().trigger(Activate { entity: undo });
+        app.update();
+        assert_eq!(app.world().resource::<Session>().editor.revision(), 2);
+        app.world_mut().trigger(MenuEvent {
+            source: button,
+            action: MenuAction::Open(NavAction::Last),
+        });
+        app.update();
+        assert!(matches!(
+            app.world().get::<MenuFocusState>(popup),
+            Some(MenuFocusState::Opening(NavAction::Last))
+        ));
+        app.world_mut().trigger(Activate { entity: redo });
+        app.update();
+        assert_eq!(app.world().resource::<Session>().editor.revision(), 3);
+        assert_eq!(
+            app.world().resource::<Session>().editor.zone().name,
+            "Menu edit"
+        );
+        app.world_mut().trigger(MenuEvent {
+            source: button,
+            action: MenuAction::FocusRoot,
+        });
+        app.update();
+        assert_eq!(app.world().resource::<InputFocus>().get(), Some(button));
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .press(KeyCode::ControlLeft);
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .press(KeyCode::KeyF);
+        app.update();
+        assert!(app.world().resource::<workspace::Requests>().find);
+        assert_eq!(app.world().resource::<Session>().editor.revision(), 3);
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .reset_all();
+        app.world_mut().get_mut::<Window>(window).unwrap().focused = false;
+        app.world_mut().trigger(MenuEvent {
+            source: button,
+            action: MenuAction::Toggle,
+        });
+        app.update();
+        app.world_mut().trigger(Activate { entity: undo });
+        app.update();
+        assert_eq!(
+            app.world().get::<Node>(popup).unwrap().display,
+            Display::None
+        );
+        assert_eq!(app.world().resource::<Session>().editor.revision(), 3);
+        assert_eq!(
+            app.world().resource::<Session>().editor.zone().origin,
+            zone.origin
+        );
+    }
+}

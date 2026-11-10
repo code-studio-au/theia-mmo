@@ -1,3 +1,14 @@
+Sprinkles-style application menus, 10 November 2026 (P5-17): compact File,
+Edit, View and Zone menus replace the long document-command button row. Save and
+Playtest remain directly accessible. Native Bevy MenuButton/MenuPopup/MenuItem
+provide the menu interaction path; command activation shares existing validation,
+undo/history and modal/playtest guards. Headless events exercise open/close/focus,
+one-entry undo/redo, disabled/unfocused refusal and far-coordinate preservation.
+Raw menu focus blocks authoring navigation, camera movement and browser wheel
+paging; closed menu buttons retain global shortcuts. All 130 focused Rust tests
+pass. Native visual/input/GPU acceptance remains pending while desktop use is
+stopped. Evidence: `build/sprinkles-review/menu-*.log`.
+
 Sprinkles browser/inspector layout, 10 November 2026 (P5-17): replaces the
 old opposing/stacked side panels with adjacent full-height left browser and
 inspector columns, followed by the world canvas. The inspector contains the

@@ -420,6 +420,8 @@ pub(super) fn scroll(
     scroll: Res<AccumulatedMouseScroll>,
     windows: Query<&Window>,
     session: Res<Session>,
+    focus: Option<Res<bevy::input_focus::InputFocus>>,
+    menu_items: Query<(), With<bevy::ui_widgets::MenuItem>>,
     mut content: ResMut<Content>,
 ) {
     let Ok(window) = windows.single() else { return };
@@ -431,7 +433,12 @@ pub(super) fn scroll(
         p.x >= 0. && p.x < WIDTH && p.y >= workspace::HEADER && p.y < window.height() - 52.
     });
     let before = content.page;
-    let blocked = !window.focused || busy(&session);
+    let blocked = !window.focused
+        || busy(&session)
+        || focus
+            .as_ref()
+            .and_then(|f| f.get())
+            .is_some_and(|entity| menu_items.contains(entity));
     if over_panel && !blocked {
         if scroll.delta.y < 0. {
             content.page = (content.page + 1).min(content.pages() - 1);
