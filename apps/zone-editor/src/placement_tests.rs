@@ -448,6 +448,42 @@ fn sprinkles_browser_inspector_and_tools_have_separate_full_height_regions() {
             assert!(p.y-half.y>=HEADER && p.y+half.y<=1440.);
         }
             assert!(visible > 0);
+            let mut viewport_controls = 0;
+            let mut header_actions = 0;
+            for (control, node, pose) in app
+                .world_mut()
+                .query::<(&Control, &ComputedNode, &bevy::ui::UiGlobalTransform)>()
+                .iter(app.world())
+            {
+                if node.size().min_element() <= 0. {
+                    continue;
+                }
+                let first = pose.affine().translation - node.size() / 2.;
+                let last = pose.affine().translation + node.size() / 2.;
+                if matches!(
+                    control,
+                    Control::View(_)
+                        | Control::Grid
+                        | Control::Snap
+                        | Control::Handles
+                        | Control::GizmoTool(_)
+                ) {
+                    viewport_controls += 1;
+                    assert!(
+                        first.x >= sidebar::WIDTH + browser_width
+                            && last.x <= sidebar::WIDTH + browser_width + inspector_width
+                    );
+                    assert!(first.y >= HEADER && last.y <= 1440.);
+                }
+                if matches!(control, Control::Command(Action::Save | Action::Play)) {
+                    header_actions += 1;
+                    assert!(first.x >= 0. && last.x <= 3440.);
+                    assert!(first.y >= 0. && last.y <= HEADER);
+                }
+            }
+            assert_eq!(viewport_controls, 10);
+            assert_eq!(header_actions, 2);
+
             assert_eq!(app.world().resource::<Session>().editor.zone(), &source);
             assert_eq!(app.world().resource::<Session>().editor.history(), (0, 0));
         }

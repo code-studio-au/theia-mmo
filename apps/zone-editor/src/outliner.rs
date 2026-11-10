@@ -1145,7 +1145,7 @@ mod tests {
             None,
             Some(Vec2::new(-1., 350.)),
             Some(Vec2::new(sidebar::WIDTH - 1., 350.)),
-            Some(Vec2::new(150., 91.)),
+            Some(Vec2::new(150., workspace::HEADER - 1.)),
             Some(Vec2::new(150., 1388.)),
             Some(Vec2::new(sidebar::WIDTH + WIDTH, 350.)),
         ] {
@@ -1161,7 +1161,7 @@ mod tests {
             .entity_mut(window)
             .get_mut::<Window>()
             .unwrap()
-            .set_cursor_position(Some(Vec2::new(sidebar::WIDTH, 92.)));
+            .set_cursor_position(Some(Vec2::new(sidebar::WIDTH, workspace::HEADER)));
         app.world_mut()
             .entity_mut(window)
             .get_mut::<Window>()
@@ -1329,7 +1329,9 @@ mod tests {
                         position.x - half.x >= sidebar::WIDTH
                             && position.x + half.x <= sidebar::WIDTH + WIDTH
                     );
-                    assert!(position.y - half.y >= 92. && position.y + half.y <= 1388.);
+                    assert!(
+                        position.y - half.y >= workspace::HEADER && position.y + half.y <= 1388.
+                    );
                 }
                 if !matches!(control, Control::Row(_)) || node.display == Display::None {
                     continue;
@@ -1341,7 +1343,7 @@ mod tests {
                     position.x - half.x >= sidebar::WIDTH
                         && position.x + half.x <= sidebar::WIDTH + WIDTH
                 );
-                assert!(position.y - half.y >= 92. && position.y + half.y <= 1388.);
+                assert!(position.y - half.y >= workspace::HEADER && position.y + half.y <= 1388.);
                 visible += 1;
             }
             assert_eq!(visible, if expected_page == 2 { 8 } else { 18 });

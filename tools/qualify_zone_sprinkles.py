@@ -152,7 +152,7 @@ def run(output, binary, only_case=None, scroll=False, attributes=False, dialogs=
                 tool = next(c for c in state()['buttons'] if c['action'] == 'Place(Box)' and min(c['size']) > 0)
                 click(tool['centre'])
                 settings_before = {c['target']: c['value'] for c in state()['workspace_controls'] if c['range'] is not None}
-                for title in ['Selection', 'Tools']:
+                for title in ['Selection', 'Viewport', 'Tools']:
                     other_sections = {c['title']:c['expanded'] for c in state()['sections'] if c['title'] != title}
                     section = next(c for c in state()['sections'] if c['title'] == title)
                     click(section['centre'])
@@ -235,7 +235,7 @@ def run(output, binary, only_case=None, scroll=False, attributes=False, dialogs=
                         visited.append(focused)
                         def visible_focus():
                             c=next(c for c in state()['transform_controls'] if c['entity']==focused)
-                            return c['centre'][1]-c['size'][1]/2 >= 92 and c['centre'][1]+c['size'][1]/2 <= 420
+                            return c['centre'][1]-c['size'][1]/2 >= state()['ui_layout']['inspector'][1] and c['centre'][1]+c['size'][1]/2 <= 420
                         wait(visible_focus)
                         assert state()['transform_edit']['fields']==exact
                         desktop.key('Tab')
@@ -344,7 +344,7 @@ def run(output, binary, only_case=None, scroll=False, attributes=False, dialogs=
                     wait(lambda: pane_state()['position'][1] == 24)
                     desktop.scroll(-8)
                     wait(lambda: abs(pane_state()['position'][1] - min(216,pane['limit'][1])) < .1)
-                    desktop.scroll(8)
+                    desktop.scroll(int(pane_state()['position'][1]/24)+1)
                     wait(lambda: pane_state()['position'][1] == 0)
                     inspector = state()['ui_layout']['inspector']
                     track_height = inspector[3]-6

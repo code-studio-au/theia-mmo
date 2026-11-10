@@ -1,3 +1,9 @@
+P5-17 current execution, 10 November 2026: continue the adopted Sprinkles UI
+migration headlessly across local commits while the user needs the desktop.
+Implemented slices and their checks are in STATUS/ZONE_EDITOR. Native checks
+remain pending for changes after the last desktop qualification; earlier runs
+only qualify their recorded binaries. No push is authorized.
+
 ## 10 November 2026 — adopted Sprinkles editor UI direction (P5-17)
 
 The user adopts Sprinkles as the concrete look, feel and interaction reference

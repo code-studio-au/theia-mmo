@@ -1,3 +1,22 @@
+Sprinkles 52 px top bar and viewport section, 10 November 2026 (P5-17):
+the editor now uses pinned topbar.rs height, 12 px inset, panel background and
+bottom border. Menus/brand sit left; Playtest and primary-blue Save sit right.
+The old second header row is removed. Camera presets, grid, snapping, handles
+and gizmo mode move into their own independently collapsible Viewport inspector
+section. Grid/Handles share a wrapping row. Existing View-menu camera access and
+all guarded commands/preferences remain. Browser, rail, inspector and embedded
+viewport start at the shared 52 px boundary, recovering 40 px of working height.
+
+All 140 focused tests pass. The actual-theme CPU layout case now checks all ten
+relocated viewport controls inside the inspector, both top-bar actions inside
+52 px, rail/browser/tool geometry across modes/widths, and exact source/history
+preservation. Source pick/window/image conversions use the shared header boundary.
+Formatting, denied-warning workspace/all-target Clippy and editor build pass.
+Evidence: `build/sprinkles-review/topbar-tests-final.log`, `topbar-clippy.log`
+and `topbar-build.log`. Native rendering/input/GPU acceptance remains pending while desktop
+use is stopped. The modern Sprinkles qualifier now uses measured inspector top
+bounds and checks independent Viewport collapse; it has only been syntax-checked.
+
 Sprinkles shared action buttons, 10 November 2026 (P5-17): workspace,
 exact-attribute, naming and file actions share upstream MD sizing (28 px height,
 12 px horizontal padding, 4 px radius and 12 px text). Full-width tool actions

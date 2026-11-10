@@ -1,3 +1,12 @@
+## 10 November 2026 — P5-17 shell follows Sprinkles top bar
+
+Continue the adopted UI migration with upstream's 52 px top bar, primary Save
+and a named inspector section for Theia viewport preferences. Preserve guarded
+commands, exact authoring data, shared viewport coordinate conversion and offline
+playtest semantics. This is implemented headlessly; native visual/input/GPU
+acceptance waits for renewed desktop authorization. The user still needs the
+mouse/display; work continues locally through commits without native input.
+
 ## 10 November 2026 — desktop use stopped; continue headlessly
 
 The user needs the mouse and display again. Stop native windows, desktop input

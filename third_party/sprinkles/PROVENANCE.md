@@ -102,3 +102,11 @@ The shared action-button Node in `theme.rs` follows pinned button.rs MD sizing:
 are 1 px; Primary, Destructive, Active, Ghost and Disabled are borderless with
 upstream state colors. Wrapped full-width tool actions keep automatic height;
 file rows keep left alignment. Native widget activation/guards are unchanged.
+
+The shell in `workspace.rs` now adapts `ui/components/topbar.rs` at the pinned
+revision: 52 px height, 12 px inset, ZINC_800 panel background, 1 px bottom border
+and right-aligned primary Save. Theia retains its native menus and offline
+Playtest action instead of importing particle timeline/playback semantics. Its
+camera/grid/snapping/handles/gizmo controls use the shared panel-section styling
+in a named Viewport section. All picking/render-image conversions retain the
+central shared header boundary rather than duplicating screen-space offsets.

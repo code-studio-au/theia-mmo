@@ -7,7 +7,7 @@ use bevy::ui_widgets::{
     ValueChange,
 };
 
-pub(super) const HEADER: f32 = 92.;
+pub(super) const HEADER: f32 = 52.;
 pub(super) const INSPECTOR_WIDTH: f32 = 360.;
 const SETTINGS_HINT: &str = "Click sliders to focus.\nLeft/right, Home/End: adjust\nCtrl S saves the zone.\nCtrl Z / Ctrl Y: undo / redo";
 #[derive(Component)]
@@ -122,16 +122,18 @@ pub(super) fn setup(mut commands: Commands, icons: Option<Res<sidebar::Icons>>) 
                 left: px(0),
                 right: px(0),
                 height: px(HEADER),
-                padding: UiRect::axes(px(14), px(6)),
+                padding: UiRect::all(px(12)),
+                border: UiRect::bottom(px(1)),
                 flex_direction: FlexDirection::Column,
-                row_gap: px(5),
                 ..default()
             },
-            BackgroundColor(theme::INPUT),
+            BackgroundColor(theme::PANEL),
+            BorderColor::all(theme::BORDER),
         ))
         .with_children(|root| {
             root.spawn(Node {
-                column_gap: px(8),
+                width: percent(100),
+                column_gap: px(12),
                 align_items: AlignItems::Center,
                 ..default()
             })
@@ -190,32 +192,6 @@ pub(super) fn setup(mut commands: Commands, icons: Option<Res<sidebar::Icons>>) 
                 });
                 row.spawn(button(Control::Command(Action::Play), "Playtest"));
                 row.spawn(button(Control::Command(Action::Save), "Save"));
-                theme::checkbox::spawn(row, Control::Snap, "Snap (1 m / 15 deg / 10%)");
-                theme::checkbox::spawn(row, Control::Handles, "Handles");
-                for (tool, label) in [
-                    (gizmo::Tool::Move, "Move"),
-                    (gizmo::Tool::Rotate, "Rotate Y"),
-                    (gizmo::Tool::Scale, "Scale uniformly"),
-                ] {
-                    row.spawn(button(Control::GizmoTool(tool), label));
-                }
-            });
-            root.spawn(Node {
-                column_gap: px(8),
-                align_items: AlignItems::Center,
-                ..default()
-            })
-            .with_children(|row| {
-                row.spawn(text("VIEW", 13.));
-                for (preset, label) in [
-                    (camera_views::Preset::Perspective, "Perspective"),
-                    (camera_views::Preset::Top, "Top"),
-                    (camera_views::Preset::Front, "Front"),
-                    (camera_views::Preset::Right, "Right"),
-                ] {
-                    row.spawn(button(Control::View(preset), label));
-                }
-                theme::checkbox::spawn(row, Control::Grid, "Grid");
             });
         });
     commands
@@ -274,6 +250,53 @@ pub(super) fn setup(mut commands: Commands, icons: Option<Res<sidebar::Icons>>) 
                                 (Control::Command(Action::RemovePoint), "Remove point"),
                             ] {
                                 row.spawn(button(control, label));
+                            }
+                        });
+                });
+                sections::spawn(panel, "Viewport", |panel| {
+                    panel
+                        .spawn(Node {
+                            flex_wrap: FlexWrap::Wrap,
+                            column_gap: px(6),
+                            row_gap: px(6),
+                            ..default()
+                        })
+                        .with_children(|row| {
+                            for (preset, label) in [
+                                (camera_views::Preset::Perspective, "Perspective"),
+                                (camera_views::Preset::Top, "Top"),
+                                (camera_views::Preset::Front, "Front"),
+                                (camera_views::Preset::Right, "Right"),
+                            ] {
+                                row.spawn(button(Control::View(preset), label));
+                            }
+                        });
+                    panel
+                        .spawn(Node {
+                            flex_wrap: FlexWrap::Wrap,
+                            column_gap: px(12),
+                            row_gap: px(6),
+                            ..default()
+                        })
+                        .with_children(|row| {
+                            theme::checkbox::spawn(row, Control::Grid, "Grid");
+                            theme::checkbox::spawn(row, Control::Handles, "Handles");
+                        });
+                    theme::checkbox::spawn(panel, Control::Snap, "Snap (1 m / 15 deg / 10%)");
+                    panel
+                        .spawn(Node {
+                            flex_wrap: FlexWrap::Wrap,
+                            column_gap: px(6),
+                            row_gap: px(6),
+                            ..default()
+                        })
+                        .with_children(|row| {
+                            for (tool, label) in [
+                                (gizmo::Tool::Move, "Move"),
+                                (gizmo::Tool::Rotate, "Rotate Y"),
+                                (gizmo::Tool::Scale, "Scale uniformly"),
+                            ] {
+                                row.spawn(button(Control::GizmoTool(tool), label));
                             }
                         });
                 });

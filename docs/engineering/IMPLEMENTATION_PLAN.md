@@ -1,3 +1,10 @@
+P5-17, 10 November 2026: the shell adopts Sprinkles' single 52 px top bar.
+Menus/Playtest/primary Save remain at top; camera/grid/snap/handles/gizmo controls
+have a named collapsible Viewport inspector section. Shared viewport/panel/input
+bounds recover 40 px of height. All 140 focused tests, formatting, denied-warning
+Clippy and editor build pass; native acceptance is pending while desktop use is stopped.
+See STATUS and ZONE_EDITOR for scope/evidence.
+
 P5-17, 10 November 2026: shared action buttons match Sprinkles MD size,
 padding, text and live variant borders. Actual theme/checkbox systems now run in
 the CPU panel-layout regression across modes/widths. All 140 focused tests,
