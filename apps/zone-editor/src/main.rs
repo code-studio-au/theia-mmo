@@ -34,11 +34,11 @@ use bevy::{
 use std::path::PathBuf;
 use theia_zone::{Command, Edit, Editor, Object, Pose, Primitive, Zone};
 
-const PANEL: f32 = 300.;
+const CANVAS_LEFT: f32 = outliner::WIDTH + workspace::INSPECTOR_WIDTH;
 fn canvas_cursor(window: &Window) -> Option<Vec2> {
     window.cursor_position().filter(|p| {
-        p.x > PANEL
-            && p.x < window.width() - outliner::WIDTH
+        p.x > CANVAS_LEFT
+            && p.x < window.width()
             && p.y > workspace::HEADER
             && p.y < window.height() - 52.
     })
@@ -636,65 +636,47 @@ fn object_actions() -> [(Action, &'static str); 12] {
         (Action::Play, "Enter / leave playtest [F5]"),
     ]
 }
+fn setup_tools(panel: &mut ChildSpawnerCommands) {
+    sections::spawn(panel, "Tools", |panel| {
+        for (index, (action, title)) in object_actions().into_iter().enumerate() {
+            panel
+                .spawn((
+                    PaletteSlot(index),
+                    action,
+                    Button,
+                    ActivateOnPress,
+                    Hovered::default(),
+                    Node {
+                        min_height: px(26),
+                        padding: UiRect::all(px(4)),
+                        ..default()
+                    },
+                    BackgroundColor(theme::Variant::Default.background(false)),
+                ))
+                .with_children(|button| {
+                    button.spawn((PaletteLabel, text(title, 15.)));
+                });
+        }
+    });
+    panel.spawn((
+        Help,
+        text("", 13.),
+        Node {
+            display: Display::None,
+            ..default()
+        },
+    ));
+}
 fn setup_ui(mut commands: Commands) {
-    commands
-        .spawn((
-            Node {
-                position_type: PositionType::Absolute,
-                left: px(0),
-                top: px(workspace::HEADER),
-                bottom: px(0),
-                width: px(PANEL),
-                padding: UiRect::all(px(14)),
-                flex_direction: FlexDirection::Column,
-                row_gap: px(6),
-                ..default()
-            },
-            BackgroundColor(theme::PANEL),
-        ))
-        .with_children(|panel| {
-            panel.spawn(text("TOOLS", 22.));
-            panel.spawn(text(
-                "Choose a workspace above.\nSettings are in Properties.",
-                13.,
-            ));
-            for (index, (action, title)) in object_actions().into_iter().enumerate() {
-                panel
-                    .spawn((
-                        PaletteSlot(index),
-                        action,
-                        Button,
-                        ActivateOnPress,
-                        Hovered::default(),
-                        Node {
-                            min_height: px(26),
-                            padding: UiRect::all(px(4)),
-                            ..default()
-                        },
-                        BackgroundColor(theme::Variant::Default.background(false)),
-                    ))
-                    .with_children(|button| {
-                        button.spawn((PaletteLabel, text(title, 15.)));
-                    });
-            }
-            panel.spawn((
-                Help,
-                text("", 13.),
-                Node {
-                    display: Display::None,
-                    ..default()
-                },
-            ));
-        });
     commands.spawn((
         Summary,
         text("", 14.),
         TextLayout::no_wrap(),
         Node {
             position_type: PositionType::Absolute,
-            left: px(PANEL + 12.),
+            left: px(CANVAS_LEFT + 12.),
             bottom: px(8),
-            right: px(outliner::WIDTH + 12.),
+            right: px(12.),
             height: px(44),
             padding: UiRect::all(px(4)),
             overflow: Overflow::clip(),

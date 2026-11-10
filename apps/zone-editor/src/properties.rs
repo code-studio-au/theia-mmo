@@ -295,10 +295,10 @@ pub(super) fn setup(mut commands: Commands) {
             Node {
                 display: Display::None,
                 position_type: PositionType::Absolute,
-                right: px(0),
+                left: px(outliner::WIDTH),
+                top: px(workspace::HEADER),
                 bottom: px(0),
-                width: px(outliner::WIDTH),
-                height: px(workspace::INSPECTOR),
+                width: px(workspace::INSPECTOR_WIDTH),
                 align_items: AlignItems::Stretch,
                 justify_content: JustifyContent::FlexStart,
                 overflow: Overflow::clip(),

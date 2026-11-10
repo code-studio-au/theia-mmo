@@ -601,6 +601,11 @@ pub(super) fn report(
         Some(serde_json::json!({"target":target,"hovered":hovered.0,"centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array(),
             "value":value.map(|v|v.0),"range":range.map(|r|[r.start(),r.end()])}))
     }).collect::<Vec<_>>());
+    value["ui_layout"] = serde_json::json!({
+        "browser":[0.,workspace::HEADER,outliner::WIDTH,window.height()-workspace::HEADER-52.],
+        "inspector":[outliner::WIDTH,workspace::HEADER,workspace::INSPECTOR_WIDTH,window.height()-workspace::HEADER],
+        "canvas":[CANVAS_LEFT,workspace::HEADER,window.width()-CANVAS_LEFT,window.height()-workspace::HEADER-52.]
+    });
     value["sections"] = serde_json::json!(controls.iter().filter_map(|(_,_,_,_,node,t,hovered,_,_,_,_,_,section)| {
         let section=section?;
         let factor=node.inverse_scale_factor()*scale.0;

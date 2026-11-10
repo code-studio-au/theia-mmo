@@ -8,8 +8,10 @@ use bevy::ui_widgets::{
 };
 
 pub(super) const HEADER: f32 = 92.;
-pub(super) const INSPECTOR: f32 = 600.;
+pub(super) const INSPECTOR_WIDTH: f32 = 360.;
 const SETTINGS_HINT: &str = "Click sliders to focus.\nLeft/right, Home/End: adjust\nCtrl S saves the zone.\nCtrl Z / Ctrl Y: undo / redo";
+#[derive(Component)]
+pub(super) struct Inspector;
 #[derive(Component)]
 pub(super) struct SettingsHint;
 #[derive(Resource, Default)]
@@ -229,12 +231,13 @@ pub(super) fn setup(mut commands: Commands) {
     commands
         .spawn((
             GlobalZIndex(4),
+            Inspector,
             Node {
                 position_type: PositionType::Absolute,
-                right: px(0),
+                left: px(outliner::WIDTH),
+                top: px(HEADER),
                 bottom: px(0),
-                width: px(outliner::WIDTH),
-                height: px(INSPECTOR),
+                width: px(INSPECTOR_WIDTH),
                 padding: UiRect::all(px(12)),
                 flex_direction: FlexDirection::Column,
                 row_gap: px(8),
@@ -282,6 +285,7 @@ pub(super) fn setup(mut commands: Commands) {
                         row.spawn(button(control, label));
                     }
                 });
+            setup_tools(panel);
             sections::spawn(panel, "Tool settings", |panel| {
                 for setting in [
                     Setting::MoveGrid,

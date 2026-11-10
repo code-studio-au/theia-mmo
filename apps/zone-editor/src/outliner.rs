@@ -160,8 +160,8 @@ pub(super) fn setup(mut commands: Commands) {
             Node {
                 position_type: PositionType::Absolute,
                 top: px(workspace::HEADER),
-                right: px(0),
-                bottom: px(workspace::INSPECTOR),
+                left: px(0),
+                bottom: px(52),
                 width: px(WIDTH),
                 padding: UiRect::all(px(12)),
                 flex_direction: FlexDirection::Column,
@@ -428,10 +428,7 @@ pub(super) fn scroll(
     }
     let cursor = window.cursor_position();
     let over_panel = cursor.is_some_and(|p| {
-        p.x >= window.width() - WIDTH
-            && p.x < window.width()
-            && p.y >= workspace::HEADER
-            && p.y < window.height() - workspace::INSPECTOR
+        p.x >= 0. && p.x < WIDTH && p.y >= workspace::HEADER && p.y < window.height() - 52.
     });
     let before = content.page;
     let blocked = !window.focused || busy(&session);
@@ -653,7 +650,7 @@ mod tests {
             focused: true,
             ..default()
         };
-        window.set_cursor_position(Some(Vec2::new(3290., 350.)));
+        window.set_cursor_position(Some(Vec2::new(150., 350.)));
         let window = app.world_mut().spawn(window).id();
         app.update();
         (app, window)
@@ -709,7 +706,7 @@ mod tests {
                     ))
                     .normalize(Some(window))
                     .unwrap(),
-                    position: Vec2::new(3290., 150.),
+                    position: Vec2::new(150., 150.),
                 },
             ),
             hit: HitData::new(window, 0., None, None),
@@ -1107,10 +1104,10 @@ mod tests {
         let (mut app, window) = app([0.; 3]);
         for point in [
             None,
-            Some(Vec2::new(3139., 350.)),
-            Some(Vec2::new(3290., 91.)),
-            Some(Vec2::new(3290., 840.)),
-            Some(Vec2::new(3440., 350.)),
+            Some(Vec2::new(-1., 350.)),
+            Some(Vec2::new(150., 91.)),
+            Some(Vec2::new(150., 1388.)),
+            Some(Vec2::new(300., 350.)),
         ] {
             app.world_mut()
                 .entity_mut(window)
@@ -1124,7 +1121,7 @@ mod tests {
             .entity_mut(window)
             .get_mut::<Window>()
             .unwrap()
-            .set_cursor_position(Some(Vec2::new(3140., 92.)));
+            .set_cursor_position(Some(Vec2::new(0., 92.)));
         app.world_mut()
             .entity_mut(window)
             .get_mut::<Window>()
@@ -1288,8 +1285,8 @@ mod tests {
                     assert!(computed.size().y >= 26.);
                     let position = transform.affine().translation;
                     let half = computed.size() * 0.5;
-                    assert!(position.x - half.x >= 3140. && position.x + half.x <= 3440.);
-                    assert!(position.y - half.y >= 92. && position.y + half.y <= 840.);
+                    assert!(position.x - half.x >= 0. && position.x + half.x <= WIDTH);
+                    assert!(position.y - half.y >= 92. && position.y + half.y <= 1388.);
                 }
                 if !matches!(control, Control::Row(_)) || node.display == Display::None {
                     continue;
@@ -1297,8 +1294,8 @@ mod tests {
                 let position = transform.affine().translation;
                 let half = computed.size() * 0.5;
                 assert_eq!(computed.size().y, 24.);
-                assert!(position.x - half.x >= 3140. && position.x + half.x <= 3440.);
-                assert!(position.y - half.y >= 92. && position.y + half.y <= 840.);
+                assert!(position.x - half.x >= 0. && position.x + half.x <= WIDTH);
+                assert!(position.y - half.y >= 92. && position.y + half.y <= 1388.);
                 visible += 1;
             }
             assert_eq!(visible, if expected_page == 2 { 8 } else { 18 });
@@ -1312,7 +1309,7 @@ mod tests {
                 }
                 if matches!(label, Label::Footer) {
                     assert_eq!(computed.size().y, 44.);
-                    assert!(transform.affine().translation.y + computed.size().y / 2. <= 840.);
+                    assert!(transform.affine().translation.y + computed.size().y / 2. <= 1388.);
                 }
             }
         }

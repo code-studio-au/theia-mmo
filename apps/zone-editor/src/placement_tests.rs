@@ -280,7 +280,7 @@ fn placement_controls_fit_properties_for_each_shape_and_hide_when_selecting() {
                 let centre = transform.affine().translation;
                 let half = node.size() * 0.5;
                 assert!(
-                    centre.y - half.y >= 840. && centre.y + half.y <= 1440.,
+                    centre.y - half.y >= workspace::HEADER && centre.y + half.y <= 1440.,
                     "footer overflow: {centre:?} {half:?}"
                 );
             }
@@ -306,8 +306,8 @@ fn placement_controls_fit_properties_for_each_shape_and_hide_when_selecting() {
             assert!(node.size().min_element() > 0.);
             let centre = transform.affine().translation;
             let half = node.size() * 0.5;
-            assert!(centre.x - half.x >= 3140. && centre.x + half.x <= 3440.);
-            assert!(centre.y - half.y >= 840. && centre.y + half.y <= 1440.);
+            assert!(centre.x - half.x >= outliner::WIDTH && centre.x + half.x <= CANVAS_LEFT);
+            assert!(centre.y - half.y >= workspace::HEADER && centre.y + half.y <= 1440.);
         }
     }
     let before: Vec<_> = app
@@ -340,8 +340,8 @@ fn placement_controls_fit_properties_for_each_shape_and_hide_when_selecting() {
     for (node,transform) in app.world_mut().query_filtered::<(&ComputedNode,&bevy::ui::UiGlobalTransform),Or<(With<Caption>,With<Info>,With<SettingsHint>)>>().iter(app.world()) {
         let centre=transform.affine().translation;let half=node.size()*0.5;
         assert!(node.size().min_element()>0.);
-        assert!(centre.x-half.x>=3140. && centre.x+half.x<=3440.);
-        assert!(centre.y-half.y>=840. && centre.y+half.y<=1440.);
+        assert!(centre.x-half.x>=outliner::WIDTH && centre.x+half.x<=CANVAS_LEFT);
+        assert!(centre.y-half.y>=workspace::HEADER && centre.y+half.y<=1440.);
     }
     app.world_mut()
         .resource_scope(|world, mut session: Mut<Session>| {
@@ -366,4 +366,63 @@ fn placement_controls_fit_properties_for_each_shape_and_hide_when_selecting() {
         preferences
     );
     assert_eq!(app.world().resource::<Session>().editor.zone(), &source);
+}
+
+#[test]
+fn sprinkles_browser_inspector_and_tools_have_separate_full_height_regions() {
+    use bevy::ecs::system::RunSystemOnce;
+    let mut app = fixture([128_000_000_000.125, 20.25, -128_000_000_000.5]);
+    app.world_mut().run_system_once(outliner::setup).unwrap();
+    app.add_systems(Update, outliner::sync);
+    crate::headless_ui::add_layout(&mut app);
+    let source = app.world().resource::<Session>().editor.zone().clone();
+    app.add_systems(Update, terrain::palette);
+    for mode in [
+        EditorMode::Objects,
+        EditorMode::Sculpt,
+        EditorMode::Paint,
+        EditorMode::Guides,
+        EditorMode::Markers,
+        EditorMode::Plants,
+    ] {
+        app.world_mut().resource_mut::<Session>().set_mode(mode);
+        for _ in 0..3 {
+            app.update();
+        }
+        let (browser, browser_pose) = app
+            .world_mut()
+            .query_filtered::<(&ComputedNode, &bevy::ui::UiGlobalTransform), With<outliner::Root>>()
+            .single(app.world())
+            .unwrap();
+        assert_eq!(
+            browser.size(),
+            Vec2::new(outliner::WIDTH, 1440. - HEADER - 52.)
+        );
+        assert_eq!(
+            browser_pose.affine().translation,
+            Vec2::new(outliner::WIDTH / 2., HEADER + browser.size().y / 2.)
+        );
+        let (inspector, inspector_pose) = app
+            .world_mut()
+            .query_filtered::<(&ComputedNode, &bevy::ui::UiGlobalTransform), With<Inspector>>()
+            .single(app.world())
+            .unwrap();
+        assert_eq!(inspector.size(), Vec2::new(INSPECTOR_WIDTH, 1440. - HEADER));
+        assert_eq!(
+            inspector_pose.affine().translation.x,
+            outliner::WIDTH + INSPECTOR_WIDTH / 2.
+        );
+        let mut visible = 0;
+        for (style,node,pose) in app.world_mut().query_filtered::<(&Node,&ComputedNode,&bevy::ui::UiGlobalTransform),With<PaletteSlot>>().iter(app.world()) {
+            if style.display==Display::None {continue;}
+            visible+=1;
+            let p=pose.affine().translation;let half=node.size()/2.;
+            assert!(node.size().min_element()>0.);
+            assert!(p.x-half.x>=outliner::WIDTH && p.x+half.x<=CANVAS_LEFT);
+            assert!(p.y-half.y>=HEADER && p.y+half.y<=1440.);
+        }
+        assert!(visible > 0);
+        assert_eq!(app.world().resource::<Session>().editor.zone(), &source);
+        assert_eq!(app.world().resource::<Session>().editor.history(), (0, 0));
+    }
 }

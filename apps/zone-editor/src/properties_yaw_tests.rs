@@ -417,8 +417,8 @@ fn cpu_layout_keeps_yaw_slider_exact_fields_and_apply_controls_inside_properties
             let centre = transform.affine().translation;
             let half = computed.size() * 0.5;
             assert!(computed.size().min_element() > 0.);
-            assert!(centre.x - half.x >= 3140. && centre.x + half.x <= 3440.);
-            assert!(centre.y - half.y >= 840. && centre.y + half.y <= 1440.);
+            assert!(centre.x - half.x >= outliner::WIDTH && centre.x + half.x <= CANVAS_LEFT);
+            assert!(centre.y - half.y >= workspace::HEADER && centre.y + half.y <= 1440.);
         }
         let fields = app
             .world()
@@ -439,8 +439,8 @@ fn cpu_layout_keeps_yaw_slider_exact_fields_and_apply_controls_inside_properties
             let centre = transform.affine().translation;
             let half = computed.size() * 0.5;
             assert!(computed.size().y >= 32.);
-            assert!(centre.x - half.x >= 3140. && centre.x + half.x <= 3440.);
-            assert!(centre.y - half.y >= 840. && centre.y + half.y <= 1440.);
+            assert!(centre.x - half.x >= outliner::WIDTH && centre.x + half.x <= CANVAS_LEFT);
+            assert!(centre.y - half.y >= workspace::HEADER && centre.y + half.y <= 1440.);
         }
         if visible {
             assert_eq!(

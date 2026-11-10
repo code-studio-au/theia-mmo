@@ -1,3 +1,16 @@
+Sprinkles browser/inspector layout, 10 November 2026 (P5-17): replaces the
+old opposing/stacked side panels with adjacent full-height left browser and
+inspector columns, followed by the world canvas. The inspector contains the
+contextual palette in a collapsible Tools group and a separate Tool settings
+group. Exact transform editing occupies the same inspector column. Wheel routing,
+canvas input exclusion and footer bounds use the new regions. Actual Bevy CPU
+layout checks cover all six workspaces, reachable tools, long properties and
+local/far exact coordinates; all 129 focused Rust tests pass. Native UI/input/GPU
+acceptance is pending while mouse and display use remain stopped. Existing native
+evidence applies only to the earlier theme binary, retained under
+`build/sprinkles-theme-qualified/`. Menus, richer direct attribute editing and
+resizing remain subsequent migration work. Evidence: `build/sprinkles-review/`.
+
 Sprinkles collapsible tool settings, 10 November 2026 (P5-17): a native Bevy
 section header now collapses/expands the retained tool settings with Sprinkles'
 chevron, spacing, ghost hover and separator styling. Activation moves focus to
