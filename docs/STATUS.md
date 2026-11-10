@@ -1,3 +1,12 @@
+Grid/pan native qualifier preparation, 10 November 2026 (P5-17):
+`tools/qualify_zone_grids.py` now uses current canvas height for projected pan
+expectations, actual browser/inspector rectangles for gesture-ownership checks,
+and View/Zone menus for camera and spawn commands. It records layout geometry,
+uses the shared client environment filter and guards the binary hash. Python
+syntax and --help checks pass. No native run, window, capture or desktop input
+was performed. Existing recorded GPU evidence remains limited to its binaries;
+this script preparation adds no visual/input/GPU acceptance or production change.
+
 Content-browser native qualifier preparation, 10 November 2026 (P5-17):
 `tools/qualify_zone_content.py` now reads current browser/inspector rectangles
 instead of the retired right-hand coordinates, routes wheel input into that

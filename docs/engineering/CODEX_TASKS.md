@@ -1,3 +1,8 @@
+P5-17, 10 November 2026: the grid/pan qualifier is prepared for current
+canvas/panel geometry and View/Zone menus. Syntax/--help checks pass; it has not
+run while desktop use is stopped. No production behavior changed and no native
+acceptance is claimed. See STATUS/ZONE_EDITOR.
+
 P5-17, 10 November 2026: the content-browser native qualifier is prepared
 for current layout telemetry and Zone-menu access. Syntax/--help checks pass;
 it has not run while desktop use is stopped. No production code changed and no

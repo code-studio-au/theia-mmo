@@ -10,13 +10,15 @@ from pathlib import Path
 import subprocess
 
 from gpu_validation import check_gpu_diagnostics
+from launch_environment import client_environment
 from qualify_world_input_os import Desktop, owned_window, wait, capture_ready
 
 
 def run(output, binary, pan=False):
     output=output.resolve();output.mkdir(parents=True,exist_ok=False)
     binary=binary.resolve();cases=[]
-    env=dict(os.environ,WGPU_BACKEND='vulkan',VK_INSTANCE_LAYERS='VK_LAYER_KHRONOS_validation',VK_LOADER_DEBUG='layer')
+    binary_hash=hashlib.sha256(binary.read_bytes()).hexdigest()
+    env=client_environment(dict(os.environ,WGPU_BACKEND='vulkan',VK_INSTANCE_LAYERS='VK_LAYER_KHRONOS_validation',VK_LOADER_DEBUG='layer'))
     for name,origin in [('local',[0,0,0]),('far',[128000000000,20,-128000000000])]:
         folder=output/name;folder.mkdir()
         source=folder/'source.json';report=folder/'state.json';logfile=folder/'editor.log'
@@ -36,7 +38,15 @@ def run(output, binary, pan=False):
                 def fresh():
                     elapsed=state()['input_elapsed'];wait(lambda:state()['input_elapsed']>elapsed);return state()
                 def control(target,group='workspace_controls'):
-                    def entries():return state()['content_list']['controls'] if group=='content' else state()[group]
+                    if group=='workspace_controls' and (target.startswith('View(') or target=='SpawnTransform'):
+                        name='View' if target.startswith('View(') else 'Zone'
+                        control(name,'menus')
+                        wait(lambda:any(entry['name']==name and entry['role']=='popup' and min(entry['size'])>0 for entry in state()['menus']))
+                    def entries():
+                        current=state()
+                        if group=='content':return current['content_list']['controls']
+                        if group=='menus':return [dict(entry,target=entry['name']) for entry in current['menus'] if entry['role']=='button']
+                        return current[group]
                     item=wait(lambda:next((b for b in entries() if b['target']==target and all(v>0 for v in b['size'])),None))
                     desktop.move(window,item['centre'],1)
                     wait(lambda:any(b['target']==target and b['hovered'] for b in entries()))
@@ -71,7 +81,7 @@ def run(output, binary, pan=False):
                         else:
                             right,up={'Top':([1,0,0],[0,0,-1]),'Front':([1,0,0],[0,1,0]),'Right':([0,0,-1],[0,1,0])}[a['preset']]
                             span=a['distance']
-                        expected=[a['target'][i]+(-right[i]*dx+up[i]*dy)*span/1440 for i in range(3)]
+                        expected=[a['target'][i]+(-right[i]*dx+up[i]*dy)*span/before['ui_layout']['canvas'][3] for i in range(3)]
                         assert max(abs(b['target'][i]-expected[i]) for i in range(3))<.0002,(a,b,expected)
                         assert a['preset']==b['preset'] and a['distance']==b['distance']
                         if a['preset']!='Perspective':
@@ -98,13 +108,17 @@ def run(output, binary, pan=False):
                         middle_drag([1720,720],[1820,760])
                         # A press originating in either panel cannot acquire
                         # a pan by later crossing into the viewport.
-                        middle_drag([150,400],[1720,720],blocked=True)
-                        middle_drag([3290,400],[1720,720],blocked=True)
+                        layout=state()['ui_layout']
+                        def panel_point(name):
+                            x,y,w,h=layout[name]
+                            return [x+w/2,y+min(300,h/2)]
+                        middle_drag(panel_point('browser'),[1720,720],blocked=True)
+                        middle_drag(panel_point('inspector'),[1720,720],blocked=True)
                         # Leaving the viewport cancels the gesture until a new press.
                         desktop.move(window,[1720,720],1);fresh();desktop.button(2,True)
                         try:
                             wait(lambda:state()['middle_mouse_down'])
-                            desktop.move(window,[150,400],1);before=copy.deepcopy(fresh()['view'])
+                            desktop.move(window,panel_point('browser'),1);before=copy.deepcopy(fresh()['view'])
                             desktop.move(window,[1800,760],1);fresh();assert state()['view']==before
                         finally:desktop.button(2,False)
                         wait(lambda:not state()['middle_mouse_down'])
@@ -153,8 +167,9 @@ def run(output, binary, pan=False):
                 if process.poll() is None:process.terminate();process.wait(timeout=15)
         logs=logfile.read_text();assert 'Insert instance layer "VK_LAYER_KHRONOS_validation"' in logs
         diagnostics=check_gpu_diagnostics(logs,allow_surface_resize=False)
-        cases.append(dict(name=name,gpu=final['gpu'],viewport=final['viewport'],validation_layer_active=True,gpu_diagnostics=diagnostics))
-    result=dict(cases=cases,binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),checks=[
+        cases.append(dict(name=name,gpu=final['gpu'],viewport=final['viewport'],ui_layout=final['ui_layout'],validation_layer_active=True,gpu_diagnostics=diagnostics))
+    assert hashlib.sha256(binary.read_bytes()).hexdigest()==binary_hash,'Binary changed during native qualification'
+    result=dict(cases=cases,binary_sha256=binary_hash,checks=[
         '130 actual bounded nonterrain grid meshes on all view planes at local and far origins',
         'zone-origin-aligned spacing, mouse toggle, pan and playtest hide/restore preserve document/history'],scope='Linux native 3440x1440 only; no Windows or multiplayer claim')
     if pan: result['checks'].append('MMB projected drag at two zooms in all views, exact ortho screen tracking, source/history preservation, panel-origin and exit cancellation, held-transform/modal/play isolation')
