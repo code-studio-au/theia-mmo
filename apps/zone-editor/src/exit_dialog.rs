@@ -127,6 +127,11 @@ fn update(
         {
             focus.set(entity, FocusCause::Navigated);
         }
+    } else if session.exit_confirmation && keys.just_pressed(KeyCode::Tab) {
+        let current = focus.get();
+        if let Some((entity, _)) = choices.iter().find(|(entity, _)| Some(*entity) != current) {
+            focus.set(entity, FocusCause::Navigated);
+        }
     } else if !session.exit_confirmation
         && *was_open
         && focus.get().is_some_and(|entity| choices.contains(entity))
@@ -204,6 +209,20 @@ mod tests {
             .find_map(|(entity, choice)| matches!(choice, Choice::Cancel).then_some(entity))
             .unwrap();
         assert_eq!(dirty.world().resource::<InputFocus>().get(), Some(cancel));
+        dirty
+            .world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .press(KeyCode::Tab);
+        dirty.update();
+        let focused = dirty.world().resource::<InputFocus>().get().unwrap();
+        assert!(matches!(
+            dirty.world().get::<Choice>(focused),
+            Some(Choice::Exit)
+        ));
+        dirty
+            .world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .clear();
         dirty.world_mut().trigger(Activate { entity: cancel });
         dirty.update();
         assert!(!dirty.world().resource::<Session>().exit_confirmation);

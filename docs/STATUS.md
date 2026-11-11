@@ -1,3 +1,12 @@
+P5-17 particle deletion and Exit interaction, 11 November 2026: native input
+deletes an unassigned placement through Properties and Zone menus, undoes it,
+and verifies dirty Exit cancellation and keyboard-confirmed discard while the
+original zone file remains unchanged. Fix Tab focus movement between Exit
+confirmation buttons. Linux RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan,
+zero GPU diagnostics; evidence `build/particle-delete-exit-native-20261111-v3/`.
+This controlled fixture passes; the original reported deletion failure's exact
+trigger has not been reproduced. Gradient/popup native retesting remains open.
+
 P5-17 editor startup schedule repair, 11 November 2026: the initial native
 check found an ordering cycle introduced by the Exit handler. Move it outside
 the zone system set while retaining the zone activity guard; a headless exit

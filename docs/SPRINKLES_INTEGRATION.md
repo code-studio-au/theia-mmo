@@ -2,10 +2,12 @@
 
 The zone workspace offers **Zone → Delete selected** for selected placements
 and **File → Exit** to close the editor. Exit asks before discarding unsaved
-zone or particle changes. Headless tests cover the actual Zone menu activation,
-clean exit and unsaved-change confirmation; native interaction remains to be
-retested. The reported failure deleting a particle from its properties menu
-has not yet been reproduced.
+zone or particle changes. Native Linux tests exercise deletion through both the
+Properties and Zone menus, undo, cancellation and keyboard confirmation of a
+dirty exit, preserving the zone file. Evidence:
+`build/particle-delete-exit-native-20261111-v3/qualification.json` (RX 7900 XTX,
+RADV NAVI31, Mesa 26.2.6, Vulkan; zero GPU diagnostics). The exact trigger of
+the reported deletion failure has not yet been reproduced.
 
 The accepted editor styling migration is recorded in `ZONE_EDITOR.md`. This
 slice reuses the actual Sprinkles runtime and editor, pinned at
