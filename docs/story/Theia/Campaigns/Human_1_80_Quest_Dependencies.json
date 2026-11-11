@@ -512,7 +512,9 @@
       "objective": "Return recovered goods and inform affected households without disclosing protected witnesses.",
       "type": "regional_optional",
       "minLevel": 15,
-      "prerequisites": [],
+      "prerequisites": [
+        "HUMAN_Q031_DONE"
+      ],
       "completionFlag": "HUMAN_Q032_DONE",
       "rewardXP": null,
       "mapId": null,
@@ -527,7 +529,9 @@
       "objective": "Lead a local patrol and protect a newly reopened road without a mandatory escort timer.",
       "type": "regional_optional",
       "minLevel": 15,
-      "prerequisites": [],
+      "prerequisites": [
+        "HUMAN_Q031_DONE"
+      ],
       "completionFlag": "HUMAN_Q033_DONE",
       "rewardXP": null,
       "mapId": null,
@@ -542,7 +546,9 @@
       "objective": "Choose a local relief priority and complete the delivery; the royal case ends but village life continues.",
       "type": "regional_optional",
       "minLevel": 15,
-      "prerequisites": [],
+      "prerequisites": [
+        "HUMAN_Q031_DONE"
+      ],
       "completionFlag": "HUMAN_Q034_DONE",
       "rewardXP": null,
       "mapId": null,
@@ -551,27 +557,26 @@
     },
     {
       "id": 35,
-      "title": "A Ledger Reaches the Sea",
-      "location": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
-      "contact": "Mara",
-      "objective": "Trace the passage ledger's shipping reference to Tidehold; register the case with alliance customs through the human warrant.",
+      "title": "The Covenant Calls",
+      "location": "Covenant racial capitals and Tidehold",
+      "contact": "Local summons bearer / Corven's office",
+      "objective": "Receive the universal summons after completing the player's racial 1–20 campaign; travel to Tidehold; register with Corven's office",
       "type": "main_story",
       "minLevel": 20,
-      "prerequisites": [
-        "HUMAN_Q031_DONE"
-      ],
+      "prerequisites": [],
       "completionFlag": "HUMAN_Q035_DONE",
       "rewardXP": null,
       "mapId": null,
       "npcId": null,
-      "encounterId": null
+      "encounterId": null,
+      "race_specific_prerequisite_policy": "Requires completion of the active character's own racial 1–20 campaign. Race-specific completion flags not yet assigned; do not interpret empty legacy prerequisites as unconditional availability."
     },
     {
       "id": 36,
       "title": "Four Peoples, One Harbour",
       "location": "Tidehold, Northwatch, hostile Dominion military sites, Heartlands",
       "contact": "Corven",
-      "objective": "Attend the alliance briefing and distinguish the human commission from alliance authority; obtain a bounded inspection permit.",
+      "objective": "Attend Corven's first shared Covenant briefing; recognise four sovereign peoples; obtain limited permission for Tidehold provision-depot investigation",
       "type": "main_story",
       "minLevel": 20,
       "prerequisites": [
@@ -856,8 +861,8 @@
       "id": 53,
       "title": "The King's Correspondence",
       "location": "Kar Durn royal court → Sylvaren",
-      "contact": "High King",
-      "objective": "Present authenticated engineering report and request introduction; Receive High King's letter; Travel to Aelari capital by established routes; Present letter and report to Caelith",
+      "contact": "High Thane Bromund / Caelith",
+      "objective": "Present authenticated engineering report and request introduction; Receive High Thane's letter; Travel to Aelari capital by established routes; Present letter and report to Caelith",
       "type": "main_story",
       "minLevel": 25,
       "prerequisites": [
@@ -3085,9 +3090,9 @@
     {
       "id": 184,
       "title": "The Road Home",
-      "location": "Thes'var central facility, distributed network, Oth'irun, Valecrown, Millhaven",
-      "contact": "Elara",
-      "objective": "Post-finale epilogue: revisit Millhaven, close local relationships and record the cost and consequence of victory.",
+      "location": "Race-specific Covenant homeland (Millhaven for humans)",
+      "contact": "Race-specific familiar contact (Elara for humans)",
+      "objective": "Return to the character's own homeland; reconnect with familiar local characters; complete a shared epilogue outcome with race-specific NPC/location/dialogue variants",
       "type": "main_story",
       "minLevel": 80,
       "prerequisites": [
@@ -3097,7 +3102,8 @@
       "rewardXP": null,
       "mapId": null,
       "npcId": null,
-      "encounterId": null
+      "encounterId": null,
+      "race_variant_policy": "One editorial Q184 and shared completion, race-specific homeland and contacts; non-human actor/location bindings unresolved."
     }
   ],
   "classificationPolicy": "Critical plot evidence and permission on main path; independent local adventures optional. Explicit regional access checks to be authored. This is a derived dependency/classification reference, not a second authoring inventory. minLevel is historical planning pace, not eligibility; approved eligibility belongs to the sole manifest. The 156/28 classification remains provisional.",
