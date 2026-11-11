@@ -29,10 +29,12 @@ pub(super) struct Requests {
     pub particle_preview: bool,
     pub bind_particle: bool,
     pub preview_library_particle: bool,
+    pub exit: bool,
 }
 #[derive(Component, Clone, Copy, Debug)]
 pub(super) enum Control {
     New,
+    Exit,
     Mode(EditorMode),
     Command(Action),
     Frame,
@@ -167,6 +169,7 @@ pub(super) fn setup(
                         (Control::FileSaveAs, "Save as…", "Ctrl Shift S"),
                         (Control::Command(Action::Load), "Reload", "Ctrl Shift O"),
                         (Control::ParticleWorkspace, "Particles workspace…", ""),
+                        (Control::Exit, "Exit", ""),
                     ],
                 );
                 menus::spawn(
@@ -212,6 +215,7 @@ pub(super) fn setup(
                     &[
                         (Control::Command(Action::Spawn), "Spawn at view centre", ""),
                         (Control::SpawnTransform, "Edit spawn…", ""),
+                        (Control::Command(Action::Delete), "Delete selected", "Del"),
                     ],
                 );
                 row.spawn(Node {
@@ -671,6 +675,7 @@ pub(super) fn execute(
     }
     match control {
         Control::New => new_document(session, view, content),
+        Control::Exit => requests.exit = true,
         Control::Mode(next) => {
             if mode(session) != next {
                 session.set_mode(next);

@@ -1,3 +1,11 @@
+P5-17 editor exit and particle deletion access, 11 November 2026: File → Exit
+closes a clean editor and asks before discarding unsaved zone or particle work;
+Zone → Delete selected exposes the shared placement deletion action. The real
+menu activation and exit guards pass headless tests; the reported native
+properties-menu deletion failure remains unreproduced. Native interaction and
+the confirmation's appearance still require testing. See
+[integration](SPRINKLES_INTEGRATION.md).
+
 P5-17 gradient point and particle-delete investigation, 11 November 2026:
 a deliberate gradient-point click can open its nested color picker, while drag
 and post-drag clicks do not; a new press clears a stale drag marker. Headless

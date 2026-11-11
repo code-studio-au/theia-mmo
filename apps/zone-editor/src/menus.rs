@@ -233,6 +233,75 @@ mod tests {
         });
     }
     #[test]
+    fn zone_menu_deletes_selected_particle() {
+        use bevy::ecs::system::RunSystemOnce;
+        fn setup_zone(mut commands: Commands) {
+            commands.spawn(Node::default()).with_children(|root| {
+                spawn(
+                    root,
+                    "Zone",
+                    &[(Control::Command(Action::Delete), "Delete selected", "Del")],
+                );
+            });
+        }
+        let (mut app, _) = super::context::tests::fixture([0.; 3]);
+        app.world_mut()
+            .resource_mut::<Session>()
+            .edit(vec![Edit::PutParticle {
+                particle: theia_zone::particles::ParticlePlacement {
+                    id: 999,
+                    name: "New particle".into(),
+                    effect: "vfx.unassigned".into(),
+                    position: [0.; 3],
+                    yaw_degrees: 0.,
+                    scale: 1.,
+                },
+            }]);
+        app.world_mut().resource_mut::<Session>().particle_selected = Some(999);
+        app.world_mut().run_system_once(setup_zone).unwrap();
+        app.update();
+        let trigger = app
+            .world_mut()
+            .query::<(Entity, &Trigger)>()
+            .iter(app.world())
+            .find_map(|(entity, trigger)| (trigger.0 == "Zone").then_some(entity))
+            .unwrap();
+        app.world_mut().trigger(MenuEvent {
+            source: trigger,
+            action: MenuAction::Open(NavAction::First),
+        });
+        app.update();
+        let popup = app
+            .world_mut()
+            .query::<(Entity, &Popup)>()
+            .iter(app.world())
+            .find_map(|(entity, popup)| (popup.0 == "Zone").then_some(entity))
+            .unwrap();
+        let delete = app
+            .world()
+            .get::<Children>(popup)
+            .unwrap()
+            .iter()
+            .find(|entity| {
+                matches!(
+                    app.world().get::<Control>(*entity),
+                    Some(Control::Command(Action::Delete))
+                )
+            })
+            .unwrap();
+        app.world_mut().trigger(Activate { entity: delete });
+        app.update();
+        assert!(
+            app.world()
+                .resource::<Session>()
+                .editor
+                .zone()
+                .particles
+                .is_empty()
+        );
+    }
+
+    #[test]
     fn menu_events_open_close_focus_and_dispatch_the_shared_edit_exactly_once() {
         let zone = Zone {
             origin: [128_000_000_000.125, 20.25, -128_000_000_000.5],

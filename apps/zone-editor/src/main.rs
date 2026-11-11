@@ -5,6 +5,7 @@ mod browser_icons;
 mod brush_preview;
 mod camera_views;
 mod cli;
+mod exit_dialog;
 mod export;
 mod file_picker;
 mod gizmo;
@@ -128,6 +129,7 @@ struct Session {
     inline_dirty: bool,
     inline_action: Option<Action>,
     particle_save_requested: bool,
+    exit_confirmation: bool,
     file_dialog: Option<file_picker::Draft>,
 }
 struct Drag {
@@ -199,6 +201,7 @@ impl Session {
             inline_dirty: false,
             inline_action: None,
             particle_save_requested: false,
+            exit_confirmation: false,
             file_dialog: None,
         }
     }
@@ -279,7 +282,10 @@ impl Session {
         Ok(true)
     }
     fn has_modal(&self) -> bool {
-        self.name_edit.is_some() || self.transform_edit.is_some() || self.file_dialog.is_some()
+        self.name_edit.is_some()
+            || self.transform_edit.is_some()
+            || self.file_dialog.is_some()
+            || self.exit_confirmation
     }
     fn set_mode(&mut self, mode: EditorMode) {
         self.inspect_spawn = false;
@@ -623,6 +629,7 @@ fn run() -> Result<(), String> {
     .add_plugins(menus::plugin)
     .add_plugins(particle_workspace::plugin)
     .add_plugins(particle_inline::plugin)
+    .add_plugins(exit_dialog::plugin)
     .init_resource::<particle_preview::State>()
     .init_resource::<particle_preview::LibraryRoot>()
     .add_observer(workspace::activate)
@@ -1032,10 +1039,18 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
             };
         }
         Action::Delete => {
-            if let Some(id) = session.selected {
+            if session.vegetation_mode {
+                vegetation::perform(Action::DeletePlant, session);
+            } else if session.marker_mode {
+                markers::perform(Action::DeleteMarker, session);
+            } else if session.path_mode {
+                paths::perform(Action::DeletePath, session);
+            } else if let Some(id) = session.selected {
                 session.edit(vec![Edit::Delete { id }]);
             } else if let Some(id) = session.particle_selected {
                 session.edit(vec![Edit::DeleteParticle { id }]);
+            } else {
+                session.status = "Select a placement to delete".into();
             }
         }
         Action::Spawn => {

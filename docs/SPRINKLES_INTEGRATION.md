@@ -1,5 +1,12 @@
 # Sprinkles authoring integration (P5-17)
 
+The zone workspace offers **Zone → Delete selected** for selected placements
+and **File → Exit** to close the editor. Exit asks before discarding unsaved
+zone or particle changes. Headless tests cover the actual Zone menu activation,
+clean exit and unsaved-change confirmation; native interaction remains to be
+retested. The reported failure deleting a particle from its properties menu
+has not yet been reproduced.
+
 The accepted editor styling migration is recorded in `ZONE_EDITOR.md`. This
 slice reuses the actual Sprinkles runtime and editor, pinned at
 `0e978f5a9afc6b456b3693c8761e73a6c7e155bd`, instead of recreating its particle
