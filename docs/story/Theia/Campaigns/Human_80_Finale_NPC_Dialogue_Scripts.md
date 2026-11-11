@@ -169,7 +169,11 @@
 
 **Persistence / skip:** The two acknowledgement facts are independent, durable and idempotent. Skipping dialogue or reconnecting must not erase a completed report or award completion before both reports. Q184 homecoming remains a separate follow-up.
 
-## Q184 — Elara
+## Q184 — The Road Home (race-specific shared epilogue)
+
+**Creator-locked structure:** One Q184 completion and reward structure, with different homeland and familiar NPCs for each Covenant race. The dialogue below is **HUMAN-ONLY** and must never be shown to a dwarf, Aelari or Korrath character as though they grew up in Millhaven. Their respective variants remain WORKING until their 1–20 campaigns establish familiar contacts.
+
+### Human variant — Elara in Millhaven
 
 **Opening:** “When you first came here, I sent you to speak to three people and learn what the village needed. I never imagined where that road would take you.”
 
