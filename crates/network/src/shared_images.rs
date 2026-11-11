@@ -15,6 +15,30 @@ pub const MAX_TOTAL_BYTES: u64 = 1024 * 1024 * 1024;
 pub const MAX_RGBA_BYTES: u64 = 2 * 1024 * 1024 * 1024;
 const MAX_GLB_JSON: u32 = 16 * 1024 * 1024;
 
+/// Validates the common bounded PNG header and returns base-level RGBA bytes.
+pub(crate) fn png_rgba_bytes(header: &[u8; 33]) -> Result<u64> {
+    let width = u32::from_be_bytes(header[16..20].try_into().unwrap());
+    let height = u32::from_be_bytes(header[20..24].try_into().unwrap());
+    let pixels = u64::from(width) * u64::from(height);
+    if &header[..8] != b"\x89PNG\r\n\x1a\n"
+        || &header[12..16] != b"IHDR"
+        || u32::from_be_bytes(header[8..12].try_into().unwrap()) != 13
+        || header[24] != 8
+        || !matches!(header[25], 0 | 2 | 3 | 4 | 6)
+        || header[26] != 0
+        || header[27] != 0
+        || header[28] > 1
+        || width == 0
+        || height == 0
+        || width > 8192
+        || height > 8192
+        || pixels > 16 * 1024 * 1024
+    {
+        return Err("Unsupported or over-budget shared PNG header".into());
+    }
+    Ok(pixels * 4)
+}
+
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "lowercase")]
 pub enum ColorSpace {
@@ -366,29 +390,12 @@ pub(crate) fn verify(
         File::open(expected)?.read_exact(&mut header)?;
         let width = u32::from_be_bytes(header[16..20].try_into().unwrap());
         let height = u32::from_be_bytes(header[20..24].try_into().unwrap());
-        let pixels = u64::from(width) * u64::from(height);
         if projected_images.contains(&image.uri())
             && (width > 4096 || height > 4096 || !matches!(header[25], 2 | 6) || header[28] != 0)
         {
             return Err("Unsupported bounded projected-material PNG".into());
         }
-        if &header[..8] != b"\x89PNG\r\n\x1a\n"
-            || &header[12..16] != b"IHDR"
-            || u32::from_be_bytes(header[8..12].try_into().unwrap()) != 13
-            || header[24] != 8
-            || !matches!(header[25], 0 | 2 | 3 | 4 | 6)
-            || header[26] != 0
-            || header[27] != 0
-            || header[28] > 1
-            || width == 0
-            || height == 0
-            || width > 8192
-            || height > 8192
-            || pixels > 16 * 1024 * 1024
-        {
-            return Err("Unsupported or over-budget shared PNG header".into());
-        }
-        rgba_bytes += pixels * 4;
+        rgba_bytes += png_rgba_bytes(&header)?;
         if rgba_bytes > MAX_RGBA_BYTES {
             return Err("Shared PNG base-level budget exceeded".into());
         }

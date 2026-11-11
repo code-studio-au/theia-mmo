@@ -1,3 +1,10 @@
+P2-13 particle texture descriptors, 11 November 2026: the preliminary
+catalog can bind bounded PNG files by hash and sRGB/linear role. Three focused
+catalog tests and sixteen package/shared-image regressions pass, with one
+private staged-world test ignored; fmt and strict workspace/all-target Clippy
+pass. Effect-reference matching, image decoding, role-aware loading and client
+playback remain pending. See [integration](SPRINKLES_INTEGRATION.md).
+
 P2-13 particle mesh preflight, 11 November 2026: reject non-finite mesh
 dimensions in local export preflight and preset snapshots. Six focused editor
 tests, fmt and strict workspace/all-target Clippy pass. This does not validate

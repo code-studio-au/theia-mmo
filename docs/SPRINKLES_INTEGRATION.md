@@ -627,3 +627,12 @@ Particle export preflight and preset snapshots also reject non-finite mesh
 dimensions for each supported mesh shape. This narrow check does not validate
 all material, transform or simulation parameters, and it does not bound finite
 but excessively large dimensions or allocations.
+
+The catalog can additionally describe up to 64 PNG texture variants by SHA-256,
+length and sRGB/linear role, with fixed hash-derived filenames. The preliminary
+limits are 16 MiB per file, 128 MiB total encoded bytes and 256 MiB total
+base-level RGBA; common PNG header checks are shared with world images. The
+helper verifies regular files, hashes and headers, but does not decode PNGs or
+prove that every effect reference matches the catalog. The Sprinkles material
+loader still needs role-aware image loading and rewritten portable paths before
+these descriptors can be used for client admission or export.

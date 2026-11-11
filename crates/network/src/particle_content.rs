@@ -1,14 +1,20 @@
-//! Bounded particle catalog data for a future versioned world package.
-//! This decoder is not yet admitted by a world manifest or used by clients.
-use crate::{Result, content};
+//! Bounded particle catalog data bound by the schema-4 world manifest.
+//! Client playback and dependency admission are not yet implemented.
+use crate::{
+    Result, content,
+    shared_images::{self, ColorSpace},
+};
 use serde::Deserialize;
-use std::{collections::BTreeSet, path::Path};
+use std::{collections::BTreeSet, fs::File, io::Read, path::Path};
 use theia_core::{content::ContentId, coordinates::LocalPosition};
 
 pub const MAX_CATALOG_BYTES: u64 = 256 * 1024;
 pub const MAX_EFFECT_BYTES: u64 = 4 * 1024 * 1024;
 pub const MAX_TOTAL_EFFECT_BYTES: u64 = 32 * 1024 * 1024;
 pub const MAX_PLACEMENTS: usize = 256;
+pub const MAX_TEXTURES: usize = 64;
+pub const MAX_TEXTURE_BYTES: u64 = 128 * 1024 * 1024;
+pub const MAX_TEXTURE_RGBA_BYTES: u64 = 256 * 1024 * 1024;
 
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -16,6 +22,29 @@ struct Document {
     schema: u32,
     effects: Vec<Effect>,
     placements: Vec<Placement>,
+    #[serde(default)]
+    textures: Vec<Texture>,
+}
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Texture {
+    pub sha256: [u8; 32],
+    pub bytes: u64,
+    pub color_space: ColorSpace,
+}
+impl Texture {
+    pub fn filename(&self) -> String {
+        let hash = self
+            .sha256
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>();
+        let color = match self.color_space {
+            ColorSpace::Srgb => 's',
+            ColorSpace::Linear => 'l',
+        };
+        format!("texture-{hash}-{color}.png")
+    }
 }
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -47,6 +76,7 @@ impl Catalog {
             || document.placements.len() > MAX_PLACEMENTS
             || document.effects.is_empty()
             || document.effects.len() > MAX_PLACEMENTS
+            || document.textures.len() > MAX_TEXTURES
         {
             return Err("Unsupported or over-budget particle catalog".into());
         }
@@ -66,6 +96,21 @@ impl Catalog {
         }
         if total > MAX_TOTAL_EFFECT_BYTES {
             return Err("Particle effect budget exceeded".into());
+        }
+        let mut texture_keys = BTreeSet::new();
+        let mut texture_bytes = 0u64;
+        for texture in &document.textures {
+            if !(1..=shared_images::MAX_IMAGE_BYTES).contains(&texture.bytes)
+                || !texture_keys.insert((texture.sha256, texture.color_space))
+            {
+                return Err("Invalid particle texture descriptor".into());
+            }
+            texture_bytes = texture_bytes
+                .checked_add(texture.bytes)
+                .ok_or("Particle texture size overflow")?;
+        }
+        if texture_bytes > MAX_TEXTURE_BYTES {
+            return Err("Particle texture byte budget exceeded".into());
         }
         let mut used = BTreeSet::new();
         let mut placement_ids = BTreeSet::new();
@@ -94,6 +139,9 @@ impl Catalog {
     pub fn placements(&self) -> &[Placement] {
         &self.0.placements
     }
+    pub fn textures(&self) -> &[Texture] {
+        &self.0.textures
+    }
     /// Checks exact file length and hash; callers must separately validate RON,
     /// dependencies and resource budgets before loading it with a renderer.
     pub fn verify_effects(&self, directory: &Path) -> Result<()> {
@@ -109,6 +157,33 @@ impl Catalog {
                         effect.id
                     )
                 })?;
+        }
+        Ok(())
+    }
+    /// Verifies fixed-name PNG bytes and bounded headers, not image decoding or
+    /// agreement between the catalog and references inside effect RON.
+    pub fn verify_textures(&self, directory: &Path) -> Result<()> {
+        let mut rgba_bytes = 0u64;
+        for texture in &self.0.textures {
+            let path = directory.join(texture.filename());
+            if !std::fs::symlink_metadata(&path)?.file_type().is_file() {
+                return Err("Particle texture must be a regular file".into());
+            }
+            content::verify_hash(
+                &path,
+                texture.sha256,
+                Some(texture.bytes),
+                shared_images::MAX_IMAGE_BYTES,
+            )
+            .map_err(|_| "Particle texture does not match its descriptor")?;
+            let mut header = [0; 33];
+            File::open(path)?.read_exact(&mut header)?;
+            rgba_bytes = rgba_bytes
+                .checked_add(shared_images::png_rgba_bytes(&header)?)
+                .ok_or("Particle texture RGBA size overflow")?;
+            if rgba_bytes > MAX_TEXTURE_RGBA_BYTES {
+                return Err("Particle texture RGBA budget exceeded".into());
+            }
         }
         Ok(())
     }
@@ -207,5 +282,52 @@ mod tests {
             assert!(catalog.verify_effects(&path).is_err());
         }
         fs::remove_dir_all(&path).unwrap();
+    }
+
+    #[test]
+    fn texture_descriptors_bind_bounded_png_variants() {
+        let png = include_bytes!("../tests/fixtures/shared-image.png");
+        let mut document = fixture();
+        let srgb = json!({"sha256":sha256(png),"bytes":png.len(),"color_space":"srgb"});
+        let linear = json!({"sha256":sha256(png),"bytes":png.len(),"color_space":"linear"});
+        document["textures"] = json!([srgb, linear]);
+        let catalog = decode(&document).unwrap();
+        assert_ne!(
+            catalog.textures()[0].filename(),
+            catalog.textures()[1].filename()
+        );
+        let path = std::env::temp_dir().join(format!(
+            "theia-particle-textures-{}-{}",
+            std::process::id(),
+            NEXT.fetch_add(1, Ordering::Relaxed)
+        ));
+        fs::create_dir(&path).unwrap();
+        for texture in catalog.textures() {
+            fs::write(path.join(texture.filename()), png).unwrap();
+        }
+        catalog.verify_textures(&path).unwrap();
+        fs::write(path.join(catalog.textures()[0].filename()), b"corrupt").unwrap();
+        assert!(catalog.verify_textures(&path).is_err());
+        let mut bad = document.clone();
+        bad["textures"][1] = bad["textures"][0].clone();
+        assert!(decode(&bad).is_err());
+        bad = document.clone();
+        bad["textures"][0]["bytes"] = json!(shared_images::MAX_IMAGE_BYTES + 1);
+        assert!(decode(&bad).is_err());
+        let too_large: Vec<_> = (0..9u8)
+            .map(|i| json!({"sha256":vec![i;32],"bytes":shared_images::MAX_IMAGE_BYTES,"color_space":"srgb"}))
+            .collect();
+        bad = fixture();
+        bad["textures"] = json!(too_large);
+        assert!(decode(&bad).is_err());
+        let mut malformed = png.to_vec();
+        malformed[16..20].copy_from_slice(&9000u32.to_be_bytes());
+        let mut bad = fixture();
+        bad["textures"] =
+            json!([{"sha256":sha256(&malformed),"bytes":malformed.len(),"color_space":"srgb"}]);
+        let catalog = decode(&bad).unwrap();
+        fs::write(path.join(catalog.textures()[0].filename()), malformed).unwrap();
+        assert!(catalog.verify_textures(&path).is_err());
+        fs::remove_dir_all(path).unwrap();
     }
 }
