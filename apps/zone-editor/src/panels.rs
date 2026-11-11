@@ -260,7 +260,11 @@ pub(super) fn resize(
         if !mouse.pressed(MouseButton::Left) {
             layout.drag = None;
         }
-    } else if allowed && mouse.just_pressed(MouseButton::Left) && !scrollbars.iter().any(|h| h.0) {
+    } else if allowed
+        && !layout.overlay_owned
+        && mouse.just_pressed(MouseButton::Left)
+        && !scrollbars.iter().any(|h| h.0)
+    {
         let Some(cursor) = cursor else {
             return;
         };
@@ -370,7 +374,7 @@ pub(super) fn apply(
         } else {
             Display::None
         };
-        if allowed && visible && hovered.0 && !over_scrollbar {
+        if allowed && visible && hovered.0 && !over_scrollbar && !session.ui.overlay_owned {
             hovered_edge = Some(grip.0);
         }
         match grip.0 {

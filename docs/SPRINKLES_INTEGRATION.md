@@ -752,3 +752,8 @@ color adjustment, before the final commit. Identical follow-up commits are
 ignored to avoid unnecessary particle restarts. Disk writes remain explicit.
 Headless binding tests cover live updates and unchanged events; native drag
 interaction needs retesting.
+
+Floating popup ownership also prevents starting either dock divider drag. This
+keeps a gradient handle directly over a divider from resizing the panel. A
+headless divider regression covers both edges and verifies normal resizing still
+starts after popup ownership ends; native interaction retesting is pending.

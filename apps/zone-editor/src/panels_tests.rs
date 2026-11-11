@@ -99,6 +99,34 @@ fn split_and_width_resize_cancel_and_release_preserve_source_and_own_world_input
     }
 }
 #[test]
+fn popup_gestures_cannot_start_either_panel_divider() {
+    for edge in [Edge::Width, Edge::Split] {
+        let (mut app, window) = fixture();
+        let layout = &app.world().resource::<Session>().ui;
+        let initial = [layout.width, layout.explorer_fraction];
+        let start = match edge {
+            Edge::Width => Vec2::new(layout.canvas_left(), 300.),
+            Edge::Split => Vec2::new(sidebar::WIDTH + 100., layout.properties_top(900.)),
+        };
+        point(&mut app, window, start.x, start.y);
+        app.world_mut().resource_mut::<Session>().ui.overlay_owned = true;
+        press(&mut app);
+        point(&mut app, window, start.x + 90., start.y + 90.);
+        app.update();
+        let layout = &app.world().resource::<Session>().ui;
+        assert!(layout.drag.is_none());
+        assert_eq!([layout.width, layout.explorer_fraction], initial);
+        app.world_mut()
+            .resource_mut::<ButtonInput<MouseButton>>()
+            .reset_all();
+        app.world_mut().resource_mut::<Session>().ui.overlay_owned = false;
+        point(&mut app, window, start.x, start.y);
+        press(&mut app);
+        assert!(app.world().resource::<Session>().ui.drag.is_some());
+    }
+}
+
+#[test]
 fn status_bar_cannot_start_dock_or_world_gestures() {
     let (mut app, window) = fixture();
     let left = app.world().resource::<Session>().ui.canvas_left();

@@ -1,3 +1,9 @@
+P5-17 popup/divider input repair, 11 November 2026: floating Sprinkles
+popups take precedence over dock divider gestures, preventing gradient-point
+drags from resizing either panel split. Five dock tests, formatting and strict
+workspace Clippy pass. Native interaction retesting remains pending. See
+[integration](SPRINKLES_INTEGRATION.md).
+
 P5-17 live gradient editing, 11 November 2026: original Sprinkles gradient
 change events update the live effect before final commit; unchanged follow-up
 events do not restart it again. Sixty-three particle-editor tests, formatting
