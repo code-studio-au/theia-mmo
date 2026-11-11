@@ -733,3 +733,12 @@ Further deferred lifetime guards handle removed color swatches and gradient
 rows; rebuilding rows is ordered before picker setup. Headless regressions cover
 these cases.
 Interactive user retesting is underway.
+
+A gradient commit replaces the complete Sprinkles gradient instead of merging
+its reflected list. This preserves deletions in the live asset and on Save.
+Dragging overlapping endpoints is rejected when there is no valid movement
+range; stale delete indices are ignored. A real binding test adds and removes
+a stop in the live effect, and a menu/row test checks the color-control count.
+First-open latency remains under investigation: diagnostic runs produced
+repeated cursor warnings with large backtraces, which have been suppressed at
+their source, but no timing or shader-warmup conclusion is established.

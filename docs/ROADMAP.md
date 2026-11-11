@@ -1,3 +1,10 @@
+P5-17 gradient point deletion repair, 11 November 2026: committing a
+Sprinkles gradient replaces its full live value so removed points stay removed;
+endpoint drags and stale delete indices are guarded. Focused tests exercise
+actual effect binding and menu-driven row removal. All 61 particle-editor
+tests, formatting and strict workspace Clippy pass. First-open latency and
+native interactive retesting remain open. See [integration](SPRINKLES_INTEGRATION.md).
+
 P5-17 inline popup input repair, 11 November 2026: opening presses no longer
 immediately dismiss Sprinkles popups, and floating popup gestures block world
 selection through release. A second color-swatch lifetime race is guarded.

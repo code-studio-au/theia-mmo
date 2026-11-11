@@ -247,7 +247,9 @@ pub(super) fn handle_curve_commit(trigger: On<CurveEditCommitEvent>, mut ctx: Co
 pub(super) fn handle_gradient_commit(trigger: On<GradientEditCommitEvent>, mut ctx: CommitContext) {
     let gradient = trigger.gradient.clone();
     ctx.commit_reflected(trigger.entity, |target| {
-        target.apply(&gradient);
+        if let Some(current) = target.try_downcast_mut::<ParticleGradient>() {
+            *current = gradient;
+        }
     });
 }
 

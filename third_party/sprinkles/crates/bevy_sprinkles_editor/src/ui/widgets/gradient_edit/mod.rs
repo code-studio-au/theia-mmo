@@ -872,6 +872,26 @@ fn bar_position_from_normalized(normalized_x: f32, bar_width: f32) -> f32 {
     }
 }
 
+fn constrained_stop_position(stops: &[GradientStop], index: usize, desired: f32) -> Option<f32> {
+    if index >= stops.len() || !desired.is_finite() {
+        return None;
+    }
+    let lower = if index > 0 {
+        stops[index - 1].position + 0.001
+    } else {
+        0.0
+    };
+    let upper = if index + 1 < stops.len() {
+        stops[index + 1].position - 0.001
+    } else {
+        1.0
+    };
+    if !lower.is_finite() || !upper.is_finite() || lower > upper {
+        return None;
+    }
+    Some(desired.clamp(lower, upper))
+}
+
 fn on_handle_drag(
     event: On<PointerDrag>,
     mut commands: Commands,
@@ -904,18 +924,10 @@ fn on_handle_drag(
 
     let new_pos = bar_position_from_normalized(normalized.x, computed.size.x);
 
-    let prev_pos = if handle.index > 0 {
-        state.gradient.stops[handle.index - 1].position + 0.001
-    } else {
-        0.0
+    let Some(clamped_pos) = constrained_stop_position(&state.gradient.stops, handle.index, new_pos)
+    else {
+        return;
     };
-    let next_pos = if handle.index < state.gradient.stops.len() - 1 {
-        state.gradient.stops[handle.index + 1].position - 0.001
-    } else {
-        1.0
-    };
-    let clamped_pos = new_pos.clamp(prev_pos, next_pos);
-
     state.gradient.stops[handle.index].position = clamped_pos;
 
     commands.trigger(GradientEditChangeEvent {
@@ -1394,7 +1406,7 @@ fn handle_delete_stop_click(
         return;
     };
 
-    if state.gradient.stops.len() <= 1 {
+    if state.gradient.stops.len() <= 1 || delete_button.index >= state.gradient.stops.len() {
         return;
     }
 
@@ -1448,7 +1460,7 @@ fn handle_delete_menu_click(
         return;
     };
 
-    if state.gradient.stops.len() <= 1 {
+    if state.gradient.stops.len() <= 1 || option.index >= state.gradient.stops.len() {
         return;
     }
 
@@ -1634,6 +1646,89 @@ fn respawn_stops_on_change(
 #[cfg(test)]
 mod lifetime_tests {
     use super::*;
+
+    #[test]
+    fn deleting_a_stop_from_its_menu_rebuilds_rows_and_picker_count() {
+        use bevy::asset::AssetApp;
+        let mut app = App::new();
+        app.add_plugins((
+            MinimalPlugins,
+            bevy::asset::AssetPlugin::default(),
+            bevy::scene::ScenePlugin,
+        ))
+        .init_asset::<Image>()
+        .init_asset::<Font>()
+        .add_observer(handle_delete_menu_click)
+        .add_systems(Update, respawn_stops_on_change);
+        let mut gradient = ParticleGradient::default();
+        gradient.stops.insert(
+            1,
+            GradientStop {
+                position: 0.5,
+                color: [1., 0., 0., 1.],
+            },
+        );
+        let editor = app.world_mut().spawn(GradientEditState { gradient }).id();
+        app.world_mut()
+            .spawn((StopRowsContainer(editor), Node::default()));
+        app.update();
+        assert_eq!(
+            app.world_mut()
+                .query::<&StopColorPicker>()
+                .iter(app.world())
+                .count(),
+            3
+        );
+        let menu = app.world_mut().spawn(HandleMenu).id();
+        let delete = app
+            .world_mut()
+            .spawn((DeleteMenuOption(StopRef::new(editor, 1)), ChildOf(menu)))
+            .id();
+        app.world_mut().trigger(ButtonClickEvent { entity: delete });
+        app.update();
+        assert_eq!(
+            app.world()
+                .get::<GradientEditState>(editor)
+                .unwrap()
+                .gradient
+                .stops
+                .len(),
+            2
+        );
+        assert_eq!(
+            app.world_mut()
+                .query::<&StopColorPicker>()
+                .iter(app.world())
+                .count(),
+            2
+        );
+        assert!(app.world().get_entity(menu).is_err());
+    }
+
+    #[test]
+    fn overlapping_endpoint_stops_cannot_produce_an_invalid_drag_range() {
+        let stop = |position| GradientStop {
+            position,
+            color: [1.; 4],
+        };
+        assert_eq!(
+            constrained_stop_position(&[stop(1.), stop(1.)], 1, 0.5),
+            None
+        );
+        assert_eq!(
+            constrained_stop_position(&[stop(0.), stop(0.)], 0, 0.5),
+            None
+        );
+        assert_eq!(
+            constrained_stop_position(&[stop(0.), stop(1.)], 0, 1.),
+            Some(0.999)
+        );
+        assert_eq!(constrained_stop_position(&[stop(0.)], 2, 0.5), None);
+        assert_eq!(
+            constrained_stop_position(&[stop(f32::NAN), stop(1.)], 1, 0.5),
+            None
+        );
+    }
 
     #[test]
     fn replaced_stop_rows_do_not_panic_during_sizing() {

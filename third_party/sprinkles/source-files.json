@@ -1286,14 +1286,14 @@
       "path": "crates/bevy_sprinkles_editor/src/ui/components/binding/commit.rs",
       "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/binding/commit.rs",
       "upstream_sha256": "24ab94b4affdb2fc4b16010168314c3546d18d9cfaec9a3913b37367beb6402f",
-      "imported_sha256": "cf928d1465bb746a8e154a3d9127953c34482b87713aaf966424fb8deabfc3a7",
+      "imported_sha256": "cc76122e75f46843c676b99d6e282d13464ebd1fea506de7d4675d147c05d2e1",
       "changed": true
     },
     {
       "path": "crates/bevy_sprinkles_editor/src/ui/components/binding/mod.rs",
       "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/binding/mod.rs",
       "upstream_sha256": "4b95e26f5795227b689937cf08ade10d0d113b3dbf117b1b5ec8989bc64042b3",
-      "imported_sha256": "c96b63c399a12f6452b4f883240779583c395b35bacc5906b2ef981f1d3edb02",
+      "imported_sha256": "ae3f09aa4e590456a0bfd75556d065ed968d80a12a7d2be7432b3841c2949cab",
       "changed": true
     },
     {
@@ -1601,7 +1601,7 @@
       "path": "crates/bevy_sprinkles_editor/src/ui/widgets/combobox.rs",
       "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/combobox.rs",
       "upstream_sha256": "2a5a4f4a6e7c6a768d4fc6732ffd19dd47978c509de6427ace5a48bcd4067423",
-      "imported_sha256": "1c74687a9d8e6254cc38b7303a54e13527793f6b6706e0bb16ca84f804700489",
+      "imported_sha256": "19d5e40eeb95596cc6e2b530b7d1c7ae36d98c7951d37c717d694e705d29110a",
       "changed": true
     },
     {
@@ -1650,7 +1650,7 @@
       "path": "crates/bevy_sprinkles_editor/src/ui/widgets/gradient_edit/mod.rs",
       "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/gradient_edit/mod.rs",
       "upstream_sha256": "2f9085f99f03859b953154c67a30b9830e03c25a8629d40fbf8cf13d542479a2",
-      "imported_sha256": "ce149c511dd2e981e21495f938dd8712f090661313541589bbd52305d8bce8cc",
+      "imported_sha256": "533809c828679163ccc5e245546a34f2aada2eb6390cabc48ad3a9c58bdce41c",
       "changed": true
     },
     {

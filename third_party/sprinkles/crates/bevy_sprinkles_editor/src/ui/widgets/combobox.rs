@@ -526,3 +526,78 @@ fn sync_combobox_selection(
         }
     }
 }
+
+#[cfg(test)]
+mod embedded_popup_tests {
+    use super::*;
+    use bevy::asset::AssetApp;
+
+    #[derive(Resource, Default)]
+    struct Changes(Vec<(usize, String)>);
+
+    #[test]
+    fn original_combobox_opens_root_popup_and_applies_selected_option() {
+        let mut app = App::new();
+        app.add_plugins((
+            MinimalPlugins,
+            bevy::asset::AssetPlugin::default(),
+            bevy::scene::ScenePlugin,
+        ))
+        .init_asset::<Image>()
+        .init_asset::<Font>()
+        .init_resource::<Changes>()
+        .add_observer(handle_trigger_click)
+        .add_observer(handle_option_click)
+        .add_observer(
+            |event: On<ComboBoxChangeEvent>, mut changes: ResMut<Changes>| {
+                changes.0.push((event.selected, event.label.clone()));
+            },
+        );
+        let combo = app
+            .world_mut()
+            .spawn((
+                EditorComboBox,
+                ComboBoxConfig {
+                    options: vec!["First".into(), "Second".into()],
+                    ..default()
+                },
+                ComboBoxState::default(),
+            ))
+            .id();
+        let trigger = app
+            .world_mut()
+            .spawn((ComboBoxTrigger(combo), ChildOf(combo)))
+            .id();
+        app.world_mut()
+            .trigger(ButtonClickEvent { entity: trigger });
+        app.update();
+        let popup = app
+            .world_mut()
+            .query_filtered::<Entity, With<ComboBoxPopover>>()
+            .single(app.world())
+            .unwrap();
+        assert_eq!(app.world().get::<GlobalZIndex>(popup).unwrap().0, 200);
+        assert!(
+            app.world()
+                .get::<crate::hosting::AuthoringUiRoot>(popup)
+                .is_some()
+        );
+        let option = app
+            .world_mut()
+            .query::<(Entity, &ComboBoxOption)>()
+            .iter(app.world())
+            .find_map(|(entity, option)| (option.index == 1).then_some(entity))
+            .unwrap();
+        app.world_mut().trigger(ButtonClickEvent { entity: option });
+        app.update();
+        assert_eq!(
+            app.world().get::<ComboBoxConfig>(combo).unwrap().selected,
+            1
+        );
+        assert_eq!(
+            app.world().resource::<Changes>().0,
+            vec![(1, "Second".into())]
+        );
+        assert!(app.world().get_entity(popup).is_err());
+    }
+}

@@ -1031,6 +1031,84 @@ mod theia_inline_binding_tests {
     struct Respawns(u32);
 
     #[test]
+    fn gradient_commit_removes_deleted_stops_from_the_live_effect() {
+        use crate::ui::widgets::gradient_edit::GradientEditCommitEvent;
+        let mut app = App::new();
+        let mut assets = Assets::<ParticlesAsset>::default();
+        let effect = assets.add(ParticlesAsset::new(
+            "effect".into(),
+            ParticlesDimension::D3,
+            default(),
+            vec![EmitterData::default()],
+            vec![],
+            false,
+            default(),
+        ));
+        let editor = EditorState {
+            current_project: Some(effect.clone()),
+            inspecting: Some(Inspecting {
+                kind: Inspectable::Emitter,
+                index: 0,
+            }),
+            ..default()
+        };
+        app.insert_resource(assets)
+            .insert_resource(editor)
+            .init_resource::<DirtyState>()
+            .init_resource::<EditorData>()
+            .add_observer(commit::handle_gradient_commit);
+        let field = app
+            .world_mut()
+            .spawn(FieldBinding::emitter(
+                "colors.color_over_lifetime",
+                FieldKind::Gradient,
+            ))
+            .id();
+        let mut gradient = ParticleGradient::white();
+        gradient.stops.insert(
+            1,
+            GradientStop {
+                position: 0.5,
+                color: [1., 0., 0., 1.],
+            },
+        );
+        app.world_mut().trigger(GradientEditCommitEvent {
+            entity: field,
+            gradient: gradient.clone(),
+        });
+        assert_eq!(
+            app.world()
+                .resource::<Assets<ParticlesAsset>>()
+                .get(&effect)
+                .unwrap()
+                .emitters[0]
+                .colors
+                .color_over_lifetime
+                .stops
+                .len(),
+            3
+        );
+        gradient.stops.remove(1);
+        app.world_mut().trigger(GradientEditCommitEvent {
+            entity: field,
+            gradient,
+        });
+        assert_eq!(
+            app.world()
+                .resource::<Assets<ParticlesAsset>>()
+                .get(&effect)
+                .unwrap()
+                .emitters[0]
+                .colors
+                .color_over_lifetime
+                .stops
+                .len(),
+            2
+        );
+        assert!(app.world().resource::<DirtyState>().has_unsaved_changes);
+    }
+
+    #[test]
     fn original_field_binding_edits_the_live_asset_without_workspace_mode() {
         let mut app = App::new();
         let mut assets = Assets::<ParticlesAsset>::default();
