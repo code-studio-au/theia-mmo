@@ -238,6 +238,41 @@ pub struct ParticleChunkDraft {
     pub textures: Vec<(String, Vec<u8>)>,
 }
 
+/// Bind a drafted catalog to a new revision of a schema-1 or schema-2 chunk.
+/// Schema 3 has projected-material requirements not represented by schema 4.
+/// The caller must verify the original package and all drafted dependencies,
+/// update the index to the returned identity and publish the result atomically.
+pub fn bind_chunk_catalog(
+    manifest_bytes: &[u8],
+    catalog_bytes: &[u8],
+) -> Result<(Vec<u8>, [u8; 32]), String> {
+    let original =
+        theia_network::content::Manifest::decode(manifest_bytes).map_err(|e| e.to_string())?;
+    if original.has_particle_catalog() {
+        return Err("Chunk already contains particles".into());
+    }
+    Catalog::decode(catalog_bytes).map_err(|e| e.to_string())?;
+    let revision = original
+        .revision()
+        .checked_add(1)
+        .ok_or("Chunk revision overflow")?;
+    let mut document: serde_json::Value =
+        serde_json::from_slice(manifest_bytes).map_err(|e| e.to_string())?;
+    if !matches!(document["schema"].as_u64(), Some(1 | 2)) {
+        return Err("Chunk material profile schema cannot be combined with particles".into());
+    }
+    document["schema"] = serde_json::json!(4);
+    document["revision"] = serde_json::json!(revision);
+    document["particle_bytes"] = serde_json::json!(catalog_bytes.len());
+    document["particle_sha256"] = serde_json::json!(theia_network::terrain::sha256(catalog_bytes));
+    let bytes = serde_json::to_vec(&document).map_err(|e| e.to_string())?;
+    let revised = theia_network::content::Manifest::decode(&bytes).map_err(|e| e.to_string())?;
+    revised
+        .verify_particle_catalog(catalog_bytes)
+        .map_err(|e| e.to_string())?;
+    Ok((bytes, revised.identity()))
+}
+
 /// Draft each chunk from one verified snapshot of every dependency. This does
 /// not modify files or bind chunk identities; callers must publish atomically.
 /// The total limit includes copies needed by multiple output chunks.
@@ -1684,6 +1719,37 @@ mod tests {
         let available: BTreeSet<_> = ids.iter().copied().collect();
         let partitioned = partition_catalog(&source, &source_effects, frame, &available).unwrap();
         assert_eq!(partitioned.len(), 2);
+        let original_bytes = fs::read(
+            residency
+                .index()
+                .directory(ids[2])
+                .join("world.manifest.json"),
+        )
+        .unwrap();
+        let original = Manifest::decode(&original_bytes).unwrap();
+        let (new_bytes, identity) =
+            bind_chunk_catalog(&original_bytes, &partitioned[&ids[0]]).unwrap();
+        let revised = Manifest::decode(&new_bytes).unwrap();
+        assert_eq!(revised.revision(), original.revision() + 1);
+        assert_ne!(identity, original.identity());
+        revised
+            .verify_particle_catalog(&partitioned[&ids[0]])
+            .unwrap();
+        assert!(bind_chunk_catalog(&new_bytes, &partitioned[&ids[0]]).is_err());
+        assert!(bind_chunk_catalog(&original_bytes, b"not a catalog").is_err());
+        let mut projected: serde_json::Value = serde_json::from_slice(&original_bytes).unwrap();
+        projected["schema"] = json!(3);
+        projected["shared_images"] = json!([
+            {"sha256":sha256(PNG),"bytes":PNG.len(),"color_space":"srgb","sampler":[10497,10497,0,0]},
+            {"sha256":sha256(PNG),"bytes":PNG.len(),"color_space":"linear","sampler":[33071,33071,9728,9728]}
+        ]);
+        let projected = serde_json::to_vec(&projected).unwrap();
+        Manifest::decode(&projected).unwrap();
+        assert!(
+            bind_chunk_catalog(&projected, &partitioned[&ids[0]])
+                .unwrap_err()
+                .contains("material profile")
+        );
         for (id, expected_x) in [(ids[0], 127.), (ids[1], 0.)] {
             let chunk = Catalog::decode(&partitioned[&id]).unwrap();
             assert_eq!(chunk.placements()[0].position, [expected_x, 0., 2.]);

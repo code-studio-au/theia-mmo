@@ -13,6 +13,9 @@ chunk index, recording both source identities and the explicit global origin. It
 was exercised against the editor-produced export
 (`build/editor-particle-overlay-draft-20261111/`) and a textured fixture. It does
 not yet modify chunk manifests or produce a runnable chunk world.
+The manifest binding helper increments the target revision and generates the new
+schema-4 identity, but refuses projected-material schema-3 chunks because schema 4
+does not currently preserve that requirement. Publication remains unfinished.
 
 P2-13 particle image admission, 11 November 2026: monolithic and chunk clients
 now apply their decoded-image allowance to verified PNG headers before invoking
