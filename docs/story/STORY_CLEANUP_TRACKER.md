@@ -131,3 +131,11 @@ After completion, stop cleanup cycles and maintain the established sources rathe
 - [ ] **Source approval fidelity:** Specific character-by-character spoken approvals earlier in this conversation must still be checked against the complete available conversation, not inferred from the limited recap. Do not invent detailed character motivations or mark these verified.
 - [ ] **Additional dialogue locations:** The expected filenames `Human_30_40_NPC_Dialogue_Scripts.md`, `Human_40_50_NPC_Dialogue_Scripts.md`, `Human_50_60_NPC_Dialogue_Scripts.md` and `Human_60_70_NPC_Dialogue_Scripts.md` were not present at those exact paths; discover their actual locations before claiming comprehensive dialogue coverage.
 - [ ] **Runtime readiness:** Per-race Q035 completion flags and Q184 contact/location bindings cannot be finalized until dwarf, Aelari and Korrath starting campaigns are approved. Structured manifests are editorial, not executable.
+
+### Continued audit — 12 November 2026 (Korrath cast and actual dialogue packs)
+
+- [x] Located the actual dialogue packs `Human_30_35_NPC_Dialogue_Scripts.md`, `Human_35_45_NPC_Dialogue_Scripts.md`, `Human_45_55_NPC_Dialogue_Scripts.md`, and `Human_55_70_NPC_Dialogue_Scripts.md`. Earlier 'missing dialogue' finding resulted from assuming incorrect level-band filenames; these packs do exist.
+- [x] Verified the 30–35, 45–55 and 55–70 packs have no exact `Grey Surveyor` / `High King` labels; updated the Q097 heading in 35–45 to `Father` and updated the engine-independent story invariant likewise.
+- [x] Updated individual Urodan and Tarek Oss profiles with their approved wise-traditional versus questioning-safety-conscious tension, while leaving exact personal biographies and dialogue open.
+- [ ] Remaining Chronicle editing is explicitly deferred per prior creator instruction; the old narrative labels are known discrepancies, not yet reconciled.
+- [ ] Broader full-conversation acceptance still requires checking the entire spoken approval source and all related cast files. Do not equate a file scan with complete semantic verification.
