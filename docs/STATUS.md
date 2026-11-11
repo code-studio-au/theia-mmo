@@ -7,7 +7,12 @@ chunk packages; the editor's monolithic export and the older geometry partitione
 still need a validated end-to-end bridge.
 The draft also retains exact verified effect and decoded-validated texture file
 bytes, enforces an aggregate output-copy limit and rejects tampered inputs before
-any publication.
+any publication. `draft_particle_chunks SOURCE_WORLD CHUNK_WORLD NEW_OUTPUT
+ORIGIN_X ORIGIN_Y ORIGIN_Z` now writes these unpublished overlays for an existing
+chunk index, recording both source identities and the explicit global origin. It
+was exercised against the editor-produced export
+(`build/editor-particle-overlay-draft-20261111/`) and a textured fixture. It does
+not yet modify chunk manifests or produce a runnable chunk world.
 
 P2-13 particle image admission, 11 November 2026: monolithic and chunk clients
 now apply their decoded-image allowance to verified PNG headers before invoking
