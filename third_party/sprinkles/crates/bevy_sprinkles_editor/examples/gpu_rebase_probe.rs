@@ -32,9 +32,9 @@ struct Probe {
     stage: u8,
     since: u32,
     attached: bool,
-    head: Option<ParticleData>,
+    particles: Option<Vec<ParticleData>>,
     history: Option<Vec<History>>,
-    baseline_head: Option<ParticleData>,
+    baseline_particles: Option<Vec<ParticleData>>,
     baseline_history: Option<Vec<History>>,
 }
 const OFFSET: Vec3 = Vec3::new(7., -2., 3.);
@@ -103,8 +103,7 @@ fn attach(
 fn sample(event: On<ReadbackComplete>, kinds: Query<&ReadKind>, mut probe: ResMut<Probe>) {
     match kinds.get(event.entity) {
         Ok(ReadKind::Head) => {
-            let particles: Vec<ParticleData> = event.to_shader_type();
-            probe.head = particles.into_iter().find(ParticleData::is_active);
+            probe.particles = Some(event.to_shader_type());
         }
         Ok(ReadKind::History) => {
             probe.history = Some(event.to_shader_type::<Vec<History>>());
@@ -124,26 +123,37 @@ fn drive(
             "GPU rebase probe timed out: stage={}, attached={}, head={}, history={:?}",
             probe.stage,
             probe.attached,
-            probe.head.is_some(),
+            probe
+                .particles
+                .as_ref()
+                .is_some_and(|p| p.first().is_some_and(ParticleData::is_active)),
             probe.history.as_ref().map(Vec::len)
         );
         exit.write(AppExit::error());
         return;
     }
-    if probe.stage == 0 && probe.frame >= 120 && probe.head.is_some() && probe.history.is_some() {
+    if probe.stage == 0
+        && probe.frame >= 120
+        && probe
+            .particles
+            .as_ref()
+            .is_some_and(|p| p.first().is_some_and(ParticleData::is_active))
+        && probe.history.is_some()
+    {
         if let Ok(mut system) = systems.single_mut() {
             system.pause();
             probe.stage = 1;
             probe.since = probe.frame;
         }
     } else if probe.stage == 1 && probe.frame >= probe.since + 30 {
-        let (Some(head), Some(history)) = (probe.head, probe.history.clone()) else {
+        let (Some(particles), Some(history)) = (probe.particles.clone(), probe.history.clone())
+        else {
             return;
         };
         if history.is_empty() {
             return;
         }
-        probe.baseline_head = Some(head);
+        probe.baseline_particles = Some(particles);
         probe.baseline_history = Some(history);
         let Ok(mut emitter) = emitters.single_mut() else {
             return;
@@ -157,15 +167,29 @@ fn drive(
         probe.since = probe.frame;
     } else if probe.stage == 2 && probe.frame >= probe.since + 30 {
         let (Some(before), Some(after), Some(old), Some(new)) = (
-            probe.baseline_head,
-            probe.head,
+            probe.baseline_particles.as_ref(),
+            probe.particles.as_ref(),
             probe.baseline_history.as_ref(),
             probe.history.as_ref(),
         ) else {
             return;
         };
-        let head_delta = Vec3::from_array(after.position[..3].try_into().unwrap())
-            - Vec3::from_array(before.position[..3].try_into().unwrap());
+        if before.len() < 2 || before.len() != after.len() {
+            error!("GPU trail segment count mismatch");
+            exit.write(AppExit::error());
+            return;
+        }
+        let particle_delta = |a: &ParticleData, b: &ParticleData| {
+            Vec3::from_array(b.position[..3].try_into().unwrap())
+                - Vec3::from_array(a.position[..3].try_into().unwrap())
+        };
+        let head_delta = particle_delta(&before[0], &after[0]);
+        let segment_error = before
+            .iter()
+            .zip(after)
+            .skip(1)
+            .map(|(a, b)| (particle_delta(a, b) - OFFSET).abs().max_element())
+            .fold(0., f32::max);
         let max_error = old
             .iter()
             .zip(new)
@@ -178,14 +202,15 @@ fn drive(
         if old.len() != new.len()
             || (head_delta - OFFSET).abs().max_element() > 0.001
             || max_error > 0.001
+            || segment_error > 0.001
         {
             error!(
-                "GPU rebase mismatch: head={head_delta:?}, expected={OFFSET:?}, history_error={max_error}"
+                "GPU rebase mismatch: head={head_delta:?}, expected={OFFSET:?}, history_error={max_error}, segment_error={segment_error}"
             );
             exit.write(AppExit::error());
             return;
         }
-        let report = serde_json::json!({"passed":true,"head_delta":head_delta.to_array(),"history_entries":old.len(),"max_history_error":max_error,"paused":true});
+        let report = serde_json::json!({"passed":true,"head_delta":head_delta.to_array(),"history_entries":old.len(),"max_history_error":max_error,"trail_segments":before.len() - 1,"max_segment_error":segment_error,"paused":true});
         let path = std::env::var_os("THEIA_REBASE_PROBE").expect("THEIA_REBASE_PROBE");
         if let Err(error) = std::fs::write(path, serde_json::to_vec_pretty(&report).unwrap()) {
             error!("{error}");
@@ -197,7 +222,7 @@ fn drive(
     }
 }
 fn main() {
-    App::new()
+    let result = App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 title: "Particle GPU rebase qualification".into(),
@@ -219,4 +244,7 @@ fn main() {
             ),
         )
         .run();
+    if let AppExit::Error(code) = result {
+        std::process::exit(i32::from(code.get()));
+    }
 }

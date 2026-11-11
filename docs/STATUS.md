@@ -9,7 +9,11 @@ are untouched. Content-frame changes or out-of-bounds offsets still clear withou
 rewinding the emitter. Two connected Vulkan clients completed the one-shot 3D
 Explosion under forced rebases with translations and no fallback clears or GPU
 validation diagnostics (`build/chunk-explosion-translate-native-20261111/`).
-This is a scenario check, not a frame-synchronized visual equivalence test.
+The upstream Tube Trails also passed a two-client chunk transition
+(`build/chunk-trails-translate-native-20261111/`). A second paused GPU readback
+verified all three rendered trail segments and 120 history entries moved exactly
+(`build/particle-gpu-rebase-segments-20261111/result.json`). These are scenario
+and buffer checks, not frame-synchronized visual equivalence tests.
 
 P2-13 / P5-17 fixed-step Sprinkles comparison, 11 November 2026: all seven
 bundled effects were captured at five matching update counts in the pinned
