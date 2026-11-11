@@ -379,8 +379,8 @@ untouched; a changed asset or path invalidates a pending confirmation, and a sav
 in progress blocks the switch. Creating a project does not create its destination
 file before confirmation. The delete-item confirmation is tied to its own dialog
 so another dialog action cannot trigger it. Changes still require the user to use
-Save; the existing new-project initial write behavior is retained. Examples and
-migrated files already marked dirty by the editor also prompt.
+Save; the existing new-project initial write behavior is retained. Migrated files already marked dirty by the editor also prompt. Bundled examples
+require Save As, but do not prompt on switching unless their content has changed.
 
 Headless tests cover focused text, stale changes, cancel, dialog identity and New
 without a write. Forty-one particle-editor and 122 zone-editor tests, formatting
@@ -395,3 +395,9 @@ success message after discovering that the old harness discarded failure status.
 The New project action is also scoped to its own dialog. If another modal is
 open, the New button cannot start a hidden form; a different dialog's action
 cannot create a project from stale form state. Headless regressions cover both.
+
+
+The original serialized example content is tracked by asset identity at both
+startup and later Open. Comparing current content avoids a discard prompt for
+an untouched example without weakening protection for an edited example. A
+missing or unserializable baseline takes the conservative confirmation path.

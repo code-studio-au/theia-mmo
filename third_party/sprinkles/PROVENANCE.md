@@ -293,3 +293,6 @@ The local editor adds a guarded project switch, including focused text commit,
 confirmation identity and stale-state checks; explicit Save behavior is retained.
 
 New-project dialog actions are locally scoped to their own modal.
+
+Untouched examples retain Save As semantics without an unnecessary discard
+confirmation; edited examples continue to require confirmation.

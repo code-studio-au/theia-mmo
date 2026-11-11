@@ -95,7 +95,7 @@ fn load_initial_project(
         if let Ok(result) = load_project_from_path(&path) {
             let has_emitters = !result.asset.emitters.is_empty();
             let handle = assets.add(result.asset);
-            editor_state.open_project(handle, path, &mut dirty_state, result.was_migrated);
+            editor_state.open_project(handle, path, &mut dirty_state, result.was_migrated, &assets);
             if has_emitters {
                 editor_state.inspecting = Some(Inspecting {
                     kind: Inspectable::Emitter,
@@ -115,7 +115,7 @@ fn load_initial_project(
         {
             let has_emitters = !result.asset.emitters.is_empty();
             let handle = assets.add(result.asset);
-            editor_state.open_project(handle, path, &mut dirty_state, result.was_migrated);
+            editor_state.open_project(handle, path, &mut dirty_state, result.was_migrated, &assets);
             if has_emitters {
                 editor_state.inspecting = Some(Inspecting {
                     kind: Inspectable::Emitter,
@@ -136,7 +136,13 @@ fn load_initial_project(
         {
             let has_emitters = !result.asset.emitters.is_empty();
             let handle = assets.add(result.asset);
-            editor_state.open_project(handle, demo_path, &mut dirty_state, result.was_migrated);
+            editor_state.open_project(
+                handle,
+                demo_path,
+                &mut dirty_state,
+                result.was_migrated,
+                &assets,
+            );
             if has_emitters {
                 editor_state.inspecting = Some(Inspecting {
                     kind: Inspectable::Emitter,

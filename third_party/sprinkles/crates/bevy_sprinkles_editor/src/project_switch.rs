@@ -143,6 +143,7 @@ fn evaluate_switch(
         return;
     }
     if dirty.has_unsaved_changes
+        && !state.is_pristine_example(&assets)
         && let Some(handle) = &state.current_project
     {
         let snapshot = match assets
@@ -277,7 +278,7 @@ fn apply_switch(
             }
             let is_example = is_example_path(&path);
             let handle = assets.add(asset);
-            state.open_project(handle, path, dirty, migrated);
+            state.open_project(handle, path, dirty, migrated, assets);
             state.inspecting = has_emitters.then_some(Inspecting {
                 kind: Inspectable::Emitter,
                 index: 0,
@@ -496,5 +497,39 @@ mod tests {
         assert_eq!(current(&app), original);
         assert!(app.world().get_resource::<PendingSwitch>().is_some());
         assert!(!path.exists());
+    }
+
+    #[test]
+    fn pristine_examples_switch_without_warning_but_edits_still_warn() {
+        for edited in [false, true] {
+            let (mut app, original) = fixture();
+            let mut state = EditorState::default();
+            let mut dirty = DirtyState::default();
+            state.open_project(
+                original.clone(),
+                crate::io::examples_dir().join("source.ron"),
+                &mut dirty,
+                false,
+                app.world().resource::<Assets<ParticlesAsset>>(),
+            );
+            assert!(dirty.has_unsaved_changes); // Save still requires a new path.
+            app.insert_resource(state);
+            app.insert_resource(dirty);
+            if edited {
+                app.world_mut()
+                    .resource_mut::<Assets<ParticlesAsset>>()
+                    .get_mut(&original)
+                    .unwrap()
+                    .name = "Changed".into();
+            }
+            request(&mut app);
+            if edited {
+                assert_eq!(current(&app), original);
+                assert!(app.world().get_resource::<PendingSwitch>().is_some());
+            } else {
+                assert_ne!(current(&app), original);
+                assert!(app.world().get_resource::<PendingSwitch>().is_none());
+            }
+        }
     }
 }

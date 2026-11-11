@@ -1,3 +1,8 @@
+P5-17 particle example switching, 11 November 2026: unchanged bundled
+examples no longer trigger the discard prompt even though Save still requires a
+new path; edited examples remain protected. Forty-three particle-editor tests,
+fmt and strict workspace/all-target Clippy pass headlessly. See [integration](../SPRINKLES_INTEGRATION.md).
+
 P5-17 particle New dialog routing, 11 November 2026: Create responds only to
 its own dialog and cannot start a form over an existing modal. Forty-two particle
 editor tests, fmt and strict workspace/all-target Clippy pass headlessly. See

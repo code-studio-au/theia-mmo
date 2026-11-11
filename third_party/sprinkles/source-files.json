@@ -1265,7 +1265,7 @@
       "path": "crates/bevy_sprinkles_editor/src/plugin.rs",
       "upstream_path": "crates/bevy_sprinkles_editor/src/plugin.rs",
       "upstream_sha256": "b5fb34d613886bc7305cf2becfd5fe40f90a4d604ed2606ff1aacb827c293e63",
-      "imported_sha256": "ef037f97d553690b7e75879921b913c4c69d915049253a7fbf8f7e51d4d65f57",
+      "imported_sha256": "acd9a39afb96f5cc975e4ddfcf22c6d3bf4faa0e136034135591d435aff9d453",
       "changed": true
     },
     {
@@ -1279,7 +1279,7 @@
       "path": "crates/bevy_sprinkles_editor/src/state.rs",
       "upstream_path": "crates/bevy_sprinkles_editor/src/state.rs",
       "upstream_sha256": "9dc027c297d8aa306c9ae39e93294fe61e1ccaed702b067b618a2f4152f2e7b3",
-      "imported_sha256": "1093bb918329f725fd00f5d969f9170cf523a9ef0f79c72993ab7abe0469897c",
+      "imported_sha256": "c6c04aa166fb4ad2d34e93de8812d518c4a99c479eef528074a882a4458b9196",
       "changed": true
     },
     {

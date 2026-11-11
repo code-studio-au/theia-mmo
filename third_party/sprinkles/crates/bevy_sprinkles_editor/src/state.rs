@@ -21,6 +21,7 @@ pub struct EditorState {
     pub current_project: Option<Handle<ParticlesAsset>>,
     pub current_project_path: Option<PathBuf>,
     pub inspecting: Option<Inspecting>,
+    pub(crate) pristine_example: Option<(AssetId<ParticlesAsset>, String)>,
 }
 
 impl EditorState {
@@ -30,11 +31,35 @@ impl EditorState {
         path: PathBuf,
         dirty_state: &mut DirtyState,
         was_migrated: bool,
+        assets: &Assets<ParticlesAsset>,
     ) {
         let is_example = is_example_path(&path);
+        self.pristine_example = if is_example {
+            assets
+                .get(&handle)
+                .and_then(|asset| crate::project::serialize_snapshot(asset).ok())
+                .map(|snapshot| (handle.id(), snapshot))
+        } else {
+            None
+        };
         self.current_project = Some(handle);
         self.current_project_path = if is_example { None } else { Some(path) };
         dirty_state.has_unsaved_changes = is_example || was_migrated;
+    }
+
+    pub(crate) fn is_pristine_example(&self, assets: &Assets<ParticlesAsset>) -> bool {
+        let (Some(handle), Some((source_id, snapshot))) =
+            (&self.current_project, &self.pristine_example)
+        else {
+            return false;
+        };
+        handle.id() == *source_id
+            && self.current_project_path.is_none()
+            && assets
+                .get(handle)
+                .and_then(|asset| crate::project::serialize_snapshot(asset).ok())
+                .as_ref()
+                == Some(snapshot)
     }
 }
 
