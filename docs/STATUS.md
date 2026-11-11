@@ -1,3 +1,8 @@
+P5-17 particle New dialog routing, 11 November 2026: Create responds only to
+its own dialog and cannot start a form over an existing modal. Forty-two particle
+editor tests, fmt and strict workspace/all-target Clippy pass headlessly. See
+[integration](SPRINKLES_INTEGRATION.md).
+
 P5-17 particle project switching, 11 November 2026: Open and New commit a
 valid focused field and request confirmation before replacing unsaved work;
 cancel and stale-project checks preserve the current asset. An active save blocks

@@ -25,7 +25,7 @@ use crate::ui::widgets::button::{
     ButtonClickEvent, ButtonProps, ButtonSize, ButtonVariant, IconButtonProps, button, icon_button,
 };
 use crate::ui::widgets::dialog::{
-    DialogActionEvent, DialogChildrenSlot, EditorDialog, OpenDialogEvent,
+    DialogActionEvent, DialogChildrenSlot, DialogPurpose, EditorDialog, OpenDialogEvent,
 };
 use crate::ui::widgets::popover::{EditorPopover, PopoverPlacement, PopoverProps, popover};
 use crate::ui::widgets::text_edit::{
@@ -55,6 +55,8 @@ pub fn plugin(app: &mut App) {
             update_remove_button_visibility,
         ));
 }
+
+const NEW_PROJECT_PURPOSE: &str = "particle-new-project";
 
 #[derive(Component, Default, Clone)]
 pub struct ProjectSelector;
@@ -373,9 +375,10 @@ fn handle_trigger_click(
 fn handle_new_project_click(
     trigger: On<ButtonClickEvent>,
     buttons: Query<(), With<NewProjectButton>>,
+    dialogs: Query<(), With<EditorDialog>>,
     mut commands: Commands,
 ) {
-    if buttons.get(trigger.entity).is_err() {
+    if buttons.get(trigger.entity).is_err() || !dialogs.is_empty() {
         return;
     }
 
@@ -388,7 +391,8 @@ fn handle_new_project_click(
         focused: false,
     });
 
-    commands.trigger(OpenDialogEvent::new("New project", "Create"));
+    commands
+        .trigger(OpenDialogEvent::new("New project", "Create").with_purpose(NEW_PROJECT_PURPOSE));
 }
 
 fn handle_open_project_click(
@@ -771,13 +775,20 @@ fn update_location_placeholder(
 }
 
 fn handle_create_project(
-    _event: On<DialogActionEvent>,
+    event: On<DialogActionEvent>,
     state: Option<Res<NewProjectDialogState>>,
+    purposes: Query<&DialogPurpose>,
     children_query: Query<&Children>,
     text_edits: Query<Entity, With<EditorTextEdit>>,
     buffers: Query<&EditableText>,
     mut commands: Commands,
 ) {
+    if !purposes
+        .get(event.entity)
+        .is_ok_and(|purpose| purpose.0 == NEW_PROJECT_PURPOSE)
+    {
+        return;
+    }
     let Some(state) = state else { return };
     let Some(name_entity) = state.name_entity else {
         return;
@@ -922,6 +933,20 @@ mod save_tests {
     use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
     #[test]
+    fn new_project_button_does_not_start_a_form_over_an_existing_dialog() {
+        let mut app = App::new();
+        app.add_observer(handle_new_project_click);
+        app.world_mut().spawn(EditorDialog);
+        let button = app.world_mut().spawn(NewProjectButton).id();
+        app.world_mut().trigger(ButtonClickEvent { entity: button });
+        assert!(
+            app.world()
+                .get_resource::<NewProjectDialogState>()
+                .is_none()
+        );
+    }
+
+    #[test]
     fn new_project_keeps_its_unsaved_data_if_the_chosen_file_already_exists() {
         let dir = std::env::temp_dir().join(format!(
             "theia-new-particle-{}-{}",
@@ -963,7 +988,22 @@ mod save_tests {
             location_entity: Some(location),
             focused: false,
         });
-        let dialog = app.world_mut().spawn_empty().id();
+        let other = app
+            .world_mut()
+            .spawn(DialogPurpose("particle-project-switch"))
+            .id();
+        app.world_mut().trigger(DialogActionEvent { entity: other });
+        app.update();
+        assert!(
+            app.world()
+                .resource::<EditorState>()
+                .current_project
+                .is_none()
+        );
+        let dialog = app
+            .world_mut()
+            .spawn(DialogPurpose(NEW_PROJECT_PURPOSE))
+            .id();
         app.world_mut()
             .trigger(DialogActionEvent { entity: dialog });
         app.update();

@@ -390,3 +390,8 @@ Mesa 26.2.6 Vulkan with explicit Khronos validation and no unexpected diagnostic
 These checks did not visually inspect pixels or qualify Windows. The examples now
 return their Bevy exit status; earlier runtime logs were checked for their explicit
 success message after discovering that the old harness discarded failure status.
+
+
+The New project action is also scoped to its own dialog. If another modal is
+open, the New button cannot start a hidden form; a different dialog's action
+cannot create a project from stale form state. Headless regressions cover both.
