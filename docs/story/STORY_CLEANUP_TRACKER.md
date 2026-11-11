@@ -139,3 +139,10 @@ After completion, stop cleanup cycles and maintain the established sources rathe
 - [x] Updated individual Urodan and Tarek Oss profiles with their approved wise-traditional versus questioning-safety-conscious tension, while leaving exact personal biographies and dialogue open.
 - [ ] Remaining Chronicle editing is explicitly deferred per prior creator instruction; the old narrative labels are known discrepancies, not yet reconciled.
 - [ ] Broader full-conversation acceptance still requires checking the entire spoken approval source and all related cast files. Do not equate a file scan with complete semantic verification.
+
+### Cross-race cast pass — 12 November 2026
+
+- [x] Updated Elara, Commander Nessa Ward, Caelith Rowan, Irielle Mossward, Queen Seralyth and First Elder Dromak character notes to respect distinct 1–20 racial histories and independent sovereign authority in the shared campaign.
+- [x] Reconfirmed that the missing mid-level dialogue packs exist under actual bands 30–35, 35–45, 45–55 and 55–70; earlier missing-path assumption is closed.
+- [ ] Character-by-character details beyond the approved summaries remain subject to full original voice-transcript comparison. These cross-race notes do not establish new personal backstories.
+- [ ] Chronicle remains deferred by explicit creator instruction; runtime gate/actor binding remains dependent on future racial campaigns.
