@@ -742,3 +742,7 @@ a stop in the live effect, and a menu/row test checks the color-control count.
 First-open latency remains under investigation: diagnostic runs produced
 repeated cursor warnings with large backtraces, which have been suppressed at
 their source, but no timing or shader-warmup conclusion is established.
+
+The related curve-point drag now also rejects overlapping endpoint constraints
+and invalid value ranges instead of attempting an invalid clamp. A headless
+regression covers both conditions; native curve interaction remains unqualified.

@@ -1,3 +1,8 @@
+P5-17 curve drag guard, 11 November 2026: Sprinkles curve-point dragging
+refuses invalid neighbor or value ranges instead of panicking when points overlap
+at an endpoint. A focused headless regression covers overlapping and reversed
+ranges; native curve interaction remains to be retested. See [integration](../SPRINKLES_INTEGRATION.md).
+
 P5-17 gradient point deletion repair, 11 November 2026: committing a
 Sprinkles gradient replaces its full live value so removed points stay removed;
 endpoint drags and stale delete indices are guarded. Focused tests exercise

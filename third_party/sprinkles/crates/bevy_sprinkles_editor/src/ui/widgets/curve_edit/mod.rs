@@ -345,6 +345,9 @@ impl CurveControl for PointHandle {
             return;
         }
 
+        if !normalized.is_finite() {
+            return;
+        }
         let new_pos = (normalized.x + 0.5).clamp(0.0, 1.0);
         let snapped_pos = (new_pos as f64 / DRAG_SNAP_STEP).round() * DRAG_SNAP_STEP;
         let prev_pos = if self.index > 0 {
@@ -357,11 +360,17 @@ impl CurveControl for PointHandle {
         } else {
             1.0
         };
+        if !prev_pos.is_finite() || !next_pos.is_finite() || prev_pos > next_pos {
+            return;
+        }
         let clamped_pos = (snapped_pos as f32).clamp(prev_pos, next_pos);
 
         let range_min = curve.range.min as f64;
         let range_max = curve.range.max as f64;
-        let range_span = curve.range.span() as f64;
+        if !range_min.is_finite() || !range_max.is_finite() || range_min > range_max {
+            return;
+        }
+        let range_span = range_max - range_min;
         let normalized_value = 0.5 - normalized.y;
         let raw_value =
             (range_min + normalized_value as f64 * range_span).clamp(range_min, range_max);
@@ -1531,6 +1540,24 @@ mod range_tests {
 
     #[derive(Resource, Default)]
     struct Commits(Vec<CurveTexture>);
+
+    #[test]
+    fn dragging_overlapping_curve_endpoints_is_safe() {
+        let mut state = CurveEditState::default();
+        state.curve.x.points = vec![CurvePoint::new(1., 0.), CurvePoint::new(1., 1.)];
+        let handle = PointHandle {
+            curve_edit: Entity::PLACEHOLDER,
+            canvas: Entity::PLACEHOLDER,
+            index: 1,
+        };
+        handle.update_state(&mut state, Vec2::ZERO, None);
+        assert_eq!(state.curve.x.points[1].position, 1.);
+        state.curve.x.points[0].position = 0.;
+        state.curve.x.range.min = 2.;
+        state.curve.x.range.max = 1.;
+        handle.update_state(&mut state, Vec2::ZERO, None);
+        assert_eq!(state.curve.x.points[1].position, 1.);
+    }
 
     #[test]
     fn actual_vector_range_children_commit_once_and_reject_invalid_ranges_without_panics() {
