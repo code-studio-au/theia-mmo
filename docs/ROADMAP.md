@@ -1,3 +1,11 @@
+P2-13 particle allocation counts, 11 November 2026: the Sprinkles runtime
+exposes checked per-emitter mesh, particle-slot and trail-history counts for
+future admission. All 18 particle-runtime tests, fmt and strict workspace/all-
+target Clippy pass. A 3440×1440 RX 7900 XTX / RADV / Mesa 26.2.6 Vulkan run
+created the local preview's emitters with Khronos validation and zero GPU
+diagnostics. Counts are not a complete memory budget or capacity claim. See
+[integration](SPRINKLES_INTEGRATION.md).
+
 P2-13 draft particle catalog, 11 November 2026: export preflight hashes
 unique local effects and validates a deterministic in-memory catalog using
 checked global-to-local placement conversion. Three focused editor tests, fmt

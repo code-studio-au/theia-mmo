@@ -596,3 +596,15 @@ local RON byte hashes, sorted unique effect IDs and placement IDs, then passes i
 to the headless decoder. Positions use the zone's checked global-to-local frame
 before conversion to f32. The draft is discarded: no catalog or effects are
 published, and external texture dependencies still need a package format.
+
+## Runtime allocation counts — P2-13
+
+The local Sprinkles port exposes checked per-emitter counts for replicated mesh
+vertices and indices, particle-buffer slots and trail-history entries. A zero
+particle amount still counts one base mesh, because the runtime constructs that
+mesh before replication. Counts share the runtime's existing overflow checks;
+they do not include every CPU/GPU allocation, texture, shader cost, emitter
+instance or cache behavior. They are a prerequisite for a package admission
+policy, not a memory cap or a measured capacity. Generated-mesh tests compare
+counts for all seven mesh types; runtime tests cover trails, zero amount and
+overflow.

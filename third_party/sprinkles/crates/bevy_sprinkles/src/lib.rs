@@ -157,6 +157,8 @@
 
 /// Particle system asset definitions, emitter data, and serialization types.
 pub mod asset;
+/// Allocation counts for admission decisions before particle buffers are created.
+pub mod budget;
 mod compute;
 mod extract;
 /// Particle material extension for GPU-driven particle rendering.

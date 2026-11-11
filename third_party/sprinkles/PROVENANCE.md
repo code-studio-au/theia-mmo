@@ -305,3 +305,8 @@ its actual path instead of assuming the application working directory.
 
 An explicit local effect-library save event reuses the retained editor save
 coordinator and atomic writer, with Theia stable content-ID validation.
+
+The local `budget.rs` adds checked per-emitter mesh, particle-slot and trail
+history counts by reusing the runtime's arithmetic guard. The mesh guard now
+returns its calculated counts internally. This is a measurement primitive, not
+a policy limit or a total CPU/GPU memory estimate.

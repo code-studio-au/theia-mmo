@@ -375,7 +375,11 @@ fn create_prism_mesh(left_to_right: f32, size: Vec3, subdivide: Vec3) -> Mesh {
 /// Validate arithmetic used by particle mesh construction and replication.
 /// This is not a memory limit or general validation of mesh dimensions.
 pub(crate) fn checked_mesh_arithmetic(config: &ParticleMesh, amount: u32) -> bool {
-    let checked = || -> Option<()> {
+    checked_mesh_counts(config, amount).is_some()
+}
+
+pub(crate) fn checked_mesh_counts(config: &ParticleMesh, amount: u32) -> Option<(u32, usize)> {
+    let checked = || -> Option<(u32, usize)> {
         let (vertices, indices) = match config {
             ParticleMesh::Quad { subdivide, .. } => {
                 let cols = (subdivide.x as u32).checked_add(1)?;
@@ -494,11 +498,11 @@ pub(crate) fn checked_mesh_arithmetic(config: &ParticleMesh, amount: u32) -> boo
             // Bevy's Cuboid mesh has six independent four-vertex faces.
             ParticleMesh::Cuboid { .. } => (24, 36),
         };
-        vertices.checked_mul(amount)?;
-        indices.checked_mul(usize::try_from(amount).ok()?)?;
-        Some(())
+        let total_vertices = vertices.checked_mul(amount)?;
+        let total_indices = indices.checked_mul(usize::try_from(amount).ok()?)?;
+        Some((total_vertices, total_indices))
     };
-    checked().is_some()
+    checked()
 }
 
 fn create_subdivided_quad(size: Vec2, subdivisions_x: u32, subdivisions_y: u32) -> Mesh {
@@ -921,6 +925,57 @@ fn extract_float32x3(
 #[cfg(test)]
 mod theia_cache_tests {
     use super::*;
+
+    #[test]
+    fn allocation_counts_match_generated_meshes() {
+        let configs = [
+            ParticleMesh::Quad {
+                orientation: QuadOrientation::FaceZ,
+                size: Vec2::ONE,
+                subdivide: Vec2::new(2., 3.),
+            },
+            ParticleMesh::Sphere {
+                radius: 1.,
+                segments: 8,
+                rings: 4,
+            },
+            ParticleMesh::Cuboid {
+                half_size: Vec3::ONE,
+            },
+            ParticleMesh::Cylinder {
+                top_radius: 1.,
+                bottom_radius: 1.,
+                height: 2.,
+                radial_segments: 8,
+                rings: 3,
+                cap_top: true,
+                cap_bottom: true,
+            },
+            ParticleMesh::Prism {
+                left_to_right: 0.5,
+                size: Vec3::ONE,
+                subdivide: Vec3::new(2., 2., 1.),
+            },
+            ParticleMesh::TubeTrail {
+                radius: 1.,
+                radial_steps: 6,
+                sections: 4,
+                section_rings: 2,
+            },
+            ParticleMesh::RibbonTrail {
+                size: 1.,
+                sections: 4,
+                section_rings: 2,
+                shape: RibbonTrailShape::Cross,
+            },
+        ];
+        for config in configs {
+            let mesh = create_base_mesh(&config);
+            let (vertices, indices) = checked_mesh_counts(&config, 3).unwrap();
+            assert_eq!(vertices as usize, mesh.count_vertices() * 3, "{config:?}");
+            assert_eq!(indices, mesh.indices().unwrap().len() * 3, "{config:?}");
+        }
+    }
 
     #[test]
     fn zero_radius_and_resolution_spheres_have_finite_mesh_attributes() {
