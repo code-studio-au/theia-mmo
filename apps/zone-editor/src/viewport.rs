@@ -595,7 +595,7 @@ type TabControls<'w, 's> = Query<
         &'static bevy::ui::UiGlobalTransform,
     ),
 >;
-#[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 pub(super) fn report(
     mut commands: Commands,
     report: Option<ResMut<Report>>,
@@ -606,6 +606,7 @@ pub(super) fn report(
         crate::particle_workspace::Report,
         Res<property_tabs::State>,
         TabControls,
+        crate::export_dialog::Report,
     ),
     session: Res<Session>,
     view: Res<View>,
@@ -620,7 +621,7 @@ pub(super) fn report(
     content: Res<outliner::Content>,
     content_controls: ContentControls,
 ) {
-    let (keys, focus, particles, tabs, tab_controls) = input;
+    let (keys, focus, particles, tabs, tab_controls, export_dialog) = input;
     let Some(mut report) = report else {
         return;
     };
@@ -840,6 +841,7 @@ pub(super) fn report(
         Some(serde_json::json!({"target":format!("{control:?}"),"hovered":hovered.0,"centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array(),
             "entry":entry.map(|e|serde_json::json!({"name":e.name,"path":e.path.to_string_lossy(),"directory":e.directory}))}))
     }).collect::<Vec<_>>());
+    value["export_dialog"] = export_dialog.snapshot(&session, scale.0, &focus);
     value["particle_workspace"] = particles.snapshot();
     value["file_dialog"] = serde_json::json!(session.file_dialog.as_ref().map(|d|serde_json::json!({"mode":format!("{:?}",d.mode),"folder":d.folder.to_string_lossy(),"text":d.text,"selection":d.selection,"page":d.page,"pages":d.pages(),"overwrite":d.overwrite})));
     value["name_controls"] = serde_json::json!(controls.iter().filter_map(|(_,control,_,_,node,t,hovered,..)| {

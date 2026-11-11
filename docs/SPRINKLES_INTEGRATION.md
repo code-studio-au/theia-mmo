@@ -175,6 +175,16 @@ was rechecked during forced rebases after this change
 (`build/particle-world-trails-rebase-native-20261111-v2/`). These are not
 synchronized upstream visual comparisons.
 
+Use **File → Export world…** in the zone editor to publish the current zone
+snapshot. Choose a new output folder, content ID and positive revision; save any
+particle edits first. The dialog runs export in a background worker, refuses to
+overwrite an existing destination and does not save the zone source. A native
+mouse/keyboard test covers direct editing, Tab/Shift-Tab and a particle-bearing
+export (`build/editor-export-dialog-native-20261111-v6/qualification.json`).
+The exact GUI-produced package then rendered its particle on two connected
+clients (`build/editor-export-world-native-20261111-v2/verification.json`), with
+zero Vulkan diagnostics on RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6.
+
 The prerequisites are the accepted Linux authoring shell and the adopted exact
 Bevy 0.20.0 engine. Upstream targets Bevy 0.19.0. Both imported crates use our
 workspace engine; introducing a second Bevy engine or downgrading Theia is not

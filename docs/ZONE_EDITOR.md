@@ -1,3 +1,15 @@
+# Editor export update — 11 November 2026
+
+**File → Export world…** publishes the current zone snapshot, including saved
+particle effects, to a new folder. Enter the destination, content ID and positive
+revision; export runs in the background and does not save the zone source.
+Unsaved particle edits and existing output folders are rejected. Native
+mouse/keyboard qualification, including Tab navigation and a subsequent
+connected two-client playback, is recorded in
+`build/editor-export-dialog-native-20261111-v6/qualification.json` and
+`build/editor-export-world-native-20261111-v2/verification.json` (RX 7900 XTX,
+RADV NAVI31, Mesa 26.2.6 Vulkan; zero GPU diagnostics).
+
 P5-17 same-window Sprinkles authoring accepted on Linux, 10 November 2026:
 File → Particles workspace opens the actual upstream UI inside Theia; Zone in
 its top bar returns. Original editing/playback/save, project/pause retention and

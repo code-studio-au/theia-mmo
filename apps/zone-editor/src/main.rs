@@ -7,6 +7,7 @@ mod camera_views;
 mod cli;
 mod exit_dialog;
 mod export;
+mod export_dialog;
 mod file_picker;
 mod gizmo;
 #[cfg(test)]
@@ -131,6 +132,7 @@ struct Session {
     particle_save_requested: bool,
     exit_confirmation: bool,
     file_dialog: Option<file_picker::Draft>,
+    export_dialog: Option<export_dialog::Draft>,
 }
 struct Drag {
     id: u64,
@@ -203,6 +205,7 @@ impl Session {
             particle_save_requested: false,
             exit_confirmation: false,
             file_dialog: None,
+            export_dialog: None,
         }
     }
     fn placement_dimensions(&self, primitive: Primitive) -> [f64; 3] {
@@ -285,6 +288,7 @@ impl Session {
         self.name_edit.is_some()
             || self.transform_edit.is_some()
             || self.file_dialog.is_some()
+            || self.export_dialog.is_some()
             || self.exit_confirmation
     }
     fn set_mode(&mut self, mode: EditorMode) {
@@ -641,6 +645,7 @@ fn run() -> Result<(), String> {
     .add_observer(properties::activate)
     .add_observer(properties::slider_change)
     .add_observer(file_picker::activate)
+    .add_observer(export_dialog::activate)
     .add_observer(particle_preview::relay_toast)
     .add_observer(particle_preview::respawn_emitters)
     .add_observer(particle_preview::respawn_colliders)
@@ -663,6 +668,7 @@ fn run() -> Result<(), String> {
             naming::setup,
             properties::setup,
             file_picker::setup,
+            export_dialog::setup,
         ),
     )
     .add_zone_systems(
@@ -672,6 +678,7 @@ fn run() -> Result<(), String> {
                 panels::apply,
                 agent::poll,
                 file_picker::keyboard,
+                export_dialog::open,
             )
                 .chain(),
             naming::keyboard,
@@ -714,6 +721,7 @@ fn run() -> Result<(), String> {
             naming::finish,
             (properties::finish, properties::slider_sync).chain(),
             file_picker::finish,
+            export_dialog::finish,
         )
             .chain()
             .after(bevy::text::EditableTextSystems),

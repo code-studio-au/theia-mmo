@@ -216,6 +216,7 @@ pub(super) fn spawn(parent: &mut ChildSpawnerCommands, kind: Kind) {
                         (workspace::Control::FileOpen, "Open…", "Ctrl O"),
                         (workspace::Control::RenameZone, "Rename zone…", "Shift F8"),
                         (workspace::Control::FileSaveAs, "Save as…", "Ctrl Shift S"),
+                        (workspace::Control::ExportWorld, "Export world…", ""),
                         (
                             workspace::Control::Command(Action::Load),
                             "Reload",

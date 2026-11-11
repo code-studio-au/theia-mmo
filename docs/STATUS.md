@@ -1,3 +1,15 @@
+P5-17 / P2-13 editor world export, 11 November 2026: **File → Export world…**
+opens a Sprinkles-styled dialog for a new output folder, content ID and revision.
+It exports the current zone snapshot on a background worker, refuses unsaved
+particle edits and existing destinations, and leaves source files unchanged.
+A native Linux mouse/keyboard test covered menu access, field focus, Tab/Shift-Tab,
+revision editing and particle-bearing publication with zero Vulkan diagnostics
+(`build/editor-export-dialog-native-20261111-v6/qualification.json`). The exact
+GUI-produced package then rendered its particle effect on two connected clients
+(`build/editor-export-world-native-20261111-v2/verification.json`) on RX 7900
+XTX / RADV NAVI31 / Mesa 26.2.6. Save still explicitly saves the source zone;
+export does not do so. The exported world remains a bounded monolithic slice.
+
 P2-13 world-particle startup readiness, 11 November 2026: world effects are
 constructed in advance but held paused before their first simulation step until
 the terrain scene, render pipelines and a connected snapshot are ready. This
