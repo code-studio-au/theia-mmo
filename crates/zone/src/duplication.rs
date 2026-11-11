@@ -22,7 +22,8 @@ pub(crate) fn apply(zone: &mut Zone, id: u64, new_id: u64, offset: [f64; 3]) -> 
         .chain(zone.paths.iter().map(|p| p.id))
         .chain(zone.markers.iter().map(|m| m.id))
         .chain(zone.plants.iter().map(|p| p.id))
-        .chain(zone.particles.iter().map(|p| p.id));
+        .chain(zone.particles.iter().map(|p| p.id))
+        .chain(zone.quest_areas.iter().map(|a| a.id));
     require(!occupied.any(|id| id == new_id), "Copy ID already exists")?;
     require(
         offset

@@ -8,6 +8,7 @@ pub mod painting;
 pub mod particles;
 pub mod paths;
 pub mod projection;
+pub mod quest_areas;
 pub mod resampling;
 pub mod terrain;
 mod translation;
@@ -69,6 +70,8 @@ pub struct Zone {
     pub plants: Vec<vegetation::Plant>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub particles: Vec<particles::ParticlePlacement>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub quest_areas: Vec<quest_areas::QuestArea>,
 }
 
 fn require(condition: bool, message: &str) -> Result<()> {
@@ -90,6 +93,7 @@ impl Default for Zone {
             markers: vec![],
             plants: vec![],
             particles: vec![],
+            quest_areas: vec![],
         }
     }
 }
@@ -131,7 +135,7 @@ impl Zone {
         )
     }
     pub fn validate(&self) -> Result<()> {
-        require(matches!(self.schema, 1..=8), "Unsupported zone schema")?;
+        require(matches!(self.schema, 1..=9), "Unsupported zone schema")?;
         require(
             self.schema != 1 || self.terrain.is_none(),
             "Terrain requires zone schema 2",
@@ -167,6 +171,14 @@ impl Zone {
         require(
             self.particles.len() <= particles::MAX_PARTICLE_PLACEMENTS,
             "Particle placement budget exceeded",
+        )?;
+        require(
+            self.schema >= 9 || self.quest_areas.is_empty(),
+            "Quest areas require zone schema 9",
+        )?;
+        require(
+            self.quest_areas.len() <= theia_core::quests::areas::MAX_AREAS,
+            "Quest area budget exceeded",
         )?;
         require(label(&self.name), "Invalid zone name")?;
         self.frame()?;
@@ -222,6 +234,21 @@ impl Zone {
             require(ids.insert(particle.id), "Duplicate authoring ID")?;
             particle.validate(self)?;
         }
+        let mut area_ids = BTreeSet::new();
+        let mut links = 0;
+        for area in &self.quest_areas {
+            require(ids.insert(area.id), "Duplicate authoring ID")?;
+            require(
+                area_ids.insert(&area.definition),
+                "Duplicate quest area definition",
+            )?;
+            area.validate(self)?;
+            links += area.map_objectives.len();
+        }
+        require(
+            links <= theia_core::quests::areas::MAX_MAP_OBJECTIVE_LINKS,
+            "Quest area objective link budget exceeded",
+        )?;
         require(
             serde_json::to_vec_pretty(self)
                 .map_err(|e| e.to_string())?
@@ -239,6 +266,7 @@ impl Zone {
             .chain(self.markers.iter().map(|m| m.id))
             .chain(self.plants.iter().map(|p| p.id))
             .chain(self.particles.iter().map(|p| p.id))
+            .chain(self.quest_areas.iter().map(|a| a.id))
             .max()
             .unwrap_or(0)
             .checked_add(1)
@@ -372,6 +400,12 @@ pub enum Edit {
         marker: markers::Marker,
     },
     DeleteMarker {
+        id: u64,
+    },
+    PutQuestArea {
+        area: quest_areas::QuestArea,
+    },
+    DeleteQuestArea {
         id: u64,
     },
     PutParticle {
@@ -605,6 +639,29 @@ impl Editor {
                                 .position(|m| m.id == id)
                                 .ok_or("Unknown marker ID")?;
                             candidate.markers.remove(index);
+                        }
+                        Edit::PutQuestArea { area } => {
+                            candidate.schema = candidate.schema.max(9);
+                            if let Some(existing) =
+                                candidate.quest_areas.iter_mut().find(|a| a.id == area.id)
+                            {
+                                *existing = area;
+                            } else {
+                                require(
+                                    candidate.quest_areas.len()
+                                        < theia_core::quests::areas::MAX_AREAS,
+                                    "Quest area budget exceeded",
+                                )?;
+                                candidate.quest_areas.push(area);
+                            }
+                        }
+                        Edit::DeleteQuestArea { id } => {
+                            let index = candidate
+                                .quest_areas
+                                .iter()
+                                .position(|a| a.id == id)
+                                .ok_or("Unknown quest area ID")?;
+                            candidate.quest_areas.remove(index);
                         }
                         Edit::PutParticle { particle } => {
                             candidate.schema = candidate.schema.max(8);

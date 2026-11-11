@@ -368,6 +368,12 @@ fn cylinder_segments(radius: f64) -> u32 {
 }
 fn geometry(zone: &Zone) -> Result<(Vec<u8>, Value, Value), String> {
     zone.validate()?;
+    if !zone.quest_areas.is_empty() {
+        return Err(
+            "Quest area drafts require gameplay catalog export; world export is not connected yet"
+                .into(),
+        );
+    }
     let guide_kinds = [
         zone.paths
             .iter()
@@ -1303,5 +1309,25 @@ mod tests {
         }
         server_stop.send_replace(true);
         server.await.unwrap().unwrap();
+    }
+    #[test]
+    fn gameplay_area_drafts_cannot_be_silently_omitted_from_world_export() {
+        let mut zone = Zone {
+            schema: 9,
+            ..Zone::default()
+        };
+        zone.quest_areas.push(theia_zone::quest_areas::QuestArea {
+            id: 50,
+            definition: "theia.area.starter".into(),
+            name: "Starter area".into(),
+            min: [0., 0., 0.],
+            max: [8., 8., 8.],
+            map_objectives: vec![],
+        });
+        assert!(
+            geometry(&zone)
+                .unwrap_err()
+                .contains("gameplay catalog export")
+        );
     }
 }

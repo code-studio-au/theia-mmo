@@ -1,3 +1,12 @@
+P5-17 / P3-15 / P3-11 quest-area authoring foundation, 12 November 2026:
+zone schema 9 adds explicit bounded global area volumes, stable definition IDs
+and minimap objective links. Shared commands provide transactional put/delete,
+rename, translation and undo/redo; draft bytes pass the existing runtime area
+parser. Far-coordinate, malformed-data, duplicate-ID and redo-preservation checks
+pass. Ordinary world export refuses these drafts until gameplay export is wired.
+No visual area editing, resolved quest binding or server publication is claimed
+by this slice; older quest markers remain annotations.
+
 P5-17 / P2-13 headless cache closeout, 12 November 2026: a windowless probe
 ran 1,000 two-owner effect/cache open-close cycles and 120 seconds of idle
 updates. Image and effect assets returned to zero after every close. Sampled
