@@ -304,3 +304,75 @@ fn migrated_v02_save_reload_has_current_stamp_and_needs_no_second_migration() {
         versions::current_format_version()
     )));
 }
+
+#[test]
+fn runtime_loader_rejects_custom_shaders_without_changing_source() {
+    use bevy_sprinkles::asset::{DrawPassMaterial, EmitterData, ParticlesDimension};
+    use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+
+    let directory = std::env::temp_dir().join(format!(
+        "theia-sprinkles-loader-{}-{}",
+        std::process::id(),
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ));
+    std::fs::create_dir_all(&directory).unwrap();
+    let mut effect = ParticlesAsset::new(
+        "Unsupported".into(),
+        ParticlesDimension::D3,
+        default(),
+        vec![EmitterData::default(), EmitterData::default()],
+        vec![],
+        false,
+        default(),
+    );
+    effect.emitters[1].draw_pass.material = DrawPassMaterial::CustomShader {
+        vertex_shader: Some("not-supported.wgsl".into()),
+        fragment_shader: None,
+    };
+    let source = ron::to_string(&effect).unwrap();
+    std::fs::write(directory.join("unsupported.ron"), &source).unwrap();
+    let mut app = App::new();
+    app.add_plugins(MinimalPlugins)
+        .add_plugins(AssetPlugin {
+            file_path: directory.to_string_lossy().into_owned(),
+            ..default()
+        })
+        .init_asset::<ParticlesAsset>()
+        .init_asset_loader::<ParticlesAssetLoader>();
+    let handle: Handle<ParticlesAsset> = app
+        .world()
+        .resource::<AssetServer>()
+        .load("unsupported.ron");
+    let deadline = Instant::now() + Duration::from_secs(10);
+    loop {
+        assert!(Instant::now() < deadline, "particle asset load timed out");
+        app.update();
+        match app.world().resource::<AssetServer>().load_state(&handle) {
+            LoadState::Failed(error) => {
+                assert!(
+                    error
+                        .to_string()
+                        .contains("Emitter 1 uses an unsupported custom shader")
+                );
+                break;
+            }
+            LoadState::Loaded => panic!("unsupported material was accepted"),
+            _ => std::thread::sleep(Duration::from_millis(2)),
+        }
+    }
+    assert!(
+        app.world()
+            .resource::<Assets<ParticlesAsset>>()
+            .get(&handle)
+            .is_none()
+    );
+    assert_eq!(
+        std::fs::read_to_string(directory.join("unsupported.ron")).unwrap(),
+        source
+    );
+    drop(app);
+    std::fs::remove_dir_all(directory).unwrap();
+}

@@ -285,12 +285,7 @@ pub(crate) fn parse_project(
             _ => LoadProjectError::Parse,
         }
     })?;
-    if result.asset.emitters.iter().any(|emitter| {
-        matches!(
-            emitter.draw_pass.material,
-            DrawPassMaterial::CustomShader { .. }
-        )
-    }) {
+    if result.asset.unsupported_material_index().is_some() {
         return Err(LoadProjectError::UnsupportedMaterial);
     }
     Ok(result)

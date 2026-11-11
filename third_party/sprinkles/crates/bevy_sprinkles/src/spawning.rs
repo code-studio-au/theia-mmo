@@ -224,21 +224,19 @@ fn create_particle_material_from_config(
     emitter_uniforms_buffer: Handle<ShaderBuffer>,
     asset_server: &AssetServer,
     assets_folders: &[String],
-) -> ParticleMaterial {
+) -> Option<ParticleMaterial> {
     let base = match config {
         DrawPassMaterial::Standard(mat) => mat.to_standard_material(asset_server, assets_folders),
-        DrawPassMaterial::CustomShader { .. } => {
-            todo!("custom shader support not yet implemented")
-        }
+        DrawPassMaterial::CustomShader { .. } => return None,
     };
 
-    ExtendedMaterial {
+    Some(ExtendedMaterial {
         base,
         extension: ParticleMaterialExtension {
             sorted_particles: sorted_particles_buffer,
             emitter_uniforms: emitter_uniforms_buffer,
         },
-    }
+    })
 }
 
 fn bake_thickness_curve(trail: &EmitterTrail) -> [f32; TRAIL_THICKNESS_CURVE_SAMPLES] {
@@ -252,6 +250,9 @@ fn bake_thickness_curve(trail: &EmitterTrail) -> [f32; TRAIL_THICKNESS_CURVE_SAM
     samples
 }
 
+#[derive(Component)]
+pub(crate) struct UnsupportedParticleAsset;
+
 pub fn setup_particle_systems(
     mut commands: Commands,
     query: Query<
@@ -259,6 +260,7 @@ pub fn setup_particle_systems(
             Entity,
             &Particles3d,
             Has<EditorMode>,
+            Has<UnsupportedParticleAsset>,
             Option<&bevy::camera::visibility::RenderLayers>,
         ),
         Without<ParticleSystemRuntime>,
@@ -270,11 +272,27 @@ pub fn setup_particle_systems(
     mut buffers: ResMut<Assets<ShaderBuffer>>,
     mut materials: ResMut<Assets<ParticleMaterial>>,
 ) {
-    for (system_entity, particle_system, is_editor, layers) in query.iter() {
+    for (system_entity, particle_system, is_editor, unsupported, layers) in query.iter() {
         let Some(asset) = assets.get(particle_system) else {
             continue;
         };
 
+        if let Some(index) = asset.unsupported_material_index() {
+            if !unsupported {
+                error!(
+                    "Particle system {system_entity:?} has unsupported custom shader in emitter {index}"
+                );
+                commands
+                    .entity(system_entity)
+                    .try_insert(UnsupportedParticleAsset);
+            }
+            continue;
+        }
+        if unsupported {
+            commands
+                .entity(system_entity)
+                .remove::<UnsupportedParticleAsset>();
+        }
         if asset.emitters.is_empty() {
             continue;
         }
@@ -336,13 +354,16 @@ pub fn setup_particle_systems(
 
             let particle_mesh_handle = mesh_cache.get_or_create(&current_mesh, amount, &mut meshes);
 
-            let material_handle = materials.add(create_particle_material_from_config(
+            let Some(material) = create_particle_material_from_config(
                 &current_material,
                 sorted_particles_buffer_handle.clone(),
                 emitter_uniforms_buffer_handle.clone(),
                 &asset_server,
                 assets_folders,
-            ));
+            ) else {
+                continue;
+            };
+            let material_handle = materials.add(material);
 
             let mut runtime = EmitterRuntime::new(emitter_index, emitter.time.fixed_seed);
             runtime.trail_history_frames = trail_history_frames;
@@ -576,7 +597,7 @@ pub(crate) fn sync_particle_buffers(
         &mut Mesh3d,
         &mut CurrentMeshConfig,
         &mut ParticleMaterialHandle,
-        &mut MeshMaterial3d<ParticleMaterial>,
+        Option<&mut MeshMaterial3d<ParticleMaterial>>,
         &mut CurrentMaterialConfig,
     )>,
     assets: Res<Assets<ParticlesAsset>>,
@@ -607,6 +628,13 @@ pub(crate) fn sync_particle_buffers(
             continue;
         };
 
+        // Leave existing buffers untouched while this emitter has no supported material.
+        if matches!(
+            emitter_data.draw_pass.material,
+            DrawPassMaterial::CustomShader { .. }
+        ) {
+            continue;
+        }
         let new_amount = emitter_data.emission.particles_amount;
         let new_trail_size = emitter_data.trail_size();
         let new_trail_history_frames = compute_trail_history_frames(emitter_data);
@@ -658,14 +686,19 @@ pub(crate) fn sync_particle_buffers(
         let assets_folders =
             get_editor_assets_folders(emitter.parent_system, is_editor, &particle_systems, &assets);
 
-        let new_material = materials.add(create_particle_material_from_config(
+        let Some(material) = create_particle_material_from_config(
             &emitter_data.draw_pass.material,
             new_sorted_buf,
             new_uniforms_buf,
             &asset_server,
             assets_folders,
-        ));
-        material3d.0 = new_material.clone();
+        ) else {
+            continue;
+        };
+        let new_material = materials.add(material);
+        if let Some(ref mut material3d) = material3d {
+            material3d.0 = new_material.clone();
+        }
         material_handle.0 = new_material;
         current_material_config.0 = emitter_data.draw_pass.material.clone();
 
@@ -717,22 +750,35 @@ pub fn write_emitter_uniforms(
     }
 }
 
+#[derive(Component)]
+pub(crate) struct UnsupportedMaterialSuppressed;
+
 pub fn sync_particle_material(
+    mut commands: Commands,
     particle_systems: Query<&Particles3d>,
     editor_modes: Query<Has<EditorMode>>,
     mut emitter_query: Query<(
+        Entity,
+        Has<UnsupportedMaterialSuppressed>,
         &EmitterEntity,
         &EmitterRuntime,
         &mut CurrentMaterialConfig,
         &mut ParticleMaterialHandle,
-        &mut MeshMaterial3d<ParticleMaterial>,
+        Option<&mut MeshMaterial3d<ParticleMaterial>>,
     )>,
     assets: Res<Assets<ParticlesAsset>>,
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<ParticleMaterial>>,
 ) {
-    for (emitter, runtime, mut current_config, mut material_handle, mut material3d) in
-        emitter_query.iter_mut()
+    for (
+        entity,
+        suppressed,
+        emitter,
+        runtime,
+        mut current_config,
+        mut material_handle,
+        mut material3d,
+    ) in emitter_query.iter_mut()
     {
         let Some(emitter_data) = get_emitter_data(
             emitter.parent_system,
@@ -744,6 +790,18 @@ pub fn sync_particle_material(
         };
 
         let new_material = emitter_data.draw_pass.material.clone();
+        if matches!(new_material, DrawPassMaterial::CustomShader { .. }) {
+            if material3d.is_some() {
+                error!(
+                    "Particle emitter {entity:?} uses an unsupported custom shader; rendering disabled"
+                );
+                commands
+                    .entity(entity)
+                    .remove::<MeshMaterial3d<ParticleMaterial>>()
+                    .try_insert(UnsupportedMaterialSuppressed);
+            }
+            continue;
+        }
 
         if current_config.0.cache_key() != new_material.cache_key() {
             let (sorted_particles_handle, emitter_uniforms_handle) = {
@@ -764,17 +822,28 @@ pub fn sync_particle_material(
                 &assets,
             );
 
-            let new_material_handle = materials.add(create_particle_material_from_config(
+            let Some(material) = create_particle_material_from_config(
                 &new_material,
                 sorted_particles_handle,
                 emitter_uniforms_handle,
                 &asset_server,
                 assets_folders,
-            ));
-
-            material3d.0 = new_material_handle.clone();
+            ) else {
+                continue;
+            };
+            let new_material_handle = materials.add(material);
             current_config.0 = new_material;
             material_handle.0 = new_material_handle;
+        }
+        if let Some(ref mut material3d) = material3d {
+            if material3d.0 != material_handle.0 {
+                material3d.0 = material_handle.0.clone();
+            }
+        } else if suppressed {
+            commands
+                .entity(entity)
+                .try_insert(MeshMaterial3d(material_handle.0.clone()))
+                .remove::<UnsupportedMaterialSuppressed>();
         }
     }
 }
@@ -783,6 +852,141 @@ pub fn sync_particle_material(
 mod theia_port_tests {
     use super::*;
     use bevy::render::{render_resource::ShaderType, storage::ShaderBufferData};
+
+    #[test]
+    fn unsupported_materials_never_panic_and_recover_without_stale_buffers() {
+        let mut app = App::new();
+        app.add_plugins((MinimalPlugins, bevy::asset::AssetPlugin::default()))
+            .init_resource::<Assets<ParticlesAsset>>()
+            .init_resource::<Assets<Mesh>>()
+            .init_resource::<Assets<ShaderBuffer>>()
+            .init_resource::<Assets<ParticleMaterial>>()
+            .init_resource::<ParticleMeshCache>()
+            .add_systems(
+                Update,
+                (
+                    setup_particle_systems,
+                    sync_particle_buffers.after(setup_particle_systems),
+                    sync_particle_material.after(sync_particle_buffers),
+                ),
+            );
+        let mut effect = ParticlesAsset::new(
+            "Material test".into(),
+            crate::asset::ParticlesDimension::D3,
+            default(),
+            vec![EmitterData::default(), EmitterData::default()],
+            vec![],
+            false,
+            default(),
+        );
+        let original = effect.emitters[0].draw_pass.material.clone();
+        effect.emitters[0].draw_pass.material = DrawPassMaterial::CustomShader {
+            vertex_shader: None,
+            fragment_shader: None,
+        };
+        let handle = app
+            .world_mut()
+            .resource_mut::<Assets<ParticlesAsset>>()
+            .add(effect);
+        let owner = app.world_mut().spawn(Particles3d(handle.clone())).id();
+        app.update();
+        assert!(app.world().get::<ParticleSystemRuntime>(owner).is_none());
+        assert!(app.world().get::<UnsupportedParticleAsset>(owner).is_some());
+        assert_eq!(app.world().resource::<Assets<ShaderBuffer>>().len(), 0);
+        app.world_mut()
+            .resource_mut::<Assets<ParticlesAsset>>()
+            .get_mut(&handle)
+            .unwrap()
+            .emitters[0]
+            .draw_pass
+            .material = original.clone();
+        app.update();
+        assert!(app.world().get::<ParticleSystemRuntime>(owner).is_some());
+        assert!(app.world().get::<UnsupportedParticleAsset>(owner).is_none());
+        let mut query = app
+            .world_mut()
+            .query::<(Entity, &EmitterEntity, &EmitterRuntime)>();
+        let mut emitters: Vec<_> = query
+            .iter(app.world())
+            .filter(|(_, emitter, _)| emitter.parent_system == owner)
+            .map(|(entity, _, runtime)| (runtime.emitter_index, entity))
+            .collect();
+        emitters.sort_by_key(|(index, _)| *index);
+        assert_eq!(emitters.len(), 2);
+        let target = emitters[0].1;
+        let other = emitters[1].1;
+        let previous = app
+            .world()
+            .get::<ParticleBufferHandle>(target)
+            .unwrap()
+            .amount;
+        {
+            let mut assets = app.world_mut().resource_mut::<Assets<ParticlesAsset>>();
+            let mut effect = assets.get_mut(&handle).unwrap();
+            effect.emitters[0].draw_pass.material = DrawPassMaterial::CustomShader {
+                vertex_shader: None,
+                fragment_shader: None,
+            };
+            effect.emitters[0].emission.particles_amount = previous + 3;
+        }
+        app.update();
+        assert!(
+            app.world()
+                .get::<MeshMaterial3d<ParticleMaterial>>(target)
+                .is_none()
+        );
+        assert!(
+            app.world()
+                .get::<MeshMaterial3d<ParticleMaterial>>(other)
+                .is_some()
+        );
+        assert_eq!(
+            app.world()
+                .get::<ParticleBufferHandle>(target)
+                .unwrap()
+                .amount,
+            previous
+        );
+        app.update();
+        app.world_mut()
+            .resource_mut::<Assets<ParticlesAsset>>()
+            .get_mut(&handle)
+            .unwrap()
+            .emitters[0]
+            .draw_pass
+            .material = original;
+        app.update();
+        let buffers = app.world().get::<ParticleBufferHandle>(target).unwrap();
+        assert_eq!(buffers.amount, previous + 3);
+        let material_handle = &app
+            .world()
+            .get::<MeshMaterial3d<ParticleMaterial>>(target)
+            .unwrap()
+            .0;
+        let material = app
+            .world()
+            .resource::<Assets<ParticleMaterial>>()
+            .get(material_handle)
+            .unwrap();
+        assert_eq!(
+            material.extension.sorted_particles,
+            buffers.sorted_particles_buffer
+        );
+        assert_eq!(
+            material.extension.emitter_uniforms,
+            buffers.emitter_uniforms_buffer
+        );
+        // A caller that deliberately removes its material is not overridden.
+        app.world_mut()
+            .entity_mut(other)
+            .remove::<MeshMaterial3d<ParticleMaterial>>();
+        app.update();
+        assert!(
+            app.world()
+                .get::<MeshMaterial3d<ParticleMaterial>>(other)
+                .is_none()
+        );
+    }
 
     #[test]
     fn particle_meshes_keep_each_owners_render_layers_and_default_layer_behavior() {

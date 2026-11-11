@@ -269,3 +269,19 @@ project switch occurs after the periodic update in the same frame. It drains
 completed errors first, allowing an outgoing snapshot to retry when storage has
 recovered. Headless schedule and failure tests exercise both cases. The bounded
 flush and uncommitted-field limitations above still apply.
+
+## Runtime material admission prerequisite — P2-13 / P5-17
+
+Custom shader materials are not implemented. The Bevy asset loader rejects
+them before a particle system asset is admitted, while programmatically supplied
+assets cannot start until all emitter materials are supported. A live emitter
+that switches to an unsupported material stops rendering and can resume after a
+supported material is restored; its resized buffers are synchronized first.
+Other emitters remain independent. No substitute material is silently rendered.
+
+The real Bevy loader and multi-emitter mutation/recovery are covered headlessly.
+A windowless 256×256 render-target smoke test with no DISPLAY or WAYLAND_DISPLAY
+ran on AMD Radeon RX 7900 XTX, RADV NAVI31, Mesa 26.2.6, Vulkan with the Khronos
+validation layer explicitly enabled: no unexpected GPU diagnostics. Its one
+unsupported-material error is intentional. This does not qualify Windows,
+visual appearance, zone placement, gameplay VFX or performance budgets.

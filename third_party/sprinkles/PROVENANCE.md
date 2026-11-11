@@ -254,3 +254,10 @@ lifecycle yet and does not provide user-facing recovery.
 The local recovery dialog is additional Theia UI composed from Sprinkles buttons,
 dialogs and scroll controls. It scans draft files off the UI thread and restores
 through the guarded local recovery event. Automatic draft capture is pending.
+
+The runtime custom-shader guard now rejects unsupported files through the Bevy
+asset loader and prevents programmatic assets from panicking. A live unsupported
+emitter temporarily loses its draw-material component and resumes only with a
+supported material after buffer synchronization; no fallback shader is supplied.
+The format remains readable through version migration, and custom shader rendering
+remains unimplemented. Local tests and a windowless GPU example exercise this.

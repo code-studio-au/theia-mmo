@@ -37,6 +37,12 @@ pub enum ParticlesAssetLoaderError {
     /// The asset file could not be parsed or migrated.
     #[error("{0}")]
     Migration(#[from] versions::MigrationError),
+    /// Custom shader rendering is not implemented by this runtime.
+    #[error("Emitter {emitter_index} uses an unsupported custom shader material")]
+    UnsupportedMaterial {
+        /// Index of the emitter containing the unsupported material.
+        emitter_index: usize,
+    },
 }
 
 impl AssetLoader for ParticlesAssetLoader {
@@ -54,6 +60,9 @@ impl AssetLoader for ParticlesAssetLoader {
         reader.read_to_end(&mut bytes).await?;
 
         let result = versions::migrate(&bytes)?;
+        if let Some(emitter_index) = result.asset.unsupported_material_index() {
+            return Err(ParticlesAssetLoaderError::UnsupportedMaterial { emitter_index });
+        }
 
         if result.was_migrated {
             let path = load_context.path();
@@ -1427,6 +1436,16 @@ pub struct ParticlesAsset {
 }
 
 impl ParticlesAsset {
+    /// First emitter requiring custom shader support, which this runtime does not implement.
+    pub fn unsupported_material_index(&self) -> Option<usize> {
+        self.emitters.iter().position(|emitter| {
+            matches!(
+                emitter.draw_pass.material,
+                DrawPassMaterial::CustomShader { .. }
+            )
+        })
+    }
+
     /// Creates a new particle system asset with the current format version.
     pub fn new(
         name: String,

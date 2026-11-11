@@ -1,3 +1,13 @@
+P2-13 / P5-17 runtime material admission, 11 November 2026: unsupported
+custom shaders are rejected by the Bevy loader and cannot panic a programmatic
+system; live emitters stop rendering and recover after valid material/buffer
+updates. Actual loader and multi-emitter regressions, 6 runtime, 14 loader,
+36 particle-editor and 122 zone-editor tests, fmt and strict workspace/all-target
+Clippy pass. Windowless RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan with
+Khronos validation reports no unexpected GPU diagnostics; no display or mouse
+was used. Windows, visual parity, zone placement and gameplay VFX remain pending.
+See [integration](SPRINKLES_INTEGRATION.md).
+
 P5-17 particle exit recovery, 11 November 2026: when a project switch and
 normal exit happen in the same frame, preserve both committed project snapshots.
 A failed outgoing write is retried if storage recovers before exit. Headless

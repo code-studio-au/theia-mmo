@@ -38,15 +38,15 @@ covered by headless regression tests. Issue #7 now has periodic separate drafts 
   envelopes: moving world-space trails still require suitable bounds or disabled
   preview culling; this is not automatic GPU bounds tracking.
 
-The source review also found and guarded an independent crash path: runtime
-`create_particle_material_from_config` still has `todo!()` for `CustomShader`.
-The imported material menu offered that option. Our editor now removes that
-unsupported choice and rejects custom-shader RON before replacing/loading the
-project, using an ordinary error toast. A regression checks both clean and dirty
-current projects, handle/asset/selection/path preservation, unchanged source files
-and no cache-history changes. Startup/cache loading uses the same guard. This
-protects the editor; custom shader rendering itself remains unimplemented and
-programmatic runtime users must not construct that unsupported material.
+The source review also found an independent custom-shader crash path. The editor
+removes the unsupported choice and rejects those projects before changing the
+current document. The runtime loader now rejects such files with the emitter
+index; programmatic assets with unsupported materials cannot start. If a live
+emitter changes to an unsupported material, its draw material is removed until
+it becomes supported again. Buffer resizing then precedes restoration, and other
+emitters and caller-removed materials are preserved. Native windowless Vulkan
+and headless asset/scheduling regressions cover these paths. This does not add
+custom shader rendering or qualify gameplay VFX and MMO budgets.
 
 Review of the final probes also exposed a startup-readiness risk: the original
 viewport binder queried only newly added cameras. A retained UI scene arriving
