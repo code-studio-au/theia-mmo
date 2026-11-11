@@ -613,3 +613,10 @@ Export preflight totals those counts across all placements, including repeated
 instances of a shared effect, and rejects invalid allocation arithmetic. Mesh
 sharing can lower actual allocation; texture, material, renderer and other costs
 are not included. The count is diagnostic only and is not an admission budget.
+
+The preliminary catalog can now be bound by world manifest schema 4, whose
+fingerprint includes its byte length and SHA-256. The headless loader can use
+that identity without particle I/O; visual verification rejects schema 4 until
+the client implements particle admission and playback. No particle-bearing
+package is published by the zone exporter yet. The byte-level fingerprint
+contract is in [CONTENT_PACKAGES.md](CONTENT_PACKAGES.md).

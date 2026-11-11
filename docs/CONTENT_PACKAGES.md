@@ -122,3 +122,21 @@ The normal chunk client validates exact GLB URI/settings agreement, in-root path
 PNG byte/header budgets and hashes before standard Bevy loading. Server collision
 loading still needs no image I/O. The offline extraction tool publishes a new
 representation without changing source geometry or the active map.
+
+## Particle catalog identity foundation (schema 4)
+
+Manifest schema 4 adds required `particle_bytes` and `particle_sha256` fields,
+bounded by the 256 KiB catalog limit. These fields are forbidden for schemas
+1–3. Its fingerprint uses the ASCII `theia-world-package-v4` domain followed by
+the schema-2 identity fields and canonical shared-image list, then the particle
+catalog byte count as u64 little-endian and its 32 SHA-256 bytes. The catalog's
+effect descriptors bind the RON bytes separately. See
+[Sprinkles integration](SPRINKLES_INTEGRATION.md) for the provisional catalog
+and its limits. Schema 4 does not currently support schema-3 material profiles.
+
+Headless collision loading can recognize this identity without opening particle
+files. The client visual verification paths explicitly reject schema 4 until
+particle catalog admission, dependencies and rendering are implemented; no
+exporter publishes it yet. Existing schema-1 through schema-3 fingerprints are
+unchanged. Hashes establish consistency, not authenticity or protection from
+files changing after verification.

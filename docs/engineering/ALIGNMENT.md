@@ -1,3 +1,10 @@
+P2-13 particle manifest identity, 11 November 2026: schema 4 binds the
+particle catalog length and hash into a new world identity. Headless collision
+loading recognizes the identity; both client visual verification paths reject
+it until particle playback exists. Nineteen package/shared-image/material tests,
+fmt and strict workspace/all-target Clippy pass; one private staged-world test
+was ignored. No exporter publishes schema 4 yet. See [contract](../CONTENT_PACKAGES.md).
+
 P2-13 particle placement allocation estimates, 11 November 2026: export
 preflight aggregates checked counts across placed effect instances and reports
 invalid arithmetic. Four focused editor tests, fmt and strict workspace/all-
