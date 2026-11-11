@@ -1,3 +1,14 @@
+## 11 November 2026 — particle placement data boundary (P2-13)
+
+Extend authoring zone schema 8 with bounded particle placements using checked
+global f64 anchors, Y-up yaw, uniform scale and the existing stable content ID
+rules. The effect ID is a logical unresolved reference, never a machine path;
+the headless zone model has no renderer dependency. The anchor boundary does not
+validate an effect's visual bounds. Until package support is implemented, export
+of a zone containing these placements fails explicitly rather than dropping them.
+This data slice does not claim an editor placement workflow, packaged assets,
+client effects, server gameplay authority or an MMO VFX budget.
+
 ## 10 November 2026 — integrated editor refinement, inline values and split panels
 
 The user reopens P5-17 usability refinement after reviewing the integrated UI.

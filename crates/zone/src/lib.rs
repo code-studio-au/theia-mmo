@@ -5,6 +5,7 @@ pub mod mailbox;
 pub mod markers;
 mod naming;
 pub mod painting;
+pub mod particles;
 pub mod paths;
 pub mod projection;
 pub mod resampling;
@@ -66,6 +67,8 @@ pub struct Zone {
     pub markers: Vec<markers::Marker>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub plants: Vec<vegetation::Plant>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub particles: Vec<particles::ParticlePlacement>,
 }
 
 fn require(condition: bool, message: &str) -> Result<()> {
@@ -86,6 +89,7 @@ impl Default for Zone {
             paths: vec![],
             markers: vec![],
             plants: vec![],
+            particles: vec![],
         }
     }
 }
@@ -127,7 +131,7 @@ impl Zone {
         )
     }
     pub fn validate(&self) -> Result<()> {
-        require(matches!(self.schema, 1..=7), "Unsupported zone schema")?;
+        require(matches!(self.schema, 1..=8), "Unsupported zone schema")?;
         require(
             self.schema != 1 || self.terrain.is_none(),
             "Terrain requires zone schema 2",
@@ -155,6 +159,14 @@ impl Zone {
         require(
             self.plants.len() <= vegetation::MAX_PLANTS,
             "Vegetation budget exceeded",
+        )?;
+        require(
+            self.schema >= 8 || self.particles.is_empty(),
+            "Particles require zone schema 8",
+        )?;
+        require(
+            self.particles.len() <= particles::MAX_PARTICLE_PLACEMENTS,
+            "Particle placement budget exceeded",
         )?;
         require(label(&self.name), "Invalid zone name")?;
         self.frame()?;
@@ -206,6 +218,10 @@ impl Zone {
             require(ids.insert(plant.id), "Duplicate authoring ID")?;
             plant.validate(self)?;
         }
+        for particle in &self.particles {
+            require(ids.insert(particle.id), "Duplicate authoring ID")?;
+            particle.validate(self)?;
+        }
         require(
             serde_json::to_vec_pretty(self)
                 .map_err(|e| e.to_string())?
@@ -222,6 +238,7 @@ impl Zone {
             .chain(self.paths.iter().map(|p| p.id))
             .chain(self.markers.iter().map(|m| m.id))
             .chain(self.plants.iter().map(|p| p.id))
+            .chain(self.particles.iter().map(|p| p.id))
             .max()
             .unwrap_or(0)
             .checked_add(1)
@@ -355,6 +372,12 @@ pub enum Edit {
         marker: markers::Marker,
     },
     DeleteMarker {
+        id: u64,
+    },
+    PutParticle {
+        particle: particles::ParticlePlacement,
+    },
+    DeleteParticle {
         id: u64,
     },
 }
@@ -582,6 +605,28 @@ impl Editor {
                                 .position(|m| m.id == id)
                                 .ok_or("Unknown marker ID")?;
                             candidate.markers.remove(index);
+                        }
+                        Edit::PutParticle { particle } => {
+                            candidate.schema = candidate.schema.max(8);
+                            if let Some(existing) =
+                                candidate.particles.iter_mut().find(|p| p.id == particle.id)
+                            {
+                                *existing = particle;
+                            } else {
+                                require(
+                                    candidate.particles.len() < particles::MAX_PARTICLE_PLACEMENTS,
+                                    "Particle placement budget exceeded",
+                                )?;
+                                candidate.particles.push(particle);
+                            }
+                        }
+                        Edit::DeleteParticle { id } => {
+                            let index = candidate
+                                .particles
+                                .iter()
+                                .position(|p| p.id == id)
+                                .ok_or("Unknown particle ID")?;
+                            candidate.particles.remove(index);
                         }
                         Edit::PutPlant { plant } => {
                             candidate.schema = candidate.schema.max(5);

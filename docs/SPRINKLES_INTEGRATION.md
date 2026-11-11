@@ -401,3 +401,29 @@ The original serialized example content is tracked by asset identity at both
 startup and later Open. Comparing current content avoids a discard prompt for
 an untouched example without weakening protection for an edited example. A
 missing or unserializable baseline takes the conservative confirmation path.
+
+
+## Zone particle placement data — P2-13
+
+Prerequisites: the existing validated zone document/transaction history and the
+integrated Sprinkles runtime/authoring workspace. Zone schema 8 adds up to 256
+particle placements, each with a shared authoring ID, name, stable `ContentId`,
+checked global f64 anchor, yaw and uniform scale. The ID is an unresolved
+catalogue key; no filesystem location is embedded. Only the anchor is bounded,
+because effect-specific visual extents are not yet available. Put/delete edits
+participate in validation, revision checks, atomic rollback and undo/redo. Older
+zone documents load with no placements; older binaries do not read schema 8.
+
+The existing world exporter rejects any zone with particle placements before
+creating an output directory. This is intentional until effect and texture
+dependencies can be packaged and verified. The current editor does not yet
+provide placement or selection controls for these entries, and clients do not
+load or render them. No MMO particle-count or GPU memory budget is implied by
+the authoring document bound.
+
+Acceptance for this slice: far-origin coordinate roundtrip, invalid keys and
+coordinates, duplicate authoring IDs, schema compatibility, undo/redo, atomic
+rollback and explicit export rejection. Fifty-eight zone tests and 123
+zone-editor tests pass, with the final shared-ID validation also exercised by a
+repeat of the export test. Formatting and denied-warning workspace/all-target
+Clippy pass. No rendering changed.

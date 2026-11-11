@@ -266,6 +266,11 @@ fn cylinder_segments(radius: f64) -> u32 {
 }
 fn geometry(zone: &Zone) -> Result<(Vec<u8>, Value, Value), String> {
     zone.validate()?;
+    if !zone.particles.is_empty() {
+        return Err(
+            "Particle placements cannot be exported until effect packaging is supported".into(),
+        );
+    }
     let guide_kinds = [
         zone.paths
             .iter()
@@ -453,6 +458,25 @@ pub(super) fn publish(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn particle_placements_are_not_silently_omitted_from_export() {
+        let mut zone = Zone {
+            schema: 8,
+            ..Zone::default()
+        };
+        zone.particles
+            .push(theia_zone::particles::ParticlePlacement {
+                id: 1,
+                name: "Fire".into(),
+                effect: "vfx.fire".into(),
+                position: [0., 0., 0.],
+                yaw_degrees: 0.,
+                scale: 1.,
+            });
+        let error = geometry(&zone).unwrap_err();
+        assert!(error.contains("Particle placements cannot be exported"));
+    }
     use std::{
         path::PathBuf,
         sync::atomic::{AtomicU64, Ordering},

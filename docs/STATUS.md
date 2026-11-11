@@ -1,3 +1,11 @@
+P2-13 particle placement data, 11 November 2026: zone schema 8 stores bounded
+renderer-independent effect references, checked f64 global anchors and
+transactional edits with undo/redo. The existing exporter rejects placements
+until packaging is implemented, preventing silent loss. Fifty-eight zone tests,
+123 zone-editor tests, fmt and strict workspace/all-target Clippy pass. Editor
+placement controls, actual effect packaging and client rendering remain pending.
+See [integration](SPRINKLES_INTEGRATION.md).
+
 P5-17 particle example switching, 11 November 2026: unchanged bundled
 examples no longer trigger the discard prompt even though Save still requires a
 new path; edited examples remain protected. Forty-three particle-editor tests,
