@@ -53,6 +53,11 @@ publish packages or play effects. File I/O and decoding are blocking and must
 stay off simulation and render update paths. Catalog and VFX tests cover changed
 or malformed files, unsupported materials, arithmetic overflow and role-aware
 rebasing; no client integration is claimed.
+`project_catalog_placements` separately converts catalog-local placements via
+checked f64 global coordinates into a bounded render frame and composes the
+original effect transform. A far-origin test reprojects after a frame change
+without accumulating offsets. This does not yet rebase live world-space trails,
+spawn entities or qualify particle rendering after an origin shift.
 
 The prerequisites are the accepted Linux authoring shell and the adopted exact
 Bevy 0.20.0 engine. Upstream targets Bevy 0.19.0. Both imported crates use our

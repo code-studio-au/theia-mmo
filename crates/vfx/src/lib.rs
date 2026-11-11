@@ -2,7 +2,7 @@
 use bevy::{
     asset::{AssetServer, RenderAssetUsages},
     image::{CompressedImageFormats, Image, ImageLoaderSettings, ImageSampler, ImageType},
-    prelude::Handle,
+    prelude::{Handle, Quat, Transform, Vec3},
 };
 use bevy_sprinkles::{
     TextureRef,
@@ -10,15 +10,90 @@ use bevy_sprinkles::{
     budget::emitter_counts,
 };
 use std::{
-    collections::BTreeSet,
+    collections::{BTreeMap, BTreeSet},
     path::{Component, Path},
 };
+use theia_core::coordinates::{LocalFrame, LocalPosition};
 use theia_network::{particle_content::Catalog, shared_images::ColorSpace};
 
 /// A catalog-identified effect decoded from the bytes whose hash was checked.
 pub struct CatalogEffect {
     pub id: String,
     pub asset: ParticlesAsset,
+}
+
+/// One catalog placement projected into the current render frame.
+pub struct CatalogPlacement {
+    pub id: u64,
+    pub effect: String,
+    pub transform: Transform,
+}
+
+/// Project immutable catalog placements from their content frame into the
+/// current render frame, then compose each effect's initial transform. Recompute
+/// from the catalog after an origin shift rather than accumulating f32 offsets.
+/// This does not spawn effects or validate their simulation parameters.
+pub fn project_catalog_placements(
+    catalog: &Catalog,
+    effects: &[CatalogEffect],
+    content_frame: LocalFrame,
+    render_frame: LocalFrame,
+) -> Result<Vec<CatalogPlacement>, String> {
+    let mut by_id = BTreeMap::new();
+    for effect in effects {
+        if by_id.insert(effect.id.as_str(), &effect.asset).is_some() {
+            return Err("Duplicate loaded particle effect ID".into());
+        }
+    }
+    if by_id.len() != catalog.effects().len()
+        || catalog
+            .effects()
+            .iter()
+            .any(|effect| !by_id.contains_key(effect.id.as_str()))
+    {
+        return Err("Loaded particle effects do not match the catalog".into());
+    }
+    let mut projected = Vec::with_capacity(catalog.placements().len());
+    for placement in catalog.placements() {
+        let effect = by_id[placement.effect.as_str()];
+        let local =
+            LocalPosition::new(placement.position).ok_or("Invalid catalog particle position")?;
+        let global = content_frame
+            .to_global(local)
+            .ok_or("Particle placement exceeds global coordinate bounds")?;
+        let render = render_frame
+            .to_local(global)
+            .ok_or("Particle placement is outside the render frame")?;
+        let initial = &effect.initial_transform;
+        if !initial.translation.is_finite()
+            || !initial.rotation.is_finite()
+            || !initial.scale.is_finite()
+        {
+            return Err(format!(
+                "{}: non-finite particle initial transform",
+                placement.effect
+            ));
+        }
+        let anchor = Transform::from_translation(Vec3::from_array(render.metres()))
+            .with_rotation(Quat::from_rotation_y(placement.yaw_degrees.to_radians()))
+            .with_scale(Vec3::splat(placement.scale));
+        let transform = anchor.mul_transform(initial.to_transform());
+        if LocalPosition::new(transform.translation.to_array()).is_none()
+            || !transform.rotation.is_finite()
+            || !transform.scale.is_finite()
+        {
+            return Err(format!(
+                "{}: particle transform is outside the render frame",
+                placement.effect
+            ));
+        }
+        projected.push(CatalogPlacement {
+            id: placement.id,
+            effect: placement.effect.clone(),
+            transform,
+        });
+    }
+    Ok(projected)
 }
 
 /// A cataloged PNG decoded from the verified bytes with its authored color role.
@@ -229,6 +304,73 @@ mod tests {
     use theia_network::terrain::sha256;
     static NEXT: AtomicU64 = AtomicU64::new(0);
     const PNG: &[u8] = include_bytes!("../../network/tests/fixtures/shared-image.png");
+
+    #[test]
+    fn catalog_placements_reproject_from_global_without_accumulating_offsets() {
+        use bevy_sprinkles::prelude::{EmitterData, ParticlesDimension};
+        use theia_core::coordinates::GlobalPosition;
+
+        let document = json!({"schema":1,
+            "effects":[{"id":"vfx.fire","bytes":4,"sha256":sha256(b"fire")}],
+            "placements":[{"id":7,"effect":"vfx.fire","position":[0.125,1.,2.],"yaw_degrees":90.,"scale":2.}]
+        });
+        let catalog = Catalog::decode(&serde_json::to_vec(&document).unwrap()).unwrap();
+        let mut asset = ParticlesAsset::new(
+            "Fire".into(),
+            ParticlesDimension::D3,
+            default(),
+            vec![EmitterData::default()],
+            vec![],
+            false,
+            default(),
+        );
+        asset.initial_transform.translation = Vec3::X;
+        asset.initial_transform.scale = Vec3::splat(2.);
+        let mut effects = vec![CatalogEffect {
+            id: "vfx.fire".into(),
+            asset,
+        }];
+        let content = LocalFrame::new(
+            GlobalPosition::new([128_000_000_000., 4., -128_000_000_000.]).unwrap(),
+        );
+        let shifted = LocalFrame::new(
+            GlobalPosition::new([128_000_000_128., 0., -128_000_000_128.]).unwrap(),
+        );
+        let original = project_catalog_placements(&catalog, &effects, content, content).unwrap();
+        let moved = project_catalog_placements(&catalog, &effects, content, shifted).unwrap();
+        assert_eq!(original[0].id, 7);
+        assert_eq!(original[0].effect, "vfx.fire");
+        assert!(
+            original[0]
+                .transform
+                .translation
+                .abs_diff_eq(Vec3::new(0.125, 1., 0.), 0.0001)
+        );
+        assert!(
+            original[0]
+                .transform
+                .scale
+                .abs_diff_eq(Vec3::splat(4.), 0.0001)
+        );
+        let global = |frame: LocalFrame, placement: &CatalogPlacement| {
+            frame
+                .to_global(LocalPosition::new(placement.transform.translation.to_array()).unwrap())
+                .unwrap()
+                .metres()
+        };
+        assert_eq!(global(content, &original[0]), global(shifted, &moved[0]));
+        let restored = project_catalog_placements(&catalog, &effects, content, content).unwrap();
+        assert_eq!(original[0].transform, restored[0].transform);
+        let far = LocalFrame::new(GlobalPosition::new([0.; 3]).unwrap());
+        assert!(project_catalog_placements(&catalog, &effects, content, far).is_err());
+        effects[0].asset.initial_transform.translation = Vec3::splat(f32::MAX);
+        assert!(project_catalog_placements(&catalog, &effects, content, content).is_err());
+        effects[0].asset.initial_transform.translation = Vec3::ZERO;
+        effects[0].asset.initial_transform.rotation.x = f32::NAN;
+        assert!(project_catalog_placements(&catalog, &effects, content, content).is_err());
+        effects[0].id = "vfx.other".into();
+        assert!(project_catalog_placements(&catalog, &effects, content, content).is_err());
+    }
 
     #[test]
     fn catalog_loading_hashes_parses_and_rebases_the_same_effect_bytes() {

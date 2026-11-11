@@ -1,3 +1,11 @@
+P2-13 particle placement projection, 11 November 2026: the VFX helper projects
+catalog placements from checked content coordinates through f64 global space
+into a bounded render frame, then composes the effect's initial transform.
+Tests cover a far origin, shifted and restored frames, missing effects and
+non-finite/out-of-frame transforms. This is a CPU transform helper; no particle
+rendering, origin-shifted trails, client playback or gameplay admission is
+claimed. Four VFX tests pass; see [integration](SPRINKLES_INTEGRATION.md).
+
 P5-17 selection-aware properties heading, 11 November 2026: the dock heading
 now identifies the selected particle, object, guide, marker, plant, spawn or
 terrain instead of only the active tool mode. A native particle gradient
