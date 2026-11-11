@@ -299,3 +299,6 @@ confirmation; edited examples continue to require confirmation.
 
 The retained editor one-shot preview logic is factored into a shared helper so
 the integrated zone preview uses the same restart behavior.
+
+First-run demo lookup uses the configured extracted examples directory and caches
+its actual path instead of assuming the application working directory.

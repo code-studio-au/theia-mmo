@@ -4,9 +4,10 @@ use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
 use bevy::prelude::*;
 use bevy_sprinkles::prelude::*;
 
-use crate::io::{EditorData, project_path, save_editor_data, working_dir};
+use crate::io::{EditorData, examples_dir, project_path, save_editor_data, working_dir};
 use crate::project::load_project_from_path;
 use crate::state::{DirtyState, EditorState, Inspectable, Inspecting};
+use crate::utils::simplify_path;
 use crate::viewport::{
     AabbGeneration, CameraSettings, ViewportInputState, despawn_preview_on_project_change,
     handle_generate_aabb_request, handle_playback_play_event, handle_playback_reset_event,
@@ -15,6 +16,7 @@ use crate::viewport::{
     sync_inspected_emitter_aabb, sync_playback_state, sync_viewport_settings, tick_aabb_generation,
     zoom_camera,
 };
+use std::path::{Path, PathBuf};
 
 #[derive(Resource, Default)]
 struct CliArgs {
@@ -128,32 +130,27 @@ fn load_initial_project(
 
     let is_first_run = editor_data.cache.recent_projects.is_empty();
 
-    if is_first_run {
-        let demo_file = "examples/3d-explosion.ron";
-        let demo_path = project_path(demo_file);
-        if demo_path.exists()
-            && let Ok(result) = load_project_from_path(&demo_path)
-        {
-            let has_emitters = !result.asset.emitters.is_empty();
-            let handle = assets.add(result.asset);
-            editor_state.open_project(
-                handle,
-                demo_path,
-                &mut dirty_state,
-                result.was_migrated,
-                &assets,
-            );
-            if has_emitters {
-                editor_state.inspecting = Some(Inspecting {
-                    kind: Inspectable::Emitter,
-                    index: 0,
-                });
-            }
-
-            editor_data.cache.add_recent_project(demo_file.to_string());
-            save_editor_data(&editor_data);
-            return;
+    if is_first_run && let Some((demo_path, result)) = load_bundled_demo(&examples_dir()) {
+        let has_emitters = !result.asset.emitters.is_empty();
+        let handle = assets.add(result.asset);
+        let demo_file = simplify_path(&demo_path);
+        editor_state.open_project(
+            handle,
+            demo_path,
+            &mut dirty_state,
+            result.was_migrated,
+            &assets,
+        );
+        if has_emitters {
+            editor_state.inspecting = Some(Inspecting {
+                kind: Inspectable::Emitter,
+                index: 0,
+            });
         }
+
+        editor_data.cache.add_recent_project(demo_file);
+        save_editor_data(&editor_data);
+        return;
     }
 
     let asset = ParticlesAsset::new(
@@ -177,11 +174,54 @@ fn load_initial_project(
     });
 }
 
+fn load_bundled_demo(
+    root: &Path,
+) -> Option<(PathBuf, bevy_sprinkles::asset::versions::MigrationResult)> {
+    let path = root.join("3d-explosion.ron");
+    if !path.is_file() {
+        return None;
+    }
+    load_project_from_path(&path)
+        .ok()
+        .map(|result| (path, result))
+}
+
 #[cfg(test)]
 mod migration_tests {
     use super::*;
     use bevy::ecs::system::RunSystemOnce;
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[test]
+    fn first_run_demo_loads_from_configured_examples_directory() {
+        let dir = std::env::temp_dir().join(format!(
+            "theia-particle-demo-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir(&dir).unwrap();
+        assert!(load_bundled_demo(&dir).is_none());
+        let asset = ParticlesAsset::new(
+            "Bundled test".into(),
+            ParticlesDimension::D3,
+            default(),
+            vec![EmitterData::default()],
+            vec![],
+            false,
+            default(),
+        );
+        let path = dir.join("3d-explosion.ron");
+        let source = ron::to_string(&asset).unwrap();
+        std::fs::write(&path, &source).unwrap();
+        let (loaded_path, result) = load_bundled_demo(&dir).unwrap();
+        assert_eq!(loaded_path, path);
+        assert_eq!(result.asset.name, "Bundled test");
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), source);
+        std::fs::remove_dir_all(dir).unwrap();
+    }
 
     #[test]
     fn cached_migrated_project_stays_dirty_until_saved_without_rewriting_source() {

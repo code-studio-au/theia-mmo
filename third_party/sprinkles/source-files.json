@@ -1265,7 +1265,7 @@
       "path": "crates/bevy_sprinkles_editor/src/plugin.rs",
       "upstream_path": "crates/bevy_sprinkles_editor/src/plugin.rs",
       "upstream_sha256": "b5fb34d613886bc7305cf2becfd5fe40f90a4d604ed2606ff1aacb827c293e63",
-      "imported_sha256": "acd9a39afb96f5cc975e4ddfcf22c6d3bf4faa0e136034135591d435aff9d453",
+      "imported_sha256": "6583b68a903f3c410aa412dfd1e40b4db9d61bb62fab8ee2f44747c9f5346226",
       "changed": true
     },
     {

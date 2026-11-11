@@ -497,3 +497,12 @@ Mesa 26.2.6 Vulkan with Khronos validation visibly show the retained rain and
 Magic Puff burst effects at the anchor, with zero unexpected diagnostics. This
 does not bind content IDs, package textures, enable client playback, establish
 MMO budgets or qualify Windows.
+
+
+On first run, the bundled explosion project loads from the configured examples
+directory and its real path is cached. Previously the lookup used a path
+relative to the process working directory and could silently fall back to a blank
+project. A fresh isolated data-directory native run rendered the bundled demo at
+a zone anchor on RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan with Khronos
+validation and zero unexpected diagnostics. Forty-four particle-editor tests,
+formatting and denied-warning workspace/all-target Clippy pass.

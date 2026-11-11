@@ -1,3 +1,10 @@
+P5-17 first-run particle demo, 11 November 2026: load the bundled explosion
+from the configured examples directory rather than the process working directory,
+and cache its actual path. Forty-four particle-editor tests, fmt and strict
+workspace/all-target Clippy pass. A fresh-data 3440×1440 native RX 7900 XTX /
+RADV / Mesa 26.2.6 Vulkan run renders the demo at a zone anchor with Khronos
+validation and zero unexpected GPU diagnostics. See [integration](../SPRINKLES_INTEGRATION.md).
+
 P2-13 temporary particle placement preview, 11 November 2026: the inspector
 can preview the currently open Sprinkles project at a selected zone anchor,
 without linking its effect ID or changing the zone. The preview uses the original
