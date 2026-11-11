@@ -5,7 +5,7 @@ use bevy::{
 use crate::{
     asset::{DrawPassMaterial, EmitterData, EmitterTrail, ParticlesAsset},
     material::{ParticleEmitterUniforms, ParticleMaterialExtension, TRAIL_THICKNESS_CURVE_SAMPLES},
-    mesh::{ParticleMeshCache, checked_quad_mesh_arithmetic},
+    mesh::{ParticleMeshCache, checked_mesh_arithmetic},
     runtime::{
         ColliderEntity, CurrentMaterialConfig, CurrentMeshConfig, EditorMode, EmitterEntity,
         EmitterRuntime, ParticleBufferHandle, ParticleData, ParticleMaterial,
@@ -58,7 +58,7 @@ fn compute_trail_history_frames(emitter: &EmitterData) -> u32 {
 // Arithmetic validity only: these checks are not a memory or performance budget.
 pub(crate) fn checked_emitter_layout(emitter: &EmitterData) -> Option<(u32, u32)> {
     let amount = emitter.emission.particles_amount;
-    if !checked_quad_mesh_arithmetic(&emitter.draw_pass.mesh, amount) {
+    if !checked_mesh_arithmetic(&emitter.draw_pass.mesh, amount) {
         return None;
     }
     let trail_size = emitter.trail_size();
@@ -316,7 +316,7 @@ pub fn setup_particle_systems(
                     .emitters
                     .iter()
                     .position(|emitter| checked_emitter_layout(emitter).is_none())
-                    .map(|index| (index, "invalid particle, trail or quad mesh arithmetic"))
+                    .map(|index| (index, "invalid particle, trail or mesh arithmetic"))
             });
         if let Some((index, reason)) = invalid {
             if !unsupported {
@@ -1062,6 +1062,30 @@ mod theia_port_tests {
         }
         emitter.draw_pass.mesh = ParticleMesh::default_quad();
         emitter.emission.particles_amount = u32::MAX / 4 + 1;
+        assert!(checked_emitter_layout(&emitter).is_none());
+        emitter.emission.particles_amount = 5;
+        assert!(checked_emitter_layout(&emitter).is_some());
+    }
+
+    #[test]
+    fn sphere_mesh_arithmetic_rejects_overflow_before_allocation() {
+        use crate::asset::ParticleMesh;
+        let mut emitter = EmitterData::default();
+        emitter.emission.particles_amount = 2;
+        for (segments, rings) in [(u32::MAX, 2), (3, u32::MAX), (65_535, 65_535)] {
+            emitter.draw_pass.mesh = ParticleMesh::Sphere {
+                radius: 1.0,
+                segments,
+                rings,
+            };
+            assert!(checked_emitter_layout(&emitter).is_none());
+        }
+        emitter.draw_pass.mesh = ParticleMesh::Sphere {
+            radius: 0.0,
+            segments: 0,
+            rings: 0,
+        };
+        emitter.emission.particles_amount = u32::MAX / 12 + 1;
         assert!(checked_emitter_layout(&emitter).is_none());
         emitter.emission.particles_amount = 5;
         assert!(checked_emitter_layout(&emitter).is_some());

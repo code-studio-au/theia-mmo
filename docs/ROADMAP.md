@@ -1,3 +1,10 @@
+P2-13 particle sphere arithmetic, 11 November 2026: checked Bevy UV-sphere
+counts and particle replication reject integer overflow before construction.
+Thirteen runtime and 14 loader tests, fmt and strict workspace/all-target Clippy
+pass; windowless RX 7900 XTX / RADV / Mesa 26.2.6 Vulkan with Khronos
+validation reports zero unexpected GPU diagnostics through rejection and recovery.
+Other mesh types and memory budgets remain open. See [integration](SPRINKLES_INTEGRATION.md).
+
 P2-13 particle quad arithmetic, 11 November 2026: overflowing subdivision,
 index-count and replicated-vertex calculations are rejected before mesh creation;
 invalid live edits suppress rendering and recover after repair. Twelve runtime and

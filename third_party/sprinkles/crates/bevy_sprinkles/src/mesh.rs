@@ -372,21 +372,40 @@ fn create_prism_mesh(left_to_right: f32, size: Vec3, subdivide: Vec3) -> Mesh {
     mesh
 }
 
-/// Validate the arithmetic used by quad construction and particle replication.
-/// This is not a limit on memory or a validation of other mesh types.
-pub(crate) fn checked_quad_mesh_arithmetic(config: &ParticleMesh, amount: u32) -> bool {
-    let ParticleMesh::Quad { subdivide, .. } = config else {
-        return true;
-    };
+/// Validate the arithmetic used by quad and sphere construction and replication.
+/// This is not a limit on memory or validation of other mesh types.
+pub(crate) fn checked_mesh_arithmetic(config: &ParticleMesh, amount: u32) -> bool {
     let checked = || -> Option<()> {
-        let cols = (subdivide.x as u32).checked_add(1)?;
-        let rows = (subdivide.y as u32).checked_add(1)?;
-        let vertices = cols.checked_add(1)?.checked_mul(rows.checked_add(1)?)?;
-        let indices = cols.checked_mul(rows)?.checked_mul(6)?;
+        let (vertices, indices) = match config {
+            ParticleMesh::Quad { subdivide, .. } => {
+                let cols = (subdivide.x as u32).checked_add(1)?;
+                let rows = (subdivide.y as u32).checked_add(1)?;
+                (
+                    cols.checked_add(1)?.checked_mul(rows.checked_add(1)?)?,
+                    usize::try_from(cols.checked_mul(rows)?.checked_mul(6)?).ok()?,
+                )
+            }
+            ParticleMesh::Sphere {
+                segments, rings, ..
+            } => {
+                let sectors = (*segments).max(3);
+                let stacks = (*rings).max(2);
+                // Bevy's UV sphere builder computes this capacity in u32 first.
+                let capacity = usize::try_from(sectors.checked_mul(stacks)?).ok()?;
+                capacity.checked_mul(6)?;
+                let vertices = sectors
+                    .checked_add(1)?
+                    .checked_mul(stacks.checked_add(1)?)?;
+                let indices = usize::try_from(sectors)
+                    .ok()?
+                    .checked_mul(usize::try_from(stacks - 1).ok()?)?
+                    .checked_mul(6)?;
+                (vertices, indices)
+            }
+            _ => return Some(()),
+        };
         vertices.checked_mul(amount)?;
-        usize::try_from(indices)
-            .ok()?
-            .checked_mul(usize::try_from(amount).ok()?)?;
+        indices.checked_mul(usize::try_from(amount).ok()?)?;
         Some(())
     };
     checked().is_some()

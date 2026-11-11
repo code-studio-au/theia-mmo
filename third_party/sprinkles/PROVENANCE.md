@@ -276,3 +276,6 @@ resolution to a minimally valid sphere; this is a local runtime modification.
 
 Quad subdivision and replicated-mesh arithmetic is locally checked before
 construction; this does not impose a memory budget or validate other mesh types.
+
+The local mesh arithmetic guard also checks Bevy UV-sphere counts and particle
+replication; it is not a memory limit or validation of remaining mesh types.

@@ -331,3 +331,13 @@ to their construction and indexing. Invalid live edits suppress the affected
 emitter until corrected. Runtime regressions and the windowless Vulkan smoke test
 cover rejection and recovery. This is not a memory cap; representable inputs may
 still exhaust memory. Other mesh types are not covered by this quad check.
+
+
+## Sphere mesh arithmetic — P2-13
+
+The Bevy UV-sphere builder's intermediate count, vertex and index counts and
+replicated mesh counts are checked for integer overflow before construction.
+Regression tests cover extreme subdivision counts, particle replication and
+minimum resolution; windowless Vulkan exercises invalid live edits and recovery.
+Representable inputs can still exhaust memory; cylinder, prism and trail mesh
+arithmetic remain outside these quad and sphere checks.
