@@ -20,6 +20,8 @@ struct Fixture {
     saw_restored: bool,
     saw_invalid_layout_suppressed: bool,
     saw_valid_layout_restored: bool,
+    saw_flat_cylinder: bool,
+    saw_flat_prism: bool,
 }
 
 fn setup(
@@ -62,6 +64,8 @@ fn setup(
         saw_restored: false,
         saw_invalid_layout_suppressed: false,
         saw_valid_layout_restored: false,
+        saw_flat_cylinder: false,
+        saw_flat_prism: false,
     });
 }
 
@@ -122,21 +126,58 @@ fn step(
                 .iter()
                 .any(|(material, buffers)| material.is_some() && buffers.amount == 5)
         }
+        110 => {
+            let mut effect = effects.get_mut(&fixture.asset).unwrap();
+            let emitter = &mut effect.emitters[0];
+            emitter.trail.enabled = false;
+            emitter.draw_pass.mesh = ParticleMesh::Cylinder {
+                top_radius: 1.0,
+                bottom_radius: 1.0,
+                height: 0.0,
+                radial_segments: 8,
+                rings: 1,
+                cap_top: true,
+                cap_bottom: true,
+            };
+        }
+        115 => {
+            fixture.saw_flat_cylinder = emitters
+                .iter()
+                .any(|(material, buffers)| material.is_some() && buffers.amount == 5)
+        }
         120 => {
+            effects.get_mut(&fixture.asset).unwrap().emitters[0]
+                .draw_pass
+                .mesh = ParticleMesh::Prism {
+                left_to_right: 0.5,
+                size: Vec3::new(0.0, 0.0, 1.0),
+                subdivide: Vec3::new(2.0, 2.0, 1.0),
+            };
+        }
+        125 => {
+            fixture.saw_flat_prism = emitters
+                .iter()
+                .any(|(material, buffers)| material.is_some() && buffers.amount == 5)
+        }
+        150 => {
             if fixture.saw_suppressed
                 && fixture.saw_restored
                 && fixture.saw_invalid_layout_suppressed
                 && fixture.saw_valid_layout_restored
+                && fixture.saw_flat_cylinder
+                && fixture.saw_flat_prism
             {
                 println!("headless particle material transition passed");
                 exits.write(AppExit::Success);
             } else {
                 eprintln!(
-                    "headless particle transitions failed: shader_suppressed={} shader_restored={} layout_suppressed={} layout_restored={}",
+                    "headless particle transitions failed: shader_suppressed={} shader_restored={} layout_suppressed={} layout_restored={} cylinder={} prism={}",
                     fixture.saw_suppressed,
                     fixture.saw_restored,
                     fixture.saw_invalid_layout_suppressed,
-                    fixture.saw_valid_layout_restored
+                    fixture.saw_valid_layout_restored,
+                    fixture.saw_flat_cylinder,
+                    fixture.saw_flat_prism
                 );
                 exits.write(AppExit::error());
             }

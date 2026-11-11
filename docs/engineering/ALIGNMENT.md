@@ -1,3 +1,11 @@
+P2-13 particle mesh normals, 11 November 2026: flat or very thin cylinders
+and degenerate prisms retain finite normals; subdivided-prism index integrity is
+regressed. Ten particle-runtime, 14 loader and 36 particle-editor tests, fmt and
+strict workspace/all-target Clippy pass. Windowless RX 7900 XTX / RADV / Mesa
+26.2.6 Vulkan with Khronos validation reports zero unexpected GPU diagnostics.
+Arbitrary mesh-parameter validation and memory budgets remain open. See
+[integration](../SPRINKLES_INTEGRATION.md).
+
 P2-13 particle allocation arithmetic, 11 November 2026: checked slot,
 trail-history and platform-sized sub-emitter counts reject arithmetic overflow
 before allocation or render extraction. Invalid live emitters are suppressed and

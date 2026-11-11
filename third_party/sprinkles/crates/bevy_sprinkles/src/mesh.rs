@@ -56,8 +56,16 @@ fn create_cylinder_mesh(
     let mut uvs: Vec<[f32; 2]> = Vec::new();
     let mut indices: Vec<u32> = Vec::new();
 
-    let side_normal_y = (bottom_radius - top_radius) / height;
-    let side_normal_scale = 1.0 / (1.0 + side_normal_y * side_normal_y).sqrt();
+    // Compute the slope in f64 so a very small nonzero height cannot overflow
+    // before normalization. A flat cylinder has no unique side normal.
+    let slope = if height == 0.0 {
+        0.0
+    } else {
+        (f64::from(bottom_radius) - f64::from(top_radius)) / f64::from(height)
+    };
+    let scale = 1.0 / (1.0 + slope * slope).sqrt();
+    let side_normal_scale = scale as f32;
+    let side_normal_y = (slope * scale) as f32;
 
     for ring in 0..=rings {
         let v = ring as f32 / rings as f32;
@@ -75,7 +83,7 @@ fn create_cylinder_mesh(
             positions.push([x, y, z]);
 
             let nx = cos_theta * side_normal_scale;
-            let ny = side_normal_y * side_normal_scale;
+            let ny = side_normal_y;
             let nz = sin_theta * side_normal_scale;
             normals.push([nx, ny, nz]);
 
@@ -257,8 +265,9 @@ fn create_prism_mesh(left_to_right: f32, size: Vec3, subdivide: Vec3) -> Mesh {
     }
 
     {
-        let normal_left = Vec3::new(-size.y, size.x * left_to_right, 0.0).normalize();
-        let normal_right = Vec3::new(size.y, size.x * (1.0 - left_to_right), 0.0).normalize();
+        let normal_left = Vec3::new(-size.y, size.x * left_to_right, 0.0).normalize_or_zero();
+        let normal_right =
+            Vec3::new(size.y, size.x * (1.0 - left_to_right), 0.0).normalize_or_zero();
 
         let mut y = start_pos.y;
         let mut thisrow = positions.len() as u32;
@@ -769,6 +778,69 @@ fn extract_float32x3(
 #[cfg(test)]
 mod theia_cache_tests {
     use super::*;
+
+    #[test]
+    fn flat_and_nearly_flat_cylinders_keep_mesh_attributes_finite() {
+        for (height, top, bottom) in [
+            (0.0, 1.0, 1.0),
+            (0.0, 0.5, 1.0),
+            (f32::MIN_POSITIVE, 0.5, 1.0),
+            (2.0, 0.5, 1.0),
+        ] {
+            let mesh = create_cylinder_mesh(top, bottom, height, 8, 1, true, true);
+            for attribute in [Mesh::ATTRIBUTE_POSITION, Mesh::ATTRIBUTE_NORMAL] {
+                let Some(VertexAttributeValues::Float32x3(values)) = mesh.attribute(attribute)
+                else {
+                    panic!("missing mesh attribute")
+                };
+                assert!(
+                    values.iter().flatten().all(|v| v.is_finite()),
+                    "nonfinite attribute for height {height}"
+                );
+            }
+            if height == 2.0 {
+                let Some(VertexAttributeValues::Float32x3(normals)) =
+                    mesh.attribute(Mesh::ATTRIBUTE_NORMAL)
+                else {
+                    unreachable!()
+                };
+                let expected = Vec3::new(1.0, 0.25, 0.0).normalize();
+                assert!(Vec3::from_array(normals[0]).distance(expected) < 1e-6);
+            }
+        }
+    }
+
+    #[test]
+    fn degenerate_prism_normals_and_subdivided_topology_remain_valid() {
+        for size in [Vec3::new(0.0, 0.0, 1.0), Vec3::ONE] {
+            let mesh = create_prism_mesh(0.5, size, Vec3::new(2.0, 2.0, 1.0));
+            let Some(VertexAttributeValues::Float32x3(positions)) =
+                mesh.attribute(Mesh::ATTRIBUTE_POSITION)
+            else {
+                panic!("missing positions")
+            };
+            let Some(VertexAttributeValues::Float32x3(normals)) =
+                mesh.attribute(Mesh::ATTRIBUTE_NORMAL)
+            else {
+                panic!("missing normals")
+            };
+            assert!(
+                positions
+                    .iter()
+                    .flatten()
+                    .chain(normals.iter().flatten())
+                    .all(|v| v.is_finite())
+            );
+            let indices: Vec<_> = mesh.indices().unwrap().iter().collect();
+            assert_eq!(indices.len() % 3, 0);
+            assert!(indices.iter().all(|index| *index < positions.len()));
+            // Front/back vertices are interleaved, and each triangle stays on one face.
+            let first_face_indices = 6 * 3 + 12 * 3 * 2;
+            for triangle in indices[..first_face_indices].as_chunks::<3>().0 {
+                assert!(triangle.iter().all(|index| index % 2 == triangle[0] % 2));
+            }
+        }
+    }
 
     #[test]
     fn mesh_edits_share_live_meshes_and_release_previous_counts() {

@@ -265,3 +265,8 @@ remains unimplemented. Local tests and a windowless GPU example exercise this.
 Checked emitter slot, history and sub-emitter-size arithmetic is now applied
 before runtime allocation and extraction. Invalid live edits suppress rendering
 until repaired. This does not establish a memory cap or validate mesh complexity.
+
+Cylinder side-normal math now handles zero and extremely small heights, and
+degenerate prism normals avoid non-finite values. Local headless geometry and
+windowless Vulkan regressions cover these cases; no broader mesh-parameter or
+performance qualification is claimed.

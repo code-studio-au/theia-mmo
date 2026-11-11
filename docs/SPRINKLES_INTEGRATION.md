@@ -300,3 +300,14 @@ exercised unsupported shader and overflowing trail transitions with explicit
 Khronos validation and zero unexpected GPU diagnostics. Both rejection logs
 are intentional. These are arithmetic checks, not memory limits, mesh-shape
 validation, untrusted-content admission, gameplay budgets or a performance claim.
+
+## Degenerate particle mesh normals — P2-13
+
+Flat and extremely thin cylinders now calculate side normals without division
+by zero or f32 slope overflow. Degenerate prisms use finite zero normals where
+a direction cannot be determined. Normal-sized cylinder slopes retain their
+expected direction. Headless tests check finite positions/normals, valid prism
+triangle indices and the existing mesh-cache lifecycle. A windowless RX 7900 XTX
+/ RADV / Mesa 26.2.6 Vulkan smoke run with Khronos validation switches through
+flat-cylinder and degenerate-prism emitters with no unexpected GPU diagnostics.
+This does not validate arbitrary mesh parameters or establish VFX memory budgets.
