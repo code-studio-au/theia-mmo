@@ -217,3 +217,13 @@
 - Author combat phase barks and cutscene timing for Cassian, Oma'vira, Su'vareth, Vaer'uun, Khor'vun, Thes'var and Oth'varen.
 - Use a content validator to flag forbidden names and concepts in quests before their reveal gates; manual editorial review remains essential.
 - Do not assert voice-ready or engine-integrated status before full localization and scene QA.
+
+## Creator-locked racial handoff and return boundaries — 12 November 2026
+
+**Q035–Q036:** Q035 `The Covenant Calls` is the same formal summons issued by Corven's office to every Covenant playable race after its completed independent 1–20 story. The local messenger may acknowledge race-specific prior deeds; the summons itself has identical authority. Q036 `Four Peoples, One Harbour` is the first shared Tidehold briefing. Corven recognises competent service without claiming the player is famous or enlisted, explains independent sovereignty and grants a limited provision-depot inspection permit. Cassian's human-only case and Edric's royal records must not be treated as universal prerequisite knowledge.
+
+**Q184:** The homecoming is one shared editorial quest and common completion, with the character returning to their own racial homeland and familiar local contacts. Human players revisit Elara and Millhaven; non-human contacts and dialogue require approval of their separate starting stories. Never write a non-human player as having grown up under Elara.
+
+**Cross-race voice rule:** NPC reactions can depend on race, prior quest history and local knowledge, but should not create friendly cross-faction diplomacy or give public NPCs knowledge of the clandestine Guardians. Do not introduce Nhal's authenticated name before Q143, or Oth'varen's identity before Q097.
+
+**Status:** Locked boundaries; full race-specific dialogue branches and actor bindings are not yet authored.
