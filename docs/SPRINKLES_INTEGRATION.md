@@ -1,5 +1,35 @@
 # Sprinkles authoring integration (P5-17)
 
+## Current closeout scope — 12 November 2026
+
+The integrated Linux authoring and bounded world-playback workflow is implemented.
+It reuses the ported Sprinkles runtime and original editor controls. Live zone
+editing, explicit saves, packaged effect/texture verification, projected-material
+worlds, chunk retirement, origin translation and rejected-transition preservation
+have native evidence in STATUS. All seven bundled upstream effects have a
+fixed-step preview comparison; this is not universal visual equivalence.
+
+Two validation items remain before closing this integration pass:
+
+- Exercise the saved world-effects preference with native input and relaunch.
+  Background persistence and actual client startup parsing already pass; the
+  startup evidence is `build/particle-preferences-cli-20261112/verification.json`.
+- Run an instrumented integrated-editor idle/open/close soak for the upstream
+  memory-growth concern. Existing cache regressions do not establish long-session
+  stability. Report CPU asset counts, process memory and GPU evidence separately.
+
+Do not expand this closeout into general particle development. Per-instance
+intensity, flipbook animation and sub-emitter scale inheritance should follow a
+specific authored effect that needs them. Production load budgets, automatic
+protection of combat cues, and native Windows qualification remain separate
+release requirements. The existing World effects toggle is a manual readability
+aid, not automatic combat-cue protection. Standalone editor polish is outside the
+user's requested integrated-only focus.
+
+Older entries below are chronological implementation records. Their statements
+about pending export, embedding or runtime work are superseded by this checkpoint
+and the current STATUS evidence.
+
 The zone workspace offers **Zone → Delete selected** for selected placements
 and **File → Exit** to close the editor. Exit asks before discarding unsaved
 zone or particle changes. Native Linux tests exercise deletion through both the

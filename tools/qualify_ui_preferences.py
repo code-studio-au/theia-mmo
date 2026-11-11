@@ -54,6 +54,7 @@ def run(args):
             else:
                 assert child.returncode == 0, f'{name}: preflight failed; inspect stderr log'
                 report = json.loads(child.stdout)
+                expected = dict({'world_effects_visible': True}, **expected)
                 assert not any(report[k] for k in ('renderer_started', 'network_started', 'saved_state_admitted'))
                 assert report['interface'] == expected, name
                 if baseline_world is None:
@@ -69,6 +70,13 @@ def run(args):
         preference.write_text('{"schema":1,"ui_scale":1.25}')
         check('saved', skin+flag, dict(enabled=True, preferred_scale=1.25, saved_preferences=True))
         check('override', skin+flag+['--ui-scale', '0.75'], dict(enabled=True, preferred_scale=.75, saved_preferences=True))
+        preference.write_text('{"schema":1,"ui_scale":1.25,"world_effects":false}')
+        check('effects-hidden', skin+flag, dict(enabled=True, preferred_scale=1.25, saved_preferences=True, world_effects_visible=False))
+        preference.write_text('{"schema":1,"ui_scale":1.25,"world_effects":true}')
+        check('effects-visible', skin+flag, dict(enabled=True, preferred_scale=1.25, saved_preferences=True))
+        check('effects-cli-override', skin+flag+['--hide-world-particles'], dict(enabled=True, preferred_scale=1.25, saved_preferences=True, world_effects_visible=False))
+        preference.write_text('{"schema":1,"ui_scale":1.25,"world_effects":"false"}')
+        check('invalid-effects', skin+flag)
         check('duplicate', skin+flag+flag)
         check('without-skin', flag)
         preference.write_text('{"schema":2,"ui_scale":1.25}')

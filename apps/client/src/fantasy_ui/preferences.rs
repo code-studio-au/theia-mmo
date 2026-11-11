@@ -177,10 +177,10 @@ impl Store {
     pub(super) fn hint(&self) -> &'static str {
         match self.status {
             Status::Unchanged => "Local preferences enabled. The world continues running.",
-            Status::Saving => "Saving UI size on this device. The world continues running.",
-            Status::Saved => "UI size saved on this device. The world continues running.",
+            Status::Saving => "Saving preferences on this device. The world continues running.",
+            Status::Saved => "Preferences saved on this device. The world continues running.",
             Status::Failed => {
-                "Could not save UI size. Select a size to retry; this session still uses it."
+                "Could not save preferences. Change a setting or select a UI size to retry."
             }
         }
     }
@@ -376,7 +376,8 @@ mod tests {
             world
                 .query::<&Text>()
                 .iter(world)
-                .any(|text| text.0 == "UI size saved on this device. The world continues running.")
+                .any(|text| text.0
+                    == "Preferences saved on this device. The world continues running.")
         );
         let saved = fs::read(&path).unwrap();
         app.world_mut()
@@ -465,7 +466,7 @@ mod tests {
             world
                 .query::<&Text>()
                 .iter(world)
-                .any(|text| text.0.contains("Select a size to retry"))
+                .any(|text| text.0.contains("select a UI size to retry"))
         );
         fs::remove_dir(&path).unwrap();
         for _ in 0..20 {

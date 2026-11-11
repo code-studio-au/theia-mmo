@@ -1,3 +1,10 @@
+P5-17 / P2-13 closeout scope, 12 November 2026: integrated authoring and
+bounded Linux world playback are implemented. Finish native preference
+save/relaunch and an instrumented editor memory soak, then return to playable
+MMO slices. Additional particle features require an actual authored effect;
+production budgets, combat-cue protection and Windows remain separate release
+requirements. See [current checklist](SPRINKLES_INTEGRATION.md#current-closeout-scope--12-november-2026).
+
 P5-17 gradient point and particle-delete investigation, 11 November 2026:
 a deliberate gradient-point click can open its nested color picker, while drag
 and post-drag clicks do not; a new press clears a stale drag marker. Headless

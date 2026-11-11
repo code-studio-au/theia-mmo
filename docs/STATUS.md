@@ -1,3 +1,11 @@
+P2-13 particle preference startup checks, 12 November 2026: the actual client
+configuration path accepts saved world-effects visibility, respects the temporary
+hide override, rejects malformed values and leaves the preference file unchanged.
+All 13 CLI cases pass (`build/particle-preferences-cli-20261112/verification.json`).
+Preference save feedback now refers to preferences rather than UI size alone.
+This is startup and headless persistence evidence; native save/relaunch and the
+editor memory soak remain the bounded closeout tasks in SPRINKLES_INTEGRATION.
+
 P2-13 world-effects preference, 11 November 2026: when fantasy UI and the
 explicit `--ui-preferences FILE` store are enabled, changing the World effects
 control persists its visibility alongside UI size. Older preference files remain
