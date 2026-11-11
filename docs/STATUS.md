@@ -1,3 +1,10 @@
+P5-17 exploratory Sprinkles visual comparison, 11 November 2026: captured all
+seven original examples in the pinned upstream editor and the ported standalone
+host; representative stills appeared broadly similar. Short clips cover two
+effects. Runs used Vulkan on RX 7900 XTX / RADV Mesa 26.2.6, with validation
+errors in the original debug build. Unsynchronized seeds/timing, the embedded
+zone and full animation parity remain unqualified. See [comparison](SPRINKLES_PARITY.md).
+
 P5-17 editor exit and particle deletion access, 11 November 2026: File → Exit
 closes a clean editor and asks before discarding unsaved zone or particle work;
 Zone → Delete selected exposes the shared placement deletion action. The real
