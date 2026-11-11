@@ -78,6 +78,20 @@ impl Textures {
         *texture = TextureRef::Asset(format!("textures/{name}"));
         Ok(())
     }
+    pub fn into_files(self) -> Vec<(String, Vec<u8>)> {
+        self.variants
+            .into_iter()
+            .map(|((hash, color_space), bytes)| {
+                let filename = Texture {
+                    sha256: hash,
+                    bytes: bytes.len() as u64,
+                    color_space,
+                }
+                .filename();
+                (filename, bytes)
+            })
+            .collect()
+    }
     pub fn descriptors(&self) -> Vec<serde_json::Value> {
         self.variants.iter().map(|((hash, color), bytes)| serde_json::json!({
             "sha256":hash,"bytes":bytes.len(),"color_space": match color { ColorSpace::Srgb => "srgb", ColorSpace::Linear => "linear" }

@@ -1,3 +1,13 @@
+P2-13 particle world export, 11 November 2026: the zone exporter can now
+stage a particle-bearing schema-4 world package with a manifest-bound catalog,
+portable effect snapshots and content-hashed, role-specific PNG variants.
+Missing effects fail before destination creation; staged files are verified
+before publication and the manifest is moved last. Export tests cover real
+texture dependencies, source-file changes and tampering. The report explicitly
+states that client playback is unavailable: clients still reject schema 4 until
+particle admission and rendering are integrated. This is a local packaging step,
+not playable zone effects or an MMO-scale performance claim.
+
 P2-13 verified particle texture handles, 11 November 2026: prepared catalog
 images can be installed in Bevy and bound to Sprinkles materials by strong,
 runtime-only handles, avoiding a second path-based disk read. Binding checks

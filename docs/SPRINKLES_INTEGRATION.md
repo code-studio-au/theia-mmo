@@ -92,6 +92,14 @@ validation diagnostics on AMD Radeon RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6
 logs errors while exercising invalid-material recovery. This bridge does not
 spawn the package or establish complete simulation or memory admission.
 
+The zone exporter now writes staged `particles/catalog.json`, `effects/` and
+`textures/` files and binds the catalog into a schema-4 world manifest. It
+verifies staged effect and texture bytes and publishes the manifest last; a
+missing dependency leaves no destination. A focused export test covers external
+texture variants and tampering. The export report explicitly says client
+playback is unavailable, and the existing client admission guard remains in
+place. The particle package is not yet playable in the game.
+
 The prerequisites are the accepted Linux authoring shell and the adopted exact
 Bevy 0.20.0 engine. Upstream targets Bevy 0.19.0. Both imported crates use our
 workspace engine; introducing a second Bevy engine or downgrading Theia is not
@@ -500,10 +508,11 @@ because effect-specific visual extents are not yet available. Put/delete edits
 participate in validation, revision checks, atomic rollback and undo/redo. Older
 zone documents load with no placements; older binaries do not read schema 8.
 
-The existing world exporter rejects any zone with particle placements before
-creating an output directory. This is intentional until effect and texture
-dependencies can be packaged and verified. The editor now provides reference creation, selection and inline attribute controls;
-clients do not load or render them. No MMO particle-count or GPU memory budget is implied by
+The world exporter packages particle placements, effects and texture variants
+in a manifest-bound schema-4 world package. Clients still reject that schema
+until particle playback and admission are implemented. The editor provides
+reference creation, selection and inline attribute controls; clients do not yet
+render exported zone effects. No MMO particle-count or GPU memory budget is implied by
 the authoring document bound.
 
 Acceptance for this slice: far-origin coordinate roundtrip, invalid keys and
@@ -532,7 +541,8 @@ commands. The initial `vfx.unassigned` ID must be replaced with the intended
 content ID; asset catalogue resolution remains pending. The currently open project
 can be previewed temporarily at the selected reference. The viewport gizmo remains
 hidden for these references; an editor-only anchor
-marks their position. World export still rejects them.
+marks their position. World export now packages these references; current clients
+reject the package until playback is implemented.
 
 CPU tests exercise creation, selection, filtering, exact far-origin edits, invalid
 effect IDs and undo. All 126 zone-editor tests, formatting and denied-warning
@@ -649,15 +659,15 @@ load them. Preview state is not persisted.
 
 ## Local export dependency preflight — P2-13
 
-Before rejecting a zone with particle placements, the exporter checks each unique
+Before packaging a zone with particle placements, the exporter checks each unique
 Effect ID against the local library. It bounds each effect file to 4 MiB, uses
 Sprinkles' version migration, rejects custom shader materials, and checks that
 all referenced external textures in the five standard material slots exist.
 Built-in preset textures need no external file. The diagnostic reports a missing
 or invalid dependency, or counts distinct resolved external texture paths. This
-is an authoring aid and a prerequisite for packaging: existence is not image
-validation, dependency hashing, portability, or a rendering budget. Export still
-refuses every zone with particle placements, including when preflight succeeds.
+is an authoring aid: existence alone is not image decoding or a rendering budget.
+Successful export snapshots and hashes dependencies; complete simulation and
+client admission are still required.
 
 ## Particle catalog decoder foundation — P2-13
 
@@ -682,8 +692,9 @@ snapshots with editor asset-folder metadata removed, sorted unique effect IDs an
 placement IDs, then passes it to the headless decoder. External PNG references
 are copied into bounded in-memory variants and rewritten to hash-derived paths
 relative to the package. Positions use the zone's checked global-to-local frame
-before conversion to f32. The draft is discarded: no catalog or effects are
-published, and external texture dependencies still need a package format.
+before conversion to f32. The exporter now publishes the catalog and snapshots
+under `particles/`, bound by the schema-4 world manifest. Clients still reject
+these packages until playback is integrated.
 
 ## Runtime allocation counts — P2-13
 

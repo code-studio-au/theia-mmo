@@ -28,13 +28,20 @@ pub(super) struct Preflight {
     pub history_entries: u64,
 }
 
-pub(super) fn preflight(zone: &Zone, root: &Path) -> Result<Preflight, String> {
+pub(super) struct Draft {
+    pub catalog: Vec<u8>,
+    pub effects: Vec<(String, Vec<u8>)>,
+    pub textures: Vec<(String, Vec<u8>)>,
+}
+
+pub(super) fn draft(zone: &Zone, root: &Path) -> Result<(Preflight, Draft), String> {
     let mut ids = BTreeMap::new();
     for placement in &zone.particles {
         *ids.entry(placement.effect.as_str()).or_insert(0u64) += 1;
     }
     let mut external_textures = BTreeSet::new();
     let mut effects = Vec::new();
+    let mut effect_files = Vec::new();
     let mut total_bytes = 0u64;
     let mut texture_draft = Textures::default();
     let mut result = Preflight::default();
@@ -122,10 +129,23 @@ pub(super) fn preflight(zone: &Zone, root: &Path) -> Result<Preflight, String> {
         let snapshot = snapshot(&asset, &mut texture_draft)?;
         effects
             .push(serde_json::json!({"id":id,"bytes":snapshot.len(),"sha256":sha256(&snapshot)}));
+        effect_files.push((format!("effect-{id}.ron"), snapshot));
     }
-    draft_catalog(zone, effects, texture_draft.descriptors())?;
+    let catalog = draft_catalog(zone, effects, texture_draft.descriptors())?;
     result.textures = external_textures.len();
-    Ok(result)
+    Ok((
+        result,
+        Draft {
+            catalog,
+            effects: effect_files,
+            textures: texture_draft.into_files(),
+        },
+    ))
+}
+
+#[cfg(test)]
+fn preflight(zone: &Zone, root: &Path) -> Result<Preflight, String> {
+    draft(zone, root).map(|(summary, _)| summary)
 }
 
 fn finite_mesh_dimensions(mesh: &ParticleMesh) -> bool {

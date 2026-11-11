@@ -266,23 +266,6 @@ fn cylinder_segments(radius: f64) -> u32 {
 }
 fn geometry(zone: &Zone) -> Result<(Vec<u8>, Value, Value), String> {
     zone.validate()?;
-    if !zone.particles.is_empty() {
-        let detail = match crate::particle_export::preflight(
-            zone,
-            &bevy_sprinkles_editor::io::data_dir(),
-        ) {
-            Ok(counts) => {
-                format!(
-                    "local effects resolved; {} external texture(s), up to {} particle slots and {} mesh vertices require packaging",
-                    counts.textures, counts.particle_slots, counts.vertices
-                )
-            }
-            Err(error) => error,
-        };
-        return Err(format!(
-            "Particle placements cannot be exported until effect packaging is supported: {detail}"
-        ));
-    }
     let guide_kinds = [
         zone.paths
             .iter()
@@ -399,9 +382,30 @@ pub(super) fn publish(
     content_id: &str,
     revision: u32,
 ) -> Result<Value, String> {
+    publish_in(
+        zone,
+        path,
+        content_id,
+        revision,
+        &bevy_sprinkles_editor::io::data_dir(),
+    )
+}
+fn publish_in(
+    zone: &Zone,
+    path: &Path,
+    content_id: &str,
+    revision: u32,
+    library: &Path,
+) -> Result<Value, String> {
     if path.exists() {
         return Err("Export requires a new output directory".into());
     }
+    zone.validate()?;
+    let particle = if zone.particles.is_empty() {
+        None
+    } else {
+        Some(crate::particle_export::draft(zone, library)?)
+    };
     let (visual, profile, mut report) = geometry(zone)?;
     let profile = serde_json::to_vec(&profile).map_err(|e| e.to_string())?;
     // Run the actual headless runtime decoder/spawn validator before writing.
@@ -409,9 +413,24 @@ pub(super) fn publish(
     if !terrain.has_spawns() {
         return Err("Export needs a valid capsule spawn".into());
     }
-    let manifest=serde_json::to_vec_pretty(&json!({"schema":1,"content_id":content_id,"revision":revision,"collision_schema":4,
-        "collision_bytes":profile.len(),"collision_sha256":sha256(&profile),"visual_bytes":visual.len(),"visual_sha256":sha256(&visual)})).map_err(|e|e.to_string())?;
+    let mut manifest = json!({"schema":1,"content_id":content_id,"revision":revision,"collision_schema":4,
+        "collision_bytes":profile.len(),"collision_sha256":sha256(&profile),"visual_bytes":visual.len(),"visual_sha256":sha256(&visual)});
+    if let Some((summary, draft)) = &particle {
+        manifest["schema"] = json!(4);
+        manifest["particle_bytes"] = json!(draft.catalog.len());
+        manifest["particle_sha256"] = json!(sha256(&draft.catalog));
+        report["particles"] = json!({"placements": zone.particles.len(), "effects": draft.effects.len(),
+            "texture_variants": draft.textures.len(), "source_textures": summary.textures,
+            "particle_slots": summary.particle_slots, "vertices": summary.vertices,
+            "client_playback": "not yet available"});
+    }
+    let manifest = serde_json::to_vec_pretty(&manifest).map_err(|e| e.to_string())?;
     let checked = Manifest::decode(&manifest).map_err(|e| e.to_string())?;
+    if let Some((_, draft)) = &particle {
+        checked
+            .verify_particle_catalog(&draft.catalog)
+            .map_err(|e| e.to_string())?;
+    }
     report["identity"] = json!(checked.identity());
     report["content_id"] = json!(content_id);
     report["revision"] = json!(revision);
@@ -428,6 +447,27 @@ pub(super) fn publish(
     fs::create_dir(&stage).map_err(|e| e.to_string())?;
     let mut destination_created = false;
     let result: Result<(), String> = (|| {
+        if let Some((_, draft)) = &particle {
+            let root = stage.join("particles");
+            let effects = root.join("effects");
+            let textures = root.join("textures");
+            fs::create_dir_all(&effects).map_err(|e| e.to_string())?;
+            fs::create_dir_all(&textures).map_err(|e| e.to_string())?;
+            for (name, bytes) in &draft.effects {
+                fs::write(effects.join(name), bytes).map_err(|e| e.to_string())?;
+            }
+            for (name, bytes) in &draft.textures {
+                fs::write(textures.join(name), bytes).map_err(|e| e.to_string())?;
+            }
+            fs::write(root.join("catalog.json"), &draft.catalog).map_err(|e| e.to_string())?;
+            let catalog = checked
+                .verify_particle_catalog(&draft.catalog)
+                .map_err(|e| e.to_string())?;
+            catalog.read_effects(&effects).map_err(|e| e.to_string())?;
+            catalog
+                .read_textures(&textures)
+                .map_err(|e| e.to_string())?;
+        }
         fs::write(stage.join("terrain.glb"), visual).map_err(|e| e.to_string())?;
         fs::write(stage.join("terrain.json"), profile).map_err(|e| e.to_string())?;
         fs::write(stage.join("world.manifest.json"), manifest).map_err(|e| e.to_string())?;
@@ -438,13 +478,26 @@ pub(super) fn publish(
         )
         .map_err(|e| e.to_string())?;
         let loaded = Terrain::load(&stage.join("terrain.json")).map_err(|e| e.to_string())?;
-        loaded
-            .verify_visual(&stage.join("terrain.glb"))
-            .map_err(|e| e.to_string())?;
+        if particle.is_some() {
+            // The client deliberately rejects schema 4 until it can render
+            // particles. Verify the same bound visual through the decoded
+            // terrain profile while retaining that admission guard.
+            terrain
+                .verify_visual(&stage.join("terrain.glb"))
+                .map_err(|e| e.to_string())?;
+        } else {
+            loaded
+                .verify_visual(&stage.join("terrain.glb"))
+                .map_err(|e| e.to_string())?;
+        }
         // Atomic directory reservation refuses a racing/existing destination.
         // Move verified artifacts first and publish the required manifest last.
         fs::create_dir(path).map_err(|e| e.to_string())?;
         destination_created = true;
+        if particle.is_some() {
+            fs::rename(stage.join("particles"), path.join("particles"))
+                .map_err(|e| e.to_string())?;
+        }
         for name in [
             "terrain.glb",
             "terrain.json",
@@ -471,24 +524,6 @@ pub(super) fn publish(
 mod tests {
     use super::*;
 
-    #[test]
-    fn particle_placements_are_not_silently_omitted_from_export() {
-        let mut zone = Zone {
-            schema: 8,
-            ..Zone::default()
-        };
-        zone.particles
-            .push(theia_zone::particles::ParticlePlacement {
-                id: 1,
-                name: "Fire".into(),
-                effect: "vfx.fire".into(),
-                position: [0., 0., 0.],
-                yaw_degrees: 0.,
-                scale: 1.,
-            });
-        let error = geometry(&zone).unwrap_err();
-        assert!(error.contains("Particle placements cannot be exported"));
-    }
     use std::{
         path::PathBuf,
         sync::atomic::{AtomicU64, Ordering},
@@ -521,6 +556,80 @@ mod tests {
         }
         editor.zone().clone()
     }
+    #[test]
+    fn particle_export_publishes_manifest_bound_files_and_rejects_missing_effects() {
+        let folder = Folder::new();
+        let mut zone = fixture();
+        zone.schema = 8;
+        zone.particles
+            .push(theia_zone::particles::ParticlePlacement {
+                id: 10000,
+                name: "Fire".into(),
+                effect: "vfx.fire".into(),
+                position: zone.spawn,
+                yaw_degrees: 0.,
+                scale: 1.,
+            });
+        let library = folder.0.join("library-root");
+        fs::create_dir_all(library.join("library")).unwrap();
+        let path = folder.0.join("world-with-particles");
+        assert!(publish_in(&zone, &path, "theia.test.particles", 1, &library).is_err());
+        assert!(!path.exists());
+        let png = include_bytes!("../../../crates/network/tests/fixtures/shared-image.png");
+        let source = library.join("source.png");
+        fs::write(&source, png).unwrap();
+        let mut asset = bevy_sprinkles::asset::versions::migrate(include_bytes!(
+            "../../../third_party/sprinkles/crates/bevy_sprinkles/tests/fixtures/valid_particle_system.ron"
+        )).unwrap().asset;
+        let bevy_sprinkles::asset::DrawPassMaterial::Standard(material) =
+            &mut asset.emitters[0].draw_pass.material
+        else {
+            unreachable!()
+        };
+        let texture = bevy_sprinkles::TextureRef::Local(source.to_str().unwrap().into());
+        material.base_color_texture = Some(texture.clone());
+        material.normal_map_texture = Some(texture);
+        fs::write(
+            library.join("library/vfx.fire.ron"),
+            ron::to_string(&asset).unwrap(),
+        )
+        .unwrap();
+        let report = publish_in(&zone, &path, "theia.test.particles", 1, &library).unwrap();
+        assert_eq!(report["particles"]["placements"], 1);
+        let manifest = Manifest::load_optional(&path.join("world.manifest.json"))
+            .unwrap()
+            .unwrap();
+        let bytes = fs::read(path.join("particles/catalog.json")).unwrap();
+        let catalog = manifest.verify_particle_catalog(&bytes).unwrap();
+        assert_eq!(catalog.placements().len(), 1);
+        assert_eq!(catalog.effects().len(), 1);
+        assert_eq!(catalog.textures().len(), 2);
+        fs::write(&source, b"changed source").unwrap();
+        catalog
+            .read_effects(&path.join("particles/effects"))
+            .unwrap();
+        catalog
+            .read_textures(&path.join("particles/textures"))
+            .unwrap();
+        assert!(
+            Terrain::load(&path.join("terrain.json"))
+                .unwrap()
+                .verify_visual(&path.join("terrain.glb"))
+                .is_err(),
+            "client must reject particle packages until playback is integrated"
+        );
+        fs::write(
+            path.join("particles/effects/effect-vfx.fire.ron"),
+            b"changed",
+        )
+        .unwrap();
+        assert!(
+            catalog
+                .read_effects(&path.join("particles/effects"))
+                .is_err()
+        );
+    }
+
     #[test]
     fn exported_primitives_use_existing_admission_and_preserve_source_and_identity() {
         let folder = Folder::new();
