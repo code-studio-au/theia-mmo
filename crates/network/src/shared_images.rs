@@ -16,7 +16,7 @@ pub const MAX_RGBA_BYTES: u64 = 2 * 1024 * 1024 * 1024;
 const MAX_GLB_JSON: u32 = 16 * 1024 * 1024;
 
 /// Validates the common bounded PNG header and returns base-level RGBA bytes.
-pub(crate) fn png_rgba_bytes(header: &[u8; 33]) -> Result<u64> {
+pub fn png_rgba_bytes(header: &[u8; 33]) -> Result<u64> {
     let width = u32::from_be_bytes(header[16..20].try_into().unwrap());
     let height = u32::from_be_bytes(header[20..24].try_into().unwrap());
     let pixels = u64::from(width) * u64::from(height);

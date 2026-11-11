@@ -18,6 +18,7 @@ mod panels;
 mod particle_anchors;
 mod particle_export;
 mod particle_preview;
+mod particle_texture_draft;
 mod particle_workspace;
 mod paths;
 mod placement;

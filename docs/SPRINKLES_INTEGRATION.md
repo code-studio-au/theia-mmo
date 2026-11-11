@@ -591,11 +591,11 @@ those admission and rendering steps are implemented and qualified. Local
 positions must be produced through the existing checked global-to-local frame
 conversion; this contract does not assign authority or collision to effects.
 
-For preset-only effects, the export preflight also constructs an in-memory draft
-catalog from deterministic RON snapshots with editor asset-folder metadata
-removed, sorted unique effect IDs and placement IDs, then passes it to the
-headless decoder. Effects with external texture references remain preflighted,
-but do not produce a package draft until dependency rewriting is implemented. Positions use the zone's checked global-to-local frame
+Export preflight constructs an in-memory draft catalog from deterministic RON
+snapshots with editor asset-folder metadata removed, sorted unique effect IDs and
+placement IDs, then passes it to the headless decoder. External PNG references
+are copied into bounded in-memory variants and rewritten to hash-derived paths
+relative to the package. Positions use the zone's checked global-to-local frame
 before conversion to f32. The draft is discarded: no catalog or effects are
 published, and external texture dependencies still need a package format.
 
@@ -634,5 +634,6 @@ limits are 16 MiB per file, 128 MiB total encoded bytes and 256 MiB total
 base-level RGBA; common PNG header checks are shared with world images. The
 helper verifies regular files, hashes and headers, but does not decode PNGs or
 prove that every effect reference matches the catalog. The Sprinkles material
-loader still needs role-aware image loading and rewritten portable paths before
-these descriptors can be used for client admission or export.
+loader still needs package-context path resolution, role-aware image loading and
+independent reference validation before these descriptors can be used for client
+admission or export.

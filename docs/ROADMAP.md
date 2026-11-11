@@ -1,3 +1,11 @@
+P2-13 external particle texture drafts, 11 November 2026: export preflight
+rewrites PNG references in cloned effect snapshots to bounded hash-derived
+package-relative sRGB/linear variants. Eighteen particle-focused editor tests,
+fmt and strict workspace/all-target Clippy pass; the snapshot regression was
+repeated after its final assertions. Drafts are discarded: client path
+resolution, role-aware loading, image decoding and export remain pending. See
+[integration](SPRINKLES_INTEGRATION.md).
+
 P2-13 particle texture descriptors, 11 November 2026: the preliminary
 catalog can bind bounded PNG files by hash and sRGB/linear role. Three focused
 catalog tests and sixteen package/shared-image regressions pass, with one

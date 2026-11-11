@@ -1,5 +1,6 @@
 //! Bounded local dependency preflight for future particle world packaging.
 //! This does not publish assets or establish that textures are portable.
+use crate::particle_texture_draft::Textures;
 use bevy_sprinkles::{
     TextureRef,
     asset::{DrawPassMaterial, ParticleMesh, ParticlesAsset, versions},
@@ -11,6 +12,7 @@ use std::{
     io::Read,
     path::Path,
 };
+use theia_network::shared_images::ColorSpace;
 use theia_network::{
     particle_content::{Catalog, MAX_EFFECT_BYTES, MAX_TOTAL_EFFECT_BYTES},
     terrain::sha256,
@@ -34,7 +36,7 @@ pub(super) fn preflight(zone: &Zone, root: &Path) -> Result<Preflight, String> {
     let mut external_textures = BTreeSet::new();
     let mut effects = Vec::new();
     let mut total_bytes = 0u64;
-    let mut can_draft = true;
+    let mut texture_draft = Textures::default();
     let mut result = Preflight::default();
     for (id, instances) in ids {
         let path = bevy_sprinkles_editor::io::effect_library_path_in(root, id)
@@ -59,7 +61,6 @@ pub(super) fn preflight(zone: &Zone, root: &Path) -> Result<Preflight, String> {
                 "{id}: emitter {index} uses an unsupported custom shader"
             ));
         }
-        let mut has_external = false;
         for (index, emitter) in asset.emitters.iter().enumerate() {
             if !finite_mesh_dimensions(&emitter.draw_pass.mesh) {
                 return Err(format!(
@@ -104,7 +105,6 @@ pub(super) fn preflight(zone: &Zone, root: &Path) -> Result<Preflight, String> {
                 match texture {
                     TextureRef::Preset(_) => {}
                     TextureRef::Asset(_) | TextureRef::Local(_) => {
-                        has_external = true;
                         let resolved = texture.resolve_path(&asset.sprinkles_editor.assets_folder);
                         if resolved.is_empty() || !Path::new(&resolved).is_file() {
                             return Err(format!(
@@ -116,18 +116,11 @@ pub(super) fn preflight(zone: &Zone, root: &Path) -> Result<Preflight, String> {
                 }
             }
         }
-        if has_external {
-            can_draft = false;
-        } else {
-            let snapshot = preset_snapshot(&asset)?;
-            effects.push(
-                serde_json::json!({"id":id,"bytes":snapshot.len(),"sha256":sha256(&snapshot)}),
-            );
-        }
+        let snapshot = snapshot(&asset, &mut texture_draft)?;
+        effects
+            .push(serde_json::json!({"id":id,"bytes":snapshot.len(),"sha256":sha256(&snapshot)}));
     }
-    if can_draft {
-        draft_catalog(zone, effects)?;
-    }
+    draft_catalog(zone, effects, texture_draft.descriptors())?;
     result.textures = external_textures.len();
     Ok(result)
 }
@@ -156,31 +149,28 @@ fn finite_mesh_dimensions(mesh: &ParticleMesh) -> bool {
     }
 }
 
-/// Only the preset-only subset is suitable for this first snapshot. External
-/// texture paths require a separate dependency format and rewrite.
-fn preset_snapshot(asset: &ParticlesAsset) -> Result<Vec<u8>, String> {
-    for emitter in &asset.emitters {
+/// Rewrite local paths to package-relative PNG names before hashing a snapshot.
+fn snapshot(asset: &ParticlesAsset, textures: &mut Textures) -> Result<Vec<u8>, String> {
+    let mut snapshot = asset.clone();
+    for emitter in &mut snapshot.emitters {
         if !finite_mesh_dimensions(&emitter.draw_pass.mesh) {
             return Err("Non-finite particle mesh dimensions cannot be snapshotted".into());
         }
-        let DrawPassMaterial::Standard(material) = &emitter.draw_pass.material else {
+        let DrawPassMaterial::Standard(material) = &mut emitter.draw_pass.material else {
             return Err("Custom particle shaders cannot be snapshotted".into());
         };
-        if [
-            &material.base_color_texture,
-            &material.emissive_texture,
-            &material.metallic_roughness_texture,
-            &material.normal_map_texture,
-            &material.occlusion_texture,
-        ]
-        .into_iter()
-        .flatten()
-        .any(|texture| !matches!(texture, TextureRef::Preset(_)))
-        {
-            return Err("External particle textures require packaging".into());
+        for (texture, color) in [
+            (&mut material.base_color_texture, ColorSpace::Srgb),
+            (&mut material.emissive_texture, ColorSpace::Srgb),
+            (&mut material.metallic_roughness_texture, ColorSpace::Linear),
+            (&mut material.normal_map_texture, ColorSpace::Linear),
+            (&mut material.occlusion_texture, ColorSpace::Linear),
+        ] {
+            if let Some(texture) = texture {
+                textures.rewrite(texture, &asset.sprinkles_editor.assets_folder, color)?;
+            }
         }
     }
-    let mut snapshot = asset.clone();
     snapshot.sprinkles_editor = Default::default();
     let encoded = ron::ser::to_string(&snapshot)
         .map_err(|error| error.to_string())?
@@ -191,7 +181,11 @@ fn preset_snapshot(asset: &ParticlesAsset) -> Result<Vec<u8>, String> {
     Ok(encoded)
 }
 
-fn draft_catalog(zone: &Zone, effects: Vec<serde_json::Value>) -> Result<Vec<u8>, String> {
+fn draft_catalog(
+    zone: &Zone,
+    effects: Vec<serde_json::Value>,
+    textures: Vec<serde_json::Value>,
+) -> Result<Vec<u8>, String> {
     let mut placements = zone.particles.iter().collect::<Vec<_>>();
     placements.sort_by_key(|p| p.id);
     let placements = placements
@@ -204,7 +198,7 @@ fn draft_catalog(zone: &Zone, effects: Vec<serde_json::Value>) -> Result<Vec<u8>
         })
         .collect::<Result<Vec<_>, String>>()?;
     let encoded = serde_json::to_vec(
-        &serde_json::json!({"schema":1,"effects":effects,"placements":placements}),
+        &serde_json::json!({"schema":1,"effects":effects,"placements":placements,"textures":textures}),
     )
     .map_err(|error| error.to_string())?;
     Catalog::decode(&encoded).map_err(|error| error.to_string())?;
@@ -222,6 +216,7 @@ mod tests {
     use theia_zone::particles::ParticlePlacement;
 
     static NEXT: AtomicU64 = AtomicU64::new(0);
+    const PNG: &[u8] = include_bytes!("../../../crates/network/tests/fixtures/shared-image.png");
     struct Folder(PathBuf);
     impl Folder {
         fn new() -> Self {
@@ -313,28 +308,50 @@ mod tests {
             assert!(!finite_mesh_dimensions(&mesh), "{mesh:?}");
             let mut asset = asset();
             asset.emitters[0].draw_pass.mesh = mesh;
-            assert!(preset_snapshot(&asset).is_err());
+            assert!(snapshot(&asset, &mut Textures::default()).is_err());
         }
     }
     #[test]
-    fn preset_snapshot_omits_editor_paths_and_rejects_external_references() {
+    fn snapshot_omits_editor_paths_and_rewrites_external_references() {
         let mut asset = asset();
         asset
             .sprinkles_editor
             .assets_folder
             .push("/private/authoring/".into());
-        let snapshot = preset_snapshot(&asset).unwrap();
-        assert!(!String::from_utf8_lossy(&snapshot).contains("/private/authoring/"));
-        let reloaded = versions::migrate(&snapshot).unwrap().asset;
+        let encoded = snapshot(&asset, &mut Textures::default()).unwrap();
+        assert!(!String::from_utf8_lossy(&encoded).contains("/private/authoring/"));
+        let reloaded = versions::migrate(&encoded).unwrap().asset;
         assert!(reloaded.sprinkles_editor.assets_folder.is_empty());
         assert_eq!(reloaded.name, asset.name);
         assert_eq!(reloaded.emitters.len(), asset.emitters.len());
-        assert_eq!(preset_snapshot(&asset).unwrap(), snapshot);
+        assert_eq!(snapshot(&asset, &mut Textures::default()).unwrap(), encoded);
+        let folder = Folder::new();
+        let image = folder.0.join("external.png");
+        fs::write(&image, PNG).unwrap();
         let DrawPassMaterial::Standard(material) = &mut asset.emitters[0].draw_pass.material else {
             panic!()
         };
-        material.normal_map_texture = Some(TextureRef::Local("/private/texture.png".into()));
-        assert!(preset_snapshot(&asset).unwrap_err().contains("External"));
+        let source = Some(TextureRef::Local(image.to_str().unwrap().into()));
+        material.normal_map_texture = source.clone();
+        material.base_color_texture = source;
+        let mut textures = Textures::default();
+        let bytes = snapshot(&asset, &mut textures).unwrap();
+        let text = String::from_utf8_lossy(&bytes);
+        assert!(!text.contains(image.to_str().unwrap()));
+        assert!(text.contains("textures/texture-"));
+        let descriptors = textures.descriptors();
+        assert_eq!(descriptors.len(), 2);
+        for descriptor in descriptors {
+            let texture: theia_network::particle_content::Texture =
+                serde_json::from_value(descriptor).unwrap();
+            assert!(text.contains(&texture.filename()));
+        }
+        let DrawPassMaterial::Standard(original) = &asset.emitters[0].draw_pass.material else {
+            panic!()
+        };
+        assert!(
+            matches!(&original.normal_map_texture, Some(TextureRef::Local(path)) if path == image.to_str().unwrap())
+        );
     }
     #[test]
     fn draft_uses_checked_far_frame_and_preserves_shared_effect_identity() {
@@ -345,14 +362,14 @@ mod tests {
         other.id = 2;
         zone.particles.insert(0, other);
         let effect = serde_json::json!({"id":"vfx.fire","bytes":4,"sha256":sha256(b"fire")});
-        let bytes = draft_catalog(&zone, vec![effect]).unwrap();
+        let bytes = draft_catalog(&zone, vec![effect], vec![]).unwrap();
         let catalog = Catalog::decode(&bytes).unwrap();
         assert_eq!(catalog.effects().len(), 1);
         assert_eq!(catalog.placements()[0].id, 1);
         assert_eq!(catalog.placements()[0].position, [0.125, 1., -0.25]);
         assert_eq!(catalog.placements()[1].effect, "vfx.fire");
         zone.particles[0].position[0] += 5000.;
-        assert!(draft_catalog(&zone, vec![]).is_err());
+        assert!(draft_catalog(&zone, vec![], vec![]).is_err());
     }
     #[test]
     fn repeated_placements_count_each_instance_and_invalid_layout_fails() {
@@ -385,7 +402,7 @@ mod tests {
             .map(|i| folder.0.join(format!("texture-{i}.png")))
             .collect();
         for image in &images {
-            fs::write(image, b"existence only").unwrap();
+            fs::write(image, PNG).unwrap();
         }
         let textures: Vec<_> = images
             .iter()
@@ -408,7 +425,7 @@ mod tests {
                     .unwrap_err()
                     .contains("texture is missing")
             );
-            fs::write(image, b"existence only").unwrap();
+            fs::write(image, PNG).unwrap();
         }
         let DrawPassMaterial::Standard(material) = &mut asset.emitters[0].draw_pass.material else {
             panic!()
