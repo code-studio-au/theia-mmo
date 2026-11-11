@@ -12,7 +12,7 @@ checks (`build/projected-particle-editor-native-20261111/qualification.json`,
 `build/projected-particle-editor-world-native-20261111/verification.json`). The editor's explicit empty replacement
 also removed the catalog while preserving schema-3 projected bindings, verified
 on two Vulkan clients (`build/projected-particle-editor-clear-native-20261111/`,
-`build/projected-particle-editor-clear-world-native-20261111/verification.json`). A separate bounded fixture combined projected visuals with paired-world collision; two Vulkan clients verified material bindings, Tube Trails particle retirement and render-origin translation during a chunk transition (`build/projected-particle-stream-native-20261111-v2/verification.json`). Visual and collision shape equivalence was not tested.
+`build/projected-particle-editor-clear-world-native-20261111/verification.json`). A separate bounded fixture combined projected visuals with paired-world collision; two Vulkan clients verified material bindings, Tube Trails particle retirement and render-origin translation during a chunk transition (`build/projected-particle-stream-native-20261111-v2/verification.json`). Visual and collision shape equivalence was not tested. Corrupting the incoming particle effect rejected the transition while preserving active roots and material bindings on both clients (`build/projected-particle-stream-corruption-20261111/tampered/verification.json`).
 
 P2-13 world-space particle translation foundation, 11 November 2026: the
 Sprinkles GPU runtime can queue a render-frame offset without advancing or

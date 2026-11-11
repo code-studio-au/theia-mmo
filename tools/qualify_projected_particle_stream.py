@@ -53,6 +53,17 @@ def qualify(output, paired, particle_package, binaries):
         chunk_stream=True, chunk_delay_ms=1000, render_span=2, replication_span=2,
         chunk_shared_images=True, require_world_particles=True,
         require_particle_retirement=True, require_particle_rebase=True)
+    damaged = output / 'tampered-fixture'
+    shutil.copytree(world, damaged)
+    incoming = damaged / 'chunk_1_0' / 'particles'
+    catalog = json.loads((incoming / 'catalog.json').read_text())
+    effect = catalog['effects'][0]['id']
+    (incoming / 'effects' / f'effect-{effect}.ron').write_bytes(b'tampered\n')
+    run(output / 'tampered', binaries, chunk_world=world,
+        client_chunk_world=damaged, chunk_direction='x', chunk_stream=True,
+        chunk_delay_ms=1000, render_span=2, replication_span=2,
+        chunk_shared_images=True, require_world_particles=True,
+        chunk_particle_failure=True)
 
 
 if __name__ == '__main__':
