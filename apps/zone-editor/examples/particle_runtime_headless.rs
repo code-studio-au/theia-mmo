@@ -3,9 +3,10 @@ use std::time::Duration;
 
 use bevy::{
     app::{AppExit, ScheduleRunnerPlugin},
+    asset::RenderAssetUsages,
     camera::RenderTarget,
     prelude::*,
-    render::render_resource::TextureFormat,
+    render::render_resource::{Extent3d, TextureDimension, TextureFormat},
     window::ExitCondition,
     winit::WinitPlugin,
 };
@@ -14,6 +15,8 @@ use bevy_sprinkles::{ParticleBufferHandle, prelude::*};
 #[derive(Resource)]
 struct Fixture {
     asset: Handle<ParticlesAsset>,
+    texture: Handle<Image>,
+    saw_runtime_texture: bool,
     original: DrawPassMaterial,
     frame: usize,
     saw_suppressed: bool,
@@ -57,7 +60,22 @@ fn setup(
         DirectionalLight::default(),
         Transform::from_xyz(2., 5., 3.).looking_at(Vec3::ZERO, Vec3::Y),
     ));
-    let emitter = EmitterData::default();
+    let texture = images.add(Image::new_fill(
+        Extent3d {
+            width: 1,
+            height: 1,
+            depth_or_array_layers: 1,
+        },
+        TextureDimension::D2,
+        &[255, 128, 32, 255],
+        TextureFormat::Rgba8UnormSrgb,
+        RenderAssetUsages::default(),
+    ));
+    let mut emitter = EmitterData::default();
+    let DrawPassMaterial::Standard(material) = &mut emitter.draw_pass.material else {
+        unreachable!()
+    };
+    material.base_color_texture = Some(TextureRef::Runtime(texture.clone()));
     let original = emitter.draw_pass.material.clone();
     let effect = effects.add(ParticlesAsset::new(
         "Headless particle check".into(),
@@ -71,6 +89,8 @@ fn setup(
     commands.spawn(Particles3d(effect.clone()));
     commands.insert_resource(Fixture {
         asset: effect,
+        texture,
+        saw_runtime_texture: false,
         original,
         frame: 0,
         saw_suppressed: false,
@@ -98,6 +118,7 @@ fn setup(
 fn step(
     mut fixture: ResMut<Fixture>,
     mut effects: ResMut<Assets<ParticlesAsset>>,
+    materials: Res<Assets<ParticleMaterial>>,
     emitters: Query<(
         Option<&MeshMaterial3d<ParticleMaterial>>,
         &ParticleBufferHandle,
@@ -106,6 +127,14 @@ fn step(
 ) {
     fixture.frame += 1;
     match fixture.frame {
+        20 => {
+            fixture.saw_runtime_texture = emitters.iter().any(|(material, _)| {
+                material
+                    .and_then(|handle| materials.get(&handle.0))
+                    .and_then(|material| material.base.base_color_texture.as_ref())
+                    .is_some_and(|handle| handle.id() == fixture.texture.id())
+            });
+        }
         30 => {
             let mut effect = effects.get_mut(&fixture.asset).unwrap();
             effect.emitters[0].draw_pass.material = DrawPassMaterial::CustomShader {
@@ -335,7 +364,8 @@ fn step(
                 .any(|(material, buffers)| material.is_some() && buffers.amount == 5)
         }
         310 => {
-            if fixture.saw_suppressed
+            if fixture.saw_runtime_texture
+                && fixture.saw_suppressed
                 && fixture.saw_restored
                 && fixture.saw_invalid_layout_suppressed
                 && fixture.saw_valid_layout_restored

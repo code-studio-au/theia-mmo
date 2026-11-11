@@ -60,9 +60,8 @@ after checking each returned buffer's catalog length and hash. The VFX helper
 rejects unsupported material and texture references, and rebases package paths.
 `Catalog::read_textures` and `decode_catalog_textures` also check bounded PNG
 bytes, hashes, headers and aggregate decoded-size estimates before decoding
-those exact bytes with Bevy in the descriptor's color space. The decoded images
-are not yet registered at package paths or used by client rendering. These
-helpers do not validate all effect parameters, impose complete resource budgets,
+those exact bytes with Bevy in the descriptor's color space. These images can now be bound directly to runtime handles, as described below.
+The helpers do not validate all effect parameters, impose complete resource budgets,
 publish packages or play effects. File I/O and decoding are blocking and must
 stay off simulation and render update paths. Catalog and VFX tests cover changed
 or malformed files, unsupported materials, arithmetic overflow and role-aware
@@ -80,8 +79,18 @@ limits or complete memory/admission policy are established by those counts.
 `prepare_catalog` combines these operations into an all-or-nothing CPU-side
 snapshot after the caller verifies its catalog against the world manifest. A
 manifest-bound fixture tests valid data and rejects modified files, insufficient
-count limits and an invalid render frame. It still does not register decoded
-textures, admit all effect parameters or start client playback.
+count limits and an invalid render frame. It does not admit all effect parameters or start client playback.
+
+`bind_prepared_catalog` installs the prepared images in Bevy and replaces
+role-checked paths with strong runtime-only image handles on the actual Sprinkles
+materials. It checks all references before insertion and never rereads the
+source files. Tests cover altered source files and distinct sRGB/linear variants;
+the handles cannot be serialized into a RON effect. A windowless Vulkan test
+confirmed the supplied handle reaches the particle material with zero GPU
+validation diagnostics on AMD Radeon RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6
+(`build/particle-verified-texture-gpu-20261111/gpu.log`). The test deliberately
+logs errors while exercising invalid-material recovery. This bridge does not
+spawn the package or establish complete simulation or memory admission.
 
 The prerequisites are the accepted Linux authoring shell and the adopted exact
 Bevy 0.20.0 engine. Upstream targets Bevy 0.19.0. Both imported crates use our

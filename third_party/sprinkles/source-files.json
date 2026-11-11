@@ -726,8 +726,8 @@
       "path": "crates/bevy_sprinkles/src/textures/preset.rs",
       "upstream_path": "crates/bevy_sprinkles/src/textures/preset.rs",
       "upstream_sha256": "d2740a7e06d6083068d72109e9dc97ab8954e43a0abd683e2a524d0b4fc24cda",
-      "imported_sha256": "d2740a7e06d6083068d72109e9dc97ab8954e43a0abd683e2a524d0b4fc24cda",
-      "changed": false
+      "imported_sha256": "bcdc0f22c0da25342b5a2ffcb5c54bcebabd7212b594b8386cbfb33d2401b345",
+      "changed": true
     },
     {
       "path": "crates/bevy_sprinkles/tests/asset_loader.rs",

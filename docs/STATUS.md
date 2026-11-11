@@ -1,3 +1,15 @@
+P2-13 verified particle texture handles, 11 November 2026: prepared catalog
+images can be installed in Bevy and bound to Sprinkles materials by strong,
+runtime-only handles, avoiding a second path-based disk read. Binding checks
+all role-specific references before inserting assets. Tests cover mismatched
+packages, changed source files and distinct sRGB/linear variants; runtime handles
+cannot be serialized into editor files. A windowless native Vulkan smoke test
+confirmed that the Sprinkles material receives the supplied image handle on AMD
+Radeon RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6, with zero GPU validation
+diagnostics (`build/particle-verified-texture-gpu-20261111/gpu.log`); injected
+invalid-material cases deliberately log errors. No package is played by the
+client yet, and complete simulation and GPU memory admission remain open.
+
 P2-13 bounded projectile cosmetic, 11 November 2026: projectile-enabled clients
 run a bundled, editable Sprinkles RON as a child of the existing server-driven
 projectile indicator. The indicator and authoritative impact remain separate;

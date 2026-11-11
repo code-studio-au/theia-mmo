@@ -104,6 +104,9 @@ pub(super) fn preflight(zone: &Zone, root: &Path) -> Result<Preflight, String> {
                 let Some(texture) = texture else { continue };
                 match texture {
                     TextureRef::Preset(_) => {}
+                    TextureRef::Runtime(_) => {
+                        return Err(format!("{id}: runtime-only texture cannot be exported"));
+                    }
                     TextureRef::Asset(_) | TextureRef::Local(_) => {
                         let resolved = texture.resolve_path(&asset.sprinkles_editor.assets_folder);
                         if resolved.is_empty() || !Path::new(&resolved).is_file() {

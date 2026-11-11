@@ -158,6 +158,10 @@ pub enum TextureRef {
     /// *Note:* Bevy's `UnapprovedPathMode` will reject paths outside the asset
     ///  directory by default. Prefer [`Asset`](Self::Asset) instead.
     Local(String),
+    /// An already loaded image supplied by the host. This is runtime-only and
+    /// cannot be saved in a particle file.
+    #[serde(skip)]
+    Runtime(Handle<Image>),
 }
 
 impl TextureRef {
@@ -190,6 +194,7 @@ impl TextureRef {
     /// asset directory where Bevy can resolve paths normally.
     pub fn load(&self, asset_server: &AssetServer, assets_folders: &[String]) -> Handle<Image> {
         match self {
+            Self::Runtime(image) => image.clone(),
             #[cfg(feature = "preset-textures")]
             Self::Preset(preset) => asset_server.load(preset.embedded_path()),
             _ => {

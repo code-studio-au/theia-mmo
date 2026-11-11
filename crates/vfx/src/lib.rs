@@ -1,6 +1,6 @@
 //! Helpers for future verified particle packages. This crate does not spawn effects.
 use bevy::{
-    asset::{AssetServer, RenderAssetUsages},
+    asset::{AssetServer, Assets, RenderAssetUsages},
     image::{CompressedImageFormats, Image, ImageLoaderSettings, ImageSampler, ImageType},
     prelude::{Handle, Quat, Transform, Vec3},
 };
@@ -221,6 +221,120 @@ pub fn prepare_catalog(
     })
 }
 
+/// A prepared effect installed in Bevy's asset stores.
+pub struct BoundEffect {
+    pub id: String,
+    pub handle: Handle<ParticlesAsset>,
+}
+
+/// Runtime handles own the verified images for as long as the catalog is used.
+pub struct BoundCatalog {
+    pub effects: Vec<BoundEffect>,
+    pub textures: Vec<Handle<Image>>,
+    pub placements: Vec<CatalogPlacement>,
+    pub counts: CatalogCounts,
+}
+
+/// Install the exact decoded images in a prepared snapshot and replace the
+/// packaged paths in its effects with strong runtime handles. Validate every
+/// reference before inserting any assets. This does not admit simulation
+/// parameters or spawn effects; the caller must enforce those policies.
+pub fn bind_prepared_catalog(
+    mut prepared: PreparedCatalog,
+    package: &Path,
+    images: &mut Assets<Image>,
+    particles: &mut Assets<ParticlesAsset>,
+) -> Result<BoundCatalog, String> {
+    validate_package_path(package)?;
+    let mut expected = BTreeSet::new();
+    for texture in &prepared.textures {
+        let filename = Path::new(&texture.filename);
+        if filename.components().count() != 1
+            || !matches!(filename.components().next(), Some(Component::Normal(_)))
+        {
+            return Err("Invalid prepared particle texture filename".into());
+        }
+        let path = package
+            .join("textures")
+            .join(filename)
+            .to_str()
+            .ok_or("Particle package path must be UTF-8")?
+            .replace('\\', "/");
+        if !expected.insert((path, texture.color_space)) {
+            return Err("Duplicate prepared particle texture".into());
+        }
+    }
+    let mut used = BTreeSet::new();
+    for effect in &prepared.effects {
+        for emitter in &effect.asset.emitters {
+            let DrawPassMaterial::Standard(material) = &emitter.draw_pass.material else {
+                return Err("Packaged particle effect uses a custom shader".into());
+            };
+            for (texture, role) in [
+                (&material.base_color_texture, ColorSpace::Srgb),
+                (&material.emissive_texture, ColorSpace::Srgb),
+                (&material.metallic_roughness_texture, ColorSpace::Linear),
+                (&material.normal_map_texture, ColorSpace::Linear),
+                (&material.occlusion_texture, ColorSpace::Linear),
+            ] {
+                match texture {
+                    None | Some(TextureRef::Preset(_)) => {}
+                    Some(TextureRef::Asset(path)) if expected.contains(&(path.clone(), role)) => {
+                        used.insert((path.clone(), role));
+                    }
+                    _ => return Err("Prepared particle texture reference is invalid".into()),
+                }
+            }
+        }
+    }
+    if used != expected {
+        return Err("Prepared particle texture is unreferenced".into());
+    }
+    let mut handles = BTreeMap::new();
+    for texture in prepared.textures {
+        let path = package
+            .join("textures")
+            .join(texture.filename)
+            .to_str()
+            .expect("validated UTF-8 package path")
+            .replace('\\', "/");
+        handles.insert((path, texture.color_space), images.add(texture.image));
+    }
+    for effect in &mut prepared.effects {
+        for emitter in &mut effect.asset.emitters {
+            let DrawPassMaterial::Standard(material) = &mut emitter.draw_pass.material else {
+                unreachable!()
+            };
+            for (texture, role) in [
+                (&mut material.base_color_texture, ColorSpace::Srgb),
+                (&mut material.emissive_texture, ColorSpace::Srgb),
+                (&mut material.metallic_roughness_texture, ColorSpace::Linear),
+                (&mut material.normal_map_texture, ColorSpace::Linear),
+                (&mut material.occlusion_texture, ColorSpace::Linear),
+            ] {
+                if let Some(TextureRef::Asset(path)) = texture {
+                    *texture = Some(TextureRef::Runtime(handles[&(path.clone(), role)].clone()));
+                }
+            }
+        }
+    }
+    let textures = handles.into_values().collect();
+    let effects = prepared
+        .effects
+        .into_iter()
+        .map(|effect| BoundEffect {
+            id: effect.id,
+            handle: particles.add(effect.asset),
+        })
+        .collect();
+    Ok(BoundCatalog {
+        effects,
+        textures,
+        placements: prepared.placements,
+        counts: prepared.counts,
+    })
+}
+
 /// Read and decode cataloged PNGs using Bevy's standard image decoder. This
 /// performs blocking file I/O and CPU decoding. It does not register assets at
 /// package paths, upload textures, enforce a GPU budget or start playback.
@@ -380,8 +494,11 @@ pub fn rebase_effect_textures(
                 let Some(texture) = texture else { continue };
                 match texture {
                     TextureRef::Preset(_) => {}
-                    TextureRef::Local(_) => {
-                        return Err("Packaged particle texture cannot use a local path".into());
+                    TextureRef::Local(_) | TextureRef::Runtime(_) => {
+                        return Err(
+                            "Packaged particle texture cannot use a local path or runtime handle"
+                                .into(),
+                        );
                     }
                     TextureRef::Asset(path) => {
                         let key = (path.clone(), role);
@@ -444,6 +561,11 @@ mod tests {
             color_space: ColorSpace::Srgb,
         };
         fs::write(texture_dir.join(texture.filename()), PNG).unwrap();
+        let linear = Texture {
+            color_space: ColorSpace::Linear,
+            ..texture
+        };
+        fs::write(texture_dir.join(linear.filename()), PNG).unwrap();
         let mut emitter = EmitterData::default();
         let DrawPassMaterial::Standard(material) = &mut emitter.draw_pass.material else {
             unreachable!()
@@ -452,6 +574,8 @@ mod tests {
             "textures/{}",
             texture.filename()
         )));
+        material.normal_map_texture =
+            Some(TextureRef::Asset(format!("textures/{}", linear.filename())));
         let asset = ParticlesAsset::new(
             "Fire".into(),
             ParticlesDimension::D3,
@@ -467,7 +591,8 @@ mod tests {
         let catalog_bytes = serde_json::to_vec(&json!({"schema":1,
             "effects":[{"id":"vfx.fire","bytes":effect.len(),"sha256":sha256(&effect)}],
             "placements":[{"id":7,"effect":"vfx.fire","position":[0.125,1.,2.],"yaw_degrees":0.,"scale":1.}],
-            "textures":[{"sha256":sha256(PNG),"bytes":PNG.len(),"color_space":"srgb"}]
+            "textures":[{"sha256":sha256(PNG),"bytes":PNG.len(),"color_space":"srgb"},
+                        {"sha256":sha256(PNG),"bytes":PNG.len(),"color_space":"linear"}]
         })).unwrap();
         let manifest = Manifest::decode(
             &serde_json::to_vec(&json!({"schema":4,"content_id":"world.test","revision":1,
@@ -498,7 +623,7 @@ mod tests {
         };
         let prepared = prepare(limits, frame).unwrap();
         assert_eq!(prepared.effects.len(), 1);
-        assert_eq!(prepared.textures.len(), 1);
+        assert_eq!(prepared.textures.len(), 2);
         assert_eq!(prepared.placements[0].id, 7);
         assert_eq!(prepared.counts, limits);
         assert!(
@@ -508,6 +633,21 @@ mod tests {
                 .format
                 .is_srgb()
         );
+        let mut images = Assets::<Image>::default();
+        let mut particle_assets = Assets::<ParticlesAsset>::default();
+        let mismatch = prepare(limits, frame).unwrap();
+        assert!(
+            bind_prepared_catalog(
+                mismatch,
+                Path::new("wrong/package"),
+                &mut images,
+                &mut particle_assets
+            )
+            .is_err()
+        );
+        assert_eq!(images.len(), 0);
+        assert_eq!(particle_assets.len(), 0);
+        let original_pixels = prepared.textures[0].image.data.clone();
         let mut too_small = limits;
         too_small.particle_slots -= 1;
         assert!(prepare(too_small, frame).is_err());
@@ -518,6 +658,41 @@ mod tests {
         fs::write(&effect_path, effect).unwrap();
         fs::write(texture_dir.join(texture.filename()), b"changed").unwrap();
         assert!(prepare(limits, frame).is_err());
+        let bound = bind_prepared_catalog(
+            prepared,
+            Path::new("world/revision"),
+            &mut images,
+            &mut particle_assets,
+        )
+        .unwrap();
+        assert_eq!(bound.textures.len(), 2);
+        let installed = particle_assets.get(&bound.effects[0].handle).unwrap();
+        let DrawPassMaterial::Standard(material) = &installed.emitters[0].draw_pass.material else {
+            unreachable!()
+        };
+        let Some(TextureRef::Runtime(handle)) = &material.base_color_texture else {
+            panic!("expected verified image handle")
+        };
+        assert!(bound.textures.iter().any(|image| image.id() == handle.id()));
+        let color_image = images.get(handle).unwrap();
+        assert_eq!(color_image.data, original_pixels);
+        assert!(color_image.texture_descriptor.format.is_srgb());
+        let Some(TextureRef::Runtime(normal)) = &material.normal_map_texture else {
+            panic!("expected verified linear image handle")
+        };
+        assert_ne!(normal.id(), handle.id());
+        assert!(
+            !images
+                .get(normal)
+                .unwrap()
+                .texture_descriptor
+                .format
+                .is_srgb()
+        );
+        assert!(
+            ron::to_string(installed).is_err(),
+            "runtime-only handles must never be serialized"
+        );
         fs::remove_dir_all(root).unwrap();
     }
 

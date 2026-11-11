@@ -328,3 +328,9 @@ not yet connected to the zone inspector.
 Inspector edit restarts are scoped to runtime systems using the edited asset,
 with each emitter's own seed, instead of restarting every emitter in the host.
 This lets the embedded zone editor retain unrelated effects safely.
+
+The texture reference enum additionally accepts a runtime-only Bevy image handle.
+It cannot be serialized, and the host uses it to keep verified, decoded package
+images associated with materials without a second disk read. File-backed and
+preset behavior are unchanged. The adapted source hash is recorded in
+`source-files.json`.
