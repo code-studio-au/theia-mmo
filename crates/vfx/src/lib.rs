@@ -296,7 +296,10 @@ pub fn prepare_resident_particles(
         let origin = id
             .origin(INITIAL_CHUNK_METRES)
             .ok_or("Invalid chunk origin")?;
-        let prepared = prepare_catalog(
+        let remaining = max_decoded_image_bytes
+            .checked_sub(decoded_image_bytes)
+            .ok_or("Particle residency exceeds decoded image limit")?;
+        let prepared = prepare_catalog_with_image_limit(
             &catalog,
             &directory.join("particles/effects"),
             &directory.join("particles/textures"),
@@ -304,6 +307,7 @@ pub fn prepare_resident_particles(
             LocalFrame::new(origin),
             residency.index().frame(),
             limits,
+            remaining,
         )?;
         counts = counts
             .checked_add(prepared.counts)
@@ -357,6 +361,31 @@ pub fn prepare_catalog(
     render_frame: LocalFrame,
     limits: CatalogCounts,
 ) -> Result<PreparedCatalog, String> {
+    prepare_catalog_with_image_limit(
+        catalog,
+        effect_directory,
+        texture_directory,
+        package,
+        content_frame,
+        render_frame,
+        limits,
+        usize::MAX,
+    )
+}
+
+/// As [`prepare_catalog`], but checks the verified PNG header sizes against the
+/// caller's aggregate decoded-image limit before invoking the decoder.
+#[allow(clippy::too_many_arguments)]
+pub fn prepare_catalog_with_image_limit(
+    catalog: &Catalog,
+    effect_directory: &Path,
+    texture_directory: &Path,
+    package: &Path,
+    content_frame: LocalFrame,
+    render_frame: LocalFrame,
+    limits: CatalogCounts,
+    max_decoded_image_bytes: usize,
+) -> Result<PreparedCatalog, String> {
     let effects = load_catalog_effects(catalog, effect_directory, package)?;
     for effect in &effects {
         simulation::validate(&effect.asset).map_err(|error| format!("{}: {error}", effect.id))?;
@@ -366,7 +395,17 @@ pub fn prepare_catalog(
         return Err("Particle catalog exceeds the supplied count limits".into());
     }
     let placements = project_catalog_placements(catalog, &effects, content_frame, render_frame)?;
-    let textures = decode_catalog_textures(catalog, texture_directory)?;
+    let textures =
+        decode_catalog_textures_with_limit(catalog, texture_directory, max_decoded_image_bytes)?;
+    let decoded = textures
+        .iter()
+        .try_fold(0usize, |sum, texture| {
+            sum.checked_add(texture.image.data.as_ref().map_or(0, Vec::len))
+        })
+        .ok_or("Particle decoded image size overflow")?;
+    if decoded > max_decoded_image_bytes {
+        return Err("Particle decoded images exceed supplied limit".into());
+    }
     Ok(PreparedCatalog {
         effects,
         textures,
@@ -496,8 +535,19 @@ pub fn decode_catalog_textures(
     catalog: &Catalog,
     directory: &Path,
 ) -> Result<Vec<CatalogTexture>, String> {
+    decode_catalog_textures_with_limit(catalog, directory, usize::MAX)
+}
+
+fn decode_catalog_textures_with_limit(
+    catalog: &Catalog,
+    directory: &Path,
+    max_decoded_image_bytes: usize,
+) -> Result<Vec<CatalogTexture>, String> {
     let buffers = catalog
-        .read_textures(directory)
+        .read_textures_with_rgba_limit(
+            directory,
+            u64::try_from(max_decoded_image_bytes).unwrap_or(u64::MAX),
+        )
         .map_err(|e| e.to_string())?;
     catalog
         .textures()
@@ -1444,6 +1494,13 @@ mod tests {
             Vec3::new(121., 0., 10.)
         );
         assert!(prepare_resident_particles(&residency, limits, 0).is_err());
+        assert!(
+            prepare_resident_particles(&residency, limits, prepared.decoded_image_bytes).is_ok()
+        );
+        assert!(
+            prepare_resident_particles(&residency, limits, prepared.decoded_image_bytes - 1)
+                .is_err()
+        );
         let mut too_small = limits;
         too_small.placements = 1;
         assert!(prepare_resident_particles(&residency, too_small, 1024).is_err());

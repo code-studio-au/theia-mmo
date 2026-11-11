@@ -1,3 +1,11 @@
+P2-13 particle image admission, 11 November 2026: monolithic and chunk clients
+now apply their decoded-image allowance to verified PNG headers before invoking
+the image decoder, and recheck actual decoded bytes afterwards. Chunk preparation
+passes the remaining allowance across catalogs. This bounds admitted base-level
+RGBA bytes; it is not a complete GPU-memory budget. A textured two-client Vulkan
+transition and corruption checks pass with this admission path
+(`build/chunk-particle-image-budget-20261111/`).
+
 P2-13 chunk particles, 11 November 2026: chunk clients prepare verified
 particle catalogs off-thread, check conservative active-plus-candidate budgets,
 and publish and retire their particle roots with the corresponding chunk scene.

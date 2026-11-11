@@ -221,6 +221,16 @@ impl Catalog {
     /// order. Header and hash checks apply to those exact buffers; PNG decoding
     /// and renderer admission remain separate responsibilities.
     pub fn read_textures(&self, directory: &Path) -> Result<Vec<Vec<u8>>> {
+        self.read_textures_with_rgba_limit(directory, MAX_TEXTURE_RGBA_BYTES)
+    }
+
+    /// Apply the caller's decoded RGBA budget to verified headers before any
+    /// image decoder can allocate the corresponding pixel buffers.
+    pub fn read_textures_with_rgba_limit(
+        &self,
+        directory: &Path,
+        max_rgba_bytes: u64,
+    ) -> Result<Vec<Vec<u8>>> {
         let mut textures = Vec::with_capacity(self.0.textures.len());
         let mut rgba_bytes = 0u64;
         for texture in &self.0.textures {
@@ -247,7 +257,7 @@ impl Catalog {
             rgba_bytes = rgba_bytes
                 .checked_add(shared_images::png_rgba_bytes(header)?)
                 .ok_or("Particle texture RGBA size overflow")?;
-            if rgba_bytes > MAX_TEXTURE_RGBA_BYTES {
+            if rgba_bytes > MAX_TEXTURE_RGBA_BYTES.min(max_rgba_bytes) {
                 return Err("Particle texture RGBA budget exceeded".into());
             }
             textures.push(bytes);
@@ -383,6 +393,20 @@ mod tests {
         catalog.verify_textures(&path).unwrap();
         let retained = catalog.read_textures(&path).unwrap();
         assert_eq!(retained, vec![png.to_vec(), png.to_vec()]);
+        let header: &[u8; 33] = png[..33].try_into().unwrap();
+        let rgba = shared_images::png_rgba_bytes(header).unwrap();
+        assert!(
+            catalog
+                .read_textures_with_rgba_limit(&path, rgba * 2)
+                .is_ok()
+        );
+        assert!(
+            catalog
+                .read_textures_with_rgba_limit(&path, rgba * 2 - 1)
+                .unwrap_err()
+                .to_string()
+                .contains("RGBA budget")
+        );
         fs::write(path.join(catalog.textures()[0].filename()), b"corrupt").unwrap();
         assert!(catalog.verify_textures(&path).is_err());
         assert!(catalog.read_textures(&path).is_err());

@@ -43,7 +43,7 @@ impl Config {
                 .map_err(|e| e.to_string())?;
             let origin = theia_core::coordinates::GlobalPosition::new([0.; 3]).unwrap();
             let frame = theia_core::coordinates::LocalFrame::new(origin);
-            let prepared = theia_vfx::prepare_catalog(
+            let prepared = theia_vfx::prepare_catalog_with_image_limit(
                 &catalog,
                 &directory.join("particles/effects"),
                 &directory.join("particles/textures"),
@@ -51,6 +51,7 @@ impl Config {
                 frame,
                 frame,
                 crate::particle_world::LIMITS,
+                crate::particle_world::MAX_IMAGE_BYTES,
             )?;
             let image_bytes = prepared
                 .textures
