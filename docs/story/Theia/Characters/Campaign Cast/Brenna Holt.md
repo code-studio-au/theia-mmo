@@ -29,3 +29,9 @@ Historical source: [Approved recurring humans: complete launch movements](https:
 Text references from this account; these links do not establish additional relationships.
 
 [Stoneford](../../Atlas/Places/Stoneford.md) · [Millhaven](../../Atlas/Places/Millhaven.md)
+
+## Creator-locked character review — 12 November 2026
+
+Brenna remains an independent Millhaven/Stoneford regional merchant. After Q004, Q011 and Q016, her Q034 relief work helps restore local trade and deliveries; she achieves sustainable regional recovery rather than political office or an implausible international empire. Human players remember their caravan history; other Covenant players receive appropriate introductions. She is unrelated to Darian Cole.
+
+**Scope:** This section supersedes conflicting earlier proposed-development wording only where specified. Existing quest IDs, unapproved sentencing, exact dialogue and other open details remain unchanged. See [decision ledger](../../../DECISIONS.md).
