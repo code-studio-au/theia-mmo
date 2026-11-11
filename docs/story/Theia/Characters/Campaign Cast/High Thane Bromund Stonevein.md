@@ -25,3 +25,9 @@ Historical source: [Allied and Kel'vari cast](https://github.com/code-studio-au/
 ## Related notes
 
 [Dwarves](../../Lore/Peoples/Dwarves.md)
+
+## Creator-locked review — 12 November 2026
+
+**Creator-approved:** Bromund is the Dwarven **High Thane**, presiding within a confederation of autonomous holds; local leaders are **thanes**, not kings. 'High King' in older quest prose is superseded. The office does not confer authority over the Covenant High Ruler or erase hold autonomy. Exact succession and broader biography remain open.
+
+This scoped decision supersedes conflicting older *working* descriptions; other details remain governed by [the decision ledger](../../../DECISIONS.md) and current campaign.
