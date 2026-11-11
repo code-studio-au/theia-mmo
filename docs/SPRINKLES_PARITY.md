@@ -5,6 +5,42 @@ Theia imports `doceazedo/sprinkles` at commit
 that revision, not an assertion about later upstream releases. The original
 uses Bevy 0.19; Theia's local port uses Bevy 0.20.
 
+## Fixed-step preview comparison — 11 November 2026
+
+All seven bundled RON examples were captured in the pinned upstream editor and
+Theia's ported standalone host. Both used a 1/60-second manual simulation step,
+four seconds of wall-clock warmup, and the same per-emitter seeds assigned in
+memory (including for subsequent one-shot loops). The source RON files were
+unchanged. Each host captured five points, at 30, 60, 120, 180 and 300 updates
+after a seeded restart; a second Theia run provides a repeatability baseline.
+GPU extraction and screenshot scheduling are not guaranteed to be synchronized.
+
+Reviewed representative frames of Rain, Tube Trails, 3D Explosion, Magic Puff,
+Acid Pool, Loot and Windy Snow look close in shape, color and arrangement. The
+selected-emitter outline differs between hosts. On the 750×688 viewport crop,
+whole-image mean absolute RGB differences ranged from 0.048 to 0.248 on a
+0–255 scale across the 35 upstream/local frames; the largest local repeat mean
+was 0.021. Much of each crop is background, so these figures are not an
+effect-only accuracy score. Before fixing the loop seeds in the capture setup,
+late one-shot frames also differed substantially between two local runs.
+
+Theia's captured runs reported zero Vulkan validation errors. The pinned
+upstream debug host produced repeated Vulkan validation diagnostics, so its
+captures are not a validation-clean reference. Both ran on Linux, AMD Radeon
+RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6. Comparison panels, logs, per-frame
+metrics and effect/binary hashes are in `build/sprinkles-fixed-seeds-loops-20261111/`
+and `build/sprinkles-fixed-seeds-rest-20261111/`. This is evidence for these
+preview examples, not proof of identical behavior for all effects, hardware,
+editor interactions or the in-world camera and lighting. In-world world-space
+particles still clear on floating-origin shifts.
+
+To repeat, apply `tools/sprinkles_deterministic_upstream.patch` to a clean
+checkout at the pinned commit and build its `bevy_sprinkles_editor` binary.
+Build Theia's `bevy_sprinkles_editor` example `deterministic_capture`, then run
+`tools/compare_sprinkles_fixed_step.py NEW_OUTPUT` with the two binary paths and
+the desired `--effect` options. The harness modifies in-memory seed values only;
+it does not save changes to the examples.
+
 ## What is shared and what differs
 
 | Area | Current evidence and differences |

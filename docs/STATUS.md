@@ -1,3 +1,11 @@
+P2-13 / P5-17 fixed-step Sprinkles comparison, 11 November 2026: all seven
+bundled effects were captured at five matching update counts in the pinned
+upstream preview and Theia port with fixed simulation steps and in-memory seeds,
+plus a Theia repeat. Representative frames look close; selected-emitter outlines
+differ. The original debug host emitted repeated Vulkan validation diagnostics,
+while Theia's runs had none. GPU scheduling, shared background and in-world
+differences limit the conclusion. See [comparison](SPRINKLES_PARITY.md).
+
 P2-13 particle chunk authoring foundation, 11 November 2026: verified particle
 catalogs can now be drafted per half-open chunk owner, with placements projected
 through global coordinates and only the effects and role-specific textures used
