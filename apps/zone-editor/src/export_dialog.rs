@@ -433,7 +433,7 @@ pub(super) fn finish(
         } else if description {
             **text = match draft.mode {
                 Mode::World => "Exports the current zone snapshot. Save particle edits first.",
-                Mode::ParticleChunks => "Copies a particle-free chunk world with these placements. Save particle edits first; projected-material chunks are not supported yet.",
+                Mode::ParticleChunks => "Copies a particle-free chunk world with these placements. Save particle edits first.",
                 Mode::ReplaceParticleChunks => "Replaces ALL particle placements in a new copy of the chunk world with this zone's placements. An empty zone removes all world particles. Save particle edits first."
             }.into();
         } else if caption.is_some_and(|caption| caption.0 == 1) {

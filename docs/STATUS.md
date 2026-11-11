@@ -1,8 +1,12 @@
 P2-13 combined projected-material and particle package foundation, 11 November
 2026: schema 5 binds both requirements under a new identity domain; Rust and
 Python agree on a golden fingerprint, missing dependencies are rejected, and
-visual-only loading remains closed. The overlay publisher does not yet produce
-schema 5, and combined client rendering remains unqualified.
+visual-only loading remains closed. The overlay publisher preserves material
+requirements when adding, replacing or removing particles. An editor-produced
+effect was published into a far-origin projected-material chunk world; two
+connected Vulkan clients verified actual projected-material bindings and visible
+particle emitters with no validation diagnostics on RX 7900 XTX / RADV NAVI31 /
+Mesa 26.2.6 (`build/projected-particle-native-20261111-v4/verification.json`).
 
 P2-13 world-space particle translation foundation, 11 November 2026: the
 Sprinkles GPU runtime can queue a render-frame offset without advancing or
@@ -44,8 +48,8 @@ was exercised against the editor-produced export
 `publish_particle_chunks CHUNK_WORLD OVERLAY_DRAFT NEW_OUTPUT` copies and verifies
 indexed geometry and collision, binds overlays to incremented chunk revisions,
 and publishes the new index last. It refuses existing output, altered catalogs,
-particle-bearing input and projected-material schema-3 chunks (schema 4 does not
-currently preserve that requirement). A headless test covers publication and
+particle-bearing input unless replacement is explicitly selected; projected-
+material chunks now use schema 5 to retain their material requirements. A headless test covers publication and
 failure cleanup; the editor export rendered from the resulting chunk world on
 two connected Vulkan clients on RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 with zero
 validation diagnostics (`build/editor-particle-chunk-world-validated-native-20261111/verification.json`).
@@ -64,7 +68,7 @@ resulting world rendered on two connected Vulkan clients
 (`build/chunk-export-dialog-world-native-20261111/`) on RX 7900 XTX / RADV NAVI31 /
 Mesa 26.2.6 with zero validation diagnostics. The original world-export dialog
 also passed its native regression (`build/world-export-dialog-regression-20261111/`).
-This requires an existing particle-free schema-1/2 chunk world; it does not
+This requires an existing particle-free schema-1/2/3 chunk world; it does not
 partition the editor's terrain or update projected-material schema-3 packages.
 Particle chunk export now drafts directly from saved particle files instead of
 constructing a temporary terrain world. A native export from a zone without

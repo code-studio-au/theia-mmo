@@ -132,7 +132,7 @@ the schema-2 identity fields and canonical shared-image list, then the particle
 catalog byte count as u64 little-endian and its 32 SHA-256 bytes. The catalog's
 effect descriptors bind the RON bytes separately. See
 [Sprinkles integration](SPRINKLES_INTEGRATION.md) for the provisional catalog
-and its limits. Schema 4 does not currently support schema-3 material profiles.
+and its limits. Schema 4 does not support schema-3 material profiles; schema 5 combines both.
 
 Headless collision loading can recognize this identity without opening particle
 files. The client visual verification paths explicitly reject schema 4 until
@@ -150,4 +150,7 @@ fields and canonical shared-image list as schema 4, then the catalog byte length
 and SHA-256. Both visual dependencies and the catalog must be verified before
 rendering; visual-only verification rejects the package. Existing schema 1–4
 identities are unchanged. The reader and Python identity function support schema
-5; overlay publication and end-to-end runtime qualification are still pending.
+5. The overlay publisher retains schema-3 projected materials when it adds or
+replaces particles, and restores schema 3 when those particles are removed. Two
+connected Vulkan clients verified projected-material bindings and particle playback
+in a published far-origin chunk world (`build/projected-particle-native-20261111-v4/`).

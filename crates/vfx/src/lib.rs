@@ -239,8 +239,8 @@ pub struct ParticleChunkDraft {
     pub textures: Vec<(String, Vec<u8>)>,
 }
 
-/// Bind a drafted catalog to a new revision of a schema-1 or schema-2 chunk.
-/// Schema 3 has projected-material requirements not represented by schema 4.
+/// Bind a drafted catalog to a new revision of a verified chunk. Projected
+/// material requirements are retained in schema 5.
 /// The caller must verify the original package and all drafted dependencies,
 /// update the index to the returned identity and publish the result atomically.
 pub fn bind_chunk_catalog(
@@ -251,7 +251,7 @@ pub fn bind_chunk_catalog(
 }
 
 /// Replace or remove the particle catalog of a previously verified chunk.
-/// Removing uses schema 2, which preserves schema-4 shared-image semantics.
+/// Removing retains projected-material requirements when present.
 pub fn replace_chunk_catalog(
     manifest_bytes: &[u8],
     catalog_bytes: Option<&[u8]>,
@@ -281,17 +281,22 @@ fn revise_chunk_catalog(
         .ok_or("Chunk revision overflow")?;
     let mut document: serde_json::Value =
         serde_json::from_slice(manifest_bytes).map_err(|e| e.to_string())?;
-    if !matches!(document["schema"].as_u64(), Some(1 | 2 | 4)) {
-        return Err("Chunk material profile schema cannot be combined with particles".into());
-    }
     document["revision"] = serde_json::json!(revision);
     if let Some(catalog_bytes) = catalog_bytes {
-        document["schema"] = serde_json::json!(4);
+        document["schema"] = serde_json::json!(if original.requires_material_profiles() {
+            5
+        } else {
+            4
+        });
         document["particle_bytes"] = serde_json::json!(catalog_bytes.len());
         document["particle_sha256"] =
             serde_json::json!(theia_network::terrain::sha256(catalog_bytes));
     } else {
-        document["schema"] = serde_json::json!(2);
+        document["schema"] = serde_json::json!(if original.requires_material_profiles() {
+            3
+        } else {
+            2
+        });
         let object = document.as_object_mut().ok_or("Invalid manifest")?;
         object.remove("particle_bytes");
         object.remove("particle_sha256");
@@ -1778,11 +1783,25 @@ mod tests {
         ]);
         let projected = serde_json::to_vec(&projected).unwrap();
         Manifest::decode(&projected).unwrap();
+        let (combined, combined_identity) =
+            bind_chunk_catalog(&projected, &partitioned[&ids[0]]).unwrap();
+        let combined_manifest = Manifest::decode(&combined).unwrap();
+        assert!(combined_manifest.requires_material_profiles());
+        assert!(combined_manifest.has_particle_catalog());
+        assert_eq!(combined_manifest.identity(), combined_identity);
+        combined_manifest
+            .verify_particle_catalog(&partitioned[&ids[0]])
+            .unwrap();
+        let (replaced, _) = replace_chunk_catalog(&combined, Some(&partitioned[&ids[0]])).unwrap();
         assert!(
-            bind_chunk_catalog(&projected, &partitioned[&ids[0]])
-                .unwrap_err()
-                .contains("material profile")
+            Manifest::decode(&replaced)
+                .unwrap()
+                .requires_material_profiles()
         );
+        let (removed, _) = replace_chunk_catalog(&replaced, None).unwrap();
+        let removed = Manifest::decode(&removed).unwrap();
+        assert!(removed.requires_material_profiles());
+        assert!(!removed.has_particle_catalog());
         for (id, expected_x) in [(ids[0], 127.), (ids[1], 0.)] {
             let chunk = Catalog::decode(&partitioned[&id]).unwrap();
             assert_eq!(chunk.placements()[0].position, [expected_x, 0., 2.]);

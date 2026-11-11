@@ -29,7 +29,7 @@ def verify_shared_bindings(bindings, directory, loaded):
     for x,z in loaded:
         package = directory/f'chunk_{x}_{z}'
         manifest = json.loads((package/'world.manifest.json').read_text())
-        assert manifest['schema'] in (2,3,4)
+        assert manifest['schema'] in (2,3,4,5)
         descriptors={'shared/'+filename(image):image for image in manifest['shared_images']}
         document,_=read(package/'terrain.glb',allow_external_images=True)
         used={primitive['material'] for mesh in document['meshes'] for primitive in mesh['primitives'] if 'material' in primitive}
@@ -558,7 +558,7 @@ def run(output, binaries, references=None, terrain=None, player_assets=None, col
                 manifest_path = terrain / 'world.manifest.json'
                 manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else None
                 if require_world_particles:
-                    assert manifest and manifest['schema'] == 4
+                    assert manifest and manifest['schema'] in (4, 5)
                 expected_identity = package_identity(manifest) if manifest else hashlib.sha256(profile_bytes).hexdigest()
                 assert bytes(report['terrain_world']).hex() == expected_identity
                 assert report['content_package'] == ({'content_id': manifest['content_id'], 'revision': manifest['revision']} if manifest else None)
