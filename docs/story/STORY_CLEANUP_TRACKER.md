@@ -146,3 +146,10 @@ After completion, stop cleanup cycles and maintain the established sources rathe
 - [x] Reconfirmed that the missing mid-level dialogue packs exist under actual bands 30–35, 35–45, 45–55 and 55–70; earlier missing-path assumption is closed.
 - [ ] Character-by-character details beyond the approved summaries remain subject to full original voice-transcript comparison. These cross-race notes do not establish new personal backstories.
 - [ ] Chronicle remains deferred by explicit creator instruction; runtime gate/actor binding remains dependent on future racial campaigns.
+
+### Historical migration and dialogue guardrail pass — 12 November 2026
+
+- [x] Historical `Human_Quest_Editorial_ID_Crosswalk_Draft.json` retains original H2-01 `A Ledger Reaches the Sea` source wording, but now explicitly marks it superseded as a live Q035 mapping; universal summons and race-aware Q184 migration constraints are recorded without rewriting historical evidence.
+- [x] `Human_1_80_Key_Scenes_Branching_Dialogue.md` now explicitly guards Q035–Q036 shared authority, Q184 race-specific history, cross-race knowledge, Guardian secrecy and Q097/Q143 reveal timing.
+- [ ] Verify other historical crosswalks and legacy dialogue references as **provenance**, not as active canonical quest definitions; avoid indiscriminate replacements.
+- [ ] Audit remains OPEN pending full spoken-approval verification, deliberately deferred Chronicle revision, and unapproved racial campaign/runtime bindings.
