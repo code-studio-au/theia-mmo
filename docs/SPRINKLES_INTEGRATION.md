@@ -19,6 +19,14 @@ gradient and nested color opening observations were 0.53 s and 0.47 s including
 test input delays; that does not establish a latency bound or reproduce the
 user's originally slow first-open case.
 
+The imported variant editor now updates an open popup when switching from a
+fieldless choice to one with attributes. A native particle inspector check
+changes Point → Sphere, edits the revealed radius, switches back to Point and
+then Ring, and verifies both Ring radius fields appear. Dropdown clicks over
+the dock divider preserve selection and panel width; source files remain
+unchanged until Save. `build/particle-shape-native-20261111-v1/qualification.json`
+records zero GPU diagnostics on RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan.
+
 The accepted editor styling migration is recorded in `ZONE_EDITOR.md`. This
 slice reuses the actual Sprinkles runtime and editor, pinned at
 `0e978f5a9afc6b456b3693c8761e73a6c7e155bd`, instead of recreating its particle

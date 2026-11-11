@@ -502,6 +502,14 @@ fn handle_variant_edit_click(
             .unwrap_or(false);
     let has_custom_content = matches!(config.content_mode, VariantContentMode::CustomContent);
     let show_fields_container = has_auto_fields || has_custom_content;
+    // A fieldless initial variant can switch to one with editable fields while
+    // this popover remains open. Keep the container available for that change.
+    let keep_fields_container = has_custom_content
+        || (matches!(config.content_mode, VariantContentMode::AutoFields)
+            && config
+                .variants
+                .iter()
+                .any(|variant| !variant.rows.is_empty()));
 
     let default_width = 256.0;
     let popover_props = PopoverProps::new(trigger.entity)
@@ -538,7 +546,7 @@ fn handle_variant_edit_click(
                 Node {
                     width: percent(100),
                     padding: UiRect::all(px(12.0)),
-                    border: if show_fields_container {
+                    border: if keep_fields_container {
                         UiRect::bottom(px(1.0))
                     } else {
                         UiRect::ZERO
@@ -554,12 +562,17 @@ fn handle_variant_edit_click(
             .insert(VariantComboBox(entity))
             .insert(ChildOf(combo_wrapper));
 
-        if show_fields_container {
+        if keep_fields_container {
             let fields_container = parent
                 .spawn((
                     VariantFieldsContainer(entity),
                     Hovered::default(),
                     Node {
+                        display: if show_fields_container {
+                            Display::Flex
+                        } else {
+                            Display::None
+                        },
                         width: percent(100),
                         flex_direction: FlexDirection::Column,
                         row_gap: px(12.0),
@@ -603,10 +616,16 @@ fn handle_variant_combobox_change(
     asset_server: Res<AssetServer>,
     variant_comboboxes: Query<&VariantComboBox>,
     mut variant_edits: Query<&mut VariantEditConfig, With<EditorVariantEdit>>,
-    fields_containers: Query<(Entity, &VariantFieldsContainer)>,
+    mut fields_containers: Query<
+        (Entity, &VariantFieldsContainer, &mut Node),
+        Without<VariantEditLeftIcon>,
+    >,
     variant_edit_children: Query<&Children, With<EditorVariantEdit>>,
     mut texts: Query<&mut Text>,
-    mut left_icons: Query<(&VariantEditLeftIcon, &mut ImageNode, &mut Node)>,
+    mut left_icons: Query<
+        (&VariantEditLeftIcon, &mut ImageNode, &mut Node),
+        Without<VariantFieldsContainer>,
+    >,
     children_query: Query<&Children>,
 ) {
     let combobox_entity = trigger.entity;
@@ -659,16 +678,26 @@ fn handle_variant_combobox_change(
     }
 
     if matches!(config.content_mode, VariantContentMode::AutoFields) {
-        for (container_entity, container) in &fields_containers {
+        for (container_entity, container, mut node) in &mut fields_containers {
             if container.0 != variant_edit_entity {
                 continue;
             }
+
+            node.display = if selected_variant.rows.is_empty() {
+                Display::None
+            } else {
+                Display::Flex
+            };
 
             if let Ok(children) = children_query.get(container_entity) {
                 for child in children.iter() {
                     commands.entity(child).try_despawn();
                 }
             }
+
+            commands
+                .entity(container_entity)
+                .with_child(scrollbar(container_entity));
 
             spawn_variant_fields_for_entity(
                 &mut commands,
@@ -869,4 +898,87 @@ fn texture_ref_variants() -> Vec<VariantDefinition> {
             .with_aliases(vec!["Asset", "Local"])
             .with_default(Some(TextureRef::Asset(String::new()))),
     ]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bevy::asset::{AssetApp, AssetPlugin};
+
+    #[test]
+    fn switching_between_fieldless_and_fieldful_variants_updates_the_open_container() {
+        let mut app = App::new();
+        app.add_plugins((
+            MinimalPlugins,
+            AssetPlugin::default(),
+            bevy::scene::ScenePlugin,
+        ))
+        .init_asset::<Image>()
+        .init_asset::<Font>()
+        .add_observer(handle_variant_combobox_change);
+        let edit = app
+            .world_mut()
+            .spawn((
+                EditorVariantEdit,
+                VariantEditConfig {
+                    path: "emission.shape".into(),
+                    variants: vec![
+                        VariantDefinition::new("Point"),
+                        VariantDefinition::new("Sphere")
+                            .with_rows(vec![vec![VariantField::f32("radius")]]),
+                        VariantDefinition::new("Box")
+                            .with_rows(vec![vec![VariantField::f32("size")]]),
+                    ],
+                    ..default()
+                },
+            ))
+            .id();
+        let combo = app.world_mut().spawn(VariantComboBox(edit)).id();
+        let container = app
+            .world_mut()
+            .spawn((
+                VariantFieldsContainer(edit),
+                Node {
+                    display: Display::None,
+                    ..default()
+                },
+            ))
+            .id();
+        app.update();
+        for (selected, field, display) in [
+            (1, Some("radius"), Display::Flex),
+            (0, None, Display::None),
+            (2, Some("size"), Display::Flex),
+        ] {
+            app.world_mut().trigger(ComboBoxChangeEvent {
+                entity: combo,
+                selected,
+                label: String::new(),
+                value: None,
+            });
+            app.update();
+            assert_eq!(app.world().get::<Node>(container).unwrap().display, display);
+            let bindings = app
+                .world()
+                .get::<Children>(container)
+                .unwrap()
+                .iter()
+                .flat_map(|entity| {
+                    app.world()
+                        .get::<Children>(entity)
+                        .into_iter()
+                        .flat_map(|children| children.iter())
+                })
+                .filter_map(|entity| app.world().get::<FieldBinding>(entity))
+                .filter_map(|binding| match &binding.accessor {
+                    crate::ui::components::binding::FieldAccessor::VariantField {
+                        field_name,
+                        ..
+                    } => Some(field_name.as_str()),
+                    _ => None,
+                })
+                .collect::<Vec<_>>();
+            assert_eq!(bindings, field.into_iter().collect::<Vec<_>>());
+        }
+    }
 }

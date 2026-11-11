@@ -206,6 +206,7 @@ pub(super) struct Report<'w, 's> {
             Has<bevy_sprinkles_editor::ui::widgets::gradient_edit::EditorGradientEdit>,
             Has<bevy_sprinkles_editor::ui::widgets::color_picker::EditorColorPicker>,
             Has<bevy_sprinkles_editor::ui::widgets::curve_edit::EditorCurveEdit>,
+            Has<bevy_sprinkles_editor::ui::widgets::variant_edit::EditorVariantEdit>,
             Has<EditorPopover>,
         ),
     >,
@@ -266,8 +267,8 @@ impl Report<'_, '_> {
         }).collect();
         let widget_buttons: Vec<_> = self.buttons.iter().filter(|(_,node,..)|node.size().min_element()>0.).filter_map(|(entity,node,pose,_,_,_)| {
             let ancestry = std::iter::once(entity).chain(self.parents.iter_ancestors(entity)).collect::<Vec<_>>();
-            let widget = ancestry.iter().find_map(|e|self.widgets.get(*e).ok().and_then(|(gradient,color,curve,_)|if gradient {Some("gradient")} else if color {Some("color")} else if curve {Some("curve")} else {None}));
-            let in_popover = ancestry.iter().any(|e|self.widgets.get(*e).is_ok_and(|(_,_,_,popover)|popover));
+            let widget = ancestry.iter().find_map(|e|self.widgets.get(*e).ok().and_then(|(gradient,color,curve,variant,_)|if gradient {Some("gradient")} else if color {Some("color")} else if curve {Some("curve")} else if variant {Some("variant")} else {None}));
+            let in_popover = ancestry.iter().any(|e|self.widgets.get(*e).is_ok_and(|(_,_,_,_,popover)|popover));
             let field = ancestry.iter().find_map(|e|self.bindings.get(*e).ok()).map(|binding|match &binding.accessor { FieldAccessor::Direct(path)=>path.clone(), FieldAccessor::VariantField{path,field_name}=>format!("{path}.{field_name}") });
             let text = self.hierarchy.iter_descendants(entity).filter_map(|e|self.texts.get(e).ok()).map(|text|text.0.as_str()).collect::<Vec<_>>().join(" ");
             (widget.is_some() || in_popover).then(||serde_json::json!({"widget":widget,"field":field,"text":text,"centre":(pose.translation*node.inverse_scale_factor()).to_array(),"size":(node.size()*node.inverse_scale_factor()).to_array()}))

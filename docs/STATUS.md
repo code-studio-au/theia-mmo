@@ -1,3 +1,12 @@
+P5-17 particle variant popup repair, 11 November 2026: native reproduction
+showed Point → Sphere changed the effect but did not create the radius field in
+the already-open popup. Keep a hidden field container for fieldless variants and
+rebuild its rows and scrollbar when selecting another variant. Native input
+now changes Point → Sphere, edits Radius, then changes Sphere → Point → Ring,
+including dropdown clicks over the dock divider; selection and source files are
+preserved. Linux RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan reported zero
+GPU diagnostics. Evidence: `build/particle-shape-native-20261111-v1/`.
+
 P5-17 top-menu/divider qualification, 11 November 2026: resized the dock so
 the divider crossed each View and Zone popup, then pressed menu commands
 directly over it. Top view and particle deletion dispatched without panel

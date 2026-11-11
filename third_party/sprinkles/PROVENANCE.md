@@ -208,6 +208,14 @@ upstream functionality correction retains the original curve/gradient/colour UI
 and effect representation. Native source-preserving value edits are recorded in
 `docs/SPRINKLES_INTEGRATION.md`.
 
+The local variant editor retains an initially hidden fields container when a
+fieldless choice can switch to an editable variant. Selecting another option
+shows or hides that container immediately, rebuilds its fields and restores its
+scrollbar. This fixes the missing-radius behavior observed in the integrated
+shape dropdown; the original effect format is unchanged. The imported source
+hash is refreshed in `source-files.json` and regression evidence is recorded in
+`docs/SPRINKLES_INTEGRATION.md`.
+
 The shared-window host adds an original-plugin wrapper, embedded-host settings,
 activity/root markers and a Zone return action built with the original ghost
 button. Embedded startup shares the host UI camera and ignores host CLI arguments.
