@@ -28,6 +28,15 @@ class PackageTests(unittest.TestCase):
         self.assertEqual(identity(manifest),
                          'cb8c7e56a45c5c6375881cdc906f8000d6cef2ccedec9fed31ca6b061cd00dea')
 
+    def test_combined_schema_matches_rust_golden_vector(self):
+        fixture = Path(__file__).resolve().parents[2] / 'crates/network/tests/fixtures/content-manifest.json'
+        manifest = json.loads(fixture.read_text())
+        manifest.update(schema=5, particle_bytes=10, particle_sha256=[3] * 32, shared_images=[
+            {'sha256':[1]*32, 'bytes':12, 'color_space':'srgb', 'sampler':[10497,10497,9729,9729]},
+            {'sha256':[2]*32, 'bytes':13, 'color_space':'linear', 'sampler':[10497,10497,9729,9729]},
+        ])
+        self.assertEqual(identity(manifest), 'adfe3c80633b3b9b760e1c269c469cef21c8ca8b7045733fa75baa721e313828')
+
     def test_package_preserves_inputs_is_path_independent_and_never_overwrites(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
