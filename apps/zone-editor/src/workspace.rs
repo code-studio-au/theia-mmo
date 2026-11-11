@@ -998,6 +998,19 @@ pub(super) fn sync(
     for mut text in &mut captions {
         **text = if session.play.is_some() {
             "Playtest controls".into()
+        } else if let Some(selection) = outliner::selection(&session) {
+            format!(
+                "Properties · {}",
+                match selection {
+                    outliner::Target::Terrain => "Terrain",
+                    outliner::Target::Spawn => "Spawn",
+                    outliner::Target::Object(_) => "Object",
+                    outliner::Target::Guide(_) => "Guide",
+                    outliner::Target::Marker(_) => "Marker",
+                    outliner::Target::Plant(_) => "Plant",
+                    outliner::Target::Particle(_) => "Particle",
+                }
+            )
         } else {
             format!("Properties · {:?}", mode(&session))
         };

@@ -1,3 +1,10 @@
+P5-17 selection-aware properties heading, 11 November 2026: the dock heading
+now identifies the selected particle, object, guide, marker, plant, spawn or
+terrain instead of only the active tool mode. A native particle gradient
+Save/reopen run and screenshot show “Properties · Particle”; Linux RX 7900 XTX /
+RADV NAVI31 / Mesa 26.2.6 Vulkan reported zero GPU diagnostics. Fmt and strict
+workspace Clippy pass. Evidence: `build/particle-gradient-native-20261111-v4/`.
+
 P5-17 particle gradient Save/reopen, 11 November 2026: native input edits a
 gradient while its zone and effect files stay unchanged, invokes the editor's
 Save button, then opens a fresh editor and verifies the exact saved stop values.
