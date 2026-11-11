@@ -1,3 +1,11 @@
+P5-17 particle exit recovery, 11 November 2026: when a project switch and
+normal exit happen in the same frame, preserve both committed project snapshots.
+A failed outgoing write is retried if storage recovers before exit. Headless
+schedule and failure regressions, particle-editor tests, fmt and strict
+workspace/all-target Clippy pass. Exit flushing remains bounded; uncommitted text,
+forced termination, storage failure and Windows remain unqualified. See
+[particle integration](SPRINKLES_INTEGRATION.md).
+
 P5-17 particle draft recovery, 11 November 2026: separate periodic and
 transition snapshots, a bounded exit flush and guarded restore/discard are in
 place. Explicit Save still owns project-file writes. 34 particle-editor tests,

@@ -182,6 +182,7 @@ pub(crate) fn capture_drafts(
 pub(crate) fn capture_on_exit(
     exits: Option<Res<bevy::ecs::message::Messages<bevy::app::AppExit>>>,
     mut capture: NonSendMut<DraftCapture>,
+    host: Res<crate::hosting::AuthoringHost>,
     state: Res<EditorState>,
     dirty: Res<DirtyState>,
     assets: Res<Assets<ParticlesAsset>>,
@@ -196,6 +197,14 @@ pub(crate) fn capture_on_exit(
     if let Err(error) = writer.flush(Duration::from_secs(2)) {
         warn!("Particle draft flush failed: {error}");
         return;
+    }
+    while let Some(result) = capture.writer.as_ref().and_then(DraftWriter::try_result) {
+        if let Err(error) = result.result {
+            if result.session == capture.session {
+                capture.last_queued = None;
+            }
+            warn!("Particle draft write failed on exit: {error}");
+        }
     }
     while let Some((session, draft)) = capture.transitions.pop_front() {
         let Some(writer) = capture.writer.as_ref() else {
@@ -213,6 +222,42 @@ pub(crate) fn capture_on_exit(
                 warn!("Particle transition draft failed on exit: {error}");
             }
         }
+    }
+    // A project may change after Update but before the exit message is handled.
+    // Preserve the previous session before allocating an ID for the new one.
+    if (capture.previous_active || host.active) && capture.handle != state.current_project {
+        if let Some(writer) = capture.writer.as_ref()
+            && let Err(error) = writer.flush(Duration::from_secs(2))
+        {
+            warn!("Particle transition draft flush failed: {error}");
+        }
+        if let Some(asset) = capture
+            .handle
+            .as_ref()
+            .and_then(|handle| assets.get(handle))
+        {
+            match crate::project::serialize_snapshot(asset) {
+                Ok(snapshot)
+                    if (capture.previous_dirty || capture.baseline.as_ref() != Some(&snapshot))
+                        && capture.last_queued.as_ref() != Some(&snapshot) =>
+                {
+                    if let Some(writer) = capture.writer.as_ref()
+                        && let Err(error) = writer.capture(
+                            capture.session,
+                            Draft::new(capture.previous_path.clone(), snapshot),
+                        )
+                    {
+                        warn!("Outgoing particle draft could not be queued on exit: {error}");
+                    }
+                }
+                Err(error) => {
+                    warn!("Outgoing particle draft could not be serialized on exit: {error}")
+                }
+                _ => {}
+            }
+        }
+        capture.session = capture.session.wrapping_add(1);
+        capture.handle = state.current_project.clone();
     }
     if let Some(writer) = capture.writer.as_ref()
         && let Err(error) = writer.flush(Duration::from_secs(2))
@@ -251,6 +296,162 @@ mod tests {
     use super::*;
     use bevy_sprinkles::prelude::*;
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[derive(Resource)]
+    struct SwitchOnExit {
+        outgoing: Handle<ParticlesAsset>,
+        incoming: Handle<ParticlesAsset>,
+    }
+
+    fn switch_after_update(
+        request: Option<Res<SwitchOnExit>>,
+        mut assets: ResMut<Assets<ParticlesAsset>>,
+        mut state: ResMut<EditorState>,
+        mut dirty: ResMut<DirtyState>,
+        mut exits: MessageWriter<bevy::app::AppExit>,
+        mut commands: Commands,
+    ) {
+        let Some(request) = request else { return };
+        assets.get_mut(&request.outgoing).unwrap().name = "Outgoing modified".into();
+        state.current_project = Some(request.incoming.clone());
+        state.current_project_path = None;
+        dirty.has_unsaved_changes = true;
+        exits.write(bevy::app::AppExit::Success);
+        commands.remove_resource::<SwitchOnExit>();
+    }
+
+    #[test]
+    fn exit_after_same_frame_project_switch_preserves_both_projects() {
+        let dir = std::env::temp_dir().join(format!(
+            "theia-capture-switch-exit-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let store = DraftStore::new(dir.join("drafts"));
+        let mut app = App::new();
+        app.insert_non_send(DraftCapture::new(store.clone()))
+            .init_resource::<crate::hosting::AuthoringHost>()
+            .init_resource::<EditorState>()
+            .init_resource::<DirtyState>()
+            .init_resource::<Assets<ParticlesAsset>>()
+            .add_message::<bevy::app::AppExit>()
+            .add_systems(Update, capture_drafts)
+            .add_systems(PostUpdate, switch_after_update)
+            .add_systems(Last, capture_on_exit);
+        let mut assets = app.world_mut().resource_mut::<Assets<ParticlesAsset>>();
+        let outgoing = assets.add(ParticlesAsset::new(
+            "Outgoing".into(),
+            ParticlesDimension::D3,
+            default(),
+            vec![],
+            vec![],
+            false,
+            default(),
+        ));
+        let incoming = assets.add(ParticlesAsset::new(
+            "Incoming".into(),
+            ParticlesDimension::D3,
+            default(),
+            vec![],
+            vec![],
+            false,
+            default(),
+        ));
+        app.world_mut()
+            .resource_mut::<EditorState>()
+            .current_project = Some(outgoing.clone());
+        app.update(); // Establish the clean outgoing baseline.
+        app.insert_resource(SwitchOnExit { outgoing, incoming });
+        app.update(); // Switch and request exit in PostUpdate, after periodic capture.
+        let mut names: Vec<_> = store
+            .list()
+            .unwrap()
+            .iter()
+            .map(|id| store.recover(id).unwrap().asset.name)
+            .collect();
+        names.sort();
+        assert_eq!(names, ["Incoming", "Outgoing modified"]);
+        drop(app);
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn exit_retries_failed_outgoing_snapshot_after_storage_recovers() {
+        use bevy::ecs::system::RunSystemOnce;
+        let dir = std::env::temp_dir().join(format!(
+            "theia-capture-retry-exit-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let draft_dir = dir.join("blocked");
+        std::fs::write(&draft_dir, b"block directory creation").unwrap();
+        let store = DraftStore::new(draft_dir.clone());
+        let mut app = App::new();
+        app.insert_non_send(DraftCapture::new(store.clone()))
+            .init_resource::<crate::hosting::AuthoringHost>()
+            .init_resource::<EditorState>()
+            .init_resource::<DirtyState>()
+            .init_resource::<Assets<ParticlesAsset>>()
+            .add_message::<bevy::app::AppExit>()
+            .add_systems(Update, capture_drafts);
+        let mut assets = app.world_mut().resource_mut::<Assets<ParticlesAsset>>();
+        let outgoing = assets.add(ParticlesAsset::new(
+            "Retry outgoing".into(),
+            ParticlesDimension::D3,
+            default(),
+            vec![],
+            vec![],
+            false,
+            default(),
+        ));
+        let incoming = assets.add(ParticlesAsset::new(
+            "Incoming".into(),
+            ParticlesDimension::D3,
+            default(),
+            vec![],
+            vec![],
+            false,
+            default(),
+        ));
+        app.world_mut()
+            .resource_mut::<EditorState>()
+            .current_project = Some(outgoing);
+        app.world_mut()
+            .resource_mut::<DirtyState>()
+            .has_unsaved_changes = true;
+        app.update(); // Queue a draft while its directory is blocked.
+        app.world()
+            .non_send::<DraftCapture>()
+            .writer
+            .as_ref()
+            .unwrap()
+            .flush(Duration::from_secs(10))
+            .unwrap();
+        std::fs::remove_file(&draft_dir).unwrap();
+        app.world_mut()
+            .resource_mut::<EditorState>()
+            .current_project = Some(incoming);
+        app.world_mut().write_message(bevy::app::AppExit::Success);
+        app.world_mut().run_system_once(capture_on_exit).unwrap();
+        let mut names: Vec<_> = store
+            .list()
+            .unwrap()
+            .iter()
+            .map(|id| store.recover(id).unwrap().asset.name)
+            .collect();
+        names.sort();
+        assert_eq!(names, ["Incoming", "Retry outgoing"]);
+        drop(app);
+        std::fs::remove_dir_all(dir).unwrap();
+    }
 
     #[test]
     fn active_dirty_project_is_captured_without_writing_its_source() {

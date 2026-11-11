@@ -263,3 +263,9 @@ A bounded background writer serializes snapshots for each editing session and
 reports write errors. Accepting a queued snapshot does not mean that it has
 reached storage. Exit flushing is bounded and is not a guarantee against forced
 termination, power loss or storage errors.
+
+The exit handler also captures the outgoing and incoming committed projects if a
+project switch occurs after the periodic update in the same frame. It drains
+completed errors first, allowing an outgoing snapshot to retry when storage has
+recovered. Headless schedule and failure tests exercise both cases. The bounded
+flush and uncommitted-field limitations above still apply.
