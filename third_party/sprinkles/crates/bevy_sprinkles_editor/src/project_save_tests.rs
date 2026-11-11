@@ -397,6 +397,34 @@ fn save_commits_text_when_button_click_just_removed_focus() {
 }
 
 #[test]
+fn inline_save_commits_text_when_button_click_just_removed_focus() {
+    let dir = folder();
+    let path = dir.join("effect.ron");
+    let (mut app, _) = fixture(path.clone());
+    {
+        let mut host = app.world_mut().resource_mut::<AuthoringHost>();
+        host.active = false;
+        host.inline_ui = true;
+    }
+    bind_name(&mut app);
+    editable(
+        &mut app,
+        "Inline name",
+        crate::ui::widgets::text_edit::TextEditVariant::Default,
+    );
+    app.update();
+    app.world_mut().resource_mut::<InputFocus>().clear();
+    app.world_mut().trigger(SaveProjectEvent);
+    wait(&mut app);
+    assert_eq!(
+        load_project_from_path(&path).unwrap().asset.name,
+        "Inline name"
+    );
+    assert!(!app.world().resource::<DirtyState>().has_unsaved_changes);
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
 fn invalid_focused_number_blocks_save_and_restores_focus() {
     let dir = folder();
     let path = dir.join("effect.ron");

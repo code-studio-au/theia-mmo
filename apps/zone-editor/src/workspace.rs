@@ -273,6 +273,7 @@ pub(super) fn setup(
                                         );
                                     });
                                 properties::setup_summary(panel);
+                                particle_inline::spawn(panel);
                                 panel
                                     .spawn((
                                         menus::GuideControls,

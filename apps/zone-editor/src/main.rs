@@ -17,6 +17,7 @@ mod outliner;
 mod panels;
 mod particle_anchors;
 mod particle_export;
+mod particle_inline;
 mod particle_preview;
 mod particle_texture_draft;
 mod particle_workspace;
@@ -126,6 +127,7 @@ struct Session {
     inline_editing: bool,
     inline_dirty: bool,
     inline_action: Option<Action>,
+    particle_save_requested: bool,
     file_dialog: Option<file_picker::Draft>,
 }
 struct Drag {
@@ -196,6 +198,7 @@ impl Session {
             inline_editing: false,
             inline_dirty: false,
             inline_action: None,
+            particle_save_requested: false,
             file_dialog: None,
         }
     }
@@ -619,6 +622,7 @@ fn run() -> Result<(), String> {
     .add_plugins(properties::summary_plugin)
     .add_plugins(menus::plugin)
     .add_plugins(particle_workspace::plugin)
+    .add_plugins(particle_inline::plugin)
     .init_resource::<particle_preview::State>()
     .init_resource::<particle_preview::LibraryRoot>()
     .add_observer(workspace::activate)
@@ -982,6 +986,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
             expected_revision: session.editor.revision(),
         }),
         Action::Save => {
+            session.particle_save_requested = true;
             let Some(path) = session.path.clone() else {
                 session.save_as_requested = true;
                 session.status = "Choose a filename with Save As".into();

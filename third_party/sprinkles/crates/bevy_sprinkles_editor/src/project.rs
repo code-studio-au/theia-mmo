@@ -37,11 +37,8 @@ pub fn plugin(app: &mut App) {
         .add_observer(on_save_project_to_library_event)
         .add_observer(continue_save_after_text_commit)
         .add_plugins(crate::project_switch::ProjectSwitchPlugin)
-        .add_authoring_systems((
-            handle_save_keyboard_shortcut,
-            poll_browse_open_result,
-            track_text_focus.before(text_edit::handle_unfocus),
-        ))
+        .add_authoring_systems((handle_save_keyboard_shortcut, poll_browse_open_result))
+        .add_inline_ui_systems(track_text_focus.before(text_edit::handle_unfocus))
         // A write may complete while the integrated host is on the Zone workspace.
         .add_systems(Update, (poll_save, crate::draft_capture::capture_drafts))
         .add_systems(Last, crate::draft_capture::capture_on_exit);

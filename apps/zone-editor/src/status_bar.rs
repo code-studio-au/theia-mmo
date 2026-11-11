@@ -122,6 +122,9 @@ fn context(session: &Session) -> String {
 }
 pub(super) fn sync(
     session: Res<Session>,
+    particle_host: Option<Res<bevy_sprinkles_editor::hosting::AuthoringHost>>,
+    particle_dirty: Option<Res<bevy_sprinkles_editor::state::DirtyState>>,
+    particle_editor: Option<Res<bevy_sprinkles_editor::state::EditorState>>,
     mut contexts: Query<&mut Text, With<Context>>,
     mut states: Query<&mut Text, (With<SaveState>, Without<Context>)>,
 ) {
@@ -129,10 +132,18 @@ pub(super) fn sync(
         **text = context(&session);
     }
     for mut text in &mut states {
-        **text = if session.is_dirty() {
-            "Unsaved changes · Ctrl S"
-        } else {
-            "Saved"
+        let effect_dirty = particle_dirty
+            .as_ref()
+            .is_some_and(|dirty| dirty.has_unsaved_changes)
+            && (particle_host.as_ref().is_some_and(|host| host.inline_ui)
+                || particle_editor
+                    .as_ref()
+                    .is_some_and(|editor| editor.current_project_path.is_some()));
+        **text = match (session.is_dirty(), effect_dirty) {
+            (true, true) => "Zone and effect unsaved",
+            (true, false) => "Unsaved changes · Ctrl S",
+            (false, true) => "Effect unsaved · Save effect",
+            (false, false) => "Saved",
         }
         .into();
     }

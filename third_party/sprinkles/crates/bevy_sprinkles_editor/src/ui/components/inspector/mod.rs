@@ -628,3 +628,67 @@ pub(super) fn spawn_labeled_combobox(
         });
     });
 }
+
+#[cfg(test)]
+mod theia_embedded_tests {
+    use super::*;
+    use bevy::asset::{AssetApp, AssetPlugin};
+
+    #[test]
+    fn original_inspector_builds_real_sections_and_field_bindings_without_a_window() {
+        let mut app = App::new();
+        app.add_plugins((
+            MinimalPlugins,
+            AssetPlugin::default(),
+            bevy::scene::ScenePlugin,
+        ))
+        .init_asset::<Image>()
+        .init_asset::<Font>()
+        .add_systems(
+            Update,
+            (setup_inspector_panel, setup_inspector_section_fields).chain(),
+        );
+        let original = app.world_mut().spawn(Node::default()).id();
+        let embedded = app.world_mut().spawn(Node::default()).id();
+        let panel = app
+            .world_mut()
+            .spawn((EditorInspectorPanel, Node::default(), ChildOf(original)))
+            .id();
+        for _ in 0..3 {
+            app.update();
+        }
+        assert!(!app.world().get::<Children>(panel).unwrap().is_empty());
+        let sections = app
+            .world_mut()
+            .query::<&InspectorSection>()
+            .iter(app.world())
+            .count();
+        let fields = app
+            .world_mut()
+            .query::<&FieldBinding>()
+            .iter(app.world())
+            .count();
+        assert!(sections >= 10, "{sections} sections");
+        assert!(fields >= 10, "{fields} bindings");
+        app.world_mut().entity_mut(embedded).add_child(panel);
+        app.update();
+        assert_eq!(
+            app.world().get::<ChildOf>(panel).unwrap().parent(),
+            embedded
+        );
+        assert_eq!(
+            app.world_mut()
+                .query::<&InspectorSection>()
+                .iter(app.world())
+                .count(),
+            sections
+        );
+        assert_eq!(
+            app.world_mut()
+                .query::<&FieldBinding>()
+                .iter(app.world())
+                .count(),
+            fields
+        );
+    }
+}

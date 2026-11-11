@@ -653,10 +653,9 @@ The original Sprinkles inspector, binding and widget systems now have a separate
 host-controlled update set. The full particle workspace enables both this set
 and its own workspace systems. An embedded host can enable the reusable UI set
 without starting Sprinkles' workspace camera and project shortcut systems; the
-zone editor still keeps this mode off. A headless test exercises a real original
-checkbox under the separate set. This is a scheduling prerequisite, not yet an
-inline particle inspector or a qualification of simultaneous keyboard, popup,
-scroll and focus ownership. Native interactive qualification was interrupted at
+zone editor uses this mode for the selected, already-open local effect. A headless
+test exercises a real original checkbox under the separate set. Simultaneous
+keyboard, popup, scroll and focus behavior still needs native qualification. Native interactive qualification was interrupted at
 the user's request to stop using the display and mouse; it has not passed for
 this change.
 
@@ -667,8 +666,7 @@ edited asset, using each emitter's own seed; unrelated particle systems are not
 reset. The zone preview listens for Sprinkles' structural emitter/collider
 respawn events and rebuilds only when its preview uses that edited asset. The
 existing shared-preview transform and explicit save behavior are retained. This
-prepares direct inspector embedding; the zone inspector is not yet wired to the
-original Sprinkles controls. Automated headless tests cover edit scoping, per-
+supports the embedded original Sprinkles inspector in the zone dock. Automated headless tests cover edit scoping, per-
 emitter seeds and zone-preview rebuild. No native display or mouse was used for
 this change, and its visual behavior remains unqualified.
 
@@ -676,11 +674,30 @@ An open project is identified as the selected local effect only when the actual
 selected zone particle's validated library path and the open project path resolve
 to the same existing file. This avoids using names or unrelated open handles as
 identity. The open-project preview reports when that match exists. This check is
-a prerequisite for the inline inspector; it does not yet switch projects or
-embed the inspector.
+used to bind the inline inspector; it does not yet switch projects automatically.
 
 A headless integration test also invokes the original Sprinkles field binding
 while the full workspace is inactive: changing an emitter count updates the
-live asset, marks it dirty and emits the existing respawn event. This validates
-the binding seam, not the layout, focus handling or save routing of an embedded
-inspector.
+live asset, marks it dirty and emits the existing respawn event. This validates the binding seam; the embedded layout still needs native visual
+and input qualification.
+
+
+## Original inspector in the zone dock — P5-17
+
+When a selected particle reference resolves to the currently open local project,
+the editor moves the single original Sprinkles inspector into the left property
+dock and starts an in-zone preview. The same original panel moves back when
+leaving the selection or opening the full particle workspace. Previous/next
+emitter controls defer switching until focused text can commit. **Save effect**
+saves that project; the zone Save action also requests a save of the current
+changed particle project, and Ctrl S works from an inline particle text field.
+No edit is automatically written to disk.
+
+Headless tests exercise the real inspector's section/binding construction, the
+shared panel's reparenting, focus handoff, emitter stepping, preview request and
+Save routing, including an actual asynchronous save after focus leaves a field.
+This first slice requires the matching local project to be open already;
+automatic selection-to-project opening is next. Popup interaction, layout,
+keyboard behavior and GPU output have not been qualified natively for this
+change because the user requested no display or mouse. World-package export and
+client playback remain blocked.

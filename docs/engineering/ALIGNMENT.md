@@ -1,3 +1,12 @@
+P5-17 shared inline particle inspector, 11 November 2026: a selected
+reference whose local effect is already open moves the original Sprinkles
+inspector into the zone dock, starts its preview, supports emitter stepping and
+explicit Save. Fifty-two particle-editor and 142 zone-editor tests pass, plus
+focused tests after the final scheduling guard; fmt and strict workspace/all-
+target Clippy pass. No display or mouse was used; native layout, popups and GPU
+behavior remain unqualified. Automatic opening and client playback remain open.
+See [integration](../SPRINKLES_INTEGRATION.md).
+
 P5-17 original particle binding test, 11 November 2026: a headless test
 confirms that an original Sprinkles field binding updates its live asset, dirty
 state and respawn event while the full workspace is inactive. Fmt and strict

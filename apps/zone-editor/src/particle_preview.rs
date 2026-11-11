@@ -62,6 +62,21 @@ pub(super) struct State {
     active: Option<Preview>,
     entity: Option<Entity>,
 }
+impl State {
+    pub(super) fn previews_open_project(
+        &self,
+        document_id: u64,
+        placement_id: u64,
+        project: &Handle<ParticlesAsset>,
+    ) -> bool {
+        self.active.as_ref().is_some_and(|preview| {
+            preview.document_id == document_id
+                && preview.placement_id == placement_id
+                && &preview.project == project
+                && matches!(preview.source, PreviewSource::OpenProject)
+        })
+    }
+}
 
 #[allow(clippy::too_many_arguments)]
 pub(super) fn sync(
