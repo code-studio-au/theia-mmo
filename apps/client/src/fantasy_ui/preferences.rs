@@ -17,6 +17,8 @@ const LIMIT: u64 = 4096;
 struct File {
     schema: u8,
     ui_scale: f32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    world_effects: Option<bool>,
 }
 impl File {
     fn valid(&self) -> bool {
@@ -26,6 +28,7 @@ impl File {
 pub(crate) struct Config {
     path: PathBuf,
     pub scale: f32,
+    pub world_effects: Option<bool>,
 }
 impl Config {
     pub(crate) fn parse(
@@ -50,20 +53,28 @@ impl Config {
         } else {
             std::env::current_dir()?.join(path)
         };
-        let saved = read(&path)?;
+        let saved = read_settings(&path)?;
         Ok(Some(Self {
             path,
             scale: if explicit {
                 scale
             } else {
-                saved.unwrap_or(scale)
+                saved.as_ref().map_or(scale, |file| file.ui_scale)
             },
+            world_effects: saved.and_then(|file| file.world_effects),
         }))
     }
     pub(crate) fn install(self, app: &mut App) {
+        let observed_effects = app
+            .world()
+            .get_resource::<crate::particle_world::VisibilityChoice>()
+            .map(|choice| choice.0);
         app.insert_resource(Store {
             path: self.path,
             requested: self.scale,
+            world_effects: self.world_effects,
+            requested_effects: self.world_effects,
+            observed_effects,
             pending: None,
             retry_requested: false,
             status: Status::Unchanged,
@@ -71,7 +82,7 @@ impl Config {
         .add_systems(Update, save);
     }
 }
-fn read(path: &Path) -> Result<Option<f32>, Box<dyn std::error::Error>> {
+fn read_settings(path: &Path) -> Result<Option<File>, Box<dyn std::error::Error>> {
     let file = match fs::File::open(path) {
         Ok(file) => file,
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
@@ -89,12 +100,21 @@ fn read(path: &Path) -> Result<Option<f32>, Box<dyn std::error::Error>> {
     if !file.valid() {
         return Err("Interface preferences require schema 1 and UI scale 0.75..1.5".into());
     }
-    Ok(Some(file.ui_scale))
+    Ok(Some(file))
 }
+#[cfg(test)]
+fn read(path: &Path) -> Result<Option<f32>, Box<dyn std::error::Error>> {
+    Ok(read_settings(path)?.map(|file| file.ui_scale))
+}
+#[cfg(test)]
 fn write(path: &Path, scale: f32) -> Result<(), String> {
+    write_preferences(path, scale, None)
+}
+fn write_preferences(path: &Path, scale: f32, world_effects: Option<bool>) -> Result<(), String> {
     let data = File {
         schema: 1,
         ui_scale: scale,
+        world_effects,
     };
     if !data.valid() {
         return Err("Invalid UI scale".into());
@@ -141,6 +161,9 @@ enum Status {
 pub(super) struct Store {
     path: PathBuf,
     requested: f32,
+    world_effects: Option<bool>,
+    requested_effects: Option<bool>,
+    observed_effects: Option<bool>,
     pending: Option<Task<Result<(), String>>>,
     retry_requested: bool,
     status: Status,
@@ -162,7 +185,17 @@ impl Store {
         }
     }
 }
-fn save(preferred: Res<PreferredScale>, mut store: ResMut<Store>) {
+fn save(
+    preferred: Res<PreferredScale>,
+    effects: Option<Res<crate::particle_world::VisibilityChoice>>,
+    mut store: ResMut<Store>,
+) {
+    let current_effects = effects.as_ref().map(|choice| choice.0);
+    let effects_changed = current_effects.is_some() && current_effects != store.observed_effects;
+    if effects_changed {
+        store.observed_effects = current_effects;
+        store.world_effects = current_effects;
+    }
     if let Some(task) = &mut store.pending
         && let Some(result) = check_ready(task)
     {
@@ -174,12 +207,20 @@ fn save(preferred: Res<PreferredScale>, mut store: ResMut<Store>) {
             Status::Saved
         };
     }
-    if store.pending.is_none() && (store.requested != preferred.0 || store.retry_requested) {
+    if store.pending.is_none()
+        && (store.requested != preferred.0
+            || store.retry_requested
+            || store.requested_effects != store.world_effects)
+    {
         store.retry_requested = false;
         store.requested = preferred.0;
+        store.requested_effects = store.world_effects;
         let scale = preferred.0;
         let path = store.path.clone();
-        store.pending = Some(IoTaskPool::get().spawn(async move { write(&path, scale) }));
+        let world_effects = store.world_effects;
+        store.pending = Some(
+            IoTaskPool::get().spawn(async move { write_preferences(&path, scale, world_effects) }),
+        );
         store.status = Status::Saving;
     }
 }
@@ -377,6 +418,7 @@ mod tests {
         Config {
             path: path.clone(),
             scale: 1.,
+            world_effects: None,
         }
         .install(&mut app);
         let window = app
@@ -467,6 +509,7 @@ mod tests {
         Config {
             path: path.clone(),
             scale: 1.,
+            world_effects: None,
         }
         .install(&mut app);
         app.world_mut().resource_mut::<PreferredScale>().0 = 1.25;
@@ -517,6 +560,7 @@ mod tests {
         Config {
             path: path.clone(),
             scale: 1.,
+            world_effects: None,
         }
         .install(&mut app);
         app.update();
@@ -543,5 +587,62 @@ mod tests {
         assert_eq!(fresh.scale, 0.75);
         assert_eq!(super::super::fit_scale(1.5, Vec2::new(1280., 720.)), 1.);
         assert_eq!(read(&path).unwrap(), Some(0.75));
+    }
+    #[test]
+    fn world_effects_choice_persists_without_saving_a_startup_override() {
+        let scratch = Scratch::new();
+        let path = scratch.file();
+        write_preferences(&path, 1.25, Some(true)).unwrap();
+        let mut args = vec![
+            "--ui-preferences".into(),
+            path.to_string_lossy().into_owned(),
+        ];
+        let config = Config::parse(&mut args, true, 1., false).unwrap().unwrap();
+        assert_eq!(config.world_effects, Some(true));
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins);
+        super::super::install_scale(&mut app, config.scale);
+        // An explicit one-session hide must not overwrite the saved preference.
+        app.insert_resource(crate::particle_world::VisibilityChoice(false));
+        config.install(&mut app);
+        app.update();
+        assert_eq!(
+            read_settings(&path).unwrap().unwrap().world_effects,
+            Some(true)
+        );
+        app.world_mut()
+            .resource_mut::<crate::particle_world::VisibilityChoice>()
+            .0 = true;
+        app.update();
+        app.world_mut()
+            .resource_mut::<crate::particle_world::VisibilityChoice>()
+            .0 = false;
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+        loop {
+            app.update();
+            let store = app.world().resource::<Store>();
+            if store.pending.is_none()
+                && matches!(store.status, Status::Saved)
+                && read_settings(&path).unwrap().unwrap().world_effects == Some(false)
+            {
+                break;
+            }
+            assert!(std::time::Instant::now() < deadline);
+            std::thread::yield_now();
+        }
+        let saved = read_settings(&path).unwrap().unwrap();
+        assert_eq!(saved.ui_scale, 1.25);
+        assert_eq!(saved.world_effects, Some(false));
+        let mut args = vec![
+            "--ui-preferences".into(),
+            path.to_string_lossy().into_owned(),
+        ];
+        assert_eq!(
+            Config::parse(&mut args, true, 1., false)
+                .unwrap()
+                .unwrap()
+                .world_effects,
+            Some(false)
+        );
     }
 }

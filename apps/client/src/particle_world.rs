@@ -36,7 +36,7 @@ struct Toggle;
 #[derive(Component)]
 struct ToggleLabel;
 #[derive(Resource)]
-struct VisibilityChoice(bool);
+pub(crate) struct VisibilityChoice(pub(crate) bool);
 #[derive(Resource, Default, serde::Serialize)]
 pub(crate) struct Metrics {
     placements: u64,

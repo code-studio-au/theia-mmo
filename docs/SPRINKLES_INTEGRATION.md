@@ -72,8 +72,9 @@ rebasing; the bounded client integration is described below.
 `project_catalog_placements` separately converts catalog-local placements via
 checked f64 global coordinates into a bounded render frame and composes the
 original effect transform. A far-origin test reprojects after a frame change
-without accumulating offsets. This does not yet rebase live world-space trails,
-spawn entities or qualify particle rendering after an origin shift.
+without accumulating offsets. Live world-space particle and trail GPU positions
+are now translated during ordinary render-origin shifts, with GPU readback and
+two-client checks recorded in STATUS. Content-frame changes still clear them.
 `count_catalog_resources` totals replicated emitter, mesh, particle, trail and
 sub-emitter buffer counts across placements and can compare them to caller-set
 limits. It intentionally counts potentially shared meshes and disabled emitters
@@ -160,8 +161,10 @@ Windy Snow hidden restored pawn-pixel checks on both clients
 (`build/upstream-snow-hidden-world-native-20261111-v1/verification.json`).
 Both tests reported zero Vulkan validation diagnostics on RX 7900 XTX / RADV
 NAVI31 / Mesa 26.2.6. The control is a manual readability aid: it does not yet
-provide automatic critical-telegraph protection, persist preferences or stop
-particle simulation.
+provide automatic critical-telegraph protection or stop particle simulation.
+With `--fantasy-ui --ui-preferences FILE`, the visibility choice is now saved
+locally; the saved-preference path has headless coverage and still needs native
+input qualification.
 
 World effects are prepared before display but held paused until the terrain
 scene, renderer pipelines and a connected snapshot are ready. This prevents

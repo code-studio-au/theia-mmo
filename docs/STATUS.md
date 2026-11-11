@@ -1,3 +1,14 @@
+P2-13 world-effects preference, 11 November 2026: when fantasy UI and the
+explicit `--ui-preferences FILE` store are enabled, changing the World effects
+control persists its visibility alongside UI size. Older preference files remain
+valid; `--hide-world-particles` overrides the saved value for that launch without
+rewriting it unless the user changes the control. Headless tests cover reload,
+rapid changes during a pending save and the override. Two connected Vulkan
+clients also passed the hidden-effects scenario on RX 7900 XTX / RADV NAVI31 /
+Mesa 26.2.6 (`build/particle-preferences-native-20261111/verification.json`);
+the saved-preference path itself has not been tested with native input. Writes
+remain asynchronous and failures follow the existing preference-store behavior.
+
 P2-13 combined projected-material and particle package foundation, 11 November
 2026: schema 5 binds both requirements under a new identity domain; Rust and
 Python agree on a golden fingerprint, missing dependencies are rejected, and

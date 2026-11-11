@@ -259,6 +259,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let ui_scale = ui_preferences
         .as_ref()
         .map_or(ui_scale, |config| config.scale);
+    let world_effects_visible = !hide_world_particles
+        && ui_preferences
+            .as_ref()
+            .and_then(|config| config.world_effects)
+            .unwrap_or(true);
     let player_life_profile = player_life::parse(
         &mut args,
         character_stats.as_ref().map(|(bytes, _)| bytes.as_slice()),
@@ -1318,10 +1323,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .add_systems(FixedUpdate, movement::move_local_pawn);
     if let Some(prepared) = particle_world {
-        particle_world::install(&mut app, prepared, !hide_world_particles);
+        particle_world::install(&mut app, prepared, world_effects_visible);
     }
     if let Some(prepared) = chunk_particles {
-        particle_world::install_chunks(&mut app, prepared, !hide_world_particles);
+        particle_world::install_chunks(&mut app, prepared, world_effects_visible);
     }
     if fantasy_skin {
         fantasy_ui::install_scale(&mut app, ui_scale);
