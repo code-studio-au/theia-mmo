@@ -5,6 +5,11 @@ passes the remaining allowance across catalogs. This bounds admitted base-level
 RGBA bytes; it is not a complete GPU-memory budget. A textured two-client Vulkan
 transition and corruption checks pass with this admission path
 (`build/chunk-particle-image-budget-20261111/`).
+For staged chunks, the allowance is reduced by active image bytes before the
+worker reads and decodes the candidate, including retained snapshots twice.
+A valid, hash-bound 4096×2049 incoming PNG exceeds the 32 MiB base-level limit
+and was rejected on both Vulkan clients without retiring their active roots
+(`build/chunk-particle-overbudget-20261111/oversized/verification.json`).
 
 P2-13 chunk particles, 11 November 2026: chunk clients prepare verified
 particle catalogs off-thread, check conservative active-plus-candidate budgets,

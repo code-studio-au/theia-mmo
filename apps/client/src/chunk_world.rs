@@ -519,6 +519,7 @@ pub fn drive(world: &mut World) {
         let ids=offer.chunks.iter().map(|&[x,z]|ChunkId{x,z}).collect::<Vec<_>>();
         if ids==config.active.loaded() {stream.seen=offer.generation;return;}
         let active=config.active.clone();let delay=stream.delay;
+        let active_particle_image_bytes=world.resource::<crate::particle_world::ChunkParticles>().image_bytes;
         stream.started=Instant::now();
         stream.settle_since=None;
         stream.waiting_reason=None;
@@ -526,7 +527,8 @@ pub fn drive(world: &mut World) {
         stream.pending=Some(Pending::Worker(offer.generation,IoTaskPool::get().spawn(async move {
             if !delay.is_zero() {std::thread::sleep(delay);}
             let data=active.staged(&ids,&[]).map_err(|e|e.to_string())?;
-            let particles=theia_vfx::prepare_resident_particles(&data,crate::particle_world::LIMITS,crate::particle_world::MAX_IMAGE_BYTES)?;
+            let image_allowance=crate::particle_world::MAX_IMAGE_BYTES.checked_sub(active_particle_image_bytes).ok_or("Active particle images exceed client budget")?;
+            let particles=theia_vfx::prepare_resident_particles(&data,crate::particle_world::LIMITS,image_allowance)?;
             Ok((data,particles))
         })));
     });

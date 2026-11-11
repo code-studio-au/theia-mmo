@@ -7,13 +7,61 @@ contain one looping effect and its catalog, as produced by the editor.
 Runs against the caller's display and Vulkan validation environment.
 """
 import argparse
+import binascii
 import hashlib
 import json
 from pathlib import Path
 import shutil
+import struct
+import zlib
 
 from package_world import identity
 from verify_multiplayer import run
+
+
+def oversized_texture_fixture(source, destination):
+    """Create an identity-bound PNG just over the client's 32 MiB RGBA limit."""
+    shutil.copytree(source, destination)
+    chunk = destination / 'chunk_1_0'
+    catalog_path = chunk / 'particles/catalog.json'
+    catalog = json.loads(catalog_path.read_text())
+    if len(catalog['textures']) != 1:
+        raise ValueError('The budget case needs exactly one texture')
+    texture = catalog['textures'][0]
+    old_hash = bytes(texture['sha256']).hex()
+    role = 's' if texture['color_space'] == 'srgb' else 'l'
+    old_name = f'texture-{old_hash}-{role}.png'
+    def png_chunk(name, data):
+        return struct.pack('>I', len(data)) + name + data + struct.pack('>I', binascii.crc32(name + data))
+    compressor = zlib.compressobj()
+    row = b'\0' + bytes(4096 * 4)
+    compressed = b''.join(compressor.compress(row) for _ in range(2049)) + compressor.flush()
+    png = (b'\x89PNG\r\n\x1a\n' + png_chunk(b'IHDR', struct.pack('>IIBBBBB', 4096, 2049, 8, 6, 0, 0, 0))
+           + png_chunk(b'IDAT', compressed) + png_chunk(b'IEND', b''))
+    digest = hashlib.sha256(png).digest()
+    new_name = f'texture-{digest.hex()}-{role}.png'
+    (chunk / 'particles/textures' / old_name).unlink()
+    (chunk / 'particles/textures' / new_name).write_bytes(png)
+    texture.update(sha256=list(digest), bytes=len(png))
+    effect = catalog['effects'][0]
+    effect_path = chunk / 'particles/effects' / f"effect-{effect['id']}.ron"
+    original = effect_path.read_bytes()
+    updated = original.replace(old_name.encode(), new_name.encode())
+    if updated == original:
+        raise ValueError('Texture reference absent from effect')
+    effect_path.write_bytes(updated)
+    effect.update(sha256=list(hashlib.sha256(updated).digest()), bytes=len(updated))
+    payload = json.dumps(catalog, separators=(',', ':')).encode()
+    catalog_path.write_bytes(payload)
+    manifest_path = chunk / 'world.manifest.json'
+    manifest = json.loads(manifest_path.read_text())
+    manifest.update(particle_bytes=len(payload), particle_sha256=list(hashlib.sha256(payload).digest()))
+    manifest_path.write_text(json.dumps(manifest))
+    index_path = destination / 'world.chunks.json'
+    index = json.loads(index_path.read_text())
+    entry, = (entry for entry in index['chunks'] if entry['id'] == [1, 0])
+    entry['package'] = list(bytes.fromhex(identity(manifest)))
+    index_path.write_text(json.dumps(index))
 
 
 def fixture(source, particle_package, destination):
@@ -70,6 +118,12 @@ def main():
         textures[0].write_bytes(b'tampered\n')
         run(output / 'tampered-texture', args.binaries.resolve(), client_chunk_world=bad_texture,
             chunk_particle_texture_failure=True, **common)
+        if len(catalog['textures']) == 1:
+            oversized = output / 'oversized-fixture'
+            oversized_texture_fixture(good, oversized)
+            run(output / 'oversized', args.binaries.resolve(), chunk_world=oversized,
+                chunk_direction='x', chunk_stream=True, render_span=2, replication_span=2,
+                require_world_particles=True, chunk_particle_budget_failure=True)
 
 
 if __name__ == '__main__':

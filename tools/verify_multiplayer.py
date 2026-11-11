@@ -221,7 +221,7 @@ def sha256(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def run(output, binaries, references=None, terrain=None, player_assets=None, collision=False, interior=False, full_map=False, map_access=False, transport="renet", world_origin=None, replication_span=None, render_span=None, jump=False, chunk_world=None, client_chunk_world=None, expect_remote_pixels=True, chunk_direction="z", chunk_stream=False, chunk_delay_ms=0, chunk_asset_failure=False, chunk_bounds_failure=False, chunk_image_failure=False, chunk_shared_images=False, staging_root_limit=1, stream_probe="green_floor", window_size="1280x720", require_world_particles=False, require_particle_rebase=False, hide_world_particles=False, exercise_particle_control=False, require_finished_particles=False, capture_particle_burst=False, require_particle_retirement=False, chunk_particle_failure=False, chunk_particle_texture_failure=False):
+def run(output, binaries, references=None, terrain=None, player_assets=None, collision=False, interior=False, full_map=False, map_access=False, transport="renet", world_origin=None, replication_span=None, render_span=None, jump=False, chunk_world=None, client_chunk_world=None, expect_remote_pixels=True, chunk_direction="z", chunk_stream=False, chunk_delay_ms=0, chunk_asset_failure=False, chunk_bounds_failure=False, chunk_image_failure=False, chunk_shared_images=False, staging_root_limit=1, stream_probe="green_floor", window_size="1280x720", require_world_particles=False, require_particle_rebase=False, hide_world_particles=False, exercise_particle_control=False, require_finished_particles=False, capture_particle_burst=False, require_particle_retirement=False, chunk_particle_failure=False, chunk_particle_texture_failure=False, chunk_particle_budget_failure=False):
     assert not require_particle_retirement or (chunk_stream and require_world_particles)
     assert not require_finished_particles or require_world_particles
     assert not capture_particle_burst or require_world_particles
@@ -229,10 +229,10 @@ def run(output, binaries, references=None, terrain=None, player_assets=None, col
     assert not hide_world_particles or require_world_particles
     assert not require_particle_rebase or (require_world_particles and render_span is not None)
     assert stream_probe in ('green_floor', 'bound_geometry')
-    assert stream_probe == 'green_floor' or (chunk_stream and chunk_shared_images and not any((chunk_asset_failure, chunk_bounds_failure, chunk_image_failure, chunk_particle_failure, chunk_particle_texture_failure)))
+    assert stream_probe == 'green_floor' or (chunk_stream and chunk_shared_images and not any((chunk_asset_failure, chunk_bounds_failure, chunk_image_failure, chunk_particle_failure, chunk_particle_texture_failure, chunk_particle_budget_failure)))
     assert type(staging_root_limit) is int and 1 <= staging_root_limit <= 32
-    assert sum(map(bool,[chunk_asset_failure,chunk_bounds_failure,chunk_image_failure,chunk_particle_failure,chunk_particle_texture_failure])) <= 1
-    candidate_failure = chunk_asset_failure or chunk_bounds_failure or chunk_image_failure or chunk_particle_failure or chunk_particle_texture_failure
+    assert sum(map(bool,[chunk_asset_failure,chunk_bounds_failure,chunk_image_failure,chunk_particle_failure,chunk_particle_texture_failure,chunk_particle_budget_failure])) <= 1
+    candidate_failure = chunk_asset_failure or chunk_bounds_failure or chunk_image_failure or chunk_particle_failure or chunk_particle_texture_failure or chunk_particle_budget_failure
     assert not candidate_failure or chunk_stream
     assert not chunk_shared_images or chunk_world
     assert not chunk_world or not any((terrain, references, collision, interior, full_map, map_access, jump, world_origin)), "Initial chunk qualifier uses its own world/poses"
@@ -613,10 +613,13 @@ def run(output, binaries, references=None, terrain=None, player_assets=None, col
                 assert 'Chunk candidate rejected: Visual exceeds indexed contributor bounds; active scene retained' in log
             if chunk_image_failure:
                 assert 'Chunk candidate rejected: Shared image ' in log and 'failed verification:' in log
-            if chunk_particle_failure or chunk_particle_texture_failure:
-                expected = 'Particle texture does not match its descriptor' if chunk_particle_texture_failure else 'Particle effect '
+            if chunk_particle_failure or chunk_particle_texture_failure or chunk_particle_budget_failure:
+                expected = ('Particle texture RGBA budget exceeded' if chunk_particle_budget_failure else
+                            'Particle texture does not match its descriptor' if chunk_particle_texture_failure else 'Particle effect ')
                 assert 'Chunk candidate rejected: ' + expected in log
-                assert 'does not match its descriptor; active scene retained' in log
+                assert 'active scene retained' in log
+                if not chunk_particle_budget_failure:
+                    assert 'does not match its descriptor; active scene retained' in log
                 assert report['world_particles']['chunk_publications'] == 1
                 assert report['world_particles']['chunk_retired_roots'] == 0
                 assert report['world_particles']['live_roots'] == report['world_particles']['placements']
@@ -718,6 +721,7 @@ def run(output, binaries, references=None, terrain=None, player_assets=None, col
                   "chunk_bounds_failure":chunk_bounds_failure,
                   "chunk_particle_failure":chunk_particle_failure,
                   "chunk_particle_texture_failure":chunk_particle_texture_failure,
+                  "chunk_particle_budget_failure":chunk_particle_budget_failure,
                   "chunk_image_failure":chunk_image_failure,"chunk_shared_images":chunk_shared_images,
                   "client_chunk_world": str(client_chunk_world) if client_chunk_world else None,
                   "player_assets": str(player_assets) if player_assets else None,
