@@ -561,7 +561,11 @@ fn run() -> Result<(), String> {
                     .id,
             );
         }
-        Some(cli::CaptureView::Particle | cli::CaptureView::ParticlePreview) => {
+        Some(
+            cli::CaptureView::Particle
+            | cli::CaptureView::ParticlePreview
+            | cli::CaptureView::ParticleBind,
+        ) => {
             session.particle_selected = Some(
                 session
                     .editor
@@ -622,6 +626,7 @@ fn run() -> Result<(), String> {
     .add_observer(properties::activate)
     .add_observer(properties::slider_change)
     .add_observer(file_picker::activate)
+    .add_observer(particle_preview::relay_toast)
     .add_systems(
         Startup,
         (

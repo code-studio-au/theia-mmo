@@ -403,11 +403,13 @@ pub(super) struct Capture {
     pub frames: u32,
     pub view: Option<cli::CaptureView>,
 }
+#[allow(clippy::too_many_arguments)]
 pub(super) fn capture(
     mut commands: Commands,
     capture: Option<ResMut<Capture>>,
     adapter: Res<RenderAdapterInfo>,
     session: Res<Session>,
+    particle_editor: Res<bevy_sprinkles_editor::state::EditorState>,
     triggers: Query<(Entity, &menus::Trigger)>,
     mut requests: ResMut<workspace::Requests>,
     previews: Query<
@@ -425,6 +427,9 @@ pub(super) fn capture(
     if capture.frames == 30 && capture.view == Some(cli::CaptureView::ParticlePreview) {
         requests.particle_preview = true;
     }
+    if capture.frames == 30 && capture.view == Some(cli::CaptureView::ParticleBind) {
+        requests.bind_particle = true;
+    }
     if capture.frames == 30
         && capture.view == Some(cli::CaptureView::PropertyActions)
         && let Some((entity, _)) = triggers
@@ -438,7 +443,10 @@ pub(super) fn capture(
             ),
         });
     }
-    let capture_frame = if capture.view == Some(cli::CaptureView::ParticlePreview) {
+    let capture_frame = if matches!(
+        capture.view,
+        Some(cli::CaptureView::ParticlePreview | cli::CaptureView::ParticleBind)
+    ) {
         150
     } else {
         90
@@ -449,6 +457,22 @@ pub(super) fn capture(
                 previews.iter().any(|children| !children.is_empty()),
                 "Particle preview did not start any emitter entities"
             );
+        }
+        if capture.view == Some(cli::CaptureView::ParticleBind) {
+            let effect = &session
+                .editor
+                .zone()
+                .particles
+                .first()
+                .expect("capture particle")
+                .effect;
+            let path =
+                bevy_sprinkles_editor::io::effect_library_path(effect).expect("valid capture ID");
+            assert!(
+                path.is_file(),
+                "Particle library save did not create its file"
+            );
+            assert_eq!(particle_editor.current_project_path.as_ref(), Some(&path));
         }
         let path = capture.path.clone();
         info!(

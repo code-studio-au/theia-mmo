@@ -1,3 +1,11 @@
+P2-13 bind local particle effect ID, 11 November 2026: the selected reference
+menu explicitly saves the open project to its local effect ID and relays save
+results to the zone status bar. 131 zone-editor tests, fmt and strict workspace/
+all-target Clippy pass. A fresh-data native RX 7900 XTX / RADV / Mesa 26.2.6
+Vulkan run created the intended library file, preserved its bundled source, and
+reported zero GPU diagnostics. Library loading, packaging and client playback
+remain pending. See [integration](SPRINKLES_INTEGRATION.md).
+
 P2-13 local particle library save foundation, 11 November 2026: an explicit
 save event writes the open project under a validated content ID using the existing
 asynchronous atomic save flow. New bindings cannot overwrite another project;

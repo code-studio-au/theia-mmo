@@ -2,6 +2,9 @@
 //! This does not resolve the authored effect ID or add assets to a world package.
 use bevy_sprinkles::{prelude::*, runtime::EditorMode};
 use bevy_sprinkles_editor::{hosting::AuthoringHost, state::EditorState};
+use bevy_sprinkles_editor::{
+    project::SaveProjectToLibraryEvent, ui::components::toasts::ToastEvent,
+};
 
 use super::*;
 
@@ -32,6 +35,25 @@ pub(super) fn sync(
     mut previews: Query<&mut Transform, With<ZoneParticlePreview>>,
 ) {
     let host_active = host.as_ref().is_some_and(|host| host.active);
+    if std::mem::take(&mut requests.bind_particle)
+        && !host_active
+        && !workspace::busy(&session)
+        && let Some(effect) = session
+            .particle_selected
+            .and_then(|id| session.editor.zone().particles.iter().find(|p| p.id == id))
+            .map(|p| p.effect.clone())
+    {
+        if editor
+            .current_project
+            .as_ref()
+            .is_some_and(|handle| assets.get(handle).is_some())
+        {
+            session.status = format!("Saving open particle project as {effect}…");
+            commands.trigger(SaveProjectToLibraryEvent(effect));
+        } else {
+            session.status = "Open a particle project before saving it to an Effect ID".into();
+        }
+    }
     if std::mem::take(&mut requests.particle_preview)
         && !host_active
         && !workspace::busy(&session)
@@ -132,6 +154,16 @@ pub(super) fn sync(
     state.entity = Some(entity);
 }
 
+pub(super) fn relay_toast(
+    event: On<ToastEvent>,
+    host: Option<Res<AuthoringHost>>,
+    mut session: ResMut<Session>,
+) {
+    if host.as_ref().is_none_or(|host| !host.active) {
+        session.status = event.content.clone();
+    }
+}
+
 pub(super) fn playback(
     assets: Res<Assets<ParticlesAsset>>,
     mut systems: Query<
@@ -156,6 +188,9 @@ pub(super) fn playback(
 mod tests {
     use super::*;
     use theia_zone::particles::ParticlePlacement;
+
+    #[derive(Resource, Default)]
+    struct LibraryRequests(Vec<String>);
 
     fn fixture() -> (App, Handle<ParticlesAsset>) {
         let origin = [128_000_000_000., 4., -128_000_000_000.];
@@ -321,5 +356,45 @@ mod tests {
         assert!(!runtime.one_shot_completed);
         assert_eq!(runtime.random_seed, 42);
         assert!(runtime.clear_requested);
+    }
+
+    #[test]
+    fn binding_uses_the_selected_id_and_reports_particle_save_results_in_zone() {
+        let (mut app, _) = fixture();
+        app.init_resource::<LibraryRequests>()
+            .add_observer(
+                |event: On<SaveProjectToLibraryEvent>, mut requests: ResMut<LibraryRequests>| {
+                    requests.0.push(event.0.clone())
+                },
+            )
+            .add_observer(relay_toast);
+        app.world_mut()
+            .resource_mut::<workspace::Requests>()
+            .bind_particle = true;
+        app.update();
+        assert_eq!(app.world().resource::<LibraryRequests>().0, ["vfx.fire"]);
+        assert!(
+            app.world()
+                .resource::<Session>()
+                .status
+                .contains("Saving open particle project")
+        );
+        app.world_mut()
+            .trigger(ToastEvent::error("Could not save project: already exists"));
+        assert!(
+            app.world()
+                .resource::<Session>()
+                .status
+                .contains("already exists")
+        );
+        app.world_mut().resource_mut::<AuthoringHost>().active = true;
+        app.world_mut()
+            .trigger(ToastEvent::success("Hidden workspace toast"));
+        assert!(
+            app.world()
+                .resource::<Session>()
+                .status
+                .contains("already exists")
+        );
     }
 }

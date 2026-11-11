@@ -150,6 +150,11 @@ pub(super) fn spawn(parent: &mut ChildSpawnerCommands, server: Option<&AssetServ
                             "",
                         ),
                         (
+                            workspace::Control::BindParticle,
+                            "Save project to local Effect ID",
+                            "",
+                        ),
+                        (
                             workspace::Control::Command(Action::Duplicate),
                             "Duplicate",
                             "Ctrl D",

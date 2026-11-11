@@ -517,6 +517,25 @@ existing save flow, and uses the existing asynchronous atomic writer. A new
 binding is create-only; a project already saved to that same library path can
 update it. Failed writes retain dirty state and do not overwrite another project.
 This is a local authoring library, not a package, an ID resolver or a client
-feature; no inspector action has been connected yet. Assets can still contain
+feature. The selected reference's three-dot menu now connects the save action. Assets can still contain
 machine-local texture paths. Forty-six particle-editor tests, formatting and
 denied-warning workspace/all-target Clippy pass.
+
+
+## Save the open project to a local effect ID — P2-13
+
+Select a particle reference, set its Effect ID, and choose **Save project to
+local Effect ID** from its inspector menu. The currently open Sprinkles project
+is explicitly saved to the local authoring library using the existing atomic
+Save flow; the project then uses that path for later Save operations. Save
+completion or failure is shown in the zone status bar. The placeholder ID is
+rejected, and a new binding cannot overwrite an existing different project.
+This operation does not yet load that ID for the reference, package dependencies
+or make it available to clients.
+
+A fresh isolated-data native test saved the bundled explosion to
+`vfx.campfire.ron`, verified the source and saved bytes matched, and reported
+zero unexpected Vulkan diagnostics on RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6
+with Khronos validation. All 131 zone-editor tests, formatting and denied-warning
+workspace/all-target Clippy pass. Native mouse activation and Windows are not
+qualified by this automated capture.
