@@ -16,11 +16,11 @@ bevy = { workspace = true, features = [
 bevy_sprinkles = { path = "../../third_party/sprinkles/crates/bevy_sprinkles" }
 bevy_sprinkles_editor = { path = "../../third_party/sprinkles/crates/bevy_sprinkles_editor" }
 avian3d.workspace = true
+ron.workspace = true
 serde_json.workspace = true
 theia-core.workspace = true
 theia-network.workspace = true
 theia-zone = { path = "../../crates/zone" }
 
 [dev-dependencies]
-ron.workspace = true
 tokio.workspace = true

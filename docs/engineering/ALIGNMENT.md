@@ -1,3 +1,10 @@
+P2-13 preset-only particle snapshots, 11 November 2026: draft catalogs now
+hash deterministic RON snapshots with editor asset-folder metadata removed.
+External textures and custom shaders cannot enter this snapshot; their package
+handling remains pending. Five focused editor tests, fmt and strict workspace/
+all-target Clippy pass. No particle package is published or played by clients
+yet. See [integration](../SPRINKLES_INTEGRATION.md).
+
 P2-13 particle manifest identity, 11 November 2026: schema 4 binds the
 particle catalog length and hash into a new world identity. Headless collision
 loading recognizes the identity; both client visual verification paths reject

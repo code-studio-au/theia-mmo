@@ -2,7 +2,7 @@
 //! This does not publish assets or establish that textures are portable.
 use bevy_sprinkles::{
     TextureRef,
-    asset::{DrawPassMaterial, versions},
+    asset::{DrawPassMaterial, ParticlesAsset, versions},
     budget::emitter_counts,
 };
 use std::{
@@ -34,6 +34,7 @@ pub(super) fn preflight(zone: &Zone, root: &Path) -> Result<Preflight, String> {
     let mut external_textures = BTreeSet::new();
     let mut effects = Vec::new();
     let mut total_bytes = 0u64;
+    let mut can_draft = true;
     let mut result = Preflight::default();
     for (id, instances) in ids {
         let path = bevy_sprinkles_editor::io::effect_library_path_in(root, id)
@@ -58,6 +59,7 @@ pub(super) fn preflight(zone: &Zone, root: &Path) -> Result<Preflight, String> {
                 "{id}: emitter {index} uses an unsupported custom shader"
             ));
         }
+        let mut has_external = false;
         for (index, emitter) in asset.emitters.iter().enumerate() {
             let counts = emitter_counts(emitter).ok_or_else(|| {
                 format!("{id}: emitter {index} has invalid allocation arithmetic")
@@ -97,6 +99,7 @@ pub(super) fn preflight(zone: &Zone, root: &Path) -> Result<Preflight, String> {
                 match texture {
                     TextureRef::Preset(_) => {}
                     TextureRef::Asset(_) | TextureRef::Local(_) => {
+                        has_external = true;
                         let resolved = texture.resolve_path(&asset.sprinkles_editor.assets_folder);
                         if resolved.is_empty() || !Path::new(&resolved).is_file() {
                             return Err(format!(
@@ -108,11 +111,52 @@ pub(super) fn preflight(zone: &Zone, root: &Path) -> Result<Preflight, String> {
                 }
             }
         }
-        effects.push(serde_json::json!({"id":id,"bytes":bytes.len(),"sha256":sha256(&bytes)}));
+        if has_external {
+            can_draft = false;
+        } else {
+            let snapshot = preset_snapshot(&asset)?;
+            effects.push(
+                serde_json::json!({"id":id,"bytes":snapshot.len(),"sha256":sha256(&snapshot)}),
+            );
+        }
     }
-    draft_catalog(zone, effects)?;
+    if can_draft {
+        draft_catalog(zone, effects)?;
+    }
     result.textures = external_textures.len();
     Ok(result)
+}
+
+/// Only the preset-only subset is suitable for this first snapshot. External
+/// texture paths require a separate dependency format and rewrite.
+fn preset_snapshot(asset: &ParticlesAsset) -> Result<Vec<u8>, String> {
+    for emitter in &asset.emitters {
+        let DrawPassMaterial::Standard(material) = &emitter.draw_pass.material else {
+            return Err("Custom particle shaders cannot be snapshotted".into());
+        };
+        if [
+            &material.base_color_texture,
+            &material.emissive_texture,
+            &material.metallic_roughness_texture,
+            &material.normal_map_texture,
+            &material.occlusion_texture,
+        ]
+        .into_iter()
+        .flatten()
+        .any(|texture| !matches!(texture, TextureRef::Preset(_)))
+        {
+            return Err("External particle textures require packaging".into());
+        }
+    }
+    let mut snapshot = asset.clone();
+    snapshot.sprinkles_editor = Default::default();
+    let encoded = ron::ser::to_string(&snapshot)
+        .map_err(|error| error.to_string())?
+        .into_bytes();
+    if encoded.len() as u64 > MAX_EFFECT_BYTES {
+        return Err("Serialized particle effect exceeds 4 MiB".into());
+    }
+    Ok(encoded)
 }
 
 fn draft_catalog(zone: &Zone, effects: Vec<serde_json::Value>) -> Result<Vec<u8>, String> {
@@ -138,7 +182,6 @@ fn draft_catalog(zone: &Zone, effects: Vec<serde_json::Value>) -> Result<Vec<u8>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use bevy_sprinkles::asset::ParticlesAsset;
     use std::{
         fs,
         path::PathBuf,
@@ -188,6 +231,26 @@ mod tests {
     }
     fn asset() -> ParticlesAsset {
         versions::migrate(include_bytes!("../../../third_party/sprinkles/crates/bevy_sprinkles_editor/src/assets/examples/3d-explosion.ron")).unwrap().asset
+    }
+    #[test]
+    fn preset_snapshot_omits_editor_paths_and_rejects_external_references() {
+        let mut asset = asset();
+        asset
+            .sprinkles_editor
+            .assets_folder
+            .push("/private/authoring/".into());
+        let snapshot = preset_snapshot(&asset).unwrap();
+        assert!(!String::from_utf8_lossy(&snapshot).contains("/private/authoring/"));
+        let reloaded = versions::migrate(&snapshot).unwrap().asset;
+        assert!(reloaded.sprinkles_editor.assets_folder.is_empty());
+        assert_eq!(reloaded.name, asset.name);
+        assert_eq!(reloaded.emitters.len(), asset.emitters.len());
+        assert_eq!(preset_snapshot(&asset).unwrap(), snapshot);
+        let DrawPassMaterial::Standard(material) = &mut asset.emitters[0].draw_pass.material else {
+            panic!()
+        };
+        material.normal_map_texture = Some(TextureRef::Local("/private/texture.png".into()));
+        assert!(preset_snapshot(&asset).unwrap_err().contains("External"));
     }
     #[test]
     fn draft_uses_checked_far_frame_and_preserves_shared_effect_identity() {
