@@ -1,3 +1,10 @@
+P2-13 particle catalog foundation, 11 November 2026: a separate headless
+decoder validates bounded local placements and effect descriptors, and checks
+effect file lengths and hashes. Two focused tests, fmt and strict workspace/
+all-target Clippy pass. This is not yet a world-manifest format or client
+feature; asset parsing, texture dependencies, resource budgets, export and
+playback remain pending. See [integration](../SPRINKLES_INTEGRATION.md).
+
 P2-13 local particle export preflight, 11 November 2026: before refusing
 particle-bearing world exports, inspect bounded local effect files and all five
 standard texture slots, reporting missing assets or unsupported custom shaders.

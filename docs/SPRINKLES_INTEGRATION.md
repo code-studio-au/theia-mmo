@@ -572,3 +572,21 @@ or invalid dependency, or counts distinct resolved external texture paths. This
 is an authoring aid and a prerequisite for packaging: existence is not image
 validation, dependency hashing, portability, or a rendering budget. Export still
 refuses every zone with particle placements, including when preflight succeeds.
+
+## Particle catalog decoder foundation — P2-13
+
+The headless network crate has a preliminary schema-1 particle catalog decoder.
+It accepts 1–256 placements with bounded local Y-up positions, yaw and scale, and
+1–256 uniquely named effect descriptors. Every effect must be referenced; each
+has a byte count up to 4 MiB and SHA-256, with a 32 MiB total and a 256 KiB
+catalog limit. The fixed effect filename is `effect-<content-id>.ron`; the
+verification helper checks regular files, lengths and hashes. IDs use the
+existing content-ID rules. It rejects unknown fields, duplicate identities,
+unassigned references and out-of-range transforms.
+
+This decoder is deliberately not part of a world manifest or client loading yet.
+It does not parse effects, validate textures, protect against files being changed
+after checking, or establish GPU resource budgets. Export remains blocked until
+those admission and rendering steps are implemented and qualified. Local
+positions must be produced through the existing checked global-to-local frame
+conversion; this contract does not assign authority or collision to effects.
