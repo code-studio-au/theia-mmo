@@ -2,31 +2,31 @@
 
 **Status: Needs Review; original first-pass dialogue, not localized or implemented.** Story authority: [Human 1–80 Canonical Campaign](Human_1_80_Canonical_Campaign.md). Companion to [Human 20–30 Quest Data](Human_1_80_Current_Quest_Authoring_Manifest.json).
 
-**Character constraints:** Covenant allies maintain independent sovereignty; Dominion encounters are hostile infiltration, never friendly Dominion leadership; the Guardians and Grey Surveyor reveal limited scientific knowledge, not Nhal, the Binding or Kel'vari. Brynja's preliminary note precedes the player's first visit to Kar Durn. The High King's letter leads to Sylvaren but does not grant access there. The sample preservation choice affects acknowledgements, not the main outcome.
+**Character constraints:** Covenant allies maintain independent sovereignty; Dominion encounters are hostile infiltration, never friendly Dominion leadership; the Guardians and Father reveal limited scientific knowledge, not Nhal, the Binding or Kel'vari. Brynja's preliminary note precedes the player's first visit to Kar Durn. The High Thane's letter leads to Sylvaren but does not grant access there. The sample preservation choice affects acknowledgements, not the main outcome.
 
-## Q035
+## Q035 — The Covenant Calls (creator-locked shared opening)
 
-**Mara, offer:** “Cassian's ledger names Tidehold twice. I won't pretend a Human warrant gives us rights in an allied harbor. Take the evidence and ask permission.”
+**Universal summons, issued by Corven's office:** “Your service in your homeland has been brought to the attention of the Covenant. You are requested to present yourself at Tidehold for duties beyond the borders of your own people. Report to the High Ruler's office upon arrival.”
 
-**Player:** “Who has authority there?”
+**Local delivery (race-specific, WORKING):** A suitable familiar representative acknowledges the player's completed homeland campaign without changing the summons' authority or claiming the player is famous. Exact NPC lines for dwarf, Aelari and Korrath remain to be written once their 1–20 campaigns are approved.
 
-**Mara, response:** “The port council. Start with their customs office.”
+**Player:** “Why has the Covenant called for me?”
 
-**Completion:** “The customs dates match the disputed shipments. Now we can ask the council for a proper inquiry.”
+**Local representative:** “The summons doesn't say. It bears Corven's authority. You can ask his office when you arrive.”
 
-**In progress:** “Finish the agreed investigation or service, then bring back what you can verify.”
+**Completion, Tidehold registration:** “Your summons has been received. The High Ruler's office will direct you to the briefing.”
 
-## Q036
+## Q036 — Four Peoples, One Harbour (creator-locked shared briefing)
 
-**Corven, offer:** “Tidehold serves four peoples, not one crown. Tell me what you need and what you intend to do with it.”
+**Corven, offer:** “Four peoples built this Covenant, and each governs its own homeland. Your service has been noted. Here, you act under a limited Covenant commission, not the authority of any single crown.”
 
-**Player:** “I need access to the cargo records.”
+**Player:** “What do you need investigated?”
 
-**Corven, response:** “Then you will receive limited access, with a clerk present. You will not seize a warehouse on a Human king's word.”
+**Corven, response:** “Begin with our provision depot. There are shortages and discrepancies in the records. They may be ordinary failures; I expect you to find evidence before drawing conclusions. You have permission to inspect the assigned records, not to seize property or command soldiers.”
 
-**Completion:** “You respected our terms. That makes the next request easier to hear.”
+**Completion:** “Report what the evidence supports. Nothing more.”
 
-**In progress:** “Finish the agreed investigation or service, then bring back what you can verify.”
+**In progress:** “The depot officials will expect your limited permit. Respect its terms.”
 
 ## Q037
 
@@ -222,17 +222,17 @@
 
 ## Q053
 
-**High King, offer:** “Brynja's evidence warrants further inquiry, but my word does not command Sylvaren. I can offer an introduction, nothing more.”
+**High Thane Bromund, offer:** “Brynja's evidence warrants further inquiry, but my word does not command Sylvaren. I can offer an introduction, nothing more.”
 
 **Player:** “That is enough.”
 
-**High King, response:** “Then carry my letter intact. Let the Aelari decide what they will share.”
+**High Thane Bromund, response:** “Then carry my letter intact. Let the Aelari decide what they will share.”
 
 **Departure / letter handoff:** “You have my seal. Present it with the engineering findings, and speak plainly about what remains uncertain.”
 
 **Q053 completion boundary:** Travel by established routes to Sylvaren and present both letter and engineering report to Caelith before completion. This handoff does not grant Q054's separate Aelari access permission.
 
-**Caelith, receipt (WORKING):** “The High King's seal is genuine, and Brynja's findings deserve examination. Neither gives you authority over our wards or records.”
+**Caelith, receipt (WORKING):** “The High Thane's seal is genuine, and Brynja's findings deserve examination. Neither gives you authority over our wards or records.”
 
 **Player:** “I'm asking you to review the evidence, not to surrender your archives.”
 
@@ -244,7 +244,7 @@
 
 ## Q054
 
-**Caelith, offer:** “The High King's letter is courteous. It is not a key to our archives. Explain why our ward records matter to your investigation.”
+**Caelith, offer:** “The High Thane's letter is courteous. It is not a key to our archives. Explain why our ward records matter to your investigation.”
 
 **Player:** “We found altered designs elsewhere.”
 
