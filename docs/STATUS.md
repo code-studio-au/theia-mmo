@@ -5,7 +5,9 @@ Retained chunks keep their existing roots; startup waits for scene, network and
 render readiness. A headless failure test and a two-client encrypted Renet
 transition with Vulkan validation cover retention and retirement on RX 7900 XTX
 (`build/chunk-particle-native-20261111/retirement/verification.json`). This is
-a small local fixture, not an MMO-scale or performance qualification.
+a small local fixture, not an MMO-scale or performance qualification. A second
+two-client run corrupts the incoming effect and confirms both clients retain the
+old roots (`build/chunk-particle-native-20261111/tampered-verified/verification.json`).
 
 P2-13 chunk particle preparation, 11 November 2026: a worker-suitable helper
 verifies each already-admitted chunk manifest, visual and particle catalog,

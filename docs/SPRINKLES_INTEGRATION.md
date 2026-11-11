@@ -198,6 +198,10 @@ three cases on RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6
 (`build/chunk-particle-native-20261111/retirement/verification.json`). Retained
 chunks are counted twice during staging, so valid large transitions can be
 rejected; texture-heavy and large-scale behavior remain unqualified.
+The qualification also corrupts an incoming effect and requires both clients to
+reject its descriptor mismatch while keeping their active particle roots. The
+reusable runner is `tools/qualify_chunk_particles.py`; it takes an existing
+green-floor chunk fixture and a one-effect looping particle package.
 
 The prerequisites are the accepted Linux authoring shell and the adopted exact
 Bevy 0.20.0 engine. Upstream targets Bevy 0.19.0. Both imported crates use our
