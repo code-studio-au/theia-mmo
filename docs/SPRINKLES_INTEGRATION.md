@@ -185,6 +185,15 @@ The exact GUI-produced package then rendered its particle on two connected
 clients (`build/editor-export-world-native-20261111-v2/verification.json`), with
 zero Vulkan diagnostics on RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6.
 
+Chunk-world preparation now has a worker-suitable helper that verifies each
+admitted chunk's visual and particle catalog, prepares exact effect/image bytes,
+projects placements from chunk-global origins into the index frame, and enforces
+aggregate candidate count and decoded-image limits. A far-origin mixed-residency
+test covers tampering and failure without changing active residency. It does not
+yet publish or render chunk particles; the existing chunk-client guard remains.
+Old-plus-new staging limits, atomic retirement and native GPU checks are still
+required.
+
 The prerequisites are the accepted Linux authoring shell and the adopted exact
 Bevy 0.20.0 engine. Upstream targets Bevy 0.19.0. Both imported crates use our
 workspace engine; introducing a second Bevy engine or downgrading Theia is not

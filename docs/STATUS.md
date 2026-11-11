@@ -1,3 +1,12 @@
+P2-13 chunk particle preparation, 11 November 2026: a worker-suitable helper
+verifies each already-admitted chunk manifest, visual and particle catalog,
+prepares effects and verified images, projects placements from each chunk's f64
+origin to the index frame, and enforces aggregate candidate counts and decoded
+image limits. A far-origin mixed-residency test covers repeated effects, aggregate
+limits, tampering and unchanged active residency. This is preparation only:
+chunk clients still reject particle-bearing visuals, and old-plus-new staging
+budgets, atomic publication, retirement and native GPU checks remain open.
+
 P5-17 / P2-13 editor world export, 11 November 2026: **File → Export world…**
 opens a Sprinkles-styled dialog for a new output folder, content ID and revision.
 It exports the current zone snapshot on a background worker, refuses unsaved

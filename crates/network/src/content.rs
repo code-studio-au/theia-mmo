@@ -192,6 +192,26 @@ impl Manifest {
             self.document.schema,
         )
     }
+    /// As above, with an explicit shared-image asset root for a chunk package.
+    pub fn verify_visual_in_for_particle_catalog(
+        &self,
+        path: &Path,
+        asset_root: &Path,
+        catalog: &[u8],
+    ) -> Result<()> {
+        self.verify_particle_catalog(catalog)?;
+        verify_visual(
+            path,
+            self.document.visual_sha256,
+            Some(self.document.visual_bytes),
+        )?;
+        shared_images::verify(
+            path,
+            Some(asset_root),
+            &self.document.shared_images,
+            self.document.schema,
+        )
+    }
     pub fn verify_visual_in(&self, path: &Path, asset_root: &Path) -> Result<()> {
         self.verify_visual_with_root(path, Some(asset_root))
     }

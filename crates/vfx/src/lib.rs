@@ -12,9 +12,10 @@ use bevy_sprinkles::{
 };
 use std::{
     collections::{BTreeMap, BTreeSet},
+    io::Read,
     path::{Component, Path},
 };
-use theia_core::coordinates::{LocalFrame, LocalPosition};
+use theia_core::coordinates::{ChunkId, INITIAL_CHUNK_METRES, LocalFrame, LocalPosition};
 use theia_network::{particle_content::Catalog, shared_images::ColorSpace};
 
 /// A catalog-identified effect decoded from the bytes whose hash was checked.
@@ -91,6 +92,23 @@ pub fn count_catalog_resources(
 }
 
 impl CatalogCounts {
+    /// Add conservative counts without wrapping.
+    pub fn checked_add(self, other: Self) -> Option<Self> {
+        Some(Self {
+            placements: self.placements.checked_add(other.placements)?,
+            emitters: self.emitters.checked_add(other.emitters)?,
+            vertices: self.vertices.checked_add(other.vertices)?,
+            indices: self.indices.checked_add(other.indices)?,
+            particle_slots: self.particle_slots.checked_add(other.particle_slots)?,
+            trail_history_entries: self
+                .trail_history_entries
+                .checked_add(other.trail_history_entries)?,
+            sub_emitter_words: self
+                .sub_emitter_words
+                .checked_add(other.sub_emitter_words)?,
+        })
+    }
+
     /// Require each count to stay within an explicit caller-provided limit.
     pub fn fits_within(self, limits: Self) -> bool {
         self.placements <= limits.placements
@@ -176,6 +194,92 @@ pub fn project_catalog_placements(
         });
     }
     Ok(projected)
+}
+
+/// Particle snapshots prepared for one immutable chunk residency candidate.
+pub struct PreparedResidency {
+    pub chunks: Vec<(ChunkId, PreparedCatalog)>,
+    pub counts: CatalogCounts,
+    pub decoded_image_bytes: usize,
+}
+
+/// Verify every visual in an already identity-checked residency and prepare
+/// its manifest-bound particle catalogs. Positions are projected from each
+/// chunk's own f64 origin to the index frame. Limits apply to the entire
+/// candidate, including repeated effects across chunks. This performs blocking
+/// I/O and image decoding; it does not publish or render any candidate and
+/// callers must separately account for old-plus-new staging resources.
+pub fn prepare_resident_particles(
+    residency: &theia_network::chunks::Residency,
+    limits: CatalogCounts,
+    max_decoded_image_bytes: usize,
+) -> Result<PreparedResidency, String> {
+    let mut chunks = Vec::new();
+    let mut counts = CatalogCounts::default();
+    let mut decoded_image_bytes = 0usize;
+    for id in residency.loaded() {
+        let directory = residency.index().directory(id);
+        let root = directory
+            .parent()
+            .ok_or("Chunk directory has no asset root")?;
+        let manifest = residency
+            .manifest(id)
+            .ok_or("Loaded chunk has no manifest")?;
+        if !manifest.has_particle_catalog() {
+            manifest
+                .verify_visual_in(&directory.join("terrain.glb"), root)
+                .map_err(|e| e.to_string())?;
+            continue;
+        }
+        let mut catalog_bytes = Vec::new();
+        std::fs::File::open(directory.join("particles/catalog.json"))
+            .map_err(|e| e.to_string())?
+            .take(theia_network::particle_content::MAX_CATALOG_BYTES + 1)
+            .read_to_end(&mut catalog_bytes)
+            .map_err(|e| e.to_string())?;
+        let catalog = manifest
+            .verify_particle_catalog(&catalog_bytes)
+            .map_err(|e| e.to_string())?;
+        manifest
+            .verify_visual_in_for_particle_catalog(
+                &directory.join("terrain.glb"),
+                root,
+                &catalog_bytes,
+            )
+            .map_err(|e| e.to_string())?;
+        let origin = id
+            .origin(INITIAL_CHUNK_METRES)
+            .ok_or("Invalid chunk origin")?;
+        let prepared = prepare_catalog(
+            &catalog,
+            &directory.join("particles/effects"),
+            &directory.join("particles/textures"),
+            Path::new("particles"),
+            LocalFrame::new(origin),
+            residency.index().frame(),
+            limits,
+        )?;
+        counts = counts
+            .checked_add(prepared.counts)
+            .ok_or("Particle residency count overflow")?;
+        if !counts.fits_within(limits) {
+            return Err("Particle residency exceeds supplied count limits".into());
+        }
+        for texture in &prepared.textures {
+            decoded_image_bytes = decoded_image_bytes
+                .checked_add(texture.image.data.as_ref().map_or(0, Vec::len))
+                .ok_or("Particle residency image size overflow")?;
+        }
+        if decoded_image_bytes > max_decoded_image_bytes {
+            return Err("Particle residency exceeds decoded image limit".into());
+        }
+        chunks.push((id, prepared));
+    }
+    Ok(PreparedResidency {
+        chunks,
+        counts,
+        decoded_image_bytes,
+    })
 }
 
 /// A cataloged PNG decoded from the verified bytes with its authored color role.
@@ -1114,6 +1218,155 @@ mod tests {
             std::thread::sleep(Duration::from_millis(5));
         }
         drop(app);
+        fs::remove_dir_all(root).unwrap();
+    }
+    #[test]
+    fn resident_particles_are_manifest_bound_projected_and_aggregate_limited() {
+        use bevy_sprinkles::prelude::{EmitterData, ParticlesDimension};
+        use theia_network::{
+            chunks::{Index, Residency},
+            content::Manifest,
+            particle_content::Texture,
+        };
+        let root = std::env::temp_dir().join(format!(
+            "theia-vfx-residency-{}-{}",
+            std::process::id(),
+            NEXT.fetch_add(1, Ordering::Relaxed)
+        ));
+        fs::create_dir(&root).unwrap();
+        let base = 1_000_000_000i64;
+        let texture = Texture {
+            sha256: sha256(PNG),
+            bytes: PNG.len() as u64,
+            color_space: ColorSpace::Srgb,
+        };
+        let mut emitter = EmitterData::default();
+        let DrawPassMaterial::Standard(material) = &mut emitter.draw_pass.material else {
+            unreachable!()
+        };
+        material.base_color_texture = Some(TextureRef::Asset(format!(
+            "textures/{}",
+            texture.filename()
+        )));
+        let asset = ParticlesAsset::new(
+            "chunk".into(),
+            ParticlesDimension::D3,
+            default(),
+            vec![emitter],
+            vec![],
+            false,
+            default(),
+        );
+        let effect = ron::to_string(&asset).unwrap().into_bytes();
+        let catalog = serde_json::to_vec(&json!({"schema":1,
+            "effects":[{"id":"vfx.test","bytes":effect.len(),"sha256":sha256(&effect)}],
+            "placements":[{"id":1,"effect":"vfx.test","position":[1.,0.,2.],"yaw_degrees":0.,"scale":1.}],
+            "textures":[{"sha256":sha256(PNG),"bytes":PNG.len(),"color_space":"srgb"}]})).unwrap();
+        let mut json_chunk = br#"{"asset":{"version":"2.0"}}"#.to_vec();
+        while !json_chunk.len().is_multiple_of(4) {
+            json_chunk.push(b' ');
+        }
+        let mut visual = b"glTF".to_vec();
+        visual.extend(2u32.to_le_bytes());
+        visual.extend((20u32 + json_chunk.len() as u32).to_le_bytes());
+        visual.extend((json_chunk.len() as u32).to_le_bytes());
+        visual.extend(b"JSON");
+        visual.extend(json_chunk);
+        let mut entries = Vec::new();
+        for offset in 0..3 {
+            let id = ChunkId {
+                x: base + offset,
+                z: base,
+            };
+            let dir = root.join(format!("chunk_{}_{}", id.x, id.z));
+            fs::create_dir_all(dir.join("particles/effects")).unwrap();
+            fs::create_dir_all(dir.join("particles/textures")).unwrap();
+            fs::write(dir.join("terrain.glb"), &visual).unwrap();
+            let profile = serde_json::to_vec(&json!({"schema":2,"bounds":[[-1.,-1.],[129.,129.]],"source_origin":[0.,0.,0.],
+                "visual_sha256":sha256(&visual),"triangles":[[[-1.,0.,-1.],[-1.,0.,129.],[129.,0.,-1.]],
+                [[129.,0.,-1.],[-1.,0.,129.],[129.,0.,129.]]]})).unwrap();
+            fs::write(dir.join("terrain.json"), &profile).unwrap();
+            let mut document = json!({"schema":1,"content_id":format!("theia.test.chunk.x{}", id.x),"revision":1,
+                "collision_schema":2,"collision_bytes":profile.len(),"collision_sha256":sha256(&profile),
+                "visual_bytes":visual.len(),"visual_sha256":sha256(&visual)});
+            if offset < 2 {
+                document["schema"] = json!(4);
+                document["particle_bytes"] = json!(catalog.len());
+                document["particle_sha256"] = json!(sha256(&catalog));
+                fs::write(dir.join("particles/catalog.json"), &catalog).unwrap();
+                fs::write(dir.join("particles/effects/effect-vfx.test.ron"), &effect).unwrap();
+                fs::write(dir.join("particles/textures").join(texture.filename()), PNG).unwrap();
+            }
+            let manifest = serde_json::to_vec(&document).unwrap();
+            fs::write(dir.join("world.manifest.json"), &manifest).unwrap();
+            entries.push(
+                json!({"id":[id.x,id.z],"package":Manifest::decode(&manifest).unwrap().identity()}),
+            );
+        }
+        fs::write(
+            root.join("world.chunks.json"),
+            serde_json::to_vec(&json!({"schema":1,"chunk_metres":128,
+            "query_origin":[base as f64 * 128. + 8.,0.,base as f64 * 128. - 8.],"chunks":entries}))
+            .unwrap(),
+        )
+        .unwrap();
+        let mut residency = Residency::new(Index::load(&root).unwrap(), 3).unwrap();
+        let ids: Vec<_> = (0..3)
+            .map(|offset| ChunkId {
+                x: base + offset,
+                z: base,
+            })
+            .collect();
+        residency.replace(&ids, &[]).unwrap();
+        assert!(
+            residency.verify_visuals().is_err(),
+            "legacy path must still reject particle chunks"
+        );
+        let limits = CatalogCounts {
+            placements: 2,
+            emitters: 2,
+            vertices: 1_000_000,
+            indices: 3_000_000,
+            particle_slots: 128,
+            trail_history_entries: 1024,
+            sub_emitter_words: 1024,
+        };
+        let prepared = prepare_resident_particles(&residency, limits, 1024).unwrap();
+        assert_eq!(prepared.chunks.len(), 2);
+        assert_eq!(prepared.counts.placements, 2);
+        assert!(prepared.decoded_image_bytes > 0);
+        assert_eq!(
+            prepared.chunks[0].1.placements[0].transform.translation,
+            Vec3::new(-7., 0., 10.)
+        );
+        assert_eq!(
+            prepared.chunks[1].1.placements[0].transform.translation,
+            Vec3::new(121., 0., 10.)
+        );
+        assert!(prepare_resident_particles(&residency, limits, 0).is_err());
+        let mut too_small = limits;
+        too_small.placements = 1;
+        assert!(prepare_resident_particles(&residency, too_small, 1024).is_err());
+        let overflow = CatalogCounts {
+            placements: u64::MAX,
+            ..default()
+        };
+        assert!(
+            overflow
+                .checked_add(CatalogCounts {
+                    placements: 1,
+                    ..default()
+                })
+                .is_none()
+        );
+        let second = residency.index().directory(ids[1]);
+        fs::write(
+            second.join("particles/effects/effect-vfx.test.ron"),
+            b"tampered",
+        )
+        .unwrap();
+        assert!(prepare_resident_particles(&residency, limits, 1024).is_err());
+        assert_eq!(residency.loaded(), ids);
         fs::remove_dir_all(root).unwrap();
     }
 }
