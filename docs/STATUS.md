@@ -6,7 +6,10 @@ requirements when adding, replacing or removing particles. An editor-produced
 effect was published into a far-origin projected-material chunk world; two
 connected Vulkan clients verified actual projected-material bindings and visible
 particle emitters with no validation diagnostics on RX 7900 XTX / RADV NAVI31 /
-Mesa 26.2.6 (`build/projected-particle-native-20261111-v4/verification.json`).
+Mesa 26.2.6 (`build/projected-particle-native-20261111-v4/verification.json`). The editor's actual File-menu export was also exercised at the same far origin; it
+preserved the source files, and its published output passed the same two-client
+checks (`build/projected-particle-editor-native-20261111/qualification.json`,
+`build/projected-particle-editor-world-native-20261111/verification.json`).
 
 P2-13 world-space particle translation foundation, 11 November 2026: the
 Sprinkles GPU runtime can queue a render-frame offset without advancing or

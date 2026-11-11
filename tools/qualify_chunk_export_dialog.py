@@ -15,14 +15,18 @@ from launch_environment import client_environment
 from qualify_world_input_os import Desktop, capture_ready, owned_window, wait
 
 
-def run(output, binary, empty_zone=False, replace=False, clear=False):
+def run(output, binary, empty_zone=False, replace=False, clear=False, projected=False):
     output.mkdir(parents=True, exist_ok=False)
     name = f'exportdemo{time.time_ns()}'
     world = Path('build')/(name+'-particles')
     assert not world.exists()
     base_world = Path('build/editor-particle-chunk-world-validated-20261111' if replace else 'build/chunk-paired-native-20261020/fixture-good')
+    if projected:
+        assert not replace and not clear
+        base_world = Path('build/runtime-materials-fixture-v1')
+    chunk_name = 'chunk_1000000000_-1000000000' if projected else 'chunk_0_0'
     before_index = (base_world/'world.chunks.json').read_bytes()
-    before_manifest = (base_world/'chunk_0_0/world.manifest.json').read_bytes()
+    before_manifest = (base_world/chunk_name/'world.manifest.json').read_bytes()
     data = output/'particle-data/library'
     data.mkdir(parents=True)
     effect = data/'vfx.test.ron'
@@ -31,11 +35,14 @@ def run(output, binary, empty_zone=False, replace=False, clear=False):
     source, report = output/'zone.json', output/'state.json'
     edits = json.loads(Path('content/zones/greybox.commands.jsonl').read_text().splitlines()[0])['edits']
     objects = [edit['object'] for edit in edits if edit['op']=='place']
-    if empty_zone:
+    if empty_zone or projected:
         objects = []
-    particles = [] if clear else [{'id':10,'name':'Test','effect':'vfx.test','position':[122,1.3,32],
+    origin = [128000000000,0,-128000000000] if projected else [0,0,0]
+    position = [origin[0]+60,1.3,origin[2]+50] if projected else [122,1.3,32]
+    local_position = [60.,1.2999999523162842,50.] if projected else [122.,1.2999999523162842,32.]
+    particles = [] if clear else [{'id':10,'name':'Test','effect':'vfx.test','position':position,
                                   'yaw_degrees':0,'scale':1}]
-    source.write_text(json.dumps({'schema':8, 'name':name, 'origin':[0,0,0], 'spawn':[0,.1,6],
+    source.write_text(json.dumps({'schema':8, 'name':name, 'origin':origin, 'spawn':[origin[0],.1,origin[2]+6],
         'objects':objects, 'particles':particles}))
     before = source.read_bytes()
     env = client_environment(dict(os.environ, WGPU_BACKEND='vulkan', VK_INSTANCE_LAYERS='VK_LAYER_KHRONOS_validation',
@@ -85,17 +92,17 @@ def run(output, binary, empty_zone=False, replace=False, clear=False):
             button = next(button for button in state()['export_dialog']['buttons'] if button['action']=='Export')
             click(button['centre'])
             wait(lambda: state()['export_dialog'] and state()['export_dialog']['finished'], 60)
-            manifest = json.loads((world/'chunk_0_0/world.manifest.json').read_text())
-            assert manifest['schema']==(2 if clear else 4) and manifest['revision']==(4 if replace else 3)
+            manifest = json.loads((world/chunk_name/'world.manifest.json').read_text())
+            assert manifest['schema']==(5 if projected else 2 if clear else 4) and manifest['revision']==(2 if projected else 4 if replace else 3)
             if clear:
-                assert not (world/'chunk_0_0/particles').exists()
+                assert not (world/chunk_name/'particles').exists()
             else:
-                catalog = (world/'chunk_0_0/particles/catalog.json').read_bytes()
+                catalog = (world/chunk_name/'particles/catalog.json').read_bytes()
                 assert manifest['particle_sha256']==list(hashlib.sha256(catalog).digest())
-                assert json.loads(catalog)['placements'][0]['position']==[122.0,1.2999999523162842,32.0]
+                assert json.loads(catalog)['placements'][0]['position']==local_position
             assert source.read_bytes()==before and effect.read_bytes()==effect_before
             assert (base_world/'world.chunks.json').read_bytes()==before_index
-            assert (base_world/'chunk_0_0/world.manifest.json').read_bytes()==before_manifest
+            assert (base_world/chunk_name/'world.manifest.json').read_bytes()==before_manifest
             close = next(button for button in state()['export_dialog']['buttons'] if button['action']=='Close')
             click(close['centre'])
             wait(lambda: state()['export_dialog'] is None)
@@ -107,7 +114,7 @@ def run(output, binary, empty_zone=False, replace=False, clear=False):
             desktop.close()
     log = (output/'editor.log').read_text()
     assert 'VK_LAYER_KHRONOS_validation' in log and check_gpu_diagnostics(log)==0
-    result = {'passed':True,'world':str(world.resolve()),'revision':4 if replace else 3,'empty_zone':empty_zone,'replace':replace,'clear':clear,'source_unchanged':True,
+    result = {'passed':True,'world':str(world.resolve()),'revision':2 if projected else 4 if replace else 3,'projected':projected,'empty_zone':empty_zone,'replace':replace,'clear':clear,'source_unchanged':True,
               'effect_unchanged':True,'gpu_diagnostics':0}
     (output/'qualification.json').write_text(json.dumps(result,indent=2)+'\n')
     return result
@@ -120,6 +127,7 @@ if __name__ == '__main__':
     parser.add_argument('--empty-zone', action='store_true')
     parser.add_argument('--replace', action='store_true')
     parser.add_argument('--clear', action='store_true')
+    parser.add_argument('--projected', action='store_true')
     args = parser.parse_args()
     assert not args.clear or args.replace
-    print(json.dumps(run(args.output.resolve(), args.binary.resolve(), args.empty_zone, args.replace, args.clear),indent=2))
+    print(json.dumps(run(args.output.resolve(), args.binary.resolve(), args.empty_zone, args.replace, args.clear, args.projected),indent=2))
