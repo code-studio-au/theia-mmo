@@ -153,3 +153,13 @@ After completion, stop cleanup cycles and maintain the established sources rathe
 - [x] `Human_1_80_Key_Scenes_Branching_Dialogue.md` now explicitly guards Q035–Q036 shared authority, Q184 race-specific history, cross-race knowledge, Guardian secrecy and Q097/Q143 reveal timing.
 - [ ] Verify other historical crosswalks and legacy dialogue references as **provenance**, not as active canonical quest definitions; avoid indiscriminate replacements.
 - [ ] Audit remains OPEN pending full spoken-approval verification, deliberately deferred Chronicle revision, and unapproved racial campaign/runtime bindings.
+
+### Late-campaign quest continuity audit — 12 November 2026
+
+- [x] Compared canonical Q156, Q157, Q159, Q168, Q169, Q181 and Q183 against both 184-quest JSON inventories.
+- [x] Q159 and Q168 both use Q156 as their sole quest prerequisite, with approved access notes; neither wrongly requires Q157 or Q181 or imposes an extra level gate.
+- [x] Q169 is correctly titled `What the Shroud Concealed`, has a post-Q156 journal investigation and Oth'varen conversation, and its authoring metadata explicitly records the Q181 death-event availability cutoff. The derived dependency reference records expiry for accepted quests that have not completed the conversation; exact runtime handling remains pending.
+- [x] Q181's authoring objectives preserve Oth'varen's physical death **after** verifying alignment and **before** final inversion. Nhal's unified will and memory are shattered; divine essence is not annihilated.
+- [x] Q183 has both the Sel'ora/Aru'ven Kel'vari response and separate Mara/Corven Covenant report in canonical and structured authoring content.
+- [ ] Q169 post-conversation but pre-custody completion remains an explicitly open edge case; do not silently decide it.
+- [ ] The runtime still needs to implement Q169 expiration, Q159/Q168 regional permissions and Q183 dual-report evidence. JSON authoring notes are not proof of engine support.
