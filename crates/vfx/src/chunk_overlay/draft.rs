@@ -138,6 +138,38 @@ pub fn from_catalog(
     result
 }
 
+/// Draft an explicit empty replacement, allowing an author to clear all world
+/// particles without inventing a catalog containing zero placements.
+pub fn empty(chunks: &Path, output: &Path, origin: [f64; 3]) -> Result<(), String> {
+    let chunks = fs::canonicalize(chunks).map_err(|e| e.to_string())?;
+    let parent = output
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or(Path::new("."));
+    let parent = fs::canonicalize(parent).map_err(|e| e.to_string())?;
+    if parent.starts_with(&chunks) {
+        return Err("Output must be outside input directories".into());
+    }
+    let destination = parent.join(
+        output
+            .file_name()
+            .ok_or("Output requires a directory name")?,
+    );
+    let origin = GlobalPosition::new(origin).ok_or("Invalid source origin")?;
+    let index = Index::load(&chunks).map_err(|e| e.to_string())?;
+    fs::create_dir(&destination).map_err(|e| e.to_string())?;
+    let report = serde_json::json!({"schema":1,"source_identity":null,"source_catalog_sha256":null,"chunk_index_identity":index.identity(),"source_origin":origin.metres(),"chunks":[],"scope":"unpublished explicit empty particle replacement"});
+    let result = fs::write(
+        destination.join("draft.json"),
+        serde_json::to_vec_pretty(&report).map_err(|e| e.to_string())?,
+    )
+    .map_err(|e| e.to_string());
+    if result.is_err() {
+        let _ = fs::remove_dir_all(destination);
+    }
+    result
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

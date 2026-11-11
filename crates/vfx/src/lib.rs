@@ -247,30 +247,62 @@ pub fn bind_chunk_catalog(
     manifest_bytes: &[u8],
     catalog_bytes: &[u8],
 ) -> Result<(Vec<u8>, [u8; 32]), String> {
+    revise_chunk_catalog(manifest_bytes, Some(catalog_bytes), false)
+}
+
+/// Replace or remove the particle catalog of a previously verified chunk.
+/// Removing uses schema 2, which preserves schema-4 shared-image semantics.
+pub fn replace_chunk_catalog(
+    manifest_bytes: &[u8],
+    catalog_bytes: Option<&[u8]>,
+) -> Result<(Vec<u8>, [u8; 32]), String> {
+    revise_chunk_catalog(manifest_bytes, catalog_bytes, true)
+}
+
+fn revise_chunk_catalog(
+    manifest_bytes: &[u8],
+    catalog_bytes: Option<&[u8]>,
+    replace: bool,
+) -> Result<(Vec<u8>, [u8; 32]), String> {
     let original =
         theia_network::content::Manifest::decode(manifest_bytes).map_err(|e| e.to_string())?;
-    if original.has_particle_catalog() {
+    if original.has_particle_catalog() && !replace {
         return Err("Chunk already contains particles".into());
     }
-    Catalog::decode(catalog_bytes).map_err(|e| e.to_string())?;
+    if catalog_bytes.is_none() && !original.has_particle_catalog() {
+        return Err("Chunk has no particle catalog to remove".into());
+    }
+    if let Some(catalog_bytes) = catalog_bytes {
+        Catalog::decode(catalog_bytes).map_err(|e| e.to_string())?;
+    }
     let revision = original
         .revision()
         .checked_add(1)
         .ok_or("Chunk revision overflow")?;
     let mut document: serde_json::Value =
         serde_json::from_slice(manifest_bytes).map_err(|e| e.to_string())?;
-    if !matches!(document["schema"].as_u64(), Some(1 | 2)) {
+    if !matches!(document["schema"].as_u64(), Some(1 | 2 | 4)) {
         return Err("Chunk material profile schema cannot be combined with particles".into());
     }
-    document["schema"] = serde_json::json!(4);
     document["revision"] = serde_json::json!(revision);
-    document["particle_bytes"] = serde_json::json!(catalog_bytes.len());
-    document["particle_sha256"] = serde_json::json!(theia_network::terrain::sha256(catalog_bytes));
+    if let Some(catalog_bytes) = catalog_bytes {
+        document["schema"] = serde_json::json!(4);
+        document["particle_bytes"] = serde_json::json!(catalog_bytes.len());
+        document["particle_sha256"] =
+            serde_json::json!(theia_network::terrain::sha256(catalog_bytes));
+    } else {
+        document["schema"] = serde_json::json!(2);
+        let object = document.as_object_mut().ok_or("Invalid manifest")?;
+        object.remove("particle_bytes");
+        object.remove("particle_sha256");
+    }
     let bytes = serde_json::to_vec(&document).map_err(|e| e.to_string())?;
     let revised = theia_network::content::Manifest::decode(&bytes).map_err(|e| e.to_string())?;
-    revised
-        .verify_particle_catalog(catalog_bytes)
-        .map_err(|e| e.to_string())?;
+    if let Some(catalog_bytes) = catalog_bytes {
+        revised
+            .verify_particle_catalog(catalog_bytes)
+            .map_err(|e| e.to_string())?;
+    }
     Ok((bytes, revised.identity()))
 }
 

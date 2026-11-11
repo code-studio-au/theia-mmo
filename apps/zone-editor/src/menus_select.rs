@@ -223,6 +223,11 @@ pub(super) fn spawn(parent: &mut ChildSpawnerCommands, kind: Kind) {
                             "",
                         ),
                         (
+                            workspace::Control::ReplaceParticleChunks,
+                            "Replace all world particles…",
+                            "",
+                        ),
+                        (
                             workspace::Control::Command(Action::Load),
                             "Reload",
                             "Ctrl Shift O",

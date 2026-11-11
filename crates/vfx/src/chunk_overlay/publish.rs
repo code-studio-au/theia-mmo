@@ -85,6 +85,20 @@ fn parse_hash(value: &serde_json::Value) -> Result<[u8; 32], String> {
     Ok(result)
 }
 pub fn run(chunks: &Path, overlays: &Path, output: &Path) -> Result<(), String> {
+    run_with_policy(chunks, overlays, output, false)
+}
+
+/// Explicitly replace all world particles in the new output; source is untouched.
+pub fn replace_all(chunks: &Path, overlays: &Path, output: &Path) -> Result<(), String> {
+    run_with_policy(chunks, overlays, output, true)
+}
+
+fn run_with_policy(
+    chunks: &Path,
+    overlays: &Path,
+    output: &Path,
+    replace: bool,
+) -> Result<(), String> {
     let chunks = fs::canonicalize(chunks).map_err(|e| e.to_string())?;
     let overlays = fs::canonicalize(overlays).map_err(|e| e.to_string())?;
     let parent = output
@@ -122,7 +136,7 @@ pub fn run(chunks: &Path, overlays: &Path, output: &Path) -> Result<(), String> 
             return Err("Invalid or duplicate overlay chunk".into());
         }
     }
-    if selected.is_empty() {
+    if selected.is_empty() && !replace {
         return Err("Overlay contains no chunks".into());
     }
     let index_bytes = read(&chunks.join("world.chunks.json"), 32 * 1024)?;
@@ -182,14 +196,58 @@ pub fn run(chunks: &Path, overlays: &Path, output: &Path) -> Result<(), String> 
             if expected.get(&id) != Some(&manifest.identity()) {
                 return Err("Chunk manifest does not match index".into());
             }
-            if manifest.has_particle_catalog() {
-                return Err("Input chunk already has particles".into());
-            }
             Terrain::load(&directory.join("terrain.json")).map_err(|e| e.to_string())?;
-            manifest
-                .verify_visual_in(&directory.join("terrain.glb"), &stage)
-                .map_err(|e| e.to_string())?;
+            let particles = directory.join("particles");
+            if manifest.has_particle_catalog() {
+                if !replace {
+                    return Err("Input chunk already has particles".into());
+                }
+                let old_bytes = read(
+                    &particles.join("catalog.json"),
+                    theia_network::particle_content::MAX_CATALOG_BYTES,
+                )?;
+                let old_catalog = manifest
+                    .verify_particle_catalog(&old_bytes)
+                    .map_err(|e| e.to_string())?;
+                manifest
+                    .verify_visual_in_for_particle_catalog(
+                        &directory.join("terrain.glb"),
+                        &stage,
+                        &old_bytes,
+                    )
+                    .map_err(|e| e.to_string())?;
+                let frame = LocalFrame::new(
+                    id.origin(INITIAL_CHUNK_METRES)
+                        .ok_or("Invalid chunk origin")?,
+                );
+                crate::prepare_catalog_with_image_limit(
+                    &old_catalog,
+                    &particles.join("effects"),
+                    &particles.join("textures"),
+                    Path::new("particles"),
+                    frame,
+                    frame,
+                    COUNTS,
+                    IMAGE_LIMIT,
+                )?;
+            } else {
+                manifest
+                    .verify_visual_in(&directory.join("terrain.glb"), &stage)
+                    .map_err(|e| e.to_string())?;
+            }
             let Some(wanted) = selected.get(&id) else {
+                if manifest.has_particle_catalog() {
+                    fs::remove_dir_all(&particles).map_err(|e| e.to_string())?;
+                    let (updated, identity) = crate::replace_chunk_catalog(&original_bytes, None)?;
+                    fs::write(&manifest_path, updated).map_err(|e| e.to_string())?;
+                    let revised = Manifest::load_optional(&manifest_path)
+                        .map_err(|e| e.to_string())?
+                        .ok_or("Revised manifest missing")?;
+                    revised
+                        .verify_visual_in(&directory.join("terrain.glb"), &stage)
+                        .map_err(|e| e.to_string())?;
+                    replacements.insert(id, identity);
+                }
                 continue;
             };
             let draft = overlays.join(format!("chunk_{}_{}", id.x, id.z));
@@ -214,7 +272,9 @@ pub fn run(chunks: &Path, overlays: &Path, output: &Path) -> Result<(), String> 
                 256 * 1024 * 1024,
             )?;
             let snapshot = snapshots.get(&id).ok_or("Empty chunk overlay")?;
-            let particles = directory.join("particles");
+            if manifest.has_particle_catalog() {
+                fs::remove_dir_all(&particles).map_err(|e| e.to_string())?;
+            }
             fs::create_dir(&particles).map_err(|e| e.to_string())?;
             fs::create_dir(particles.join("effects")).map_err(|e| e.to_string())?;
             fs::create_dir(particles.join("textures")).map_err(|e| e.to_string())?;
@@ -238,8 +298,11 @@ pub fn run(chunks: &Path, overlays: &Path, output: &Path) -> Result<(), String> 
                 COUNTS,
                 IMAGE_LIMIT,
             )?;
-            let (updated, identity) =
-                crate::bind_chunk_catalog(&original_bytes, &snapshot.catalog)?;
+            let (updated, identity) = if replace {
+                crate::replace_chunk_catalog(&original_bytes, Some(&snapshot.catalog))?
+            } else {
+                crate::bind_chunk_catalog(&original_bytes, &snapshot.catalog)?
+            };
             fs::write(manifest_path, updated).map_err(|e| e.to_string())?;
             let revised = Manifest::load_optional(&directory.join("world.manifest.json"))
                 .map_err(|e| e.to_string())?
@@ -388,6 +451,43 @@ mod tests {
                 .placements,
             1
         );
+        let replacement = root.join("replacement-draft");
+        crate::chunk_overlay::draft::from_catalog(
+            &catalog,
+            &overlay.join("chunk_0_0/effects"),
+            &overlay.join("chunk_0_0/textures"),
+            &output,
+            &replacement,
+            [0.; 3],
+            None,
+        )
+        .unwrap();
+        let replaced = root.join("replaced");
+        replace_all(&output, &replacement, &replaced).unwrap();
+        let manifest = Manifest::load_optional(&replaced.join("chunk_0_0/world.manifest.json"))
+            .unwrap()
+            .unwrap();
+        assert_eq!(manifest.revision(), 3);
+        assert!(manifest.has_particle_catalog());
+        let empty = root.join("empty");
+        crate::chunk_overlay::draft::empty(&replaced, &empty, [0.; 3]).unwrap();
+        let cleared = root.join("cleared");
+        replace_all(&replaced, &empty, &cleared).unwrap();
+        let manifest = Manifest::load_optional(&cleared.join("chunk_0_0/world.manifest.json"))
+            .unwrap()
+            .unwrap();
+        assert_eq!(manifest.revision(), 4);
+        assert!(!manifest.has_particle_catalog());
+        assert!(!cleared.join("chunk_0_0/particles").exists());
+        assert!(replaced.join("chunk_0_0/particles").exists());
+        fs::write(
+            replaced.join("chunk_0_0/particles/effects/effect-vfx.test.ron"),
+            b"tampered",
+        )
+        .unwrap();
+        let corrupt_output = root.join("corrupt-output");
+        assert!(replace_all(&replaced, &empty, &corrupt_output).is_err());
+        assert!(!corrupt_output.exists());
         assert!(run(&source, &overlay, &output).is_err());
         fs::write(overlay.join("chunk_0_0/catalog.json"), b"corrupt").unwrap();
         let failed = root.join("failed");

@@ -22,8 +22,15 @@ pub(super) fn publish_particles_to_chunks(
     zone: &Zone,
     chunks: &Path,
     output: &Path,
+    replace: bool,
 ) -> Result<(), String> {
-    publish_particles_to_chunks_in(zone, chunks, output, &bevy_sprinkles_editor::io::data_dir())
+    publish_particles_to_chunks_in(
+        zone,
+        chunks,
+        output,
+        &bevy_sprinkles_editor::io::data_dir(),
+        replace,
+    )
 }
 
 fn publish_particles_to_chunks_in(
@@ -31,8 +38,9 @@ fn publish_particles_to_chunks_in(
     chunks: &Path,
     output: &Path,
     library: &Path,
+    replace: bool,
 ) -> Result<(), String> {
-    if zone.particles.is_empty() {
+    if zone.particles.is_empty() && !replace {
         return Err("Add a particle placement before exporting".into());
     }
     if output.exists() {
@@ -57,28 +65,36 @@ fn publish_particles_to_chunks_in(
     let overlays = root.join("overlays");
     let result = (|| {
         zone.validate()?;
-        let (_, draft) = crate::particle_export::draft(zone, library)?;
-        fs::create_dir(&source).map_err(|e| e.to_string())?;
-        let effects = source.join("effects");
-        let textures = source.join("textures");
-        fs::create_dir(&effects).map_err(|e| e.to_string())?;
-        fs::create_dir(&textures).map_err(|e| e.to_string())?;
-        for (name, bytes) in draft.effects {
-            fs::write(effects.join(name), bytes).map_err(|e| e.to_string())?;
+        if zone.particles.is_empty() {
+            theia_vfx::chunk_overlay::draft::empty(chunks, &overlays, zone.origin)?;
+        } else {
+            let (_, draft) = crate::particle_export::draft(zone, library)?;
+            fs::create_dir(&source).map_err(|e| e.to_string())?;
+            let effects = source.join("effects");
+            let textures = source.join("textures");
+            fs::create_dir(&effects).map_err(|e| e.to_string())?;
+            fs::create_dir(&textures).map_err(|e| e.to_string())?;
+            for (name, bytes) in draft.effects {
+                fs::write(effects.join(name), bytes).map_err(|e| e.to_string())?;
+            }
+            for (name, bytes) in draft.textures {
+                fs::write(textures.join(name), bytes).map_err(|e| e.to_string())?;
+            }
+            theia_vfx::chunk_overlay::draft::from_catalog(
+                &draft.catalog,
+                &effects,
+                &textures,
+                chunks,
+                &overlays,
+                zone.origin,
+                None,
+            )?;
         }
-        for (name, bytes) in draft.textures {
-            fs::write(textures.join(name), bytes).map_err(|e| e.to_string())?;
+        if replace {
+            theia_vfx::chunk_overlay::publish::replace_all(chunks, &overlays, output)
+        } else {
+            theia_vfx::chunk_overlay::publish::run(chunks, &overlays, output)
         }
-        theia_vfx::chunk_overlay::draft::from_catalog(
-            &draft.catalog,
-            &effects,
-            &textures,
-            chunks,
-            &overlays,
-            zone.origin,
-            None,
-        )?;
-        theia_vfx::chunk_overlay::publish::run(chunks, &overlays, output)
     })();
     let _ = fs::remove_dir_all(&root);
     result
@@ -649,8 +665,14 @@ mod tests {
         fs::create_dir(&chunks).unwrap();
         let mut zone = fixture();
         assert!(
-            publish_particles_to_chunks_in(&zone, &chunks, &folder.0.join("output"), &folder.0)
-                .is_err()
+            publish_particles_to_chunks_in(
+                &zone,
+                &chunks,
+                &folder.0.join("output"),
+                &folder.0,
+                false
+            )
+            .is_err()
         );
         zone.particles
             .push(theia_zone::particles::ParticlePlacement {
@@ -662,8 +684,14 @@ mod tests {
                 scale: 1.,
             });
         assert!(
-            publish_particles_to_chunks_in(&zone, &chunks, &chunks.join("nested"), &folder.0)
-                .is_err()
+            publish_particles_to_chunks_in(
+                &zone,
+                &chunks,
+                &chunks.join("nested"),
+                &folder.0,
+                false
+            )
+            .is_err()
         );
         assert_eq!(fs::read_dir(&chunks).unwrap().count(), 0);
     }

@@ -38,6 +38,13 @@ partition the editor's terrain or update projected-material schema-3 packages.
 Particle chunk export now drafts directly from saved particle files instead of
 constructing a temporary terrain world. A native export from a zone without
 objects passed (`build/chunk-export-empty-zone-native-20261111/`).
+**File → Replace all world particles…** explicitly creates a new copy in which
+all existing world particle placements are replaced by the current zone's; an
+empty zone clears them. It verifies the previous packages and increments affected
+revisions. Native menu tests covered replacement and clearing while preserving
+the original (`build/particle-replace-dialog-native-20261111/` and
+`build/particle-clear-dialog-native-20261111/`); connected Vulkan clients tested
+both resulting worlds. This is a whole-world operation, not a per-zone merge.
 
 P2-13 particle image admission, 11 November 2026: monolithic and chunk clients
 now apply their decoded-image allowance to verified PNG headers before invoking

@@ -221,7 +221,8 @@ def sha256(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def run(output, binaries, references=None, terrain=None, player_assets=None, collision=False, interior=False, full_map=False, map_access=False, transport="renet", world_origin=None, replication_span=None, render_span=None, jump=False, chunk_world=None, client_chunk_world=None, expect_remote_pixels=True, chunk_direction="z", chunk_stream=False, chunk_delay_ms=0, chunk_asset_failure=False, chunk_bounds_failure=False, chunk_image_failure=False, chunk_shared_images=False, staging_root_limit=1, stream_probe="green_floor", window_size="1280x720", require_world_particles=False, require_particle_rebase=False, hide_world_particles=False, exercise_particle_control=False, require_finished_particles=False, capture_particle_burst=False, require_particle_retirement=False, chunk_particle_failure=False, chunk_particle_texture_failure=False, chunk_particle_budget_failure=False):
+def run(output, binaries, references=None, terrain=None, player_assets=None, collision=False, interior=False, full_map=False, map_access=False, transport="renet", world_origin=None, replication_span=None, render_span=None, jump=False, chunk_world=None, client_chunk_world=None, expect_remote_pixels=True, chunk_direction="z", chunk_stream=False, chunk_delay_ms=0, chunk_asset_failure=False, chunk_bounds_failure=False, chunk_image_failure=False, chunk_shared_images=False, staging_root_limit=1, stream_probe="green_floor", window_size="1280x720", require_world_particles=False, require_particle_rebase=False, hide_world_particles=False, exercise_particle_control=False, require_finished_particles=False, capture_particle_burst=False, require_particle_retirement=False, chunk_particle_failure=False, chunk_particle_texture_failure=False, chunk_particle_budget_failure=False, require_no_world_particles=False):
+    assert not require_no_world_particles or (chunk_world and not require_world_particles)
     assert not require_particle_retirement or (chunk_stream and require_world_particles)
     assert not require_finished_particles or require_world_particles
     assert not capture_particle_burst or require_world_particles
@@ -508,6 +509,9 @@ def run(output, binaries, references=None, terrain=None, player_assets=None, col
                         gap = min(gap, profile_capsule_clearance(profile, local_player))
                     assert -.001 <= gap <= .02, f'Chunk capsule mesh clearance: {gap}; {player}'
                     ground_checks.append({'client':name,'actor':player['id'],'clearance':gap})
+            if require_no_world_particles:
+                particles = report['world_particles']
+                assert particles['placements'] == 0 and particles['live_roots'] == 0 and particles['running_emitter_frames'] == 0
             if require_world_particles:
                 particles = report['world_particles']
                 assert particles['placements'] > 0
@@ -758,6 +762,7 @@ if __name__ == "__main__":
     parser.add_argument("--reference-assets", type=Path)
     parser.add_argument("--terrain-world", type=Path)
     parser.add_argument("--require-world-particles", action="store_true", help="Require visible running particle emitters in both clients")
+    parser.add_argument("--require-no-world-particles", action="store_true", help="Require no world particle roots or playback in a chunk world")
     parser.add_argument("--require-particle-rebase", action="store_true", help="Require world-space particle resets on both clients during rebases")
     parser.add_argument("--hide-world-particles", action="store_true", help="Start with world effects hidden and verify they stay hidden")
     parser.add_argument("--exercise-particle-control", action="store_true", help="Use actual X11 pointer and keyboard to toggle client A's world effects")
@@ -779,4 +784,4 @@ if __name__ == "__main__":
     parser.add_argument("--jump", action="store_true")
     parser.add_argument("--window-size", choices=["1280x720", "3440x1440"], default="1280x720")
     args = parser.parse_args()
-    run(args.output.resolve(), args.binaries.resolve(), args.reference_assets.resolve() if args.reference_assets else None, args.terrain_world.resolve() if args.terrain_world else None, args.player_assets.resolve() if args.player_assets else None, args.static_collision, args.interior, args.full_map, args.map_access, args.transport, args.world_origin, args.replication_span, args.render_span, args.jump, args.chunk_world.resolve() if args.chunk_world else None, args.client_chunk_world.resolve() if args.client_chunk_world else None, not args.offscreen_remote, args.chunk_direction, window_size=args.window_size, require_world_particles=args.require_world_particles, require_particle_rebase=args.require_particle_rebase, hide_world_particles=args.hide_world_particles, exercise_particle_control=args.exercise_particle_control, require_finished_particles=args.require_finished_particles, capture_particle_burst=args.capture_particle_burst)
+    run(args.output.resolve(), args.binaries.resolve(), args.reference_assets.resolve() if args.reference_assets else None, args.terrain_world.resolve() if args.terrain_world else None, args.player_assets.resolve() if args.player_assets else None, args.static_collision, args.interior, args.full_map, args.map_access, args.transport, args.world_origin, args.replication_span, args.render_span, args.jump, args.chunk_world.resolve() if args.chunk_world else None, args.client_chunk_world.resolve() if args.client_chunk_world else None, not args.offscreen_remote, args.chunk_direction, window_size=args.window_size, require_world_particles=args.require_world_particles, require_particle_rebase=args.require_particle_rebase, hide_world_particles=args.hide_world_particles, exercise_particle_control=args.exercise_particle_control, require_finished_particles=args.require_finished_particles, capture_particle_burst=args.capture_particle_burst, require_no_world_particles=args.require_no_world_particles)

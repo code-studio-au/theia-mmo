@@ -24,6 +24,7 @@ pub(super) struct Draft {
 enum Mode {
     World,
     ParticleChunks,
+    ReplaceParticleChunks,
 }
 #[derive(Component)]
 pub(super) struct Root;
@@ -180,7 +181,8 @@ pub(super) fn open(
 ) {
     let world = std::mem::take(&mut requests.export_world);
     let chunks = std::mem::take(&mut requests.export_particle_chunks);
-    if !(world || chunks)
+    let replace = std::mem::take(&mut requests.replace_particle_chunks);
+    if !(world || chunks || replace)
         || session.has_modal()
         || !windows.single().is_ok_and(|window| window.focused)
     {
@@ -195,7 +197,9 @@ pub(super) fn open(
         return;
     }
     let slug = slug(&session.editor.zone().name);
-    let mode = if chunks {
+    let mode = if replace {
+        Mode::ReplaceParticleChunks
+    } else if chunks {
         Mode::ParticleChunks
     } else {
         Mode::World
@@ -296,7 +300,7 @@ pub(super) fn finish(
         root.display = Display::Flex;
     }
     for (row, mut node) in &mut rows {
-        node.display = if draft.mode == Mode::ParticleChunks && row.0 == 2 {
+        node.display = if draft.mode != Mode::World && row.0 == 2 {
             Display::None
         } else {
             Display::Flex
@@ -388,6 +392,7 @@ pub(super) fn finish(
             match input {
                 Ok((path, world, chunks)) => {
                     let zone = session.editor.zone().clone();
+                    let replace = draft.mode == Mode::ReplaceParticleChunks;
                     draft.message = format!("Exporting {}…", path.display());
                     draft.target = Some(path.clone());
                     draft.task = Some(IoTaskPool::get().spawn(async move {
@@ -398,6 +403,7 @@ pub(super) fn finish(
                                 &zone,
                                 &chunks.expect("chunk export folder"),
                                 &path,
+                                replace,
                             )
                             .map(|()| serde_json::Value::Null)
                         }
@@ -411,24 +417,24 @@ pub(super) fn finish(
         if message {
             **text = draft.message.clone();
         } else if title {
-            **text = if draft.mode == Mode::World {
-                "Export world"
-            } else {
-                "Export particles to chunks"
+            **text = match draft.mode {
+                Mode::World => "Export world",
+                Mode::ParticleChunks => "Export particles to chunks",
+                Mode::ReplaceParticleChunks => "Replace all world particles",
             }
             .into();
         } else if submit {
-            **text = if draft.mode == Mode::World {
-                "Export world"
-            } else {
-                "Export particles"
+            **text = match draft.mode {
+                Mode::World => "Export world",
+                Mode::ParticleChunks => "Export particles",
+                Mode::ReplaceParticleChunks => "Replace all particles",
             }
             .into();
         } else if description {
-            **text = if draft.mode == Mode::World {
-                "Exports the current zone snapshot. Save particle edits first."
-            } else {
-                "Copies a particle-free chunk world with these placements. Save particle edits first; projected-material chunks are not supported yet."
+            **text = match draft.mode {
+                Mode::World => "Exports the current zone snapshot. Save particle edits first.",
+                Mode::ParticleChunks => "Copies a particle-free chunk world with these placements. Save particle edits first; projected-material chunks are not supported yet.",
+                Mode::ReplaceParticleChunks => "Replaces ALL particle placements in a new copy of the chunk world with this zone's placements. An empty zone removes all world particles. Save particle edits first."
             }.into();
         } else if caption.is_some_and(|caption| caption.0 == 1) {
             **text = if draft.mode == Mode::World {
@@ -558,6 +564,36 @@ mod tests {
                 .unwrap()
                 .message
                 .contains("existing chunk world")
+        );
+        app.world_mut()
+            .resource_mut::<Session>()
+            .export_dialog
+            .as_mut()
+            .unwrap()
+            .action = Some(Control::Close);
+        app.update();
+        app.world_mut()
+            .resource_mut::<workspace::Requests>()
+            .replace_particle_chunks = true;
+        app.update();
+        assert!(
+            app.world()
+                .resource::<Session>()
+                .export_dialog
+                .as_ref()
+                .unwrap()
+                .mode
+                == Mode::ReplaceParticleChunks
+        );
+        let mut descriptions = app
+            .world_mut()
+            .query_filtered::<&Text, With<DialogDescription>>();
+        assert!(
+            descriptions
+                .single(app.world())
+                .unwrap()
+                .0
+                .contains("ALL particle placements")
         );
     }
     #[test]
