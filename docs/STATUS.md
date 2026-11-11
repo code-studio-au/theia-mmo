@@ -1,3 +1,9 @@
+P2-13 combined projected-material and particle package foundation, 11 November
+2026: schema 5 binds both requirements under a new identity domain; Rust and
+Python agree on a golden fingerprint, missing dependencies are rejected, and
+visual-only loading remains closed. The overlay publisher does not yet produce
+schema 5, and combined client rendering remains unqualified.
+
 P2-13 world-space particle translation foundation, 11 November 2026: the
 Sprinkles GPU runtime can queue a render-frame offset without advancing or
 restarting the emitter, including while paused and between fixed steps. A native

@@ -53,12 +53,12 @@ impl Manifest {
         }
         let mut document: Document = serde_json::from_slice(bytes)?;
         let id = ContentId::new(&document.content_id).ok_or("Invalid stable content ID")?;
-        if !matches!(document.schema, 1..=4)
+        if !matches!(document.schema, 1..=5)
             || (document.schema == 1 && (bytes.len() > 8192 || !document.shared_images.is_empty()))
-            || (document.schema == 3 && document.shared_images.len() < 2)
-            || (document.schema != 4
+            || (matches!(document.schema, 3 | 5) && document.shared_images.len() < 2)
+            || (!matches!(document.schema, 4 | 5)
                 && (document.particle_bytes.is_some() || document.particle_sha256.is_some()))
-            || (document.schema == 4
+            || (matches!(document.schema, 4 | 5)
                 && (!document
                     .particle_bytes
                     .is_some_and(|n| (1..=MAX_CATALOG_BYTES).contains(&n))
@@ -90,11 +90,11 @@ impl Manifest {
         &self.id
     }
     pub fn requires_material_profiles(&self) -> bool {
-        self.document.schema == 3
+        matches!(self.document.schema, 3 | 5)
     }
     /// Whether this manifest binds a particle catalog.
     pub fn has_particle_catalog(&self) -> bool {
-        self.document.schema == 4
+        matches!(self.document.schema, 4 | 5)
     }
     pub fn revision(&self) -> u32 {
         self.document.revision
@@ -112,8 +112,10 @@ impl Manifest {
                 b"theia-world-package-v2\0"
             } else if d.schema == 3 {
                 b"theia-world-package-v3\0"
-            } else {
+            } else if d.schema == 4 {
                 b"theia-world-package-v4\0"
+            } else {
+                b"theia-world-package-v5\0"
             },
             &(id.len() as u16).to_le_bytes(),
             id,
@@ -137,7 +139,7 @@ impl Manifest {
                 }
             }
         }
-        if d.schema == 4 {
+        if matches!(d.schema, 4 | 5) {
             context.update(
                 &d.particle_bytes
                     .expect("validated particle bytes")
@@ -149,7 +151,7 @@ impl Manifest {
     }
     /// Checks the manifest binding and decodes the bounded particle catalog.
     pub fn verify_particle_catalog(&self, bytes: &[u8]) -> Result<Catalog> {
-        if self.document.schema != 4
+        if !self.has_particle_catalog()
             || self.document.particle_bytes != Some(bytes.len() as u64)
             || self.document.particle_sha256 != Some(sha256(bytes))
         {
@@ -175,9 +177,9 @@ impl Manifest {
     pub fn verify_visual(&self, path: &Path) -> Result<()> {
         self.verify_visual_with_root(path, None)
     }
-    /// Verify a schema-4 visual only for a caller that is preparing its exact
+    /// Verify a particle-bearing visual only for a caller that is preparing its exact
     /// manifest-bound particle catalog. The caller still must admit and render
-    /// those particles; legacy `verify_visual` continues to reject schema 4.
+    /// those particles; legacy `verify_visual` continues to reject particle-bearing packages.
     pub fn verify_visual_for_particle_catalog(&self, path: &Path, catalog: &[u8]) -> Result<()> {
         self.verify_particle_catalog(catalog)?;
         verify_visual(
@@ -219,7 +221,7 @@ impl Manifest {
         &self.document.shared_images
     }
     fn verify_visual_with_root(&self, path: &Path, root: Option<&Path>) -> Result<()> {
-        if self.document.schema == 4 {
+        if self.has_particle_catalog() {
             return Err(
                 "Particle-bearing world packages are not yet supported by the client".into(),
             );

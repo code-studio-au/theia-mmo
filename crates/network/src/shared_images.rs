@@ -257,8 +257,8 @@ pub(crate) fn verify(
         else {
             continue;
         };
-        if schema != 3 {
-            return Err("Bound material profiles require package schema 3".into());
+        if !matches!(schema, 3 | 5) {
+            return Err("Bound material profiles require package schema 3 or 5".into());
         }
         projected_profiles.insert(profile.key()?);
         if projected_profiles.len() > 16 {
@@ -301,8 +301,8 @@ pub(crate) fn verify(
             referenced.insert(uri.to_owned());
         }
     }
-    if schema == 3 && projected_profiles.is_empty() {
-        return Err("Package schema 3 requires bound material profiles".into());
+    if matches!(schema, 3 | 5) && projected_profiles.is_empty() {
+        return Err("Package schema 3 or 5 requires bound material profiles".into());
     }
     if referenced != declared {
         return Err("Unused shared image declaration".into());

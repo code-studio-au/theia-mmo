@@ -140,3 +140,14 @@ particle catalog admission, dependencies and rendering are implemented; no
 exporter publishes it yet. Existing schema-1 through schema-3 fingerprints are
 unchanged. Hashes establish consistency, not authenticity or protection from
 files changing after verification.
+
+## Combined projected materials and particles (schema 5)
+
+Schema 5 retains schema 3's required, verified projected material profiles and
+shared images, and schema 4's required, hash-bound particle catalog. Its identity
+uses the domain `theia-world-package-v5\0`, followed by the same little-endian
+fields and canonical shared-image list as schema 4, then the catalog byte length
+and SHA-256. Both visual dependencies and the catalog must be verified before
+rendering; visual-only verification rejects the package. Existing schema 1–4
+identities are unchanged. The reader and Python identity function support schema
+5; overlay publication and end-to-end runtime qualification are still pending.

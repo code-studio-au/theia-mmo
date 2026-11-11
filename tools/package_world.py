@@ -26,7 +26,7 @@ def valid_id(value):
 def identity(document):
     name = document['content_id'].encode('ascii')
     schema = document['schema']
-    if schema not in (1,2,3,4):
+    if schema not in (1,2,3,4,5):
         raise ValueError('Unsupported package schema')
     data = (f'theia-world-package-v{schema}\0'.encode() + struct.pack('<H', len(name)) + name
             + struct.pack('<IIQ', document['revision'], document['collision_schema'], document['collision_bytes'])
@@ -38,7 +38,7 @@ def identity(document):
         data += struct.pack('<H',len(images))
         for image in images:
             data += bytes(image['sha256']) + struct.pack('<QB4I',image['bytes'],int(image['color_space']=='linear'),*image['sampler'])
-    if schema == 4:
+    if schema in (4, 5):
         data += struct.pack('<Q', document['particle_bytes']) + bytes(document['particle_sha256'])
     return hashlib.sha256(data).hexdigest()
 

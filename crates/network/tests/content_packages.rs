@@ -346,3 +346,52 @@ fn particle_manifest_binds_catalog_and_fails_closed_for_visual_loading() {
     let manifest = Manifest::decode(&serde_json::to_vec(&malformed).unwrap()).unwrap();
     assert!(manifest.verify_particle_catalog(invalid).is_err());
 }
+
+#[test]
+fn material_and_particle_manifest_binds_both_requirements() {
+    let mut document: Value = serde_json::from_slice(GOLDEN).unwrap();
+    document["schema"] = json!(5);
+    document["particle_bytes"] = json!(10);
+    document["particle_sha256"] = json!(vec![3; 32]);
+    document["shared_images"] = json!([
+        {"sha256":vec![1; 32],"bytes":12,"color_space":"srgb","sampler":[10497,10497,9729,9729]},
+        {"sha256":vec![2; 32],"bytes":13,"color_space":"linear","sampler":[10497,10497,9729,9729]}
+    ]);
+    let manifest = Manifest::decode(&serde_json::to_vec(&document).unwrap()).unwrap();
+    assert!(manifest.requires_material_profiles());
+    assert!(manifest.has_particle_catalog());
+    assert_eq!(
+        hex(manifest.identity()),
+        "adfe3c80633b3b9b760e1c269c469cef21c8ca8b7045733fa75baa721e313828"
+    );
+    assert!(manifest.verify_particle_catalog(b"wrong").is_err());
+    assert!(
+        manifest
+            .verify_visual(std::path::Path::new("missing"))
+            .is_err()
+    );
+    for field in ["particle_bytes", "particle_sha256"] {
+        let mut missing = document.clone();
+        missing.as_object_mut().unwrap().remove(field);
+        assert!(Manifest::decode(&serde_json::to_vec(&missing).unwrap()).is_err());
+    }
+    let mut missing_images = document.clone();
+    missing_images["shared_images"] = json!([]);
+    assert!(Manifest::decode(&serde_json::to_vec(&missing_images).unwrap()).is_err());
+    let mut changed = document.clone();
+    changed["shared_images"][0]["sha256"] = json!(vec![4; 32]);
+    assert_ne!(
+        Manifest::decode(&serde_json::to_vec(&changed).unwrap())
+            .unwrap()
+            .identity(),
+        manifest.identity()
+    );
+    changed = document;
+    changed["particle_sha256"] = json!(vec![4; 32]);
+    assert_ne!(
+        Manifest::decode(&serde_json::to_vec(&changed).unwrap())
+            .unwrap()
+            .identity(),
+        manifest.identity()
+    );
+}
