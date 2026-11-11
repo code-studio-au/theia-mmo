@@ -900,7 +900,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Err("Targeting requires a graybox world".into());
     }
     let camera_collision = camera::CollisionMode::parse(&mut args)?;
-    let chunks = chunk_world::Config::parse(&mut args)?;
+    let mut chunks = chunk_world::Config::parse(&mut args)?;
+    let chunk_particles = chunks.as_mut().and_then(|chunks| chunks.particles.take());
     let mut terrain = terrain_scene::Config::parse(&mut args)?;
     let particle_world = terrain
         .as_mut()
@@ -1318,6 +1319,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .add_systems(FixedUpdate, movement::move_local_pawn);
     if let Some(prepared) = particle_world {
         particle_world::install(&mut app, prepared, !hide_world_particles);
+    }
+    if let Some(prepared) = chunk_particles {
+        particle_world::install_chunks(&mut app, prepared, !hide_world_particles);
     }
     if fantasy_skin {
         fantasy_ui::install_scale(&mut app, ui_scale);

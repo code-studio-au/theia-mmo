@@ -120,7 +120,8 @@ vertices, 3 million indices, 8192 particle slots, 65536 trail-history entries,
 prototype counts, not a complete GPU memory or MMO load policy. Both local- and world-coordinate emitters are supported. On an origin change,
 world-space emitters clear and restart before simulation, so existing particles
 and trails do not retain their prior trajectories; local-coordinate emitters
-continue without a reset. Chunk-world particle packages remain rejected.
+continue without a reset. Chunk-world particles are admitted and retired with
+their chunk scene as described below.
 
 A real editor-exported textured placement appeared on both native Linux clients
 connected to an authoritative server over encrypted Renet. Each reported one
@@ -189,11 +190,14 @@ Chunk-world preparation now has a worker-suitable helper that verifies each
 admitted chunk's visual and particle catalog, prepares exact effect/image bytes,
 projects placements from chunk-global origins into the index frame, and enforces
 aggregate candidate count and decoded-image limits. A far-origin mixed-residency
-test covers tampering and failure without changing active residency. It does not
-yet publish or render chunk particles; the existing chunk-client guard remains.
-A conservative old-plus-new staging budget check is available but is not yet
-wired into the chunk client. Atomic retirement and native GPU checks are still
-required.
+test covers tampering and failure without changing active residency. The chunk
+client now checks conservative active-plus-candidate budgets, binds new effects
+before publication, preserves retained roots and retires removed roots. A
+two-client encrypted Renet transition with real Vulkan validation exercises all
+three cases on RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6
+(`build/chunk-particle-native-20261111/retirement/verification.json`). Retained
+chunks are counted twice during staging, so valid large transitions can be
+rejected; texture-heavy and large-scale behavior remain unqualified.
 
 The prerequisites are the accepted Linux authoring shell and the adopted exact
 Bevy 0.20.0 engine. Upstream targets Bevy 0.19.0. Both imported crates use our

@@ -21,6 +21,7 @@ pub struct Config {
     pub directory: PathBuf,
     pub data: theia_network::chunk_world::Config,
     pub active: Residency,
+    pub particles: Option<theia_vfx::PreparedResidency>,
     recovery_spawns: Vec<theia_core::coordinates::GlobalPosition>,
 }
 impl Config {
@@ -33,12 +34,17 @@ impl Config {
         let data =
             theia_network::chunk_world::Config::load(&directory).map_err(|e| e.to_string())?;
         let (active, recovery_spawns) = data.prepare_startup().map_err(|e| e.to_string())?;
-        active.verify_visuals().map_err(|e| e.to_string())?;
+        let particles = theia_vfx::prepare_resident_particles(
+            &active,
+            crate::particle_world::LIMITS,
+            crate::particle_world::MAX_IMAGE_BYTES,
+        )?;
         args.drain(..2);
         Ok(Some(Self {
             directory,
             data,
             active,
+            particles: Some(particles),
             recovery_spawns,
         }))
     }
@@ -62,12 +68,16 @@ pub struct Loading {
 }
 struct Candidate {
     data: Residency,
+    particles: theia_vfx::PreparedResidency,
     handles: BTreeMap<ChunkId, Handle<Gltf>>,
     roots: BTreeMap<ChunkId, Entity>,
     withdrawal: Option<Vec<ChunkId>>,
 }
 enum Pending {
-    Worker(u64, Task<Result<Residency, String>>),
+    Worker(
+        u64,
+        Task<Result<(Residency, theia_vfx::PreparedResidency), String>>,
+    ),
     Assets(u64, Box<Candidate>),
 }
 #[derive(Resource)]
@@ -416,7 +426,9 @@ pub fn drive(world: &mut World) {
                         None=>{stream.pending=Some(Pending::Worker(generation,task));}
                         Some(_) if generation!=offer.generation=>{},
                         Some(Err(error))=>discard(world,&mut stream,generation,None,&error),
-                        Some(Ok(data))=>{
+                        Some(Ok((data, particles)))=>{
+                            let active=world.resource::<crate::particle_world::ChunkParticles>();
+                            if let Err(error)=theia_vfx::check_residency_staging_budget(active.counts, active.image_bytes, &particles, crate::particle_world::LIMITS, crate::particle_world::MAX_IMAGE_BYTES) {discard(world,&mut stream,generation,None,&error);return;}
                             observe(world,&mut stream,generation,"prepared");
                             let loading=world.resource::<Loading>();
                             let directory=&world.resource::<Config>().directory;
@@ -424,7 +436,7 @@ pub fn drive(world: &mut World) {
                                 let path=r.asset.strip_prefix(directory).unwrap().to_str().unwrap().replace('\\',"/");
                                 (r.chunk,world.resource::<AssetServer>().load(path))
                             }).collect();
-                            stream.pending=Some(Pending::Assets(generation,Box::new(Candidate {data,handles,roots:BTreeMap::new(),withdrawal:None})));
+                            stream.pending=Some(Pending::Assets(generation,Box::new(Candidate {data,particles,handles,roots:BTreeMap::new(),withdrawal:None})));
                         }
                     }
                     return;
@@ -474,6 +486,8 @@ pub fn drive(world: &mut World) {
                         stream.pending=Some(Pending::Assets(generation,candidate));return;
                     }
                     stream.waiting_reason=None;
+                    let particles=std::mem::replace(&mut candidate.particles, theia_vfx::PreparedResidency { chunks:Vec::new(), counts:Default::default(), decoded_image_bytes:0 });
+                    if let Err(error)=crate::particle_world::publish_chunks(world,particles) {discard(world,&mut stream,generation,Some(&candidate),&error);return;}
                     let next=candidate.data.loaded();
                     let retained=world.resource::<Loading>().roots.iter().filter(|(id,_)|next.contains(id)).map(|(id,entity)|(*id,*entity)).collect::<Vec<_>>();
                     let mut removed=Vec::new();
@@ -512,8 +526,8 @@ pub fn drive(world: &mut World) {
         stream.pending=Some(Pending::Worker(offer.generation,IoTaskPool::get().spawn(async move {
             if !delay.is_zero() {std::thread::sleep(delay);}
             let data=active.staged(&ids,&[]).map_err(|e|e.to_string())?;
-            data.verify_visuals().map_err(|e|e.to_string())?;
-            Ok(data)
+            let particles=theia_vfx::prepare_resident_particles(&data,crate::particle_world::LIMITS,crate::particle_world::MAX_IMAGE_BYTES)?;
+            Ok((data,particles))
         })));
     });
 }

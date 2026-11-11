@@ -6,7 +6,8 @@ use bevy::{
 };
 use bevy_sprinkles::{SprinklesPlugin, asset::ParticlesAsset, runtime::Particles3d};
 use std::{collections::BTreeMap, path::Path};
-use theia_vfx::{BoundEffect, CatalogCounts, PreparedCatalog};
+use theia_core::coordinates::ChunkId;
+use theia_vfx::{BoundCatalog, BoundEffect, CatalogCounts, PreparedCatalog, PreparedResidency};
 
 pub const LIMITS: CatalogCounts = CatalogCounts {
     placements: 32,
@@ -48,6 +49,9 @@ pub(crate) struct Metrics {
     visibility_button_toggles: u64,
     unready_emitter_frames: u64,
     released_systems: u64,
+    chunk_publications: u64,
+    chunk_retained_roots: u64,
+    chunk_retired_roots: u64,
 }
 #[derive(Resource, Default)]
 struct LastFrame(Option<([f64; 3], [f64; 3])>);
@@ -55,18 +59,23 @@ struct LastFrame(Option<([f64; 3], [f64; 3])>);
 struct BurstCapture(Option<std::path::PathBuf>);
 
 pub fn install(app: &mut App, prepared: PreparedCatalog, visible: bool) {
+    install_shared(app, visible);
+    app.insert_resource(Pending(Some(prepared)))
+        .add_systems(Startup, spawn);
+}
+
+fn install_shared(app: &mut App, visible: bool) {
     if !app.is_plugin_added::<SprinklesPlugin>() {
         app.add_plugins(SprinklesPlugin);
     }
     let capture =
         std::env::var_os("THEIA_WORLD_PARTICLE_FIRST_CAPTURE").map(std::path::PathBuf::from);
     app.insert_resource(BurstCapture(capture));
-    app.insert_resource(Pending(Some(prepared)))
-        .insert_resource(VisibilityChoice(visible))
+    app.insert_resource(VisibilityChoice(visible))
         .init_resource::<Metrics>()
         .init_resource::<LastFrame>()
         .add_observer(activate_toggle)
-        .add_systems(Startup, (spawn, setup_toggle))
+        .add_systems(Startup, setup_toggle)
         .add_systems(PreUpdate, keyboard_toggle.after(bevy::input::InputSystems))
         .add_systems(Update, apply_visibility)
         .add_systems(
@@ -82,6 +91,131 @@ pub fn install(app: &mut App, prepared: PreparedCatalog, visible: bool) {
                 .before(bevy_sprinkles::ParticleSimulationStep),
         )
         .add_systems(Last, (observe, capture_first));
+}
+
+#[derive(Resource, Default)]
+pub(crate) struct ChunkParticles {
+    pending: Option<PreparedResidency>,
+    chunks: BTreeMap<ChunkId, (BoundCatalog, Vec<Entity>)>,
+    pub counts: CatalogCounts,
+    pub image_bytes: usize,
+}
+
+pub fn install_chunks(app: &mut App, prepared: PreparedResidency, visible: bool) {
+    install_shared(app, visible);
+    app.insert_resource(ChunkParticles {
+        pending: Some(prepared),
+        ..default()
+    })
+    .add_systems(Startup, spawn_initial_chunks);
+}
+
+fn spawn_initial_chunks(world: &mut World) {
+    let prepared = world
+        .resource_mut::<ChunkParticles>()
+        .pending
+        .take()
+        .unwrap();
+    if let Err(error) = publish_chunks(world, prepared) {
+        error!("Cannot bind initial chunk particles: {error}");
+        world.write_message(AppExit::error());
+    }
+}
+
+/// Bind new chunks before touching the active set; old roots survive any failure.
+pub(crate) fn publish_chunks(world: &mut World, prepared: PreparedResidency) -> Result<(), String> {
+    let next = prepared
+        .chunks
+        .iter()
+        .map(|(id, _)| *id)
+        .collect::<Vec<_>>();
+    let counts = prepared.counts;
+    let image_bytes = prepared.decoded_image_bytes;
+    let mut bound = Vec::new();
+    for (id, catalog) in prepared.chunks {
+        if world.resource::<ChunkParticles>().chunks.contains_key(&id) {
+            continue;
+        }
+        let catalog = world.resource_scope(|world, mut images: Mut<Assets<Image>>| {
+            theia_vfx::bind_prepared_catalog(
+                catalog,
+                Path::new("particles"),
+                &mut images,
+                &mut world.resource_mut::<Assets<ParticlesAsset>>(),
+            )
+        })?;
+        bound.push((id, catalog));
+    }
+    for (_, catalog) in &bound {
+        if catalog.placements.iter().any(|placement| {
+            !catalog
+                .effects
+                .iter()
+                .any(|effect| effect.id == placement.effect)
+        }) {
+            return Err("Chunk particle placement references a missing effect".into());
+        }
+    }
+    let visible = world.resource::<VisibilityChoice>().0;
+    let mut new_chunks = Vec::new();
+    for (id, catalog) in bound {
+        let effects: BTreeMap<_, _> = catalog
+            .effects
+            .iter()
+            .map(|e| (e.id.as_str(), e.handle.clone()))
+            .collect();
+        let mut roots = Vec::new();
+        for placement in &catalog.placements {
+            let effect = &effects[placement.effect.as_str()];
+            roots.push(
+                world
+                    .spawn((
+                        WorldParticle,
+                        WaitingForScene,
+                        Particles3d(effect.clone()),
+                        crate::floating_origin::Anchored(
+                            placement.transform.translation.to_array().map(f64::from),
+                        ),
+                        placement.transform,
+                        if visible {
+                            Visibility::Inherited
+                        } else {
+                            Visibility::Hidden
+                        },
+                    ))
+                    .id(),
+            );
+        }
+        new_chunks.push((id, catalog, roots));
+    }
+    let mut retired = Vec::new();
+    let mut retained_count = 0;
+    world.resource_scope(|_, mut state: Mut<ChunkParticles>| {
+        state.chunks.retain(|id, (_, roots)| {
+            if next.contains(id) {
+                retained_count += roots.len() as u64;
+                true
+            } else {
+                retired.extend(roots.iter().copied());
+                false
+            }
+        });
+        for (id, catalog, roots) in new_chunks {
+            state.chunks.insert(id, (catalog, roots));
+        }
+        state.counts = counts;
+        state.image_bytes = image_bytes;
+    });
+    let retired_count = retired.len() as u64;
+    for entity in retired {
+        world.despawn(entity);
+    }
+    let mut metrics = world.resource_mut::<Metrics>();
+    metrics.placements = counts.placements;
+    metrics.chunk_publications += 1;
+    metrics.chunk_retained_roots += retained_count;
+    metrics.chunk_retired_roots += retired_count;
+    Ok(())
 }
 fn spawn(
     mut commands: Commands,
@@ -148,6 +282,7 @@ fn spawn(
 fn gate_playback(
     mut commands: Commands,
     scene: Option<Res<crate::terrain_scene::Ready>>,
+    chunks: Option<Res<crate::chunk_world::Ready>>,
     pipelines: Res<crate::capture_ready::CaptureReady>,
     network: Option<Res<crate::network::Network>>,
     mut metrics: ResMut<Metrics>,
@@ -156,7 +291,7 @@ fn gate_playback(
         With<WaitingForScene>,
     >,
 ) {
-    let ready = scene.is_some()
+    let ready = (scene.is_some() || chunks.is_some())
         && pipelines.ready()
         && network.as_ref().is_some_and(|network| {
             let state = network.state();
@@ -325,6 +460,7 @@ fn observe(
     mut metrics: ResMut<Metrics>,
     roots: Query<(), With<WorldParticle>>,
     scene_ready: Option<Res<crate::terrain_scene::Ready>>,
+    chunks_ready: Option<Res<crate::chunk_world::Ready>>,
     emitters: Query<(
         &bevy_sprinkles::runtime::EmitterEntity,
         &bevy_sprinkles::runtime::EmitterRuntime,
@@ -336,7 +472,8 @@ fn observe(
         if roots.contains(emitter.parent_system) && runtime.system_time > 0. {
             metrics.running_emitter_frames += 1;
             metrics.visible_emitter_frames += u64::from(visible.get());
-            metrics.unready_emitter_frames += u64::from(scene_ready.is_none());
+            metrics.unready_emitter_frames +=
+                u64::from(scene_ready.is_none() && chunks_ready.is_none());
         }
     }
 }
@@ -346,6 +483,86 @@ mod tests {
     use super::*;
     use bevy_sprinkles::prelude::{EmitterData, ParticlesDimension};
     use theia_vfx::{CatalogEffect, CatalogPlacement};
+
+    fn chunk_fixture(id: ChunkId, effect_name: &str) -> (ChunkId, PreparedCatalog) {
+        let asset = ParticlesAsset::new(
+            "test".into(),
+            ParticlesDimension::D3,
+            default(),
+            vec![EmitterData::default()],
+            vec![],
+            false,
+            default(),
+        );
+        (
+            id,
+            PreparedCatalog {
+                effects: vec![CatalogEffect {
+                    id: "vfx.test".into(),
+                    asset,
+                }],
+                textures: vec![],
+                placements: vec![CatalogPlacement {
+                    id: 1,
+                    effect: effect_name.into(),
+                    transform: Transform::from_xyz(id.x as f32, 0., 0.),
+                }],
+                counts: CatalogCounts {
+                    placements: 1,
+                    emitters: 1,
+                    ..default()
+                },
+            },
+        )
+    }
+
+    #[test]
+    fn chunk_publication_preserves_retained_roots_and_rejects_partial_candidate() {
+        let mut world = World::new();
+        world.insert_resource(ChunkParticles::default());
+        world.insert_resource(VisibilityChoice(true));
+        world.insert_resource(Metrics::default());
+        world.insert_resource(Assets::<Image>::default());
+        world.insert_resource(Assets::<ParticlesAsset>::default());
+        let a = ChunkId { x: 0, z: 0 };
+        let b = ChunkId { x: 1, z: 0 };
+        let candidate = |chunks| PreparedResidency {
+            chunks,
+            counts: CatalogCounts {
+                placements: 2,
+                emitters: 2,
+                ..default()
+            },
+            decoded_image_bytes: 0,
+        };
+        publish_chunks(&mut world, candidate(vec![chunk_fixture(a, "vfx.test")])).unwrap();
+        let original = world.resource::<ChunkParticles>().chunks[&a].1[0];
+        assert!(
+            publish_chunks(
+                &mut world,
+                candidate(vec![
+                    chunk_fixture(a, "vfx.test"),
+                    chunk_fixture(b, "missing")
+                ])
+            )
+            .is_err()
+        );
+        assert_eq!(world.resource::<ChunkParticles>().chunks[&a].1[0], original);
+        assert_eq!(world.resource::<ChunkParticles>().chunks.len(), 1);
+        publish_chunks(
+            &mut world,
+            candidate(vec![
+                chunk_fixture(a, "vfx.test"),
+                chunk_fixture(b, "vfx.test"),
+            ]),
+        )
+        .unwrap();
+        assert_eq!(world.resource::<ChunkParticles>().chunks[&a].1[0], original);
+        let replacement = world.resource::<ChunkParticles>().chunks[&b].1[0];
+        publish_chunks(&mut world, candidate(vec![chunk_fixture(b, "vfx.test")])).unwrap();
+        assert!(world.get_entity(original).is_err());
+        assert!(world.get_entity(replacement).is_ok());
+    }
 
     #[test]
     fn installs_anchored_effects_with_authored_transform_and_shared_asset() {

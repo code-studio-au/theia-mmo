@@ -1,13 +1,20 @@
+P2-13 chunk particles, 11 November 2026: chunk clients prepare verified
+particle catalogs off-thread, check conservative active-plus-candidate budgets,
+and publish and retire their particle roots with the corresponding chunk scene.
+Retained chunks keep their existing roots; startup waits for scene, network and
+render readiness. A headless failure test and a two-client encrypted Renet
+transition with Vulkan validation cover retention and retirement on RX 7900 XTX
+(`build/chunk-particle-native-20261111/retirement/verification.json`). This is
+a small local fixture, not an MMO-scale or performance qualification.
+
 P2-13 chunk particle preparation, 11 November 2026: a worker-suitable helper
 verifies each already-admitted chunk manifest, visual and particle catalog,
 prepares effects and verified images, projects placements from each chunk's f64
 origin to the index frame, and enforces aggregate candidate counts and decoded
 image limits. A far-origin mixed-residency test covers repeated effects, aggregate
-limits, tampering and unchanged active residency. This is preparation only:
-chunk clients still reject particle-bearing visuals. A separate conservative
-old-plus-new staging budget check now covers counts, decoded image bytes and
-overflow; it must be wired into the client before atomic publication, retirement
-and native GPU checks can be qualified.
+limits, tampering and unchanged active residency. The conservative old-plus-new
+staging check covers counts, decoded image bytes and overflow, including retained
+chunks twice; larger-world budgets and texture-heavy transitions remain unqualified.
 
 P5-17 / P2-13 editor world export, 11 November 2026: **File → Export world…**
 opens a Sprinkles-styled dialog for a new output folder, content ID and revision.

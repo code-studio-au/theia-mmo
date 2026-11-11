@@ -221,7 +221,8 @@ def sha256(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def run(output, binaries, references=None, terrain=None, player_assets=None, collision=False, interior=False, full_map=False, map_access=False, transport="renet", world_origin=None, replication_span=None, render_span=None, jump=False, chunk_world=None, client_chunk_world=None, expect_remote_pixels=True, chunk_direction="z", chunk_stream=False, chunk_delay_ms=0, chunk_asset_failure=False, chunk_bounds_failure=False, chunk_image_failure=False, chunk_shared_images=False, staging_root_limit=1, stream_probe="green_floor", window_size="1280x720", require_world_particles=False, require_particle_rebase=False, hide_world_particles=False, exercise_particle_control=False, require_finished_particles=False, capture_particle_burst=False):
+def run(output, binaries, references=None, terrain=None, player_assets=None, collision=False, interior=False, full_map=False, map_access=False, transport="renet", world_origin=None, replication_span=None, render_span=None, jump=False, chunk_world=None, client_chunk_world=None, expect_remote_pixels=True, chunk_direction="z", chunk_stream=False, chunk_delay_ms=0, chunk_asset_failure=False, chunk_bounds_failure=False, chunk_image_failure=False, chunk_shared_images=False, staging_root_limit=1, stream_probe="green_floor", window_size="1280x720", require_world_particles=False, require_particle_rebase=False, hide_world_particles=False, exercise_particle_control=False, require_finished_particles=False, capture_particle_burst=False, require_particle_retirement=False):
+    assert not require_particle_retirement or (chunk_stream and require_world_particles)
     assert not require_finished_particles or require_world_particles
     assert not capture_particle_burst or require_world_particles
     assert not exercise_particle_control or (require_world_particles and not hide_world_particles)
@@ -507,35 +508,39 @@ def run(output, binaries, references=None, terrain=None, player_assets=None, col
                         gap = min(gap, profile_capsule_clearance(profile, local_player))
                     assert -.001 <= gap <= .02, f'Chunk capsule mesh clearance: {gap}; {player}'
                     ground_checks.append({'client':name,'actor':player['id'],'clearance':gap})
+            if require_world_particles:
+                particles = report['world_particles']
+                assert particles['placements'] > 0
+                if require_particle_retirement:
+                    assert particles['chunk_publications'] >= 2
+                    assert particles['chunk_retained_roots'] > 0 and particles['chunk_retired_roots'] > 0
+                if require_finished_particles or capture_particle_burst:
+                    assert particles['released_systems'] == particles['placements']
+                    assert particles['unready_emitter_frames'] == 0
+                    assert (output/name/'particle-first.png').is_file()
+                if require_finished_particles:
+                    assert particles['live_roots'] == 0
+                else:
+                    assert particles['live_roots'] > 0
+                assert particles['running_emitter_frames'] > 0
+                if hide_world_particles:
+                    assert not particles['effects_enabled'] and particles['visible_emitter_frames'] == 0
+                elif exercise_particle_control and name == 'a':
+                    assert not particles['effects_enabled']
+                    assert particles['visibility_button_toggles'] == 1 and particles['visibility_key_toggles'] == 2
+                else:
+                    assert particles['effects_enabled'] and particles['visible_emitter_frames'] > 0
+                if require_particle_rebase:
+                    assert particles['world_space_rebase_resets'] > 0
             if terrain:
                 profile_bytes=(terrain/'terrain.json').read_bytes()
                 manifest_path = terrain / 'world.manifest.json'
                 manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else None
+                if require_world_particles:
+                    assert manifest and manifest['schema'] == 4
                 expected_identity = package_identity(manifest) if manifest else hashlib.sha256(profile_bytes).hexdigest()
                 assert bytes(report['terrain_world']).hex() == expected_identity
                 assert report['content_package'] == ({'content_id': manifest['content_id'], 'revision': manifest['revision']} if manifest else None)
-                if require_world_particles:
-                    assert manifest and manifest['schema'] == 4
-                    particles = report['world_particles']
-                    assert particles['placements'] > 0
-                    if require_finished_particles or capture_particle_burst:
-                        assert particles['released_systems'] == particles['placements']
-                        assert particles['unready_emitter_frames'] == 0
-                        assert (output/name/'particle-first.png').is_file()
-                    if require_finished_particles:
-                        assert particles['live_roots'] == 0
-                    else:
-                        assert particles['live_roots'] > 0
-                    assert particles['running_emitter_frames'] > 0
-                    if hide_world_particles:
-                        assert not particles['effects_enabled'] and particles['visible_emitter_frames'] == 0
-                    elif exercise_particle_control and name == 'a':
-                        assert not particles['effects_enabled']
-                        assert particles['visibility_button_toggles'] == 1 and particles['visibility_key_toggles'] == 2
-                    else:
-                        assert particles['effects_enabled'] and particles['visible_emitter_frames'] > 0
-                    if require_particle_rebase:
-                        assert particles['world_space_rebase_resets'] > 0
                 profile=json.loads(profile_bytes)
                 for player in players.values():
                     if profile['schema'] == 4:
