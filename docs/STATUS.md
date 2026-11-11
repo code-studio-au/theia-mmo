@@ -4,8 +4,12 @@ restarting the emitter, including while paused and between fixed steps. A native
 GPU readback on RX 7900 XTX / RADV verified the active head and all 120 trail
 history entries moved by the exact requested offset with no Vulkan validation
 diagnostics (`build/particle-gpu-rebase-20261111/result.json`). This capability
-is not yet connected to client origin shifts; the client still clears world-space
-particles on rebase until that integration is validated.
+is now connected to ordinary client render-origin shifts; local-space emitters
+are untouched. Content-frame changes or out-of-bounds offsets still clear without
+rewinding the emitter. Two connected Vulkan clients completed the one-shot 3D
+Explosion under forced rebases with translations and no fallback clears or GPU
+validation diagnostics (`build/chunk-explosion-translate-native-20261111/`).
+This is a scenario check, not a frame-synchronized visual equivalence test.
 
 P2-13 / P5-17 fixed-step Sprinkles comparison, 11 November 2026: all seven
 bundled effects were captured at five matching update counts in the pinned
@@ -105,11 +109,10 @@ The upstream world-space Tube Trails effect also exercised floating-origin
 resets during a two-client chunk transition with Vulkan validation
 (`build/chunk-particle-rebase-suite-20261111/retirement/verification.json`).
 This checks the reset path, not frame-synchronized visual parity.
-World-space rebases now clear old-frame GPU particles without rewinding emitter
-time or retriggering one-shot bursts. The upstream 3D Explosion finished after
-six forced resets on each of two Vulkan clients, with zero pre-ready emitter
-frames (`build/chunk-explosion-rebase-native-20261111/`). Clearing still causes
-a visual discontinuity for already-live world-space particles.
+Before the translation change above, the upstream 3D Explosion finished after
+six forced clears on each of two Vulkan clients, with zero pre-ready emitter
+frames (`build/chunk-explosion-rebase-native-20261111/`); the clear caused a
+visual discontinuity for already-live world-space particles.
 The same one-shot was also tested when its chunk arrived after startup: both
 clients released and finished it with zero pre-ready emitter frames
 (`build/chunk-explosion-arrival-native-20261111-v2/`). Captures are not
@@ -180,10 +183,9 @@ checked through export and admission in this slice.
 
 P2-13 world-space particle rebases, 11 November 2026: bounded monolithic
 worlds now admit both local- and world-coordinate Sprinkles emitters. On a
-render/content origin change, world-space emitters clear and restart before
-simulation, keeping fixed seeds and leaving stopped emitters stopped; this can
-visibly restart an effect and its trail, rather than preserving existing GPU
-particle trajectories. Local-coordinate emitters are left running. Two connected
+render/content origin change, the original implementation cleared and restarted
+world-space emitters before simulation. It has since been replaced as described
+at the top of this file. Local-coordinate emitters are left running. Two connected
 native Linux clients rendered a textured world-space effect and upstream
 Tube Trails during repeated forced render rebases with zero GPU validation
 diagnostics on RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan

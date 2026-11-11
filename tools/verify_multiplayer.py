@@ -551,7 +551,8 @@ def run(output, binaries, references=None, terrain=None, player_assets=None, col
                 else:
                     assert particles['effects_enabled'] and particles['visible_emitter_frames'] > 0
                 if require_particle_rebase:
-                    assert particles['world_space_rebase_resets'] > 0
+                    assert particles['world_space_rebase_translations'] > 0
+                    assert particles['world_space_rebase_resets'] == 0
             if terrain:
                 profile_bytes=(terrain/'terrain.json').read_bytes()
                 manifest_path = terrain / 'world.manifest.json'
@@ -779,7 +780,7 @@ if __name__ == "__main__":
     parser.add_argument("--terrain-world", type=Path)
     parser.add_argument("--require-world-particles", action="store_true", help="Require visible running particle emitters in both clients")
     parser.add_argument("--require-no-world-particles", action="store_true", help="Require no world particle roots or playback in a chunk world")
-    parser.add_argument("--require-particle-rebase", action="store_true", help="Require world-space particle resets on both clients during rebases")
+    parser.add_argument("--require-particle-rebase", action="store_true", help="Require world-space particle translations on both clients during rebases")
     parser.add_argument("--hide-world-particles", action="store_true", help="Start with world effects hidden and verify they stay hidden")
     parser.add_argument("--exercise-particle-control", action="store_true", help="Use actual X11 pointer and keyboard to toggle client A's world effects")
     parser.add_argument("--require-finished-particles", action="store_true", help="Require a one-shot effect to start after readiness and finish")

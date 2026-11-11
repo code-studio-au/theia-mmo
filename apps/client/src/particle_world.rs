@@ -44,6 +44,7 @@ pub(crate) struct Metrics {
     running_emitter_frames: u64,
     visible_emitter_frames: u64,
     world_space_rebase_resets: u64,
+    world_space_rebase_translations: u64,
     effects_enabled: bool,
     control_visible: bool,
     control_shown_after_ready: u64,
@@ -450,8 +451,9 @@ fn apply_visibility(
 }
 
 // World-space GPU positions and trail histories refer to the previous render
-// frame. Clear them when the origin changes; local-coordinate emitters follow
-// their parent and do not need a restart.
+// frame. Translate them on ordinary render-origin shifts; local-coordinate
+// emitters follow their parent. Clear if the content frame changes or the
+// translation cannot be represented within the bounded rendering frame.
 fn rebase_world_emitters(
     frame: Res<crate::floating_origin::Frame>,
     mut previous: ResMut<LastFrame>,
@@ -467,13 +469,18 @@ fn rebase_world_emitters(
         frame.content.origin().metres(),
         frame.render.origin().metres(),
     );
-    let changed = previous
-        .0
-        .replace(current)
-        .is_some_and(|old| old != current);
-    if !changed {
+    let Some(old) = previous.0.replace(current) else {
+        return;
+    };
+    if old == current {
         return;
     }
+    let offset = std::array::from_fn::<_, 3, _>(|i| old.1[i] - current.1[i]);
+    let translation = (old.0 == current.0
+        && offset
+            .iter()
+            .all(|v| v.is_finite() && v.abs() <= 2. * theia_core::coordinates::MAX_LOCAL_METRES))
+    .then(|| Vec3::from_array(offset.map(|v| v as f32)));
     for (emitter, mut runtime) in &mut emitters {
         let Some(data) = systems
             .get(emitter.parent_system)
@@ -484,12 +491,15 @@ fn rebase_world_emitters(
             continue;
         };
         if !data.draw_pass.use_local_coords {
-            // GPU positions belong to the old render frame. Clear them without
-            // rewinding emission time, which would retrigger one-shot bursts.
-            runtime.clear_requested = true;
-            runtime.simulation_steps.clear();
-            runtime.trail_history_write_index = 0;
-            metrics.world_space_rebase_resets += 1;
+            if translation.is_some_and(|offset| runtime.queue_world_rebase(offset)) {
+                metrics.world_space_rebase_translations += 1;
+            } else {
+                // Do not rewind emission time and retrigger one-shot bursts.
+                runtime.clear_requested = true;
+                runtime.simulation_steps.clear();
+                runtime.trail_history_write_index = 0;
+                metrics.world_space_rebase_resets += 1;
+            }
         }
     }
 }
@@ -735,7 +745,7 @@ mod tests {
         assert_eq!(transform.scale, Vec3::splat(2.));
     }
     #[test]
-    fn rebase_resets_world_space_emitters_but_preserves_local_emitters() {
+    fn rebase_translates_world_space_emitters_but_preserves_local_emitters() {
         use bevy_sprinkles::runtime::{EmitterEntity, EmitterRuntime};
         let mut app = App::new();
         app.init_resource::<crate::floating_origin::Frame>()
@@ -809,7 +819,7 @@ mod tests {
             .focus(theia_core::coordinates::GlobalPosition::new([256., 0., 0.]).unwrap());
         app.update();
         let world = app.world().get::<EmitterRuntime>(world_emitter).unwrap();
-        assert!(world.clear_requested && world.is_emitting());
+        assert!(!world.clear_requested && world.is_emitting());
         assert_eq!(world.system_time, 3.);
         assert_eq!(world.cycle, 2);
         assert!(world.one_shot_completed);
@@ -818,7 +828,9 @@ mod tests {
         assert!(!local.clear_requested);
         assert_eq!(local.system_time, 3.);
         assert_eq!(
-            app.world().resource::<Metrics>().world_space_rebase_resets,
+            app.world()
+                .resource::<Metrics>()
+                .world_space_rebase_translations,
             1
         );
         let mut stopped = app
@@ -832,7 +844,24 @@ mod tests {
             .focus(theia_core::coordinates::GlobalPosition::new([-256., 0., 0.]).unwrap());
         app.update();
         let stopped = app.world().get::<EmitterRuntime>(world_emitter).unwrap();
-        assert!(stopped.clear_requested && !stopped.is_emitting());
+        assert!(!stopped.clear_requested && !stopped.is_emitting());
+        let frame = &mut app
+            .world_mut()
+            .resource_mut::<crate::floating_origin::Frame>();
+        frame.content = theia_core::coordinates::LocalFrame::new(
+            theia_core::coordinates::GlobalPosition::new([10., 0., 0.]).unwrap(),
+        );
+        app.update();
+        assert!(
+            app.world()
+                .get::<EmitterRuntime>(world_emitter)
+                .unwrap()
+                .clear_requested
+        );
+        assert_eq!(
+            app.world().resource::<Metrics>().world_space_rebase_resets,
+            1
+        );
     }
     #[test]
     fn visibility_controls_affect_only_world_particles_and_require_focus() {
