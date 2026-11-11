@@ -6121,7 +6121,7 @@
               "type": "npc_interacted",
               "target_editorial_alias": "grey_surveyor",
               "target_stable_id": null,
-              "description": "Consult Grey Surveyor without revealing his identity",
+              "description": "Consult Father without revealing his identity",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -6179,11 +6179,11 @@
       "definition_status": "planning_not_importable",
       "narrative_source": "Human_1_80_Canonical_Campaign.md",
       "giver_npc": {
-        "editorial_contact": "Sera / Grey Surveyor",
+        "editorial_contact": "Sera / Father",
         "stable_id": null
       },
       "turn_in_npc": {
-        "editorial_contact": "Sera / Grey Surveyor",
+        "editorial_contact": "Sera / Father",
         "stable_id": null,
         "requires_verification": true
       },
@@ -9809,11 +9809,11 @@
       "definition_status": "planning_not_importable",
       "narrative_source": "Human_1_80_Canonical_Campaign.md",
       "giver_npc": {
-        "editorial_contact": "Grey Surveyor",
+        "editorial_contact": "Father",
         "stable_id": null
       },
       "turn_in_npc": {
-        "editorial_contact": "Grey Surveyor",
+        "editorial_contact": "Father",
         "stable_id": null,
         "requires_verification": true
       },
@@ -10227,11 +10227,11 @@
       "definition_status": "planning_not_importable",
       "narrative_source": "Human_1_80_Canonical_Campaign.md",
       "giver_npc": {
-        "editorial_contact": "Grey Surveyor",
+        "editorial_contact": "Father",
         "stable_id": null
       },
       "turn_in_npc": {
-        "editorial_contact": "Grey Surveyor",
+        "editorial_contact": "Father",
         "stable_id": null,
         "requires_verification": true
       },
@@ -10353,11 +10353,11 @@
       "definition_status": "planning_not_importable",
       "narrative_source": "Human_1_80_Canonical_Campaign.md",
       "giver_npc": {
-        "editorial_contact": "Grey Surveyor / Brynja",
+        "editorial_contact": "Father / Brynja",
         "stable_id": null
       },
       "turn_in_npc": {
-        "editorial_contact": "Grey Surveyor / Brynja",
+        "editorial_contact": "Father / Brynja",
         "stable_id": null,
         "requires_verification": true
       },
@@ -10499,11 +10499,11 @@
       "definition_status": "planning_not_importable",
       "narrative_source": "Human_1_80_Canonical_Campaign.md",
       "giver_npc": {
-        "editorial_contact": "Grey Surveyor",
+        "editorial_contact": "Father",
         "stable_id": null
       },
       "turn_in_npc": {
-        "editorial_contact": "Grey Surveyor",
+        "editorial_contact": "Father",
         "stable_id": null,
         "requires_verification": true
       },
@@ -13833,7 +13833,7 @@
               "type": "object_inspected",
               "target_editorial_alias": "modern_signature",
               "target_stable_id": null,
-              "description": "Compare Grey Surveyor mark",
+              "description": "Compare Father mark",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -14027,7 +14027,7 @@
         "hide_terms": [
           "Oth'varen"
         ],
-        "public_label": "Grey Surveyor"
+        "public_label": "Father"
       }
     },
     {
