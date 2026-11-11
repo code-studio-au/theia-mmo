@@ -32,3 +32,9 @@ Deposed, convicted after trial and sentenced to permanent imprisonment in the Ac
 Historical source: [Approved recurring humans: complete launch movements](https://github.com/code-studio-au/theia-mmo/blob/a52b29999d803e2b861319ffefcd3c394baaa1ad/docs/story/THEIA_HUMAN_CAST_AND_PLACES.md).
 
 [Characters](../Characters.md) · [Current Human Campaign](../../Campaigns/CURRENT_HUMAN_CAMPAIGN.md)
+
+## Creator-locked character review — 12 November 2026
+
+Cassian was not the murdered delegate. Edric attended the Shattered Delegation on behalf of the human crown as part of the authorised Covenant delegation; Cassian knowingly helped compromise the event to eliminate Edric and take his position, without knowing the full Unmade plan. The human-only Valecrown/Millhaven Q018–Q031 storyline ends with Cassian captured alive and lawfully held before level 20. The investigation does not become a required ongoing thread for other races or gate their Tidehold summons.
+
+**Scope:** This section supersedes conflicting earlier proposed-development wording only where specified. Existing quest IDs, unapproved sentencing, exact dialogue and other open details remain unchanged. See [decision ledger](../../../DECISIONS.md).
