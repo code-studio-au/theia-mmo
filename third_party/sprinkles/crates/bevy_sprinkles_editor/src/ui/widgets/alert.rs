@@ -63,7 +63,7 @@ struct AlertConfig {
 }
 
 pub fn plugin(app: &mut App) {
-    app.add_authoring_systems(setup_alert);
+    app.add_inline_ui_systems(setup_alert);
 }
 
 pub fn alert(variant: AlertVariant, spans: Vec<AlertSpan>) -> impl Scene {

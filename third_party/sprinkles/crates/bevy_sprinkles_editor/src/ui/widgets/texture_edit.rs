@@ -111,7 +111,7 @@ struct TextureFilePickResult {
 pub fn plugin(app: &mut App) {
     app.add_observer(handle_preset_click)
         .add_observer(handle_select_file_click)
-        .add_authoring_systems((
+        .add_inline_ui_systems((
             setup_texture_content,
             respawn_texture_content_on_switch,
             update_texture_scrollbar,

@@ -13,7 +13,7 @@ use crate::ui::widgets::utils::is_descendant_of;
 pub fn plugin(app: &mut App) {
     app.add_observer(handle_trigger_click)
         .add_observer(handle_option_click)
-        .add_authoring_systems((
+        .add_inline_ui_systems((
             setup_combobox,
             handle_combobox_popover_closed,
             sync_combobox_selection,

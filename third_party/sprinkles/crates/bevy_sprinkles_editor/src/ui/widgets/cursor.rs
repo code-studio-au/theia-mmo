@@ -5,7 +5,7 @@ use bevy::window::{CursorIcon, SystemCursorIcon};
 
 pub fn plugin(app: &mut App) {
     app.init_resource::<ManagedCursor>()
-        .add_authoring_systems(update_cursors);
+        .add_inline_ui_systems(update_cursors);
 }
 
 #[derive(Component)]

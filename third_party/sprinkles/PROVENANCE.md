@@ -310,3 +310,9 @@ The local `budget.rs` adds checked per-emitter mesh, particle-slot and trail
 history counts by reusing the runtime's arithmetic guard. The mesh guard now
 returns its calculated counts internally. This is a measurement primitive, not
 a policy limit or a total CPU/GPU memory estimate.
+
+The original inspector, binding and widget systems use a separately gated
+`AuthoringUiUpdate` schedule so a host can later run them beside its own UI while
+keeping Sprinkles' full workspace, camera and project shortcuts inactive. Full
+workspace mode still runs both schedules. Inline mode is off by default; it is
+not yet connected to the zone inspector.

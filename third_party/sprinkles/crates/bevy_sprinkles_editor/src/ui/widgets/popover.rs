@@ -15,7 +15,7 @@ const POPOVER_GAP: f32 = 4.0;
 
 pub fn plugin(app: &mut App) {
     app.add_observer(handle_popover_close_click)
-        .add_authoring_systems((
+        .add_inline_ui_systems((
             handle_popover_position,
             handle_popover_dismiss,
             cleanup_tracked_popovers,

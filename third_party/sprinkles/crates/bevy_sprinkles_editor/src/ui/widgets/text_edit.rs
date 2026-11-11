@@ -92,8 +92,8 @@ const INPUT_HEIGHT: f32 = 28.0;
 const AFFIX_SIZE: u64 = 16;
 
 pub fn plugin(app: &mut App) {
-    app.add_authoring_systems(setup_text_edit_input)
-        .add_authoring_systems((
+    app.add_inline_ui_systems(setup_text_edit_input)
+        .add_inline_ui_systems((
             handle_focus_style,
             handle_numeric_increment,
             handle_tab_navigation,

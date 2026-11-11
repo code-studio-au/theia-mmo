@@ -27,7 +27,7 @@ pub fn plugin(app: &mut App) {
         .add_observer(on_cancel_button_click)
         .add_observer(on_close_button_click)
         .add_observer(on_close_dialog)
-        .add_authoring_systems((
+        .add_inline_ui_systems((
             bevy_easings::custom_ease_system::<(), DialogVisual>,
             sync_dialog_visual,
             sync_children_slot_visibility,

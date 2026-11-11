@@ -95,7 +95,7 @@ pub fn plugin(app: &mut App) {
         .add_observer(handle_axis_tab_click)
         .add_observer(handle_flip_click)
         .add_observer(handle_point_mode_change)
-        .add_authoring_systems((
+        .add_inline_ui_systems((
             setup_curve_edit,
             setup_curve_edit_content,
             update_curve_visuals,
@@ -1537,7 +1537,7 @@ mod range_tests {
         let mut app = App::new();
         app.init_resource::<InputFocus>()
             .init_resource::<Commits>()
-            .add_authoring_systems((handle_range_blur, sync_range_inputs_to_state).chain())
+            .add_inline_ui_systems((handle_range_blur, sync_range_inputs_to_state).chain())
             .add_observer(
                 |event: On<CurveEditCommitEvent>, mut commits: ResMut<Commits>| {
                     commits.0.push(event.curve.clone())

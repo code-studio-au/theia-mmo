@@ -20,7 +20,7 @@ struct TrailOptions;
 struct TrailNoMeshAlert;
 
 pub fn plugin(app: &mut App) {
-    app.add_authoring_systems((
+    app.add_inline_ui_systems((
         setup_trail_options,
         toggle_trail_options,
         sync_trail_no_mesh_alert,

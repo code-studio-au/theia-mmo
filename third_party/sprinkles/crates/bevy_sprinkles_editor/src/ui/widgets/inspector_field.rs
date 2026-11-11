@@ -11,7 +11,7 @@ use crate::ui::components::binding::{BindingTarget, FieldBinding};
 use crate::ui::components::inspector::{ComboBoxOption, FieldKind, path_to_label};
 
 pub fn plugin(app: &mut App) {
-    app.add_authoring_systems(setup_combobox_fields);
+    app.add_inline_ui_systems(setup_combobox_fields);
 }
 
 pub struct InspectorFieldProps {

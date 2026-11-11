@@ -14,7 +14,7 @@ pub struct CheckboxCommitEvent {
 }
 
 pub fn plugin(app: &mut App) {
-    app.add_authoring_systems((
+    app.add_inline_ui_systems((
         handle_checkbox_hover,
         handle_checkbox_click,
         sync_checkbox_icon,
@@ -205,5 +205,53 @@ fn sync_checkbox_icon(
         } else {
             Display::None
         };
+    }
+}
+
+#[cfg(test)]
+mod theia_inline_tests {
+    use super::*;
+    use crate::hosting::{AuthoringHost, AuthoringHostPlugin};
+
+    #[derive(Resource, Default)]
+    struct Commits(u32);
+
+    #[test]
+    fn original_checkbox_edits_while_only_inline_ui_is_active() {
+        let mut app = App::new();
+        app.insert_resource(AuthoringHost::embedded(1))
+            .init_resource::<Commits>()
+            .add_plugins(AuthoringHostPlugin)
+            .add_plugins(plugin)
+            .add_observer(|_: On<CheckboxCommitEvent>, mut commits: ResMut<Commits>| {
+                commits.0 += 1
+            });
+        let check = app
+            .world_mut()
+            .spawn((EditorCheckbox, CheckboxState::default(), Interaction::None))
+            .id();
+        let box_entity = app.world_mut().spawn((CheckboxBox, ChildOf(check))).id();
+        let icon = app
+            .world_mut()
+            .spawn((
+                CheckboxIcon,
+                Node {
+                    display: Display::None,
+                    ..default()
+                },
+                ChildOf(box_entity),
+            ))
+            .id();
+        app.update();
+        app.world_mut().resource_mut::<AuthoringHost>().inline_ui = true;
+        *app.world_mut().get_mut::<Interaction>(check).unwrap() = Interaction::Pressed;
+        app.update();
+        assert!(app.world().get::<CheckboxState>(check).unwrap().checked);
+        assert_eq!(
+            app.world().get::<Node>(icon).unwrap().display,
+            Display::Flex
+        );
+        assert_eq!(app.world().resource::<Commits>().0, 1);
+        assert!(!app.world().resource::<AuthoringHost>().active);
     }
 }

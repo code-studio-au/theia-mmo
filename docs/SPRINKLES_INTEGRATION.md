@@ -646,3 +646,16 @@ verify catalog and image files, request the variants before any other load of
 the same paths, and keep the handles alive. This helper is not yet connected to
 world loading or Sprinkles material creation; the world client still rejects
 schema 4.
+
+## Reusable inspector schedule — P5-17
+
+The original Sprinkles inspector, binding and widget systems now have a separate
+host-controlled update set. The full particle workspace enables both this set
+and its own workspace systems. An embedded host can enable the reusable UI set
+without starting Sprinkles' workspace camera and project shortcut systems; the
+zone editor still keeps this mode off. A headless test exercises a real original
+checkbox under the separate set. This is a scheduling prerequisite, not yet an
+inline particle inspector or a qualification of simultaneous keyboard, popup,
+scroll and focus ownership. Native interactive qualification was interrupted at
+the user's request to stop using the display and mouse; it has not passed for
+this change.

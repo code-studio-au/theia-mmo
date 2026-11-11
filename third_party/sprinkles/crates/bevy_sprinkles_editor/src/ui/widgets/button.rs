@@ -27,7 +27,7 @@ pub struct ButtonClickEvent {
 }
 
 pub fn plugin(app: &mut App) {
-    app.add_authoring_systems((handle_hover, handle_button_click));
+    app.add_inline_ui_systems((handle_hover, handle_button_click));
 }
 
 #[derive(Component, Default, Clone)]

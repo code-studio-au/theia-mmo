@@ -23,7 +23,7 @@ struct GenerateAabbButton;
 struct GenerateAabbOverlay;
 
 pub fn plugin(app: &mut App) {
-    app.add_authoring_systems((setup_generate_aabb_button, sync_generate_aabb_button))
+    app.add_inline_ui_systems((setup_generate_aabb_button, sync_generate_aabb_button))
         .add_observer(handle_generate_aabb_click);
 }
 

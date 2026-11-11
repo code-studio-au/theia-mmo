@@ -193,7 +193,7 @@ pub fn plugin(app: &mut App) {
         .add_observer(commit::handle_texture_commit)
         .add_observer(commit::handle_variant_change)
         .add_observer(swatch::sync_variant_swatch_from_color)
-        .add_authoring_systems(
+        .add_inline_ui_systems(
             (
                 propagate_bindings,
                 (

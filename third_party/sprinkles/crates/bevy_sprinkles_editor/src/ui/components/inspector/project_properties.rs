@@ -34,7 +34,7 @@ struct ProjectRuntimeContent;
 struct RevealFileButton(PathBuf);
 
 pub fn plugin(app: &mut App) {
-    app.add_authoring_systems((setup_properties_content, setup_runtime_content))
+    app.add_inline_ui_systems((setup_properties_content, setup_runtime_content))
         .add_observer(handle_reveal_file_click);
 }
 

@@ -24,7 +24,7 @@ struct AlphaOpaqueAlert;
 struct AlphaDisabledOverlay;
 
 pub fn plugin(app: &mut App) {
-    app.add_authoring_systems(
+    app.add_inline_ui_systems(
         (setup_alpha_alert, sync_alpha_disabled).after(super::update_inspected_emitter_tracker),
     );
 }

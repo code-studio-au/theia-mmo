@@ -63,7 +63,7 @@ pub fn plugin(app: &mut App) {
         ))
         .add_plugins(project_properties::plugin)
         .add_plugins(visibility_aabb::plugin)
-        .add_authoring_systems((
+        .add_inline_ui_systems((
             (
                 update_inspected_emitter_tracker,
                 update_inspected_collider_tracker,

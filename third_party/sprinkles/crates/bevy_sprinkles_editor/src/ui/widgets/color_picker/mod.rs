@@ -44,7 +44,7 @@ pub fn plugin(app: &mut App) {
         .add_plugins(UiMaterialPlugin::<CheckerboardMaterial>::default())
         .add_observer(handle_trigger_click)
         .add_observer(handle_input_mode_change)
-        .add_authoring_systems((
+        .add_inline_ui_systems((
             setup_color_picker,
             setup_trigger_swatch,
             setup_color_picker_content,

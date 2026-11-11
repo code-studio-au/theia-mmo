@@ -19,7 +19,7 @@ pub struct LinkHitbox {
 }
 
 pub fn plugin(app: &mut App) {
-    app.add_authoring_systems((position_link_hitboxes, handle_link_click, update_link_hover));
+    app.add_inline_ui_systems((position_link_hitboxes, handle_link_click, update_link_hover));
 }
 
 pub fn spawn_link_hitbox(

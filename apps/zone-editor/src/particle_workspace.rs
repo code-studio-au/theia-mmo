@@ -6,7 +6,9 @@ use bevy::input_focus::InputFocus;
 use bevy_sprinkles::ParticleSystemRuntime;
 use bevy_sprinkles_editor::{
     ParticleAuthoringPlugin,
-    hosting::{AuthoringHost, AuthoringUiRoot, AuthoringUpdate, ReturnToHostRequested},
+    hosting::{
+        AuthoringHost, AuthoringUiRoot, AuthoringUiUpdate, AuthoringUpdate, ReturnToHostRequested,
+    },
     viewport::{EditorCamera, EditorParticlePreview},
 };
 use std::collections::HashMap;
@@ -46,7 +48,13 @@ pub(super) fn plugin(app: &mut App) {
         .add_plugins(ParticleAuthoringPlugin)
         .configure_sets(Update, ZoneAuthoring.run_if(zone_active))
         .add_observer(request_return)
-        .add_systems(Update, switch.before(ZoneAuthoring).before(AuthoringUpdate));
+        .add_systems(
+            Update,
+            switch
+                .before(ZoneAuthoring)
+                .before(AuthoringUpdate)
+                .before(AuthoringUiUpdate),
+        );
 }
 
 pub(super) fn zone_active(host: Option<Res<AuthoringHost>>) -> bool {

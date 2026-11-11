@@ -1,3 +1,11 @@
+P5-17 reusable Sprinkles inspector schedule, 11 November 2026: the original
+inspector and widgets can update independently of the full particle workspace;
+inline mode is not yet wired into the zone UI. Forty-seven particle-editor and
+139 zone-editor tests pass, plus focused real-checkbox and workspace-transition
+tests; fmt and strict workspace/all-target Clippy pass. Native interactive GPU
+qualification was interrupted when the user requested no display or mouse. See
+[integration](../SPRINKLES_INTEGRATION.md).
+
 P2-13 particle texture loading foundation, 11 November 2026: a client-side
 helper requests verified, package-relative PNG variants through Bevy's standard
 image loader with explicit sRGB/linear settings. A real-file Bevy test confirms

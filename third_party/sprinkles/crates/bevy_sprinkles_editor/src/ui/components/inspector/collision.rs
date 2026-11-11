@@ -23,7 +23,7 @@ struct CollisionContent;
 
 pub fn plugin(app: &mut App) {
     app.add_observer(handle_collision_mode_change)
-        .add_authoring_systems(
+        .add_inline_ui_systems(
             setup_collision_content.after(super::update_inspected_emitter_tracker),
         );
 }

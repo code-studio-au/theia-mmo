@@ -30,7 +30,7 @@ struct ColliderShapeField(&'static str);
 pub fn plugin(app: &mut App) {
     app.add_observer(handle_collider_shape_change)
         .add_observer(handle_collider_text_commit)
-        .add_authoring_systems(
+        .add_inline_ui_systems(
             setup_collider_content.after(super::update_inspected_collider_tracker),
         );
 }

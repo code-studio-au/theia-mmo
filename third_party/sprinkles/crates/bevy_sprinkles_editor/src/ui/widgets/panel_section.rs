@@ -7,7 +7,7 @@ use crate::ui::tokens::{BORDER_COLOR, FONT_PATH, TEXT_DISPLAY_COLOR, TEXT_SIZE};
 use crate::ui::widgets::button::{ButtonClickEvent, ButtonVariant, IconButtonProps, icon_button};
 
 pub fn plugin(app: &mut App) {
-    app.add_authoring_systems(setup_panel_section_buttons);
+    app.add_inline_ui_systems(setup_panel_section_buttons);
 }
 
 #[derive(Component, Default, Clone)]

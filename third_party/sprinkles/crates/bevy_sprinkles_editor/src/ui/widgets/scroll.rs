@@ -11,7 +11,7 @@ const SCROLLBAR_WIDTH: f32 = 3.0;
 const SCROLLBAR_MARGIN: f32 = 3.0;
 
 pub fn plugin(app: &mut App) {
-    app.add_authoring_systems((send_scroll_events, update_scrollbar))
+    app.add_inline_ui_systems((send_scroll_events, update_scrollbar))
         .add_observer(on_scroll_handler);
 }
 

@@ -67,7 +67,7 @@ pub fn plugin(app: &mut App) {
         .add_observer(handle_handle_color_change)
         .add_observer(handle_handle_color_commit)
         .add_observer(handle_trigger_click)
-        .add_authoring_systems((
+        .add_inline_ui_systems((
             setup_gradient_edit,
             setup_gradient_edit_content,
             setup_trigger_swatch,

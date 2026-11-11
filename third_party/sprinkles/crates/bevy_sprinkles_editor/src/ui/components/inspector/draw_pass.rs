@@ -31,7 +31,7 @@ pub struct TrailMeshAlert;
 struct DrawPassSection;
 
 pub fn plugin(app: &mut App) {
-    app.add_authoring_systems(
+    app.add_inline_ui_systems(
         (sync_mask_cutoff, sync_trail_mesh_alert).after(super::update_inspected_emitter_tracker),
     );
 }

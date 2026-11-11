@@ -11,7 +11,7 @@ use crate::ui::widgets::cursor::{ActiveCursor, HoverCursor};
 const RESIZE_HANDLE_WIDTH: u32 = 12;
 
 pub fn plugin(app: &mut App) {
-    app.add_authoring_systems((
+    app.add_inline_ui_systems((
         spawn_resize_handles,
         sync_resize_handle_positions,
         handle_resize_drag,

@@ -16,7 +16,7 @@ struct TurbulenceSection;
 struct TurbulenceOptions;
 
 pub fn plugin(app: &mut App) {
-    app.add_authoring_systems((setup_turbulence_options, toggle_turbulence_options));
+    app.add_inline_ui_systems((setup_turbulence_options, toggle_turbulence_options));
 }
 
 pub fn turbulence_section() -> (impl Bundle, InspectorSection) {
