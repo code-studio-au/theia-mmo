@@ -647,6 +647,14 @@ the same paths, and keep the handles alive. This helper is not yet connected to
 world loading or Sprinkles material creation; the world client still rejects
 schema 4.
 
+A separate client-side helper now checks that each standard-material texture
+reference exactly matches a catalog entry with the appropriate sRGB or linear
+role. It rejects local paths, editor asset folders, custom shaders and unused
+catalog textures, then rebases cloned effects to the verified package-relative
+asset path. This helper is not complete package admission: it does not verify
+file bytes or effect identities, validate simulation parameters, establish GPU
+budgets or spawn effects. Export and client playback remain disabled.
+
 ## Reusable inspector schedule — P5-17
 
 The original Sprinkles inspector, binding and widget systems now have a separate

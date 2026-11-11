@@ -1,3 +1,10 @@
+P2-13 particle texture-reference foundation, 11 November 2026: the VFX helper
+checks original Sprinkles standard-material references against cataloged
+role-specific texture names, rejects editor/local paths and unused descriptors,
+and rebases cloned effects to the package asset root. Both VFX tests pass;
+this does not verify file bytes or admit, export or play particle packages.
+See [integration](../SPRINKLES_INTEGRATION.md).
+
 P5-17 selected particle auto-open, 11 November 2026: selecting a local
 particle opens its original Sprinkles project into the shared inspector after
 pending field edits and project operations settle. Unsaved projects block the
