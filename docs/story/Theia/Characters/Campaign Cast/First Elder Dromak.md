@@ -26,3 +26,9 @@ Historical source: [Allied and Kel'vari cast](https://github.com/code-studio-au/
 Text references from this account; these links do not establish additional relationships.
 
 [Korrath](../../Lore/Peoples/Korrath.md)
+
+## Approved cross-race campaign boundaries — 12 November 2026
+
+**Creator-locked cross-race continuity:** Dromak remains First Elder within Korrath council governance, not a monarch. He grants only bounded, council-authorized access to sensitive records and research. His people retain protective traditions while Urodan and Tarek debate safety and discovery. Non-Korrath players are not assumed to have completed Korrath homeland stories.
+
+**Scope:** This is a continuity application of existing approved roles, not approval of new racial 1–20 quest plots or dialogue.
