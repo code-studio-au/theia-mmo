@@ -15,7 +15,7 @@ uses Bevy 0.19; Theia's local port uses Bevy 0.20.
 | Preview and zone | Sprinkles has its own preview scene. Theia can also select a zone placement and show its original inspector while previewing in the zone. Lighting, camera, scale, frame timing and environment can change appearance independently of the effect data. |
 | Custom materials | Theia rejects unsupported custom-shader effects instead of reaching the original unimplemented panic path. Custom shader rendering remains unimplemented. |
 | Saves and recovery | Theia adds guarded project switches, focused-field save handling, safe writes and draft recovery. These are local behavior changes, not upstream parity. Zone files and effects are saved explicitly. |
-| Game integration | Zone preview exists; world-package export, game-client playback and gameplay integration are pending. Neither preview demonstrates MMO-scale performance. |
+| Game integration | The zone editor exports bounded particle packages and can add or explicitly replace particles in a new chunk world. The client plays verified world placements, and a bounded cosmetic projectile cue is driven by the server. These are small validated slices, not MMO-scale capacity or complete gameplay integration. |
 
 A byte comparison of the two source trees at this baseline found 11 changed
 and 88 unchanged same-path files in the runtime, and 61 changed and 68 unchanged
@@ -56,6 +56,9 @@ similar; individual positions and the selected-emitter bounds overlay differ.
 This is a visual observation, not proof of equivalent simulation or rendering.
 The standalone host shares Theia's ported editor/runtime but does not exercise
 the zone workspace, its camera, lighting, placement or input interactions.
+Subsequent connected-client tests use exported upstream effects, including
+chunk startup, streaming and rebasing; they do not make the original and Theia
+captures frame-synchronized or establish cross-version visual equivalence.
 
 Each run produced three stills around 3, 6 and 9 seconds after emitters appeared.
 Separate approximately seven-second recordings cover Magic Puff and Tube Trails.
