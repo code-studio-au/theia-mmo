@@ -1,3 +1,11 @@
+P2-13 particle quad arithmetic, 11 November 2026: overflowing subdivision,
+index-count and replicated-vertex calculations are rejected before mesh creation;
+invalid live edits suppress rendering and recover after repair. Twelve runtime and
+14 loader tests, fmt and strict workspace/all-target Clippy pass. Windowless RX
+7900 XTX / RADV / Mesa 26.2.6 Vulkan with Khronos validation reports zero
+unexpected GPU diagnostics. Other mesh types and memory budgets remain open. See
+[integration](../SPRINKLES_INTEGRATION.md).
+
 P2-13 particle sphere geometry, 11 November 2026: zero-radius spheres retain
 finite normals and zero resolution uses at least three segments and two rings.
 Eleven runtime, 14 loader and 36 particle-editor tests, fmt and strict workspace/

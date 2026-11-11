@@ -23,6 +23,8 @@ struct Fixture {
     saw_flat_cylinder: bool,
     saw_flat_prism: bool,
     saw_zero_sphere: bool,
+    saw_invalid_quad: bool,
+    saw_repaired_quad: bool,
 }
 
 fn setup(
@@ -68,6 +70,8 @@ fn setup(
         saw_flat_cylinder: false,
         saw_flat_prism: false,
         saw_zero_sphere: false,
+        saw_invalid_quad: false,
+        saw_repaired_quad: false,
     });
 }
 
@@ -175,7 +179,29 @@ fn step(
                 .iter()
                 .any(|(material, buffers)| material.is_some() && buffers.amount == 5)
         }
+        140 => {
+            effects.get_mut(&fixture.asset).unwrap().emitters[0]
+                .draw_pass
+                .mesh = ParticleMesh::Quad {
+                orientation: default(),
+                size: Vec2::ONE,
+                subdivide: Vec2::splat(f32::MAX),
+            };
+        }
+        145 => {
+            fixture.saw_invalid_quad = emitters.iter().any(|(material, _)| material.is_none());
+        }
         150 => {
+            effects.get_mut(&fixture.asset).unwrap().emitters[0]
+                .draw_pass
+                .mesh = ParticleMesh::default();
+        }
+        160 => {
+            fixture.saw_repaired_quad = emitters
+                .iter()
+                .any(|(material, buffers)| material.is_some() && buffers.amount == 5);
+        }
+        170 => {
             if fixture.saw_suppressed
                 && fixture.saw_restored
                 && fixture.saw_invalid_layout_suppressed
@@ -183,19 +209,23 @@ fn step(
                 && fixture.saw_flat_cylinder
                 && fixture.saw_flat_prism
                 && fixture.saw_zero_sphere
+                && fixture.saw_invalid_quad
+                && fixture.saw_repaired_quad
             {
                 println!("headless particle material transition passed");
                 exits.write(AppExit::Success);
             } else {
                 eprintln!(
-                    "headless particle transitions failed: shader_suppressed={} shader_restored={} layout_suppressed={} layout_restored={} cylinder={} prism={} sphere={}",
+                    "headless particle transitions failed: shader_suppressed={} shader_restored={} layout_suppressed={} layout_restored={} cylinder={} prism={} sphere={} invalid_quad={} repaired_quad={}",
                     fixture.saw_suppressed,
                     fixture.saw_restored,
                     fixture.saw_invalid_layout_suppressed,
                     fixture.saw_valid_layout_restored,
                     fixture.saw_flat_cylinder,
                     fixture.saw_flat_prism,
-                    fixture.saw_zero_sphere
+                    fixture.saw_zero_sphere,
+                    fixture.saw_invalid_quad,
+                    fixture.saw_repaired_quad
                 );
                 exits.write(AppExit::error());
             }

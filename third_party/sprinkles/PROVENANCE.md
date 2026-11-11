@@ -273,3 +273,6 @@ performance qualification is claimed.
 
 Sphere generation now preserves finite normals at zero radius and clamps zero
 resolution to a minimally valid sphere; this is a local runtime modification.
+
+Quad subdivision and replicated-mesh arithmetic is locally checked before
+construction; this does not impose a memory budget or validate other mesh types.

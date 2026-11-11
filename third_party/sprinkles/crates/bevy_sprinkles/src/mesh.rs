@@ -372,6 +372,26 @@ fn create_prism_mesh(left_to_right: f32, size: Vec3, subdivide: Vec3) -> Mesh {
     mesh
 }
 
+/// Validate the arithmetic used by quad construction and particle replication.
+/// This is not a limit on memory or a validation of other mesh types.
+pub(crate) fn checked_quad_mesh_arithmetic(config: &ParticleMesh, amount: u32) -> bool {
+    let ParticleMesh::Quad { subdivide, .. } = config else {
+        return true;
+    };
+    let checked = || -> Option<()> {
+        let cols = (subdivide.x as u32).checked_add(1)?;
+        let rows = (subdivide.y as u32).checked_add(1)?;
+        let vertices = cols.checked_add(1)?.checked_mul(rows.checked_add(1)?)?;
+        let indices = cols.checked_mul(rows)?.checked_mul(6)?;
+        vertices.checked_mul(amount)?;
+        usize::try_from(indices)
+            .ok()?
+            .checked_mul(usize::try_from(amount).ok()?)?;
+        Some(())
+    };
+    checked().is_some()
+}
+
 fn create_subdivided_quad(size: Vec2, subdivisions_x: u32, subdivisions_y: u32) -> Mesh {
     let cols = subdivisions_x + 1;
     let rows = subdivisions_y + 1;

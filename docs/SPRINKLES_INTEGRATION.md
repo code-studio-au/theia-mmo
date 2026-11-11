@@ -321,3 +321,13 @@ clamped to the minimum geometry accepted by Bevy (three and two). Tests cover
 zero and tiny radii, zero resolution, finite attributes and valid indices; the
 windowless Vulkan smoke test also transitions to a zero-radius, zero-resolution
 sphere. This does not validate arbitrary dimensions or limit memory usage.
+
+
+## Quad mesh arithmetic — P2-13
+
+Before construction, quad subdivisions, base vertex and index counts, and
+replicated vertex and index counts are checked for the integer overflow relevant
+to their construction and indexing. Invalid live edits suppress the affected
+emitter until corrected. Runtime regressions and the windowless Vulkan smoke test
+cover rejection and recovery. This is not a memory cap; representable inputs may
+still exhaust memory. Other mesh types are not covered by this quad check.
