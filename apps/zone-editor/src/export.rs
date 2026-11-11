@@ -422,7 +422,7 @@ fn publish_in(
         report["particles"] = json!({"placements": zone.particles.len(), "effects": draft.effects.len(),
             "texture_variants": draft.textures.len(), "source_textures": summary.textures,
             "particle_slots": summary.particle_slots, "vertices": summary.vertices,
-            "client_playback": "not yet available"});
+            "client_playback": "bounded monolithic worlds; local-coordinate effects only"});
     }
     let manifest = serde_json::to_vec_pretty(&manifest).map_err(|e| e.to_string())?;
     let checked = Manifest::decode(&manifest).map_err(|e| e.to_string())?;
@@ -601,6 +601,14 @@ mod tests {
             .unwrap();
         let bytes = fs::read(path.join("particles/catalog.json")).unwrap();
         let catalog = manifest.verify_particle_catalog(&bytes).unwrap();
+        manifest
+            .verify_visual_for_particle_catalog(&path.join("terrain.glb"), &bytes)
+            .unwrap();
+        assert!(
+            manifest
+                .verify_visual_for_particle_catalog(&path.join("terrain.glb"), b"wrong")
+                .is_err()
+        );
         assert_eq!(catalog.placements().len(), 1);
         assert_eq!(catalog.effects().len(), 1);
         assert_eq!(catalog.textures().len(), 2);
@@ -616,7 +624,7 @@ mod tests {
                 .unwrap()
                 .verify_visual(&path.join("terrain.glb"))
                 .is_err(),
-            "client must reject particle packages until playback is integrated"
+            "legacy visual verification must fail closed for particle packages"
         );
         fs::write(
             path.join("particles/effects/effect-vfx.fire.ron"),

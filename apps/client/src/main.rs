@@ -23,6 +23,7 @@ mod movement;
 mod movement_metrics;
 mod nameplates;
 mod network;
+mod particle_world;
 mod physics;
 mod player_life;
 mod progression;
@@ -893,7 +894,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     let camera_collision = camera::CollisionMode::parse(&mut args)?;
     let chunks = chunk_world::Config::parse(&mut args)?;
-    let terrain = terrain_scene::Config::parse(&mut args)?;
+    let mut terrain = terrain_scene::Config::parse(&mut args)?;
+    let particle_world = terrain
+        .as_mut()
+        .and_then(|terrain| terrain.particles.take());
     if chunks.is_some() && terrain.is_some() {
         return Err("Choose either chunk or monolithic terrain world".into());
     }
@@ -1305,6 +1309,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .after(bevy::picking::PickingSystems::Last),
         )
         .add_systems(FixedUpdate, movement::move_local_pawn);
+    if let Some(prepared) = particle_world {
+        particle_world::install(&mut app, prepared);
+    }
     if fantasy_skin {
         fantasy_ui::install_scale(&mut app, ui_scale);
         if let Some(preferences) = ui_preferences {

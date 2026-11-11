@@ -1,3 +1,18 @@
+P2-13 bounded zone particle playback, 11 November 2026: the monolithic
+`--terrain-world` client now admits manifest-bound particle packages, validates
+simulation data and explicit resource counts, binds verified decoded images and
+spawns anchored Sprinkles effects. Initial admission requires local-coordinate
+emitters; world-space effects and chunk-world playback remain unsupported. A
+real editor-exported textured effect was visible on both native Linux clients
+connected to an authoritative server over encrypted Renet; the test recorded
+one running visible emitter per client and zero GPU validation diagnostics on
+AMD Radeon RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan
+(`build/particle-world-native-20261111-v5/verification.json`, captures in `a/`
+and `b/`). Actual-client admission tests rejected tampered catalog/effect/image
+files, excessive particle counts and world-space emitters. Frame-rebase unit
+tests preserve the local effect's anchor, rotation and scale; this does not yet
+qualify live GPU rebases, total GPU memory or MMO-scale cosmetic load.
+
 P2-13 particle simulation preparation, 11 November 2026: package preparation
 now applies a conservative 3D/emitter/collider, timing, reflected numeric and
 curve/gradient complexity check before resource counting. Sprinkles' documented

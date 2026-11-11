@@ -171,8 +171,10 @@ struct Assets {
 #[derive(Component)]
 struct Visual(Key);
 pub(crate) fn install(app: &mut App) {
-    app.add_plugins(SprinklesPlugin)
-        .init_resource::<Cues>()
+    if !app.is_plugin_added::<SprinklesPlugin>() {
+        app.add_plugins(SprinklesPlugin);
+    }
+    app.init_resource::<Cues>()
         .add_systems(Startup, setup)
         .add_systems(Update, render.after(crate::combat::Presentation));
 }

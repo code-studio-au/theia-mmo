@@ -34,6 +34,9 @@ The subsequent `build/particle-shape-native-20261111-v2/qualification.json`
 also verifies Solid → Gradient on initial color reveals its nested gradient
 control without reopening the popup, with zero GPU diagnostics.
 
+Later sections preserve historical checkpoints; the current zone playback scope
+and restrictions are described immediately below.
+
 The accepted editor styling migration is recorded in `ZONE_EDITOR.md`. This
 slice reuses the actual Sprinkles runtime and editor, pinned at
 `0e978f5a9afc6b456b3693c8761e73a6c7e155bd`, instead of recreating its particle
@@ -51,8 +54,8 @@ three server launches and impacts, visible running emitters and zero GPU
 validation diagnostics on AMD Radeon RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6
 Vulkan (`build/sprinkles-projectile-native-20261111-v4/verification.json`;
 `A/projectile.png` and `B/projectile.png`). Inputs were synthetic events in
-the focused client. This is a fixed prototype effect; it does not bind editor
-zone placements to package playback or establish an MMO-scale resource budget.
+the focused client. This fixed projectile prototype does not establish an
+MMO-scale resource budget.
 
 P2-13 preparation: `Catalog::read_effects` returns bounded effect bytes only
 after checking each returned buffer's catalog length and hash. The VFX helper
@@ -65,7 +68,7 @@ The helpers do not validate all effect parameters, impose complete resource budg
 publish packages or play effects. File I/O and decoding are blocking and must
 stay off simulation and render update paths. Catalog and VFX tests cover changed
 or malformed files, unsupported materials, arithmetic overflow and role-aware
-rebasing; no client integration is claimed.
+rebasing; the bounded client integration is described below.
 `project_catalog_placements` separately converts catalog-local placements via
 checked f64 global coordinates into a bounded render frame and composes the
 original effect transform. A far-origin test reprojects after a frame change
@@ -96,9 +99,9 @@ The zone exporter now writes staged `particles/catalog.json`, `effects/` and
 `textures/` files and binds the catalog into a schema-4 world manifest. It
 verifies staged effect and texture bytes and publishes the manifest last; a
 missing dependency leaves no destination. A focused export test covers external
-texture variants and tampering. The export report explicitly says client
-playback is unavailable, and the existing client admission guard remains in
-place. The particle package is not yet playable in the game.
+texture variants and tampering. Monolithic terrain-world clients now admit a
+bounded subset as described below; legacy and chunk paths still reject these
+packages.
 
 Package preparation now also checks 3D dimension, bounded emitter/collider
 counts, emitter timing, reflected finite numeric values and bounded ordered
@@ -106,7 +109,27 @@ curve/gradient points. The documented infinite material attenuation default is
 preserved. Focused tests reject invalid values and all seven upstream examples
 pass this numeric subset; this does not establish that they fit resource limits
 or work in-game. The checks do not yet constitute complete semantic or GPU memory
-admission, and client package playback remains blocked.
+admission; initial bounded playback is described below.
+
+The monolithic `--terrain-world` client now prepares the exact manifest-bound
+catalog before startup, validates its effect data and resource counts, binds
+verified decoded textures, and spawns the authored effects at their checked
+anchors. Initial caps are 32 placements, 64 emitters, 1 million replicated
+vertices, 3 million indices, 8192 particle slots, 65536 trail-history entries,
+100000 sub-emitter words and 32 MiB decoded image data. These are conservative
+prototype counts, not a complete GPU memory or MMO load policy. All emitters
+must currently use local coordinates; world-space effects fail admission until
+rebase handling is implemented. Chunk-world particle packages remain rejected.
+
+A real editor-exported textured placement appeared on both native Linux clients
+connected to an authoritative server over encrypted Renet. Each reported one
+visible running emitter, with zero GPU validation diagnostics on AMD Radeon RX
+7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan
+(`build/particle-world-native-20261111-v5/verification.json` and `a/scene.png`,
+`b/scene.png`). `tools/qualify_particle_world_admission.py` tests actual client
+rejection of modified catalogs, effects and textures, excessive counts and
+world-space effects. A headless test checks anchor, rotation and scale across a
+render-frame change; a live GPU rebase is not yet qualified.
 
 The prerequisites are the accepted Linux authoring shell and the adopted exact
 Bevy 0.20.0 engine. Upstream targets Bevy 0.19.0. Both imported crates use our
@@ -517,10 +540,9 @@ participate in validation, revision checks, atomic rollback and undo/redo. Older
 zone documents load with no placements; older binaries do not read schema 8.
 
 The world exporter packages particle placements, effects and texture variants
-in a manifest-bound schema-4 world package. Clients still reject that schema
-until particle playback and admission are implemented. The editor provides
-reference creation, selection and inline attribute controls; clients do not yet
-render exported zone effects. No MMO particle-count or GPU memory budget is implied by
+in a manifest-bound schema-4 world package. Monolithic clients now render the
+bounded local-coordinate subset described above. The editor provides reference
+creation, selection and inline attribute controls. No MMO particle-count or GPU memory budget is implied by
 the authoring document bound.
 
 Acceptance for this slice: far-origin coordinate roundtrip, invalid keys and

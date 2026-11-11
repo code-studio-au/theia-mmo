@@ -92,6 +92,10 @@ impl Manifest {
     pub fn requires_material_profiles(&self) -> bool {
         self.document.schema == 3
     }
+    /// Whether this manifest binds a particle catalog.
+    pub fn has_particle_catalog(&self) -> bool {
+        self.document.schema == 4
+    }
     pub fn revision(&self) -> u32 {
         self.document.revision
     }
@@ -170,6 +174,23 @@ impl Manifest {
     }
     pub fn verify_visual(&self, path: &Path) -> Result<()> {
         self.verify_visual_with_root(path, None)
+    }
+    /// Verify a schema-4 visual only for a caller that is preparing its exact
+    /// manifest-bound particle catalog. The caller still must admit and render
+    /// those particles; legacy `verify_visual` continues to reject schema 4.
+    pub fn verify_visual_for_particle_catalog(&self, path: &Path, catalog: &[u8]) -> Result<()> {
+        self.verify_particle_catalog(catalog)?;
+        verify_visual(
+            path,
+            self.document.visual_sha256,
+            Some(self.document.visual_bytes),
+        )?;
+        shared_images::verify(
+            path,
+            None,
+            &self.document.shared_images,
+            self.document.schema,
+        )
     }
     pub fn verify_visual_in(&self, path: &Path, asset_root: &Path) -> Result<()> {
         self.verify_visual_with_root(path, Some(asset_root))

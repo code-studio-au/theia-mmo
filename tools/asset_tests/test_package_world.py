@@ -21,6 +21,13 @@ class PackageTests(unittest.TestCase):
         self.assertEqual(identity(json.loads(fixture.read_text())),
                          '779362a91793754893713aa35b709e773164332295f7ccb3fc49d7f5756b2d26')
 
+    def test_particle_schema_matches_rust_golden_vector(self):
+        fixture = Path(__file__).resolve().parents[2] / 'crates/network/tests/fixtures/content-manifest.json'
+        manifest = json.loads(fixture.read_text())
+        manifest.update(schema=4, particle_bytes=10, particle_sha256=[3] * 32)
+        self.assertEqual(identity(manifest),
+                         'cb8c7e56a45c5c6375881cdc906f8000d6cef2ccedec9fed31ca6b061cd00dea')
+
     def test_package_preserves_inputs_is_path_independent_and_never_overwrites(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

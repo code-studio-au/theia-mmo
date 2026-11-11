@@ -10,7 +10,6 @@ import copy
 import json
 from pathlib import Path
 import numpy as np
-from unity_editor_reference import digest, read_json
 
 
 def convex_surface(vertices, faces):
@@ -70,6 +69,7 @@ def intersect(triangles, probe):
 
 
 def qualify(fixture, output):
+    from unity_editor_reference import digest, read_json
     fixture = Path(fixture).resolve(strict=True)
     output = Path(output).resolve()
     build = Path(__file__).resolve().parents[1] / 'build'

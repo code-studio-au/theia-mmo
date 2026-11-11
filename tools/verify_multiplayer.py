@@ -221,7 +221,7 @@ def sha256(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def run(output, binaries, references=None, terrain=None, player_assets=None, collision=False, interior=False, full_map=False, map_access=False, transport="renet", world_origin=None, replication_span=None, render_span=None, jump=False, chunk_world=None, client_chunk_world=None, expect_remote_pixels=True, chunk_direction="z", chunk_stream=False, chunk_delay_ms=0, chunk_asset_failure=False, chunk_bounds_failure=False, chunk_image_failure=False, chunk_shared_images=False, staging_root_limit=1, stream_probe="green_floor", window_size="1280x720"):
+def run(output, binaries, references=None, terrain=None, player_assets=None, collision=False, interior=False, full_map=False, map_access=False, transport="renet", world_origin=None, replication_span=None, render_span=None, jump=False, chunk_world=None, client_chunk_world=None, expect_remote_pixels=True, chunk_direction="z", chunk_stream=False, chunk_delay_ms=0, chunk_asset_failure=False, chunk_bounds_failure=False, chunk_image_failure=False, chunk_shared_images=False, staging_root_limit=1, stream_probe="green_floor", window_size="1280x720", require_world_particles=False):
     assert stream_probe in ('green_floor', 'bound_geometry')
     assert stream_probe == 'green_floor' or (chunk_stream and chunk_shared_images and not any((chunk_asset_failure, chunk_bounds_failure, chunk_image_failure)))
     assert type(staging_root_limit) is int and 1 <= staging_root_limit <= 32
@@ -489,6 +489,11 @@ def run(output, binaries, references=None, terrain=None, player_assets=None, col
                 expected_identity = package_identity(manifest) if manifest else hashlib.sha256(profile_bytes).hexdigest()
                 assert bytes(report['terrain_world']).hex() == expected_identity
                 assert report['content_package'] == ({'content_id': manifest['content_id'], 'revision': manifest['revision']} if manifest else None)
+                if require_world_particles:
+                    assert manifest and manifest['schema'] == 4
+                    particles = report['world_particles']
+                    assert particles['placements'] > 0 and particles['live_roots'] > 0
+                    assert particles['running_emitter_frames'] > 0 and particles['visible_emitter_frames'] > 0
                 profile=json.loads(profile_bytes)
                 for player in players.values():
                     if profile['schema'] == 4:
@@ -622,6 +627,9 @@ def run(output, binaries, references=None, terrain=None, player_assets=None, col
             validation_active = 'Insert instance layer "VK_LAYER_KHRONOS_validation"' in log
             if "VK_LAYER_KHRONOS_validation" in os.environ.get("VK_INSTANCE_LAYERS", ""):
                 assert validation_active, "Enable VK_LOADER_DEBUG=layer to prove layer activation"
+                if require_world_particles:
+                    from gpu_validation import check_gpu_diagnostics
+                    assert check_gpu_diagnostics(log) == 0, "Particle world produced GPU validation diagnostics"
             images.append({"client": name, "blue_pixels": blue, "red_pixels": red,
                            "image_sha256": sha256(png), "gpu": report["gpu"],
                            "validation_active": validation_active})
@@ -689,6 +697,7 @@ if __name__ == "__main__":
     parser.add_argument("--binaries", type=Path, default=Path("target/debug"))
     parser.add_argument("--reference-assets", type=Path)
     parser.add_argument("--terrain-world", type=Path)
+    parser.add_argument("--require-world-particles", action="store_true", help="Require visible running particle emitters in both clients")
     parser.add_argument("--chunk-world", type=Path)
     parser.add_argument("--client-chunk-world", type=Path)
     parser.add_argument("--chunk-direction", choices=["x", "z"], default="z")
@@ -705,4 +714,4 @@ if __name__ == "__main__":
     parser.add_argument("--jump", action="store_true")
     parser.add_argument("--window-size", choices=["1280x720", "3440x1440"], default="1280x720")
     args = parser.parse_args()
-    run(args.output.resolve(), args.binaries.resolve(), args.reference_assets.resolve() if args.reference_assets else None, args.terrain_world.resolve() if args.terrain_world else None, args.player_assets.resolve() if args.player_assets else None, args.static_collision, args.interior, args.full_map, args.map_access, args.transport, args.world_origin, args.replication_span, args.render_span, args.jump, args.chunk_world.resolve() if args.chunk_world else None, args.client_chunk_world.resolve() if args.client_chunk_world else None, not args.offscreen_remote, args.chunk_direction, window_size=args.window_size)
+    run(args.output.resolve(), args.binaries.resolve(), args.reference_assets.resolve() if args.reference_assets else None, args.terrain_world.resolve() if args.terrain_world else None, args.player_assets.resolve() if args.player_assets else None, args.static_collision, args.interior, args.full_map, args.map_access, args.transport, args.world_origin, args.replication_span, args.render_span, args.jump, args.chunk_world.resolve() if args.chunk_world else None, args.client_chunk_world.resolve() if args.client_chunk_world else None, not args.offscreen_remote, args.chunk_direction, window_size=args.window_size, require_world_particles=args.require_world_particles)

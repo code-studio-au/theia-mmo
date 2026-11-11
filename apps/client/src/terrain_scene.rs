@@ -1,12 +1,17 @@
 //! Opt-in bounded imported terrain; capsules remain presentation of server poses.
 use bevy::{asset::LoadState, prelude::*, world_serialization::WorldAssetRoot};
-use std::{path::PathBuf, time::Instant};
+use std::{
+    io::Read,
+    path::{Path, PathBuf},
+    time::Instant,
+};
 use theia_network::terrain::Terrain;
 
 #[derive(Resource)]
 pub struct Config {
     pub directory: PathBuf,
     pub terrain: Terrain,
+    pub particles: Option<theia_vfx::PreparedCatalog>,
 }
 impl Config {
     pub fn parse(args: &mut Vec<String>) -> Result<Option<Self>, Box<dyn std::error::Error>> {
@@ -23,13 +28,61 @@ impl Config {
                 "World requires a validated spawn; use chunk packages through residency".into(),
             );
         }
-        terrain
-            .verify_visual(&directory.join("terrain.glb"))
-            .map_err(|e| e.to_string())?;
+        let particles = if let Some(manifest) = &terrain.package
+            && manifest.has_particle_catalog()
+        {
+            let file = std::fs::File::open(directory.join("particles/catalog.json"))?;
+            let mut bytes = Vec::new();
+            file.take(theia_network::particle_content::MAX_CATALOG_BYTES + 1)
+                .read_to_end(&mut bytes)?;
+            let catalog = manifest
+                .verify_particle_catalog(&bytes)
+                .map_err(|e| e.to_string())?;
+            manifest
+                .verify_visual_for_particle_catalog(&directory.join("terrain.glb"), &bytes)
+                .map_err(|e| e.to_string())?;
+            let origin = theia_core::coordinates::GlobalPosition::new([0.; 3]).unwrap();
+            let frame = theia_core::coordinates::LocalFrame::new(origin);
+            let prepared = theia_vfx::prepare_catalog(
+                &catalog,
+                &directory.join("particles/effects"),
+                &directory.join("particles/textures"),
+                Path::new("particles"),
+                frame,
+                frame,
+                crate::particle_world::LIMITS,
+            )?;
+            if prepared.effects.iter().any(|effect| {
+                effect
+                    .asset
+                    .emitters
+                    .iter()
+                    .any(|emitter| !emitter.draw_pass.use_local_coords)
+            }) {
+                return Err("World particle effects must use local coordinates until world-space rebase is supported".into());
+            }
+            let image_bytes = prepared
+                .textures
+                .iter()
+                .try_fold(0usize, |sum, texture| {
+                    sum.checked_add(texture.image.data.as_ref().map_or(0, Vec::len))
+                })
+                .ok_or("Particle decoded image size overflow")?;
+            if image_bytes > crate::particle_world::MAX_IMAGE_BYTES {
+                return Err("Particle decoded images exceed client budget".into());
+            }
+            Some(prepared)
+        } else {
+            terrain
+                .verify_visual(&directory.join("terrain.glb"))
+                .map_err(|e| e.to_string())?;
+            None
+        };
         args.drain(..2);
         Ok(Some(Self {
             directory,
             terrain: terrain.into_world(),
+            particles,
         }))
     }
 }
