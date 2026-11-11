@@ -9,7 +9,10 @@ particle emitters with no validation diagnostics on RX 7900 XTX / RADV NAVI31 /
 Mesa 26.2.6 (`build/projected-particle-native-20261111-v4/verification.json`). The editor's actual File-menu export was also exercised at the same far origin; it
 preserved the source files, and its published output passed the same two-client
 checks (`build/projected-particle-editor-native-20261111/qualification.json`,
-`build/projected-particle-editor-world-native-20261111/verification.json`).
+`build/projected-particle-editor-world-native-20261111/verification.json`). The editor's explicit empty replacement
+also removed the catalog while preserving schema-3 projected bindings, verified
+on two Vulkan clients (`build/projected-particle-editor-clear-native-20261111/`,
+`build/projected-particle-editor-clear-world-native-20261111/verification.json`).
 
 P2-13 world-space particle translation foundation, 11 November 2026: the
 Sprinkles GPU runtime can queue a render-frame offset without advancing or

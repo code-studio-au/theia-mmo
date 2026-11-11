@@ -15,18 +15,19 @@ from launch_environment import client_environment
 from qualify_world_input_os import Desktop, capture_ready, owned_window, wait
 
 
-def run(output, binary, empty_zone=False, replace=False, clear=False, projected=False):
+def run(output, binary, empty_zone=False, replace=False, clear=False, projected=False, projected_world=None):
     output.mkdir(parents=True, exist_ok=False)
     name = f'exportdemo{time.time_ns()}'
     world = Path('build')/(name+'-particles')
     assert not world.exists()
     base_world = Path('build/editor-particle-chunk-world-validated-20261111' if replace else 'build/chunk-paired-native-20261020/fixture-good')
     if projected:
-        assert not replace and not clear
-        base_world = Path('build/runtime-materials-fixture-v1')
+        base_world = projected_world or Path('build/runtime-materials-fixture-v1')
+        assert not replace or projected_world is not None
     chunk_name = 'chunk_1000000000_-1000000000' if projected else 'chunk_0_0'
     before_index = (base_world/'world.chunks.json').read_bytes()
     before_manifest = (base_world/chunk_name/'world.manifest.json').read_bytes()
+    expected_revision = json.loads(before_manifest)['revision'] + 1
     data = output/'particle-data/library'
     data.mkdir(parents=True)
     effect = data/'vfx.test.ron'
@@ -93,7 +94,7 @@ def run(output, binary, empty_zone=False, replace=False, clear=False, projected=
             click(button['centre'])
             wait(lambda: state()['export_dialog'] and state()['export_dialog']['finished'], 60)
             manifest = json.loads((world/chunk_name/'world.manifest.json').read_text())
-            assert manifest['schema']==(5 if projected else 2 if clear else 4) and manifest['revision']==(2 if projected else 4 if replace else 3)
+            assert manifest['schema']==(3 if projected and clear else 5 if projected else 2 if clear else 4) and manifest['revision']==expected_revision
             if clear:
                 assert not (world/chunk_name/'particles').exists()
             else:
@@ -114,7 +115,7 @@ def run(output, binary, empty_zone=False, replace=False, clear=False, projected=
             desktop.close()
     log = (output/'editor.log').read_text()
     assert 'VK_LAYER_KHRONOS_validation' in log and check_gpu_diagnostics(log)==0
-    result = {'passed':True,'world':str(world.resolve()),'revision':2 if projected else 4 if replace else 3,'projected':projected,'empty_zone':empty_zone,'replace':replace,'clear':clear,'source_unchanged':True,
+    result = {'passed':True,'world':str(world.resolve()),'revision':expected_revision,'projected':projected,'empty_zone':empty_zone,'replace':replace,'clear':clear,'source_unchanged':True,
               'effect_unchanged':True,'gpu_diagnostics':0}
     (output/'qualification.json').write_text(json.dumps(result,indent=2)+'\n')
     return result
@@ -128,6 +129,7 @@ if __name__ == '__main__':
     parser.add_argument('--replace', action='store_true')
     parser.add_argument('--clear', action='store_true')
     parser.add_argument('--projected', action='store_true')
+    parser.add_argument('--projected-world', type=Path)
     args = parser.parse_args()
     assert not args.clear or args.replace
-    print(json.dumps(run(args.output.resolve(), args.binary.resolve(), args.empty_zone, args.replace, args.clear, args.projected),indent=2))
+    print(json.dumps(run(args.output.resolve(), args.binary.resolve(), args.empty_zone, args.replace, args.clear, args.projected, args.projected_world),indent=2))
