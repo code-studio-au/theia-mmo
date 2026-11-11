@@ -109,3 +109,16 @@ After completion, stop cleanup cycles and maintain the established sources rathe
 - [ ] **Final validation:** Cross-check quest IDs, prerequisites, dialogue, old/new names and later epilogues; report anything not fully committed or implemented. Only mark complete after concrete verification.
 
 **Audit scope note:** The current project conversation includes many spoken approvals. A full assertion of 100% coverage requires comparing all available approval records and their detailed source conversations, not just this initial targeted file scan. This tracker records confirmed gaps rather than asserting completeness.
+
+### Reconciliation progress — 12 November 2026
+
+- [x] Q035/Q036 canonical, dependency reference, structured authoring manifest and 20–30 dialogue now use the universal Tidehold summons and shared Corven briefing. Human Q031 no longer gates Q035 in the derived dependency reference or authoring manifest. **Per-race completion flags remain unassigned** because the three other racial campaigns are not yet authored; this is a design/implementation dependency, not a claim of executable readiness.
+- [x] Q032–Q034 optional human aftermath now require Q031 in the structured reference and manifest without gating Q035.
+- [x] Q053 uses High Thane terminology in the canonical register, derived reference, authoring manifest and 20–30 dialogue.
+- [x] Q097 and pre-reveal Guardian references use Father instead of Grey Surveyor in the current canonical register and structured inventories. Historical archives may retain the superseded label as provenance.
+- [x] Q184 has race-specific homeland/contacts in the canonical register and structured inventories, with the shared quest ID preserved. Exact non-human NPC bindings remain OPEN.
+- [x] Vorrath ancestry note updated to complement Korrath and Aelari/Vaelari reciprocal origin directions without placing modern factions in the ancient past.
+- [x] Re-fetched and JSON-parsed both updated inventories; both retain 184 quest records and Q035's new title.
+- [ ] **Unresolved: all older narrative/dialogue references.** Other dialogue packs, Chronicle, World Bible, character cross-links, legacy registers and archival sources require context-aware checks. Do not globally replace historical quotations or turn unapproved interpretations into canon.
+- [ ] **Unresolved: exact spoken-approval coverage.** Earlier character-by-character discussion contains approvals beyond those summarized in the ledger; verify source details before asserting all individual backgrounds, motivations and dialogues are fully reflected.
+- [ ] **Unresolved: engine and race integration.** Implement real race-specific Q035 eligibility, Q184 actors/locations, quest catalogue migration, dialogue branching and end-to-end tests when the other racial campaigns and engine bindings exist.
