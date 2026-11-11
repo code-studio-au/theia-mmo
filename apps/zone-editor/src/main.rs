@@ -15,6 +15,7 @@ mod menus;
 mod naming;
 mod outliner;
 mod panels;
+mod particle_anchors;
 mod particle_workspace;
 mod paths;
 mod placement;
@@ -629,6 +630,7 @@ fn run() -> Result<(), String> {
             terrain::setup,
             paths::setup,
             markers::setup,
+            particle_anchors::setup,
             vegetation::setup,
             setup_ui,
             workspace::setup,
@@ -667,7 +669,7 @@ fn run() -> Result<(), String> {
             )
                 .chain(),
             paths::sync,
-            markers::sync,
+            (markers::sync, particle_anchors::sync).chain(),
             vegetation::sync,
             (outliner::scroll, outliner::sync).chain(),
             workspace::sync,

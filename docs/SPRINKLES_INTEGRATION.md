@@ -443,9 +443,8 @@ selects it in the left explorer and exposes its name, stable effect ID, position
 yaw and uniform scale in the normal inline inspector. The Particles filter,
 rename, duplicate, ground, frame, delete and undo use the shared document
 commands. The initial `vfx.unassigned` ID must be replaced with the intended
-content ID; no asset catalogue resolution or effect preview is implied. The
-viewport gizmo is hidden for these references until a world-space anchor is
-implemented. World export still rejects them.
+content ID; no asset catalogue resolution or effect preview is implied. The viewport gizmo remains hidden for these references; an editor-only anchor
+marks their position. World export still rejects them.
 
 CPU tests exercise creation, selection, filtering, exact far-origin edits, invalid
 effect IDs and undo. All 126 zone-editor tests, formatting and denied-warning
@@ -453,3 +452,22 @@ workspace/all-target Clippy pass. A native 3440×1440 capture of the selected
 particle inspector on RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan with
 Khronos validation reported zero GPU diagnostics. The capture does not validate
 particle rendering, packaging, client playback or Windows.
+
+
+## Particle reference anchors — P2-13
+
+Unresolved references have a small purple editor badge at their checked local
+position, highlighted orange when selected. Clicking the badge routes selection
+to the normal particle inspector. It has no collision, casts no shadow, is hidden
+in offline playtest, and does not represent a running effect. The shared badge
+mesh and materials are reused; document edits, selection, deletion and undo
+update the entity without accumulating old anchors. Particle workspace rendering
+uses a separate layer and camera. Transform gizmos, asset resolution, packaging
+and runtime playback remain pending.
+
+Headless tests check a far-origin anchor, selection material, playtest visibility,
+movement, deletion and undo. All 127 editor tests, formatting and denied-warning
+workspace/all-target Clippy pass. A native 3440×1440 selected-anchor capture on
+RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan with explicit Khronos validation
+reported zero GPU diagnostics. It verifies rendered placement and inspector, not
+physical mouse picking, particle playback or Windows.

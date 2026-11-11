@@ -1,3 +1,11 @@
+P2-13 particle viewport anchors, 11 November 2026: unresolved references use
+a selectable editor-only badge at their checked local position, update selection
+colour and disappear in playtest. 127 zone-editor tests, fmt and strict
+workspace/all-target Clippy pass. A 3440×1440 RX 7900 XTX / RADV / Mesa 26.2.6
+Vulkan capture with Khronos validation reports zero GPU diagnostics. Native
+mouse picking, effect resolution, packaging and client playback remain pending
+qualification. See [integration](SPRINKLES_INTEGRATION.md).
+
 P2-13 particle reference controls, 11 November 2026: Add creates an unresolved
 reference at spawn; the left explorer filters/selects it and the inspector edits
 its content ID, name and exact transforms inline. Shared duplicate, ground, frame,

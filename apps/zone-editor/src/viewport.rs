@@ -207,6 +207,7 @@ pub(super) fn pointer(
     windows: Query<&Window>,
     camera: Query<(&Camera, &GlobalTransform), With<crate::viewport::ZoneCamera>>,
     objects: Query<&Authored>,
+    particles: Query<&particle_anchors::ParticleAnchor>,
     handles: Query<(&gizmo::TransformHandle, &Visibility, &Transform)>,
     ground: Query<(), With<terrain::GroundPart>>,
     mut raycast: MeshRayCast,
@@ -263,6 +264,7 @@ pub(super) fn pointer(
     if mouse.just_pressed(MouseButton::Left) {
         let filter = |entity| {
             objects.contains(entity)
+                || particles.contains(entity)
                 || ground.contains(entity)
                 || handles
                     .get(entity)
@@ -316,6 +318,11 @@ pub(super) fn pointer(
                     session.status = "Orbit the view to drag this handle".into();
                 }
             }
+        } else if let Some(particle) = hit.and_then(|entity| particles.get(entity).ok()) {
+            session.inspect_spawn = false;
+            session.selected = None;
+            session.particle_selected = Some(particle.0);
+            session.status = format!("Selected particle reference #{}", particle.0);
         } else {
             let id = hit.and_then(|entity| objects.get(entity).ok()).map(|o| o.0);
             let already_selected = id == session.selected;
