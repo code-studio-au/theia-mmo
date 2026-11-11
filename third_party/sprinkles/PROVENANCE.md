@@ -279,3 +279,6 @@ construction; this does not impose a memory budget or validate other mesh types.
 
 The local mesh arithmetic guard also checks Bevy UV-sphere counts and particle
 replication; it is not a memory limit or validation of remaining mesh types.
+
+The local mesh arithmetic guard checks cylinder side and cap geometry too; it
+does not impose a memory limit or validate the remaining mesh types.

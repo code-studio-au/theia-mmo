@@ -372,7 +372,7 @@ fn create_prism_mesh(left_to_right: f32, size: Vec3, subdivide: Vec3) -> Mesh {
     mesh
 }
 
-/// Validate the arithmetic used by quad and sphere construction and replication.
+/// Validate the arithmetic used by quad, sphere and cylinder construction and replication.
 /// This is not a limit on memory or validation of other mesh types.
 pub(crate) fn checked_mesh_arithmetic(config: &ParticleMesh, amount: u32) -> bool {
     let checked = || -> Option<()> {
@@ -400,6 +400,35 @@ pub(crate) fn checked_mesh_arithmetic(config: &ParticleMesh, amount: u32) -> boo
                     .ok()?
                     .checked_mul(usize::try_from(stacks - 1).ok()?)?
                     .checked_mul(6)?;
+                (vertices, indices)
+            }
+            ParticleMesh::Cylinder {
+                top_radius,
+                bottom_radius,
+                radial_segments,
+                rings,
+                cap_top,
+                cap_bottom,
+                ..
+            } => {
+                let radial = (*radial_segments).max(3);
+                let rings = (*rings).max(1);
+                let caps = u32::from(*cap_top && (*top_radius > 0.0 || top_radius.is_nan()))
+                    + u32::from(*cap_bottom && (*bottom_radius > 0.0 || bottom_radius.is_nan()));
+                let vertices = radial
+                    .checked_add(1)?
+                    .checked_mul(rings.checked_add(1)?)?
+                    .checked_add(radial.checked_add(2)?.checked_mul(caps)?)?;
+                let indices = usize::try_from(radial)
+                    .ok()?
+                    .checked_mul(usize::try_from(rings).ok()?)?
+                    .checked_mul(6)?
+                    .checked_add(
+                        usize::try_from(radial)
+                            .ok()?
+                            .checked_mul(usize::try_from(caps).ok()?)?
+                            .checked_mul(3)?,
+                    )?;
                 (vertices, indices)
             }
             _ => return Some(()),

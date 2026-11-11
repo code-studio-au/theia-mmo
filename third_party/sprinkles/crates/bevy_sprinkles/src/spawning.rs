@@ -1092,6 +1092,39 @@ mod theia_port_tests {
     }
 
     #[test]
+    fn cylinder_mesh_arithmetic_rejects_overflow_before_allocation() {
+        use crate::asset::ParticleMesh;
+        let mut emitter = EmitterData::default();
+        emitter.emission.particles_amount = 1;
+        let cylinder = |radial_segments, rings, cap_top, cap_bottom| ParticleMesh::Cylinder {
+            top_radius: 1.0,
+            bottom_radius: 1.0,
+            height: 1.0,
+            radial_segments,
+            rings,
+            cap_top,
+            cap_bottom,
+        };
+        for mesh in [
+            cylinder(u32::MAX, 1, false, false),
+            cylinder(3, u32::MAX, false, false),
+            cylinder(65_535, 65_535, false, false),
+        ] {
+            emitter.draw_pass.mesh = mesh;
+            assert!(checked_emitter_layout(&emitter).is_none());
+        }
+        emitter.draw_pass.mesh = cylinder(3, 1, true, true);
+        // Eight side vertices and five for each cap.
+        emitter.emission.particles_amount = u32::MAX / 18 + 1;
+        assert!(checked_emitter_layout(&emitter).is_none());
+        emitter.draw_pass.mesh = cylinder(3, 1, false, false);
+        assert!(checked_emitter_layout(&emitter).is_some());
+        emitter.emission.particles_amount = 5;
+        emitter.draw_pass.mesh = cylinder(0, 0, true, true);
+        assert!(checked_emitter_layout(&emitter).is_some());
+    }
+
+    #[test]
     fn trail_history_rejects_nonfinite_and_overflowing_frame_counts() {
         use crate::asset::{ParticleMesh, RibbonTrailShape};
         let mut emitter = EmitterData::default();

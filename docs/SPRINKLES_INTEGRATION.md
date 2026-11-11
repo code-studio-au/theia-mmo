@@ -341,3 +341,12 @@ Regression tests cover extreme subdivision counts, particle replication and
 minimum resolution; windowless Vulkan exercises invalid live edits and recovery.
 Representable inputs can still exhaust memory; cylinder, prism and trail mesh
 arithmetic remain outside these quad and sphere checks.
+
+
+## Cylinder mesh arithmetic — P2-13
+
+Cylinder side, optional cap and replicated mesh counts are checked before
+construction. Tests cover extreme radial and ring counts, cap-dependent vertex
+counts and minimum subdivisions; windowless Vulkan covers invalid live edits and
+recovery. Representable inputs can still exhaust memory; prism and trail mesh
+arithmetic remain outside the checks.
