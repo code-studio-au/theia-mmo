@@ -122,3 +122,12 @@ After completion, stop cleanup cycles and maintain the established sources rathe
 - [ ] **Unresolved: all older narrative/dialogue references.** Other dialogue packs, Chronicle, World Bible, character cross-links, legacy registers and archival sources require context-aware checks. Do not globally replace historical quotations or turn unapproved interpretations into canon.
 - [ ] **Unresolved: exact spoken-approval coverage.** Earlier character-by-character discussion contains approvals beyond those summarized in the ledger; verify source details before asserting all individual backgrounds, motivations and dialogues are fully reflected.
 - [ ] **Unresolved: engine and race integration.** Implement real race-specific Q035 eligibility, Q184 actors/locations, quest catalogue migration, dialogue branching and end-to-end tests when the other racial campaigns and engine bindings exist.
+
+### Further source and narrative audit — 12 November 2026
+
+- [x] World Bible now explicitly carries the approved racial campaign boundary, reciprocal schisms, Guardian secrecy, Father alias, player reveal timing, political leadership and race-specific epilogue.
+- [x] Current 10–20 and 70–80 NPC dialogue packs were fetched and checked for the exact superseded labels `Grey Surveyor` and `High King`; neither label appears in those two packs.
+- [ ] **Chronicle intentionally not modified:** `THEIA_INTERWOVEN_CHRONICLE.md` still has 28 `Grey Surveyor` and six `High King` occurrences. The creator previously asked not to edit the Chronicle yet; a separate prose review is required before touching it. This is a documented exception, not a completed reconciliation.
+- [ ] **Source approval fidelity:** Specific character-by-character spoken approvals earlier in this conversation must still be checked against the complete available conversation, not inferred from the limited recap. Do not invent detailed character motivations or mark these verified.
+- [ ] **Additional dialogue locations:** The expected filenames `Human_30_40_NPC_Dialogue_Scripts.md`, `Human_40_50_NPC_Dialogue_Scripts.md`, `Human_50_60_NPC_Dialogue_Scripts.md` and `Human_60_70_NPC_Dialogue_Scripts.md` were not present at those exact paths; discover their actual locations before claiming comprehensive dialogue coverage.
+- [ ] **Runtime readiness:** Per-race Q035 completion flags and Q184 contact/location bindings cannot be finalized until dwarf, Aelari and Korrath starting campaigns are approved. Structured manifests are editorial, not executable.
