@@ -1,3 +1,10 @@
+P2-13 local particle library save foundation, 11 November 2026: an explicit
+save event writes the open project under a validated content ID using the existing
+asynchronous atomic save flow. New bindings cannot overwrite another project;
+the project can update its own library file. Forty-six particle-editor tests, fmt
+and strict workspace/all-target Clippy pass. Inspector wiring, ID resolution,
+portable texture packaging and client playback remain pending. See [integration](SPRINKLES_INTEGRATION.md).
+
 P5-17 first-run particle demo, 11 November 2026: load the bundled explosion
 from the configured examples directory rather than the process working directory,
 and cache its actual path. Forty-four particle-editor tests, fmt and strict

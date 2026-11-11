@@ -157,6 +157,19 @@ pub fn projects_dir() -> PathBuf {
     data_dir().join("projects")
 }
 
+/// Local authoring library; package export and client delivery are separate.
+pub fn effect_library_path(id: &str) -> Option<PathBuf> {
+    effect_library_path_in(&data_dir(), id)
+}
+
+fn effect_library_path_in(root: &std::path::Path, id: &str) -> Option<PathBuf> {
+    let id = theia_core::content::ContentId::new(id)?;
+    if id.as_str() == "vfx.unassigned" {
+        return None;
+    }
+    Some(root.join("library").join(format!("{}.ron", id.as_str())))
+}
+
 pub fn examples_dir() -> PathBuf {
     data_dir().join("examples")
 }
@@ -225,4 +238,27 @@ pub fn save_editor_data(data: &EditorData) {
                 .expect("failed to write editor data");
         })
         .detach();
+}
+
+#[cfg(test)]
+mod effect_library_tests {
+    use super::*;
+    #[test]
+    fn effect_library_uses_stable_ids_without_paths_or_placeholder() {
+        let root = std::path::Path::new("/isolated/data");
+        assert_eq!(
+            effect_library_path_in(root, "vfx.campfire"),
+            Some(root.join("library/vfx.campfire.ron"))
+        );
+        for invalid in [
+            "",
+            "../secret",
+            "World",
+            "vfx..fire",
+            "vfx.unassigned",
+            "a/b",
+        ] {
+            assert!(effect_library_path_in(root, invalid).is_none());
+        }
+    }
 }

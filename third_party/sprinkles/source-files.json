@@ -782,7 +782,7 @@
       "path": "crates/bevy_sprinkles_editor/Cargo.toml",
       "upstream_path": "crates/bevy_sprinkles_editor/Cargo.toml",
       "upstream_sha256": "bcebd70ca47b56bc98d94f9eb8053523df53ff721d9b19efe8f0865fc7ace9c3",
-      "imported_sha256": "b0fb22e7a1bcfe66ca750842a4ce057965f8c061f97da453c48704245439a0cc",
+      "imported_sha256": "9d7fdd20731986fd87fc6c6acc76490f4e3ecd5c6953b35d1f04b1bdfa987a24",
       "changed": true
     },
     {
@@ -1244,7 +1244,7 @@
       "path": "crates/bevy_sprinkles_editor/src/io.rs",
       "upstream_path": "crates/bevy_sprinkles_editor/src/io.rs",
       "upstream_sha256": "f0d52847e5deb4e1adc33bc8778f813ae90a0a78ba3754f00a805e0278a924c6",
-      "imported_sha256": "d6ca222e9ca951e90cd2dbf5c6c45b155358344a7e14ca5c66006ec9f3b4f12a",
+      "imported_sha256": "ac8db54b4bd503447ae6036bafe44ff9bfe35727d244295379a4fbcfa1d8fb0a",
       "changed": true
     },
     {
@@ -1272,7 +1272,7 @@
       "path": "crates/bevy_sprinkles_editor/src/project.rs",
       "upstream_path": "crates/bevy_sprinkles_editor/src/project.rs",
       "upstream_sha256": "f349f24cff2a96c052ca8295533942e1e9dcf346744dc16e7f2036918ef591b3",
-      "imported_sha256": "957392b7aace7965f7bf2e644bc4604b2a5d26b668fec794d963aa10c066319c",
+      "imported_sha256": "447b5144ca08cfd3c0ba22a649afd5cc2b42540960767fcc294ada95199e3df3",
       "changed": true
     },
     {

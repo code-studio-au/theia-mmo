@@ -34,6 +34,7 @@ pub fn plugin(app: &mut App) {
         .add_observer(on_browse_open_project_event)
         .add_observer(on_save_project_event)
         .add_observer(on_save_project_as_event)
+        .add_observer(on_save_project_to_library_event)
         .add_observer(continue_save_after_text_commit)
         .add_plugins(crate::project_switch::ProjectSwitchPlugin)
         .add_authoring_systems((
@@ -57,6 +58,10 @@ pub struct SaveProjectEvent;
 
 #[derive(Event)]
 pub struct SaveProjectAsEvent;
+
+/// Explicitly save the open project under a stable local effect ID.
+#[derive(Event)]
+pub struct SaveProjectToLibraryEvent(pub String);
 
 #[derive(Resource, Clone)]
 pub struct BrowseOpenResult(pub Arc<Mutex<Option<PathBuf>>>);
@@ -394,10 +399,11 @@ fn track_text_focus(
     tracker.0 = focus.get().filter(|entity| inputs.contains(*entity));
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 enum SaveKind {
     Current,
     As,
+    Library(PathBuf),
 }
 #[derive(Event)]
 struct ContinueSave {
@@ -418,11 +424,24 @@ fn begin_save(
     let Some(asset) = assets.get(handle) else {
         return Ok(());
     };
-    match (kind, &state.current_project_path) {
-        (SaveKind::Current, Some(path)) => {
-            saves.save_to_path(handle.clone(), asset, path.clone(), false, false)
+    match kind {
+        SaveKind::Current => match &state.current_project_path {
+            Some(path) => saves.save_to_path(handle.clone(), asset, path.clone(), false, false),
+            None => saves.choose_path(handle.clone(), asset),
+        },
+        SaveKind::As => saves.choose_path(handle.clone(), asset),
+        SaveKind::Library(path) => {
+            if std::fs::symlink_metadata(&path)
+                .is_ok_and(|metadata| metadata.file_type().is_symlink())
+            {
+                return Err("Effect library target cannot be a symbolic link".into());
+            }
+            let parent = path.parent().ok_or("Invalid effect library path")?;
+            std::fs::create_dir_all(parent)
+                .map_err(|error| format!("Cannot create effect library: {error}"))?;
+            let create_only = state.current_project_path.as_ref() != Some(&path);
+            saves.save_to_path(handle.clone(), asset, path, true, create_only)
         }
-        _ => saves.choose_path(handle.clone(), asset),
     }
 }
 
@@ -521,6 +540,34 @@ fn on_save_project_as_event(
         &mut commands,
     );
 }
+
+fn on_save_project_to_library_event(
+    event: On<SaveProjectToLibraryEvent>,
+    editor_state: Res<EditorState>,
+    assets: Res<Assets<ParticlesAsset>>,
+    mut saves: ResMut<SaveCoordinator>,
+    mut focus: ResMut<InputFocus>,
+    mut tracker: ResMut<TextFocusTracker>,
+    inputs: SaveTextInputs,
+    mut commands: Commands,
+) {
+    let Some(path) = crate::io::effect_library_path(&event.0) else {
+        commands.trigger(ToastEvent::error(
+            "Set a valid effect ID before saving to the library",
+        ));
+        return;
+    };
+    request_save(
+        SaveKind::Library(path),
+        &editor_state,
+        &assets,
+        &mut saves,
+        &mut focus,
+        &mut tracker,
+        &inputs,
+        &mut commands,
+    );
+}
 fn continue_save_after_text_commit(
     event: On<ContinueSave>,
     editor_state: Res<EditorState>,
@@ -539,7 +586,7 @@ fn continue_save_after_text_commit(
         commands.trigger(ToastEvent::error("The project changed; save again"));
         return;
     }
-    if let Err(error) = begin_save(event.kind, &editor_state, &assets, &mut saves) {
+    if let Err(error) = begin_save(event.kind.clone(), &editor_state, &assets, &mut saves) {
         commands.trigger(ToastEvent::error(error));
     }
 }

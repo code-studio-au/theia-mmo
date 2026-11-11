@@ -506,3 +506,17 @@ project. A fresh isolated data-directory native run rendered the bundled demo at
 a zone anchor on RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan with Khronos
 validation and zero unexpected diagnostics. Forty-four particle-editor tests,
 formatting and denied-warning workspace/all-target Clippy pass.
+
+
+## Local effect library save foundation — P2-13
+
+An explicit editor save event maps a validated stable content ID to
+`<particle data directory>/library/<ID>.ron`. It rejects the unassigned
+placeholder and symbolic-link targets, commits a valid focused field through the
+existing save flow, and uses the existing asynchronous atomic writer. A new
+binding is create-only; a project already saved to that same library path can
+update it. Failed writes retain dirty state and do not overwrite another project.
+This is a local authoring library, not a package, an ID resolver or a client
+feature; no inspector action has been connected yet. Assets can still contain
+machine-local texture paths. Forty-six particle-editor tests, formatting and
+denied-warning workspace/all-target Clippy pass.

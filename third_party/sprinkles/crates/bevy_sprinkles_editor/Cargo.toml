@@ -26,6 +26,7 @@ bevy = { workspace = true, features = [
     "bevy_ui_widgets", "system_clipboard", "bevy_scene", "jpeg", "file_watcher",
 ] }
 bevy_sprinkles = { version = "0.3.0", path = "../bevy_sprinkles" }
+theia-core.workspace = true
 serde = { workspace = true }
 ron = { workspace = true }
 rfd = "0.15"

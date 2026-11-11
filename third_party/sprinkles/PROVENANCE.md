@@ -302,3 +302,6 @@ the integrated zone preview uses the same restart behavior.
 
 First-run demo lookup uses the configured extracted examples directory and caches
 its actual path instead of assuming the application working directory.
+
+An explicit local effect-library save event reuses the retained editor save
+coordinator and atomic writer, with Theia stable content-ID validation.

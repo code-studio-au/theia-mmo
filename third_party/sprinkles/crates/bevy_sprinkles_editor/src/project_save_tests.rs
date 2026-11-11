@@ -417,3 +417,69 @@ fn invalid_focused_number_blocks_save_and_restores_focus() {
     assert_eq!(std::fs::read(path).unwrap(), b"original");
     std::fs::remove_dir_all(dir).unwrap();
 }
+
+#[test]
+fn library_save_is_create_only_for_new_bindings_and_updates_its_own_project() {
+    let dir = folder();
+    let target = dir.join("library/vfx.fire.ron");
+    let (mut app, handle) = fixture(dir.join("original.ron"));
+    let begin = |app: &mut App| {
+        app.world_mut()
+            .resource_scope(|world, mut saves: Mut<SaveCoordinator>| {
+                begin_save(
+                    SaveKind::Library(target.clone()),
+                    world.resource::<EditorState>(),
+                    world.resource::<Assets<ParticlesAsset>>(),
+                    &mut saves,
+                )
+                .unwrap();
+            });
+    };
+    begin(&mut app);
+    wait(&mut app);
+    assert_eq!(
+        load_project_from_path(&target).unwrap().asset.name,
+        "Before save"
+    );
+    assert_eq!(
+        app.world()
+            .resource::<EditorState>()
+            .current_project_path
+            .as_deref(),
+        Some(target.as_path())
+    );
+    app.world_mut()
+        .resource_mut::<Assets<ParticlesAsset>>()
+        .get_mut(&handle)
+        .unwrap()
+        .name = "Updated".into();
+    app.world_mut()
+        .resource_mut::<DirtyState>()
+        .has_unsaved_changes = true;
+    begin(&mut app);
+    wait(&mut app);
+    assert_eq!(
+        load_project_from_path(&target).unwrap().asset.name,
+        "Updated"
+    );
+    assert!(!app.world().resource::<DirtyState>().has_unsaved_changes);
+    app.world_mut()
+        .resource_mut::<EditorState>()
+        .current_project_path = Some(dir.join("other.ron"));
+    app.world_mut()
+        .resource_mut::<Assets<ParticlesAsset>>()
+        .get_mut(&handle)
+        .unwrap()
+        .name = "Must not overwrite".into();
+    app.world_mut()
+        .resource_mut::<DirtyState>()
+        .has_unsaved_changes = true;
+    begin(&mut app);
+    wait(&mut app);
+    assert_eq!(
+        load_project_from_path(&target).unwrap().asset.name,
+        "Updated"
+    );
+    assert!(app.world().resource::<DirtyState>().has_unsaved_changes);
+    std::fs::remove_dir_all(dir).unwrap();
+}
