@@ -121,6 +121,35 @@ def run(output, binary):
             choose('Point', 'Ring')
             wait(lambda: all(any(e['field'] == 'emission.shape.' + field for e in particle()['fields']) for field in ('radius', 'inner_radius')))
             assert selection_intact() and state()['ui_layout']['inspector'][2] == width
+
+            # A different variant editor has both a swatch and nested gradient
+            # field; verify it also rebuilds its contents without a reopen.
+            click(shape_button()['centre'])
+            wait(lambda: not particle()['popovers'])
+
+            def initial_color():
+                return next((e for e in particle()['widget_buttons'] if e['widget'] == 'variant' and e['field'] == 'colors.initial_color'), None)
+
+            for _ in range(20):
+                button = wait(initial_color)
+                if 650 < button['centre'][1] < 1330:
+                    break
+                old_y = button['centre'][1]
+                desktop.move(window, [276, 1100], 1)
+                desktop.scroll(-8 if old_y > 1330 else 8)
+                wait(lambda: initial_color()['centre'][1] != old_y)
+            else:
+                raise AssertionError('Initial color control did not scroll into view')
+            click(initial_color()['centre'])
+            wait(lambda: len(particle()['popovers']) == 1)
+            combo = wait(lambda: next((e for e in particle()['widget_buttons'] if e['widget'] is None and e['text'] == 'Solid' and min(e['size']) > 0), None))
+            click(combo['centre'])
+            wait(lambda: len(particle()['popovers']) == 2)
+            option = wait(lambda: next((e for e in particle()['widget_buttons'] if e['widget'] is None and e['text'] == 'Gradient' and min(e['size']) > 0), None))
+            click(option['centre'])
+            wait(lambda: 'Gradient' in particle()['project']['emitters'][0]['colors']['initial_color'])
+            wait(lambda: any(e['widget'] == 'gradient' and e['field'] == 'colors.initial_color.gradient' for e in particle()['widget_buttons']))
+            assert selection_intact() and state()['ui_layout']['inspector'][2] == width
             assert source.read_text() == original and effect.read_bytes() == effect_before
             gpu = state()['gpu']
         finally:
@@ -133,7 +162,7 @@ def run(output, binary):
     diagnostics = check_gpu_diagnostics(log, allow_surface_resize=False)
     assert hashlib.sha256(binary.read_bytes()).hexdigest() == binary_hash
     result = {'gpu': gpu, 'binary_sha256': binary_hash, 'gpu_diagnostics': diagnostics,
-              'scope': 'Linux native; shape dropdown over divider, live radius edit, fieldless and fieldful shape switching, selection and source preservation'}
+              'scope': 'Linux native; shape dropdown over divider, live radius edit, shape and initial color variant switching, selection and source preservation'}
     (output / 'qualification.json').write_text(json.dumps(result, indent=2) + '\n')
     print(json.dumps(result, indent=2))
 

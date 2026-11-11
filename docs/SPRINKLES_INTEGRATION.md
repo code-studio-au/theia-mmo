@@ -26,6 +26,9 @@ then Ring, and verifies both Ring radius fields appear. Dropdown clicks over
 the dock divider preserve selection and panel width; source files remain
 unchanged until Save. `build/particle-shape-native-20261111-v1/qualification.json`
 records zero GPU diagnostics on RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan.
+The subsequent `build/particle-shape-native-20261111-v2/qualification.json`
+also verifies Solid → Gradient on initial color reveals its nested gradient
+control without reopening the popup, with zero GPU diagnostics.
 
 The accepted editor styling migration is recorded in `ZONE_EDITOR.md`. This
 slice reuses the actual Sprinkles runtime and editor, pinned at

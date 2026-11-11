@@ -1,3 +1,10 @@
+P5-17 initial-color variant qualification, 11 November 2026: native input
+switches the original particle initial-color control from Solid to Gradient and
+confirms its nested gradient control appears in the open popup without losing
+selection. The same run repeats shape/radius editing across the dock divider.
+Linux RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan reported zero GPU
+diagnostics. Evidence: `build/particle-shape-native-20261111-v2/`.
+
 P2-13 catalog texture decoding, 11 November 2026: read bounded catalog PNGs
 into owned buffers and verify their hashes, headers and aggregate decoded-size
 estimate before Bevy decodes those same bytes in the cataloged color space.
