@@ -28,6 +28,7 @@ pub(super) struct Requests {
     pub particle_workspace: bool,
     pub particle_preview: bool,
     pub bind_particle: bool,
+    pub preview_library_particle: bool,
 }
 #[derive(Component, Clone, Copy, Debug)]
 pub(super) enum Control {
@@ -44,6 +45,7 @@ pub(super) enum Control {
     ParticleWorkspace,
     ParticlePreview,
     BindParticle,
+    PreviewLibraryParticle,
     Point(i8),
     WholePath,
     Snap,
@@ -483,7 +485,9 @@ impl Control {
                         .or(session.particle_selected)
                         .is_some()
             }
-            Self::ParticlePreview | Self::BindParticle => session.particle_selected.is_some(),
+            Self::ParticlePreview | Self::BindParticle | Self::PreviewLibraryParticle => {
+                session.particle_selected.is_some()
+            }
             Self::Point(_) | Self::WholePath => {
                 session.path_mode && session.path_selected.is_some()
             }
@@ -713,6 +717,7 @@ pub(super) fn execute(
         Control::ParticleWorkspace => requests.particle_workspace = true,
         Control::ParticlePreview => requests.particle_preview = true,
         Control::BindParticle => requests.bind_particle = true,
+        Control::PreviewLibraryParticle => requests.preview_library_particle = true,
         Control::Snap | Control::Handles | Control::Grid => {}
     }
 }

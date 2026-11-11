@@ -129,7 +129,7 @@ pub(super) fn spawn(parent: &mut ChildSpawnerCommands, server: Option<&AssetServ
                     display: Display::None,
                     position_type: PositionType::Absolute,
                     width: px(240),
-                    padding: UiRect::all(px(4)),
+                    padding: UiRect::all(px(2)),
                     flex_direction: FlexDirection::Column,
                     border: UiRect::all(px(1)),
                     border_radius: BorderRadius::all(px(4)),
@@ -152,6 +152,11 @@ pub(super) fn spawn(parent: &mut ChildSpawnerCommands, server: Option<&AssetServ
                         (
                             workspace::Control::BindParticle,
                             "Save project to local Effect ID",
+                            "",
+                        ),
+                        (
+                            workspace::Control::PreviewLibraryParticle,
+                            "Toggle local Effect ID preview",
                             "",
                         ),
                         (

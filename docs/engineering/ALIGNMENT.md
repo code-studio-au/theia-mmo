@@ -1,3 +1,12 @@
+P2-13 local particle ID preview, 11 November 2026: a selected placement can
+load its saved local Effect ID independently of the open project, with reload,
+missing-file and malformed-file handling. The short-window action menu stays
+within bounds. All 132 zone-editor tests, fmt and strict workspace/all-target
+Clippy pass. A 3440×1440 native RX 7900 XTX / RADV / Mesa 26.2.6 Vulkan run
+created the saved asset's emitters with a different project open and zero GPU
+diagnostics; its captured frame was between bursts. Packaging, client playback,
+physical menu activation and Windows qualification remain open. See [integration](../SPRINKLES_INTEGRATION.md).
+
 P2-13 bind local particle effect ID, 11 November 2026: the selected reference
 menu explicitly saves the open project to its local effect ID and relays save
 results to the zone status bar. 131 zone-editor tests, fmt and strict workspace/

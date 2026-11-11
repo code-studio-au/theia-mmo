@@ -29,8 +29,8 @@ editors, settings, playback controls and particle preview. **Zone** in its top
 bar returns to the retained zone workspace. The particle project, unsaved data
 and manual pause state remain available when re-entering. Ctrl S belongs to the
 active workspace. Zone commands, source data, revision and undo/redo stay intact
-while editing a particle project. Effects save as original Sprinkles RON assets. The zone editor can author unresolved
-particle references; effect resolution and world-package export remain pending.
+while editing a particle project. Effects save as original Sprinkles RON assets. The zone editor can author particle references and explicitly preview effects
+saved in its local library. World-package export and client playback remain pending.
 
 Product work now focuses on this integrated workspace. The retained standalone
 host shares the same runtime/editor library and can remain an internal diagnostic
@@ -516,8 +516,7 @@ placeholder and symbolic-link targets, commits a valid focused field through the
 existing save flow, and uses the existing asynchronous atomic writer. A new
 binding is create-only; a project already saved to that same library path can
 update it. Failed writes retain dirty state and do not overwrite another project.
-This is a local authoring library, not a package, an ID resolver or a client
-feature. The selected reference's three-dot menu now connects the save action. Assets can still contain
+This is a local authoring library, not a world package or a client feature. The selected reference's three-dot menu now connects the save action. Assets can still contain
 machine-local texture paths. Forty-six particle-editor tests, formatting and
 denied-warning workspace/all-target Clippy pass.
 
@@ -530,8 +529,8 @@ is explicitly saved to the local authoring library using the existing atomic
 Save flow; the project then uses that path for later Save operations. Save
 completion or failure is shown in the zone status bar. The placeholder ID is
 rejected, and a new binding cannot overwrite an existing different project.
-This operation does not yet load that ID for the reference, package dependencies
-or make it available to clients.
+The separate local preview action can load that ID for the reference; this save
+operation does not package dependencies or make them available to clients.
 
 A fresh isolated-data native test saved the bundled explosion to
 `vfx.campfire.ron`, verified the source and saved bytes matched, and reported
@@ -539,3 +538,25 @@ zero unexpected Vulkan diagnostics on RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6
 with Khronos validation. All 131 zone-editor tests, formatting and denied-warning
 workspace/all-target Clippy pass. Native mouse activation and Windows are not
 qualified by this automated capture.
+
+
+## Preview a local effect ID — P2-13 / P5-17
+
+Select a particle reference and choose **Toggle local Effect ID preview** from
+its inspector menu. The editor resolves the validated ID to the local library
+and loads its saved Sprinkles asset through Bevy, independently of the open
+particle project. The single explicit preview follows the placement transform,
+uses the shared one-shot loop behavior, and suspends in the particle workspace
+and playtest. Changing the reference ID or document stops it. Toggling it off
+and on requests a reload; an already cached asset can remain visible briefly
+while that reload completes. Missing and malformed local assets report failure.
+
+A real-file loader test covers loading, reload, changed IDs, missing files and
+malformed RON. An automated 3440×1440 native run on RX 7900 XTX / RADV NAVI31 /
+Mesa 26.2.6 Vulkan with Khronos validation loaded the saved effect while a
+different project was open, created runtime emitter entities, and had zero GPU
+diagnostics. The captured frame was between bursts, so visual burst appearance
+was not verified by that capture. Physical menu activation and Windows remain
+unqualified. Library files and their texture paths are local to the authoring
+machine: package export still refuses particle references and clients cannot yet
+load them. Preview state is not persisted.

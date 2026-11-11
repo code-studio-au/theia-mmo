@@ -162,7 +162,8 @@ pub fn effect_library_path(id: &str) -> Option<PathBuf> {
     effect_library_path_in(&data_dir(), id)
 }
 
-fn effect_library_path_in(root: &std::path::Path, id: &str) -> Option<PathBuf> {
+/// Resolve an ID under a specific local data root without accepting filesystem paths.
+pub fn effect_library_path_in(root: &std::path::Path, id: &str) -> Option<PathBuf> {
     let id = theia_core::content::ContentId::new(id)?;
     if id.as_str() == "vfx.unassigned" {
         return None;

@@ -564,7 +564,8 @@ fn run() -> Result<(), String> {
         Some(
             cli::CaptureView::Particle
             | cli::CaptureView::ParticlePreview
-            | cli::CaptureView::ParticleBind,
+            | cli::CaptureView::ParticleBind
+            | cli::CaptureView::ParticleLibrary,
         ) => {
             session.particle_selected = Some(
                 session
@@ -617,6 +618,7 @@ fn run() -> Result<(), String> {
     .add_plugins(menus::plugin)
     .add_plugins(particle_workspace::plugin)
     .init_resource::<particle_preview::State>()
+    .init_resource::<particle_preview::LibraryRoot>()
     .add_observer(workspace::activate)
     .add_observer(workspace::change)
     .add_observer(workspace::toggle)

@@ -1,5 +1,5 @@
-//! Explicit, temporary preview of the currently open Sprinkles project at an anchor.
-//! This does not resolve the authored effect ID or add assets to a world package.
+//! Explicit previews of open projects or local library effects at zone anchors.
+//! Local library references are not yet packaged or delivered to clients.
 use bevy_sprinkles::{prelude::*, runtime::EditorMode};
 use bevy_sprinkles_editor::{hosting::AuthoringHost, state::EditorState};
 use bevy_sprinkles_editor::{
@@ -15,6 +15,20 @@ struct Preview {
     document_id: u64,
     placement_id: u64,
     project: Handle<ParticlesAsset>,
+    source: PreviewSource,
+}
+
+enum PreviewSource {
+    OpenProject,
+    Library(String),
+}
+
+#[derive(Resource)]
+pub(super) struct LibraryRoot(pub PathBuf);
+impl Default for LibraryRoot {
+    fn default() -> Self {
+        Self(bevy_sprinkles_editor::io::data_dir())
+    }
 }
 
 #[derive(Resource, Default)]
@@ -30,6 +44,8 @@ pub(super) fn sync(
     mut requests: ResMut<workspace::Requests>,
     editor: Res<EditorState>,
     assets: Res<Assets<ParticlesAsset>>,
+    asset_server: Option<Res<AssetServer>>,
+    library_root: Res<LibraryRoot>,
     host: Option<Res<AuthoringHost>>,
     mut state: ResMut<State>,
     mut previews: Query<&mut Transform, With<ZoneParticlePreview>>,
@@ -60,7 +76,9 @@ pub(super) fn sync(
         && let Some(id) = session.particle_selected
     {
         if state.active.as_ref().is_some_and(|preview| {
-            preview.placement_id == id && preview.document_id == session.document_id
+            preview.placement_id == id
+                && preview.document_id == session.document_id
+                && matches!(preview.source, PreviewSource::OpenProject)
         }) {
             state.active = None;
             session.status = "Stopped open-project particle preview".into();
@@ -73,6 +91,7 @@ pub(super) fn sync(
                 document_id: session.document_id,
                 placement_id: id,
                 project: project.clone(),
+                source: PreviewSource::OpenProject,
             });
             session.status =
                 "Previewing open particle project · Effect ID is not linked or packaged".into();
@@ -83,22 +102,72 @@ pub(super) fn sync(
             commands.entity(entity).despawn();
         }
     }
+    if std::mem::take(&mut requests.preview_library_particle)
+        && !host_active
+        && !workspace::busy(&session)
+        && let Some(placement) = session
+            .particle_selected
+            .and_then(|id| session.editor.zone().particles.iter().find(|p| p.id == id))
+            .cloned()
+    {
+        if state.active.as_ref().is_some_and(|preview| {
+            preview.placement_id == placement.id
+                && preview.document_id == session.document_id
+                && matches!(&preview.source, PreviewSource::Library(id) if id == &placement.effect)
+        }) {
+            state.active = None;
+            if let Some(entity) = state.entity.take() {
+                commands.entity(entity).despawn();
+            }
+            session.status = "Stopped local effect preview".into();
+        } else if let Some(server) = asset_server.as_ref() {
+            let path = bevy_sprinkles_editor::io::effect_library_path_in(
+                &library_root.0,
+                &placement.effect,
+            );
+            let resolved = path
+                .and_then(|path| std::fs::canonicalize(path).ok())
+                .filter(|path| path.is_file());
+            if let Some(path) = resolved {
+                let project: Handle<ParticlesAsset> = server.load(path.clone());
+                if assets.get(&project).is_some() {
+                    server.reload(path);
+                }
+                if let Some(entity) = state.entity.take() {
+                    commands.entity(entity).despawn();
+                }
+                session.status =
+                    format!("Loading local effect {} · not packaged", placement.effect);
+                state.active = Some(Preview {
+                    document_id: session.document_id,
+                    placement_id: placement.id,
+                    project,
+                    source: PreviewSource::Library(placement.effect),
+                });
+            } else {
+                session.status = format!("No local effect saved for {}", placement.effect);
+            }
+        } else {
+            session.status = "The asset loader is unavailable".into();
+        }
+    }
     let valid = state.active.as_ref().is_some_and(|preview| {
         preview.document_id == session.document_id
-            && editor.current_project.as_ref() == Some(&preview.project)
-            && assets.get(&preview.project).is_some()
-            && session
-                .editor
-                .zone()
-                .particles
-                .iter()
-                .any(|p| p.id == preview.placement_id)
+            && session.editor.zone().particles.iter().any(|p| {
+                p.id == preview.placement_id
+                    && match &preview.source {
+                        PreviewSource::OpenProject => {
+                            editor.current_project.as_ref() == Some(&preview.project)
+                                && assets.get(&preview.project).is_some()
+                        }
+                        PreviewSource::Library(id) => p.effect == *id,
+                    }
+            })
     });
     if !valid {
         if state.active.is_some() {
             session.status =
-                "Open-project particle preview stopped because its project or placement changed"
-                    .into();
+                "Particle preview stopped because its project or placement changed".into();
         }
         state.active = None;
     }
@@ -110,6 +179,25 @@ pub(super) fn sync(
     }
     let preview = state.active.as_ref().expect("validated preview");
     let project_handle = preview.project.clone();
+    let loaded_library = match &preview.source {
+        PreviewSource::Library(id) => Some(id.clone()),
+        PreviewSource::OpenProject => None,
+    };
+    if matches!(preview.source, PreviewSource::Library(_))
+        && asset_server.as_ref().is_some_and(|server| {
+            matches!(
+                server.load_state(project_handle.id()),
+                bevy::asset::LoadState::Failed(_)
+            )
+        })
+    {
+        session.status = "Could not load the local particle effect".into();
+        state.active = None;
+        if let Some(entity) = state.entity.take() {
+            commands.entity(entity).despawn();
+        }
+        return;
+    }
     let placement = session
         .editor
         .zone()
@@ -117,7 +205,9 @@ pub(super) fn sync(
         .iter()
         .find(|p| p.id == preview.placement_id)
         .expect("validated placement");
-    let project = assets.get(&preview.project).expect("validated project");
+    let Some(project) = assets.get(&preview.project) else {
+        return;
+    };
     let position = Vec3::from_array(
         session
             .editor
@@ -152,6 +242,9 @@ pub(super) fn sync(
         ))
         .id();
     state.entity = Some(entity);
+    if let Some(id) = loaded_library {
+        session.status = format!("Previewing local effect {id} · not packaged");
+    }
 }
 
 pub(super) fn relay_toast(
@@ -234,6 +327,7 @@ mod tests {
             .insert_resource(assets)
             .insert_resource(editor)
             .insert_resource(AuthoringHost::embedded(1))
+            .init_resource::<LibraryRoot>()
             .init_resource::<workspace::Requests>()
             .init_resource::<State>()
             .add_systems(Update, sync);
@@ -396,5 +490,128 @@ mod tests {
                 .status
                 .contains("already exists")
         );
+    }
+
+    #[test]
+    fn local_effect_id_loads_through_bevy_without_an_open_project() {
+        use bevy::asset::{AssetApp, AssetPlugin, UnapprovedPathMode};
+        use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+        let dir = std::env::temp_dir().join(format!(
+            "theia-particle-library-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(dir.join("library")).unwrap();
+        std::fs::write(dir.join("library/vfx.fire.ron"), include_bytes!("../../../third_party/sprinkles/crates/bevy_sprinkles_editor/src/assets/examples/3d-explosion.ron")).unwrap();
+        let (mut app, _) = fixture();
+        app.add_plugins(MinimalPlugins)
+            .add_plugins(AssetPlugin {
+                unapproved_path_mode: UnapprovedPathMode::Allow,
+                ..default()
+            })
+            .init_asset::<ParticlesAsset>()
+            .init_asset_loader::<bevy_sprinkles::asset::ParticlesAssetLoader>()
+            .insert_resource(LibraryRoot(dir.clone()));
+        app.world_mut()
+            .resource_mut::<EditorState>()
+            .current_project = None;
+        app.world_mut()
+            .resource_mut::<workspace::Requests>()
+            .preview_library_particle = true;
+        let deadline = Instant::now() + Duration::from_secs(10);
+        while preview(&mut app).is_none() {
+            assert!(
+                Instant::now() < deadline,
+                "Local effect did not load: {}",
+                app.world().resource::<Session>().status
+            );
+            app.update();
+            std::thread::sleep(Duration::from_millis(2));
+        }
+        let (_, _, effect) = preview(&mut app).unwrap();
+        assert_eq!(
+            app.world()
+                .resource::<Assets<ParticlesAsset>>()
+                .get(&effect)
+                .unwrap()
+                .name,
+            "Explosion"
+        );
+        assert!(
+            app.world()
+                .resource::<Session>()
+                .status
+                .contains("Previewing local effect vfx.fire")
+        );
+        app.world_mut()
+            .resource_mut::<workspace::Requests>()
+            .preview_library_particle = true;
+        app.update();
+        assert!(preview(&mut app).is_none());
+        std::fs::write(dir.join("library/vfx.fire.ron"), include_bytes!("../../../third_party/sprinkles/crates/bevy_sprinkles_editor/src/assets/examples/rain.ron")).unwrap();
+        app.world_mut()
+            .resource_mut::<workspace::Requests>()
+            .preview_library_particle = true;
+        let deadline = Instant::now() + Duration::from_secs(10);
+        loop {
+            app.update();
+            if let Some((_, _, handle)) = preview(&mut app)
+                && app
+                    .world()
+                    .resource::<Assets<ParticlesAsset>>()
+                    .get(&handle)
+                    .is_some_and(|asset| asset.name == "Rain")
+            {
+                break;
+            }
+            assert!(
+                Instant::now() < deadline,
+                "Updated local effect did not reload"
+            );
+            std::thread::sleep(Duration::from_millis(2));
+        }
+        let mut changed = app.world().resource::<Session>().editor.zone().particles[0].clone();
+        changed.effect = "vfx.other".into();
+        app.world_mut()
+            .resource_mut::<Session>()
+            .edit(vec![Edit::PutParticle { particle: changed }]);
+        app.update();
+        assert!(preview(&mut app).is_none());
+        assert!(app.world().resource::<State>().active.is_none());
+        app.world_mut()
+            .resource_mut::<workspace::Requests>()
+            .preview_library_particle = true;
+        app.update();
+        assert!(
+            app.world()
+                .resource::<Session>()
+                .status
+                .contains("No local effect saved")
+        );
+        std::fs::write(dir.join("library/vfx.other.ron"), b"invalid RON").unwrap();
+        app.world_mut()
+            .resource_mut::<workspace::Requests>()
+            .preview_library_particle = true;
+        app.update();
+        let deadline = Instant::now() + Duration::from_secs(10);
+        while app.world().resource::<State>().active.is_some() {
+            assert!(
+                Instant::now() < deadline,
+                "Invalid local effect did not fail"
+            );
+            app.update();
+            std::thread::sleep(Duration::from_millis(2));
+        }
+        assert!(
+            app.world()
+                .resource::<Session>()
+                .status
+                .contains("Could not load")
+        );
+        assert!(preview(&mut app).is_none());
+        std::fs::remove_dir_all(dir).unwrap();
     }
 }

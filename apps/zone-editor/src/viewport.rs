@@ -403,7 +403,7 @@ pub(super) struct Capture {
     pub frames: u32,
     pub view: Option<cli::CaptureView>,
 }
-#[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 pub(super) fn capture(
     mut commands: Commands,
     capture: Option<ResMut<Capture>>,
@@ -413,7 +413,7 @@ pub(super) fn capture(
     triggers: Query<(Entity, &menus::Trigger)>,
     mut requests: ResMut<workspace::Requests>,
     previews: Query<
-        &Children,
+        (&Children, &bevy_sprinkles::Particles3d),
         (
             With<particle_preview::ZoneParticlePreview>,
             With<bevy_sprinkles::runtime::ParticleSystemRuntime>,
@@ -430,6 +430,9 @@ pub(super) fn capture(
     if capture.frames == 30 && capture.view == Some(cli::CaptureView::ParticleBind) {
         requests.bind_particle = true;
     }
+    if capture.frames == 30 && capture.view == Some(cli::CaptureView::ParticleLibrary) {
+        requests.preview_library_particle = true;
+    }
     if capture.frames == 30
         && capture.view == Some(cli::CaptureView::PropertyActions)
         && let Some((entity, _)) = triggers
@@ -445,17 +448,33 @@ pub(super) fn capture(
     }
     let capture_frame = if matches!(
         capture.view,
-        Some(cli::CaptureView::ParticlePreview | cli::CaptureView::ParticleBind)
+        Some(
+            cli::CaptureView::ParticlePreview
+                | cli::CaptureView::ParticleBind
+                | cli::CaptureView::ParticleLibrary
+        )
     ) {
         150
     } else {
         90
     };
     if capture.frames == capture_frame {
-        if capture.view == Some(cli::CaptureView::ParticlePreview) {
+        if matches!(
+            capture.view,
+            Some(cli::CaptureView::ParticlePreview | cli::CaptureView::ParticleLibrary)
+        ) {
             assert!(
-                previews.iter().any(|children| !children.is_empty()),
+                previews.iter().any(|(children, _)| !children.is_empty()),
                 "Particle preview did not start any emitter entities"
+            );
+        }
+        if capture.view == Some(cli::CaptureView::ParticleLibrary) {
+            assert!(
+                previews.iter().any(|(_, effect)| particle_editor
+                    .current_project
+                    .as_ref()
+                    .is_none_or(|open| open.id() != effect.0.id())),
+                "Library preview unexpectedly uses the open project handle"
             );
         }
         if capture.view == Some(cli::CaptureView::ParticleBind) {

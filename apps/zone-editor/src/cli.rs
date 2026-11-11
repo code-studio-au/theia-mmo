@@ -11,6 +11,7 @@ pub enum CaptureView {
     Particle,
     ParticlePreview,
     ParticleBind,
+    ParticleLibrary,
 }
 
 #[derive(Default)]
@@ -59,9 +60,10 @@ impl Options {
                         Some("particle") => CaptureView::Particle,
                         Some("particle-preview") => CaptureView::ParticlePreview,
                         Some("particle-bind") => CaptureView::ParticleBind,
+                        Some("particle-library") => CaptureView::ParticleLibrary,
                         _ => {
                             return Err(
-                                "--capture-view requires spawn, property-actions, particle, particle-preview or particle-bind"
+                                "--capture-view requires spawn, property-actions, particle, particle-preview, particle-bind or particle-library"
                                     .into(),
                             );
                         }
@@ -98,7 +100,7 @@ impl Options {
                 }
                 "--help" => {
                     println!(
-                        "theia-zone-editor [--zone FILE] [--commands JSONL] [--output FILE] [--save-path FILE] [--headless] [--check-playtest] [--capture PNG] [--capture-view spawn|property-actions|particle|particle-preview|particle-bind] [--report JSON] [--mailbox DIR] [--export NEW_DIR --content-id ID --revision N]\n\nCommands use the same transaction/undo engine as the viewport. Use --commands - to read bounded JSONL from stdin through EOF, with the same byte/line limits as a command file. Headless mode validates and prints the final revision without opening a window. Check-playtest is read-only: it builds the actual offline collision scene, checks the requested capsule spawn and prints JSON without opening a window. It cannot be combined with --output or --export. Output writes only after every command succeeds. Save-path changes the later editor save target without writing at startup."
+                        "theia-zone-editor [--zone FILE] [--commands JSONL] [--output FILE] [--save-path FILE] [--headless] [--check-playtest] [--capture PNG] [--capture-view spawn|property-actions|particle|particle-preview|particle-bind|particle-library] [--report JSON] [--mailbox DIR] [--export NEW_DIR --content-id ID --revision N]\n\nCommands use the same transaction/undo engine as the viewport. Use --commands - to read bounded JSONL from stdin through EOF, with the same byte/line limits as a command file. Headless mode validates and prints the final revision without opening a window. Check-playtest is read-only: it builds the actual offline collision scene, checks the requested capsule spawn and prints JSON without opening a window. It cannot be combined with --output or --export. Output writes only after every command succeeds. Save-path changes the later editor save target without writing at startup."
                     );
                     std::process::exit(0);
                 }
