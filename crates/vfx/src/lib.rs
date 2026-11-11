@@ -142,6 +142,95 @@ fn catalog_effects_by_id<'a>(
     Ok(by_id)
 }
 
+/// Partition a verified source catalog by the half-open owner of each anchor.
+/// Effects must be loaded from that catalog with `particles` as their package
+/// path. This only drafts catalogs; callers must verify and publish their bytes,
+/// dependencies and containing chunk manifests transactionally.
+pub fn partition_catalog(
+    catalog: &Catalog,
+    effects: &[CatalogEffect],
+    source_frame: LocalFrame,
+    available: &BTreeSet<ChunkId>,
+) -> Result<BTreeMap<ChunkId, Vec<u8>>, String> {
+    let effects_by_id = catalog_effects_by_id(catalog, effects)?;
+    let mut placements: BTreeMap<ChunkId, Vec<serde_json::Value>> = BTreeMap::new();
+    for placement in catalog.placements() {
+        let global = source_frame
+            .to_global(LocalPosition::new(placement.position).ok_or("Invalid particle position")?)
+            .ok_or("Particle global position is outside coordinate bounds")?;
+        let owner = global
+            .chunk(INITIAL_CHUNK_METRES)
+            .ok_or("Invalid particle chunk")?;
+        if !available.contains(&owner) {
+            return Err("Particle anchor has no output chunk".into());
+        }
+        let frame = LocalFrame::new(
+            owner
+                .origin(INITIAL_CHUNK_METRES)
+                .ok_or("Invalid particle chunk origin")?,
+        );
+        let position = frame
+            .to_local(global)
+            .ok_or("Particle outside chunk frame")?
+            .metres();
+        placements
+            .entry(owner)
+            .or_default()
+            .push(serde_json::json!({
+                "id":placement.id,"effect":placement.effect,"position":position,
+                "yaw_degrees":placement.yaw_degrees,"scale":placement.scale
+            }));
+    }
+    let mut output = BTreeMap::new();
+    for (owner, rows) in placements {
+        let used: BTreeSet<_> = rows
+            .iter()
+            .map(|row| row["effect"].as_str().expect("authored effect"))
+            .collect();
+        let mut texture_keys = BTreeSet::new();
+        for id in &used {
+            for emitter in &effects_by_id[id].emitters {
+                let DrawPassMaterial::Standard(material) = &emitter.draw_pass.material else {
+                    return Err("Custom particle shader unsupported".into());
+                };
+                for (texture, color) in [
+                    (&material.base_color_texture, ColorSpace::Srgb),
+                    (&material.emissive_texture, ColorSpace::Srgb),
+                    (&material.metallic_roughness_texture, ColorSpace::Linear),
+                    (&material.normal_map_texture, ColorSpace::Linear),
+                    (&material.occlusion_texture, ColorSpace::Linear),
+                ] {
+                    match texture {
+                        None | Some(TextureRef::Preset(_)) => {}
+                        Some(TextureRef::Asset(path)) => {
+                            texture_keys.insert((path.clone(), color));
+                        }
+                        _ => return Err("Non-package particle texture unsupported".into()),
+                    }
+                }
+            }
+        }
+        let selected_effects: Vec<_> = catalog.effects().iter().filter(|effect| used.contains(effect.id.as_str())).map(|effect| serde_json::json!({"id":effect.id,"bytes":effect.bytes,"sha256":effect.sha256})).collect();
+        let mut textures = Vec::new();
+        for texture in catalog.textures() {
+            let key = (
+                format!("particles/textures/{}", texture.filename()),
+                texture.color_space,
+            );
+            if texture_keys.remove(&key) {
+                textures.push(serde_json::json!({"sha256":texture.sha256,"bytes":texture.bytes,"color_space":match texture.color_space { ColorSpace::Srgb => "srgb", ColorSpace::Linear => "linear" }}));
+            }
+        }
+        if !texture_keys.is_empty() {
+            return Err("Particle texture reference missing from catalog".into());
+        }
+        let bytes = serde_json::to_vec(&serde_json::json!({"schema":1,"effects":selected_effects,"placements":rows,"textures":textures})).map_err(|e|e.to_string())?;
+        Catalog::decode(&bytes).map_err(|e| e.to_string())?;
+        output.insert(owner, bytes);
+    }
+    Ok(output)
+}
+
 /// Project immutable catalog placements from their content frame into the
 /// current render frame, then compose each effect's initial transform. Recompute
 /// from the catalog after an origin shift rather than accumulating f32 offsets.
@@ -1317,6 +1406,64 @@ mod tests {
         fs::remove_dir_all(root).unwrap();
     }
     #[test]
+    fn partition_keeps_only_each_chunks_effect_and_texture_dependencies() {
+        use bevy_sprinkles::prelude::{EmitterData, ParticlesDimension};
+        use theia_core::coordinates::GlobalPosition;
+        use theia_network::particle_content::Texture;
+        let texture = Texture {
+            sha256: sha256(PNG),
+            bytes: PNG.len() as u64,
+            color_space: ColorSpace::Srgb,
+        };
+        let document = json!({"schema":1,
+            "effects":[{"id":"vfx.textured","bytes":1,"sha256":vec![0;32]}, {"id":"vfx.plain","bytes":1,"sha256":vec![1;32]}],
+            "placements":[{"id":1,"effect":"vfx.textured","position":[-0.25,0.,1.],"yaw_degrees":0.,"scale":1.},
+                          {"id":2,"effect":"vfx.plain","position":[128.,0.,1.],"yaw_degrees":0.,"scale":1.}],
+            "textures":[{"sha256":texture.sha256,"bytes":texture.bytes,"color_space":"srgb"}]});
+        let catalog = Catalog::decode(&serde_json::to_vec(&document).unwrap()).unwrap();
+        let mut emitter = EmitterData::default();
+        let DrawPassMaterial::Standard(material) = &mut emitter.draw_pass.material else {
+            unreachable!()
+        };
+        material.base_color_texture = Some(TextureRef::Asset(format!(
+            "particles/textures/{}",
+            texture.filename()
+        )));
+        let make = |id: &str, emitter| CatalogEffect {
+            id: id.into(),
+            asset: ParticlesAsset::new(
+                id.into(),
+                ParticlesDimension::D3,
+                default(),
+                vec![emitter],
+                vec![],
+                false,
+                default(),
+            ),
+        };
+        let effects = vec![
+            make("vfx.textured", emitter),
+            make("vfx.plain", EmitterData::default()),
+        ];
+        let ids = [ChunkId { x: -1, z: 0 }, ChunkId { x: 1, z: 0 }];
+        let result = partition_catalog(
+            &catalog,
+            &effects,
+            LocalFrame::new(GlobalPosition::new([0.; 3]).unwrap()),
+            &ids.into_iter().collect(),
+        )
+        .unwrap();
+        let textured = Catalog::decode(&result[&ids[0]]).unwrap();
+        assert_eq!(textured.placements()[0].position[0], 127.75);
+        assert_eq!(textured.effects()[0].id, "vfx.textured");
+        assert_eq!(textured.textures().len(), 1);
+        let plain = Catalog::decode(&result[&ids[1]]).unwrap();
+        assert_eq!(plain.placements()[0].position[0], 0.);
+        assert_eq!(plain.effects()[0].id, "vfx.plain");
+        assert!(plain.textures().is_empty());
+    }
+
+    #[test]
     fn resident_particles_are_manifest_bound_projected_and_aggregate_limited() {
         use bevy_sprinkles::prelude::{EmitterData, ParticlesDimension};
         use theia_network::{
@@ -1414,6 +1561,40 @@ mod tests {
             })
             .collect();
         residency.replace(&ids, &[]).unwrap();
+        let mut source: serde_json::Value = serde_json::from_slice(&catalog).unwrap();
+        source["placements"] = json!([
+            {"id":1,"effect":"vfx.test","position":[127.,0.,2.],"yaw_degrees":10.,"scale":1.},
+            {"id":2,"effect":"vfx.test","position":[128.,0.,2.],"yaw_degrees":20.,"scale":2.}
+        ]);
+        let source = Catalog::decode(&serde_json::to_vec(&source).unwrap()).unwrap();
+        let source_effects = load_catalog_effects(
+            &source,
+            &residency
+                .index()
+                .directory(ids[0])
+                .join("particles/effects"),
+            Path::new("particles"),
+        )
+        .unwrap();
+        let frame = LocalFrame::new(ids[0].origin(INITIAL_CHUNK_METRES).unwrap());
+        let available: BTreeSet<_> = ids.iter().copied().collect();
+        let partitioned = partition_catalog(&source, &source_effects, frame, &available).unwrap();
+        assert_eq!(partitioned.len(), 2);
+        for (id, expected_x) in [(ids[0], 127.), (ids[1], 0.)] {
+            let chunk = Catalog::decode(&partitioned[&id]).unwrap();
+            assert_eq!(chunk.placements()[0].position, [expected_x, 0., 2.]);
+            assert_eq!(chunk.effects().len(), 1);
+            assert_eq!(chunk.textures().len(), 1);
+        }
+        assert!(
+            partition_catalog(
+                &source,
+                &source_effects,
+                frame,
+                &[ids[0]].into_iter().collect()
+            )
+            .is_err()
+        );
         assert!(
             residency.verify_visuals().is_err(),
             "legacy path must still reject particle chunks"

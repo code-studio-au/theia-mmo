@@ -1,3 +1,11 @@
+P2-13 particle chunk authoring foundation, 11 November 2026: verified particle
+catalogs can now be drafted per half-open chunk owner, with placements projected
+through global coordinates and only the effects and role-specific textures used
+by that chunk. Tests cover far origins, negative and exact-boundary placement,
+dependency selection and missing output chunks. This does not write or publish
+chunk packages; the editor's monolithic export and the older geometry partitioner
+still need a validated end-to-end bridge.
+
 P2-13 particle image admission, 11 November 2026: monolithic and chunk clients
 now apply their decoded-image allowance to verified PNG headers before invoking
 the image decoder, and recheck actual decoded bytes afterwards. Chunk preparation
