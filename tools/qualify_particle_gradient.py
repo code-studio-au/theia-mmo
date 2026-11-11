@@ -134,19 +134,50 @@ def run(output, binary):
             desktop.key('F12')
             wait(lambda: capture_ready(report.with_suffix('.png')), 30)
             report.with_suffix('.png').rename(output / 'gradient-color.png')
+            saved_stops = [dict(stop) for stop in stops()]
+            save = wait(lambda: next((e for e in state()['workspace_controls'] if e['target'] == 'Command(Save)' and not e['menu_item'] and min(e['size']) > 0), None))
+            click(save['centre'])
+            wait(lambda: effect.read_bytes() != effect_before and not particle()['dirty'], 60)
+            assert selection_intact()
+            saved_zone = source.read_bytes()
             gpu = state()['gpu']
         finally:
             desktop.close()
             if process.poll() is None:
                 process.terminate()
                 process.wait(timeout=15)
+    # Reopen the files in a fresh editor to verify the saved value itself, not
+    # merely that an asynchronous write completed or changed the file bytes.
+    report = output / 'reopened-state.json'
+    desktop = Desktop()
+    with (output / 'reopened-editor.log').open('w') as log:
+        process = subprocess.Popen([str(binary), '--zone', str(source), '--report', str(report)],
+                                   env=env, stdout=log, stderr=log)
+        try:
+            window = wait(lambda: owned_window(process.pid), 60)
+            desktop.focus(window)
+            def reopened():
+                assert process.poll() is None, 'Reopened editor exited unexpectedly'
+                return json.loads(report.read_text())
+            wait(lambda: report.exists() and reopened()['viewport'] == [3440, 1440], 60)
+            row = wait(lambda: next((e for e in reopened()['content_list']['controls'] if e['target'] == 'Particle(1)' and min(e['size']) > 0), None))
+            desktop.click(window, row['centre'], 1, 1)
+            wait(lambda: reopened()['particle_workspace']['inline'], 60)
+            wait(lambda: reopened()['particle_workspace']['project']['emitters'][0]['colors']['color_over_lifetime']['stops'] == saved_stops, 30)
+            assert source.read_bytes() == saved_zone
+        finally:
+            desktop.close()
+            if process.poll() is None:
+                process.terminate()
+                process.wait(timeout=15)
     log = (output / 'editor.log').read_text()
+    log += (output / 'reopened-editor.log').read_text()
     assert 'Insert instance layer "VK_LAYER_KHRONOS_validation"' in log
     diagnostics = check_gpu_diagnostics(log, allow_surface_resize=False)
     assert hashlib.sha256(binary.read_bytes()).hexdigest() == binary_hash
     result = {'gpu': gpu, 'binary_sha256': binary_hash, 'gpu_diagnostics': diagnostics,
               'gradient_open_seconds': opening_seconds, 'color_open_seconds': color_open_seconds,
-              'scope': 'Linux native; inline gradient dragging across divider, stop add/delete, color edit, selection and source preservation'}
+              'scope': 'Linux native; inline gradient drag, stop add/delete, color edit, explicit Save and fresh-editor reload'}
     (output / 'qualification.json').write_text(json.dumps(result, indent=2) + '\n')
     print(json.dumps(result, indent=2))
 

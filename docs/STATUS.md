@@ -1,3 +1,9 @@
+P5-17 particle gradient Save/reopen, 11 November 2026: native input edits a
+gradient while its zone and effect files stay unchanged, invokes the editor's
+Save button, then opens a fresh editor and verifies the exact saved stop values.
+Both Linux RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan runs reported zero
+GPU diagnostics. Evidence: `build/particle-gradient-native-20261111-v3/`.
+
 P5-17 initial-color variant qualification, 11 November 2026: native input
 switches the original particle initial-color control from Solid to Gradient and
 confirms its nested gradient control appears in the open popup without losing

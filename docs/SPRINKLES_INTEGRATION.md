@@ -18,6 +18,10 @@ GPU diagnostics on RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan. One run's
 gradient and nested color opening observations were 0.53 s and 0.47 s including
 test input delays; that does not establish a latency bound or reproduce the
 user's originally slow first-open case.
+The subsequent `build/particle-gradient-native-20261111-v3/qualification.json`
+also invokes the editor's Save button after the gradient/color edit and verifies
+the saved stop values in a fresh editor. Both native runs reported zero GPU
+diagnostics; the effect and zone were unchanged before explicit Save.
 
 The imported variant editor now updates an open popup when switching from a
 fieldless choice to one with attributes. A native particle inspector check
