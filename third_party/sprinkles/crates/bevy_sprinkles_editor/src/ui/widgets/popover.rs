@@ -308,6 +308,7 @@ fn handle_popover_dismiss(
     mut commands: Commands,
     popovers: Query<(Entity, &PopoverAnchor, &Hovered), With<EditorPopover>>,
     parents: Query<&ChildOf>,
+    anchors: Query<&Hovered, Without<EditorPopover>>,
     keyboard: Res<ButtonInput<KeyCode>>,
     mouse: Res<ButtonInput<MouseButton>>,
 ) {
@@ -320,7 +321,11 @@ fn handle_popover_dismiss(
 
     let any_hovered = popovers.iter().any(|(_, _, hovered)| hovered.get());
 
-    for (entity, _anchor, hovered) in &popovers {
+    for (entity, anchor, hovered) in &popovers {
+        // The press that opened this popup must not immediately dismiss it.
+        if !esc_pressed && anchors.get(anchor.0).is_ok_and(Hovered::get) {
+            continue;
+        }
         if esc_pressed || !any_hovered {
             commands.entity(entity).try_despawn();
             continue;
@@ -458,4 +463,42 @@ fn handle_popover_close_click(
         return;
     };
     commands.entity(close_button.0).try_despawn();
+}
+
+#[cfg(test)]
+mod inline_dismiss_tests {
+    use super::*;
+
+    #[test]
+    fn opening_press_keeps_popup_and_outside_press_dismisses_it() {
+        let mut app = App::new();
+        app.init_resource::<ButtonInput<KeyCode>>()
+            .init_resource::<ButtonInput<MouseButton>>()
+            .add_systems(Update, handle_popover_dismiss);
+        let anchor = app.world_mut().spawn(Hovered(true)).id();
+        let popup = app
+            .world_mut()
+            .spawn((EditorPopover, PopoverAnchor(anchor), Hovered(false)))
+            .id();
+        app.world_mut()
+            .resource_mut::<ButtonInput<MouseButton>>()
+            .press(MouseButton::Left);
+        app.update();
+        assert!(app.world().get_entity(popup).is_ok());
+        app.world_mut()
+            .resource_mut::<ButtonInput<MouseButton>>()
+            .clear();
+        app.world_mut()
+            .resource_mut::<ButtonInput<MouseButton>>()
+            .release(MouseButton::Left);
+        app.world_mut()
+            .resource_mut::<ButtonInput<MouseButton>>()
+            .clear();
+        app.world_mut().entity_mut(anchor).insert(Hovered(false));
+        app.world_mut()
+            .resource_mut::<ButtonInput<MouseButton>>()
+            .press(MouseButton::Left);
+        app.update();
+        assert!(app.world().get_entity(popup).is_err());
+    }
 }

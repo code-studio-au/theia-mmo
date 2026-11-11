@@ -868,7 +868,7 @@ fn handle_drag_value(
             hitbox.start_value = start_value;
             commands
                 .entity(entity)
-                .insert(ActiveCursor(SystemCursorIcon::ColResize));
+                .try_insert(ActiveCursor(SystemCursorIcon::ColResize));
         }
 
         if mouse.just_released(MouseButton::Left) {
@@ -882,7 +882,7 @@ fn handle_drag_value(
                 });
             }
             hitbox.dragging = false;
-            commands.entity(entity).remove::<ActiveCursor>();
+            commands.entity(entity).try_remove::<ActiveCursor>();
         }
 
         if hitbox.dragging

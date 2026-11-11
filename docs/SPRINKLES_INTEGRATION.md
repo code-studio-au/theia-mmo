@@ -725,3 +725,11 @@ update in the same deferred batch and removes its unneeded trigger. Headless
 regressions exercise the root visibility gates and that removal race. Native
 interactive retesting is in progress; this does not establish that every popup
 and input path is qualified.
+
+The popup opening press is no longer treated as an outside click. Floating
+Sprinkles popovers also own pointer gestures through release, so interacting
+with a gradient does not select the world behind the popup or reset the dock.
+Further deferred lifetime guards handle removed color swatches and gradient
+rows; rebuilding rows is ordered before picker setup. Headless regressions cover
+these cases.
+Interactive user retesting is underway.

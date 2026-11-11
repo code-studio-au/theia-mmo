@@ -55,6 +55,9 @@ pub(crate) fn pack_gradient_stops(
     (stop_count, positions, colors)
 }
 
+#[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub(crate) struct GradientRowsUpdate;
+
 pub fn plugin(app: &mut App) {
     app.add_plugins(UiMaterialPlugin::<GradientMaterial>::default())
         .add_observer(handle_add_stop_click)
@@ -72,14 +75,14 @@ pub fn plugin(app: &mut App) {
             setup_gradient_edit_content,
             setup_trigger_swatch,
             sync_trigger_swatch,
-            fix_stop_row_sizing,
+            fix_stop_row_sizing.after(GradientRowsUpdate),
             update_gradient_visuals,
             update_handle_positions,
             update_handle_colors,
             update_stop_position_inputs,
             handle_bar_right_click,
             handle_handle_right_click,
-            respawn_stops_on_change,
+            respawn_stops_on_change.in_set(GradientRowsUpdate),
         ));
 }
 
@@ -600,7 +603,7 @@ fn fix_stop_row_sizing(
         node.flex_shrink = 0.0;
         node.flex_basis = Val::Auto;
         node.width = px(72.0);
-        commands.entity(entity).insert(StopSizingApplied);
+        commands.entity(entity).try_insert(StopSizingApplied);
     }
 
     for (entity, mut node, children) in &mut color_pickers {
@@ -616,7 +619,7 @@ fn fix_stop_row_sizing(
         });
 
         if trigger_fixed {
-            commands.entity(entity).insert(StopSizingApplied);
+            commands.entity(entity).try_insert(StopSizingApplied);
         }
     }
 }
@@ -1625,5 +1628,44 @@ fn respawn_stops_on_change(
                 break;
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod lifetime_tests {
+    use super::*;
+
+    #[test]
+    fn replaced_stop_rows_do_not_panic_during_sizing() {
+        fn remove(
+            mut commands: Commands,
+            stops: Query<Entity, Or<(With<StopPositionInput>, With<StopColorPicker>)>>,
+        ) {
+            for entity in &stops {
+                commands.entity(entity).despawn();
+            }
+        }
+        let mut app = App::new();
+        app.add_systems(
+            Update,
+            (remove, fix_stop_row_sizing).chain_ignore_deferred(),
+        );
+        let gradient = app.world_mut().spawn_empty().id();
+        let position = app
+            .world_mut()
+            .spawn((
+                StopPositionInput(StopRef::new(gradient, 0)),
+                Node::default(),
+            ))
+            .id();
+        let picker = app
+            .world_mut()
+            .spawn((StopColorPicker(StopRef::new(gradient, 0)), Node::default()))
+            .id();
+        app.world_mut()
+            .spawn((EditorButton, Node::default(), ChildOf(picker)));
+        app.update();
+        assert!(app.world().get_entity(position).is_err());
+        assert!(app.world().get_entity(picker).is_err());
     }
 }

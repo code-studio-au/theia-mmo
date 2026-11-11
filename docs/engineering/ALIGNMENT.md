@@ -1,3 +1,10 @@
+P5-17 inline popup input repair, 11 November 2026: opening presses no longer
+immediately dismiss Sprinkles popups, and floating popup gestures block world
+selection through release. A second color-swatch lifetime race is guarded.
+Fifty-seven particle-editor and 143 zone-editor tests and strict workspace
+Clippy pass; user interaction retesting is underway.
+See [integration](../SPRINKLES_INTEGRATION.md).
+
 P5-17 inline popup repair, 11 November 2026: embedded Sprinkles popovers
 are no longer hidden behind the workspace gate and receive global stacking;
 a gradient color-picker removal race is guarded. Headless regression tests and

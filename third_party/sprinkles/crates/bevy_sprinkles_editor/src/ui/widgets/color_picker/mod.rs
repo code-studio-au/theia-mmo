@@ -45,8 +45,8 @@ pub fn plugin(app: &mut App) {
         .add_observer(handle_trigger_click)
         .add_observer(handle_input_mode_change)
         .add_inline_ui_systems((
-            setup_color_picker,
-            setup_trigger_swatch,
+            setup_color_picker.after(crate::ui::widgets::gradient_edit::GradientRowsUpdate),
+            setup_trigger_swatch.after(crate::ui::widgets::gradient_edit::GradientRowsUpdate),
             setup_color_picker_content,
             update_color_picker_visuals,
             handle_input_field_blur,
@@ -617,7 +617,7 @@ fn setup_trigger_swatch(
     for (trigger_entity, config, children) in &triggers {
         commands
             .entity(trigger_entity)
-            .remove::<TriggerSwatchConfig>();
+            .try_remove::<TriggerSwatchConfig>();
 
         let swatch_entity = commands
             .spawn((
@@ -656,11 +656,17 @@ fn setup_trigger_swatch(
             ));
         });
 
-        commands.entity(trigger_entity).add_child(swatch_entity);
+        commands.queue(move |world: &mut World| {
+            if let Ok(mut trigger) = world.get_entity_mut(trigger_entity) {
+                trigger.add_child(swatch_entity);
+            } else {
+                world.despawn(swatch_entity);
+            }
+        });
 
         for child in children.iter() {
             if texts.get(child).is_ok() {
-                commands.entity(child).insert((
+                commands.entity(child).try_insert((
                     TriggerLabel(config.picker),
                     Node {
                         margin: UiRect::left(px(SWATCH_SIZE + 6.0)),
@@ -1504,6 +1510,40 @@ fn update_trigger_display(
 mod lifetime_tests {
     use super::*;
     use bevy::asset::AssetApp;
+
+    #[test]
+    fn removed_trigger_does_not_leave_a_swatch_or_panic() {
+        fn remove(mut commands: Commands, triggers: Query<Entity, With<TriggerSwatchConfig>>) {
+            for entity in &triggers {
+                commands.entity(entity).despawn();
+            }
+        }
+        let mut app = App::new();
+        app.init_resource::<Assets<CheckerboardMaterial>>()
+            .add_systems(
+                Update,
+                (remove, setup_trigger_swatch).chain_ignore_deferred(),
+            );
+        let picker = app.world_mut().spawn_empty().id();
+        let trigger = app
+            .world_mut()
+            .spawn(TriggerSwatchConfig {
+                picker,
+                color: Srgba::WHITE,
+            })
+            .id();
+        app.world_mut()
+            .spawn((Text::new("color"), ChildOf(trigger)));
+        app.update();
+        assert!(app.world().get_entity(trigger).is_err());
+        assert_eq!(
+            app.world_mut()
+                .query::<&TriggerSwatch>()
+                .iter(app.world())
+                .count(),
+            0
+        );
+    }
 
     #[test]
     fn picker_removed_in_same_batch_does_not_panic_or_leave_trigger() {

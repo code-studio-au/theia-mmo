@@ -3,6 +3,7 @@ use super::*;
 use bevy_sprinkles_editor::ui::icons::{
     ICON_ARROW_DOWN, ICON_EMPTY_AXIS, ICON_EXPAND_HORIZONTAL, ICON_PIVOT_BOUNDBOX, ICON_REPEAT,
 };
+use bevy_sprinkles_editor::ui::widgets::popover::EditorPopover;
 
 const WIDTH: f32 = 56.;
 const ITEM: f32 = 36.;
@@ -50,7 +51,16 @@ pub(super) fn blocks(window: &Window, session: &Session) -> bool {
 pub(super) fn plugin(app: &mut App) {
     app.init_resource::<PointerOwner>()
         .add_systems(Startup, setup)
-        .add_zone_systems(guard.before(panels::resize))
+        .add_zone_systems(
+            guard
+                .before(panels::resize)
+                .before(viewport::pointer)
+                .before(terrain::pointer)
+                .before(paths::pointer)
+                .before(markers::pointer)
+                .before(vegetation::pointer)
+                .before(camera_controls),
+        )
         .add_zone_systems(sync.after(workspace::sync));
 }
 
@@ -144,6 +154,7 @@ fn setup(
 fn guard(
     windows: Query<&Window>,
     mouse: Res<ButtonInput<MouseButton>>,
+    popovers: Query<&Hovered, With<EditorPopover>>,
     mut owner: ResMut<PointerOwner>,
     mut session: ResMut<Session>,
 ) {
@@ -154,15 +165,17 @@ fn guard(
         return;
     }
     let buttons = [MouseButton::Left, MouseButton::Middle, MouseButton::Right];
+    let popup_hovered = popovers.iter().any(Hovered::get);
     if mouse.any_just_pressed(buttons)
-        && window.cursor_position().is_some_and(|cursor| {
-            bounds(window, &session).is_some_and(|rect| rect.contains(cursor))
-        })
+        && (popup_hovered
+            || window.cursor_position().is_some_and(|cursor| {
+                bounds(window, &session).is_some_and(|rect| rect.contains(cursor))
+            }))
     {
         owner.0 = true;
     }
     // Include the release frame even when the pointer has left the toolbar.
-    session.ui.overlay_owned = owner.0;
+    session.ui.overlay_owned = owner.0 || popup_hovered;
     if !mouse.any_pressed(buttons) {
         owner.0 = false;
     }
@@ -293,6 +306,39 @@ mod tests {
                     .is_some()
                 );
             }
+            let popup = app.world_mut().spawn((EditorPopover, Hovered(true))).id();
+            app.world_mut()
+                .get_mut::<Window>(window)
+                .unwrap()
+                .set_cursor_position(Some(Vec2::new(1200., 400.)));
+            app.world_mut()
+                .resource_mut::<ButtonInput<MouseButton>>()
+                .press(MouseButton::Left);
+            app.world_mut().run_system_once(guard).unwrap();
+            assert!(
+                canvas_cursor(
+                    app.world().get::<Window>(window).unwrap(),
+                    app.world().resource::<Session>()
+                )
+                .is_none()
+            );
+            app.world_mut().entity_mut(popup).insert(Hovered(false));
+            app.world_mut()
+                .resource_mut::<ButtonInput<MouseButton>>()
+                .clear();
+            app.world_mut().run_system_once(guard).unwrap();
+            assert!(app.world().resource::<Session>().ui.overlay_owned);
+            app.world_mut()
+                .resource_mut::<ButtonInput<MouseButton>>()
+                .release(MouseButton::Left);
+            app.world_mut().run_system_once(guard).unwrap();
+            assert!(app.world().resource::<Session>().ui.overlay_owned);
+            app.world_mut()
+                .resource_mut::<ButtonInput<MouseButton>>()
+                .clear();
+            app.world_mut().run_system_once(guard).unwrap();
+            assert!(!app.world().resource::<Session>().ui.overlay_owned);
+            assert_eq!(app.world().resource::<Session>().selected, Some(1));
             app.world_mut().resource_mut::<PointerOwner>().0 = true;
             app.world_mut().get_mut::<Window>(window).unwrap().focused = false;
             app.world_mut().run_system_once(guard).unwrap();
