@@ -1,3 +1,10 @@
+P2-13 particle sphere geometry, 11 November 2026: zero-radius spheres retain
+finite normals and zero resolution uses at least three segments and two rings.
+Eleven runtime, 14 loader and 36 particle-editor tests, fmt and strict workspace/
+all-target Clippy pass. Windowless RX 7900 XTX / RADV / Mesa 26.2.6 Vulkan
+with Khronos validation reports zero unexpected GPU diagnostics. Arbitrary mesh
+parameters and VFX memory budgets remain open. See [integration](../SPRINKLES_INTEGRATION.md).
+
 P2-13 particle mesh normals, 11 November 2026: flat or very thin cylinders
 and degenerate prisms retain finite normals; subdivided-prism index integrity is
 regressed. Ten particle-runtime, 14 loader and 36 particle-editor tests, fmt and

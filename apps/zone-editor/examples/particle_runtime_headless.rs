@@ -22,6 +22,7 @@ struct Fixture {
     saw_valid_layout_restored: bool,
     saw_flat_cylinder: bool,
     saw_flat_prism: bool,
+    saw_zero_sphere: bool,
 }
 
 fn setup(
@@ -66,6 +67,7 @@ fn setup(
         saw_valid_layout_restored: false,
         saw_flat_cylinder: false,
         saw_flat_prism: false,
+        saw_zero_sphere: false,
     });
 }
 
@@ -159,6 +161,20 @@ fn step(
                 .iter()
                 .any(|(material, buffers)| material.is_some() && buffers.amount == 5)
         }
+        130 => {
+            effects.get_mut(&fixture.asset).unwrap().emitters[0]
+                .draw_pass
+                .mesh = ParticleMesh::Sphere {
+                radius: 0.0,
+                segments: 0,
+                rings: 0,
+            };
+        }
+        135 => {
+            fixture.saw_zero_sphere = emitters
+                .iter()
+                .any(|(material, buffers)| material.is_some() && buffers.amount == 5)
+        }
         150 => {
             if fixture.saw_suppressed
                 && fixture.saw_restored
@@ -166,18 +182,20 @@ fn step(
                 && fixture.saw_valid_layout_restored
                 && fixture.saw_flat_cylinder
                 && fixture.saw_flat_prism
+                && fixture.saw_zero_sphere
             {
                 println!("headless particle material transition passed");
                 exits.write(AppExit::Success);
             } else {
                 eprintln!(
-                    "headless particle transitions failed: shader_suppressed={} shader_restored={} layout_suppressed={} layout_restored={} cylinder={} prism={}",
+                    "headless particle transitions failed: shader_suppressed={} shader_restored={} layout_suppressed={} layout_restored={} cylinder={} prism={} sphere={}",
                     fixture.saw_suppressed,
                     fixture.saw_restored,
                     fixture.saw_invalid_layout_suppressed,
                     fixture.saw_valid_layout_restored,
                     fixture.saw_flat_cylinder,
-                    fixture.saw_flat_prism
+                    fixture.saw_flat_prism,
+                    fixture.saw_zero_sphere
                 );
                 exits.write(AppExit::error());
             }

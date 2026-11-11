@@ -623,7 +623,21 @@ fn create_base_mesh(config: &ParticleMesh) -> Mesh {
             radius,
             segments,
             rings,
-        } => Sphere::new(*radius).mesh().uv(*segments, *rings),
+        } => {
+            // Building with a zero radius divides by zero in Bevy's UV-sphere
+            // normal generation. Scale positions instead; normals stay defined.
+            let mut mesh = Sphere::new(1.0)
+                .mesh()
+                .uv((*segments).max(3), (*rings).max(2));
+            if let Some(VertexAttributeValues::Float32x3(positions)) =
+                mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION)
+            {
+                for position in positions {
+                    *position = (Vec3::from_array(*position) * *radius).to_array();
+                }
+            }
+            mesh
+        }
         ParticleMesh::Cuboid { half_size } => Mesh::from(Cuboid::new(
             half_size.x * 2.0,
             half_size.y * 2.0,
@@ -778,6 +792,47 @@ fn extract_float32x3(
 #[cfg(test)]
 mod theia_cache_tests {
     use super::*;
+
+    #[test]
+    fn zero_radius_and_resolution_spheres_have_finite_mesh_attributes() {
+        for (radius, segments, rings) in [(0.0, 0, 0), (f32::MIN_POSITIVE, 3, 2), (2.0, 8, 4)] {
+            let mesh = create_base_mesh(&ParticleMesh::Sphere {
+                radius,
+                segments,
+                rings,
+            });
+            let Some(VertexAttributeValues::Float32x3(positions)) =
+                mesh.attribute(Mesh::ATTRIBUTE_POSITION)
+            else {
+                panic!("missing positions")
+            };
+            let Some(VertexAttributeValues::Float32x3(normals)) =
+                mesh.attribute(Mesh::ATTRIBUTE_NORMAL)
+            else {
+                panic!("missing normals")
+            };
+            assert!(
+                positions
+                    .iter()
+                    .flatten()
+                    .chain(normals.iter().flatten())
+                    .all(|value| value.is_finite())
+            );
+            assert!(
+                normals
+                    .iter()
+                    .all(|normal| (Vec3::from_array(*normal).length() - 1.0).abs() < 1e-5)
+            );
+            assert!(
+                positions
+                    .iter()
+                    .all(|position| (Vec3::from_array(*position).length() - radius).abs() < 1e-5)
+            );
+            let indices: Vec<_> = mesh.indices().unwrap().iter().collect();
+            assert_eq!(indices.len() % 3, 0);
+            assert!(indices.iter().all(|index| *index < positions.len()));
+        }
+    }
 
     #[test]
     fn flat_and_nearly_flat_cylinders_keep_mesh_attributes_finite() {

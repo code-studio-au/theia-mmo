@@ -311,3 +311,13 @@ triangle indices and the existing mesh-cache lifecycle. A windowless RX 7900 XTX
 / RADV / Mesa 26.2.6 Vulkan smoke run with Khronos validation switches through
 flat-cylinder and degenerate-prism emitters with no unexpected GPU diagnostics.
 This does not validate arbitrary mesh parameters or establish VFX memory budgets.
+
+
+## Degenerate particle spheres — P2-13
+
+Sphere meshes use unit-sphere normals and scale their positions by the authored
+radius, avoiding non-finite normals at radius zero. Segment and ring counts are
+clamped to the minimum geometry accepted by Bevy (three and two). Tests cover
+zero and tiny radii, zero resolution, finite attributes and valid indices; the
+windowless Vulkan smoke test also transitions to a zero-radius, zero-resolution
+sphere. This does not validate arbitrary dimensions or limit memory usage.

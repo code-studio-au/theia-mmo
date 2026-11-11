@@ -270,3 +270,6 @@ Cylinder side-normal math now handles zero and extremely small heights, and
 degenerate prism normals avoid non-finite values. Local headless geometry and
 windowless Vulkan regressions cover these cases; no broader mesh-parameter or
 performance qualification is claimed.
+
+Sphere generation now preserves finite normals at zero radius and clamps zero
+resolution to a minimally valid sphere; this is a local runtime modification.
