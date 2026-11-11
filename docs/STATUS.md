@@ -2,20 +2,23 @@ P2-13 particle chunk authoring foundation, 11 November 2026: verified particle
 catalogs can now be drafted per half-open chunk owner, with placements projected
 through global coordinates and only the effects and role-specific textures used
 by that chunk. Tests cover far origins, negative and exact-boundary placement,
-dependency selection and missing output chunks. This does not write or publish
-chunk packages; the editor's monolithic export and the older geometry partitioner
-still need a validated end-to-end bridge.
+dependency selection and missing output chunks.
 The draft also retains exact verified effect and decoded-validated texture file
 bytes, enforces an aggregate output-copy limit and rejects tampered inputs before
 any publication. `draft_particle_chunks SOURCE_WORLD CHUNK_WORLD NEW_OUTPUT
 ORIGIN_X ORIGIN_Y ORIGIN_Z` now writes these unpublished overlays for an existing
 chunk index, recording both source identities and the explicit global origin. It
 was exercised against the editor-produced export
-(`build/editor-particle-overlay-draft-20261111/`) and a textured fixture. It does
-not yet modify chunk manifests or produce a runnable chunk world.
-The manifest binding helper increments the target revision and generates the new
-schema-4 identity, but refuses projected-material schema-3 chunks because schema 4
-does not currently preserve that requirement. Publication remains unfinished.
+(`build/editor-particle-overlay-draft-20261111/`) and a textured fixture.
+`publish_particle_chunks CHUNK_WORLD OVERLAY_DRAFT NEW_OUTPUT` copies and verifies
+indexed geometry and collision, binds overlays to incremented chunk revisions,
+and publishes the new index last. It refuses existing output, altered catalogs,
+particle-bearing input and projected-material schema-3 chunks (schema 4 does not
+currently preserve that requirement). A headless test covers publication and
+failure cleanup; the editor export rendered from the resulting chunk world on
+two connected Vulkan clients on RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 with zero
+validation diagnostics (`build/editor-particle-chunk-world-validated-native-20261111/verification.json`).
+This combines effects with existing chunks; it does not partition editor terrain.
 
 P2-13 particle image admission, 11 November 2026: monolithic and chunk clients
 now apply their decoded-image allowance to verified PNG headers before invoking
