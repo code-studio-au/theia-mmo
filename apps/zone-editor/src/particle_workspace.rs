@@ -9,6 +9,7 @@ use bevy_sprinkles_editor::{
     hosting::{
         AuthoringHost, AuthoringUiRoot, AuthoringUiUpdate, AuthoringUpdate, ReturnToHostRequested,
     },
+    ui::widgets::popover::EditorPopover,
     viewport::{EditorCamera, EditorParticlePreview},
 };
 use std::collections::HashMap;
@@ -78,7 +79,10 @@ fn switch(
     mut requests: ResMut<workspace::Requests>,
     mut session: ResMut<Session>,
     mut focus: ResMut<InputFocus>,
-    mut roots: Query<(Entity, &mut Node, Has<AuthoringUiRoot>), Without<ChildOf>>,
+    mut roots: Query<
+        (Entity, &mut Node, Has<AuthoringUiRoot>, Has<EditorPopover>),
+        Without<ChildOf>,
+    >,
     mut cameras: Query<(&mut Camera, Has<EditorCamera>, Has<viewport::ZoneCamera>)>,
     mut previews: Query<(Entity, &mut ParticleSystemRuntime), With<EditorParticlePreview>>,
     mut windows: Query<(Entity, &mut Window)>,
@@ -114,9 +118,9 @@ fn switch(
         .into();
         bridge.visible = host.active;
     }
-    for (entity, mut node, authoring) in &mut roots {
+    for (entity, mut node, authoring, popover) in &mut roots {
         if authoring {
-            let display = if host.active {
+            let display = if host.active || (host.inline_ui && popover) {
                 Display::Flex
             } else {
                 Display::None
@@ -306,6 +310,26 @@ mod tests {
                     },
                 ))
                 .id();
+            let popup = app
+                .world_mut()
+                .spawn((AuthoringUiRoot, EditorPopover, Node::default()))
+                .id();
+            app.world_mut().resource_mut::<AuthoringHost>().inline_ui = true;
+            app.update();
+            assert_eq!(
+                app.world().get::<Node>(popup).unwrap().display,
+                Display::Flex
+            );
+            assert_eq!(
+                app.world().get::<Node>(source_root).unwrap().display,
+                Display::None
+            );
+            app.world_mut().resource_mut::<AuthoringHost>().inline_ui = false;
+            app.update();
+            assert_eq!(
+                app.world().get::<Node>(popup).unwrap().display,
+                Display::None
+            );
             let zone_camera = app
                 .world_mut()
                 .spawn((viewport::ZoneCamera, Camera::default()))

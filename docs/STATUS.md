@@ -1,3 +1,9 @@
+P5-17 inline popup repair, 11 November 2026: embedded Sprinkles popovers
+are no longer hidden behind the workspace gate and receive global stacking;
+a gradient color-picker removal race is guarded. Headless regression tests and
+strict workspace Clippy pass. Native interaction retesting is in progress.
+See [integration](SPRINKLES_INTEGRATION.md).
+
 P2-13 particle texture-reference foundation, 11 November 2026: the VFX helper
 checks original Sprinkles standard-material references against cataloged
 role-specific texture names, rejects editor/local paths and unused descriptors,

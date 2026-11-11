@@ -714,3 +714,14 @@ Non-UTF-8 local paths remain intact for file access. Popup interaction, layout,
 keyboard behavior and GPU output have not been qualified natively for this
 change because the user requested no display or mouse. World-package export and
 client playback remain blocked.
+
+
+## Inline popup and gradient picker repair — P5-17
+
+Sprinkles popovers are root UI entities: the host now keeps them visible when
+the shared inspector is active and gives them global stacking above the zone
+dock. The color-picker setup tolerates a picker being replaced by a gradient
+update in the same deferred batch and removes its unneeded trigger. Headless
+regressions exercise the root visibility gates and that removal race. Native
+interactive retesting is in progress; this does not establish that every popup
+and input path is qualified.

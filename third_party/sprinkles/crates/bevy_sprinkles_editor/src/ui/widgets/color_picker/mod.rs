@@ -564,15 +564,19 @@ fn setup_color_picker(
 ) {
     for (entity, config, state) in &mut pickers {
         if config.inline {
-            commands.entity(entity).with_child((
-                ColorPickerContent(entity),
-                Node {
-                    flex_direction: FlexDirection::Column,
-                    row_gap: px(12.0),
-                    width: percent(100),
-                    ..default()
-                },
-            ));
+            commands.queue(move |world: &mut World| {
+                if let Ok(mut picker) = world.get_entity_mut(entity) {
+                    picker.with_child((
+                        ColorPickerContent(entity),
+                        Node {
+                            flex_direction: FlexDirection::Column,
+                            row_gap: px(12.0),
+                            width: percent(100),
+                            ..default()
+                        },
+                    ));
+                }
+            });
         } else {
             let rgba = state.to_rgba();
             let srgba = Srgba::new(rgba[0], rgba[1], rgba[2], rgba[3]);
@@ -587,11 +591,18 @@ fn setup_color_picker(
                 .insert(ColorPickerTrigger(entity))
                 .id();
 
-            commands.entity(entity).add_child(trigger_entity);
-
             commands.entity(trigger_entity).insert(TriggerSwatchConfig {
                 picker: entity,
                 color: srgba,
+            });
+            // A gradient can replace this picker in the same deferred batch.
+            // Do not leave an orphan trigger or attach to a despawned picker.
+            commands.queue(move |world: &mut World| {
+                if let Ok(mut picker) = world.get_entity_mut(entity) {
+                    picker.add_child(trigger_entity);
+                } else {
+                    world.despawn(trigger_entity);
+                }
             });
         }
     }
@@ -1485,6 +1496,55 @@ fn update_trigger_display(
                 continue;
             }
             **text = hex.clone();
+        }
+    }
+}
+
+#[cfg(test)]
+mod lifetime_tests {
+    use super::*;
+    use bevy::asset::AssetApp;
+
+    #[test]
+    fn picker_removed_in_same_batch_does_not_panic_or_leave_trigger() {
+        fn remove_picker(mut commands: Commands, pickers: Query<Entity, With<EditorColorPicker>>) {
+            for entity in &pickers {
+                commands.entity(entity).despawn();
+            }
+        }
+        for inline in [false, true] {
+            let mut app = App::new();
+            app.add_plugins((
+                MinimalPlugins,
+                bevy::asset::AssetPlugin::default(),
+                bevy::scene::ScenePlugin,
+            ))
+            .init_asset::<Image>()
+            .init_asset::<Font>()
+            .add_systems(
+                Update,
+                (remove_picker, setup_color_picker).chain_ignore_deferred(),
+            );
+            app.world_mut().spawn((
+                EditorColorPicker,
+                ColorPickerConfig { inline },
+                ColorPickerState::default(),
+            ));
+            app.update();
+            assert_eq!(
+                app.world_mut()
+                    .query::<&EditorColorPicker>()
+                    .iter(app.world())
+                    .count(),
+                0
+            );
+            assert_eq!(
+                app.world_mut()
+                    .query::<&ColorPickerTrigger>()
+                    .iter(app.world())
+                    .count(),
+                0
+            );
         }
     }
 }

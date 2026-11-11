@@ -220,6 +220,7 @@ pub fn popover(props: PopoverProps) -> impl Scene {
         BackgroundColor({ BACKGROUND_COLOR })
         @template_value(BorderColor::all(BORDER_COLOR))
         @template_value(ZIndex(z_index))
+        @template_value(GlobalZIndex(z_index))
     }
 }
 
