@@ -62,6 +62,8 @@ pub(crate) struct Metrics {
 struct LastFrame(Option<([f64; 3], [f64; 3])>);
 #[derive(Resource)]
 struct BurstCapture(Option<std::path::PathBuf>);
+#[derive(Resource)]
+struct FinishMarker(Option<std::path::PathBuf>);
 
 pub fn install(app: &mut App, prepared: PreparedCatalog, visible: bool) {
     install_shared(app, visible);
@@ -76,6 +78,9 @@ fn install_shared(app: &mut App, visible: bool) {
     let capture =
         std::env::var_os("THEIA_WORLD_PARTICLE_FIRST_CAPTURE").map(std::path::PathBuf::from);
     app.insert_resource(BurstCapture(capture));
+    app.insert_resource(FinishMarker(
+        std::env::var_os("THEIA_WORLD_PARTICLE_FINISHED_MARKER").map(std::path::PathBuf::from),
+    ));
     app.insert_resource(VisibilityChoice(visible))
         .init_resource::<Metrics>()
         .init_resource::<LastFrame>()
@@ -95,7 +100,20 @@ fn install_shared(app: &mut App, visible: bool) {
                 .after(crate::floating_origin::place_static)
                 .before(bevy_sprinkles::ParticleSimulationStep),
         )
-        .add_systems(Last, (observe, capture_first));
+        .add_systems(Last, (observe, mark_finished.after(observe), capture_first));
+}
+
+// Opt-in qualification marker: only after at least one system was released and
+// all authored placements have actually despawned.
+fn mark_finished(mut marker: ResMut<FinishMarker>, metrics: Res<Metrics>) {
+    if metrics.placements > 0
+        && metrics.released_systems >= metrics.placements
+        && metrics.live_roots == 0
+        && let Some(path) = marker.0.take()
+        && let Err(error) = std::fs::write(path, b"finished\n")
+    {
+        error!("Cannot write particle completion marker: {error}");
+    }
 }
 
 #[derive(Resource, Default)]
@@ -528,6 +546,31 @@ mod tests {
     use super::*;
     use bevy_sprinkles::prelude::{EmitterData, ParticlesDimension};
     use theia_vfx::{CatalogEffect, CatalogPlacement};
+
+    #[test]
+    fn completion_marker_waits_for_released_systems_and_no_live_roots() {
+        let path =
+            std::env::temp_dir().join(format!("theia-particle-finished-{}", std::process::id()));
+        let _ = std::fs::remove_file(&path);
+        let mut app = App::new();
+        app.insert_resource(FinishMarker(Some(path.clone())))
+            .init_resource::<Metrics>()
+            .add_systems(Update, mark_finished);
+        app.update();
+        assert!(!path.exists());
+        {
+            let mut m = app.world_mut().resource_mut::<Metrics>();
+            m.placements = 1;
+            m.released_systems = 1;
+            m.live_roots = 1;
+        }
+        app.update();
+        assert!(!path.exists());
+        app.world_mut().resource_mut::<Metrics>().live_roots = 0;
+        app.update();
+        assert_eq!(std::fs::read(&path).unwrap(), b"finished\n");
+        std::fs::remove_file(path).unwrap();
+    }
 
     fn chunk_fixture(id: ChunkId, effect_name: &str) -> (ChunkId, PreparedCatalog) {
         let asset = ParticlesAsset::new(

@@ -93,6 +93,11 @@ time or retriggering one-shot bursts. The upstream 3D Explosion finished after
 six forced resets on each of two Vulkan clients, with zero pre-ready emitter
 frames (`build/chunk-explosion-rebase-native-20261111/`). Clearing still causes
 a visual discontinuity for already-live world-space particles.
+The same one-shot was also tested when its chunk arrived after startup: both
+clients released and finished it with zero pre-ready emitter frames
+(`build/chunk-explosion-arrival-native-20261111-v2/`). Captures are not
+synchronized; one visibly shows the burst while the other shows little of it
+under the forced rebase stress.
 
 P5-17 / P2-13 editor world export, 11 November 2026: **File → Export world…**
 opens a Sprinkles-styled dialog for a new output folder, content ID and revision.

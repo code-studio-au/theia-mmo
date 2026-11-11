@@ -319,6 +319,7 @@ def run(output, binaries, references=None, terrain=None, player_assets=None, col
                 # of the caller's ambient logging filter.
                 env=dict(os.environ,
                          **({'THEIA_WORLD_PARTICLE_FIRST_CAPTURE': str(directory/'particle-first.png')} if require_finished_particles or capture_particle_burst else {}),
+                         **({'THEIA_WORLD_PARTICLE_FINISHED_MARKER': str(directory/'particle-finished')} if require_finished_particles else {}),
                          THEIA_WINDOW_SIZE=window_size,
                          RUST_LOG=os.environ.get('RUST_LOG', 'info') + ',theia_client=info',
                          THEIA_RENDER_SPAN=str(render_span if render_span is not None else 128),
@@ -360,6 +361,11 @@ def run(output, binaries, references=None, terrain=None, player_assets=None, col
             assert all(p.poll() is None for p in clients), 'Client failed before capture readiness'
             assert time.monotonic()<deadline, 'Two-client capture readiness timed out'
             time.sleep(.05)
+        if require_finished_particles:
+            while not all((output/name/'particle-finished').is_file() for name in ['a','b']):
+                assert all(p.poll() is None for p in clients), 'Client failed before particle completion'
+                assert time.monotonic()<deadline, 'Particle completion timed out'
+                time.sleep(.05)
         capture_gate.write_text('capture\n')
         while not all((output/name/'network.json').is_file() for name in ['a','b']):
             assert all(p.poll() is None for p in clients), 'Client failed before capture completion'
