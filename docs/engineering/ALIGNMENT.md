@@ -1,3 +1,9 @@
+P5-17 selected effect identity, 11 November 2026: match the selected zone
+particle to the open Sprinkles project by its existing validated local library
+path, and report that match in preview status. Seven focused preview tests, fmt
+and strict workspace/all-target Clippy pass. Project switching and the inline
+inspector remain pending. See [integration](../SPRINKLES_INTEGRATION.md).
+
 P5-17 scoped live particle editing, 11 November 2026: original Sprinkles
 inspector edits restart only systems using the edited asset, with per-emitter
 seeds; structural edit events rebuild matching zone previews. Forty-nine particle

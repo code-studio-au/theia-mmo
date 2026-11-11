@@ -31,6 +31,32 @@ impl Default for LibraryRoot {
     }
 }
 
+/// Match by the validated local library path, never by display name or handle.
+pub(super) fn selected_matches_open_project(
+    session: &Session,
+    editor: &EditorState,
+    root: &LibraryRoot,
+) -> bool {
+    let Some(outliner::Target::Particle(id)) = outliner::selection(session) else {
+        return false;
+    };
+    let Some(placement) = session.editor.zone().particles.iter().find(|p| p.id == id) else {
+        return false;
+    };
+    let Some(expected) =
+        bevy_sprinkles_editor::io::effect_library_path_in(&root.0, &placement.effect)
+            .and_then(|path| std::fs::canonicalize(path).ok())
+    else {
+        return false;
+    };
+    editor.current_project.is_some()
+        && editor
+            .current_project_path
+            .as_ref()
+            .and_then(|path| std::fs::canonicalize(path).ok())
+            == Some(expected)
+}
+
 #[derive(Resource, Default)]
 pub(super) struct State {
     active: Option<Preview>,
@@ -93,8 +119,11 @@ pub(super) fn sync(
                 project: project.clone(),
                 source: PreviewSource::OpenProject,
             });
-            session.status =
-                "Previewing open particle project · Effect ID is not linked or packaged".into();
+            session.status = if selected_matches_open_project(&session, &editor, &library_root) {
+                "Previewing selected local effect · not packaged".into()
+            } else {
+                "Previewing open particle project · Effect ID is not linked or packaged".into()
+            };
         } else {
             session.status = "Open a particle project before previewing it".into();
         }
@@ -376,6 +405,68 @@ mod tests {
             .resource_mut::<workspace::Requests>()
             .particle_preview = true;
         app.update();
+    }
+
+    #[test]
+    fn selected_binding_requires_the_exact_existing_local_effect_path() {
+        use std::time::{SystemTime, UNIX_EPOCH};
+        let dir = std::env::temp_dir().join(format!(
+            "theia-particle-binding-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(dir.join("library")).unwrap();
+        let fire = dir.join("library/vfx.fire.ron");
+        let other = dir.join("other.ron");
+        std::fs::write(&fire, b"fire").unwrap();
+        std::fs::write(&other, b"other").unwrap();
+        let (mut app, _) = fixture();
+        app.insert_resource(LibraryRoot(dir.clone()));
+        assert!(!selected_matches_open_project(
+            app.world().resource::<Session>(),
+            app.world().resource::<EditorState>(),
+            app.world().resource::<LibraryRoot>()
+        ));
+        app.world_mut()
+            .resource_mut::<EditorState>()
+            .current_project_path = Some(other);
+        assert!(!selected_matches_open_project(
+            app.world().resource::<Session>(),
+            app.world().resource::<EditorState>(),
+            app.world().resource::<LibraryRoot>()
+        ));
+        app.world_mut()
+            .resource_mut::<EditorState>()
+            .current_project_path = Some(fire.clone());
+        assert!(selected_matches_open_project(
+            app.world().resource::<Session>(),
+            app.world().resource::<EditorState>(),
+            app.world().resource::<LibraryRoot>()
+        ));
+        app.world_mut().resource_mut::<Session>().selected = Some(99);
+        assert!(!selected_matches_open_project(
+            app.world().resource::<Session>(),
+            app.world().resource::<EditorState>(),
+            app.world().resource::<LibraryRoot>()
+        ));
+        app.world_mut().resource_mut::<Session>().selected = None;
+        toggle(&mut app);
+        assert!(
+            app.world()
+                .resource::<Session>()
+                .status
+                .contains("selected local effect")
+        );
+        std::fs::remove_file(fire).unwrap();
+        assert!(!selected_matches_open_project(
+            app.world().resource::<Session>(),
+            app.world().resource::<EditorState>(),
+            app.world().resource::<LibraryRoot>()
+        ));
+        std::fs::remove_dir_all(dir).unwrap();
     }
 
     #[test]

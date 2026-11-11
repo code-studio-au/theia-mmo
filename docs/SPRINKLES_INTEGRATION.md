@@ -671,3 +671,10 @@ prepares direct inspector embedding; the zone inspector is not yet wired to the
 original Sprinkles controls. Automated headless tests cover edit scoping, per-
 emitter seeds and zone-preview rebuild. No native display or mouse was used for
 this change, and its visual behavior remains unqualified.
+
+An open project is identified as the selected local effect only when the actual
+selected zone particle's validated library path and the open project path resolve
+to the same existing file. This avoids using names or unrelated open handles as
+identity. The open-project preview reports when that match exists. This check is
+a prerequisite for the inline inspector; it does not yet switch projects or
+embed the inspector.
