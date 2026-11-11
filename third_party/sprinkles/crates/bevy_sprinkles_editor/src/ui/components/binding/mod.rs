@@ -1018,3 +1018,71 @@ mod theia_scoped_restart_tests {
         assert!(app.world().resource::<DirtyState>().has_unsaved_changes);
     }
 }
+
+#[cfg(test)]
+mod theia_inline_binding_tests {
+    use super::*;
+    use crate::{
+        hosting::AuthoringHost, state::Inspecting, ui::widgets::text_edit::TextEditCommitEvent,
+        viewport::RespawnEmittersEvent,
+    };
+
+    #[derive(Resource, Default)]
+    struct Respawns(u32);
+
+    #[test]
+    fn original_field_binding_edits_the_live_asset_without_workspace_mode() {
+        let mut app = App::new();
+        let mut assets = Assets::<ParticlesAsset>::default();
+        let effect = assets.add(ParticlesAsset::new(
+            "effect".into(),
+            ParticlesDimension::D3,
+            default(),
+            vec![EmitterData::default()],
+            vec![],
+            false,
+            default(),
+        ));
+        let editor = EditorState {
+            current_project: Some(effect.clone()),
+            inspecting: Some(Inspecting {
+                kind: Inspectable::Emitter,
+                index: 0,
+            }),
+            ..default()
+        };
+        app.insert_resource(assets)
+            .insert_resource(editor)
+            .insert_resource(AuthoringHost::embedded(1))
+            .init_resource::<DirtyState>()
+            .init_resource::<EditorData>()
+            .init_resource::<Respawns>()
+            .add_observer(commit::handle_text_commit)
+            .add_observer(|_: On<RespawnEmittersEvent>, mut count: ResMut<Respawns>| count.0 += 1);
+        let field = app
+            .world_mut()
+            .spawn(FieldBinding::emitter(
+                "emission.particles_amount",
+                FieldKind::U32,
+            ))
+            .id();
+        app.world_mut().trigger(TextEditCommitEvent {
+            entity: field,
+            text: "32".into(),
+        });
+        app.update();
+        assert_eq!(
+            app.world()
+                .resource::<Assets<ParticlesAsset>>()
+                .get(&effect)
+                .unwrap()
+                .emitters[0]
+                .emission
+                .particles_amount,
+            32
+        );
+        assert!(app.world().resource::<DirtyState>().has_unsaved_changes);
+        assert_eq!(app.world().resource::<Respawns>().0, 1);
+        assert!(!app.world().resource::<AuthoringHost>().active);
+    }
+}

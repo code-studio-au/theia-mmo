@@ -678,3 +678,9 @@ to the same existing file. This avoids using names or unrelated open handles as
 identity. The open-project preview reports when that match exists. This check is
 a prerequisite for the inline inspector; it does not yet switch projects or
 embed the inspector.
+
+A headless integration test also invokes the original Sprinkles field binding
+while the full workspace is inactive: changing an emitter count updates the
+live asset, marks it dirty and emits the existing respawn event. This validates
+the binding seam, not the layout, focus handling or save routing of an embedded
+inspector.

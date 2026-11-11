@@ -1,3 +1,9 @@
+P5-17 original particle binding test, 11 November 2026: a headless test
+confirms that an original Sprinkles field binding updates its live asset, dirty
+state and respawn event while the full workspace is inactive. Fmt and strict
+workspace/all-target Clippy pass. Inline layout, focus and save routing remain
+unfinished. See [integration](../SPRINKLES_INTEGRATION.md).
+
 P5-17 selected effect identity, 11 November 2026: match the selected zone
 particle to the open Sprinkles project by its existing validated local library
 path, and report that match in preview status. Seven focused preview tests, fmt
