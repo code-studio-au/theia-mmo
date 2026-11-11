@@ -25,3 +25,9 @@ Shaper-created and worshipping; confederation of holds; ancient surviving mounta
 ## Related notes
 
 [The Shaper](../../Characters/Divine/The%20Shaper.md)
+
+## Creator-locked review — 12 November 2026
+
+**Creator-locked leadership:** The Dwarven confederation is headed by **High Thane Bromund Stonevein**, with individual holds led by **thanes**. Earlier 'High King' wording is superseded. Holds retain autonomy; the Covenant High Ruler is a separate office.
+
+This scoped decision supersedes conflicting older *working* descriptions; other details remain governed by [the decision ledger](../../../DECISIONS.md) and current campaign.
