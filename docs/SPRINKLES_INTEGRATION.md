@@ -350,3 +350,12 @@ construction. Tests cover extreme radial and ring counts, cap-dependent vertex
 counts and minimum subdivisions; windowless Vulkan covers invalid live edits and
 recovery. Representable inputs can still exhaust memory; prism and trail mesh
 arithmetic remain outside the checks.
+
+
+## Trail mesh arithmetic — P2-13
+
+Tube and flat/crossed ribbon section, vertex, index and replicated mesh counts
+are checked before construction. Tests cover extreme counts and minimum
+subdivisions; windowless Vulkan covers invalid live edits and recovery.
+Representable inputs can still exhaust memory; prism and cuboid mesh arithmetic
+remain outside these checks.

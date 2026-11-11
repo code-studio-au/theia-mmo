@@ -1125,6 +1125,60 @@ mod theia_port_tests {
     }
 
     #[test]
+    fn trail_mesh_arithmetic_rejects_overflow_before_allocation() {
+        use crate::asset::{ParticleMesh, RibbonTrailShape};
+        let mut emitter = EmitterData::default();
+        emitter.emission.particles_amount = 1;
+        for mesh in [
+            ParticleMesh::TubeTrail {
+                radius: 1.0,
+                radial_steps: 3,
+                sections: u32::MAX,
+                section_rings: 2,
+            },
+            ParticleMesh::TubeTrail {
+                radius: 1.0,
+                radial_steps: u32::MAX,
+                sections: 2,
+                section_rings: 1,
+            },
+            ParticleMesh::RibbonTrail {
+                size: 1.0,
+                sections: u32::MAX,
+                section_rings: 2,
+                shape: RibbonTrailShape::Flat,
+            },
+            ParticleMesh::RibbonTrail {
+                size: 1.0,
+                sections: u32::MAX / 2,
+                section_rings: 1,
+                shape: RibbonTrailShape::Cross,
+            },
+        ] {
+            emitter.draw_pass.mesh = mesh;
+            assert!(checked_emitter_layout(&emitter).is_none());
+        }
+        emitter.draw_pass.mesh = ParticleMesh::RibbonTrail {
+            size: 1.0,
+            sections: 2,
+            section_rings: 1,
+            shape: RibbonTrailShape::Cross,
+        };
+        // Three rows, two vertices per row, two strips.
+        emitter.emission.particles_amount = u32::MAX / 12 + 1;
+        assert!(checked_emitter_layout(&emitter).is_none());
+        emitter.emission.particles_amount = 5;
+        assert!(checked_emitter_layout(&emitter).is_some());
+        emitter.draw_pass.mesh = ParticleMesh::TubeTrail {
+            radius: 1.0,
+            radial_steps: 0,
+            sections: 0,
+            section_rings: 0,
+        };
+        assert!(checked_emitter_layout(&emitter).is_some());
+    }
+
+    #[test]
     fn trail_history_rejects_nonfinite_and_overflowing_frame_counts() {
         use crate::asset::{ParticleMesh, RibbonTrailShape};
         let mut emitter = EmitterData::default();

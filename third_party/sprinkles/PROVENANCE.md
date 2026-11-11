@@ -282,3 +282,6 @@ replication; it is not a memory limit or validation of remaining mesh types.
 
 The local mesh arithmetic guard checks cylinder side and cap geometry too; it
 does not impose a memory limit or validate the remaining mesh types.
+
+The local mesh arithmetic guard checks tube and ribbon geometry too; it does
+not impose a memory limit or validate the remaining mesh types.

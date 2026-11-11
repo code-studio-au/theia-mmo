@@ -372,8 +372,8 @@ fn create_prism_mesh(left_to_right: f32, size: Vec3, subdivide: Vec3) -> Mesh {
     mesh
 }
 
-/// Validate the arithmetic used by quad, sphere and cylinder construction and replication.
-/// This is not a limit on memory or validation of other mesh types.
+/// Validate arithmetic used by particle mesh construction and replication.
+/// This is not a memory limit; prism and cuboid meshes are not yet checked.
 pub(crate) fn checked_mesh_arithmetic(config: &ParticleMesh, amount: u32) -> bool {
     let checked = || -> Option<()> {
         let (vertices, indices) = match config {
@@ -429,6 +429,46 @@ pub(crate) fn checked_mesh_arithmetic(config: &ParticleMesh, amount: u32) -> boo
                             .checked_mul(usize::try_from(caps).ok()?)?
                             .checked_mul(3)?,
                     )?;
+                (vertices, indices)
+            }
+            ParticleMesh::TubeTrail {
+                radial_steps,
+                sections,
+                section_rings,
+                ..
+            } => {
+                let radial = (*radial_steps).max(3);
+                let rings = (*sections).max(2).checked_mul((*section_rings).max(1))?;
+                let vertices = radial
+                    .checked_add(1)?
+                    .checked_mul(rings.checked_add(1)?)?
+                    .checked_add(radial.checked_add(2)?)?;
+                let indices = usize::try_from(radial)
+                    .ok()?
+                    .checked_mul(usize::try_from(rings).ok()?)?
+                    .checked_mul(6)?
+                    .checked_add(usize::try_from(radial).ok()?.checked_mul(3)?)?;
+                (vertices, indices)
+            }
+            ParticleMesh::RibbonTrail {
+                sections,
+                section_rings,
+                shape,
+                ..
+            } => {
+                let subdivisions = (*sections).max(2).checked_mul((*section_rings).max(1))?;
+                let strips = match shape {
+                    RibbonTrailShape::Flat => 1_u32,
+                    RibbonTrailShape::Cross => 2_u32,
+                };
+                let vertices = subdivisions
+                    .checked_add(1)?
+                    .checked_mul(2)?
+                    .checked_mul(strips)?;
+                let indices = usize::try_from(subdivisions)
+                    .ok()?
+                    .checked_mul(usize::try_from(strips).ok()?)?
+                    .checked_mul(6)?;
                 (vertices, indices)
             }
             _ => return Some(()),

@@ -29,6 +29,9 @@ struct Fixture {
     saw_repaired_sphere: bool,
     saw_invalid_cylinder: bool,
     saw_repaired_cylinder: bool,
+    saw_invalid_tube: bool,
+    saw_invalid_ribbon: bool,
+    saw_repaired_trail: bool,
 }
 
 fn setup(
@@ -80,6 +83,9 @@ fn setup(
         saw_repaired_sphere: false,
         saw_invalid_cylinder: false,
         saw_repaired_cylinder: false,
+        saw_invalid_tube: false,
+        saw_invalid_ribbon: false,
+        saw_repaired_trail: false,
     });
 }
 
@@ -258,6 +264,43 @@ fn step(
                 .any(|(material, buffers)| material.is_some() && buffers.amount == 5);
         }
         230 => {
+            effects.get_mut(&fixture.asset).unwrap().emitters[0]
+                .draw_pass
+                .mesh = ParticleMesh::TubeTrail {
+                radius: 1.0,
+                radial_steps: 3,
+                sections: u32::MAX,
+                section_rings: 2,
+            };
+        }
+        235 => fixture.saw_invalid_tube = emitters.iter().any(|(material, _)| material.is_none()),
+        240 => {
+            effects.get_mut(&fixture.asset).unwrap().emitters[0]
+                .draw_pass
+                .mesh = ParticleMesh::RibbonTrail {
+                size: 1.0,
+                sections: u32::MAX,
+                section_rings: 2,
+                shape: RibbonTrailShape::Cross,
+            };
+        }
+        245 => fixture.saw_invalid_ribbon = emitters.iter().any(|(material, _)| material.is_none()),
+        250 => {
+            effects.get_mut(&fixture.asset).unwrap().emitters[0]
+                .draw_pass
+                .mesh = ParticleMesh::RibbonTrail {
+                size: 1.0,
+                sections: 2,
+                section_rings: 1,
+                shape: RibbonTrailShape::Cross,
+            };
+        }
+        260 => {
+            fixture.saw_repaired_trail = emitters
+                .iter()
+                .any(|(material, buffers)| material.is_some() && buffers.amount == 5)
+        }
+        270 => {
             if fixture.saw_suppressed
                 && fixture.saw_restored
                 && fixture.saw_invalid_layout_suppressed
@@ -271,12 +314,15 @@ fn step(
                 && fixture.saw_repaired_sphere
                 && fixture.saw_invalid_cylinder
                 && fixture.saw_repaired_cylinder
+                && fixture.saw_invalid_tube
+                && fixture.saw_invalid_ribbon
+                && fixture.saw_repaired_trail
             {
                 println!("headless particle material transition passed");
                 exits.write(AppExit::Success);
             } else {
                 eprintln!(
-                    "headless particle transitions failed: shader_suppressed={} shader_restored={} layout_suppressed={} layout_restored={} cylinder={} prism={} sphere={} invalid_quad={} repaired_quad={} invalid_sphere={} repaired_sphere={} invalid_cylinder={} repaired_cylinder={}",
+                    "headless particle transitions failed: shader_suppressed={} shader_restored={} layout_suppressed={} layout_restored={} cylinder={} prism={} sphere={} invalid_quad={} repaired_quad={} invalid_sphere={} repaired_sphere={} invalid_cylinder={} repaired_cylinder={} invalid_tube={} invalid_ribbon={} repaired_trail={}",
                     fixture.saw_suppressed,
                     fixture.saw_restored,
                     fixture.saw_invalid_layout_suppressed,
@@ -289,7 +335,10 @@ fn step(
                     fixture.saw_invalid_sphere,
                     fixture.saw_repaired_sphere,
                     fixture.saw_invalid_cylinder,
-                    fixture.saw_repaired_cylinder
+                    fixture.saw_repaired_cylinder,
+                    fixture.saw_invalid_tube,
+                    fixture.saw_invalid_ribbon,
+                    fixture.saw_repaired_trail
                 );
                 exits.write(AppExit::error());
             }
