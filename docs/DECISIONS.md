@@ -1,3 +1,22 @@
+## 12 November 2026 — complete starter-zone authoring milestone
+
+The user directs autonomous local development toward a complete WoW-style starter
+zone designed in the integrated editor: authored terrain and static boundaries
+with one intended exit, placed NPCs with quest assignments, quest item pickups,
+quest areas and existing minimap integration. Reuse the authoritative gameplay
+catalogs and validation; authoring annotations do not become gameplay implicitly.
+Keep explicit Save and shared undo/redo. Continue across local commits, without
+mouse or display access until the user changes that constraint. P3-17/18 remain
+unspecified.
+
+Finish available headless particle checks, record display-dependent and GPU-soak
+limits, and move to P5-17 / P3-15 authoring slices supporting P3-11/12 and the
+P3-16 starter zone. A single intended exit needs collision/navigation and movement
+checks, not just visual cliffs. Start with the existing quest-area runtime format,
+then NPC/contact/quest binding and pickups; validate references before export.
+A complete playable zone requires server admission and persistent quest/playtest
+evidence in addition to editor previews. No completion is claimed by this decision.
+
 ## 11 November 2026 — particle placement data boundary (P2-13)
 
 Extend authoring zone schema 8 with bounded particle placements using checked

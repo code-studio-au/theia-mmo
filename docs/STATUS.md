@@ -1,3 +1,13 @@
+P5-17 / P2-13 headless cache closeout, 12 November 2026: a windowless probe
+ran 1,000 two-owner effect/cache open-close cycles and 120 seconds of idle
+updates. Image and effect assets returned to zero after every close. Sampled
+Linux RSS ranged from 59,160 to 59,244 KiB. Evidence:
+`build/particle-headless-cache-soak-20261112/report.json`. This covers CPU
+baked gradient/curve caches only; full-editor and GPU memory stability remain
+unqualified. Native saved-preference interaction also remains pending while the
+user reserves mouse/display. Work now moves to the adopted starter-zone editor
+milestone; those display-dependent checks are explicitly deferred.
+
 P2-13 particle preference startup checks, 12 November 2026: the actual client
 configuration path accepts saved world-effects visibility, respects the temporary
 hide override, rejects malformed values and leaves the preference file unchanged.

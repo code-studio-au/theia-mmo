@@ -1,5 +1,20 @@
 # Editor export update — 11 November 2026
 
+## Starter-zone implementation target — 12 November 2026
+
+| Capability | Current boundary | Next acceptance |
+| --- | --- | --- |
+| Terrain and boundary geometry | Sculpting, primitive placement, static collision export exist | Author a bounded basin/cliff perimeter and verify one intended traversable exit with gameplay movement/navigation |
+| Quest areas | Runtime volumes and minimap links exist; editor quest markers are annotations | Explicit area volumes with stable IDs, objective links, undo/redo and validated runtime catalog export |
+| NPCs and quest assignment | Editor NPC markers are unresolved annotations; runtime dialogue uses a guide binding | Resolve contact/quest catalogs, place supported contacts and validate giver/turn-in assignments; expand runtime placements where required |
+| Quest pickups | Inventory/quest-item and corpse-loot runtime paths exist | Audit and implement placed world-item pickup authority, then authoring and persistence; do not equate corpse loot with placed pickups |
+| Playable publication | Geometry and particles export; editor F5 is an offline sandbox | Export a coherent gameplay bundle and launch authoritative playtest with quests, minimap and persistence |
+
+Execute through P5-17 / P3-15, reusing P3-11/12 and targeting the bounded P3-16
+starter-zone milestone. Each slice needs positive and rejection-path tests; native
+UI/GPU acceptance is deferred while the user reserves mouse/display. Existing
+primitive/terrain/particle authoring must remain usable throughout.
+
 **File → Export world…** publishes the current zone snapshot, including saved
 particle effects, to a new folder. Enter the destination, content ID and positive
 revision; export runs in the background and does not save the zone source.
