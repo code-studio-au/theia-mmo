@@ -32,7 +32,7 @@
 ## Story invariants for integration tests
 
 - Q086 first living Kel'vari reveal occurs after permitted gate crossing.
-- Q097 reveals Grey Surveyor identity, not before.
+- Q097 reveals Father identity, not before.
 - Q143 first authenticated Nhal name.
 - Q156 Khor'vun killed, Veil destroyed, Binding immediately dissolved, Seven freed, Shroud fade started; manifestation remains gradual.
 - Q177 sabotage discovered after Thes'var dies at Q176; Q178 Oth'varen learns correction is fatal; Q181 he physically dies only after alignment holds, Nhal's identity shatters while essence survives.
