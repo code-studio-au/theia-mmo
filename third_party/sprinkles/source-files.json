@@ -75,7 +75,7 @@
       "path": "crates/bevy_sprinkles/src/lib.rs",
       "upstream_path": "crates/bevy_sprinkles/src/lib.rs",
       "upstream_sha256": "d2f69b00f5380fbcf4342961843bd1df03ff15351d497e0b3de52e7f1e631a17",
-      "imported_sha256": "bc636b149f284c260523a83f721733905f071edda0dbe9cf039dac62f394b2fe",
+      "imported_sha256": "2411858923cc7756cc18de397766b1df86eb64c93f6d364cb9f3fc010f51d3ee",
       "changed": true
     },
     {

@@ -422,7 +422,7 @@ fn publish_in(
         report["particles"] = json!({"placements": zone.particles.len(), "effects": draft.effects.len(),
             "texture_variants": draft.textures.len(), "source_textures": summary.textures,
             "particle_slots": summary.particle_slots, "vertices": summary.vertices,
-            "client_playback": "bounded monolithic worlds; local-coordinate effects only"});
+            "client_playback": "bounded monolithic worlds; world-space effects reset on origin shifts"});
     }
     let manifest = serde_json::to_vec_pretty(&manifest).map_err(|e| e.to_string())?;
     let checked = Manifest::decode(&manifest).map_err(|e| e.to_string())?;

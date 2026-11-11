@@ -60,7 +60,7 @@ def run(client, source):
         check(client, texture, 'does not match its descriptor')
         world_space = copied('world-space')
         rewrite_effect(world_space, lambda b: b.replace(b'use_local_coords:true', b'use_local_coords:false'))
-        check(client, world_space, 'must use local coordinates')
+        check(client, world_space, 'World walking requires')
         budget = copied('budget')
         rewrite_effect(budget, lambda b: b.replace(b'particles_amount:48', b'particles_amount:9000'))
         check(client, budget, 'exceeds the supplied count limits')

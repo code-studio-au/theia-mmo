@@ -1,15 +1,29 @@
+P2-13 world-space particle rebases, 11 November 2026: bounded monolithic
+worlds now admit both local- and world-coordinate Sprinkles emitters. On a
+render/content origin change, world-space emitters clear and restart before
+simulation, keeping fixed seeds and leaving stopped emitters stopped; this can
+visibly restart an effect and its trail, rather than preserving existing GPU
+particle trajectories. Local-coordinate emitters are left running. Two connected
+native Linux clients rendered a textured world-space effect and upstream
+Tube Trails during repeated forced render rebases with zero GPU validation
+diagnostics on RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan
+(`build/particle-world-rebase-native-20261111-v1/verification.json` and
+`build/particle-world-trails-rebase-native-20261111-v1/verification.json`).
+Each client recorded 3–4 world-space resets; screenshots show the effects after
+movement. This is not a per-frame visual equivalence or MMO-load result.
+
 P2-13 bounded zone particle playback, 11 November 2026: the monolithic
 `--terrain-world` client now admits manifest-bound particle packages, validates
 simulation data and explicit resource counts, binds verified decoded images and
-spawns anchored Sprinkles effects. Initial admission requires local-coordinate
-emitters; world-space effects and chunk-world playback remain unsupported. A
+spawns anchored Sprinkles effects. This initial slice required local-coordinate emitters; the subsequent rebase
+slice above adds world-space support. Chunk-world playback remains unsupported. A
 real editor-exported textured effect was visible on both native Linux clients
 connected to an authoritative server over encrypted Renet; the test recorded
 one running visible emitter per client and zero GPU validation diagnostics on
 AMD Radeon RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan
 (`build/particle-world-native-20261111-v5/verification.json`, captures in `a/`
 and `b/`). Actual-client admission tests rejected tampered catalog/effect/image
-files, excessive particle counts and world-space emitters. Frame-rebase unit
+files, excessive particle counts and (at that checkpoint) world-space emitters. Frame-rebase unit
 tests preserve the local effect's anchor, rotation and scale; this does not yet
 qualify live GPU rebases, total GPU memory or MMO-scale cosmetic load.
 

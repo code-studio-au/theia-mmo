@@ -334,3 +334,8 @@ It cannot be serialized, and the host uses it to keep verified, decoded package
 images associated with materials without a second disk read. File-backed and
 preset behavior are unchanged. The adapted source hash is recorded in
 `source-files.json`.
+
+The host can schedule work before particle time advancement via the public
+`ParticleSimulationStep` system set. Theia uses this to clear world-space
+particles when its render origin shifts. The adapted runtime source hash is
+recorded in `source-files.json`.

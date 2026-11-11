@@ -202,6 +202,10 @@ use textures::{
 /// and all the systems needed to simulate and render particles.
 pub struct SprinklesPlugin;
 
+/// Schedule point for host systems that must prepare emitters before simulation.
+#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ParticleSimulationStep;
+
 impl Plugin for SprinklesPlugin {
     fn build(&self, app: &mut App) {
         bevy::shader::load_shader_library!(app, "shaders/common.wesl");
@@ -236,7 +240,7 @@ impl Plugin for SprinklesPlugin {
                 sync_particle_mesh.after(sync_particle_buffers),
                 sync_particle_material.after(sync_particle_mesh),
                 sync_collider_data,
-                update_particle_time,
+                update_particle_time.in_set(ParticleSimulationStep),
                 check_particle_system_finished.after(update_particle_time),
                 cleanup_particle_entities,
             ),

@@ -30,7 +30,10 @@ pub(crate) struct Metrics {
     live_roots: usize,
     running_emitter_frames: u64,
     visible_emitter_frames: u64,
+    world_space_rebase_resets: u64,
 }
+#[derive(Resource, Default)]
+struct LastFrame(Option<([f64; 3], [f64; 3])>);
 
 pub fn install(app: &mut App, prepared: PreparedCatalog) {
     if !app.is_plugin_added::<SprinklesPlugin>() {
@@ -38,7 +41,14 @@ pub fn install(app: &mut App, prepared: PreparedCatalog) {
     }
     app.insert_resource(Pending(Some(prepared)))
         .init_resource::<Metrics>()
+        .init_resource::<LastFrame>()
         .add_systems(Startup, spawn)
+        .add_systems(
+            Update,
+            rebase_world_emitters
+                .after(crate::floating_origin::place_static)
+                .before(bevy_sprinkles::ParticleSimulationStep),
+        )
         .add_systems(Last, observe);
 }
 fn spawn(
@@ -95,6 +105,51 @@ fn spawn(
         _effects: bound.effects,
         _textures: bound.textures,
     });
+}
+
+// World-space GPU positions and trail histories refer to the previous render
+// frame. Clear them when the origin changes; local-coordinate emitters follow
+// their parent and do not need a restart.
+fn rebase_world_emitters(
+    frame: Res<crate::floating_origin::Frame>,
+    mut previous: ResMut<LastFrame>,
+    mut metrics: ResMut<Metrics>,
+    systems: Query<&Particles3d, With<WorldParticle>>,
+    assets: Res<Assets<ParticlesAsset>>,
+    mut emitters: Query<(
+        &bevy_sprinkles::runtime::EmitterEntity,
+        &mut bevy_sprinkles::runtime::EmitterRuntime,
+    )>,
+) {
+    let current = (
+        frame.content.origin().metres(),
+        frame.render.origin().metres(),
+    );
+    let changed = previous
+        .0
+        .replace(current)
+        .is_some_and(|old| old != current);
+    if !changed {
+        return;
+    }
+    for (emitter, mut runtime) in &mut emitters {
+        let Some(data) = systems
+            .get(emitter.parent_system)
+            .ok()
+            .and_then(|system| assets.get(&system.0))
+            .and_then(|asset| asset.emitters.get(runtime.emitter_index))
+        else {
+            continue;
+        };
+        if !data.draw_pass.use_local_coords {
+            let emitting = runtime.is_emitting();
+            runtime.stop(data.time.fixed_seed);
+            if emitting {
+                runtime.play();
+            }
+            metrics.world_space_rebase_resets += 1;
+        }
+    }
 }
 
 fn observe(
@@ -201,5 +256,101 @@ mod tests {
         assert_eq!(transform.translation, Vec3::new(-254., 3., 4.));
         assert_eq!(transform.rotation, rotation);
         assert_eq!(transform.scale, Vec3::splat(2.));
+    }
+    #[test]
+    fn rebase_resets_world_space_emitters_but_preserves_local_emitters() {
+        use bevy_sprinkles::runtime::{EmitterEntity, EmitterRuntime};
+        let mut app = App::new();
+        app.init_resource::<crate::floating_origin::Frame>()
+            .init_resource::<LastFrame>()
+            .init_resource::<Metrics>()
+            .insert_resource(Assets::<ParticlesAsset>::default())
+            .add_systems(Update, rebase_world_emitters);
+        let make = |local| {
+            let mut emitter = EmitterData::default();
+            emitter.draw_pass.use_local_coords = local;
+            emitter.time.fixed_seed = Some(7);
+            ParticlesAsset::new(
+                "test".into(),
+                ParticlesDimension::D3,
+                default(),
+                vec![emitter],
+                vec![],
+                false,
+                default(),
+            )
+        };
+        let world_asset = app
+            .world_mut()
+            .resource_mut::<Assets<ParticlesAsset>>()
+            .add(make(false));
+        let local_asset = app
+            .world_mut()
+            .resource_mut::<Assets<ParticlesAsset>>()
+            .add(make(true));
+        let world_root = app
+            .world_mut()
+            .spawn((WorldParticle, Particles3d(world_asset)))
+            .id();
+        let local_root = app
+            .world_mut()
+            .spawn((WorldParticle, Particles3d(local_asset)))
+            .id();
+        let mut world_runtime = EmitterRuntime::new(0, Some(7));
+        world_runtime.system_time = 3.;
+        let world_emitter = app
+            .world_mut()
+            .spawn((
+                EmitterEntity {
+                    parent_system: world_root,
+                },
+                world_runtime,
+            ))
+            .id();
+        let mut local_runtime = EmitterRuntime::new(0, Some(7));
+        local_runtime.system_time = 3.;
+        let local_emitter = app
+            .world_mut()
+            .spawn((
+                EmitterEntity {
+                    parent_system: local_root,
+                },
+                local_runtime,
+            ))
+            .id();
+        app.update();
+        assert!(
+            !app.world()
+                .get::<EmitterRuntime>(world_emitter)
+                .unwrap()
+                .clear_requested
+        );
+        app.world_mut()
+            .resource_mut::<crate::floating_origin::Frame>()
+            .focus(theia_core::coordinates::GlobalPosition::new([256., 0., 0.]).unwrap());
+        app.update();
+        let world = app.world().get::<EmitterRuntime>(world_emitter).unwrap();
+        assert!(world.clear_requested && world.is_emitting());
+        assert_eq!(world.system_time, 0.);
+        assert_eq!(world.random_seed, 7);
+        let local = app.world().get::<EmitterRuntime>(local_emitter).unwrap();
+        assert!(!local.clear_requested);
+        assert_eq!(local.system_time, 3.);
+        assert_eq!(
+            app.world().resource::<Metrics>().world_space_rebase_resets,
+            1
+        );
+        let mut stopped = app
+            .world_mut()
+            .get_mut::<EmitterRuntime>(world_emitter)
+            .unwrap();
+        stopped.stop(Some(7));
+        stopped.clear_requested = false;
+        app.world_mut()
+            .resource_mut::<crate::floating_origin::Frame>()
+            .focus(theia_core::coordinates::GlobalPosition::new([-256., 0., 0.]).unwrap());
+        app.update();
+        let stopped = app.world().get::<EmitterRuntime>(world_emitter).unwrap();
+        assert!(stopped.clear_requested && !stopped.is_emitting());
     }
 }

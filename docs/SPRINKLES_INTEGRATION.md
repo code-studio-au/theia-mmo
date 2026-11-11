@@ -117,9 +117,10 @@ verified decoded textures, and spawns the authored effects at their checked
 anchors. Initial caps are 32 placements, 64 emitters, 1 million replicated
 vertices, 3 million indices, 8192 particle slots, 65536 trail-history entries,
 100000 sub-emitter words and 32 MiB decoded image data. These are conservative
-prototype counts, not a complete GPU memory or MMO load policy. All emitters
-must currently use local coordinates; world-space effects fail admission until
-rebase handling is implemented. Chunk-world particle packages remain rejected.
+prototype counts, not a complete GPU memory or MMO load policy. Both local- and world-coordinate emitters are supported. On an origin change,
+world-space emitters clear and restart before simulation, so existing particles
+and trails do not retain their prior trajectories; local-coordinate emitters
+continue without a reset. Chunk-world particle packages remain rejected.
 
 A real editor-exported textured placement appeared on both native Linux clients
 connected to an authoritative server over encrypted Renet. Each reported one
@@ -127,9 +128,13 @@ visible running emitter, with zero GPU validation diagnostics on AMD Radeon RX
 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan
 (`build/particle-world-native-20261111-v5/verification.json` and `a/scene.png`,
 `b/scene.png`). `tools/qualify_particle_world_admission.py` tests actual client
-rejection of modified catalogs, effects and textures, excessive counts and
-world-space effects. A headless test checks anchor, rotation and scale across a
-render-frame change; a live GPU rebase is not yet qualified.
+rejection of modified catalogs, effects and textures and excessive counts.
+Headless tests check anchors and world-space resets. Two-client Vulkan tests
+exercise repeated render rebases for a textured world-space effect and upstream
+Tube Trails, with visible emitters and zero GPU diagnostics
+(`build/particle-world-rebase-native-20261111-v1/verification.json`,
+`build/particle-world-trails-rebase-native-20261111-v1/verification.json`).
+These do not prove per-frame visual equivalence across resets.
 
 The prerequisites are the accepted Linux authoring shell and the adopted exact
 Bevy 0.20.0 engine. Upstream targets Bevy 0.19.0. Both imported crates use our
@@ -541,7 +546,7 @@ zone documents load with no placements; older binaries do not read schema 8.
 
 The world exporter packages particle placements, effects and texture variants
 in a manifest-bound schema-4 world package. Monolithic clients now render the
-bounded local-coordinate subset described above. The editor provides reference
+bounded local- and world-coordinate subset described above. The editor provides reference
 creation, selection and inline attribute controls. No MMO particle-count or GPU memory budget is implied by
 the authoring document bound.
 

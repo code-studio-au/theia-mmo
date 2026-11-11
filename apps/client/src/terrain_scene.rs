@@ -52,15 +52,6 @@ impl Config {
                 frame,
                 crate::particle_world::LIMITS,
             )?;
-            if prepared.effects.iter().any(|effect| {
-                effect
-                    .asset
-                    .emitters
-                    .iter()
-                    .any(|emitter| !emitter.draw_pass.use_local_coords)
-            }) {
-                return Err("World particle effects must use local coordinates until world-space rebase is supported".into());
-            }
             let image_bytes = prepared
                 .textures
                 .iter()
