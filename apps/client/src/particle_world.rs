@@ -45,6 +45,7 @@ pub(crate) struct Metrics {
     visible_emitter_frames: u64,
     world_space_rebase_resets: u64,
     effects_enabled: bool,
+    control_visible: bool,
     visibility_key_toggles: u64,
     visibility_button_toggles: u64,
     unready_emitter_frames: u64,
@@ -320,6 +321,7 @@ fn setup_toggle(mut commands: Commands) {
             Button,
             AccessibleLabel::new("Toggle world particle effects"),
             Node {
+                display: Display::None,
                 position_type: PositionType::Absolute,
                 left: px(12),
                 bottom: px(12),
@@ -346,7 +348,10 @@ fn activate_toggle(
     mut choice: ResMut<VisibilityChoice>,
     mut metrics: ResMut<Metrics>,
 ) {
-    if buttons.contains(event.entity) && windows.single().is_ok_and(|window| window.focused) {
+    if metrics.placements > 0
+        && buttons.contains(event.entity)
+        && windows.single().is_ok_and(|window| window.focused)
+    {
         choice.0 = !choice.0;
         metrics.visibility_button_toggles += 1;
     }
@@ -357,7 +362,10 @@ fn keyboard_toggle(
     mut choice: ResMut<VisibilityChoice>,
     mut metrics: ResMut<Metrics>,
 ) {
-    if windows.single().is_ok_and(|window| window.focused) && keys.just_pressed(KeyCode::F9) {
+    if metrics.placements > 0
+        && windows.single().is_ok_and(|window| window.focused)
+        && keys.just_pressed(KeyCode::F9)
+    {
         choice.0 = !choice.0;
         metrics.visibility_key_toggles += 1;
     }
@@ -367,8 +375,20 @@ fn apply_visibility(
     mut metrics: ResMut<Metrics>,
     mut roots: Query<&mut Visibility, With<WorldParticle>>,
     mut labels: Query<&mut Text, With<ToggleLabel>>,
+    mut buttons: Query<&mut Node, With<Toggle>>,
 ) {
     metrics.effects_enabled = choice.0;
+    metrics.control_visible = metrics.placements > 0;
+    for mut node in &mut buttons {
+        let desired = if metrics.placements > 0 {
+            Display::Flex
+        } else {
+            Display::None
+        };
+        if node.display != desired {
+            node.display = desired;
+        }
+    }
     let visibility = if choice.0 {
         Visibility::Inherited
     } else {
@@ -767,17 +787,26 @@ mod tests {
             .spawn((WorldParticle, Visibility::Inherited))
             .id();
         let gameplay_cue = app.world_mut().spawn(Visibility::Inherited).id();
-        let button = app.world_mut().spawn(Toggle).id();
+        let button = app.world_mut().spawn((Toggle, Node::default())).id();
         let label = app.world_mut().spawn((ToggleLabel, Text::new(""))).id();
         app.world_mut()
             .resource_mut::<ButtonInput<KeyCode>>()
             .press(KeyCode::F9);
         app.update();
         assert!(app.world().resource::<VisibilityChoice>().0);
+        assert_eq!(
+            app.world().get::<Node>(button).unwrap().display,
+            Display::None
+        );
+        app.world_mut().resource_mut::<Metrics>().placements = 1;
         app.world_mut().trigger(Activate { entity: button });
         assert!(app.world().resource::<VisibilityChoice>().0);
         app.world_mut().get_mut::<Window>(window).unwrap().focused = true;
         app.update();
+        assert_eq!(
+            app.world().get::<Node>(button).unwrap().display,
+            Display::Flex
+        );
         assert_eq!(
             *app.world().get::<Visibility>(root).unwrap(),
             Visibility::Hidden
@@ -802,6 +831,12 @@ mod tests {
         assert_eq!(
             app.world().get::<Text>(label).unwrap().0,
             "World effects: On [F9]"
+        );
+        app.world_mut().resource_mut::<Metrics>().placements = 0;
+        app.update();
+        assert_eq!(
+            app.world().get::<Node>(button).unwrap().display,
+            Display::None
         );
     }
     #[test]

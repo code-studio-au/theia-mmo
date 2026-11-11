@@ -123,6 +123,10 @@ both runs recorded zero Vulkan validation diagnostics on RX 7900 XTX / RADV
 NAVI31 / Mesa 26.2.6. Unit tests cover focus and cue isolation. The switch is a
 manual readability aid, not automatic critical-telegraph protection, a
 persistence setting, or a simulation/GPU workload reduction.
+The control now hides when the active chunk set has no particle placements and
+returns when placements load. Two-client Vulkan checks cover both an empty world
+(`build/particle-control-empty-native-20261111/`) and a populated world with real
+mouse/keyboard toggles (`build/particle-control-present-native-20261111/`).
 
 P2-13 upstream example package check, 11 November 2026: all seven bundled
 Sprinkles example RONs exported and passed actual-client pre-launch admission

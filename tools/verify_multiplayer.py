@@ -512,9 +512,11 @@ def run(output, binaries, references=None, terrain=None, player_assets=None, col
             if require_no_world_particles:
                 particles = report['world_particles']
                 assert particles['placements'] == 0 and particles['live_roots'] == 0 and particles['running_emitter_frames'] == 0
+                assert not particles['control_visible']
             if require_world_particles:
                 particles = report['world_particles']
                 assert particles['placements'] > 0
+                assert particles['control_visible']
                 if require_particle_retirement:
                     assert particles['chunk_publications'] >= 2
                     assert particles['chunk_retained_roots'] > 0 and particles['chunk_retired_roots'] > 0
