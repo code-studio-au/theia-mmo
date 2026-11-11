@@ -6,13 +6,59 @@ use bevy::{
 };
 use bevy_sprinkles::{
     TextureRef,
-    asset::{DrawPassMaterial, ParticlesAsset},
+    asset::{DrawPassMaterial, ParticlesAsset, versions},
+    budget::emitter_counts,
 };
 use std::{
     collections::BTreeSet,
     path::{Component, Path},
 };
 use theia_network::{particle_content::Catalog, shared_images::ColorSpace};
+
+/// A catalog-identified effect decoded from the bytes whose hash was checked.
+pub struct CatalogEffect {
+    pub id: String,
+    pub asset: ParticlesAsset,
+}
+
+/// Read catalog effects, verify their exact bytes, migrate their original RON
+/// format, check allocation arithmetic and rebase their texture references.
+/// This is not admission for playback: callers must independently verify and
+/// decode texture files, validate all simulation parameters and enforce actual
+/// CPU/GPU budgets before creating render entities. It performs blocking file
+/// I/O and belongs off the simulation and render update paths.
+pub fn load_catalog_effects(
+    catalog: &Catalog,
+    directory: &Path,
+    package: &Path,
+) -> Result<Vec<CatalogEffect>, String> {
+    let buffers = catalog.read_effects(directory).map_err(|e| e.to_string())?;
+    let mut assets = Vec::with_capacity(buffers.len());
+    for (effect, bytes) in catalog.effects().iter().zip(&buffers) {
+        let asset = versions::migrate(bytes)
+            .map_err(|error| format!("{}: invalid particle effect: {error}", effect.id))?
+            .asset;
+        for (index, emitter) in asset.emitters.iter().enumerate() {
+            if emitter_counts(emitter).is_none() {
+                return Err(format!(
+                    "{}: emitter {index} has invalid allocation arithmetic",
+                    effect.id
+                ));
+            }
+        }
+        assets.push(asset);
+    }
+    let assets = rebase_effect_textures(catalog, &assets, package)?;
+    Ok(catalog
+        .effects()
+        .iter()
+        .zip(assets)
+        .map(|(effect, asset)| CatalogEffect {
+            id: effect.id.clone(),
+            asset,
+        })
+        .collect())
+}
 
 /// Queue catalog texture variants using standard Bevy image loading. `package`
 /// is a relative package directory under the configured Bevy asset root; an
@@ -143,6 +189,95 @@ mod tests {
     use theia_network::terrain::sha256;
     static NEXT: AtomicU64 = AtomicU64::new(0);
     const PNG: &[u8] = include_bytes!("../../network/tests/fixtures/shared-image.png");
+
+    #[test]
+    fn catalog_loading_hashes_parses_and_rebases_the_same_effect_bytes() {
+        let root = std::env::temp_dir().join(format!(
+            "theia-vfx-effect-{}-{}",
+            std::process::id(),
+            NEXT.fetch_add(1, Ordering::Relaxed)
+        ));
+        fs::create_dir(&root).unwrap();
+        let path = root.join("effect-vfx.fire.ron");
+        let example = include_bytes!(
+            "../../../third_party/sprinkles/crates/bevy_sprinkles_editor/src/assets/examples/magic-puff.ron"
+        );
+        let catalog_for = |bytes: &[u8], textures: serde_json::Value| {
+            Catalog::decode(&serde_json::to_vec(&json!({"schema":1,
+                "effects":[{"id":"vfx.fire","bytes":bytes.len(),"sha256":sha256(bytes)}],
+                "placements":[{"id":1,"effect":"vfx.fire","position":[0.,0.,0.],"yaw_degrees":0.,"scale":1.}],
+                "textures":textures
+            })).unwrap()).unwrap()
+        };
+        let catalog = catalog_for(example, json!([]));
+        fs::write(&path, example).unwrap();
+        let effects = load_catalog_effects(&catalog, &root, Path::new("world/revision")).unwrap();
+        assert_eq!(effects.len(), 1);
+        assert_eq!(effects[0].id, "vfx.fire");
+        assert_eq!(effects[0].asset.emitters.len(), 6);
+        fs::write(&path, b"changed").unwrap();
+        assert_eq!(effects[0].asset.emitters.len(), 6);
+        assert!(load_catalog_effects(&catalog, &root, Path::new("world")).is_err());
+
+        let malformed = b"not RON";
+        fs::write(&path, malformed).unwrap();
+        assert!(
+            load_catalog_effects(
+                &catalog_for(malformed, json!([])),
+                &root,
+                Path::new("world")
+            )
+            .is_err()
+        );
+
+        let mut asset = versions::migrate(example).unwrap().asset;
+        asset.emitters[0].draw_pass.material = DrawPassMaterial::CustomShader {
+            vertex_shader: None,
+            fragment_shader: None,
+        };
+        let custom = ron::to_string(&asset).unwrap().into_bytes();
+        fs::write(&path, &custom).unwrap();
+        assert!(
+            load_catalog_effects(&catalog_for(&custom, json!([])), &root, Path::new("world"))
+                .is_err()
+        );
+
+        let mut asset = versions::migrate(example).unwrap().asset;
+        asset.emitters[0].emission.particles_amount = u32::MAX;
+        let oversized = ron::to_string(&asset).unwrap().into_bytes();
+        fs::write(&path, &oversized).unwrap();
+        assert!(
+            load_catalog_effects(
+                &catalog_for(&oversized, json!([])),
+                &root,
+                Path::new("world")
+            )
+            .is_err()
+        );
+
+        let mut asset = versions::migrate(example).unwrap().asset;
+        let texture = json!({"sha256":sha256(PNG),"bytes":PNG.len(),"color_space":"srgb"});
+        let texture_catalog = catalog_for(example, json!([texture.clone()]));
+        let relative = format!("textures/{}", texture_catalog.textures()[0].filename());
+        let DrawPassMaterial::Standard(material) = &mut asset.emitters[0].draw_pass.material else {
+            unreachable!()
+        };
+        material.base_color_texture = Some(TextureRef::Asset(relative.clone()));
+        let textured = ron::to_string(&asset).unwrap().into_bytes();
+        fs::write(&path, &textured).unwrap();
+        let catalog = catalog_for(&textured, json!([texture]));
+        let effects = load_catalog_effects(&catalog, &root, Path::new("world/revision")).unwrap();
+        let DrawPassMaterial::Standard(material) = &effects[0].asset.emitters[0].draw_pass.material
+        else {
+            unreachable!()
+        };
+        assert_eq!(
+            material.base_color_texture,
+            Some(TextureRef::Asset(format!("world/revision/{relative}")))
+        );
+        assert!(load_catalog_effects(&catalog, &root, Path::new("../escape")).is_err());
+        fs::remove_dir_all(root).unwrap();
+    }
 
     #[test]
     fn rebasing_requires_cataloged_role_specific_references_and_no_editor_paths() {

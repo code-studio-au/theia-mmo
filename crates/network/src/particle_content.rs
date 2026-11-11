@@ -142,6 +142,35 @@ impl Catalog {
     pub fn textures(&self) -> &[Texture] {
         &self.0.textures
     }
+    /// Read the exact effect bytes described by this catalog, in catalog order.
+    /// Hashes are checked on the returned buffers, so later file changes cannot
+    /// alter those buffers. RON admission, texture verification and resource
+    /// budgets remain separate responsibilities.
+    pub fn read_effects(&self, directory: &Path) -> Result<Vec<Vec<u8>>> {
+        let mut effects = Vec::with_capacity(self.0.effects.len());
+        for effect in &self.0.effects {
+            let path = directory.join(format!("effect-{}.ron", effect.id));
+            if !std::fs::symlink_metadata(&path)?.file_type().is_file() {
+                return Err("Particle effect must be a regular file".into());
+            }
+            let file = File::open(path)?;
+            if !file.metadata()?.is_file() {
+                return Err("Particle effect must be a regular file".into());
+            }
+            let mut bytes = Vec::new();
+            file.take(MAX_EFFECT_BYTES + 1).read_to_end(&mut bytes)?;
+            if bytes.len() as u64 != effect.bytes || crate::terrain::sha256(&bytes) != effect.sha256
+            {
+                return Err(format!(
+                    "Particle effect {} does not match its descriptor",
+                    effect.id
+                )
+                .into());
+            }
+            effects.push(bytes);
+        }
+        Ok(effects)
+    }
     /// Checks exact file length and hash; callers must separately validate RON,
     /// dependencies and resource budgets before loading it with a renderer.
     pub fn verify_effects(&self, directory: &Path) -> Result<()> {
@@ -269,10 +298,17 @@ mod tests {
         let effect = path.join("effect-vfx.fire.ron");
         let catalog = decode(&fixture()).unwrap();
         assert!(catalog.verify_effects(&path).is_err());
+        assert!(catalog.read_effects(&path).is_err());
         fs::write(&effect, b"fire").unwrap();
         catalog.verify_effects(&path).unwrap();
+        let retained = catalog.read_effects(&path).unwrap();
+        assert_eq!(retained, vec![b"fire".to_vec()]);
         fs::write(&effect, b"fIrE").unwrap();
         assert!(catalog.verify_effects(&path).is_err());
+        assert!(catalog.read_effects(&path).is_err());
+        assert_eq!(retained, vec![b"fire".to_vec()]);
+        fs::write(&effect, vec![0; MAX_EFFECT_BYTES as usize + 1]).unwrap();
+        assert!(catalog.read_effects(&path).is_err());
         #[cfg(unix)]
         {
             fs::remove_file(&effect).unwrap();
@@ -280,6 +316,7 @@ mod tests {
             fs::write(&target, b"fire").unwrap();
             std::os::unix::fs::symlink(target, &effect).unwrap();
             assert!(catalog.verify_effects(&path).is_err());
+            assert!(catalog.read_effects(&path).is_err());
         }
         fs::remove_dir_all(&path).unwrap();
     }

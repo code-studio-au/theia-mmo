@@ -10,3 +10,6 @@ bevy_sprinkles = { path = "../../third_party/sprinkles/crates/bevy_sprinkles" }
 bevy = { workspace = true, features = ["std", "async_executor", "bevy_asset", "bevy_image", "png"] }
 theia-network.workspace = true
 serde_json.workspace = true
+
+[dev-dependencies]
+ron.workspace = true

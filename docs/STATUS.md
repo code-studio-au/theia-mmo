@@ -1,3 +1,12 @@
+P2-13 catalog effect loading, 11 November 2026: the network catalog can read
+bounded effect bytes and verify the exact returned buffers against their hashes.
+The VFX helper migrates those buffers, checks allocation arithmetic and
+cataloged texture roles, and rebases cloned references. Three focused catalog
+and three VFX tests plus strict workspace Clippy pass. This performs blocking
+I/O and is not wired to client playback; texture bytes/decoding, complete
+parameter validation, allocation budgets, export and playback remain pending.
+See [integration](SPRINKLES_INTEGRATION.md).
+
 P5-17 particle variant popup repair, 11 November 2026: native reproduction
 showed Point → Sphere changed the effect but did not create the radius field in
 the already-open popup. Keep a hidden field container for fieldless variants and
