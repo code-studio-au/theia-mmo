@@ -7730,6 +7730,7 @@ version = "0.1.0"
 dependencies = [
  "avian3d",
  "bevy",
+ "bevy_sprinkles",
  "serde",
  "serde_json",
  "theia-core",

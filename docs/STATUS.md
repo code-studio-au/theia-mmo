@@ -1,3 +1,17 @@
+P2-13 bounded projectile cosmetic, 11 November 2026: projectile-enabled clients
+run a bundled, editable Sprinkles RON as a child of the existing server-driven
+projectile indicator. The indicator and authoritative impact remain separate;
+parent cleanup removes the effect, local particle coordinates follow the render
+frame, and failed asset parsing leaves the indicator intact. The fixed effect
+uses 12 particle slots per cue, at most 32 active cues. A two-client native
+qualification covers three launches/impacts, synthetic action-bar pointer and
+keyboard inputs, visible running emitters on both clients and zero GPU validation
+diagnostics on AMD Radeon RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan:
+`build/sprinkles-projectile-native-20261111-v4/verification.json` and captures.
+The test focuses the caster window and accommodates the current action-bar slots.
+This is a fixed projectile prototype, not zone catalog playback, complete cosmetic
+memory budgeting, Windows execution or an MMO-scale load result.
+
 P2-13 manifest-bound particle preparation, 11 November 2026: a CPU-only helper
 combines cataloged effect loading, explicit count-limit checks, checked frame
 projection and verified PNG decoding into an all-or-nothing snapshot. A test

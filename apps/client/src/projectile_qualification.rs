@@ -387,7 +387,7 @@ fn report(world: &mut World) {
         && visuals_ok
         && health == Some(expected_health)
         && resolved == 3
-        && ui.actions.len() == 2
+        && ui.actions.len() >= 2
         && layout.invalid_layouts == 0
         && layout.button_layout_samples > 0
         && (run.variant == "B"

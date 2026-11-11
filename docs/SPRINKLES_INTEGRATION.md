@@ -40,6 +40,20 @@ slice reuses the actual Sprinkles runtime and editor, pinned at
 authoring controls. Source, asset licenses and file hashes are under
 `third_party/sprinkles/`.
 
+P2-13 gameplay prototype: projectile-enabled clients use Sprinkles for a
+bundled glimmer (`apps/client/assets/vfx/projectile-glimmer.ron`) parented to
+the existing authoritative-event-driven projectile indicator. The editable RON
+uses one local-coordinate emitter with 12 slots; existing cue admission caps
+active projectiles at 32. The effect cannot decide impacts, and a failed RON
+load leaves the original indicator available. Unit tests cover the allocation,
+parent-child lifecycle and existing cue bounds. Two native clients observed
+three server launches and impacts, visible running emitters and zero GPU
+validation diagnostics on AMD Radeon RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6
+Vulkan (`build/sprinkles-projectile-native-20261111-v4/verification.json`;
+`A/projectile.png` and `B/projectile.png`). Inputs were synthetic events in
+the focused client. This is a fixed prototype effect; it does not bind editor
+zone placements to package playback or establish an MMO-scale resource budget.
+
 P2-13 preparation: `Catalog::read_effects` returns bounded effect bytes only
 after checking each returned buffer's catalog length and hash. The VFX helper
 `load_catalog_effects` migrates those buffers, checks allocation arithmetic,

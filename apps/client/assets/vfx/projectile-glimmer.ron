@@ -1,0 +1,19 @@
+(
+    sprinkles_version: "0.3",
+    name: "Projectile glimmer",
+    dimension: D3,
+    emitters: [(
+        name: "Glimmer",
+        time: (lifetime: 0.35),
+        emission: (shape: Sphere(radius: 0.20), particles_amount: 12),
+        draw_pass: (
+            mesh: Sphere(segments: 8, rings: 4),
+            material: Standard((base_color: (0.2, 0.75, 1.0, 1.0), unlit: true)),
+            shadow_caster: false,
+            use_local_coords: true,
+        ),
+        scale: (range: (min: 0.025, max: 0.06)),
+        velocities: (spread: 180.0, initial_velocity: (min: 0.3, max: 0.6)),
+        accelerations: (gravity: (0.0, 0.0, 0.0)),
+    )],
+)
