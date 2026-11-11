@@ -4531,7 +4531,9 @@
       "eligibility": {
         "minimum_level": null,
         "level_gate_approved": false,
-        "prerequisite_quest_refs": [],
+        "prerequisite_quest_refs": [
+          "Q031"
+        ],
         "prerequisite_runtime_ids": null
       },
       "stages": [
@@ -4679,7 +4681,9 @@
       "eligibility": {
         "minimum_level": null,
         "level_gate_approved": false,
-        "prerequisite_quest_refs": [],
+        "prerequisite_quest_refs": [
+          "Q031"
+        ],
         "prerequisite_runtime_ids": null
       },
       "stages": [
@@ -4825,7 +4829,9 @@
       "eligibility": {
         "minimum_level": null,
         "level_gate_approved": false,
-        "prerequisite_quest_refs": [],
+        "prerequisite_quest_refs": [
+          "Q031"
+        ],
         "prerequisite_runtime_ids": null
       },
       "stages": [
@@ -4949,23 +4955,23 @@
     },
     {
       "campaign_reference": "Q035",
-      "title": "A Ledger Reaches the Sea",
+      "title": "The Covenant Calls",
       "provenance": {
         "editorial_ids_candidates": [
           "H2-01"
         ],
-        "mapping_status": "unreviewed",
+        "mapping_status": "requires_review_after_creator_2026_11_12_restructure",
         "legacy_completion_alias": "HUMAN_Q035_DONE"
       },
       "runtime_id": null,
       "definition_status": "planning_not_importable",
       "narrative_source": "Human_1_80_Canonical_Campaign.md",
       "giver_npc": {
-        "editorial_contact": "Mara",
+        "editorial_contact": "Race-specific local summons bearer (Corven's office)",
         "stable_id": null
       },
       "turn_in_npc": {
-        "editorial_contact": "Mara",
+        "editorial_contact": "Tidehold High Ruler's office",
         "stable_id": null,
         "requires_verification": true
       },
@@ -4973,10 +4979,9 @@
       "eligibility": {
         "minimum_level": null,
         "level_gate_approved": false,
-        "prerequisite_quest_refs": [
-          "Q031"
-        ],
-        "prerequisite_runtime_ids": null
+        "prerequisite_quest_refs": [],
+        "prerequisite_runtime_ids": null,
+        "race_completion_gate": "Player must have completed their own race-specific level 1–20 campaign; per-race runtime completion IDs unresolved; do not treat empty legacy prerequisite list as unconditional."
       },
       "stages": [
         {
@@ -4987,9 +4992,9 @@
             {
               "objective_id": "q035.objective.01",
               "type": "npc_interacted",
-              "target_editorial_alias": "mara_brief",
+              "target_editorial_alias": "covenant_summons",
               "target_stable_id": null,
-              "description": "Receive the sealed Cassian shipping reference",
+              "description": "Receive Corven's identical formal Covenant summons after racial storyline closure",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -5007,7 +5012,7 @@
             {
               "objective_id": "q035.objective.02",
               "type": "region_reached",
-              "target_editorial_alias": "tidehold_ship",
+              "target_editorial_alias": "tidehold_arrival",
               "target_stable_id": null,
               "description": "Travel to Tidehold by established route",
               "required_count": 1,
@@ -5026,10 +5031,10 @@
           "objectives": [
             {
               "objective_id": "q035.objective.03",
-              "type": "object_inspected",
-              "target_editorial_alias": "customs_entry",
+              "type": "npc_interacted",
+              "target_editorial_alias": "tidehold_registration",
               "target_stable_id": null,
-              "description": "Compare shipping entry with customs log",
+              "description": "Register the summons at Corven's office",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -5047,9 +5052,9 @@
             {
               "objective_id": "q035.objective.04",
               "type": "npc_interacted",
-              "target_editorial_alias": "ysra",
+              "target_editorial_alias": "summons_acknowledgment",
               "target_stable_id": null,
-              "description": "Record authorized inquiry",
+              "description": "Confirm briefing appointment",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -5091,7 +5096,8 @@
         "rewards_unbalanced",
         "evidence_provenance_needs_engine_binding",
         "inventory_and_choice_semantics_require_quest_specific_review"
-      ]
+      ],
+      "race_variants": "Same summons and authority for human, dwarf, Aelari and Korrath; delivery contact and local acknowledgment vary. Do not bind a human-only actor for other races."
     },
     {
       "campaign_reference": "Q036",
@@ -5135,7 +5141,7 @@
               "type": "npc_interacted",
               "target_editorial_alias": "corven",
               "target_stable_id": null,
-              "description": "Present bounded royal commission",
+              "description": "Attend Corven's shared Covenant briefing (no human commission prerequisite)",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -5175,7 +5181,7 @@
               "type": "object_inspected",
               "target_editorial_alias": "jurisdiction_register",
               "target_stable_id": null,
-              "description": "Review port jurisdiction",
+              "description": "Review the limits of Covenant jurisdiction and member sovereignty",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -5195,7 +5201,7 @@
               "type": "npc_interacted",
               "target_editorial_alias": "corven_permit",
               "target_stable_id": null,
-              "description": "Receive limited alliance authorization",
+              "description": "Receive bounded Tidehold provision-depot inspection authorization",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -7693,7 +7699,7 @@
       "definition_status": "planning_not_importable",
       "narrative_source": "Human_1_80_Canonical_Campaign.md",
       "giver_npc": {
-        "editorial_contact": "High King",
+        "editorial_contact": "High Thane Bromund",
         "stable_id": null
       },
       "turn_in_npc": {
@@ -7719,7 +7725,7 @@
             {
               "objective_id": "q053.objective.01",
               "type": "npc_interacted",
-              "target_editorial_alias": "high_king",
+              "target_editorial_alias": "high_thane_bromund",
               "target_stable_id": null,
               "description": "Present authenticated engineering report and request introduction",
               "required_count": 1,
@@ -7741,7 +7747,7 @@
               "type": "object_inspected",
               "target_editorial_alias": "sealed_correspondence",
               "target_stable_id": null,
-              "description": "Receive High King's letter",
+              "description": "Receive High Thane's introduction letter",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -13905,7 +13911,7 @@
       "definition_status": "planning_not_importable",
       "narrative_source": "Human_1_80_Canonical_Campaign.md",
       "giver_npc": {
-        "editorial_contact": "Grey Surveyor (until identity reveal)",
+        "editorial_contact": "Father (before identity reveal)",
         "stable_id": null
       },
       "turn_in_npc": {
@@ -13951,9 +13957,9 @@
             {
               "objective_id": "q097.objective.02",
               "type": "npc_interacted",
-              "target_editorial_alias": "grey_surveyor",
+              "target_editorial_alias": "father_othvaren_masked",
               "target_stable_id": null,
-              "description": "Confront Surveyor respectfully",
+              "description": "Confront Father respectfully with independently verified evidence",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -25649,11 +25655,11 @@
       "definition_status": "planning_not_importable",
       "narrative_source": "Human_1_80_Canonical_Campaign.md",
       "giver_npc": {
-        "editorial_contact": "Elara",
+        "editorial_contact": "Race-specific familiar homeland contact (Elara for humans)",
         "stable_id": null
       },
       "turn_in_npc": {
-        "editorial_contact": "Elara",
+        "editorial_contact": "Race-specific familiar homeland contact (Elara for humans)",
         "stable_id": null,
         "requires_verification": true
       },
@@ -25675,9 +25681,9 @@
             {
               "objective_id": "q184.objective.01",
               "type": "region_reached",
-              "target_editorial_alias": "millhaven_return",
+              "target_editorial_alias": "racial_homeland_return",
               "target_stable_id": null,
-              "description": "Return by ordinary travel to Millhaven",
+              "description": "Return by ordinary travel to the character's own racial homeland",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -25695,9 +25701,9 @@
             {
               "objective_id": "q184.objective.02",
               "type": "npc_interacted",
-              "target_editorial_alias": "elara",
+              "target_editorial_alias": "homeland_contact",
               "target_stable_id": null,
-              "description": "Revisit Elara",
+              "description": "Revisit familiar homeland quest contact (Elara for humans)",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -25715,9 +25721,9 @@
             {
               "objective_id": "q184.objective.03",
               "type": "npc_interacted",
-              "target_editorial_alias": "anwen_brenna_darian",
+              "target_editorial_alias": "homeland_companions",
               "target_stable_id": null,
-              "description": "Revisit original companions",
+              "description": "Reconnect with established homeland companions",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -25737,7 +25743,7 @@
               "type": "object_interacted",
               "target_editorial_alias": "homecoming_record",
               "target_stable_id": null,
-              "description": "Close Human personal journey",
+              "description": "Close the character's personal homeland journey",
               "required_count": 1,
               "progress_semantics": "historical_event",
               "completion_evidence": "trusted_rust_server_fact_required",
@@ -25779,7 +25785,8 @@
         "rewards_unbalanced",
         "evidence_provenance_needs_engine_binding",
         "inventory_and_choice_semantics_require_quest_specific_review"
-      ]
+      ],
+      "race_variants": "One shared quest ID and completion structure. Human: Millhaven, Elara, Anwen/Brenna/Darian. Dwarf/Aelari/Korrath: respective homelands and established familiar NPCs, to be bound when racial campaigns approved."
     }
   ],
   "migration_provenance": "Consolidated from nine chapter draft JSON files, verified for 184 quest IDs, stage counts and target aliases; former files deleted from current tree, recoverable in Git history."
