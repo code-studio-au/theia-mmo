@@ -1,3 +1,14 @@
+P5-17 inline particle gradient qualification, 11 November 2026: native input
+opens the original gradient in the zone inspector, drags its first stop across
+the dock divider without resizing or opening a picker, adds and deletes a stop
+with its row, and edits a stop color while retaining the selected particle and
+Attributes tab. Zone and effect files remain unchanged until Save. On Linux
+RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan there were zero GPU diagnostics;
+one run observed gradient opening in 0.53 s and nested color opening in 0.47 s,
+including test input delays. This single observation is not a latency guarantee
+or proof that the user's original slow first-open case is resolved. Evidence:
+`build/particle-gradient-native-20261111-v2/qualification.json`.
+
 P5-17 particle deletion and Exit interaction, 11 November 2026: native input
 deletes an unassigned placement through Properties and Zone menus, undoes it,
 and verifies dirty Exit cancellation and keyboard-confirmed discard while the

@@ -9,6 +9,16 @@ dirty exit, preserving the zone file. Evidence:
 RADV NAVI31, Mesa 26.2.6, Vulkan; zero GPU diagnostics). The exact trigger of
 the reported deletion failure has not yet been reproduced.
 
+Native inline-gradient qualification covers a leftmost-stop drag across the dock
+divider without resizing or accidentally opening a color picker, adding and
+deleting a stop and its row, then editing color without losing particle selection
+or the Attributes tab. The source zone and effect remain unchanged until Save.
+`build/particle-gradient-native-20261111-v2/qualification.json` records zero
+GPU diagnostics on RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan. One run's
+gradient and nested color opening observations were 0.53 s and 0.47 s including
+test input delays; that does not establish a latency bound or reproduce the
+user's originally slow first-open case.
+
 The accepted editor styling migration is recorded in `ZONE_EDITOR.md`. This
 slice reuses the actual Sprinkles runtime and editor, pinned at
 `0e978f5a9afc6b456b3693c8761e73a6c7e155bd`, instead of recreating its particle

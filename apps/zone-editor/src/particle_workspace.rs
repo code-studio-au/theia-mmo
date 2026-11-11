@@ -188,6 +188,7 @@ pub(super) struct Report<'w, 's> {
         'w,
         's,
         (
+            Entity,
             &'static ComputedNode,
             &'static bevy::ui::UiGlobalTransform,
             Has<bevy_sprinkles_editor::hosting::ReturnToHostButton>,
@@ -196,6 +197,35 @@ pub(super) struct Report<'w, 's> {
         ),
         With<bevy_sprinkles_editor::ui::widgets::button::CompatButton>,
     >,
+    hierarchy: Query<'w, 's, &'static Children>,
+    texts: Query<'w, 's, &'static Text>,
+    widgets: Query<
+        'w,
+        's,
+        (
+            Has<bevy_sprinkles_editor::ui::widgets::gradient_edit::EditorGradientEdit>,
+            Has<bevy_sprinkles_editor::ui::widgets::color_picker::EditorColorPicker>,
+            Has<bevy_sprinkles_editor::ui::widgets::curve_edit::EditorCurveEdit>,
+            Has<EditorPopover>,
+        ),
+    >,
+    popovers: Query<
+        'w,
+        's,
+        (
+            &'static Node,
+            &'static ComputedNode,
+            &'static bevy::ui::UiGlobalTransform,
+        ),
+        With<EditorPopover>,
+    >,
+    gradient_contents: Query<
+        'w,
+        's,
+        Entity,
+        With<bevy_sprinkles_editor::ui::widgets::gradient_edit::GradientEditContent>,
+    >,
+    geometry: Query<'w, 's, (&'static ComputedNode, &'static bevy::ui::UiGlobalTransform)>,
     emitters: Query<
         'w,
         's,
@@ -230,11 +260,34 @@ impl Report<'_, '_> {
             });
             serde_json::json!({"field":field,"value":text.value().to_string(),"centre":(pose.translation*node.inverse_scale_factor()).to_array(),"size":(node.size()*node.inverse_scale_factor()).to_array()})
         }).collect();
-        let buttons: Vec<_> = self.buttons.iter().filter(|(node,..)|node.size().min_element()>0.).filter_map(|(node,pose,back,play,hovered)| {
+        let buttons: Vec<_> = self.buttons.iter().filter(|(_,node,..)|node.size().min_element()>0.).filter_map(|(_,node,pose,back,play,hovered)| {
             if !back && !play {return None;}
             Some(serde_json::json!({"kind":if back {"back"} else {"play"},"centre":(pose.translation*node.inverse_scale_factor()).to_array(),"hovered":hovered.is_some_and(|h|h.0)}))
         }).collect();
-        serde_json::json!({"active":self.host.active,"dirty":self.dirty.has_unsaved_changes,"project":project.and_then(|asset|serde_json::to_value(asset).ok()),"fields":fields,"buttons":buttons,
+        let widget_buttons: Vec<_> = self.buttons.iter().filter(|(_,node,..)|node.size().min_element()>0.).filter_map(|(entity,node,pose,_,_,_)| {
+            let ancestry = std::iter::once(entity).chain(self.parents.iter_ancestors(entity)).collect::<Vec<_>>();
+            let widget = ancestry.iter().find_map(|e|self.widgets.get(*e).ok().and_then(|(gradient,color,curve,_)|if gradient {Some("gradient")} else if color {Some("color")} else if curve {Some("curve")} else {None}));
+            let in_popover = ancestry.iter().any(|e|self.widgets.get(*e).is_ok_and(|(_,_,_,popover)|popover));
+            let field = ancestry.iter().find_map(|e|self.bindings.get(*e).ok()).map(|binding|match &binding.accessor { FieldAccessor::Direct(path)=>path.clone(), FieldAccessor::VariantField{path,field_name}=>format!("{path}.{field_name}") });
+            let text = self.hierarchy.iter_descendants(entity).filter_map(|e|self.texts.get(e).ok()).map(|text|text.0.as_str()).collect::<Vec<_>>().join(" ");
+            (widget.is_some() || in_popover).then(||serde_json::json!({"widget":widget,"field":field,"text":text,"centre":(pose.translation*node.inverse_scale_factor()).to_array(),"size":(node.size()*node.inverse_scale_factor()).to_array()}))
+        }).collect();
+        let popovers:Vec<_> = self.popovers.iter().filter(|(node,computed,_)|node.display!=Display::None && computed.size().min_element()>0.).map(|(_,node,pose)|serde_json::json!({"centre":(pose.translation*node.inverse_scale_factor()).to_array(),"size":(node.size()*node.inverse_scale_factor()).to_array()})).collect();
+        let gradient_bars:Vec<_> = self.gradient_contents.iter().filter_map(|content| {
+            let bar = self.hierarchy.get(content).ok()?.iter().next()?;
+            let (node,pose)=self.geometry.get(bar).ok()?;
+            (node.size().min_element()>0.).then(||serde_json::json!({"centre":(pose.translation*node.inverse_scale_factor()).to_array(),"size":(node.size()*node.inverse_scale_factor()).to_array()}))
+        }).collect();
+        let gradient_handles:Vec<_> = self.gradient_contents.iter().flat_map(|content| {
+            let handles = self.hierarchy.get(content).ok().and_then(|children|children.iter().next())
+                .and_then(|bar|self.hierarchy.get(bar).ok()).and_then(|children|children.iter().nth(1))
+                .and_then(|area|self.hierarchy.get(area).ok());
+            handles.into_iter().flat_map(|children|children.iter()).enumerate().filter_map(|(index,entity)| {
+                let (node,pose)=self.geometry.get(entity).ok()?;
+                (node.size().min_element()>0.).then(||serde_json::json!({"index":index,"centre":(pose.translation*node.inverse_scale_factor()).to_array(),"size":(node.size()*node.inverse_scale_factor()).to_array()}))
+            }).collect::<Vec<_>>()
+        }).collect();
+        serde_json::json!({"active":self.host.active,"inline":self.host.inline_ui,"dirty":self.dirty.has_unsaved_changes,"project":project.and_then(|asset|serde_json::to_value(asset).ok()),"fields":fields,"buttons":buttons,"widget_buttons":widget_buttons,"popovers":popovers,"gradient_bars":gradient_bars,"gradient_handles":gradient_handles,
             "runtime":self.runtime.iter().map(|r|serde_json::json!({"paused":r.paused,"loop":r.force_loop})).collect::<Vec<_>>(),
             "emitter_layers":self.emitters.iter().filter(|(emitter,_)|self.runtime.contains(emitter.parent_system)).map(|(_,layers)|layers.cloned().unwrap_or_default().iter().collect::<Vec<_>>()).collect::<Vec<_>>(),
             "cameras":self.cameras.iter().filter(|(_,source,zone)|*source||*zone).map(|(camera,source,_)|serde_json::json!({"kind":if source {"particle"} else {"zone"},"active":camera.is_active})).collect::<Vec<_>>()})
