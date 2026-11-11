@@ -94,6 +94,7 @@ def main():
     parser.add_argument('particle_package', type=Path)
     parser.add_argument('output', type=Path)
     parser.add_argument('--binaries', type=Path, default=Path('target/debug'))
+    parser.add_argument('--require-particle-rebase', action='store_true', help='Require the supplied effect to use world-space simulation')
     args = parser.parse_args()
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=False)
@@ -106,7 +107,7 @@ def main():
     common = dict(chunk_world=good, chunk_direction='x', chunk_stream=True,
                   render_span=2, replication_span=2, require_world_particles=True)
     run(output / 'retirement', args.binaries.resolve(), chunk_delay_ms=1000,
-        require_particle_retirement=True, **common)
+        require_particle_retirement=True, require_particle_rebase=args.require_particle_rebase, **common)
     arrival = output / 'arrival-fixture'
     shutil.copytree(good, arrival)
     for x in (-1, 0):

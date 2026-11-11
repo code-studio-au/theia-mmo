@@ -84,6 +84,10 @@ runtime particles plus only newly bound chunks; it still counts decoded images
 from both snapshots. Larger-world budgets and texture-heavy transitions remain
 unqualified. Retention and corruption were rerun against this accounting with
 two Vulkan clients (`build/chunk-particle-reuse-20261111/`).
+The upstream world-space Tube Trails effect also exercised floating-origin
+resets during a two-client chunk transition with Vulkan validation
+(`build/chunk-particle-rebase-suite-20261111/retirement/verification.json`).
+This checks the reset path, not frame-synchronized visual parity.
 
 P5-17 / P2-13 editor world export, 11 November 2026: **File → Export world…**
 opens a Sprinkles-styled dialog for a new output folder, content ID and revision.
