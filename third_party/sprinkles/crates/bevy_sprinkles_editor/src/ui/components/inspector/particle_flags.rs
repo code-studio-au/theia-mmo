@@ -105,7 +105,8 @@ fn handle_particle_flag_checkbox(
     editor_state: Res<EditorState>,
     mut assets: ResMut<Assets<ParticlesAsset>>,
     mut dirty_state: ResMut<DirtyState>,
-    mut emitter_runtimes: Query<&mut EmitterRuntime>,
+    systems: Query<(Option<&Particles3d>, Option<&Particles2d>)>,
+    mut emitter_runtimes: Query<(&EmitterEntity, &mut EmitterRuntime)>,
 ) {
     let Ok(flag_checkbox) = flag_checkboxes.get(trigger.entity) else {
         return;
@@ -120,7 +121,9 @@ fn handle_particle_flag_checkbox(
         .set(flag_checkbox.flag, trigger.checked);
     mark_dirty_and_restart(
         &mut dirty_state,
+        &editor_state,
+        &assets,
+        &systems,
         &mut emitter_runtimes,
-        emitter.time.fixed_seed,
     );
 }

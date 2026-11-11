@@ -18,7 +18,7 @@ use crate::viewport::{RespawnCollidersEvent, RespawnEmittersEvent};
 
 use super::{
     BindingTarget, BoundTo, FieldBinding, FieldValue, get_inspected_data_mut,
-    mark_dirty_and_restart, parse_field_value, read_fixed_seed, resolve_binding_data_mut,
+    mark_dirty_and_restart, parse_field_value, resolve_binding_data_mut,
 };
 
 #[derive(SystemParam)]
@@ -30,7 +30,8 @@ pub(super) struct CommitContext<'w, 's> {
     dirty_state: ResMut<'w, DirtyState>,
     bindings: Query<'w, 's, &'static FieldBinding>,
     bound_query: Query<'w, 's, &'static BoundTo>,
-    emitter_runtimes: Query<'w, 's, &'static mut EmitterRuntime>,
+    systems: Query<'w, 's, (Option<&'static Particles3d>, Option<&'static Particles2d>)>,
+    emitter_runtimes: Query<'w, 's, (&'static EmitterEntity, &'static mut EmitterRuntime)>,
 }
 
 impl CommitContext<'_, '_> {
@@ -42,25 +43,16 @@ impl CommitContext<'_, '_> {
         self.bindings.get(bound.binding).ok().cloned()
     }
 
-    fn resolve_data_mut(
-        &mut self,
-        binding: &FieldBinding,
-    ) -> Option<(&mut dyn Reflect, Option<u32>)> {
-        let data = resolve_binding_data_mut(
+    fn resolve_data_mut(&mut self, binding: &FieldBinding) -> Option<&mut dyn Reflect> {
+        resolve_binding_data_mut(
             binding,
             &self.editor_state,
             &mut self.assets,
             &mut self.editor_data,
-        )?;
-        let fixed_seed = if binding.target == BindingTarget::Inspected {
-            read_fixed_seed(&*data)
-        } else {
-            None
-        };
-        Some((data, fixed_seed))
+        )
     }
 
-    fn mark_change(&mut self, binding: &FieldBinding, fixed_seed: Option<u32>) {
+    fn mark_change(&mut self, binding: &FieldBinding) {
         match binding.target {
             BindingTarget::EditorSettings => {
                 save_editor_data(&self.editor_data);
@@ -69,8 +61,10 @@ impl CommitContext<'_, '_> {
             BindingTarget::Inspected => {
                 mark_dirty_and_restart(
                     &mut self.dirty_state,
+                    &self.editor_state,
+                    &self.assets,
+                    &self.systems,
                     &mut self.emitter_runtimes,
-                    fixed_seed,
                 );
             }
             BindingTarget::Asset => {
@@ -95,12 +89,12 @@ impl CommitContext<'_, '_> {
         let Some(binding) = self.resolve_binding(entity) else {
             return;
         };
-        let Some((data, fixed_seed)) = self.resolve_data_mut(&binding) else {
+        let Some(data) = self.resolve_data_mut(&binding) else {
             return;
         };
         let changed = binding.write_reflected(data, apply_fn);
         if changed {
-            self.mark_change(&binding, fixed_seed);
+            self.mark_change(&binding);
         }
     }
 
@@ -108,12 +102,12 @@ impl CommitContext<'_, '_> {
         let Some(binding) = self.resolve_binding(entity) else {
             return;
         };
-        let Some((data, fixed_seed)) = self.resolve_data_mut(&binding) else {
+        let Some(data) = self.resolve_data_mut(&binding) else {
             return;
         };
         let changed = binding.write_value(data, &value);
         if changed {
-            self.mark_change(&binding, fixed_seed);
+            self.mark_change(&binding);
         }
     }
 }
@@ -168,7 +162,7 @@ pub(super) fn handle_text_commit(trigger: On<TextEditCommitEvent>, mut ctx: Comm
             return;
         };
 
-        let Some((data, fixed_seed)) = ctx.resolve_data_mut(&binding) else {
+        let Some(data) = ctx.resolve_data_mut(&binding) else {
             return;
         };
 
@@ -176,7 +170,7 @@ pub(super) fn handle_text_commit(trigger: On<TextEditCommitEvent>, mut ctx: Comm
         let new_value = set_field_value_component(&current_value, idx, v);
         let changed = binding.write_value(data, &new_value);
         if changed {
-            ctx.mark_change(&binding, fixed_seed);
+            ctx.mark_change(&binding);
         }
         return;
     }
@@ -208,7 +202,7 @@ pub(super) fn handle_combobox_change(
 
     let is_optional = matches!(binding.kind, FieldKind::ComboBox { optional: true, .. });
 
-    let Some((data, fixed_seed)) = ctx.resolve_data_mut(&binding) else {
+    let Some(data) = ctx.resolve_data_mut(&binding) else {
         return;
     };
 
@@ -235,7 +229,7 @@ pub(super) fn handle_combobox_change(
     };
 
     if changed {
-        ctx.mark_change(&binding, fixed_seed);
+        ctx.mark_change(&binding);
     }
 }
 
@@ -302,11 +296,10 @@ pub(super) fn handle_variant_change(
         return;
     }
 
-    let fixed_seed = read_fixed_seed(&*data);
     if binding.write_reflected(data, |field| {
         field.apply(default_value.as_ref());
     }) {
-        ctx.mark_change(binding, fixed_seed);
+        ctx.mark_change(binding);
     }
 }
 

@@ -631,6 +631,8 @@ fn run() -> Result<(), String> {
     .add_observer(properties::slider_change)
     .add_observer(file_picker::activate)
     .add_observer(particle_preview::relay_toast)
+    .add_observer(particle_preview::respawn_emitters)
+    .add_observer(particle_preview::respawn_colliders)
     .add_systems(
         Startup,
         (

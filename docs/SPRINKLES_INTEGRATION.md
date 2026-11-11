@@ -659,3 +659,15 @@ inline particle inspector or a qualification of simultaneous keyboard, popup,
 scroll and focus ownership. Native interactive qualification was interrupted at
 the user's request to stop using the display and mouse; it has not passed for
 this change.
+
+## Scoped live edit preparation — P5-17
+
+Sprinkles inspector edits now restart only emitters belonging to the currently
+edited asset, using each emitter's own seed; unrelated particle systems are not
+reset. The zone preview listens for Sprinkles' structural emitter/collider
+respawn events and rebuilds only when its preview uses that edited asset. The
+existing shared-preview transform and explicit save behavior are retained. This
+prepares direct inspector embedding; the zone inspector is not yet wired to the
+original Sprinkles controls. Automated headless tests cover edit scoping, per-
+emitter seeds and zone-preview rebuild. No native display or mouse was used for
+this change, and its visual behavior remains unqualified.

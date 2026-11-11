@@ -257,6 +257,35 @@ pub(super) fn relay_toast(
     }
 }
 
+fn respawn_edited_preview(editor: &EditorState, state: &mut State, commands: &mut Commands) {
+    if state
+        .active
+        .as_ref()
+        .is_some_and(|preview| editor.current_project.as_ref() == Some(&preview.project))
+        && let Some(entity) = state.entity.take()
+    {
+        commands.entity(entity).despawn();
+    }
+}
+
+pub(super) fn respawn_emitters(
+    _: On<bevy_sprinkles_editor::viewport::RespawnEmittersEvent>,
+    editor: Res<EditorState>,
+    mut state: ResMut<State>,
+    mut commands: Commands,
+) {
+    respawn_edited_preview(&editor, &mut state, &mut commands);
+}
+
+pub(super) fn respawn_colliders(
+    _: On<bevy_sprinkles_editor::viewport::RespawnCollidersEvent>,
+    editor: Res<EditorState>,
+    mut state: ResMut<State>,
+    mut commands: Commands,
+) {
+    respawn_edited_preview(&editor, &mut state, &mut commands);
+}
+
 pub(super) fn playback(
     assets: Res<Assets<ParticlesAsset>>,
     mut systems: Query<
@@ -330,6 +359,8 @@ mod tests {
             .init_resource::<LibraryRoot>()
             .init_resource::<workspace::Requests>()
             .init_resource::<State>()
+            .add_observer(respawn_emitters)
+            .add_observer(respawn_colliders)
             .add_systems(Update, sync);
         (app, handle)
     }
@@ -345,6 +376,30 @@ mod tests {
             .resource_mut::<workspace::Requests>()
             .particle_preview = true;
         app.update();
+    }
+
+    #[test]
+    fn original_edit_respawn_events_rebuild_only_the_matching_zone_preview() {
+        let (mut app, effect) = fixture();
+        toggle(&mut app);
+        let old = preview(&mut app).unwrap().0;
+        app.world_mut()
+            .trigger(bevy_sprinkles_editor::viewport::RespawnEmittersEvent);
+        app.update();
+        let replaced = preview(&mut app).unwrap();
+        assert_ne!(old, replaced.0);
+        assert_eq!(replaced.2, effect);
+        app.world_mut()
+            .trigger(bevy_sprinkles_editor::viewport::RespawnCollidersEvent);
+        app.update();
+        let after = preview(&mut app).unwrap().0;
+        assert_ne!(replaced.0, after);
+        app.world_mut()
+            .resource_mut::<EditorState>()
+            .current_project = None;
+        app.world_mut()
+            .trigger(bevy_sprinkles_editor::viewport::RespawnEmittersEvent);
+        assert!(app.world().get_entity(after).is_ok());
     }
 
     #[test]

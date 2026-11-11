@@ -316,3 +316,7 @@ The original inspector, binding and widget systems use a separately gated
 keeping Sprinkles' full workspace, camera and project shortcuts inactive. Full
 workspace mode still runs both schedules. Inline mode is off by default; it is
 not yet connected to the zone inspector.
+
+Inspector edit restarts are scoped to runtime systems using the edited asset,
+with each emitter's own seed, instead of restarting every emitter in the host.
+This lets the embedded zone editor retain unrelated effects safely.

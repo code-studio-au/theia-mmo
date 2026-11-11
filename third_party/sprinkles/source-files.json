@@ -1286,14 +1286,14 @@
       "path": "crates/bevy_sprinkles_editor/src/ui/components/binding/commit.rs",
       "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/binding/commit.rs",
       "upstream_sha256": "24ab94b4affdb2fc4b16010168314c3546d18d9cfaec9a3913b37367beb6402f",
-      "imported_sha256": "6ad3e67d7f589be35cc6184aaa89656bc44ff6631e55365503983e99eb45dd51",
+      "imported_sha256": "cf928d1465bb746a8e154a3d9127953c34482b87713aaf966424fb8deabfc3a7",
       "changed": true
     },
     {
       "path": "crates/bevy_sprinkles_editor/src/ui/components/binding/mod.rs",
       "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/binding/mod.rs",
       "upstream_sha256": "4b95e26f5795227b689937cf08ade10d0d113b3dbf117b1b5ec8989bc64042b3",
-      "imported_sha256": "48d09ab6f69a09b4e128a9f12f83d99303d765ac38b1a3c0790d8922c46c4dd2",
+      "imported_sha256": "769face6dc2c704a1742b82f422eeab3ce9f2864d5d143e849768a00bd17f0a5",
       "changed": true
     },
     {
@@ -1391,7 +1391,7 @@
       "path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/particle_flags.rs",
       "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/inspector/particle_flags.rs",
       "upstream_sha256": "1ec234d669b22b1ce1a777e2858da2a92e648849ceff5db828332eda380fc77e",
-      "imported_sha256": "3ea220b43b18b0f46280e0aa0fc08966dfc69b44b18af5789aa1e7369938060f",
+      "imported_sha256": "600fd242e9df4bc9615de5761fccb06b7f808a6efac05dd908dff38c20b83fc9",
       "changed": true
     },
     {

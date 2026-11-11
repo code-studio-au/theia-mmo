@@ -770,22 +770,32 @@ pub(super) fn find_ancestor_entity(
     find_ancestor(entity, parents, MAX_ANCESTOR_DEPTH, |e| e == target).is_some()
 }
 
-pub(super) fn read_fixed_seed(data: &dyn Reflect) -> Option<u32> {
-    let path = ReflectPath::new("time.fixed_seed");
-    data.reflect_path(path.as_str())
-        .ok()
-        .and_then(|v| v.try_downcast_ref::<Option<u32>>().copied())
-        .flatten()
-}
-
 pub(super) fn mark_dirty_and_restart(
     dirty_state: &mut DirtyState,
-    emitter_runtimes: &mut Query<&mut EmitterRuntime>,
-    fixed_seed: Option<u32>,
+    editor_state: &EditorState,
+    assets: &Assets<ParticlesAsset>,
+    systems: &Query<(Option<&Particles3d>, Option<&Particles2d>)>,
+    emitter_runtimes: &mut Query<(&EmitterEntity, &mut EmitterRuntime)>,
 ) {
     dirty_state.has_unsaved_changes = true;
-    for mut runtime in emitter_runtimes.iter_mut() {
-        runtime.restart(fixed_seed);
+    let Some(handle) = editor_state.current_project.as_ref() else {
+        return;
+    };
+    let Some(asset) = assets.get(handle) else {
+        return;
+    };
+    for (emitter, mut runtime) in emitter_runtimes.iter_mut() {
+        let Ok((system_3d, system_2d)) = systems.get(emitter.parent_system) else {
+            continue;
+        };
+        if !system_3d.is_some_and(|system| system.0 == *handle)
+            && !system_2d.is_some_and(|system| system.0 == *handle)
+        {
+            continue;
+        }
+        if let Some(data) = asset.emitters.get(runtime.emitter_index) {
+            runtime.restart(data.time.fixed_seed);
+        }
     }
 }
 
@@ -794,7 +804,8 @@ pub(crate) struct EmitterWriter<'w, 's> {
     editor_state: Res<'w, EditorState>,
     assets: ResMut<'w, Assets<ParticlesAsset>>,
     dirty_state: ResMut<'w, DirtyState>,
-    emitter_runtimes: Query<'w, 's, &'static mut EmitterRuntime>,
+    systems: Query<'w, 's, (Option<&'static Particles3d>, Option<&'static Particles2d>)>,
+    emitter_runtimes: Query<'w, 's, (&'static EmitterEntity, &'static mut EmitterRuntime)>,
 }
 
 impl EmitterWriter<'_, '_> {
@@ -803,12 +814,13 @@ impl EmitterWriter<'_, '_> {
         else {
             return;
         };
-        let fixed_seed = emitter.time.fixed_seed;
         if f(emitter) {
             mark_dirty_and_restart(
                 &mut self.dirty_state,
+                &self.editor_state,
+                &self.assets,
+                &self.systems,
                 &mut self.emitter_runtimes,
-                fixed_seed,
             );
         }
     }
@@ -935,5 +947,74 @@ fn set_optional_enum_by_name(
             target.apply(&some);
             true
         }
+    }
+}
+
+#[cfg(test)]
+mod theia_scoped_restart_tests {
+    use super::*;
+
+    #[test]
+    fn original_emitter_edit_restarts_only_the_edited_asset_with_each_own_seed() {
+        let mut app = App::new();
+        let mut assets = Assets::<ParticlesAsset>::default();
+        let mut first = EmitterData::default();
+        first.time.fixed_seed = Some(11);
+        let mut second = EmitterData::default();
+        second.time.fixed_seed = Some(22);
+        let asset = ParticlesAsset::new(
+            "one".into(),
+            ParticlesDimension::D3,
+            default(),
+            vec![first, second],
+            vec![],
+            false,
+            default(),
+        );
+        let edited = assets.add(asset.clone());
+        let other = assets.add(asset);
+        let p1 = app.world_mut().spawn(Particles3d(edited.clone())).id();
+        let p2 = app.world_mut().spawn(Particles2d(edited.clone())).id();
+        let p3 = app.world_mut().spawn(Particles3d(other)).id();
+        let spawn_runtime = |world: &mut World, parent, index| {
+            let mut runtime = EmitterRuntime::new(index, Some(99));
+            runtime.system_time = 3.;
+            world
+                .spawn((
+                    EmitterEntity {
+                        parent_system: parent,
+                    },
+                    runtime,
+                ))
+                .id()
+        };
+        let e1 = spawn_runtime(app.world_mut(), p1, 0);
+        let e2 = spawn_runtime(app.world_mut(), p2, 1);
+        let e3 = spawn_runtime(app.world_mut(), p3, 0);
+        let editor = EditorState {
+            current_project: Some(edited),
+            inspecting: Some(crate::state::Inspecting {
+                kind: Inspectable::Emitter,
+                index: 0,
+            }),
+            ..default()
+        };
+        app.insert_resource(assets)
+            .insert_resource(editor)
+            .init_resource::<DirtyState>()
+            .add_systems(Update, |mut writer: EmitterWriter| {
+                writer.modify_emitter(|emitter| {
+                    emitter.time.lifetime = 2.;
+                    true
+                })
+            });
+        app.update();
+        let a = app.world().get::<EmitterRuntime>(e1).unwrap();
+        let b = app.world().get::<EmitterRuntime>(e2).unwrap();
+        let untouched = app.world().get::<EmitterRuntime>(e3).unwrap();
+        assert_eq!((a.system_time, a.random_seed), (0., 11));
+        assert_eq!((b.system_time, b.random_seed), (0., 22));
+        assert_eq!((untouched.system_time, untouched.random_seed), (3., 99));
+        assert!(app.world().resource::<DirtyState>().has_unsaved_changes);
     }
 }

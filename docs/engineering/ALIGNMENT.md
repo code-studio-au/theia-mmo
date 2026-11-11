@@ -1,3 +1,10 @@
+P5-17 scoped live particle editing, 11 November 2026: original Sprinkles
+inspector edits restart only systems using the edited asset, with per-emitter
+seeds; structural edit events rebuild matching zone previews. Forty-nine particle
+editor tests and six focused zone-preview tests, fmt and strict workspace/all-
+target Clippy pass. No native display or mouse was used; visual qualification and
+the actual inline inspector remain pending. See [integration](../SPRINKLES_INTEGRATION.md).
+
 P5-17 reusable Sprinkles inspector schedule, 11 November 2026: the original
 inspector and widgets can update independently of the full particle workspace;
 inline mode is not yet wired into the zone UI. Forty-seven particle-editor and
