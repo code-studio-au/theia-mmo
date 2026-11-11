@@ -24,6 +24,11 @@ was 0.021. Much of each crop is background, so these figures are not an
 effect-only accuracy score. Before fixing the loop seeds in the capture setup,
 late one-shot frames also differed substantially between two local runs.
 
+A follow-up disabled the selected-emitter bounds in both hosts and repeated
+Tube Trails and Magic Puff (`build/sprinkles-no-bounds-20261111/`). Their
+representative frames still look close. The current harness uses this cleaner
+setting; it does not change the earlier seven-example measurements above.
+
 Theia's captured runs reported zero Vulkan validation errors. The pinned
 upstream debug host produced repeated Vulkan validation diagnostics, so its
 captures are not a validation-clean reference. Both ran on Linux, AMD Radeon

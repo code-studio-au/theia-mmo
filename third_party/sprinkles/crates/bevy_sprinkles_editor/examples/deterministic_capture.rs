@@ -9,7 +9,7 @@ use bevy_sprinkles::{
     asset::ParticlesAsset,
     prelude::{EmitterRuntime, ParticleSystemRuntime},
 };
-use bevy_sprinkles_editor::state::EditorState;
+use bevy_sprinkles_editor::{io::EditorData, state::EditorState};
 use std::time::{Duration, Instant};
 
 fn main() {
@@ -24,6 +24,7 @@ fn main() {
 fn capture(
     mut commands: Commands,
     state: Res<EditorState>,
+    mut settings: ResMut<EditorData>,
     mut assets: ResMut<Assets<ParticlesAsset>>,
     mut emitters: Query<&mut EmitterRuntime>,
     mut systems: Query<&mut ParticleSystemRuntime>,
@@ -36,6 +37,7 @@ fn capture(
         return;
     }
     if !*seeded {
+        settings.settings.show_aabb_gizmos = false;
         let Some(mut asset) = state
             .current_project
             .as_ref()

@@ -11,10 +11,10 @@ index 75d9af3..9d906a0 100644
      let home = env::var_os("HOME").map(PathBuf::from).unwrap_or_default();
      #[cfg(not(unix))]
 diff --git a/crates/bevy_sprinkles_editor/src/main.rs b/crates/bevy_sprinkles_editor/src/main.rs
-index 0d1bdec..b784333 100644
+index 0d1bdec..3d9843c 100644
 --- a/crates/bevy_sprinkles_editor/src/main.rs
 +++ b/crates/bevy_sprinkles_editor/src/main.rs
-@@ -42,5 +42,65 @@ fn main() {
+@@ -42,5 +42,67 @@ fn main() {
          .add_plugins(bevy_easings::EasingsPlugin::default())
          .add_plugins(SprinklesEditorPlugin)
          .add_plugins(EditorUiPlugin)
@@ -26,6 +26,7 @@ index 0d1bdec..b784333 100644
 +fn deterministic_capture(
 +    mut commands: Commands,
 +    state: Res<state::EditorState>,
++    mut settings: ResMut<io::EditorData>,
 +    mut assets: ResMut<Assets<bevy_sprinkles::asset::ParticlesAsset>>,
 +    mut emitters: Query<&mut bevy_sprinkles::prelude::EmitterRuntime>,
 +    mut systems: Query<&mut bevy_sprinkles::prelude::ParticleSystemRuntime>,
@@ -38,6 +39,7 @@ index 0d1bdec..b784333 100644
 +        return;
 +    }
 +    if !*seeded {
++        settings.settings.show_aabb_gizmos = false;
 +        let Some(mut asset) = state
 +            .current_project
 +            .as_ref()

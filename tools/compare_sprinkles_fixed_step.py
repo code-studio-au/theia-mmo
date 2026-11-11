@@ -82,7 +82,7 @@ def main():
         results[name]={'effect_sha256':effect_before,'diagnostics':{'upstream':upstream_log,'local':local_log,'local_repeat':repeat_log},
             'upstream_vs_local':compare(dest/'upstream',dest/'local',dest),
             'local_repeat':compare(dest/'local',dest/'local-repeat',dest/'local-repeat',('Theia first run','Theia repeat'))}
-    report={'fixed_step_seconds':1/60,'seed_by_emitter':'1000 + emitter index, overridden in memory for looping','warmup_wall_seconds':4,
+    report={'fixed_step_seconds':1/60,'seed_by_emitter':'1000 + emitter index, overridden in memory for looping','warmup_wall_seconds':4,'aabb_gizmos':False,
             'viewport_crop':VIEWPORT,'original_binary_sha256':sha(original),'local_binary_sha256':sha(local),
             'scope':'Viewport image differences include engine/rendering, timing, overlays and nondeterminism; not a pixel-perfect parity verdict.',
             'effects':results}
