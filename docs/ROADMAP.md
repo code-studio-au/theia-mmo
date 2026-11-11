@@ -1,3 +1,8 @@
+P2-13 particle mesh preflight, 11 November 2026: reject non-finite mesh
+dimensions in local export preflight and preset snapshots. Six focused editor
+tests, fmt and strict workspace/all-target Clippy pass. This does not validate
+all effect parameters or establish an allocation budget. See [integration](SPRINKLES_INTEGRATION.md).
+
 P2-13 preset-only particle snapshots, 11 November 2026: draft catalogs now
 hash deterministic RON snapshots with editor asset-folder metadata removed.
 External textures and custom shaders cannot enter this snapshot; their package

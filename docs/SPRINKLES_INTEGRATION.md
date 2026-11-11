@@ -622,3 +622,8 @@ that identity without particle I/O; visual verification rejects schema 4 until
 the client implements particle admission and playback. No particle-bearing
 package is published by the zone exporter yet. The byte-level fingerprint
 contract is in [CONTENT_PACKAGES.md](CONTENT_PACKAGES.md).
+
+Particle export preflight and preset snapshots also reject non-finite mesh
+dimensions for each supported mesh shape. This narrow check does not validate
+all material, transform or simulation parameters, and it does not bound finite
+but excessively large dimensions or allocations.

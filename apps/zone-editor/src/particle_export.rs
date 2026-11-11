@@ -2,7 +2,7 @@
 //! This does not publish assets or establish that textures are portable.
 use bevy_sprinkles::{
     TextureRef,
-    asset::{DrawPassMaterial, ParticlesAsset, versions},
+    asset::{DrawPassMaterial, ParticleMesh, ParticlesAsset, versions},
     budget::emitter_counts,
 };
 use std::{
@@ -61,6 +61,11 @@ pub(super) fn preflight(zone: &Zone, root: &Path) -> Result<Preflight, String> {
         }
         let mut has_external = false;
         for (index, emitter) in asset.emitters.iter().enumerate() {
+            if !finite_mesh_dimensions(&emitter.draw_pass.mesh) {
+                return Err(format!(
+                    "{id}: emitter {index} has non-finite mesh dimensions"
+                ));
+            }
             let counts = emitter_counts(emitter).ok_or_else(|| {
                 format!("{id}: emitter {index} has invalid allocation arithmetic")
             })?;
@@ -127,10 +132,37 @@ pub(super) fn preflight(zone: &Zone, root: &Path) -> Result<Preflight, String> {
     Ok(result)
 }
 
+fn finite_mesh_dimensions(mesh: &ParticleMesh) -> bool {
+    match mesh {
+        ParticleMesh::Quad {
+            size, subdivide, ..
+        } => size.is_finite() && subdivide.is_finite(),
+        ParticleMesh::Sphere { radius, .. } | ParticleMesh::TubeTrail { radius, .. } => {
+            radius.is_finite()
+        }
+        ParticleMesh::Cuboid { half_size } => half_size.is_finite(),
+        ParticleMesh::Cylinder {
+            top_radius,
+            bottom_radius,
+            height,
+            ..
+        } => top_radius.is_finite() && bottom_radius.is_finite() && height.is_finite(),
+        ParticleMesh::Prism {
+            left_to_right,
+            size,
+            subdivide,
+        } => left_to_right.is_finite() && size.is_finite() && subdivide.is_finite(),
+        ParticleMesh::RibbonTrail { size, .. } => size.is_finite(),
+    }
+}
+
 /// Only the preset-only subset is suitable for this first snapshot. External
 /// texture paths require a separate dependency format and rewrite.
 fn preset_snapshot(asset: &ParticlesAsset) -> Result<Vec<u8>, String> {
     for emitter in &asset.emitters {
+        if !finite_mesh_dimensions(&emitter.draw_pass.mesh) {
+            return Err("Non-finite particle mesh dimensions cannot be snapshotted".into());
+        }
         let DrawPassMaterial::Standard(material) = &emitter.draw_pass.material else {
             return Err("Custom particle shaders cannot be snapshotted".into());
         };
@@ -231,6 +263,58 @@ mod tests {
     }
     fn asset() -> ParticlesAsset {
         versions::migrate(include_bytes!("../../../third_party/sprinkles/crates/bevy_sprinkles_editor/src/assets/examples/3d-explosion.ron")).unwrap().asset
+    }
+    #[test]
+    fn rejects_nonfinite_mesh_dimensions_for_each_shape() {
+        use bevy::prelude::{Vec2, Vec3};
+        use bevy_sprinkles::asset::{QuadOrientation, RibbonTrailShape};
+        let invalid = [
+            ParticleMesh::Quad {
+                orientation: QuadOrientation::FaceZ,
+                size: Vec2::new(f32::NAN, 1.),
+                subdivide: Vec2::ZERO,
+            },
+            ParticleMesh::Sphere {
+                radius: f32::INFINITY,
+                segments: 8,
+                rings: 4,
+            },
+            ParticleMesh::Cuboid {
+                half_size: Vec3::splat(f32::NAN),
+            },
+            ParticleMesh::Cylinder {
+                top_radius: 1.,
+                bottom_radius: f32::NAN,
+                height: 1.,
+                radial_segments: 8,
+                rings: 2,
+                cap_top: true,
+                cap_bottom: true,
+            },
+            ParticleMesh::Prism {
+                left_to_right: 0.5,
+                size: Vec3::ONE,
+                subdivide: Vec3::splat(f32::INFINITY),
+            },
+            ParticleMesh::TubeTrail {
+                radius: f32::NAN,
+                radial_steps: 8,
+                sections: 4,
+                section_rings: 1,
+            },
+            ParticleMesh::RibbonTrail {
+                size: f32::NAN,
+                sections: 4,
+                section_rings: 1,
+                shape: RibbonTrailShape::Flat,
+            },
+        ];
+        for mesh in invalid {
+            assert!(!finite_mesh_dimensions(&mesh), "{mesh:?}");
+            let mut asset = asset();
+            asset.emitters[0].draw_pass.mesh = mesh;
+            assert!(preset_snapshot(&asset).is_err());
+        }
     }
     #[test]
     fn preset_snapshot_omits_editor_paths_and_rejects_external_references() {
