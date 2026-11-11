@@ -26,3 +26,9 @@ Historical source: [Allied and Kel'vari cast](https://github.com/code-studio-au/
 Text references from this account; these links do not establish additional relationships.
 
 [Aelari](../../Lore/Peoples/Aelari.md)
+
+## Approved cross-race campaign boundaries — 12 November 2026
+
+**Creator-locked cross-race continuity:** Caelith's woodland stewardship and permission-based research remain intact in Q054–Q058 and Q168. Non-Aelari Covenant players require normal introductions and permission; do not assume they experienced the Aelari level 1–20 story. Exact Aelari starting-campaign appearances remain open.
+
+**Scope:** This is a continuity application of existing approved roles, not approval of new racial 1–20 quest plots or dialogue.
