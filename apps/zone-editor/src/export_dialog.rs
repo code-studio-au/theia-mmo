@@ -12,6 +12,7 @@ use bevy_sprinkles_editor::{
 };
 
 pub(super) struct Draft {
+    mode: Mode,
     revision: u64,
     task: Option<Task<Result<serde_json::Value, String>>>,
     finished: bool,
@@ -19,12 +20,39 @@ pub(super) struct Draft {
     message: String,
     action: Option<Control>,
 }
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Mode {
+    World,
+    ParticleChunks,
+}
 #[derive(Component)]
 pub(super) struct Root;
 #[derive(Component, Clone, Copy, PartialEq, Eq)]
 pub(super) struct Field(usize);
 #[derive(Component)]
 pub(super) struct Message;
+#[derive(Component)]
+pub(super) struct FieldRow(usize);
+#[derive(Component)]
+pub(super) struct FieldCaption(usize);
+#[derive(Component)]
+pub(super) struct DialogTitle;
+#[derive(Component)]
+pub(super) struct SubmitLabel;
+#[derive(Component)]
+pub(super) struct DialogDescription;
+type DialogTexts<'w, 's> = Query<
+    'w,
+    's,
+    (
+        &'static mut Text,
+        Option<&'static FieldCaption>,
+        Has<DialogTitle>,
+        Has<SubmitLabel>,
+        Has<DialogDescription>,
+        Has<Message>,
+    ),
+>;
 #[derive(Component, Clone, Copy, Debug)]
 pub(super) enum Control {
     Export,
@@ -51,41 +79,58 @@ pub(super) fn setup(mut commands: Commands) {
         .with_children(|root| {
             root.spawn(theme::dialog::panel(520.))
                 .with_children(|panel| {
-                    panel
-                        .spawn(theme::dialog::header())
-                        .with_child(theme::label("Export world", 18., theme::DISPLAY));
+                    panel.spawn(theme::dialog::header()).with_child((
+                        DialogTitle,
+                        theme::label("Export world", 18., theme::DISPLAY),
+                    ));
                     scrolling::pane(panel, 24., scrolling::Pane::Dialog, |body| {
-                        body.spawn(theme::label(
-                            "Exports the current zone snapshot. Save particle edits first.",
-                            12.,
-                            theme::MUTED,
+                        body.spawn((
+                            DialogDescription,
+                            theme::label(
+                                "Exports the current zone snapshot. Save particle edits first.",
+                                12.,
+                                theme::MUTED,
+                            ),
                         ));
                         for (index, caption) in ["New output folder", "Content ID", "Revision"]
                             .into_iter()
                             .enumerate()
                         {
-                            body.spawn(theme::label(caption, 12., theme::BODY));
                             body.spawn((
-                                Field(index),
-                                bevy::input_focus::tab_navigation::TabIndex(0),
-                                TextInput,
-                                SelectAllOnFocus,
-                                EditableText {
-                                    max_characters: Some(if index == 0 { 512 } else { 96 }),
-                                    allow_newlines: false,
-                                    ..default()
-                                },
+                                FieldRow(index),
                                 Node {
                                     width: percent(100),
-                                    ..theme::input_node()
+                                    flex_direction: FlexDirection::Column,
+                                    ..default()
                                 },
-                                BorderColor::all(theme::BORDER),
-                                BackgroundColor(Color::NONE),
-                                theme::input_font(),
-                                TextColor(theme::BODY),
-                                TextLayout::no_wrap(),
-                                theme::text_cursor(),
-                            ));
+                            ))
+                            .with_children(|row| {
+                                row.spawn((
+                                    FieldCaption(index),
+                                    theme::label(caption, 12., theme::BODY),
+                                ));
+                                row.spawn((
+                                    Field(index),
+                                    bevy::input_focus::tab_navigation::TabIndex(0),
+                                    TextInput,
+                                    SelectAllOnFocus,
+                                    EditableText {
+                                        max_characters: Some(if index <= 1 { 512 } else { 96 }),
+                                        allow_newlines: false,
+                                        ..default()
+                                    },
+                                    Node {
+                                        width: percent(100),
+                                        ..theme::input_node()
+                                    },
+                                    BorderColor::all(theme::BORDER),
+                                    BackgroundColor(Color::NONE),
+                                    theme::input_font(),
+                                    TextColor(theme::BODY),
+                                    TextLayout::no_wrap(),
+                                    theme::text_cursor(),
+                                ));
+                            });
                         }
                         body.spawn((Message, theme::label("", 12., theme::MUTED)));
                     });
@@ -93,18 +138,20 @@ pub(super) fn setup(mut commands: Commands) {
                         for (control, caption) in
                             [(Control::Close, "Close"), (Control::Export, "Export world")]
                         {
-                            row.spawn((
+                            let mut button = row.spawn((
                                 control,
                                 Button,
                                 Hovered::default(),
                                 theme::button_node(),
                                 BackgroundColor(theme::Variant::Default.background(false)),
-                            ))
-                            .with_child(theme::label(
-                                caption,
-                                12.,
-                                theme::BODY,
                             ));
+                            button.with_children(|button| {
+                                let mut label =
+                                    button.spawn(theme::label(caption, 12., theme::BODY));
+                                if matches!(control, Control::Export) {
+                                    label.insert(SubmitLabel);
+                                }
+                            });
                         }
                     });
                 });
@@ -131,7 +178,9 @@ pub(super) fn open(
     mut fields: Query<(Entity, &Field, &mut EditableText)>,
     mut focus: ResMut<InputFocus>,
 ) {
-    if !std::mem::take(&mut requests.export_world)
+    let world = std::mem::take(&mut requests.export_world);
+    let chunks = std::mem::take(&mut requests.export_particle_chunks);
+    if !(world || chunks)
         || session.has_modal()
         || !windows.single().is_ok_and(|window| window.focused)
     {
@@ -146,11 +195,24 @@ pub(super) fn open(
         return;
     }
     let slug = slug(&session.editor.zone().name);
-    let values = [
-        format!("build/{slug}-v1"),
-        format!("theia.zone.{slug}"),
-        "1".to_string(),
-    ];
+    let mode = if chunks {
+        Mode::ParticleChunks
+    } else {
+        Mode::World
+    };
+    let values = if mode == Mode::World {
+        [
+            format!("build/{slug}-v1"),
+            format!("theia.zone.{slug}"),
+            "1".to_string(),
+        ]
+    } else {
+        [
+            format!("build/{slug}-particles"),
+            String::new(),
+            String::new(),
+        ]
+    };
     for (entity, field, mut text) in &mut fields {
         text.clear();
         text.editor_mut().set_text(&values[field.0]);
@@ -160,6 +222,7 @@ pub(super) fn open(
         }
     }
     session.export_dialog = Some(Draft {
+        mode,
         revision: session.editor.revision(),
         task: None,
         finished: false,
@@ -215,7 +278,8 @@ pub(super) fn finish(
     mut session: ResMut<Session>,
     mut roots: Query<&mut Node, With<Root>>,
     fields: Query<(Entity, &Field, &mut EditableText)>,
-    mut messages: Query<&mut Text, With<Message>>,
+    mut texts: DialogTexts,
+    mut rows: Query<(&FieldRow, &mut Node), Without<Root>>,
     mut focus: ResMut<InputFocus>,
     dirty: Res<DirtyState>,
     editor: Res<EditorState>,
@@ -230,6 +294,13 @@ pub(super) fn finish(
     };
     for mut root in &mut roots {
         root.display = Display::Flex;
+    }
+    for (row, mut node) in &mut rows {
+        node.display = if draft.mode == Mode::ParticleChunks && row.0 == 2 {
+            Display::None
+        } else {
+            Display::Flex
+        };
     }
     if let Some(task) = &mut draft.task
         && let Some(result) = check_ready(task)
@@ -266,10 +337,11 @@ pub(super) fn finish(
             .iter()
             .find(|(entity, _, _)| Some(*entity) == current)
             .map_or(0, |(_, field, _)| {
+                let count = if draft.mode == Mode::World { 3 } else { 2 };
                 if keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight) {
-                    (field.0 + 2) % 3
+                    (field.0 + count - 1) % count
                 } else {
-                    (field.0 + 1) % 3
+                    (field.0 + 1) % count
                 }
             });
         if let Some((entity, _, _)) = fields.iter().find(|(_, field, _)| field.0 == index) {
@@ -291,22 +363,81 @@ pub(super) fn finish(
         {
             draft.message = "Save particle edits before exporting.".into();
         } else {
-            match values(&fields) {
-                Ok((path, id, revision)) => {
+            let input = if draft.mode == Mode::World {
+                values(&fields).map(|(path, id, revision)| (path, Some((id, revision)), None))
+            } else {
+                let mut input = [String::new(), String::new()];
+                for (_, field, text) in fields.iter() {
+                    if field.0 < 2 {
+                        input[field.0] = text.value().to_string().trim().to_owned();
+                    }
+                }
+                if input
+                    .iter()
+                    .any(|value| value.is_empty() || value.contains(['\0', '\n', '\r']))
+                {
+                    Err("Enter a new output folder and an existing chunk world folder".into())
+                } else {
+                    Ok((
+                        PathBuf::from(&input[0]),
+                        None,
+                        Some(PathBuf::from(&input[1])),
+                    ))
+                }
+            };
+            match input {
+                Ok((path, world, chunks)) => {
                     let zone = session.editor.zone().clone();
                     draft.message = format!("Exporting {}…", path.display());
                     draft.target = Some(path.clone());
-                    draft.task = Some(
-                        IoTaskPool::get()
-                            .spawn(async move { export::publish(&zone, &path, &id, revision) }),
-                    );
+                    draft.task = Some(IoTaskPool::get().spawn(async move {
+                        if let Some((id, revision)) = world {
+                            export::publish(&zone, &path, &id, revision)
+                        } else {
+                            export::publish_particles_to_chunks(
+                                &zone,
+                                &chunks.expect("chunk export folder"),
+                                &path,
+                            )
+                            .map(|()| serde_json::Value::Null)
+                        }
+                    }));
                 }
                 Err(error) => draft.message = error,
             }
         }
     }
-    for mut message in &mut messages {
-        **message = draft.message.clone();
+    for (mut text, caption, title, submit, description, message) in &mut texts {
+        if message {
+            **text = draft.message.clone();
+        } else if title {
+            **text = if draft.mode == Mode::World {
+                "Export world"
+            } else {
+                "Export particles to chunks"
+            }
+            .into();
+        } else if submit {
+            **text = if draft.mode == Mode::World {
+                "Export world"
+            } else {
+                "Export particles"
+            }
+            .into();
+        } else if description {
+            **text = if draft.mode == Mode::World {
+                "Exports the current zone snapshot. Save particle edits first."
+            } else {
+                "Copies an existing chunk world with these particle placements. Save particle edits first."
+            }.into();
+        } else if caption.is_some_and(|caption| caption.0 == 1) {
+            **text = if draft.mode == Mode::World {
+                "Content ID"
+            } else {
+                "Existing chunk world folder"
+            }
+            .into();
+        }
     }
     session.export_dialog = Some(draft);
 }
@@ -368,6 +499,66 @@ mod tests {
         assert_eq!(slug("My New Zone!"), "my-new-zone");
         assert_eq!(slug("?!"), "untitled");
         assert!(slug(&"a".repeat(100)).len() <= 48);
+    }
+    #[test]
+    fn chunk_export_dialog_uses_two_fields_and_requires_both_paths() {
+        let mut app = App::new();
+        app.add_plugins(bevy::app::TaskPoolPlugin::default())
+            .insert_resource(Session::new(
+                Editor::new(Zone::default()).unwrap(),
+                PathBuf::from("zone.json"),
+                None,
+            ))
+            .init_resource::<workspace::Requests>()
+            .init_resource::<DirtyState>()
+            .init_resource::<EditorState>()
+            .init_resource::<Assets<ParticlesAsset>>()
+            .init_resource::<ButtonInput<KeyCode>>()
+            .init_resource::<InputFocus>()
+            .add_systems(Startup, setup)
+            .add_systems(Update, open)
+            .add_systems(PostUpdate, finish);
+        app.world_mut().spawn(Window {
+            focused: true,
+            ..default()
+        });
+        app.update();
+        app.world_mut()
+            .resource_mut::<workspace::Requests>()
+            .export_particle_chunks = true;
+        app.update();
+        let draft = app
+            .world()
+            .resource::<Session>()
+            .export_dialog
+            .as_ref()
+            .unwrap();
+        assert!(draft.mode == Mode::ParticleChunks);
+        let mut rows = app.world_mut().query::<(&FieldRow, &Node)>();
+        assert_eq!(
+            rows.iter(app.world())
+                .find(|(row, _)| row.0 == 2)
+                .unwrap()
+                .1
+                .display,
+            Display::None
+        );
+        app.world_mut()
+            .resource_mut::<Session>()
+            .export_dialog
+            .as_mut()
+            .unwrap()
+            .action = Some(Control::Export);
+        app.update();
+        assert!(
+            app.world()
+                .resource::<Session>()
+                .export_dialog
+                .as_ref()
+                .unwrap()
+                .message
+                .contains("existing chunk world")
+        );
     }
     #[test]
     fn dialog_validates_and_exports_without_overwriting_or_saving_zone() {

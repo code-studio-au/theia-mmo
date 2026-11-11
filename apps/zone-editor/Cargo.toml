@@ -20,6 +20,7 @@ ron.workspace = true
 serde_json.workspace = true
 theia-core.workspace = true
 theia-network.workspace = true
+theia-vfx = { path = "../../crates/vfx" }
 theia-zone = { path = "../../crates/zone" }
 
 [dev-dependencies]

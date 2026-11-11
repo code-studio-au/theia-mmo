@@ -15,6 +15,72 @@ const MAX_VISUAL_TRIANGLES: usize = 262_144;
 const MAX_EXPORT_BYTES: usize = 64 * 1024 * 1024;
 const CYLINDER_ERROR_METRES: f64 = 0.001;
 
+/// Publish the zone's saved particle effects into a new copy of an existing
+/// chunk world. Temporary source and overlay directories are owned here and
+/// removed after success or failure; the zone and source chunks are untouched.
+pub(super) fn publish_particles_to_chunks(
+    zone: &Zone,
+    chunks: &Path,
+    output: &Path,
+) -> Result<(), String> {
+    publish_particles_to_chunks_in(zone, chunks, output, &bevy_sprinkles_editor::io::data_dir())
+}
+
+fn publish_particles_to_chunks_in(
+    zone: &Zone,
+    chunks: &Path,
+    output: &Path,
+    library: &Path,
+) -> Result<(), String> {
+    if zone.particles.is_empty() {
+        return Err("Add a particle placement before exporting".into());
+    }
+    if output.exists() {
+        return Err("Export requires a new output directory".into());
+    }
+    let parent = output
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or(Path::new("."));
+    let parent = fs::canonicalize(parent).map_err(|e| e.to_string())?;
+    let nonce = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|e| e.to_string())?
+        .as_nanos();
+    let root = parent.join(format!(
+        ".theia-particle-export-{}-{nonce}",
+        std::process::id()
+    ));
+    validate_chunk_export_paths(chunks, output, &root)?;
+    fs::create_dir(&root).map_err(|e| e.to_string())?;
+    let source = root.join("source");
+    let overlays = root.join("overlays");
+    let result = (|| {
+        publish_in(zone, &source, "theia.internal.particle-export", 1, library)?;
+        theia_vfx::chunk_overlay::draft::run(&source, chunks, &overlays, zone.origin)?;
+        theia_vfx::chunk_overlay::publish::run(chunks, &overlays, output)
+    })();
+    let _ = fs::remove_dir_all(&root);
+    result
+}
+
+fn validate_chunk_export_paths(
+    chunks: &Path,
+    output: &Path,
+    temporary: &Path,
+) -> Result<(), String> {
+    let chunks = fs::canonicalize(chunks).map_err(|e| e.to_string())?;
+    let parent = output
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or(Path::new("."));
+    let parent = fs::canonicalize(parent).map_err(|e| e.to_string())?;
+    if parent.starts_with(&chunks) || temporary.starts_with(&chunks) {
+        return Err("Output must be outside the source chunk world".into());
+    }
+    Ok(())
+}
+
 struct Glb {
     bytes: Vec<u8>,
     views: Vec<Value>,
@@ -555,6 +621,31 @@ mod tests {
             editor.execute(serde_json::from_str(line).unwrap()).unwrap();
         }
         editor.zone().clone()
+    }
+    #[test]
+    fn particle_chunk_export_refuses_empty_and_nested_output_without_touching_source() {
+        let folder = Folder::new();
+        let chunks = folder.0.join("chunks");
+        fs::create_dir(&chunks).unwrap();
+        let mut zone = fixture();
+        assert!(
+            publish_particles_to_chunks_in(&zone, &chunks, &folder.0.join("output"), &folder.0)
+                .is_err()
+        );
+        zone.particles
+            .push(theia_zone::particles::ParticlePlacement {
+                id: 10000,
+                name: "Fire".into(),
+                effect: "vfx.fire".into(),
+                position: zone.spawn,
+                yaw_degrees: 0.,
+                scale: 1.,
+            });
+        assert!(
+            publish_particles_to_chunks_in(&zone, &chunks, &chunks.join("nested"), &folder.0)
+                .is_err()
+        );
+        assert_eq!(fs::read_dir(&chunks).unwrap().count(), 0);
     }
     #[test]
     fn particle_export_publishes_manifest_bound_files_and_rejects_missing_effects() {

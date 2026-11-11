@@ -218,6 +218,11 @@ pub(super) fn spawn(parent: &mut ChildSpawnerCommands, kind: Kind) {
                         (workspace::Control::FileSaveAs, "Save as…", "Ctrl Shift S"),
                         (workspace::Control::ExportWorld, "Export world…", ""),
                         (
+                            workspace::Control::ExportParticleChunks,
+                            "Export particles to chunks…",
+                            "",
+                        ),
+                        (
                             workspace::Control::Command(Action::Load),
                             "Reload",
                             "Ctrl Shift O",

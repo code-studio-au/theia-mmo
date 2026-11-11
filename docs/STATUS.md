@@ -23,6 +23,19 @@ A textured particle overlay on a schema-2 shared-image chunk world also retained
 the actual terrain image bindings on two Vulkan clients
 (`build/shared-particle-world-native-20261111-v3/verification.json`).
 
+P5-17 / P2-13 integrated chunk export, 11 November 2026: **File → Export
+particles to chunks…** takes a new output folder and existing chunk world, uses
+the current zone origin and saved effects, and runs the verified draft/publication
+pipeline in the background. It preserves the source zone and chunk world; normal
+Save remains explicit. A native mouse/keyboard test covered the menu, text entry,
+Tab/Shift-Tab and export (`build/chunk-export-dialog-native-20261111/`); the
+resulting world rendered on two connected Vulkan clients
+(`build/chunk-export-dialog-world-native-20261111/`) on RX 7900 XTX / RADV NAVI31 /
+Mesa 26.2.6 with zero validation diagnostics. The original world-export dialog
+also passed its native regression (`build/world-export-dialog-regression-20261111/`).
+This requires an existing particle-free schema-1/2 chunk world; it does not
+partition the editor's terrain or update projected-material schema-3 packages.
+
 P2-13 particle image admission, 11 November 2026: monolithic and chunk clients
 now apply their decoded-image allowance to verified PNG headers before invoking
 the image decoder, and recheck actual decoded bytes afterwards. Chunk preparation
