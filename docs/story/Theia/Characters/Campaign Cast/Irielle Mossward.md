@@ -26,3 +26,9 @@ Historical source: [Allied and Kel'vari cast](https://github.com/code-studio-au/
 Text references from this account; these links do not establish additional relationships.
 
 [Aelari](../../Lore/Peoples/Aelari.md)
+
+## Approved cross-race campaign boundaries — 12 November 2026
+
+**Creator-locked cross-race continuity:** Irielle is an Aelari field guide, not secretly a Guardian or a default companion known personally to every Covenant player. Her regional cultural perspective may differ from that of non-Aelari visitors. Exact Aelari level 1–20 appearances and dialogue remain open until that racial campaign is developed.
+
+**Scope:** This is a continuity application of existing approved roles, not approval of new racial 1–20 quest plots or dialogue.
