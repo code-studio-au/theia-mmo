@@ -1,3 +1,11 @@
+P2-13 catalog texture decoding, 11 November 2026: read bounded catalog PNGs
+into owned buffers and verify their hashes, headers and aggregate decoded-size
+estimate before Bevy decodes those same bytes in the cataloged color space.
+Focused catalog/VFX tests cover tampering, malformed headers, bad image payloads
+and sRGB/linear variants. This is not yet connected to package-path asset
+registration, client rendering, resource budgets or playback. See
+[integration](SPRINKLES_INTEGRATION.md).
+
 P2-13 catalog effect loading, 11 November 2026: the network catalog can read
 bounded effect bytes and verify the exact returned buffers against their hashes.
 The VFX helper migrates those buffers, checks allocation arithmetic and

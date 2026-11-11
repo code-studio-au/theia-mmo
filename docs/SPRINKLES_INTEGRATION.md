@@ -37,11 +37,15 @@ P2-13 preparation: `Catalog::read_effects` returns bounded effect bytes only
 after checking each returned buffer's catalog length and hash. The VFX helper
 `load_catalog_effects` migrates those buffers, checks allocation arithmetic,
 rejects unsupported material and texture references, and rebases package paths.
-These helpers do not verify or decode texture files, validate all effect
-parameters, impose resource budgets, publish packages or play effects. File I/O
-is blocking and must stay off simulation and render update paths. Catalog and
-VFX tests cover changed/malformed files, unsupported materials, arithmetic
-overflow and role-aware rebasing; no client integration is claimed.
+`Catalog::read_textures` and `decode_catalog_textures` also check bounded PNG
+bytes, hashes, headers and aggregate decoded-size estimates before decoding
+those exact bytes with Bevy in the descriptor's color space. The decoded images
+are not yet registered at package paths or used by client rendering. These
+helpers do not validate all effect parameters, impose complete resource budgets,
+publish packages or play effects. File I/O and decoding are blocking and must
+stay off simulation and render update paths. Catalog and VFX tests cover changed
+or malformed files, unsupported materials, arithmetic overflow and role-aware
+rebasing; no client integration is claimed.
 
 The prerequisites are the accepted Linux authoring shell and the adopted exact
 Bevy 0.20.0 engine. Upstream targets Bevy 0.19.0. Both imported crates use our

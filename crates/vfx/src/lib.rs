@@ -1,7 +1,7 @@
 //! Helpers for future verified particle packages. This crate does not spawn effects.
 use bevy::{
-    asset::AssetServer,
-    image::{Image, ImageLoaderSettings},
+    asset::{AssetServer, RenderAssetUsages},
+    image::{CompressedImageFormats, Image, ImageLoaderSettings, ImageSampler, ImageType},
     prelude::Handle,
 };
 use bevy_sprinkles::{
@@ -19,6 +19,46 @@ use theia_network::{particle_content::Catalog, shared_images::ColorSpace};
 pub struct CatalogEffect {
     pub id: String,
     pub asset: ParticlesAsset,
+}
+
+/// A cataloged PNG decoded from the verified bytes with its authored color role.
+pub struct CatalogTexture {
+    pub filename: String,
+    pub color_space: ColorSpace,
+    pub image: Image,
+}
+
+/// Read and decode cataloged PNGs using Bevy's standard image decoder. This
+/// performs blocking file I/O and CPU decoding. It does not register assets at
+/// package paths, upload textures, enforce a GPU budget or start playback.
+pub fn decode_catalog_textures(
+    catalog: &Catalog,
+    directory: &Path,
+) -> Result<Vec<CatalogTexture>, String> {
+    let buffers = catalog
+        .read_textures(directory)
+        .map_err(|e| e.to_string())?;
+    catalog
+        .textures()
+        .iter()
+        .zip(buffers)
+        .map(|(texture, bytes)| {
+            let image = Image::from_buffer(
+                &bytes,
+                ImageType::Extension("png"),
+                CompressedImageFormats::NONE,
+                texture.color_space == ColorSpace::Srgb,
+                ImageSampler::default(),
+                RenderAssetUsages::default(),
+            )
+            .map_err(|error| format!("Invalid particle texture {}: {error}", texture.filename()))?;
+            Ok(CatalogTexture {
+                filename: texture.filename(),
+                color_space: texture.color_space,
+                image,
+            })
+        })
+        .collect()
 }
 
 /// Read catalog effects, verify their exact bytes, migrate their original RON
@@ -384,6 +424,49 @@ mod tests {
         catalog
             .verify_textures(&root.join("chunk_0_0/textures"))
             .unwrap();
+        let decoded = decode_catalog_textures(&catalog, &root.join("chunk_0_0/textures")).unwrap();
+        assert_eq!(decoded.len(), 2);
+        assert_eq!(decoded[0].filename, catalog.textures()[0].filename());
+        assert!(decoded[0].image.texture_descriptor.format.is_srgb());
+        assert!(!decoded[1].image.texture_descriptor.format.is_srgb());
+        assert_eq!(decoded[0].color_space, ColorSpace::Srgb);
+        let first_path = root
+            .join("chunk_0_0/textures")
+            .join(catalog.textures()[0].filename());
+        fs::write(&first_path, b"changed").unwrap();
+        assert!(decode_catalog_textures(&catalog, &root.join("chunk_0_0/textures")).is_err());
+        assert!(
+            decoded[0]
+                .image
+                .data
+                .as_ref()
+                .is_some_and(|data| !data.is_empty())
+        );
+        fs::write(&first_path, PNG).unwrap();
+
+        let mut corrupt = PNG.to_vec();
+        let idat = corrupt
+            .windows(4)
+            .position(|bytes| bytes == b"IDAT")
+            .unwrap();
+        corrupt[idat + 5] ^= 0xff;
+        let invalid = json!({"schema":1,
+            "effects":[{"id":"vfx.fire","bytes":4,"sha256":sha256(b"fire")}],
+            "placements":[{"id":1,"effect":"vfx.fire","position":[0.,0.,0.],"yaw_degrees":0.,"scale":1.}],
+            "textures":[{"sha256":sha256(&corrupt),"bytes":corrupt.len(),"color_space":"srgb"}]
+        });
+        let invalid = Catalog::decode(&serde_json::to_vec(&invalid).unwrap()).unwrap();
+        fs::write(
+            root.join("chunk_0_0/textures")
+                .join(invalid.textures()[0].filename()),
+            &corrupt,
+        )
+        .unwrap();
+        // The hash and bounded header match; actual image decoding still fails.
+        invalid
+            .read_textures(&root.join("chunk_0_0/textures"))
+            .unwrap();
+        assert!(decode_catalog_textures(&invalid, &root.join("chunk_0_0/textures")).is_err());
         let mut app = App::new();
         app.add_plugins((
             MinimalPlugins,

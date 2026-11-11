@@ -216,6 +216,44 @@ impl Catalog {
         }
         Ok(())
     }
+
+    /// Read and validate each cataloged PNG into an owned buffer, in catalog
+    /// order. Header and hash checks apply to those exact buffers; PNG decoding
+    /// and renderer admission remain separate responsibilities.
+    pub fn read_textures(&self, directory: &Path) -> Result<Vec<Vec<u8>>> {
+        let mut textures = Vec::with_capacity(self.0.textures.len());
+        let mut rgba_bytes = 0u64;
+        for texture in &self.0.textures {
+            let path = directory.join(texture.filename());
+            if !std::fs::symlink_metadata(&path)?.file_type().is_file() {
+                return Err("Particle texture must be a regular file".into());
+            }
+            let file = File::open(path)?;
+            if !file.metadata()?.is_file() {
+                return Err("Particle texture must be a regular file".into());
+            }
+            let mut bytes = Vec::new();
+            file.take(shared_images::MAX_IMAGE_BYTES + 1)
+                .read_to_end(&mut bytes)?;
+            if bytes.len() as u64 != texture.bytes
+                || crate::terrain::sha256(&bytes) != texture.sha256
+            {
+                return Err("Particle texture does not match its descriptor".into());
+            }
+            let header: &[u8; 33] = bytes
+                .get(..33)
+                .ok_or("Particle texture header is truncated")?
+                .try_into()?;
+            rgba_bytes = rgba_bytes
+                .checked_add(shared_images::png_rgba_bytes(header)?)
+                .ok_or("Particle texture RGBA size overflow")?;
+            if rgba_bytes > MAX_TEXTURE_RGBA_BYTES {
+                return Err("Particle texture RGBA budget exceeded".into());
+            }
+            textures.push(bytes);
+        }
+        Ok(textures)
+    }
 }
 
 #[cfg(test)]
@@ -343,8 +381,12 @@ mod tests {
             fs::write(path.join(texture.filename()), png).unwrap();
         }
         catalog.verify_textures(&path).unwrap();
+        let retained = catalog.read_textures(&path).unwrap();
+        assert_eq!(retained, vec![png.to_vec(), png.to_vec()]);
         fs::write(path.join(catalog.textures()[0].filename()), b"corrupt").unwrap();
         assert!(catalog.verify_textures(&path).is_err());
+        assert!(catalog.read_textures(&path).is_err());
+        assert_eq!(retained, vec![png.to_vec(), png.to_vec()]);
         let mut bad = document.clone();
         bad["textures"][1] = bad["textures"][0].clone();
         assert!(decode(&bad).is_err());
@@ -365,6 +407,17 @@ mod tests {
         let catalog = decode(&bad).unwrap();
         fs::write(path.join(catalog.textures()[0].filename()), malformed).unwrap();
         assert!(catalog.verify_textures(&path).is_err());
+        assert!(catalog.read_textures(&path).is_err());
+        #[cfg(unix)]
+        {
+            let catalog = decode(&document).unwrap();
+            let first = path.join(catalog.textures()[0].filename());
+            fs::remove_file(&first).unwrap();
+            let target = path.join("target.png");
+            fs::write(&target, png).unwrap();
+            std::os::unix::fs::symlink(target, first).unwrap();
+            assert!(catalog.read_textures(&path).is_err());
+        }
         fs::remove_dir_all(path).unwrap();
     }
 }
