@@ -8,6 +8,10 @@ transition with Vulkan validation cover retention and retirement on RX 7900 XTX
 a small local fixture, not an MMO-scale or performance qualification. A second
 two-client run corrupts the incoming effect and confirms both clients retain the
 old roots (`build/chunk-particle-native-20261111/tampered-verified/verification.json`).
+The same two-client transition now also passes with one cataloged sRGB texture;
+corrupting either the effect or its texture rejects the candidate while retaining
+the existing roots (`build/chunk-particle-textured-20261111/`). This does not
+establish texture fidelity or texture-heavy performance.
 
 P2-13 chunk particle preparation, 11 November 2026: a worker-suitable helper
 verifies each already-admitted chunk manifest, visual and particle catalog,

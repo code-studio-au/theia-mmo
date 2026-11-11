@@ -100,8 +100,8 @@ The zone exporter now writes staged `particles/catalog.json`, `effects/` and
 verifies staged effect and texture bytes and publishes the manifest last; a
 missing dependency leaves no destination. A focused export test covers external
 texture variants and tampering. Monolithic terrain-world clients now admit a
-bounded subset as described below; legacy and chunk paths still reject these
-packages.
+bounded subset as described below; chunk-world support was added later in the
+same integration.
 
 Package preparation now also checks 3D dimension, bounded emitter/collider
 counts, emitter timing, reflected finite numeric values and bounded ordered
@@ -202,7 +202,10 @@ texture-heavy and large-scale behavior remain unqualified.
 The qualification also corrupts an incoming effect and requires both clients to
 reject its descriptor mismatch while keeping their active particle roots. The
 reusable runner is `tools/qualify_chunk_particles.py`; it takes an existing
-green-floor chunk fixture and a one-effect looping particle package.
+green-floor chunk fixture and a one-effect looping particle package. A basic
+textured package also passes the transition and rejects corrupted effect and
+texture files on both Vulkan clients (`build/chunk-particle-textured-20261111/`);
+this does not assess texture fidelity.
 
 The prerequisites are the accepted Linux authoring shell and the adopted exact
 Bevy 0.20.0 engine. Upstream targets Bevy 0.19.0. Both imported crates use our

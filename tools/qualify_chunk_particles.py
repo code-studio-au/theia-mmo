@@ -3,7 +3,7 @@
 
 The source fixture must use initial chunks [-1, 0] and [0, 0], and offer
 [1, 0] during the standard green-floor transition. The particle package must
-contain one untextured looping effect and its catalog, as produced by the editor.
+contain one looping effect and its catalog, as produced by the editor.
 Runs against the caller's display and Vulkan validation environment.
 """
 import argparse
@@ -25,8 +25,8 @@ def fixture(source, particle_package, destination):
         shutil.copytree(particle_package / 'particles', chunk / 'particles')
         catalog_path = chunk / 'particles/catalog.json'
         catalog = json.loads(catalog_path.read_text())
-        if len(catalog['placements']) != 1 or len(catalog['effects']) != 1 or catalog['textures']:
-            raise ValueError('Expected one untextured effect and placement')
+        if len(catalog['placements']) != 1 or len(catalog['effects']) != 1:
+            raise ValueError('Expected one effect and placement')
         catalog['placements'][0]['position'] = position
         payload = json.dumps(catalog, separators=(',', ':')).encode()
         catalog_path.write_bytes(payload)
@@ -61,6 +61,15 @@ def main():
         require_particle_retirement=True, **common)
     run(output / 'tampered', args.binaries.resolve(), client_chunk_world=bad,
         chunk_particle_failure=True, **common)
+    if catalog['textures']:
+        bad_texture = output / 'tampered-texture-fixture'
+        shutil.copytree(good, bad_texture)
+        textures = list((bad_texture / 'chunk_1_0/particles/textures').iterdir())
+        if not textures:
+            raise ValueError('Particle catalog has no texture file')
+        textures[0].write_bytes(b'tampered\n')
+        run(output / 'tampered-texture', args.binaries.resolve(), client_chunk_world=bad_texture,
+            chunk_particle_texture_failure=True, **common)
 
 
 if __name__ == '__main__':
