@@ -8,13 +8,13 @@
 
 No quest is deleted, renumbered or assigned a runtime ID in this review. Level bands remain editorial pacing notes, not hard eligibility gates.
 
-## Q035–Q037 — Tidehold jurisdiction
+## Q035–Q037 — Universal Covenant summons and Tidehold jurisdiction (creator-locked revision)
 
-**Narrative purpose:** Q035 requires the sealed Cassian shipping reference, conventional travel and an authorized customs inquiry. Q036 obtains independent Tidehold/Covenant port authorization; the Human royal commission alone cannot grant allied inspection powers. Q037 compares damaged cargo, the original manifest and false requisition as distinct evidence sources.
+**Narrative purpose:** Q035 `The Covenant Calls` is the same summons from High Ruler Corven's office after the player's own race-specific level 1–20 story is complete. It does **not** require Cassian's shipping ledger, Q031, the human king's warrant, or a human-only NPC. Local delivery and acknowledgement may vary; the issuing authority and destination do not. Q036 `Four Peoples, One Harbour` is Corven's first shared briefing, establishing the sovereignty of four Covenant peoples and issuing a narrowly scoped provision-depot inspection permit. Q037 compares damaged cargo, the original manifest and a false requisition as distinct evidence sources without assuming an Unmade conspiracy is already known.
 
-**Proposed objective/stage treatment:** Group the Q037 documentary inspections into one unordered `all` stage, followed by Ysra's authenticated conclusion. Q035/Q036 require distinct semantic actions for inquiry registration, permit application and permit receipt. Region travel and document inspection remain planned capabilities.
+**Proposed objective/stage treatment:** Q035 requires race-specific story-completion evidence (stable runtime flags remain unassigned), local summons receipt, established travel to Tidehold and registration at Corven's office. Q036 requires attending the briefing and receiving limited inspection authorization. Q037 documentary inspections may form an unordered `all` stage, followed by Ysra's authenticated conclusion. Region travel, NPC interaction and documentary inspection remain planned capabilities; do not import unreviewed editorial identifiers as runtime IDs.
 
-**Continuity and availability:** Q037's legacy HS-16 candidate is thematic only; a mundane missing berth must not be conflated with a falsified requisition.
+**Continuity and availability:** Q032–Q034 are optional human aftermath after Q031 and do not gate Q035. The historical H2-01 ledger story is archival provenance, not the new shared opening. Q037's legacy HS-16 candidate is thematic only; a mundane missing berth must not be conflated with a falsified requisition.
 
 ## Q038–Q041 — Northwatch and hostile Dominion coast
 
@@ -40,11 +40,11 @@ No quest is deleted, renumbered or assigned a runtime ID in this review. Level b
 
 **Continuity and availability:** Q046's availability requires Northwatch access, not simply an empty prerequisite list if its giver is physically there. Q048 needs an accessible healer/ward location, not a hard story gate.
 
-## Q049–Q053 — Kar Durn and the High King's letter
+## Q049–Q053 — Kar Durn and the High Thane's letter
 
 **Narrative purpose:** Q049 establishes legitimate engineering contract and first personal meeting with Brynja. Q050 authenticates original and substituted drawings. Q051 is optional rescue. Q052 resolves trade issues and engineering cooperation. Q053 obtains a letter and travels to Sylvaren.
 
-**Proposed objective/stage treatment:** Q050's two drawings can be inspected in any order; Brynja's authentication is a later stage. Q052 must distinguish a valid trade settlement from the mandatory engineering evidence: review whether this trade quest needs to be on the critical path. Q053 needs High King giver and Caelith final contact separately.
+**Proposed objective/stage treatment:** Q050's two drawings can be inspected in any order; Brynja's authentication is a later stage. Q052 must distinguish a valid trade settlement from the mandatory engineering evidence: review whether this trade quest needs to be on the critical path. Q053 needs High Thane Bromund giver and Caelith final contact separately.
 
 **Continuity and availability:** Q051 must not gate Q052. Q053's letter is an introduction only, not transferable Aelari authority. The optional H/HS provenance overlap is unapproved.
 
@@ -54,7 +54,7 @@ No quest is deleted, renumbered or assigned a runtime ID in this review. Level b
 
 **Proposed objective/stage treatment:** Q056 should permit record inspection in any order before authentication. Q057 testimony and correspondence must be separate facts. Q058 requires queen's authorization and explicit permitted disclosure; final return travel may be an independent stage.
 
-**Continuity and availability:** Q055 must not gate Q056; preserve a local ordinary hazard unrelated to the Conclave. Do not make the High King's letter automatically grant archive access.
+**Continuity and availability:** Q055 must not gate Q056; preserve a local ordinary hazard unrelated to the Conclave. Do not make the High Thane's letter automatically grant archive access.
 
 ## Q059–Q062 — second Dominion investigation and Korrath lead
 
@@ -86,7 +86,7 @@ No quest is deleted, renumbered or assigned a runtime ID in this review. Level b
 | Q050 | Signed original versus substituted drawing | NPC interaction / inspection planned | Two independent documents |
 | Q051 | Maintenance crew rescue and recovered tools | NPC interaction / rescue and items planned | Optional; no main-story dependency |
 | Q052 | Trade docket and authorized cooperation | NPC interaction / inspection planned | Assess critical-path necessity |
-| Q053 | High King's introduction and Caelith receipt | NPC interaction / travel and document planned | Separate giver and turn-in NPCs |
+| Q053 | High Thane's introduction and Caelith receipt | NPC interaction / travel and document planned | Separate giver and turn-in NPCs |
 | Q054 | Explicit Aelari research permission | NPC interaction / inspection planned | Sovereign permission not inherited |
 | Q055 | Nursery workers safe and ward repaired | NPC interaction / defense/object planned | Optional access to Sylvaren |
 | Q056 | Original, altered and maintenance ward records | NPC interaction / inspection planned | Three-source evidence |
@@ -99,11 +99,11 @@ No quest is deleted, renumbered or assigned a runtime ID in this review. Level b
 
 ## High-priority proposed changes
 
-1. **Q052 critical path:** Review whether an ordinary grain/iron trade settlement is necessary to unlock Q053, or whether its engineering cooperation should be granted through Q050 with Q052 moved to optional regional content. Preserve the sovereign High King introduction.
+1. **Q052 critical path:** Review whether an ordinary grain/iron trade settlement is necessary to unlock Q053, or whether its engineering cooperation should be granted through Q050 with Q052 moved to optional regional content. Preserve the sovereign High Thane Bromund introduction.
 2. **Q046, Q048, Q051 and Q055 access:** They currently have empty quest prerequisites. That can be correct for regional side quests, but availability must respect region access, not invent mandatory storyline dependencies.
 3. **Q043 choice:** Persist preserve/destroy decision; later evidence and Q047 must remain valid in either case. Item possession and consumption must be separately specified if a sample object is issued.
 4. **Q045:** Treat Halvek's defeat, Resonator cutoff and evidence preservation as separate authoritative outcomes; do not collapse them into one generic kill objective.
-5. **Q053:** Confirm distinct giver (High King) and turn-in (Caelith) contacts and the letter's evidence/possession policy.
+5. **Q053:** Confirm distinct giver (High Thane Bromund) and turn-in (Caelith) contacts and the letter's evidence/possession policy.
 6. **Q061:** Decide whether stopping the courier is an encounter-success fact rather than a mandatory kill, preserving the intended alternative.
 
 ## Cross-cutting authoring rules
