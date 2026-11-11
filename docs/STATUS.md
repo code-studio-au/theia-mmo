@@ -1,3 +1,11 @@
+P5-17 top-menu/divider qualification, 11 November 2026: resized the dock so
+the divider crossed each View and Zone popup, then pressed menu commands
+directly over it. Top view and particle deletion dispatched without panel
+resizing; the saved source remained unchanged. Screenshot confirms the View
+menu draws over the divider. Linux RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6
+Vulkan reported zero GPU diagnostics. Evidence:
+`build/menu-divider-native-20261111-v1/qualification.json`.
+
 P5-17 inline particle gradient qualification, 11 November 2026: native input
 opens the original gradient in the zone inspector, drags its first stop across
 the dock divider without resizing or opening a picker, adds and deletes a stop
