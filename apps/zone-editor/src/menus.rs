@@ -233,6 +233,39 @@ mod tests {
         });
     }
     #[test]
+    fn file_menu_dispatches_exit_request() {
+        use bevy::ecs::system::RunSystemOnce;
+        fn setup_file(mut commands: Commands) {
+            commands.spawn(Node::default()).with_children(|root| {
+                spawn(root, "File", &[(Control::Exit, "Exit", "")]);
+            });
+        }
+        let (mut app, _) = super::context::tests::fixture([0.; 3]);
+        app.world_mut().run_system_once(setup_file).unwrap();
+        app.update();
+        let trigger = app
+            .world_mut()
+            .query::<(Entity, &Trigger)>()
+            .iter(app.world())
+            .find_map(|(entity, trigger)| (trigger.0 == "File").then_some(entity))
+            .unwrap();
+        app.world_mut().trigger(MenuEvent {
+            source: trigger,
+            action: MenuAction::Open(NavAction::First),
+        });
+        app.update();
+        let item = app
+            .world_mut()
+            .query::<(Entity, &Control)>()
+            .iter(app.world())
+            .find_map(|(entity, control)| matches!(control, Control::Exit).then_some(entity))
+            .unwrap();
+        app.world_mut().trigger(Activate { entity: item });
+        app.update();
+        assert!(app.world().resource::<workspace::Requests>().exit);
+    }
+
+    #[test]
     fn zone_menu_deletes_selected_particle() {
         use bevy::ecs::system::RunSystemOnce;
         fn setup_zone(mut commands: Commands) {

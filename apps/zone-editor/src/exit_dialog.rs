@@ -189,9 +189,11 @@ mod tests {
             .iter(dirty.world())
             .find_map(|(entity, choice)| matches!(choice, Choice::Cancel).then_some(entity))
             .unwrap();
+        assert_eq!(dirty.world().resource::<InputFocus>().get(), Some(cancel));
         dirty.world_mut().trigger(Activate { entity: cancel });
         dirty.update();
         assert!(!dirty.world().resource::<Session>().exit_confirmation);
+        assert_eq!(dirty.world().resource::<InputFocus>().get(), None);
         assert!(dirty.should_exit().is_none());
         request(&mut dirty);
         let exit = dirty
