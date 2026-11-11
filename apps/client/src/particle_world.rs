@@ -466,11 +466,11 @@ fn rebase_world_emitters(
             continue;
         };
         if !data.draw_pass.use_local_coords {
-            let emitting = runtime.is_emitting();
-            runtime.stop(data.time.fixed_seed);
-            if emitting {
-                runtime.play();
-            }
+            // GPU positions belong to the old render frame. Clear them without
+            // rewinding emission time, which would retrigger one-shot bursts.
+            runtime.clear_requested = true;
+            runtime.simulation_steps.clear();
+            runtime.trail_history_write_index = 0;
             metrics.world_space_rebase_resets += 1;
         }
     }
@@ -732,6 +732,8 @@ mod tests {
             .id();
         let mut world_runtime = EmitterRuntime::new(0, Some(7));
         world_runtime.system_time = 3.;
+        world_runtime.cycle = 2;
+        world_runtime.one_shot_completed = true;
         let world_emitter = app
             .world_mut()
             .spawn((
@@ -765,7 +767,9 @@ mod tests {
         app.update();
         let world = app.world().get::<EmitterRuntime>(world_emitter).unwrap();
         assert!(world.clear_requested && world.is_emitting());
-        assert_eq!(world.system_time, 0.);
+        assert_eq!(world.system_time, 3.);
+        assert_eq!(world.cycle, 2);
+        assert!(world.one_shot_completed);
         assert_eq!(world.random_seed, 7);
         let local = app.world().get::<EmitterRuntime>(local_emitter).unwrap();
         assert!(!local.clear_requested);

@@ -118,7 +118,7 @@ anchors. Initial caps are 32 placements, 64 emitters, 1 million replicated
 vertices, 3 million indices, 8192 particle slots, 65536 trail-history entries,
 100000 sub-emitter words and 32 MiB decoded image data. These are conservative
 prototype counts, not a complete GPU memory or MMO load policy. Both local- and world-coordinate emitters are supported. On an origin change,
-world-space emitters clear and restart before simulation, so existing particles
+world-space emitters clear before simulation without rewinding emission time, so existing particles
 and trails do not retain their prior trajectories; local-coordinate emitters
 continue without a reset. Chunk-world particles are admitted and retired with
 their chunk scene as described below.
