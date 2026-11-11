@@ -1,5 +1,9 @@
 //! Bounded, manifest-verified particle placements for a monolithic world.
-use bevy::prelude::*;
+use bevy::{
+    picking::Pickable,
+    prelude::*,
+    ui_widgets::{Activate, Button},
+};
 use bevy_sprinkles::{SprinklesPlugin, asset::ParticlesAsset, runtime::Particles3d};
 use std::{collections::BTreeMap, path::Path};
 use theia_vfx::{BoundEffect, CatalogCounts, PreparedCatalog};
@@ -24,6 +28,12 @@ struct KeepAlive {
 }
 #[derive(Component)]
 struct WorldParticle;
+#[derive(Component)]
+struct Toggle;
+#[derive(Component)]
+struct ToggleLabel;
+#[derive(Resource)]
+struct VisibilityChoice(bool);
 #[derive(Resource, Default, serde::Serialize)]
 pub(crate) struct Metrics {
     placements: u64,
@@ -31,18 +41,25 @@ pub(crate) struct Metrics {
     running_emitter_frames: u64,
     visible_emitter_frames: u64,
     world_space_rebase_resets: u64,
+    effects_enabled: bool,
+    visibility_key_toggles: u64,
+    visibility_button_toggles: u64,
 }
 #[derive(Resource, Default)]
 struct LastFrame(Option<([f64; 3], [f64; 3])>);
 
-pub fn install(app: &mut App, prepared: PreparedCatalog) {
+pub fn install(app: &mut App, prepared: PreparedCatalog, visible: bool) {
     if !app.is_plugin_added::<SprinklesPlugin>() {
         app.add_plugins(SprinklesPlugin);
     }
     app.insert_resource(Pending(Some(prepared)))
+        .insert_resource(VisibilityChoice(visible))
         .init_resource::<Metrics>()
         .init_resource::<LastFrame>()
-        .add_systems(Startup, spawn)
+        .add_observer(activate_toggle)
+        .add_systems(Startup, (spawn, setup_toggle))
+        .add_systems(PreUpdate, keyboard_toggle.after(bevy::input::InputSystems))
+        .add_systems(Update, apply_visibility)
         .add_systems(
             Update,
             rebase_world_emitters
@@ -57,6 +74,7 @@ fn spawn(
     mut images: ResMut<Assets<Image>>,
     mut particles: ResMut<Assets<ParticlesAsset>>,
     mut metrics: ResMut<Metrics>,
+    choice: Res<VisibilityChoice>,
     mut exit: MessageWriter<AppExit>,
 ) {
     let Some(prepared) = pending.0.take() else {
@@ -93,7 +111,11 @@ fn spawn(
                 placement.transform.translation.to_array().map(f64::from),
             ),
             placement.transform,
-            Visibility::Inherited,
+            if choice.0 {
+                Visibility::Inherited
+            } else {
+                Visibility::Hidden
+            },
         ));
     }
     metrics.placements = bound.counts.placements;
@@ -105,6 +127,84 @@ fn spawn(
         _effects: bound.effects,
         _textures: bound.textures,
     });
+}
+
+fn setup_toggle(mut commands: Commands) {
+    commands
+        .spawn((
+            Toggle,
+            Button,
+            AccessibleLabel::new("Toggle world particle effects"),
+            Node {
+                position_type: PositionType::Absolute,
+                left: px(12),
+                bottom: px(12),
+                padding: UiRect::all(px(8)),
+                ..default()
+            },
+            BackgroundColor(Color::srgba(0.02, 0.03, 0.05, 0.9)),
+            GlobalZIndex(30),
+        ))
+        .with_child((
+            ToggleLabel,
+            Text::new(""),
+            TextFont {
+                font_size: FontSize::Px(14.),
+                ..default()
+            },
+            Pickable::IGNORE,
+        ));
+}
+fn activate_toggle(
+    event: On<Activate>,
+    buttons: Query<(), With<Toggle>>,
+    windows: Query<&Window>,
+    mut choice: ResMut<VisibilityChoice>,
+    mut metrics: ResMut<Metrics>,
+) {
+    if buttons.contains(event.entity) && windows.single().is_ok_and(|window| window.focused) {
+        choice.0 = !choice.0;
+        metrics.visibility_button_toggles += 1;
+    }
+}
+fn keyboard_toggle(
+    keys: Res<ButtonInput<KeyCode>>,
+    windows: Query<&Window>,
+    mut choice: ResMut<VisibilityChoice>,
+    mut metrics: ResMut<Metrics>,
+) {
+    if windows.single().is_ok_and(|window| window.focused) && keys.just_pressed(KeyCode::F9) {
+        choice.0 = !choice.0;
+        metrics.visibility_key_toggles += 1;
+    }
+}
+fn apply_visibility(
+    choice: Res<VisibilityChoice>,
+    mut metrics: ResMut<Metrics>,
+    mut roots: Query<&mut Visibility, With<WorldParticle>>,
+    mut labels: Query<&mut Text, With<ToggleLabel>>,
+) {
+    metrics.effects_enabled = choice.0;
+    let visibility = if choice.0 {
+        Visibility::Inherited
+    } else {
+        Visibility::Hidden
+    };
+    for mut current in &mut roots {
+        if *current != visibility {
+            *current = visibility;
+        }
+    }
+    let text = if choice.0 {
+        "World effects: On [F9]"
+    } else {
+        "World effects: Off [F9]"
+    };
+    for mut label in &mut labels {
+        if label.0 != text {
+            **label = text.into();
+        }
+    }
 }
 
 // World-space GPU positions and trail histories refer to the previous render
@@ -216,6 +316,7 @@ mod tests {
         };
         let mut app = App::new();
         app.insert_resource(Pending(Some(prepared)))
+            .insert_resource(VisibilityChoice(true))
             .init_resource::<Metrics>()
             .insert_resource(Assets::<Image>::default())
             .insert_resource(Assets::<ParticlesAsset>::default())
@@ -352,5 +453,62 @@ mod tests {
         app.update();
         let stopped = app.world().get::<EmitterRuntime>(world_emitter).unwrap();
         assert!(stopped.clear_requested && !stopped.is_emitting());
+    }
+    #[test]
+    fn visibility_controls_affect_only_world_particles_and_require_focus() {
+        let mut app = App::new();
+        app.insert_resource(VisibilityChoice(true))
+            .init_resource::<Metrics>()
+            .init_resource::<ButtonInput<KeyCode>>()
+            .add_observer(activate_toggle)
+            .add_systems(Update, (keyboard_toggle, apply_visibility).chain());
+        let window = app
+            .world_mut()
+            .spawn(Window {
+                focused: false,
+                ..default()
+            })
+            .id();
+        let root = app
+            .world_mut()
+            .spawn((WorldParticle, Visibility::Inherited))
+            .id();
+        let gameplay_cue = app.world_mut().spawn(Visibility::Inherited).id();
+        let button = app.world_mut().spawn(Toggle).id();
+        let label = app.world_mut().spawn((ToggleLabel, Text::new(""))).id();
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .press(KeyCode::F9);
+        app.update();
+        assert!(app.world().resource::<VisibilityChoice>().0);
+        app.world_mut().trigger(Activate { entity: button });
+        assert!(app.world().resource::<VisibilityChoice>().0);
+        app.world_mut().get_mut::<Window>(window).unwrap().focused = true;
+        app.update();
+        assert_eq!(
+            *app.world().get::<Visibility>(root).unwrap(),
+            Visibility::Hidden
+        );
+        assert_eq!(
+            *app.world().get::<Visibility>(gameplay_cue).unwrap(),
+            Visibility::Inherited
+        );
+        assert_eq!(
+            app.world().get::<Text>(label).unwrap().0,
+            "World effects: Off [F9]"
+        );
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .clear();
+        app.world_mut().trigger(Activate { entity: button });
+        app.update();
+        assert_eq!(
+            *app.world().get::<Visibility>(root).unwrap(),
+            Visibility::Inherited
+        );
+        assert_eq!(
+            app.world().get::<Text>(label).unwrap().0,
+            "World effects: On [F9]"
+        );
     }
 }

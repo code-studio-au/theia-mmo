@@ -1,3 +1,16 @@
+P2-13 world-effect visibility control, 11 November 2026: worlds with placed
+particle effects expose a clickable World effects control and F9 shortcut, plus
+`--hide-world-particles` for starting hidden. It changes only world-particle
+visibility; gameplay cues remain separate. A native two-client X11 test used one
+actual click and two F9 presses on one client while the other retained effects
+(`build/particle-control-os-native-20261111-v1/verification.json`). Starting
+Windy Snow hidden restored the pawn-pixel checks on both clients
+(`build/upstream-snow-hidden-world-native-20261111-v1/verification.json`);
+both runs recorded zero Vulkan validation diagnostics on RX 7900 XTX / RADV
+NAVI31 / Mesa 26.2.6. Unit tests cover focus and cue isolation. The switch is a
+manual readability aid, not automatic critical-telegraph protection, a
+persistence setting, or a simulation/GPU workload reduction.
+
 P2-13 upstream example package check, 11 November 2026: all seven bundled
 Sprinkles example RONs exported and passed actual-client pre-launch admission
 (`build/upstream-particle-package-20261111-v3/qualification.json`). Two-client

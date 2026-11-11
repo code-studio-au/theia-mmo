@@ -149,6 +149,19 @@ visuals against such effects. The two one-shot examples have only been admitted,
 not qualified for connected visual playback in this slice. These observations
 do not prove pixel or animation parity.
 
+Worlds with placed particle effects now expose a clickable **World effects**
+control and F9 shortcut; `--hide-world-particles` starts them hidden. It affects
+world particles only, leaving the separate gameplay projectile cue unchanged.
+A native two-client test exercised an actual X11 click and keyboard presses on
+one client while the other retained its particles
+(`build/particle-control-os-native-20261111-v1/verification.json`). Starting
+Windy Snow hidden restored pawn-pixel checks on both clients
+(`build/upstream-snow-hidden-world-native-20261111-v1/verification.json`).
+Both tests reported zero Vulkan validation diagnostics on RX 7900 XTX / RADV
+NAVI31 / Mesa 26.2.6. The control is a manual readability aid: it does not yet
+provide automatic critical-telegraph protection, persist preferences or stop
+particle simulation.
+
 The prerequisites are the accepted Linux authoring shell and the adopted exact
 Bevy 0.20.0 engine. Upstream targets Bevy 0.19.0. Both imported crates use our
 workspace engine; introducing a second Bevy engine or downgrading Theia is not

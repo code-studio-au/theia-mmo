@@ -63,6 +63,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if args.first().is_some_and(|a| a == "--chunk-smoke") {
         return chunk_scene::run(&args);
     }
+    let hide_world_particles =
+        if let Some(i) = args.iter().position(|a| a == "--hide-world-particles") {
+            args.remove(i);
+            true
+        } else {
+            false
+        };
     let configuration_report =
         if let Some(i) = args.iter().position(|a| a == "--configuration-report") {
             args.remove(i);
@@ -1310,7 +1317,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .add_systems(FixedUpdate, movement::move_local_pawn);
     if let Some(prepared) = particle_world {
-        particle_world::install(&mut app, prepared);
+        particle_world::install(&mut app, prepared, !hide_world_particles);
     }
     if fantasy_skin {
         fantasy_ui::install_scale(&mut app, ui_scale);
