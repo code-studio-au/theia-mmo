@@ -184,6 +184,43 @@ pub struct CatalogTexture {
     pub image: Image,
 }
 
+/// A CPU-side, catalog-consistent snapshot for a future client integration.
+pub struct PreparedCatalog {
+    pub effects: Vec<CatalogEffect>,
+    pub textures: Vec<CatalogTexture>,
+    pub placements: Vec<CatalogPlacement>,
+    pub counts: CatalogCounts,
+}
+
+/// Validate and prepare one already manifest-verified catalog without creating
+/// any render entities. The caller supplies explicit count limits. These limits
+/// cover only [`CatalogCounts`]; remaining simulation and total CPU/GPU resource
+/// admission is still required. Blocking I/O and PNG decoding must run off the
+/// simulation and render update paths. Failure returns no partial snapshot.
+pub fn prepare_catalog(
+    catalog: &Catalog,
+    effect_directory: &Path,
+    texture_directory: &Path,
+    package: &Path,
+    content_frame: LocalFrame,
+    render_frame: LocalFrame,
+    limits: CatalogCounts,
+) -> Result<PreparedCatalog, String> {
+    let effects = load_catalog_effects(catalog, effect_directory, package)?;
+    let counts = count_catalog_resources(catalog, &effects)?;
+    if !counts.fits_within(limits) {
+        return Err("Particle catalog exceeds the supplied count limits".into());
+    }
+    let placements = project_catalog_placements(catalog, &effects, content_frame, render_frame)?;
+    let textures = decode_catalog_textures(catalog, texture_directory)?;
+    Ok(PreparedCatalog {
+        effects,
+        textures,
+        placements,
+        counts,
+    })
+}
+
 /// Read and decode cataloged PNGs using Bevy's standard image decoder. This
 /// performs blocking file I/O and CPU decoding. It does not register assets at
 /// package paths, upload textures, enforce a GPU budget or start playback.
@@ -385,6 +422,104 @@ mod tests {
     use theia_network::terrain::sha256;
     static NEXT: AtomicU64 = AtomicU64::new(0);
     const PNG: &[u8] = include_bytes!("../../network/tests/fixtures/shared-image.png");
+
+    #[test]
+    fn prepares_a_manifest_bound_snapshot_and_rejects_partial_or_over_limit_data() {
+        use bevy_sprinkles::prelude::{EmitterData, ParticlesDimension};
+        use theia_core::coordinates::GlobalPosition;
+        use theia_network::{content::Manifest, particle_content::Texture};
+
+        let root = std::env::temp_dir().join(format!(
+            "theia-vfx-prepared-{}-{}",
+            std::process::id(),
+            NEXT.fetch_add(1, Ordering::Relaxed)
+        ));
+        let effect_dir = root.join("effects");
+        let texture_dir = root.join("textures");
+        fs::create_dir_all(&effect_dir).unwrap();
+        fs::create_dir_all(&texture_dir).unwrap();
+        let texture = Texture {
+            sha256: sha256(PNG),
+            bytes: PNG.len() as u64,
+            color_space: ColorSpace::Srgb,
+        };
+        fs::write(texture_dir.join(texture.filename()), PNG).unwrap();
+        let mut emitter = EmitterData::default();
+        let DrawPassMaterial::Standard(material) = &mut emitter.draw_pass.material else {
+            unreachable!()
+        };
+        material.base_color_texture = Some(TextureRef::Asset(format!(
+            "textures/{}",
+            texture.filename()
+        )));
+        let asset = ParticlesAsset::new(
+            "Fire".into(),
+            ParticlesDimension::D3,
+            default(),
+            vec![emitter],
+            vec![],
+            false,
+            default(),
+        );
+        let effect = ron::to_string(&asset).unwrap().into_bytes();
+        let effect_path = effect_dir.join("effect-vfx.fire.ron");
+        fs::write(&effect_path, &effect).unwrap();
+        let catalog_bytes = serde_json::to_vec(&json!({"schema":1,
+            "effects":[{"id":"vfx.fire","bytes":effect.len(),"sha256":sha256(&effect)}],
+            "placements":[{"id":7,"effect":"vfx.fire","position":[0.125,1.,2.],"yaw_degrees":0.,"scale":1.}],
+            "textures":[{"sha256":sha256(PNG),"bytes":PNG.len(),"color_space":"srgb"}]
+        })).unwrap();
+        let manifest = Manifest::decode(
+            &serde_json::to_vec(&json!({"schema":4,"content_id":"world.test","revision":1,
+                "collision_schema":4,"collision_bytes":1,"collision_sha256":sha256(b"c"),
+                "visual_bytes":1,"visual_sha256":sha256(b"v"),
+                "particle_bytes":catalog_bytes.len(),"particle_sha256":sha256(&catalog_bytes)
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+        let catalog = manifest.verify_particle_catalog(&catalog_bytes).unwrap();
+        let frame = LocalFrame::new(
+            GlobalPosition::new([128_000_000_000., 4., -128_000_000_000.]).unwrap(),
+        );
+        let effects =
+            load_catalog_effects(&catalog, &effect_dir, Path::new("world/revision")).unwrap();
+        let limits = count_catalog_resources(&catalog, &effects).unwrap();
+        let prepare = |limits, render| {
+            prepare_catalog(
+                &catalog,
+                &effect_dir,
+                &texture_dir,
+                Path::new("world/revision"),
+                frame,
+                render,
+                limits,
+            )
+        };
+        let prepared = prepare(limits, frame).unwrap();
+        assert_eq!(prepared.effects.len(), 1);
+        assert_eq!(prepared.textures.len(), 1);
+        assert_eq!(prepared.placements[0].id, 7);
+        assert_eq!(prepared.counts, limits);
+        assert!(
+            prepared.textures[0]
+                .image
+                .texture_descriptor
+                .format
+                .is_srgb()
+        );
+        let mut too_small = limits;
+        too_small.particle_slots -= 1;
+        assert!(prepare(too_small, frame).is_err());
+        let far = LocalFrame::new(GlobalPosition::new([0.; 3]).unwrap());
+        assert!(prepare(limits, far).is_err());
+        fs::write(&effect_path, b"changed").unwrap();
+        assert!(prepare(limits, frame).is_err());
+        fs::write(&effect_path, effect).unwrap();
+        fs::write(texture_dir.join(texture.filename()), b"changed").unwrap();
+        assert!(prepare(limits, frame).is_err());
+        fs::remove_dir_all(root).unwrap();
+    }
 
     #[test]
     fn catalog_counts_include_repeated_placements_disabled_emitters_and_sub_buffers() {

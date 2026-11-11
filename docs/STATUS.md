@@ -1,3 +1,11 @@
+P2-13 manifest-bound particle preparation, 11 November 2026: a CPU-only helper
+combines cataloged effect loading, explicit count-limit checks, checked frame
+projection and verified PNG decoding into an all-or-nothing snapshot. A test
+binds a catalog to a schema-4 manifest and rejects changed effects/textures,
+out-of-frame placements and insufficient limits. Six VFX tests and strict
+workspace Clippy pass. Client rendering, texture registration, complete effect
+admission and export remain blocked. See [integration](SPRINKLES_INTEGRATION.md).
+
 P2-13 particle catalog allocation counts, 11 November 2026: the VFX helper
 conservatively totals emitters, mesh vertices/indices, particle slots, trail
 history and sub-emitter buffer words across each placement, including disabled

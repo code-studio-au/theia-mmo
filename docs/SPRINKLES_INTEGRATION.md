@@ -63,6 +63,11 @@ sub-emitter buffer counts across placements and can compare them to caller-set
 limits. It intentionally counts potentially shared meshes and disabled emitters
 conservatively, but omits textures and other CPU/GPU allocations. No production
 limits or complete memory/admission policy are established by those counts.
+`prepare_catalog` combines these operations into an all-or-nothing CPU-side
+snapshot after the caller verifies its catalog against the world manifest. A
+manifest-bound fixture tests valid data and rejects modified files, insufficient
+count limits and an invalid render frame. It still does not register decoded
+textures, admit all effect parameters or start client playback.
 
 The prerequisites are the accepted Linux authoring shell and the adopted exact
 Bevy 0.20.0 engine. Upstream targets Bevy 0.19.0. Both imported crates use our
