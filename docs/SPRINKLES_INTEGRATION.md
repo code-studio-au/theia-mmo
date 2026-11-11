@@ -369,3 +369,24 @@ generated geometry and exercise overflowing inputs without allocating them;
 windowless Vulkan exercises invalid live edits and recovery. These checks cover
 the current mesh variants but are not memory budgets, general validation of
 dimensions, or protection for direct external use of the public mesh cache.
+
+
+## Protect unsaved projects when switching — P5-17
+
+Opening or creating another particle project commits a valid focused text field,
+then asks before discarding dirty work. Cancel leaves the current asset and file
+untouched; a changed asset or path invalidates a pending confirmation, and a save
+in progress blocks the switch. Creating a project does not create its destination
+file before confirmation. The delete-item confirmation is tied to its own dialog
+so another dialog action cannot trigger it. Changes still require the user to use
+Save; the existing new-project initial write behavior is retained. Examples and
+migrated files already marked dirty by the editor also prompt.
+
+Headless tests cover focused text, stale changes, cancel, dialog identity and New
+without a write. Forty-one particle-editor and 122 zone-editor tests, formatting
+and denied-warning workspace/all-target Clippy pass. A windowless 512×384 UI
+layout test and the runtime transition example ran on RX 7900 XTX / RADV NAVI31 /
+Mesa 26.2.6 Vulkan with explicit Khronos validation and no unexpected diagnostics.
+These checks did not visually inspect pixels or qualify Windows. The examples now
+return their Bevy exit status; earlier runtime logs were checked for their explicit
+success message after discovering that the old harness discarded failure status.

@@ -40,6 +40,10 @@ pub fn plugin(app: &mut App) {
 #[derive(Component, Default, Clone)]
 pub struct EditorDialog;
 
+/// Associates a dialog action with the operation that opened it.
+#[derive(Component, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct DialogPurpose(pub &'static str);
+
 #[derive(Component, Default, Clone)]
 struct DialogBackdrop;
 
@@ -90,6 +94,7 @@ pub struct CloseDialogEvent;
 
 #[derive(Event)]
 pub struct OpenDialogEvent {
+    pub(crate) purpose: Option<DialogPurpose>,
     pub title: Option<String>,
     pub description: Option<String>,
     pub action: Option<String>,
@@ -105,6 +110,7 @@ pub struct OpenDialogEvent {
 impl OpenDialogEvent {
     pub fn new(title: impl Into<String>, action: impl Into<String>) -> Self {
         Self {
+            purpose: None,
             title: Some(title.into()),
             description: None,
             action: Some(action.into()),
@@ -116,6 +122,11 @@ impl OpenDialogEvent {
             max_width: None,
             content_padding: UiRect::all(px(24)),
         }
+    }
+
+    pub(crate) fn with_purpose(mut self, purpose: &'static str) -> Self {
+        self.purpose = Some(DialogPurpose(purpose));
+        self
     }
 
     pub fn without_cancel(mut self) -> Self {
@@ -154,6 +165,7 @@ pub struct OpenConfirmationDialogEvent {
     pub title: String,
     pub description: Option<String>,
     pub action: String,
+    pub(crate) purpose: Option<DialogPurpose>,
 }
 
 impl OpenConfirmationDialogEvent {
@@ -162,11 +174,17 @@ impl OpenConfirmationDialogEvent {
             title: title.into(),
             description: None,
             action: action.into(),
+            purpose: None,
         }
     }
 
     pub fn with_description(mut self, description: impl Into<String>) -> Self {
         self.description = Some(description.into());
+        self
+    }
+
+    pub(crate) fn with_purpose(mut self, purpose: &'static str) -> Self {
+        self.purpose = Some(DialogPurpose(purpose));
         self
     }
 }
@@ -178,6 +196,7 @@ impl From<&OpenConfirmationDialogEvent> for OpenDialogEvent {
             .with_close_button(false)
             .with_close_on_click_outside(false);
         dialog.description = event.description.clone();
+        dialog.purpose = event.purpose;
         dialog
     }
 }
@@ -255,6 +274,9 @@ fn spawn_dialog(commands: &mut Commands, event: &OpenDialogEvent) {
     };
 
     let dialog = commands.spawn_scene(dialog_scene(event)).id();
+    if let Some(purpose) = event.purpose {
+        commands.entity(dialog).insert(purpose);
+    }
     commands.entity(dialog).insert(
         start_visual
             .ease_to(

@@ -1,3 +1,13 @@
+P5-17 particle project switching, 11 November 2026: Open and New commit a
+valid focused field and request confirmation before replacing unsaved work;
+cancel and stale-project checks preserve the current asset. An active save blocks
+switching, and dialog actions are scoped to their operation. Forty-one particle
+editor and 122 zone-editor tests, fmt and strict workspace/all-target Clippy pass.
+Offscreen 512×384 confirmation layout and particle runtime checks on RX 7900 XTX /
+RADV / Mesa 26.2.6 Vulkan with Khronos validation report zero unexpected GPU
+diagnostics. No physical display or mouse; visual assessment and Windows remain
+unqualified. See [integration](../SPRINKLES_INTEGRATION.md).
+
 P2-13 particle prism and cuboid arithmetic, 11 November 2026: runtime mesh
 admission checks prism geometry and cuboid replication for integer overflow.
 Sixteen runtime and 14 loader tests, fmt and strict workspace/all-target Clippy

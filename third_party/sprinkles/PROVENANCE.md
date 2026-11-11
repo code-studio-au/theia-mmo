@@ -288,3 +288,6 @@ not impose a memory limit or validate the remaining mesh types.
 
 Runtime mesh admission checks prism and cuboid count arithmetic too; it is not
 a memory limit or general mesh validation, and direct mesh-cache use bypasses it.
+
+The local editor adds a guarded project switch, including focused text commit,
+confirmation identity and stale-state checks; explicit Save behavior is retained.

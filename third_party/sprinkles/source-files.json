@@ -1251,7 +1251,7 @@
       "path": "crates/bevy_sprinkles_editor/src/lib.rs",
       "upstream_path": "crates/bevy_sprinkles_editor/src/main.rs",
       "upstream_sha256": "bb4a5c53b2ba2e2f1f7b356ff3009d7332e80daaae55db9e3e408a07b50d1774",
-      "imported_sha256": "4fe1b7f2be59d1ce264c7a895258fc7b23e1effef7a62b7cd2540203c3291d08",
+      "imported_sha256": "65a13ae6c46946d552163e13466435298a877a9ab49b87e1e77fef41a615ef4c",
       "changed": true
     },
     {
@@ -1272,7 +1272,7 @@
       "path": "crates/bevy_sprinkles_editor/src/project.rs",
       "upstream_path": "crates/bevy_sprinkles_editor/src/project.rs",
       "upstream_sha256": "f349f24cff2a96c052ca8295533942e1e9dcf346744dc16e7f2036918ef591b3",
-      "imported_sha256": "3b35bf30ff607f5609ab7cf28d12e1436cb4ff8d8936d7dafb8cb0a6c960b8a8",
+      "imported_sha256": "957392b7aace7965f7bf2e644bc4604b2a5d26b668fec794d963aa10c066319c",
       "changed": true
     },
     {
@@ -1314,7 +1314,7 @@
       "path": "crates/bevy_sprinkles_editor/src/ui/components/data_panel.rs",
       "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/data_panel.rs",
       "upstream_sha256": "77218abff16ac61e37e54d135acdb28fbce94bb207d8e971cb3cb55713c231af",
-      "imported_sha256": "48e0a1a3ab557794ae3c5ae63108c51f909c0d18ddb5af812f799edd5d0184b0",
+      "imported_sha256": "d7672b181dfaabbb84db351f18cd2926d21334ea03404b6f189e1e9c559c3663",
       "changed": true
     },
     {
@@ -1496,7 +1496,7 @@
       "path": "crates/bevy_sprinkles_editor/src/ui/components/project_selector.rs",
       "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/project_selector.rs",
       "upstream_sha256": "cbda66c259ce0aa5800a85baecc821b920b4fef575d4a84df07872ac441f77c7",
-      "imported_sha256": "7ad595df4421aa66d2333077620b0f25ec8dec276717bd180604138548c05cd0",
+      "imported_sha256": "84e2d2a03075bdd1fd24cd6b494986bbf189661cb78127b7b6b2c3cfd5b22aed",
       "changed": true
     },
     {
@@ -1636,7 +1636,7 @@
       "path": "crates/bevy_sprinkles_editor/src/ui/widgets/dialog.rs",
       "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/dialog.rs",
       "upstream_sha256": "08b9ca70d0907adeb2e10be789fdbf026d2c88c687828329cebb36d9b7c37367",
-      "imported_sha256": "297429a18defcc70c5666497a2ea2ef4eab9bc578819b5378a5e39dbb1986a3f",
+      "imported_sha256": "43f64403a56579c4c333041f4a33e635d5d6bac9bb1661a0442ad7260838ed4b",
       "changed": true
     },
     {

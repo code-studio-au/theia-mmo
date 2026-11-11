@@ -11,10 +11,10 @@ use bevy::text::EditableText;
 use bevy_sprinkles::prelude::*;
 
 use crate::io::{EditorData, data_dir, project_path, projects_dir, save_editor_data};
-use crate::project::{
-    BrowseOpenProjectEvent, OpenProjectEvent, SaveCoordinator, load_project_from_path,
-};
-use crate::state::{DirtyState, EditorState, Inspectable, Inspecting};
+#[cfg(test)]
+use crate::project::SaveCoordinator;
+use crate::project::{BrowseOpenProjectEvent, OpenProjectEvent, load_project_from_path};
+use crate::state::{DirtyState, EditorState};
 use crate::ui::icons::{
     ICON_ARROW_DOWN, ICON_CLOSE, ICON_FILE_ADD, ICON_FOLDER_IMAGE, ICON_FOLDER_OPEN,
 };
@@ -773,10 +773,6 @@ fn update_location_placeholder(
 fn handle_create_project(
     _event: On<DialogActionEvent>,
     state: Option<Res<NewProjectDialogState>>,
-    mut editor_state: ResMut<EditorState>,
-    mut saves: ResMut<SaveCoordinator>,
-    mut assets: ResMut<Assets<ParticlesAsset>>,
-    mut dirty_state: ResMut<DirtyState>,
     children_query: Query<&Children>,
     text_edits: Query<Entity, With<EditorTextEdit>>,
     buffers: Query<&EditableText>,
@@ -812,10 +808,6 @@ fn handle_create_project(
         Some(raw) => resolve_location_path(&raw),
         None => projects_dir().join(format!("{slug}.ron")),
     };
-    if let Some(parent) = path.parent() {
-        let _ = std::fs::create_dir_all(parent);
-    }
-
     let asset = ParticlesAsset::new(
         name,
         ParticlesDimension::D3,
@@ -829,20 +821,10 @@ fn handle_create_project(
         Default::default(),
     );
 
-    let handle = assets.add(asset.clone());
-    editor_state.current_project = Some(handle.clone());
-    // A newly created project remains unsaved until its first write succeeds.
-    editor_state.current_project_path = None;
-    editor_state.inspecting = Some(Inspecting {
-        kind: Inspectable::Emitter,
-        index: 0,
-    });
-    dirty_state.has_unsaved_changes = true;
-    if let Err(error) = saves.save_to_path(handle, &asset, path, true, true) {
-        commands.trigger(crate::ui::components::toasts::ToastEvent::error(error));
-    }
-
     commands.remove_resource::<NewProjectDialogState>();
+    commands.trigger(crate::project_switch::RequestProjectSwitch::new_project(
+        asset, path,
+    ));
 }
 
 fn handle_browse_location_click(
@@ -984,6 +966,7 @@ mod save_tests {
         let dialog = app.world_mut().spawn_empty().id();
         app.world_mut()
             .trigger(DialogActionEvent { entity: dialog });
+        app.update();
         assert!(app.world().resource::<DirtyState>().has_unsaved_changes);
         assert!(
             app.world()

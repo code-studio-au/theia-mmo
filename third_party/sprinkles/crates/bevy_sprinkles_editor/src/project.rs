@@ -11,8 +11,10 @@ use bevy::tasks::IoTaskPool;
 use bevy_sprinkles::prelude::*;
 use inflector::Inflector;
 
-use crate::io::{EditorData, is_example_path, project_path, projects_dir, save_editor_data};
-use crate::state::{DirtyState, EditorState, Inspectable, Inspecting};
+use crate::io::{EditorData, project_path, projects_dir, save_editor_data};
+use crate::state::{DirtyState, EditorState};
+#[cfg(test)]
+use crate::state::{Inspectable, Inspecting};
 use crate::ui::components::toasts::ToastEvent;
 use crate::ui::widgets::text_edit::{self, SaveTextInputs, TextEditCommitEvent};
 use crate::utils::{MAX_DISPLAY_PATH_LEN, simplify_path, truncate_path};
@@ -33,6 +35,7 @@ pub fn plugin(app: &mut App) {
         .add_observer(on_save_project_event)
         .add_observer(on_save_project_as_event)
         .add_observer(continue_save_after_text_commit)
+        .add_plugins(crate::project_switch::ProjectSwitchPlugin)
         .add_authoring_systems((
             handle_save_keyboard_shortcut,
             poll_browse_open_result,
@@ -291,17 +294,9 @@ pub(crate) fn parse_project(
     Ok(result)
 }
 
-fn on_open_project_event(
-    event: On<OpenProjectEvent>,
-    mut editor_state: ResMut<EditorState>,
-    mut editor_data: ResMut<EditorData>,
-    mut assets: ResMut<Assets<ParticlesAsset>>,
-    mut dirty_state: ResMut<DirtyState>,
-    mut commands: Commands,
-) {
+fn on_open_project_event(event: On<OpenProjectEvent>, mut commands: Commands) {
     let location = &event.0;
     let path = project_path(location);
-    let is_example = is_example_path(&path);
 
     let result = match load_project_from_path(&path) {
         Ok(result) => result,
@@ -336,36 +331,12 @@ fn on_open_project_event(
         }
     };
 
-    let asset = result.asset;
-
-    let filename = path
-        .file_name()
-        .map(|n| n.to_string_lossy().to_string())
-        .unwrap_or_else(|| location.clone());
-
-    if result.was_migrated {
-        let current = bevy_sprinkles::asset::versions::current_format_version();
-        commands.trigger(ToastEvent::success(format!(
-            "Project \"{filename}\" will be updated to {current} on the next save"
-        )));
-    }
-
-    let has_emitters = !asset.emitters.is_empty();
-    let handle = assets.add(asset);
-    editor_state.open_project(handle, path, &mut dirty_state, result.was_migrated);
-    editor_state.inspecting = if has_emitters {
-        Some(Inspecting {
-            kind: Inspectable::Emitter,
-            index: 0,
-        })
-    } else {
-        None
-    };
-
-    if !is_example {
-        editor_data.cache.add_recent_project(location.clone());
-        save_editor_data(&editor_data);
-    }
+    commands.trigger(crate::project_switch::RequestProjectSwitch::open(
+        result.asset,
+        path,
+        location.clone(),
+        result.was_migrated,
+    ));
 }
 
 fn on_browse_open_project_event(_event: On<BrowseOpenProjectEvent>, mut commands: Commands) {

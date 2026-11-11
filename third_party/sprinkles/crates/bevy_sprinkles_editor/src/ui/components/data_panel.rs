@@ -11,7 +11,9 @@ use crate::ui::widgets::button::{
 use crate::ui::widgets::combobox::{
     ComboBoxChangeEvent, ComboBoxPopover, ComboBoxTrigger, combobox_icon,
 };
-use crate::ui::widgets::dialog::{DialogActionEvent, EditorDialog, OpenConfirmationDialogEvent};
+use crate::ui::widgets::dialog::{
+    DialogActionEvent, DialogPurpose, EditorDialog, OpenConfirmationDialogEvent,
+};
 use crate::ui::widgets::panel::{PanelDirection, PanelProps, panel};
 use crate::ui::widgets::panel_section::{PanelSectionProps, panel_section};
 use crate::ui::widgets::scroll::scrollbar;
@@ -22,6 +24,7 @@ use crate::ui::widgets::utils::find_ancestor;
 use crate::viewport::{RespawnCollidersEvent, RespawnEmittersEvent};
 
 const DOUBLE_CLICK_THRESHOLD: f32 = 0.3;
+const DELETE_PURPOSE: &str = "particle-delete-item";
 
 pub fn plugin(app: &mut App) {
     app.init_resource::<LastLoadedProject>()
@@ -436,6 +439,7 @@ fn on_item_menu_change(
             });
             commands.trigger(
                 OpenConfirmationDialogEvent::new(label, "Delete")
+                    .with_purpose(DELETE_PURPOSE)
                     .with_description(format!("Are you sure you want to delete {}?", item_name)),
             );
         }
@@ -753,7 +757,8 @@ fn on_rename_commit(
 }
 
 fn on_delete_confirmed(
-    _event: On<DialogActionEvent>,
+    event: On<DialogActionEvent>,
+    purposes: Query<&DialogPurpose>,
     pending: Option<Res<PendingDelete>>,
     mut commands: Commands,
     mut editor_state: ResMut<EditorState>,
@@ -761,6 +766,12 @@ fn on_delete_confirmed(
     mut dirty_state: ResMut<DirtyState>,
     mut last_project: ResMut<LastLoadedProject>,
 ) {
+    if !purposes
+        .get(event.entity)
+        .is_ok_and(|purpose| purpose.0 == DELETE_PURPOSE)
+    {
+        return;
+    }
     let Some(pending) = pending else {
         return;
     };
@@ -881,5 +892,67 @@ fn update_items(
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod dialog_routing_tests {
+    use super::*;
+    use bevy_sprinkles::asset::ParticlesDimension;
+
+    #[test]
+    fn unrelated_dialog_action_does_not_delete_an_emitter() {
+        let mut app = App::new();
+        app.init_resource::<EditorState>()
+            .init_resource::<DirtyState>()
+            .init_resource::<LastLoadedProject>()
+            .init_resource::<Assets<ParticlesAsset>>()
+            .add_observer(on_delete_confirmed);
+        let asset = ParticlesAsset::new(
+            "Effect".into(),
+            ParticlesDimension::D3,
+            default(),
+            vec![EmitterData::default()],
+            vec![],
+            false,
+            default(),
+        );
+        let handle = app
+            .world_mut()
+            .resource_mut::<Assets<ParticlesAsset>>()
+            .add(asset);
+        app.world_mut()
+            .resource_mut::<EditorState>()
+            .current_project = Some(handle.clone());
+        app.insert_resource(PendingDelete {
+            kind: Inspectable::Emitter,
+            index: 0,
+        });
+        let other = app
+            .world_mut()
+            .spawn(DialogPurpose("particle-project-switch"))
+            .id();
+        app.world_mut().trigger(DialogActionEvent { entity: other });
+        assert_eq!(
+            app.world()
+                .resource::<Assets<ParticlesAsset>>()
+                .get(&handle)
+                .unwrap()
+                .emitters
+                .len(),
+            1
+        );
+        let confirmation = app.world_mut().spawn(DialogPurpose(DELETE_PURPOSE)).id();
+        app.world_mut().trigger(DialogActionEvent {
+            entity: confirmation,
+        });
+        assert!(
+            app.world()
+                .resource::<Assets<ParticlesAsset>>()
+                .get(&handle)
+                .unwrap()
+                .emitters
+                .is_empty()
+        );
     }
 }

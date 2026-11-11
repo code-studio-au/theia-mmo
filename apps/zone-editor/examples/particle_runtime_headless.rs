@@ -387,7 +387,7 @@ fn step(
     }
 }
 
-fn main() {
+fn main() -> AppExit {
     App::new()
         .add_plugins(
             DefaultPlugins
@@ -402,5 +402,5 @@ fn main() {
         .add_plugins(ScheduleRunnerPlugin::run_loop(Duration::from_millis(16)))
         .add_systems(Startup, setup)
         .add_systems(PostUpdate, step)
-        .run();
+        .run()
 }

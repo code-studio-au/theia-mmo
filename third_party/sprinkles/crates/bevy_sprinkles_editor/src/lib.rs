@@ -10,6 +10,7 @@ pub mod hosting;
 pub mod io;
 pub mod plugin;
 pub mod project;
+mod project_switch;
 pub mod state;
 pub mod ui;
 mod utils;
