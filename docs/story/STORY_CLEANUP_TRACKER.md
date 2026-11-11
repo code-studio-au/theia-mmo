@@ -163,3 +163,11 @@ After completion, stop cleanup cycles and maintain the established sources rathe
 - [x] Q183 has both the Sel'ora/Aru'ven Kel'vari response and separate Mara/Corven Covenant report in canonical and structured authoring content.
 - [ ] Q169 post-conversation but pre-custody completion remains an explicitly open edge case; do not silently decide it.
 - [ ] The runtime still needs to implement Q169 expiration, Q159/Q168 regional permissions and Q183 dual-report evidence. JSON authoring notes are not proof of engine support.
+
+### Optional journal and homecoming dialogue pass — 12 November 2026
+
+- [x] Added WORKING replacement Q169 dialogue to the 70–80 pack: Tarek's historical site assignment, authenticated pre-Sundering Thes'var journal, Oth'varen's bounded recollection, original custody and explicit no-exoneration/no-finale-spoiler boundaries. The former transport-survey dialogue remains clearly marked SUPERSEDED as provenance.
+- [x] The Q169 dialogue note preserves the creator-approved Q181 death cutoff and explicitly leaves post-conversation unfinished custody unresolved.
+- [x] Scoped Q184's existing Elara/Millhaven finale dialogue explicitly to the HUMAN variant of the shared epilogue. Dwarf/Aelari/Korrath variants remain open rather than receiving invented NPCs.
+- [ ] Replacement Q169 dialogue is a working draft, not creator-approved final wording or executable script.
+- [ ] Non-human Q184 dialogue and actor binding require completion of the three separate 1–20 racial campaigns.
