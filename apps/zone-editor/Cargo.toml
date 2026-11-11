@@ -22,4 +22,5 @@ theia-network.workspace = true
 theia-zone = { path = "../../crates/zone" }
 
 [dev-dependencies]
+ron.workspace = true
 tokio.workspace = true

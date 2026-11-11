@@ -560,3 +560,15 @@ was not verified by that capture. Physical menu activation and Windows remain
 unqualified. Library files and their texture paths are local to the authoring
 machine: package export still refuses particle references and clients cannot yet
 load them. Preview state is not persisted.
+
+## Local export dependency preflight — P2-13
+
+Before rejecting a zone with particle placements, the exporter checks each unique
+Effect ID against the local library. It bounds each effect file to 4 MiB, uses
+Sprinkles' version migration, rejects custom shader materials, and checks that
+all referenced external textures in the five standard material slots exist.
+Built-in preset textures need no external file. The diagnostic reports a missing
+or invalid dependency, or counts distinct resolved external texture paths. This
+is an authoring aid and a prerequisite for packaging: existence is not image
+validation, dependency hashing, portability, or a rendering budget. Export still
+refuses every zone with particle placements, including when preflight succeeds.

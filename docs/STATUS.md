@@ -1,3 +1,11 @@
+P2-13 local particle export preflight, 11 November 2026: before refusing
+particle-bearing world exports, inspect bounded local effect files and all five
+standard texture slots, reporting missing assets or unsupported custom shaders.
+Texture existence alone does not establish portability or image validity. All
+134 zone-editor tests, fmt and strict workspace/all-target Clippy pass; the
+preflight tests were repeated after improving diagnostics. Packaging and client
+playback remain pending. See [integration](SPRINKLES_INTEGRATION.md).
+
 P2-13 local particle ID preview, 11 November 2026: a selected placement can
 load its saved local Effect ID independently of the open project, with reload,
 missing-file and malformed-file handling. The short-window action menu stays

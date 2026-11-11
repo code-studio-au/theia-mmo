@@ -267,9 +267,16 @@ fn cylinder_segments(radius: f64) -> u32 {
 fn geometry(zone: &Zone) -> Result<(Vec<u8>, Value, Value), String> {
     zone.validate()?;
     if !zone.particles.is_empty() {
-        return Err(
-            "Particle placements cannot be exported until effect packaging is supported".into(),
-        );
+        let detail =
+            match crate::particle_export::preflight(zone, &bevy_sprinkles_editor::io::data_dir()) {
+                Ok(count) => {
+                    format!("local effects resolved; {count} external texture(s) require packaging")
+                }
+                Err(error) => error,
+            };
+        return Err(format!(
+            "Particle placements cannot be exported until effect packaging is supported: {detail}"
+        ));
     }
     let guide_kinds = [
         zone.paths

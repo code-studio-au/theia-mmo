@@ -7828,6 +7828,7 @@ dependencies = [
  "bevy",
  "bevy_sprinkles",
  "bevy_sprinkles_editor",
+ "ron 0.10.1",
  "serde_json",
  "theia-core",
  "theia-network",

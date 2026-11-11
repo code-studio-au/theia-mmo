@@ -16,6 +16,7 @@ mod naming;
 mod outliner;
 mod panels;
 mod particle_anchors;
+mod particle_export;
 mod particle_preview;
 mod particle_workspace;
 mod paths;
