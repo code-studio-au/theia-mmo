@@ -25,3 +25,9 @@ Guardian-created elves, Guardian-worshipping; woodland monarchy, postwar primeva
 ## Related notes
 
 [The Guardian](../../Characters/Divine/The%20Guardian.md)
+
+## Creator-locked review — 12 November 2026
+
+**Creator-approved historical direction:** The Aelari preserve the ancestral elven tradition associated with the later Covenant; the Vaelari are the divergent branch ultimately aligned with Dominion. This describes a cultural/historical lineage, **not membership in an alliance before the alliances were founded**. The schism concerns magical responsibility, religious tradition and knowledge; precise chronology and events remain to be developed. The Aelari level 1–20 campaign must be a distinct complete homeland adventure, not automatically a Cassian-style political plot.
+
+This scoped decision supersedes conflicting older *working* descriptions; other details remain governed by [the decision ledger](../../../DECISIONS.md) and current campaign.
