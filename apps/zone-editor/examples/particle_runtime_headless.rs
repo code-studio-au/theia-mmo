@@ -18,6 +18,8 @@ struct Fixture {
     frame: usize,
     saw_suppressed: bool,
     saw_restored: bool,
+    saw_invalid_layout_suppressed: bool,
+    saw_valid_layout_restored: bool,
 }
 
 fn setup(
@@ -58,6 +60,8 @@ fn setup(
         frame: 0,
         saw_suppressed: false,
         saw_restored: false,
+        saw_invalid_layout_suppressed: false,
+        saw_valid_layout_restored: false,
     });
 }
 
@@ -91,14 +95,48 @@ fn step(
                 .iter()
                 .any(|(material, buffers)| material.is_some() && buffers.amount == 11)
         }
+        80 => {
+            let mut effect = effects.get_mut(&fixture.asset).unwrap();
+            let emitter = &mut effect.emitters[0];
+            emitter.trail.enabled = true;
+            emitter.draw_pass.mesh = ParticleMesh::RibbonTrail {
+                size: 1.0,
+                sections: 2,
+                section_rings: 1,
+                shape: RibbonTrailShape::Flat,
+            };
+            emitter.emission.particles_amount = u32::MAX;
+        }
+        85 => {
+            fixture.saw_invalid_layout_suppressed = emitters
+                .iter()
+                .any(|(material, buffers)| material.is_none() && buffers.amount == 11)
+        }
+        95 => {
+            effects.get_mut(&fixture.asset).unwrap().emitters[0]
+                .emission
+                .particles_amount = 5
+        }
+        105 => {
+            fixture.saw_valid_layout_restored = emitters
+                .iter()
+                .any(|(material, buffers)| material.is_some() && buffers.amount == 5)
+        }
         120 => {
-            if fixture.saw_suppressed && fixture.saw_restored {
+            if fixture.saw_suppressed
+                && fixture.saw_restored
+                && fixture.saw_invalid_layout_suppressed
+                && fixture.saw_valid_layout_restored
+            {
                 println!("headless particle material transition passed");
                 exits.write(AppExit::Success);
             } else {
                 eprintln!(
-                    "headless particle material transition failed: suppressed={} restored={}",
-                    fixture.saw_suppressed, fixture.saw_restored
+                    "headless particle transitions failed: shader_suppressed={} shader_restored={} layout_suppressed={} layout_restored={}",
+                    fixture.saw_suppressed,
+                    fixture.saw_restored,
+                    fixture.saw_invalid_layout_suppressed,
+                    fixture.saw_valid_layout_restored
                 );
                 exits.write(AppExit::error());
             }

@@ -261,3 +261,7 @@ emitter temporarily loses its draw-material component and resumes only with a
 supported material after buffer synchronization; no fallback shader is supplied.
 The format remains readable through version migration, and custom shader rendering
 remains unimplemented. Local tests and a windowless GPU example exercise this.
+
+Checked emitter slot, history and sub-emitter-size arithmetic is now applied
+before runtime allocation and extraction. Invalid live edits suppress rendering
+until repaired. This does not establish a memory cap or validate mesh complexity.

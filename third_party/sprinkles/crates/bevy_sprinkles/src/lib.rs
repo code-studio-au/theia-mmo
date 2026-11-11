@@ -232,7 +232,7 @@ impl Plugin for SprinklesPlugin {
                 setup_particle_systems,
                 sync_particle_buffers.after(setup_particle_systems),
                 sync_particle_mesh.after(sync_particle_buffers),
-                sync_particle_material.after(sync_particle_buffers),
+                sync_particle_material.after(sync_particle_mesh),
                 sync_collider_data,
                 update_particle_time,
                 check_particle_system_finished.after(update_particle_time),

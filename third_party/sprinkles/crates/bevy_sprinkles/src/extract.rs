@@ -595,6 +595,9 @@ pub fn extract_particle_systems(
         let Some(emitter) = asset.emitters.get(runtime.emitter_index) else {
             continue;
         };
+        if crate::spawning::checked_emitter_layout(emitter).is_none() {
+            continue;
+        }
         let Some(ref sub_config) = emitter.sub_emitter else {
             continue;
         };
@@ -619,6 +622,9 @@ pub fn extract_particle_systems(
         let Some(emitter) = asset.emitters.get(runtime.emitter_index) else {
             continue;
         };
+        if crate::spawning::checked_emitter_layout(emitter).is_none() {
+            continue;
+        }
 
         if !emitter.enabled || runtime.inactive {
             continue;

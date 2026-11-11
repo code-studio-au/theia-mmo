@@ -1,3 +1,12 @@
+P2-13 particle allocation arithmetic, 11 November 2026: checked slot,
+trail-history and platform-sized sub-emitter counts reject arithmetic overflow
+before allocation or render extraction. Invalid live emitters are suppressed and
+recover after repair. Eight runtime, 14 loader, 36 particle-editor and 122 zone
+editor tests, fmt and strict workspace/all-target Clippy pass. A windowless RX
+7900 XTX / RADV / Mesa 26.2.6 Vulkan run with Khronos validation reports zero
+unexpected GPU diagnostics. This is not a memory cap, mesh validation or MMO VFX
+budget. See [integration](../SPRINKLES_INTEGRATION.md).
+
 P2-13 / P5-17 runtime material admission, 11 November 2026: unsupported
 custom shaders are rejected by the Bevy loader and cannot panic a programmatic
 system; live emitters stop rendering and recover after valid material/buffer

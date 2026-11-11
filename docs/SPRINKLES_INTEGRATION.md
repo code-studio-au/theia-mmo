@@ -285,3 +285,18 @@ ran on AMD Radeon RX 7900 XTX, RADV NAVI31, Mesa 26.2.6, Vulkan with the Khronos
 validation layer explicitly enabled: no unexpected GPU diagnostics. Its one
 unsupported-material error is intentional. This does not qualify Windows,
 visual appearance, zone placement, gameplay VFX or performance budgets.
+
+## Checked particle/trail arithmetic — P2-13
+
+Before allocating, the runtime checks the particle-by-trail slot count, history
+entry count and platform-sized sub-emitter buffer calculation. Non-finite,
+negative or unrepresentable active trail-history timing is refused. Invalid
+programmatic systems do not start; invalid live emitters skip resizing, mesh
+replacement, uniform writes and render extraction, and their draw material is
+suppressed until repaired. Headless regressions cover overflow and recovery.
+
+The windowless 256×256 RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan test
+exercised unsupported shader and overflowing trail transitions with explicit
+Khronos validation and zero unexpected GPU diagnostics. Both rejection logs
+are intentional. These are arithmetic checks, not memory limits, mesh-shape
+validation, untrusted-content admission, gameplay budgets or a performance claim.

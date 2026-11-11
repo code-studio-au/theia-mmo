@@ -55,6 +55,34 @@ fn compute_trail_history_frames(emitter: &EmitterData) -> u32 {
     trail_size.max(from_stretch).max(2)
 }
 
+// Arithmetic validity only: these checks are not a memory or performance budget.
+pub(crate) fn checked_emitter_layout(emitter: &EmitterData) -> Option<(u32, u32)> {
+    let amount = emitter.emission.particles_amount;
+    let trail_size = emitter.trail_size();
+    let total_slots = amount.checked_mul(trail_size)?;
+    if trail_size > 1 {
+        let stretch = emitter.trail.stretch_time;
+        if !stretch.is_finite() || stretch < 0.0 {
+            return None;
+        }
+        let fps = if emitter.time.fixed_fps > 0 {
+            emitter.time.fixed_fps as f64
+        } else {
+            MAX_TRAIL_HISTORY_FPS as f64
+        };
+        if (f64::from(stretch) * fps).ceil() > f64::from(u32::MAX) {
+            return None;
+        }
+    }
+    let frames = compute_trail_history_frames(emitter);
+    amount.checked_mul(frames)?;
+    usize::try_from(amount)
+        .ok()?
+        .checked_mul(12)?
+        .checked_add(4)?;
+    Some((total_slots, frames))
+}
+
 fn get_particle_asset<'a>(
     parent_system: Entity,
     particle_systems: &Query<&Particles3d>,
@@ -251,7 +279,7 @@ fn bake_thickness_curve(trail: &EmitterTrail) -> [f32; TRAIL_THICKNESS_CURVE_SAM
 }
 
 #[derive(Component)]
-pub(crate) struct UnsupportedParticleAsset;
+pub(crate) struct InvalidParticleAsset;
 
 pub fn setup_particle_systems(
     mut commands: Commands,
@@ -260,7 +288,7 @@ pub fn setup_particle_systems(
             Entity,
             &Particles3d,
             Has<EditorMode>,
-            Has<UnsupportedParticleAsset>,
+            Has<InvalidParticleAsset>,
             Option<&bevy::camera::visibility::RenderLayers>,
         ),
         Without<ParticleSystemRuntime>,
@@ -277,21 +305,29 @@ pub fn setup_particle_systems(
             continue;
         };
 
-        if let Some(index) = asset.unsupported_material_index() {
+        let invalid = asset
+            .unsupported_material_index()
+            .map(|index| (index, "unsupported custom shader"))
+            .or_else(|| {
+                asset
+                    .emitters
+                    .iter()
+                    .position(|emitter| checked_emitter_layout(emitter).is_none())
+                    .map(|index| (index, "invalid particle or trail allocation arithmetic"))
+            });
+        if let Some((index, reason)) = invalid {
             if !unsupported {
-                error!(
-                    "Particle system {system_entity:?} has unsupported custom shader in emitter {index}"
-                );
+                error!("Particle system {system_entity:?}, emitter {index}: {reason}");
                 commands
                     .entity(system_entity)
-                    .try_insert(UnsupportedParticleAsset);
+                    .try_insert(InvalidParticleAsset);
             }
             continue;
         }
         if unsupported {
             commands
                 .entity(system_entity)
-                .remove::<UnsupportedParticleAsset>();
+                .remove::<InvalidParticleAsset>();
         }
         if asset.emitters.is_empty() {
             continue;
@@ -318,7 +354,9 @@ pub fn setup_particle_systems(
         for (emitter_index, emitter) in asset.emitters.iter().enumerate() {
             let amount = emitter.emission.particles_amount;
             let trail_size = emitter.trail_size();
-            let total_slots = amount * trail_size;
+            let Some((total_slots, trail_history_frames)) = checked_emitter_layout(emitter) else {
+                continue;
+            };
 
             let particles: Vec<ParticleData> =
                 (0..total_slots).map(|_| ParticleData::default()).collect();
@@ -332,7 +370,6 @@ pub fn setup_particle_systems(
 
             let sorted_particles_buffer_handle = buffers.add(ShaderBuffer::from(particles));
 
-            let trail_history_frames = compute_trail_history_frames(emitter);
             let trail_history_buffer =
                 create_trail_history_buffer(amount, trail_history_frames, &mut buffers);
 
@@ -574,6 +611,9 @@ pub fn sync_particle_mesh(
             continue;
         };
 
+        if checked_emitter_layout(emitter_data).is_none() {
+            continue;
+        }
         let new_mesh = emitter_data.draw_pass.mesh.clone();
 
         if current_config.0 != new_mesh {
@@ -637,7 +677,10 @@ pub(crate) fn sync_particle_buffers(
         }
         let new_amount = emitter_data.emission.particles_amount;
         let new_trail_size = emitter_data.trail_size();
-        let new_trail_history_frames = compute_trail_history_frames(emitter_data);
+        let Some((new_total, new_trail_history_frames)) = checked_emitter_layout(emitter_data)
+        else {
+            continue;
+        };
 
         if buffer_handle.amount == new_amount
             && buffer_handle.trail_size == new_trail_size
@@ -646,7 +689,6 @@ pub(crate) fn sync_particle_buffers(
             continue;
         }
 
-        let new_total = new_amount * new_trail_size;
         let particles: Vec<ParticleData> =
             (0..new_total).map(|_| ParticleData::default()).collect();
 
@@ -731,6 +773,9 @@ pub fn write_emitter_uniforms(
             continue;
         };
 
+        if checked_emitter_layout(emitter_data).is_none() {
+            continue;
+        }
         let trail_size = emitter_data.trail_size();
         let trail_thickness_curve = bake_thickness_curve(&emitter_data.trail);
 
@@ -751,7 +796,7 @@ pub fn write_emitter_uniforms(
 }
 
 #[derive(Component)]
-pub(crate) struct UnsupportedMaterialSuppressed;
+pub(crate) struct InvalidEmitterSuppressed;
 
 pub fn sync_particle_material(
     mut commands: Commands,
@@ -759,7 +804,7 @@ pub fn sync_particle_material(
     editor_modes: Query<Has<EditorMode>>,
     mut emitter_query: Query<(
         Entity,
-        Has<UnsupportedMaterialSuppressed>,
+        Has<InvalidEmitterSuppressed>,
         &EmitterEntity,
         &EmitterRuntime,
         &mut CurrentMaterialConfig,
@@ -790,15 +835,17 @@ pub fn sync_particle_material(
         };
 
         let new_material = emitter_data.draw_pass.material.clone();
-        if matches!(new_material, DrawPassMaterial::CustomShader { .. }) {
+        if matches!(new_material, DrawPassMaterial::CustomShader { .. })
+            || checked_emitter_layout(emitter_data).is_none()
+        {
             if material3d.is_some() {
                 error!(
-                    "Particle emitter {entity:?} uses an unsupported custom shader; rendering disabled"
+                    "Particle emitter {entity:?} has unsupported material or invalid allocation arithmetic; rendering disabled"
                 );
                 commands
                     .entity(entity)
                     .remove::<MeshMaterial3d<ParticleMaterial>>()
-                    .try_insert(UnsupportedMaterialSuppressed);
+                    .try_insert(InvalidEmitterSuppressed);
             }
             continue;
         }
@@ -843,7 +890,7 @@ pub fn sync_particle_material(
             commands
                 .entity(entity)
                 .try_insert(MeshMaterial3d(material_handle.0.clone()))
-                .remove::<UnsupportedMaterialSuppressed>();
+                .remove::<InvalidEmitterSuppressed>();
         }
     }
 }
@@ -852,6 +899,138 @@ pub fn sync_particle_material(
 mod theia_port_tests {
     use super::*;
     use bevy::render::{render_resource::ShaderType, storage::ShaderBufferData};
+
+    #[test]
+    fn overflowing_trail_layout_is_rejected_and_live_edits_resume_after_repair() {
+        use crate::asset::{ParticleMesh, RibbonTrailShape};
+        let mut app = App::new();
+        app.add_plugins((MinimalPlugins, bevy::asset::AssetPlugin::default()))
+            .init_resource::<Assets<ParticlesAsset>>()
+            .init_resource::<Assets<Mesh>>()
+            .init_resource::<Assets<ShaderBuffer>>()
+            .init_resource::<Assets<ParticleMaterial>>()
+            .init_resource::<ParticleMeshCache>()
+            .add_systems(
+                Update,
+                (
+                    setup_particle_systems,
+                    sync_particle_buffers.after(setup_particle_systems),
+                    sync_particle_mesh.after(sync_particle_buffers),
+                    sync_particle_material.after(sync_particle_mesh),
+                ),
+            );
+        let mut emitter = EmitterData::default();
+        emitter.trail.enabled = true;
+        emitter.draw_pass.mesh = ParticleMesh::RibbonTrail {
+            size: 1.0,
+            sections: 2,
+            section_rings: 1,
+            shape: RibbonTrailShape::Flat,
+        };
+        emitter.emission.particles_amount = u32::MAX;
+        assert!(checked_emitter_layout(&emitter).is_none());
+        let handle = app
+            .world_mut()
+            .resource_mut::<Assets<ParticlesAsset>>()
+            .add(ParticlesAsset::new(
+                "Overflow".into(),
+                crate::asset::ParticlesDimension::D3,
+                default(),
+                vec![emitter],
+                vec![],
+                false,
+                default(),
+            ));
+        let owner = app.world_mut().spawn(Particles3d(handle.clone())).id();
+        app.update();
+        assert!(app.world().get::<InvalidParticleAsset>(owner).is_some());
+        assert!(app.world().get::<ParticleSystemRuntime>(owner).is_none());
+        assert_eq!(app.world().resource::<Assets<ShaderBuffer>>().len(), 0);
+        app.world_mut()
+            .resource_mut::<Assets<ParticlesAsset>>()
+            .get_mut(&handle)
+            .unwrap()
+            .emitters[0]
+            .emission
+            .particles_amount = 4;
+        app.update();
+        assert!(app.world().get::<ParticleSystemRuntime>(owner).is_some());
+        let mut query = app.world_mut().query::<(Entity, &EmitterEntity)>();
+        let emitter_entity = query
+            .iter(app.world())
+            .find(|(_, e)| e.parent_system == owner)
+            .unwrap()
+            .0;
+        assert_eq!(
+            app.world()
+                .get::<ParticleBufferHandle>(emitter_entity)
+                .unwrap()
+                .amount,
+            4
+        );
+        app.world_mut()
+            .resource_mut::<Assets<ParticlesAsset>>()
+            .get_mut(&handle)
+            .unwrap()
+            .emitters[0]
+            .emission
+            .particles_amount = u32::MAX;
+        app.update();
+        assert!(
+            app.world()
+                .get::<MeshMaterial3d<ParticleMaterial>>(emitter_entity)
+                .is_none()
+        );
+        assert_eq!(
+            app.world()
+                .get::<ParticleBufferHandle>(emitter_entity)
+                .unwrap()
+                .amount,
+            4
+        );
+        app.world_mut()
+            .resource_mut::<Assets<ParticlesAsset>>()
+            .get_mut(&handle)
+            .unwrap()
+            .emitters[0]
+            .emission
+            .particles_amount = 5;
+        app.update();
+        assert!(
+            app.world()
+                .get::<MeshMaterial3d<ParticleMaterial>>(emitter_entity)
+                .is_some()
+        );
+        assert_eq!(
+            app.world()
+                .get::<ParticleBufferHandle>(emitter_entity)
+                .unwrap()
+                .amount,
+            5
+        );
+    }
+
+    #[test]
+    fn trail_history_rejects_nonfinite_and_overflowing_frame_counts() {
+        use crate::asset::{ParticleMesh, RibbonTrailShape};
+        let mut emitter = EmitterData::default();
+        emitter.trail.enabled = true;
+        emitter.draw_pass.mesh = ParticleMesh::RibbonTrail {
+            size: 1.0,
+            sections: 2,
+            section_rings: 1,
+            shape: RibbonTrailShape::Flat,
+        };
+        for invalid in [f32::NAN, f32::INFINITY, -1.0, f32::MAX] {
+            emitter.trail.stretch_time = invalid;
+            assert!(checked_emitter_layout(&emitter).is_none());
+        }
+        emitter.trail.stretch_time = 0.3;
+        emitter.emission.particles_amount = u32::MAX / 2;
+        assert!(checked_emitter_layout(&emitter).is_none());
+        emitter.emission.particles_amount = 5;
+        assert!(checked_emitter_layout(&emitter).is_some());
+    }
 
     #[test]
     fn unsupported_materials_never_panic_and_recover_without_stale_buffers() {
@@ -891,7 +1070,7 @@ mod theia_port_tests {
         let owner = app.world_mut().spawn(Particles3d(handle.clone())).id();
         app.update();
         assert!(app.world().get::<ParticleSystemRuntime>(owner).is_none());
-        assert!(app.world().get::<UnsupportedParticleAsset>(owner).is_some());
+        assert!(app.world().get::<InvalidParticleAsset>(owner).is_some());
         assert_eq!(app.world().resource::<Assets<ShaderBuffer>>().len(), 0);
         app.world_mut()
             .resource_mut::<Assets<ParticlesAsset>>()
@@ -902,7 +1081,7 @@ mod theia_port_tests {
             .material = original.clone();
         app.update();
         assert!(app.world().get::<ParticleSystemRuntime>(owner).is_some());
-        assert!(app.world().get::<UnsupportedParticleAsset>(owner).is_none());
+        assert!(app.world().get::<InvalidParticleAsset>(owner).is_none());
         let mut query = app
             .world_mut()
             .query::<(Entity, &EmitterEntity, &EmitterRuntime)>();
