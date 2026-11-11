@@ -80,7 +80,7 @@ def fixture(source, particle_package, destination):
         catalog_path.write_bytes(payload)
         manifest_path = chunk / 'world.manifest.json'
         manifest = json.loads(manifest_path.read_text())
-        manifest.update(schema=4, particle_bytes=len(payload),
+        manifest.update(schema=5 if manifest['schema'] in (3, 5) else 4, particle_bytes=len(payload),
                         particle_sha256=list(hashlib.sha256(payload).digest()))
         manifest_path.write_text(json.dumps(manifest))
         entry, = (entry for entry in index['chunks'] if entry['id'] == [x, 0])

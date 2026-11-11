@@ -12,7 +12,7 @@ checks (`build/projected-particle-editor-native-20261111/qualification.json`,
 `build/projected-particle-editor-world-native-20261111/verification.json`). The editor's explicit empty replacement
 also removed the catalog while preserving schema-3 projected bindings, verified
 on two Vulkan clients (`build/projected-particle-editor-clear-native-20261111/`,
-`build/projected-particle-editor-clear-world-native-20261111/verification.json`).
+`build/projected-particle-editor-clear-world-native-20261111/verification.json`). A separate bounded fixture combined projected visuals with paired-world collision; two Vulkan clients verified material bindings, Tube Trails particle retirement and render-origin translation during a chunk transition (`build/projected-particle-stream-native-20261111-v2/verification.json`). Visual and collision shape equivalence was not tested.
 
 P2-13 world-space particle translation foundation, 11 November 2026: the
 Sprinkles GPU runtime can queue a render-frame offset without advancing or
@@ -75,7 +75,8 @@ resulting world rendered on two connected Vulkan clients
 Mesa 26.2.6 with zero validation diagnostics. The original world-export dialog
 also passed its native regression (`build/world-export-dialog-regression-20261111/`).
 This requires an existing particle-free schema-1/2/3 chunk world; it does not
-partition the editor's terrain or update projected-material schema-3 packages.
+partition the editor's terrain. Projected-material schema-3 packages are now
+supported as described above.
 Particle chunk export now drafts directly from saved particle files instead of
 constructing a temporary terrain world. A native export from a zone without
 objects passed (`build/chunk-export-empty-zone-native-20261111/`).

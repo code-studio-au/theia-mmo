@@ -37,7 +37,8 @@ metrics and effect/binary hashes are in `build/sprinkles-fixed-seeds-loops-20261
 and `build/sprinkles-fixed-seeds-rest-20261111/`. This is evidence for these
 preview examples, not proof of identical behavior for all effects, hardware,
 editor interactions or the in-world camera and lighting. In-world world-space
-particles still clear on floating-origin shifts.
+particles now translate their GPU positions on ordinary floating-origin shifts;
+content-frame changes and out-of-bounds offsets still clear them.
 
 To repeat, apply `tools/sprinkles_deterministic_upstream.patch` to a clean
 checkout at the pinned commit and build its `bevy_sprinkles_editor` binary.
