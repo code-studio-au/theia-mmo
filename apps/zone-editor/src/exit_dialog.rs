@@ -20,7 +20,12 @@ enum Choice {
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(Startup, setup)
         .add_observer(choose)
-        .add_zone_systems(update.after(AuthoringUiUpdate));
+        .add_systems(
+            Update,
+            update
+                .after(AuthoringUiUpdate)
+                .run_if(particle_workspace::zone_active),
+        );
 }
 
 fn setup(mut commands: Commands) {
@@ -157,6 +162,15 @@ mod tests {
             .init_resource::<Assets<ParticlesAsset>>()
             .init_resource::<ButtonInput<KeyCode>>()
             .init_resource::<InputFocus>()
+            // The inline inspector has zone systems ordered before the original
+            // authoring UI. Reproduce that relationship in this fixture so an
+            // exit system accidentally placed in the zone set cannot cycle.
+            .add_systems(
+                Update,
+                (|| {})
+                    .in_set(particle_workspace::ZoneAuthoring)
+                    .before(AuthoringUiUpdate),
+            )
             .add_plugins(plugin);
         app.update();
         app

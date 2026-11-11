@@ -1,3 +1,13 @@
+P5-17 editor startup schedule repair, 11 November 2026: the initial native
+check found an ordering cycle introduced by the Exit handler. Move it outside
+the zone system set while retaining the zone activity guard; a headless exit
+regression now includes the inline inspector's real scheduling relationship.
+The editor starts on Linux Vulkan without the cycle. The older end-to-end
+qualifier then timed out because it expects the retired separate property form;
+current inline and Exit menu native checks remain pending. Fmt, focused tests
+and strict workspace Clippy pass. Evidence: `build/zone-native-20261111-current/`
+and `build/zone-native-20261111-schedule-fix/`.
+
 P5-17 exploratory Sprinkles visual comparison, 11 November 2026: captured all
 seven original examples in the pinned upstream editor and the ported standalone
 host; representative stills appeared broadly similar. Short clips cover two
