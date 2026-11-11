@@ -1,3 +1,10 @@
+P5-17 gradient point and particle-delete investigation, 11 November 2026:
+a deliberate gradient-point click can open its nested color picker, while drag
+and post-drag clicks do not; a new press clears a stale drag marker. Headless
+tests also cover deleting an unassigned particle through the command, key,
+explorer and properties menus. A user-reported native deletion failure remains
+unreproduced, and native gradient retesting remains open. See [integration](../SPRINKLES_INTEGRATION.md).
+
 P5-17 menu/divider ownership, 11 November 2026: both native menus and
 Sprinkles popovers own pointer gestures above dock dividers, and top-bar menus
 render above the divider. Focused headless menu and divider tests pass; native

@@ -1650,7 +1650,7 @@
       "path": "crates/bevy_sprinkles_editor/src/ui/widgets/gradient_edit/mod.rs",
       "upstream_path": "crates/bevy_sprinkles_editor/src/ui/widgets/gradient_edit/mod.rs",
       "upstream_sha256": "2f9085f99f03859b953154c67a30b9830e03c25a8629d40fbf8cf13d542479a2",
-      "imported_sha256": "533809c828679163ccc5e245546a34f2aada2eb6390cabc48ad3a9c58bdce41c",
+      "imported_sha256": "c30321b009563450caf8113925babedb8022668cf3d08c9ec5f1833bf1ecd5f7",
       "changed": true
     },
     {

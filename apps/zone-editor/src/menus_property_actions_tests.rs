@@ -46,6 +46,39 @@ fn item(app: &App, popup: Entity, action: Action) -> Entity {
     }).unwrap()
 }
 #[test]
+fn selected_particle_can_be_deleted_from_property_actions() {
+    let (mut app, _, button, popup) = fixture([0.; 3]);
+    app.world_mut()
+        .resource_mut::<Session>()
+        .edit(vec![Edit::PutParticle {
+            particle: theia_zone::particles::ParticlePlacement {
+                id: 999,
+                name: "New particle".into(),
+                effect: "vfx.unassigned".into(),
+                position: [0.; 3],
+                yaw_degrees: 0.,
+                scale: 1.,
+            },
+        }]);
+    let mut session = app.world_mut().resource_mut::<Session>();
+    session.selected = None;
+    session.particle_selected = Some(999);
+    app.update();
+    open(&mut app, button, popup);
+    let delete = item(&app, popup, Action::Delete);
+    app.world_mut().trigger(Activate { entity: delete });
+    app.update();
+    assert!(
+        app.world()
+            .resource::<Session>()
+            .editor
+            .zone()
+            .particles
+            .is_empty()
+    );
+}
+
+#[test]
 fn selected_actions_duplicate_once_and_refuse_stale_or_closed_contexts() {
     for origin in [
         [0.125, 0.25, -0.5],

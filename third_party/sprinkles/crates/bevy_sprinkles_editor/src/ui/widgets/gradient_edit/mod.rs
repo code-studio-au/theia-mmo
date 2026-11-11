@@ -1,7 +1,7 @@
 use crate::hosting::AuthoringAppExt;
 pub mod materials;
 
-use bevy::picking::events::PointerClick;
+use bevy::picking::events::{PointerClick, PointerPress};
 use bevy::picking::hover::Hovered;
 use bevy::picking::pointer::PointerButton;
 use bevy::picking::prelude::Pickable;
@@ -31,6 +31,7 @@ use crate::ui::widgets::popover::{
 use crate::ui::widgets::text_edit::{
     TextEditCommitEvent, TextEditProps, set_text_input_value, text_edit,
 };
+use crate::ui::widgets::utils::is_descendant_of;
 use bevy::text::EditableText;
 
 const BAR_HEIGHT: f32 = 24.0;
@@ -719,6 +720,7 @@ fn spawn_stop_handles(
                 spawn_handle_square(handle, stop.color);
             })
             .observe(on_handle_click)
+            .observe(on_handle_press)
             .observe(on_handle_drag_start)
             .observe(on_handle_drag)
             .observe(on_handle_drag_end);
@@ -788,6 +790,7 @@ fn on_handle_click(
     states: Query<&GradientEditState>,
     existing_popovers: Query<Entity, With<HandleColorPopover>>,
     all_popovers: Query<Entity, With<EditorPopover>>,
+    parents: Query<&ChildOf>,
 ) {
     if event.button != PointerButton::Primary {
         return;
@@ -798,7 +801,7 @@ fn on_handle_click(
     };
 
     if is_dragging || just_dragged {
-        commands.entity(event.entity).remove::<JustDragged>();
+        commands.entity(event.entity).try_remove::<JustDragged>();
         return;
     }
 
@@ -806,7 +809,9 @@ fn on_handle_click(
         commands.entity(popover_entity).try_despawn();
     }
 
-    if !all_popovers.is_empty() {
+    if all_popovers.iter().any(|popover| {
+        !existing_popovers.contains(popover) && !is_descendant_of(event.entity, popover, &parents)
+    }) {
         return;
     }
 
@@ -844,6 +849,16 @@ fn on_handle_click(
             )))
             .insert(ChildOf(parent_target));
     });
+}
+
+fn on_handle_press(
+    event: On<PointerPress>,
+    mut commands: Commands,
+    handles: Query<(), With<StopHandle>>,
+) {
+    if event.button == PointerButton::Primary && handles.contains(event.entity) {
+        commands.entity(event.entity).try_remove::<JustDragged>();
+    }
 }
 
 fn on_handle_drag_start(
@@ -1646,6 +1661,98 @@ fn respawn_stops_on_change(
 #[cfg(test)]
 mod lifetime_tests {
     use super::*;
+
+    #[test]
+    fn dragged_stop_does_not_open_picker_but_click_opens_it_within_gradient_popup() {
+        use bevy::{
+            asset::AssetApp,
+            camera::NormalizedRenderTarget,
+            picking::{
+                backend::HitData,
+                events::Pointer,
+                pointer::{Location, PointerId},
+            },
+        };
+        use std::time::Duration;
+        let mut app = App::new();
+        app.add_plugins((
+            MinimalPlugins,
+            bevy::asset::AssetPlugin::default(),
+            bevy::scene::ScenePlugin,
+        ))
+        .init_asset::<Image>()
+        .init_asset::<Font>()
+        .add_observer(on_handle_click)
+        .add_observer(on_handle_press);
+        let gradient = app.world_mut().spawn(GradientEditState::default()).id();
+        let outer = app.world_mut().spawn(EditorPopover).id();
+        let handle = app
+            .world_mut()
+            .spawn((
+                StopHandle(StopRef::new(gradient, 0)),
+                Dragging,
+                ChildOf(outer),
+            ))
+            .id();
+        let pointer = Pointer::new(
+            PointerId::Mouse,
+            Location {
+                target: NormalizedRenderTarget::None {
+                    width: 100,
+                    height: 100,
+                },
+                position: Vec2::ZERO,
+            },
+        );
+        let click = || PointerClick {
+            entity: handle,
+            pointer: pointer.clone(),
+            button: PointerButton::Primary,
+            hit: HitData::new(Entity::PLACEHOLDER, 0., None, None),
+            duration: Duration::ZERO,
+            count: 1,
+        };
+        app.world_mut().trigger(click());
+        app.update();
+        assert_eq!(
+            app.world_mut()
+                .query::<&HandleColorPopover>()
+                .iter(app.world())
+                .count(),
+            0
+        );
+        app.world_mut().entity_mut(handle).remove::<Dragging>();
+        app.world_mut().entity_mut(handle).insert(JustDragged);
+        app.world_mut().trigger(click());
+        app.update();
+        assert_eq!(
+            app.world_mut()
+                .query::<&HandleColorPopover>()
+                .iter(app.world())
+                .count(),
+            0
+        );
+        // Some platforms omit the post-drag click; the next press must clear
+        // the old marker so a deliberate click still opens the picker.
+        app.world_mut().entity_mut(handle).insert(JustDragged);
+        app.world_mut().trigger(PointerPress {
+            entity: handle,
+            pointer: pointer.clone(),
+            button: PointerButton::Primary,
+            hit: HitData::new(Entity::PLACEHOLDER, 0., None, None),
+            count: 1,
+        });
+        app.update();
+        app.world_mut().trigger(click());
+        app.update();
+        assert_eq!(
+            app.world_mut()
+                .query::<&HandleColorPopover>()
+                .iter(app.world())
+                .count(),
+            1
+        );
+    }
 
     #[test]
     fn deleting_a_stop_from_its_menu_rebuilds_rows_and_picker_count() {

@@ -88,6 +88,43 @@ fn item(app: &mut App, popup: Entity, control: workspace::Control) -> Entity {
         .unwrap()
 }
 #[test]
+fn particle_row_menu_deletes_placement_and_preserves_other_content() {
+    let (mut app, _) = fixture([0.; 3]);
+    app.world_mut()
+        .resource_mut::<Session>()
+        .edit(vec![Edit::PutParticle {
+            particle: theia_zone::particles::ParticlePlacement {
+                id: 999,
+                name: "New particle".into(),
+                effect: "vfx.unassigned".into(),
+                position: [0.; 3],
+                yaw_degrees: 0.,
+                scale: 1.,
+            },
+        }]);
+    app.world_mut().resource_mut::<outliner::Content>().filter = outliner::Filter::Particles;
+    app.update();
+    let popup = open(&mut app, 0, true);
+    assert_eq!(
+        app.world().resource::<Session>().particle_selected,
+        Some(999)
+    );
+    let before = app
+        .world()
+        .resource::<Session>()
+        .editor
+        .zone()
+        .objects
+        .clone();
+    let delete = item(&mut app, popup, workspace::Control::Command(Action::Delete));
+    app.world_mut().trigger(Activate { entity: delete });
+    app.update();
+    let session = app.world().resource::<Session>();
+    assert!(session.editor.zone().particles.is_empty());
+    assert_eq!(session.editor.zone().objects, before);
+}
+
+#[test]
 fn native_row_menu_selects_context_and_duplicates_exactly_once_through_shared_commands() {
     for origin in [
         [0.125, 0.25, -0.5],

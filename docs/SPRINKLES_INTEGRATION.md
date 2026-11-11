@@ -762,3 +762,13 @@ The same pointer ownership now covers native editor menus and selectors, not
 just Sprinkles popovers. Top-bar menus render above dock grips. Headless tests
 exercise both popup families over the real divider and check top-menu layering;
 native retesting remains pending.
+
+A gradient handle click can open its color picker inside the existing gradient
+popover. Dragging or the click associated with a drag does not open it; a new
+press clears an old drag marker. A headless pointer-event regression covers the
+sequence, while native interaction remains to be retested.
+
+An unassigned particle placement added at spawn can be deleted by the shared
+command, Delete key, explorer context menu and properties actions in headless
+tests; Undo restores the placement. A reported native inability to delete remains
+unresolved until the actual failing interaction can be reproduced.

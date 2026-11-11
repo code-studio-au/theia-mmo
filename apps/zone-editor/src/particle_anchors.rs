@@ -105,6 +105,67 @@ mod tests {
     use theia_zone::particles::ParticlePlacement;
 
     #[test]
+    fn delete_key_removes_selected_particle_when_no_text_field_owns_focus() {
+        let (mut app, _) = crate::outliner::tests::app([0.; 3]);
+        app.add_systems(Update, crate::keyboard);
+        app.world_mut()
+            .resource_mut::<Session>()
+            .edit(vec![Edit::PutParticle {
+                particle: ParticlePlacement {
+                    id: 999,
+                    name: "New particle".into(),
+                    effect: "vfx.unassigned".into(),
+                    position: [0.; 3],
+                    yaw_degrees: 0.,
+                    scale: 1.,
+                },
+            }]);
+        app.world_mut().resource_mut::<Session>().particle_selected = Some(999);
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .press(KeyCode::Delete);
+        app.update();
+        assert!(
+            app.world()
+                .resource::<Session>()
+                .editor
+                .zone()
+                .particles
+                .is_empty()
+        );
+    }
+
+    #[test]
+    fn add_at_spawn_then_delete_removes_only_the_selected_placement_and_undo_restores_it() {
+        let zone = Zone::default();
+        let mut session = Session::new(
+            Editor::new(zone.clone()).unwrap(),
+            PathBuf::new(),
+            Some(zone),
+        );
+        let mut view = View {
+            target: Vec3::ZERO,
+            yaw: 0.,
+            pitch: 0.8,
+            distance: 32.,
+            preset: camera_views::Preset::Perspective,
+            show_grid: true,
+        };
+        perform(Action::AddParticle, &mut session, &mut view);
+        let id = session.particle_selected.expect("new particle is selected");
+        assert_eq!(session.editor.zone().particles.len(), 1);
+        assert_eq!(
+            session.editor.zone().particles[0].position,
+            session.editor.zone().spawn
+        );
+        perform(Action::Delete, &mut session, &mut view);
+        assert!(session.editor.zone().particles.is_empty());
+        assert_eq!(session.particle_selected, None);
+        perform(Action::Undo, &mut session, &mut view);
+        assert_eq!(session.editor.zone().particles[0].id, id);
+    }
+
+    #[test]
     fn anchor_tracks_exact_local_position_selection_deletion_and_undo() {
         let origin = [128_000_000_000., 4., -128_000_000_000.];
         let particle = ParticlePlacement {
