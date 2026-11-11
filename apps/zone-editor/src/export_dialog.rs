@@ -428,7 +428,7 @@ pub(super) fn finish(
             **text = if draft.mode == Mode::World {
                 "Exports the current zone snapshot. Save particle edits first."
             } else {
-                "Copies an existing chunk world with these particle placements. Save particle edits first."
+                "Copies a particle-free chunk world with these placements. Save particle edits first; projected-material chunks are not supported yet."
             }.into();
         } else if caption.is_some_and(|caption| caption.0 == 1) {
             **text = if draft.mode == Mode::World {
