@@ -88,3 +88,24 @@ All boxes remain open until final current-main verification, even where substant
 - [ ] Temporary tracker deleted with incoming references repaired.
 
 After completion, stop cleanup cycles and maintain the established sources rather than create competing ones.
+
+
+## 2026-11-12 — Full conversation-to-repository reconciliation audit (IN PROGRESS)
+
+**Authority:** Creator-approved decisions recorded in [DECISIONS.md](DECISIONS.md#2026-11-12--covenant-racial-openings-tidehold-handoff-and-cast-review--creator-locked-documentation) and the current canonical campaign. **Do not treat this audit as approval of unmade racial 1–20 plots or as permission to invent missing biographies.** Review only the scope of approved details; preserve stable quest IDs and prior outcomes.
+
+### Initial verified findings on `main`
+
+- [x] Decision ledger includes the new Covenant racial handoff, human cast, Bromund, Oth'varen/Father, and race-history direction.
+- [x] Canonical campaign Q035 is `The Covenant Calls`, Q036 is the shared Tidehold briefing, Q184 has a race-specific homecoming, and Q053 names the High Thane.
+- [x] Individual character notes updated for Darian, Brenna, Anwen, Aldren, Cassian, Corven, Veylan, Bromund and Oth'varen; Dwarves, Aelari, Vaelari and Korrath people notes updated.
+- [ ] **BLOCKING — Structured quest inventory:** `Theia/Campaigns/Human_1_80_Current_Quest_Authoring_Manifest.json` still contains old Q035 title and legacy `Grey Surveyor` / `High King` strings. Reconcile Q035 race-aware prerequisites, Q036 briefing and Q184 branches carefully, preserving all stages/evidence semantics.
+- [ ] **BLOCKING — Quest dependency inventory:** `Theia/Campaigns/Human_1_80_Quest_Dependencies.json` still contains old Q035 title and legacy titles. Verify Q035 is not gated by human Q031 or Cassian's ledger and has a correct per-race completion gate.
+- [ ] **Dialogue:** `Theia/Campaigns/Human_20_30_NPC_Dialogue_Scripts.md` still has old Q035 Cassian-ledger introduction and old `Grey Surveyor` / `High King` references. Review later dialogue packs and spoiler timing before replacements.
+- [ ] **Canon consistency:** `Theia/Campaigns/Human_1_80_Canonical_Campaign.md` still contains older `Grey Surveyor` and `High King` references beyond the Q053 change. Determine each reference's context (historical vs current player-facing) before editing.
+- [ ] **Race/culture review:** Reconcile reciprocal Aelari/Vaelari and Korrath/Vorrath ancestral directions with the World Bible, Chronicle, race profiles and historic schism timing. Neither modern alliance existed at the ancient schisms. Review Vorrath note specifically.
+- [ ] **Character coverage:** Check remaining cast files and scene scripts for approved motivations, dialogue and relationships from the conversation. Avoid inventing details not actually recoverable.
+- [ ] **Narrative and reveal timing:** Confirm Guardians' secrecy, Father alias, Oth'varen's hidden transformation, Harbinger name timing, incremental resonator discovery, forgotten Kel'vari, divine absence, Shattered Delegation accounts and race-specific dialogue across all relevant files.
+- [ ] **Final validation:** Cross-check quest IDs, prerequisites, dialogue, old/new names and later epilogues; report anything not fully committed or implemented. Only mark complete after concrete verification.
+
+**Audit scope note:** The current project conversation includes many spoken approvals. A full assertion of 100% coverage requires comparing all available approval records and their detailed source conversations, not just this initial targeted file scan. This tracker records confirmed gaps rather than asserting completeness.
