@@ -1,7 +1,11 @@
 //! Draft particle overlays for an existing chunk index without publishing it.
 use std::{collections::BTreeSet, fs, io::Read, path::Path};
 use theia_core::coordinates::{GlobalPosition, LocalFrame};
-use theia_network::{chunks::Index, content::Manifest, particle_content::MAX_CATALOG_BYTES};
+use theia_network::{
+    chunks::Index,
+    content::Manifest,
+    particle_content::{Catalog, MAX_CATALOG_BYTES},
+};
 
 fn read_bounded(path: &Path, limit: u64) -> Result<Vec<u8>, String> {
     let file = fs::File::open(path).map_err(|e| e.to_string())?;
@@ -43,15 +47,60 @@ pub fn run(source: &Path, chunks: &Path, output: &Path, origin: [f64; 3]) -> Res
     )?)
     .map_err(|e| e.to_string())?;
     let catalog_bytes = read_bounded(&source.join("particles/catalog.json"), MAX_CATALOG_BYTES)?;
-    let catalog = manifest
+    manifest
         .verify_particle_catalog(&catalog_bytes)
         .map_err(|e| e.to_string())?;
+    from_catalog(
+        &catalog_bytes,
+        &source.join("particles/effects"),
+        &source.join("particles/textures"),
+        &chunks,
+        &destination,
+        origin.metres(),
+        Some(manifest.identity()),
+    )
+}
+
+/// Draft a validated catalog and its hash-bound files without requiring a world
+/// geometry export. `source_identity` is optional provenance, not authority.
+#[allow(clippy::too_many_arguments)]
+pub fn from_catalog(
+    catalog_bytes: &[u8],
+    effects: &Path,
+    textures: &Path,
+    chunks: &Path,
+    output: &Path,
+    origin: [f64; 3],
+    source_identity: Option<[u8; 32]>,
+) -> Result<(), String> {
+    let chunks = fs::canonicalize(chunks).map_err(|e| e.to_string())?;
+    let effects = fs::canonicalize(effects).map_err(|e| e.to_string())?;
+    let textures = fs::canonicalize(textures).map_err(|e| e.to_string())?;
+    let parent = output
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or(Path::new("."));
+    let parent = fs::canonicalize(parent).map_err(|e| e.to_string())?;
+    if parent.starts_with(&chunks) || parent.starts_with(&effects) || parent.starts_with(&textures)
+    {
+        return Err("Output must be outside input directories".into());
+    }
+    let destination = parent.join(
+        output
+            .file_name()
+            .ok_or("Output requires a directory name")?,
+    );
+    if destination.exists() {
+        return Err("Output directory already exists".into());
+    }
+    let origin = GlobalPosition::new(origin).ok_or("Invalid source origin")?;
+    let catalog = Catalog::decode(catalog_bytes).map_err(|e| e.to_string())?;
     let index = Index::load(&chunks).map_err(|e| e.to_string())?;
     let ids: BTreeSet<_> = index.ids().collect();
     let drafts = crate::draft_particle_chunks(
         &catalog,
-        &source.join("particles/effects"),
-        &source.join("particles/textures"),
+        &effects,
+        &textures,
         LocalFrame::new(origin),
         &ids,
         256 * 1024 * 1024,
@@ -75,7 +124,7 @@ pub fn run(source: &Path, chunks: &Path, output: &Path, origin: [f64; 3]) -> Res
             fs::write(directory.join("catalog.json"), &draft.catalog).map_err(|e| e.to_string())?;
             entries.push(serde_json::json!({"id":[id.x,id.z], "catalog_sha256":theia_network::terrain::sha256(&draft.catalog)}));
         }
-        let report = serde_json::json!({"schema":1,"source_identity":manifest.identity(),"chunk_index_identity":index.identity(),"source_origin":origin.metres(),"chunks":entries,"scope":"unpublished particle overlays; chunk geometry, manifests and index are unchanged"});
+        let report = serde_json::json!({"schema":1,"source_identity":source_identity,"source_catalog_sha256":theia_network::terrain::sha256(catalog_bytes),"chunk_index_identity":index.identity(),"source_origin":origin.metres(),"chunks":entries,"scope":"unpublished particle overlays; chunk geometry, manifests and index are unchanged"});
         fs::write(
             destination.join("draft.json"),
             serde_json::to_vec_pretty(&report).map_err(|e| e.to_string())?,
@@ -149,6 +198,26 @@ mod tests {
         let missing = root.join("missing");
         assert!(run(&source, &chunks, &missing, [1000., 0., 0.]).is_err());
         assert!(!missing.exists());
+        fs::remove_file(source.join("world.manifest.json")).unwrap();
+        let direct = root.join("direct");
+        from_catalog(
+            &catalog,
+            &source.join("particles/effects"),
+            &source.join("particles/textures"),
+            &chunks,
+            &direct,
+            [120., 0., 0.],
+            None,
+        )
+        .unwrap();
+        assert_eq!(
+            fs::read(direct.join("chunk_0_0/catalog.json")).unwrap(),
+            fs::read(output.join("chunk_0_0/catalog.json")).unwrap()
+        );
+        let report: serde_json::Value =
+            serde_json::from_slice(&fs::read(direct.join("draft.json")).unwrap()).unwrap();
+        assert!(report["source_identity"].is_null());
+        assert_eq!(report["source_catalog_sha256"], json!(sha256(&catalog)));
         fs::remove_dir_all(root).unwrap();
     }
 }

@@ -15,7 +15,7 @@ from launch_environment import client_environment
 from qualify_world_input_os import Desktop, capture_ready, owned_window, wait
 
 
-def run(output, binary):
+def run(output, binary, empty_zone=False):
     output.mkdir(parents=True, exist_ok=False)
     name = f'exportdemo{time.time_ns()}'
     world = Path('build')/(name+'-particles')
@@ -28,6 +28,8 @@ def run(output, binary):
     source, report = output/'zone.json', output/'state.json'
     edits = json.loads(Path('content/zones/greybox.commands.jsonl').read_text().splitlines()[0])['edits']
     objects = [edit['object'] for edit in edits if edit['op']=='place']
+    if empty_zone:
+        objects = []
     source.write_text(json.dumps({'schema':8, 'name':name, 'origin':[0,0,0], 'spawn':[0,.1,6],
         'objects':objects, 'particles':[{'id':10,'name':'Test','effect':'vfx.test','position':[122,1.3,32],
                                         'yaw_degrees':0,'scale':1}]}))
@@ -95,7 +97,7 @@ def run(output, binary):
             desktop.close()
     log = (output/'editor.log').read_text()
     assert 'VK_LAYER_KHRONOS_validation' in log and check_gpu_diagnostics(log)==0
-    result = {'passed':True,'world':str(world.resolve()),'revision':3,'source_unchanged':True,
+    result = {'passed':True,'world':str(world.resolve()),'revision':3,'empty_zone':empty_zone,'source_unchanged':True,
               'effect_unchanged':True,'gpu_diagnostics':0}
     (output/'qualification.json').write_text(json.dumps(result,indent=2)+'\n')
     return result
@@ -105,5 +107,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('output', type=Path)
     parser.add_argument('--binary', type=Path, default=Path('target/debug/theia-zone-editor'))
+    parser.add_argument('--empty-zone', action='store_true')
     args = parser.parse_args()
-    print(json.dumps(run(args.output.resolve(), args.binary.resolve()),indent=2))
+    print(json.dumps(run(args.output.resolve(), args.binary.resolve(), args.empty_zone),indent=2))

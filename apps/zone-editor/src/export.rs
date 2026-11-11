@@ -56,8 +56,28 @@ fn publish_particles_to_chunks_in(
     let source = root.join("source");
     let overlays = root.join("overlays");
     let result = (|| {
-        publish_in(zone, &source, "theia.internal.particle-export", 1, library)?;
-        theia_vfx::chunk_overlay::draft::run(&source, chunks, &overlays, zone.origin)?;
+        zone.validate()?;
+        let (_, draft) = crate::particle_export::draft(zone, library)?;
+        fs::create_dir(&source).map_err(|e| e.to_string())?;
+        let effects = source.join("effects");
+        let textures = source.join("textures");
+        fs::create_dir(&effects).map_err(|e| e.to_string())?;
+        fs::create_dir(&textures).map_err(|e| e.to_string())?;
+        for (name, bytes) in draft.effects {
+            fs::write(effects.join(name), bytes).map_err(|e| e.to_string())?;
+        }
+        for (name, bytes) in draft.textures {
+            fs::write(textures.join(name), bytes).map_err(|e| e.to_string())?;
+        }
+        theia_vfx::chunk_overlay::draft::from_catalog(
+            &draft.catalog,
+            &effects,
+            &textures,
+            chunks,
+            &overlays,
+            zone.origin,
+            None,
+        )?;
         theia_vfx::chunk_overlay::publish::run(chunks, &overlays, output)
     })();
     let _ = fs::remove_dir_all(&root);

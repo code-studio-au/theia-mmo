@@ -35,6 +35,9 @@ Mesa 26.2.6 with zero validation diagnostics. The original world-export dialog
 also passed its native regression (`build/world-export-dialog-regression-20261111/`).
 This requires an existing particle-free schema-1/2 chunk world; it does not
 partition the editor's terrain or update projected-material schema-3 packages.
+Particle chunk export now drafts directly from saved particle files instead of
+constructing a temporary terrain world. A native export from a zone without
+objects passed (`build/chunk-export-empty-zone-native-20261111/`).
 
 P2-13 particle image admission, 11 November 2026: monolithic and chunk clients
 now apply their decoded-image allowance to verified PNG headers before invoking
