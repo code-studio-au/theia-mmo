@@ -142,15 +142,23 @@ pub fn update_particle_time(
 
         let clear_requested = runtime.clear_requested;
         runtime.clear_requested = false;
+        let world_rebase = std::mem::take(&mut runtime.pending_world_rebase);
+        // A clear discards existing positions, so it supersedes translation.
+        let world_rebase = if clear_requested {
+            Vec3::ZERO
+        } else {
+            world_rebase
+        };
 
         if runtime.inactive || system_runtime.paused {
-            if clear_requested {
+            if clear_requested || world_rebase != Vec3::ZERO {
                 let step = SimulationStep {
                     prev_system_time: runtime.system_time,
                     system_time: runtime.system_time,
                     cycle: runtime.cycle,
                     delta_time: 0.0,
-                    clear_requested: true,
+                    clear_requested,
+                    world_rebase,
                     trail_history_write_index: runtime.trail_history_write_index,
                 };
                 runtime.simulation_steps.push(step);
@@ -184,6 +192,11 @@ pub fn update_particle_time(
                     system_time: runtime.system_time,
                     cycle: runtime.cycle,
                     delta_time: fixed_delta,
+                    world_rebase: if runtime.simulation_steps.is_empty() {
+                        world_rebase
+                    } else {
+                        Vec3::ZERO
+                    },
                     clear_requested: if runtime.simulation_steps.is_empty() {
                         clear_requested
                     } else {
@@ -197,6 +210,17 @@ pub fn update_particle_time(
 
             if !runtime.simulation_steps.is_empty() {
                 runtime.prev_system_time = runtime.simulation_steps[0].prev_system_time;
+            } else if world_rebase != Vec3::ZERO {
+                let step = SimulationStep {
+                    prev_system_time: runtime.system_time,
+                    system_time: runtime.system_time,
+                    cycle: runtime.cycle,
+                    delta_time: 0.,
+                    clear_requested: false,
+                    world_rebase,
+                    trail_history_write_index: runtime.trail_history_write_index,
+                };
+                runtime.simulation_steps.push(step);
             }
         } else {
             let delta = time.delta_secs();
@@ -215,6 +239,7 @@ pub fn update_particle_time(
                 cycle: runtime.cycle,
                 delta_time: delta,
                 clear_requested,
+                world_rebase,
                 trail_history_write_index: runtime.trail_history_write_index,
             };
             runtime.advance_trail_history();
@@ -902,6 +927,99 @@ pub fn sync_particle_material(
 mod theia_port_tests {
     use super::*;
     use bevy::render::{render_resource::ShaderType, storage::ShaderBufferData};
+
+    #[test]
+    fn world_rebase_is_delivered_once_even_when_paused_or_between_fixed_steps() {
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins)
+            .insert_resource(bevy::time::TimeUpdateStrategy::ManualDuration(
+                std::time::Duration::ZERO,
+            ))
+            .init_resource::<Assets<ParticlesAsset>>()
+            .add_systems(Update, update_particle_time);
+        let mut emitter = EmitterData::default();
+        emitter.time.fixed_fps = 60;
+        let handle = app
+            .world_mut()
+            .resource_mut::<Assets<ParticlesAsset>>()
+            .add(ParticlesAsset::new(
+                "test".into(),
+                crate::asset::ParticlesDimension::D3,
+                default(),
+                vec![emitter],
+                vec![],
+                false,
+                default(),
+            ));
+        let parent = app
+            .world_mut()
+            .spawn((Particles3d(handle), ParticleSystemRuntime::default()))
+            .id();
+        let entity = app
+            .world_mut()
+            .spawn((
+                EmitterEntity {
+                    parent_system: parent,
+                },
+                EmitterRuntime::new(0, Some(7)),
+            ))
+            .id();
+        app.update();
+        {
+            let mut runtime = app.world_mut().get_mut::<EmitterRuntime>(entity).unwrap();
+            assert!(runtime.queue_world_rebase(Vec3::new(3., 0., 0.)));
+            assert!(runtime.queue_world_rebase(Vec3::new(-1., 0., 0.)));
+            assert!(!runtime.queue_world_rebase(Vec3::splat(f32::NAN)));
+        }
+        app.update();
+        let runtime = app.world().get::<EmitterRuntime>(entity).unwrap();
+        assert_eq!(runtime.system_time, 0.);
+        assert_eq!(runtime.simulation_steps.len(), 1);
+        assert_eq!(
+            runtime.simulation_steps[0].world_rebase,
+            Vec3::new(2., 0., 0.)
+        );
+        assert_eq!(runtime.simulation_steps[0].delta_time, 0.);
+        assert!(!runtime.simulation_steps[0].clear_requested);
+        app.update();
+        assert!(
+            app.world()
+                .get::<EmitterRuntime>(entity)
+                .unwrap()
+                .simulation_steps
+                .is_empty()
+        );
+        app.world_mut()
+            .get_mut::<ParticleSystemRuntime>(parent)
+            .unwrap()
+            .pause();
+        app.world_mut()
+            .get_mut::<EmitterRuntime>(entity)
+            .unwrap()
+            .queue_world_rebase(Vec3::Y);
+        app.update();
+        let step = app
+            .world()
+            .get::<EmitterRuntime>(entity)
+            .unwrap()
+            .simulation_steps[0];
+        assert_eq!(step.world_rebase, Vec3::Y);
+        assert!(!step.clear_requested);
+        assert_eq!(step.delta_time, 0.);
+        {
+            let mut runtime = app.world_mut().get_mut::<EmitterRuntime>(entity).unwrap();
+            runtime.queue_world_rebase(Vec3::Z);
+            runtime.clear_requested = true;
+        }
+        app.update();
+        let step = app
+            .world()
+            .get::<EmitterRuntime>(entity)
+            .unwrap()
+            .simulation_steps[0];
+        assert!(step.clear_requested);
+        assert_eq!(step.world_rebase, Vec3::ZERO);
+    }
 
     #[test]
     fn overflowing_trail_layout_is_rejected_and_live_edits_resume_after_repair() {

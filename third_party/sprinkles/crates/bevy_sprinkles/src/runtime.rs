@@ -164,6 +164,8 @@ pub struct SimulationStep {
     pub delta_time: f32,
     /// Whether to clear all particles before this step.
     pub clear_requested: bool,
+    /// Translation of existing world-space GPU positions before this step.
+    pub world_rebase: Vec3,
     /// Snapshot of the trail history ring buffer write position for this step.
     pub trail_history_write_index: u32,
 }
@@ -191,6 +193,7 @@ pub struct EmitterRuntime {
     pub inactive_time: f32,
     /// Whether to clear all particles on the next frame.
     pub clear_requested: bool,
+    pub(crate) pending_world_rebase: Vec3,
     /// Index of this emitter within the parent [`ParticlesAsset::emitters`].
     pub emitter_index: usize,
     /// Pending simulation steps to be dispatched to the GPU.
@@ -219,6 +222,7 @@ impl EmitterRuntime {
             inactive: false,
             inactive_time: 0.0,
             clear_requested: false,
+            pending_world_rebase: Vec3::ZERO,
             emitter_index,
             simulation_steps: Vec::new(),
             trail_history_write_index: 0,
@@ -272,8 +276,21 @@ impl EmitterRuntime {
         self.random_seed = fixed_seed.unwrap_or_else(rand_seed);
         self.one_shot_completed = false;
         self.clear_requested = true;
+        self.pending_world_rebase = Vec3::ZERO;
         self.simulation_steps.clear();
         self.trail_history_write_index = 0;
+    }
+
+    /// Queue a translation of existing world-space particles and trail history.
+    /// The caller supplies old-frame origin minus new-frame origin, in metres.
+    /// Returns false without changing the queue if the accumulated offset is not finite.
+    pub fn queue_world_rebase(&mut self, offset: Vec3) -> bool {
+        let next = self.pending_world_rebase + offset;
+        if !next.is_finite() {
+            return false;
+        }
+        self.pending_world_rebase = next;
+        true
     }
 
     pub(crate) fn advance_trail_history(&mut self) {

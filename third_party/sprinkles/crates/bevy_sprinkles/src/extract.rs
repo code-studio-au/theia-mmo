@@ -223,6 +223,8 @@ pub struct EmitterUniforms {
     pub trail_effective_fps: f32,
     pub _trail_pad0: u32,
     pub _trail_pad1: u32,
+    pub world_rebase: [f32; 3],
+    pub _rebase_pad: f32,
 }
 
 #[derive(Resource, Default)]
@@ -549,6 +551,8 @@ fn build_base_uniforms(
         trail_effective_fps: 60.0,
         _trail_pad0: 0,
         _trail_pad1: 0,
+        world_rebase: [0.; 3],
+        _rebase_pad: 0.,
     }
 }
 
@@ -720,6 +724,7 @@ pub fn extract_particle_systems(
                     is_sub_emitter_target: if is_sub_emitter_target { 1 } else { 0 },
                     trail_pass: 0,
                     trail_history_write_index: step.trail_history_write_index,
+                    world_rebase: step.world_rebase.to_array(),
                     ..base_uniforms
                 };
                 let trail_uniforms = (trail_size > 1).then_some(EmitterUniforms {

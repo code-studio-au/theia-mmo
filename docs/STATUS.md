@@ -1,3 +1,12 @@
+P2-13 world-space particle translation foundation, 11 November 2026: the
+Sprinkles GPU runtime can queue a render-frame offset without advancing or
+restarting the emitter, including while paused and between fixed steps. A native
+GPU readback on RX 7900 XTX / RADV verified the active head and all 120 trail
+history entries moved by the exact requested offset with no Vulkan validation
+diagnostics (`build/particle-gpu-rebase-20261111/result.json`). This capability
+is not yet connected to client origin shifts; the client still clears world-space
+particles on rebase until that integration is validated.
+
 P2-13 / P5-17 fixed-step Sprinkles comparison, 11 November 2026: all seven
 bundled effects were captured at five matching update counts in the pinned
 upstream preview and Theia port with fixed simulation steps and in-memory seeds,

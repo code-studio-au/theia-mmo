@@ -152,6 +152,8 @@ struct EmitterParams {
     trail_effective_fps: f32,
     _trail_pad0: u32,
     _trail_pad1: u32,
+    world_rebase: vec3<f32>,
+    _rebase_pad: f32,
 }
 
 struct Collider {
@@ -323,6 +325,22 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     }
 
     var p = particles[idx];
+
+    // Existing world-space positions use the previous render origin. Move live
+    // heads and their history into the new frame before simulation or pause.
+    if (any(params.world_rebase != vec3(0.0))) {
+        let active_before_rebase = (bitcast<u32>(p.custom.w) & PARTICLE_FLAG_ACTIVE) != 0u;
+        if (active_before_rebase) {
+            p.position = vec4(p.position.xyz + params.world_rebase, p.position.w);
+            if (params.trail_history_size > 0u) {
+                let base = thread_idx * params.trail_history_size;
+                for (var h = 0u; h < params.trail_history_size; h++) {
+                    let old = trail_history[base + h].position;
+                    trail_history[base + h].position = vec4(old.xyz + params.world_rebase, old.w);
+                }
+            }
+        }
+    }
 
     // fully reset particle data, then continue to emission/update
     // (clear does not skip the rest of the step)
