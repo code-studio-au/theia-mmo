@@ -100,6 +100,11 @@ pub(crate) struct ChunkParticles {
     pub counts: CatalogCounts,
     pub image_bytes: usize,
 }
+impl ChunkParticles {
+    pub(crate) fn retained_chunks(&self) -> std::collections::BTreeSet<ChunkId> {
+        self.chunks.keys().copied().collect()
+    }
+}
 
 pub fn install_chunks(app: &mut App, prepared: PreparedResidency, visible: bool) {
     install_shared(app, visible);

@@ -203,19 +203,40 @@ pub struct PreparedResidency {
     pub decoded_image_bytes: usize,
 }
 
-/// Admit a candidate while the previous residency is still alive. Counting
-/// both complete snapshots is conservative when chunks are retained, but keeps
-/// staging bounded without depending on asset reuse or publication order.
+/// Admit a candidate while the previous residency is still alive. Retained
+/// chunks reuse existing runtime assets and are not bound a second time. The
+/// caller must supply only immutable, identity-matched chunks it will actually
+/// reuse. CPU images count both complete snapshots because candidate images are
+/// already decoded even when their runtime assets are retained.
 pub fn check_residency_staging_budget(
     active_counts: CatalogCounts,
     active_image_bytes: usize,
     candidate: &PreparedResidency,
+    retained: &BTreeSet<ChunkId>,
     limits: CatalogCounts,
     max_decoded_image_bytes: usize,
 ) -> Result<(), String> {
-    let counts = active_counts
-        .checked_add(candidate.counts)
-        .ok_or("Staged particle count overflow")?;
+    let mut total = CatalogCounts::default();
+    let mut seen = BTreeSet::new();
+    for (id, catalog) in &candidate.chunks {
+        if !seen.insert(*id) {
+            return Err("Duplicate particle chunk".into());
+        }
+        total = total
+            .checked_add(catalog.counts)
+            .ok_or("Candidate particle count overflow")?;
+    }
+    if total != candidate.counts || !total.fits_within(limits) {
+        return Err("Candidate particles exceed supplied count limits".into());
+    }
+    let mut counts = active_counts;
+    for (id, catalog) in &candidate.chunks {
+        if !retained.contains(id) {
+            counts = counts
+                .checked_add(catalog.counts)
+                .ok_or("Staged particle count overflow")?;
+        }
+    }
     if !counts.fits_within(limits) {
         return Err("Active and staged particles exceed supplied count limits".into());
     }
@@ -1361,14 +1382,22 @@ mod tests {
         assert_eq!(prepared.counts.placements, 2);
         assert!(prepared.decoded_image_bytes > 0);
         assert!(
-            check_residency_staging_budget(CatalogCounts::default(), 0, &prepared, limits, 1024)
-                .is_ok()
+            check_residency_staging_budget(
+                CatalogCounts::default(),
+                0,
+                &prepared,
+                &BTreeSet::new(),
+                limits,
+                1024
+            )
+            .is_ok()
         );
         assert!(
             check_residency_staging_budget(
                 prepared.counts,
                 prepared.decoded_image_bytes,
                 &prepared,
+                &BTreeSet::new(),
                 limits,
                 1024
             )
@@ -1379,10 +1408,32 @@ mod tests {
                 CatalogCounts::default(),
                 usize::MAX,
                 &prepared,
+                &BTreeSet::new(),
                 limits,
                 usize::MAX
             )
             .is_err()
+        );
+        let retained: BTreeSet<_> = prepared.chunks.iter().map(|(id, _)| *id).collect();
+        assert!(
+            check_residency_staging_budget(prepared.counts, 0, &prepared, &retained, limits, 1024)
+                .is_ok()
+        );
+        let retained: BTreeSet<_> = [prepared.chunks[0].0].into_iter().collect();
+        assert!(
+            check_residency_staging_budget(
+                prepared.chunks[0].1.counts,
+                0,
+                &prepared,
+                &retained,
+                limits,
+                1024
+            )
+            .is_ok()
+        );
+        assert!(
+            check_residency_staging_budget(prepared.counts, 0, &prepared, &retained, limits, 1024)
+                .is_err()
         );
         assert_eq!(
             prepared.chunks[0].1.placements[0].transform.translation,

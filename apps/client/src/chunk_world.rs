@@ -428,7 +428,7 @@ pub fn drive(world: &mut World) {
                         Some(Err(error))=>discard(world,&mut stream,generation,None,&error),
                         Some(Ok((data, particles)))=>{
                             let active=world.resource::<crate::particle_world::ChunkParticles>();
-                            if let Err(error)=theia_vfx::check_residency_staging_budget(active.counts, active.image_bytes, &particles, crate::particle_world::LIMITS, crate::particle_world::MAX_IMAGE_BYTES) {discard(world,&mut stream,generation,None,&error);return;}
+                            if let Err(error)=theia_vfx::check_residency_staging_budget(active.counts, active.image_bytes, &particles, &active.retained_chunks(), crate::particle_world::LIMITS, crate::particle_world::MAX_IMAGE_BYTES) {discard(world,&mut stream,generation,None,&error);return;}
                             observe(world,&mut stream,generation,"prepared");
                             let loading=world.resource::<Loading>();
                             let directory=&world.resource::<Config>().directory;

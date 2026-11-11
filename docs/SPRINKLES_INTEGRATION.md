@@ -196,8 +196,9 @@ before publication, preserves retained roots and retires removed roots. A
 two-client encrypted Renet transition with real Vulkan validation exercises all
 three cases on RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6
 (`build/chunk-particle-native-20261111/retirement/verification.json`). Retained
-chunks are counted twice during staging, so valid large transitions can be
-rejected; texture-heavy and large-scale behavior remain unqualified.
+chunks reuse existing runtime assets for count admission. Decoded images are
+still counted in both snapshots, so texture-heavy transitions may be rejected;
+texture-heavy and large-scale behavior remain unqualified.
 The qualification also corrupts an incoming effect and requires both clients to
 reject its descriptor mismatch while keeping their active particle roots. The
 reusable runner is `tools/qualify_chunk_particles.py`; it takes an existing

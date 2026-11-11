@@ -14,9 +14,11 @@ verifies each already-admitted chunk manifest, visual and particle catalog,
 prepares effects and verified images, projects placements from each chunk's f64
 origin to the index frame, and enforces aggregate candidate counts and decoded
 image limits. A far-origin mixed-residency test covers repeated effects, aggregate
-limits, tampering and unchanged active residency. The conservative old-plus-new
-staging check covers counts, decoded image bytes and overflow, including retained
-chunks twice; larger-world budgets and texture-heavy transitions remain unqualified.
+limits, tampering and unchanged active residency. The staging check counts old
+runtime particles plus only newly bound chunks; it still counts decoded images
+from both snapshots. Larger-world budgets and texture-heavy transitions remain
+unqualified. Retention and corruption were rerun against this accounting with
+two Vulkan clients (`build/chunk-particle-reuse-20261111/`).
 
 P5-17 / P2-13 editor world export, 11 November 2026: **File → Export world…**
 opens a Sprinkles-styled dialog for a new output folder, content ID and revision.
