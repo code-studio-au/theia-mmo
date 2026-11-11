@@ -1,4 +1,5 @@
 //! Helpers for future verified particle packages. This crate does not spawn effects.
+pub mod chunk_overlay;
 pub mod simulation;
 use bevy::{
     asset::{AssetServer, Assets, RenderAssetUsages},
