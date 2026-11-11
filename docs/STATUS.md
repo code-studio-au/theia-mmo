@@ -1,9 +1,23 @@
+P2-13 world-particle startup readiness, 11 November 2026: world effects are
+constructed in advance but held paused before their first simulation step until
+the terrain scene, render pipelines and a connected snapshot are ready. This
+fixes a measured case where a short upstream explosion advanced hundreds of
+emitter-frames while the scene was still loading. Two connected native Linux
+clients captured the upstream 3D Explosion and Magic Puff after readiness with
+zero pre-ready emitter-frames and zero Vulkan validation diagnostics on RX 7900
+XTX / RADV NAVI31 / Mesa 26.2.6
+(`build/upstream-explosion-world-native-20261111-v5/` and
+`build/upstream-magic-world-native-20261111-v1/`, `particle-first.png`).
+Explosion completion/despawn was observed; a separate Tube Trails run retained
+world-space rebase behavior (`build/particle-world-trails-rebase-native-20261111-v2/`).
+These captures are not synchronized upstream parity or an MMO load test.
+
 P2-13 world-effect visibility control, 11 November 2026: worlds with placed
 particle effects expose a clickable World effects control and F9 shortcut, plus
 `--hide-world-particles` for starting hidden. It changes only world-particle
 visibility; gameplay cues remain separate. A native two-client X11 test used one
 actual click and two F9 presses on one client while the other retained effects
-(`build/particle-control-os-native-20261111-v1/verification.json`). Starting
+(`build/particle-control-os-native-20261111-v2/verification.json`). Starting
 Windy Snow hidden restored the pawn-pixel checks on both clients
 (`build/upstream-snow-hidden-world-native-20261111-v1/verification.json`);
 both runs recorded zero Vulkan validation diagnostics on RX 7900 XTX / RADV

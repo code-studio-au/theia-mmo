@@ -145,8 +145,8 @@ rendered on both clients without GPU diagnostics, but its dense authored streaks
 caused the pawn-pixel readability check to fail
 (`build/upstream-snow-world-native-20261111-v1/`). An upstream editor capture
 shows similar streaks; the game still needs a way to protect critical combat
-visuals against such effects. The two one-shot examples have only been admitted,
-not qualified for connected visual playback in this slice. These observations
+visuals against such effects. The two one-shot examples were subsequently qualified for connected playback
+as described below. These observations
 do not prove pixel or animation parity.
 
 Worlds with placed particle effects now expose a clickable **World effects**
@@ -154,13 +154,26 @@ control and F9 shortcut; `--hide-world-particles` starts them hidden. It affects
 world particles only, leaving the separate gameplay projectile cue unchanged.
 A native two-client test exercised an actual X11 click and keyboard presses on
 one client while the other retained its particles
-(`build/particle-control-os-native-20261111-v1/verification.json`). Starting
+(`build/particle-control-os-native-20261111-v2/verification.json`). Starting
 Windy Snow hidden restored pawn-pixel checks on both clients
 (`build/upstream-snow-hidden-world-native-20261111-v1/verification.json`).
 Both tests reported zero Vulkan validation diagnostics on RX 7900 XTX / RADV
 NAVI31 / Mesa 26.2.6. The control is a manual readability aid: it does not yet
 provide automatic critical-telegraph protection, persist preferences or stop
 particle simulation.
+
+World effects are prepared before display but held paused until the terrain
+scene, renderer pipelines and a connected snapshot are ready. This prevents
+short one-shot effects from advancing while the world is loading. Both native
+Linux clients captured the upstream 3D Explosion and Magic Puff after readiness,
+with zero pre-ready emitter-frames and zero Vulkan validation diagnostics on RX
+7900 XTX / RADV NAVI31 / Mesa 26.2.6. See
+`build/upstream-explosion-world-native-20261111-v5/` and
+`build/upstream-magic-world-native-20261111-v1/` for `particle-first.png` and
+verification reports. Explosion completion/despawn was observed. Tube Trails
+was rechecked during forced rebases after this change
+(`build/particle-world-trails-rebase-native-20261111-v2/`). These are not
+synchronized upstream visual comparisons.
 
 The prerequisites are the accepted Linux authoring shell and the adopted exact
 Bevy 0.20.0 engine. Upstream targets Bevy 0.19.0. Both imported crates use our

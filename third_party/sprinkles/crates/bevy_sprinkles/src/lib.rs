@@ -202,6 +202,10 @@ use textures::{
 /// and all the systems needed to simulate and render particles.
 pub struct SprinklesPlugin;
 
+/// Schedule point for systems that create particle runtime entities.
+#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ParticleSystemSetup;
+
 /// Schedule point for host systems that must prepare emitters before simulation.
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ParticleSimulationStep;
@@ -235,7 +239,7 @@ impl Plugin for SprinklesPlugin {
         app.add_systems(
             Update,
             (
-                setup_particle_systems,
+                setup_particle_systems.in_set(ParticleSystemSetup),
                 sync_particle_buffers.after(setup_particle_systems),
                 sync_particle_mesh.after(sync_particle_buffers),
                 sync_particle_material.after(sync_particle_mesh),

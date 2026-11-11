@@ -29,6 +29,8 @@ struct KeepAlive {
 #[derive(Component)]
 struct WorldParticle;
 #[derive(Component)]
+struct WaitingForScene;
+#[derive(Component)]
 struct Toggle;
 #[derive(Component)]
 struct ToggleLabel;
@@ -44,14 +46,21 @@ pub(crate) struct Metrics {
     effects_enabled: bool,
     visibility_key_toggles: u64,
     visibility_button_toggles: u64,
+    unready_emitter_frames: u64,
+    released_systems: u64,
 }
 #[derive(Resource, Default)]
 struct LastFrame(Option<([f64; 3], [f64; 3])>);
+#[derive(Resource)]
+struct BurstCapture(Option<std::path::PathBuf>);
 
 pub fn install(app: &mut App, prepared: PreparedCatalog, visible: bool) {
     if !app.is_plugin_added::<SprinklesPlugin>() {
         app.add_plugins(SprinklesPlugin);
     }
+    let capture =
+        std::env::var_os("THEIA_WORLD_PARTICLE_FIRST_CAPTURE").map(std::path::PathBuf::from);
+    app.insert_resource(BurstCapture(capture));
     app.insert_resource(Pending(Some(prepared)))
         .insert_resource(VisibilityChoice(visible))
         .init_resource::<Metrics>()
@@ -62,11 +71,17 @@ pub fn install(app: &mut App, prepared: PreparedCatalog, visible: bool) {
         .add_systems(Update, apply_visibility)
         .add_systems(
             Update,
+            gate_playback
+                .after(bevy_sprinkles::ParticleSystemSetup)
+                .before(bevy_sprinkles::ParticleSimulationStep),
+        )
+        .add_systems(
+            Update,
             rebase_world_emitters
                 .after(crate::floating_origin::place_static)
                 .before(bevy_sprinkles::ParticleSimulationStep),
         )
-        .add_systems(Last, observe);
+        .add_systems(Last, (observe, capture_first));
 }
 fn spawn(
     mut commands: Commands,
@@ -106,6 +121,7 @@ fn spawn(
         };
         commands.spawn((
             WorldParticle,
+            WaitingForScene,
             Particles3d((*effect).clone()),
             crate::floating_origin::Anchored(
                 placement.transform.translation.to_array().map(f64::from),
@@ -127,6 +143,34 @@ fn spawn(
         _effects: bound.effects,
         _textures: bound.textures,
     });
+}
+
+fn gate_playback(
+    mut commands: Commands,
+    scene: Option<Res<crate::terrain_scene::Ready>>,
+    pipelines: Res<crate::capture_ready::CaptureReady>,
+    network: Option<Res<crate::network::Network>>,
+    mut metrics: ResMut<Metrics>,
+    mut systems: Query<
+        (Entity, &mut bevy_sprinkles::runtime::ParticleSystemRuntime),
+        With<WaitingForScene>,
+    >,
+) {
+    let ready = scene.is_some()
+        && pipelines.ready()
+        && network.as_ref().is_some_and(|network| {
+            let state = network.state();
+            state.error.is_none() && state.snapshot.is_some()
+        });
+    for (entity, mut runtime) in &mut systems {
+        if ready {
+            runtime.resume();
+            commands.entity(entity).remove::<WaitingForScene>();
+            metrics.released_systems += 1;
+        } else {
+            runtime.pause();
+        }
+    }
 }
 
 fn setup_toggle(mut commands: Commands) {
@@ -252,9 +296,35 @@ fn rebase_world_emitters(
     }
 }
 
+// Optional native qualification capture during early particle playback.
+fn capture_first(
+    mut commands: Commands,
+    mut capture: ResMut<BurstCapture>,
+    pipelines: Res<crate::capture_ready::CaptureReady>,
+    roots: Query<(), With<WorldParticle>>,
+    emitters: Query<(
+        &bevy_sprinkles::runtime::EmitterEntity,
+        &bevy_sprinkles::runtime::EmitterRuntime,
+        &ViewVisibility,
+    )>,
+) {
+    if capture.0.is_none() || !pipelines.ready() {
+        return;
+    }
+    if emitters.iter().any(|(emitter, runtime, visible)| {
+        roots.contains(emitter.parent_system) && runtime.system_time >= 0.6 && visible.get()
+    }) {
+        let path = capture.0.take().unwrap();
+        commands
+            .spawn(bevy::render::view::screenshot::Screenshot::primary_window())
+            .observe(bevy::render::view::screenshot::save_to_disk(path));
+    }
+}
+
 fn observe(
     mut metrics: ResMut<Metrics>,
     roots: Query<(), With<WorldParticle>>,
+    scene_ready: Option<Res<crate::terrain_scene::Ready>>,
     emitters: Query<(
         &bevy_sprinkles::runtime::EmitterEntity,
         &bevy_sprinkles::runtime::EmitterRuntime,
@@ -266,6 +336,7 @@ fn observe(
         if roots.contains(emitter.parent_system) && runtime.system_time > 0. {
             metrics.running_emitter_frames += 1;
             metrics.visible_emitter_frames += u64::from(visible.get());
+            metrics.unready_emitter_frames += u64::from(scene_ready.is_none());
         }
     }
 }
@@ -510,5 +581,39 @@ mod tests {
             app.world().get::<Text>(label).unwrap().0,
             "World effects: On [F9]"
         );
+    }
+    #[test]
+    fn unready_scene_keeps_particle_system_paused() {
+        let mut app = App::new();
+        app.init_resource::<Metrics>()
+            .init_resource::<crate::capture_ready::CaptureReady>()
+            .add_systems(Update, gate_playback);
+        let entity = app
+            .world_mut()
+            .spawn((
+                WaitingForScene,
+                bevy_sprinkles::runtime::ParticleSystemRuntime::default(),
+            ))
+            .id();
+        app.update();
+        assert!(
+            app.world()
+                .get::<bevy_sprinkles::runtime::ParticleSystemRuntime>(entity)
+                .unwrap()
+                .paused
+        );
+        assert!(app.world().get::<WaitingForScene>(entity).is_some());
+        app.insert_resource(crate::terrain_scene::Ready);
+        app.world_mut()
+            .resource_mut::<crate::capture_ready::CaptureReady>()
+            .clear_frames = 3;
+        app.update();
+        assert!(
+            app.world()
+                .get::<bevy_sprinkles::runtime::ParticleSystemRuntime>(entity)
+                .unwrap()
+                .paused
+        );
+        assert_eq!(app.world().resource::<Metrics>().released_systems, 0);
     }
 }

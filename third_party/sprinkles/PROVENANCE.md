@@ -339,3 +339,8 @@ The host can schedule work before particle time advancement via the public
 `ParticleSimulationStep` system set. Theia uses this to clear world-space
 particles when its render origin shifts. The adapted runtime source hash is
 recorded in `source-files.json`.
+
+The host can also order readiness work after particle system entity setup via
+`ParticleSystemSetup`. Theia uses it to pause newly constructed world effects
+before the first simulation step, without changing the saved effect format.
+The adapted source hash is recorded in `source-files.json`.
