@@ -171,3 +171,9 @@ After completion, stop cleanup cycles and maintain the established sources rathe
 - [x] Scoped Q184's existing Elara/Millhaven finale dialogue explicitly to the HUMAN variant of the shared epilogue. Dwarf/Aelari/Korrath variants remain open rather than receiving invented NPCs.
 - [ ] Replacement Q169 dialogue is a working draft, not creator-approved final wording or executable script.
 - [ ] Non-human Q184 dialogue and actor binding require completion of the three separate 1–20 racial campaigns.
+
+### Q031–Q037 authoring and dialogue reconciliation — 12 November 2026
+
+- [x] Found a remaining active contradiction in `Human_Q035_Q062_Rust_Authoring_Review.md`: it still required Cassian's ledger and a human warrant for Q035. Replaced this with the creator-locked universal summons, racial campaign completion gate, common Corven briefing and limited depot investigation; corrected High Thane terminology in the review.
+- [x] Revised Q031 human-only dialogue to make Aldren's commission explicitly limited to the human crown, and to close the Cassian story with Elara without making Q035 dependent on that commission. Q032–Q034 remain optional.
+- [ ] Continue auditing all other current authoring reviews and quest contracts for human-only assumptions in shared Q035+ content; historical sources remain archival.
