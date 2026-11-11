@@ -1286,14 +1286,14 @@
       "path": "crates/bevy_sprinkles_editor/src/ui/components/binding/commit.rs",
       "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/binding/commit.rs",
       "upstream_sha256": "24ab94b4affdb2fc4b16010168314c3546d18d9cfaec9a3913b37367beb6402f",
-      "imported_sha256": "cc76122e75f46843c676b99d6e282d13464ebd1fea506de7d4675d147c05d2e1",
+      "imported_sha256": "f7aa94deb58807ed49a8e50cfdf7d1fc2ae7eb2e6c3e1d9c0328852b52589908",
       "changed": true
     },
     {
       "path": "crates/bevy_sprinkles_editor/src/ui/components/binding/mod.rs",
       "upstream_path": "crates/bevy_sprinkles_editor/src/ui/components/binding/mod.rs",
       "upstream_sha256": "4b95e26f5795227b689937cf08ade10d0d113b3dbf117b1b5ec8989bc64042b3",
-      "imported_sha256": "ae3f09aa4e590456a0bfd75556d065ed968d80a12a7d2be7432b3841c2949cab",
+      "imported_sha256": "695ea183b67bfb2597b9582f5eb4d73a17f9644d4583fc680e72c61d813dc19b",
       "changed": true
     },
     {

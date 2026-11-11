@@ -1,3 +1,9 @@
+P5-17 live gradient editing, 11 November 2026: original Sprinkles gradient
+change events update the live effect before final commit; unchanged follow-up
+events do not restart it again. Sixty-three particle-editor tests, formatting
+and strict workspace Clippy pass. Native drag behavior needs retesting. See
+[integration](SPRINKLES_INTEGRATION.md).
+
 P5-17 curve drag guard, 11 November 2026: Sprinkles curve-point dragging
 refuses invalid neighbor or value ranges instead of panicking when points overlap
 at an endpoint. A focused headless regression covers overlapping and reversed

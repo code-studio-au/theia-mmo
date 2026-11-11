@@ -10,7 +10,9 @@ use crate::ui::widgets::checkbox::CheckboxCommitEvent;
 use crate::ui::widgets::color_picker::ColorPickerCommitEvent;
 use crate::ui::widgets::combobox::ComboBoxChangeEvent;
 use crate::ui::widgets::curve_edit::CurveEditCommitEvent;
-use crate::ui::widgets::gradient_edit::GradientEditCommitEvent;
+use crate::ui::widgets::gradient_edit::{
+    GradientEditChangeEvent, GradientEditCommitEvent, GradientEditState,
+};
 use crate::ui::widgets::text_edit::TextEditCommitEvent;
 use crate::ui::widgets::texture_edit::TextureEditCommitEvent;
 use crate::ui::widgets::variant_edit::{VariantComboBox, VariantEditConfig};
@@ -93,6 +95,36 @@ impl CommitContext<'_, '_> {
             return;
         };
         let changed = binding.write_reflected(data, apply_fn);
+        if changed {
+            self.mark_change(&binding);
+        }
+    }
+
+    fn commit_gradient(&mut self, entity: Entity, gradient: &ParticleGradient) {
+        let Some(binding) = self.resolve_binding(entity) else {
+            return;
+        };
+        let Some(data) = self.resolve_data_mut(&binding) else {
+            return;
+        };
+        let changed = binding
+            .with_resolved_mut(data, |target| {
+                let Some(current) = target.try_downcast_mut::<ParticleGradient>() else {
+                    return false;
+                };
+                let same = current.interpolation == gradient.interpolation
+                    && current.stops.len() == gradient.stops.len()
+                    && current
+                        .stops
+                        .iter()
+                        .zip(&gradient.stops)
+                        .all(|(a, b)| a.position == b.position && a.color == b.color);
+                if !same {
+                    *current = gradient.clone();
+                }
+                !same
+            })
+            .unwrap_or(false);
         if changed {
             self.mark_change(&binding);
         }
@@ -244,13 +276,18 @@ pub(super) fn handle_curve_commit(trigger: On<CurveEditCommitEvent>, mut ctx: Co
     });
 }
 
+pub(super) fn handle_gradient_change(
+    trigger: On<GradientEditChangeEvent>,
+    states: Query<&GradientEditState>,
+    mut ctx: CommitContext,
+) {
+    if let Ok(state) = states.get(trigger.entity) {
+        ctx.commit_gradient(trigger.entity, &state.gradient);
+    }
+}
+
 pub(super) fn handle_gradient_commit(trigger: On<GradientEditCommitEvent>, mut ctx: CommitContext) {
-    let gradient = trigger.gradient.clone();
-    ctx.commit_reflected(trigger.entity, |target| {
-        if let Some(current) = target.try_downcast_mut::<ParticleGradient>() {
-            *current = gradient;
-        }
-    });
+    ctx.commit_gradient(trigger.entity, &trigger.gradient);
 }
 
 pub(super) fn handle_color_commit(trigger: On<ColorPickerCommitEvent>, mut ctx: CommitContext) {

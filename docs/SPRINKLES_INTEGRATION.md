@@ -746,3 +746,9 @@ their source, but no timing or shader-warmup conclusion is established.
 The related curve-point drag now also rejects overlapping endpoint constraints
 and invalid value ranges instead of attempting an invalid clamp. A headless
 regression covers both conditions; native curve interaction remains unqualified.
+
+Gradient change events now update the live Sprinkles asset during dragging or
+color adjustment, before the final commit. Identical follow-up commits are
+ignored to avoid unnecessary particle restarts. Disk writes remain explicit.
+Headless binding tests cover live updates and unchanged events; native drag
+interaction needs retesting.
