@@ -4,7 +4,7 @@ use bevy::input_focus::InputFocus;
 use bevy_sprinkles::asset::ParticlesAsset;
 use bevy_sprinkles_editor::{
     hosting::{AuthoringHost, AuthoringUiUpdate, AuthoringUpdate},
-    project::SaveProjectEvent,
+    project::{OpenProjectPathEvent, ProjectOperation, SaveProjectEvent},
     state::{ActiveSidebarTab, DirtyState, EditorState, Inspectable, Inspecting, SidebarTab},
     ui::components::inspector::EditorInspectorPanel,
     ui::widgets::text_edit::EditorTextEdit,
@@ -60,10 +60,115 @@ pub(super) fn plugin(app: &mut App) {
                 .before(AuthoringUpdate),
         )
         .add_zone_systems(sync.after(workspace::sync).before(AuthoringUiUpdate))
+        .add_zone_systems(open_selected.after(sync).before(AuthoringUiUpdate))
         .add_zone_systems((
             inline_save_shortcut.after(keyboard),
             save_requested.after(inline_save_shortcut),
         ));
+}
+
+#[derive(Default)]
+struct OpenAttempt {
+    blocked: bool,
+    selection: Option<(u64, u64, String)>,
+    attempted: Option<AttemptKey>,
+}
+
+#[derive(PartialEq, Eq)]
+struct AttemptKey {
+    path: PathBuf,
+    length: u64,
+    modified: Option<std::time::SystemTime>,
+    project: Option<AssetId<ParticlesAsset>>,
+}
+
+/// Open a selected library effect only after inline text has been committed and
+/// the current project is safe to replace. Failed reads are not retried each frame.
+#[allow(clippy::too_many_arguments)]
+fn open_selected(
+    mut session: ResMut<Session>,
+    editor: Res<EditorState>,
+    dirty: Res<DirtyState>,
+    assets: Res<Assets<ParticlesAsset>>,
+    root: Res<particle_preview::LibraryRoot>,
+    host: Res<AuthoringHost>,
+    focus: Res<InputFocus>,
+    inputs: Query<(), With<EditorTextEdit>>,
+    operation: ProjectOperation,
+    mut state: Local<OpenAttempt>,
+    mut commands: Commands,
+) {
+    let Some(outliner::Target::Particle(id)) = outliner::selection(&session) else {
+        state.selection = None;
+        state.attempted = None;
+        state.blocked = false;
+        return;
+    };
+    let Some(effect) = session
+        .editor
+        .zone()
+        .particles
+        .iter()
+        .find(|p| p.id == id)
+        .map(|p| p.effect.clone())
+    else {
+        return;
+    };
+    let selection = (session.document_id, id, effect.clone());
+    if state.selection.as_ref() != Some(&selection) {
+        state.selection = Some(selection);
+        state.attempted = None;
+        state.blocked = false;
+        return;
+    }
+    if host.active
+        || host.inline_ui
+        || session.has_modal()
+        || session.play.is_some()
+        || focus.get().is_some_and(|entity| inputs.contains(entity))
+        || operation.busy()
+        || particle_preview::selected_matches_open_project(&session, &editor, &root)
+    {
+        return;
+    }
+    if dirty.has_unsaved_changes && !editor.is_pristine_example(&assets) {
+        state.attempted = None;
+        if !state.blocked {
+            session.status = if editor.current_project_path.is_some() {
+                "Save the current particle effect before opening the selected effect".into()
+            } else {
+                "Save the current particle effect in the particle workspace before opening another"
+                    .into()
+            };
+            state.blocked = true;
+        }
+        return;
+    }
+    state.blocked = false;
+    let Some(path) = bevy_sprinkles_editor::io::effect_library_path_in(&root.0, &effect) else {
+        return;
+    };
+    let Ok(metadata) = std::fs::metadata(&path) else {
+        return;
+    };
+    if !metadata.is_file()
+        || metadata.len() == 0
+        || metadata.len() > theia_network::particle_content::MAX_EFFECT_BYTES
+    {
+        return;
+    }
+    let attempt = AttemptKey {
+        path: path.clone(),
+        length: metadata.len(),
+        modified: metadata.modified().ok(),
+        project: editor.current_project.as_ref().map(|handle| handle.id()),
+    };
+    if state.attempted.as_ref() == Some(&attempt) {
+        return;
+    }
+    state.attempted = Some(attempt);
+    session.status = format!("Opening particle effect {effect}");
+    commands.trigger(OpenProjectPathEvent(path));
 }
 
 fn inline_save_shortcut(
@@ -428,6 +533,76 @@ mod tests {
 
     #[derive(Resource, Default)]
     struct Saves(u32);
+
+    #[derive(Resource, Default)]
+    struct Opened(Vec<PathBuf>);
+
+    #[test]
+    fn selected_effect_waits_for_dirty_work_and_only_requests_open_once() {
+        let dir = std::env::temp_dir().join(format!(
+            "theia-auto-open-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(dir.join("library")).unwrap();
+        let path = dir.join("library/vfx.fire.ron");
+        std::fs::write(&path, b"fixture").unwrap();
+        let mut zone = Zone {
+            schema: 8,
+            ..Zone::default()
+        };
+        zone.particles.push(ParticlePlacement {
+            id: 7,
+            name: "Fire".into(),
+            effect: "vfx.fire".into(),
+            position: [0.; 3],
+            yaw_degrees: 0.,
+            scale: 1.,
+        });
+        let mut session = Session::new(
+            Editor::new(zone.clone()).unwrap(),
+            dir.join("zone.json"),
+            Some(zone),
+        );
+        session.particle_selected = Some(7);
+        let mut app = App::new();
+        app.insert_resource(session)
+            .insert_resource(particle_preview::LibraryRoot(dir.clone()))
+            .insert_resource(AuthoringHost::embedded(1))
+            .insert_resource(DirtyState {
+                has_unsaved_changes: true,
+            })
+            .init_resource::<EditorState>()
+            .init_resource::<Assets<ParticlesAsset>>()
+            .init_resource::<InputFocus>()
+            .init_resource::<Opened>()
+            .add_observer(
+                |event: On<OpenProjectPathEvent>, mut opened: ResMut<Opened>| {
+                    opened.0.push(event.0.clone())
+                },
+            )
+            .add_systems(Update, open_selected);
+        app.update();
+        app.update();
+        assert!(app.world().resource::<Opened>().0.is_empty());
+        app.world_mut()
+            .resource_mut::<DirtyState>()
+            .has_unsaved_changes = false;
+        let field = app.world_mut().spawn(EditorTextEdit).id();
+        app.world_mut()
+            .resource_mut::<InputFocus>()
+            .set(field, FocusCause::Navigated);
+        app.update();
+        assert!(app.world().resource::<Opened>().0.is_empty());
+        app.world_mut().resource_mut::<InputFocus>().clear();
+        app.update();
+        app.update();
+        assert_eq!(app.world().resource::<Opened>().0, vec![path]);
+        std::fs::remove_dir_all(dir).unwrap();
+    }
 
     #[test]
     #[allow(clippy::field_reassign_with_default)]

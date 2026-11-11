@@ -75,7 +75,7 @@ enum Phase {
     Showing,
 }
 #[derive(Resource)]
-struct PendingSwitch {
+pub(crate) struct PendingSwitch {
     destination: Destination,
     expected: Handle<ParticlesAsset>,
     path: Option<PathBuf>,

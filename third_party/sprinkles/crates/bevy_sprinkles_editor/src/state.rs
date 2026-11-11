@@ -47,7 +47,7 @@ impl EditorState {
         dirty_state.has_unsaved_changes = is_example || was_migrated;
     }
 
-    pub(crate) fn is_pristine_example(&self, assets: &Assets<ParticlesAsset>) -> bool {
+    pub fn is_pristine_example(&self, assets: &Assets<ParticlesAsset>) -> bool {
         let (Some(handle), Some((source_id, snapshot))) =
             (&self.current_project, &self.pristine_example)
         else {

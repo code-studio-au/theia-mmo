@@ -31,6 +31,7 @@ pub fn plugin(app: &mut App) {
         .init_resource::<SaveCoordinator>()
         .init_resource::<TextFocusTracker>()
         .add_observer(on_open_project_event)
+        .add_observer(on_open_project_path_event)
         .add_observer(on_browse_open_project_event)
         .add_observer(on_save_project_event)
         .add_observer(on_save_project_as_event)
@@ -47,6 +48,10 @@ pub fn plugin(app: &mut App) {
 #[derive(Event)]
 pub struct OpenProjectEvent(pub String);
 
+/// Open a local project without losing non-UTF-8 path components.
+#[derive(Event)]
+pub struct OpenProjectPathEvent(pub PathBuf);
+
 #[derive(Event)]
 pub struct BrowseOpenProjectEvent;
 
@@ -62,6 +67,19 @@ pub struct SaveProjectToLibraryEvent(pub String);
 
 #[derive(Resource, Clone)]
 pub struct BrowseOpenResult(pub Arc<Mutex<Option<PathBuf>>>);
+
+/// Whether an existing save or guarded project switch must finish first.
+#[derive(bevy::ecs::system::SystemParam)]
+pub struct ProjectOperation<'w> {
+    saves: Option<Res<'w, SaveCoordinator>>,
+    switch: Option<Res<'w, crate::project_switch::PendingSwitch>>,
+}
+
+impl ProjectOperation<'_> {
+    pub fn busy(&self) -> bool {
+        self.saves.as_ref().is_some_and(|saves| saves.busy()) || self.switch.is_some()
+    }
+}
 
 #[derive(Resource, Default)]
 pub(crate) struct SaveCoordinator {
@@ -297,13 +315,21 @@ pub(crate) fn parse_project(
 }
 
 fn on_open_project_event(event: On<OpenProjectEvent>, mut commands: Commands) {
-    let location = &event.0;
-    let path = project_path(location);
+    let path = project_path(&event.0);
+    request_open_project(path, event.0.clone(), &mut commands);
+}
 
+fn on_open_project_path_event(event: On<OpenProjectPathEvent>, mut commands: Commands) {
+    let path = event.0.clone();
+    let location = path.to_string_lossy().into_owned();
+    request_open_project(path, location, &mut commands);
+}
+
+fn request_open_project(path: PathBuf, location: String, commands: &mut Commands) {
     let result = match load_project_from_path(&path) {
         Ok(result) => result,
         Err(err) => {
-            let display = truncate_path(location, MAX_DISPLAY_PATH_LEN);
+            let display = truncate_path(&location, MAX_DISPLAY_PATH_LEN);
             let message = match &err {
                 LoadProjectError::Read(io_err) => match io_err.kind() {
                     std::io::ErrorKind::NotFound => {
@@ -336,7 +362,7 @@ fn on_open_project_event(event: On<OpenProjectEvent>, mut commands: Commands) {
     commands.trigger(crate::project_switch::RequestProjectSwitch::open(
         result.asset,
         path,
-        location.clone(),
+        location,
         result.was_migrated,
     ));
 }
@@ -740,6 +766,45 @@ mod material_load_tests {
 
     #[derive(Resource, Default)]
     struct Errors(Vec<String>);
+
+    #[cfg(unix)]
+    #[test]
+    fn path_event_loads_non_utf8_project_path() {
+        use std::os::unix::ffi::OsStringExt;
+        let folder = std::env::temp_dir().join(format!(
+            "theia-path-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir(&folder).unwrap();
+        let path = folder.join(std::ffi::OsString::from_vec(b"effect-\xff.ron".to_vec()));
+        let asset = ParticlesAsset::new(
+            "Effect".into(),
+            ParticlesDimension::D3,
+            default(),
+            vec![EmitterData::default()],
+            vec![],
+            false,
+            default(),
+        );
+        std::fs::write(&path, ron::to_string(&asset).unwrap()).unwrap();
+        #[derive(Resource, Default)]
+        struct Requests(u32);
+        let mut app = App::new();
+        app.init_resource::<Requests>()
+            .add_observer(on_open_project_path_event)
+            .add_observer(
+                |_: On<crate::project_switch::RequestProjectSwitch>,
+                 mut requests: ResMut<Requests>| requests.0 += 1,
+            );
+        app.world_mut().trigger(OpenProjectPathEvent(path));
+        app.update();
+        assert_eq!(app.world().resource::<Requests>().0, 1);
+        std::fs::remove_dir_all(folder).unwrap();
+    }
 
     #[test]
     fn unsupported_material_load_preserves_current_project_dirty_state_and_files() {

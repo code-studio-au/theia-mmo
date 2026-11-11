@@ -696,8 +696,13 @@ No edit is automatically written to disk.
 Headless tests exercise the real inspector's section/binding construction, the
 shared panel's reparenting, focus handoff, emitter stepping, preview request and
 Save routing, including an actual asynchronous save after focus leaves a field.
-This first slice requires the matching local project to be open already;
-automatic selection-to-project opening is next. Popup interaction, layout,
+Selecting an existing local effect now requests its original project directly,
+without a separate import or conversion. The editor waits for the previous field
+to commit and for pending project operations; unsaved changes block replacement,
+with a status message. An untouched bundled example can be replaced. The auto
+open checks that the local file is nonempty and at most 4 MiB; invalid or absent
+files do not open. A failed open is retried when the file or selection changes.
+Non-UTF-8 local paths remain intact for file access. Popup interaction, layout,
 keyboard behavior and GPU output have not been qualified natively for this
 change because the user requested no display or mouse. World-package export and
 client playback remain blocked.

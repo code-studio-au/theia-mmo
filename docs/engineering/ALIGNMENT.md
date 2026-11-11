@@ -1,3 +1,12 @@
+P5-17 selected particle auto-open, 11 November 2026: selecting a local
+particle opens its original Sprinkles project into the shared inspector after
+pending field edits and project operations settle. Unsaved projects block the
+switch; local files are checked for presence and size. Focused headless tests
+cover dirty and focused-field guards, retry suppression and non-UTF-8 paths.
+All 53 particle-editor and 143 zone-editor tests, formatting and strict
+workspace/all-target Clippy pass. No display or mouse was used; native interaction and GPU qualification remain
+pending, as do world export and client playback. See [integration](../SPRINKLES_INTEGRATION.md).
+
 P5-17 shared inline particle inspector, 11 November 2026: a selected
 reference whose local effect is already open moves the original Sprinkles
 inspector into the zone dock, starts its preview, supports emitter stepping and
