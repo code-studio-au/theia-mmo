@@ -145,6 +145,11 @@ pub(super) fn spawn(parent: &mut ChildSpawnerCommands, server: Option<&AssetServ
                         (workspace::Control::Rename, "Rename", "F8"),
                         (workspace::Control::Transform, "Focus attributes", "F9"),
                         (
+                            workspace::Control::ParticlePreview,
+                            "Toggle open-project preview",
+                            "",
+                        ),
+                        (
                             workspace::Control::Command(Action::Duplicate),
                             "Duplicate",
                             "Ctrl D",

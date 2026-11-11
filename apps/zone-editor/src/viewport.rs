@@ -409,11 +409,22 @@ pub(super) fn capture(
     adapter: Res<RenderAdapterInfo>,
     session: Res<Session>,
     triggers: Query<(Entity, &menus::Trigger)>,
+    mut requests: ResMut<workspace::Requests>,
+    previews: Query<
+        &Children,
+        (
+            With<particle_preview::ZoneParticlePreview>,
+            With<bevy_sprinkles::runtime::ParticleSystemRuntime>,
+        ),
+    >,
 ) {
     let Some(mut capture) = capture else {
         return;
     };
     capture.frames += 1;
+    if capture.frames == 30 && capture.view == Some(cli::CaptureView::ParticlePreview) {
+        requests.particle_preview = true;
+    }
     if capture.frames == 30
         && capture.view == Some(cli::CaptureView::PropertyActions)
         && let Some((entity, _)) = triggers
@@ -427,7 +438,18 @@ pub(super) fn capture(
             ),
         });
     }
-    if capture.frames == 90 {
+    let capture_frame = if capture.view == Some(cli::CaptureView::ParticlePreview) {
+        150
+    } else {
+        90
+    };
+    if capture.frames == capture_frame {
+        if capture.view == Some(cli::CaptureView::ParticlePreview) {
+            assert!(
+                previews.iter().any(|children| !children.is_empty()),
+                "Particle preview did not start any emitter entities"
+            );
+        }
         let path = capture.path.clone();
         info!(
             "Zone editor native capture: {} | {:?} | device {} | revision {} | objects {}",

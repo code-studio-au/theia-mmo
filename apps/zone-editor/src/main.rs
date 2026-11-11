@@ -16,6 +16,7 @@ mod naming;
 mod outliner;
 mod panels;
 mod particle_anchors;
+mod particle_preview;
 mod particle_workspace;
 mod paths;
 mod placement;
@@ -560,7 +561,7 @@ fn run() -> Result<(), String> {
                     .id,
             );
         }
-        Some(cli::CaptureView::Particle) => {
+        Some(cli::CaptureView::Particle | cli::CaptureView::ParticlePreview) => {
             session.particle_selected = Some(
                 session
                     .editor
@@ -611,6 +612,7 @@ fn run() -> Result<(), String> {
     .add_plugins(properties::summary_plugin)
     .add_plugins(menus::plugin)
     .add_plugins(particle_workspace::plugin)
+    .init_resource::<particle_preview::State>()
     .add_observer(workspace::activate)
     .add_observer(workspace::change)
     .add_observer(workspace::toggle)
@@ -677,6 +679,12 @@ fn run() -> Result<(), String> {
             status_bar::sync,
         )
             .chain(),
+    )
+    .add_systems(
+        Update,
+        (particle_preview::sync, particle_preview::playback)
+            .chain()
+            .after(particle_workspace::ZoneAuthoring),
     )
     .add_systems(
         PostUpdate,

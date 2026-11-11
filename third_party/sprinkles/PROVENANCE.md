@@ -296,3 +296,6 @@ New-project dialog actions are locally scoped to their own modal.
 
 Untouched examples retain Save As semantics without an unnecessary discard
 confirmation; edited examples continue to require confirmation.
+
+The retained editor one-shot preview logic is factored into a shared helper so
+the integrated zone preview uses the same restart behavior.

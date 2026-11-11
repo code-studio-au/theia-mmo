@@ -443,7 +443,9 @@ selects it in the left explorer and exposes its name, stable effect ID, position
 yaw and uniform scale in the normal inline inspector. The Particles filter,
 rename, duplicate, ground, frame, delete and undo use the shared document
 commands. The initial `vfx.unassigned` ID must be replaced with the intended
-content ID; no asset catalogue resolution or effect preview is implied. The viewport gizmo remains hidden for these references; an editor-only anchor
+content ID; asset catalogue resolution remains pending. The currently open project
+can be previewed temporarily at the selected reference. The viewport gizmo remains
+hidden for these references; an editor-only anchor
 marks their position. World export still rejects them.
 
 CPU tests exercise creation, selection, filtering, exact far-origin edits, invalid
@@ -471,3 +473,27 @@ workspace/all-target Clippy pass. A native 3440×1440 selected-anchor capture on
 RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan with explicit Khronos validation
 reported zero GPU diagnostics. It verifies rendered placement and inspector, not
 physical mouse picking, particle playback or Windows.
+
+
+## Temporary open-project preview at an anchor — P2-13
+
+For a selected particle reference, the inspector's three-dot menu offers
+**Toggle open-project preview**. It renders the currently open Sprinkles asset
+at the selected anchor, including its initial transform, and uses the retained
+Sprinkles one-shot restart behavior. This is an explicit temporary preview: the
+open project is not associated with the authored effect ID, the zone is not
+changed by toggling, and no file is saved. Position/yaw/scale edits update the
+preview. It is removed while the Sprinkles workspace or offline playtest is
+active and returns when authoring resumes; changing the open project or zone
+document, deleting the reference, or toggling it off stops the preview. Only one
+such preview is active.
+
+Tests cover far-origin transforms, shared asset identity, unchanged zone state,
+toggle, suspension, project/document changes and one-shot restart. Forty-three
+particle-editor and 130 zone-editor tests, fmt and denied-warning workspace/
+all-target Clippy pass; the preview-specific tests were rerun after the final
+status-text change. Native 3440×1440 captures on RX 7900 XTX / RADV NAVI31 /
+Mesa 26.2.6 Vulkan with Khronos validation visibly show the retained rain and
+Magic Puff burst effects at the anchor, with zero unexpected diagnostics. This
+does not bind content IDs, package textures, enable client playback, establish
+MMO budgets or qualify Windows.

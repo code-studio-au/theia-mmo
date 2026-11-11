@@ -1762,7 +1762,7 @@
       "path": "crates/bevy_sprinkles_editor/src/viewport.rs",
       "upstream_path": "crates/bevy_sprinkles_editor/src/viewport.rs",
       "upstream_sha256": "fac62bfd9e3c63bf3474049e605ba9000883228e68b6cceb64fb072f4f84296c",
-      "imported_sha256": "025cebef305eded1162f6aa13de5d134cbd2b85a36f493bbd417e4933cb593e8",
+      "imported_sha256": "92e7433dfae5049052e66605cac8110a7279f051a9608993c43ce2ac7afef1d0",
       "changed": true
     },
     {

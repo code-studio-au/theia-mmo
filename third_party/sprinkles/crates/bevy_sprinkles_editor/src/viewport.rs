@@ -713,6 +713,67 @@ pub(crate) fn tick_aabb_generation(
     *generation = AabbGeneration::default();
 }
 
+/// Applies the retained Sprinkles one-shot preview loop to one particle system.
+/// Returns true when the system was restarted or paused after completing a cycle.
+pub fn sync_one_shot_preview(
+    asset: &ParticlesAsset,
+    system_entity: Entity,
+    system_runtime: &mut ParticleSystemRuntime,
+    emitter_query: &mut Query<(&EmitterEntity, &mut EmitterRuntime)>,
+) -> bool {
+    let sub_target_indices: Vec<usize> = asset
+        .emitters
+        .iter()
+        .filter_map(|e| e.sub_emitter.as_ref().map(|s| s.target_emitter))
+        .collect();
+
+    let all_one_shots_completed = asset
+        .emitters
+        .iter()
+        .enumerate()
+        .filter(|(idx, _)| !sub_target_indices.contains(idx))
+        .all(|(idx, emitter_data)| {
+            if !emitter_data.time.one_shot {
+                return true;
+            }
+            emitter_query.iter().any(|(emitter, runtime)| {
+                emitter.parent_system == system_entity
+                    && runtime.emitter_index == idx
+                    && runtime.one_shot_completed
+            })
+        });
+
+    let has_one_shot = asset
+        .emitters
+        .iter()
+        .enumerate()
+        .filter(|(idx, _)| !sub_target_indices.contains(idx))
+        .any(|(_, e)| e.time.one_shot);
+
+    if has_one_shot && all_one_shots_completed {
+        if system_runtime.force_loop {
+            for (emitter, mut runtime) in emitter_query.iter_mut() {
+                if emitter.parent_system == system_entity {
+                    let fixed_seed = asset
+                        .emitters
+                        .get(runtime.emitter_index)
+                        .and_then(|e| e.time.fixed_seed);
+                    runtime.restart(fixed_seed);
+                }
+            }
+        } else {
+            system_runtime.pause();
+            for (emitter, mut runtime) in emitter_query.iter_mut() {
+                if emitter.parent_system == system_entity {
+                    runtime.seek(0.0);
+                }
+            }
+        }
+        return true;
+    }
+    false
+}
+
 pub fn sync_playback_state(
     assets: Res<Assets<ParticlesAsset>>,
     drag_state: Query<&SeekbarDragState>,
@@ -736,54 +797,12 @@ pub fn sync_playback_state(
             continue;
         }
 
-        let sub_target_indices: Vec<usize> = asset
-            .emitters
-            .iter()
-            .filter_map(|e| e.sub_emitter.as_ref().map(|s| s.target_emitter))
-            .collect();
-
-        let all_one_shots_completed = asset
-            .emitters
-            .iter()
-            .enumerate()
-            .filter(|(idx, _)| !sub_target_indices.contains(idx))
-            .all(|(idx, emitter_data)| {
-                if !emitter_data.time.one_shot {
-                    return true;
-                }
-                emitter_query.iter().any(|(emitter, runtime)| {
-                    emitter.parent_system == system_entity
-                        && runtime.emitter_index == idx
-                        && runtime.one_shot_completed
-                })
-            });
-
-        let has_one_shot = asset
-            .emitters
-            .iter()
-            .enumerate()
-            .filter(|(idx, _)| !sub_target_indices.contains(idx))
-            .any(|(_, e)| e.time.one_shot);
-
-        if has_one_shot && all_one_shots_completed {
-            if system_runtime.force_loop {
-                for (emitter, mut runtime) in emitter_query.iter_mut() {
-                    if emitter.parent_system == system_entity {
-                        let fixed_seed = asset
-                            .emitters
-                            .get(runtime.emitter_index)
-                            .and_then(|e| e.time.fixed_seed);
-                        runtime.restart(fixed_seed);
-                    }
-                }
-            } else {
-                system_runtime.pause();
-                for (emitter, mut runtime) in emitter_query.iter_mut() {
-                    if emitter.parent_system == system_entity {
-                        runtime.seek(0.0);
-                    }
-                }
-            }
+        if sync_one_shot_preview(
+            asset,
+            system_entity,
+            &mut system_runtime,
+            &mut emitter_query,
+        ) {
             continue;
         }
 

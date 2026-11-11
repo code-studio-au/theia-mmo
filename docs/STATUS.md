@@ -1,3 +1,14 @@
+P2-13 temporary particle placement preview, 11 November 2026: the inspector
+can preview the currently open Sprinkles project at a selected zone anchor,
+without linking its effect ID or changing the zone. The preview uses the original
+asset and shared one-shot loop logic, follows transforms, and suspends for the
+particle workspace and playtest. Forty-three particle-editor and 130 zone-editor
+tests, fmt and strict workspace/all-target Clippy pass; final preview regressions
+were repeated. Native 3440×1440 RX 7900 XTX / RADV / Mesa 26.2.6 Vulkan
+captures visibly render rain and a looping burst with Khronos validation and no
+unexpected GPU diagnostics. Persistent ID resolution, packaging, client playback
+and MMO budgets remain open. See [integration](SPRINKLES_INTEGRATION.md).
+
 P2-13 particle viewport anchors, 11 November 2026: unresolved references use
 a selectable editor-only badge at their checked local position, update selection
 colour and disappear in playtest. 127 zone-editor tests, fmt and strict
