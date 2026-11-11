@@ -7734,6 +7734,7 @@ dependencies = [
  "serde_json",
  "theia-core",
  "theia-network",
+ "theia-vfx",
  "tokio",
 ]
 
@@ -7809,6 +7810,15 @@ dependencies = [
  "tokio",
  "tokio-postgres",
  "url",
+]
+
+[[package]]
+name = "theia-vfx"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "serde_json",
+ "theia-network",
 ]
 
 [[package]]

@@ -1,3 +1,9 @@
+P2-13 particle texture loading foundation, 11 November 2026: a client-side
+helper requests verified, package-relative PNG variants through Bevy's standard
+image loader with explicit sRGB/linear settings. A real-file Bevy test confirms
+format and handle reuse; fmt and strict workspace/all-target Clippy pass. World
+loading and Sprinkles playback do not yet use this helper. See [integration](SPRINKLES_INTEGRATION.md).
+
 P2-13 external particle texture drafts, 11 November 2026: export preflight
 rewrites PNG references in cloned effect snapshots to bounded hash-derived
 package-relative sRGB/linear variants. Eighteen particle-focused editor tests,

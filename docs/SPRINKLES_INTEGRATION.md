@@ -637,3 +637,12 @@ prove that every effect reference matches the catalog. The Sprinkles material
 loader still needs package-context path resolution, role-aware image loading and
 independent reference validation before these descriptors can be used for client
 admission or export.
+
+The client-side `theia-vfx` helper can pre-request those PNG variants through
+Bevy's standard `AssetServer`, using sRGB for color and linear for data, with
+validated package-relative prefixes. A real-file test confirms that later normal
+Bevy loads reuse the same handles with the requested formats. The caller must
+verify catalog and image files, request the variants before any other load of
+the same paths, and keep the handles alive. This helper is not yet connected to
+world loading or Sprinkles material creation; the world client still rejects
+schema 4.

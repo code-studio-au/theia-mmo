@@ -1,5 +1,5 @@
 [workspace]
-members = ["third_party/sprinkles/crates/bevy_sprinkles", "third_party/sprinkles/crates/bevy_sprinkles_editor", "apps/zone-editor", "crates/zone", "apps/nav-bake", "apps/client", "apps/server", "crates/core", "crates/network", "crates/persistence", "crates/auth"]
+members = ["third_party/sprinkles/crates/bevy_sprinkles", "third_party/sprinkles/crates/bevy_sprinkles_editor", "apps/zone-editor", "crates/zone", "crates/vfx", "apps/nav-bake", "apps/client", "apps/server", "crates/core", "crates/network", "crates/persistence", "crates/auth"]
 resolver = "3"
 
 [workspace.package]
