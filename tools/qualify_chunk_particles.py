@@ -107,6 +107,23 @@ def main():
                   render_span=2, replication_span=2, require_world_particles=True)
     run(output / 'retirement', args.binaries.resolve(), chunk_delay_ms=1000,
         require_particle_retirement=True, **common)
+    arrival = output / 'arrival-fixture'
+    shutil.copytree(good, arrival)
+    for x in (-1, 0):
+        chunk = arrival / f'chunk_{x}_0'
+        shutil.rmtree(chunk)
+        shutil.copytree(args.source.resolve() / f'chunk_{x}_0', chunk)
+    index_path = arrival / 'world.chunks.json'
+    index = json.loads(index_path.read_text())
+    base = json.loads((args.source.resolve() / 'world.chunks.json').read_text())
+    identities = {tuple(entry['id']):entry['package'] for entry in base['chunks']}
+    for entry in index['chunks']:
+        if entry['id'][0] in (-1, 0):
+            entry['package'] = identities[tuple(entry['id'])]
+    index_path.write_text(json.dumps(index))
+    run(output / 'arrival', args.binaries.resolve(), chunk_world=arrival, chunk_direction='x',
+        chunk_stream=True, chunk_delay_ms=1000, render_span=2, replication_span=2,
+        require_world_particles=True, require_particle_control_arrival=True)
     run(output / 'tampered', args.binaries.resolve(), client_chunk_world=bad,
         chunk_particle_failure=True, **common)
     if catalog['textures']:

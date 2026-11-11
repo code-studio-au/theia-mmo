@@ -46,6 +46,8 @@ pub(crate) struct Metrics {
     world_space_rebase_resets: u64,
     effects_enabled: bool,
     control_visible: bool,
+    control_shown_after_ready: u64,
+    control_hidden_ready_frames: u64,
     visibility_key_toggles: u64,
     visibility_button_toggles: u64,
     unready_emitter_frames: u64,
@@ -376,9 +378,19 @@ fn apply_visibility(
     mut roots: Query<&mut Visibility, With<WorldParticle>>,
     mut labels: Query<&mut Text, With<ToggleLabel>>,
     mut buttons: Query<&mut Node, With<Toggle>>,
+    terrain_ready: Option<Res<crate::terrain_scene::Ready>>,
+    chunks_ready: Option<Res<crate::chunk_world::Ready>>,
 ) {
     metrics.effects_enabled = choice.0;
-    metrics.control_visible = metrics.placements > 0;
+    let visible = metrics.placements > 0;
+    let ready = terrain_ready.is_some() || chunks_ready.is_some();
+    if ready && visible && !metrics.control_visible {
+        metrics.control_shown_after_ready += 1;
+    }
+    if ready && !visible {
+        metrics.control_hidden_ready_frames += 1;
+    }
+    metrics.control_visible = visible;
     for mut node in &mut buttons {
         let desired = if metrics.placements > 0 {
             Display::Flex
@@ -798,6 +810,8 @@ mod tests {
             app.world().get::<Node>(button).unwrap().display,
             Display::None
         );
+        app.insert_resource(crate::chunk_world::Ready);
+        app.update();
         app.world_mut().resource_mut::<Metrics>().placements = 1;
         app.world_mut().trigger(Activate { entity: button });
         assert!(app.world().resource::<VisibilityChoice>().0);
@@ -806,6 +820,16 @@ mod tests {
         assert_eq!(
             app.world().get::<Node>(button).unwrap().display,
             Display::Flex
+        );
+        assert_eq!(
+            app.world().resource::<Metrics>().control_shown_after_ready,
+            1
+        );
+        assert!(
+            app.world()
+                .resource::<Metrics>()
+                .control_hidden_ready_frames
+                > 0
         );
         assert_eq!(
             *app.world().get::<Visibility>(root).unwrap(),

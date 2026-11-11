@@ -127,6 +127,8 @@ The control now hides when the active chunk set has no particle placements and
 returns when placements load. Two-client Vulkan checks cover both an empty world
 (`build/particle-control-empty-native-20261111/`) and a populated world with real
 mouse/keyboard toggles (`build/particle-control-present-native-20261111/`).
+Both clients also started in a ready particle-free scene and showed the control
+after a particle-bearing chunk arrived (`build/chunk-particle-arrival-native-20261111/`).
 
 P2-13 upstream example package check, 11 November 2026: all seven bundled
 Sprinkles example RONs exported and passed actual-client pre-launch admission
