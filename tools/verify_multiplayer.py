@@ -221,7 +221,8 @@ def sha256(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def run(output, binaries, references=None, terrain=None, player_assets=None, collision=False, interior=False, full_map=False, map_access=False, transport="renet", world_origin=None, replication_span=None, render_span=None, jump=False, chunk_world=None, client_chunk_world=None, expect_remote_pixels=True, chunk_direction="z", chunk_stream=False, chunk_delay_ms=0, chunk_asset_failure=False, chunk_bounds_failure=False, chunk_image_failure=False, chunk_shared_images=False, staging_root_limit=1, stream_probe="green_floor", window_size="1280x720", require_world_particles=False, require_particle_rebase=False, hide_world_particles=False, exercise_particle_control=False, require_finished_particles=False, capture_particle_burst=False, require_particle_retirement=False, chunk_particle_failure=False, chunk_particle_texture_failure=False, chunk_particle_budget_failure=False, require_no_world_particles=False, require_particle_control_arrival=False):
+def run(output, binaries, references=None, terrain=None, player_assets=None, collision=False, interior=False, full_map=False, map_access=False, transport="renet", world_origin=None, replication_span=None, render_span=None, jump=False, chunk_world=None, client_chunk_world=None, expect_remote_pixels=True, chunk_direction="z", chunk_stream=False, chunk_delay_ms=0, chunk_asset_failure=False, chunk_bounds_failure=False, chunk_image_failure=False, chunk_shared_images=False, staging_root_limit=1, stream_probe="green_floor", window_size="1280x720", require_world_particles=False, require_particle_rebase=False, hide_world_particles=False, exercise_particle_control=False, require_finished_particles=False, capture_particle_burst=False, require_particle_retirement=False, chunk_particle_failure=False, chunk_particle_texture_failure=False, chunk_particle_budget_failure=False, require_no_world_particles=False, require_particle_control_arrival=False, require_particle_control_departure=False):
+    assert not require_particle_control_departure or (chunk_stream and require_no_world_particles)
     assert not require_particle_control_arrival or (chunk_stream and require_world_particles)
     assert not require_no_world_particles or (chunk_world and not require_world_particles)
     assert not require_particle_retirement or (chunk_stream and require_world_particles)
@@ -512,8 +513,12 @@ def run(output, binaries, references=None, terrain=None, player_assets=None, col
                     ground_checks.append({'client':name,'actor':player['id'],'clearance':gap})
             if require_no_world_particles:
                 particles = report['world_particles']
-                assert particles['placements'] == 0 and particles['live_roots'] == 0 and particles['running_emitter_frames'] == 0
+                assert particles['placements'] == 0 and particles['live_roots'] == 0
+                if not require_particle_control_departure:
+                    assert particles['running_emitter_frames'] == 0
                 assert not particles['control_visible']
+                if require_particle_control_departure:
+                    assert particles['control_hidden_after_ready'] > 0 and particles['control_visible_ready_frames'] > 0
             if require_world_particles:
                 particles = report['world_particles']
                 assert particles['placements'] > 0

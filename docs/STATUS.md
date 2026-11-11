@@ -129,6 +129,9 @@ returns when placements load. Two-client Vulkan checks cover both an empty world
 mouse/keyboard toggles (`build/particle-control-present-native-20261111/`).
 Both clients also started in a ready particle-free scene and showed the control
 after a particle-bearing chunk arrived (`build/chunk-particle-arrival-native-20261111/`).
+The reverse transition also passed on both clients: after the last particle
+chunk retired, the control disappeared and no particle roots remained
+(`build/chunk-particle-departure-native-20261111-v2/`).
 
 P2-13 upstream example package check, 11 November 2026: all seven bundled
 Sprinkles example RONs exported and passed actual-client pre-launch admission

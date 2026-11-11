@@ -47,6 +47,8 @@ pub(crate) struct Metrics {
     effects_enabled: bool,
     control_visible: bool,
     control_shown_after_ready: u64,
+    control_hidden_after_ready: u64,
+    control_visible_ready_frames: u64,
     control_hidden_ready_frames: u64,
     visibility_key_toggles: u64,
     visibility_button_toggles: u64,
@@ -386,6 +388,12 @@ fn apply_visibility(
     let ready = terrain_ready.is_some() || chunks_ready.is_some();
     if ready && visible && !metrics.control_visible {
         metrics.control_shown_after_ready += 1;
+    }
+    if ready && !visible && metrics.control_visible {
+        metrics.control_hidden_after_ready += 1;
+    }
+    if ready && visible {
+        metrics.control_visible_ready_frames += 1;
     }
     if ready && !visible {
         metrics.control_hidden_ready_frames += 1;
@@ -856,12 +864,32 @@ mod tests {
             app.world().get::<Text>(label).unwrap().0,
             "World effects: On [F9]"
         );
+        app.world_mut().resource_mut::<VisibilityChoice>().0 = false;
         app.world_mut().resource_mut::<Metrics>().placements = 0;
         app.update();
         assert_eq!(
             app.world().get::<Node>(button).unwrap().display,
             Display::None
         );
+        assert_eq!(
+            app.world().resource::<Metrics>().control_hidden_after_ready,
+            1
+        );
+        assert!(
+            app.world()
+                .resource::<Metrics>()
+                .control_visible_ready_frames
+                > 0
+        );
+        assert!(!app.world().resource::<VisibilityChoice>().0);
+        {
+            let mut keys = app.world_mut().resource_mut::<ButtonInput<KeyCode>>();
+            keys.release(KeyCode::F9);
+            keys.clear();
+            keys.press(KeyCode::F9);
+        }
+        app.update();
+        assert!(!app.world().resource::<VisibilityChoice>().0);
     }
     #[test]
     fn unready_scene_keeps_particle_system_paused() {
