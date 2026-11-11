@@ -29,16 +29,83 @@ pub struct CatalogPlacement {
     pub transform: Transform,
 }
 
-/// Project immutable catalog placements from their content frame into the
-/// current render frame, then compose each effect's initial transform. Recompute
-/// from the catalog after an origin shift rather than accumulating f32 offsets.
-/// This does not spawn effects or validate their simulation parameters.
-pub fn project_catalog_placements(
+/// Conservative replicated counts, not a complete CPU or GPU memory estimate.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct CatalogCounts {
+    pub placements: u64,
+    pub emitters: u64,
+    pub vertices: u64,
+    pub indices: u64,
+    pub particle_slots: u64,
+    pub trail_history_entries: u64,
+    pub sub_emitter_words: u64,
+}
+
+/// Count every emitter for every placement, including disabled emitters and
+/// potentially shared meshes. Textures, render targets, shader data and other
+/// allocations are not included. These counts alone do not admit playback.
+pub fn count_catalog_resources(
     catalog: &Catalog,
     effects: &[CatalogEffect],
-    content_frame: LocalFrame,
-    render_frame: LocalFrame,
-) -> Result<Vec<CatalogPlacement>, String> {
+) -> Result<CatalogCounts, String> {
+    let by_id = catalog_effects_by_id(catalog, effects)?;
+    let mut totals = CatalogCounts::default();
+    for placement in catalog.placements() {
+        totals.placements = totals
+            .placements
+            .checked_add(1)
+            .ok_or("Particle count overflow")?;
+        let asset = by_id[placement.effect.as_str()];
+        for (index, emitter) in asset.emitters.iter().enumerate() {
+            let count = emitter_counts(emitter).ok_or("Invalid particle allocation arithmetic")?;
+            let sub_words = emitter
+                .sub_emitter
+                .as_ref()
+                .and_then(|sub| {
+                    (sub.target_emitter != index)
+                        .then(|| asset.emitters.get(sub.target_emitter))
+                        .flatten()
+                        .map(|target| 4 + 12 * u64::from(target.emission.particles_amount))
+                })
+                .unwrap_or(0);
+            for (total, value) in [
+                (&mut totals.emitters, 1),
+                (&mut totals.vertices, u64::from(count.vertices)),
+                (
+                    &mut totals.indices,
+                    u64::try_from(count.indices).map_err(|_| "Particle count overflow")?,
+                ),
+                (&mut totals.particle_slots, u64::from(count.particle_slots)),
+                (
+                    &mut totals.trail_history_entries,
+                    u64::from(count.trail_history_entries),
+                ),
+                (&mut totals.sub_emitter_words, sub_words),
+            ] {
+                *total = total.checked_add(value).ok_or("Particle count overflow")?;
+            }
+        }
+    }
+    Ok(totals)
+}
+
+impl CatalogCounts {
+    /// Require each count to stay within an explicit caller-provided limit.
+    pub fn fits_within(self, limits: Self) -> bool {
+        self.placements <= limits.placements
+            && self.emitters <= limits.emitters
+            && self.vertices <= limits.vertices
+            && self.indices <= limits.indices
+            && self.particle_slots <= limits.particle_slots
+            && self.trail_history_entries <= limits.trail_history_entries
+            && self.sub_emitter_words <= limits.sub_emitter_words
+    }
+}
+
+fn catalog_effects_by_id<'a>(
+    catalog: &Catalog,
+    effects: &'a [CatalogEffect],
+) -> Result<BTreeMap<&'a str, &'a ParticlesAsset>, String> {
     let mut by_id = BTreeMap::new();
     for effect in effects {
         if by_id.insert(effect.id.as_str(), &effect.asset).is_some() {
@@ -53,6 +120,20 @@ pub fn project_catalog_placements(
     {
         return Err("Loaded particle effects do not match the catalog".into());
     }
+    Ok(by_id)
+}
+
+/// Project immutable catalog placements from their content frame into the
+/// current render frame, then compose each effect's initial transform. Recompute
+/// from the catalog after an origin shift rather than accumulating f32 offsets.
+/// This does not spawn effects or validate their simulation parameters.
+pub fn project_catalog_placements(
+    catalog: &Catalog,
+    effects: &[CatalogEffect],
+    content_frame: LocalFrame,
+    render_frame: LocalFrame,
+) -> Result<Vec<CatalogPlacement>, String> {
+    let by_id = catalog_effects_by_id(catalog, effects)?;
     let mut projected = Vec::with_capacity(catalog.placements().len());
     for placement in catalog.placements() {
         let effect = by_id[placement.effect.as_str()];
@@ -304,6 +385,72 @@ mod tests {
     use theia_network::terrain::sha256;
     static NEXT: AtomicU64 = AtomicU64::new(0);
     const PNG: &[u8] = include_bytes!("../../network/tests/fixtures/shared-image.png");
+
+    #[test]
+    fn catalog_counts_include_repeated_placements_disabled_emitters_and_sub_buffers() {
+        use bevy_sprinkles::{
+            asset::{EmitterEmission, SubEmitterConfig},
+            prelude::{EmitterData, ParticlesDimension},
+        };
+        let document = json!({"schema":1,
+            "effects":[{"id":"vfx.fire","bytes":4,"sha256":sha256(b"fire")}],
+            "placements":[
+                {"id":1,"effect":"vfx.fire","position":[0.,0.,0.],"yaw_degrees":0.,"scale":1.},
+                {"id":2,"effect":"vfx.fire","position":[1.,0.,0.],"yaw_degrees":0.,"scale":1.}
+            ]
+        });
+        let catalog = Catalog::decode(&serde_json::to_vec(&document).unwrap()).unwrap();
+        let first = EmitterData {
+            sub_emitter: Some(SubEmitterConfig {
+                target_emitter: 1,
+                ..default()
+            }),
+            ..default()
+        };
+        let second = EmitterData {
+            enabled: false,
+            emission: EmitterEmission {
+                particles_amount: 5,
+                ..default()
+            },
+            ..default()
+        };
+        let first_count = emitter_counts(&first).unwrap();
+        let second_count = emitter_counts(&second).unwrap();
+        let asset = ParticlesAsset::new(
+            "Fire".into(),
+            ParticlesDimension::D3,
+            default(),
+            vec![first, second],
+            vec![],
+            false,
+            default(),
+        );
+        let mut effects = vec![CatalogEffect {
+            id: "vfx.fire".into(),
+            asset,
+        }];
+        let counts = count_catalog_resources(&catalog, &effects).unwrap();
+        assert_eq!(counts.placements, 2);
+        assert_eq!(counts.emitters, 4);
+        assert_eq!(
+            counts.vertices,
+            2 * u64::from(first_count.vertices + second_count.vertices)
+        );
+        assert_eq!(
+            counts.particle_slots,
+            2 * u64::from(first_count.particle_slots + second_count.particle_slots)
+        );
+        assert_eq!(counts.sub_emitter_words, 2 * (4 + 12 * 5));
+        assert!(counts.fits_within(counts));
+        let mut limits = counts;
+        limits.particle_slots -= 1;
+        assert!(!counts.fits_within(limits));
+        effects[0].asset.emitters[0].emission.particles_amount = u32::MAX;
+        assert!(count_catalog_resources(&catalog, &effects).is_err());
+        effects[0].id = "vfx.other".into();
+        assert!(count_catalog_resources(&catalog, &effects).is_err());
+    }
 
     #[test]
     fn catalog_placements_reproject_from_global_without_accumulating_offsets() {

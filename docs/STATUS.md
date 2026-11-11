@@ -1,3 +1,11 @@
+P2-13 particle catalog allocation counts, 11 November 2026: the VFX helper
+conservatively totals emitters, mesh vertices/indices, particle slots, trail
+history and sub-emitter buffer words across each placement, including disabled
+emitters and repeated effects. Callers can compare the checked totals to
+explicit limits. Five VFX tests and strict workspace Clippy pass. These counts
+do not include textures or other allocations and are not a complete memory
+budget, playback admission or MMO capacity claim. See [integration](SPRINKLES_INTEGRATION.md).
+
 P2-13 particle placement projection, 11 November 2026: the VFX helper projects
 catalog placements from checked content coordinates through f64 global space
 into a bounded render frame, then composes the effect's initial transform.

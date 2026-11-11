@@ -58,6 +58,11 @@ checked f64 global coordinates into a bounded render frame and composes the
 original effect transform. A far-origin test reprojects after a frame change
 without accumulating offsets. This does not yet rebase live world-space trails,
 spawn entities or qualify particle rendering after an origin shift.
+`count_catalog_resources` totals replicated emitter, mesh, particle, trail and
+sub-emitter buffer counts across placements and can compare them to caller-set
+limits. It intentionally counts potentially shared meshes and disabled emitters
+conservatively, but omits textures and other CPU/GPU allocations. No production
+limits or complete memory/admission policy are established by those counts.
 
 The prerequisites are the accepted Linux authoring shell and the adopted exact
 Bevy 0.20.0 engine. Upstream targets Bevy 0.19.0. Both imported crates use our
