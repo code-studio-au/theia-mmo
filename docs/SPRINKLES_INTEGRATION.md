@@ -590,3 +590,9 @@ after checking, or establish GPU resource budgets. Export remains blocked until
 those admission and rendering steps are implemented and qualified. Local
 positions must be produced through the existing checked global-to-local frame
 conversion; this contract does not assign authority or collision to effects.
+
+The export preflight also constructs an in-memory draft catalog from the exact
+local RON byte hashes, sorted unique effect IDs and placement IDs, then passes it
+to the headless decoder. Positions use the zone's checked global-to-local frame
+before conversion to f32. The draft is discarded: no catalog or effects are
+published, and external texture dependencies still need a package format.

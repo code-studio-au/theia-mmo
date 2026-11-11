@@ -5,9 +5,11 @@ use bevy_sprinkles::{
     asset::{DrawPassMaterial, versions},
 };
 use std::{collections::BTreeSet, fs::File, io::Read, path::Path};
+use theia_network::{
+    particle_content::{Catalog, MAX_EFFECT_BYTES, MAX_TOTAL_EFFECT_BYTES},
+    terrain::sha256,
+};
 use theia_zone::Zone;
-
-const MAX_EFFECT_BYTES: u64 = 4 * 1024 * 1024;
 
 pub(super) fn preflight(zone: &Zone, root: &Path) -> Result<usize, String> {
     let mut ids = BTreeSet::new();
@@ -15,6 +17,8 @@ pub(super) fn preflight(zone: &Zone, root: &Path) -> Result<usize, String> {
         ids.insert(placement.effect.as_str());
     }
     let mut external_textures = BTreeSet::new();
+    let mut effects = Vec::new();
+    let mut total_bytes = 0u64;
     for id in ids {
         let path = bevy_sprinkles_editor::io::effect_library_path_in(root, id)
             .ok_or_else(|| format!("{id}: invalid or unassigned Effect ID"))?;
@@ -25,6 +29,10 @@ pub(super) fn preflight(zone: &Zone, root: &Path) -> Result<usize, String> {
             .map_err(|_| format!("{id}: could not read local effect"))?;
         if bytes.len() as u64 > MAX_EFFECT_BYTES {
             return Err(format!("{id}: local effect exceeds 4 MiB"));
+        }
+        total_bytes += bytes.len() as u64;
+        if total_bytes > MAX_TOTAL_EFFECT_BYTES {
+            return Err("Local particle effects exceed the catalog byte budget".into());
         }
         let asset = versions::migrate(&bytes)
             .map_err(|error| format!("{id}: invalid local effect: {error}"))?
@@ -60,8 +68,30 @@ pub(super) fn preflight(zone: &Zone, root: &Path) -> Result<usize, String> {
                 }
             }
         }
+        effects.push(serde_json::json!({"id":id,"bytes":bytes.len(),"sha256":sha256(&bytes)}));
     }
+    draft_catalog(zone, effects)?;
     Ok(external_textures.len())
+}
+
+fn draft_catalog(zone: &Zone, effects: Vec<serde_json::Value>) -> Result<Vec<u8>, String> {
+    let mut placements = zone.particles.iter().collect::<Vec<_>>();
+    placements.sort_by_key(|p| p.id);
+    let placements = placements
+        .into_iter()
+        .map(|p| {
+            Ok(
+                serde_json::json!({"id":p.id,"effect":p.effect,"position":zone.local(p.position)?,
+                "yaw_degrees":p.yaw_degrees as f32,"scale":p.scale as f32}),
+            )
+        })
+        .collect::<Result<Vec<_>, String>>()?;
+    let encoded = serde_json::to_vec(
+        &serde_json::json!({"schema":1,"effects":effects,"placements":placements}),
+    )
+    .map_err(|error| error.to_string())?;
+    Catalog::decode(&encoded).map_err(|error| error.to_string())?;
+    Ok(encoded)
 }
 
 #[cfg(test)]
@@ -117,6 +147,24 @@ mod tests {
     }
     fn asset() -> ParticlesAsset {
         versions::migrate(include_bytes!("../../../third_party/sprinkles/crates/bevy_sprinkles_editor/src/assets/examples/3d-explosion.ron")).unwrap().asset
+    }
+    #[test]
+    fn draft_uses_checked_far_frame_and_preserves_shared_effect_identity() {
+        let mut zone = zone();
+        zone.origin = [128_000_000_000., 4., -128_000_000_000.];
+        zone.particles[0].position = [zone.origin[0] + 0.125, 5., zone.origin[2] - 0.25];
+        let mut other = zone.particles[0].clone();
+        other.id = 2;
+        zone.particles.insert(0, other);
+        let effect = serde_json::json!({"id":"vfx.fire","bytes":4,"sha256":sha256(b"fire")});
+        let bytes = draft_catalog(&zone, vec![effect]).unwrap();
+        let catalog = Catalog::decode(&bytes).unwrap();
+        assert_eq!(catalog.effects().len(), 1);
+        assert_eq!(catalog.placements()[0].id, 1);
+        assert_eq!(catalog.placements()[0].position, [0.125, 1., -0.25]);
+        assert_eq!(catalog.placements()[1].effect, "vfx.fire");
+        zone.particles[0].position[0] += 5000.;
+        assert!(draft_catalog(&zone, vec![]).is_err());
     }
     #[test]
     fn resolves_all_texture_slots_and_deduplicates_references() {

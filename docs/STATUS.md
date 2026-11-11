@@ -1,3 +1,9 @@
+P2-13 draft particle catalog, 11 November 2026: export preflight hashes
+unique local effects and validates a deterministic in-memory catalog using
+checked global-to-local placement conversion. Three focused editor tests, fmt
+and strict workspace/all-target Clippy pass. The draft is discarded; world
+packaging, textures and client playback remain pending. See [integration](SPRINKLES_INTEGRATION.md).
+
 P2-13 particle catalog foundation, 11 November 2026: a separate headless
 decoder validates bounded local placements and effect descriptors, and checks
 effect file lengths and hashes. Two focused tests, fmt and strict workspace/
