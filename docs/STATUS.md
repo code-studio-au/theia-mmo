@@ -1,3 +1,12 @@
+P2-13 particle simulation preparation, 11 November 2026: package preparation
+now applies a conservative 3D/emitter/collider, timing, reflected numeric and
+curve/gradient complexity check before resource counting. Sprinkles' documented
+infinite material attenuation default is retained. Tests reject non-finite,
+excessive, unordered or invalid values; all seven upstream example files pass
+this numeric subset check, which does not mean they fit runtime budgets or have
+been rendered. Complete semantic validation, GPU memory admission and client
+package playback remain open.
+
 P2-13 particle world export, 11 November 2026: the zone exporter can now
 stage a particle-bearing schema-4 world package with a manifest-bound catalog,
 portable effect snapshots and content-hashed, role-specific PNG variants.

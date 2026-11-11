@@ -100,6 +100,14 @@ texture variants and tampering. The export report explicitly says client
 playback is unavailable, and the existing client admission guard remains in
 place. The particle package is not yet playable in the game.
 
+Package preparation now also checks 3D dimension, bounded emitter/collider
+counts, emitter timing, reflected finite numeric values and bounded ordered
+curve/gradient points. The documented infinite material attenuation default is
+preserved. Focused tests reject invalid values and all seven upstream examples
+pass this numeric subset; this does not establish that they fit resource limits
+or work in-game. The checks do not yet constitute complete semantic or GPU memory
+admission, and client package playback remains blocked.
+
 The prerequisites are the accepted Linux authoring shell and the adopted exact
 Bevy 0.20.0 engine. Upstream targets Bevy 0.19.0. Both imported crates use our
 workspace engine; introducing a second Bevy engine or downgrading Theia is not

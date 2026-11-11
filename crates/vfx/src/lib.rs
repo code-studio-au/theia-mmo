@@ -1,4 +1,5 @@
 //! Helpers for future verified particle packages. This crate does not spawn effects.
+pub mod simulation;
 use bevy::{
     asset::{AssetServer, Assets, RenderAssetUsages},
     image::{CompressedImageFormats, Image, ImageLoaderSettings, ImageSampler, ImageType},
@@ -207,6 +208,9 @@ pub fn prepare_catalog(
     limits: CatalogCounts,
 ) -> Result<PreparedCatalog, String> {
     let effects = load_catalog_effects(catalog, effect_directory, package)?;
+    for effect in &effects {
+        simulation::validate(&effect.asset).map_err(|error| format!("{}: {error}", effect.id))?;
+    }
     let counts = count_catalog_resources(catalog, &effects)?;
     if !counts.fits_within(limits) {
         return Err("Particle catalog exceeds the supplied count limits".into());
