@@ -24,3 +24,7 @@ trolls co-created by Keeper + Ascendant; chiefly Ascendant-worshipping; exiled r
 ## Related notes
 
 [The Keeper](../../Characters/Divine/The%20Keeper.md) · [The Ascendant](../../Characters/Divine/The%20Ascendant.md)
+
+## Creator-approved reciprocal ancestry direction — 12 November 2026
+
+The ancestral troll tradition ultimately associated with Dominion is the lineage from which the Korrath diverged toward Covenant. Vorrath retain a distinct Ascendant-linked storm-coast religious identity, while Korrath emphasize Keeper-linked restraint and protective restrictions. **Neither Covenant nor Dominion existed at the time of the ancient schism**; these are descriptions of later alignments, not ancient faction memberships. The precise split chronology, culpability and regional migration history remain OPEN. This direction supersedes conflicting working assumptions about which troll branch is ancestral, without erasing the established religious exile tradition.
