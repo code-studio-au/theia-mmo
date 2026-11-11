@@ -1,3 +1,10 @@
+P2-13 particle prism and cuboid arithmetic, 11 November 2026: runtime mesh
+admission checks prism geometry and cuboid replication for integer overflow.
+Sixteen runtime and 14 loader tests, fmt and strict workspace/all-target Clippy
+pass; windowless RX 7900 XTX / RADV / Mesa 26.2.6 Vulkan with Khronos
+validation reports zero unexpected GPU diagnostics through rejection and recovery.
+Checks are not memory limits or general input validation. See [integration](SPRINKLES_INTEGRATION.md).
+
 P2-13 particle trail mesh arithmetic, 11 November 2026: tube and ribbon
 geometry and replication reject integer overflow before construction. Fifteen
 runtime and 14 loader tests, fmt and strict workspace/all-target Clippy pass;

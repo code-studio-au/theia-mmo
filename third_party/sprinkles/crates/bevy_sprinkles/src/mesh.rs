@@ -373,7 +373,7 @@ fn create_prism_mesh(left_to_right: f32, size: Vec3, subdivide: Vec3) -> Mesh {
 }
 
 /// Validate arithmetic used by particle mesh construction and replication.
-/// This is not a memory limit; prism and cuboid meshes are not yet checked.
+/// This is not a memory limit or general validation of mesh dimensions.
 pub(crate) fn checked_mesh_arithmetic(config: &ParticleMesh, amount: u32) -> bool {
     let checked = || -> Option<()> {
         let (vertices, indices) = match config {
@@ -471,7 +471,28 @@ pub(crate) fn checked_mesh_arithmetic(config: &ParticleMesh, amount: u32) -> boo
                     .checked_mul(6)?;
                 (vertices, indices)
             }
-            _ => return Some(()),
+            ParticleMesh::Prism { subdivide, .. } => {
+                // Each dimension has subdivisions + 1 cells and + 2 vertices.
+                let w = (subdivide.x as usize).checked_add(1)?;
+                let h = (subdivide.y as usize).checked_add(1)?;
+                let d = (subdivide.z as usize).checked_add(1)?;
+                let wv = w.checked_add(1)?;
+                let hv = h.checked_add(1)?;
+                let dv = d.checked_add(1)?;
+                let vertices = wv
+                    .checked_mul(hv)?
+                    .checked_mul(2)?
+                    .checked_add(dv.checked_mul(hv)?.checked_mul(2)?)?
+                    .checked_add(wv.checked_mul(dv)?)?;
+                let indices = w
+                    .checked_mul(6)?
+                    .checked_add(w.checked_mul(h - 1)?.checked_mul(12)?)?
+                    .checked_add(d.checked_mul(h)?.checked_mul(12)?)?
+                    .checked_add(w.checked_mul(d)?.checked_mul(6)?)?;
+                (u32::try_from(vertices).ok()?, indices)
+            }
+            // Bevy's Cuboid mesh has six independent four-vertex faces.
+            ParticleMesh::Cuboid { .. } => (24, 36),
         };
         vertices.checked_mul(amount)?;
         indices.checked_mul(usize::try_from(amount).ok()?)?;
@@ -943,6 +964,36 @@ mod theia_cache_tests {
     }
 
     #[test]
+    fn prism_and_cuboid_arithmetic_checks_match_generated_vertex_counts() {
+        let prism = ParticleMesh::Prism {
+            left_to_right: 0.5,
+            size: Vec3::ONE,
+            subdivide: Vec3::new(2.0, 2.0, 1.0),
+        };
+        let cuboid = ParticleMesh::Cuboid {
+            half_size: Vec3::ONE,
+        };
+        let mesh = create_base_mesh(&cuboid);
+        assert_eq!(mesh.count_vertices(), 24);
+        assert_eq!(mesh.indices().unwrap().len(), 36);
+        for (mesh, vertices) in [(prism, 68), (cuboid, 24)] {
+            assert!(checked_mesh_arithmetic(&mesh, u32::MAX / vertices));
+            assert!(!checked_mesh_arithmetic(&mesh, u32::MAX / vertices + 1));
+        }
+        for subdivide in [
+            Vec3::splat(f32::MAX),
+            Vec3::new(1_000_000.0, 1_000_000.0, 1.0),
+        ] {
+            let mesh = ParticleMesh::Prism {
+                left_to_right: 0.5,
+                size: Vec3::ONE,
+                subdivide,
+            };
+            assert!(!checked_mesh_arithmetic(&mesh, 1));
+        }
+    }
+
+    #[test]
     fn flat_and_nearly_flat_cylinders_keep_mesh_attributes_finite() {
         for (height, top, bottom) in [
             (0.0, 1.0, 1.0),
@@ -995,6 +1046,8 @@ mod theia_cache_tests {
                     .all(|v| v.is_finite())
             );
             let indices: Vec<_> = mesh.indices().unwrap().iter().collect();
+            assert_eq!(positions.len(), 68);
+            assert_eq!(indices.len(), 198);
             assert_eq!(indices.len() % 3, 0);
             assert!(indices.iter().all(|index| *index < positions.len()));
             // Front/back vertices are interleaved, and each triangle stays on one face.

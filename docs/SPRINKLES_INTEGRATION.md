@@ -359,3 +359,13 @@ are checked before construction. Tests cover extreme counts and minimum
 subdivisions; windowless Vulkan covers invalid live edits and recovery.
 Representable inputs can still exhaust memory; prism and cuboid mesh arithmetic
 remain outside these checks.
+
+
+## Prism and cuboid mesh arithmetic — P2-13
+
+Runtime admission checks prism subdivision, vertex, index and replicated mesh
+counts and cuboid replication counts. Tests compare expected counts to actual
+generated geometry and exercise overflowing inputs without allocating them;
+windowless Vulkan exercises invalid live edits and recovery. These checks cover
+the current mesh variants but are not memory budgets, general validation of
+dimensions, or protection for direct external use of the public mesh cache.

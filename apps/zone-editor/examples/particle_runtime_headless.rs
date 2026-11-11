@@ -32,6 +32,9 @@ struct Fixture {
     saw_invalid_tube: bool,
     saw_invalid_ribbon: bool,
     saw_repaired_trail: bool,
+    saw_invalid_prism: bool,
+    saw_invalid_cuboid: bool,
+    saw_repaired_mesh: bool,
 }
 
 fn setup(
@@ -86,6 +89,9 @@ fn setup(
         saw_invalid_tube: false,
         saw_invalid_ribbon: false,
         saw_repaired_trail: false,
+        saw_invalid_prism: false,
+        saw_invalid_cuboid: false,
+        saw_repaired_mesh: false,
     });
 }
 
@@ -301,6 +307,34 @@ fn step(
                 .any(|(material, buffers)| material.is_some() && buffers.amount == 5)
         }
         270 => {
+            effects.get_mut(&fixture.asset).unwrap().emitters[0]
+                .draw_pass
+                .mesh = ParticleMesh::Prism {
+                left_to_right: 0.5,
+                size: Vec3::ONE,
+                subdivide: Vec3::splat(f32::MAX),
+            };
+        }
+        275 => fixture.saw_invalid_prism = emitters.iter().any(|(material, _)| material.is_none()),
+        280 => {
+            let mut effect = effects.get_mut(&fixture.asset).unwrap();
+            effect.emitters[0].draw_pass.mesh = ParticleMesh::Cuboid {
+                half_size: Vec3::ONE,
+            };
+            effect.emitters[0].emission.particles_amount = u32::MAX / 24 + 1;
+        }
+        285 => fixture.saw_invalid_cuboid = emitters.iter().any(|(material, _)| material.is_none()),
+        290 => {
+            effects.get_mut(&fixture.asset).unwrap().emitters[0]
+                .emission
+                .particles_amount = 5
+        }
+        300 => {
+            fixture.saw_repaired_mesh = emitters
+                .iter()
+                .any(|(material, buffers)| material.is_some() && buffers.amount == 5)
+        }
+        310 => {
             if fixture.saw_suppressed
                 && fixture.saw_restored
                 && fixture.saw_invalid_layout_suppressed
@@ -317,12 +351,15 @@ fn step(
                 && fixture.saw_invalid_tube
                 && fixture.saw_invalid_ribbon
                 && fixture.saw_repaired_trail
+                && fixture.saw_invalid_prism
+                && fixture.saw_invalid_cuboid
+                && fixture.saw_repaired_mesh
             {
                 println!("headless particle material transition passed");
                 exits.write(AppExit::Success);
             } else {
                 eprintln!(
-                    "headless particle transitions failed: shader_suppressed={} shader_restored={} layout_suppressed={} layout_restored={} cylinder={} prism={} sphere={} invalid_quad={} repaired_quad={} invalid_sphere={} repaired_sphere={} invalid_cylinder={} repaired_cylinder={} invalid_tube={} invalid_ribbon={} repaired_trail={}",
+                    "headless particle transitions failed: shader_suppressed={} shader_restored={} layout_suppressed={} layout_restored={} cylinder={} prism={} sphere={} invalid_quad={} repaired_quad={} invalid_sphere={} repaired_sphere={} invalid_cylinder={} repaired_cylinder={} invalid_tube={} invalid_ribbon={} repaired_trail={} invalid_prism={} invalid_cuboid={} repaired_mesh={}",
                     fixture.saw_suppressed,
                     fixture.saw_restored,
                     fixture.saw_invalid_layout_suppressed,
@@ -338,7 +375,10 @@ fn step(
                     fixture.saw_repaired_cylinder,
                     fixture.saw_invalid_tube,
                     fixture.saw_invalid_ribbon,
-                    fixture.saw_repaired_trail
+                    fixture.saw_repaired_trail,
+                    fixture.saw_invalid_prism,
+                    fixture.saw_invalid_cuboid,
+                    fixture.saw_repaired_mesh
                 );
                 exits.write(AppExit::error());
             }

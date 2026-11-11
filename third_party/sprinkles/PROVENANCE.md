@@ -285,3 +285,6 @@ does not impose a memory limit or validate the remaining mesh types.
 
 The local mesh arithmetic guard checks tube and ribbon geometry too; it does
 not impose a memory limit or validate the remaining mesh types.
+
+Runtime mesh admission checks prism and cuboid count arithmetic too; it is not
+a memory limit or general mesh validation, and direct mesh-cache use bypasses it.
