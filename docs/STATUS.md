@@ -1,3 +1,8 @@
+P5-17 menu/divider ownership, 11 November 2026: both native menus and
+Sprinkles popovers own pointer gestures above dock dividers, and top-bar menus
+render above the divider. Focused headless menu and divider tests pass; native
+visual retesting remains pending. See [integration](SPRINKLES_INTEGRATION.md).
+
 P5-17 popup/divider input repair, 11 November 2026: floating Sprinkles
 popups take precedence over dock divider gestures, preventing gradient-point
 drags from resizing either panel split. Five dock tests, formatting and strict

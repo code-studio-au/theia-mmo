@@ -74,7 +74,7 @@ pub(super) fn spawn(
                 MenuPopup::default(),
                 Popup(title),
                 Hovered::default(),
-                GlobalZIndex(15),
+                GlobalZIndex(18),
                 Node {
                     display: Display::None,
                     position_type: PositionType::Absolute,
@@ -298,6 +298,7 @@ mod tests {
             .query_filtered::<Entity, With<MenuPopup>>()
             .single(app.world())
             .unwrap();
+        assert_eq!(app.world().get::<GlobalZIndex>(popup).unwrap().0, 18);
         let mut item = |action: Action| {
             app.world_mut().query::<(Entity,&Control)>().iter(app.world()).find(|(_,control)|matches!(control,Control::Command(a) if std::mem::discriminant(a)==std::mem::discriminant(&action))).unwrap().0
         };

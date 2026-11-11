@@ -17,6 +17,7 @@ pub(super) struct Root;
 pub(super) struct ToolButton;
 #[derive(Resource, Default)]
 struct PointerOwner(bool);
+type PopupFilter = Or<(With<EditorPopover>, With<bevy::ui_widgets::MenuPopup>)>;
 
 pub(super) fn bounds(window: &Window, session: &Session) -> Option<Rect> {
     if session.play.is_some()
@@ -154,7 +155,7 @@ fn setup(
 fn guard(
     windows: Query<&Window>,
     mouse: Res<ButtonInput<MouseButton>>,
-    popovers: Query<&Hovered, With<EditorPopover>>,
+    popovers: Query<&Hovered, PopupFilter>,
     mut owner: ResMut<PointerOwner>,
     mut session: ResMut<Session>,
 ) {
@@ -205,6 +206,60 @@ fn sync(
 mod tests {
     use super::*;
     use bevy::ecs::system::RunSystemOnce;
+
+    #[test]
+    fn hovered_popup_owns_drag_over_the_actual_dock_edge() {
+        for sprinkles in [false, true] {
+            let zone = Zone::default();
+            let mut session = Session::new(
+                Editor::new(zone.clone()).unwrap(),
+                "unused.json".into(),
+                Some(zone),
+            );
+            session.particle_selected = Some(7);
+            let edge = session.ui.canvas_left();
+            let original = session.ui.width;
+            let mut app = App::new();
+            app.insert_resource(session)
+                .init_resource::<PointerOwner>()
+                .init_resource::<ButtonInput<MouseButton>>()
+                .init_resource::<ButtonInput<KeyCode>>()
+                .add_systems(Update, (guard, panels::resize).chain());
+            let window = app
+                .world_mut()
+                .spawn(Window {
+                    focused: true,
+                    resolution: (1440, 900).into(),
+                    ..default()
+                })
+                .id();
+            if sprinkles {
+                app.world_mut().spawn((EditorPopover, Hovered(true)));
+            } else {
+                app.world_mut()
+                    .spawn((bevy::ui_widgets::MenuPopup::default(), Hovered(true)));
+            }
+            app.world_mut()
+                .get_mut::<Window>(window)
+                .unwrap()
+                .set_cursor_position(Some(Vec2::new(edge, 300.)));
+            app.world_mut()
+                .resource_mut::<ButtonInput<MouseButton>>()
+                .press(MouseButton::Left);
+            app.update();
+            assert!(app.world().resource::<Session>().ui.overlay_owned);
+            app.world_mut()
+                .get_mut::<Window>(window)
+                .unwrap()
+                .set_cursor_position(Some(Vec2::new(edge + 80., 300.)));
+            app.world_mut()
+                .resource_mut::<ButtonInput<MouseButton>>()
+                .clear();
+            app.update();
+            assert_eq!(app.world().resource::<Session>().ui.width, original);
+            assert_eq!(app.world().resource::<Session>().particle_selected, Some(7));
+        }
+    }
 
     #[test]
     fn toolbar_owns_each_mouse_gesture_through_release_and_focus_loss_cancels() {

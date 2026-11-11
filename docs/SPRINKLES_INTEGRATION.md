@@ -757,3 +757,8 @@ Floating popup ownership also prevents starting either dock divider drag. This
 keeps a gradient handle directly over a divider from resizing the panel. A
 headless divider regression covers both edges and verifies normal resizing still
 starts after popup ownership ends; native interaction retesting is pending.
+
+The same pointer ownership now covers native editor menus and selectors, not
+just Sprinkles popovers. Top-bar menus render above dock grips. Headless tests
+exercise both popup families over the real divider and check top-menu layering;
+native retesting remains pending.
