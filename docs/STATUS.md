@@ -1,3 +1,17 @@
+P2-13 upstream example package check, 11 November 2026: all seven bundled
+Sprinkles example RONs exported and passed actual-client pre-launch admission
+(`build/upstream-particle-package-20261111-v3/qualification.json`). Two-client
+native Vulkan tests passed for Acid Pool, Loot, Rain and Tube Trails with zero
+GPU validation diagnostics (`build/upstream-{acid,loot,rain}-world-native-20261111-v1/`
+and `build/particle-world-trails-rebase-native-20261111-v1/`). Windy Snow also
+rendered on both clients with zero diagnostics, but the automated pawn-pixel
+check failed because its dense streaks changed player colors
+(`build/upstream-snow-world-native-20261111-v1/`). The upstream editor capture
+shows similarly dense authored streaks. This demonstrates a gameplay visibility
+risk for large environmental effects; these checks do not establish visual
+parity or protection of combat indicators. One-shot examples have only been
+checked through export and admission in this slice.
+
 P2-13 world-space particle rebases, 11 November 2026: bounded monolithic
 worlds now admit both local- and world-coordinate Sprinkles emitters. On a
 render/content origin change, world-space emitters clear and restart before

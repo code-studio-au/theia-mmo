@@ -136,6 +136,19 @@ Tube Trails, with visible emitters and zero GPU diagnostics
 `build/particle-world-trails-rebase-native-20261111-v1/verification.json`).
 These do not prove per-frame visual equivalence across resets.
 
+All seven bundled upstream example RONs export and pass actual-client pre-launch
+admission (`build/upstream-particle-package-20261111-v3/qualification.json`).
+Two-client native Vulkan checks passed for Acid Pool, Loot, Rain and Tube Trails
+with zero GPU diagnostics (`build/upstream-{acid,loot,rain}-world-native-20261111-v1/`
+and `build/particle-world-trails-rebase-native-20261111-v1/`). Windy Snow also
+rendered on both clients without GPU diagnostics, but its dense authored streaks
+caused the pawn-pixel readability check to fail
+(`build/upstream-snow-world-native-20261111-v1/`). An upstream editor capture
+shows similar streaks; the game still needs a way to protect critical combat
+visuals against such effects. The two one-shot examples have only been admitted,
+not qualified for connected visual playback in this slice. These observations
+do not prove pixel or animation parity.
+
 The prerequisites are the accepted Linux authoring shell and the adopted exact
 Bevy 0.20.0 engine. Upstream targets Bevy 0.19.0. Both imported crates use our
 workspace engine; introducing a second Bevy engine or downgrading Theia is not
