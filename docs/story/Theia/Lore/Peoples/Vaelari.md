@@ -25,3 +25,9 @@ Guardian-created elves, chiefly Seeker-worshipping; arcane leadership and postwa
 ## Related notes
 
 [The Guardian](../../Characters/Divine/The%20Guardian.md) · [The Seeker](../../Characters/Divine/The%20Seeker.md)
+
+## Creator-locked review — 12 November 2026
+
+**Creator-approved historical direction:** The Vaelari are the divergent elven branch ultimately aligned with Dominion, contrasted with the Aelari's ancestral Covenant-associated tradition. These alliances arose long after the ancient catastrophe, so do not project modern faction membership backward into the original schism. Detailed chronology remains open.
+
+This scoped decision supersedes conflicting older *working* descriptions; other details remain governed by [the decision ledger](../../../DECISIONS.md) and current campaign.
