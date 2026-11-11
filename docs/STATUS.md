@@ -19,6 +19,9 @@ failure cleanup; the editor export rendered from the resulting chunk world on
 two connected Vulkan clients on RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 with zero
 validation diagnostics (`build/editor-particle-chunk-world-validated-native-20261111/verification.json`).
 This combines effects with existing chunks; it does not partition editor terrain.
+A textured particle overlay on a schema-2 shared-image chunk world also retained
+the actual terrain image bindings on two Vulkan clients
+(`build/shared-particle-world-native-20261111-v3/verification.json`).
 
 P2-13 particle image admission, 11 November 2026: monolithic and chunk clients
 now apply their decoded-image allowance to verified PNG headers before invoking

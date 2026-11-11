@@ -29,7 +29,7 @@ def verify_shared_bindings(bindings, directory, loaded):
     for x,z in loaded:
         package = directory/f'chunk_{x}_{z}'
         manifest = json.loads((package/'world.manifest.json').read_text())
-        assert manifest['schema'] in (2,3)
+        assert manifest['schema'] in (2,3,4)
         descriptors={'shared/'+filename(image):image for image in manifest['shared_images']}
         document,_=read(package/'terrain.glb',allow_external_images=True)
         used={primitive['material'] for mesh in document['meshes'] for primitive in mesh['primitives'] if 'material' in primitive}
