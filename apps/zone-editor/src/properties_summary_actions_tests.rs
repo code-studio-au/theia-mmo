@@ -521,3 +521,97 @@ fn spawn_request_focuses_permanent_exact_fields_and_saves_only_on_explicit_save(
         );
     }
 }
+
+#[test]
+fn particle_inline_position_edits_use_exact_world_coordinates_and_shared_history() {
+    let origin = [128_000_000_000., 4., -128_000_000_000.];
+    let (mut app, _) = super::tests::fixture(origin, 0);
+    let particle = theia_zone::particles::ParticlePlacement {
+        id: 17,
+        name: "Campfire".into(),
+        effect: "vfx.campfire".into(),
+        position: [origin[0] + 0.125, origin[1], origin[2]],
+        yaw_degrees: 0.,
+        scale: 1.,
+    };
+    let source = Zone {
+        schema: 8,
+        origin,
+        spawn: origin,
+        particles: vec![particle],
+        ..Zone::default()
+    };
+    let mut session = Session::new(
+        Editor::new(source.clone()).unwrap(),
+        PathBuf::new(),
+        Some(source.clone()),
+    );
+    session.particle_selected = Some(17);
+    app.insert_resource(session);
+    for _ in 0..3 {
+        app.update();
+    }
+    assert!(
+        description(app.world().resource::<Session>())
+            .unwrap()
+            .contains("Unresolved asset reference")
+    );
+    let input = open(&mut app, 0);
+    type_value(&mut app, input, "128000000000.375");
+    key(&mut app, KeyCode::Enter, Key::Enter);
+    let session = app.world().resource::<Session>();
+    assert_eq!(
+        session.editor.zone().particles[0].position[0],
+        origin[0] + 0.375
+    );
+    assert_eq!(session.editor.zone().particles[0].effect, "vfx.campfire");
+    assert!(session.is_dirty());
+    let revision = session.editor.revision();
+    app.world_mut()
+        .resource_mut::<Session>()
+        .execute(Command::Undo {
+            expected_revision: revision,
+        });
+    assert_eq!(app.world().resource::<Session>().editor.zone(), &source);
+    for _ in 0..3 {
+        app.update();
+    }
+    let effect = app
+        .world_mut()
+        .query_filtered::<Entity, With<Effect>>()
+        .single(app.world())
+        .unwrap();
+    assert!(
+        app.world()
+            .get::<ComputedNode>(effect)
+            .unwrap()
+            .size()
+            .min_element()
+            > 0.
+    );
+    assert_eq!(
+        app.world().get::<EditableText>(effect).unwrap().value(),
+        "vfx.campfire"
+    );
+    app.world_mut()
+        .resource_mut::<InputFocus>()
+        .set(effect, FocusCause::Navigated);
+    app.update();
+    type_value(&mut app, effect, "../invalid");
+    key(&mut app, KeyCode::Enter, Key::Enter);
+    assert_eq!(
+        app.world().resource::<Session>().editor.zone().particles[0].effect,
+        "vfx.campfire"
+    );
+    key(&mut app, KeyCode::Escape, Key::Escape);
+    app.world_mut()
+        .resource_mut::<InputFocus>()
+        .set(effect, FocusCause::Navigated);
+    app.update();
+    type_value(&mut app, effect, "vfx.torch");
+    key(&mut app, KeyCode::Enter, Key::Enter);
+    assert_eq!(
+        app.world().resource::<Session>().editor.zone().particles[0].effect,
+        "vfx.torch"
+    );
+}

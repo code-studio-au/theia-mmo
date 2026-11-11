@@ -32,6 +32,10 @@ pub(crate) struct Name;
 #[derive(Component)]
 struct NameRow;
 #[derive(Component)]
+struct EffectRow;
+#[derive(Component)]
+struct Effect;
+#[derive(Component)]
 struct Row(usize);
 #[derive(Component)]
 struct Heading(usize);
@@ -70,6 +74,7 @@ pub(super) fn description(session: &Session) -> Option<String> {
         }
     }
     match target {
+        Target::Particle(_) => subject.push_str("\nUnresolved asset reference"),
         Target::Marker(marker) => subject.push_str(&format!(
             "\nDefinition: {}\nAuthoring annotation",
             marker.definition.as_deref().unwrap_or("unbound")
@@ -127,6 +132,29 @@ pub(super) fn spawn(parent: &mut ChildSpawnerCommands) {
                 ));
                 field(row, super::inline::Input::Name, 0);
             });
+            root.spawn((
+                EffectRow,
+                Visibility::Hidden,
+                Node {
+                    display: Display::None,
+                    width: percent(100),
+                    column_gap: px(8),
+                    align_items: AlignItems::Center,
+                    flex_shrink: 0.,
+                    ..default()
+                },
+            ))
+            .with_children(|row| {
+                row.spawn((
+                    theme::field_label("Effect ID"),
+                    Node {
+                        width: px(88),
+                        flex_shrink: 0.,
+                        ..default()
+                    },
+                ));
+                field(row, super::inline::Input::Effect, 1);
+            });
             for index in 0..7 {
                 if matches!(index, 0 | 3 | 4) {
                     root.spawn((
@@ -171,7 +199,7 @@ pub(super) fn spawn(parent: &mut ChildSpawnerCommands) {
                             ..default()
                         },
                     ));
-                    field(row, super::inline::Input::Number(index), index as i32 + 1);
+                    field(row, super::inline::Input::Number(index), index as i32 + 2);
                 });
             }
         });
@@ -205,10 +233,10 @@ fn field(parent: &mut ChildSpawnerCommands, input: super::inline::Input, order: 
                 TabIndex(order),
                 Hovered::default(),
                 EditableText {
-                    max_characters: Some(if matches!(input, super::inline::Input::Name) {
-                        80
-                    } else {
-                        64
+                    max_characters: Some(match input {
+                        super::inline::Input::Name => 80,
+                        super::inline::Input::Effect => 96,
+                        _ => 64,
                     }),
                     allow_newlines: false,
                     ..default()
@@ -235,6 +263,9 @@ fn field(parent: &mut ChildSpawnerCommands, input: super::inline::Input, order: 
                 super::inline::Input::Name => {
                     entity.insert(Name);
                 }
+                super::inline::Input::Effect => {
+                    entity.insert(Effect);
+                }
             }
         });
 }
@@ -246,13 +277,36 @@ pub(super) fn plugin(app: &mut App) {
 fn sync(
     session: Res<Session>,
     mut roots: Query<(&mut Root, &mut Node, &mut Visibility)>,
-    mut rows: Query<(&Row, &mut Node, &mut Visibility), (Without<Root>, Without<NameRow>)>,
+    mut rows: Query<
+        (&Row, &mut Node, &mut Visibility),
+        (Without<Root>, Without<NameRow>, Without<EffectRow>),
+    >,
     mut labels: Query<(&Label, &mut Text)>,
-    mut values: Query<(Entity, &Value, &mut EditableText), (Without<Label>, Without<Name>)>,
-    mut names: Query<(Entity, &mut EditableText), (With<Name>, Without<Value>)>,
+    mut values: Query<
+        (Entity, &Value, &mut EditableText),
+        (Without<Label>, Without<Name>, Without<Effect>),
+    >,
+    mut names: Query<(Entity, &mut EditableText), (With<Name>, Without<Value>, Without<Effect>)>,
+    mut effects: Query<(Entity, &mut EditableText), (With<Effect>, Without<Value>, Without<Name>)>,
     mut name_rows: Query<
         (&mut Node, &mut Visibility),
-        (With<NameRow>, Without<Root>, Without<Row>, Without<Heading>),
+        (
+            With<NameRow>,
+            Without<Root>,
+            Without<Row>,
+            Without<Heading>,
+            Without<EffectRow>,
+        ),
+    >,
+    mut effect_rows: Query<
+        (&mut Node, &mut Visibility),
+        (
+            With<EffectRow>,
+            Without<Root>,
+            Without<Row>,
+            Without<Heading>,
+            Without<NameRow>,
+        ),
     >,
     inputs: Query<(Entity, Has<InteractionDisabled>), With<super::inline::Input>>,
     mut commands: Commands,
@@ -266,6 +320,7 @@ fn sync(
             Without<Label>,
             Without<Value>,
             Without<NameRow>,
+            Without<EffectRow>,
         ),
     >,
 ) {
@@ -320,6 +375,29 @@ fn sync(
             }
         }
     }
+    let effect = snapshot.as_ref().and_then(|(_, target, _)| match target {
+        Target::Particle(particle) => Some(particle.effect.as_str()),
+        _ => None,
+    });
+    for (mut node, mut visibility) in &mut effect_rows {
+        node.display = if effect.is_some() {
+            Display::Flex
+        } else {
+            Display::None
+        };
+        *visibility = if effect.is_some() {
+            Visibility::Inherited
+        } else {
+            Visibility::Hidden
+        };
+    }
+    if let Some(effect) = effect {
+        for (entity, mut text) in &mut effects {
+            if focus.get() != Some(entity) && !editing.owns(entity) && text.value() != effect {
+                text.editor_mut().set_text(effect);
+            }
+        }
+    }
     let Some((_, target, _)) = snapshot else {
         return;
     };
@@ -332,6 +410,7 @@ fn sync(
             (_, 3) => "Rotation",
             (Target::Object(_), 4) => "Dimensions",
             (Target::Plant(_), 4) => "Scale",
+            (Target::Particle(_), 4) => "Scale",
             (Target::Marker(_), 4) => "Area",
             _ => "",
         };

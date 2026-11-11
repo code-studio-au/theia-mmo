@@ -29,8 +29,8 @@ editors, settings, playback controls and particle preview. **Zone** in its top
 bar returns to the retained zone workspace. The particle project, unsaved data
 and manual pause state remain available when re-entering. Ctrl S belongs to the
 active workspace. Zone commands, source data, revision and undo/redo stay intact
-while editing a particle project. Effects save as original Sprinkles RON assets;
-this slice does not yet place them in the zone or export them into world packages.
+while editing a particle project. Effects save as original Sprinkles RON assets. The zone editor can author unresolved
+particle references; effect resolution and world-package export remain pending.
 
 Product work now focuses on this integrated workspace. The retained standalone
 host shares the same runtime/editor library and can remain an internal diagnostic
@@ -416,9 +416,8 @@ zone documents load with no placements; older binaries do not read schema 8.
 
 The existing world exporter rejects any zone with particle placements before
 creating an output directory. This is intentional until effect and texture
-dependencies can be packaged and verified. The current editor does not yet
-provide placement or selection controls for these entries, and clients do not
-load or render them. No MMO particle-count or GPU memory budget is implied by
+dependencies can be packaged and verified. The editor now provides reference creation, selection and inline attribute controls;
+clients do not load or render them. No MMO particle-count or GPU memory budget is implied by
 the authoring document bound.
 
 Acceptance for this slice: far-origin coordinate roundtrip, invalid keys and
@@ -435,3 +434,22 @@ far-origin regression checks the complete transaction, effect-ID preservation,
 conflicting IDs, rollback and undo/redo. These commands do not yet provide editor
 controls or resolve an effect asset. Fifty-nine zone tests and denied-warning
 workspace/all-target Clippy pass; no rendering changed.
+
+
+## Particle reference controls — P2-13 / P5-17
+
+The Add menu creates an unresolved particle reference at the player spawn,
+selects it in the left explorer and exposes its name, stable effect ID, position,
+yaw and uniform scale in the normal inline inspector. The Particles filter,
+rename, duplicate, ground, frame, delete and undo use the shared document
+commands. The initial `vfx.unassigned` ID must be replaced with the intended
+content ID; no asset catalogue resolution or effect preview is implied. The
+viewport gizmo is hidden for these references until a world-space anchor is
+implemented. World export still rejects them.
+
+CPU tests exercise creation, selection, filtering, exact far-origin edits, invalid
+effect IDs and undo. All 126 zone-editor tests, formatting and denied-warning
+workspace/all-target Clippy pass. A native 3440×1440 capture of the selected
+particle inspector on RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan with
+Khronos validation reported zero GPU diagnostics. The capture does not validate
+particle rendering, packaging, client playback or Windows.

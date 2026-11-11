@@ -110,7 +110,8 @@ fn context(session: &Session) -> String {
             outliner::Target::Object(id)
             | outliner::Target::Guide(id)
             | outliner::Target::Marker(id)
-            | outliner::Target::Plant(id) => {
+            | outliner::Target::Plant(id)
+            | outliner::Target::Particle(id) => {
                 single_line(zone.authoring_name(id).unwrap_or("Selection"), 48)
             }
             outliner::Target::Terrain => "Terrain".into(),

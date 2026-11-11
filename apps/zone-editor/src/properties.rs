@@ -24,7 +24,9 @@ pub(super) use numeric::scrub;
 pub(super) use summary::Frame as InlineFrame;
 pub(super) use summary::Name as InlineName;
 pub(super) use summary::Value as SummaryValue;
-use theia_zone::{markers::Marker, paths::GuidePath, vegetation::Plant};
+use theia_zone::{
+    markers::Marker, particles::ParticlePlacement, paths::GuidePath, vegetation::Plant,
+};
 
 const LABELS: [&str; 7] = [
     "World X (m)",
@@ -102,6 +104,7 @@ enum Target {
     Spawn([f64; 3]),
     Object(Pose),
     Plant(Plant),
+    Particle(ParticlePlacement),
     Marker(Marker),
     Path {
         path: GuidePath,
@@ -126,6 +129,9 @@ impl Target {
             (Control::ValueSlider, Self::Plant(_)) => {
                 (4, 0.25, 8., 0.25, "Plant scale | step 0.25", false)
             }
+            (Control::ValueSlider, Self::Particle(_)) => {
+                (4, 0.01, 64., 0.25, "Particle scale | step 0.25", false)
+            }
             (Control::ValueSlider, Self::Marker(_)) => {
                 (4, 0.25, 64., 0.25, "Radius (m) | step 0.25", false)
             }
@@ -149,13 +155,16 @@ impl Target {
         })
     }
     fn has_yaw(&self) -> bool {
-        matches!(self, Self::Object(_) | Self::Plant(_) | Self::Marker(_))
+        matches!(
+            self,
+            Self::Object(_) | Self::Plant(_) | Self::Marker(_) | Self::Particle(_)
+        )
     }
     fn labels(&self) -> &'static [&'static str] {
         match self {
             Self::Object(_) => &LABELS,
             Self::Spawn(_) => &["World X (m)", "World Y (m)", "World Z (m)"],
-            Self::Plant(_) => &[
+            Self::Plant(_) | Self::Particle(_) => &[
                 "World X (m)",
                 "World Y (m)",
                 "World Z (m)",
@@ -180,6 +189,15 @@ impl Target {
             Self::Object(pose) => values(pose).to_vec(),
             Self::Spawn(position) => position.map(|v| v.to_string()).to_vec(),
             Self::Plant(p) => [
+                p.position[0],
+                p.position[1],
+                p.position[2],
+                p.yaw_degrees,
+                p.scale,
+            ]
+            .map(|v| v.to_string())
+            .to_vec(),
+            Self::Particle(p) => [
                 p.position[0],
                 p.position[1],
                 p.position[2],
@@ -226,6 +244,14 @@ impl Target {
                 plant.yaw_degrees = v[3];
                 plant.scale = v[4];
                 Ok((plant != *original).then_some(Edit::PutPlant { plant }))
+            }
+            Self::Particle(original) => {
+                let v = numbers(fields, self.labels())?;
+                let mut particle = original.clone();
+                particle.position = [v[0], v[1], v[2]];
+                particle.yaw_degrees = v[3];
+                particle.scale = v[4];
+                Ok((particle != *original).then_some(Edit::PutParticle { particle }))
             }
             Self::Marker(original) => {
                 let v = numbers(fields, self.labels())?;
@@ -645,6 +671,16 @@ fn capture(session: &Session, spawn_requested: bool) -> Option<(Option<u64>, Tar
             Some(object.id),
             Target::Object(object.pose.clone()),
             format!("{:?} #{} | {}", object.primitive, object.id, object.name),
+        )
+    } else if let Some(particle) = zone
+        .particles
+        .iter()
+        .find(|p| Some(p.id) == session.particle_selected)
+    {
+        (
+            Some(particle.id),
+            Target::Particle(particle.clone()),
+            format!("Particle #{} | {}", particle.id, particle.name),
         )
     } else if let Some(plant) = zone
         .plants

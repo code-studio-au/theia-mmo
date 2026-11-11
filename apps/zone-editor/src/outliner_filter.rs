@@ -94,6 +94,7 @@ pub(super) fn spawn(parent: &mut ChildSpawnerCommands) {
                     Filter::Guides,
                     Filter::Markers,
                     Filter::Plants,
+                    Filter::Particles,
                     Filter::Terrain,
                 ] {
                     menu.spawn((

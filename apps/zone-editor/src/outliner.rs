@@ -19,6 +19,7 @@ pub(super) enum Target {
     Guide(u64),
     Marker(u64),
     Plant(u64),
+    Particle(u64),
 }
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub(super) enum Filter {
@@ -28,6 +29,7 @@ pub(super) enum Filter {
     Guides,
     Markers,
     Plants,
+    Particles,
     Terrain,
 }
 impl Filter {
@@ -38,6 +40,7 @@ impl Filter {
             Self::Guides => "Guides",
             Self::Markers => "Markers",
             Self::Plants => "Plants",
+            Self::Particles => "Particles",
             Self::Terrain => "Terrain",
         }
     }
@@ -49,6 +52,7 @@ impl Filter {
                 | (Self::Guides, Target::Guide(_))
                 | (Self::Markers, Target::Marker(_))
                 | (Self::Plants, Target::Plant(_))
+                | (Self::Particles, Target::Particle(_))
                 | (Self::Terrain, Target::Terrain)
         )
     }
@@ -144,6 +148,10 @@ fn entries(zone: &Zone) -> Vec<Entry> {
         target: Target::Plant(p.id),
         label: format!("{:?} #{} | {}", p.kind, p.id, p.name),
     }));
+    rows.extend(zone.particles.iter().map(|p| Entry {
+        target: Target::Particle(p.id),
+        label: format!("Particle #{} | {}", p.id, p.name),
+    }));
     rows
 }
 pub(super) fn selection(session: &Session) -> Option<Target> {
@@ -164,6 +172,8 @@ pub(super) fn selection(session: &Session) -> Option<Target> {
         session.plant_selected.map(Target::Plant)
     } else if let Some(id) = session.selected {
         Some(Target::Object(id))
+    } else if let Some(id) = session.particle_selected {
+        Some(Target::Particle(id))
     } else if session.inspect_spawn {
         Some(Target::Spawn)
     } else {
@@ -359,6 +369,7 @@ pub(super) fn select_row(
         Target::Guide(id) => zone.paths.iter().any(|v| v.id == id),
         Target::Marker(id) => zone.markers.iter().any(|v| v.id == id),
         Target::Plant(id) => zone.plants.iter().any(|v| v.id == id),
+        Target::Particle(id) => zone.particles.iter().any(|v| v.id == id),
     };
     if !present {
         session.status = "Content changed; select an updated row".into();
@@ -393,6 +404,10 @@ pub(super) fn select_row(
         Target::Plant(id) => {
             session.set_mode(EditorMode::Plants);
             session.plant_selected = Some(id);
+        }
+        Target::Particle(id) => {
+            session.set_mode(EditorMode::Objects);
+            session.particle_selected = Some(id);
         }
     }
     session.status = if target == Target::Spawn {
@@ -604,6 +619,93 @@ pub(super) fn sync(
 pub(crate) mod tests {
     use super::*;
     use bevy::input_focus::InputFocus;
+
+    #[test]
+    fn particle_entry_can_be_selected_framed_duplicated_and_deleted() {
+        let origin = [128_000_000_000., 4., -128_000_000_000.];
+        let particle = theia_zone::particles::ParticlePlacement {
+            id: 17,
+            name: "Campfire".into(),
+            effect: "vfx.campfire".into(),
+            position: [origin[0] + 0.125, origin[1], origin[2] + 1.],
+            yaw_degrees: 0.,
+            scale: 1.,
+        };
+        let zone = Zone {
+            schema: 8,
+            origin,
+            spawn: origin,
+            particles: vec![particle],
+            ..Zone::default()
+        };
+        let mut session = Session::new(
+            Editor::new(zone.clone()).unwrap(),
+            PathBuf::new(),
+            Some(zone),
+        );
+        let content = Content {
+            entries: entries(session.editor.zone())
+                .into_iter()
+                .filter(|e| Filter::Particles.accepts(e.target))
+                .collect(),
+            ..default()
+        };
+        let mut view = View {
+            target: Vec3::ZERO,
+            yaw: 0.,
+            pitch: 0.,
+            distance: 32.,
+            preset: camera_views::Preset::Perspective,
+            show_grid: true,
+        };
+        assert_eq!(
+            select_row(0, 2, &content, &mut session, &mut view),
+            Some(Target::Particle(17))
+        );
+        assert_eq!(selection(&session), Some(Target::Particle(17)));
+        assert_eq!(view.target, Vec3::new(0.125, 0., 1.));
+        assert!(workspace::Control::Transform.enabled(&session));
+        selection::duplicate(&mut session);
+        assert_eq!(selection(&session), Some(Target::Particle(18)));
+        assert_eq!(session.editor.zone().particles.len(), 2);
+        perform(Action::Delete, &mut session, &mut view);
+        assert_eq!(session.editor.zone().particles.len(), 1);
+        assert_eq!(selection(&session), None);
+        session.execute(Command::Undo {
+            expected_revision: session.editor.revision(),
+        });
+        assert_eq!(session.editor.zone().particles.len(), 2);
+    }
+
+    #[test]
+    fn add_particle_reference_at_spawn_is_undoable_and_selected() {
+        let zone = Zone::default();
+        let mut session = Session::new(
+            Editor::new(zone.clone()).unwrap(),
+            PathBuf::new(),
+            Some(zone.clone()),
+        );
+        let mut view = View {
+            target: Vec3::ZERO,
+            yaw: 0.,
+            pitch: 0.,
+            distance: 32.,
+            preset: camera_views::Preset::Perspective,
+            show_grid: true,
+        };
+        perform(Action::AddParticle, &mut session, &mut view);
+        let particle = &session.editor.zone().particles[0];
+        assert_eq!(particle.position, zone.spawn);
+        assert_eq!(particle.effect, "vfx.unassigned");
+        assert_eq!(selection(&session), Some(Target::Particle(particle.id)));
+        assert!(session.is_dirty());
+        let revision = session.editor.revision();
+        session.execute(Command::Undo {
+            expected_revision: revision,
+        });
+        assert_eq!(session.editor.zone(), &zone);
+        assert_eq!(selection(&session), None);
+    }
 
     // This app runs the actual UI setup/sync/input systems, with a data-only
     // Window. It has no Winit, renderer, display connection or OS input driver.

@@ -1,3 +1,11 @@
+P2-13 particle reference controls, 11 November 2026: Add creates an unresolved
+reference at spawn; the left explorer filters/selects it and the inspector edits
+its content ID, name and exact transforms inline. Shared duplicate, ground, frame,
+delete and undo work. 126 zone-editor tests, fmt and strict workspace/all-target
+Clippy pass. Native 3440×1440 RX 7900 XTX / RADV / Mesa 26.2.6 Vulkan capture
+with Khronos validation reports zero GPU diagnostics. A viewport anchor, effect
+resolution, packaging and client playback remain pending. See [integration](../SPRINKLES_INTEGRATION.md).
+
 P2-13 particle shared authoring commands, 11 November 2026: particle
 placements support the existing rename, translate, duplicate and ground
 transactions, including checked IDs and undo/redo. Fifty-nine zone tests, fmt

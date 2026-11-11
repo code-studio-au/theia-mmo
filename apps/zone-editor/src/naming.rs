@@ -171,7 +171,8 @@ pub(super) fn keyboard(
         .selected
         .or(session.path_selected)
         .or(session.marker_selected)
-        .or(session.plant_selected);
+        .or(session.plant_selected)
+        .or(session.particle_selected);
     let target = if find {
         Target::Search
     } else if zone {
@@ -220,6 +221,8 @@ pub(super) fn keyboard(
                 "guide"
             } else if zone.markers.iter().any(|m| m.id == id) {
                 "marker"
+            } else if zone.particles.iter().any(|p| p.id == id) {
+                "particle"
             } else {
                 "plant"
             };

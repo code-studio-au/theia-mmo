@@ -177,6 +177,15 @@ pub(super) fn setup(
                 );
                 menus::spawn(
                     row,
+                    "Add",
+                    &[(
+                        Control::Command(Action::AddParticle),
+                        "Particle reference at spawn",
+                        "",
+                    )],
+                );
+                menus::spawn(
+                    row,
                     "View",
                     &[
                         (Control::Frame, "Frame selection", "F"),
@@ -452,10 +461,12 @@ impl Control {
             .or(session.path_selected)
             .or(session.marker_selected)
             .or(session.plant_selected)
+            .or(session.particle_selected)
             .is_some();
         match self {
             Self::GizmoTool(_) => {
                 mode(session) == EditorMode::Objects
+                    && session.particle_selected.is_none()
                     && outliner::selection(session) != Some(outliner::Target::Spawn)
             }
             Self::Transform => {
@@ -465,6 +476,7 @@ impl Control {
                         .or(session.plant_selected)
                         .or(session.marker_selected)
                         .or(session.path_selected)
+                        .or(session.particle_selected)
                         .is_some()
             }
             Self::Point(_) | Self::WholePath => {

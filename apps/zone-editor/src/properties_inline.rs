@@ -6,12 +6,17 @@ use super::*;
 pub(crate) enum Input {
     Number(usize),
     Name,
+    Effect,
 }
 impl Input {
     fn value(self, session: &Session, id: Option<u64>, target: &Target) -> Option<String> {
         match self {
             Self::Number(index) => target.values().get(index).cloned(),
             Self::Name => session.editor.zone().authoring_name(id?).map(String::from),
+            Self::Effect => match target {
+                Target::Particle(particle) => Some(particle.effect.clone()),
+                _ => None,
+            },
         }
     }
 }
@@ -64,6 +69,15 @@ fn commit(session: &mut Session, pending: &Pending, value: &str) -> Result<(), S
             id: pending.id.expect("Name fields require authored content"),
             name: value.into(),
         }),
+        Input::Effect => match &pending.original {
+            Target::Particle(original) if value != pending.original_text => {
+                let mut particle = original.clone();
+                particle.effect = value.into();
+                Some(Edit::PutParticle { particle })
+            }
+            Target::Particle(_) => None,
+            _ => return Err("Effect reference is no longer available".into()),
+        },
     };
     if let Some(edit) = edit {
         let points = session.selected_path_len();

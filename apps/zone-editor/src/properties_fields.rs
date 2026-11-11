@@ -133,6 +133,7 @@ pub(super) fn prefix(target: &Target, index: usize) -> Option<(&'static str, f32
         (_, 3) => Some(("Yaw", 28., "°")),
         (Target::Object(_), 4..=6) => Some((["X", "Y", "Z"][index - 4], 16., "m")),
         (Target::Plant(_), 4) => Some(("Scale", 40., "")),
+        (Target::Particle(_), 4) => Some(("Scale", 40., "")),
         (Target::Marker(_), 4) => Some(("Radius", 44., "m")),
         _ => None,
     }

@@ -33,6 +33,7 @@ fn editable(target: outliner::Target) -> bool {
             | outliner::Target::Guide(_)
             | outliner::Target::Marker(_)
             | outliner::Target::Plant(_)
+            | outliner::Target::Particle(_)
     )
 }
 pub(super) fn plugin(app: &mut App) {

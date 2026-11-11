@@ -24,6 +24,7 @@ pub(super) fn keyboard(
         && !session.terrain_mode
     {
         session.inspect_spawn = false;
+        session.particle_selected = None;
         let objects = &session.editor.zone().objects;
         let reverse = keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight);
         session.selected = if objects.is_empty() {
@@ -91,6 +92,11 @@ pub(super) fn frame(session: &mut Session, view: &mut View) -> bool {
             .iter()
             .find(|m| Some(m.id) == session.marker_selected)
             .map(|m| (m.position, m.radius_metres.max(2.) as f32))
+    } else if let Some(id) = session.particle_selected {
+        zone.particles
+            .iter()
+            .find(|p| p.id == id)
+            .map(|p| (p.position, 2.))
     } else {
         zone.objects
             .iter()
@@ -136,7 +142,7 @@ pub(super) fn duplicate(session: &mut Session) {
     } else if session.vegetation_mode {
         session.plant_selected
     } else if !session.terrain_mode {
-        session.selected
+        session.selected.or(session.particle_selected)
     } else {
         None
     };
@@ -169,6 +175,8 @@ pub(super) fn duplicate(session: &mut Session) {
     } else if session.vegetation_mode {
         session.plant_selected = Some(new_id);
         session.plant_palette = None;
+    } else if session.particle_selected.is_some() {
+        session.particle_selected = Some(new_id);
     } else {
         session.selected = Some(new_id);
         session.palette = None;

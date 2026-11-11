@@ -36,6 +36,7 @@ fn identity(session: &Session, tabs: Option<&property_tabs::State>) -> Option<Id
             | outliner::Target::Guide(_)
             | outliner::Target::Marker(_)
             | outliner::Target::Plant(_)
+            | outliner::Target::Particle(_)
     ) {
         return None;
     }

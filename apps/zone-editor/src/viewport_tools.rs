@@ -25,6 +25,7 @@ pub(super) fn bounds(window: &Window, session: &Session) -> Option<Rect> {
         || session.marker_palette.is_some()
         || session.path_draft.is_some()
         || session.terrain_mode
+        || session.particle_selected.is_some()
         || outliner::selection(session) == Some(outliner::Target::Spawn)
         || outliner::selection(session).is_none()
     {

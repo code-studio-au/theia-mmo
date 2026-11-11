@@ -75,6 +75,7 @@ struct Session {
     editor: Editor,
     saved_zone: Option<Zone>,
     selected: Option<u64>,
+    particle_selected: Option<u64>,
     inspect_spawn: bool,
     palette: Option<Primitive>,
     placement_size: [f64; 3],
@@ -145,6 +146,7 @@ impl Session {
             editor,
             saved_zone,
             selected: None,
+            particle_selected: None,
             inspect_spawn: false,
             palette: None,
             placement_size: [1.; 3],
@@ -296,6 +298,7 @@ impl Session {
         self.drag = None;
         self.palette = None;
         self.selected = None;
+        self.particle_selected = None;
         self.status = if self.terrain_paint {
             "Terrain paint - choose a surface and click or drag".into()
         } else if self.vegetation_mode {
@@ -394,6 +397,15 @@ impl Session {
         {
             self.plant_selected = None;
         }
+        if !self
+            .editor
+            .zone()
+            .particles
+            .iter()
+            .any(|p| Some(p.id) == self.particle_selected)
+        {
+            self.particle_selected = None;
+        }
         self.next_id = self
             .next_id
             .max(self.editor.zone().next_id().unwrap_or(u64::MAX));
@@ -436,6 +448,7 @@ enum Action {
     Spawn,
     Delete,
     Duplicate,
+    AddParticle,
     TerrainToggle,
     TerrainResolution,
     Brush(terrain::Tool),
@@ -543,6 +556,17 @@ fn run() -> Result<(), String> {
                     .objects
                     .first()
                     .ok_or("--capture-view property-actions requires an object")?
+                    .id,
+            );
+        }
+        Some(cli::CaptureView::Particle) => {
+            session.particle_selected = Some(
+                session
+                    .editor
+                    .zone()
+                    .particles
+                    .first()
+                    .ok_or("--capture-view particle requires a particle reference")?
                     .id,
             );
         }
@@ -836,6 +860,31 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
     }
     match action {
         Action::Duplicate => selection::duplicate(session),
+        Action::AddParticle => {
+            let id = session.next_id;
+            let Some(next) = id.checked_add(1) else {
+                session.status = "Authoring IDs exhausted".into();
+                return;
+            };
+            let revision = session.editor.revision();
+            session.edit(vec![Edit::PutParticle {
+                particle: theia_zone::particles::ParticlePlacement {
+                    id,
+                    name: format!("Particle {id}"),
+                    effect: "vfx.unassigned".into(),
+                    position: session.editor.zone().spawn,
+                    yaw_degrees: 0.,
+                    scale: 1.,
+                },
+            }]);
+            if session.editor.revision() != revision {
+                session.next_id = next;
+                session.set_mode(EditorMode::Objects);
+                session.particle_selected = Some(id);
+                session.status =
+                    "Particle reference added at spawn · set Effect ID in Attributes".into();
+            }
+        }
         Action::Select => {
             session.palette = None;
             session.marker_palette = None;
@@ -851,6 +900,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
         | Action::MarkerRadius(_) => markers::perform(action, session),
         Action::Place(primitive) => {
             session.inspect_spawn = false;
+            session.particle_selected = None;
             session.terrain_mode = false;
             session.terrain_paint = false;
             session.path_mode = false;
@@ -889,7 +939,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
                 } else if session.marker_mode {
                     session.marker_selected
                 } else if !session.terrain_mode {
-                    session.selected
+                    session.selected.or(session.particle_selected)
                 } else {
                     None
                 };
@@ -942,6 +992,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
             {
                 Ok(()) => {
                     session.selected = None;
+                    session.particle_selected = None;
                     session.inspect_spawn = false;
                     session.path_selected = None;
                     session.path_point = None;
@@ -957,6 +1008,8 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
         Action::Delete => {
             if let Some(id) = session.selected {
                 session.edit(vec![Edit::Delete { id }]);
+            } else if let Some(id) = session.particle_selected {
+                session.edit(vec![Edit::DeleteParticle { id }]);
             }
         }
         Action::Spawn => {
