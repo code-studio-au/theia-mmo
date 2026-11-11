@@ -4,8 +4,10 @@ prepares effects and verified images, projects placements from each chunk's f64
 origin to the index frame, and enforces aggregate candidate counts and decoded
 image limits. A far-origin mixed-residency test covers repeated effects, aggregate
 limits, tampering and unchanged active residency. This is preparation only:
-chunk clients still reject particle-bearing visuals, and old-plus-new staging
-budgets, atomic publication, retirement and native GPU checks remain open.
+chunk clients still reject particle-bearing visuals. A separate conservative
+old-plus-new staging budget check now covers counts, decoded image bytes and
+overflow; it must be wired into the client before atomic publication, retirement
+and native GPU checks can be qualified.
 
 P5-17 / P2-13 editor world export, 11 November 2026: **File → Export world…**
 opens a Sprinkles-styled dialog for a new output folder, content ID and revision.

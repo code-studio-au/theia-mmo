@@ -203,6 +203,31 @@ pub struct PreparedResidency {
     pub decoded_image_bytes: usize,
 }
 
+/// Admit a candidate while the previous residency is still alive. Counting
+/// both complete snapshots is conservative when chunks are retained, but keeps
+/// staging bounded without depending on asset reuse or publication order.
+pub fn check_residency_staging_budget(
+    active_counts: CatalogCounts,
+    active_image_bytes: usize,
+    candidate: &PreparedResidency,
+    limits: CatalogCounts,
+    max_decoded_image_bytes: usize,
+) -> Result<(), String> {
+    let counts = active_counts
+        .checked_add(candidate.counts)
+        .ok_or("Staged particle count overflow")?;
+    if !counts.fits_within(limits) {
+        return Err("Active and staged particles exceed supplied count limits".into());
+    }
+    let image_bytes = active_image_bytes
+        .checked_add(candidate.decoded_image_bytes)
+        .ok_or("Staged particle image size overflow")?;
+    if image_bytes > max_decoded_image_bytes {
+        return Err("Active and staged particles exceed decoded image limit".into());
+    }
+    Ok(())
+}
+
 /// Verify every visual in an already identity-checked residency and prepare
 /// its manifest-bound particle catalogs. Positions are projected from each
 /// chunk's own f64 origin to the index frame. Limits apply to the entire
@@ -1335,6 +1360,30 @@ mod tests {
         assert_eq!(prepared.chunks.len(), 2);
         assert_eq!(prepared.counts.placements, 2);
         assert!(prepared.decoded_image_bytes > 0);
+        assert!(
+            check_residency_staging_budget(CatalogCounts::default(), 0, &prepared, limits, 1024)
+                .is_ok()
+        );
+        assert!(
+            check_residency_staging_budget(
+                prepared.counts,
+                prepared.decoded_image_bytes,
+                &prepared,
+                limits,
+                1024
+            )
+            .is_err()
+        );
+        assert!(
+            check_residency_staging_budget(
+                CatalogCounts::default(),
+                usize::MAX,
+                &prepared,
+                limits,
+                usize::MAX
+            )
+            .is_err()
+        );
         assert_eq!(
             prepared.chunks[0].1.placements[0].transform.translation,
             Vec3::new(-7., 0., 10.)

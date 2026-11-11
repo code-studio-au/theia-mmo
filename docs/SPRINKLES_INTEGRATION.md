@@ -191,7 +191,8 @@ projects placements from chunk-global origins into the index frame, and enforces
 aggregate candidate count and decoded-image limits. A far-origin mixed-residency
 test covers tampering and failure without changing active residency. It does not
 yet publish or render chunk particles; the existing chunk-client guard remains.
-Old-plus-new staging limits, atomic retirement and native GPU checks are still
+A conservative old-plus-new staging budget check is available but is not yet
+wired into the chunk client. Atomic retirement and native GPU checks are still
 required.
 
 The prerequisites are the accepted Linux authoring shell and the adopted exact
