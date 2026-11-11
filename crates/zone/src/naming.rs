@@ -9,6 +9,7 @@ impl Zone {
             .chain(self.paths.iter().map(|p| (p.id, p.name.as_str())))
             .chain(self.markers.iter().map(|m| (m.id, m.name.as_str())))
             .chain(self.plants.iter().map(|p| (p.id, p.name.as_str())))
+            .chain(self.particles.iter().map(|p| (p.id, p.name.as_str())))
             .find_map(|(key, name)| (key == id).then_some(name))
     }
 }
@@ -21,6 +22,7 @@ pub(crate) fn apply(zone: &mut Zone, id: u64, name: String) -> Result<()> {
         .chain(zone.paths.iter_mut().map(|p| (p.id, &mut p.name)))
         .chain(zone.markers.iter_mut().map(|m| (m.id, &mut m.name)))
         .chain(zone.plants.iter_mut().map(|p| (p.id, &mut p.name)))
+        .chain(zone.particles.iter_mut().map(|p| (p.id, &mut p.name)))
         .find_map(|(key, name)| (key == id).then_some(name))
         .ok_or("Unknown authoring ID to rename")?;
     *target = name;

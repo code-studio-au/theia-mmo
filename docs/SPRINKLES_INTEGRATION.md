@@ -427,3 +427,11 @@ rollback and explicit export rejection. Fifty-eight zone tests and 123
 zone-editor tests pass, with the final shared-ID validation also exercised by a
 repeat of the export test. Formatting and denied-warning workspace/all-target
 Clippy pass. No rendering changed.
+
+
+Particle records participate in the same name lookup, rename, f64 translation,
+duplicate and explicit terrain-grounding commands as other placements. A
+far-origin regression checks the complete transaction, effect-ID preservation,
+conflicting IDs, rollback and undo/redo. These commands do not yet provide editor
+controls or resolve an effect asset. Fifty-nine zone tests and denied-warning
+workspace/all-target Clippy pass; no rendering changed.

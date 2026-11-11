@@ -181,4 +181,75 @@ mod tests {
             zone
         );
     }
+
+    #[test]
+    fn shared_authoring_commands_preserve_particle_data_and_history() {
+        let origin = [128_000_000_000., 4., -128_000_000_000.];
+        let particle = placement(7, [origin[0], origin[1] + 3., origin[2]]);
+        let zone = Zone {
+            schema: 8,
+            origin,
+            spawn: origin,
+            particles: vec![particle.clone()],
+            ..Zone::default()
+        };
+        let mut editor = Editor::new(zone.clone()).unwrap();
+        apply(
+            &mut editor,
+            vec![
+                Edit::Rename {
+                    id: 7,
+                    name: "Fire renamed".into(),
+                },
+                Edit::Translate {
+                    id: 7,
+                    offset: [0.125, 0., 0.],
+                },
+                Edit::Duplicate {
+                    id: 7,
+                    new_id: 8,
+                    offset: [1., 0., 0.],
+                },
+                Edit::ProjectToSurface {
+                    projection: crate::projection::Projection {
+                        targets: vec![crate::projection::Target::Placement { id: 8 }],
+                        offset_metres: 0.5,
+                    },
+                },
+            ],
+        )
+        .unwrap();
+        assert_eq!(editor.zone().authoring_name(7), Some("Fire renamed"));
+        assert_eq!(editor.zone().particles[1].name, "Fire renamed copy");
+        assert_eq!(editor.zone().particles[1].effect, particle.effect);
+        assert_eq!(
+            editor.zone().particles[1].position,
+            [origin[0] + 1.125, origin[1] + 0.5, origin[2]]
+        );
+        let changed = editor.zone().clone();
+        assert!(
+            apply(
+                &mut editor,
+                vec![Edit::Duplicate {
+                    id: 7,
+                    new_id: 8,
+                    offset: [0.; 3]
+                }]
+            )
+            .is_err()
+        );
+        assert_eq!(editor.zone(), &changed);
+        editor
+            .execute(Command::Undo {
+                expected_revision: 1,
+            })
+            .unwrap();
+        assert_eq!(editor.zone(), &zone);
+        editor
+            .execute(Command::Redo {
+                expected_revision: 2,
+            })
+            .unwrap();
+        assert_eq!(editor.zone(), &changed);
+    }
 }

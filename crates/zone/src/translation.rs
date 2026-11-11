@@ -19,6 +19,8 @@ pub(crate) fn apply(zone: &mut Zone, id: u64, offset: [f64; 3]) -> Result<()> {
         marker.position = shift(marker.position);
     } else if let Some(plant) = zone.plants.iter_mut().find(|p| p.id == id) {
         plant.position = shift(plant.position);
+    } else if let Some(particle) = zone.particles.iter_mut().find(|p| p.id == id) {
+        particle.position = shift(particle.position);
     } else {
         return Err("Unknown authoring ID to translate".into());
     }

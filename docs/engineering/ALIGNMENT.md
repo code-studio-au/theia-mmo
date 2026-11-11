@@ -1,3 +1,9 @@
+P2-13 particle shared authoring commands, 11 November 2026: particle
+placements support the existing rename, translate, duplicate and ground
+transactions, including checked IDs and undo/redo. Fifty-nine zone tests, fmt
+and strict workspace/all-target Clippy pass. Editor controls, packaging and
+client rendering remain pending. See [integration](../SPRINKLES_INTEGRATION.md).
+
 P2-13 particle placement data, 11 November 2026: zone schema 8 stores bounded
 renderer-independent effect references, checked f64 global anchors and
 transactional edits with undo/redo. The existing exporter rejects placements

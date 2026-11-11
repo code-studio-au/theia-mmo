@@ -40,6 +40,8 @@ impl Projection {
                         (p.position, 0.)
                     } else if let Some(m) = zone.markers.iter().find(|m| m.id == id) {
                         (m.position, 0.)
+                    } else if let Some(p) = zone.particles.iter().find(|p| p.id == id) {
+                        (p.position, 0.)
                     } else {
                         return Err("Unknown placement ID".into());
                     }
@@ -67,6 +69,8 @@ impl Projection {
                         p.position = next;
                     } else if let Some(m) = zone.markers.iter_mut().find(|m| m.id == id) {
                         m.position = next;
+                    } else if let Some(p) = zone.particles.iter_mut().find(|p| p.id == id) {
+                        p.position = next;
                     }
                 }
                 Target::GuidePoint { id, index } => {
