@@ -3,23 +3,39 @@
 use bevy_sprinkles::{
     TextureRef,
     asset::{DrawPassMaterial, versions},
+    budget::emitter_counts,
 };
-use std::{collections::BTreeSet, fs::File, io::Read, path::Path};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    fs::File,
+    io::Read,
+    path::Path,
+};
 use theia_network::{
     particle_content::{Catalog, MAX_EFFECT_BYTES, MAX_TOTAL_EFFECT_BYTES},
     terrain::sha256,
 };
 use theia_zone::Zone;
 
-pub(super) fn preflight(zone: &Zone, root: &Path) -> Result<usize, String> {
-    let mut ids = BTreeSet::new();
+#[derive(Debug, Default)]
+pub(super) struct Preflight {
+    pub textures: usize,
+    pub vertices: u64,
+    pub indices: u64,
+    pub particle_slots: u64,
+    pub history_entries: u64,
+}
+
+pub(super) fn preflight(zone: &Zone, root: &Path) -> Result<Preflight, String> {
+    let mut ids = BTreeMap::new();
     for placement in &zone.particles {
-        ids.insert(placement.effect.as_str());
+        *ids.entry(placement.effect.as_str()).or_insert(0u64) += 1;
     }
     let mut external_textures = BTreeSet::new();
     let mut effects = Vec::new();
     let mut total_bytes = 0u64;
-    for id in ids {
+    let mut result = Preflight::default();
+    for (id, instances) in ids {
         let path = bevy_sprinkles_editor::io::effect_library_path_in(root, id)
             .ok_or_else(|| format!("{id}: invalid or unassigned Effect ID"))?;
         let file = File::open(path).map_err(|_| format!("{id}: local effect is missing"))?;
@@ -43,6 +59,30 @@ pub(super) fn preflight(zone: &Zone, root: &Path) -> Result<usize, String> {
             ));
         }
         for (index, emitter) in asset.emitters.iter().enumerate() {
+            let counts = emitter_counts(emitter).ok_or_else(|| {
+                format!("{id}: emitter {index} has invalid allocation arithmetic")
+            })?;
+            for (total, count) in [
+                (&mut result.vertices, u64::from(counts.vertices)),
+                (
+                    &mut result.indices,
+                    u64::try_from(counts.indices)
+                        .map_err(|_| "Particle allocation count overflow")?,
+                ),
+                (&mut result.particle_slots, u64::from(counts.particle_slots)),
+                (
+                    &mut result.history_entries,
+                    u64::from(counts.trail_history_entries),
+                ),
+            ] {
+                *total = total
+                    .checked_add(
+                        count
+                            .checked_mul(instances)
+                            .ok_or("Particle allocation count overflow")?,
+                    )
+                    .ok_or("Particle allocation count overflow")?;
+            }
             let DrawPassMaterial::Standard(material) = &emitter.draw_pass.material else {
                 unreachable!("custom material rejected above")
             };
@@ -71,7 +111,8 @@ pub(super) fn preflight(zone: &Zone, root: &Path) -> Result<usize, String> {
         effects.push(serde_json::json!({"id":id,"bytes":bytes.len(),"sha256":sha256(&bytes)}));
     }
     draft_catalog(zone, effects)?;
-    Ok(external_textures.len())
+    result.textures = external_textures.len();
+    Ok(result)
 }
 
 fn draft_catalog(zone: &Zone, effects: Vec<serde_json::Value>) -> Result<Vec<u8>, String> {
@@ -167,6 +208,29 @@ mod tests {
         assert!(draft_catalog(&zone, vec![]).is_err());
     }
     #[test]
+    fn repeated_placements_count_each_instance_and_invalid_layout_fails() {
+        let folder = Folder::new();
+        let mut asset = asset();
+        folder.save(&asset);
+        let mut zone = zone();
+        let one = preflight(&zone, &folder.0).unwrap();
+        let mut second = zone.particles[0].clone();
+        second.id = 2;
+        zone.particles.push(second);
+        let two = preflight(&zone, &folder.0).unwrap();
+        assert_eq!(two.particle_slots, one.particle_slots * 2);
+        assert_eq!(two.vertices, one.vertices * 2);
+        assert_eq!(two.indices, one.indices * 2);
+        assert_eq!(two.history_entries, one.history_entries * 2);
+        asset.emitters[0].emission.particles_amount = u32::MAX;
+        folder.save(&asset);
+        assert!(
+            preflight(&zone, &folder.0)
+                .unwrap_err()
+                .contains("allocation arithmetic")
+        );
+    }
+    #[test]
     fn resolves_all_texture_slots_and_deduplicates_references() {
         let folder = Folder::new();
         let mut asset = asset();
@@ -189,7 +253,7 @@ mod tests {
         material.normal_map_texture = textures[3].clone();
         material.occlusion_texture = textures[4].clone();
         folder.save(&asset);
-        assert_eq!(preflight(&zone(), &folder.0).unwrap(), 5);
+        assert_eq!(preflight(&zone(), &folder.0).unwrap().textures, 5);
         for image in &images {
             fs::remove_file(image).unwrap();
             assert!(
@@ -204,7 +268,7 @@ mod tests {
         };
         material.emissive_texture = textures[0].clone();
         folder.save(&asset);
-        assert_eq!(preflight(&zone(), &folder.0).unwrap(), 4);
+        assert_eq!(preflight(&zone(), &folder.0).unwrap().textures, 4);
     }
     #[test]
     fn missing_malformed_oversize_and_custom_shader_are_reported() {

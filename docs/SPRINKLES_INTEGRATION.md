@@ -608,3 +608,8 @@ instance or cache behavior. They are a prerequisite for a package admission
 policy, not a memory cap or a measured capacity. Generated-mesh tests compare
 counts for all seven mesh types; runtime tests cover trails, zero amount and
 overflow.
+
+Export preflight totals those counts across all placements, including repeated
+instances of a shared effect, and rejects invalid allocation arithmetic. Mesh
+sharing can lower actual allocation; texture, material, renderer and other costs
+are not included. The count is diagnostic only and is not an admission budget.

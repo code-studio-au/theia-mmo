@@ -1,3 +1,9 @@
+P2-13 particle placement allocation estimates, 11 November 2026: export
+preflight aggregates checked counts across placed effect instances and reports
+invalid arithmetic. Four focused editor tests, fmt and strict workspace/all-
+target Clippy pass. Mesh sharing and additional renderer/texture costs mean these
+are not a memory budget or capacity claim. See [integration](SPRINKLES_INTEGRATION.md).
+
 P2-13 particle allocation counts, 11 November 2026: the Sprinkles runtime
 exposes checked per-emitter mesh, particle-slot and trail-history counts for
 future admission. All 18 particle-runtime tests, fmt and strict workspace/all-
