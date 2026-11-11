@@ -231,6 +231,99 @@ pub fn partition_catalog(
     Ok(output)
 }
 
+/// Immutable bytes for a future chunk-package publication.
+pub struct ParticleChunkDraft {
+    pub catalog: Vec<u8>,
+    pub effects: Vec<(String, Vec<u8>)>,
+    pub textures: Vec<(String, Vec<u8>)>,
+}
+
+/// Draft each chunk from one verified snapshot of every dependency. This does
+/// not modify files or bind chunk identities; callers must publish atomically.
+/// The total limit includes copies needed by multiple output chunks.
+pub fn draft_particle_chunks(
+    catalog: &Catalog,
+    effect_directory: &Path,
+    texture_directory: &Path,
+    source_frame: LocalFrame,
+    available: &BTreeSet<ChunkId>,
+    max_output_bytes: usize,
+) -> Result<BTreeMap<ChunkId, ParticleChunkDraft>, String> {
+    let effect_bytes = catalog
+        .read_effects(effect_directory)
+        .map_err(|e| e.to_string())?;
+    let effects = catalog_effects_from_buffers(catalog, &effect_bytes, Path::new("particles"))?;
+    for effect in &effects {
+        simulation::validate(&effect.asset).map_err(|error| format!("{}: {error}", effect.id))?;
+    }
+    let texture_bytes = catalog
+        .read_textures(texture_directory)
+        .map_err(|e| e.to_string())?;
+    for (texture, bytes) in catalog.textures().iter().zip(&texture_bytes) {
+        Image::from_buffer(
+            bytes,
+            ImageType::Extension("png"),
+            CompressedImageFormats::NONE,
+            texture.color_space == ColorSpace::Srgb,
+            ImageSampler::default(),
+            RenderAssetUsages::default(),
+        )
+        .map_err(|error| format!("Invalid particle texture {}: {error}", texture.filename()))?;
+    }
+    let catalogs = partition_catalog(catalog, &effects, source_frame, available)?;
+    let mut used_bytes = 0usize;
+    let mut result = BTreeMap::new();
+    for (id, bytes) in catalogs {
+        let selected = Catalog::decode(&bytes).map_err(|e| e.to_string())?;
+        let mut chunk_effects = Vec::new();
+        let mut chunk_textures = Vec::new();
+        used_bytes = used_bytes
+            .checked_add(bytes.len())
+            .ok_or("Particle draft size overflow")?;
+        for effect in selected.effects() {
+            let index = catalog
+                .effects()
+                .iter()
+                .position(|source| source.id == effect.id)
+                .ok_or("Draft effect missing")?;
+            let data = &effect_bytes[index];
+            used_bytes = used_bytes
+                .checked_add(data.len())
+                .ok_or("Particle draft size overflow")?;
+            if used_bytes > max_output_bytes {
+                return Err("Particle draft exceeds output byte limit".into());
+            }
+            chunk_effects.push((format!("effect-{}.ron", effect.id), data.clone()));
+        }
+        for texture in selected.textures() {
+            let index = catalog
+                .textures()
+                .iter()
+                .position(|source| {
+                    source.sha256 == texture.sha256 && source.color_space == texture.color_space
+                })
+                .ok_or("Draft texture missing")?;
+            let data = &texture_bytes[index];
+            used_bytes = used_bytes
+                .checked_add(data.len())
+                .ok_or("Particle draft size overflow")?;
+            if used_bytes > max_output_bytes {
+                return Err("Particle draft exceeds output byte limit".into());
+            }
+            chunk_textures.push((texture.filename(), data.clone()));
+        }
+        result.insert(
+            id,
+            ParticleChunkDraft {
+                catalog: bytes,
+                effects: chunk_effects,
+                textures: chunk_textures,
+            },
+        );
+    }
+    Ok(result)
+}
+
 /// Project immutable catalog placements from their content frame into the
 /// current render frame, then compose each effect's initial transform. Recompute
 /// from the catalog after an origin shift rather than accumulating f32 offsets.
@@ -673,8 +766,19 @@ pub fn load_catalog_effects(
     package: &Path,
 ) -> Result<Vec<CatalogEffect>, String> {
     let buffers = catalog.read_effects(directory).map_err(|e| e.to_string())?;
+    catalog_effects_from_buffers(catalog, &buffers, package)
+}
+
+fn catalog_effects_from_buffers(
+    catalog: &Catalog,
+    buffers: &[Vec<u8>],
+    package: &Path,
+) -> Result<Vec<CatalogEffect>, String> {
+    if buffers.len() != catalog.effects().len() {
+        return Err("Particle effect snapshot count mismatch".into());
+    }
     let mut assets = Vec::with_capacity(buffers.len());
-    for (effect, bytes) in catalog.effects().iter().zip(&buffers) {
+    for (effect, bytes) in catalog.effects().iter().zip(buffers) {
         let asset = versions::migrate(bytes)
             .map_err(|error| format!("{}: invalid particle effect: {error}", effect.id))?
             .asset;
@@ -1599,6 +1703,46 @@ mod tests {
             residency.verify_visuals().is_err(),
             "legacy path must still reject particle chunks"
         );
+        let particle_dir = residency.index().directory(ids[0]).join("particles");
+        let drafts = draft_particle_chunks(
+            &source,
+            &particle_dir.join("effects"),
+            &particle_dir.join("textures"),
+            frame,
+            &available,
+            1_000_000,
+        )
+        .unwrap();
+        assert_eq!(drafts.len(), 2);
+        for draft in drafts.values() {
+            assert_eq!(draft.effects[0].1, effect);
+            assert_eq!(draft.textures[0].1, PNG);
+        }
+        assert!(
+            draft_particle_chunks(
+                &source,
+                &particle_dir.join("effects"),
+                &particle_dir.join("textures"),
+                frame,
+                &available,
+                1
+            )
+            .is_err()
+        );
+        let texture_path = particle_dir.join("textures").join(texture.filename());
+        fs::write(&texture_path, b"tampered").unwrap();
+        assert!(
+            draft_particle_chunks(
+                &source,
+                &particle_dir.join("effects"),
+                &particle_dir.join("textures"),
+                frame,
+                &available,
+                1_000_000
+            )
+            .is_err()
+        );
+        fs::write(texture_path, PNG).unwrap();
         let limits = CatalogCounts {
             placements: 2,
             emitters: 2,

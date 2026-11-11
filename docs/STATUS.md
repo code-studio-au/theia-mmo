@@ -5,6 +5,9 @@ by that chunk. Tests cover far origins, negative and exact-boundary placement,
 dependency selection and missing output chunks. This does not write or publish
 chunk packages; the editor's monolithic export and the older geometry partitioner
 still need a validated end-to-end bridge.
+The draft also retains exact verified effect and decoded-validated texture file
+bytes, enforces an aggregate output-copy limit and rejects tampered inputs before
+any publication.
 
 P2-13 particle image admission, 11 November 2026: monolithic and chunk clients
 now apply their decoded-image allowance to verified PNG headers before invoking
