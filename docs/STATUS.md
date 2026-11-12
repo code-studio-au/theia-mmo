@@ -1,3 +1,17 @@
+Safe-stop checkpoint — 12 November 2026:
+stopped at the user's request after local commit c9e3ca84. No build/test process
+or game/editor window remains from this work. Resume with authored-world launch
+integration. Newly identified before stopping: the server/launcher still default
+to developer spawn [8000,8000], and procedural spawn resolution takes XZ with a
+high ground-search ceiling. Preserve the editor-authored spawn (including its
+vertical layer) before treating arbitrary authored worlds as supported; do not
+silently place an under-roof spawn onto the roof. No fix for this is implemented
+yet. Then qualify authored navigation with creature/gameplay/account launch,
+adapt the minimap terrain raster, and implement supported NPC/contact/quest
+bindings and placed pickups in the editor. Keep mouse/display reserved unless
+explicitly reauthorized. Current Synty starter scene is centred at [8000,0,8000]
+with an open central spawn, so existing bounded evidence remains applicable.
+
 P5-17 / P3-16 authored navigation, 12 November 2026:
 `theia-nav-bake bake-authored` consumes the admitted Avian static meshes/boxes/
 hulls/heightfields, clips their surfaces to each tile plus padding, and preserves
