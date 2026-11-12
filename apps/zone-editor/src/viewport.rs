@@ -213,6 +213,7 @@ pub(super) fn pointer(
     handles: Query<(&gizmo::TransformHandle, &Visibility, &Transform)>,
     ground: Query<(), With<terrain::GroundPart>>,
     mut raycast: MeshRayCast,
+    library: Option<Res<scenery_library::Library>>,
     mut session: ResMut<Session>,
 ) {
     let previous_preview = session.placement_preview.take();
@@ -285,15 +286,8 @@ pub(super) fn pointer(
             .map(|(entity, _)| *entity);
         if let Some((handle, _, handle_transform)) = hit.and_then(|entity| handles.get(entity).ok())
         {
-            if let Some(object) = session
-                .editor
-                .zone()
-                .objects
-                .iter()
-                .find(|o| Some(o.id) == session.selected)
-            {
-                let local =
-                    Vec3::from_array(session.editor.zone().local(object.pose.position).unwrap());
+            if let Some((id, pose)) = transform_target::selected(&session) {
+                let local = Vec3::from_array(session.editor.zone().local(pose.position).unwrap());
                 let reference = if handle.tool == gizmo::Tool::Scale {
                     handles
                         .iter()
@@ -310,9 +304,9 @@ pub(super) fn pointer(
                     gizmo::Gesture::begin(handle.tool, ray, local, handle.axis, reference)
                 {
                     session.drag = Some(Drag {
-                        id: object.id,
-                        before: object.pose.clone(),
-                        preview: object.pose.clone(),
+                        id,
+                        before: pose.clone(),
+                        preview: pose,
                         revision: session.editor.revision(),
                         gesture: gesture.with_grid(session.grid()),
                     });
@@ -327,9 +321,25 @@ pub(super) fn pointer(
                 }
             }
         } else if let Some(id) = hit.and_then(scenery_id) {
+            let already_selected = session.scenery_selected == Some(id);
             session.set_mode(EditorMode::Objects);
             session.scenery_selected = Some(id);
             session.status = format!("Selected scenery #{id}");
+            if already_selected
+                && session.gizmo_tool == gizmo::Tool::Move
+                && let Some((_, pose)) = transform_target::selected(&session)
+                && let Ok(local) = session.editor.zone().local(pose.position)
+                && let Some(gesture) = gizmo::Gesture::plane(ray, Vec3::from_array(local))
+            {
+                session.drag = Some(Drag {
+                    id,
+                    before: pose.clone(),
+                    preview: pose,
+                    revision: session.editor.revision(),
+                    gesture: gesture.with_grid(session.grid()),
+                });
+                session.status = "Moving XZ plane - release applies; Escape cancels".into();
+            }
         } else if let Some(particle) = hit.and_then(|entity| particles.get(entity).ok()) {
             session.inspect_spawn = false;
             session.selected = None;
@@ -380,10 +390,12 @@ pub(super) fn pointer(
             let valid = Editor::new(zone.clone()).and_then(|mut candidate| {
                 candidate.execute(Command::Apply {
                     expected_revision: 0,
-                    edits: vec![Edit::Transform {
-                        id: drag.id,
-                        pose: pose.clone(),
-                    }],
+                    edits: vec![transform_target::edit(
+                        zone,
+                        drag.id,
+                        &pose,
+                        library.as_deref(),
+                    )?],
                 })
             });
             match valid {
@@ -393,13 +405,18 @@ pub(super) fn pointer(
         }
         if mouse.just_released(MouseButton::Left) {
             if drag.preview != drag.before {
-                session.execute(Command::Apply {
-                    expected_revision: drag.revision,
-                    edits: vec![Edit::Transform {
-                        id: drag.id,
-                        pose: drag.preview,
-                    }],
-                });
+                match transform_target::edit(
+                    session.editor.zone(),
+                    drag.id,
+                    &drag.preview,
+                    library.as_deref(),
+                ) {
+                    Ok(edit) => session.execute(Command::Apply {
+                        expected_revision: drag.revision,
+                        edits: vec![edit],
+                    }),
+                    Err(error) => session.status = error,
+                }
             } else {
                 session.status = match drag.gesture.tool() {
                     gizmo::Tool::Move => "Position unchanged",
@@ -737,8 +754,8 @@ pub(super) fn report(
                     let radius=transform.scale.x;
                     (transform.translation+Vec3::X*radius,transform.translation+Vec3::new(radius,0.,-radius)*std::f32::consts::FRAC_1_SQRT_2)
                 } else if handle.tool==gizmo::Tool::Scale {
-                    let centre=session.editor.zone().objects.iter().find(|o|Some(o.id)==session.selected)
-                        .and_then(|o|session.editor.zone().local(o.pose.position).ok()).map(Vec3::from_array).unwrap_or(transform.translation);
+                    let centre=transform_target::selected(&session)
+                        .and_then(|(_,pose)|session.editor.zone().local(pose.position).ok()).map(Vec3::from_array).unwrap_or(transform.translation);
                     let extent=transform.translation.distance(centre);
                     invalid_target=project(centre-Vec3::Y*extent*0.25);
                     (transform.translation,transform.translation+Vec3::Y*extent*0.5)

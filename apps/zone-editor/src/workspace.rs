@@ -533,7 +533,6 @@ impl Control {
                 mode(session) == EditorMode::Objects
                     && session.particle_selected.is_none()
                     && session.quest_area_selected.is_none()
-                    && session.scenery_selected.is_none()
                     && outliner::selection(session) != Some(outliner::Target::Spawn)
             }
             Self::Transform => {

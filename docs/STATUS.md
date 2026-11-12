@@ -1,4 +1,24 @@
-Safe-stop checkpoint — 12 November 2026:
+P5-17 model gizmos and Classic playtest controls, 12 November 2026:
+imported scenery now uses the same viewport XYZ arrows, XZ body drag, yaw ring
+and uniform-scale handle as primitives. Shared commands retain the source asset,
+name, exact global coordinates, undo/redo and explicit Save. Model bounds and
+scale admission reject invalid previews; cancellation restores the existing
+scene root without changing the document. The game and editor now share the
+actual binding sampler and orbit math, including LMB orbit, RMB steer, both-button
+forward, wheel zoom, Q/E strafe and walk/run toggle. Offline playtest uses the
+Classic ground solver and collision-aware camera; render-frame jump edges survive
+until consumed by a fixed tick. This remains an offline authoring sandbox.
+Actual offscreen Synty archway rendering on RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6
+Vulkan verifies all three handle modes, real ray-picked movement/undo, preview
+and cancellation with no OS window/input. Evidence: build/editor-model-gizmo-gpu.log
+and build/model-{Move,Rotate,Scale}.png. Native interaction/Windows remain pending.
+The 190 passing ordinary editor checks plus the corrected cancellation check,
+241 client tests, formatting, strict workspace/all-target Clippy and editor build
+pass. Two editor and two client opt-in checks are outside ordinary suites.
+Larger village terrain, multiple quest contacts and patrol authoring remain next;
+the earlier authored-spawn/launcher/minimap gaps are still open.
+
+Previous safe-stop checkpoint — 12 November 2026:
 stopped at the user's request after local commit c9e3ca84. No build/test process
 or game/editor window remains from this work. Resume with authored-world launch
 integration. Newly identified before stopping: the server/launcher still default

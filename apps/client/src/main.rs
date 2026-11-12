@@ -5,7 +5,8 @@ mod camera;
 mod capture_ready;
 mod chunk_scene;
 mod chunk_world;
-mod classic_controls;
+#[path = "../../common/classic_controls.rs"]
+pub mod classic_controls;
 mod combat;
 mod combat_feedback;
 mod creature_visual;

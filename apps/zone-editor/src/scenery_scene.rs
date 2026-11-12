@@ -149,7 +149,7 @@ fn add(session: &mut Session, entry: &scenery_library::Entry) {
         session.scenery_selected = Some(id);
         session.ui.properties_collapsed = false;
         session.status =
-            "Scenery added at spawn · edit position, rotation and scale in Attributes".into();
+            "Scenery added at spawn · use viewport handles or Attributes to transform".into();
     }
 }
 
@@ -161,7 +161,11 @@ pub(super) fn sync(
     mut scene: ResMut<Scene>,
 ) {
     let signature = (session.document_id, session.editor.revision());
-    if scene.signature == Some(signature) {
+    let preview = session
+        .drag
+        .as_ref()
+        .filter(|d| session.editor.zone().scenery.iter().any(|p| p.id == d.id));
+    if scene.signature == Some(signature) && preview.is_none() {
         return;
     }
     let mut old = std::mem::take(&mut scene.roots);
@@ -171,7 +175,11 @@ pub(super) fn sync(
             errors += 1;
             continue;
         };
-        let Ok(transform) = transform(session.editor.zone(), placement, &asset.entry) else {
+        let placement = preview.filter(|d| d.id == placement.id).map_or_else(
+            || placement.clone(),
+            |d| transform_target::scenery_preview(placement, &d.preview),
+        );
+        let Ok(transform) = transform(session.editor.zone(), &placement, &asset.entry) else {
             errors += 1;
             continue;
         };
@@ -202,16 +210,78 @@ pub(super) fn sync(
     for (entity, _) in old.into_values() {
         commands.entity(entity).despawn();
     }
+    let previewing = preview.is_some();
     if errors > 0 {
         session.status =
             format!("{errors} scenery placements unavailable · check library IDs and model bounds");
     }
-    scene.signature = Some(signature);
+    scene.signature = if previewing { None } else { Some(signature) };
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn live_model_drag_reuses_root_and_cancel_restores_source_without_dirtying() {
+        let (mut session, library) =
+            transform_target::tests::fixture([128_000_000_000., 0., -128_000_000_000.]);
+        let original = session.editor.zone().clone();
+        let (id, before) = transform_target::selected(&session).unwrap();
+        let anchor = Vec3::from_array(original.local(before.position).unwrap());
+        let ray = Ray3d::new(
+            anchor + Vec3::new(5., 8., 10.),
+            Dir3::new(Vec3::new(-5., -8., -10.)).unwrap(),
+        );
+        let mut preview = before.clone();
+        preview.position[0] += 5.;
+        preview.yaw_degrees = 90.;
+        preview.size = [2.; 3];
+        session.drag = Some(Drag {
+            id,
+            before: before.clone(),
+            preview: preview.clone(),
+            revision: 0,
+            gesture: gizmo::Gesture::plane(ray, anchor).unwrap(),
+        });
+        let mut app = App::new();
+        app.add_plugins((MinimalPlugins, bevy::asset::AssetPlugin::default()));
+        let root = app
+            .world_mut()
+            .spawn((SceneryRoot(id), Transform::default()))
+            .id();
+        let mut scene = Scene {
+            signature: Some((session.document_id, 0)),
+            ..default()
+        };
+        scene.roots.insert(id, (root, "fixture".into()));
+        app.insert_resource(session)
+            .insert_resource(library)
+            .insert_resource(scene)
+            .add_systems(Update, sync);
+        app.update();
+        let rendered = app.world().get::<Transform>(root).unwrap();
+        assert_eq!(rendered.translation, anchor + Vec3::X * 5.);
+        assert_eq!(rendered.scale, Vec3::splat(2.));
+        assert!(
+            rendered
+                .rotation
+                .abs_diff_eq(Quat::from_rotation_y(std::f32::consts::FRAC_PI_2), 0.000001)
+        );
+        assert_eq!(app.world().resource::<Session>().editor.zone(), &original);
+        assert_eq!(app.world().resource::<Session>().editor.revision(), 0);
+        app.world_mut().resource_mut::<Session>().drag = None;
+        app.update();
+        let restored = app.world().get::<Transform>(root).unwrap();
+        assert_eq!(restored.translation, anchor);
+        assert_eq!(restored.scale, Vec3::splat(before.size[0] as f32));
+        assert_eq!(app.world().resource::<Scene>().roots[&id].0, root);
+        assert_eq!(app.world().resource::<Session>().editor.revision(), 0);
+        assert!(!app.world().resource::<Session>().is_dirty());
+        assert_eq!(
+            app.world().resource::<Session>().saved_zone.as_ref(),
+            Some(&original)
+        );
+    }
     #[test]
     fn add_duplicate_delete_scenery_share_history_and_preserve_saved_document() {
         let zone = Zone::default();

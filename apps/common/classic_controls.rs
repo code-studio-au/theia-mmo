@@ -166,7 +166,7 @@ impl Controller {
                 .read_to_end(&mut bytes)?;
             bytes
         } else {
-            include_bytes!("../../../content/input/classic-controls.json").to_vec()
+            include_bytes!("../../content/input/classic-controls.json").to_vec()
         };
         enabled
             .then(|| Self::parse(&bytes).map_err(Into::into))
@@ -283,25 +283,20 @@ mod tests {
     }
     #[test]
     fn old_shift_boost_configuration_is_rejected_explicitly() {
-        let mut raw: serde_json::Value = serde_json::from_slice(include_bytes!(
-            "../../../content/input/classic-controls.json"
-        ))
-        .unwrap();
+        let mut raw: serde_json::Value =
+            serde_json::from_slice(include_bytes!("../../content/input/classic-controls.json"))
+                .unwrap();
         raw["schema"] = serde_json::json!(1);
         assert!(Controller::parse(&serde_json::to_vec(&raw).unwrap()).is_err());
     }
     fn controller() -> Controller {
-        Controller::parse(include_bytes!(
-            "../../../content/input/classic-controls.json"
-        ))
-        .unwrap()
+        Controller::parse(include_bytes!("../../content/input/classic-controls.json")).unwrap()
     }
     #[test]
     fn target_search_defaults_preserve_old_files_and_metric_radius_is_checked() {
-        let mut raw: serde_json::Value = serde_json::from_slice(include_bytes!(
-            "../../../content/input/classic-controls.json"
-        ))
-        .unwrap();
+        let mut raw: serde_json::Value =
+            serde_json::from_slice(include_bytes!("../../content/input/classic-controls.json"))
+                .unwrap();
         raw.as_object_mut().unwrap().remove("targeting");
         let c = Controller::parse(&serde_json::to_vec(&raw).unwrap()).unwrap();
         assert!(c.targeting().prefer_front);
@@ -372,10 +367,9 @@ mod tests {
     }
     #[test]
     fn bindings_allow_ad_strafe_and_reject_unknown_conflicting_or_oversized_settings() {
-        let mut raw: serde_json::Value = serde_json::from_slice(include_bytes!(
-            "../../../content/input/classic-controls.json"
-        ))
-        .unwrap();
+        let mut raw: serde_json::Value =
+            serde_json::from_slice(include_bytes!("../../content/input/classic-controls.json"))
+                .unwrap();
         raw["bindings"]["turn_left"] = serde_json::json!("ArrowLeft");
         raw["bindings"]["turn_right"] = serde_json::json!("ArrowRight");
         raw["bindings"]["strafe_left"] = serde_json::json!("KeyA");

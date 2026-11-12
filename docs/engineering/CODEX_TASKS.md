@@ -1,3 +1,10 @@
+P5-17 model transforms / Classic playtest, 12 November 2026: reuse existing
+viewport gestures/history for imported scenery and the actual game binding/orbit
+code for offline playtest. Local/far model commands and cancellation checks plus
+an actual offscreen Synty model/handle/ray-drag check cover this slice. Runtime
+quest integration and enlarged starter valley remain separate; do not claim
+working multiple quest NPCs/patrols from visual placements. See ../STATUS.md.
+
 P5-17 / P3-16 starter-world bridge, 12 November 2026: origin-bound authored
 exports now reuse prediction collision, immutable standard GLB presentation and
 explicit client/server selection. Actual Synty assets pass offscreen GPU readiness

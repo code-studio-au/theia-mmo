@@ -13,6 +13,11 @@ pub(super) struct Playtest {
     pub feet: LocalPosition,
     motion: Motion,
     spawn: LocalPosition,
+    pub(super) camera: play_orbit::Orbit,
+    pub(super) controls: classic_controls::Controller,
+    pub(super) input: Intent,
+    pub(super) look: [bool; 2],
+    pub(super) look_travel: f32,
 }
 #[cfg(test)]
 pub(super) fn collision(zone: &Zone) -> Result<StaticScene, String> {
@@ -68,6 +73,10 @@ fn collision_with_library(
     Ok(StaticScene::new(colliders))
 }
 impl Playtest {
+    pub(super) fn camera_fraction(&self, target: Vec3, eye: Vec3) -> f32 {
+        self.scene
+            .camera_fraction(target.to_array(), eye.to_array())
+    }
     pub fn new(zone: &Zone) -> Result<Self, String> {
         Self::with_library(zone, &scenery_library::Library::default())
     }
@@ -81,48 +90,50 @@ impl Playtest {
             feet: spawn,
             spawn,
             motion: Motion::default(),
+            camera: play_orbit::Orbit::default(),
+            controls: classic_controls::Controller::parse(include_bytes!(
+                "../../../content/input/classic-controls.json"
+            ))?,
+            input: Intent {
+                facing: Some(theia_core::facing::Facing::default()),
+                ..default()
+            },
+            look: [false; 2],
+            look_travel: 0.,
         })
     }
 }
-pub(super) fn step(
-    keys: Res<ButtonInput<KeyCode>>,
-    windows: Query<&Window>,
-    mut session: ResMut<Session>,
-) {
+pub(super) fn step(windows: Query<&Window>, mut session: ResMut<Session>) {
     if !windows.single().is_ok_and(|w| w.focused) {
         return;
     }
     if session.play.is_none() {
         return;
     }
-    let mut heading = session.heading;
-    heading += (i32::from(keys.pressed(KeyCode::KeyA)) - i32::from(keys.pressed(KeyCode::KeyD)))
-        as f32
-        * 2.
-        / 30.;
-    session.heading = heading;
+    let blocked = session.has_modal()
+        || session.inline_editing
+        || session.ui.input_owned
+        || session.ui.overlay_owned;
     let Some(play) = session.play.as_mut() else {
         return;
     };
-    let forward =
-        (i32::from(keys.pressed(KeyCode::KeyW)) - i32::from(keys.pressed(KeyCode::KeyS))) as f32;
-    let right =
-        (i32::from(keys.pressed(KeyCode::KeyE)) - i32::from(keys.pressed(KeyCode::KeyQ))) as f32;
-    let delta = Quat::from_rotation_y(heading) * Vec3::new(right, 0., -forward);
-    let intent = Intent {
-        axes: [
-            (delta.x * 1000.).round() as i16,
-            (delta.z * 1000.).round() as i16,
-        ],
-        jump: keys.pressed(KeyCode::Space),
-        ..default()
+    let intent = if blocked {
+        Intent {
+            facing: Some(play.controls.facing()),
+            ..default()
+        }
+    } else {
+        play.input
     };
-    match kinematic::advance(
+    // Preserve a render-frame jump edge until one fixed tick consumes it.
+    play.input.jump = false;
+    match kinematic::advance_classic(
         &play.scene,
         &mut play.motion,
         play.feet,
         intent,
         TickRate::Hz30,
+        None,
     ) {
         Ok(feet) if feet.metres().iter().all(|v| v.abs() < 500.) && feet.metres()[1] > -100. => {
             play.feet = feet
@@ -617,6 +628,14 @@ mod scenery_tests {
                 feet: play.feet,
                 motion: Motion::default(),
                 spawn: play.spawn,
+                camera: play_orbit::Orbit::default(),
+                controls: classic_controls::Controller::parse(include_bytes!(
+                    "../../../content/input/classic-controls.json"
+                ))
+                .unwrap(),
+                input: Intent::default(),
+                look: [false; 2],
+                look_travel: 0.,
             };
             walk(&mut exported, [0, -1000], 120);
             walk(&mut play, [0, -1000], 120);

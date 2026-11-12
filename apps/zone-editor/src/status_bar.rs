@@ -73,7 +73,7 @@ fn single_line(value: &str, limit: usize) -> String {
 }
 pub(super) fn message(session: &Session) -> String {
     let hints = if session.play.is_some() {
-        "W/S Move · A/D Turn · Q/E Strafe · Space Jump · F5 Return"
+        "W/S Move · A/D Turn · Q/E Strafe · LMB Orbit · RMB Steer · Both Forward · Wheel Zoom · Space Jump · F5 Return"
     } else if session.inline_editing {
         "Enter Apply · Esc Cancel · Ctrl S Save"
     } else if session.has_modal() {

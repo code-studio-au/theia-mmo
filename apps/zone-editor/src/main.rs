@@ -4,6 +4,8 @@ mod authoring_grid;
 mod browser_icons;
 mod brush_preview;
 mod camera_views;
+#[path = "../../common/classic_controls.rs"]
+pub mod classic_controls;
 mod cli;
 mod exit_dialog;
 mod export;
@@ -26,7 +28,10 @@ mod particle_texture_draft;
 mod particle_workspace;
 mod paths;
 mod placement;
+#[path = "../../common/orbit.rs"]
+pub mod play_orbit;
 mod playtest;
+mod playtest_controls;
 mod properties;
 mod property_tabs;
 mod quest_area_authoring;
@@ -35,6 +40,8 @@ mod quest_area_preview;
 mod scenery_collision;
 mod scenery_export;
 mod scenery_glb;
+#[cfg(test)]
+mod scenery_gpu_test;
 mod scenery_library;
 mod scenery_scene;
 mod scrolling;
@@ -46,6 +53,7 @@ mod spawn;
 mod status_bar;
 mod terrain;
 mod theme;
+mod transform_target;
 mod vegetation;
 mod viewport;
 mod viewport_tools;
@@ -758,7 +766,9 @@ fn run() -> Result<(), String> {
             paths::pointer,
             terrain::pointer,
             viewport::pointer,
-            camera_controls,
+            (playtest_controls::input, camera_controls)
+                .chain()
+                .after(keyboard),
             terrain::sync,
             terrain::palette,
             (
@@ -1588,22 +1598,13 @@ fn camera_controls(
             *transform = camera_views::transform(&view);
             return;
         }
-        let (target, yaw, pitch, distance) = if let Some(play) = &session.play {
-            (
-                Vec3::from_array(play.feet.metres()) + Vec3::Y,
-                session.heading,
-                0.45,
-                8.,
-            )
-        } else {
-            (view.target, view.yaw, view.pitch, view.distance)
-        };
-        let offset = Vec3::new(
-            yaw.sin() * pitch.cos(),
-            pitch.sin(),
-            yaw.cos() * pitch.cos(),
-        ) * distance;
-        *transform = Transform::from_translation(target + offset).looking_at(target, Vec3::Y);
+        if let Some(play) = &session.play {
+            let target = Vec3::from_array(play.feet.metres()) + Vec3::Y;
+            let desired = play.camera.unobstructed_eye(target);
+            let fraction = play.camera_fraction(target, desired);
+            *transform = Transform::from_translation(target + (desired - target) * fraction)
+                .looking_at(target, Vec3::Y);
+        }
     }
 }
 fn present(

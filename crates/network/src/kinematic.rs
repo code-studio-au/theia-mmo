@@ -312,7 +312,7 @@ pub fn advance_development(
 }
 
 /// Shared v3 Classic ground speeds; authority and prediction use this same solver.
-pub(crate) fn advance_classic(
+pub fn advance_classic(
     scene: &StaticScene,
     state: &mut Motion,
     start: LocalPosition,

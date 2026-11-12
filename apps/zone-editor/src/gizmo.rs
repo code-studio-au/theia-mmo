@@ -287,6 +287,7 @@ pub(super) fn setup(
 pub(super) fn sync(
     session: Res<Session>,
     scene: Res<Scene>,
+    library: Option<Res<scenery_library::Library>>,
     camera: Query<(&GlobalTransform, &Projection), With<crate::viewport::ZoneCamera>>,
     mut handles: Query<(
         &TransformHandle,
@@ -295,31 +296,29 @@ pub(super) fn sync(
         &mut MeshMaterial3d<StandardMaterial>,
     )>,
 ) {
-    let pose = session
-        .editor
-        .zone()
-        .objects
-        .iter()
-        .find(|o| Some(o.id) == session.selected)
-        .filter(|_| {
-            session.show_move_handles
-                && session.palette.is_none()
-                && !session.terrain_mode
-                && !session.path_mode
-                && !session.marker_mode
-                && !session.vegetation_mode
-                && !session.has_modal()
-                && session.play.is_none()
-        })
-        .map(|o| {
-            session
-                .drag
-                .as_ref()
-                .filter(|d| d.id == o.id)
-                .map_or(&o.pose, |d| &d.preview)
-        });
+    let target = transform_target::selected(&session).filter(|_| {
+        session.show_move_handles
+            && session.palette.is_none()
+            && !session.terrain_mode
+            && !session.path_mode
+            && !session.marker_mode
+            && !session.vegetation_mode
+            && !session.has_modal()
+            && session.play.is_none()
+    });
+    let target = target.map(|(id, pose)| {
+        let pose = session
+            .drag
+            .as_ref()
+            .filter(|d| d.id == id)
+            .map_or(pose, |d| d.preview.clone());
+        (id, pose)
+    });
     for (handle, mut transform, mut visibility, mut material) in &mut handles {
-        let Some(pose) = pose.filter(|_| handle.tool == session.gizmo_tool) else {
+        let Some((id, pose)) = target
+            .as_ref()
+            .filter(|_| handle.tool == session.gizmo_tool)
+        else {
             *visibility = Visibility::Hidden;
             continue;
         };
@@ -343,8 +342,10 @@ pub(super) fn sync(
             },
             _ => (camera.translation().distance(centre) * 0.06).clamp(1.2, 24.),
         };
-        let length = (pose.size.iter().copied().fold(0., f64::max) as f32 * 0.5 + size * 0.7)
-            .max(size * 1.5);
+        let length =
+            (transform_target::extent(session.editor.zone(), *id, pose, library.as_deref())
+                + size * 0.7)
+                .max(size * 1.5);
         let length = session
             .drag
             .as_ref()
