@@ -46,6 +46,7 @@ mod spell_feedback;
 mod status_effects;
 mod targeting;
 mod terrain_scene;
+mod test_controller;
 mod triplanar;
 mod ui_buttons;
 mod world_input;
@@ -164,6 +165,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         false
     };
     let classic_controller = classic_controls::Controller::from_args(&mut args, classic)?;
+    let test_controller = test_controller::from_args(
+        &mut args,
+        classic && matches!(&source, theia_network::procedural::Source::Authored(_)),
+    )?;
     if classic && !prediction {
         return Err("Classic controls require predicted terrain".into());
     }
@@ -1085,6 +1090,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             |chunks| chunks.data.identity(),
         )
     };
+    if test_controller.is_some()
+        && !configuration_report
+        && args.first().is_none_or(|a| a != "--renet-connect")
+    {
+        return Err("Test controllers require a connected local client".into());
+    }
     if configuration_report {
         if connected || !args.is_empty() || !graybox || !prediction || !classic {
             return Err("Configuration report requires exclusive predicted Classic graybox content without connection arguments".into());
@@ -1096,6 +1107,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "scope": "Client content configuration only; no network, renderer or saved admission",
                 "world": theia_network::classic::profile_identity(content_identity),
                 "classic_source": content_identity,
+                "test_controller":test_controller.as_ref().map(|run|run.description()),
                 "inventory_profile": inventory_profile.as_ref().map(|p|p.hash()),
                 "journal_profile": journal_profile.as_ref().map(|p|p.hash()),
                 "progression_profile": progression_profile.as_ref().map(|p|p.hash()),
@@ -1337,6 +1349,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .after(bevy::picking::PickingSystems::Last),
         )
         .add_systems(FixedUpdate, movement::move_local_pawn);
+    if let Some(run) = test_controller {
+        test_controller::install(&mut app, run);
+    }
     if let Some(prepared) = particle_world {
         particle_world::install(&mut app, prepared, world_effects_visible);
     }
@@ -1506,8 +1521,12 @@ fn input(
     buttons: Res<ButtonInput<MouseButton>>,
     gesture: Option<Res<world_input::Gesture>>,
     time: Res<Time>,
+    test_controller: Option<Res<test_controller::Run>>,
 ) {
     intent.jump = false;
+    if test_controller.is_some_and(|run| run.active) {
+        return;
+    }
     if windows.single().is_ok_and(|window| !window.focused) {
         intent.direction = Vec2::ZERO;
         intent.sprint = false;

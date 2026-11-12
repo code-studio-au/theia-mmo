@@ -1,3 +1,39 @@
+## 12 November 2026 — attachable movement controllers (P5-17 / P1-06)
+
+Scenario players can now specify `"controller": "path/to/script.json"`, resolved
+relative to the scenario file; null/omitted keeps manual controls. The launcher
+validates enabled scripts before starting children. The client accepts the same
+file with `--test-controller` only for authored, predicted Classic connected play.
+The checked example is `content/testing/walk-turn-controller.json`.
+
+Script schema 1 contains `name`, optional `repeat` and 1..64 `steps`. Each step has
+`duration_ms` (100..60000), optional `forward`/`strafe` (-1000..1000), `turn`
+(-1/0/1), `walk` and `jump`. Total duration is at most ten minutes and the file at
+most 32 KiB. These actions use the ordinary character-relative Classic controller,
+configured turn rate, prediction and authenticated input path. They never edit a
+pawn pose or bypass server movement validation. Scripts wait for the authored
+scene/player model and acknowledged current-footprint collision readiness, and
+run in background client windows. Frame stalls cannot consume unbounded steps.
+
+F7 or the visible controller button detaches to normal manual controls; attaching
+again restarts the script. A finite script stops issuing movement on completion.
+This is a bounded movement scenario, not arbitrary executable AI or combat logic.
+
+All 246 ordinary client tests pass (two opt-in skips), including shared
+script/manual input equivalence and script bounds/readiness/toggle checks.
+Seventeen focused launcher/profile tests, formatting, strict workspace/all-target
+Clippy and client/server/editor builds pass. Actual Linux RX 7900 XTX / RADV NAVI31
+/ Mesa 26.2.6 Vulkan runs two scripted clients; the second has 80 ms each-way delay
+plus 0..20 ms jitter. Both wait for readiness, complete the route and turn 90°.
+Native F7 detaches and restarts one script. Zero rejected inputs, movement
+recoveries, relay overflow or GPU diagnostics; managed cleanup removes tickets.
+Evidence: `build/test-controller-{tests,final-tests,launcher-tests,clippy,build}.log`
+and `build/network-scripted-native-v1/`. A follow-up layout check is recorded in
+`build/network-scripted-native-v3/`; only owned test windows are used.
+Editor Test Player placement/property binding, managed editor Start/Stop and
+embedded client views remain pending. F5 remains offline; no Windows, persistent
+account or scripted combat qualification is claimed.
+
 ## 12 November 2026 — managed multi-client launcher (P5-17 / P1-06)
 
 `tools/network_playtest.py` launches one authoritative server and one actual native
@@ -8,7 +44,7 @@ manual Classic input. A schema-1 scenario extends the server profile's player
 entries with optional `enabled` (default true) and `network` settings. Disabled
 entries do not launch a client; missing network settings add no artificial faults.
 Each network object accepts the Profile fields documented below; outage windows
-are JSON arrays `[start_ms, duration_ms]`. Script controllers are not supported yet.
+are JSON arrays `[start_ms, duration_ms]`. Optional controller scripts are described above.
 
 Example using this session's checked local exports and Synty art:
 

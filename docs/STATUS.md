@@ -1,3 +1,22 @@
+P5-17 / P1-06 attachable movement controllers, 12 November 2026:
+Enabled scenario players may bind a bounded JSON movement script; the launcher
+preflights it and the native client drives the shared Classic input/controller,
+normal prediction and authenticated server path. Wait for scene/model and actual
+acknowledged collision footprint before advancing; support background clients,
+finite/repeating routes and F7/button detach/restart with ordinary manual controls.
+No arbitrary code, teleports or scripted combat. The checked walk/turn/strafe/jump
+example is content/testing/walk-turn-controller.json.
+All 246 ordinary client tests (two opt-in skips), 17 focused Python checks,
+formatting, strict workspace/all-target Clippy and client/server/editor builds pass.
+Actual two-client native Vulkan routes pass on Linux RX 7900 XTX / RADV NAVI31 /
+Mesa 26.2.6, including 80 ms each-way + 0..20 ms jitter on client 2 and owned F7
+manual/restart interaction. Zero rejected inputs, recoveries, relay overflow or
+GPU diagnostics; managed cleanup removes tickets. Evidence: build/test-controller-*
+and build/network-scripted-native-v1/ (v3 checks the refined status placement).
+No Windows/account/combat/editor launcher UI claim. Next: author Test Player
+placements with stable client slots/controller references/network settings, then
+connect managed Start/Stop. F5 remains offline. See RENET_QUALIFICATION.md.
+
 P5-17 / P1-06 managed native network playtest, 12 November 2026:
 New tools/network_playtest.py derives client count from enabled scenario players,
 starts one authoritative server plus independent local-ticket clients/relays,

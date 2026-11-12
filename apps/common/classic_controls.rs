@@ -237,6 +237,33 @@ impl Controller {
         sample.sprint = self.running;
         sample
     }
+    /// Local test-controller actions, using the same character-relative axes and
+    /// configured keyboard turn rate. The server still validates ordinary intent.
+    pub fn sample_script(
+        &mut self,
+        axes: [i16; 2],
+        turn: i8,
+        walk: bool,
+        jump: bool,
+        seconds: f64,
+    ) -> Sample {
+        let dt = if seconds.is_finite() {
+            seconds.clamp(0., 0.1)
+        } else {
+            0.
+        };
+        let delta = f64::from(turn.clamp(-1, 1)) * self.turn_radians_per_second * dt;
+        self.yaw = (self.yaw + delta).rem_euclid(std::f64::consts::TAU);
+        Sample {
+            axes: self
+                .facing()
+                .world_axes(axes.map(|a| a.clamp(-1000, 1000)))
+                .unwrap(),
+            jump,
+            sprint: !walk,
+            keyboard_turn: delta as f32,
+        }
+    }
     pub fn hint(&self) -> String {
         let b = &self.bindings;
         let label = |k: KeyCode| format!("{k:?}").replace("Key", "");
@@ -258,6 +285,26 @@ impl Controller {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn scripted_actions_match_normal_character_relative_movement_and_turn_rate() {
+        for seconds in [1. / 30., 1. / 60., 0.1] {
+            let mut manual = controller();
+            let mut scripted = controller();
+            let mut keys = ButtonInput::default();
+            keys.press(KeyCode::KeyW);
+            keys.press(KeyCode::KeyQ);
+            keys.press(KeyCode::KeyA);
+            keys.press(KeyCode::Space);
+            for _ in 0..60 {
+                let a = manual.sample(&keys, seconds, 0., false, false, true);
+                let b = scripted.sample_script([-1000, -1000], 1, false, true, seconds);
+                assert_eq!(a.axes, b.axes);
+                assert_eq!(a.sprint, b.sprint);
+                assert_eq!(a.jump, b.jump);
+                assert_eq!(manual.facing(), scripted.facing());
+            }
+        }
+    }
     #[test]
     fn run_defaults_on_toggle_latches_shift_does_not_boost_and_ui_cannot_toggle() {
         let mut c = controller();

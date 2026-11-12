@@ -25,6 +25,7 @@ class Player:
     client_id: int
     feet: tuple[float, float, float]
     network: Profile
+    controller: Path | None = None
 
 
 @dataclass(frozen=True)
@@ -51,7 +52,7 @@ class Scenario:
             raise ValueError('A test scenario supports one or two players')
         players, ids = [], set()
         for entry in entries:
-            if (not isinstance(entry, dict) or set(entry) - {'client_id', 'feet', 'enabled', 'network'}
+            if (not isinstance(entry, dict) or set(entry) - {'client_id', 'feet', 'enabled', 'network', 'controller'}
                     or not {'client_id', 'feet'} <= set(entry)):
                 raise ValueError('Unsupported test player fields')
             client_id, feet = entry['client_id'], entry['feet']
@@ -75,8 +76,15 @@ class Scenario:
                     raise ValueError('Outages must be arrays of [start_ms, duration_ms]')
                 profile['outages'] = tuple(tuple(window) for window in windows)
             network = Profile(**profile)
+            controller = entry.get('controller')
+            if controller is not None:
+                if not isinstance(controller, str) or not controller or len(controller) > 1024:
+                    raise ValueError('Controller must be a script path or null for manual input')
+                controller = (Path(path).resolve().parent / controller).resolve()
+                if enabled and (not controller.is_file() or controller.stat().st_size > 32 * 1024):
+                    raise ValueError('Controller script is missing or exceeds 32 KiB')
             if enabled:
-                players.append(Player(client_id, tuple(feet), network))
+                players.append(Player(client_id, tuple(feet), network, controller))
         if not players:
             raise ValueError('Enable at least one test player')
         return cls(tuple(identity), tuple(sorted(players, key=lambda player: player.client_id)))
@@ -128,6 +136,11 @@ def run(scenario_path, world, players, binaries, output, *, duration=None, windo
     configuration = json.loads(checked.stdout[start:]) if start >= 0 else {}
     if configuration.get('classic_source') != list(scenario.identity):
         raise ValueError('Test scenario belongs to a different authored world')
+    for controller in {p.controller for p in scenario.players if p.controller is not None}:
+        checked_script = subprocess.run([str(client_binary), *scene, '--test-controller', str(controller), '--configuration-report'],
+                                        env=environment, capture_output=True, text=True, timeout=30)
+        if checked_script.returncode:
+            raise ValueError(f'Invalid test controller: {checked_script.stderr.strip()}')
     output.mkdir(parents=True, exist_ok=False)
     (output / 'server-players.json').write_text(json.dumps(scenario.server_profile(), indent=2) + '\n')
     (output / 'client-configuration.json').write_text(json.dumps(configuration, indent=2) + '\n')
@@ -172,7 +185,7 @@ def run(scenario_path, world, players, binaries, output, *, duration=None, windo
             for player, relay in zip(scenario.players, relays):
                 relay.start(backend)
                 processes.append(subprocess.Popen([str(client_binary), *scene, '--window-size', window_size,
-                    '--player-assets', str(players), '--renet-connect', f'{relay.address[0]}:{relay.address[1]}',
+                    '--player-assets', str(players), *(['--test-controller', str(player.controller)] if player.controller else []), '--renet-connect', f'{relay.address[0]}:{relay.address[1]}',
                     str(Path(tickets) / f'client-{player.client_id}.token')], env=environment,
                     stdout=files.enter_context((output / f'client-{player.client_id}.log').open('w')), stderr=subprocess.STDOUT))
                 files.callback(cleanup, stop, processes[-1])
@@ -201,9 +214,9 @@ def run(scenario_path, world, players, binaries, output, *, duration=None, windo
         raise
     finally:
         summary = dict(reason=reason, cleanup_errors=cleanup_errors, clients=[dict(client_id=p.client_id, network=asdict(p.network),
-                       added_base_rtt_ms=p.network.added_rtt_ms, relay=r.stats)
+                       added_base_rtt_ms=p.network.added_rtt_ms, controller=str(p.controller) if p.controller else None, relay=r.stats)
                        for p, r in zip(scenario.players, relays)],
-                       scope='Local encrypted development tickets; manual clients; no account persistence or scripted controllers')
+                       scope='Local encrypted development tickets; optional bounded movement controllers; no account persistence or scripted combat')
         (output / 'session.json').write_text(json.dumps(summary, indent=2) + '\n')
         if cleanup_errors:
             raise RuntimeError('Playtest cleanup failed: ' + '; '.join(cleanup_errors))

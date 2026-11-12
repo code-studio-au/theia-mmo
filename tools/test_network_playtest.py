@@ -37,6 +37,15 @@ class ScenarioTests(unittest.TestCase):
         self.assertEqual(scenario.server_profile()['players'], [dict(client_id=2, feet=(8190., .01, 8192.))])
         self.assertNotIn('network', scenario.server_profile()['players'][0])
 
+    def test_relative_controller_is_resolved_and_not_sent_to_server(self):
+        controller = self.path.parent / 'walk.json'
+        controller.write_text('{"schema":1,"name":"Walk","steps":[{"duration_ms":100,"forward":1000}]}')
+        data = document()
+        data['players'][0]['controller'] = 'walk.json'
+        scenario = self.load(data)
+        self.assertEqual(scenario.players[1].controller, controller.resolve())
+        self.assertNotIn('controller', scenario.server_profile()['players'][1])
+
     def test_invalid_configuration_is_rejected_before_any_child(self):
         bad = []
         for field, value in [('schema', True), ('schema', 2), ('world_identity', [0]*31), ('players', []), ('extra', 1)]:
@@ -116,6 +125,16 @@ class LifecycleTests(unittest.TestCase):
             self.assertIn('--classic', process.arguments)
         self.assertFalse(list(self.output.glob('tickets-*')))
         self.assertEqual(json.loads((self.output / 'session.json').read_text())['reason'], 'stop requested')
+
+    def test_only_assigned_client_receives_controller_argument(self):
+        script = self.root / 'walk.json'
+        script.write_text('{}') # Shape validation is delegated to the actual client preflight.
+        data = document(); data['players'][0]['controller'] = str(script)
+        self.path.write_text(json.dumps(data))
+        self.execute()
+        self.assertNotIn('--test-controller', self.processes[1].arguments)
+        self.assertIn('--test-controller', self.processes[2].arguments)
+        self.assertIn(str(script), self.processes[2].arguments)
 
     def test_partial_launch_failure_cleans_up_first_client_server_and_all_relays(self):
         with self.assertRaisesRegex(RuntimeError, 'Synthetic'):
