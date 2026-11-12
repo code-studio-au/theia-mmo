@@ -4072,3 +4072,10 @@ quest areas; leave it blank for ordinary geometry/particle exports. The worker
 uses the same validated snapshot path and reports errors in the dialog. This
 four-field form supports Tab/Shift-Tab; chunk export keeps two visible fields.
 Headless dialog qualification covers both modes; native appearance remains open.
+
+Selecting a quest area now displays a twelve-edge bounds outline in the viewport.
+It updates with committed inline edits and hides in offline playtest; it neither
+blocks picking nor adds collision. The implementation uses one standard Bevy mesh
+and material for twelve reusable entities. Far-coordinate and lifecycle checks
+pass headlessly. Native rendering/appearance remains to be checked when display
+use is available; no pixel or GPU acceptance is claimed for this addition.

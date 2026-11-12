@@ -1,3 +1,10 @@
+P5-17 / P3-15 selected quest-area preview, 12 November 2026: selecting an
+area now builds a standard Bevy mesh outline of its bounds. Twelve fixed edges
+share one mesh/material, ignore picking, have no collider and hide during offline
+playtest. Headless scene checks cover far-coordinate precision, edits, deletion,
+undo and asset counts. Native GPU/appearance checks are explicitly deferred under
+the user's no-display instruction; no rendered acceptance is claimed.
+
 P5-17 / P3-15 integrated gameplay export dialog, 12 November 2026:
 File → Export world now offers an optional gameplay-template manifest field;
 quest-area zones require it. The existing background export route publishes the

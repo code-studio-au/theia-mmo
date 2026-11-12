@@ -31,6 +31,7 @@ mod properties;
 mod property_tabs;
 mod quest_area_authoring;
 mod quest_area_export;
+mod quest_area_preview;
 mod scrolling;
 mod sections;
 mod selection;
@@ -691,6 +692,7 @@ fn run() -> Result<(), String> {
             paths::setup,
             markers::setup,
             particle_anchors::setup,
+            quest_area_preview::setup,
             vegetation::setup,
             setup_ui,
             workspace::setup,
@@ -731,7 +733,12 @@ fn run() -> Result<(), String> {
             )
                 .chain(),
             paths::sync,
-            (markers::sync, particle_anchors::sync).chain(),
+            (
+                markers::sync,
+                particle_anchors::sync,
+                quest_area_preview::sync,
+            )
+                .chain(),
             vegetation::sync,
             (outliner::scroll, outliner::sync).chain(),
             workspace::sync,
