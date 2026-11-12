@@ -1,3 +1,19 @@
+## 12 November 2026 — custom-bound NPC spawn groups requested
+
+The user requests an NPC equivalent of the tree group, with custom editable bounds,
+a monster type/model, target number to spawn and respawn delay. Treat this as a
+separate spawn-group authoring feature, not decorative scattering or trusted client
+spawns. Recommended boundary is an editable polygon with explicit vertical limits.
+Creature definitions bind gameplay and presentation; the server owns population,
+selection of valid spawn locations, fresh identities and respawn timing. Validate
+candidate points against matching navigation, support/slope and world collision;
+exclude unsuitable geometry/layers and report insufficient capacity rather than
+forcing placements. Keep spawn bounds distinct from roaming/chase limits.
+This requires extending the current single-creature runtime as well as editor UI.
+First finish the patrol-export connection and show the user the current editor;
+then implement bounded authoring/validation and actual multi-creature gameplay in
+small tested slices. The spawn-group feature is requested, not yet implemented.
+
 ## 12 November 2026 — proposed editor network-test players
 
 The user proposes exposing test player pawns with attachable/detachable AI

@@ -1670,6 +1670,70 @@ mod tests {
     }
 
     #[test]
+    fn gameplay_patrol_binding_changes_only_route_and_refuses_ambiguous_assignments() {
+        use theia_network::gameplay_bundle;
+        use theia_zone::paths::{GuidePath, PathKind};
+        let root = Folder::new();
+        let template = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../content/development-gameplay-classic-quest-areas.json");
+        let original = gameplay_bundle::snapshot(&template).unwrap();
+        let mut zone: Zone = serde_json::from_slice(include_bytes!(
+            "../../../content/zones/quest-areas.zone.json"
+        ))
+        .unwrap();
+        zone.schema = 13;
+        zone.paths.push(GuidePath {
+            id: 2000,
+            name: "Western patrol".into(),
+            kind: PathKind::Patrol,
+            width_metres: 0.7,
+            points: vec![[8008., 0.03, 8000.], [8016., 0.03, 8000.]],
+        });
+        let output = root.0.join("world");
+        let report = publish_with_gameplay(
+            &zone,
+            &output,
+            "theia.test.patrol-binding",
+            1,
+            Some(&template),
+        )
+        .unwrap();
+        let published =
+            gameplay_bundle::snapshot(&output.join("gameplay/gameplay.manifest.json")).unwrap();
+        let mut expected: Value =
+            serde_json::from_slice(original.profile("creature").unwrap()).unwrap();
+        expected["route"] = json!("theia.zone.patrol.2000");
+        let actual: Value = serde_json::from_slice(published.profile("creature").unwrap()).unwrap();
+        assert_eq!(actual, expected);
+        assert_eq!(report["patrol_route_requests"][0]["id"], actual["route"]);
+        for role in &original.report().profiles {
+            if role.kind != "creature" && role.kind != "quest_areas" {
+                assert_eq!(original.profile(&role.kind), published.profile(&role.kind));
+            }
+        }
+        assert_eq!(
+            original.report(),
+            &gameplay_bundle::validate(&template).unwrap()
+        );
+        let mut second = zone.paths[0].clone();
+        second.id = 2001;
+        zone.paths.push(second);
+        let refused = root.0.join("ambiguous");
+        assert!(
+            publish_with_gameplay(
+                &zone,
+                &refused,
+                "theia.test.patrol-binding",
+                1,
+                Some(&template)
+            )
+            .unwrap_err()
+            .contains("one authored creature patrol")
+        );
+        assert!(!refused.exists());
+    }
+
+    #[test]
     fn bound_npc_exports_verified_position_and_profile_and_refuses_unusable_bindings() {
         use theia_network::{
             authored_world::Store,

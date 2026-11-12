@@ -1,3 +1,11 @@
+P5-17 / P3-07 / P4-03, 12 November 2026: a single authored patrol now binds
+the exported creature profile without changing creature IDs or combat values. Retain
+explicit offline baking, source/hash checks and authoritative collision. The actual
+export passes a 1,200-step loop; this is separate from prior connected quest evidence.
+Next requested scope is custom-bound NPC spawn groups and a bounded multi-creature
+runtime, with server-owned placement/respawn and separate spawn/roam limits. It is
+not yet implemented. See ../DECISIONS.md and ../STATUS.md.
+
 P5-17 / P3-07 / P4-03, 12 November 2026: schema-13 patrol guides are explicit
 navigation requests, not runtime authority. Reuse transactional path editing and the
 existing offline Recast/Landmass/collision pipeline; previews never become collision

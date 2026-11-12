@@ -1,4 +1,4 @@
-//! Publish authored areas with an exact validated gameplay-template snapshot.
+//! Publish authored areas/contact/patrol binding with a validated template snapshot.
 use std::{fs, path::Path};
 use theia_network::gameplay_bundle::{self, Snapshot};
 use theia_zone::Zone;
@@ -7,6 +7,7 @@ pub(super) struct Draft {
     template: Snapshot,
     manifest: Vec<u8>,
     areas: Vec<u8>,
+    creature: Option<Vec<u8>>,
     pub(super) contact: Option<theia_network::authored_world::Contact>,
 }
 
@@ -69,6 +70,30 @@ impl Draft {
         } else {
             None
         };
+        let routes: Vec<_> = zone
+            .paths
+            .iter()
+            .filter_map(|path| path.patrol_route_id())
+            .collect();
+        if routes.len() > 1 {
+            return Err("Current gameplay runtime supports one authored creature patrol; keep one patrol guide for gameplay export".into());
+        }
+        let creature = routes
+            .first()
+            .map(|route| -> Result<Vec<u8>, String> {
+                let mut profile: serde_json::Value = serde_json::from_slice(
+                    template
+                        .profile("creature")
+                        .ok_or("Patrol binding requires a creature profile")?,
+                )
+                .map_err(|e| e.to_string())?;
+                profile["route"] = serde_json::json!(route);
+                let bytes = serde_json::to_vec_pretty(&profile).map_err(|e| e.to_string())?;
+                theia_network::simulation::creatures::Profile::from_json(&bytes)
+                    .map_err(|e| e.to_string())?;
+                Ok(bytes)
+            })
+            .transpose()?;
         let mut manifest: serde_json::Value =
             serde_json::from_slice(template.manifest()).map_err(|e| e.to_string())?;
         manifest["id"] = serde_json::json!(id);
@@ -78,6 +103,7 @@ impl Draft {
             template,
             manifest,
             areas,
+            creature,
             contact,
         })
     }
@@ -91,6 +117,8 @@ impl Draft {
                 .map_err(|e| e.to_string())?;
             let bytes = if record.kind == "quest_areas" {
                 &self.areas
+            } else if record.kind == "creature" && self.creature.is_some() {
+                self.creature.as_ref().unwrap()
             } else {
                 self.template
                     .profile(&record.kind)
@@ -100,7 +128,7 @@ impl Draft {
         }
         let manifest = root.join("gameplay.manifest.json");
         write_new(&manifest, &self.manifest)?;
-        // Recheck all cross-profile rules after replacing the authored area role.
+        // Recheck all cross-profile rules after replacing authored area and optional patrol roles.
         gameplay_bundle::validate(&manifest).map_err(|e| e.to_string())
     }
 }

@@ -1,3 +1,19 @@
+P5-17 patrol gameplay binding, 12 November 2026:
+Exporting with a gameplay template now connects its creature to the single authored
+Patrol guide automatically. Keep one Patrol guide for this current single-creature
+runtime; multiple guides are allowed as standalone requests, but a gameplay export
+refuses an ambiguous assignment. Names can change without changing the route ID.
+Combat/behavior values and creature/quest identities remain those of the template.
+After exporting, bake the emitted navigation-requests/patrol-ID.json with the offline
+baker and launch with that matching world/navigation pair. An editor Bake button and
+multiple-creature spawn groups remain future work.
+
+The current review copy is build/valley-patrol-binding-v1/valley.zone.json, with
+Western grove patrol #1002. Its world/ and navigation/ exports pass an actual
+1,200-step authoritative patrol loop. Use its world/gameplay/gameplay.manifest.json
+as the template for subsequent exports. Original village/contact copies are preserved.
+See STATUS.md for evidence and the distinction from the earlier connected quest run.
+
 P5-17 patrol route requests, 12 November 2026:
 Choose **Guides -> Tools -> New patrol route**, click ground points and press Enter.
 Select its Explorer row or point handles; Attributes edits coordinates and Preview

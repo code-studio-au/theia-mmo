@@ -1,3 +1,26 @@
+P5-17 / P3-07 / P4-03 patrol-to-gameplay export binding, 12 November 2026:
+With a gameplay template and exactly one Patrol guide, world export now binds the
+copied creature profile to that guide's stable route ID. Preserve the creature ID,
+combat/behavior values and every unrelated role byte; revalidate the complete copied
+bundle. Multiple patrol guides with a single-creature template refuse before staging
+instead of choosing arbitrarily. Exports without a gameplay template still support
+multiple independent route requests. Baking remains an explicit offline step.
+The actual valley review copy adds Western grove patrol #1002 through the shared
+headless command API, preserving the original source. Exported profile and request
+agree on theia.zone.patrol.1002. Nine tiles bake with 231 clearance samples; 1,200
+actual authoritative fixed steps complete a loop, travel 70.011 m and record zero
+blocked steps with that exact exported creature profile. Native client configuration
+also checks the resulting source/route binding separately from simulation. This is
+not a new connected combat/rejoin run; the prior full valley quest proof remains.
+Evidence: build/editor-patrol-binding-{tests,export-tests,clippy,build}.log and
+build/valley-patrol-binding-v1/{edit.log,export.log,bake.log,runtime-test.log,preflight/}.
+No rendering changes in this binding slice. Earlier native patrol authoring captures
+remain valid. Review zone: build/valley-patrol-binding-v1/valley.zone.json, with
+world/ and navigation/ beside it. This world has a new identity: keep this pair together.
+Next requested feature: custom-polygon NPC spawn groups with creature/model, alive
+count and respawn delay, collision/navigation placement and separate roam limits.
+That population feature is not implemented yet; see DECISIONS.md.
+
 P5-17 / P3-07 / P4-03 editable patrol requests, 12 November 2026:
 Schema 13 adds Patrol to the existing guide tools. Create ground points, edit exact
 inline coordinates/preview width, rename, insert/remove points and use normal

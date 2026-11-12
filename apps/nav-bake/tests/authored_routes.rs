@@ -154,10 +154,12 @@ fn actual_valley_patrol_completes_its_route_on_authoritative_scenery_collision()
     let spawn = store.spawn(0).unwrap().metres();
     let source = procedural::Source::Authored(store);
     let nav = navigation::Store::open(std::path::Path::new(&nav_path), source.identity()).unwrap();
-    let profile = creatures::Profile::from_json(include_bytes!(
-        "../../../content/gameplay/starter-valley-wolf-patrol.json"
-    ))
-    .unwrap();
+    let bytes = std::env::var_os("THEIA_AUTHORED_CREATURE_PROFILE")
+        .map(|path| std::fs::read(path).unwrap())
+        .unwrap_or_else(|| {
+            include_bytes!("../../../content/gameplay/starter-valley-wolf-patrol.json").to_vec()
+        });
+    let profile = creatures::Profile::from_json(&bytes).unwrap();
     let prepared = creatures::Prepared::load(profile, &nav, &source).unwrap();
     let mut world = World::with_terrain_source([spawn[0], spawn[2]], 1., source).unwrap();
     world.enable_prediction().unwrap();
