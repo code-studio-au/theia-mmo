@@ -490,11 +490,13 @@ impl Control {
             .or(session.marker_selected)
             .or(session.plant_selected)
             .or(session.particle_selected)
+            .or(session.quest_area_selected)
             .is_some();
         match self {
             Self::GizmoTool(_) => {
                 mode(session) == EditorMode::Objects
                     && session.particle_selected.is_none()
+                    && session.quest_area_selected.is_none()
                     && outliner::selection(session) != Some(outliner::Target::Spawn)
             }
             Self::Transform => {
@@ -505,6 +507,7 @@ impl Control {
                         .or(session.marker_selected)
                         .or(session.path_selected)
                         .or(session.particle_selected)
+                        .or(session.quest_area_selected)
                         .is_some()
             }
             Self::ParticlePreview | Self::BindParticle | Self::PreviewLibraryParticle => {
@@ -536,7 +539,9 @@ impl Control {
             Self::Frame => {
                 (session.terrain_mode && session.editor.zone().terrain.is_some()) || selected
             }
-            Self::Command(Action::Duplicate | Action::Ground) => selected,
+            Self::Command(Action::Duplicate | Action::Ground) => {
+                selected && session.quest_area_selected.is_none()
+            }
             Self::Command(Action::Undo) => session.editor.history().0 > 0,
             Self::Command(Action::Redo) => session.editor.history().1 > 0,
             Self::Command(Action::Load) => session.path.is_some(),
@@ -1029,6 +1034,7 @@ pub(super) fn sync(
                     outliner::Target::Marker(_) => "Marker",
                     outliner::Target::Plant(_) => "Plant",
                     outliner::Target::Particle(_) => "Particle",
+                    outliner::Target::QuestArea(_) => "Quest area",
                 }
             )
         } else {

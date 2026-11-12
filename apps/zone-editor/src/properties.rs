@@ -105,6 +105,7 @@ enum Target {
     Object(Pose),
     Plant(Plant),
     Particle(ParticlePlacement),
+    QuestArea(theia_zone::quest_areas::QuestArea),
     Marker(Marker),
     Path {
         path: GuidePath,
@@ -163,6 +164,14 @@ impl Target {
     fn labels(&self) -> &'static [&'static str] {
         match self {
             Self::Object(_) => &LABELS,
+            Self::QuestArea(_) => &[
+                "Min X (m)",
+                "Min Y (m)",
+                "Min Z (m)",
+                "Max X (m)",
+                "Max Y (m)",
+                "Max Z (m)",
+            ],
             Self::Spawn(_) => &["World X (m)", "World Y (m)", "World Z (m)"],
             Self::Plant(_) | Self::Particle(_) => &[
                 "World X (m)",
@@ -187,6 +196,12 @@ impl Target {
     fn values(&self) -> Vec<String> {
         match self {
             Self::Object(pose) => values(pose).to_vec(),
+            Self::QuestArea(area) => area
+                .min
+                .into_iter()
+                .chain(area.max)
+                .map(|v| v.to_string())
+                .collect(),
             Self::Spawn(position) => position.map(|v| v.to_string()).to_vec(),
             Self::Plant(p) => [
                 p.position[0],
@@ -225,6 +240,13 @@ impl Target {
     }
     fn edit(&self, id: Option<u64>, fields: &[String]) -> Result<Option<Edit>, String> {
         match self {
+            Self::QuestArea(original) => {
+                let v = numbers(fields, self.labels())?;
+                let mut area = original.clone();
+                area.min = [v[0], v[1], v[2]];
+                area.max = [v[3], v[4], v[5]];
+                Ok((area != *original).then_some(Edit::PutQuestArea { area }))
+            }
             Self::Spawn(original) => {
                 let v = numbers(fields, self.labels())?;
                 let position = [v[0], v[1], v[2]];
@@ -671,6 +693,16 @@ fn capture(session: &Session, spawn_requested: bool) -> Option<(Option<u64>, Tar
             Some(object.id),
             Target::Object(object.pose.clone()),
             format!("{:?} #{} | {}", object.primitive, object.id, object.name),
+        )
+    } else if let Some(area) = zone
+        .quest_areas
+        .iter()
+        .find(|a| Some(a.id) == session.quest_area_selected)
+    {
+        (
+            Some(area.id),
+            Target::QuestArea(area.clone()),
+            format!("Quest area #{} | {}", area.id, area.name),
         )
     } else if let Some(particle) = zone
         .particles

@@ -329,6 +329,7 @@ pub(super) fn pointer(
             session.inspect_spawn = false;
             session.selected = id;
             session.particle_selected = None;
+            session.quest_area_selected = None;
             if already_selected
                 && session.gizmo_tool == gizmo::Tool::Move
                 && let Some(id) = id

@@ -75,6 +75,11 @@ pub(super) fn description(session: &Session) -> Option<String> {
     }
     match target {
         Target::Particle(_) => subject.push_str("\nUnresolved asset reference"),
+        Target::QuestArea(area) => subject.push_str(&format!(
+            "\nDefinition: {}\n{} minimap objective links",
+            area.definition,
+            area.map_objectives.len()
+        )),
         Target::Marker(marker) => subject.push_str(&format!(
             "\nDefinition: {}\nAuthoring annotation",
             marker.definition.as_deref().unwrap_or("unbound")
@@ -404,6 +409,9 @@ fn sync(
     let fields = target.values();
     for (heading, mut node, mut text) in &mut headings {
         let title = match (&target, heading.0) {
+            (Target::QuestArea(_), 0) => "Minimum bounds",
+            (Target::QuestArea(_), 3) => "Maximum bounds",
+            (Target::QuestArea(_), _) => "",
             (Target::Path { point: None, .. }, 0) => "Path",
             (_, 0) => "Position",
             (Target::Path { point: Some(_), .. }, 3) => "Path",

@@ -4012,3 +4012,15 @@ The command validates references using the real runtime quest and area catalogs
 and refuses an existing destination. This is explicit standalone catalog export,
 not a normal gameplay bundle update. World export currently refuses area-bearing
 zones until gameplay publication is connected. Visual controls are the next slice.
+
+## Quest-area inspector — 12 November 2026
+
+P5-17 / P3-15: loaded schema-9 areas appear under the **Quest areas** explorer
+filter. Select one to edit its name and exact global minimum/maximum coordinates
+in the existing permanent Attributes text fields. Enter or leaving the field
+commits a validated edit; Save persists the zone file. Invalid/inverted bounds
+leave history and source unchanged. Frame centers the bounds; Delete removes the
+area through shared undo/redo. Duplicate, Ground and placement gizmos are not
+available for area volumes. Definition IDs and minimap-link counts are currently
+read-only metadata. CPU layout and real Bevy edit-event checks run without an OS
+window, renderer or device input; native appearance remains unqualified.

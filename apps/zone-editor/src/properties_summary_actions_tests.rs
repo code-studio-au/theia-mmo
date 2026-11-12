@@ -615,3 +615,64 @@ fn particle_inline_position_edits_use_exact_world_coordinates_and_shared_history
         "vfx.torch"
     );
 }
+
+#[test]
+fn quest_area_bounds_edit_inline_keep_selection_reject_inversion_and_undo() {
+    let (mut app, _) = super::tests::fixture([0.; 3], 0);
+    let zone: Zone = serde_json::from_slice(include_bytes!(
+        "../../../content/zones/quest-areas.zone.json"
+    ))
+    .unwrap();
+    let id = zone.quest_areas[0].id;
+    let mut session = Session::new(
+        Editor::new(zone.clone()).unwrap(),
+        PathBuf::new(),
+        Some(zone.clone()),
+    );
+    session.quest_area_selected = Some(id);
+    app.insert_resource(session);
+    app.update();
+    app.update();
+    let visible: Vec<_> = app
+        .world_mut()
+        .query::<(&Value, &ComputedNode)>()
+        .iter(app.world())
+        .filter(|(_, n)| n.size().min_element() > 0.)
+        .map(|(v, _)| v.0)
+        .collect();
+    assert_eq!(visible.len(), 6);
+    let headings: Vec<_> = app
+        .world_mut()
+        .query::<(&Heading, &Text, &ComputedNode)>()
+        .iter(app.world())
+        .filter(|(_, _, n)| n.size().min_element() > 0.)
+        .map(|(_, t, _)| t.0.clone())
+        .collect();
+    assert_eq!(headings, ["Minimum bounds", "Maximum bounds"]);
+    let input = open(&mut app, 0);
+    let changed = zone.quest_areas[0].min[0] + 0.125;
+    type_value(&mut app, input, &changed.to_string());
+    key(&mut app, KeyCode::Enter, Key::Enter);
+    let session = app.world().resource::<Session>();
+    assert_eq!(session.editor.zone().quest_areas[0].min[0], changed);
+    assert_eq!(
+        outliner::selection(session),
+        Some(outliner::Target::QuestArea(id))
+    );
+    assert_eq!(session.saved_zone.as_ref(), Some(&zone));
+    assert!(session.is_dirty());
+    let accepted = session.editor.zone().clone();
+    let input = open(&mut app, 3);
+    type_value(&mut app, input, &(changed - 1.).to_string());
+    key(&mut app, KeyCode::Enter, Key::Enter);
+    let session = app.world().resource::<Session>();
+    assert_eq!(session.editor.zone(), &accepted);
+    assert_eq!(session.editor.history(), (1, 0));
+    assert_eq!(session.quest_area_selected, Some(id));
+    app.world_mut()
+        .resource_mut::<Session>()
+        .execute(Command::Undo {
+            expected_revision: 1,
+        });
+    assert_eq!(app.world().resource::<Session>().editor.zone(), &zone);
+}

@@ -20,6 +20,7 @@ pub(super) enum Target {
     Marker(u64),
     Plant(u64),
     Particle(u64),
+    QuestArea(u64),
 }
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub(super) enum Filter {
@@ -30,6 +31,7 @@ pub(super) enum Filter {
     Markers,
     Plants,
     Particles,
+    QuestAreas,
     Terrain,
 }
 impl Filter {
@@ -41,6 +43,7 @@ impl Filter {
             Self::Markers => "Markers",
             Self::Plants => "Plants",
             Self::Particles => "Particles",
+            Self::QuestAreas => "Quest areas",
             Self::Terrain => "Terrain",
         }
     }
@@ -53,6 +56,7 @@ impl Filter {
                 | (Self::Markers, Target::Marker(_))
                 | (Self::Plants, Target::Plant(_))
                 | (Self::Particles, Target::Particle(_))
+                | (Self::QuestAreas, Target::QuestArea(_))
                 | (Self::Terrain, Target::Terrain)
         )
     }
@@ -152,6 +156,10 @@ fn entries(zone: &Zone) -> Vec<Entry> {
         target: Target::Particle(p.id),
         label: format!("Particle #{} | {}", p.id, p.name),
     }));
+    rows.extend(zone.quest_areas.iter().map(|a| Entry {
+        target: Target::QuestArea(a.id),
+        label: format!("Quest area #{} | {}", a.id, a.name),
+    }));
     rows
 }
 pub(super) fn selection(session: &Session) -> Option<Target> {
@@ -174,6 +182,8 @@ pub(super) fn selection(session: &Session) -> Option<Target> {
         Some(Target::Object(id))
     } else if let Some(id) = session.particle_selected {
         Some(Target::Particle(id))
+    } else if let Some(id) = session.quest_area_selected {
+        Some(Target::QuestArea(id))
     } else if session.inspect_spawn {
         Some(Target::Spawn)
     } else {
@@ -370,6 +380,7 @@ pub(super) fn select_row(
         Target::Marker(id) => zone.markers.iter().any(|v| v.id == id),
         Target::Plant(id) => zone.plants.iter().any(|v| v.id == id),
         Target::Particle(id) => zone.particles.iter().any(|v| v.id == id),
+        Target::QuestArea(id) => zone.quest_areas.iter().any(|v| v.id == id),
     };
     if !present {
         session.status = "Content changed; select an updated row".into();
@@ -404,6 +415,10 @@ pub(super) fn select_row(
         Target::Plant(id) => {
             session.set_mode(EditorMode::Plants);
             session.plant_selected = Some(id);
+        }
+        Target::QuestArea(id) => {
+            session.set_mode(EditorMode::Objects);
+            session.quest_area_selected = Some(id);
         }
         Target::Particle(id) => {
             session.set_mode(EditorMode::Objects);
@@ -619,6 +634,57 @@ pub(super) fn sync(
 pub(crate) mod tests {
     use super::*;
     use bevy::input_focus::InputFocus;
+
+    #[test]
+    fn quest_area_explorer_filters_frames_deletes_and_restores_without_duplicate_tools() {
+        let zone: Zone = serde_json::from_slice(include_bytes!(
+            "../../../content/zones/quest-areas.zone.json"
+        ))
+        .unwrap();
+        let area = zone.quest_areas[0].clone();
+        let mut session = Session::new(
+            Editor::new(zone.clone()).unwrap(),
+            PathBuf::new(),
+            Some(zone),
+        );
+        let content = Content {
+            entries: entries(session.editor.zone())
+                .into_iter()
+                .filter(|e| Filter::QuestAreas.accepts(e.target))
+                .collect(),
+            ..default()
+        };
+        assert_eq!(content.entries.len(), 1);
+        let mut view = View {
+            target: Vec3::ZERO,
+            yaw: 0.,
+            pitch: 0.,
+            distance: 32.,
+            preset: camera_views::Preset::Perspective,
+            show_grid: true,
+        };
+        assert_eq!(
+            select_row(0, 2, &content, &mut session, &mut view),
+            Some(Target::QuestArea(area.id))
+        );
+        assert_eq!(
+            view.target,
+            Vec3::from_array(std::array::from_fn(|i| ((area.min[i] + area.max[i]) / 2.
+                - session.editor.zone().origin[i])
+                as f32))
+        );
+        assert!(workspace::Control::Transform.enabled(&session));
+        assert!(workspace::Control::Frame.enabled(&session));
+        assert!(!workspace::Control::Command(Action::Duplicate).enabled(&session));
+        assert!(!workspace::Control::Command(Action::Ground).enabled(&session));
+        perform(Action::Delete, &mut session, &mut view);
+        assert!(session.editor.zone().quest_areas.is_empty());
+        assert_eq!(selection(&session), None);
+        session.execute(Command::Undo {
+            expected_revision: session.editor.revision(),
+        });
+        assert_eq!(session.editor.zone().quest_areas, vec![area]);
+    }
 
     #[test]
     fn particle_entry_can_be_selected_framed_duplicated_and_deleted() {

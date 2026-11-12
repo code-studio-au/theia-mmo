@@ -84,6 +84,7 @@ struct Session {
     saved_zone: Option<Zone>,
     selected: Option<u64>,
     particle_selected: Option<u64>,
+    quest_area_selected: Option<u64>,
     inspect_spawn: bool,
     palette: Option<Primitive>,
     placement_size: [f64; 3],
@@ -158,6 +159,7 @@ impl Session {
             saved_zone,
             selected: None,
             particle_selected: None,
+            quest_area_selected: None,
             inspect_spawn: false,
             palette: None,
             placement_size: [1.; 3],
@@ -317,6 +319,7 @@ impl Session {
         self.palette = None;
         self.selected = None;
         self.particle_selected = None;
+        self.quest_area_selected = None;
         self.status = if self.terrain_paint {
             "Terrain paint - choose a surface and click or drag".into()
         } else if self.vegetation_mode {
@@ -423,6 +426,15 @@ impl Session {
             .any(|p| Some(p.id) == self.particle_selected)
         {
             self.particle_selected = None;
+        }
+        if !self
+            .editor
+            .zone()
+            .quest_areas
+            .iter()
+            .any(|a| Some(a.id) == self.quest_area_selected)
+        {
+            self.quest_area_selected = None;
         }
         self.next_id = self
             .next_id
@@ -956,6 +968,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
         Action::Place(primitive) => {
             session.inspect_spawn = false;
             session.particle_selected = None;
+            session.quest_area_selected = None;
             session.terrain_mode = false;
             session.terrain_paint = false;
             session.path_mode = false;
@@ -1049,6 +1062,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
                 Ok(()) => {
                     session.selected = None;
                     session.particle_selected = None;
+                    session.quest_area_selected = None;
                     session.inspect_spawn = false;
                     session.path_selected = None;
                     session.path_point = None;
@@ -1072,6 +1086,8 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
                 session.edit(vec![Edit::Delete { id }]);
             } else if let Some(id) = session.particle_selected {
                 session.edit(vec![Edit::DeleteParticle { id }]);
+            } else if let Some(id) = session.quest_area_selected {
+                session.edit(vec![Edit::DeleteQuestArea { id }]);
             } else {
                 session.status = "Select a placement to delete".into();
             }

@@ -1,3 +1,11 @@
+P5-17 / P3-15 quest-area inspector, 12 November 2026: authored areas appear
+in the explorer and its type filter, with permanent exact-f64 minimum/maximum
+fields and the shared inline name editor. Selection survives edits; inverted
+bounds are rejected atomically. Frame, context actions, delete and undo work;
+unsupported duplicate/ground/gizmo operations are disabled. Headless CPU-layout
+and edit-event tests pass. No native visual acceptance is claimed while the user
+reserves the display; area creation and gameplay-link editing remain next.
+
 P5-17 / P3-15 / P3-11 quest-area catalog export, 12 November 2026:
 `--export-quest-areas NEW_FILE --quests QUEST_CATALOG --content-id ID --revision N`
 exports authored schema-9 volumes through the existing area and quest-reference
