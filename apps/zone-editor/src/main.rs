@@ -32,6 +32,8 @@ mod property_tabs;
 mod quest_area_authoring;
 mod quest_area_export;
 mod quest_area_preview;
+mod scenery_library;
+mod scenery_scene;
 mod scrolling;
 mod sections;
 mod selection;
@@ -540,6 +542,16 @@ fn main() {
 fn run() -> Result<(), String> {
     let options = cli::Options::parse()?;
     let editor = options.prepare()?;
+    let scenery_library = options
+        .scenery_library
+        .as_deref()
+        .map(scenery_library::Library::load)
+        .transpose()?
+        .unwrap_or_default();
+    if options.check_scenery {
+        println!("{}", scenery_library.check_headless()?);
+        return Ok(());
+    }
     if options.check_playtest {
         let checked = playtest::Playtest::new(editor.zone())
             .and_then(|play| editor.zone().global(play.feet.metres()));
@@ -594,6 +606,8 @@ fn run() -> Result<(), String> {
     let path = options.editor_path();
     let saved_zone = Zone::load(&path).ok();
     let mut app = App::new();
+    scenery_library.register(&mut app);
+    app.insert_resource(scenery_library);
     let mut session = Session::new(editor, path, saved_zone);
     match options.capture_view {
         Some(cli::CaptureView::Spawn) => session.inspect_spawn = true,
@@ -635,6 +649,7 @@ fn run() -> Result<(), String> {
         distance: if initial_target.is_some() { 120. } else { 32. },
         preset: camera_views::Preset::Perspective,
     })
+    .init_resource::<scenery_scene::Scene>()
     .insert_resource(Time::<Fixed>::from_hz(30.))
     .insert_resource(bevy::winit::WinitSettings::continuous())
     .add_plugins(
@@ -737,6 +752,7 @@ fn run() -> Result<(), String> {
                 markers::sync,
                 particle_anchors::sync,
                 quest_area_preview::sync,
+                scenery_scene::sync,
             )
                 .chain(),
             vegetation::sync,

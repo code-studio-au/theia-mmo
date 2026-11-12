@@ -30,6 +30,8 @@ pub struct Options {
     pub export_quest_areas: Option<PathBuf>,
     pub quest_catalog: Option<PathBuf>,
     pub gameplay_template: Option<PathBuf>,
+    pub scenery_library: Option<PathBuf>,
+    pub check_scenery: bool,
     pub content_id: Option<String>,
     pub revision: Option<u32>,
 }
@@ -92,6 +94,17 @@ impl Options {
                             .into(),
                     )
                 }
+                "--check-scenery" => {
+                    result.check_scenery = true;
+                    result.headless = true;
+                }
+                "--scenery-library" => {
+                    result.scenery_library = Some(
+                        args.next()
+                            .ok_or("--scenery-library needs a catalog")?
+                            .into(),
+                    );
+                }
                 "--gameplay-template" => {
                     result.gameplay_template = Some(
                         args.next()
@@ -130,6 +143,17 @@ impl Options {
                 }
                 _ => return Err(format!("Unknown argument: {arg}")),
             }
+        }
+        if result.check_scenery
+            && (result.scenery_library.is_none()
+                || result.export.is_some()
+                || result.export_quest_areas.is_some()
+                || result.output.is_some()
+                || result.check_playtest)
+        {
+            return Err(
+                "--check-scenery requires a library and excludes export/output/playtest".into(),
+            );
         }
         if result.check_playtest
             && (result.output.is_some()

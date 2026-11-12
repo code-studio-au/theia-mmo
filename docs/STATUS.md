@@ -1,3 +1,12 @@
+P5-17 / P1-10 scenery loading and scene instances, 12 November 2026:
+editor `--scenery-library` verifies a bounded, hash-addressed catalog and registers
+its immutable bytes with Bevy's in-memory asset source. Standard glTF world assets
+follow document placement revisions, with rotated/scaled bounds checked in the
+local frame. `--check-scenery` loaded all seven staged Synty models, materials and
+images without a window; evidence: `build/starter-forest-scenery-v1/bevy-load.json`.
+Two integrity/precision tests and denied-warning workspace Clippy pass. Native
+appearance is pending; placement UI and export/collision admission remain next.
+
 P5-17 / P1-10 model-placement document foundation, 12 November 2026:
 zone schema 10 stores bounded scenery references by logical asset ID with exact
 global position, yaw and uniform scale. Shared commands provide put/delete,
