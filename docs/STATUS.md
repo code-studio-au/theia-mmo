@@ -1,3 +1,11 @@
+P5-17 / P3-15 gameplay-publication prerequisite, 12 November 2026: offline
+manifest validation now lives in `theia_network::gameplay_bundle`; the existing
+validator CLI uses the same implementation. A validated snapshot retains the
+exact manifest/profile bytes from that pass for editor publication. All 62
+existing validator tests and a source-change snapshot regression pass. This
+changes no admitted gameplay schema and does not itself publish or activate a
+world; combined editor export is next.
+
 P5-17 / P3-15 quest-area creation and binding fields, 12 November 2026:
 Add → Quest area at spawn creates an undoable 8 m volume with a unique definition
 ID, including near the authoring boundary. Attributes now edits Area ID and
