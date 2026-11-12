@@ -177,3 +177,10 @@ After completion, stop cleanup cycles and maintain the established sources rathe
 - [x] Found a remaining active contradiction in `Human_Q035_Q062_Rust_Authoring_Review.md`: it still required Cassian's ledger and a human warrant for Q035. Replaced this with the creator-locked universal summons, racial campaign completion gate, common Corven briefing and limited depot investigation; corrected High Thane terminology in the review.
 - [x] Revised Q031 human-only dialogue to make Aldren's commission explicitly limited to the human crown, and to close the Cassian story with Elara without making Q035 dependent on that commission. Q032–Q034 remain optional.
 - [ ] Continue auditing all other current authoring reviews and quest contracts for human-only assumptions in shared Q035+ content; historical sources remain archival.
+
+### Quest authoring review sweep — 12 November 2026
+
+- [x] Inspected current Q063–Q079, Q080–Q103, Q104–Q128, Q129–Q157 and Q158–Q184 Rust authoring reviews for the exact superseded `Grey Surveyor`, `High King` and human-warrant wording; none of those five files contains the searched strings.
+- [x] Corrected Q018–Q034 Rust review's stale claim that Q032–Q034 lack prerequisites. The structured references now require Q031; these optional human quests do not gate Q035.
+- [x] Corrected Q158–Q184 Rust review's human-only Q184 completion language to the creator-approved shared quest with race-specific homeland/NPC variants.
+- [ ] The five-file terminology sweep is not a semantic audit of every scene; race-aware dialogue and engine actor bindings remain to be implemented.
