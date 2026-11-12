@@ -106,8 +106,8 @@ def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk
             raise ValueError('Guide position must be finite graybox x,z metres')
     if bool(creature_profile) != bool(navigation):
         raise ValueError('Creature profile and navigation package must be selected together')
-    if creature_profile and (not combat_catalog or not prediction or saved_terrain is None):
-        raise ValueError('Creature patrol requires predicted saved-terrain combat')
+    if creature_profile and (not combat_catalog or not prediction or (saved_terrain is None and authored_world is None)):
+        raise ValueError('Creature patrol requires predicted saved-terrain or authored-world combat')
     if status_catalog and (not character_stats or not combat_catalog):
         raise ValueError('Statuses require combat and character stats')
     if quest_catalog and not progression_catalog:
@@ -136,7 +136,7 @@ def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk
             raise ValueError(f'Missing saved terrain at {saved_terrain}; bake once with cargo run --release --locked -p theia-network --example bake_terrain -- bake "{saved_terrain}"; see docs/SAVED_TERRAIN.md')
         graybox = True
     if creature_profile and not (navigation / 'navigation.manifest.json').is_file():
-        raise ValueError(f'Missing baked navigation at {navigation}; run cargo run --release --locked -p theia-nav-bake -- bake "{saved_terrain}" "{navigation}" first')
+        raise ValueError(f'Missing baked navigation at {navigation}; bake navigation for the selected world first (see apps/nav-bake/README.md)')
     if feedback and not combat_catalog:
         raise ValueError("Spell feedback requires combat")
     if feedback:
@@ -524,7 +524,8 @@ def main(argv=None):
         graybox = args.graybox_world or args.saved_terrain is not None or (args.world is None and args.chunk_world is None)
         saved_terrain = (args.saved_terrain or Path('build/graybox-terrain-v1')).resolve() if graybox and not args.graybox_world and args.authored_world is None else None
         prediction = graybox if args.prediction is None else args.prediction
-        players = args.players or Path('build/synty-character-canonical-stage' if graybox else 'build/reference-scene')
+        from player_assets import default_player_assets
+        players = args.players or (default_player_assets() if graybox else Path('build/reference-scene'))
         play(args.world.resolve() if args.world else None, players.resolve(), args.clients, args.binaries.resolve(), args.tick_hz, args.transport,
              args.chunk_world.resolve() if args.chunk_world else None, args.camera_collision, graybox, args.dev_speed, args.dev_spawn, args.dev_tour, prediction, saved_terrain, args.targeting, combat_catalog, feedback, args.persistence, args.account_login, character_stats, item_catalog, status_catalog, creature_profile, navigation, reward_catalog, progression_catalog, args.window_size, args.fullscreen, quest_catalog, dialogue_catalog, guide_position, vendor_catalog, args.quest_lifecycle, args.quest_turn_in_xp.resolve() if args.quest_turn_in_xp else None, args.creature_retaliation.resolve() if args.creature_retaliation else None, args.player_respawn.resolve() if args.player_respawn else None, args.creature_asset.resolve() if args.creature_asset else None, args.dodge_profile.resolve() if args.dodge_profile else None, args.classic, args.controls_file, args.melee_weapons.resolve() if args.melee_weapons else None, args.physical_definitions.resolve() if args.physical_definitions else None, args.physical_stats.resolve() if args.physical_stats else None, args.white_melee.resolve() if args.white_melee else None, args.ability_starting.resolve() if args.ability_starting else None, args.ability_damage.resolve() if args.ability_damage else None, args.combat_membership.resolve() if args.combat_membership else None, args.creature_credit.resolve() if args.creature_credit else None, args.creature_reset.resolve() if args.creature_reset else None, args.quest_journal, args.creature_threat.resolve() if args.creature_threat else None, args.public_creature_attacks, args.public_avatar_life, args.quest_areas.resolve() if args.quest_areas else None, args.creature_loot, args.quest_items, args.quest_loot, args.document_catalog.resolve() if args.document_catalog else None, args.quest_item_rewards.resolve() if args.quest_item_rewards else None, args.fantasy_ui, args.ui_scale, args.ui_preferences, args.authored_world.resolve() if args.authored_world else None)
 

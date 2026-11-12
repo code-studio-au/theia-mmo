@@ -143,7 +143,7 @@ impl Prepared {
         for (i, p) in points.iter().enumerate() {
             let p = p.metres();
             let supported = patch
-                .try_spawn(p[0], p[2])
+                .try_spawn_near(points[i])
                 .ok_or("Unsupported patrol waypoint")?;
             if !patch.covers(supported, None) || (supported.metres()[1] - p[1]).abs() > 0.25 {
                 return Err("Patrol waypoint differs from prepared collision support".into());
@@ -469,8 +469,11 @@ impl World {
         if replaced.is_some() {
             runtime.retired = runtime.retired.saturating_add(1);
         }
-        let p = prepared.points[0].metres();
-        let key = self.spawn_development_target([p[0], p[2]])?;
+        let feet = prepared
+            .patch
+            .try_spawn_near(prepared.points[0])
+            .ok_or("Patrol home lost its prepared support layer")?;
+        let key = self.spawn_prepared_target(feet)?;
         let home = self.targets[&key.entity.value()].position;
         self.patrol_identity = Some(profile_identity(
             crate::targeting::profile_identity(prepared.source),
@@ -645,6 +648,84 @@ pub(crate) mod tests {
     use theia_core::time::TickRate;
     const PROFILE: &[u8] =
         include_bytes!("../../../../content/gameplay/development-creature-patrol.json");
+    #[test]
+    fn patrol_preparation_keeps_the_authored_layer_below_a_walkable_roof() {
+        use crate::physics::{GROUND, PlacedCollider, SOLID, StaticScene};
+        use avian3d::prelude::Collider;
+        use theia_core::coordinates::{ChunkId, LocalFrame};
+        let owner = ChunkId { x: 64, z: 64 };
+        let frame = LocalFrame::new(owner.origin(128).unwrap());
+        let patch = Arc::new(procedural::Patch {
+            owner,
+            frame,
+            ids: procedural::neighbours(owner, 1),
+            scene: StaticScene::new(vec![
+                PlacedCollider {
+                    shape: Collider::cuboid(128., 1., 128.),
+                    center: [64., -0.5, 64.].into(),
+                    layer: GROUND | SOLID,
+                },
+                PlacedCollider {
+                    shape: Collider::cuboid(40., 1., 40.),
+                    center: [64., 9.5, 64.].into(),
+                    layer: GROUND | SOLID,
+                },
+            ]),
+        });
+        let points: Vec<_> = [[60., 60.], [70., 60.], [70., 70.], [60., 60.]]
+            .into_iter()
+            .map(|[x, z]| {
+                frame
+                    .to_global(LocalPosition::new([x, 0.03, z]).unwrap())
+                    .unwrap()
+            })
+            .collect();
+        assert!(
+            patch
+                .try_spawn(points[0].metres()[0], points[0].metres()[2])
+                .unwrap()
+                .metres()[1]
+                > 9.
+        );
+        let mut world = World::with_procedural([8252., 8252.], 1.).unwrap();
+        let source = world.procedural().unwrap().source.identity();
+        let prepared = Prepared::checked(
+            Profile::from_json(PROFILE).unwrap(),
+            [1; 32],
+            source,
+            points,
+            patch.clone(),
+        )
+        .unwrap();
+        assert!(prepared.points.iter().all(|p| p.metres()[1] < 0.1));
+        let floating = prepared
+            .points
+            .iter()
+            .map(|p| {
+                let mut v = p.metres();
+                v[1] = 5.;
+                GlobalPosition::new(v).unwrap()
+            })
+            .collect();
+        assert!(
+            Prepared::checked(
+                Profile::from_json(PROFILE).unwrap(),
+                [1; 32],
+                [2; 32],
+                floating,
+                patch.clone()
+            )
+            .is_err()
+        );
+        let key = world.enable_patrol(prepared).unwrap();
+        assert!(world.targets[&key.entity.value()].position.metres()[1] < 1.1);
+        for _ in 0..300 {
+            world.step();
+        }
+        let patrol = world.patrol_snapshot().unwrap();
+        assert!(patrol.position[1] < 1.1 && patrol.travelled_metres > 10.);
+        assert_eq!(patrol.blocked, 0);
+    }
     fn preparation(world: &World, home: [f64; 2]) -> Prepared {
         let focus = GlobalPosition::new([home[0], 0., home[1]]).unwrap();
         let source = &world.procedural.as_ref().unwrap().source;

@@ -923,10 +923,21 @@ impl World {
         let patch = runtime
             .patch(focus)
             .ok_or("Target collision is not prepared")?;
-        let mut position = patch
+        let feet = patch
             .try_spawn(xz[0], xz[1])
-            .ok_or("Target has no supported placement")?
-            .metres();
+            .ok_or("Target has no supported placement")?;
+        self.spawn_prepared_target(feet)
+    }
+    /// Trusted, already collision-validated feet; preserve the selected floor.
+    fn spawn_prepared_target(&mut self, feet: GlobalPosition) -> crate::Result<EntityKey> {
+        if self.tick != 0
+            || !self.players.is_empty()
+            || self.combat.is_some()
+            || self.targets.len() >= crate::targeting::MAX_TARGETS
+        {
+            return Err("Targets require inactive world and available target budget".into());
+        }
+        let mut position = feet.metres();
         position[1] += f64::from(crate::world::PAWN_Y);
         let position = GlobalPosition::new(position).ok_or("Invalid supported target position")?;
         let next_id = self

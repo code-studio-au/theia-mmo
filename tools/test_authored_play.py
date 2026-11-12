@@ -59,14 +59,48 @@ class AuthoredPlay(unittest.TestCase):
             try:
                 os.chdir(folder)
                 with patch.object(Path,'is_file',return_value=True), patch.object(play.subprocess,'Popen',capture):
-                    with self.assertRaises(CapturedLaunch):
-                        play.play(None,Path('players'),1,Path('binaries'),prediction=True,
-                                  authored_world=Path('authored'))
+                    for extra in ({}, dict(creature_profile=Path('wolf'), navigation=Path('nav'),
+                                           combat_catalog=Path('abilities'))):
+                        with self.assertRaises(CapturedLaunch):
+                            play.play(None,Path('players'),1,Path('binaries'),prediction=True,
+                                      authored_world=Path('authored'), **extra)
             finally:
                 os.chdir(previous)
-        self.assertEqual(len(calls),1)
-        self.assertIn('--authored-world',calls[0])
-        self.assertNotIn('--dev-spawn',calls[0])
+        self.assertEqual(len(calls),2)
+        for call in calls:
+            self.assertIn('--authored-world',call)
+            self.assertNotIn('--dev-spawn',call)
+            self.assertNotIn('--saved-terrain',call)
+        self.assertIn('--creature-profile',calls[1])
+        self.assertIn('--navigation',calls[1])
+
+    def test_authored_creature_flags_reach_the_real_launcher_without_saved_terrain(self):
+        observed = {}
+        signature = inspect.signature(play.play)
+        def launch(*args, **kwargs):
+            observed.update(signature.bind(*args, **kwargs).arguments)
+        with patch.object(play, 'play', launch):
+            play.main(['--authored-world', 'valley', '--classic', '--creatures',
+                       '--creature-profile', 'content/gameplay/starter-valley-wolf-patrol.json',
+                       '--navigation', 'build/starter-valley-navigation-v1'])
+        self.assertIsNone(observed['saved_terrain'])
+        self.assertEqual(observed['authored_world'], Path('valley').resolve())
+        self.assertEqual(observed['creature_profile'].name, 'starter-valley-wolf-patrol.json')
+        self.assertIsNotNone(observed['combat_catalog'])
+        self.assertIsNotNone(observed['character_stats'])
+        self.assertFalse(observed['account_login'])
+
+    def test_authored_patrol_requires_its_navigation_and_preserves_account_gate(self):
+        options = dict(prediction=True, classic=True, authored_world=Path('valley'),
+                       combat_catalog=Path('abilities'), creature_profile=Path('wolf'))
+        with patch.object(play.subprocess, 'Popen') as child:
+            with self.assertRaisesRegex(ValueError, 'selected together'):
+                play.play(None, Path('players'), 1, Path('binaries'), **options)
+            with self.assertRaisesRegex(ValueError, 'Missing baked navigation'):
+                play.play(None, Path('players'), 1, Path('binaries'), navigation=Path('absent'), **options)
+            with self.assertRaisesRegex(ValueError, 'Account login requires'):
+                play.play(None, Path('players'), 1, Path('binaries'), navigation=Path('absent'), account_login=True, **options)
+            child.assert_not_called()
 
 
 if __name__ == '__main__':

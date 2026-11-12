@@ -4203,6 +4203,44 @@ playback or exhaustive route coverage. See `build/authored-nav-routes.log`,
 `build/authored-nav-verify.log`, `build/authored-nav-rejections.json` and
 `build/authored-patrol-test.log`. Route authoring UI remains separate work.
 
+## Dressed valley connected patrol — 12 November 2026
+
+The normal launcher now accepts an authored world with its matching navigation
+and creature profile. The village walking recipe also supports this first
+nonaggressive patrol in the northwest grove:
+
+```bash
+python3 tools/play.py --authored-world build/starter-valley-village-world-v2 \
+  --classic --creatures --binaries target/debug \
+  --creature-profile content/gameplay/starter-valley-wolf-patrol.json \
+  --navigation build/starter-valley-navigation-v1 \
+  --creature-asset build/creature-wolf-stage-v1/wolf.glb
+```
+
+The route begins around global X=8100, Z=8130, roughly 92 m west and 62 m north
+of the village origin. The existing resource-combat profile provides Arcane Bolt;
+this slice does not add retaliation, pursuit, loot, quests or account persistence.
+Those modes retain their separate prerequisites. F5 in the editor remains the
+offline movement playtest; the command above starts the connected game client.
+
+Patrol preparation and target creation retain validated XYZ feet, so a path on
+the ground beneath a roof does not jump to the roof. A synthetic overhead-floor
+test verifies preparation, installation and 300 simulated steps. Two actual
+encrypted peers receive moving target and combat state while Classic prediction
+and stale-world rejection pass; explicit CPU readiness is test scaffolding.
+The normal client `--configuration-report` (no renderer/network) matches that
+server identity. New native interaction and wolf-in-valley rendering are not
+claimed by these checks. See current build/check evidence in `docs/STATUS.md`.
+
+When available, the launcher now prefers the locally qualified 22-clip Synty
+character at `build/classic-directional-client-qualified-v1-20261103/art/player`.
+This includes directional locomotion, jump, sword stance/attack/hit and death.
+`--players DIRECTORY` still chooses an explicit package; older combat and basic
+locomotion stages remain fallbacks. Selecting art does not grant equipment or
+abilities. These prepared Synty stages do not yet contain a spell-casting clip.
+The editor's offline F5 pawn remains a capsule pending the requested player-art
+integration; the preference above applies to the connected client.
+
 ## Authored player spawn admission — 12 November 2026
 
 P5-17 / P3-15: authored player admission now retains all three coordinates of the

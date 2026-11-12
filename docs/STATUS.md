@@ -1,3 +1,37 @@
+P3-07 / P3-15 / P2-09 connected valley patrol, 12 November 2026:
+The normal launcher accepts authored-world navigation and creature combat while
+retaining the account/bundle gates. content/gameplay/starter-valley-wolf-patrol.json
+binds the checked northwest grove route. Full XYZ patrol support now survives both
+preparation and target installation under an overhead walkable floor. A 300-step
+synthetic regression proves it does not jump to the roof. All 823 ordinary network
+tests pass (12 opt-in skips), plus both actual authored-world encrypted two-peer
+walking/patrol tests. Moving targets and resource combat state replicate; no new
+attack/damage, pursuit, loot or quest acceptance is claimed. Zero rejected movement/
+readiness and zero recovery resets in the patrol probe. Initial harness attempts
+used an incorrect Classic identity base and then an oversized event queue; both
+refused before admission and the harness now uses the production bounds/profile.
+Formatting, strict workspace/all-target Clippy, 11 launcher/asset-selection tests,
+and rebuilt client/server pass. The actual CLI server starts the patrol/combat,
+moves it without blocking, shuts down cleanly and refuses an authored XZ spawn
+override. The rebuilt client's windowless configuration report matches the actual
+network identity, including the selected local Synty art. No desktop was used.
+Evidence: build/starter-valley-patrol-{network-tests,clippy,app-build}.log,
+-patrol-renet-v4.log, -patrol-server-smoke.{json,log}, -patrol-client-config-final.json.
+Connected launch instructions: docs/ZONE_EDITOR.md (Dressed valley connected patrol).
+The user was notified earlier that walking is ready; this adds one nonaggressive
+wolf and existing resource combat. Multiple wolves/contacts, editor NPC/patrol
+bindings, quest pickups and authored account gameplay remain outstanding.
+
+User's additional request: load the Synty base player with sword/spell animations.
+The game launcher now prefers the qualified 22-clip directional/sword player art,
+with explicit --players override and older-stage fallbacks. Current prepared Synty
+art includes no spell-casting clip. Sword, Modular Hero and AnyRPG package inventory
+checks found no named casting clip; no reference-game animation was copied.
+Next: add the same optional character loading to the editor F5 playtest, then
+provide animation preview and complete a properly sourced/authored spell clip.
+Keep the broader village/quest editor objective active. Remain headless until the
+user permits desktop use; their new player-art request did not change that limit.
+
 P3-07 / P4-03 dressed-valley navigation repair, 12 November 2026:
 The missing contour hole-joining step in Rerecast 0.5 caused InvalidContour near
 scenery. A bounded adapter of Recast 1.6.0 now joins holes to their region outline

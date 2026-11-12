@@ -33,6 +33,9 @@ struct Peer {
     ready: watch::Sender<Option<Vec<ChunkId>>>,
     commands: mpsc::Sender<theia_network::prediction_wire::Commands>,
     _input: watch::Sender<Intent>,
+    _choice: Option<watch::Sender<Option<theia_network::targeting::Choice>>>,
+    _casts: Option<mpsc::Sender<net::CastChoice>>,
+    _events: Option<mpsc::Receiver<theia_network::combat_wire::Batch>>,
     driver: Driver,
     terrain: Runtime,
     initial: [f64; 3],
@@ -102,6 +105,16 @@ async fn drive(peers: &mut [Peer], duration: Duration) {
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[ignore = "requires THEIA_AUTHORED_WORLD local exported starter world with a clear +Z approach"]
 async fn authored_classic_two_encrypted_peers_hold_until_ready_walk_and_reject_stale_world() {
+    run_authored(false).await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[ignore = "requires THEIA_AUTHORED_WORLD valley and THEIA_AUTHORED_NAV west-grove package"]
+async fn authored_valley_patrol_and_resource_combat_replicate_to_two_classic_peers() {
+    run_authored(true).await;
+}
+
+async fn run_authored(patrol: bool) {
     let root =
         PathBuf::from(std::env::var_os("THEIA_AUTHORED_WORLD").expect("Authored starter export"));
     let store = Arc::new(Store::open(&root).unwrap());
@@ -110,9 +123,38 @@ async fn authored_classic_two_encrypted_peers_hold_until_ready_walk_and_reject_s
     let spawn = [x, z];
     let mut world = World::with_terrain_source(spawn, 1., Source::Authored(store)).unwrap();
     world.enable_prediction().unwrap();
+    let catalog_bytes =
+        include_bytes!("../../../content/gameplay/development-resource-abilities.json");
+    let catalog = Arc::new(theia_core::abilities::Catalog::from_json(catalog_bytes).unwrap());
+    let patrol_home = if patrol {
+        use theia_network::{navigation, simulation::creatures};
+        let path = PathBuf::from(std::env::var_os("THEIA_AUTHORED_NAV").unwrap());
+        let nav = navigation::Store::open(&path, source).unwrap();
+        let profile = creatures::Profile::from_json(include_bytes!(
+            "../../../content/gameplay/starter-valley-wolf-patrol.json"
+        ))
+        .unwrap();
+        let prepared =
+            creatures::Prepared::load(profile, &nav, &world.procedural().unwrap().source).unwrap();
+        world.enable_patrol(prepared).unwrap();
+        world
+            .enable_resource_combat(
+                catalog_bytes,
+                theia_network::simulation::combat::DEVELOPMENT_HEALTH,
+                theia_network::simulation::combat::DEVELOPMENT_RESPAWN_MS,
+                include_bytes!("../../../content/gameplay/development-character-stats.json"),
+            )
+            .unwrap();
+        Some(world.patrol_snapshot().unwrap().home)
+    } else {
+        None
+    };
+    let classic_source = world.identity();
     world.enable_classic().unwrap();
     let identity = world.identity();
-    assert_eq!(identity, theia_network::classic::profile_identity(source));
+    if !patrol {
+        assert_eq!(identity, theia_network::classic::profile_identity(source));
+    }
     let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
     let address = socket.local_addr().unwrap();
     let tickets = std::env::temp_dir().join(format!(
@@ -137,18 +179,35 @@ async fn authored_classic_two_encrypted_peers_hold_until_ready_walk_and_reject_s
         let (states, mut state) = watch::channel(State::default());
         let (ready, readiness) = watch::channel(None);
         let (commands, queue) = mpsc::channel(8);
+        let mut mode = mode(readiness, queue, classic_source);
+        let (choice, choices) = watch::channel(None);
+        let (casts, requests) = mpsc::channel(8);
+        let (events, event_rx) = mpsc::channel(16);
+        if patrol {
+            mode.choices = Some(choices);
+            mode.combat = Some(net::CombatActions {
+                melee: None,
+                catalog: catalog.clone(),
+                casts: requests,
+                events,
+            });
+        }
         let shutdown = shutdown.clone();
         let task = tokio::spawn(async move {
-            net::run_client_gameplay(
+            let result = net::run_client_gameplay(
                 address,
                 &ticket,
                 inputs,
-                states,
+                states.clone(),
                 shutdown,
                 identity,
-                mode(readiness, queue, source),
+                mode,
             )
-            .await
+            .await;
+            if let Err(error) = &result {
+                states.send_modify(|s| s.error = Some(error.to_string()));
+            }
+            result
         });
         tokio::time::timeout(Duration::from_secs(8), async {
             while state.borrow().correction.is_none() {
@@ -166,7 +225,10 @@ async fn authored_classic_two_encrypted_peers_hold_until_ready_walk_and_reject_s
             ready,
             commands,
             _input: input,
-            driver: Driver::with_classic(source, false),
+            _choice: patrol.then_some(choice),
+            _casts: patrol.then_some(casts),
+            _events: patrol.then_some(event_rx),
+            driver: Driver::with_classic(classic_source, false),
             terrain,
             initial,
             task,
@@ -195,6 +257,22 @@ async fn authored_classic_two_encrypted_peers_hold_until_ready_walk_and_reject_s
         assert!((correction.pose.feet.metres()[0] - peer.initial[0]).abs() < 0.02);
         assert!(peer.driver.stats.predicted_steps > 0 && peer.driver.stats.corrections > 0);
         assert_eq!(state.snapshot.as_ref().unwrap().players.len(), 2);
+        if let Some(home) = patrol_home {
+            let targeting = state
+                .targeting
+                .as_ref()
+                .expect("Replicated patrol targeting");
+            assert_eq!(targeting.targets.len(), 1);
+            let position = targeting.targets[0].position.metres();
+            assert!(
+                (position[0] - home[0]).hypot(position[2] - home[2]) > 1.,
+                "Patrol failed to move"
+            );
+            assert!(
+                state.combat.is_some(),
+                "Resource combat state must replicate"
+            );
+        }
     }
     let ticket = std::fs::read(cleanup.tickets.join("client-3.token")).unwrap();
     let (_input, input) = watch::channel(Intent::default());
@@ -226,7 +304,7 @@ async fn authored_classic_two_encrypted_peers_hold_until_ready_walk_and_reject_s
     let stats = server.await.unwrap().unwrap();
     println!(
         "{}",
-        serde_json::json!({"passed":true,"clients":2,"world":identity,"server":stats,
+        serde_json::json!({"passed":true,"clients":2,"patrol":patrol,"world":identity,"server":stats,
         "scope":"Actual authored Synty collision, encrypted loopback admission and Classic driver; explicit headless readiness, no native-client/quest/persistence claim"})
     );
 }
