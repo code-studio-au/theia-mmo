@@ -1,3 +1,24 @@
+P5-17 / P3-07 / P4-03 authored patrol configuration checks, 12 November 2026:
+Client configuration now verifies navigation tile hashes and resolves the creature
+profile's route against the selected manifest. Share that route lookup with server
+patrol preparation; authoritative physical route preparation remains unchanged.
+The normal launcher runs configuration-only preflight before starting an authored
+creature session or creating its ticket directory. Keep service credentials out
+of that client process. Full authored gameplay-manifest launch remains gated.
+All 13 creature simulation checks, 21 authored/account Python tests, fmt, strict
+workspace/all-target Clippy and client/server builds pass. Four actual headless
+client checks accept the matching west-grove profile and reject missing route,
+foreign source identity and a modified tile with its unchanged expected hash.
+No renderer, network connection or saved-state admission starts in preflight.
+The qualification fixture includes the existing ability item/status/life dependencies;
+earlier v1-v3 attempts correctly rejected omitted companion profiles.
+Evidence: build/authored-patrol-preflight-{tests,python,clippy,build}.log and
+build/authored-patrol-preflight-v4/qualification.json; reproduce with
+tools/qualify_authored_patrol_preflight.py. No new GPU/Windows/runtime quest claim.
+The valley's exported development template still references the older training
+route; the matching candidate changes only that route reference. Next: construct
+and qualify a coherent valley gameplay bundle with its bound contact/navigation.
+
 P5-17 / P2-02 / P3-01 account-backed authored-world entry, 12 November 2026:
 Normal --account-login now admits validated immutable authored packages as well as
 saved terrain. Retain source identity, supported spawn/restore checks, normal

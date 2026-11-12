@@ -269,6 +269,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             source.identity(),
         )
         .map_err(|e| e.to_string())?;
+        navigation.verify().map_err(|e| e.to_string())?;
+        profile
+            .navigation_route(navigation.manifest())
+            .map_err(|e| e.to_string())?;
         Some((profile, navigation.identity(), bytes))
     } else {
         if args.iter().any(|a| a == "--navigation") {

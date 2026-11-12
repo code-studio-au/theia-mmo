@@ -1,3 +1,11 @@
+P5-17 authored creature preflight, 12 November 2026:
+The normal launcher checks authored creature sessions with the actual client's
+--configuration-report before starting the server/login. Navigation must bind the
+same world, pass tile hashes and contain the creature profile's route ID. Missing
+route or mismatched navigation now produces an early configuration error. This
+is not a runtime patrol/quest completion check, and full authored gameplay bundles
+remain gated. See STATUS.md for the matching west-grove candidate/evidence.
+
 P5-17 account playtest prerequisite, 12 November 2026:
 Exported authored worlds can now use the normal account-backed walking launcher:
 `python3 tools/play.py --authored-world WORLD --classic --account-login --players PLAYER_ASSETS`.

@@ -71,6 +71,19 @@ impl Profile {
     pub fn id(&self) -> &ContentId {
         &self.id
     }
+    /// Resolve an already validated navigation manifest during configuration,
+    /// before admitting actors or issuing tickets. Physical route preparation
+    /// remains the authoritative server's responsibility.
+    pub fn navigation_route<'a>(
+        &self,
+        manifest: &'a navigation::Manifest,
+    ) -> Result<&'a navigation::Route> {
+        manifest
+            .routes
+            .iter()
+            .find(|route| route.id == self.route.as_str())
+            .ok_or_else(|| "Patrol route is absent from the selected navigation package".into())
+    }
     pub fn speed_metres_per_second(&self) -> f32 {
         self.speed
     }
@@ -108,12 +121,7 @@ impl Prepared {
             return Err("Patrol navigation belongs to another terrain".into());
         }
         store.verify()?;
-        let route = store
-            .manifest()
-            .routes
-            .iter()
-            .find(|r| r.id == profile.route.as_str())
-            .ok_or("Patrol route is absent")?;
+        let route = profile.navigation_route(store.manifest())?;
         let points = route
             .points
             .iter()

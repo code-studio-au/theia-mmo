@@ -267,6 +267,17 @@ def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk
     for path in [*required, players / ('character.glb' if graybox else 'human.glb'), server_binary, client_binary]:
         if not path.is_file():
             raise ValueError(f'Missing {path}; build with cargo build --release --locked --workspace; see docs/DEVELOPMENT_WORLD.md for asset preparation or select --binaries explicitly')
+    if authored_world is not None and creature_profile is not None:
+        checked = subprocess.run([str(client_binary), *scene, '--configuration-report'],
+                                 env=client_environment(os.environ), capture_output=True, text=True, timeout=30)
+        if checked.returncode:
+            raise ValueError('Authored gameplay configuration failed: ' + checked.stderr.strip())
+        try:
+            report = json.loads(checked.stdout[checked.stdout.index('{'):])
+            if any(report.get(key) is not False for key in ('renderer_started', 'network_started', 'saved_state_admitted')):
+                raise ValueError()
+        except (ValueError, TypeError):
+            raise ValueError('Authored gameplay preflight did not return a configuration-only report') from None
     session = Path('build/development-session')
     session.mkdir(parents=True, exist_ok=True)
     certificate = session / 'server-cert.der'

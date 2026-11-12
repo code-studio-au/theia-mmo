@@ -1,6 +1,8 @@
 """Authored-world launcher selection; no window, OS input or server is started."""
 import contextlib
 import inspect
+import json
+from types import SimpleNamespace
 import io
 from pathlib import Path
 import unittest
@@ -58,7 +60,7 @@ class AuthoredPlay(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             try:
                 os.chdir(folder)
-                with patch.object(Path,'is_file',return_value=True), patch.object(play.subprocess,'Popen',capture):
+                with patch.object(Path,'is_file',return_value=True), patch.object(play.subprocess,'Popen',capture), patch.object(play.subprocess, 'run', return_value=SimpleNamespace(returncode=0, stdout=json.dumps(dict(renderer_started=False, network_started=False, saved_state_admitted=False)), stderr='')):
                     for extra in ({}, dict(creature_profile=Path('wolf'), navigation=Path('nav'),
                                            combat_catalog=Path('abilities')),
                                   dict(dialogue_catalog=Path('dialogue'), guide_position='8194,0.1,8192'),
@@ -111,6 +113,14 @@ class AuthoredPlay(unittest.TestCase):
         self.assertNotIn('--saved-terrain', calls[0])
         self.assertNotIn('--renet-tickets', calls[0])
         self.assertNotIn('--dev-spawn', calls[0])
+
+    def test_authored_patrol_preflight_failure_prevents_server_and_login_start(self):
+        with patch.object(Path, 'is_file', return_value=True), patch.object(play.subprocess, 'run', return_value=SimpleNamespace(returncode=1, stdout='', stderr='Patrol route is absent')), patch.object(play.subprocess, 'Popen') as children:
+            with self.assertRaisesRegex(ValueError, 'Patrol route is absent'):
+                play.play(None, Path('players'), 1, Path('binaries'), prediction=True,
+                          authored_world=Path('authored'), creature_profile=Path('wolf'),
+                          navigation=Path('navigation'), combat_catalog=Path('abilities'))
+            children.assert_not_called()
 
     def test_authored_creature_flags_reach_the_real_launcher_without_saved_terrain(self):
         observed = {}
