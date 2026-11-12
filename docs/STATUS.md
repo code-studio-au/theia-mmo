@@ -1,3 +1,16 @@
+Safe stop requested, 12 November 2026:
+Work stops after cf2a8018 (spawn-zone editor drafts). Final editor suite completed:
+223 passed, seven optional skips. No implementation is in progress. Resume with
+per-vertex custom-boundary authoring, then connect checked placement candidates
+and authoritative multi-creature population/respawn support. Do not remove the
+explicit export refusal until that runtime connection is validated.
+The user review editor PID 308099 remains open on the saved valley patrol copy;
+its running binary predates the spawn-zone UI. Its report/log are under
+build/editor-quests-review-v1/. Check unsaved state before any replacement; preserve
+user files. Separate spawn-zone qualification windows are closed. All commits are
+local; nothing pushed. Current review source and gameplay/scenery paths remain
+recorded below and in docs/ZONE_EDITOR.md.
+
 P5-17 / P3-07 spawn-zone editor drafts, 12 November 2026:
 Add → NPC spawn zone at spawn creates a bounded rectangular population draft.
 Explorer has an NPC spawn zones filter; select a draft to see its custom polygon
