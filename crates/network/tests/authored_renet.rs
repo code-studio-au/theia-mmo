@@ -100,14 +100,15 @@ async fn drive(peers: &mut [Peer], duration: Duration) {
     }
 }
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-#[ignore = "requires THEIA_AUTHORED_WORLD local exported starter world near 8000,8000"]
+#[ignore = "requires THEIA_AUTHORED_WORLD local exported starter world with a clear +Z approach"]
 async fn authored_classic_two_encrypted_peers_hold_until_ready_walk_and_reject_stale_world() {
     let root =
         PathBuf::from(std::env::var_os("THEIA_AUTHORED_WORLD").expect("Authored starter export"));
     let store = Arc::new(Store::open(&root).unwrap());
     let source = store.identity();
-    let mut world =
-        World::with_terrain_source([8000., 8000.], 1., Source::Authored(store)).unwrap();
+    let [x, _, z] = store.spawn(0).unwrap().metres();
+    let spawn = [x, z];
+    let mut world = World::with_terrain_source(spawn, 1., Source::Authored(store)).unwrap();
     world.enable_prediction().unwrap();
     world.enable_classic().unwrap();
     let identity = world.identity();
@@ -130,8 +131,7 @@ async fn authored_classic_two_encrypted_peers_hold_until_ready_walk_and_reject_s
     for i in 1..=2 {
         let client_store = Arc::new(Store::open(&root).unwrap());
         assert_eq!(client_store.identity(), source);
-        let terrain =
-            Runtime::with_source([8000., 8000.], 1., Source::Authored(client_store)).unwrap();
+        let terrain = Runtime::with_source(spawn, 1., Source::Authored(client_store)).unwrap();
         let ticket = std::fs::read(cleanup.tickets.join(format!("client-{i}.token"))).unwrap();
         let (input, inputs) = watch::channel(Intent::default());
         let (states, mut state) = watch::channel(State::default());
@@ -159,6 +159,8 @@ async fn authored_classic_two_encrypted_peers_hold_until_ready_walk_and_reject_s
         .await
         .expect("Authored admission timeout");
         let initial = state.borrow().correction.unwrap().state.pose.feet.metres();
+        assert!((initial[0] - spawn[0]).abs() < 0.001);
+        assert!((initial[2] - spawn[1]).abs() < 0.001);
         peers.push(Peer {
             state,
             ready,

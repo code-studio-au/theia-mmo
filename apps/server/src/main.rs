@@ -66,6 +66,7 @@ async fn main() -> Result<()> {
     let mut dev_tour = false;
     let mut dev_speed = 1.;
     let mut dev_spawn = [8000., 8000.];
+    let mut explicit_dev_spawn = false;
     let mut origin = None;
     let mut replication_span = None;
     let mut world = theia_network::simulation::World::default();
@@ -216,7 +217,7 @@ async fn main() -> Result<()> {
                 terrain_source=theia_network::procedural::Source::Saved(std::sync::Arc::new(theia_network::saved_terrain::Store::open(&PathBuf::from(args.next().ok_or("Missing saved terrain directory")?))?)); }
             "--graybox-world" => { if world_selected {return Err("Choose one world".into());} world_selected=true; graybox=true; }
             "--dev-speed" => {dev_speed=args.next().ok_or("Missing developer speed")?.parse()?;}
-            "--dev-spawn" => {let values:Vec<f64>=args.next().ok_or("Missing developer spawn")?.split(',').map(str::parse).collect::<std::result::Result<_,_>>()?;dev_spawn=values.try_into().map_err(|_|"Expected x,z")?;}
+            "--dev-spawn" => {explicit_dev_spawn=true;let values:Vec<f64>=args.next().ok_or("Missing developer spawn")?.split(',').map(str::parse).collect::<std::result::Result<_,_>>()?;dev_spawn=values.try_into().map_err(|_|"Expected x,z")?;}
             "--chunk-stream"=>chunk_stream=true,
             "--world-origin" => {
                 let xyz: Vec<f64> = args.next().ok_or("Missing world origin")?.split(',').map(str::parse).collect::<std::result::Result<_,_>>()?;
@@ -289,6 +290,19 @@ async fn main() -> Result<()> {
     }
     if character_stats.is_some() && combat_catalog.is_none() {
         return Err("Character stats require combat".into());
+    }
+    if let theia_network::procedural::Source::Authored(store) = &terrain_source {
+        if explicit_dev_spawn {
+            return Err(
+                "Authored worlds use the saved player spawn; edit the zone instead of --dev-spawn"
+                    .into(),
+            );
+        }
+        let [x, _, z] = store
+            .spawn(0)
+            .ok_or("Authored world has no player spawn")?
+            .metres();
+        dev_spawn = [x, z];
     }
     if graybox {
         if (tickets.is_none() && !account_login) || origin.is_some() || replication_span.is_some() {

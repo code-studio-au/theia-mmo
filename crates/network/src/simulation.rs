@@ -790,15 +790,7 @@ impl World {
             return None;
         }
         let runtime = self.procedural.as_ref()?;
-        let offset = f64::from((slot - 1) % 4) * 2.;
-        let x = if runtime.spawn[0] + offset <= 15999. {
-            runtime.spawn[0] + offset
-        } else {
-            runtime.spawn[0] - offset
-        };
-        let z = runtime.spawn[1];
-        let requested = GlobalPosition::new([x, 0., z])?;
-        let mut p = runtime.patch(requested)?.try_spawn(x, z)?.metres();
+        let mut p = runtime.spawn_feet(usize::from(slot - 1))?.metres();
         p[1] += f64::from(crate::world::PAWN_Y);
         GlobalPosition::new(p)
     }
@@ -841,15 +833,19 @@ impl World {
         self.next_id = self.next_id.checked_add(1)?;
         let id = self.next_id;
         let x = ((id - 1) % 4) as f32 * 2.;
-        let spawn = if let Some(runtime) = &self.procedural {
-            let [x, _, z] = restored.map_or(
-                [runtime.spawn[0] + f64::from(x), 0., runtime.spawn[1]],
-                GlobalPosition::metres,
-            );
-            let patch = runtime.patch(GlobalPosition::new([x, 0., z]).unwrap())?;
-            let p = patch.try_spawn(x, z)?.metres();
-            // Spawn storage is unused for this backend; global truth is assigned below.
-            [0., (p[1] + f64::from(crate::world::PAWN_Y)) as f32, 0.]
+        let global_spawn = if let Some(position) = restored {
+            Some(position)
+        } else if let Some(runtime) = &self.procedural {
+            let mut p = runtime.spawn_feet((id - 1) as usize)?.metres();
+            p[1] += f64::from(crate::world::PAWN_Y);
+            Some(GlobalPosition::new(p)?)
+        } else {
+            None
+        };
+        let spawn = if let Some(position) = global_spawn {
+            // Local spawn storage is unused for this backend. Keep the already
+            // validated full global position instead of resolving XZ a second time.
+            [0., position.metres()[1] as f32, 0.]
         } else if let Some(chunks) = &self.chunks {
             let [x, y, z] = chunks.spawn((id - 1) as usize).metres();
             [x, y + crate::world::PAWN_Y, z]
@@ -895,17 +891,8 @@ impl World {
                     .expect("Validated capsule spawn"),
             },
         );
-        if let Some(position) = restored {
+        if let Some(position) = global_spawn {
             self.players.get_mut(&id).unwrap().position = position;
-        } else if let Some(runtime) = &self.procedural {
-            let x = runtime.spawn[0] + f64::from(x);
-            let z = runtime.spawn[1];
-            let mut p = runtime
-                .patch(GlobalPosition::new([x, 0., z]).unwrap())?
-                .try_spawn(x, z)?
-                .metres();
-            p[1] += f64::from(crate::world::PAWN_Y);
-            self.players.get_mut(&id).unwrap().position = GlobalPosition::new(p)?;
         }
         if !self.initialize_player_life(id) {
             self.players.remove(&id);

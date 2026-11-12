@@ -4202,3 +4202,53 @@ These are bounded offline/simulation qualifications, not native creature/quest
 playback or exhaustive route coverage. See `build/authored-nav-routes.log`,
 `build/authored-nav-verify.log`, `build/authored-nav-rejections.json` and
 `build/authored-patrol-test.log`. Route authoring UI remains separate work.
+
+## Authored player spawn admission — 12 November 2026
+
+P5-17 / P3-15: authored player admission now retains all three coordinates of the
+hash-bound collision package's validated spawn. The server selects that saved
+spawn before preparing its initial patch. It no longer substitutes development
+XZ or searches downward from 256 m, which could place an under-roof spawn on the
+roof. Explicit developer-spawn overrides refuse for authored worlds; move the
+spawn in the editor and export again instead. Generated/saved development worlds
+retain their existing XZ controls and four placement offsets.
+
+Authored spawn slots cycle through the package's explicit supported positions;
+players can share a point because actors do not collide with each other. Account
+restoration retains the separately validated full position instead of performing
+an unrelated second XZ spawn query. This does not enable authored account/combat
+launch modes: those existing qualification guards remain in place. Guide/NPC
+placement and combat home/respawn integration still need their own full-position
+contract before arbitrary interior gameplay is supported.
+
+Four unit checks cover the source binding, a nondefault [8192,8192] origin with
+ground-floor and rooftop spawn slots, restored ground-floor placement, rejection
+of missing explicit spawns and mismatched development coordinates. Four launcher
+checks include the actual captured server argv and refusal of explicit XZ
+overrides without starting any child process. Additional network/executable
+qualification is recorded in the status checkpoint for this slice.
+
+The new valley is ready for bounded walking/camera/scenery testing. Open the
+editable source and press F5 to enter or leave its offline sandbox:
+
+```sh
+python3 tools/edit_zone.py --no-build --zone build/starter-valley-village-v2.zone.json
+```
+
+Run the authoritative game-client walking version with the rebuilt debug pair:
+
+```sh
+python3 tools/play.py --authored-world build/starter-valley-village-world-v2 \
+  --classic --binaries target/debug
+```
+
+822 ordinary network tests pass with 11 opt-in skips; the actual two-peer authored
+Renet check is additionally executed against this valley and passes (including
+stale-world refusal). Rebuilt server CLI startup/shutdown and override rejection
+pass. The actual client GPU readiness/rebase/asset-withdrawal check passes on RX
+7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan with 114 world mesh primitives, without
+an OS window/input. Evidence is `build/authored-valley-spawn-renet-test.log`,
+`authored-valley-server-smoke.json`, `starter-valley-client-gpu-readiness.log` and
+`starter-valley-client-offscreen.png`. These separate network and offscreen checks
+do not claim native end-to-end input/Windows qualification. Quest contacts,
+multiple wolves, pickups and account/combat wiring are not yet part of this scene.

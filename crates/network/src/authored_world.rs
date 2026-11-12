@@ -52,6 +52,9 @@ impl Store {
         {
             return Err("Authored anchor mismatch or unsupported presentation dependencies".into());
         }
+        if !terrain.has_spawns() {
+            return Err("Authored world requires an explicit safe player spawn".into());
+        }
         let bounds = terrain.bounds();
         for (i, (&min, &max)) in bounds[0].iter().zip(&bounds[1]).enumerate() {
             let origin = anchor.origin[i * 2];
@@ -80,6 +83,11 @@ impl Store {
     }
     pub fn origin(&self) -> GlobalPosition {
         self.origin
+    }
+    /// Hash-bound capsule feet, including the authored vertical support layer.
+    /// Multiple players may share an authored spawn; actors never block actors.
+    pub fn spawn(&self, slot: usize) -> Option<GlobalPosition> {
+        LocalFrame::new(self.origin).to_global(self.terrain.spawn(slot)?)
     }
     pub fn visual(&self) -> Arc<Vec<u8>> {
         self.visual.clone()
@@ -127,6 +135,9 @@ mod tests {
         }
     }
     fn fixture() -> (Folder, Anchor) {
+        spawn_fixture([8000., 0., 8000.], false, false)
+    }
+    fn spawn_fixture(origin: [f64; 3], roof: bool, empty: bool) -> (Folder, Anchor) {
         let root = std::env::temp_dir().join(format!(
             "theia-authored-{}-{}",
             std::process::id(),
@@ -137,12 +148,23 @@ mod tests {
         ));
         std::fs::create_dir(&root).unwrap();
         let visual = b"Synthetic visual snapshot; no rendered acceptance";
-        let profile=serde_json::to_vec(&json!({"schema":4,"source_origin":[0,0,0],"bounds":[[-32,-32],[32,32]],"spawns":[[0,0.1,0]],"visual_sha256":sha256(visual),"triangles":[[[-32,0,-32],[32,0,32],[32,0,-32]],[[-32,0,-32],[-32,0,32],[32,0,32]]],"static_shapes":{"meshes":[],"objects":[{"kind":"box","center":[4,1,0],"size":[1,2,4],"rotation":[0,0,0,1]}]}})).unwrap();
+        let mut objects =
+            vec![json!({"kind":"box","center":[4,1,0],"size":[1,2,4],"rotation":[0,0,0,1]})];
+        let mut spawns = vec![[0., 0.1, 0.]];
+        if roof {
+            objects
+                .push(json!({"kind":"box","center":[0,4,0],"size":[12,1,12],"rotation":[0,0,0,1]}));
+            spawns.push([0., 4.6, 0.]);
+        }
+        if empty {
+            spawns.clear();
+        }
+        let profile=serde_json::to_vec(&json!({"schema":4,"source_origin":[0,0,0],"bounds":[[-32,-32],[32,32]],"spawns":spawns,"visual_sha256":sha256(visual),"triangles":[[[-32,0,-32],[32,0,32],[32,0,-32]],[[-32,0,-32],[-32,0,32],[32,0,32]]],"static_shapes":{"meshes":[],"objects":objects}})).unwrap();
         let manifest=serde_json::to_vec(&json!({"schema":1,"content_id":"theia.test.authored","revision":1,"collision_schema":4,"collision_bytes":profile.len(),"collision_sha256":sha256(&profile),"visual_bytes":visual.len(),"visual_sha256":sha256(visual)})).unwrap();
         let identity = content::Manifest::decode(&manifest).unwrap().identity();
         let anchor = Anchor {
             schema: 1,
-            origin: [8000., 0., 8000.],
+            origin,
             world_identity: identity,
         };
         for (name, bytes) in [
@@ -154,6 +176,52 @@ mod tests {
             std::fs::write(root.join(name), bytes).unwrap();
         }
         (Folder(root), anchor)
+    }
+    #[test]
+    fn authored_spawn_keeps_ground_and_roof_layers_for_all_player_slots() {
+        let (folder, _) = spawn_fixture([8192., 0., 8192.], true, false);
+        let store = Arc::new(Store::open(&folder.0).unwrap());
+        let ground = store.spawn(0).unwrap();
+        let roof = store.spawn(1).unwrap();
+        assert!(ground.metres()[1] < 0.02);
+        assert!((roof.metres()[1] - 4.5).abs() < 0.02);
+        let source = procedural::Source::Authored(store);
+        assert!(
+            crate::simulation::World::with_terrain_source([8000., 8000.], 1., source.clone())
+                .is_err()
+        );
+        let mut world =
+            crate::simulation::World::with_terrain_source([8192., 8192.], 1., source).unwrap();
+        world.enable_prediction().unwrap();
+        world.enable_classic().unwrap();
+        for slot in 1..=4 {
+            let expected = if slot % 2 == 1 { ground } else { roof };
+            let development = world.development_player_spawn(slot).unwrap();
+            let id = world.join().unwrap();
+            let actual = world.global_position(id).unwrap();
+            assert_eq!(actual, development);
+            let mut feet = actual.metres();
+            feet[1] -= f64::from(crate::world::PAWN_Y);
+            assert_eq!([feet[0], feet[2]], [8192., 8192.]);
+            assert!((feet[1] - expected.metres()[1]).abs() < 0.001);
+            world.validate_restored_player(actual).unwrap();
+        }
+        let mut restored = ground.metres();
+        restored[1] += f64::from(crate::world::PAWN_Y);
+        let restored = GlobalPosition::new(restored).unwrap();
+        let id = world.join_restored(restored).unwrap();
+        assert_eq!(world.global_position(id), Some(restored));
+    }
+    #[test]
+    fn authored_world_without_explicit_spawn_refuses() {
+        let (folder, _) = spawn_fixture([8192., 0., 8192.], false, true);
+        assert!(
+            Store::open(&folder.0)
+                .err()
+                .unwrap()
+                .to_string()
+                .contains("explicit safe player spawn")
+        );
     }
     #[test]
     fn authored_world_preserves_frame_collision_and_can_prepare_classic_guide() {

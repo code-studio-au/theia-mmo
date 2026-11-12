@@ -30,13 +30,17 @@ def fantasy_ui_options(directory, classic, combat_catalog, ui_scale=None, ui_pre
     return ['--fantasy-ui', str(directory), *(['--ui-scale', str(ui_scale)] if ui_scale is not None else []), *(['--ui-preferences', str(Path(ui_preferences).resolve())] if ui_preferences is not None else [])]
 
 
-def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk_world=None, camera_collision=None, graybox=False, dev_speed=1, dev_spawn="8000,8000", dev_tour=False, prediction=False, saved_terrain=None, targeting=False, combat_catalog=None, feedback=None, persistence=False, account_login=False, character_stats=None, item_catalog=None, status_catalog=None, creature_profile=None, navigation=None, reward_catalog=None, progression_catalog=None, window_size=None, fullscreen=False, quest_catalog=None, dialogue_catalog=None, guide_position=None, vendor_catalog=None, quest_lifecycle=False, quest_turn_in_xp=None, creature_retaliation=None, player_respawn=None, creature_asset=None, dodge_profile=None, classic=False, controls_file=None, melee_weapons=None, physical_definitions=None, physical_stats=None, white_melee=None, ability_starting=None, ability_damage=None, combat_membership=None, creature_credit=None, creature_reset=None, quest_journal=False, creature_threat=None, public_creature_attacks=False, public_avatar_life=False, quest_areas=None, creature_loot=False, quest_items=False, quest_loot=False, document_catalog=None, quest_item_rewards=None, fantasy_ui=None, ui_scale=None, ui_preferences=None, authored_world=None):
+def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk_world=None, camera_collision=None, graybox=False, dev_speed=1, dev_spawn=None, dev_tour=False, prediction=False, saved_terrain=None, targeting=False, combat_catalog=None, feedback=None, persistence=False, account_login=False, character_stats=None, item_catalog=None, status_catalog=None, creature_profile=None, navigation=None, reward_catalog=None, progression_catalog=None, window_size=None, fullscreen=False, quest_catalog=None, dialogue_catalog=None, guide_position=None, vendor_catalog=None, quest_lifecycle=False, quest_turn_in_xp=None, creature_retaliation=None, player_respawn=None, creature_asset=None, dodge_profile=None, classic=False, controls_file=None, melee_weapons=None, physical_definitions=None, physical_stats=None, white_melee=None, ability_starting=None, ability_damage=None, combat_membership=None, creature_credit=None, creature_reset=None, quest_journal=False, creature_threat=None, public_creature_attacks=False, public_avatar_life=False, quest_areas=None, creature_loot=False, quest_items=False, quest_loot=False, document_catalog=None, quest_item_rewards=None, fantasy_ui=None, ui_scale=None, ui_preferences=None, authored_world=None):
     if authored_world is not None:
         if world is not None or chunk_world is not None or saved_terrain is not None:
             raise ValueError('Choose authored, saved or legacy world')
+        if dev_spawn is not None:
+            raise ValueError('Authored worlds use their saved XYZ spawn; edit the zone instead of dev_spawn')
         if not prediction or dev_tour or dev_speed != 1:
             raise ValueError('Authored world requires normal-speed prediction without a tour')
         graybox = True
+    if dev_spawn is None:
+        dev_spawn = '8000,8000'
     if document_catalog is not None and (not quest_journal or quest_catalog is None or item_catalog is None):
         raise ValueError('Documents require journal, quest and inventory catalogues')
     ui_options = fantasy_ui_options(fantasy_ui, classic, combat_catalog, ui_scale, ui_preferences)
@@ -253,7 +257,8 @@ def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk
             raise ValueError('Creature art requires authoritative creature combat')
         if not creature_asset.is_file():
             raise ValueError(f'Missing creature art: {creature_asset}')
-    server_options = ['--dev-speed', str(dev_speed), '--dev-spawn', dev_spawn, *(['--dev-tour'] if dev_tour else [])] if graybox else []
+    server_options = (['--dev-speed', str(dev_speed), *(['--dev-spawn', dev_spawn] if authored_world is None else []),
+                       *(['--dev-tour'] if dev_tour else [])] if graybox else [])
     for path in [*required, players / ('character.glb' if graybox else 'human.glb'), server_binary, client_binary]:
         if not path.is_file():
             raise ValueError(f'Missing {path}; build with cargo build --release --locked --workspace; see docs/DEVELOPMENT_WORLD.md for asset preparation or select --binaries explicitly')
@@ -388,7 +393,7 @@ def main(argv=None):
     parser.add_argument('--abilities', type=Path, help='Combat catalog (default: content/gameplay/development-abilities.json); requires --combat')
     parser.add_argument('--targeting', action='store_true', help='Opt-in authoritative training target, Tab selection and Backspace clear')
     parser.add_argument('--dev-speed', type=int, choices=[1, 8, 32], default=1)
-    parser.add_argument('--dev-spawn', default='8000,8000', help='Graybox server spawn x,z in metres')
+    parser.add_argument('--dev-spawn', help='Generated/saved terrain spawn x,z metres (default 8000,8000); authored worlds use the editor spawn')
     parser.add_argument('--dev-tour', action='store_true', help='Server-owned teleport circuit for streaming qualification')
     parser.add_argument('--clients', type=int, choices=range(1, 9), default=1)
     parser.add_argument('--binaries', type=Path, default=Path('target/release'),

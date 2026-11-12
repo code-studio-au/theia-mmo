@@ -1,3 +1,28 @@
+P5-17 / P3-15 authored player spawn and valley walking launch, 12 November 2026:
+server admission now uses the exported, validated full XYZ player spawn. Ground
+and rooftop slots retain their support layer; restored admissions keep their
+separately validated global pose. Authored worlds reject missing spawns and explicit
+XZ developer overrides. Generated/saved terrain retains its existing controls.
+All 822 ordinary network tests pass (11 opt-in checks skipped), plus the actual
+new-valley two-peer encrypted Renet test with zero rejected inputs/readiness and
+zero movement recovery resets. Four focused source/layer tests and four launcher
+checks pass. The broader Python run passes 96 ordinary checks; its four missing-bpy
+errors are resolved by running the five affected checks in the Blender environment.
+Formatting, denied-warning workspace/all-target Clippy and client/server/editor
+builds pass. The rebuilt server starts, shuts down cleanly and refuses authored
+XZ overrides. Actual RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan client rendering
+loads 114 world primitive entities, gates readiness, survives rebasing, withdraws
+readiness when a GPU mesh is removed and restores it when reintroduced. No OS
+window/input used. See build/authored-spawn-*, authored-valley-*, and
+starter-valley-client-gpu-readiness.log / starter-valley-client-offscreen.png.
+The user was notified that the editor and game-client walking/camera/scenery
+playtests are ready; exact launch commands are in docs/ZONE_EDITOR.md. Normal
+native interaction and Windows are not newly qualified. Questgivers, multiple
+wolves, pickups and authored account/combat integration remain outstanding.
+Next: the full dressed valley navigation probe fails with Recast InvalidContour
+at tile [63,64] (build/starter-valley-navigation-probe.log). Resolve actual imported
+geometry navigation before adding patrol gameplay; do not publish a partial bake.
+
 P5-17 / P3-15 editable starter village scenery, 12 November 2026:
 a separate command recipe builds six Kingdom cottages, 44 trees across the village
 and four outskirt groves, ruins, hollow trunk, fallen timber, meeting furniture,

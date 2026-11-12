@@ -183,6 +183,12 @@ impl Patch {
             .ok()?,
         )
     }
+    /// Resolve only near the trusted full position; never search above its layer.
+    pub fn try_spawn_near(&self, requested: GlobalPosition) -> Option<GlobalPosition> {
+        let local = self.frame.to_local(requested)?;
+        self.frame
+            .to_global(crate::kinematic::spawn(&self.scene, local).ok()?)
+    }
     pub fn covers(&self, p: GlobalPosition, ready: Option<&BTreeSet<ChunkId>>) -> bool {
         let [x, y, z] = p.metres();
         let r = f64::from(crate::kinematic::FOOTPRINT_RADIUS);
@@ -226,6 +232,18 @@ impl Runtime {
                 "Graybox spawn must be inside 1..15999m and developer speed 1, 8 or 32".into(),
             );
         }
+        if let Source::Authored(store) = &source {
+            let [x, _, z] = store
+                .spawn(0)
+                .ok_or("Authored world has no spawn")?
+                .metres();
+            if spawn != [x, z] {
+                return Err(
+                    "Authored runtime requires the saved player spawn; edit the zone to move it"
+                        .into(),
+                );
+            }
+        }
         let id = owner(GlobalPosition::new([spawn[0], 0., spawn[1]]).unwrap()).unwrap();
         let patch = Arc::new(Patch::load(id, &source)?);
         let worker_source = source.clone();
@@ -257,6 +275,23 @@ impl Runtime {
         })
     }
     /// Call from the owner pump, outside the fixed simulation step.
+    /// Safe admission feet. Authored slots retain their original XYZ; the older
+    /// generated/saved development worlds retain their four horizontal offsets.
+    pub fn spawn_feet(&self, slot: usize) -> Option<GlobalPosition> {
+        if let Source::Authored(store) = &self.source {
+            let requested = store.spawn(slot)?;
+            return self.patch(requested)?.try_spawn_near(requested);
+        }
+        let offset = (slot % 4) as f64 * 2.;
+        let x = if self.spawn[0] + offset <= SIDE - 1. {
+            self.spawn[0] + offset
+        } else {
+            self.spawn[0] - offset
+        };
+        let z = self.spawn[1];
+        self.patch(GlobalPosition::new([x, 0., z])?)?
+            .try_spawn(x, z)
+    }
     pub fn poll(&mut self, positions: &[GlobalPosition]) {
         if self.error.is_some() {
             return;
