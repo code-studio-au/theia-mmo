@@ -126,6 +126,9 @@ impl World {
         self.predicted = true;
         Ok(())
     }
+    pub(crate) fn has_players(&self) -> bool {
+        !self.players.is_empty()
+    }
     pub fn prediction_enabled(&self) -> bool {
         self.predicted
     }

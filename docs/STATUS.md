@@ -1,3 +1,23 @@
+P5-17 / P1-06 per-client authored test spawns, 12 November 2026:
+Headless server --test-players accepts a bounded source-bound profile of one/two
+local client IDs and full XYZ feet. Validate prepared capsule collision/support
+before issuing tickets; reject stale world identities, unsupported/intersecting
+positions, unknown/duplicate IDs and incompatible account/persistence/travel modes.
+Distinct positions bind authenticated client IDs rather than arrival/actor order;
+normal World admission, replay guard and readiness/prediction remain in use.
+Actual encrypted valley peers join in reverse order at their configured positions,
+then both move through Classic prediction. An unconfigured third authenticated
+peer is refused; two test admissions, one refusal, zero persistent admissions,
+zero rejected movement/readiness inputs and zero movement recoveries.
+All 482 authority unit tests, three actual CLI tests, formatting, strict workspace/
+all-target Clippy and client/server/editor builds pass. No display use, new native
+render qualification or Windows claim. Evidence: build/test-player-spawn-
+{authority-tests,renet,cli-tests,clippy,build}.log. Local generated profile:
+build/starter-valley-test-players-v1.json. See RENET_QUALIFICATION.md.
+Next: connect profiles/independent impairment to a managed multi-client launcher,
+then add editor Test Player placement/properties and normal-input controllers.
+Current F5 remains offline; no complete Network Playtest UI claim. Continue locally.
+
 P1-06 / P5-17 configurable test-connection foundation, 12 November 2026:
 The loopback qualification relay accepts a checked per-connection Profile with
 one-way delay, bounded added jitter, seeded loss and scheduled outages. Explicit

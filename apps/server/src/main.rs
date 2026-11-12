@@ -14,6 +14,7 @@ async fn main() -> Result<()> {
             .unwrap_or_else(|| "build/server-cert.der".into()),
     );
     let mut tickets = None;
+    let mut test_players = None;
     let mut dev_relays: Option<Vec<SocketAddr>> = None;
     let mut chunk_stream = false;
     let mut world_selected = false;
@@ -72,6 +73,10 @@ async fn main() -> Result<()> {
     let mut world = theia_network::simulation::World::default();
     while let Some(option) = args.next() {
         match option.as_str() {
+            "--test-players" => {
+                if test_players.is_some() { return Err("Choose one test player profile".into()); }
+                test_players=Some(PathBuf::from(args.next().ok_or("Missing test player profile")?));
+            }
             "--dev-relays" => dev_relays=Some(args.next().ok_or("Missing relay endpoints")?.split(',').map(str::parse).collect::<std::result::Result<_,_>>()?),
             "--prediction" => predicted=true,
             "--classic" => classic=true,
@@ -263,6 +268,20 @@ async fn main() -> Result<()> {
             }
             _ => return Err("Expected --terrain-world or --chunk-world <directory>, --tick-hz <20|30|60> or --renet-tickets <fresh-directory>".into()),
         }
+    }
+    if test_players.is_some()
+        && (tickets.is_none()
+            || account_login
+            || dev_persistence
+            || chunk_stream
+            || !bind.ip().is_loopback()
+            || !graybox
+            || !predicted
+            || !classic
+            || dev_tour
+            || dev_speed != 1.)
+    {
+        return Err("Test players require local-ticket Classic prediction at normal speed, without accounts, persistence or streaming overrides".into());
     }
     if quest_item_rewards.is_some()
         && (!journal_mode || quest_catalog.is_none() || item_catalog.is_none())
@@ -1037,6 +1056,31 @@ async fn main() -> Result<()> {
     } else {
         None
     };
+    let test_players = if let Some(path) = test_players {
+        use std::io::Read;
+        use theia_network::renet_runtime::test_players::{MAX_BYTES, Plan};
+        let mut bytes = Vec::new();
+        std::fs::File::open(path)?
+            .take(MAX_BYTES as u64 + 1)
+            .read_to_end(&mut bytes)?;
+        let plan = Plan::from_json(&bytes, &world)?;
+        let positions = plan.positions();
+        tokio::time::timeout(std::time::Duration::from_secs(15), async {
+            loop {
+                world.poll_terrain_keeping(&positions)?;
+                if positions.iter().all(|p| world.terrain_prepared_for(*p)) {
+                    break;
+                }
+                tokio::time::sleep(std::time::Duration::from_millis(2)).await;
+            }
+            Ok::<_, Box<dyn std::error::Error + Send + Sync>>(())
+        })
+        .await
+        .map_err(|_| "Test player collision preparation timed out")??;
+        Some(plan.prepare(&world)?)
+    } else {
+        None
+    };
     if let Some(directory) = tickets {
         let socket = std::net::UdpSocket::bind(bind)?;
         let address = socket.local_addr()?;
@@ -1063,6 +1107,13 @@ async fn main() -> Result<()> {
             game?;
             saved?;
             return Ok(());
+        }
+        if let Some(players) = test_players {
+            return theia_network::renet_runtime::run_server_with_test_players(
+                transport, stop, world, players,
+            )
+            .await
+            .map(|_| ());
         }
         return if chunk_stream {
             theia_network::renet_runtime::run_server_streaming(transport, stop, world)

@@ -1,3 +1,45 @@
+## 12 November 2026 — checked per-client test spawns (P5-17 / P1-06)
+
+The headless server accepts `--test-players <profile.json>` with an authored world,
+Classic prediction and loopback local tickets. This is an explicit development
+mode, separate from account login/persistence and ordinary default spawn behavior.
+Its bounded schema-1 profile contains `world_identity` (the authored Source's 32
+hash bytes) and one or two `players`, each with `client_id` 1 or 2 and global XYZ
+`feet`. IDs may appear in either order. Missing/unconfigured IDs are refused;
+positions never depend on actor allocation or connection order. The local issuer
+still writes its normal eight bearer tickets, but only configured IDs can be
+admitted. Tokens are single-use under the existing server-lifetime replay guard.
+
+Every spawn must match the source identity and pass prepared static-capsule
+collision/support checks before the server binds its socket or issues tickets.
+This retains the selected floor beneath roofs. Preparation uses the existing
+bounded worker outside the simulation step, with a 15-second startup timeout.
+Unsupported heights, overlaps, duplicate IDs, stale sources, excess bytes/counts,
+nonlocal listen addresses and mixed account/persistence/travel modes refuse.
+Game commands do not carry or choose test spawn coordinates. Logs and counters
+use `test_player_admit` / `test_player_admissions`, separate from persistent entry.
+
+The actual encrypted two-peer test starts client 2 first and verifies the distinct
+configured spawns, readiness-gated Classic movement, prediction/reconciliation and
+refusal of a third correctly authenticated but unconfigured peer. No rejected
+movement/readiness inputs or recovery resets. All 482 authority unit tests, three
+actual server CLI checks, formatting, strict workspace/all-target Clippy and
+client/server/editor builds pass. Evidence: `build/test-player-spawn-*.log`.
+Native rendered two-window playtest, controller scripts and editor pawn controls
+remain separate follow-ons; this slice does not claim account or quest persistence.
+
+To reproduce with the current local exported valley, and write its matching
+profile for the command-line checks:
+
+```sh
+THEIA_AUTHORED_WORLD="$PWD/build/starter-valley-contact-world-v3" \
+THEIA_TEST_PLAYERS_PROFILE="$PWD/build/starter-valley-test-players-v1.json" \
+cargo test -p theia-network --test authored_renet authored_test_players -- --ignored --nocapture
+THEIA_AUTHORED_WORLD="$PWD/build/starter-valley-contact-world-v3" \
+THEIA_TEST_PLAYERS_PROFILE="$PWD/build/starter-valley-test-players-v1.json" \
+PYTHONPATH=tools python3 -m unittest test_test_player_cli -v
+```
+
 ## 12 November 2026 — configurable local test connections (P1-06 / P5-17)
 
 `tools/network_profile.py` supplies an immutable, checked `Profile` for the existing

@@ -106,28 +106,35 @@ async fn drive(peers: &mut [Peer], duration: Duration) {
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[ignore = "requires THEIA_AUTHORED_WORLD local exported starter world with a clear +Z approach"]
 async fn authored_classic_two_encrypted_peers_hold_until_ready_walk_and_reject_stale_world() {
-    run_authored(false, false, false).await;
+    run_authored(false, false, false, false).await;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[ignore = "requires THEIA_AUTHORED_WORLD valley and THEIA_AUTHORED_NAV west-grove package"]
 async fn authored_valley_patrol_and_resource_combat_replicate_to_two_classic_peers() {
-    run_authored(true, false, false).await;
+    run_authored(true, false, false, false).await;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[ignore = "requires THEIA_AUTHORED_WORLD valley and THEIA_AUTHORED_NAV west-grove package"]
 async fn authored_valley_full_xyz_guide_opens_and_closes_on_walkaway_for_two_encrypted_peers() {
-    run_authored(true, true, false).await;
+    run_authored(true, true, false, false).await;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[ignore = "requires THEIA_AUTHORED_WORLD bound village contact and THEIA_AUTHORED_NAV package"]
 async fn authored_valley_exported_contact_binds_profile_and_placement_for_two_encrypted_peers() {
-    run_authored(true, true, true).await;
+    run_authored(true, true, true, false).await;
 }
 
-async fn run_authored(patrol: bool, with_guide: bool, from_world: bool) {
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[ignore = "requires THEIA_AUTHORED_WORLD local valley with clear village spawns"]
+async fn authored_test_players_keep_client_spawns_in_reverse_arrival_and_refuse_unconfigured_peer()
+{
+    run_authored(false, false, false, true).await;
+}
+
+async fn run_authored(patrol: bool, with_guide: bool, from_world: bool, test_players: bool) {
     let root =
         PathBuf::from(std::env::var_os("THEIA_AUTHORED_WORLD").expect("Authored starter export"));
     let store = Arc::new(Store::open(&root).unwrap());
@@ -196,6 +203,25 @@ async fn run_authored(patrol: bool, with_guide: bool, from_world: bool) {
     if !patrol && !with_guide {
         assert_eq!(identity, theia_network::classic::profile_identity(source));
     }
+    let prepared = if test_players {
+        let bytes = serde_json::to_vec_pretty(
+            &serde_json::json!({"schema":1,"world_identity":source,"players":[
+                {"client_id":1,"feet":[x,y,z]}, {"client_id":2,"feet":[x-2.,y,z]}
+            ]}),
+        )
+        .unwrap();
+        if let Some(path) = std::env::var_os("THEIA_TEST_PLAYERS_PROFILE") {
+            std::fs::write(path, &bytes).unwrap();
+        }
+        Some(
+            net::test_players::Plan::from_json(&bytes, &world)
+                .unwrap()
+                .prepare(&world)
+                .unwrap(),
+        )
+    } else {
+        None
+    };
     let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
     let address = socket.local_addr().unwrap();
     let tickets = std::env::temp_dir().join(format!(
@@ -209,9 +235,16 @@ async fn run_authored(patrol: bool, with_guide: bool, from_world: bool) {
     let transport = net::issue_local(socket, &tickets).unwrap();
     let (stop, shutdown) = watch::channel(false);
     let cleanup = Cleanup { stop, tickets };
-    let server = tokio::spawn(net::run_server_measured(transport, shutdown.clone(), world));
+    let server_shutdown = shutdown.clone();
+    let server = tokio::spawn(async move {
+        if let Some(prepared) = prepared {
+            net::run_server_with_test_players(transport, server_shutdown, world, prepared).await
+        } else {
+            net::run_server_measured(transport, server_shutdown, world).await
+        }
+    });
     let mut peers = Vec::new();
-    for i in 1..=2 {
+    for i in if test_players { [2, 1] } else { [1, 2] } {
         let client_store = Arc::new(Store::open(&root).unwrap());
         assert_eq!(client_store.identity(), source);
         let terrain = Runtime::with_source(spawn, 1., Source::Authored(client_store)).unwrap();
@@ -266,7 +299,9 @@ async fn run_authored(patrol: bool, with_guide: bool, from_world: bool) {
         .await
         .expect("Authored admission timeout");
         let initial = state.borrow().correction.unwrap().state.pose.feet.metres();
-        assert!((initial[0] - spawn[0]).abs() < 0.001);
+        assert!(
+            (initial[0] - (spawn[0] - if test_players && i == 2 { 2. } else { 0. })).abs() < 0.001
+        );
         assert!((initial[2] - spawn[1]).abs() < 0.001);
         peers.push(Peer {
             state,
@@ -365,11 +400,13 @@ async fn run_authored(patrol: bool, with_guide: bool, from_world: bool) {
     }
     let ticket = std::fs::read(cleanup.tickets.join("client-3.token")).unwrap();
     let (_input, input) = watch::channel(Intent::default());
-    let (states, _state) = watch::channel(State::default());
+    let (states, rejected_state) = watch::channel(State::default());
     let (_ready, ready) = watch::channel(None);
     let (_commands, queue) = mpsc::channel(8);
     let mut stale = source;
-    stale[0] ^= 1;
+    if !test_players {
+        stale[0] ^= 1;
+    }
     let error = tokio::time::timeout(
         Duration::from_secs(8),
         net::run_client_gameplay(
@@ -385,12 +422,22 @@ async fn run_authored(patrol: bool, with_guide: bool, from_world: bool) {
     .await
     .unwrap()
     .unwrap_err();
-    assert!(error.to_string().contains("world mismatch"), "{error}");
+    if test_players {
+        assert!(rejected_state.borrow().correction.is_none());
+    } else {
+        assert!(error.to_string().contains("world mismatch"), "{error}");
+    }
     cleanup.stop.send_replace(true);
     for peer in peers {
         peer.task.await.unwrap().unwrap();
     }
     let stats = server.await.unwrap().unwrap();
+    if test_players {
+        assert_eq!(stats.test_player_admissions, 2);
+        assert_eq!(stats.test_player_refusals, 1);
+        assert_eq!(stats.persistent_spawn_admissions, 0);
+        assert_eq!(stats.rejected_inputs, 0);
+    }
     if with_guide {
         assert_eq!(stats.dialogue_requests_accepted, 2);
         assert_eq!(stats.dialogue_requests_rejected, 0);
@@ -398,7 +445,7 @@ async fn run_authored(patrol: bool, with_guide: bool, from_world: bool) {
     println!(
         "{}",
         serde_json::json!({"passed":true,"clients":2,"patrol":patrol,"guide":with_guide,
-        "guide_requested_feet":guide_requested_feet,"authored_contact":from_world,"world":identity,"server":stats,
+        "guide_requested_feet":guide_requested_feet,"authored_contact":from_world,"test_player_spawns":test_players,"reverse_arrival":test_players,"world":identity,"server":stats,
         "scope":"Actual authored Synty collision, encrypted loopback admission and Classic driver; explicit headless readiness, no native-client/quest/persistence claim"})
     );
 }

@@ -13,6 +13,7 @@ pub mod player_life;
 pub mod progression;
 pub mod quest_journal;
 pub mod quest_lifecycle;
+pub mod test_players;
 mod tickets;
 use crate::{
     Result,
@@ -191,6 +192,8 @@ pub struct ServerStats {
     pub inventory_backpressure_disconnects: u64,
     pub checkpoint_publications: u64,
     pub persistent_spawn_admissions: u64,
+    pub test_player_admissions: u64,
+    pub test_player_refusals: u64,
     pub combat_states_sent: u64,
     pub melee_states_sent: u64,
     pub melee_requests_accepted: u64,
@@ -354,7 +357,7 @@ pub async fn run_server_with_chunks(
     world: World,
     requests: ChunkRequests,
 ) -> Result<ServerStats> {
-    run_server_inner(transport, shutdown, world, requests, None, None, None).await
+    run_server_inner(transport, shutdown, world, requests, None, None, None, None).await
 }
 
 /// Production owner loop with bounded trusted management; requests are not wire data.
@@ -364,7 +367,7 @@ pub async fn run_server_with_world_control(
     world: World,
     requests: WorldRequests,
 ) -> Result<ServerStats> {
-    run_server_inner(transport, shutdown, world, requests, None, None, None).await
+    run_server_inner(transport, shutdown, world, requests, None, None, None, None).await
 }
 
 type Demand = Option<Vec<theia_core::coordinates::ChunkId>>;
@@ -407,6 +410,7 @@ pub async fn run_server_streaming(
         Some(updates),
         None,
         None,
+        None,
     )
     .await;
     owner.abort();
@@ -433,7 +437,7 @@ pub async fn run_server_measured(
     world: World,
 ) -> Result<ServerStats> {
     let (_, requests) = chunk_control();
-    run_server_inner(transport, shutdown, world, requests, None, None, None).await
+    run_server_inner(transport, shutdown, world, requests, None, None, None, None).await
 }
 /// Opt-in local-issuer persistence bridge. The application owns DB work and
 /// stable identities; this authority only restores validated poses and emits
@@ -455,6 +459,7 @@ pub async fn run_server_with_checkpoints(
         requests,
         None,
         Some(bridge),
+        None,
         None,
     )
     .await?;
@@ -482,9 +487,35 @@ pub async fn run_server_with_admissions(
         None,
         None,
         Some(authority),
+        None,
     )
     .await
 }
+/// Trusted local editor-test admission. Client identity chooses a checked spawn;
+/// no accounts, database or client-supplied coordinates are involved.
+pub async fn run_server_with_test_players(
+    transport: NetcodeServerTransport,
+    shutdown: watch::Receiver<bool>,
+    world: World,
+    players: test_players::Prepared,
+) -> Result<ServerStats> {
+    players.validate(&world)?;
+    let (_, requests) = world_control();
+    let stats = run_server_inner(
+        transport,
+        shutdown,
+        world,
+        requests,
+        None,
+        None,
+        None,
+        Some(players),
+    )
+    .await?;
+    println!("transport_summary {}", serde_json::to_string(&stats)?);
+    Ok(stats)
+}
+
 fn admit_peer(
     world: &mut World,
     server: &mut RenetServer,
@@ -1186,6 +1217,7 @@ fn publish_combat_state(
     retire_peers(server, peers, world, &slow)?;
     Ok(())
 }
+#[allow(clippy::too_many_arguments)]
 async fn run_server_inner(
     mut transport: NetcodeServerTransport,
     mut shutdown: watch::Receiver<bool>,
@@ -1194,6 +1226,7 @@ async fn run_server_inner(
     demand: Option<watch::Sender<Demand>>,
     mut checkpoints: Option<CheckpointBridge>,
     authority: Option<std::sync::Arc<dyn AccountAdmissions>>,
+    test_players: Option<test_players::Prepared>,
 ) -> Result<ServerStats> {
     world.require_client_chunks()?;
     if world.local_chat_area().is_some() && authority.is_none() {
@@ -1319,6 +1352,7 @@ async fn run_server_inner(
                     let retained = authority.retained_positions()?;
                     world.poll_terrain_keeping(&retained.into_iter().flatten().collect::<Vec<_>>())?;
                 } else if let Some(bridge)=&checkpoints {world.poll_terrain_keeping(&bridge.pending())?;}
+                else if let Some(players)=&test_players {world.poll_terrain_keeping(&players.positions())?;}
                 else {world.poll_terrain();}
                 if let Some(error) = world.procedural().and_then(|t| t.error.as_ref()) { return Err(error.clone().into()); }
                 if let Some(terrain) = world.procedural() {
@@ -1356,13 +1390,23 @@ async fn run_server_inner(
                         continue;
                     }
                     if !spent.insert(client_id) {server.disconnect(client_id);continue;}
-                    let restored=checkpoints.as_ref().and_then(|b|b.position(client_id));
+                    let restored=if let Some(players)=&test_players {
+                        let Some(position)=players.position(client_id) else {
+                            stats.test_player_refusals+=1;
+                            server.disconnect(client_id);
+                            continue;
+                        };
+                        Some(position)
+                    } else {checkpoints.as_ref().and_then(|b|b.position(client_id))};
                     if let Some(peer) = admit_peer(&mut world, &mut server, client_id, restored, None, current)? {
                         if let Some(bridge)=&mut checkpoints {
                             bridge.admitted(client_id);
                             println!("persistent_admit {}",serde_json::json!({"client_id":client_id,"actor":peer.actor,"epoch":world.epoch(),"position":world.global_position(peer.actor).unwrap().metres()}));
                         }
-                        stats.persistent_spawn_admissions+=u64::from(restored.is_some());
+                        if test_players.is_some() {
+                            stats.test_player_admissions+=1;
+                            println!("test_player_admit {}",serde_json::json!({"client_id":client_id,"actor":peer.actor,"position":world.global_position(peer.actor).unwrap().metres()}));
+                        } else {stats.persistent_spawn_admissions+=u64::from(restored.is_some());}
                         peers.insert(client_id, peer);
                     }
                 }

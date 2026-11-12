@@ -372,6 +372,78 @@ mod tests {
         assert_ne!(identities[0], identities[1]);
     }
     #[test]
+    fn test_players_bind_checked_xyz_to_client_ids_and_refuse_stale_or_unsafe_plans() {
+        use crate::renet_runtime::test_players::{MAX_BYTES, Plan};
+        let (folder, _) = spawn_fixture([8192., 0., 8192.], true, false);
+        let store = Arc::new(Store::open(&folder.0).unwrap());
+        let mut world = crate::simulation::World::with_terrain_source(
+            [8192.; 2],
+            1.,
+            procedural::Source::Authored(store.clone()),
+        )
+        .unwrap();
+        let document = json!({"schema":1,"world_identity":store.identity(),"players":[
+            {"client_id":2,"feet":[8192.,4.6,8192.]},
+            {"client_id":1,"feet":[8190.,0.1,8192.]}
+        ]});
+        let bytes = serde_json::to_vec(&document).unwrap();
+        assert!(Plan::from_json(&bytes, &world).is_err());
+        world.enable_prediction().unwrap();
+        world.enable_classic().unwrap();
+        let original_identity = world.identity();
+        for client_id in [0, 3, u64::MAX] {
+            let mut invalid = document.clone();
+            // Every syntactic invalidity is refused before there can be admission.
+            invalid["players"][0]["client_id"] = json!(client_id);
+            assert!(Plan::from_json(&serde_json::to_vec(&invalid).unwrap(), &world).is_err());
+        }
+        for (field, value) in [
+            ("schema", json!(2)),
+            ("world_identity", json!(vec![0; 32])),
+            ("players", json!([])),
+            ("unknown", json!(true)),
+        ] {
+            let mut invalid = document.clone();
+            invalid[field] = value;
+            assert!(Plan::from_json(&serde_json::to_vec(&invalid).unwrap(), &world).is_err());
+        }
+        let mut duplicate = document.clone();
+        duplicate["players"][0]["client_id"] = json!(1);
+        assert!(Plan::from_json(&serde_json::to_vec(&duplicate).unwrap(), &world).is_err());
+        assert!(Plan::from_json(&vec![b' '; MAX_BYTES + 1], &world).is_err());
+        for feet in [
+            [8192., 100., 8192.],
+            [8192., 4., 8192.],
+            [8196., 0.1, 8192.],
+        ] {
+            let mut invalid = document.clone();
+            invalid["players"][0]["feet"] = json!(feet);
+            let plan = Plan::from_json(&serde_json::to_vec(&invalid).unwrap(), &world).unwrap();
+            assert!(plan.prepare(&world).is_err());
+            assert!(!world.has_players());
+            assert_eq!(world.identity(), original_identity);
+        }
+        let plan = Plan::from_json(&bytes, &world).unwrap();
+        let positions = plan.positions();
+        assert_eq!(positions[0].metres()[0], 8190.);
+        assert_eq!(positions[1].metres()[0], 8192.);
+        assert!((positions[1].metres()[1] - positions[0].metres()[1] - 4.5).abs() < 0.0001);
+        plan.prepare(&world).unwrap();
+        // Reverse arrival and an unrelated target do not define the client's spawn.
+        world.spawn_development_target([8188., 8192.]).unwrap();
+        for position in positions.into_iter().rev() {
+            let actor = world.join_restored(position).unwrap();
+            assert_eq!(world.global_position(actor), Some(position));
+        }
+        assert!(
+            Plan::from_json(&bytes, &world)
+                .unwrap()
+                .prepare(&world)
+                .is_err()
+        );
+    }
+
+    #[test]
     fn authored_spawn_keeps_ground_and_roof_layers_for_all_player_slots() {
         let (folder, _) = spawn_fixture([8192., 0., 8192.], true, false);
         let store = Arc::new(Store::open(&folder.0).unwrap());
