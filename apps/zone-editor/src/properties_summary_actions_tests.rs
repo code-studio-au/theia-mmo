@@ -676,3 +676,82 @@ fn quest_area_bounds_edit_inline_keep_selection_reject_inversion_and_undo() {
         });
     assert_eq!(app.world().resource::<Session>().editor.zone(), &zone);
 }
+
+#[test]
+fn quest_area_binding_fields_commit_validate_and_preserve_source_file_snapshot() {
+    let (mut app, _) = super::tests::fixture([0.; 3], 0);
+    let zone: Zone = serde_json::from_slice(include_bytes!(
+        "../../../content/zones/quest-areas.zone.json"
+    ))
+    .unwrap();
+    let id = zone.quest_areas[0].id;
+    let mut session = Session::new(
+        Editor::new(zone.clone()).unwrap(),
+        PathBuf::new(),
+        Some(zone.clone()),
+    );
+    session.quest_area_selected = Some(id);
+    app.insert_resource(session);
+    app.update();
+    app.update();
+    let fields: Vec<_> = app
+        .world_mut()
+        .query::<(Entity, &Input, &ComputedNode)>()
+        .iter(app.world())
+        .filter_map(|(e, input, node)| match input {
+            Input::AreaDefinition => {
+                assert!(node.size().min_element() > 0.);
+                Some((false, e))
+            }
+            Input::AreaObjectives => {
+                assert!(node.size().min_element() > 0.);
+                Some((true, e))
+            }
+            _ => None,
+        })
+        .collect();
+    assert_eq!(fields.len(), 2);
+    for (objectives, entity) in fields {
+        app.world_mut()
+            .resource_mut::<InputFocus>()
+            .set(entity, FocusCause::Navigated);
+        app.update();
+        let valid = if objectives {
+            " theia.quest.a.visit , theia.quest.b.visit "
+        } else {
+            "theia.area.custom"
+        };
+        type_value(&mut app, entity, valid);
+        key(&mut app, KeyCode::Enter, Key::Enter);
+        let session = app.world().resource::<Session>();
+        let accepted = session.editor.zone().clone();
+        if objectives {
+            assert_eq!(
+                accepted.quest_areas[0].map_objectives,
+                ["theia.quest.a.visit", "theia.quest.b.visit"]
+            );
+        } else {
+            assert_eq!(accepted.quest_areas[0].definition, valid);
+        }
+        assert_eq!(session.saved_zone.as_ref(), Some(&zone));
+        assert_eq!(session.quest_area_selected, Some(id));
+        let revision = session.editor.revision();
+        app.world_mut()
+            .resource_mut::<InputFocus>()
+            .set(entity, FocusCause::Navigated);
+        app.update();
+        let invalid = if objectives {
+            "theia.quest.a.visit, theia.quest.a.visit"
+        } else {
+            "Invalid/ID"
+        };
+        type_value(&mut app, entity, invalid);
+        key(&mut app, KeyCode::Enter, Key::Enter);
+        assert_eq!(app.world().resource::<Session>().editor.zone(), &accepted);
+        assert_eq!(
+            app.world().resource::<Session>().editor.revision(),
+            revision
+        );
+        key(&mut app, KeyCode::Escape, Key::Escape);
+    }
+}

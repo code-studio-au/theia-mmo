@@ -7,12 +7,27 @@ pub(crate) enum Input {
     Number(usize),
     Name,
     Effect,
+    AreaDefinition,
+    AreaObjectives,
 }
 impl Input {
-    fn value(self, session: &Session, id: Option<u64>, target: &Target) -> Option<String> {
+    pub(super) fn value(
+        self,
+        session: &Session,
+        id: Option<u64>,
+        target: &Target,
+    ) -> Option<String> {
         match self {
             Self::Number(index) => target.values().get(index).cloned(),
             Self::Name => session.editor.zone().authoring_name(id?).map(String::from),
+            Self::AreaDefinition | Self::AreaObjectives => match target {
+                Target::QuestArea(area) => Some(if matches!(self, Self::AreaDefinition) {
+                    area.definition.clone()
+                } else {
+                    area.map_objectives.join(", ")
+                }),
+                _ => None,
+            },
             Self::Effect => match target {
                 Target::Particle(particle) => Some(particle.effect.clone()),
                 _ => None,
@@ -69,6 +84,22 @@ fn commit(session: &mut Session, pending: &Pending, value: &str) -> Result<(), S
             id: pending.id.expect("Name fields require authored content"),
             name: value.into(),
         }),
+        Input::AreaDefinition | Input::AreaObjectives => match &pending.original {
+            Target::QuestArea(original) => {
+                let mut area = original.clone();
+                if matches!(pending.field, Input::AreaDefinition) {
+                    area.definition = value.trim().into();
+                } else {
+                    area.map_objectives = if value.trim().is_empty() {
+                        Vec::new()
+                    } else {
+                        value.split(',').map(|id| id.trim().to_string()).collect()
+                    };
+                }
+                (area != *original).then_some(Edit::PutQuestArea { area })
+            }
+            _ => return Err("Quest area is no longer available".into()),
+        },
         Input::Effect => match &pending.original {
             Target::Particle(original) if value != pending.original_text => {
                 let mut particle = original.clone();

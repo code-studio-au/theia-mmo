@@ -75,11 +75,7 @@ pub(super) fn description(session: &Session) -> Option<String> {
     }
     match target {
         Target::Particle(_) => subject.push_str("\nUnresolved asset reference"),
-        Target::QuestArea(area) => subject.push_str(&format!(
-            "\nDefinition: {}\n{} minimap objective links",
-            area.definition,
-            area.map_objectives.len()
-        )),
+        Target::QuestArea(_) => subject.push_str("\nQuest references checked on catalog export"),
         Target::Marker(marker) => subject.push_str(&format!(
             "\nDefinition: {}\nAuthoring annotation",
             marker.definition.as_deref().unwrap_or("unbound")
@@ -160,6 +156,7 @@ pub(super) fn spawn(parent: &mut ChildSpawnerCommands) {
                 ));
                 field(row, super::inline::Input::Effect, 1);
             });
+            super::area::spawn(root);
             for index in 0..7 {
                 if matches!(index, 0 | 3 | 4) {
                     root.spawn((
@@ -204,12 +201,12 @@ pub(super) fn spawn(parent: &mut ChildSpawnerCommands) {
                             ..default()
                         },
                     ));
-                    field(row, super::inline::Input::Number(index), index as i32 + 2);
+                    field(row, super::inline::Input::Number(index), index as i32 + 4);
                 });
             }
         });
 }
-fn field(parent: &mut ChildSpawnerCommands, input: super::inline::Input, order: i32) {
+pub(super) fn field(parent: &mut ChildSpawnerCommands, input: super::inline::Input, order: i32) {
     parent
         .spawn((
             Frame,
@@ -240,7 +237,10 @@ fn field(parent: &mut ChildSpawnerCommands, input: super::inline::Input, order: 
                 EditableText {
                     max_characters: Some(match input {
                         super::inline::Input::Name => 80,
-                        super::inline::Input::Effect => 96,
+                        super::inline::Input::Effect | super::inline::Input::AreaDefinition => 96,
+                        super::inline::Input::AreaObjectives => {
+                            theia_core::quests::areas::MAX_MAP_OBJECTIVES_PER_AREA * 98
+                        }
                         _ => 64,
                     }),
                     allow_newlines: false,
@@ -271,11 +271,14 @@ fn field(parent: &mut ChildSpawnerCommands, input: super::inline::Input, order: 
                 super::inline::Input::Effect => {
                     entity.insert(Effect);
                 }
+                super::inline::Input::AreaDefinition | super::inline::Input::AreaObjectives => {
+                    entity.insert(super::area::TextField);
+                }
             }
         });
 }
 pub(super) fn plugin(app: &mut App) {
-    app.add_plugins(super::inline::plugin)
+    app.add_plugins((super::inline::plugin, super::area::plugin))
         .add_zone_systems(sync.after(crate::present));
 }
 #[allow(clippy::type_complexity, clippy::too_many_arguments)]

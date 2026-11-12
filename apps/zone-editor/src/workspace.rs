@@ -204,11 +204,18 @@ pub(super) fn setup(
                 menus::spawn(
                     row,
                     "Add",
-                    &[(
-                        Control::Command(Action::AddParticle),
-                        "Particle reference at spawn",
-                        "",
-                    )],
+                    &[
+                        (
+                            Control::Command(Action::AddParticle),
+                            "Particle reference at spawn",
+                            "",
+                        ),
+                        (
+                            Control::Command(Action::AddQuestArea),
+                            "Quest area at spawn",
+                            "",
+                        ),
+                    ],
                 );
                 menus::spawn(
                     row,

@@ -1,3 +1,13 @@
+P5-17 / P3-15 quest-area creation and binding fields, 12 November 2026:
+Add → Quest area at spawn creates an undoable 8 m volume with a unique definition
+ID, including near the authoring boundary. Attributes now edits Area ID and
+comma-separated minimap objective IDs through the permanent text-field route.
+Invalid IDs/duplicate links preserve the document; names and bounds remain
+editable, and Save remains explicit. Headless edge-spawn, selection/history and
+real text-event tests pass; native UI acceptance and integrated publication remain
+pending. Objective IDs are format-checked on edit and resolved against the chosen
+quest catalog on export.
+
 P5-17 / P3-15 quest-area inspector, 12 November 2026: authored areas appear
 in the explorer and its type filter, with permanent exact-f64 minimum/maximum
 fields and the shared inline name editor. Selection survives edits; inverted

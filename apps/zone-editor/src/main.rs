@@ -28,6 +28,7 @@ mod placement;
 mod playtest;
 mod properties;
 mod property_tabs;
+mod quest_area_authoring;
 mod quest_area_export;
 mod scrolling;
 mod sections;
@@ -479,6 +480,7 @@ enum Action {
     Delete,
     Duplicate,
     AddParticle,
+    AddQuestArea,
     TerrainToggle,
     TerrainResolution,
     Brush(terrain::Tool),
@@ -927,6 +929,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
     }
     match action {
         Action::Duplicate => selection::duplicate(session),
+        Action::AddQuestArea => quest_area_authoring::add(session),
         Action::AddParticle => {
             let id = session.next_id;
             let Some(next) = id.checked_add(1) else {

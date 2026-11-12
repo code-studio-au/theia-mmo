@@ -1,5 +1,7 @@
 //! Numeric object, plant and marker transforms; standard text/focus widgets, existing commands.
 use super::*;
+#[path = "properties_area.rs"]
+mod area;
 #[path = "properties_fields.rs"]
 mod fields_ui;
 #[path = "properties_inline.rs"]

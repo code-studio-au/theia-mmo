@@ -4024,3 +4024,15 @@ area through shared undo/redo. Duplicate, Ground and placement gizmos are not
 available for area volumes. Definition IDs and minimap-link counts are currently
 read-only metadata. CPU layout and real Bevy edit-event checks run without an OS
 window, renderer or device input; native appearance remains unqualified.
+
+## Quest-area creation and binding — 12 November 2026
+
+**Add → Quest area at spawn** creates a selected 8 m volume containing the spawn,
+clamped inside the editor's finite authoring bounds. **Attributes → Quest binding**
+contains permanent Area ID and Map objectives fields. Enter or blur applies the
+change through shared validation/history; Save writes the source. Map objectives
+accepts comma-separated objective IDs (empty clears the links). Format errors and
+duplicate links are rejected immediately; catalog export checks reference
+existence. These minimap links are presentation links: the quest catalog's own
+reach-area objectives define authoritative area credit. No automatic quest
+rewriting occurs when an Area ID changes. Native interaction remains pending.
