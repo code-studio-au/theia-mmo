@@ -57,23 +57,81 @@ fn checked_population_uses_real_world_combat_and_fresh_respawn_ids_at_all_rates(
             seed: request.seed,
         });
     zone.validate().unwrap();
-    let file =
-        std::env::temp_dir().join(format!("theia-population-zone-{}.json", std::process::id()));
-    std::fs::write(&file, serde_json::to_vec(&zone).unwrap()).unwrap();
-    let loaded = theia_zone::Zone::load(&file);
-    std::fs::remove_file(&file).unwrap();
-    let zone = loaded.unwrap();
+    struct Scratch(PathBuf);
+    impl Drop for Scratch {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+    let scratch = Scratch(std::env::temp_dir().join(format!(
+        "theia-population-config-{}-{}", std::process::id(),
+        std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()
+    )));
+    std::fs::create_dir(&scratch.0).unwrap();
+    std::fs::write(
+        scratch.0.join("zone.json"),
+        serde_json::to_vec(&zone).unwrap(),
+    )
+    .unwrap();
+    std::fs::write(
+        scratch.0.join("creature.json"),
+        include_bytes!("../../../content/gameplay/development-creature-patrol.json"),
+    )
+    .unwrap();
+    std::fs::create_dir(scratch.0.join("navigation")).unwrap();
+    for file in std::fs::read_dir(&nav_path).unwrap() {
+        let file = file.unwrap();
+        if file.file_type().unwrap().is_file() {
+            std::fs::copy(
+                file.path(),
+                scratch.0.join("navigation").join(file.file_name()),
+            )
+            .unwrap();
+        }
+    }
+    let config = serde_json::json!({
+        "schema": 1, "zone": "zone.json", "group": group_id,
+        "creature": "creature.json", "navigation": "navigation",
+        "minimum_spacing_metres": request.minimum_spacing_metres,
+        "access_from": request.access_from,
+    });
+    let config_path = scratch.0.join("population.json");
+    std::fs::write(&config_path, serde_json::to_vec(&config).unwrap()).unwrap();
+    for (field, value) in [
+        ("schema", serde_json::json!(2)),
+        ("unknown", serde_json::json!(true)),
+        ("zone", serde_json::json!("../zone.json")),
+        ("group", serde_json::json!(u64::MAX)),
+        ("minimum_spacing_metres", serde_json::json!(0.)),
+        (
+            "creature",
+            serde_json::json!("navigation/navigation.manifest.json"),
+        ),
+    ] {
+        let mut invalid = config.clone();
+        invalid[field] = value;
+        std::fs::write(&config_path, serde_json::to_vec(&invalid).unwrap()).unwrap();
+        assert!(
+            theia_network::simulation::population::configuration::Loaded::open(
+                &config_path,
+                &procedural::Source::Authored(store.clone())
+            )
+            .is_err(),
+            "{field}"
+        );
+    }
+    std::fs::write(&config_path, serde_json::to_vec(&config).unwrap()).unwrap();
     for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
-        let (prepared, binding) = theia_network::simulation::population::authoring::prepare(
-            &zone,
-            group_id,
-            definition.clone(),
-            &store,
-            &navigation,
-            request.minimum_spacing_metres,
-            request.access_from,
+        let loaded = theia_network::simulation::population::configuration::Loaded::open(
+            &config_path,
+            &procedural::Source::Authored(store.clone()),
         )
         .unwrap();
+        assert_eq!(loaded.count(), 5);
+        assert_eq!(loaded.respawn_ms(), 30_000);
+        let loaded_identity =
+            loaded.profile_identity(theia_network::targeting::profile_identity(store.identity()));
+        let (prepared, binding) = loaded.into_parts();
         let feet = prepared.points().to_vec();
         let expected_identity =
             prepared.profile_identity(theia_network::targeting::profile_identity(store.identity()));
@@ -84,6 +142,7 @@ fn checked_population_uses_real_world_combat_and_fresh_respawn_ids_at_all_rates(
         world.enable_prediction().unwrap();
         world.enable_classic().unwrap();
         let expected_identity = binding.profile_identity(expected_identity);
+        assert_eq!(loaded_identity, expected_identity);
         let keys = world.enable_defined_population(prepared, binding).unwrap();
         assert!(
             keys.iter()

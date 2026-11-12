@@ -1,3 +1,18 @@
+P3-07 bounded population startup configuration, 13 November 2026:
+A shared schema-1 loader resolves a saved zone/group, passive creature definition
+and navigation directory beneath the configuration directory. Bound configuration
+to 4096 bytes and paths to 256 bytes; reject unknown fields, unsupported schemas,
+escaping paths, procedural worlds and unresolved group/behavior/model settings.
+Preparation completes before simulation/network admission. Loaded state provides
+matching population identity, count and respawn timing for server/client setup.
+The authored World test now loads all inputs through this actual file path and
+proves exact identities, five full-health kills and fresh-ID 30-second respawns at
+20/30/60 Hz. Malformed config/group/spacing/profile cases refuse; four ordinary
+adapter/loader tests pass. Fmt and strict workspace/all-target Clippy pass.
+Evidence: build/population-config-{tests,authority,clippy}.log. CLI consumption is
+the next slice; this loader alone does not claim launcher or editor Play integration.
+No mouse/display, native rendering or native Windows execution.
+
 P3-07 saved editor population admission adapter, 13 November 2026:
 A shared startup adapter now derives placement requests and passive lifecycle
 bindings directly from validated zone groups. The read-only spawns-zone CLI uses
