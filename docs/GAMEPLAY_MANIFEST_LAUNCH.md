@@ -1,3 +1,13 @@
+Authored gameplay bundle launch, 12 November 2026:
+Normal account play now accepts an immutable authored world plus its gameplay
+manifest and explicit source-matched navigation. The guide comes from the exported
+contact; positional overrides are refused. Real client configuration preflight
+checks route identity and navigation tile hashes before launching a session. The
+existing sealed bundle validation and shared client/server identities remain intact.
+Native Linux qualification covers the introduction quest, 25 XP, durable restart and
+rejoin, with a moving west-grove patrol. It does not yet qualify the valley's kill
+or area quests. [Launch command and exact scope](ZONE_EDITOR.md).
+
 Headless normal client/server identity comparison, 6 November 2026:
 The client's explicit `--configuration-report` returns before networking or
 window/renderer startup. The existing configuration qualifier now compares its

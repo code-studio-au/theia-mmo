@@ -444,9 +444,12 @@ def main(argv=None):
         bundle = None
         if args.gameplay_manifest:
             if args.authored_world:
-                parser.error('Authored gameplay bundles need navigation and quest-runtime qualification; use walking/dialogue mode for now')
+                if args.navigation is None:
+                    parser.error('Authored gameplay bundles require explicit matching --navigation')
+                if args.guide_position not in (None, 'authored'):
+                    parser.error('Authored gameplay bundles use their bound contact; omit --guide-position or use authored')
             if any([args.world, args.chunk_world, args.graybox_world, args.prediction is False, args.transport != 'renet', args.persistence, args.dev_tour, args.dev_speed != 1, args.clients != 1]):
-                parser.error('--gameplay-manifest requires one normal predicted saved-terrain Renet client')
+                parser.error('--gameplay-manifest requires one normal predicted saved/authored-terrain Renet client')
             if any([args.items, args.abilities, args.character_stats, args.statuses, args.creature_profile, args.dialogue_catalog, args.vendor_catalog, args.quest_turn_in_xp, args.creature_retaliation, args.player_respawn, args.dodge_profile, args.melee_weapons, args.physical_definitions, args.physical_stats, args.white_melee, args.ability_starting, args.ability_damage, args.combat_membership, args.creature_credit, args.creature_reset, args.creature_threat, args.quest_areas, args.document_catalog, args.quest_item_rewards]):
                 parser.error('--gameplay-manifest cannot be mixed with individual gameplay profile overrides')
             from gameplay_bundle import snapshot
@@ -502,7 +505,7 @@ def main(argv=None):
         if (args.dialogue_catalog or args.guide_position) and not args.dialogue:
             parser.error('--dialogue-catalog/--guide-position require --dialogue')
         dialogue_catalog=(args.dialogue_catalog or Path('content/quests/development-journal-dialogue.json' if args.quest_journal else 'content/gameplay/development-dialogue.json')).resolve() if args.dialogue else None
-        guide_position=(args.guide_position or '8004,8000') if args.dialogue else None
+        guide_position=(args.guide_position or ('authored' if bundle and args.authored_world else '8004,8000')) if args.dialogue else None
         args.progression = args.progression or args.quests
         quest_catalog = Path('content/quests/development-journal.json' if args.quest_journal else 'content/gameplay/development-quest.json').resolve() if args.quests else None
         args.equipment = args.equipment or args.rewards or args.vendors

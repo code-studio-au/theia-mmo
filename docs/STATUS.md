@@ -1,3 +1,27 @@
+P5-17 / P3-01 / P3-09 authored gameplay bundle and introduction quest, 12 November 2026:
+The normal launcher now accepts an authored gameplay manifest with explicit matching
+navigation and the world's bound guide. Configuration preflight checks the real
+client before login/server launch; arbitrary guide-position overrides are refused.
+The candidate copies the existing development gameplay profiles, changing only the
+creature route to the baked west-grove patrol and the manifest identity. This is a
+bounded development fixture, not a new multi-NPC content catalogue.
+Actual private OIDC/PostgreSQL/native Vulkan qualification completes the guide's
+introduction, its dialogue objectives and turn-in for 25 XP. After database restart,
+rejoin preserves journal revision 5, one completed quest and 25 XP; the completed
+quest is no longer offered. The authoritative patrol moves with zero blocked steps.
+Owned processes/tickets close, checkpoints commit and GPU diagnostics remain zero
+on Linux RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6. No Windows qualification.
+All 71 authored/account/gameplay-bundle Python tests, fmt, strict workspace/all-target
+Clippy and diff checks pass. Evidence: build/authored-gameplay-{python,clippy}.log,
+build/authored-quest-intro-native-v2/qualification.json and fresh/resumed captures.
+Reproduce with tools/qualify_authored_quest_intro.py. An earlier native attempt
+completed/restored the quest but clicked before resumed input/scene readiness;
+the qualifier now waits for readiness, focus and cursor position before interaction.
+Qualified bundle: build/authored-quest-intro-native-v2/gameplay/gameplay.manifest.json,
+paired with starter-valley-contact-world-v3 and starter-valley-contact-navigation-v3.
+Next: actual wolf-kill and overlook quest completion, then broader editor NPC/quest
+support. This does not qualify all valley quests, multiple contacts or wolf art.
+
 P5-17 / P3-07 / P4-03 authored patrol configuration checks, 12 November 2026:
 Client configuration now verifies navigation tile hashes and resolves the creature
 profile's route against the selected manifest. Share that route lookup with server

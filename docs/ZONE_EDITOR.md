@@ -1,3 +1,23 @@
+P5-17 authored account quest playtest, 12 November 2026:
+The normal launcher now supports the complete authored gameplay bundle, explicit
+matching navigation and the exported guide contact. The earlier dated restrictions
+below are historical. The first introduction quest, 25 XP reward, durable database
+restart and rejoin are qualified; wolf-kill/overlook completion and multiple contacts
+remain next. The editor's Network Playtest still tests movement independently.
+With the existing local account/identity/database services configured:
+
+```sh
+python3 tools/play.py --account-login --classic \
+  --authored-world build/starter-valley-contact-world-v3 \
+  --navigation build/starter-valley-contact-navigation-v3 \
+  --gameplay-manifest build/authored-quest-intro-native-v2/gameplay/gameplay.manifest.json \
+  --players build/classic-directional-client-qualified-v1-20261103/art/player
+```
+
+Use this exact matching export/navigation pair. The newer network-test snapshot has
+a different source identity. No zone source is changed by this launch; the original
+village file is preserved. See STATUS.md for qualification scope and devices.
+
 P5-17 authored creature preflight, 12 November 2026:
 The normal launcher checks authored creature sessions with the actual client's
 --configuration-report before starting the server/login. Navigation must bind the

@@ -23,7 +23,7 @@ SECOND = 'theia.dev.quest-follow-up'
 WOLVES = SECOND + '.objective.wolves'
 
 
-def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False, minimap=False, reach_areas=False, corpse_loot=False, item_quest=False, quest_only=False):
+def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False, minimap=False, reach_areas=False, corpse_loot=False, item_quest=False, quest_only=False, intro_only=False):
     scale = state()['window'][2]
     base_head = 13 if repeat_interaction else 11
     expected_head = base_head + (3 if reach_areas else 0)
@@ -144,6 +144,14 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
         raise AssertionError('Normal movement did not reach the contact')
 
     wait(lambda: journal() and journal()['tracker'] and journal()['tracker']['glyphs'] > 0)
+    if resumed and intro_only:
+        assert quest(FIRST)['status'] == 'Completed' and quest(SECOND) is None
+        assert journal()['xp'] == 25 and journal()['ui']['submitted'] == 0
+        capture('intro-restored.png')
+        speak()
+        assert not any(button.get('quest') == FIRST for button in journal()['buttons'])
+        capture('intro-resumed.png')
+        return dict(passed=True, resumed=True, revision=journal()['revision'], xp=journal()['xp'])
     if resumed:
         assert all(quest(q)['status'] == 'Completed' for q in [FIRST, SECOND])
         assert journal()['revision'] == expected_head and journal()['xp'] == expected_xp
@@ -178,6 +186,9 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
     capture('quest-ready.png')
     action(FIRST, 'Completed')
     wait(lambda: journal()['xp'] == 25)
+    if intro_only:
+        capture('intro-completed.png')
+        return dict(passed=True, resumed=False, revision=journal()['revision'], xp=journal()['xp'])
     action(SECOND, 'Active')
     capture('follow-up-accepted.png')
     if item_quest:

@@ -25,12 +25,19 @@ class AuthoredPlay(unittest.TestCase):
         self.assertTrue(observed['classic'])
         self.assertIsNone(observed['dev_spawn'])
 
-    def test_mixed_world_and_unqualified_bundle_refuse_before_launch(self):
+    def test_mixed_world_and_bundle_without_navigation_refuse_before_launch(self):
         with patch.object(play, 'play') as launch, contextlib.redirect_stderr(io.StringIO()):
             for extra in (['--saved-terrain', 'saved'], ['--world', 'legacy'],
                           ['--gameplay-manifest', 'bundle.json']):
                 with self.subTest(extra=extra), self.assertRaises(SystemExit):
                     play.main(['--authored-world', 'authored', *extra])
+            launch.assert_not_called()
+
+    def test_authored_bundle_cannot_override_its_bound_contact(self):
+        with patch.object(play, 'play') as launch, contextlib.redirect_stderr(io.StringIO()):
+            with self.assertRaises(SystemExit):
+                play.main(['--authored-world', 'authored', '--gameplay-manifest', 'bundle.json',
+                           '--navigation', 'nav', '--guide-position', '8004,8000'])
             launch.assert_not_called()
 
     def test_unsupported_travel_or_missing_package_never_starts_children(self):

@@ -1,3 +1,10 @@
+P5-17 / P3-01 / P3-09, 12 November 2026: authored account play now uses the
+existing sealed gameplay bundle with explicit source-matched navigation and its
+bound guide. Normal authoritative dialogue/quest/XP/persistence paths complete the
+valley introduction and restore it after database restart. No new protocol, quest
+engine, reward formula or offline authority is introduced. Multiple contacts and
+valley kill/area completion remain separate; see ../STATUS.md for native evidence.
+
 P5-17 / P1-06 test-player direction, 12 November 2026: editor test pawns
 configure enabled independent clients, checked authoritative spawns, optional
 bounded normal-input controllers and per-connection network impairment. Retain
