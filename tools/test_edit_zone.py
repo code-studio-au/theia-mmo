@@ -4,10 +4,25 @@ import tempfile
 import sys
 import unittest
 
-from edit_zone import build_environment, editor_arguments, example_arguments, scenery_arguments
+from edit_zone import build_environment, editor_arguments, example_arguments, scenery_arguments, player_arguments
 
 
 class EditorLaunchTests(unittest.TestCase):
+    def test_optional_player_art_preserves_explicit_choice_and_capsule_mode(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            arguments = ['--zone', 'village.json']
+            self.assertEqual(player_arguments(arguments, root), arguments)
+            model = root / 'build/classic-directional-client-qualified-v1-20261103/art/player/character.glb'
+            model.parent.mkdir(parents=True)
+            model.write_bytes(b'local player art')
+            self.assertEqual(player_arguments(arguments, root), [*arguments, '--player-assets', str(model.parent)])
+            self.assertEqual(player_arguments(arguments, root, enabled=False), arguments)
+            explicit = [*arguments, '--player-assets', 'my-character']
+            self.assertEqual(player_arguments(explicit, root), explicit)
+            self.assertEqual(arguments, ['--zone', 'village.json'])
+            self.assertEqual(model.read_bytes(), b'local player art')
+
     def test_local_scenery_is_optional_and_explicit_catalogs_win(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

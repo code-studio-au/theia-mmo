@@ -37,6 +37,8 @@ pub(super) struct Requests {
 }
 #[derive(Component, Clone, Copy, Debug)]
 pub(super) enum Control {
+    PlayerModel,
+    PlayerAnimation(playtest_avatar::Preview),
     New,
     AddScenery(usize),
     Exit,
@@ -96,6 +98,13 @@ pub(super) fn busy(session: &Session) -> bool {
         || session.drag.is_some()
         || session.stroke.is_some()
         || session.path_draft.is_some()
+}
+pub(super) fn player_menu_available(session: &Session) -> bool {
+    !session.ui.input_owned
+        && !session.has_modal()
+        && session.drag.is_none()
+        && session.stroke.is_none()
+        && session.path_draft.is_none()
 }
 pub(super) fn new_document(
     session: &mut Session,
@@ -270,6 +279,53 @@ pub(super) fn setup(
                         (Control::Command(Action::Spawn), "Spawn at view centre", ""),
                         (Control::SpawnTransform, "Edit spawn…", ""),
                         (Control::Command(Action::Delete), "Delete selected", "Del"),
+                    ],
+                );
+                menus::spawn(
+                    row,
+                    "Player",
+                    &[
+                        (Control::PlayerModel, "Synty model", ""),
+                        (
+                            Control::PlayerAnimation(playtest_avatar::Preview::Auto),
+                            "Automatic movement",
+                            "",
+                        ),
+                        (
+                            Control::PlayerAnimation(playtest_avatar::Preview::Idle),
+                            "Preview idle",
+                            "",
+                        ),
+                        (
+                            Control::PlayerAnimation(playtest_avatar::Preview::Walk),
+                            "Preview walk",
+                            "",
+                        ),
+                        (
+                            Control::PlayerAnimation(playtest_avatar::Preview::Run),
+                            "Preview run",
+                            "",
+                        ),
+                        (
+                            Control::PlayerAnimation(playtest_avatar::Preview::SwordIdle),
+                            "Preview sword stance",
+                            "",
+                        ),
+                        (
+                            Control::PlayerAnimation(playtest_avatar::Preview::SwordAttack),
+                            "Preview sword swing",
+                            "",
+                        ),
+                        (
+                            Control::PlayerAnimation(playtest_avatar::Preview::SpellCast),
+                            "Preview spell cast",
+                            "",
+                        ),
+                        (
+                            Control::PlayerAnimation(playtest_avatar::Preview::Death),
+                            "Preview death",
+                            "",
+                        ),
                     ],
                 );
                 row.spawn(Node {
@@ -514,7 +570,23 @@ pub(super) fn setup(
         });
 }
 impl Control {
+    pub(super) fn player_control(self) -> bool {
+        matches!(self, Self::PlayerModel | Self::PlayerAnimation(_))
+    }
     pub(super) fn enabled(self, session: &Session) -> bool {
+        if self.player_control() {
+            return player_menu_available(session)
+                && !session.player_clips.is_empty()
+                && match self {
+                    Self::PlayerAnimation(preview) => {
+                        session.player_model
+                            && preview
+                                .clip()
+                                .is_none_or(|name| session.player_clips.iter().any(|c| c == name))
+                    }
+                    _ => true,
+                };
+        }
         if matches!(self, Self::Command(Action::Play)) && session.play.is_some() {
             return !session.has_modal();
         }
@@ -729,6 +801,7 @@ pub(super) fn execute(
     }
     if busy(session)
         && !(session.play.is_some() && matches!(control, Control::Command(Action::Play)))
+        && !control.player_control()
     {
         session.status =
             "Finish or cancel the preview / leave playtest before using workspace controls".into();
@@ -738,6 +811,22 @@ pub(super) fn execute(
         return;
     }
     match control {
+        Control::PlayerModel => {
+            session.player_model = !session.player_model;
+            session.status = if session.player_model {
+                "Synty player enabled for F5 playtest"
+            } else {
+                "Capsule player enabled for F5 playtest"
+            }
+            .into();
+        }
+        Control::PlayerAnimation(preview) => {
+            session.player_animation = preview;
+            session.status = preview.clip().map_or_else(
+                || "Automatic player movement animation".into(),
+                |name| format!("{name} preview in F5 playtest — no gameplay action"),
+            );
+        }
         Control::New => new_document(session, view, content),
         Control::AddScenery(index) => requests.add_scenery = Some(index),
         Control::Exit => requests.exit = true,
@@ -960,6 +1049,8 @@ pub(super) fn sync(
             }
         }
         let active = match *control {
+            Control::PlayerModel => session.player_model && !session.player_clips.is_empty(),
+            Control::PlayerAnimation(preview) => session.player_animation == preview,
             Control::Mode(m) => m == mode(&session),
             Control::Snap => session.snap,
             Control::Handles => session.show_move_handles,

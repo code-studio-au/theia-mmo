@@ -104,8 +104,9 @@ pub(super) fn spawn(
             let Ok((mut node, mut state)) = popups.get_mut(popup) else {
                 return;
             };
-            let allowed =
-                !workspace::busy(&session) && windows.single().is_ok_and(|window| window.focused);
+            let allowed = (!workspace::busy(&session)
+                || (title == "Player" && workspace::player_menu_available(&session)))
+                && windows.single().is_ok_and(|window| window.focused);
             match event.action {
                 MenuAction::Open(direction) if allowed => {
                     node.display = Display::Flex;
@@ -219,6 +220,77 @@ fn activate(
 mod tests {
     use super::*;
     use workspace::Control;
+    #[test]
+    fn player_menu_works_during_playtest_without_editing_the_zone() {
+        use bevy::ecs::system::RunSystemOnce;
+        use playtest_avatar::Preview;
+        fn setup_player(mut commands: Commands) {
+            commands.spawn(Node::default()).with_children(|root| {
+                spawn(
+                    root,
+                    "Player",
+                    &[
+                        (Control::PlayerAnimation(Preview::SwordAttack), "Sword", ""),
+                        (Control::PlayerAnimation(Preview::SpellCast), "Spell", ""),
+                    ],
+                );
+            });
+        }
+        let (mut app, _) = super::context::tests::fixture([0.; 3]);
+        let zone = app.world().resource::<Session>().editor.zone().clone();
+        let play = playtest::Playtest::new(&zone).unwrap();
+        let feet = play.feet;
+        let revision = app.world().resource::<Session>().editor.revision();
+        {
+            let mut session = app.world_mut().resource_mut::<Session>();
+            session.play = Some(play);
+            session.player_clips = vec!["Idle".into(), "SwordAttack".into()];
+        }
+        app.world_mut().run_system_once(setup_player).unwrap();
+        app.update();
+        let trigger = app
+            .world_mut()
+            .query::<(Entity, &Trigger)>()
+            .iter(app.world())
+            .find_map(|(entity, trigger)| (trigger.0 == "Player").then_some(entity))
+            .unwrap();
+        app.world_mut().trigger(MenuEvent {
+            source: trigger,
+            action: MenuAction::Open(NavAction::First),
+        });
+        app.update();
+        let popup = app
+            .world_mut()
+            .query::<(Entity, &Popup)>()
+            .iter(app.world())
+            .find_map(|(entity, popup)| (popup.0 == "Player").then_some(entity))
+            .unwrap();
+        assert_eq!(
+            app.world().get::<Node>(popup).unwrap().display,
+            Display::Flex
+        );
+        for preview in [Preview::SwordAttack, Preview::SpellCast] {
+            let item = app
+                .world_mut()
+                .query::<(Entity, &Control)>()
+                .iter(app.world())
+                .find_map(|(entity, control)| {
+                    matches!(control, Control::PlayerAnimation(p) if *p == preview)
+                        .then_some(entity)
+                })
+                .unwrap();
+            app.world_mut().trigger(Activate { entity: item });
+            app.update();
+            assert_eq!(
+                app.world().resource::<Session>().player_animation,
+                Preview::SwordAttack
+            );
+        }
+        let session = app.world().resource::<Session>();
+        assert_eq!(session.editor.zone(), &zone);
+        assert_eq!(session.editor.revision(), revision);
+        assert_eq!(session.play.as_ref().unwrap().feet, feet);
+    }
     fn setup(mut commands: Commands) {
         commands.spawn(Node::default()).with_children(|root| {
             spawn(

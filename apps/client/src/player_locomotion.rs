@@ -1,4 +1,6 @@
 //! Optional authored direction clips. Presentation never turns or moves an actor.
+#[path = "../../common/locomotion_direction.rs"]
+mod shared_direction;
 use crate::movement::Gait;
 use bevy::prelude::*;
 use theia_core::coordinates::GlobalPosition;
@@ -123,37 +125,24 @@ pub(super) fn choose(
     // Difference in checked globals first; f32 sees only a bounded unit vector.
     let local = rotation.inverse() * Vec3::new((x / length) as f32, 0., (z / length) as f32);
     let angle = local.x.atan2(-local.z);
-    let old = previous.and_then(direction);
-    let keep = old.filter(|d| {
-        let centre = *d as u8 as f32 * std::f32::consts::FRAC_PI_4;
-        let error = (angle - centre + std::f32::consts::PI).rem_euclid(std::f32::consts::TAU)
-            - std::f32::consts::PI;
-        error.abs() <= 28.5_f32.to_radians() // 22.5° sector plus 6° hysteresis.
-    });
-    let selected = keep.unwrap_or_else(|| {
-        [
-            Direction::Forward,
-            Direction::ForwardRight,
-            Direction::Right,
-            Direction::BackRight,
-            Direction::Back,
-            Direction::BackLeft,
-            Direction::Left,
-            Direction::ForwardLeft,
-        ][((angle / std::f32::consts::FRAC_PI_4).round() as i32).rem_euclid(8) as usize]
-    });
+    let old = previous.and_then(direction).map(|d| d as u8);
+    let selected = [
+        Direction::Forward,
+        Direction::ForwardRight,
+        Direction::Right,
+        Direction::BackRight,
+        Direction::Back,
+        Direction::BackLeft,
+        Direction::Left,
+        Direction::ForwardLeft,
+    ][usize::from(shared_direction::sector(angle, old))];
     DIRECTIONS
         .iter()
         .position(|d| *d == selected)
         .map_or(base, |i| FIRST + i + if gait == Gait::Run { 7 } else { 0 })
 }
 pub(super) fn phase(time: f32, old_duration: f32, new_duration: f32) -> Option<f32> {
-    (time.is_finite()
-        && old_duration.is_finite()
-        && new_duration.is_finite()
-        && old_duration > 0.
-        && new_duration > 0.)
-        .then(|| time.rem_euclid(old_duration) / old_duration * new_duration)
+    shared_direction::phase(time, old_duration, new_duration)
 }
 
 #[derive(Resource, Default, serde::Serialize)]

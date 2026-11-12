@@ -7,6 +7,7 @@ import subprocess
 import sys
 
 from launch_environment import client_environment
+from player_assets import default_player_assets
 
 ROOT = Path(__file__).resolve().parents[1]
 AUTHORING_FLAGS = {'--zone', '--commands', '--output', '--save-path', '--export'}
@@ -51,11 +52,21 @@ def build_environment(source, root=ROOT):
     return result
 
 
+def player_arguments(arguments, root=ROOT, enabled=True):
+    if not enabled or any(arg.split('=', 1)[0] == '--player-assets' for arg in arguments):
+        return list(arguments)
+    directory = default_player_assets(root)
+    if (directory / 'character.glb').is_file():
+        return [*arguments, '--player-assets', str(directory)]
+    return list(arguments)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, epilog='Other arguments pass directly to the editor; explicit authoring flags bypass automatic draft selection.')
     parser.add_argument('--draft', type=Path, help='draft to reopen or save later (default: build/zone-draft.json, or build/wayfarer-hollow.zone.json with --example)')
     parser.add_argument('--example', action='store_true', help='start or reopen an editable Wayfarer Hollow example draft')
     parser.add_argument('--no-scenery-library', action='store_true', help='do not automatically load the locally staged starter scenery catalog')
+    parser.add_argument('--no-player-assets', action='store_true', help='use the capsule instead of automatically loading local Synty player art')
     parser.add_argument('--no-build', action='store_true', help='use the existing debug editor binary')
     parser.add_argument('--build-only', action='store_true', help='build the editor and exit')
     options, forwarded = parser.parse_known_args()
@@ -77,6 +88,7 @@ def main():
         return 0
     arguments = example_arguments(forwarded, draft) if options.example else editor_arguments(forwarded, draft)
     arguments = scenery_arguments(arguments, enabled=not options.no_scenery_library)
+    arguments = player_arguments(arguments, enabled=not options.no_player_assets)
     if '--check-playtest' not in forwarded and not any(arg.split('=', 1)[0] in AUTHORING_FLAGS for arg in forwarded):
         draft.parent.mkdir(parents=True, exist_ok=True)
     # Preserve caller-relative explicit paths. On Linux, exec preserves the owned PID

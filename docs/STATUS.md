@@ -1,3 +1,27 @@
+P5-17 / P2-09 / P3-08 Synty player in editor F5, 12 November 2026:
+The editor launcher now selects the locally qualified 22-clip Synty base mannequin.
+Player menu switches model/capsule and automatic locomotion or explicit idle,
+walk/run, sword stance/swing and death previews. Optional SpellCast stays disabled
+because the local art has no casting clip. The game and editor share eight-way
+direction hysteresis and normalized phase preservation; no controller or gameplay
+authority change. Art loading uses standard Bevy glTF, skinning and animation.
+All 197 ordinary editor tests / five opt-in skips, 241 client tests / two skips,
+10 launcher/selection checks, formatting and strict workspace/all-target Clippy
+pass. Editor/client/server builds pass. A new real RX 7900 XTX / RADV NAVI31 /
+Mesa 26.2.6 Vulkan offscreen check passes: 22 clips, 52 joints, changing sword pose,
+directional run, model/capsule toggle, F5 exit and exact unchanged document/feet.
+The captured base mannequin image was inspected. No OS window/input was used;
+native desktop interaction and Windows are not newly qualified. Asset-watcher/
+unavailable-clipboard warnings occur in the windowless harness; no GPU errors.
+Initial test compilation missed one fixture velocity field and first Clippy
+flagged the pixel iterator; corrected before acceptance. Evidence:
+build/editor-player-{build,editor-tests,client-tests,gpu,clippy-v2,launch-tests}.log,
+build/editor-synty-player-sword.png. Instructions: docs/ZONE_EDITOR.md.
+This does not equip a weapon or add combat to F5. Properly sourced/authored spell
+animation, multi-NPC quest/patrol authoring and connected authored account gameplay
+remain follow-ups. Continue with full XYZ respawn/contact support for layered
+village geometry before enabling the broader connected gameplay bundle.
+
 P3-07 / P3-15 / P2-09 connected valley patrol, 12 November 2026:
 The normal launcher accepts authored-world navigation and creature combat while
 retaining the account/bundle gates. content/gameplay/starter-valley-wolf-patrol.json

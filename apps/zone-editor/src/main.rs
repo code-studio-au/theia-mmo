@@ -31,6 +31,7 @@ mod placement;
 #[path = "../../common/orbit.rs"]
 pub mod play_orbit;
 mod playtest;
+mod playtest_avatar;
 mod playtest_controls;
 mod properties;
 mod property_tabs;
@@ -121,6 +122,9 @@ struct Session {
     next_id: u64,
     drag: Option<Drag>,
     play: Option<playtest::Playtest>,
+    player_model: bool,
+    player_animation: playtest_avatar::Preview,
+    player_clips: Vec<String>,
     heading: f32,
     terrain_mode: bool,
     terrain_paint: bool,
@@ -199,6 +203,9 @@ impl Session {
             next_id,
             drag: None,
             play: None,
+            player_model: true,
+            player_animation: playtest_avatar::Preview::Auto,
+            player_clips: vec![],
             heading: 0.,
             terrain_mode: false,
             terrain_paint: false,
@@ -638,6 +645,9 @@ fn run() -> Result<(), String> {
     let path = options.editor_path();
     let saved_zone = Zone::load(&path).ok();
     let mut app = App::new();
+    if let Some(directory) = &options.player_assets {
+        playtest_avatar::install(&mut app, directory)?;
+    }
     scenery_library.register(&mut app);
     app.insert_resource(scenery_library);
     let mut session = Session::new(editor, path, saved_zone);

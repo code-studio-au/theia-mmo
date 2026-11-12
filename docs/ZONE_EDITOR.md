@@ -1,3 +1,32 @@
+# Synty player in editor playtest — 12 November 2026
+
+The launcher automatically uses the local qualified Synty base character when
+available. Open the village, then press **F5**:
+
+```sh
+python3 tools/edit_zone.py --no-build --zone build/starter-valley-village-v2.zone.json
+```
+
+The **Player** menu switches between the character and capsule, automatic movement
+and individual animation previews. Walking, running in eight directions and
+jumping follow the existing Classic movement solver; sword stance/swing and death
+can be previewed without changing the zone or issuing a gameplay action. Select
+**Automatic movement** to return to movement-driven animation. Loading failure
+retains the capsule. No animation preview saves the zone or changes collision.
+
+Use `--player-assets DIRECTORY` to select a local directory containing
+`character.glb`, or launcher option `--no-player-assets` for the capsule alone.
+The prepared 22-clip character includes sword animations but **no SpellCast clip**;
+that menu entry remains disabled. Loading art does not equip a sword or grant
+abilities. Gameplay combat remains in the connected game client; editor F5 is
+the offline movement/animation sandbox. Proprietary art stays outside Git.
+
+P5-17 / P2-09 / P3-08 prerequisites: the qualified directional Synty conversion,
+standard Bevy glTF/animation and shared Classic editor controls. Acceptance covers
+menu activation during F5, availability gates, unchanged document/feet, directional
+selection, animated skin rendering, capsule fallback and leaving playtest. Native
+desktop interaction and Windows qualification remain separate from offscreen tests.
+
 # Expanded terrain and model controls — 12 November 2026
 
 Imported scenery uses the existing XYZ move arrows, XZ body drag, yaw ring and

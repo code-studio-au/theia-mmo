@@ -12,6 +12,7 @@ pub(super) struct Playtest {
     scene: StaticScene,
     pub feet: LocalPosition,
     motion: Motion,
+    pub(super) velocity: Vec3,
     spawn: LocalPosition,
     pub(super) camera: play_orbit::Orbit,
     pub(super) controls: classic_controls::Controller,
@@ -73,6 +74,9 @@ fn collision_with_library(
     Ok(StaticScene::new(colliders))
 }
 impl Playtest {
+    pub(super) fn airborne(&self) -> bool {
+        !self.motion.snapshot().grounded
+    }
     pub(super) fn camera_fraction(&self, target: Vec3, eye: Vec3) -> f32 {
         self.scene
             .camera_fraction(target.to_array(), eye.to_array())
@@ -90,6 +94,7 @@ impl Playtest {
             feet: spawn,
             spawn,
             motion: Motion::default(),
+            velocity: Vec3::ZERO,
             camera: play_orbit::Orbit::default(),
             controls: classic_controls::Controller::parse(include_bytes!(
                 "../../../content/input/classic-controls.json"
@@ -105,6 +110,9 @@ impl Playtest {
 }
 pub(super) fn step(windows: Query<&Window>, mut session: ResMut<Session>) {
     if !windows.single().is_ok_and(|w| w.focused) {
+        if let Some(play) = session.play.as_mut() {
+            play.velocity = Vec3::ZERO;
+        }
         return;
     }
     if session.play.is_none() {
@@ -127,6 +135,7 @@ pub(super) fn step(windows: Query<&Window>, mut session: ResMut<Session>) {
     };
     // Preserve a render-frame jump edge until one fixed tick consumes it.
     play.input.jump = false;
+    let previous = Vec3::from_array(play.feet.metres());
     match kinematic::advance_classic(
         &play.scene,
         &mut play.motion,
@@ -136,11 +145,13 @@ pub(super) fn step(windows: Query<&Window>, mut session: ResMut<Session>) {
         None,
     ) {
         Ok(feet) if feet.metres().iter().all(|v| v.abs() < 500.) && feet.metres()[1] > -100. => {
-            play.feet = feet
+            play.feet = feet;
+            play.velocity = (Vec3::from_array(feet.metres()) - previous) * 30.;
         }
         _ => {
             play.feet = play.spawn;
             play.motion = Motion::default();
+            play.velocity = Vec3::ZERO;
         }
     }
 }
@@ -624,6 +635,7 @@ mod scenery_tests {
                 theia_network::terrain::Terrain::load(&output.join("terrain.json")).unwrap();
             terrain.verify_visual(&output.join("terrain.glb")).unwrap();
             let mut exported = Playtest {
+                velocity: Vec3::ZERO,
                 scene: terrain.physics,
                 feet: play.feet,
                 motion: Motion::default(),
