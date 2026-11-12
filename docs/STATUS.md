@@ -1,3 +1,12 @@
+P5-17 / P3-15 / P3-11 quest-area catalog export, 12 November 2026:
+`--export-quest-areas NEW_FILE --quests QUEST_CATALOG --content-id ID --revision N`
+exports authored schema-9 volumes through the existing area and quest-reference
+validators. Complete bytes are published without replacing an existing file;
+source catalogs are preserved. Four actual headless editor cases pass, including
+unknown objective rejection and incompatible CLI modes
+(`build/zone-quest-areas-headless-20261112/verification.json`). This produces a
+standalone catalog; server bundle activation and visual area controls remain open.
+
 P5-17 / P3-15 / P3-11 quest-area authoring foundation, 12 November 2026:
 zone schema 9 adds explicit bounded global area volumes, stable definition IDs
 and minimap objective links. Shared commands provide transactional put/delete,

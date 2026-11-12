@@ -1,0 +1,15 @@
+{
+  "schema": 9,
+  "name": "Quest area authoring fixture",
+  "origin": [8000, 0, 8000],
+  "spawn": [8000, 0.1, 8000],
+  "objects": [],
+  "quest_areas": [{
+    "id": 1,
+    "definition": "theia.dev.area.western-overlook",
+    "name": "Western overlook",
+    "min": [7856, -64, 7984],
+    "max": [7872, 64, 8016],
+    "map_objectives": ["theia.dev.quest-overlook.objective.reach"]
+  }]
+}

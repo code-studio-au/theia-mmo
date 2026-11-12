@@ -3992,3 +3992,23 @@ Bevy 0.20. The compatibility probe is under ignored build/sprinkles-port; no
 particle runtime or authoring workspace has yet been added to the Theia editor.
 Full authoritative spell VFX/audio P2-13 remains separate. Desktop use is renewed;
 keep working locally without pushing.
+
+## Quest-area catalog export foundation — 12 November 2026
+
+Schema 9 stores `quest_areas` separately from annotation markers. Each entry has
+an authoring ID, stable `definition`, name, inclusive global f64 `min`/`max`, and
+optional `map_objectives`. Shared `put_quest_area` / `delete_quest_area` commands,
+rename, translation and history are supported. Duplication requires explicitly
+choosing a fresh gameplay definition via put; generic copy cannot alias one.
+
+```bash
+target/debug/theia-zone-editor --zone content/zones/quest-areas.zone.json \
+  --export-quest-areas build/starter-areas.json \
+  --quests content/quests/development-journal-areas.json \
+  --content-id theia.areas.starter --revision 1
+```
+
+The command validates references using the real runtime quest and area catalogs
+and refuses an existing destination. This is explicit standalone catalog export,
+not a normal gameplay bundle update. World export currently refuses area-bearing
+zones until gameplay publication is connected. Visual controls are the next slice.

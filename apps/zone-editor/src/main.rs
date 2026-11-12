@@ -28,6 +28,7 @@ mod placement;
 mod playtest;
 mod properties;
 mod property_tabs;
+mod quest_area_export;
 mod scrolling;
 mod sections;
 mod selection;
@@ -533,6 +534,20 @@ fn run() -> Result<(), String> {
         });
         println!("{report}");
         return checked.map(|_| ());
+    }
+    if let Some(path) = &options.export_quest_areas {
+        let report = quest_area_export::publish(
+            editor.zone(),
+            options
+                .quest_catalog
+                .as_deref()
+                .expect("Checked quest catalog"),
+            path,
+            options.content_id.as_deref().expect("Checked catalog ID"),
+            options.revision.expect("Checked catalog revision"),
+        )?;
+        println!("{report}");
+        return Ok(());
     }
     if let Some(path) = &options.export {
         let report = export::publish(
