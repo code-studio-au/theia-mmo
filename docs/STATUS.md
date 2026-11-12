@@ -1,3 +1,22 @@
+P5-17 / P3-07 / P4-03 saved spawn-zone placement checks, 13 November 2026:
+`theia-nav-bake spawns-zone WORLD NAVIGATION ZONE_JSON GROUP_ID SPACING X Y Z`
+reads a validated saved editor group directly. Preserve its custom polygon, exact
+seed and alive count; require an enabled known group and explicit spacing/access
+anchor. Output includes the group metadata and canonical draft digest alongside
+the checked world/navigation identities. It uses the existing bounded support,
+standing-clearance, containment, spacing and access-route checks unchanged.
+Nine ordinary baker tests and the actual valley CLI integration test pass, plus
+fmt and strict workspace/all-target Clippy. The saved-group and explicit-request
+paths return the same five points / 299 access samples; repeatability, disabled/
+missing groups, wrong heights, invalid access, insufficient capacity and preserved
+source/package files pass. Evidence: build/spawn-zone-check-{tests,cli,clippy}.log.
+This is read-only placement checking against the supplied world, not proof that
+all draft geometry matches that world, resolved creature/model binding, runtime
+population or respawn qualification. No mouse/display use or rendering change.
+World export still refuses population drafts. Next: reusable checked preparation
+for authoritative population admission, retaining the current 16-target runtime
+budget until protocol/client capacity is deliberately extended.
+
 P5-17 / P3-07 spawn-boundary reshaping, 13 November 2026:
 Autonomous local work resumed under the user's no-mouse/no-display instruction.
 Attributes now cycles through numbered polygon vertices, edits exact global X/Z,

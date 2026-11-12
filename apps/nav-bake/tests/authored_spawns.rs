@@ -80,6 +80,68 @@ fn authored_spawn_cli_is_repeatable_rejects_wrong_layers_and_preserves_packages(
         );
     }
     assert_eq!(run(&request_path).stdout, first.stdout);
+    // Consume a saved editor draft directly, without manually copying a request.
+    let mut zone = theia_zone::Zone::load(&world.join("authoring.zone.json")).unwrap();
+    zone.schema = 14;
+    let group_id = zone.next_id().unwrap();
+    zone.spawn_groups
+        .push(theia_zone::spawn_groups::SpawnGroup {
+            id: group_id,
+            name: "Checked grove".into(),
+            enabled: true,
+            creature: "theia.dev.training-creature".into(),
+            model: Some("theia.model.wolf".into()),
+            volume: request.volume.clone(),
+            target_alive: request.count as u16,
+            respawn_seconds: 30,
+            seed: request.seed,
+        });
+    zone.validate().unwrap();
+    let zone_file = scratch.0.join("spawn.zone.json");
+    let zone_bytes = serde_json::to_vec_pretty(&zone).unwrap();
+    fs::write(&zone_file, &zone_bytes).unwrap();
+    let run_zone = |id: u64| {
+        Command::new(env!("CARGO_BIN_EXE_theia-nav-bake"))
+            .arg("spawns-zone")
+            .arg(&world)
+            .arg(&nav)
+            .arg(&zone_file)
+            .arg(id.to_string())
+            .arg(request.minimum_spacing_metres.to_string())
+            .args(request.access_from.map(|v| v.to_string()))
+            .output()
+            .unwrap()
+    };
+    let checked = run_zone(group_id);
+    assert!(
+        checked.status.success(),
+        "{}",
+        String::from_utf8_lossy(&checked.stderr)
+    );
+    let saved_report: serde_json::Value = serde_json::from_str(
+        String::from_utf8_lossy(&checked.stdout)
+            .lines()
+            .last()
+            .unwrap(),
+    )
+    .unwrap();
+    let checked_result = &saved_report["authored_spawn_candidates"];
+    assert_eq!(checked_result["accepted"], result["accepted"]);
+    assert_eq!(
+        checked_result["authoring"]["group"],
+        serde_json::to_value(zone.spawn_groups.last().unwrap()).unwrap()
+    );
+    assert_eq!(run_zone(group_id).stdout, checked.stdout);
+    assert_eq!(fs::read(&zone_file).unwrap(), zone_bytes);
+    assert!(!run_zone(u64::MAX).status.success());
+    zone.spawn_groups.last_mut().unwrap().enabled = false;
+    fs::write(&zone_file, serde_json::to_vec(&zone).unwrap()).unwrap();
+    assert!(!run_zone(group_id).status.success());
+    zone.spawn_groups.last_mut().unwrap().enabled = true;
+    zone.spawn_groups.last_mut().unwrap().volume =
+        PolygonVolume::new(request.volume.polygon().to_vec(), 90., 100.).unwrap();
+    fs::write(&zone_file, serde_json::to_vec(&zone).unwrap()).unwrap();
+    assert!(!run_zone(group_id).status.success());
     let mut high = request.clone();
     high.volume = PolygonVolume::new(high.volume.polygon().to_vec(), 90., 100.).unwrap();
     let file = scratch.0.join("wrong-height.json");

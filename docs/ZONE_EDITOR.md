@@ -26,6 +26,18 @@ target/debug/theia-nav-bake spawns-authored \
   content/navigation/starter-valley-spawn-candidates.json
 ```
 
+To check a saved editor spawn group without copying its bounds into a request:
+
+```sh
+target/debug/theia-nav-bake spawns-zone WORLD NAVIGATION ZONE_JSON GROUP_ID 3 ACCESS_X ACCESS_Y ACCESS_Z
+```
+
+`3` is an explicit minimum spacing in metres; the final XYZ is a known accessible
+feet anchor. Disabled/unknown groups refuse. The checker uses saved bounds/count/
+seed and reports group metadata plus a canonical draft digest. It does not save
+the zone or prove that its other draft geometry matches the supplied world.
+Creature/model resolution and live spawning remain separate.
+
 It verifies development-capsule standing space, custom bounds, spacing and sampled
 access routes; reports rejection counts and insufficient results; and creates no
 NPCs or files. Its vertical limits apply to feet, and the access anchor does not

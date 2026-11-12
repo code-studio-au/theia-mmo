@@ -7757,6 +7757,7 @@ dependencies = [
  "serde_json",
  "theia-core",
  "theia-network",
+ "theia-zone",
 ]
 
 [[package]]
