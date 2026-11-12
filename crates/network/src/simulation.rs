@@ -4,7 +4,7 @@ pub mod combat;
 pub mod creatures;
 pub mod dialogue;
 mod dodging;
-mod population;
+pub mod population;
 pub mod progression;
 pub mod quest_journal;
 pub mod quests;
@@ -38,6 +38,7 @@ pub struct World {
     patrol: Option<creatures::Patrol>,
     patrol_identity: Option<[u8; 32]>,
     population: Option<crate::navigation::spawn_preparation::Prepared>,
+    population_binding: Option<population::Binding>,
     quest_journal: Option<std::sync::Arc<crate::quest_journal::Profile>>,
     quest: Option<std::sync::Arc<crate::quest_wire::Profile>>,
     quest_lifecycle: Option<std::sync::Arc<crate::quest_lifecycle_wire::Profile>>,
@@ -102,6 +103,7 @@ impl Default for World {
             patrol: None,
             patrol_identity: None,
             population: None,
+            population_binding: None,
             quest_journal: None,
             quest: None,
             quest_lifecycle: None,
@@ -746,6 +748,10 @@ impl World {
                 .population
                 .as_ref()
                 .map_or(identity, |p| p.profile_identity(identity));
+            let identity = self
+                .population_binding
+                .as_ref()
+                .map_or(identity, |d| d.profile_identity(identity));
             let identity = self
                 .combat
                 .as_ref()

@@ -1232,6 +1232,15 @@ impl World {
                 "Combat requires inactive graybox world with prepared development targets".into(),
             );
         }
+        if self
+            .population_binding
+            .as_ref()
+            .is_some_and(|binding| binding.respawn_ms() != respawn_ms)
+        {
+            return Err(
+                "Combat respawn delay does not match the authored population binding".into(),
+            );
+        }
         let authority = Authority::create(self, catalog, health, respawn_ms, stats, statuses)?;
         if authority.catalog.schema() >= 7 && !self.classic {
             return Err("Explicit ability rules require classic independent facing".into());

@@ -10,6 +10,9 @@ use theia_core::{
     facing::Facing,
     identity::EntityKey,
 };
+mod definition;
+pub use definition::Definition;
+
 pub const MAX_PROFILE_BYTES: usize = 4096;
 const ARRIVAL_METRES: f64 = 0.01;
 #[derive(Deserialize)]
@@ -31,13 +34,9 @@ fn deflect_eligibility<'de, D: serde::Deserializer<'de>>(
 }
 #[derive(Clone)]
 pub struct Profile {
-    id: ContentId,
+    definition: Definition,
     route: ContentId,
-    speed: f32,
-    wait_ms: u32,
     digest: [u8; 32],
-    aggro: Option<theia_core::pursuit::Settings>,
-    can_deflect: bool,
 }
 impl Profile {
     pub fn from_json(bytes: &[u8]) -> Result<Self> {
@@ -59,17 +58,22 @@ impl Profile {
             return Err("Creature profile exceeds initial patrol bounds".into());
         }
         Ok(Self {
-            id: ContentId::new(&raw.id).ok_or("Invalid creature ID")?,
+            definition: Definition {
+                id: ContentId::new(&raw.id).ok_or("Invalid creature ID")?,
+                speed: raw.speed_metres_per_second,
+                wait_ms: raw.wait_ms,
+                aggro: raw.aggro,
+                can_deflect,
+            },
             route: ContentId::new(&raw.route).ok_or("Invalid creature route ID")?,
-            speed: raw.speed_metres_per_second,
-            wait_ms: raw.wait_ms,
             digest: crate::terrain::sha256(bytes),
-            aggro: raw.aggro,
-            can_deflect,
         })
     }
     pub fn id(&self) -> &ContentId {
-        &self.id
+        self.definition.id()
+    }
+    pub fn definition(&self) -> &Definition {
+        &self.definition
     }
     /// Resolve an already validated navigation manifest during configuration,
     /// before admitting actors or issuing tickets. Physical route preparation
@@ -85,13 +89,13 @@ impl Profile {
             .ok_or_else(|| "Patrol route is absent from the selected navigation package".into())
     }
     pub fn speed_metres_per_second(&self) -> f32 {
-        self.speed
+        self.definition.speed_metres_per_second()
     }
     pub fn aggro(&self) -> Option<theia_core::pursuit::Settings> {
-        self.aggro
+        self.definition.aggro()
     }
     pub fn can_deflect(&self) -> bool {
-        self.can_deflect
+        self.definition.can_deflect()
     }
 }
 pub fn profile_identity(base: [u8; 32], profile: &Profile, navigation: [u8; 32]) -> [u8; 32] {
@@ -129,7 +133,7 @@ impl Prepared {
             .collect::<Result<Vec<_>>>()?;
         let owner = procedural::owner(points[0]).ok_or("Patrol home outside world")?;
         let patch = Arc::new(procedural::Patch::load(owner, source)?);
-        let enabled = profile.aggro.is_some();
+        let enabled = profile.aggro().is_some();
         let mut prepared =
             Self::checked(profile, store.identity(), source.identity(), points, patch)?;
         if enabled {
@@ -258,7 +262,7 @@ impl Patrol {
         self.profile.id()
     }
     pub(super) fn aggro(&self) -> Option<theia_core::pursuit::Settings> {
-        self.profile.aggro
+        self.profile.aggro()
     }
     pub(super) fn home(&self) -> GlobalPosition {
         self.home
@@ -346,7 +350,7 @@ impl Patrol {
             if !pursuing {
                 self.wait_until = None;
             }
-            let speed = phase.map_or(self.profile.speed, |p| p.speed);
+            let speed = phase.map_or(self.profile.speed_metres_per_second(), |p| p.speed);
             let travel = f64::from(speed) * f64::from(world.rate.seconds());
             let scale = distance.min(travel) / (5. * f64::from(world.rate.seconds()));
             if distance > 0.000001 {
@@ -439,9 +443,8 @@ impl Patrol {
 }
 impl World {
     pub(super) fn creature_can_deflect(&self, target: EntityKey) -> bool {
-        self.patrol
-            .as_ref()
-            .is_some_and(|p| p.key == target && p.profile.can_deflect())
+        self.creature_definition(target)
+            .is_some_and(Definition::can_deflect)
     }
     /// Installation only: consumes already prepared collision/data, no file I/O.
     pub fn enable_patrol(&mut self, prepared: Prepared) -> Result<EntityKey> {
@@ -452,13 +455,15 @@ impl World {
             || self.population.is_some()
             || self.targets.len() >= crate::targeting::MAX_TARGETS
             || self.next_id == u64::MAX
-            || (prepared.profile.aggro.is_some() && prepared.worker.is_none())
+            || (prepared.profile.aggro().is_some() && prepared.worker.is_none())
         {
             return Err("Patrol requires inactive world before combat/admission".into());
         }
         let wait_ticks = self
             .rate
-            .ticks_for(Duration::from_millis(u64::from(prepared.profile.wait_ms)))
+            .ticks_for(Duration::from_millis(u64::from(
+                prepared.profile.definition.wait_ms(),
+            )))
             .ok_or("Patrol wait overflows clock")?;
         let coverage = crate::chunks::Coverage::procedural_cells(
             prepared.patch.frame,
@@ -772,7 +777,7 @@ pub(crate) mod tests {
         let profile = Profile::from_json(profile).unwrap();
         assert_eq!(profile.route, prepared.profile.route);
         prepared.profile = profile;
-        if prepared.profile.aggro.is_some() {
+        if prepared.profile.aggro().is_some() {
             // Consumer fixture only: exact gentle-terrain triangles, without
             // claiming Recast clearance/obstacle baking. Actual bake/worker
             // obstacle and seam integration is tested by the nav-bake package.

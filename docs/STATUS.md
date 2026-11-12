@@ -1,3 +1,21 @@
+P3-07 passive creature definition and population lifecycle binding, 13 November 2026:
+Separate validated creature behavior from its patrol route while retaining legacy
+exact-byte patrol identities. Canonical definition identity covers logical ID,
+speed/wait, deflection and every pursuit field; route/reformatting do not change it.
+A resolved passive population binding requires an exact creature ID and the saved
+1..86400-second respawn range. Reject aggressive definitions until multi-creature
+pursuit exists. World admits the checked pool atomically, includes definition and
+lifecycle in its identity, resolves definitions only for current live incarnations,
+and rejects conflicting combat respawn settings before mutation. No new file schema.
+The authored valley test proves five full-health deaths and exact 30-second fresh-ID
+respawns with retained definitions at 20/30/60 Hz. Fifteen creature tests and all 203
+combat tests pass, including actual encrypted loopback regressions; sandbox socket
+failures were rerun with local UDP permitted. Fmt and strict workspace/all-target
+Clippy pass. Evidence: build/creature-definition-{tests,authority,combat-qualified,
+clippy}.log. No mouse/display or native rendering qualification. This is typed
+runtime admission, not yet saved group loading, model binding, rewards, pursuit or
+normal editor export. Next: connect saved authoring inputs to this admission path.
+
 P3-07 authored respawn deadline range, 13 November 2026:
 Combat configuration now accepts the editor's full 24-hour respawn ceiling; retain
 100 ms legacy minimum and the existing 5 s development default. This is an explicit

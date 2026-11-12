@@ -33,6 +33,12 @@ fn checked_population_uses_real_world_combat_and_fresh_respawn_ids_at_all_rates(
     );
     let saved_spawn = store.spawn(0).unwrap().metres();
     let spawn = [saved_spawn[0], saved_spawn[2]];
+    let definition = theia_network::simulation::creatures::Profile::from_json(include_bytes!(
+        "../../../content/gameplay/development-creature-patrol.json"
+    ))
+    .unwrap()
+    .definition()
+    .clone();
     for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
         let prepared = prepare(&request);
         let feet = prepared.points().to_vec();
@@ -44,7 +50,18 @@ fn checked_population_uses_real_world_combat_and_fresh_respawn_ids_at_all_rates(
         assert!(world.set_tick_rate(rate));
         world.enable_prediction().unwrap();
         world.enable_classic().unwrap();
-        let keys = world.enable_prepared_population(prepared).unwrap();
+        let binding = theia_network::simulation::population::Binding::new(
+            definition.id(),
+            definition.clone(),
+            30,
+        )
+        .unwrap();
+        let expected_identity = binding.profile_identity(expected_identity);
+        let keys = world.enable_defined_population(prepared, binding).unwrap();
+        assert!(
+            keys.iter()
+                .all(|&key| world.creature_definition(key) == Some(&definition))
+        );
         assert_eq!(keys.len(), 5);
         assert_eq!(
             world.identity(),
@@ -54,6 +71,12 @@ fn checked_population_uses_real_world_combat_and_fresh_respawn_ids_at_all_rates(
         let identity = world.identity();
         assert!(world.spawn_development_target(spawn).is_err());
         assert!(world.enable_prepared_population(prepare(&request)).is_err());
+        assert_eq!(world.identity(), identity);
+        assert!(
+            world
+                .enable_combat(ABILITIES, combat::DEVELOPMENT_HEALTH, 5000)
+                .is_err()
+        );
         assert_eq!(world.identity(), identity);
         world
             .enable_combat(ABILITIES, combat::DEVELOPMENT_HEALTH, 30_000)
@@ -144,6 +167,11 @@ fn checked_population_uses_real_world_combat_and_fresh_respawn_ids_at_all_rates(
             assert_eq!(health.current, combat::DEVELOPMENT_HEALTH);
             assert_eq!(health.respawn_at, None);
             assert!(!keys.contains(&health.key));
+            assert_eq!(world.creature_definition(health.key), Some(&definition));
+            assert!(
+                keys.iter()
+                    .all(|&old| world.creature_definition(old).is_none())
+            );
             assert_eq!(health.position, initial.targets[i].position);
         }
         for (&actor, &old) in actors.iter().zip(&keys) {
@@ -177,6 +205,51 @@ fn checked_population_uses_real_world_combat_and_fresh_respawn_ids_at_all_rates(
     let mut world =
         World::with_terrain_source(spawn, 1., procedural::Source::Authored(store.clone())).unwrap();
     let identity = world.identity();
+    let missing = ContentId::new("theia.creature.missing").unwrap();
+    assert!(
+        theia_network::simulation::population::Binding::new(&missing, definition.clone(), 30)
+            .is_err()
+    );
+    assert_eq!(world.identity(), identity);
+    let aggressive = theia_network::simulation::creatures::Profile::from_json(include_bytes!(
+        "../../../content/gameplay/development-creature-pursuit.json"
+    ))
+    .unwrap()
+    .definition()
+    .clone();
+    assert!(
+        theia_network::simulation::population::Binding::new(
+            aggressive.id(),
+            aggressive.clone(),
+            30
+        )
+        .is_err()
+    );
+    for seconds in [0, 86401, u32::MAX] {
+        assert!(
+            theia_network::simulation::population::Binding::new(
+                definition.id(),
+                definition.clone(),
+                seconds
+            )
+            .is_err()
+        );
+    }
+    let short =
+        theia_network::simulation::population::Binding::new(definition.id(), definition.clone(), 1)
+            .unwrap();
+    let long = theia_network::simulation::population::Binding::new(
+        definition.id(),
+        definition.clone(),
+        86400,
+    )
+    .unwrap();
+    assert_eq!(long.respawn_ms(), 86_400_000);
+    assert_ne!(
+        short.profile_identity(identity),
+        long.profile_identity(identity)
+    );
+    assert_eq!(world.identity(), identity);
     assert!(
         world
             .enable_prepared_population(prepare(&excessive))
