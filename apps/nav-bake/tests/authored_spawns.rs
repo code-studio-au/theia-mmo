@@ -80,6 +80,28 @@ fn authored_spawn_cli_is_repeatable_rejects_wrong_layers_and_preserves_packages(
         );
     }
     assert_eq!(run(&request_path).stdout, first.stdout);
+    let store = theia_network::authored_world::Store::open(&world).unwrap();
+    let navigation = theia_network::navigation::Store::open(&nav, store.identity()).unwrap();
+    let checked =
+        theia_network::navigation::spawn_preparation::check_authored(&store, &navigation, &request)
+            .unwrap();
+    assert_eq!(
+        checked.report()["authored_spawn_candidates"]["accepted"],
+        result["accepted"]
+    );
+    let prepared = checked.into_prepared().unwrap();
+    assert_eq!(prepared.source_identity(), store.identity());
+    assert_eq!(prepared.navigation_identity(), navigation.identity());
+    assert_eq!(prepared.request().volume, request.volume);
+    assert_eq!(
+        prepared
+            .points()
+            .iter()
+            .map(|p| p.metres())
+            .collect::<Vec<_>>(),
+        points
+    );
+
     // Consume a saved editor draft directly, without manually copying a request.
     let mut zone = theia_zone::Zone::load(&world.join("authoring.zone.json")).unwrap();
     zone.schema = 14;
@@ -154,6 +176,15 @@ fn authored_spawn_cli_is_repeatable_rejects_wrong_layers_and_preserves_packages(
     let mut crowded = request.clone();
     crowded.count = 64;
     crowded.minimum_spacing_metres = 32.;
+    let incomplete =
+        theia_network::navigation::spawn_preparation::check_authored(&store, &navigation, &crowded)
+            .unwrap();
+    assert_eq!(
+        incomplete.report()["authored_spawn_candidates"]["passed"],
+        false
+    );
+    assert!(incomplete.into_prepared().is_err());
+
     fs::write(&file, serde_json::to_vec(&crowded).unwrap()).unwrap();
     let failed = run(&file);
     assert!(!failed.status.success());

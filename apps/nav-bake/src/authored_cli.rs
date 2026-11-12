@@ -1,6 +1,7 @@
 //! Bounded offline authored-world navigation publication; existing format/runtime.
-use std::{collections::BTreeMap, fs, io::Read, path::Path, time::Instant};
+use std::{fs, io::Read, path::Path, time::Instant};
 use theia_core::{content::ContentId, coordinates::GlobalPosition};
+use theia_network::navigation::authored_checks::{Grounding, clearance};
 use theia_network::{
     Result,
     authored_world::Store,
@@ -163,57 +164,6 @@ pub(super) fn route(source: &Path, navigation: &Path, request_path: &Path) -> Re
     );
     Ok(())
 }
-pub(super) struct Grounding<'a> {
-    store: &'a Store,
-    patches: BTreeMap<theia_core::coordinates::ChunkId, procedural::Patch>,
-}
-impl<'a> Grounding<'a> {
-    pub(super) fn new(store: &'a Store) -> Self {
-        Self {
-            store,
-            patches: BTreeMap::new(),
-        }
-    }
-    pub(super) fn at(&mut self, point: GlobalPosition) -> Result<GlobalPosition> {
-        let id = procedural::owner(point).ok_or("Route outside prediction domain")?;
-        if let std::collections::btree_map::Entry::Vacant(entry) = self.patches.entry(id) {
-            entry.insert(self.store.patch(id)?);
-        }
-        let patch = &self.patches[&id];
-        let mut local = patch
-            .frame
-            .to_local(point)
-            .ok_or("Route outside local frame")?
-            .metres();
-        let (height, walkable) = patch
-            .scene
-            .ground([local[0], local[2]], local[1] + 0.3)
-            .ok_or("Route has no close collision surface")?;
-        if !walkable || (height - local[1]).abs() > 0.3 {
-            return Err(format!(
-                "Navigation route at {:?} disagrees with collision height {} (walkable={walkable})",
-                point.metres(),
-                height
-            )
-            .into());
-        }
-        local[1] = height + 0.03;
-        let local =
-            theia_core::coordinates::LocalPosition::new(local).ok_or("Invalid route pose")?;
-        let local = theia_network::kinematic::spawn(&patch.scene, local)?;
-        theia_network::kinematic::validate_pose(&patch.scene, local, true).map_err(|error| {
-            format!(
-                "Route grounding at {:?}, local feet {:?}: {error}",
-                point.metres(),
-                local.metres()
-            )
-        })?;
-        patch
-            .frame
-            .to_global(local)
-            .ok_or("Invalid global route".into())
-    }
-}
 pub(super) fn verify(source: &Path, output: &Path) -> Result<()> {
     let store = Store::open(source)?;
     let nav = nav::Store::open(output, store.identity())?;
@@ -241,36 +191,5 @@ pub(super) fn verify(source: &Path, output: &Path) -> Result<()> {
         "{}",
         serde_json::json!({"authored_navigation_verify":{"passed":true,"tiles":tiles.len(),"route_points":points,"clearance_samples":samples,"source":store.identity(),"scope":"Package, navigation and 0.2 m sampled route capsule clearance; native creature acceptance remains separate"}})
     );
-    Ok(())
-}
-
-pub(super) fn clearance(
-    query: &theia_nav_bake::Query,
-    grounding: &mut Grounding<'_>,
-    points: &[[f64; 3]],
-    samples: &mut usize,
-) -> Result<()> {
-    for segment in points.windows(2) {
-        let distance = (0..3)
-            .map(|i| (segment[1][i] - segment[0][i]).powi(2))
-            .sum::<f64>()
-            .sqrt();
-        let steps = (distance / 0.2).ceil().max(1.) as usize;
-        *samples = samples
-            .checked_add(steps + 1)
-            .filter(|n| *n <= 8192)
-            .ok_or("Authored route clearance sample budget exceeded")?;
-        for step in 0..=steps {
-            let fraction = step as f64 / steps as f64;
-            let point = GlobalPosition::new(std::array::from_fn(|i| {
-                segment[0][i] + (segment[1][i] - segment[0][i]) * fraction
-            }))
-            .ok_or("Invalid route interpolation")?;
-            query
-                .sample(point)
-                .map_err(|error| format!("Route clearance at {:?}: {error}", point.metres()))?;
-            grounding.at(point)?;
-        }
-    }
     Ok(())
 }

@@ -1,3 +1,19 @@
+P3-07 / P4-03 shared spawn preparation, 13 November 2026:
+Move authored standing/route-clearance and bounded spawn checking from the baker
+binary into the shared network navigation library. The CLI uses that same path.
+A private, non-deserializable Prepared value exposes complete checked feet and
+source/navigation/request identity; incomplete diagnostics cannot become Prepared.
+File loading and navigation queries remain loader/worker operations, never fixed
+simulation work. This is a runtime-admission prerequisite, not live population.
+Nine baker tests, two navigation unit tests, actual valley CLI/direct-preparation
+checks and authored route verification pass. Pre/post-move valley reports match
+exactly (five points, 299 access samples); route verification retains 231 samples.
+Incomplete capacity refuses promotion; fmt and strict workspace/all-target Clippy
+pass. Evidence: build/spawn-preparation-{tests,network-tests,cli,route,clippy}.log.
+No renderer, mouse/display, Windows, connected population or respawn claim. Next:
+atomic bounded admission to the actual World, then population lifecycle/profile
+binding. Saved-group export refusal remains in place.
+
 P5-17 / P3-07 / P4-03 saved spawn-zone placement checks, 13 November 2026:
 `theia-nav-bake spawns-zone WORLD NAVIGATION ZONE_JSON GROUP_ID SPACING X Y Z`
 reads a validated saved editor group directly. Preserve its custom polygon, exact
