@@ -96,3 +96,56 @@ class EditorSceneryTests(unittest.TestCase):
         catalog = json.loads((self.output / 'catalog.json').read_text())
         self.assertEqual(catalog['assets'][0]['collision'], {'kind': 'decorative'})
         self.assertEqual(list(self.output.glob('*.collision.json')), [])
+
+    def foliage(self):
+        from merge_static_glb import read
+        from add_terrain_house import write_glb
+        document, binary = read(self.prototype / 'preview.glb')
+        primitive = document['meshes'][0]['primitives'][0]
+        primitive['material'] = 0
+        document['meshes'][0]['primitives'].append(dict(primitive, material=1))
+        document['materials'] = [dict(name='trunk', alphaMode='MASK', alphaCutoff=.5, doubleSided=True),
+                                 dict(name='leaf', alphaMode='MASK', alphaCutoff=.5, doubleSided=True)]
+        (self.prototype / 'preview.glb').unlink()
+        write_glb(document, binary, self.prototype / 'preview.glb')
+        self.original = (self.prototype / 'preview.glb').read_bytes()
+        sha = hashlib.sha256(self.original).hexdigest()
+        self.record.update(profile='full-static', prototype_sha256=sha)
+        (self.batch / 'batch.json').write_text(json.dumps({'converted': [self.record]}))
+        (self.prototype / 'independent-verification.json').write_text(json.dumps(dict(passed=True, asset_sha256=sha, triangles=2)))
+        (self.prototype / 'geometry-reference.json').write_text(json.dumps(dict(vertices_z_up_metres=[[0,0,0],[1,0,0],[0,-1,0]])))
+        (self.prototype / 'conversion.json').write_text(json.dumps(dict(archive_sha256='b'*64, canonical_mesh=True,
+            profile={'profile':'synty-full-static-foliage-v1'})))
+        selected = json.loads(self.selection.read_text())
+        selected['assets'][0].update(profile='full-static', prototype='a'*64, collision='trunk_triangles')
+        self.selection.write_text(json.dumps(selected))
+        return selected
+
+    def test_static_foliage_preserves_visual_bytes_and_only_trunk_triangles_block(self):
+        self.foliage()
+        stage(self.batch, self.selection, self.output)
+        asset = json.loads((self.output / 'catalog.json').read_text())['assets'][0]
+        self.assertEqual((self.output / asset['file']).read_bytes(), self.original)
+        self.assertEqual(asset['triangles'], 2)
+        self.assertEqual(asset['collision']['kind'], 'triangle_mesh')
+        self.assertEqual(asset['source']['collision_scope'], 'trunk_triangles')
+        collision = json.loads((self.output / asset['collision']['file']).read_bytes())
+        self.assertEqual(len(collision['indices']), 1)
+        self.assertIn('wind', asset['source']['limitations'][0])
+
+    def test_foliage_reference_profile_and_explicit_binding_must_match(self):
+        selected = self.foliage()
+        selected['assets'][0]['prototype'] = 'c'*64
+        self.selection.write_text(json.dumps(selected))
+        with self.assertRaisesRegex(ValueError, 'one qualified'):
+            stage(self.batch, self.selection, self.output)
+        self.assertFalse(self.output.exists())
+        selected['assets'][0]['prototype'] = 'a'*64
+        self.selection.write_text(json.dumps(selected))
+        (self.prototype / 'geometry-reference.json').write_text(json.dumps(dict(vertices_z_up_metres=[[0,0,0],[2,0,0],[0,-1,0]])))
+        with self.assertRaisesRegex(ValueError, 'bounds differ'):
+            stage(self.batch, self.selection, self.output)
+        self.assertFalse(self.output.exists())
+        (self.prototype / 'conversion.json').write_text(json.dumps(dict(profile={'profile':'unknown'})))
+        with self.assertRaisesRegex(ValueError, 'qualified canonical'):
+            stage(self.batch, self.selection, self.output)

@@ -1,3 +1,18 @@
+P5-17 / P1-10 static forest trees in the editor library, 12 November 2026:
+reuse the already verified full-foliage GLB adaptation with exact material/image
+bytes, explicit source wind/highlight/LOD limitations and trunk-only triangle
+collision. A nine-asset local catalog adds the small forest tree and large hollow
+trunk to the seven existing props. CPU loading creates ten primitive entities
+and removes all descendants on deletion; the checker now counts glTF primitives,
+not one entity per mesh. Actual RX 7900 XTX offscreen rendering of the tree passes
+all three gizmo modes, ray-picked movement/undo and preview cancellation. A world
+export preserves all visual attributes, indices, embedded images, materials,
+samplers, placement and admitted collision. Six staging and eight launcher tests,
+strict workspace Clippy and editor build pass. Evidence: build/starter-valley-
+scenery-v1, -tree-gpu.log, -library-check.log, -tree-source-comparison.json.
+Normal launches prefer the expanded local catalog when available. No source
+payload is tracked. Kingdom village-building conversion is still underway.
+
 P5-17 / P3-15 expanded starter valley, 12 November 2026:
 Add → Starter valley terrain creates an editable 512 × 512 m patch with a village
 clearing, curved paths, uneven surrounding ridges and one +Z pass. Schema 11 adds

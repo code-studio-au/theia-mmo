@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Stage selected verified static prototypes for the editor; no native window.
 
-Source payloads and outputs remain local. This first catalog accepts embedded
-standard-material GLBs; foliage, projected shaders and animation remain separate.
+Source payloads and outputs remain local. Accept independently verified embedded
+standard GLBs, including the explicit static foliage adaptation. Source wind,
+animated highlights, projected shaders and animation are not implemented here.
 """
 import argparse
 import hashlib
@@ -24,10 +25,14 @@ def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def collision_mesh(document, binary):
+def collision_mesh(document, binary, trunk_only=False):
     """Explicit Theia static-surface adaptation; not Unity collider import."""
     vertices, indices = [], []
     for primitive in document['meshes'][0]['primitives']:
+        if trunk_only:
+            material = primitive.get('material')
+            if material is None or document['materials'][material].get('name') != 'trunk':
+                continue
         if primitive.get('mode', 4) != 4 or primitive.get('targets'):
             raise ValueError('Collision needs static triangle primitives')
         points = accessor(document, binary, primitive['attributes']['POSITION'])
@@ -64,9 +69,16 @@ def stage(batch, selection, output):
         if not re.fullmatch(r'[a-z][a-z0-9._-]{0,94}[a-z0-9]', identifier) or '..' in identifier or identifier in used:
             raise ValueError('Invalid or duplicate scenery ID')
         used.add(identifier)
-        matches = [r for r in records if Path(r['source']).stem == item['prefab'] and r.get('profile') == 'standard-opaque']
+        profile = item.get('profile', 'standard-opaque')
+        if profile not in ('standard-opaque', 'full-static'):
+            raise ValueError('Unsupported scenery material profile')
+        prototype = item.get('prototype')
+        if prototype is not None and not re.fullmatch('[0-9a-f]{64}', prototype):
+            raise ValueError('Invalid explicit prototype key')
+        matches = [r for r in records if Path(r['source']).stem == item['prefab']
+                   and r.get('profile') == profile and (prototype is None or r['key'] == prototype)]
         if len(matches) != 1:
-            raise ValueError(f'Expected one qualified standard-material binding: {item["prefab"]}')
+            raise ValueError(f'Expected one qualified material binding: {item["prefab"]}')
         record = matches[0]
         if not re.fullmatch('[0-9a-f]{64}', record['key']):
             raise ValueError('Invalid prototype key')
@@ -89,29 +101,47 @@ def stage(batch, selection, output):
         bounds = transformed_bounds(doc, binary, 0, np.eye(4))
         if not np.isfinite(bounds).all() or np.abs(bounds).max() > 128:
             raise ValueError('Scenery bounds exceed local prototype limits')
-        if not np.allclose(bounds[0], proof['bounds_y_up_metres']['min'], atol=1e-5, rtol=0) or not np.allclose(bounds[1], proof['bounds_y_up_metres']['max'], atol=1e-5, rtol=0):
-            raise ValueError('Scenery bounds differ from independent verification')
         conversion = json.loads((root / 'conversion.json').read_bytes())
+        if profile == 'full-static':
+            if conversion.get('profile', {}).get('profile') != 'synty-full-static-foliage-v1' or conversion.get('canonical_mesh') is not True:
+                raise ValueError('Foliage needs the qualified canonical static profile')
+            reference = json.loads((root / 'geometry-reference.json').read_bytes())
+            points = np.asarray(reference['vertices_z_up_metres'], dtype=np.float64)
+            if points.ndim != 2 or points.shape[1] != 3 or not np.isfinite(points).all():
+                raise ValueError('Invalid foliage geometry reference')
+            points = points[:, [0, 2, 1]] * [1, 1, -1]
+            expected_bounds = [points.min(axis=0), points.max(axis=0)]
+        else:
+            expected_bounds = [proof['bounds_y_up_metres']['min'], proof['bounds_y_up_metres']['max']]
+        if not np.allclose(bounds, expected_bounds, atol=1e-5, rtol=0):
+            raise ValueError('Scenery bounds differ from independent verification')
         entry = {k: item[k] for k in ('id', 'name', 'category')}
         entry.update(file=f'{sha}.glb', bytes=size, sha256=sha, bounds=bounds.tolist(),
                      triangles=proof['triangles'], source=dict(prefab=record['source'],
                      archive_sha256=conversion['archive_sha256'],
                      verification_sha256=digest(root / 'independent-verification.json'),
-                     profile=record['profile']))
+                     profile=record['profile'], prototype=record['key']))
+        if profile == 'full-static':
+            entry['source']['limitations'] = ['Static rest geometry; source wind, gust highlights and LOD crossfade are unapplied']
+            entry['source']['geometry_reference_sha256'] = digest(root / 'geometry-reference.json')
+            entry['source']['conversion_sha256'] = digest(root / 'conversion.json')
         choice = item.get('collision')
         collision = None
-        if choice == 'triangle_mesh':
-            collision = collision_mesh(doc, binary)
+        if choice in ('triangle_mesh', 'trunk_triangles'):
+            if choice == 'trunk_triangles' and profile != 'full-static':
+                raise ValueError('Trunk collision requires qualified foliage branches')
+            collision = collision_mesh(doc, binary, trunk_only=choice == 'trunk_triangles')
+            entry['source']['collision_scope'] = choice
             collision_hash = hashlib.sha256(collision).hexdigest()
             if len(collision) > MAX_ASSET_BYTES:
                 raise ValueError('Collision byte budget exceeded')
             total += len(collision)
-            entry['collision'] = dict(kind=choice, file=f'{collision_hash}.collision.json',
+            entry['collision'] = dict(kind='triangle_mesh', file=f'{collision_hash}.collision.json',
                                       bytes=len(collision), sha256=collision_hash)
         elif choice == 'decorative':
             entry['collision'] = dict(kind=choice)
         else:
-            raise ValueError('Choose explicit triangle_mesh or decorative collision')
+            raise ValueError('Choose explicit triangle_mesh, trunk_triangles or decorative collision')
         if total > MAX_LIBRARY_BYTES:
             raise ValueError('Scenery byte budget exceeded')
         prepared.append((entry, asset, collision))

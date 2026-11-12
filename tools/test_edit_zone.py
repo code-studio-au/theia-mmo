@@ -22,6 +22,12 @@ class EditorLaunchTests(unittest.TestCase):
             self.assertEqual(scenery_arguments(explicit, root), explicit)
             self.assertEqual(catalog.read_bytes(), b'caller-owned catalog bytes')
             self.assertEqual(arguments, ['--zone', 'my.zone.json'])
+            expanded = root / 'build/starter-valley-scenery-v1/catalog.json'
+            expanded.parent.mkdir(parents=True)
+            expanded.write_bytes(b'expanded local catalog')
+            self.assertEqual(scenery_arguments(arguments, root), [*arguments, '--scenery-library', str(expanded)])
+            self.assertEqual(scenery_arguments(explicit, root), explicit)
+            self.assertEqual(scenery_arguments(arguments, root, enabled=False), arguments)
 
     def test_new_draft_sets_only_the_later_save_path(self):
         with tempfile.TemporaryDirectory() as root:

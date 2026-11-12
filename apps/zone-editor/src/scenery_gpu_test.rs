@@ -7,14 +7,15 @@ use std::time::{Duration, Instant};
 fn imported_model_gizmos_render_and_preview_without_window() {
     let path = std::env::var_os("THEIA_SCENERY_LIBRARY").expect("Local scenery catalog");
     let library = scenery_library::Library::load(std::path::Path::new(&path)).unwrap();
+    let selected_asset =
+        std::env::var("THEIA_SCENERY_ASSET").unwrap_or_else(|_| "synty.forest.archway".into());
     let asset = library
         .assets
-        .values()
-        .find(|a| a.entry.id.contains("archway"))
-        .unwrap();
+        .get(&selected_asset)
+        .expect("Selected local model");
     let placement = theia_zone::scenery::SceneryPlacement {
         id: 1,
-        name: "Archway transform qualification".into(),
+        name: "Model transform qualification".into(),
         asset: asset.entry.id.clone(),
         position: [128_000_000_000., 0., -128_000_000_000.],
         yaw_degrees: 0.,

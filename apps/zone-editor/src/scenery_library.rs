@@ -267,13 +267,31 @@ impl Library {
         let gltfs = app.world().resource::<Assets<Gltf>>();
         let mut entries = Vec::new();
         let mut worlds = Vec::new();
+        let mut expected_meshes = 0;
+        let gltf_meshes = app.world().resource::<Assets<bevy::gltf::GltfMesh>>();
         for (id, handle) in &handles {
             let gltf = gltfs.get(handle).ok_or("Missing loaded scenery")?;
             if gltf.scenes.len() != 1 || gltf.meshes.len() != 1 || !gltf.skins.is_empty() {
                 return Err("Unexpected static scenery graph".into());
             }
+            let primitives = gltf
+                .meshes
+                .iter()
+                .map(|handle| {
+                    gltf_meshes
+                        .get(handle)
+                        .map(|mesh| mesh.primitives.len())
+                        .ok_or("Missing loaded scenery mesh")
+                })
+                .collect::<Result<Vec<_>, _>>()?
+                .into_iter()
+                .sum::<usize>();
+            if primitives == 0 {
+                return Err("Scenery mesh has no primitives".into());
+            }
+            expected_meshes += primitives;
             worlds.push(gltf.scenes[0].clone());
-            entries.push(serde_json::json!({"id":id,"meshes":gltf.meshes.len(),"materials":gltf.materials.len(),"collision_triangles":self.assets[id].collision.as_ref().map_or(0, |m| m.indices.len())}));
+            entries.push(serde_json::json!({"id":id,"meshes":gltf.meshes.len(),"primitives":primitives,"materials":gltf.materials.len(),"collision_triangles":self.assets[id].collision.as_ref().map_or(0, |m| m.indices.len())}));
         }
         let roots: Vec<_> = worlds
             .into_iter()
@@ -287,10 +305,9 @@ impl Library {
             app.update();
         }
         let meshes = app.world_mut().query::<&Mesh3d>().iter(app.world()).count();
-        if meshes != roots.len() {
+        if meshes != expected_meshes {
             return Err(format!(
-                "Expected {} scene meshes, got {meshes}",
-                roots.len()
+                "Expected {expected_meshes} scene primitives, got {meshes}"
             ));
         }
         for root in roots {

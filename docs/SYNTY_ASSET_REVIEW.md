@@ -185,3 +185,13 @@ Reports stay in `build/starter-package-review/`. No Viking/Norse/Nordic-named
 archive, file or folder was found under Downloads in this inspection. Continue
 with Kingdom for village buildings while retaining that unresolved location.
 Archive payloads remain local; no supplied scripts execute.
+
+The starter-valley selection now reuses nine verified static assets, including
+`SM_Env_Tree_Small_01` LOD0 and `SM_Env_Tree_Trunk_01`. The selected small tree
+retains 2,824 visual triangles and only its 536 trunk triangles block the player;
+leaf cards stay nonblocking. Source wind/highlight/LOD limitations from
+[FULL_FOREST_FOLIAGE.md](FULL_FOREST_FOLIAGE.md) remain explicit in catalog metadata.
+The immutable staged payloads total 18,918,896 bytes. CPU asset loading/deletion,
+actual offscreen GPU model/gizmo checks, and source-exact world export comparison
+pass. The selection and tools are tracked; GLBs, textures and collision payloads
+remain ignored under build. Village placements are still to be authored.
