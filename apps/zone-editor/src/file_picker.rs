@@ -10,6 +10,7 @@ const SCAN_LIMIT: usize = 4096;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Mode {
     Open,
+    Gameplay,
     SaveAs,
 }
 #[derive(Clone)]
@@ -91,7 +92,7 @@ impl Draft {
             path.set_extension("zone.json");
         }
         if !path.is_dir() && !is_json(&path) {
-            return Err("Zone files use a .json extension".into());
+            return Err("Choose a .json file".into());
         }
         Ok(path)
     }
@@ -303,7 +304,10 @@ pub(super) fn keyboard(
     let save_as = std::mem::take(&mut requests.file_save_as)
         || implicit_save_as
         || (ctrl && shift && keys.just_pressed(KeyCode::KeyS));
-    let mode = if open {
+    let gameplay = std::mem::take(&mut requests.gameplay_open);
+    let mode = if gameplay {
+        Some(Mode::Gameplay)
+    } else if open {
         Some(Mode::Open)
     } else if save_as {
         Some(Mode::SaveAs)
@@ -325,7 +329,14 @@ pub(super) fn keyboard(
             "Finish or cancel the preview, or leave playtest, before choosing a file".into();
         return;
     }
-    let base = session.picker_path();
+    let base = if mode == Mode::Gameplay {
+        session
+            .quest_context
+            .as_ref()
+            .map_or_else(|| session.picker_path(), |c| c.path.clone())
+    } else {
+        session.picker_path()
+    };
     let Some(folder) = base.parent() else {
         session.status = "Current save path has no folder".into();
         return;
@@ -333,7 +344,8 @@ pub(super) fn keyboard(
     let mut draft = Draft {
         mode,
         folder: folder.into(),
-        text: if mode == Mode::SaveAs {
+        text: if mode == Mode::SaveAs || (mode == Mode::Gameplay && session.quest_context.is_some())
+        {
             base.file_name()
                 .map_or_else(String::new, |s| s.to_string_lossy().into_owned())
         } else {
@@ -366,6 +378,7 @@ pub(super) fn keyboard(
     session.status = match mode {
         Mode::Open => "Choose a zone file; undo can restore the previous document",
         Mode::SaveAs => "Choose a new zone filename",
+        Mode::Gameplay => "Choose a gameplay manifest; quest data is loaded read-only",
     }
     .into();
     session.file_dialog = Some(draft);
@@ -376,15 +389,25 @@ fn submit(draft: &mut Draft, session: &mut Session, view: &mut View) -> Result<b
     }
     let path = draft.path()?;
     if path.is_dir() {
-        if draft.mode == Mode::Open {
+        if draft.mode != Mode::SaveAs {
             draft.refresh(path)?;
             draft.text.clear();
-            session.status = "Choose a zone file".into();
+            session.status = if draft.mode == Mode::Gameplay {
+                "Choose a gameplay manifest"
+            } else {
+                "Choose a zone file"
+            }
+            .into();
             return Ok(false);
         }
         return Err("Save As needs a filename, not a directory".into());
     }
     match draft.mode {
+        Mode::Gameplay => {
+            let context = crate::quest_inspector::Context::load(&path)?;
+            session.status = format!("Loaded gameplay {}", context.path.display());
+            session.quest_context = Some(context);
+        }
         Mode::SaveAs => {
             if path.exists() && !draft.overwrite {
                 draft.overwrite = true;
@@ -448,7 +471,12 @@ pub(super) fn finish(
     if typed != draft.text {
         draft.text = typed;
         draft.overwrite = false;
-        session.status = "Choose a zone file".into();
+        session.status = if draft.mode == Mode::Gameplay {
+            "Choose a gameplay manifest"
+        } else {
+            "Choose a zone file"
+        }
+        .into();
     }
     let range = field.editor().raw_selection().text_range();
     draft.selection = [range.start, range.end];
@@ -483,7 +511,12 @@ pub(super) fn finish(
             match draft.browse(folder) {
                 Ok(()) => {
                     reset = true;
-                    session.status = "Choose a zone file".into();
+                    session.status = if draft.mode == Mode::Gameplay {
+                        "Choose a gameplay manifest"
+                    } else {
+                        "Choose a zone file"
+                    }
+                    .into();
                 }
                 Err(error) => session.status = error,
             }
@@ -496,7 +529,12 @@ pub(super) fn finish(
                         draft.text = entry.name.clone();
                         draft.overwrite = false;
                         reset = true;
-                        session.status = "Choose a zone file".into();
+                        session.status = if draft.mode == Mode::Gameplay {
+                            "Choose a gameplay manifest"
+                        } else {
+                            "Choose a zone file"
+                        }
+                        .into();
                     }
                 }
                 _ => {}
@@ -571,6 +609,8 @@ pub(super) fn finish(
                     .map_or_else(String::new, |e| e.name.clone()),
                 Control::Apply => if draft.overwrite {
                     "Overwrite file"
+                } else if draft.mode == Mode::Gameplay {
+                    "Load gameplay"
                 } else if draft.mode == Mode::Open {
                     "Open zone"
                 } else {
@@ -585,7 +625,9 @@ pub(super) fn finish(
             };
         }
         if let Ok(mut caption) = captions.single_mut() {
-            **caption = if draft.mode == Mode::Open {
+            **caption = if draft.mode == Mode::Gameplay {
+                "Load gameplay"
+            } else if draft.mode == Mode::Open {
                 "Open zone"
             } else {
                 "Save zone as"

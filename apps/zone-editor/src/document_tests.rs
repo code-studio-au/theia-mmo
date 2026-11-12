@@ -595,3 +595,64 @@ fn short_dialogs_keep_actions_visible_and_reveal_path_without_writing_or_editing
         assert_eq!(std::fs::read_dir(&root.0).unwrap().count(), 15);
     }
 }
+
+#[test]
+fn gameplay_browser_loads_read_only_and_invalid_choices_preserve_context_and_zone() {
+    let root = Sandbox::new();
+    let mut app = fixture(&root, [8192., 0., 8192.]);
+    let source = app.world().resource::<Session>().editor.zone().clone();
+    let revision = app.world().resource::<Session>().editor.revision();
+    let saved = std::fs::read(root.0.join("original.zone.json")).unwrap();
+    let target = app.world().resource::<View>().target;
+    let template = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../content/development-gameplay-classic-quest-areas.json")
+        .canonicalize()
+        .unwrap();
+    let original_template = std::fs::read(&template).unwrap();
+    app.world_mut()
+        .resource_mut::<workspace::Requests>()
+        .gameplay_open = true;
+    app.update();
+    assert!(matches!(
+        app.world()
+            .resource::<Session>()
+            .file_dialog
+            .as_ref()
+            .unwrap()
+            .mode,
+        Mode::Gameplay
+    ));
+    filename(&mut app, template.to_str().unwrap());
+    apply(&mut app);
+    assert!(app.world().resource::<Session>().file_dialog.is_none());
+    assert_eq!(
+        app.world()
+            .resource::<Session>()
+            .quest_context
+            .as_ref()
+            .unwrap()
+            .path,
+        template
+    );
+    app.world_mut()
+        .resource_mut::<workspace::Requests>()
+        .gameplay_open = true;
+    app.update();
+    filename(
+        &mut app,
+        root.0.join("original.zone.json").to_str().unwrap(),
+    );
+    apply(&mut app);
+    let session = app.world().resource::<Session>();
+    assert!(session.file_dialog.is_some());
+    assert_eq!(session.quest_context.as_ref().unwrap().path, template);
+    assert_eq!(session.editor.zone(), &source);
+    assert_eq!(session.editor.revision(), revision);
+    assert_eq!(app.world().resource::<View>().target, target);
+    assert_eq!(std::fs::read(&template).unwrap(), original_template);
+    assert_eq!(
+        std::fs::read(root.0.join("original.zone.json")).unwrap(),
+        saved
+    );
+    cancel(&mut app);
+}

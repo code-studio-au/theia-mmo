@@ -248,14 +248,12 @@ pub(super) fn open(
             },
             format!("theia.zone.{slug}"),
             "1".to_string(),
-            if network {
-                manager
-                    .as_ref()
-                    .and_then(|m| m.template.as_ref())
-                    .map_or_else(String::new, |p| p.display().to_string())
-            } else {
-                String::new()
-            },
+            session
+                .quest_context
+                .as_ref()
+                .map(|c| &c.path)
+                .or_else(|| manager.as_ref().and_then(|m| m.template.as_ref()))
+                .map_or_else(String::new, |p| p.display().to_string()),
             manager
                 .as_ref()
                 .and_then(|m| m.player_assets.as_ref())

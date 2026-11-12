@@ -1,3 +1,17 @@
+NPC quest inspection (P5-17 / P5-18, 12 November 2026): select an NPC in the
+explorer, choose Attributes and expand an entry under Quests. Entries show whether
+that NPC offers the quest, accepts turn-in or both; requirements, stages/objectives
+and rewards come from the existing catalogue. Use File → Load gameplay… or
+Change / reload gameplay… to select a validated gameplay manifest. The browser
+starts beside the zone if no template is loaded, otherwise beside that template.
+`--gameplay-template MANIFEST` also works when opening the interactive editor.
+This selection supplies the export default for the session; zone Save does not
+write the template or persist that selection. Quest definitions remain content
+files; character progress and durable rewards remain authoritative database state.
+Quest authoring and general multi-contact gameplay are not implemented by this UI.
+The native test covers expansion, reload/cancel, unbound selection and unchanged
+source files; exact scope and GPU evidence are in STATUS.md.
+
 P5-17 patrol gameplay binding, 12 November 2026:
 Exporting with a gameplay template now connects its creature to the single authored
 Patrol guide automatically. Keep one Patrol guide for this current single-creature

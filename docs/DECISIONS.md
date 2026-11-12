@@ -1,3 +1,19 @@
+## 12 November 2026 — NPC quest inspection and authoring source
+
+The user reports missing quest information when selecting the village NPC and asks
+whether quests should be separate files, NPC quest groups or database records,
+then delegates the design. Retain the existing validated quest catalogue as the
+source of definitions: stable quest IDs, prerequisite quests, giver/turn-in NPC
+IDs, stages/objectives and rewards. Derive the NPC inspector's list from these
+links; do not duplicate a second quest list or encode requirements in filenames.
+PostgreSQL remains responsible for per-character quest state and durable awards.
+Initial P5-17 / P5-18 scope is read-only content inspection, with an explicit
+validated gameplay-template selection and expandable quest details. This neither
+adds live player eligibility to the editor nor changes the one-contact runtime
+limit. Full quest authoring and general multi-NPC runtime remain separate slices.
+The loaded template is session context and an export default, not an implicit
+zone save or a live database editor. Invalid loads preserve the current context.
+
 ## 12 November 2026 — custom-bound NPC spawn groups requested
 
 The user requests an NPC equivalent of the tree group, with custom editable bounds,

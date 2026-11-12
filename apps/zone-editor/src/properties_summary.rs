@@ -95,6 +95,11 @@ pub(super) fn description(session: &Session) -> Option<String> {
         )),
         Target::Scenery(model) => subject.push_str(&format!("\n{}", model.asset)),
         Target::QuestArea(_) => subject.push_str("\nQuest references checked on catalog export"),
+        Target::Marker(ref m)
+            if m.kind == theia_zone::markers::MarkerKind::Npc && m.definition.is_some() =>
+        {
+            subject.push_str("\nNPC gameplay reference")
+        }
         Target::Marker(_) => subject.push_str("\nAuthoring annotation"),
         Target::Path { path, .. } => subject.push_str(&format!("\n{} points", path.points.len())),
         Target::Object(_)
@@ -173,6 +178,7 @@ pub(super) fn spawn(parent: &mut ChildSpawnerCommands) {
                 field(row, super::inline::Input::Effect, 1);
             });
             super::area::spawn(root);
+            crate::quest_inspector::spawn(root);
             for index in 0..7 {
                 if matches!(index, 0 | 3 | 4) {
                     root.spawn((
@@ -298,8 +304,12 @@ pub(super) fn field(parent: &mut ChildSpawnerCommands, input: super::inline::Inp
         });
 }
 pub(super) fn plugin(app: &mut App) {
-    app.add_plugins((super::inline::plugin, super::area::plugin))
-        .add_zone_systems(sync.after(crate::present));
+    app.add_plugins((
+        super::inline::plugin,
+        super::area::plugin,
+        crate::quest_inspector::plugin,
+    ))
+    .add_zone_systems(sync.after(crate::present));
 }
 #[allow(clippy::type_complexity, clippy::too_many_arguments)]
 fn sync(

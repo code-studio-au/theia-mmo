@@ -650,6 +650,7 @@ pub(super) fn report(
         TabControls,
         crate::export_dialog::Report,
         crate::asset_preview::Report,
+        crate::quest_inspector::Report,
         Query<
             (
                 &ComputedNode,
@@ -672,8 +673,17 @@ pub(super) fn report(
     content: Res<outliner::Content>,
     content_controls: ContentControls,
 ) {
-    let (keys, focus, particles, tabs, tab_controls, export_dialog, asset_preview, asset_search) =
-        input;
+    let (
+        keys,
+        focus,
+        particles,
+        tabs,
+        tab_controls,
+        export_dialog,
+        asset_preview,
+        quests,
+        asset_search,
+    ) = input;
     let Some(mut report) = report else {
         return;
     };
@@ -835,6 +845,7 @@ pub(super) fn report(
         Some(serde_json::json!({"field":field.0,"value":text.value().to_string(),
             "centre":(t.affine().translation*factor).to_array(),"size":(node.size()*factor).to_array()}))
     }).collect::<Vec<_>>());
+    value["npc_quests"] = quests.snapshot(&session, scale.0);
     value["inline_attributes"] = serde_json::json!(controls.iter().filter_map(|((_,_,_,_,entity,_,_,_,_,_,field,text),_,_,_,node,t,..)| {
         let properties::InlineInput::Number(field) = field? else { return None }; let text = text?;
         if node.size().min_element() <= 0. { return None; }

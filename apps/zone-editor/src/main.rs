@@ -43,6 +43,7 @@ mod property_tabs;
 mod quest_area_authoring;
 mod quest_area_export;
 mod quest_area_preview;
+mod quest_inspector;
 mod scenery_collision;
 mod scenery_export;
 mod scenery_glb;
@@ -173,6 +174,7 @@ struct Session {
     exit_confirmation: bool,
     file_dialog: Option<file_picker::Draft>,
     export_dialog: Option<export_dialog::Draft>,
+    quest_context: Option<quest_inspector::Context>,
 }
 struct Drag {
     id: u64,
@@ -256,6 +258,7 @@ impl Session {
             exit_confirmation: false,
             file_dialog: None,
             export_dialog: None,
+            quest_context: None,
         }
     }
     fn placement_dimensions(&self, primitive: Primitive) -> [f64; 3] {
@@ -670,6 +673,11 @@ fn run() -> Result<(), String> {
         );
         return Ok(());
     }
+    let quest_context = options
+        .gameplay_template
+        .as_deref()
+        .map(quest_inspector::Context::load)
+        .transpose()?;
     if options.headless {
         println!("{}", cli::summary(&editor));
         return Ok(());
@@ -684,6 +692,7 @@ fn run() -> Result<(), String> {
     scenery_library.register(&mut app);
     app.insert_resource(scenery_library);
     let mut session = Session::new(editor, path, saved_zone);
+    session.quest_context = quest_context;
     match options.capture_view {
         Some(cli::CaptureView::Spawn) => session.inspect_spawn = true,
         Some(cli::CaptureView::TestPlayer) => {

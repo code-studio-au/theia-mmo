@@ -1,3 +1,27 @@
+P5-17 / P5-18 NPC quest inspection, 12 November 2026:
+Selecting a bound NPC now shows expandable quest offers/turn-ins in Attributes,
+including description, prerequisite quest names, ordered stages/completion rules,
+objectives, XP and configured fixed item rewards. Resolve existing stable NPC IDs
+against a validated gameplay catalogue; no duplicate NPC quest list or database
+editing is introduced. Missing templates, unbound and unmatched NPCs are explicit.
+File → Load gameplay and the inspector use the existing file browser; reload is
+prefilled, invalid files retain current data and zone/history/files remain intact.
+Interactive --gameplay-template now loads this session context and supplies the
+world/network export default. It is not persisted by zone Save; load it again on
+another launch, or pass the CLI option. This is read-only quest inspection, not
+full quest creation or multiple runtime NPC contacts.
+Prerequisites: existing quest catalogue/reward validation and NPC binding/export.
+Acceptance: all 220 ordinary editor tests pass (seven optional skips), fmt and
+strict workspace/all-target Clippy pass. Native actual selection, three quest
+expand/collapse flows, manifest reload, browser cancel and unbound NPC clearing
+pass on RX 7900 XTX / RADV NAVI31 / Vulkan, zero GPU diagnostics. Captures were
+visually inspected; drawn chevrons reuse the existing section style. Source zone
+and gameplay bytes remain unchanged. No Windows or new connected gameplay claim.
+Evidence: build/quest-inspector-{tests-final,clippy,build}.log and
+build/editor-quests-native-v2/{qualification.json,npc-quests.png,quest-details.png,
+gameplay-file-browser.png,unbound-npc.png}; reproduce with tools/qualify_editor_quests.py.
+Continue custom-bound NPC spawn-group implementation after this user-reported UI gap.
+
 P5-17 / P3-07 spawn-group data foundation, 12 November 2026:
 Schema 14 adds bounded custom-polygon population drafts with creature/model IDs,
 alive count, respawn delay and seed. Pure f64 polygon validation accepts concave
