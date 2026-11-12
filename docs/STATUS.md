@@ -1,3 +1,14 @@
+P5-17 / P3-16 authored encrypted-loopback qualification, 12 November 2026:
+two real Renet peers load independent snapshots of the exported Synty starter
+world, use the Classic prediction driver, remain still before readiness, then
+walk while seeing both players. A third stale-identity probe detects world
+mismatch before movement. The four-second headless run reports zero rejected
+inputs/readiness and movement recoveries; this is not a load/capacity claim.
+`build/authored-renet-test.log` records the explicitly invoked proprietary-asset
+test. Formatting and strict workspace Clippy pass. The harness supplies CPU
+collision readiness; native-client rendering, quests and persistence are not
+combined acceptance. Navigation and minimap terrain support remain next.
+
 P5-17 / P3-16 authored client presentation, 12 November 2026:
 client/server accept explicit `--authored-world` through the existing prediction
 path. The client loads the immutable standard GLB with Bevy world assets, updates

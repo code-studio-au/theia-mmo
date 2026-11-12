@@ -4145,3 +4145,10 @@ Mesa 26.2.6 Vulkan. `build/authored-gpu-test.log` and
 render scheduling and does not exercise an interactive client or network session.
 An earlier offscreen harness used unsupported default tonemapping; the final run
 uses the runtime's Reinhard tonemapping and has no logged rendering errors.
+
+The optional `authored_renet` integration test now runs two actual encrypted peers
+against this exported scene with independent collision sources and the Classic
+driver. It checks withheld-readiness immobility, movement after readiness and a
+stale-identity client's mismatch detection. `build/authored-renet-test.log` records
+the four-second run. CPU readiness is explicitly supplied by the harness; this
+does not combine the separate GPU test into native-client or quest acceptance.
