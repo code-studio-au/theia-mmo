@@ -128,14 +128,16 @@ impl Combat {
         let position = world
             .global_position(id)
             .ok_or("Missing player life actor")?;
-        let [x, _, z] = position.metres();
+        let mut feet = position.metres();
+        feet[1] -= f64::from(crate::world::PAWN_Y);
+        let feet = GlobalPosition::new(feet).ok_or("Invalid player life feet")?;
         let patch = world
             .procedural
             .as_ref()
             .and_then(|r| r.patch(position))
             .ok_or("Player life collision is not prepared")?;
         let mut home = patch
-            .try_spawn(x, z)
+            .try_landing_spawn(feet)
             .ok_or("Player life has no supported home")?
             .metres();
         home[1] += f64::from(crate::world::PAWN_Y);

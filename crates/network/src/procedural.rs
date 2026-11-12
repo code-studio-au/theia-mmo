@@ -189,6 +189,18 @@ impl Patch {
         self.frame
             .to_global(crate::kinematic::spawn(&self.scene, local).ok()?)
     }
+    /// Resolve the bounded landing support beneath trusted feet, including an
+    /// airborne restored actor. Unlike the XZ fixture lookup, this cannot choose
+    /// an overhead building roof as the actor's respawn home.
+    pub fn try_landing_spawn(&self, requested: GlobalPosition) -> Option<GlobalPosition> {
+        let local = self.frame.to_local(requested)?;
+        crate::kinematic::validate_pose(&self.scene, local, false).ok()?;
+        let mut feet = local.metres();
+        feet[1] = crate::kinematic::support_below(&self.scene, local)?;
+        let supported = theia_core::coordinates::LocalPosition::new(feet)?;
+        self.frame
+            .to_global(crate::kinematic::spawn(&self.scene, supported).ok()?)
+    }
     pub fn covers(&self, p: GlobalPosition, ready: Option<&BTreeSet<ChunkId>>) -> bool {
         let [x, y, z] = p.metres();
         let r = f64::from(crate::kinematic::FOOTPRINT_RADIUS);

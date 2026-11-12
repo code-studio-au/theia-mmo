@@ -1,3 +1,18 @@
+P3-04 / P3-15 full XYZ respawn support, 12 November 2026:
+Admission now retains the landing layer beneath the player's full feet position
+when preparing immutable respawn home. The former XZ-only highest-ground lookup
+could put a ground-floor player onto an overhead roof. A real Avian regression
+covers grounded/airborne admission below and above a walkable roof, lethal damage,
+respawn, exact horizontal placement, life/stream advancement, and unsupported/
+penetrating refusal. All 478 network authority tests pass, including their encrypted
+life/combat regressions. Formatting, denied-warning workspace/all-target Clippy,
+and rebuilt client/server/editor pass. No presentation or protocol change, desktop
+use, new GPU qualification or Windows claim. Logs: build/layered-respawn-{direct,
+authority-tests,clippy,build}.log. See docs/PLAYER_LIFE_AUTHORITY.md.
+Next: give stationary NPC/guide placement the same explicit height capability,
+then connect authored NPC/quest bindings; existing XZ fixture compatibility must
+remain exact. Proper spell animation and multi-NPC gameplay are still outstanding.
+
 P5-17 / P2-09 / P3-08 Synty player in editor F5, 12 November 2026:
 The editor launcher now selects the locally qualified 22-clip Synty base mannequin.
 Player menu switches model/capsule and automatic locomotion or explicit idle,

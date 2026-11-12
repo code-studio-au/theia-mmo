@@ -67,6 +67,94 @@ fn fixture(rate: TickRate, enable: bool) -> (World, EntityKey) {
     }
     (world, npc)
 }
+
+#[test]
+fn respawn_keeps_ground_or_roof_support_including_airborne_restored_players() {
+    use bevy::prelude::Vec3;
+    for (height, expected_height) in [(0., 0.), (1.5, 0.), (6.5, 6.5), (8., 6.5)] {
+        let (mut world, _) = fixture(TickRate::Hz30, true);
+        let focus = GlobalPosition::new([8006., 0., 8000.]).unwrap();
+        let original = world
+            .procedural
+            .as_ref()
+            .unwrap()
+            .patch(focus)
+            .unwrap()
+            .clone();
+        let floor = original.try_spawn(8006., 8000.).unwrap();
+        let local = Vec3::from_array(original.frame.to_local(floor).unwrap().metres());
+        let mut geometry = original.scene.colliders.clone();
+        geometry.push(crate::physics::PlacedCollider {
+            shape: avian3d::prelude::Collider::cuboid(20., 1., 20.),
+            center: local + Vec3::Y * 6.,
+            layer: crate::physics::SOLID | crate::physics::GROUND | crate::physics::CAMERA,
+        });
+        let patch = Arc::new(crate::procedural::Patch {
+            owner: original.owner,
+            frame: original.frame,
+            ids: original.ids.clone(),
+            scene: crate::physics::StaticScene::new(geometry),
+        });
+        let at_height = |height: f64| {
+            let mut position = floor.metres();
+            position[1] += height;
+            GlobalPosition::new(position).unwrap()
+        };
+        assert!(patch.try_landing_spawn(at_height(100.)).is_none());
+        assert!(patch.try_landing_spawn(at_height(5.8)).is_none());
+        assert!(patch.try_spawn(8006., 8000.).unwrap().metres()[1] > floor.metres()[1] + 6.);
+        world
+            .procedural
+            .as_mut()
+            .unwrap()
+            .patches
+            .insert(original.owner, patch);
+        let actor = world
+            .join_restored(at_height(height + f64::from(crate::world::PAWN_Y)))
+            .unwrap();
+        ready(&mut world, actor, 1);
+        let home = world.combat.as_ref().unwrap().actors[&actor]
+            .life
+            .as_ref()
+            .unwrap()
+            .home;
+        let expected = at_height(expected_height + f64::from(crate::world::PAWN_Y));
+        assert!(
+            (home.metres()[1] - expected.metres()[1]).abs() < 0.01,
+            "height={height} home={home:?} expected={expected:?}"
+        );
+        let key = world.player_life_snapshot(actor).unwrap().key;
+        let mut combat = world.combat.take().unwrap();
+        assert!(
+            combat
+                .damage_player(&mut world, key, 100)
+                .unwrap()
+                .unwrap()
+                .died
+        );
+        world.combat = Some(combat);
+        for _ in 0..20 {
+            world.step();
+            if world.player_alive(actor) {
+                break;
+            }
+        }
+        assert!(world.player_alive(actor));
+        assert_eq!(world.player_life_metrics().unwrap().respawns, 1);
+        assert!(world.player_life_error().is_none());
+        let restored = world.global_position(actor).unwrap().metres();
+        for (actual, expected) in restored.into_iter().zip(expected.metres()) {
+            assert!(
+                (actual - expected).abs() < 0.01,
+                "height={height} respawn={restored:?}"
+            );
+        }
+        assert_eq!(
+            world.player_life_snapshot(actor).unwrap().movement_stream,
+            3
+        );
+    }
+}
 pub(super) fn join(world: &mut World, xz: [f64; 2]) -> u64 {
     let position = GlobalPosition::new([xz[0], 0., xz[1]]).unwrap();
     let patch = world.procedural.as_ref().unwrap().patch(position).unwrap();

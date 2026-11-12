@@ -1,3 +1,12 @@
+12 November 2026 — P3-04 / P3-15 layered village support:
+Respawn home now resolves the bounded landing surface beneath the admitted full
+XYZ feet. It no longer searches downward from a fixed high altitude using only
+X/Z, which could select a building roof above a ground-floor player. Restored
+airborne players use their existing landing layer; unsupported or penetrating
+positions refuse. The existing 64 m support probe, capsule/headroom checks,
+prepared-patch and respawn-readiness gates remain. No client-selected home or
+new collision/loading path is introduced.
+
 Current opt-in executable and rendered adoption is qualified in
 [player-life native integration](PLAYER_LIFE_NATIVE.md). The checkpoint below
 records its own prerequisite scope and historical remaining gates.
