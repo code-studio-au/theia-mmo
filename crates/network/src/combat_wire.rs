@@ -43,6 +43,9 @@ pub fn max_batch_events(catalog: &Catalog) -> usize {
     }
 }
 const MAX_DEADLINE: u64 = 3600;
+// Respawns may span the authoring cap at the maximum supported 60 Hz.
+// Ability/cast/queue deadlines retain their original, separate bound.
+const MAX_RESPAWN_DEADLINE: u64 = combat::MAX_RESPAWN_MS as u64 / 1000 * 60;
 fn index(catalog: &Catalog, id: &ContentId) -> Result<u8> {
     catalog
         .abilities()
@@ -66,6 +69,9 @@ fn key(epoch: u64, entity: u64) -> Result<EntityKey> {
 }
 fn future(at: u64, tick: u64) -> bool {
     at > tick && at - tick <= MAX_DEADLINE
+}
+fn respawn_future(at: u64, tick: u64) -> bool {
+    at > tick && at - tick <= MAX_RESPAWN_DEADLINE
 }
 fn reason(value: u8) -> Result<Reason> {
     Ok(match value {
@@ -438,7 +444,8 @@ impl State {
                     || t.maximum > 1_000_000
                     || t.current > t.maximum
                     || (t.current == 0) != t.respawn_at.is_some()
-                    || t.respawn_at.is_some_and(|at| !future(at, self.tick))
+                    || t.respawn_at
+                        .is_some_and(|at| !respawn_future(at, self.tick))
             })
         {
             return Err("Invalid combat health/lifecycle".into());
@@ -776,7 +783,7 @@ impl Batch {
                 }
                 Event::Died {
                     target, respawn_at, ..
-                } => valid_key(*target) && future(*respawn_at, self.tick),
+                } => valid_key(*target) && respawn_future(*respawn_at, self.tick),
                 Event::Respawned {
                     previous, target, ..
                 } => valid_key(*previous) && valid_key(*target) && target.entity > previous.entity,

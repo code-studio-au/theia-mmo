@@ -1,3 +1,12 @@
+## 13 November 2026 — authored respawn timing and protocol bounds
+
+The already adopted spawn-zone authoring range is 1..86400 seconds. Extend the
+underlying combat configuration ceiling to 86400000 ms, retaining its existing
+100 ms development/test minimum and 5000 ms default. Use a separate bounded wire
+respawn deadline; do not widen cast, queue, GCD or ability cooldown limits. Values
+are Theia authoring policy in simulation seconds, not evidenced Classic formulas.
+Existing group export remains blocked pending complete gameplay/model binding.
+
 ## 12 November 2026 — NPC quest inspection and authoring source
 
 The user reports missing quest information when selecting the village NPC and asks

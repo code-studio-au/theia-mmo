@@ -8,7 +8,7 @@ use theia_core::{
 use theia_network::{
     simulation::{
         World,
-        combat::{Event, Outcome, Reason, Request},
+        combat::{self, Event, Outcome, Reason, Request},
     },
     wire::{ChunkReady, Input, Intent, VERSION},
 };
@@ -620,4 +620,67 @@ fn impact_death_and_respawn_positions_survive_entity_retirement() {
             .iter()
             .any(|e| matches!(e,Event::Respawned {position:p,..} if *p==position))
     );
+}
+
+#[test]
+fn authored_long_respawn_delays_keep_exact_tick_deadlines_and_wire_bounds() {
+    use theia_network::combat_wire;
+    for rate in [TickRate::Hz20, TickRate::Hz30, TickRate::Hz60] {
+        for seconds in [1_u32, 61, 86_400] {
+            let mut world = World::with_procedural([8000., 8000.], 1.).unwrap();
+            assert!(world.set_tick_rate(rate));
+            let target = world.spawn_development_target([8008., 8000.]).unwrap();
+            let identity = world.identity();
+            assert!(
+                world
+                    .enable_combat(&data(), 100, combat::MAX_RESPAWN_MS + 1)
+                    .is_err()
+            );
+            assert_eq!(world.identity(), identity);
+            world.enable_combat(&data(), 100, seconds * 1000).unwrap();
+            assert_eq!(
+                world.identity(),
+                combat::profile_identity(identity, &data(), 100, seconds * 1000).unwrap()
+            );
+            let actor = world.join().unwrap();
+            ready(&mut world, actor, 1);
+            let hz = u64::from(rate.hz());
+            for sequence in 1..=5 {
+                assert!(matches!(
+                    world
+                        .cast(actor, request(&world, sequence, target, BOLT))
+                        .reply
+                        .outcome,
+                    Outcome::Started { .. }
+                ));
+                step(&mut world, hz);
+                if sequence < 5 {
+                    step(&mut world, hz);
+                }
+            }
+            let snapshot = world.combat_snapshot(actor).unwrap();
+            let deadline = snapshot.tick + u64::from(seconds) * hz;
+            assert_eq!(snapshot.targets[0].respawn_at, Some(deadline));
+            assert_eq!(snapshot.targets[0].current, 0);
+            let catalog = world.combat_catalog().unwrap();
+            let wire = combat_wire::State::new(world.epoch(), snapshot, catalog).unwrap();
+            let bytes = wire.encode(catalog).unwrap();
+            assert_eq!(combat_wire::State::decode(&bytes, catalog).unwrap(), wire);
+            let batch = combat_wire::Batch {
+                sequence: 1,
+                epoch: world.epoch(),
+                tick: world.completed_tick(),
+                events: world.combat_events().to_vec(),
+            };
+            let bytes = batch.encode(catalog).unwrap();
+            assert_eq!(combat_wire::Batch::decode(&bytes, catalog).unwrap(), batch);
+            step(&mut world, hz - 1);
+            assert_eq!(health(&world, actor), 0);
+            if seconds == 1 {
+                world.step();
+                assert_eq!(health(&world, actor), 100);
+                assert_ne!(world.combat_snapshot(actor).unwrap().targets[0].key, target);
+            }
+        }
+    }
 }

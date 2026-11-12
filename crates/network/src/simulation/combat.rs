@@ -28,6 +28,8 @@ pub const MAX_STEP_EVENTS: usize = 64;
 pub const MAX_PROJECTILE_STEP_EVENTS: usize = 128;
 pub const DEVELOPMENT_HEALTH: u32 = 100;
 pub const DEVELOPMENT_RESPAWN_MS: u32 = 5000;
+/// Theia authored spawn-group cap (24 hours), not a Classic formula.
+pub const MAX_RESPAWN_MS: u32 = 86_400_000;
 struct Configuration {
     resources_hash: Option<[u8; 32]>,
     catalog: Catalog,
@@ -42,7 +44,7 @@ fn configuration(
     resources: Option<&[u8]>,
     statuses: Option<&[u8]>,
 ) -> crate::Result<Configuration> {
-    if health == 0 || health > 1_000_000 || !(100..=60_000).contains(&respawn_ms) {
+    if health == 0 || health > 1_000_000 || !(100..=MAX_RESPAWN_MS).contains(&respawn_ms) {
         return Err("Combat health/respawn configuration exceeds bounded prototype".into());
     }
     let catalog = Catalog::from_json(bytes)?;

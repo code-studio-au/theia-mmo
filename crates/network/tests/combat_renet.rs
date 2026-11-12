@@ -1586,3 +1586,88 @@ async fn checked_authored_population_replicates_to_two_encrypted_peers_with_inde
         stats.max_players
     );
 }
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn authored_day_long_respawn_deadline_reaches_an_encrypted_client() {
+    let (world, target, chunks) =
+        world(DATA, 100, theia_network::simulation::combat::MAX_RESPAWN_MS);
+    let identity = world.identity();
+    let catalog = Arc::new(Catalog::from_json(DATA).unwrap());
+    let tickets = tickets();
+    let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+    let address = socket.local_addr().unwrap();
+    let transport = net::issue_local(socket, &tickets.0).unwrap();
+    let (stop, shutdown) = watch::channel(false);
+    let guard = Stop(stop);
+    let server = tokio::spawn(net::run_server_measured(transport, shutdown, world));
+    let mut peer = Peer::start(
+        address,
+        fs::read(tickets.0.join("client-1.token")).unwrap(),
+        identity,
+        chunks,
+        catalog,
+        16,
+    );
+    peer.until(|s, _| s.chunk_ack.is_some() && s.combat.is_some())
+        .await;
+    for remaining in [80, 60, 40, 20, 0] {
+        peer.cast(target).await;
+        let state = peer
+            .until(|s, _| {
+                s.combat
+                    .as_ref()
+                    .is_some_and(|s| s.targets[0].current == remaining)
+            })
+            .await;
+        if remaining > 0 {
+            let deadline = state
+                .combat
+                .unwrap()
+                .cooldowns
+                .iter()
+                .map(|(_, at)| *at)
+                .max()
+                .unwrap();
+            peer.until(|s, _| s.snapshot.as_ref().is_some_and(|s| s.tick >= deadline))
+                .await;
+        }
+    }
+    let state = peer
+        .until(|_, events| {
+            events
+                .iter()
+                .any(|e| matches!(e,Event::Died { target:key,.. } if *key==target))
+        })
+        .await;
+    let health = &state.combat.as_ref().unwrap().targets[0];
+    let death = peer
+        .seen
+        .iter()
+        .find_map(|e| match e {
+            Event::Died {
+                target: key,
+                respawn_at,
+                ..
+            } if *key == target => Some(*respawn_at),
+            _ => None,
+        })
+        .unwrap();
+    assert_eq!(health.respawn_at, Some(death));
+    assert_eq!(death - state.combat.as_ref().unwrap().tick, 86_400 * 30);
+    let tick = state.snapshot.as_ref().unwrap().tick;
+    peer.until(|s, _| {
+        s.snapshot.as_ref().is_some_and(|s| s.tick >= tick + 30)
+            && s.combat.as_ref().is_some_and(|s| {
+                s.targets[0].current == 0 && s.targets[0].respawn_at == Some(death)
+            })
+    })
+    .await;
+    peer.finish().await.unwrap();
+    drop(guard);
+    let stats = server.await.unwrap().unwrap();
+    assert_eq!(stats.cast_requests_accepted, 5);
+    assert_eq!(stats.combat_backpressure_disconnects, 0);
+    println!(
+        "long_respawn_wire passed=true seconds=86400 hz=30 health=100 normal_casts=5 early_respawn=false elapsed_day_simulated=false"
+    );
+}

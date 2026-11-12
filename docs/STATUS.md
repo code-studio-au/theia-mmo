@@ -1,3 +1,22 @@
+P3-07 authored respawn deadline range, 13 November 2026:
+Combat configuration now accepts the editor's full 24-hour respawn ceiling; retain
+100 ms legacy minimum and the existing 5 s development default. This is an explicit
+Theia authoring limit, not a Classic formula. Health/death wire messages validate
+respawn deadlines separately up to that ceiling at supported 60 Hz. Ability cast,
+GCD, cooldown and queue deadline limits stay unchanged, as do frame tags/layouts
+and bounded bytes. Existing short-delay configuration identities remain unchanged;
+long-delay identities include their exact delay and older config loaders refuse them.
+Eleven actual authority tests, 13 wire tests and all eight ordinary encrypted combat
+regressions pass (one optional population test skipped). Test 1 s / 61 s / 24 h
+exact deadlines at 20/30/60 Hz after normal full-health damage, reject excessive/
+past/corrupted deadlines and retain short ability limits. A real encrypted client
+receives a 24-hour deadline after five normal 20-damage casts against 100 health
+and observes no early respawn. This is deadline arithmetic/transport evidence,
+not a full-day soak or saved group-setting adoption. Fmt and strict workspace/
+all-target Clippy pass. Evidence: build/population-respawn-{tests,network,
+renet-regressions,clippy}.log. No mouse/display; localhost tests use socket escalation.
+Next: bind creature definitions and saved group lifecycle settings; export stays gated.
+
 P3-07 / P1-07 prepared population over secure transport, 13 November 2026:
 Two actual encrypted Renet peers receive all five checked valley targets and their
 100-health states, with coordinates agreeing within 0.1 mm. Independent selection
