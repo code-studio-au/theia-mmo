@@ -1,3 +1,26 @@
+P5-17 / P1-06 Test Player setup in the editor, 12 November 2026:
+Use Add -> Test player at spawn (maximum two), then Explorer -> Test players to
+filter/select the setup pawns. These are nonblocking capsule badges. Move them
+with XYZ arrows or the permanent Position fields; Frame, Ground, Rename,
+Duplicate, Delete and Undo/Redo share normal authoring history. Duplicate uses
+the other client slot. Rotation and scale are disabled until the runtime spawn
+profile supports them. F5 remains the offline preview and hides test-pawn badges.
+
+Attributes -> Network conditions edits delay in milliseconds **each way**, added
+jitter, packet-loss percentage and the random seed. Thus 80 ms delay adds 160 ms
+base round-trip latency before jitter and actual transport latency. The three-dot
+properties menu toggles whether the client launches, or assigns Manual / Walk and
+turn controller. Changes apply immediately to setup; Save writes the zone file.
+Export/launch takes a snapshot; editing setup does not change an already running
+session. Scheduled outages remain supported by JSON, without an inspector yet.
+
+The native Linux qualification uses real owned UI input through add/filter,
+controller/enabled selection, inline position/delay edits, axis dragging and
+undo/duplicate/delete. Source bytes remain unchanged without Save; all 213
+ordinary editor tests pass. `tools/qualify_test_player_ui.py --output NEW_DIR`
+repeats the native check; see STATUS.md for device/evidence. Network test export
+and launch are currently CLI paths below; in-editor managed Start/Stop is next.
+
 P5-17 / P1-06 network-test export bridge, 12 November 2026:
 Use `--export NEW_DIRECTORY --network-test --content-id ID --revision N` to turn
 enabled saved Test Players into a managed-launcher scenario. Supply the usual

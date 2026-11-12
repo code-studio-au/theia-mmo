@@ -235,6 +235,11 @@ pub(super) fn setup(
                             "",
                         ),
                         (
+                            Control::Command(Action::AddTestPlayer),
+                            "Test player at spawn",
+                            "",
+                        ),
+                        (
                             Control::Command(Action::AddQuestArea),
                             "Quest area at spawn",
                             "",
@@ -588,13 +593,21 @@ impl Control {
             .or(session.particle_selected)
             .or(session.quest_area_selected)
             .or(session.scenery_selected)
+            .or(session.test_player_selected)
             .is_some();
         match self {
+            Self::Command(Action::TestPlayerEnabled | Action::TestPlayerController(_)) => {
+                session.test_player_selected.is_some()
+            }
+            Self::Command(Action::AddTestPlayer) => session.editor.zone().test_players.len() < 2,
             Self::AssetPlace => session.ui.assets_open && session.assets.selected.is_some(),
             Self::Command(Action::CreateStarterBasin | Action::CreateStarterValley) => {
                 theia_zone::starter_basin::available(session.editor.zone())
             }
-            Self::GizmoTool(_) => {
+            Self::GizmoTool(tool) => {
+                if session.test_player_selected.is_some() && tool != gizmo::Tool::Move {
+                    return false;
+                }
                 mode(session) == EditorMode::Objects
                     && session.particle_selected.is_none()
                     && session.quest_area_selected.is_none()
@@ -610,6 +623,7 @@ impl Control {
                         .or(session.particle_selected)
                         .or(session.quest_area_selected)
                         .or(session.scenery_selected)
+                        .or(session.test_player_selected)
                         .is_some()
             }
             Self::ParticlePreview | Self::BindParticle | Self::PreviewLibraryParticle => {
@@ -1031,6 +1045,10 @@ pub(super) fn sync(
                 | Control::WholePath
                 | Control::Command(Action::InsertPoint | Action::RemovePoint)
         ) && !session.path_mode
+            || matches!(
+                control,
+                Control::Command(Action::TestPlayerEnabled | Action::TestPlayerController(_))
+            ) && (session.test_player_selected.is_none() || session.play.is_some())
         {
             Display::None
         } else {
@@ -1169,6 +1187,7 @@ pub(super) fn sync(
                     outliner::Target::Particle(_) => "Particle",
                     outliner::Target::QuestArea(_) => "Quest area",
                     outliner::Target::Scenery(_) => "Scenery",
+                    outliner::Target::TestPlayer(_) => "Test player",
                 }
             )
         } else {

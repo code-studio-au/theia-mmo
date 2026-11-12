@@ -39,6 +39,7 @@ fn identity(session: &Session, tabs: Option<&property_tabs::State>) -> Option<Id
             | outliner::Target::Particle(_)
             | outliner::Target::QuestArea(_)
             | outliner::Target::Scenery(_)
+            | outliner::Target::TestPlayer(_)
     ) {
         return None;
     }
@@ -170,7 +171,8 @@ pub(super) fn spawn(parent: &mut ChildSpawnerCommands, server: Option<&AssetServ
                         (workspace::Control::Frame, "Frame", "F"),
                         (workspace::Control::Command(Action::Delete), "Delete", "Del"),
                     ],
-                )
+                );
+                test_players::menu(menu);
             })
             .id();
     });

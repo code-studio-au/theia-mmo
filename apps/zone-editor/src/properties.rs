@@ -108,6 +108,7 @@ enum Target {
     Plant(Plant),
     Particle(ParticlePlacement),
     Scenery(theia_zone::scenery::SceneryPlacement),
+    TestPlayer(theia_zone::test_players::TestPlayer),
     QuestArea(theia_zone::quest_areas::QuestArea),
     Marker(Marker),
     Path {
@@ -179,6 +180,15 @@ impl Target {
                 "Max Y (m)",
                 "Max Z (m)",
             ],
+            Self::TestPlayer(_) => &[
+                "World X (m)",
+                "World Y (m)",
+                "World Z (m)",
+                "Delay (ms/way)",
+                "Jitter (ms)",
+                "Packet loss (%)",
+                "Random seed",
+            ],
             Self::Spawn(_) => &["World X (m)", "World Y (m)", "World Z (m)"],
             Self::Plant(_) | Self::Particle(_) | Self::Scenery(_) => &[
                 "World X (m)",
@@ -209,6 +219,17 @@ impl Target {
                 .chain(area.max)
                 .map(|v| v.to_string())
                 .collect(),
+            Self::TestPlayer(p) => [
+                p.position[0],
+                p.position[1],
+                p.position[2],
+                f64::from(p.network.delay_ms),
+                f64::from(p.network.jitter_ms),
+                p.network.loss_percent,
+                f64::from(p.network.seed),
+            ]
+            .map(|v| v.to_string())
+            .to_vec(),
             Self::Spawn(position) => position.map(|v| v.to_string()).to_vec(),
             Self::Plant(p) => [
                 p.position[0],
@@ -262,6 +283,23 @@ impl Target {
                 area.min = [v[0], v[1], v[2]];
                 area.max = [v[3], v[4], v[5]];
                 Ok((area != *original).then_some(Edit::PutQuestArea { area }))
+            }
+            Self::TestPlayer(original) => {
+                let v = numbers(fields, self.labels())?;
+                let mut player = original.clone();
+                player.position = [v[0], v[1], v[2]];
+                if [3, 4, 6]
+                    .iter()
+                    .any(|&i| v[i].fract() != 0. || !(0. ..=f64::from(u32::MAX)).contains(&v[i]))
+                {
+                    return Err("Delay, jitter and seed require nonnegative whole numbers".into());
+                }
+                player.network.delay_ms = v[3] as u32;
+                player.network.jitter_ms = v[4] as u32;
+                player.network.loss_percent = v[5];
+                player.network.seed = v[6] as u32;
+                player.network.validate()?;
+                Ok((player != *original).then_some(Edit::PutTestPlayer { player }))
             }
             Self::Spawn(original) => {
                 let v = numbers(fields, self.labels())?;
@@ -727,6 +765,16 @@ fn capture(session: &Session, spawn_requested: bool) -> Option<(Option<u64>, Tar
             Some(model.id),
             Target::Scenery(model.clone()),
             format!("Scenery #{} | {}", model.id, model.name),
+        )
+    } else if let Some(p) = zone
+        .test_players
+        .iter()
+        .find(|p| Some(p.id) == session.test_player_selected)
+    {
+        (
+            Some(p.id),
+            Target::TestPlayer(p.clone()),
+            format!("Test player {} | {}", p.client_id, p.name),
         )
     } else if let Some(area) = zone
         .quest_areas
@@ -1548,3 +1596,53 @@ mod value_tests;
 #[cfg(test)]
 #[path = "properties_keyboard_tests.rs"]
 mod keyboard_tests;
+
+#[cfg(test)]
+mod test_player_attributes {
+    use super::*;
+    #[test]
+    fn inline_test_player_values_keep_configuration_and_validate_integer_network_settings() {
+        let original = theia_zone::test_players::TestPlayer {
+            id: 1,
+            name: "Delayed player".into(),
+            client_id: 2,
+            enabled: false,
+            position: [128_000_000_000.125, 0.1, -128_000_000_000.25],
+            controller: Some("test.walk-turn".into()),
+            network: theia_zone::test_players::NetworkConditions {
+                outages: vec![[1000, 100]],
+                ..default()
+            },
+        };
+        let target = Target::TestPlayer(original.clone());
+        let mut values = target.values();
+        assert_eq!(values.len(), 7);
+        assert!(!target.has_yaw());
+        values[0] = "128000000000.375".into();
+        values[3] = "80".into();
+        values[4] = "20".into();
+        values[5] = "1.25".into();
+        values[6] = "4294967295".into();
+        let Some(Edit::PutTestPlayer { player }) = target.edit(Some(1), &values).unwrap() else {
+            panic!("Expected test-player command");
+        };
+        assert_eq!(player.position[0], 128_000_000_000.375);
+        assert_eq!(player.position[2], original.position[2]);
+        assert_eq!(player.network.added_base_rtt_ms(), 160);
+        assert_eq!(player.network.outages, original.network.outages);
+        assert_eq!(player.controller, original.controller);
+        assert!(!player.enabled);
+        for (field, value) in [
+            (3, "80.5"),
+            (4, "-1"),
+            (3, "5001"),
+            (5, "101"),
+            (6, "4294967296"),
+            (0, "NaN"),
+        ] {
+            let mut bad = values.clone();
+            bad[field] = value.into();
+            assert!(target.edit(Some(1), &bad).is_err());
+        }
+    }
+}

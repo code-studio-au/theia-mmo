@@ -129,6 +129,10 @@ pub(super) fn prefix(target: &Target, index: usize) -> Option<(&'static str, f32
         return Some((["X", "Y", "Z"][index], 16., "m"));
     }
     match (target, index) {
+        (Target::TestPlayer(_), 3) => Some(("Delay", 44., "ms")),
+        (Target::TestPlayer(_), 4) => Some(("Jitter", 44., "ms")),
+        (Target::TestPlayer(_), 5) => Some(("Loss", 44., "%")),
+        (Target::TestPlayer(_), 6) => Some(("Seed", 44., "")),
         (Target::Path { .. }, 3) => Some(("Width", 44., "m")),
         (_, 3) => Some(("Yaw", 28., "°")),
         (Target::Object(_), 4..=6) => Some((["X", "Y", "Z"][index - 4], 16., "m")),

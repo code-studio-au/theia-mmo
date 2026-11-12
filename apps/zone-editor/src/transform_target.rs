@@ -3,7 +3,17 @@ use super::*;
 
 pub(super) fn selected(session: &Session) -> Option<(u64, Pose)> {
     let zone = session.editor.zone();
-    if let Some(id) = session.scenery_selected {
+    if let Some(id) = session.test_player_selected {
+        let player = zone.test_players.iter().find(|p| p.id == id)?;
+        Some((
+            id,
+            Pose {
+                position: player.position,
+                yaw_degrees: 0.,
+                size: [1.; 3],
+            },
+        ))
+    } else if let Some(id) = session.scenery_selected {
         let placement = zone.scenery.iter().find(|p| p.id == id)?;
         Some((id, scenery_pose(placement)))
     } else {
@@ -48,6 +58,14 @@ pub(super) fn edit(
             .ok_or("Load the scenery library before moving this model")?;
         scenery_scene::transform(zone, &placement, &entry.entry)?;
         Ok(Edit::PutScenery { scenery: placement })
+    } else if let Some(original) = zone.test_players.iter().find(|p| p.id == id) {
+        if pose.yaw_degrees != 0. || pose.size != [1.; 3] {
+            return Err("Test players currently support position only".into());
+        }
+        let mut player = original.clone();
+        player.position = pose.position;
+        player.validate(zone)?;
+        Ok(Edit::PutTestPlayer { player })
     } else if zone.objects.iter().any(|o| o.id == id) {
         Ok(Edit::Transform {
             id,

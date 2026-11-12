@@ -57,6 +57,11 @@ pub(super) fn snapshot(session: &Session) -> Option<(Option<u64>, Target, String
     {
         *pose = drag.preview.clone();
     }
+    if let Target::TestPlayer(player) = &mut target
+        && let Some(drag) = session.drag.as_ref().filter(|drag| Some(drag.id) == id)
+    {
+        player.position = drag.preview.position;
+    }
     Some((id, target, subject))
 }
 pub(super) fn description(session: &Session) -> Option<String> {
@@ -75,6 +80,19 @@ pub(super) fn description(session: &Session) -> Option<String> {
     }
     match target {
         Target::Particle(_) => subject.push_str("\nUnresolved asset reference"),
+        Target::TestPlayer(player) => subject.push_str(&format!(
+            "\n{} | {}",
+            if player.enabled {
+                "Enabled"
+            } else {
+                "Disabled"
+            },
+            match player.controller.as_deref() {
+                None => "Manual controller",
+                Some("test.walk-turn") => "Walk and turn",
+                Some(id) => id,
+            }
+        )),
         Target::Scenery(model) => subject.push_str(&format!("\n{}", model.asset)),
         Target::QuestArea(_) => subject.push_str("\nQuest references checked on catalog export"),
         Target::Marker(_) => subject.push_str("\nAuthoring annotation"),
@@ -414,6 +432,7 @@ fn sync(
     let fields = target.values();
     for (heading, mut node, mut text) in &mut headings {
         let title = match (&target, heading.0) {
+            (Target::TestPlayer(_), 3) => "Network conditions",
             (Target::QuestArea(_), 0) => "Minimum bounds",
             (Target::QuestArea(_), 3) => "Maximum bounds",
             (Target::QuestArea(_), _) => "",

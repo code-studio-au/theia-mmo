@@ -56,6 +56,7 @@ mod snapping;
 mod spawn;
 mod status_bar;
 mod terrain;
+mod test_players;
 mod theme;
 mod transform_target;
 #[cfg(test)]
@@ -113,6 +114,7 @@ struct Session {
     particle_selected: Option<u64>,
     quest_area_selected: Option<u64>,
     scenery_selected: Option<u64>,
+    test_player_selected: Option<u64>,
     scenery_ground_requested: Option<(u64, u64, u64)>,
     scenery_play_requested: Option<(u64, u64)>,
     inspect_spawn: bool,
@@ -195,6 +197,7 @@ impl Session {
             particle_selected: None,
             quest_area_selected: None,
             scenery_selected: None,
+            test_player_selected: None,
             scenery_ground_requested: None,
             scenery_play_requested: None,
             inspect_spawn: false,
@@ -361,6 +364,7 @@ impl Session {
         self.particle_selected = None;
         self.quest_area_selected = None;
         self.scenery_selected = None;
+        self.test_player_selected = None;
         self.status = if self.terrain_paint {
             "Terrain paint - choose a surface and click or drag".into()
         } else if self.vegetation_mode {
@@ -486,6 +490,15 @@ impl Session {
         {
             self.scenery_selected = None;
         }
+        if !self
+            .editor
+            .zone()
+            .test_players
+            .iter()
+            .any(|p| Some(p.id) == self.test_player_selected)
+        {
+            self.test_player_selected = None;
+        }
         self.next_id = self
             .next_id
             .max(self.editor.zone().next_id().unwrap_or(u64::MAX));
@@ -530,6 +543,9 @@ enum Action {
     Duplicate,
     AddParticle,
     AddQuestArea,
+    AddTestPlayer,
+    TestPlayerEnabled,
+    TestPlayerController(bool),
     CreateStarterBasin,
     CreateStarterValley,
     TerrainToggle,
@@ -666,6 +682,17 @@ fn run() -> Result<(), String> {
     let mut session = Session::new(editor, path, saved_zone);
     match options.capture_view {
         Some(cli::CaptureView::Spawn) => session.inspect_spawn = true,
+        Some(cli::CaptureView::TestPlayer) => {
+            session.test_player_selected = Some(
+                session
+                    .editor
+                    .zone()
+                    .test_players
+                    .first()
+                    .ok_or("--capture-view test-player requires a test player")?
+                    .id,
+            )
+        }
         Some(cli::CaptureView::PropertyActions) => {
             session.selected = Some(
                 session
@@ -704,6 +731,7 @@ fn run() -> Result<(), String> {
         distance: if initial_target.is_some() { 120. } else { 32. },
         preset: camera_views::Preset::Perspective,
     })
+    .init_resource::<test_players::Scene>()
     .init_resource::<scenery_scene::Scene>()
     .insert_resource(Time::<Fixed>::from_hz(30.))
     .insert_resource(bevy::winit::WinitSettings::continuous())
@@ -812,6 +840,7 @@ fn run() -> Result<(), String> {
                 quest_area_preview::sync,
                 scenery_scene::add_requested,
                 scenery_scene::sync,
+                test_players::sync,
             )
                 .chain(),
             vegetation::sync,
@@ -1029,6 +1058,10 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
                     "Starter terrain created · sculpt and paint to refine the zone".into();
             }
         }
+        Action::AddTestPlayer => test_players::add(session),
+        Action::TestPlayerEnabled | Action::TestPlayerController(_) => {
+            test_players::configure(action, session)
+        }
         Action::AddQuestArea => quest_area_authoring::add(session),
         Action::AddParticle => {
             let id = session.next_id;
@@ -1073,6 +1106,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
             session.particle_selected = None;
             session.quest_area_selected = None;
             session.scenery_selected = None;
+            session.test_player_selected = None;
             session.terrain_mode = false;
             session.terrain_paint = false;
             session.path_mode = false;
@@ -1116,7 +1150,10 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
                 } else if session.marker_mode {
                     session.marker_selected
                 } else if !session.terrain_mode {
-                    session.selected.or(session.particle_selected)
+                    session
+                        .selected
+                        .or(session.particle_selected)
+                        .or(session.test_player_selected)
                 } else {
                     None
                 };
@@ -1173,6 +1210,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
                     session.particle_selected = None;
                     session.quest_area_selected = None;
                     session.scenery_selected = None;
+                    session.test_player_selected = None;
                     session.inspect_spawn = false;
                     session.path_selected = None;
                     session.path_point = None;
@@ -1198,6 +1236,8 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
                 session.edit(vec![Edit::DeleteParticle { id }]);
             } else if let Some(id) = session.scenery_selected {
                 session.edit(vec![Edit::DeleteScenery { id }]);
+            } else if let Some(id) = session.test_player_selected {
+                session.edit(vec![Edit::DeleteTestPlayer { id }]);
             } else if let Some(id) = session.quest_area_selected {
                 session.edit(vec![Edit::DeleteQuestArea { id }]);
             } else {

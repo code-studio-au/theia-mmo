@@ -22,6 +22,7 @@ pub(super) enum Target {
     Particle(u64),
     QuestArea(u64),
     Scenery(u64),
+    TestPlayer(u64),
 }
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub(super) enum Filter {
@@ -34,6 +35,7 @@ pub(super) enum Filter {
     Particles,
     QuestAreas,
     Scenery,
+    TestPlayers,
     Terrain,
 }
 impl Filter {
@@ -47,6 +49,7 @@ impl Filter {
             Self::Particles => "Particles",
             Self::QuestAreas => "Quest areas",
             Self::Scenery => "Scenery",
+            Self::TestPlayers => "Test players",
             Self::Terrain => "Terrain",
         }
     }
@@ -61,6 +64,7 @@ impl Filter {
                 | (Self::Particles, Target::Particle(_))
                 | (Self::QuestAreas, Target::QuestArea(_))
                 | (Self::Scenery, Target::Scenery(_))
+                | (Self::TestPlayers, Target::TestPlayer(_))
                 | (Self::Terrain, Target::Terrain)
         )
     }
@@ -160,6 +164,15 @@ fn entries(zone: &Zone) -> Vec<Entry> {
         target: Target::Particle(p.id),
         label: format!("Particle #{} | {}", p.id, p.name),
     }));
+    rows.extend(zone.test_players.iter().map(|p| Entry {
+        target: Target::TestPlayer(p.id),
+        label: format!(
+            "Player {} | {}{}",
+            p.client_id,
+            p.name,
+            if p.enabled { "" } else { " (disabled)" }
+        ),
+    }));
     rows.extend(zone.scenery.iter().map(|p| Entry {
         target: Target::Scenery(p.id),
         label: format!("Scenery #{} | {}", p.id, p.name),
@@ -194,6 +207,8 @@ pub(super) fn selection(session: &Session) -> Option<Target> {
         Some(Target::QuestArea(id))
     } else if let Some(id) = session.scenery_selected {
         Some(Target::Scenery(id))
+    } else if let Some(id) = session.test_player_selected {
+        Some(Target::TestPlayer(id))
     } else if session.inspect_spawn {
         Some(Target::Spawn)
     } else {
@@ -390,6 +405,7 @@ pub(super) fn select_row(
         Target::Marker(id) => zone.markers.iter().any(|v| v.id == id),
         Target::Plant(id) => zone.plants.iter().any(|v| v.id == id),
         Target::Particle(id) => zone.particles.iter().any(|v| v.id == id),
+        Target::TestPlayer(id) => zone.test_players.iter().any(|v| v.id == id),
         Target::Scenery(id) => zone.scenery.iter().any(|v| v.id == id),
         Target::QuestArea(id) => zone.quest_areas.iter().any(|v| v.id == id),
     };
@@ -426,6 +442,11 @@ pub(super) fn select_row(
         Target::Plant(id) => {
             session.set_mode(EditorMode::Plants);
             session.plant_selected = Some(id);
+        }
+        Target::TestPlayer(id) => {
+            session.set_mode(EditorMode::Objects);
+            session.test_player_selected = Some(id);
+            session.gizmo_tool = gizmo::Tool::Move;
         }
         Target::Scenery(id) => {
             session.set_mode(EditorMode::Objects);

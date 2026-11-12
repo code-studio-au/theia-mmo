@@ -1,3 +1,23 @@
+P5-17 / P1-06 native Test Player authoring, 12 November 2026:
+Add -> Test player at spawn creates a bounded slot with a nonblocking capsule
+badge. Explorer has a Test players filter and normal selection/frame/rename;
+shared XYZ handles, permanent position fields, grounding, duplicate/delete and
+undo/redo preserve exact global coordinates and explicit Save. Rotation/scale
+are disabled because this first network spawn profile specifies feet only.
+Attributes includes validated one-way delay, added jitter, loss and seed. The
+three-dot menu toggles enabled and selects Manual or Walk and turn; controller
+and network settings survive movement/history. Outage schedules remain JSON-only.
+The badges hide in offline F5, add no collision and release deleted entities.
+All 213 ordinary editor tests pass (seven opt-in skips), as do fmt, strict
+workspace/all-target Clippy and client/server/editor builds. Native Linux owned
+mouse/keyboard tests pass add/filter, controller/enabled, position/delay edits,
+XYZ drag/undo, duplicate/delete/undo and exact source-file preservation. Zero GPU
+diagnostics on RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan. Tests close their
+owned window; no Windows execution claim. Evidence: build/test-player-ui-*
+and build/test-player-ui-native-v3/{qualification.json,state.png,editor.log}.
+Reproduce with tools/qualify_test_player_ui.py. Current Network Playtest launcher
+and authored export work from CLI; managed in-editor Start/Stop remains next.
+
 P5-17 / P1-06 zone-to-network-test export, 12 November 2026:
 The editor CLI --export DIR --network-test publishes a fresh world/scenario and
 bundled controller snapshot from enabled schema-12 Test Players. Resolve the

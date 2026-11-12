@@ -209,6 +209,7 @@ pub(super) fn pointer(
     objects: Query<&Authored>,
     particles: Query<&particle_anchors::ParticleAnchor>,
     scenery: Query<&scenery_scene::SceneryRoot>,
+    test_players: Query<&test_players::Badge>,
     parents: Query<&ChildOf>,
     handles: Query<(&gizmo::TransformHandle, &Visibility, &Transform)>,
     ground: Query<(), With<terrain::GroundPart>>,
@@ -273,6 +274,7 @@ pub(super) fn pointer(
         let filter = |entity| {
             objects.contains(entity)
                 || scenery_id(entity).is_some()
+                || test_players.contains(entity)
                 || particles.contains(entity)
                 || ground.contains(entity)
                 || handles
@@ -340,12 +342,18 @@ pub(super) fn pointer(
                 });
                 session.status = "Moving XZ plane - release applies; Escape cancels".into();
             }
+        } else if let Some(player) = hit.and_then(|entity| test_players.get(entity).ok()) {
+            session.set_mode(EditorMode::Objects);
+            session.test_player_selected = Some(player.0);
+            session.gizmo_tool = gizmo::Tool::Move;
+            session.status = format!("Selected test player #{}", player.0);
         } else if let Some(particle) = hit.and_then(|entity| particles.get(entity).ok()) {
             session.inspect_spawn = false;
             session.selected = None;
             session.particle_selected = Some(particle.0);
             session.quest_area_selected = None;
             session.scenery_selected = None;
+            session.test_player_selected = None;
             session.status = format!("Selected particle reference #{}", particle.0);
         } else {
             let id = hit.and_then(|entity| objects.get(entity).ok()).map(|o| o.0);
@@ -355,6 +363,7 @@ pub(super) fn pointer(
             session.particle_selected = None;
             session.quest_area_selected = None;
             session.scenery_selected = None;
+            session.test_player_selected = None;
             if already_selected
                 && session.gizmo_tool == gizmo::Tool::Move
                 && let Some(id) = id
