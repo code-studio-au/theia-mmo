@@ -65,8 +65,11 @@ saved group must be enabled, reference the supplied passive creature definition,
 have no explicit model reference and contain at most 16 actors. Its saved respawn
 delay controls combat. The profile's patrol route is not activated for this passive
 pool. Conflicting singleton creature/pursuit/loot options refuse. This explicit
-startup works headlessly with two actual encrypted peers; normal editor Play/export
-and `tools/play.py` population convenience wiring are still pending.
+startup works headlessly with two actual encrypted peers. The development launcher
+also accepts `python3 tools/play.py --authored-world WORLD --population-config FILE`
+with the usual `--binaries`/`--players` paths if needed. It implies Classic combat
+and checks the configuration before starting game processes. Normal editor
+Play/export population integration is still pending.
 
 It verifies development-capsule standing space, custom bounds, spacing and sampled
 access routes; reports rejection counts and insufficient results; and creates no

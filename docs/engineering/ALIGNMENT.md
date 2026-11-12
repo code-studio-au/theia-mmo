@@ -1,3 +1,18 @@
+P3-07 development launcher population integration, 13 November 2026:
+tools/play.py now accepts --population-config with an authored world, implies
+Classic combat, and forwards the exact resolved configuration to server and every
+client. It does not imply a patrol or resource profile. Reject singleton gameplay
+manifest conflicts and patrol/model overrides. Run the actual client configuration
+preflight before creating game processes; invalid placement/configuration refuses
+without starting a server or window. Existing process/ticket cleanup is retained.
+Five population launcher tests and 49 gameplay-bundle regressions pass, including
+one actual built-client headless preflight that stops before the first game process.
+Other launcher tests use process doubles only for argument/cleanup assertions;
+actual encrypted peer evidence remains in the preceding real-binary qualification.
+Fmt, strict workspace/all-target Clippy and diff checks pass. Evidence:
+build/population-launcher-{tests,clippy}.log. No mouse/display or native UI run.
+Editor export/Play population integration and model/AI support remain pending.
+
 P3-07 real server/client passive population startup, 13 November 2026:
 Both binaries now accept --population-config FILE with authored world, prediction,
 Classic controls and combat. Server consumes checked actors and the group's respawn

@@ -1,0 +1,134 @@
+"""Population launcher argument/preflight checks; never starts a game window."""
+from contextlib import redirect_stderr, redirect_stdout
+import inspect
+import io
+import json
+import os
+from pathlib import Path
+import subprocess
+import tempfile
+from types import SimpleNamespace
+import unittest
+from unittest.mock import patch
+import play
+
+PLAY_SIGNATURE = inspect.signature(play.play)
+
+
+class PopulationLauncher(unittest.TestCase):
+    @unittest.skipUnless(all(os.environ.get(key) for key in (
+        'THEIA_AUTHORED_WORLD', 'THEIA_POPULATION_CONFIG', 'THEIA_CLIENT_BIN')),
+        'requires actual authored population and built client')
+    def test_actual_client_preflight_completes_before_any_game_process(self):
+        class EndBeforeLaunch(Exception): pass
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            args = self.fixture(root)
+            args.update(authored_world=Path(os.environ['THEIA_AUTHORED_WORLD']),
+                        population_config=Path(os.environ['THEIA_POPULATION_CONFIG']),
+                        binaries=Path(os.environ['THEIA_CLIENT_BIN']).parent,
+                        combat_catalog=Path('content/gameplay/development-abilities.json').resolve())
+            commands = []
+            def launch(command, **_):
+                commands.append(command)
+                raise EndBeforeLaunch()
+            # Keep real subprocess.run's internals intact; stop only game launch.
+            runner = SimpleNamespace(run=subprocess.run, Popen=launch,
+                                     STDOUT=subprocess.STDOUT,
+                                     TimeoutExpired=subprocess.TimeoutExpired)
+            previous = Path.cwd()
+            try:
+                os.chdir(root)
+                with patch.object(play, 'subprocess', runner), self.assertRaises(EndBeforeLaunch):
+                    play.play(**args)
+            finally:
+                os.chdir(previous)
+            self.assertEqual(len(commands), 1)
+            self.assertTrue(Path(commands[0][0]).name.startswith('theia-server'))
+
+    def test_cli_selects_population_without_implying_patrol_or_resources(self):
+        with patch.object(play, 'play') as launch:
+            play.main(['--authored-world', 'world', '--population-config', 'population.json'])
+        args = PLAY_SIGNATURE.bind(*launch.call_args.args).arguments
+        self.assertEqual(args['population_config'], Path('population.json').resolve())
+        self.assertTrue(args['classic'])
+        self.assertTrue(args['prediction'])
+        self.assertIsNotNone(args['combat_catalog'])
+        self.assertIsNone(args['creature_profile'])
+        self.assertIsNone(args['navigation'])
+        self.assertIsNone(args['character_stats'])
+
+    def test_singleton_bundle_conflict_refuses_before_loading_or_launching(self):
+        with patch.object(play, 'play') as launch, redirect_stderr(io.StringIO()):
+            with self.assertRaises(SystemExit):
+                play.main(['--population-config', 'population.json', '--gameplay-manifest', 'missing.json'])
+        launch.assert_not_called()
+
+    def fixture(self, root):
+        for name in ['world/authored.world.json', 'world/world.manifest.json',
+                     'world/terrain.json', 'world/terrain.glb', 'players/character.glb',
+                     'bin/theia-client', 'bin/theia-server', 'population.json', 'abilities.json']:
+            if os.name == 'nt' and name.startswith('bin/'):
+                name += '.exe'
+            path = root/name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text('{}')
+        return dict(world=None, players=root/'players', clients=2, binaries=root/'bin',
+                    authored_world=root/'world', prediction=True, classic=True,
+                    combat_catalog=root/'abilities.json', population_config=root/'population.json')
+
+    def test_failed_headless_preflight_never_starts_children_or_session(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            args = self.fixture(root)
+            for response in [SimpleNamespace(returncode=1, stderr='Invalid placement', stdout=''),
+                             SimpleNamespace(returncode=0, stderr='', stdout='{}'),
+                             SimpleNamespace(returncode=0, stderr='', stdout='not JSON')]:
+                with patch.object(play.subprocess, 'run', return_value=response) as preflight, \
+                        patch.object(play.subprocess, 'Popen') as child:
+                    with self.assertRaises(ValueError):
+                        play.play(**args)
+                child.assert_not_called()
+                command = preflight.call_args.args[0]
+                self.assertIn('--configuration-report', command)
+                self.assertEqual(command[command.index('--population-config')+1], str(root/'population.json'))
+
+    def test_same_population_is_forwarded_after_preflight_and_owned_children_clean_up(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            args = self.fixture(root)
+            report = dict(renderer_started=False, network_started=False, saved_state_admitted=False)
+            commands, stopped = [], []
+            class Process:
+                def __init__(self, server): self.server, self.code = server, None if server else 0
+                def poll(self): return self.code
+                def send_signal(self, _): stopped.append('server'); self.code = 0
+                def terminate(self): stopped.append('server'); self.code = 0
+                def wait(self, **_): return self.code
+            def launch(command, **kwargs):
+                commands.append(command)
+                server = len(commands) == 1
+                if server:
+                    kwargs['stdout'].write('listening=127.0.0.1:12345 local_tickets=fixture\n')
+                    kwargs['stdout'].flush()
+                return Process(server)
+            previous = Path.cwd()
+            try:
+                os.chdir(root)
+                with patch.object(play.subprocess, 'run', return_value=SimpleNamespace(
+                        returncode=0, stderr='', stdout=json.dumps(report))), \
+                        patch.object(play.subprocess, 'Popen', side_effect=launch), redirect_stdout(io.StringIO()):
+                    play.play(**args)
+            finally:
+                os.chdir(previous)
+            self.assertEqual(len(commands), 3)
+            for command in commands:
+                self.assertEqual(command.count('--population-config'), 1)
+                self.assertEqual(command[command.index('--population-config')+1], str(root/'population.json'))
+                self.assertNotIn('--creature-profile', command)
+            self.assertEqual(stopped, ['server'])
+            self.assertEqual(list((root/'build/development-session').glob('renet-*')), [])
+
+
+if __name__ == '__main__':
+    unittest.main()
