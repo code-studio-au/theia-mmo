@@ -417,6 +417,9 @@ impl Network {
     pub(crate) fn local_motion_segment(&self) -> Option<[GlobalPosition; 2]> {
         self.local_track.as_ref().map(RemotePawn::global_endpoints)
     }
+    pub(crate) fn local_actor_id(&self) -> Option<u64> {
+        self.state.borrow().id
+    }
     pub(crate) fn state(&self) -> State {
         self.state.borrow().clone()
     }

@@ -6,7 +6,10 @@ quest areas or bound NPC contacts. The player path defaults from --player-assets
 the current editor process remembers the last template/player directory.
 The dialog exports the current immutable zone/scenery/controller snapshot and
 launches one local authoritative server plus one independent encrypted client per
-enabled pawn. Test-player attributes determine spawn, controller and network
+enabled pawn. Their native windows arrange side by side (or vertically on tall
+displays), show the actual server-assigned player IDs, and keep rendering while
+unfocused. You can move/resize them afterwards. Small displays use a cascade;
+these remain separate processes/windows, not embedded editor camera panels. Test-player attributes determine spawn, controller and network
 conditions. **Zone -> Stop network playtest** ends the whole owned session.
 Closing or losing the editor also closes its private launcher pipe and cleans up
 its server/clients. F5 / Offline playtest is separate and disabled during a

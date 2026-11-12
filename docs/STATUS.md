@@ -1,3 +1,21 @@
+P5-17 / P1-06 independent network camera windows, 12 November 2026:
+Managed playtests pass each client a bounded --test-window INDEX/COUNT. Standard
+Bevy monitor/window APIs arrange two views horizontally where space allows,
+vertically on tall displays, or as a cascade on small screens; a single enabled
+client centres normally regardless of its authenticated slot. Titles use the
+server-supplied player ID. Background views keep updating and initial placement
+never overrides later user movement/resizing. No embedded framebuffer sharing.
+All 248 ordinary client tests (two skips), 21 focused Python checks, formatting,
+strict workspace/all-target Clippy and application builds pass. Native Linux
+Vulkan qualification verifies actual separate 1280x720 client rectangles inside
+the 3440x1440 monitor, distinct authenticated player titles/camera captures, both
+movement scripts completing and owned cleanup/ticket removal. Zero GPU diagnostics
+on RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6. Portrait/negative-origin layouts have
+headless checks; native Windows/Wayland/multiple-monitor execution is unqualified.
+Evidence: build/test-window-* and build/network-windows-native-v2/; reproduce with
+tools/qualify_network_windows.py. Next: authored-world minimap terrain, currently
+blank in these new zone views, before more authored quest/NPC integration.
+
 P5-17 / P1-06 managed Network Playtest in the editor, 12 November 2026:
 Zone -> Start network playtest exports the current immutable authoring snapshot,
 then owns one real server and one encrypted native client per enabled Test Player.

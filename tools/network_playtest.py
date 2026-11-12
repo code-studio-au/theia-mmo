@@ -189,12 +189,13 @@ def run(scenario_path, world, players, binaries, output, *, duration=None, windo
                 if time.monotonic() >= deadline:
                     raise TimeoutError('Test server startup timed out')
                 time.sleep(.02)
-            for player, relay in zip(scenario.players, relays):
+            for view_index, (player, relay) in enumerate(zip(scenario.players, relays), 1):
                 if stop_file.exists() or stop_requested():
                     reason = "stop requested during client startup"
                     return
                 relay.start(backend)
                 processes.append(subprocess.Popen([str(client_binary), *scene, '--window-size', window_size,
+                    '--test-window', f'{view_index}/{len(scenario.players)}',
                     '--player-assets', str(players), *(['--test-controller', str(player.controller)] if player.controller else []), '--renet-connect', f'{relay.address[0]}:{relay.address[1]}',
                     str(Path(tickets) / f'client-{player.client_id}.token')], env=environment,
                     stdout=files.enter_context((output / f'client-{player.client_id}.log').open('w')), stderr=subprocess.STDOUT))

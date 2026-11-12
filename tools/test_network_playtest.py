@@ -157,8 +157,20 @@ class LifecycleTests(unittest.TestCase):
             self.assertTrue(process.arguments[-1].endswith(f'client-{index}.token'))
             self.assertIn(f'127.0.0.1:{10000 + index - 1}', process.arguments)
             self.assertIn('--classic', process.arguments)
+            slot = process.arguments.index('--test-window')
+            self.assertEqual(process.arguments[slot + 1], f'{index}/2')
         self.assertFalse(list(self.output.glob('tickets-*')))
         self.assertEqual(json.loads((self.output / 'session.json').read_text())['reason'], 'stop requested')
+
+    def test_only_second_player_uses_one_view_without_changing_its_identity(self):
+        data = document()
+        data['players'][1]['enabled'] = False
+        self.path.write_text(json.dumps(data))
+        self.execute(owner_stops_after=2)
+        self.assertEqual(len(self.processes), 2)
+        client = self.processes[1].arguments
+        self.assertEqual(client[client.index('--test-window') + 1], '1/1')
+        self.assertTrue(client[-1].endswith('client-2.token'))
 
     def test_only_assigned_client_receives_controller_argument(self):
         script = self.root / 'walk.json'

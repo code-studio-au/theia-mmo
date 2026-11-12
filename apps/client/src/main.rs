@@ -47,6 +47,7 @@ mod status_effects;
 mod targeting;
 mod terrain_scene;
 mod test_controller;
+mod test_window;
 mod triplanar;
 mod ui_buttons;
 mod world_input;
@@ -89,6 +90,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         false
     };
+    let test_view = test_window::from_args(&mut args)?;
+    if test_view.is_some() && fullscreen {
+        return Err("Test windows require windowed mode".into());
+    }
     let window_size = if let Some(i) = args.iter().position(|a| a == "--window-size") {
         args.remove(i);
         if i >= args.len() {
@@ -1090,11 +1095,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             |chunks| chunks.data.identity(),
         )
     };
-    if test_controller.is_some()
+    if (test_controller.is_some() || test_view.is_some())
         && !configuration_report
         && args.first().is_none_or(|a| a != "--renet-connect")
     {
-        return Err("Test controllers require a connected local client".into());
+        return Err("Test controllers/windows require a connected local client".into());
     }
     if configuration_report {
         if connected || !args.is_empty() || !graybox || !prediction || !classic {
@@ -1349,6 +1354,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .after(bevy::picking::PickingSystems::Last),
         )
         .add_systems(FixedUpdate, movement::move_local_pawn);
+    if let Some(view) = test_view {
+        test_window::install(&mut app, view);
+    }
     if let Some(run) = test_controller {
         test_controller::install(&mut app, run);
     }
