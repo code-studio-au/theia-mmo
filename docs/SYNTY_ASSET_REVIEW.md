@@ -252,3 +252,60 @@ no desktop is available; there are no GPU errors in the final runs. No native
 interaction or Windows rendering claim. Hut 1 has an extended foundation/pier:
 place the intended ground/floor level, rather than blindly raising its bottom
 bound to the terrain for village dressing.
+
+### Editable starter valley village
+
+P5-17 / P3-15, 12 November 2026: the separate tracked recipe
+`content/zones/starter-valley-village.commands.jsonl` creates the 512 m terrain,
+six Kingdom cottages, a meeting table/chairs/lantern, 44 forest trees in village
+and four outskirt groups, ruins, a hollow trunk, fallen timber, rocks and an exit
+arch. Two normal editor transactions place the 65 models and paint 58 trail
+strokes connecting the outskirts. Every model remains independently selectable,
+movable, rotatable, scalable and undoable. Source cottage foundations extend
+below their porch: the recipe sinks the foundation to put the porch at terrain
+level. Interiors have not been qualified. No NPC behaviour is implied by cottage
+names such as Herbalist or Hunter.
+
+Create a new local copy and export without touching an existing user draft:
+
+```sh
+python3 tools/edit_zone.py --no-build --headless \
+  --zone content/zones/starter-valley.base.json \
+  --commands content/zones/starter-valley-village.commands.jsonl \
+  --scenery-library build/starter-valley-scenery-v2/catalog.json \
+  --output build/starter-valley-village-v2.zone.json \
+  --export build/starter-valley-village-world-v2 \
+  --content-id theia.starter.valley --revision 2
+```
+
+The exported scene has 232,062 instantiated triangles, 11 shared visuals and
+58 solid model instances, within the existing 262,144 visual-triangle limit.
+Source-exact export comparison passes all 65 placements, including original
+textures/materials/tangents and source collision triangles. The comparison now
+uses the actual numeric contract: subtract f64 global origin, then convert local
+translation to f32; it no longer incorrectly requires large local f32 translations
+to equal f64 values within two micrometres. Saved global source values remain exact.
+
+The actual offline Classic controller follows five routes from the plaza to the
+four outskirt clearings and the southern exit, then returns, without jumping or
+teleporting past obstacles. Spawn and full scenery collision pass. This is sampled
+walkability, not pathfinding, combat, multiplayer or exhaustive containment.
+Evidence: `build/starter-valley-village-routes.log`, `-v2-spawn.log`,
+`-v2-source-comparison.json`, `-v2-export.log`. Quest contacts, wolves, pickups,
+full-zone navigation residency and the connected authored-spawn correction remain
+separate work.
+
+The offscreen GPU harness now waits for all model primitives and stable compiled
+pipelines before capturing; previously it could capture loaded foliage entities
+before the alpha-mask shaders were ready. A canopy-pixel check detects that false
+visual completion. This was a capture readiness error, not disappearing tree art.
+The terrain-only recipe remains available; neither this recipe nor qualification
+opens the desktop or writes the normal editor draft.
+
+Final actual GPU overview and village close-up pass on RX 7900 XTX / RADV NAVI31 /
+Mesa 26.2.6 Vulkan with all 110 primitive entities and visible golden foliage.
+Images: `build/starter-valley-village-{overview,closeup}-final.png`; logs:
+`build/starter-valley-village-{overview,closeup}-final-gpu.log`. Formatting and
+strict workspace/all-target Clippy pass. This remains a scenery blockout; the
+mountain boundary, cottage access and set dressing can be refined during gameplay
+iteration, and no native Windows/display interaction was performed.

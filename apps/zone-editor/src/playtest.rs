@@ -768,6 +768,84 @@ mod starter_basin_tests {
 mod starter_valley_tests {
     use super::*;
     #[test]
+    #[ignore = "requires THEIA_VALLEY_ZONE and the local THEIA_SCENERY_LIBRARY"]
+    fn dressed_valley_classic_routes_reach_outskirts_and_return() {
+        let path = std::env::var_os("THEIA_VALLEY_ZONE").expect("Local dressed valley");
+        let zone = Zone::load(std::path::Path::new(&path)).unwrap();
+        let path = std::env::var_os("THEIA_SCENERY_LIBRARY").expect("Local model catalog");
+        let library = scenery_library::Library::load(std::path::Path::new(&path)).unwrap();
+        assert!(zone.scenery.len() >= 65);
+        let mut play = Playtest::with_library(&zone, &library).unwrap();
+        let routes: &[&[[f32; 2]]] = &[
+            &[
+                [-20., -6.],
+                [-65., -9.],
+                [-74., -23.],
+                [-85., -40.],
+                [-92., -62.],
+            ],
+            &[[20., 6.], [65., 9.], [76., -9.], [87., -31.], [92., -56.]],
+            &[
+                [-20., -6.],
+                [-65., -9.],
+                [-75., 21.],
+                [-80., 48.],
+                [-72., 86.],
+            ],
+            &[[20., 6.], [65., 9.], [77., 31.], [82., 56.], [75., 82.]],
+            &[[0., 80.], [0., 140.], [4., 165.], [0., 210.], [-4., 252.]],
+        ];
+        for (route, points) in routes.iter().enumerate() {
+            play.feet = play.spawn;
+            play.motion = Motion::default();
+            let targets = points
+                .iter()
+                .chain(points.iter().rev().skip(1))
+                .copied()
+                .chain(std::iter::once([0., 0.]));
+            for target in targets {
+                let mut reached = false;
+                for _ in 0..1200 {
+                    let [x, _, z] = play.feet.metres();
+                    let direction = Vec2::new(target[0] - x, target[1] - z);
+                    if direction.length() < 0.35 {
+                        reached = true;
+                        break;
+                    }
+                    let direction = direction.normalize();
+                    play.feet = kinematic::advance_classic(
+                        &play.scene,
+                        &mut play.motion,
+                        play.feet,
+                        Intent {
+                            axes: [
+                                (direction.x * 1000.).round() as i16,
+                                (direction.y * 1000.).round() as i16,
+                            ],
+                            sprint: true,
+                            facing: theia_core::facing::Facing::from_radians(
+                                f64::from(direction.x).atan2(f64::from(direction.y))
+                                    + std::f64::consts::PI,
+                            ),
+                            ..default()
+                        },
+                        TickRate::Hz30,
+                        None,
+                    )
+                    .unwrap();
+                }
+                assert!(
+                    reached,
+                    "Route {route} blocked toward {target:?} at {:?}",
+                    play.feet.metres()
+                );
+            }
+        }
+        println!(
+            "five_classic_routes=true return_to_village=true source_scenery_collision=true navigation_not_exercised=true"
+        );
+    }
+    #[test]
     fn valley_classic_walk_and_jump_routes_cross_only_the_southern_pass() {
         let mut editor = Editor::new(Zone {
             origin: [8192., 0., 8192.],

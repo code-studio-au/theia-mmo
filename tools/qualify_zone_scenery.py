@@ -58,7 +58,10 @@ def verify(zone_path, catalog_path, world):
         previous = mesh_uses.setdefault(asset['sha256'], node['mesh'])
         assert node['mesh'] == previous, 'Repeated asset must share one mesh'
         yaw = np.deg2rad(placement['yaw_degrees']) / 2
-        expected = local_matrix(dict(translation=(np.array(placement['position']) - zone['origin']).tolist(),
+        # The renderer/collision contract uses bounded f32 local transforms after
+        # the exact f64 global subtraction. Keep this independent of Rust export.
+        local = (np.array(placement['position'], dtype=np.float64) - zone['origin']).astype(np.float32)
+        expected = local_matrix(dict(translation=local.tolist(),
                                      rotation=[0, np.sin(yaw), 0, np.cos(yaw)], scale=[placement['scale']]*3))
         assert np.allclose(matrices[node_index], expected, atol=2e-6, rtol=0)
         original = source['meshes'][0]['primitives']

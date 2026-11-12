@@ -1,3 +1,23 @@
+P5-17 / P3-15 editable starter village scenery, 12 November 2026:
+a separate command recipe builds six Kingdom cottages, 44 trees across the village
+and four outskirt groves, ruins, hollow trunk, fallen timber, meeting furniture,
+rocks and an exit arch. All 65 models retain ordinary editor gizmos and history;
+58 paint strokes connect the outskirt clearings. The 512 m scene exports 232,062
+instantiated triangles with 11 shared visuals and 58 solid model instances.
+Actual Classic capsule movement reaches all four clearings and the southern exit,
+then returns to the village without jump/teleport; sampled routes, not navigation.
+Source-exact full export and playtest spawn checks pass. World comparison now
+correctly accounts for f64-to-f32 local translation rather than rejecting valid
+rounding at larger distances. Strict workspace Clippy and formatting pass.
+RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan offscreen overview and close-up
+captures pass with all 110 mesh primitives and visible canopies. The harness now
+waits for compiled pipelines: earlier images taken too soon lacked foliage.
+Final images: build/starter-valley-village-{overview,closeup}-final.png; scene:
+build/starter-valley-village-v2.zone.json; recipe and reproduction are documented
+in docs/SYNTY_ASSET_REVIEW.md. No desktop used. This is an editable scenery
+blockout, not the complete quest zone. Next: preserve authored spawn in the
+connected runtime, navigation coverage, NPC quest contacts and wolf patrols.
+
 P1-10 / P5-17 Kingdom huts in the integrated scenery library, 12 November 2026:
 11 verified local assets now include two Kingdom huts with source palette art and
 an explicit Standard normal-map adaptation. Bounded legacy prefab/model metadata
