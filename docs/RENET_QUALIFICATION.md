@@ -1,3 +1,37 @@
+## 12 November 2026 — configurable local test connections (P1-06 / P5-17)
+
+`tools/network_profile.py` supplies an immutable, checked `Profile` for the existing
+loopback UDP relay. `Relay(Profile())` has no added impairment; `Relay(Profile(
+delay_ms=80))` adds 80 ms in each direction (160 ms base added RTT). Jitter adds
+0..N ms per packet; measured RTT also includes actual transport/scheduling latency.
+Loss choices are repeatable by seed, direction and packet ordinal. This is repeatable
+packet impairment, not deterministic game replay. Optional outage windows are
+relative to relay start and discard pending packets rather than replaying them
+when the link returns. No packet contents or simulation timestep are changed.
+
+Delay/jitter are bounded to 5,000 ms each, loss to 0..100%, seed to u32, and at most
+16 ordered nonoverlapping outages of up to 60 seconds each within a one-hour test.
+The existing 512-packet queue/32-packet receive batch remain bounded. Excess queued
+traffic increments overflow; close cancels pending work. Each relay owns one client
+connection. No-argument `Relay()` retains the older native qualification fixture's
+exact ordinal loss, jitter and duplication rules for compatibility.
+
+Nine profile/real-loopback tests cover independent clients, round-trip delay,
+payload preservation, seeded choices, total loss, outage/recovery, queue overflow,
+shutdown, invalid configuration and the old fixture. Together with existing launcher
+and qualification-helper regressions, 18 tests pass:
+
+```sh
+PYTHONPATH=tools python3 -m unittest test_network_profile test_qualify_graybox test_authored_play -v
+```
+
+Evidence: `build/network-profile-tests-final.log`; formatting and denied-warning
+workspace/all-target Clippy pass. These new checks use actual UDP echo peers,
+not authenticated Renet gameplay or rendered split clients. Editor Test Player
+properties, per-pawn spawn/controller binding, integration with secure client
+launch, and Windows execution remain follow-ons. Existing Renet evidence below
+is unchanged and does not qualify the new configurable workflow.
+
 # Renet local replacement qualification
 
 The timings below record the wire-v5 replacement gate. The newer

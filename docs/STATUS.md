@@ -1,3 +1,17 @@
+P1-06 / P5-17 configurable test-connection foundation, 12 November 2026:
+The loopback qualification relay accepts a checked per-connection Profile with
+one-way delay, bounded added jitter, seeded loss and scheduled outages. Explicit
+Profile() adds no impairment; old no-argument callers retain their original
+fixture exactly. Outages discard queued traffic, queues remain bounded and close
+cancels delayed packets. Real UDP tests verify two independent connections,
+round-trip delay/payloads, outage/recovery/loss, queue overflow and legacy behavior.
+All 18 focused Python tests, formatting and strict workspace/all-target Clippy
+pass. Logs: build/network-profile-{tests-final,clippy}.log. No new renderer use,
+Windows execution, authenticated Renet or editor-pawn integration claim. Next:
+authored test-player definitions, server-validated per-client spawns and normal
+client input scripts, then editor-managed Start/Stop and distinct client views.
+See RENET_QUALIFICATION.md. Continue locally across commits.
+
 P5-17 selected model preview, 12 November 2026:
 Selecting an asset card now shows its actual verified GLB through a standard Bevy
 camera in the browser's right-hand preview. Only that presentation instance is
