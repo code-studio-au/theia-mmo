@@ -90,6 +90,7 @@ struct Session {
     selected: Option<u64>,
     particle_selected: Option<u64>,
     quest_area_selected: Option<u64>,
+    scenery_selected: Option<u64>,
     inspect_spawn: bool,
     palette: Option<Primitive>,
     placement_size: [f64; 3],
@@ -165,6 +166,7 @@ impl Session {
             selected: None,
             particle_selected: None,
             quest_area_selected: None,
+            scenery_selected: None,
             inspect_spawn: false,
             palette: None,
             placement_size: [1.; 3],
@@ -325,6 +327,7 @@ impl Session {
         self.selected = None;
         self.particle_selected = None;
         self.quest_area_selected = None;
+        self.scenery_selected = None;
         self.status = if self.terrain_paint {
             "Terrain paint - choose a surface and click or drag".into()
         } else if self.vegetation_mode {
@@ -440,6 +443,15 @@ impl Session {
             .any(|a| Some(a.id) == self.quest_area_selected)
         {
             self.quest_area_selected = None;
+        }
+        if !self
+            .editor
+            .zone()
+            .scenery
+            .iter()
+            .any(|p| Some(p.id) == self.scenery_selected)
+        {
+            self.scenery_selected = None;
         }
         self.next_id = self
             .next_id
@@ -752,6 +764,7 @@ fn run() -> Result<(), String> {
                 markers::sync,
                 particle_anchors::sync,
                 quest_area_preview::sync,
+                scenery_scene::add_requested,
                 scenery_scene::sync,
             )
                 .chain(),
@@ -997,6 +1010,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
             session.inspect_spawn = false;
             session.particle_selected = None;
             session.quest_area_selected = None;
+            session.scenery_selected = None;
             session.terrain_mode = false;
             session.terrain_paint = false;
             session.path_mode = false;
@@ -1091,6 +1105,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
                     session.selected = None;
                     session.particle_selected = None;
                     session.quest_area_selected = None;
+                    session.scenery_selected = None;
                     session.inspect_spawn = false;
                     session.path_selected = None;
                     session.path_point = None;
@@ -1114,6 +1129,8 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
                 session.edit(vec![Edit::Delete { id }]);
             } else if let Some(id) = session.particle_selected {
                 session.edit(vec![Edit::DeleteParticle { id }]);
+            } else if let Some(id) = session.scenery_selected {
+                session.edit(vec![Edit::DeleteScenery { id }]);
             } else if let Some(id) = session.quest_area_selected {
                 session.edit(vec![Edit::DeleteQuestArea { id }]);
             } else {

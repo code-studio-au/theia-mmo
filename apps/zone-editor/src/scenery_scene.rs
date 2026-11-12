@@ -3,7 +3,7 @@ use super::*;
 use std::collections::BTreeMap;
 
 #[derive(Component)]
-pub(super) struct SceneryRoot;
+pub(super) struct SceneryRoot(pub u64);
 #[derive(Resource, Default)]
 pub(super) struct Scene {
     roots: BTreeMap<u64, (Entity, String)>,
@@ -32,6 +32,59 @@ pub(super) fn transform(
             ))
             .with_scale(Vec3::splat(placement.scale as f32)),
     )
+}
+
+pub(super) fn add_requested(
+    mut requests: ResMut<workspace::Requests>,
+    mut session: ResMut<Session>,
+    library: Res<scenery_library::Library>,
+    mut tabs: Option<ResMut<property_tabs::State>>,
+) {
+    let Some(index) = requests.add_scenery.take() else {
+        return;
+    };
+    if workspace::busy(&session) {
+        return;
+    }
+    let Some(asset) = library.assets.values().nth(index) else {
+        session.status = "Scenery library changed; select a model again".into();
+        return;
+    };
+    add(&mut session, &asset.entry);
+    if session.scenery_selected.is_some()
+        && let Some(tabs) = tabs.as_mut()
+    {
+        tabs.active = property_tabs::Tab::Attributes;
+    }
+}
+fn add(session: &mut Session, entry: &scenery_library::Entry) {
+    let id = session.next_id;
+    if id == u64::MAX {
+        session.status = "Authoring IDs exhausted".into();
+        return;
+    }
+    let zone = session.editor.zone();
+    let placement = theia_zone::scenery::SceneryPlacement {
+        id,
+        name: entry.name.clone(),
+        asset: entry.id.clone(),
+        position: zone.spawn,
+        yaw_degrees: 0.,
+        scale: 1.,
+    };
+    if let Err(error) = transform(zone, &placement, entry) {
+        session.status = error;
+        return;
+    }
+    let revision = session.editor.revision();
+    session.edit(vec![Edit::PutScenery { scenery: placement }]);
+    if session.editor.revision() != revision {
+        session.set_mode(EditorMode::Objects);
+        session.scenery_selected = Some(id);
+        session.ui.properties_collapsed = false;
+        session.status =
+            "Scenery added at spawn · edit position, rotation and scale in Attributes".into();
+    }
 }
 
 pub(super) fn sync(
@@ -71,7 +124,7 @@ pub(super) fn sync(
         } else {
             commands
                 .spawn((
-                    SceneryRoot,
+                    SceneryRoot(placement.id),
                     WorldAssetRoot(server.load(format!("scenery://{}#Scene0", asset.entry.file))),
                     transform,
                     Visibility::Visible,
@@ -93,6 +146,56 @@ pub(super) fn sync(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn add_duplicate_delete_scenery_share_history_and_preserve_saved_document() {
+        let zone = Zone::default();
+        let mut session = Session::new(
+            Editor::new(zone.clone()).unwrap(),
+            PathBuf::new(),
+            Some(zone.clone()),
+        );
+        let entry = scenery_library::Entry {
+            id: "synty.forest.archway".into(),
+            name: "Archway".into(),
+            category: "Structures".into(),
+            file: String::new(),
+            bytes: 1,
+            sha256: String::new(),
+            bounds: [[-1., 0., -1.], [1., 3., 1.]],
+            triangles: 1,
+            source: serde_json::json!({}),
+        };
+        add(&mut session, &entry);
+        let first = session.scenery_selected.unwrap();
+        assert_eq!(
+            outliner::selection(&session),
+            Some(outliner::Target::Scenery(first))
+        );
+        let first_zone = session.editor.zone().clone();
+        selection::duplicate(&mut session);
+        let second = session.scenery_selected.unwrap();
+        assert_ne!(first, second);
+        assert_eq!(session.editor.zone().scenery.len(), 2);
+        let mut view = View {
+            target: Vec3::ZERO,
+            yaw: 0.,
+            pitch: -0.5,
+            distance: 20.,
+            preset: default(),
+            show_grid: true,
+        };
+        perform(Action::Delete, &mut session, &mut view);
+        assert_eq!(session.editor.zone(), &first_zone);
+        assert_eq!(session.scenery_selected, None);
+        assert_eq!(session.saved_zone.as_ref(), Some(&zone));
+        for _ in 0..3 {
+            session.execute(Command::Undo {
+                expected_revision: session.editor.revision(),
+            });
+        }
+        assert_eq!(session.editor.zone(), &zone);
+        assert!(!session.is_dirty());
+    }
     #[test]
     fn far_model_transforms_preserve_anchor_and_reject_rotated_geometry_outside_zone() {
         let origin = [128_000_000_000., -4., -128_000_000_000.];

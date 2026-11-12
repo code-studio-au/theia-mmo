@@ -112,6 +112,7 @@ fn context(session: &Session) -> String {
             | outliner::Target::Marker(id)
             | outliner::Target::Plant(id)
             | outliner::Target::Particle(id)
+            | outliner::Target::Scenery(id)
             | outliner::Target::QuestArea(id) => {
                 single_line(zone.authoring_name(id).unwrap_or("Selection"), 48)
             }

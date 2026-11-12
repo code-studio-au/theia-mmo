@@ -208,6 +208,8 @@ pub(super) fn pointer(
     camera: Query<(&Camera, &GlobalTransform), With<crate::viewport::ZoneCamera>>,
     objects: Query<&Authored>,
     particles: Query<&particle_anchors::ParticleAnchor>,
+    scenery: Query<&scenery_scene::SceneryRoot>,
+    parents: Query<&ChildOf>,
     handles: Query<(&gizmo::TransformHandle, &Visibility, &Transform)>,
     ground: Query<(), With<terrain::GroundPart>>,
     mut raycast: MeshRayCast,
@@ -262,8 +264,14 @@ pub(super) fn pointer(
         return;
     }
     if mouse.just_pressed(MouseButton::Left) {
+        let scenery_id = |entity| {
+            std::iter::once(entity)
+                .chain(parents.iter_ancestors(entity))
+                .find_map(|ancestor| scenery.get(ancestor).ok().map(|root| root.0))
+        };
         let filter = |entity| {
             objects.contains(entity)
+                || scenery_id(entity).is_some()
                 || particles.contains(entity)
                 || ground.contains(entity)
                 || handles
@@ -318,10 +326,16 @@ pub(super) fn pointer(
                     session.status = "Orbit the view to drag this handle".into();
                 }
             }
+        } else if let Some(id) = hit.and_then(scenery_id) {
+            session.set_mode(EditorMode::Objects);
+            session.scenery_selected = Some(id);
+            session.status = format!("Selected scenery #{id}");
         } else if let Some(particle) = hit.and_then(|entity| particles.get(entity).ok()) {
             session.inspect_spawn = false;
             session.selected = None;
             session.particle_selected = Some(particle.0);
+            session.quest_area_selected = None;
+            session.scenery_selected = None;
             session.status = format!("Selected particle reference #{}", particle.0);
         } else {
             let id = hit.and_then(|entity| objects.get(entity).ok()).map(|o| o.0);
@@ -330,6 +344,7 @@ pub(super) fn pointer(
             session.selected = id;
             session.particle_selected = None;
             session.quest_area_selected = None;
+            session.scenery_selected = None;
             if already_selected
                 && session.gizmo_tool == gizmo::Tool::Move
                 && let Some(id) = id

@@ -45,7 +45,7 @@ pub(super) fn spawn_content(parent: &mut ChildSpawnerCommands, row: usize) {
 pub(super) fn spawn(
     parent: &mut ChildSpawnerCommands,
     title: &'static str,
-    items: &[(workspace::Control, &'static str, &'static str)],
+    items: &[(workspace::Control, &str, &str)],
 ) {
     let mut owner = parent.spawn(Node::default());
     let anchor = owner.id();
@@ -133,7 +133,7 @@ pub(super) fn spawn(
 
 pub(super) fn spawn_items(
     menu: &mut ChildSpawnerCommands,
-    items: &[(workspace::Control, &'static str, &'static str)],
+    items: &[(workspace::Control, &str, &str)],
 ) {
     for &(control, label, shortcut) in items {
         menu.spawn((

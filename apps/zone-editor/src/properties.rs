@@ -107,6 +107,7 @@ enum Target {
     Object(Pose),
     Plant(Plant),
     Particle(ParticlePlacement),
+    Scenery(theia_zone::scenery::SceneryPlacement),
     QuestArea(theia_zone::quest_areas::QuestArea),
     Marker(Marker),
     Path {
@@ -160,7 +161,11 @@ impl Target {
     fn has_yaw(&self) -> bool {
         matches!(
             self,
-            Self::Object(_) | Self::Plant(_) | Self::Marker(_) | Self::Particle(_)
+            Self::Object(_)
+                | Self::Plant(_)
+                | Self::Marker(_)
+                | Self::Particle(_)
+                | Self::Scenery(_)
         )
     }
     fn labels(&self) -> &'static [&'static str] {
@@ -175,7 +180,7 @@ impl Target {
                 "Max Z (m)",
             ],
             Self::Spawn(_) => &["World X (m)", "World Y (m)", "World Z (m)"],
-            Self::Plant(_) | Self::Particle(_) => &[
+            Self::Plant(_) | Self::Particle(_) | Self::Scenery(_) => &[
                 "World X (m)",
                 "World Y (m)",
                 "World Z (m)",
@@ -206,6 +211,15 @@ impl Target {
                 .collect(),
             Self::Spawn(position) => position.map(|v| v.to_string()).to_vec(),
             Self::Plant(p) => [
+                p.position[0],
+                p.position[1],
+                p.position[2],
+                p.yaw_degrees,
+                p.scale,
+            ]
+            .map(|v| v.to_string())
+            .to_vec(),
+            Self::Scenery(p) => [
                 p.position[0],
                 p.position[1],
                 p.position[2],
@@ -268,6 +282,14 @@ impl Target {
                 plant.yaw_degrees = v[3];
                 plant.scale = v[4];
                 Ok((plant != *original).then_some(Edit::PutPlant { plant }))
+            }
+            Self::Scenery(original) => {
+                let v = numbers(fields, self.labels())?;
+                let mut scenery = original.clone();
+                scenery.position = [v[0], v[1], v[2]];
+                scenery.yaw_degrees = v[3];
+                scenery.scale = v[4];
+                Ok((scenery != *original).then_some(Edit::PutScenery { scenery }))
             }
             Self::Particle(original) => {
                 let v = numbers(fields, self.labels())?;
@@ -695,6 +717,16 @@ fn capture(session: &Session, spawn_requested: bool) -> Option<(Option<u64>, Tar
             Some(object.id),
             Target::Object(object.pose.clone()),
             format!("{:?} #{} | {}", object.primitive, object.id, object.name),
+        )
+    } else if let Some(model) = zone
+        .scenery
+        .iter()
+        .find(|p| Some(p.id) == session.scenery_selected)
+    {
+        (
+            Some(model.id),
+            Target::Scenery(model.clone()),
+            format!("Scenery #{} | {}", model.id, model.name),
         )
     } else if let Some(area) = zone
         .quest_areas

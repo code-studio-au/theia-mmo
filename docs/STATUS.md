@@ -1,3 +1,18 @@
+P5-17 / P1-10 Synty scenery placement UI, 12 November 2026:
+loading a scenery catalog adds a Scenery menu with named models. Placements appear
+in Explorer with a type filter, resolve viewport mesh clicks to their authoring
+object, and expose permanent name/position/yaw/scale fields. Enter or leaving a
+field applies the accepted value through shared history; disk Save stays explicit.
+Duplicate/delete/undo retain the scenery selection contract. A tracked eight-
+placement `content/zones/forest-scenery.zone.json` references only logical IDs;
+proprietary payloads remain local. All 169 other editor tests passed in the full
+run; the new inline test's incorrect pre-Enter expectation was corrected and all
+four scenery tests then passed. Formatting and strict workspace Clippy pass.
+Actual headless Bevy loading instantiated seven model meshes and removed all seven
+on root deletion: `build/starter-forest-scenery-v1/bevy-scene-lifecycle.json`.
+Native appearance remains pending. Scenery grounding, export and offline collision
+admission are still next; the existing export/playtest guards remain explicit.
+
 P5-17 / P1-10 scenery loading and scene instances, 12 November 2026:
 editor `--scenery-library` verifies a bounded, hash-addressed catalog and registers
 its immutable bytes with Bevy's in-memory asset source. Standard glTF world assets

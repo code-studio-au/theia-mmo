@@ -237,15 +237,45 @@ impl Library {
         }
         let gltfs = app.world().resource::<Assets<Gltf>>();
         let mut entries = Vec::new();
+        let mut worlds = Vec::new();
         for (id, handle) in &handles {
             let gltf = gltfs.get(handle).ok_or("Missing loaded scenery")?;
             if gltf.scenes.len() != 1 || gltf.meshes.len() != 1 || !gltf.skins.is_empty() {
                 return Err("Unexpected static scenery graph".into());
             }
+            worlds.push(gltf.scenes[0].clone());
             entries.push(serde_json::json!({"id":id,"meshes":gltf.meshes.len(),"materials":gltf.materials.len()}));
         }
+        let roots: Vec<_> = worlds
+            .into_iter()
+            .map(|handle| {
+                app.world_mut()
+                    .spawn((WorldAssetRoot(handle), Transform::default()))
+                    .id()
+            })
+            .collect();
+        for _ in 0..4 {
+            app.update();
+        }
+        let meshes = app.world_mut().query::<&Mesh3d>().iter(app.world()).count();
+        if meshes != roots.len() {
+            return Err(format!(
+                "Expected {} scene meshes, got {meshes}",
+                roots.len()
+            ));
+        }
+        for root in roots {
+            app.world_mut().entity_mut(root).despawn();
+        }
+        for _ in 0..4 {
+            app.update();
+        }
+        let remaining = app.world_mut().query::<&Mesh3d>().iter(app.world()).count();
+        if remaining != 0 {
+            return Err("Scenery descendants survived root deletion".into());
+        }
         Ok(
-            serde_json::json!({"loaded":true,"assets":entries,"images":app.world().resource::<Assets<Image>>().len(),"scope":"CPU glTF and image loading; no rendering or collision qualification"}),
+            serde_json::json!({"instantiated_meshes":meshes,"meshes_after_deletion":remaining,"loaded":true,"assets":entries,"images":app.world().resource::<Assets<Image>>().len(),"scope":"CPU glTF and image loading; no rendering or collision qualification"}),
         )
     }
 }

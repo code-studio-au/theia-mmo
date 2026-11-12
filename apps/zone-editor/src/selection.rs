@@ -26,6 +26,7 @@ pub(super) fn keyboard(
         session.inspect_spawn = false;
         session.particle_selected = None;
         session.quest_area_selected = None;
+        session.scenery_selected = None;
         let objects = &session.editor.zone().objects;
         let reverse = keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight);
         session.selected = if objects.is_empty() {
@@ -101,6 +102,11 @@ pub(super) fn frame(session: &mut Session, view: &mut View) -> bool {
                     .length();
             (centre, radius)
         })
+    } else if let Some(id) = session.scenery_selected {
+        zone.scenery
+            .iter()
+            .find(|p| p.id == id)
+            .map(|p| (p.position, (p.scale * 4.) as f32))
     } else if let Some(id) = session.particle_selected {
         zone.particles
             .iter()
@@ -151,7 +157,10 @@ pub(super) fn duplicate(session: &mut Session) {
     } else if session.vegetation_mode {
         session.plant_selected
     } else if !session.terrain_mode {
-        session.selected.or(session.particle_selected)
+        session
+            .selected
+            .or(session.particle_selected)
+            .or(session.scenery_selected)
     } else {
         None
     };
@@ -184,6 +193,8 @@ pub(super) fn duplicate(session: &mut Session) {
     } else if session.vegetation_mode {
         session.plant_selected = Some(new_id);
         session.plant_palette = None;
+    } else if session.scenery_selected.is_some() {
+        session.scenery_selected = Some(new_id);
     } else if session.particle_selected.is_some() {
         session.particle_selected = Some(new_id);
     } else {

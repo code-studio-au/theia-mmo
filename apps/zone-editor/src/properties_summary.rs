@@ -75,6 +75,7 @@ pub(super) fn description(session: &Session) -> Option<String> {
     }
     match target {
         Target::Particle(_) => subject.push_str("\nUnresolved asset reference"),
+        Target::Scenery(model) => subject.push_str(&format!("\n{}", model.asset)),
         Target::QuestArea(_) => subject.push_str("\nQuest references checked on catalog export"),
         Target::Marker(marker) => subject.push_str(&format!(
             "\nDefinition: {}\nAuthoring annotation",
@@ -421,7 +422,7 @@ fn sync(
             (_, 3) => "Rotation",
             (Target::Object(_), 4) => "Dimensions",
             (Target::Plant(_), 4) => "Scale",
-            (Target::Particle(_), 4) => "Scale",
+            (Target::Particle(_) | Target::Scenery(_), 4) => "Scale",
             (Target::Marker(_), 4) => "Area",
             _ => "",
         };

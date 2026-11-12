@@ -33,10 +33,12 @@ pub(super) struct Requests {
     pub bind_particle: bool,
     pub preview_library_particle: bool,
     pub exit: bool,
+    pub add_scenery: Option<usize>,
 }
 #[derive(Component, Clone, Copy, Debug)]
 pub(super) enum Control {
     New,
+    AddScenery(usize),
     Exit,
     Mode(EditorMode),
     Command(Action),
@@ -136,6 +138,7 @@ pub(super) fn setup(
     icons: Option<Res<sidebar::Icons>>,
     server: Option<Res<AssetServer>>,
     images: Option<Res<Assets<Image>>>,
+    library: Option<Res<scenery_library::Library>>,
 ) {
     sidebar::setup(&mut commands, icons.as_deref());
     commands.init_resource::<Requests>();
@@ -217,6 +220,23 @@ pub(super) fn setup(
                         ),
                     ],
                 );
+                if let Some(library) = &library
+                    && !library.assets.is_empty()
+                {
+                    let items: Vec<_> = library
+                        .assets
+                        .values()
+                        .enumerate()
+                        .map(|(i, asset)| {
+                            (
+                                Control::AddScenery(i),
+                                asset.entry.name.as_str(),
+                                "at spawn",
+                            )
+                        })
+                        .collect();
+                    menus::spawn(row, "Scenery", &items);
+                }
                 menus::spawn(
                     row,
                     "View",
@@ -498,12 +518,14 @@ impl Control {
             .or(session.plant_selected)
             .or(session.particle_selected)
             .or(session.quest_area_selected)
+            .or(session.scenery_selected)
             .is_some();
         match self {
             Self::GizmoTool(_) => {
                 mode(session) == EditorMode::Objects
                     && session.particle_selected.is_none()
                     && session.quest_area_selected.is_none()
+                    && session.scenery_selected.is_none()
                     && outliner::selection(session) != Some(outliner::Target::Spawn)
             }
             Self::Transform => {
@@ -515,6 +537,7 @@ impl Control {
                         .or(session.path_selected)
                         .or(session.particle_selected)
                         .or(session.quest_area_selected)
+                        .or(session.scenery_selected)
                         .is_some()
             }
             Self::ParticlePreview | Self::BindParticle | Self::PreviewLibraryParticle => {
@@ -546,6 +569,7 @@ impl Control {
             Self::Frame => {
                 (session.terrain_mode && session.editor.zone().terrain.is_some()) || selected
             }
+            Self::Command(Action::Ground) if session.scenery_selected.is_some() => false,
             Self::Command(Action::Duplicate | Action::Ground) => {
                 selected && session.quest_area_selected.is_none()
             }
@@ -704,6 +728,7 @@ pub(super) fn execute(
     }
     match control {
         Control::New => new_document(session, view, content),
+        Control::AddScenery(index) => requests.add_scenery = Some(index),
         Control::Exit => requests.exit = true,
         Control::Mode(next) => {
             if mode(session) != next {
@@ -1042,6 +1067,7 @@ pub(super) fn sync(
                     outliner::Target::Plant(_) => "Plant",
                     outliner::Target::Particle(_) => "Particle",
                     outliner::Target::QuestArea(_) => "Quest area",
+                    outliner::Target::Scenery(_) => "Scenery",
                 }
             )
         } else {

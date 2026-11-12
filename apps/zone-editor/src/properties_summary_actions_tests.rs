@@ -755,3 +755,71 @@ fn quest_area_binding_fields_commit_validate_and_preserve_source_file_snapshot()
         key(&mut app, KeyCode::Escape, Key::Escape);
     }
 }
+
+#[test]
+fn scenery_inline_transforms_keep_selection_and_save_explicitly() {
+    let origin = [128_000_000_000.125, 0., -128_000_000_000.25];
+    let (mut app, _) = super::tests::fixture(origin, 0);
+    let zone = Zone {
+        schema: 10,
+        origin,
+        spawn: origin,
+        scenery: vec![theia_zone::scenery::SceneryPlacement {
+            id: 1,
+            name: "Archway".into(),
+            asset: "synty.forest.archway".into(),
+            position: origin,
+            yaw_degrees: 0.,
+            scale: 1.,
+        }],
+        ..default()
+    };
+    let mut session = Session::new(
+        Editor::new(zone.clone()).unwrap(),
+        PathBuf::new(),
+        Some(zone.clone()),
+    );
+    session.scenery_selected = Some(1);
+    app.insert_resource(session);
+    app.update();
+    app.update();
+    let visible = app
+        .world_mut()
+        .query::<(&Value, &ComputedNode)>()
+        .iter(app.world())
+        .filter(|(_, node)| node.size().min_element() > 0.)
+        .count();
+    assert_eq!(visible, 5);
+    for (index, value) in [(0, origin[0] + 0.125), (3, 45.), (4, 2.)] {
+        let input = open(&mut app, index);
+        type_value(&mut app, input, &value.to_string());
+        // Enter accepts the value directly from the permanent field; Save is separate.
+        key(&mut app, KeyCode::Enter, Key::Enter);
+        let session = app.world().resource::<Session>();
+        let p = &session.editor.zone().scenery[0];
+        assert_eq!(
+            match index {
+                0 => p.position[0],
+                3 => p.yaw_degrees,
+                _ => p.scale,
+            },
+            value
+        );
+        assert_eq!(session.scenery_selected, Some(1));
+        assert_eq!(session.saved_zone.as_ref(), Some(&zone));
+    }
+    let before = app.world().resource::<Session>().editor.zone().clone();
+    let input = open(&mut app, 4);
+    type_value(&mut app, input, "-1");
+    key(&mut app, KeyCode::Enter, Key::Enter);
+    assert_eq!(app.world().resource::<Session>().editor.zone(), &before);
+    key(&mut app, KeyCode::Escape, Key::Escape);
+    let mut session = app.world_mut().resource_mut::<Session>();
+    session.edit(vec![Edit::DeleteScenery { id: 1 }]);
+    assert_eq!(session.scenery_selected, None);
+    let revision = session.editor.revision();
+    session.execute(Command::Undo {
+        expected_revision: revision,
+    });
+    assert_eq!(session.editor.zone(), &before);
+}

@@ -102,3 +102,27 @@ source, ambiguous bindings and existing-output refusal. The local Medieval Camp
 folder contains Unreal `.uasset` files, so it is not yet part of this FBX/GLB
 pipeline. Forest cliffs have qualified projected-material work to reuse after the
 standard model-placement path; no material substitution is claimed here.
+
+### Editor dressing study (12 November 2026)
+
+The integrated editor now uses these actual GLBs through standard Bevy world
+assets. Open the saved-reference example with the staged catalog:
+
+```sh
+python3 tools/edit_zone.py --zone content/zones/forest-scenery.zone.json \
+  --save-path build/forest-scenery-draft.zone.json \
+  --scenery-library build/starter-forest-scenery-v1/catalog.json
+```
+
+The Scenery menu places a named model at spawn. Explorer selection and direct
+position/yaw/scale/name fields support editing, duplication and deletion with
+undo; Save writes the document explicitly. Eight example placements include a
+small table/chair/lantern group and nearby arch, ruins, log and rocks. Geometry
+and textures are loaded from the verified immutable snapshot, with no copies of
+proprietary model files in Git. GPU appearance remains unreviewed under the
+no-display instruction. Export and offline playtest refuse scenery until the
+collision/publication slice is qualified; this example is an authoring study.
+
+The windowless `--check-scenery` route loaded all seven models and their images,
+instantiated seven mesh entities and verified zero surviving meshes after root
+deletion. Evidence: `build/starter-forest-scenery-v1/bevy-scene-lifecycle.json`.

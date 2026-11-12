@@ -1,0 +1,113 @@
+{
+  "schema": 10,
+  "name": "Synty forest dressing study",
+  "origin": [
+    0,
+    0,
+    0
+  ],
+  "spawn": [
+    0,
+    0.1,
+    -6
+  ],
+  "objects": [],
+  "scenery": [
+    {
+      "id": 1,
+      "name": "Forest archway",
+      "asset": "synty.forest.archway",
+      "position": [
+        0.0,
+        1.036816120147705,
+        10.0
+      ],
+      "yaw_degrees": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": 2,
+      "name": "Forest ruins",
+      "asset": "synty.forest.ruins",
+      "position": [
+        -9.0,
+        0.45146307349205017,
+        5.0
+      ],
+      "yaw_degrees": 25.0,
+      "scale": 1.0
+    },
+    {
+      "id": 3,
+      "name": "Woodland table",
+      "asset": "synty.forest.table",
+      "position": [
+        4.0,
+        0.006849555764347315,
+        2.0
+      ],
+      "yaw_degrees": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": 4,
+      "name": "Woodland chair",
+      "asset": "synty.forest.chair",
+      "position": [
+        4.0,
+        3.86600659112446e-05,
+        0.5
+      ],
+      "yaw_degrees": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": 5,
+      "name": "Woodland chair",
+      "asset": "synty.forest.chair",
+      "position": [
+        4.0,
+        3.86600659112446e-05,
+        3.5
+      ],
+      "yaw_degrees": 180.0,
+      "scale": 1.0
+    },
+    {
+      "id": 6,
+      "name": "Forest lantern",
+      "asset": "synty.forest.lantern",
+      "position": [
+        4.0,
+        1.0046554640866816,
+        2.0
+      ],
+      "yaw_degrees": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": 7,
+      "name": "Fallen log",
+      "asset": "synty.forest.log",
+      "position": [
+        -5.0,
+        0.6844769060611724,
+        -5.0
+      ],
+      "yaw_degrees": 35.0,
+      "scale": 0.35
+    },
+    {
+      "id": 8,
+      "name": "Rock cluster",
+      "asset": "synty.forest.pebbles",
+      "position": [
+        2.0,
+        0.12158725410699844,
+        8.0
+      ],
+      "yaw_degrees": 20.0,
+      "scale": 1.0
+    }
+  ]
+}

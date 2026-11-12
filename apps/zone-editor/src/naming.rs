@@ -173,7 +173,8 @@ pub(super) fn keyboard(
         .or(session.marker_selected)
         .or(session.plant_selected)
         .or(session.particle_selected)
-        .or(session.quest_area_selected);
+        .or(session.quest_area_selected)
+        .or(session.scenery_selected);
     let target = if find {
         Target::Search
     } else if zone {
