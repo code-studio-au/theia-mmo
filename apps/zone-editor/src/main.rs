@@ -118,6 +118,7 @@ struct Session {
     particle_selected: Option<u64>,
     quest_area_selected: Option<u64>,
     spawn_group_selected: Option<u64>,
+    spawn_boundary_point: Option<usize>,
     scenery_selected: Option<u64>,
     test_player_selected: Option<u64>,
     scenery_ground_requested: Option<(u64, u64, u64)>,
@@ -204,6 +205,7 @@ impl Session {
             particle_selected: None,
             quest_area_selected: None,
             spawn_group_selected: None,
+            spawn_boundary_point: None,
             scenery_selected: None,
             test_player_selected: None,
             scenery_ground_requested: None,
@@ -374,6 +376,7 @@ impl Session {
         self.particle_selected = None;
         self.quest_area_selected = None;
         self.spawn_group_selected = None;
+        self.spawn_boundary_point = None;
         self.scenery_selected = None;
         self.test_player_selected = None;
         self.status = if self.terrain_paint {
@@ -500,6 +503,7 @@ impl Session {
             .any(|g| Some(g.id) == self.spawn_group_selected)
         {
             self.spawn_group_selected = None;
+            self.spawn_boundary_point = None;
         }
         if !self
             .editor
@@ -565,6 +569,10 @@ enum Action {
     AddQuestArea,
     AddSpawnGroup,
     ToggleSpawnGroup,
+    SpawnBoundaryPoint(i8),
+    SpawnBoundaryWhole,
+    SpawnBoundaryInsert,
+    SpawnBoundaryRemove,
     AddTestPlayer,
     TestPlayerEnabled,
     TestPlayerController(bool),
@@ -1102,6 +1110,19 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
         Action::AddQuestArea => quest_area_authoring::add(session),
         Action::AddSpawnGroup => spawn_groups::add(session),
         Action::ToggleSpawnGroup => spawn_groups::toggle(session),
+        Action::SpawnBoundaryPoint(direction) => spawn_groups::boundary_action(
+            session,
+            workspace::Control::SpawnBoundaryPoint(direction),
+        ),
+        Action::SpawnBoundaryWhole => {
+            spawn_groups::boundary_action(session, workspace::Control::SpawnBoundaryWhole)
+        }
+        Action::SpawnBoundaryInsert => {
+            spawn_groups::boundary_action(session, workspace::Control::SpawnBoundaryInsert)
+        }
+        Action::SpawnBoundaryRemove => {
+            spawn_groups::boundary_action(session, workspace::Control::SpawnBoundaryRemove)
+        }
         Action::AddParticle => {
             let id = session.next_id;
             let Some(next) = id.checked_add(1) else {

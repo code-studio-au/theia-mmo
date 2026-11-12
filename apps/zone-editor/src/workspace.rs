@@ -70,6 +70,10 @@ pub(super) enum Control {
     PreviewLibraryParticle,
     Point(i8),
     WholePath,
+    SpawnBoundaryPoint(i8),
+    SpawnBoundaryWhole,
+    SpawnBoundaryInsert,
+    SpawnBoundaryRemove,
     Snap,
     Handles,
     Grid,
@@ -142,7 +146,7 @@ pub(super) fn mode(session: &Session) -> EditorMode {
         EditorMode::Objects
     }
 }
-fn button(control: Control, caption: &str) -> impl Bundle {
+pub(super) fn button(control: Control, caption: &str) -> impl Bundle {
     (
         control,
         Button,
@@ -654,6 +658,10 @@ impl Control {
             Self::ParticlePreview | Self::BindParticle | Self::PreviewLibraryParticle => {
                 session.particle_selected.is_some()
             }
+            Self::SpawnBoundaryPoint(_)
+            | Self::SpawnBoundaryWhole
+            | Self::SpawnBoundaryInsert
+            | Self::SpawnBoundaryRemove => spawn_groups::boundary_enabled(session, self),
             Self::Point(_) | Self::WholePath => {
                 session.path_mode && session.path_selected.is_some()
             }
@@ -904,6 +912,12 @@ pub(super) fn execute(
             }
         }
         Control::WholePath => session.path_point = None,
+        Control::SpawnBoundaryPoint(direction) => {
+            perform(Action::SpawnBoundaryPoint(direction), session, view)
+        }
+        Control::SpawnBoundaryWhole => perform(Action::SpawnBoundaryWhole, session, view),
+        Control::SpawnBoundaryInsert => perform(Action::SpawnBoundaryInsert, session, view),
+        Control::SpawnBoundaryRemove => perform(Action::SpawnBoundaryRemove, session, view),
         Control::View(preset) => preset.select(view),
         Control::GizmoTool(tool) => {
             session.gizmo_tool = tool;

@@ -487,6 +487,10 @@ pub enum Edit {
     DeleteSpawnGroup {
         id: u64,
     },
+    EditSpawnBoundary {
+        id: u64,
+        edit: spawn_groups::BoundaryEdit,
+    },
     PutTestPlayer {
         player: test_players::TestPlayer,
     },
@@ -782,6 +786,14 @@ impl Editor {
                                 )?;
                                 candidate.spawn_groups.push(group);
                             }
+                        }
+                        Edit::EditSpawnBoundary { id, edit } => {
+                            let group = candidate
+                                .spawn_groups
+                                .iter_mut()
+                                .find(|g| g.id == id)
+                                .ok_or("Unknown spawn group ID")?;
+                            group.edit_boundary(edit)?;
                         }
                         Edit::DeleteSpawnGroup { id } => {
                             let index = candidate

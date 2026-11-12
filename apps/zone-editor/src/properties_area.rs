@@ -63,6 +63,27 @@ fn spawn_group(parent: &mut ChildSpawnerCommands, group: Group) {
             ));
             if spawn {
                 theme::checkbox::spawn(group, workspace::Control::SpawnEnabled, "Enabled");
+                group
+                    .spawn(Node {
+                        flex_wrap: FlexWrap::Wrap,
+                        column_gap: px(4),
+                        row_gap: px(4),
+                        ..default()
+                    })
+                    .with_children(|row| {
+                        for (control, label) in [
+                            (
+                                workspace::Control::SpawnBoundaryPoint(-1),
+                                "Previous vertex",
+                            ),
+                            (workspace::Control::SpawnBoundaryPoint(1), "Next vertex"),
+                            (workspace::Control::SpawnBoundaryWhole, "Whole boundary"),
+                            (workspace::Control::SpawnBoundaryInsert, "Split edge"),
+                            (workspace::Control::SpawnBoundaryRemove, "Remove vertex"),
+                        ] {
+                            row.spawn(workspace::button(control, label));
+                        }
+                    });
             }
             for (input, title, order) in fields {
                 group
@@ -120,7 +141,7 @@ fn sync(
                 (group, target),
                 (Group::Area, Target::QuestArea(_))
                     | (Group::Marker, Target::Marker(_))
-                    | (Group::Population, Target::SpawnGroup(_))
+                    | (Group::Population, Target::SpawnGroup(_, _))
             )
         });
         node.display = if visible {

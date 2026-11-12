@@ -90,6 +90,86 @@ pub(super) fn toggle(session: &mut Session) {
         session.edit(vec![Edit::PutSpawnGroup { group }]);
     }
 }
+pub(super) fn boundary_enabled(session: &Session, control: workspace::Control) -> bool {
+    use workspace::Control;
+    let Some(group) = session
+        .editor
+        .zone()
+        .spawn_groups
+        .iter()
+        .find(|g| Some(g.id) == session.spawn_group_selected)
+    else {
+        return false;
+    };
+    if session.play.is_some() {
+        return false;
+    }
+    let selected = session
+        .spawn_boundary_point
+        .filter(|i| *i < group.volume.polygon().len());
+    match control {
+        Control::SpawnBoundaryInsert => {
+            selected.is_some()
+                && group.volume.polygon().len() < theia_core::spawn_volume::MAX_VERTICES
+        }
+        Control::SpawnBoundaryRemove => selected.is_some() && group.volume.polygon().len() > 3,
+        _ => true,
+    }
+}
+pub(super) fn boundary_action(session: &mut Session, control: workspace::Control) {
+    use theia_zone::spawn_groups::BoundaryEdit;
+    use workspace::Control;
+    if !boundary_enabled(session, control) {
+        return;
+    }
+    let group = session
+        .editor
+        .zone()
+        .spawn_groups
+        .iter()
+        .find(|g| Some(g.id) == session.spawn_group_selected)
+        .unwrap();
+    let count = group.volume.polygon().len();
+    let point = session.spawn_boundary_point.filter(|i| *i < count);
+    let edit = match control {
+        Control::SpawnBoundaryWhole => {
+            session.spawn_boundary_point = None;
+            return;
+        }
+        Control::SpawnBoundaryPoint(direction) => {
+            let slot = point.map_or(0, |i| i + 1);
+            let next = if direction < 0 {
+                (slot + count) % (count + 1)
+            } else {
+                (slot + 1) % (count + 1)
+            };
+            session.spawn_boundary_point = next.checked_sub(1);
+            return;
+        }
+        Control::SpawnBoundaryInsert => {
+            let i = point.unwrap();
+            let a = group.volume.polygon()[i];
+            let b = group.volume.polygon()[(i + 1) % count];
+            BoundaryEdit::Insert {
+                after: i,
+                position: std::array::from_fn(|axis| a[axis] + (b[axis] - a[axis]) * 0.5),
+            }
+        }
+        Control::SpawnBoundaryRemove => BoundaryEdit::Remove {
+            index: point.unwrap(),
+        },
+        _ => return,
+    };
+    let id = group.id;
+    let revision = session.editor.revision();
+    session.edit(vec![Edit::EditSpawnBoundary { id, edit }]);
+    if session.editor.revision() != revision {
+        session.spawn_boundary_point = Some(match control {
+            Control::SpawnBoundaryInsert => point.unwrap() + 1,
+            _ => point.unwrap().min(count - 2),
+        });
+    }
+}
 #[derive(Component)]
 struct Edge(usize);
 #[derive(Resource, Default)]
@@ -255,6 +335,51 @@ mod tests {
         let mut edge = session([theia_core::coordinates::MAX_GLOBAL_METRES; 3], 0.);
         add(&mut edge);
         assert!(edge.editor.zone().spawn_groups.is_empty());
+    }
+    #[test]
+    fn boundary_controls_wrap_close_edges_and_refuse_invalid_topology() {
+        use workspace::Control;
+        let mut session = session([0.; 3], 0.);
+        add(&mut session);
+        let original = session.editor.zone().clone();
+        boundary_action(&mut session, Control::SpawnBoundaryPoint(-1));
+        assert_eq!(session.spawn_boundary_point, Some(3));
+        boundary_action(&mut session, Control::SpawnBoundaryInsert);
+        assert_eq!(session.spawn_boundary_point, Some(4));
+        assert_eq!(
+            session.editor.zone().spawn_groups[0].volume.polygon()[4],
+            [-8., 0.]
+        );
+        boundary_action(&mut session, Control::SpawnBoundaryPoint(1));
+        assert_eq!(session.spawn_boundary_point, None);
+        assert!(!boundary_enabled(&session, Control::SpawnBoundaryRemove));
+        boundary_action(&mut session, Control::SpawnBoundaryPoint(-1));
+        boundary_action(&mut session, Control::SpawnBoundaryRemove);
+        assert_eq!(session.editor.zone(), &original);
+        boundary_action(&mut session, Control::SpawnBoundaryRemove);
+        assert_eq!(
+            session.editor.zone().spawn_groups[0].volume.polygon().len(),
+            3
+        );
+        assert!(!boundary_enabled(&session, Control::SpawnBoundaryRemove));
+        let before = session.editor.zone().clone();
+        boundary_action(&mut session, Control::SpawnBoundaryRemove);
+        assert_eq!(session.editor.zone(), &before);
+        let mut group = before.spawn_groups[0].clone();
+        group.volume = theia_core::spawn_volume::PolygonVolume::new(
+            vec![[0., 0.], [0.25, 0.], [0., 1.]],
+            -2.,
+            2.,
+        )
+        .unwrap();
+        session.edit(vec![Edit::PutSpawnGroup { group }]);
+        session.spawn_boundary_point = Some(0);
+        let before = session.editor.zone().clone();
+        let revision = session.editor.revision();
+        boundary_action(&mut session, Control::SpawnBoundaryInsert);
+        assert_eq!(session.editor.zone(), &before);
+        assert_eq!(session.editor.revision(), revision);
+        assert_eq!(session.spawn_boundary_point, Some(0));
     }
     #[test]
     fn polygon_preview_uses_bounded_shared_assets_no_collision_and_hides_with_selection() {

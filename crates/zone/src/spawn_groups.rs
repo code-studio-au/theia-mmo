@@ -24,7 +24,53 @@ pub struct SpawnGroup {
     pub respawn_seconds: u32,
     pub seed: u64,
 }
+/// Exact global X/Z edits, also available through the structured editor API.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "operation", rename_all = "snake_case", deny_unknown_fields)]
+pub enum BoundaryEdit {
+    Move {
+        index: usize,
+        position: [f64; 2],
+    },
+    /// Insert after an existing vertex, including the closing edge.
+    Insert {
+        after: usize,
+        position: [f64; 2],
+    },
+    Remove {
+        index: usize,
+    },
+}
 impl SpawnGroup {
+    /// Validate before replacing the volume; failure preserves the original.
+    pub fn edit_boundary(&mut self, edit: BoundaryEdit) -> Result<()> {
+        let mut points = self.volume.polygon().to_vec();
+        match edit {
+            BoundaryEdit::Move { index, position } => {
+                *points
+                    .get_mut(index)
+                    .ok_or("Unknown spawn boundary vertex")? = position;
+            }
+            BoundaryEdit::Insert { after, position } => {
+                require(after < points.len(), "Unknown spawn boundary vertex")?;
+                require(
+                    points.len() < theia_core::spawn_volume::MAX_VERTICES,
+                    "Spawn boundary vertex budget exceeded",
+                )?;
+                points.insert(after + 1, position);
+            }
+            BoundaryEdit::Remove { index } => {
+                require(index < points.len(), "Unknown spawn boundary vertex")?;
+                require(
+                    points.len() > 3,
+                    "Spawn boundary needs at least three vertices",
+                )?;
+                points.remove(index);
+            }
+        }
+        self.volume = PolygonVolume::new(points, self.volume.min_y(), self.volume.max_y())?;
+        Ok(())
+    }
     pub fn validate(&self, zone: &Zone) -> Result<()> {
         require(
             self.id > 0 && label(&self.name),
@@ -158,6 +204,139 @@ mod tests {
             apply(&mut editor, vec![Edit::DeleteSpawnGroup { id: 10 }]).unwrap();
             assert!(editor.zone().spawn_groups.is_empty());
         }
+    }
+    #[test]
+    fn boundary_commands_preserve_precision_metadata_and_transactional_history() {
+        for origin in [[0.; 3], [128_000_000_000.125, 20.25, -128_000_000_000.5]] {
+            let mut zone = Zone {
+                origin,
+                spawn: origin,
+                ..Zone::default()
+            };
+            zone.schema = 14;
+            zone.spawn_groups.push(group(origin));
+            let mut editor = Editor::new(zone.clone()).unwrap();
+            let position = [origin[0] + 0.125, origin[2] - 0.5];
+            let edit = Edit::EditSpawnBoundary {
+                id: 10,
+                edit: BoundaryEdit::Move { index: 0, position },
+            };
+            let encoded = serde_json::to_vec(&edit).unwrap();
+            assert_eq!(serde_json::from_slice::<Edit>(&encoded).unwrap(), edit);
+            apply(&mut editor, vec![edit]).unwrap();
+            let moved = editor.zone().clone();
+            assert_eq!(moved.spawn_groups[0].volume.polygon()[0], position);
+            let mut expected = zone.spawn_groups[0].clone();
+            expected.volume = moved.spawn_groups[0].volume.clone();
+            assert_eq!(moved.spawn_groups[0], expected);
+            // Split the closing edge, then remove that vertex exactly.
+            let last = moved.spawn_groups[0].volume.polygon()[5];
+            let midpoint = std::array::from_fn(|i| last[i] + (position[i] - last[i]) * 0.5);
+            apply(
+                &mut editor,
+                vec![Edit::EditSpawnBoundary {
+                    id: 10,
+                    edit: BoundaryEdit::Insert {
+                        after: 5,
+                        position: midpoint,
+                    },
+                }],
+            )
+            .unwrap();
+            assert_eq!(editor.zone().spawn_groups[0].volume.polygon().len(), 7);
+            apply(
+                &mut editor,
+                vec![Edit::EditSpawnBoundary {
+                    id: 10,
+                    edit: BoundaryEdit::Remove { index: 6 },
+                }],
+            )
+            .unwrap();
+            assert_eq!(editor.zone(), &moved);
+            for edit in [
+                BoundaryEdit::Move {
+                    index: 99,
+                    position,
+                },
+                BoundaryEdit::Insert {
+                    after: usize::MAX,
+                    position,
+                },
+                BoundaryEdit::Remove { index: usize::MAX },
+                BoundaryEdit::Move {
+                    index: 0,
+                    position: moved.spawn_groups[0].volume.polygon()[2],
+                },
+                BoundaryEdit::Move {
+                    index: 0,
+                    position: [origin[0] + 600., origin[2]],
+                },
+                BoundaryEdit::Move {
+                    index: 0,
+                    position: [f64::NAN, origin[2]],
+                },
+            ] {
+                let history = editor.history();
+                let revision = editor.revision();
+                assert!(
+                    apply(
+                        &mut editor,
+                        vec![
+                            Edit::RenameZone {
+                                name: "rollback".into()
+                            },
+                            Edit::EditSpawnBoundary { id: 10, edit }
+                        ]
+                    )
+                    .is_err()
+                );
+                assert_eq!(editor.zone(), &moved);
+                assert_eq!(editor.history(), history);
+                assert_eq!(editor.revision(), revision);
+            }
+            for _ in 0..3 {
+                editor
+                    .execute(Command::Undo {
+                        expected_revision: editor.revision(),
+                    })
+                    .unwrap();
+            }
+            assert_eq!(editor.zone(), &zone);
+            editor
+                .execute(Command::Redo {
+                    expected_revision: editor.revision(),
+                })
+                .unwrap();
+            assert_eq!(editor.zone(), &moved);
+        }
+    }
+    #[test]
+    fn boundary_vertex_limits_and_invalid_removal_preserve_volume() {
+        let mut g = group([0.; 3]);
+        g.volume = PolygonVolume::new(vec![[0., 0.], [8., 0.], [0., 8.]], -2., 8.).unwrap();
+        let original = g.clone();
+        assert!(g.edit_boundary(BoundaryEdit::Remove { index: 1 }).is_err());
+        assert_eq!(g, original);
+        g.volume = PolygonVolume::new(
+            (0..64)
+                .map(|i| {
+                    let angle = i as f64 * std::f64::consts::TAU / 64.;
+                    [angle.cos() * 10., angle.sin() * 10.]
+                })
+                .collect(),
+            -2.,
+            8.,
+        )
+        .unwrap();
+        let original = g.clone();
+        assert!(
+            g.edit_boundary(BoundaryEdit::Insert {
+                after: 0,
+                position: [10., 1.]
+            })
+            .is_err()
+        );
+        assert_eq!(g, original);
     }
     #[test]
     fn invalid_group_edits_schema_ids_and_population_budgets_fail_atomically() {

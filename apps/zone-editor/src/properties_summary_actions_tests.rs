@@ -980,3 +980,96 @@ fn spawn_population_attributes_commit_exact_values_and_reject_invalid_drafts() {
     );
     assert_eq!(app.world().resource::<Session>().saved_zone, saved);
 }
+
+#[test]
+fn spawn_boundary_inline_edit_and_topology_actions_share_exact_history() {
+    use workspace::Control;
+    let (mut app, _) = super::tests::fixture([128_000_000_000.125, 20.25, -128_000_000_000.5], 0);
+    spawn_groups::add(&mut app.world_mut().resource_mut::<Session>());
+    app.update();
+    let original = app.world().resource::<Session>().editor.zone().clone();
+    spawn_groups::boundary_action(
+        &mut app.world_mut().resource_mut::<Session>(),
+        Control::SpawnBoundaryPoint(1),
+    );
+    app.update();
+    let p = original.spawn_groups[0].volume.polygon()[0];
+    let input = open(&mut app, 0);
+    type_value(&mut app, input, &(p[0] + 0.125).to_string());
+    key(&mut app, KeyCode::Enter, Key::Enter);
+    let changed = app.world().resource::<Session>().editor.zone().clone();
+    assert_eq!(
+        changed.spawn_groups[0].volume.polygon()[0],
+        [p[0] + 0.125, p[1]]
+    );
+    assert_eq!(
+        &changed.spawn_groups[0].volume.polygon()[1..],
+        &original.spawn_groups[0].volume.polygon()[1..]
+    );
+    let input = open(&mut app, 1);
+    type_value(&mut app, input, "NaN");
+    key(&mut app, KeyCode::Enter, Key::Enter);
+    assert_eq!(app.world().resource::<Session>().editor.zone(), &changed);
+    key(&mut app, KeyCode::Escape, Key::Escape);
+    {
+        let mut session = app.world_mut().resource_mut::<Session>();
+        spawn_groups::boundary_action(&mut session, Control::SpawnBoundaryInsert);
+        assert_eq!(session.spawn_boundary_point, Some(1));
+        assert_eq!(
+            session.editor.zone().spawn_groups[0].volume.polygon().len(),
+            5
+        );
+        spawn_groups::boundary_action(&mut session, Control::SpawnBoundaryRemove);
+        assert_eq!(session.editor.zone(), &changed);
+        for _ in 0..3 {
+            let revision = session.editor.revision();
+            session.execute(Command::Undo {
+                expected_revision: revision,
+            });
+        }
+        assert_eq!(session.editor.zone(), &original);
+        session.set_mode(EditorMode::Objects);
+        assert_eq!(session.spawn_boundary_point, None);
+    }
+    app.update();
+}
+
+#[test]
+fn spawn_boundary_navigation_commits_pending_field_before_changing_vertex() {
+    let (mut app, _) = super::tests::fixture([0.; 3], 0);
+    app.insert_resource(View {
+        target: Vec3::ZERO,
+        yaw: 0.6,
+        pitch: 0.8,
+        distance: 32.,
+        preset: camera_views::Preset::Perspective,
+        show_grid: true,
+    });
+    spawn_groups::add(&mut app.world_mut().resource_mut::<Session>());
+    spawn_groups::boundary_action(
+        &mut app.world_mut().resource_mut::<Session>(),
+        workspace::Control::SpawnBoundaryPoint(1),
+    );
+    app.update();
+    let input = open(&mut app, 0);
+    type_value(&mut app, input, "-7.5");
+    {
+        let world = app.world_mut();
+        world.resource_scope(|world, mut session: Mut<Session>| {
+            let mut view = world.resource_mut::<View>();
+            perform(Action::SpawnBoundaryPoint(1), &mut session, &mut view);
+            assert_eq!(session.spawn_boundary_point, Some(0));
+        });
+    }
+    app.update();
+    let session = app.world().resource::<Session>();
+    assert_eq!(session.spawn_boundary_point, Some(1));
+    assert_eq!(
+        session.editor.zone().spawn_groups[0].volume.polygon()[0][0],
+        -7.5
+    );
+    assert_eq!(
+        session.editor.zone().spawn_groups[0].volume.polygon()[1][0],
+        8.
+    );
+}

@@ -4,9 +4,19 @@ delay and seed through the shared command API. Add → NPC spawn zone at spawn
 creates a rectangle; use the NPC spawn zones explorer filter and Attributes for
 inline IDs, seed, enabled, centre X/Z, height limits, alive count and respawn delay.
 Select a group and press F to frame its polygon; rename, copy, delete, undo and
-explicit Save use the normal controls. Imported custom polygons are previewed,
-but individual vertex editing is the next slice. Drafts remain explicitly refused
-by world export until population integration exists. An offline placement checker can now test a separate request against an
+explicit Save use the normal controls. In Attributes, Previous/Next vertex cycles
+between the whole boundary and numbered vertices. A selected vertex exposes exact
+X/Z coordinates; Whole boundary restores centre translation. Split edge inserts
+the midpoint after the selected vertex (including the closing edge), and Remove
+vertex retains at least three vertices. Invalid crossings, short edges, invalid
+coordinates and out-of-zone shapes refuse without changing document/history.
+Pending inline edits commit before a boundary action. Changes remain in memory
+until explicit Save. The shared JSONL command is `edit_spawn_boundary`, with
+`id` and an `edit` carrying `operation: move|insert|remove`; move uses `index`
+and `position: [x,z]`, insert uses `after` and `position`, remove uses `index`.
+These boundary controls are headlessly tested; native layout/input/GPU checks
+remain pending under the user's no-display/no-mouse instruction (13 November).
+Drafts remain explicitly refused by world export until population integration exists. An offline placement checker can now test a separate request against an
 existing exported world/navigation pair:
 
 ```sh

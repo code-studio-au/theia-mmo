@@ -19,7 +19,7 @@ impl Key {
             revision: session.editor.revision(),
             document_id: session.document_id,
             point: match target {
-                Target::Path { point, .. } => *point,
+                Target::Path { point, .. } | Target::SpawnGroup(_, point) => *point,
                 _ => None,
             },
         }
@@ -94,10 +94,15 @@ pub(super) fn description(session: &Session) -> Option<String> {
             }
         )),
         Target::Scenery(model) => subject.push_str(&format!("\n{}", model.asset)),
-        Target::SpawnGroup(ref g) => subject.push_str(&format!(
-            "\n{} boundary vertices · population draft",
-            g.volume.polygon().len()
-        )),
+        Target::SpawnGroup(ref g, point) => {
+            subject.push_str(&format!(
+                "\n{} boundary vertices · population draft",
+                g.volume.polygon().len()
+            ));
+            if let Some(i) = point {
+                subject.push_str(&format!("\nBoundary vertex {}", i + 1));
+            }
+        }
         Target::QuestArea(_) => subject.push_str("\nQuest references checked on catalog export"),
         Target::Marker(ref m)
             if m.kind == theia_zone::markers::MarkerKind::Npc && m.definition.is_some() =>
@@ -451,10 +456,11 @@ fn sync(
     let fields = target.values();
     for (heading, mut node, mut text) in &mut headings {
         let title = match (&target, heading.0) {
-            (Target::SpawnGroup(_), 0) => "Boundary position",
-            (Target::SpawnGroup(_), 2) => "Height limits",
-            (Target::SpawnGroup(_), 4) => "Population",
-            (Target::SpawnGroup(_), _) => "",
+            (Target::SpawnGroup(_, Some(_)), 0) => "Boundary vertex",
+            (Target::SpawnGroup(_, None), 0) => "Boundary centre",
+            (Target::SpawnGroup(_, _), 2) => "Height limits",
+            (Target::SpawnGroup(_, _), 4) => "Population",
+            (Target::SpawnGroup(_, _), _) => "",
             (_, 2) => "",
             (Target::TestPlayer(_), 3) => "Network conditions",
             (Target::QuestArea(_), 0) => "Minimum bounds",

@@ -25,7 +25,7 @@ impl Input {
             Self::Number(index) => target.values().get(index).cloned(),
             Self::Name => session.editor.zone().authoring_name(id?).map(String::from),
             Self::SpawnCreature | Self::SpawnModel | Self::SpawnSeed => match target {
-                Target::SpawnGroup(group) => Some(match self {
+                Target::SpawnGroup(group, _) => Some(match self {
                     Self::SpawnCreature => group.creature.clone(),
                     Self::SpawnModel => group.model.clone().unwrap_or_default(),
                     _ => group.seed.to_string(),
@@ -101,7 +101,7 @@ fn commit(session: &mut Session, pending: &Pending, value: &str) -> Result<(), S
             name: value.into(),
         }),
         Input::SpawnCreature | Input::SpawnModel | Input::SpawnSeed => match &pending.original {
-            Target::SpawnGroup(original) => {
+            Target::SpawnGroup(original, _) => {
                 let mut group = original.clone();
                 match pending.field {
                     Input::SpawnCreature => group.creature = value.trim().into(),

@@ -1,3 +1,23 @@
+P5-17 / P3-07 spawn-boundary reshaping, 13 November 2026:
+Autonomous local work resumed under the user's no-mouse/no-display instruction.
+Attributes now cycles through numbered polygon vertices, edits exact global X/Z,
+splits the selected edge (including the closing edge), removes vertices down to
+three, and returns to whole-boundary translation. Pending fields commit before
+boundary actions. Shared structured move/insert/remove commands retain validation,
+atomic history and explicit Save; invalid geometry, indices and budget overflow
+preserve the prior document. Far-origin precision and metadata remain intact.
+Prerequisites: schema-14 validated polygon volumes and existing inline/history UI.
+Acceptance: 75 zone tests and 226 editor tests pass (seven optional skips), plus
+fmt and denied-warning workspace/all-target Clippy. The existing UDP regression
+requires sandbox escalation for localhost sockets; it passes there. Build tools
+use tools/edit_zone.py's staged native SDK environment. Evidence:
+build/spawn-boundary-{zone-tests,editor-qualified,clippy-final,focus-tests}.log.
+No display/mouse use or new GPU/Windows qualification; native boundary-control
+layout/input remains pending. The open review editor and saved user files are
+untouched. World export still refuses population drafts. Next: consume saved
+spawn zones in checked placement validation, then authoritative population/respawn
+integration. These authoring edits do not create live NPCs. All work stays local.
+
 Safe stop requested, 12 November 2026:
 Work stops after cf2a8018 (spawn-zone editor drafts). Final editor suite completed:
 223 passed, seven optional skips. No implementation is in progress. Resume with

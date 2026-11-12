@@ -110,7 +110,7 @@ enum Target {
     Scenery(theia_zone::scenery::SceneryPlacement),
     TestPlayer(theia_zone::test_players::TestPlayer),
     QuestArea(theia_zone::quest_areas::QuestArea),
-    SpawnGroup(theia_zone::spawn_groups::SpawnGroup),
+    SpawnGroup(theia_zone::spawn_groups::SpawnGroup, Option<usize>),
     Marker(Marker),
     Path {
         path: GuidePath,
@@ -173,7 +173,15 @@ impl Target {
     fn labels(&self) -> &'static [&'static str] {
         match self {
             Self::Object(_) => &LABELS,
-            Self::SpawnGroup(_) => &[
+            Self::SpawnGroup(_, Some(_)) => &[
+                "Vertex X (m)",
+                "Vertex Z (m)",
+                "Minimum Y (m)",
+                "Maximum Y (m)",
+                "Alive count",
+                "Respawn (s)",
+            ],
+            Self::SpawnGroup(_, None) => &[
                 "Centre X (m)",
                 "Centre Z (m)",
                 "Minimum Y (m)",
@@ -236,11 +244,12 @@ impl Target {
     fn values(&self) -> Vec<String> {
         match self {
             Self::Object(pose) => values(pose).to_vec(),
-            Self::SpawnGroup(group) => {
+            Self::SpawnGroup(group, point) => {
                 let c = spawn_groups::centre(group);
+                let position = point.map_or([c[0], c[2]], |i| group.volume.polygon()[i]);
                 [
-                    c[0],
-                    c[2],
+                    position[0],
+                    position[1],
                     group.volume.min_y(),
                     group.volume.max_y(),
                     f64::from(group.target_alive),
@@ -313,7 +322,7 @@ impl Target {
     }
     fn edit(&self, id: Option<u64>, fields: &[String]) -> Result<Option<Edit>, String> {
         match self {
-            Self::SpawnGroup(original) => {
+            Self::SpawnGroup(original, point) => {
                 let v = numbers(fields, self.labels())?;
                 if v[4].fract() != 0.
                     || !(1. ..=64.).contains(&v[4])
@@ -325,12 +334,23 @@ impl Target {
                     );
                 }
                 let c = spawn_groups::centre(original);
-                let polygon = original
+                let mut polygon: Vec<_> = original
                     .volume
                     .polygon()
                     .iter()
-                    .map(|p| [p[0] + (v[0] - c[0]), p[1] + (v[1] - c[2])])
+                    .map(|p| {
+                        if point.is_some() {
+                            *p
+                        } else {
+                            [p[0] + (v[0] - c[0]), p[1] + (v[1] - c[2])]
+                        }
+                    })
                     .collect();
+                if let Some(index) = point {
+                    *polygon
+                        .get_mut(*index)
+                        .ok_or("Unknown spawn boundary vertex")? = [v[0], v[1]];
+                }
                 let mut group = original.clone();
                 group.volume = theia_core::spawn_volume::PolygonVolume::new(polygon, v[2], v[3])?;
                 group.target_alive = v[4] as u16;
@@ -843,7 +863,12 @@ fn capture(session: &Session, spawn_requested: bool) -> Option<(Option<u64>, Tar
     {
         (
             Some(group.id),
-            Target::SpawnGroup(group.clone()),
+            Target::SpawnGroup(
+                group.clone(),
+                session
+                    .spawn_boundary_point
+                    .filter(|i| *i < group.volume.polygon().len()),
+            ),
             format!("NPC spawn zone #{} | {}", group.id, group.name),
         )
     } else if let Some(area) = zone
