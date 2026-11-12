@@ -40,6 +40,21 @@ pub(super) fn add_requested(
     library: Res<scenery_library::Library>,
     mut tabs: Option<ResMut<property_tabs::State>>,
 ) {
+    if let Some((document, revision)) = session.scenery_play_requested.take()
+        && !workspace::busy(&session)
+        && session.document_id == document
+        && session.editor.revision() == revision
+    {
+        match playtest::Playtest::with_library(session.editor.zone(), &library) {
+            Ok(play) => {
+                session.play = Some(play);
+                session.heading = 0.;
+                session.status =
+                    "Offline playtest · scenery collision enabled · F5 returns to editing".into();
+            }
+            Err(error) => session.status = error,
+        }
+    }
     if let Some(request) = session.scenery_ground_requested.take()
         && let Err(error) = ground(&mut session, &library, request)
     {
@@ -215,6 +230,7 @@ mod tests {
             bounds: [[-1., 0., -1.], [1., 3., 1.]],
             triangles: 1,
             source: serde_json::json!({}),
+            collision: None,
         };
         add(&mut session, &entry);
         let first = session.scenery_selected.unwrap();
@@ -266,6 +282,7 @@ mod tests {
             bounds: [[-0.1, -0.25, -0.1], [0.1, 0., 0.1]],
             triangles: 1,
             source: serde_json::json!({}),
+            collision: None,
         };
         add(&mut session, &entry);
         let original = session.editor.zone().scenery[0].clone();
@@ -285,6 +302,7 @@ mod tests {
             scenery_library::Asset {
                 entry,
                 bytes: std::sync::Arc::new(vec![]),
+                collision: None,
             },
         );
         assert!(
@@ -335,6 +353,7 @@ mod tests {
             bounds: [[-1., 0., -4.], [1., 3., 4.]],
             triangles: 1,
             source: serde_json::json!({}),
+            collision: None,
         };
         let value = transform(&zone, &placement, &entry).unwrap();
         assert_eq!(value.translation, Vec3::new(0.125, 0., -0.25));

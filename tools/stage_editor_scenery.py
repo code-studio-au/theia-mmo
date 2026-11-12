@@ -14,7 +14,7 @@ import tempfile
 
 import numpy as np
 from merge_static_glb import read
-from static_geometry import hierarchy, transformed_bounds
+from static_geometry import accessor, hierarchy, transformed_bounds
 
 MAX_ASSET_BYTES = 32 * 1024 * 1024
 MAX_LIBRARY_BYTES = 128 * 1024 * 1024
@@ -22,6 +22,30 @@ MAX_LIBRARY_BYTES = 128 * 1024 * 1024
 
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def collision_mesh(document, binary):
+    """Explicit Theia static-surface adaptation; not Unity collider import."""
+    vertices, indices = [], []
+    for primitive in document['meshes'][0]['primitives']:
+        if primitive.get('mode', 4) != 4 or primitive.get('targets'):
+            raise ValueError('Collision needs static triangle primitives')
+        points = accessor(document, binary, primitive['attributes']['POSITION'])
+        if points.shape[1] != 3:
+            raise ValueError('Collision needs position triplets')
+        faces = (accessor(document, binary, primitive['indices']).reshape(-1)
+                 if 'indices' in primitive else np.arange(len(points)))
+        if len(faces) % 3 or faces.dtype.kind not in 'ui' or np.any(faces < 0) or np.any(faces >= len(points)):
+            raise ValueError('Invalid collision triangle indices')
+        offset = len(vertices)
+        vertices.extend(points.tolist())
+        for face in faces.reshape((-1, 3)):
+            a, b, c = points[face]
+            if np.linalg.norm(np.cross(b-a, c-a)) > 1e-10:
+                indices.append((face + offset).tolist())
+    if not indices or len(indices) > 65536 or len(vertices) > 262144:
+        raise ValueError('Collision mesh exceeds budget or has no surface')
+    return json.dumps(dict(vertices=vertices, indices=indices), separators=(',', ':'), allow_nan=False).encode()
 
 
 def stage(batch, selection, output):
@@ -74,15 +98,33 @@ def stage(batch, selection, output):
                      archive_sha256=conversion['archive_sha256'],
                      verification_sha256=digest(root / 'independent-verification.json'),
                      profile=record['profile']))
-        prepared.append((entry, asset))
+        choice = item.get('collision')
+        collision = None
+        if choice == 'triangle_mesh':
+            collision = collision_mesh(doc, binary)
+            collision_hash = hashlib.sha256(collision).hexdigest()
+            if len(collision) > MAX_ASSET_BYTES:
+                raise ValueError('Collision byte budget exceeded')
+            total += len(collision)
+            entry['collision'] = dict(kind=choice, file=f'{collision_hash}.collision.json',
+                                      bytes=len(collision), sha256=collision_hash)
+        elif choice == 'decorative':
+            entry['collision'] = dict(kind=choice)
+        else:
+            raise ValueError('Choose explicit triangle_mesh or decorative collision')
+        if total > MAX_LIBRARY_BYTES:
+            raise ValueError('Scenery byte budget exceeded')
+        prepared.append((entry, asset, collision))
     output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='.scenery-', dir=output.parent) as folder:
         temporary = Path(folder)
-        for entry, asset in prepared:
+        for entry, asset, collision in prepared:
             shutil.copyfile(asset, temporary / entry['file'])
+            if collision is not None:
+                (temporary / entry['collision']['file']).write_bytes(collision)
             if digest(temporary / entry['file']) != entry['sha256']:
                 raise ValueError('Source asset changed during staging')
-        catalog = dict(schema=1, id=chosen['id'], assets=[entry for entry, _ in prepared])
+        catalog = dict(schema=1, id=chosen['id'], assets=[entry for entry, _, _ in prepared])
         (temporary / 'catalog.json').write_text(json.dumps(catalog, indent=2) + '\n')
         output.mkdir()  # Refuse a racing/existing destination.
         try:
@@ -92,7 +134,7 @@ def stage(batch, selection, output):
             shutil.rmtree(output)
             raise
     return dict(assets=len(prepared), bytes=total, catalog=str(output / 'catalog.json'),
-                collision='not inferred', desktop_used=False)
+                collision='explicit source triangles or nonblocking decoration', desktop_used=False)
 
 
 if __name__ == '__main__':

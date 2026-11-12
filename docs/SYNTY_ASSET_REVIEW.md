@@ -92,7 +92,7 @@ bindings. It does not infer collision or claim a native viewport check.
 build/asset-tools/bin/python tools/stage_editor_scenery.py \
   build/synty-forest-static-batch-v2 \
   content/scenery/starter-forest.selection.json \
-  build/starter-forest-scenery-v1
+  build/starter-forest-scenery-v2
 ```
 
 The executed selection produced seven assets totalling 8,731,372 bytes. Proprietary
@@ -111,7 +111,7 @@ assets. Open the saved-reference example with the staged catalog:
 ```sh
 python3 tools/edit_zone.py --zone content/zones/forest-scenery.zone.json \
   --save-path build/forest-scenery-draft.zone.json \
-  --scenery-library build/starter-forest-scenery-v1/catalog.json
+  --scenery-library build/starter-forest-scenery-v2/catalog.json
 ```
 
 The Scenery menu places a named model at spawn, aligning its scaled lower bound
@@ -121,9 +121,21 @@ undo; Save writes the document explicitly. Eight example placements include a
 small table/chair/lantern group and nearby arch, ruins, log and rocks. Geometry
 and textures are loaded from the verified immutable snapshot, with no copies of
 proprietary model files in Git. GPU appearance remains unreviewed under the
-no-display instruction. Export and offline playtest refuse scenery until the
-collision/publication slice is qualified; this example is an authoring study.
+no-display instruction. Offline playtest now uses explicit v2 collision bindings: source triangles for
+archway, ruins, table, chairs and log; decorative lantern and pebbles do not block
+movement. World export remains guarded until publication is connected.
 
 The windowless `--check-scenery` route loaded all seven models and their images,
 instantiated seven mesh entities and verified zero surviving meshes after root
 deletion. Evidence: `build/starter-forest-scenery-v1/bevy-scene-lifecycle.json`.
+
+The current v2 selection stages 9,808,112 visual/collision bytes. The actual arch
+capsule route and pillar-contact test passes at both ordinary and far origins:
+
+```sh
+THEIA_SCENERY_CATALOG="$PWD/build/starter-forest-scenery-v2/catalog.json" \
+  cargo test -p theia-zone-editor actual_synty_scenery -- --ignored --nocapture
+```
+
+This opt-in test requires the user's local proprietary assets; portable CI does
+not report it as an executed pass. The standard scenery tests use synthetic data.

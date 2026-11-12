@@ -1,3 +1,16 @@
+## 12 November 2026 — curated Synty scenery collision
+
+Reuse the locally staged Enchanted Forest standard-material assets in the
+integrated editor. Keep immutable hash-checked visual bytes separate from an
+explicit collision binding. For the starter selection, archway/ruins/table/chair/
+log use source triangle surfaces; lantern and pebble clusters are nonblocking
+decoration. This is a Theia static-surface adaptation, not imported Unity collider
+semantics or a claim that arbitrary source render meshes are production collision.
+Do not replace an arch with a solid envelope. Stage bounded geometry separately,
+validate exact bytes, reject unresolved collision policy, and qualify Avian capsule
+passage/contact before admitting offline playtest. Navigation, full footprint
+fitting, gameplay hit shapes and native appearance remain separate requirements.
+
 ## 12 November 2026 — complete starter-zone authoring milestone
 
 The user directs autonomous local development toward a complete WoW-style starter

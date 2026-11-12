@@ -39,7 +39,7 @@ class EditorSceneryTests(unittest.TestCase):
         (self.prototype / 'conversion.json').write_text(json.dumps({'archive_sha256': 'b' * 64}))
         self.selection = self.root / 'selection.json'
         self.selection.write_text(json.dumps(dict(schema=1, id='theia.test.library', assets=[
-            dict(id='theia.prop', name='Prop', category='Props', prefab='Prop')
+            dict(id='theia.prop', name='Prop', category='Props', prefab='Prop', collision='triangle_mesh')
         ])))
         self.output = self.root / 'library'
 
@@ -51,6 +51,9 @@ class EditorSceneryTests(unittest.TestCase):
         self.assertEqual(asset['bounds'], [[0, 0, 0], [1, 0, 1]])
         self.assertEqual((self.output / asset['file']).read_bytes(), self.original)
         self.assertEqual((self.prototype / 'preview.glb').read_bytes(), self.original)
+        collision = json.loads((self.output / asset['collision']['file']).read_bytes())
+        self.assertEqual(collision['vertices'], [[0,0,0],[1,0,0],[0,0,1]])
+        self.assertEqual(collision['indices'], [[0,1,2]])
         with self.assertRaises(ValueError):
             stage(self.batch, self.selection, self.output)
         self.assertEqual((self.output / asset['file']).read_bytes(), self.original)
@@ -79,3 +82,17 @@ class EditorSceneryTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'scenery ID'):
             stage(self.batch, self.selection, self.output)
         self.assertFalse(self.output.exists())
+
+    def test_collision_policy_is_explicit_and_decoration_has_no_mesh(self):
+        selected = json.loads(self.selection.read_text())
+        del selected['assets'][0]['collision']
+        self.selection.write_text(json.dumps(selected))
+        with self.assertRaisesRegex(ValueError, 'explicit'):
+            stage(self.batch, self.selection, self.output)
+        self.assertFalse(self.output.exists())
+        selected['assets'][0]['collision'] = 'decorative'
+        self.selection.write_text(json.dumps(selected))
+        stage(self.batch, self.selection, self.output)
+        catalog = json.loads((self.output / 'catalog.json').read_text())
+        self.assertEqual(catalog['assets'][0]['collision'], {'kind': 'decorative'})
+        self.assertEqual(list(self.output.glob('*.collision.json')), [])

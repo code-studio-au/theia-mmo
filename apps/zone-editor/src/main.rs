@@ -32,6 +32,7 @@ mod property_tabs;
 mod quest_area_authoring;
 mod quest_area_export;
 mod quest_area_preview;
+mod scenery_collision;
 mod scenery_library;
 mod scenery_scene;
 mod scrolling;
@@ -92,6 +93,7 @@ struct Session {
     quest_area_selected: Option<u64>,
     scenery_selected: Option<u64>,
     scenery_ground_requested: Option<(u64, u64, u64)>,
+    scenery_play_requested: Option<(u64, u64)>,
     inspect_spawn: bool,
     palette: Option<Primitive>,
     placement_size: [f64; 3],
@@ -169,6 +171,7 @@ impl Session {
             quest_area_selected: None,
             scenery_selected: None,
             scenery_ground_requested: None,
+            scenery_play_requested: None,
             inspect_spawn: false,
             palette: None,
             placement_size: [1.; 3],
@@ -567,7 +570,7 @@ fn run() -> Result<(), String> {
         return Ok(());
     }
     if options.check_playtest {
-        let checked = playtest::Playtest::new(editor.zone())
+        let checked = playtest::Playtest::with_library(editor.zone(), &scenery_library)
             .and_then(|play| editor.zone().global(play.feet.metres()));
         let mut report = cli::summary(&editor);
         report["playtest"] = serde_json::json!({
@@ -951,6 +954,8 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
     if matches!(action, Action::Play) {
         if session.play.take().is_some() {
             session.status = "Returned to editing".into();
+        } else if !session.editor.zone().scenery.is_empty() {
+            session.scenery_play_requested = Some((session.document_id, session.editor.revision()));
         } else {
             match playtest::Playtest::new(session.editor.zone()) {
                 Ok(play) => {

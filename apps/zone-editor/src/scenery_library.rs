@@ -23,6 +23,8 @@ pub(super) struct Entry {
     pub bounds: [[f64; 3]; 2],
     pub triangles: usize,
     pub source: serde_json::Value,
+    #[serde(default)]
+    pub collision: Option<scenery_collision::Binding>,
 }
 
 #[cfg(test)]
@@ -51,8 +53,32 @@ mod tests {
             "id":"theia.asset.arch","name":"Arch","category":"Structures","file":format!("{hash}.glb"),
             "bytes":bytes.len(),"sha256":hash,"bounds":[[-1.,0.,-1.],[1.,2.,1.]],"triangles":1,"source":{}
         }]});
+        let collision_bytes = br#"{"vertices":[[0,0,0],[1,0,0],[0,0,1]],"indices":[[0,1,2]]}"#;
+        let collision_hash: String = theia_network::terrain::sha256(collision_bytes)
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect();
+        let collision_file = format!("{collision_hash}.collision.json");
+        std::fs::write(root.join(&collision_file), collision_bytes).unwrap();
+        catalog["assets"][0]["collision"] = serde_json::json!({"kind":"triangle_mesh", "file":collision_file,"bytes":collision_bytes.len(),"sha256":collision_hash});
         std::fs::write(&path, serde_json::to_vec(&catalog).unwrap()).unwrap();
         let library = Library::load(&path).unwrap();
+        std::fs::write(root.join(&collision_file), b"changed").unwrap();
+        assert!(
+            Library::load(&path)
+                .err()
+                .unwrap()
+                .contains("collision bytes")
+        );
+        assert_eq!(
+            library.assets["theia.asset.arch"]
+                .collision
+                .as_ref()
+                .unwrap()
+                .indices,
+            [[0, 1, 2]]
+        );
+        std::fs::write(root.join(&collision_file), collision_bytes).unwrap();
         std::fs::write(&asset, b"changed").unwrap();
         assert!(Library::load(&path).is_err());
         assert_eq!(library.assets["theia.asset.arch"].bytes.as_slice(), bytes);
@@ -73,12 +99,13 @@ struct Catalog {
 pub(super) struct Asset {
     pub entry: Entry,
     pub bytes: Arc<Vec<u8>>,
+    pub collision: Option<Arc<scenery_collision::Mesh>>,
 }
 #[derive(Resource, Clone, Default)]
 pub(super) struct Library {
     pub assets: BTreeMap<String, Asset>,
 }
-fn bounded(path: &Path, limit: usize) -> Result<Vec<u8>, String> {
+pub(super) fn bounded(path: &Path, limit: usize) -> Result<Vec<u8>, String> {
     let file = std::fs::File::open(path).map_err(|e| e.to_string())?;
     if !file.metadata().map_err(|e| e.to_string())?.is_file() {
         return Err("Scenery input must be a regular file".into());
@@ -153,12 +180,14 @@ impl Library {
             if bytes.len() != entry.bytes || hash != entry.sha256 {
                 return Err("Scenery asset bytes do not match catalog".into());
             }
+            let collision = scenery_collision::load(root, &entry, &mut total)?;
             if assets
                 .insert(
                     entry.id.clone(),
                     Asset {
                         entry,
                         bytes: Arc::new(bytes),
+                        collision,
                     },
                 )
                 .is_some()
@@ -244,7 +273,7 @@ impl Library {
                 return Err("Unexpected static scenery graph".into());
             }
             worlds.push(gltf.scenes[0].clone());
-            entries.push(serde_json::json!({"id":id,"meshes":gltf.meshes.len(),"materials":gltf.materials.len()}));
+            entries.push(serde_json::json!({"id":id,"meshes":gltf.meshes.len(),"materials":gltf.materials.len(),"collision_triangles":self.assets[id].collision.as_ref().map_or(0, |m| m.indices.len())}));
         }
         let roots: Vec<_> = worlds
             .into_iter()

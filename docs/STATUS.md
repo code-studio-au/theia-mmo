@@ -1,3 +1,15 @@
+P5-17 / P1-10 explicit Synty scenery collision, 12 November 2026:
+starter catalog v2 stages five source triangle-mesh bindings and two decorative
+bindings with bounded immutable hash-checked data. Offline playtest resolves them
+through standard Avian static meshes and refuses absent assets or unspecified
+policy. The eight-placement dressing study admits its spawn with six solid bodies;
+evidence: `build/starter-forest-scenery-v2/playtest-preflight.json`. The local-asset
+ignored test was explicitly run: capsule passage through the actual arch and
+contact with its pillar pass at ordinary and far global origins. Six portable
+scenery tests, four Python staging tests and strict workspace Clippy pass. This
+is offline collision evidence; scenery world export and native appearance remain
+pending. Legacy visual-only catalogs can open but cannot silently enter playtest.
+
 P5-17 / P1-10 model grounding, 12 November 2026: new scenery is grounded
 using its scaled lower bound at the terrain sample under its anchor. Existing
 scenery supports the same Ground action and undo. Stale document/revision/selection

@@ -14,11 +14,16 @@ pub(super) struct Playtest {
     motion: Motion,
     spawn: LocalPosition,
 }
+#[cfg(test)]
 pub(super) fn collision(zone: &Zone) -> Result<StaticScene, String> {
+    collision_with_library(zone, &scenery_library::Library::default())
+}
+fn collision_with_library(
+    zone: &Zone,
+    library: &scenery_library::Library,
+) -> Result<StaticScene, String> {
     zone.validate()?;
-    if !zone.scenery.is_empty() {
-        return Err("Scenery collision admission is not connected yet".into());
-    }
+    let scenery = scenery_collision::colliders(zone, library)?;
     let mut colliders: Vec<_> = terrain::ground_boxes(zone)
         .into_iter()
         .map(|(center, size)| PlacedCollider {
@@ -59,11 +64,15 @@ pub(super) fn collision(zone: &Zone) -> Result<StaticScene, String> {
             layer: SOLID | GROUND | CAMERA,
         });
     }
+    colliders.extend(scenery);
     Ok(StaticScene::new(colliders))
 }
 impl Playtest {
     pub fn new(zone: &Zone) -> Result<Self, String> {
-        let scene = collision(zone)?;
+        Self::with_library(zone, &scenery_library::Library::default())
+    }
+    pub fn with_library(zone: &Zone, library: &scenery_library::Library) -> Result<Self, String> {
+        let scene = collision_with_library(zone, library)?;
         let guess = LocalPosition::new(zone.local(zone.spawn)?).ok_or("Invalid spawn")?;
         let spawn =
             kinematic::spawn(&scene, guess).map_err(|e| format!("Playtest spawn refused: {e}"))?;
@@ -550,5 +559,75 @@ mod example_tests {
         );
         shelter.spawn = [36., 0.1, 97.];
         assert!(Playtest::new(&shelter).is_err());
+    }
+}
+
+#[cfg(test)]
+mod scenery_tests {
+    use super::*;
+    fn walk(play: &mut Playtest, axes: [i16; 2], ticks: usize) {
+        for _ in 0..ticks {
+            play.feet = kinematic::advance(
+                &play.scene,
+                &mut play.motion,
+                play.feet,
+                Intent { axes, ..default() },
+                TickRate::Hz30,
+            )
+            .unwrap();
+        }
+    }
+    #[test]
+    #[ignore = "Requires the local proprietary Synty catalog via THEIA_SCENERY_CATALOG"]
+    fn actual_synty_scenery_arch_passage_and_pillar_contact() {
+        let path = std::env::var_os("THEIA_SCENERY_CATALOG").expect("Set THEIA_SCENERY_CATALOG");
+        let library = scenery_library::Library::load(std::path::Path::new(&path)).unwrap();
+        let entry = &library.assets["synty.forest.archway"].entry;
+        for origin in [[0.; 3], [128_000_000_000., 20., -128_000_000_000.]] {
+            let mut zone = Zone {
+                schema: 10,
+                origin,
+                spawn: [origin[0], origin[1] + 0.1, origin[2] + 4.],
+                scenery: vec![theia_zone::scenery::SceneryPlacement {
+                    id: 1,
+                    name: "Archway route".into(),
+                    asset: entry.id.clone(),
+                    position: [origin[0], origin[1] - entry.bounds[0][1], origin[2]],
+                    yaw_degrees: 0.,
+                    scale: 1.,
+                }],
+                ..default()
+            };
+            let mut play = Playtest::with_library(&zone, &library).unwrap();
+            walk(&mut play, [0, -1000], 120);
+            let through = play.feet.metres();
+            println!("scenery arch passage origin={origin:?} end={through:?}");
+            assert!(
+                through[2] < -2.,
+                "Arch opening must remain passable: {through:?}"
+            );
+            zone.spawn[0] = origin[0] + 1.5;
+            let mut play = Playtest::with_library(&zone, &library).unwrap();
+            walk(&mut play, [0, -1000], 120);
+            let pillar = play.feet.metres();
+            println!("scenery pillar origin={origin:?} end={pillar:?}");
+            assert!(pillar[2] > 0., "Solid pillar must stop passage: {pillar:?}");
+        }
+        let zone = Zone::load(std::path::Path::new(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../content/zones/forest-scenery.zone.json"
+        )))
+        .unwrap();
+        let colliders = scenery_collision::colliders(&zone, &library).unwrap();
+        assert_eq!(
+            colliders.len(),
+            6,
+            "Six solid placements; lantern and pebbles decorative"
+        );
+        assert!(Playtest::with_library(&zone, &library).is_ok());
+        assert!(
+            Playtest::new(&zone).is_err(),
+            "No silent missing-library omission"
+        );
     }
 }
