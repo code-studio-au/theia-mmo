@@ -184,3 +184,10 @@ After completion, stop cleanup cycles and maintain the established sources rathe
 - [x] Corrected Q018–Q034 Rust review's stale claim that Q032–Q034 lack prerequisites. The structured references now require Q031; these optional human quests do not gate Q035.
 - [x] Corrected Q158–Q184 Rust review's human-only Q184 completion language to the creator-approved shared quest with race-specific homeland/NPC variants.
 - [ ] The five-file terminology sweep is not a semantic audit of every scene; race-aware dialogue and engine actor bindings remain to be implemented.
+
+### Shared completion-alias safety audit — 12 November 2026
+
+- [x] Found a further runtime migration hazard: the derived quest reference still labels Q035 and every later shared Covenant completion `HUMAN_Q###_DONE`, and Q036–Q037 still reference those legacy aliases. This does **not** change editorial story order, but could accidentally become a human-only implementation gate if imported uncritically.
+- [x] Added an explicit BLOCKING migration warning to the derived JSON reference, preserving the old labels as provenance rather than silently renaming persistent completion facts.
+- [x] Added cross-race acceptance criteria to the Rust quest authoring contract: race-specific Q035 unlock; no human Q031 gate; shared Q036+ progression; optional Q032–Q034; race-specific Q184; catalogue/journal migration checks.
+- [ ] Stable cross-race runtime IDs, saved-progress migrations and engine tests remain to be designed and implemented; do not mark them complete from documentation alone.
