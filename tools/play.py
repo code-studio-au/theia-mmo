@@ -101,10 +101,14 @@ def play(world, players, clients, binaries, tick_hz=30, transport="renet", chunk
     if dialogue_catalog:
         if not graybox or not prediction or transport != 'renet':
             raise ValueError('Dialogue requires predicted graybox and secure Renet')
-        guide_values=[float(value) for value in guide_position.split(',')]
-        if (len(guide_values) not in (2, 3) or not all(math.isfinite(value) for value in guide_values)
-                or not all(0 <= guide_values[i] < 16000 for i in (0, -1))):
-            raise ValueError('Guide position must be finite x,z or x,y,z feet in metres, within the supported world')
+        if guide_position == 'authored':
+            if authored_world is None:
+                raise ValueError('Authored guide position requires an authored world')
+        else:
+            guide_values=[float(value) for value in guide_position.split(',')]
+            if (len(guide_values) not in (2, 3) or not all(math.isfinite(value) for value in guide_values)
+                    or not all(0 <= guide_values[i] < 16000 for i in (0, -1))):
+                raise ValueError('Guide position must be finite x,z or x,y,z feet in metres, within the supported world')
     if bool(creature_profile) != bool(navigation):
         raise ValueError('Creature profile and navigation package must be selected together')
     if creature_profile and (not combat_catalog or not prediction or (saved_terrain is None and authored_world is None)):
@@ -366,7 +370,7 @@ def main(argv=None):
     parser.add_argument('--vendor-catalog',type=Path,help='Barter offers; requires --vendors')
     parser.add_argument('--dialogue',action='store_true',help='Opt-in noncombat informational guide; E to talk, F1–F4 or buttons to choose, Esc to close')
     parser.add_argument('--dialogue-catalog',type=Path,help='Informational dialogue profile; requires --dialogue')
-    parser.add_argument('--guide-position',help='Fixed guide x,z or x,y,z feet in metres; default 8004,8000, independent of player spawn')
+    parser.add_argument('--guide-position',help='Guide x,z or x,y,z feet, or authored to load the bound world contact; default 8004,8000')
     parser.add_argument('--quest-turn-in-xp', type=Path, help='Optional completion XP recipe; implies explicit quest/account setup')
     parser.add_argument('--quest-loot',action='store_true',help='Explicit quest-required loot; requires item-journal and creature-loot modes')
     parser.add_argument('--quest-items',action='store_true',help='Explicit current-backpack quests; requires journal and inventory')

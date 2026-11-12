@@ -1,3 +1,33 @@
+# Editor-authored village contact — 12 November 2026
+
+Select an NPC marker and edit **Gameplay reference → Catalog ID**. A blank ID
+leaves an annotation. With a gameplay template, one NPC ID matching its dialogue
+profile becomes the runtime contact at the marker's exact requested XYZ feet.
+Unsupported/intersecting positions (including the world envelope), mismatched IDs
+and multiple bound NPCs refuse export. Valid changes use existing undo/redo and
+explicit Save; they do not automatically write the zone file.
+
+`content/zones/starter-valley-contact.commands.jsonl` adds a village guide and
+western-grove quest area to a copy of the dressed valley. Use the existing
+`content/development-gameplay-classic-quest-areas.json` template. The prepared
+`build/starter-valley-contact-v3.zone.json` and exported
+`build/starter-valley-contact-world-v3` preserve the user's saved v2 scenery edits;
+the source v2 file is untouched. Navigation was rebaked separately into
+`build/starter-valley-contact-navigation-v3` for the new world identity.
+
+For the connected valley launch, select the v3 world/navigation and add:
+
+```sh
+--dialogue --guide-position authored \
+--dialogue-catalog build/starter-valley-contact-world-v3/gameplay/quests/development-journal-dialogue.json
+```
+
+Both client and server resolve the verified contact instead of a separately typed
+position. Actual encrypted two-peer dialogue/walkaway and CLI identity checks pass.
+The exported quest catalogs/area are validated content; this test does not enable
+account-backed quest progress. Multiple NPCs, quest pickups and full authored
+account gameplay remain follow-ups. F5 remains the movement/animation sandbox.
+
 # Height-aware village contact — 12 November 2026
 
 The connected village can include one informational guide using explicit global

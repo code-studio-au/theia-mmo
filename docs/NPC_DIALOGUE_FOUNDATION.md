@@ -1,3 +1,20 @@
+12 November 2026 — P5-17 / P3-12 / P3-15 editor contact binding:
+NPC markers expose an inline Catalog ID with existing validation, history and
+explicit Save. A gameplay-template export binds one matching NPC to its full XYZ
+feet; unknown IDs, multiple bound contacts and unsafe positions refuse. Anchor
+schema 2 includes that contact in world identity; schema 1 retains legacy bytes.
+`--guide-position authored` resolves the verified contact against the selected
+dialogue profile on server and client. Normal x,z/x,y,z options remain supported.
+Unbound markers and exports without gameplay templates retain annotation behavior.
+Marker yaw/radius remain authoring metadata; no new NPC model or facing behavior.
+
+Actual encrypted two-peer valley acceptance opens both private conversations,
+closes on walkaway and retains the moving wolf, with zero rejected movement,
+readiness or dialogue and zero recovery resets. Rebuilt client configuration and
+CLI server agree with the encrypted identity. This tests contact binding, not
+quest acceptance/rewards, persistence, multiple contacts or editor F5 gameplay.
+See build/editor-contact-renet.log and build/editor-contact-cli-proof.json.
+
 12 November 2026 — P3-12 / P3-15 authored contact height:
 Server, client and launcher accept `--guide-position x,y,z` for trusted contact
 feet. Placement resolves only near that support layer; unsupported, penetrating

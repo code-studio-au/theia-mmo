@@ -106,22 +106,28 @@ async fn drive(peers: &mut [Peer], duration: Duration) {
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[ignore = "requires THEIA_AUTHORED_WORLD local exported starter world with a clear +Z approach"]
 async fn authored_classic_two_encrypted_peers_hold_until_ready_walk_and_reject_stale_world() {
-    run_authored(false, false).await;
+    run_authored(false, false, false).await;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[ignore = "requires THEIA_AUTHORED_WORLD valley and THEIA_AUTHORED_NAV west-grove package"]
 async fn authored_valley_patrol_and_resource_combat_replicate_to_two_classic_peers() {
-    run_authored(true, false).await;
+    run_authored(true, false, false).await;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[ignore = "requires THEIA_AUTHORED_WORLD valley and THEIA_AUTHORED_NAV west-grove package"]
 async fn authored_valley_full_xyz_guide_opens_and_closes_on_walkaway_for_two_encrypted_peers() {
-    run_authored(true, true).await;
+    run_authored(true, true, false).await;
 }
 
-async fn run_authored(patrol: bool, with_guide: bool) {
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[ignore = "requires THEIA_AUTHORED_WORLD bound village contact and THEIA_AUTHORED_NAV package"]
+async fn authored_valley_exported_contact_binds_profile_and_placement_for_two_encrypted_peers() {
+    run_authored(true, true, true).await;
+}
+
+async fn run_authored(patrol: bool, with_guide: bool, from_world: bool) {
     let root =
         PathBuf::from(std::env::var_os("THEIA_AUTHORED_WORLD").expect("Authored starter export"));
     let store = Arc::new(Store::open(&root).unwrap());
@@ -157,21 +163,31 @@ async fn run_authored(patrol: bool, with_guide: bool) {
         None
     };
     let dialogue = with_guide.then(|| {
-        Arc::new(
-            theia_network::dialogue::Profile::from_json(include_bytes!(
-                "../../../content/gameplay/development-dialogue.json"
-            ))
-            .unwrap(),
-        )
+        let bytes = if from_world {
+            theia_network::gameplay_bundle::snapshot(&root.join("gameplay/gameplay.manifest.json"))
+                .unwrap()
+                .profile("dialogue")
+                .unwrap()
+                .to_vec()
+        } else {
+            include_bytes!("../../../content/gameplay/development-dialogue.json").to_vec()
+        };
+        Arc::new(theia_network::dialogue::Profile::from_json(&bytes).unwrap())
     });
+    let mut guide_requested_feet = None;
     let guide = dialogue.as_ref().map(|profile| {
+        use theia_network::dialogue::Placement;
+        let placement = if from_world {
+            Placement::resolve("authored", &world.procedural().unwrap().source, profile).unwrap()
+        } else {
+            Placement::Feet(theia_core::coordinates::GlobalPosition::new([x + 2., y, z]).unwrap())
+        };
+        let Placement::Feet(feet) = placement else {
+            panic!("Expected explicit authored feet")
+        };
+        guide_requested_feet = Some(feet.metres());
         world
-            .spawn_placed_guide(
-                profile.clone(),
-                theia_network::dialogue::Placement::Feet(
-                    theia_core::coordinates::GlobalPosition::new([x + 2., y, z]).unwrap(),
-                ),
-            )
+            .spawn_placed_guide(profile.clone(), placement)
             .unwrap()
     });
     let classic_source = world.identity();
@@ -382,7 +398,7 @@ async fn run_authored(patrol: bool, with_guide: bool) {
     println!(
         "{}",
         serde_json::json!({"passed":true,"clients":2,"patrol":patrol,"guide":with_guide,
-        "guide_requested_feet":with_guide.then_some([x + 2., y, z]),"world":identity,"server":stats,
+        "guide_requested_feet":guide_requested_feet,"authored_contact":from_world,"world":identity,"server":stats,
         "scope":"Actual authored Synty collision, encrypted loopback admission and Classic driver; explicit headless readiness, no native-client/quest/persistence claim"})
     );
 }

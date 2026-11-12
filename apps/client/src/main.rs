@@ -341,8 +341,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if i >= args.len() {
             return Err("Missing guide position".into());
         }
-        let placement = theia_network::dialogue::Placement::parse(&args.remove(i))
-            .map_err(|error| error.to_string())?;
+        let placement =
+            theia_network::dialogue::Placement::resolve(&args.remove(i), &source, &profile)
+                .map_err(|error| error.to_string())?;
         Some((profile, placement))
     } else {
         if args.iter().any(|a| a == "--guide-position") {

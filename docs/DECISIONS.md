@@ -1,3 +1,16 @@
+## 12 November 2026 — Bevy editor design inspiration
+
+The user approves the supplied Bevy Editor Figma/SVG as inspiration where useful,
+not a wholesale replacement or pixel-perfect target. Retain our left-hand stacked
+explorer/properties, Sprinkles inline edits/popovers, immediate application and
+explicit Save. Prioritize a separate asset browser for available models/effects,
+clear scene hierarchy, compact transforms, restrained single borders and consistent
+spacing. Model thumbnails and drag-to-place are implementation goals, not features
+proved by the static design. Keep gameplay-facing sections rather than exposing
+generic engine internals. Reference: https://www.figma.com/design/fkYfFPSBgnGkhbQd3HOMsL/Bevy-Editor?node-id=39198-9068
+The supplied SVG was inspected locally; upstream implementation/reuse availability
+was not verified. Current permission allows mouse/display if needed.
+
 ## 12 November 2026 — authored worlds through existing prediction
 
 The quest runtime currently depends on procedural/saved-terrain patch preparation;

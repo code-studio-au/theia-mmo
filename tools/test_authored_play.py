@@ -61,13 +61,14 @@ class AuthoredPlay(unittest.TestCase):
                 with patch.object(Path,'is_file',return_value=True), patch.object(play.subprocess,'Popen',capture):
                     for extra in ({}, dict(creature_profile=Path('wolf'), navigation=Path('nav'),
                                            combat_catalog=Path('abilities')),
-                                  dict(dialogue_catalog=Path('dialogue'), guide_position='8194,0.1,8192')):
+                                  dict(dialogue_catalog=Path('dialogue'), guide_position='8194,0.1,8192'),
+                                  dict(dialogue_catalog=Path('dialogue'), guide_position='authored')):
                         with self.assertRaises(CapturedLaunch):
                             play.play(None,Path('players'),1,Path('binaries'),prediction=True,
                                       authored_world=Path('authored'), **extra)
             finally:
                 os.chdir(previous)
-        self.assertEqual(len(calls),3)
+        self.assertEqual(len(calls),4)
         for call in calls:
             self.assertIn('--authored-world',call)
             self.assertNotIn('--dev-spawn',call)
@@ -75,6 +76,7 @@ class AuthoredPlay(unittest.TestCase):
         self.assertIn('--creature-profile',calls[1])
         self.assertIn('--navigation',calls[1])
         self.assertEqual(calls[2][calls[2].index('--guide-position') + 1], '8194,0.1,8192')
+        self.assertEqual(calls[3][calls[3].index('--guide-position') + 1], 'authored')
 
     def test_invalid_guide_height_or_coordinate_refuses_before_starting_children(self):
         with patch.object(play.subprocess, 'Popen') as child:

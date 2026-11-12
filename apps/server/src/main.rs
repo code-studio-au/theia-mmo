@@ -60,7 +60,7 @@ async fn main() -> Result<()> {
     let mut quest_turn_in_xp = None;
     let mut dialogue_catalog = None;
     let mut vendor_catalog = None;
-    let mut guide_position: Option<theia_network::dialogue::Placement> = None;
+    let mut guide_position: Option<String> = None;
     let mut dev_persistence = false;
     let mut account_login = false;
     let mut dev_tour = false;
@@ -148,7 +148,9 @@ async fn main() -> Result<()> {
             }
             "--guide-position" => {
                 if guide_position.is_some() {return Err("Choose one guide position".into());}
-                guide_position=Some(theia_network::dialogue::Placement::parse(&args.next().ok_or("Missing guide position")?)?);
+                let value = args.next().ok_or("Missing guide position")?;
+                if value != "authored" { theia_network::dialogue::Placement::parse(&value)?; }
+                guide_position=Some(value);
             }
             "--quest-lifecycle" => explicit_quest=true,
             "--quest-journal" => journal_mode=true,
@@ -631,6 +633,14 @@ async fn main() -> Result<()> {
                 .take(theia_core::dialogue::MAX_PROFILE_BYTES as u64 + 1)
                 .read_to_end(&mut bytes)?;
             let profile = std::sync::Arc::new(theia_network::dialogue::Profile::from_json(&bytes)?);
+            let placement = theia_network::dialogue::Placement::resolve(
+                &placement,
+                &world
+                    .procedural()
+                    .ok_or("Guide requires prepared world")?
+                    .source,
+                &profile,
+            )?;
             let guide =
                 theia_server::development::prepare_placed_guide(&mut world, profile, placement)
                     .await?;

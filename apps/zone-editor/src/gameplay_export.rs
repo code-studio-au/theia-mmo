@@ -7,6 +7,7 @@ pub(super) struct Draft {
     template: Snapshot,
     manifest: Vec<u8>,
     areas: Vec<u8>,
+    pub(super) contact: Option<theia_network::authored_world::Contact>,
 }
 
 impl Draft {
@@ -36,6 +37,38 @@ impl Draft {
             id,
             revision,
         )?;
+        let contacts: Vec<_> = zone
+            .markers
+            .iter()
+            .filter(|marker| {
+                marker.kind == theia_zone::markers::MarkerKind::Npc && marker.definition.is_some()
+            })
+            .collect();
+        if contacts.len() > 1 {
+            return Err("Current gameplay runtime supports one bound NPC contact".into());
+        }
+        let contact = if let Some(marker) = contacts.first() {
+            let profile = theia_network::dialogue::Profile::from_json(
+                template
+                    .profile("dialogue")
+                    .ok_or("Gameplay template needs dialogue")?,
+            )
+            .map_err(|e| e.to_string())?;
+            let npc = marker.definition.as_ref().unwrap();
+            if npc != profile.profile().npc().as_str() {
+                return Err(format!(
+                    "NPC {} does not match the gameplay template contact {}",
+                    npc,
+                    profile.profile().npc().as_str()
+                ));
+            }
+            Some(theia_network::authored_world::Contact {
+                npc: npc.clone(),
+                feet: marker.position,
+            })
+        } else {
+            None
+        };
         let mut manifest: serde_json::Value =
             serde_json::from_slice(template.manifest()).map_err(|e| e.to_string())?;
         manifest["id"] = serde_json::json!(id);
@@ -45,6 +78,7 @@ impl Draft {
             template,
             manifest,
             areas,
+            contact,
         })
     }
 

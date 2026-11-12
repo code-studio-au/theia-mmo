@@ -378,10 +378,18 @@ fn permanent_names_apply_enter_and_blur_validate_cancel_and_share_exact_undo() {
             app.update();
             type_value(&mut app, field, "Tab committed");
             key(&mut app, KeyCode::Tab, Key::Tab);
-            assert_eq!(
-                app.world().resource::<InputFocus>().get(),
-                Some(button(&mut app, 0))
-            );
+            let next = if target == 2 {
+                app.world_mut()
+                    .query::<(Entity, &Input)>()
+                    .iter(app.world())
+                    .find_map(|(entity, input)| {
+                        matches!(input, Input::MarkerDefinition).then_some(entity)
+                    })
+                    .unwrap()
+            } else {
+                button(&mut app, 0)
+            };
+            assert_eq!(app.world().resource::<InputFocus>().get(), Some(next));
             assert_eq!(
                 app.world()
                     .resource::<Session>()
@@ -675,6 +683,81 @@ fn quest_area_bounds_edit_inline_keep_selection_reject_inversion_and_undo() {
             expected_revision: 1,
         });
     assert_eq!(app.world().resource::<Session>().editor.zone(), &zone);
+}
+
+#[test]
+fn marker_catalog_id_is_inline_validated_clearable_and_undoable_without_saving() {
+    let (mut app, _) = super::tests::fixture([0.; 3], 2);
+    let original = app.world().resource::<Session>().editor.zone().clone();
+    let id = app.world().resource::<Session>().marker_selected.unwrap();
+    let field = app
+        .world_mut()
+        .query::<(Entity, &Input, &ComputedNode)>()
+        .iter(app.world())
+        .find_map(|(entity, input, node)| {
+            if matches!(input, Input::MarkerDefinition) {
+                assert!(node.size().min_element() > 0.);
+                Some(entity)
+            } else {
+                None
+            }
+        })
+        .unwrap();
+    app.world_mut()
+        .resource_mut::<InputFocus>()
+        .set(field, FocusCause::Navigated);
+    app.update();
+    type_value(&mut app, field, " theia.dev.guide ");
+    key(&mut app, KeyCode::Enter, Key::Enter);
+    let accepted = app.world().resource::<Session>().editor.zone().clone();
+    assert_eq!(
+        accepted
+            .markers
+            .iter()
+            .find(|m| m.id == id)
+            .unwrap()
+            .definition
+            .as_deref(),
+        Some("theia.dev.guide")
+    );
+    let revision = app.world().resource::<Session>().editor.revision();
+    app.world_mut()
+        .resource_mut::<InputFocus>()
+        .set(field, FocusCause::Navigated);
+    app.update();
+    type_value(&mut app, field, "../invalid");
+    key(&mut app, KeyCode::Enter, Key::Enter);
+    assert_eq!(app.world().resource::<Session>().editor.zone(), &accepted);
+    assert_eq!(
+        app.world().resource::<Session>().editor.revision(),
+        revision
+    );
+    key(&mut app, KeyCode::Escape, Key::Escape);
+    app.world_mut()
+        .resource_mut::<InputFocus>()
+        .set(field, FocusCause::Navigated);
+    app.update();
+    type_value(&mut app, field, "");
+    key(&mut app, KeyCode::Enter, Key::Enter);
+    assert!(
+        app.world()
+            .resource::<Session>()
+            .editor
+            .zone()
+            .markers
+            .iter()
+            .find(|m| m.id == id)
+            .unwrap()
+            .definition
+            .is_none()
+    );
+    let mut session = app.world_mut().resource_mut::<Session>();
+    let revision = session.editor.revision();
+    session.execute(Command::Undo {
+        expected_revision: revision,
+    });
+    assert_eq!(session.editor.zone(), &accepted);
+    assert_eq!(session.saved_zone.as_ref(), Some(&original));
 }
 
 #[test]

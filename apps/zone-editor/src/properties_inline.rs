@@ -7,6 +7,7 @@ pub(crate) enum Input {
     Number(usize),
     Name,
     Effect,
+    MarkerDefinition,
     AreaDefinition,
     AreaObjectives,
 }
@@ -20,6 +21,10 @@ impl Input {
         match self {
             Self::Number(index) => target.values().get(index).cloned(),
             Self::Name => session.editor.zone().authoring_name(id?).map(String::from),
+            Self::MarkerDefinition => match target {
+                Target::Marker(marker) => Some(marker.definition.clone().unwrap_or_default()),
+                _ => None,
+            },
             Self::AreaDefinition | Self::AreaObjectives => match target {
                 Target::QuestArea(area) => Some(if matches!(self, Self::AreaDefinition) {
                     area.definition.clone()
@@ -84,6 +89,14 @@ fn commit(session: &mut Session, pending: &Pending, value: &str) -> Result<(), S
             id: pending.id.expect("Name fields require authored content"),
             name: value.into(),
         }),
+        Input::MarkerDefinition => match &pending.original {
+            Target::Marker(original) => {
+                let mut marker = original.clone();
+                marker.definition = (!value.trim().is_empty()).then(|| value.trim().to_owned());
+                (marker != *original).then_some(Edit::PutMarker { marker })
+            }
+            _ => return Err("Marker is no longer available".into()),
+        },
         Input::AreaDefinition | Input::AreaObjectives => match &pending.original {
             Target::QuestArea(original) => {
                 let mut area = original.clone();

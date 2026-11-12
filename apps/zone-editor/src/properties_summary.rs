@@ -77,10 +77,7 @@ pub(super) fn description(session: &Session) -> Option<String> {
         Target::Particle(_) => subject.push_str("\nUnresolved asset reference"),
         Target::Scenery(model) => subject.push_str(&format!("\n{}", model.asset)),
         Target::QuestArea(_) => subject.push_str("\nQuest references checked on catalog export"),
-        Target::Marker(marker) => subject.push_str(&format!(
-            "\nDefinition: {}\nAuthoring annotation",
-            marker.definition.as_deref().unwrap_or("unbound")
-        )),
+        Target::Marker(_) => subject.push_str("\nAuthoring annotation"),
         Target::Path { path, .. } => subject.push_str(&format!("\n{} points", path.points.len())),
         Target::Object(_)
             if session
@@ -238,7 +235,9 @@ pub(super) fn field(parent: &mut ChildSpawnerCommands, input: super::inline::Inp
                 EditableText {
                     max_characters: Some(match input {
                         super::inline::Input::Name => 80,
-                        super::inline::Input::Effect | super::inline::Input::AreaDefinition => 96,
+                        super::inline::Input::Effect
+                        | super::inline::Input::AreaDefinition
+                        | super::inline::Input::MarkerDefinition => 96,
                         super::inline::Input::AreaObjectives => {
                             theia_core::quests::areas::MAX_MAP_OBJECTIVES_PER_AREA * 98
                         }
@@ -272,7 +271,9 @@ pub(super) fn field(parent: &mut ChildSpawnerCommands, input: super::inline::Inp
                 super::inline::Input::Effect => {
                     entity.insert(Effect);
                 }
-                super::inline::Input::AreaDefinition | super::inline::Input::AreaObjectives => {
+                super::inline::Input::AreaDefinition
+                | super::inline::Input::AreaObjectives
+                | super::inline::Input::MarkerDefinition => {
                     entity.insert(super::area::TextField);
                 }
             }
@@ -477,3 +478,7 @@ mod action_tests;
 #[cfg(test)]
 #[path = "properties_summary_workspace_tests.rs"]
 mod workspace_tests;
+
+#[cfg(test)]
+#[path = "properties_binding_gpu_test.rs"]
+mod binding_gpu_test;

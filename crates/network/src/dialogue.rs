@@ -47,6 +47,22 @@ pub enum Placement {
     Feet(GlobalPosition),
 }
 impl Placement {
+    /// Resolve the explicit `authored` startup selector against verified world
+    /// metadata and the selected dialogue profile; never reads a client position.
+    pub fn resolve(
+        value: &str,
+        source: &crate::procedural::Source,
+        profile: &Profile,
+    ) -> crate::Result<Self> {
+        if value == "authored" {
+            match source {
+                crate::procedural::Source::Authored(store) => store.contact_placement(profile),
+                _ => Err("Authored contact placement requires an authored world".into()),
+            }
+        } else {
+            Self::parse(value)
+        }
+    }
     pub fn parse(value: &str) -> crate::Result<Self> {
         let values: Vec<f64> = value.split(',').map(str::parse).collect::<Result<_, _>>()?;
         let placement = match values.as_slice() {

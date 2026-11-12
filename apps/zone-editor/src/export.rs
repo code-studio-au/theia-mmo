@@ -579,9 +579,22 @@ fn publish_combined(
     };
     let profile = serde_json::to_vec(&profile).map_err(|e| e.to_string())?;
     // Run the actual headless runtime decoder/spawn validator before writing.
-    let terrain = Terrain::decode(&profile).map_err(|e| e.to_string())?;
+    let terrain = Terrain::decode(&profile)
+        .map_err(|e| e.to_string())?
+        .into_world();
     if !terrain.has_spawns() {
         return Err("Export needs a valid capsule spawn".into());
+    }
+    let contact = gameplay.as_ref().and_then(|draft| draft.contact.clone());
+    report["npc_contact"] = serde_json::to_value(&contact).map_err(|e| e.to_string())?;
+    if let Some(contact) = &contact {
+        contact
+            .validate(
+                theia_core::coordinates::GlobalPosition::new(zone.origin)
+                    .ok_or("Invalid contact origin")?,
+                &terrain.physics,
+            )
+            .map_err(|e| e.to_string())?;
     }
     let mut manifest = json!({"schema":1,"content_id":content_id,"revision":revision,"collision_schema":4,
         "collision_bytes":profile.len(),"collision_sha256":sha256(&profile),"visual_bytes":visual.len(),"visual_sha256":sha256(&visual)});
@@ -650,9 +663,10 @@ fn publish_combined(
         fs::write(
             stage.join(theia_network::authored_world::ANCHOR_FILE),
             serde_json::to_vec_pretty(&theia_network::authored_world::Anchor {
-                schema: 1,
+                schema: if contact.is_some() { 2 } else { 1 },
                 origin: zone.origin,
                 world_identity: checked.identity(),
+                contact: contact.clone(),
             })
             .map_err(|e| e.to_string())?,
         )
@@ -1603,6 +1617,80 @@ mod tests {
         assert_eq!(fs::read_dir(&root.0).unwrap().count(), 1);
     }
 
+    #[test]
+    fn bound_npc_exports_verified_position_and_profile_and_refuses_unusable_bindings() {
+        use theia_network::{
+            authored_world::Store,
+            dialogue::{Placement, Profile},
+            procedural::Source,
+        };
+        let root = Folder::new();
+        let template = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../content/development-gameplay-classic-quest-areas.json");
+        let mut zone: Zone = serde_json::from_slice(include_bytes!(
+            "../../../content/zones/quest-areas.zone.json"
+        ))
+        .unwrap();
+        zone.markers.push(theia_zone::markers::Marker {
+            id: 2,
+            name: "Village guide".into(),
+            kind: theia_zone::markers::MarkerKind::Npc,
+            position: [8002., 0.03, 8000.],
+            yaw_degrees: 0.,
+            radius_metres: 1.,
+            definition: Some("theia.dev.guide".into()),
+        });
+        let before = zone.clone();
+        let output = root.0.join("bound");
+        let report =
+            publish_with_gameplay(&zone, &output, "theia.test.npc", 1, Some(&template)).unwrap();
+        assert_eq!(report["npc_contact"]["feet"], json!([8002., 0.03, 8000.]));
+        let store = std::sync::Arc::new(Store::open(&output).unwrap());
+        let bundle = theia_network::gameplay_bundle::snapshot(
+            &output.join("gameplay/gameplay.manifest.json"),
+        )
+        .unwrap();
+        let profile = Profile::from_json(bundle.profile("dialogue").unwrap()).unwrap();
+        let placement = Placement::resolve("authored", &Source::Authored(store), &profile).unwrap();
+        assert_eq!(
+            placement.focus().unwrap().metres(),
+            zone.markers[0].position
+        );
+        assert_eq!(
+            Zone::load(&output.join("authoring.zone.json")).unwrap(),
+            before
+        );
+        assert_eq!(zone, before);
+        for (index, mut candidate) in [zone.clone(), zone.clone(), zone.clone(), zone.clone()]
+            .into_iter()
+            .enumerate()
+        {
+            match index {
+                0 => candidate.markers[0].definition = Some("theia.unknown.contact".into()),
+                1 => candidate.markers[0].position[1] = 100.,
+                // The enclosing runtime wall must be checked before publication.
+                2 => candidate.markers[0].position[0] = zone.origin[0] + 511.9,
+                _ => {
+                    let mut second = candidate.markers[0].clone();
+                    second.id = 3;
+                    candidate.markers.push(second);
+                }
+            }
+            let destination = root.0.join(format!("refused-{index}"));
+            assert!(
+                publish_with_gameplay(
+                    &candidate,
+                    &destination,
+                    "theia.test.npc",
+                    1,
+                    Some(&template)
+                )
+                .is_err()
+            );
+            assert!(!destination.exists());
+        }
+        assert_eq!(fs::read_dir(&root.0).unwrap().count(), 1);
+    }
     #[test]
     fn gameplay_area_drafts_cannot_be_silently_omitted_from_world_export() {
         let mut zone = Zone {

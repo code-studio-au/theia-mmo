@@ -3,14 +3,30 @@ use super::*;
 use crate::particle_workspace::ZoneAppExt;
 
 #[derive(Component)]
-struct Group;
+enum Group {
+    Area,
+    Marker,
+}
 #[derive(Component)]
 pub(super) struct TextField;
 
 pub(super) fn spawn(parent: &mut ChildSpawnerCommands) {
+    spawn_group(parent, Group::Area);
+    spawn_group(parent, Group::Marker);
+}
+fn spawn_group(parent: &mut ChildSpawnerCommands, group: Group) {
+    let marker = matches!(group, Group::Marker);
+    let fields = if marker {
+        vec![(inline::Input::MarkerDefinition, "Catalog ID", 2)]
+    } else {
+        vec![
+            (inline::Input::AreaDefinition, "Area ID", 2),
+            (inline::Input::AreaObjectives, "Map objectives", 3),
+        ]
+    };
     parent
         .spawn((
-            Group,
+            group,
             Visibility::Hidden,
             Node {
                 display: Display::None,
@@ -23,13 +39,18 @@ pub(super) fn spawn(parent: &mut ChildSpawnerCommands) {
         ))
         .with_children(|group| {
             group.spawn((
-                theme::label("Quest binding", 12., theme::DISPLAY),
+                theme::label(
+                    if marker {
+                        "Gameplay reference"
+                    } else {
+                        "Quest binding"
+                    },
+                    12.,
+                    theme::DISPLAY,
+                ),
                 Pickable::IGNORE,
             ));
-            for (input, title, order) in [
-                (inline::Input::AreaDefinition, "Area ID", 2),
-                (inline::Input::AreaObjectives, "Map objectives", 3),
-            ] {
+            for (input, title, order) in fields {
                 group
                     .spawn(Node {
                         width: percent(100),
@@ -51,7 +72,15 @@ pub(super) fn spawn(parent: &mut ChildSpawnerCommands) {
                     });
             }
             group.spawn((
-                theme::label("Objective IDs, separated by commas", 10., theme::MUTED),
+                theme::label(
+                    if marker {
+                        "Blank leaves this marker unbound"
+                    } else {
+                        "Objective IDs, separated by commas"
+                    },
+                    10.,
+                    theme::MUTED,
+                ),
                 Pickable::IGNORE,
             ));
         });
@@ -63,28 +92,31 @@ pub(super) fn plugin(app: &mut App) {
 
 fn sync(
     session: Res<Session>,
-    mut groups: Query<(&mut Node, &mut Visibility), With<Group>>,
+    mut groups: Query<(&Group, &mut Node, &mut Visibility)>,
     mut fields: Query<(Entity, &inline::Input, &mut EditableText), With<TextField>>,
     focus: Res<InputFocus>,
     editing: Res<inline::State>,
 ) {
     let snapshot = summary::snapshot(&session);
-    let area = snapshot
-        .as_ref()
-        .filter(|(_, target, _)| matches!(target, Target::QuestArea(_)));
-    for (mut node, mut visibility) in &mut groups {
-        node.display = if area.is_some() {
+    for (group, mut node, mut visibility) in &mut groups {
+        let visible = snapshot.as_ref().is_some_and(|(_, target, _)| {
+            matches!(
+                (group, target),
+                (Group::Area, Target::QuestArea(_)) | (Group::Marker, Target::Marker(_))
+            )
+        });
+        node.display = if visible {
             Display::Flex
         } else {
             Display::None
         };
-        *visibility = if area.is_some() {
+        *visibility = if visible {
             Visibility::Inherited
         } else {
             Visibility::Hidden
         };
     }
-    if let Some((id, target, _)) = area {
+    if let Some((id, target, _)) = &snapshot {
         for (entity, input, mut text) in &mut fields {
             if focus.get() != Some(entity)
                 && !editing.owns(entity)

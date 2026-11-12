@@ -1,5 +1,13 @@
 # P5-17 integrated editor usability refinement
 
+12 November 2026 design direction: use the supplied Bevy Editor design as
+inspiration for an asset browser, scene hierarchy, compact transform fields and
+consistent panel/control spacing. Preserve the left stacked dock, original
+Sprinkles particle controls, inline changes and explicit Save. Distinguish placed
+scene objects from available assets. The current reference browser uses folders
+and asset tiles; thumbnails/drag-to-place are our proposed enhancements, not
+observed working upstream features. See the adoption record in DECISIONS.md.
+
 Adopted 10 November 2026. Keep the dock on the **left**. Sprinkles supplies the
 visual and interaction reference; Blender supplies the stacked explorer/properties
 pattern, category tabs, viewport tool strip and compact status bar. Pixel-perfect

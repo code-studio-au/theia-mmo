@@ -478,7 +478,7 @@ pub(super) fn finish(
             .into();
         } else if description {
             **text = match draft.mode {
-                Mode::World => "Exports the current zone. Quest areas require a gameplay template manifest. Save particle edits first.",
+                Mode::World => "Exports the current zone. Use a matching gameplay template for quest areas and NPC references. Save particle edits first.",
                 Mode::ParticleChunks => "Copies a particle-free chunk world with these placements. Save particle edits first.",
                 Mode::ReplaceParticleChunks => "Replaces ALL particle placements in a new copy of the chunk world with this zone's placements. An empty zone removes all world particles. Save particle edits first."
             }.into();

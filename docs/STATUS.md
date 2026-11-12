@@ -1,3 +1,35 @@
+P5-17 / P3-12 / P3-15 editor NPC contact binding, 12 November 2026:
+NPC markers now have a permanent inline Catalog ID with validation/history/Save.
+Gameplay-template export binds one matching dialogue contact at authored XYZ feet,
+rejecting unknown IDs, multiple contacts and unsafe capsule support/headroom/world
+boundary intersections. Anchor schema 2 binds the contact into world identity;
+legacy schema 1 remains compatible. Server/client/launcher --guide-position authored
+resolve against that verified contact and matching dialogue profile.
+All 199 ordinary editor tests (six opt-in skips), 241 client tests (two skips),
+481 network authority tests and seven launcher tests pass. A focused final export
+regression also covers boundary-wall refusal. Formatting and denied-warning
+workspace/all-target Clippy pass. Client/server/editor/baker builds pass before
+that final export-only guard; the final editor test binary includes the guard.
+Offscreen RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan verifies the actual inline
+field alignment and unchanged source (build/editor-contact-gpu.log and
+editor-contact-inspector.png). No new native interaction or Windows qualification.
+The user confirmed they intentionally closed the editor. Their eight saved v2
+scenery placement edits remain untouched and are carried into a new v3 zone/world
+copy. Fresh nine-tile navigation and 231 route-clearance samples pass. Two actual
+encrypted peers use the exported dialogue/placement, open independent conversations
+and close on walkaway while the wolf patrol moves; zero rejected movement/readiness/
+dialogue and zero recovery resets. Actual CLI startup/shutdown/unsupported-height
+refusal and rebuilt client identity match pass. Logs: build/editor-contact-*.log;
+source proof: build/editor-contact-source-proof.json; CLI proof:
+build/editor-contact-cli-proof.json. Source: build/starter-valley-contact-v3.zone.json;
+world/navigation: build/starter-valley-contact-{world,navigation}-v3.
+This is one bound contact, not complete quest/persistence or multiple-NPC support.
+Unbound markers/no-template exports remain annotations; marker yaw/radius remain
+metadata. Proper spell animation, multiple contacts/patrols, pickups and authored
+account gameplay remain outstanding. User approved the supplied Bevy editor SVG as
+inspiration (DECISIONS.md), retaining the left dock and Sprinkles behavior, and
+currently allows mouse/display if needed. Continue across local commits.
+
 P3-12 / P3-15 explicit XYZ contact placement, 12 November 2026:
 Guide startup accepts x,y,z feet through launcher/client/server and preserves the
 requested support layer. XYZ hashes bind all three coordinates; legacy XZ APIs,

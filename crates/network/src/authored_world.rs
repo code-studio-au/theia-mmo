@@ -17,12 +17,39 @@ pub struct Anchor {
     pub schema: u32,
     pub origin: [f64; 3],
     pub world_identity: [u8; 32],
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub contact: Option<Contact>,
+}
+/// One explicit dialogue contact, matching the current runtime contact budget.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct Contact {
+    pub npc: String,
+    pub feet: [f64; 3],
+}
+impl Contact {
+    pub fn validate(&self, origin: GlobalPosition, terrain: &StaticScene) -> Result<()> {
+        if theia_core::content::ContentId::new(&self.npc).is_none() {
+            return Err("Authored contact needs a valid NPC catalog ID".into());
+        }
+        let position = GlobalPosition::new(self.feet).ok_or("Invalid authored contact feet")?;
+        if procedural::owner(position).is_none() {
+            return Err("Authored contact leaves the supported world".into());
+        }
+        let local = LocalFrame::new(origin)
+            .to_local(position)
+            .ok_or("Contact outside local frame")?;
+        crate::kinematic::spawn(terrain, local)
+            .map_err(|_| "Authored contact has no safe support")?;
+        Ok(())
+    }
 }
 pub struct Store {
     terrain: Terrain,
     origin: GlobalPosition,
     identity: [u8; 32],
     visual: Arc<Vec<u8>>,
+    contact: Option<Contact>,
 }
 fn path(root: &Path, name: &str) -> Result<std::path::PathBuf> {
     let file = root.join(name).canonicalize()?;
@@ -37,8 +64,11 @@ impl Store {
         let bytes = content::read_bounded(&path(&root, ANCHOR_FILE)?, 4096)?;
         let anchor: Anchor = serde_json::from_slice(&bytes)?;
         let origin = GlobalPosition::new(anchor.origin).ok_or("Invalid authored origin")?;
-        if anchor.schema != 1 || anchor.origin[1] != 0. {
-            return Err("Initial authored prediction requires schema 1 and zero origin Y".into());
+        if !matches!(anchor.schema, 1 | 2)
+            || (anchor.schema == 2) != anchor.contact.is_some()
+            || anchor.origin[1] != 0.
+        {
+            return Err("Authored prediction requires schema 1, or schema 2 with a contact, and zero origin Y".into());
         }
         let terrain = Terrain::load(&path(&root, "terrain.json")?)?;
         let package = terrain
@@ -71,11 +101,16 @@ impl Store {
         let mut identity_bytes = b"theia-authored-predicted-world-v1\0".to_vec();
         identity_bytes.extend(&bytes);
         identity_bytes.extend(package.identity());
+        let terrain = terrain.into_world();
+        if let Some(contact) = &anchor.contact {
+            contact.validate(origin, &terrain.physics)?;
+        }
         Ok(Self {
-            terrain: terrain.into_world(),
+            terrain,
             origin,
             identity: sha256(&identity_bytes),
             visual: Arc::new(visual),
+            contact: anchor.contact,
         })
     }
     pub fn identity(&self) -> [u8; 32] {
@@ -83,6 +118,21 @@ impl Store {
     }
     pub fn origin(&self) -> GlobalPosition {
         self.origin
+    }
+    pub fn contact_placement(
+        &self,
+        profile: &crate::dialogue::Profile,
+    ) -> Result<crate::dialogue::Placement> {
+        let contact = self
+            .contact
+            .as_ref()
+            .ok_or("Authored world has no bound NPC contact")?;
+        if profile.profile().npc().as_str() != contact.npc {
+            return Err("Dialogue catalog does not match the authored NPC contact".into());
+        }
+        Ok(crate::dialogue::Placement::Feet(
+            GlobalPosition::new(contact.feet).ok_or("Invalid authored contact")?,
+        ))
     }
     /// Hash-bound capsule feet, including the authored vertical support layer.
     /// Multiple players may share an authored spawn; actors never block actors.
@@ -166,6 +216,7 @@ mod tests {
             schema: 1,
             origin,
             world_identity: identity,
+            contact: None,
         };
         for (name, bytes) in [
             ("terrain.json", profile),
@@ -176,6 +227,66 @@ mod tests {
             std::fs::write(root.join(name), bytes).unwrap();
         }
         (Folder(root), anchor)
+    }
+    #[test]
+    fn contact_metadata_is_versioned_supported_profile_checked_and_identity_bound() {
+        let (folder, mut anchor) = spawn_fixture([8192., 0., 8192.], true, false);
+        let legacy = Store::open(&folder.0).unwrap().identity();
+        let profile = crate::dialogue::Profile::from_json(include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../content/gameplay/development-dialogue.json"
+        )))
+        .unwrap();
+        anchor.schema = 2;
+        anchor.contact = Some(Contact {
+            npc: profile.profile().npc().as_str().into(),
+            feet: [8192., 0.03, 8192.],
+        });
+        let publish = |anchor: &Anchor| {
+            std::fs::write(
+                folder.0.join(ANCHOR_FILE),
+                serde_json::to_vec(anchor).unwrap(),
+            )
+            .unwrap()
+        };
+        publish(&anchor);
+        let floor = Arc::new(Store::open(&folder.0).unwrap());
+        assert_ne!(legacy, floor.identity());
+        let source = procedural::Source::Authored(floor.clone());
+        let placement = crate::dialogue::Placement::resolve("authored", &source, &profile).unwrap();
+        assert_eq!(placement.focus().unwrap().metres(), [8192., 0.03, 8192.]);
+        assert!(
+            crate::dialogue::Placement::resolve(
+                "authored",
+                &procedural::Source::Procedural,
+                &profile
+            )
+            .is_err()
+        );
+        anchor.contact.as_mut().unwrap().feet[1] = 4.53;
+        publish(&anchor);
+        assert_ne!(floor.identity(), Store::open(&folder.0).unwrap().identity());
+        anchor.contact.as_mut().unwrap().npc = "theia.other.contact".into();
+        publish(&anchor);
+        assert!(
+            Store::open(&folder.0)
+                .unwrap()
+                .contact_placement(&profile)
+                .is_err()
+        );
+        for y in [4., 100.] {
+            anchor.contact.as_mut().unwrap().feet[1] = y;
+            publish(&anchor);
+            assert!(Store::open(&folder.0).is_err());
+        }
+        anchor.contact.as_mut().unwrap().feet[1] = 0.03;
+        anchor.schema = 1;
+        publish(&anchor);
+        assert!(Store::open(&folder.0).is_err());
+        anchor.schema = 2;
+        anchor.contact = None;
+        publish(&anchor);
+        assert!(Store::open(&folder.0).is_err());
     }
     #[test]
     fn explicit_guide_height_selects_its_floor_and_rejects_unsupported_positions_atomically() {
