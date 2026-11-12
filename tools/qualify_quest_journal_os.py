@@ -23,7 +23,7 @@ SECOND = 'theia.dev.quest-follow-up'
 WOLVES = SECOND + '.objective.wolves'
 
 
-def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False, minimap=False, reach_areas=False, corpse_loot=False, item_quest=False, quest_only=False, intro_only=False):
+def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False, minimap=False, reach_areas=False, corpse_loot=False, item_quest=False, quest_only=False, intro_only=False, authored_trail=None, authored_area=None):
     scale = state()['window'][2]
     base_head = 13 if repeat_interaction else 11
     expected_head = base_head + (3 if reach_areas else 0)
@@ -128,20 +128,57 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
             time.sleep(.2)
         raise AssertionError('Manual facing did not reach the requested direction')
 
-    def approach(point):
+    def approach(point, tolerance=2.1):
         for _ in range(45):
             target = point()
             face(target)
             distance = math.hypot(target[0]-feet()[0], target[2]-feet()[2])
-            if distance < 2.1:
+            if distance < tolerance:
                 return
             desktop.key_state('w', True)
             try:
-                time.sleep(min(.35, max(.02, (distance-1.9)/5)))
+                time.sleep(min(.35, max(.02, (distance-max(.1, tolerance-.2))/5)))
             finally:
                 desktop.key_state('w', False)
             time.sleep(.15)
         raise AssertionError('Normal movement did not reach the contact')
+
+    travel_count = 0
+
+    def walk_trail(reverse=False):
+        nonlocal travel_count
+        travel_count += 1
+        points = list(reversed(authored_trail)) if reverse else authored_trail
+        observations = []
+        for point in points:
+            approach(lambda: point, tolerance=.6)
+            observations.append(dict(requested=point, feet=feet(), tick=state()['dodge']['tick']))
+        (folder / f'trail-{travel_count}-{"return" if reverse else "outward"}.json').write_text(
+            json.dumps(observations, indent=2)+'\n')
+
+    def engage():
+        clicks = state()['controls']['enemy_clicks']
+        for dx, dy in [(20, -25), (-20, -25), (0, -30), (0, 0)]:
+            point = wait(lambda: state()['enemy_screen'])
+            desktop.click(window, [point[0]+dx, point[1]+dy], scale, 3)
+            try:
+                wait(lambda:state()['controls']['enemy_clicks']>clicks,.75)
+                break
+            except TimeoutError:
+                pass
+        if state()['controls']['enemy_clicks']==clicks:
+            # An earlier corpse can be the actual frontmost pointer hit.
+            # Close that ordinary pane and use the supported Tab target cycle.
+            if (state().get('loot') or {}).get('ui',{}).get('open'):
+                desktop.key('Escape');wait(lambda:not state()['loot']['ui']['open'])
+            if state()['dialogue_open']:
+                close_panels()
+            desktop.key('Tab')
+            wait(lambda:state()['selected_hostile'] is not None)
+    def await_respawn():
+        wait(lambda: state()['combat']['player_health'] > 0 and
+             math.hypot(feet()[0]-authored_trail[0][0], feet()[2]-authored_trail[0][2]) < 3, 30)
+        assert state()['combat']['player_deaths'] <= 3, 'Bounded quest test death budget exceeded'
 
     wait(lambda: journal() and journal()['tracker'] and journal()['tracker']['glyphs'] > 0)
     if resumed and intro_only:
@@ -162,8 +199,11 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
             # Pickup legitimately changed the saved logout position.
             approach(lambda: [8004., 0., 8000.])
         speak()
-        assert not journal()['buttons'], 'Completed quests were offered again'
-        assert not state()['quest_marker']['visible_now']
+        if authored_trail and not reach_areas:
+            assert not any(b.get('quest') in [FIRST, SECOND] for b in journal()['buttons'])
+        else:
+            assert not journal()['buttons'], 'Completed quests were offered again'
+            assert not state()['quest_marker']['visible_now']
         capture('resumed-completed-journal.png')
         return dict(passed=True, resumed=True, revision=expected_head, xp=expected_xp)
 
@@ -202,38 +242,40 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
         desktop.click(window, wait(lambda: state()['equip_screen']), scale, 1)
         wait(lambda: state()['sword_equipped'])
         close_panels()
+    if authored_trail:
+        walk_trail()
     initial_deaths = state()['combat']['deaths']
     for count in range(1, 4):
         wait(lambda: state().get('enemy_health') is not None and state()['enemy_health'] > 0, 15)
         approach(lambda: state()['enemy_global'])
-        clicks = state()['controls']['enemy_clicks']
-        for dx, dy in [(20, -25), (-20, -25), (0, -30), (0, 0)]:
-            point = wait(lambda: state()['enemy_screen'])
-            desktop.click(window, [point[0]+dx, point[1]+dy], scale, 3)
-            try:
-                wait(lambda:state()['controls']['enemy_clicks']>clicks,.75)
-                break
-            except TimeoutError:
-                pass
-        if state()['controls']['enemy_clicks']==clicks:
-            # An earlier corpse can be the actual frontmost pointer hit.
-            # Close that ordinary pane and use the supported Tab target cycle.
-            if (state().get('loot') or {}).get('ui',{}).get('open'):
-                desktop.key('Escape');wait(lambda:not state()['loot']['ui']['open'])
-            if state()['dialogue_open']:
-                close_panels()
-            desktop.key('Tab')
-            wait(lambda:state()['selected_hostile'] is not None)
+        engage()
         deadline = time.monotonic()+60
         while quest(SECOND)['counts'][WOLVES] < count:
             assert time.monotonic() < deadline, 'Normal wolf fight timed out'
-            assert state()['combat']['player_deaths'] == 0, 'Quest fixture player died'
+            if authored_trail and state()['combat']['player_health'] == 0:
+                await_respawn()
+                walk_trail()
+                approach(lambda: state()['enemy_global'])
+                engage()
+                deadline = time.monotonic()+60
+            elif not authored_trail:
+                assert state()['combat']['player_deaths'] == 0, 'Quest fixture player died'
             desktop.key('2')
             time.sleep(.25)
         wait(lambda: journal()['xp'] == 25+25*count)
     assert state()['combat']['deaths'] == initial_deaths+3
     capture('three-kills.png')
-    approach(lambda: [8004., 0., 8000.])
+    returned_via_respawn = False
+    if authored_trail:
+        if state()['combat']['player_health'] == 0 or (state()['combat']['player_deaths'] > 0 and
+                math.hypot(feet()[0]-authored_trail[0][0], feet()[2]-authored_trail[0][2]) < 3):
+            await_respawn()
+            returned_via_respawn = True
+            capture('respawn-after-combat.png')
+        else:
+            walk_trail(reverse=True)
+    else:
+        approach(lambda: [8004., 0., 8000.])
     speak()
     if not item_quest:
         ask('training')
@@ -249,12 +291,14 @@ def flow(desktop, window, state, folder, resumed=False, repeat_interaction=False
     if reach_areas:
         from quest_reach_area_os import flow as area_flow
         area_proof = area_flow(desktop, state, folder, quest, journal, feet, face,
-                               close_panels, speak, action, capture)
+                               close_panels, speak, action, capture,
+                               area=authored_area, travel=walk_trail if authored_trail else None)
         assert journal()['revision'] == expected_head
         assert journal()['ui']['submitted'] == 6 and journal()['ui']['applied'] == 6
         assert journal()['ui']['rejected'] == 0
     return dict(passed=True, resumed=False, revision=expected_head, xp=expected_xp,
                 actions=6 if reach_areas else 4, reach_area=area_proof,
+                player_deaths=state()['combat']['player_deaths'], returned_via_respawn=returned_via_respawn,
                 semantic_choices=4, preaccept_noop_choices=2 if repeat_interaction else 0, kills=3, ui=journal()['ui'], adapter=state()['adapter'])
 
 

@@ -20,8 +20,12 @@ parser = argparse.ArgumentParser(description=__doc__)
 for name in ('world', 'navigation', 'gameplay-manifest', 'players', 'output'):
     parser.add_argument('--' + name, type=Path, required=True)
 parser.add_argument('--route', required=True)
+parser.add_argument('--reach-area', action='store_true', help='Also complete the authored western-overlook quest')
+parser.add_argument('--quest-trail', type=Path, help='Also complete the three-kill follow-up using this checked route request')
 parser.add_argument('--binaries', type=Path, default=Path('target/debug'))
 args = parser.parse_args()
+if args.reach_area and not args.quest_trail:
+    parser.error('--reach-area requires --quest-trail')
 out = args.output.resolve()
 out.mkdir(parents=True, exist_ok=False, mode=0o700)
 bundle = out / 'gameplay'
@@ -40,13 +44,24 @@ manifest.write_text(json.dumps(document, indent=2) + '\n')
 query = '''SELECT h.revision,p.experience,
     (SELECT count(*) FROM theia.quest_journal_entries q WHERE q.realm_id=h.realm_id AND q.character_id=h.character_id AND q.status=2)
     FROM theia.quest_journal_heads h JOIN theia.progression p USING(realm_id,character_id);'''
+area = None
+if args.reach_area:
+    area_catalog = json.loads((bundle / document['quest_areas']).read_text())
+    area = next(a for a in area_catalog['areas'] if a['id'] == 'theia.dev.area.western-overlook')
+trail = None
+if args.quest_trail:
+    result = subprocess.run([str(args.binaries.resolve() / 'theia-nav-bake'), 'route-authored',
+        str(args.world.resolve()), str(args.navigation.resolve()), str(args.quest_trail.resolve())],
+        check=True, capture_output=True, text=True, timeout=60)
+    (out / 'route-check.log').write_text(result.stdout)
+    trail = json.loads(result.stdout.splitlines()[-1])['authored_navigation_route']['route']['points']
 os.environ.setdefault('DISPLAY', ':0')
 x = Desktop()
 x.prepare_wheel()
 launcher = None
 results = []
 try:
-    with Identity(out / 'provider', Path('build/identity-sdk'), token_seconds=300) as identity, Cluster(out / 'cluster', Path('build/postgres-sdk')) as cluster:
+    with Identity(out / 'provider', Path('build/identity-sdk'), token_seconds=1800, interactive=True) as identity, Cluster(out / 'cluster', Path('build/postgres-sdk')) as cluster:
         for resumed in (False, True):
             folder = out / ('resumed' if resumed else 'fresh')
             folder.mkdir()
@@ -61,6 +76,7 @@ try:
                 VK_INSTANCE_LAYERS='VK_LAYER_KHRONOS_validation',
                 LD_LIBRARY_PATH=str(Path('build/native-sdk/usr/lib/x86_64-linux-gnu').resolve()),
                 THEIA_DATABASE_URL=cluster.test_environment()['THEIA_TEST_DATABASE_URL'],
+                THEIA_ACCOUNT_SESSION_SECONDS='1800',
                 THEIA_OIDC_ISSUER=identity.issuer, THEIA_OIDC_CLIENT_ID=identity.client_id,
                 THEIA_ACCOUNT_BIND=urllib.parse.urlsplit(identity.redirect).netloc,
                 THEIA_TEST_BROWSER_ISSUER=identity.issuer, THEIA_TEST_BROWSER_REDIRECT=identity.redirect,
@@ -80,7 +96,8 @@ try:
                     launcher.stdin.flush()
                     def state():
                         assert launcher.poll() is None, 'Owned launcher exited; inspect copied logs'
-                        return json.loads((folder / 'input-os.json').read_text())
+                        # The optional live report can be observed while being replaced.
+                        return wait(lambda: json.loads((folder / 'input-os.json').read_text()), 2)
                     wait(lambda: (folder / 'input-os.json').is_file() or launcher.poll() is not None, 70)
                     initial = wait(lambda: state() if state()['connected'] and state()['quest_journal'] and state()['guide_screen'] else None, 60)
                     parent = re.search(r'^PPid:\s+(\d+)', Path(f'/proc/{initial["pid"]}/status').read_text(), re.M)
@@ -92,7 +109,11 @@ try:
                          and state().get('minimap', {}).get('known_pixels', 0) > 0)
                     x.move(window, [640, 360], initial['window'][2])
                     wait(lambda: state()['cursor']['position'] and math.dist(state()['cursor']['position'], [640,360]) < 2)
-                    proof = flow(x, window, state, folder, resumed=resumed, intro_only=True)
+                    def play_state():
+                        report = state()
+                        assert report['connected'], 'Owned client disconnected during quest qualification'
+                        return report
+                    proof = flow(x, window, play_state, folder, resumed=resumed, intro_only=not bool(trail), authored_trail=trail, reach_areas=args.reach_area, authored_area=area)
                     launcher.send_signal(signal.SIGINT)
                     assert launcher.wait(timeout=30) == 0
                     results.append(proof)
@@ -125,7 +146,7 @@ try:
             db = cluster.query(query)
             assert db.returncode == 0
             (folder / 'database-proof.txt').write_text(db.stdout)
-            assert db.stdout.strip() == f"{proof['revision']}|25|1"
+            assert db.stdout.strip() == f"{proof['revision']}|{proof['xp']}|{3 if area else (2 if trail else 1)}"
             if resumed:
                 assert db.stdout == before.stdout
             for path in folder.glob('*.log'):
@@ -136,4 +157,4 @@ finally:
     x.close()
 (out / 'qualification.json').write_text(json.dumps(dict(passed=True, runs=results,
     private_services_closed=True, database_restart=True,
-    scope='One authored guide introduction quest, server patrol, checkpoint and rejoin; no wolf-kill/area quest acceptance'), indent=2))
+    scope=('Authored introduction, three-kill and overlook quests, ordinary input traversal, checkpoint and rejoin' if area else 'Authored introduction and three-kill follow-up, ordinary input traversal, checkpoint and rejoin; no area quest acceptance' if trail else 'One authored guide introduction quest, server patrol, checkpoint and rejoin; no wolf-kill/area quest acceptance')), indent=2))

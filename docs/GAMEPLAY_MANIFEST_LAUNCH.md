@@ -1,3 +1,10 @@
+Authored full quest-loop qualification, 12 November 2026:
+The contact-v3 valley's introduction, three-kill follow-up and exported overlook
+area now pass native normal input, turn-in, 150 XP, database restart and rejoin.
+The copy at build/starter-valley-playable-gameplay-v1 retains the original combat
+profiles and uses the matching west-grove route. Scope is one contact and one
+respawning creature; one player death/respawn occurs. [Evidence and limitations](STATUS.md).
+
 Authored gameplay bundle launch, 12 November 2026:
 Normal account play now accepts an immutable authored world plus its gameplay
 manifest and explicit source-matched navigation. The guide comes from the exported

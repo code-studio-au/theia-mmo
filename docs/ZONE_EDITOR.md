@@ -1,3 +1,25 @@
+P5-17 authored valley gameplay acceptance, 12 November 2026:
+The introduction, three-kill follow-up and western-grove area quest now all complete
+through ordinary connected play and survive database restart/rejoin (150 XP,
+revision 14, three completions). Use the stable local gameplay copy below with the
+matching contact-v3 world/navigation. This remains one guide and one respawning
+creature; multiple-NPC authoring and quest item pickups are separate. One death /
+respawn occurred in the complete native run; balance/health recovery is not qualified.
+
+```sh
+python3 tools/play.py --account-login --classic \
+  --authored-world build/starter-valley-contact-world-v3 \
+  --navigation build/starter-valley-contact-navigation-v3 \
+  --gameplay-manifest build/starter-valley-playable-gameplay-v1/gameplay.manifest.json \
+  --players build/classic-directional-client-qualified-v1-20261103/art/player
+```
+
+This normal command requires configured local account/database services. Longer
+playtests need both the issuer token lifetime and THEIA_ACCOUNT_SESSION_SECONDS
+set explicitly; see AUTHENTICATED_ADMISSION.md. The reproducible owned-service
+qualification uses 1800 seconds, closes its private services afterwards, and is not
+a persistent user account. See STATUS.md for exact evidence and current limitations.
+
 P5-17 authored account quest playtest, 12 November 2026:
 The normal launcher now supports the complete authored gameplay bundle, explicit
 matching navigation and the exported guide contact. The earlier dated restrictions

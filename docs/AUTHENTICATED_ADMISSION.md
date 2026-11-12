@@ -1,3 +1,10 @@
+Authored quest-loop follow-up, 12 November 2026:
+The earlier authored-bundle gate below is superseded: all three development valley
+quests now complete and survive restart/rejoin through normal account play. The
+long native qualifier explicitly chooses 1800-second issuer/server policy; default
+five-minute expiry and all authentication checks remain unchanged. See STATUS.md
+for exact scope, including one player death and a single bound guide/patrol creature.
+
 P5-17 / P2-02 / P3-01 authored-zone entry, 12 November 2026:
 The normal account server/launcher accepts validated authored-world packages in
 addition to saved terrain. Use --authored-world DIR --classic --account-login

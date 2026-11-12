@@ -1,3 +1,10 @@
+P5-17 / P3-09, 12 November 2026: the dressed authored valley now qualifies
+normal introduction, three-kill and reach-area quest completion plus durable
+restart/rejoin. Keep one-guide/one-respawning-creature limits explicit. Normal
+Classic input, authoritative area/kill credit and existing session expiry remain;
+the owned long test opts into the already adopted session-lifetime policy. Next:
+patrol-route authoring before general multiple-contact/quest content. See ../STATUS.md.
+
 P5-17 / P3-01 / P3-09, 12 November 2026: authored account play now uses the
 existing sealed gameplay bundle with explicit source-matched navigation and its
 bound guide. Normal authoritative dialogue/quest/XP/persistence paths complete the

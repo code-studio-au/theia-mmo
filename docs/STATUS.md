@@ -1,10 +1,40 @@
+P5-17 / P3-09 authored valley quest loop, 12 November 2026:
+Native connected account play now qualifies all three existing development quests
+in the dressed valley: guide introduction, three kills of the single respawning
+patrol creature, and reaching the authored western-grove overlook. Normal Classic
+mouse/keyboard input walks the checked trail; normal dialogue/buttons equip the
+sword and accept/turn in quests. No health/damage/reward profiles are weakened.
+Area occupancy changes the objective without XP; the final turn-in reaches 150 XP,
+three completed quests and journal revision 14. Database restart/rejoin preserves
+all three and the exact observed feet [8192.279571294785,0.008000016212463379,
+8192.029574822634]. Completed quests are no longer offered. Six quest UI actions
+apply, none reject; server patrol blocking and GPU diagnostics remain zero.
+All 73 authored/account/gameplay/identity Python tests, fmt and strict workspace/
+all-target Clippy pass (build/authored-quests-python.log and editor-patrol-clippy.log).
+The complete run includes one player death/automatic respawn; this is not a
+continuous death-free route qualification or a combat-balance/health-recovery claim.
+It uses one bound guide and one respawning training creature, not multiple NPCs,
+a population of wolves, authored quest editing or item-pickup qualification.
+Evidence: build/authored-quests-native-v4/{qualification.json,position-proof.json},
+fresh/resumed captures and logs. Linux RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6;
+no Windows claim. All owned game/identity/database processes and tickets close.
+Earlier attempts exposed test handling of respawn, a partial live-report read and
+the intentional five-minute account expiry. The qualifier now retries partial
+reports, checks connection state, handles respawn and explicitly uses the existing
+1800-second owned issuer/server session policy. Expiry enforcement is unchanged.
+Reproduce with tools/qualify_authored_quest_intro.py --quest-trail
+content/navigation/starter-valley-quest-trail.json --reach-area plus the contact-v3
+world/navigation and original template/player assets. Qualified gameplay copy:
+build/starter-valley-playable-gameplay-v1/gameplay.manifest.json. Next: editable
+patrol guides/export, then multiple NPC contacts and broader quest/content authoring.
+
 P5-17 / P4-03 authored route inspection, 12 November 2026:
 Add read-only `theia-nav-bake route-authored WORLD NAVIGATION ROUTE_JSON`, using the
 same bounded route reader, strict floor sampling and collision checks as publication.
 It verifies world identity/tile hashes and returns grounded waypoints only after
 0.2 m sampled capsule clearance. No package or actor is changed. The western village
 trail passes 679 samples / 35 output points; wrong-floor input is rejected and source
-bytes are preserved by the actual CLI integration check. Nine ordinary baker tests,
+bytes are preserved by the actual CLI integration check. Eight ordinary baker tests,
 fmt and strict workspace/all-target Clippy pass; no rendering change/GPU claim.
 The initial direct route was correctly rejected at a cottage edge; a southward
 alternative also failed strict height agreement on a slope. These are unresolved
