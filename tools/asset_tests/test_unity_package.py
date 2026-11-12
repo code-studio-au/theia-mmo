@@ -20,6 +20,28 @@ def archive(path, names):
 
 
 class UnityPackageTests(unittest.TestCase):
+    def test_dot_root_package_members_import_and_alias_duplicates_refuse(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); package = root / 'source.unitypackage'
+            def write(duplicate=False):
+                with tarfile.open(package, 'w:gz') as stream:
+                    for kind, data in [('pathname', b'Assets/house.fbx'), ('asset', b'house'), ('asset.meta', b'guid: abc')]:
+                        entry = tarfile.TarInfo('./'+'a'*32+'/'+kind); entry.size=len(data)
+                        stream.addfile(entry, io.BytesIO(data))
+                    if duplicate:
+                        entry=tarfile.TarInfo('a'*32+'/asset');entry.size=5
+                        stream.addfile(entry,io.BytesIO(b'other'))
+            write()
+            original=package.read_bytes()
+            self.assertEqual(inspect(package)['Assets/house.fbx']['bytes'],5)
+            extract_selected(package,root/'output',['Assets/house.fbx'],include_meta=True)
+            self.assertEqual((root/'output/Assets/house.fbx').read_bytes(),b'house')
+            self.assertEqual((root/'output/Assets/house.fbx.meta').read_bytes(),b'guid: abc')
+            self.assertEqual(package.read_bytes(),original)
+            write(True)
+            with self.assertRaisesRegex(ValueError,'Duplicate'):
+                inspect(package)
+
     def test_optional_metadata_is_hash_bound_complete_and_budgeted(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory);package = root / 'source.unitypackage'

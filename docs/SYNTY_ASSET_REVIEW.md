@@ -168,3 +168,20 @@ also pass against the exported runtime collision at local/far origins, with a
 1 cm route agreement limit; millimetre ground-contact differences are retained
 in the scope, not described as bit-identical simulation. Native appearance and
 connected authority admission for this Synty scene remain separate checks.
+
+## Starter-village package review — 12 November 2026
+
+The user requested the other supplied Unity packages, specifically recalling a
+Kingdom and Viking pack. `POLYGON Fantasy Kingdom ... v1.10.unitypackage` is
+present and inventories 6,647 payloads, including optimized huts, houses,
+blacksmith, tavern, stables, well and modular roof/wall assets. Its archive uses
+`./GUID/asset` member names; the package reader now accepts that single root
+prefix while retaining duplicate/path/alias checks. Five package extraction
+tests pass, including original-byte preservation and normalized duplicate refusal.
+Farm inventories 1,549 assets, Pirates 1,683 and Dungeons 2,375. Their candidate
+prefabs include barns/fences/orchard trees, timber shops/rocks and rock/cliff
+components respectively. These are inventory results, not converted assets.
+Reports stay in `build/starter-package-review/`. No Viking/Norse/Nordic-named
+archive, file or folder was found under Downloads in this inspection. Continue
+with Kingdom for village buildings while retaining that unresolved location.
+Archive payloads remain local; no supplied scripts execute.
