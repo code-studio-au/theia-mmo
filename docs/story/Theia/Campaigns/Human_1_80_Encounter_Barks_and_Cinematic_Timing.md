@@ -187,13 +187,15 @@
 
 ## E10 — Q182–Q184 Aftermath and Homecoming
 
+**Creator-locked continuity:** Q184 is one shared epilogue with race-specific homeland and familiar NPC variants. The Elara/Millhaven lines below apply only to human characters. Do not reuse them for dwarf, Aelari or Korrath players; their actors and lines remain OPEN until those 1–20 stories are approved.
+
 **Sera, memorial:** “Oth'varen knew the cost only when the last choice was before him. He made it, and he did not come back.”
 
 **Mara, report:** “The Shroud began fading when Veilbreaker destroyed the Veil. That history must be recorded correctly.”
 
 **Corven:** “Nhal is defeated. Our nations still have to choose what comes next.”
 
-**Elara, homecoming:** “I sent you out to learn what the village needed. You found a world that needed more. I'm glad you found the road home.”
+**Elara, HUMAN-ONLY Q184 homecoming variant (other races require their own homeland contacts):** “I sent you out to learn what the village needed. You found a world that needed more. I'm glad you found the road home.”
 
 **Cutscene beats:** survivors and Seven confirmed → Oth'varen memorial → separate Covenant/Kel'vari reports → unresolved war → personal Millhaven closure.
 
