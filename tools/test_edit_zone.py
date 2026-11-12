@@ -26,6 +26,10 @@ class EditorLaunchTests(unittest.TestCase):
             expanded.parent.mkdir(parents=True)
             expanded.write_bytes(b'expanded local catalog')
             self.assertEqual(scenery_arguments(arguments, root), [*arguments, '--scenery-library', str(expanded)])
+            kingdom = root / 'build/starter-valley-scenery-v2/catalog.json'
+            kingdom.parent.mkdir(parents=True)
+            kingdom.write_bytes(b'kingdom and forest local catalog')
+            self.assertEqual(scenery_arguments(arguments, root), [*arguments, '--scenery-library', str(kingdom)])
             self.assertEqual(scenery_arguments(explicit, root), explicit)
             self.assertEqual(scenery_arguments(arguments, root, enabled=False), arguments)
 

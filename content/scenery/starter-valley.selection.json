@@ -66,6 +66,22 @@
       "category": "Nature",
       "prefab": "SM_Env_Tree_Trunk_01",
       "collision": "triangle_mesh"
+    },
+    {
+      "id": "synty.kingdom.hut-01",
+      "name": "Kingdom hut 1",
+      "category": "Buildings",
+      "prefab": "SM_Bld_Preset_Hut_01_Optimized",
+      "profile": "standard-normal",
+      "collision": "triangle_mesh"
+    },
+    {
+      "id": "synty.kingdom.hut-02",
+      "name": "Kingdom hut 2",
+      "category": "Buildings",
+      "prefab": "SM_Bld_Preset_Hut_02_Optimized",
+      "profile": "standard-normal",
+      "collision": "triangle_mesh"
     }
   ]
 }

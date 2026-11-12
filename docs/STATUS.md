@@ -1,3 +1,21 @@
+P1-10 / P5-17 Kingdom huts in the integrated scenery library, 12 November 2026:
+11 verified local assets now include two Kingdom huts with source palette art and
+an explicit Standard normal-map adaptation. Bounded legacy prefab/model metadata
+support preserves exact source IDs; stale blacksmith references still refuse.
+Actual headless Linux Unity confirms inherited texture settings and both hut mesh
+frames. Independent geometry, UV, winding, normals and source-image checks pass;
+source compression/Unity lighting parity and walkable interiors are not claimed.
+244 asset-tool tests, eight launcher tests, formatting and strict workspace Clippy
+pass. CPU library load/delete and both-hut source-exact world export pass. Actual
+RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan offscreen rendering verifies both
+huts with move/rotate/scale handles, ray-picked movement/undo and preview cancel.
+No desktop/window/input is used. Final GPU logs are build/kingdom-hut0{1,2}-gpu-final.log;
+images are in the corresponding -gpu folders. The first capture attempt lacked
+its output directories; those image-write failures were corrected and rerun.
+Normal launches prefer build/starter-valley-scenery-v2/catalog.json when present.
+Village placement and multiple quest/NPC/patrol runtime integration remain next.
+See docs/SYNTY_ASSET_REVIEW.md for reproduction, provenance and limitations.
+
 P5-17 / P1-10 static forest trees in the editor library, 12 November 2026:
 reuse the already verified full-foliage GLB adaptation with exact material/image
 bytes, explicit source wind/highlight/LOD limitations and trunk-only triangle

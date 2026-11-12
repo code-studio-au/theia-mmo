@@ -13,7 +13,7 @@ import shutil
 
 import bpy
 from PIL import Image
-from unity_scene import Sources, records
+from unity_scene import Sources, records, without_legacy_prefab_header
 from unity_draw_bindings import select_draw
 from unity_model_ids import identity, bound_candidates
 from unity_fbx_static import require_identity_geometry
@@ -28,12 +28,18 @@ def only(rr, kind):
     return values[0]
 
 
-def preview(source, prefab, output, base_color_preview, standard=False, *, plan_path=None, instance=None, renderer=None, triplanar_shader_source=None, triplanar_texture_reference=None, glass=False):
+def preview(source, prefab, output, base_color_preview, standard=False, *, plan_path=None, instance=None, renderer=None, triplanar_shader_source=None, triplanar_texture_reference=None, glass=False, normal_map=False, sampler_reference=None):
     if glass and (not standard or plan_path is None or triplanar_shader_source is not None):raise ValueError('Glass requires an explicit canonical Standard adaptation')
     if triplanar_shader_source is not None and (not standard or plan_path is None):raise ValueError('Triplanar requires an explicit canonical Standard rendering adapter')
     if base_color_preview == standard:
         raise ValueError('Select exactly one explicit material adaptation')
+    if normal_map and (not standard or glass or triplanar_shader_source is not None):
+        raise ValueError('Standard normal adaptation requires its own explicit material profile')
     sources = Sources(source)
+    normal_reference = None
+    if sampler_reference is not None:
+        from unity_texture_reference import inspect as inspect_textures
+        normal_reference = inspect_textures(source, sampler_reference)
     texture_reference = None
     if triplanar_texture_reference is not None:
         if triplanar_shader_source is None:raise ValueError('Texture reference requires explicit triplanar conversion')
@@ -49,7 +55,7 @@ def preview(source, prefab, output, base_color_preview, standard=False, *, plan_
         if set(static['unimplemented_components'])-{'136'}:raise ValueError('Unsupported source prefab component')
         mesh_ref=draw['mesh'];mats=draw['materials'];go={'m_Name':str(draw['renderer'])}
     else:
-        rr = records(sources.checked(prefab));sources.metadata(prefab)
+        rr = without_legacy_prefab_header(records(sources.checked(prefab)));sources.metadata(prefab)
         if any(v['kind'] not in (1, 4, 23, 33, 64, 65) for v in rr.values()):
             raise ValueError('Expected a simple static prefab without nested models or behaviours')
         transform, mesh_filter, source_renderer = (only(rr, k) for k in (4, 33, 23))
@@ -67,7 +73,8 @@ def preview(source, prefab, output, base_color_preview, standard=False, *, plan_
     model_name = sources.by_guid[mesh_ref['guid']]
     model = sources.checked(model_name);model_meta = sources.metadata(model_name)['ModelImporter']
     importer = model_meta['meshes']
-    if importer['globalScale'] != 1 or importer['useFileUnits'] != 1 or importer['bakeAxisConversion'] != 0:
+    legacy_axes = model_meta.get('serializedVersion') == 21 and 'bakeAxisConversion' not in importer
+    if importer['globalScale'] != 1 or importer['useFileUnits'] != 1 or (not legacy_axes and importer.get('bakeAxisConversion') != 0):
         raise ValueError('Unexpected source model import units/axis policy')
     if not mats or any(m != mats[0] for m in mats):
         raise ValueError('Preview currently requires one repeated material binding')
@@ -80,7 +87,7 @@ def preview(source, prefab, output, base_color_preview, standard=False, *, plan_
             if shaders.manifest['archive_sha256']!=sources.manifest['archive_sha256']:raise ValueError('Triplanar shader archive differs')
             shader_name=shaders.by_guid[material_fields['m_Shader']['guid']];shaders.metadata(shader_name)
             material_plan=triplanar_material(material_fields,hashlib.sha256(shaders.checked(shader_name).read_bytes()).hexdigest())
-        else:material_plan = glass_material(material_fields) if glass else standard_material(material_fields)
+        else:material_plan = glass_material(material_fields) if glass else standard_material(material_fields, normal_map=normal_map)
         base_ref = material_plan['base_color']
     else:
         saved = material_fields['m_SavedProperties']
@@ -97,14 +104,18 @@ def preview(source, prefab, output, base_color_preview, standard=False, *, plan_
         path = sources.checked(name);meta = sources.metadata(name)['TextureImporter']
         if path.suffix.lower() != '.png' or meta['mipmaps']['sRGBTexture'] != 1 or (standard and meta['mipmaps'].get('enableMipMap') != 1):
             raise ValueError('Expected sRGB source PNG')
-        settings = meta['textureSettings']
-        if settings['wrapU'] != 0 or settings['wrapV'] != 0 or settings['filterMode'] != 1 or (standard and (settings.get('aniso',1) != 1 or settings.get('mipBias',0) != 0)):
-            raise ValueError('Unexpected source texture sampler')
+        if normal_map:
+            from unity_standard_normal import sampler
+            sampler(sources, name, normal_reference)
+        else:
+            settings = meta['textureSettings']
+            if settings['wrapU'] != 0 or settings['wrapV'] != 0 or settings['filterMode'] != 1 or (standard and (settings.get('aniso',1) != 1 or settings.get('mipBias',0) != 0)):
+                raise ValueError('Unexpected source texture sampler')
         return name,path
     texture_name,texture = checked_texture(base_ref) if base_ref is not None else (None,None)
     emissive_name,emissive_path = (checked_texture(material_plan['emissive'])
                                   if material_plan['emissive'] else (None,None))
-    if scene_binding:
+    if scene_binding or legacy_axes:
         ids,_=bound_candidates(identity(model),model_meta);binding=ids.get(mesh_ref['fileID'])
         if not binding or binding['kind']!='Mesh':raise ValueError('Source mesh fileID is not bound')
         require_identity_geometry(model,binding['model'])
@@ -164,8 +175,17 @@ def preview(source, prefab, output, base_color_preview, standard=False, *, plan_
         (output/'geometry-reference.json').write_text(json.dumps(reference)+'\n')
         bpy.ops.export_scene.gltf(filepath=str(output/'preview.glb'),export_format='GLB',
             export_yup=True,export_animations=False,export_skins=False,export_lights=False,
-            export_cameras=False,export_vertex_color='NONE',export_materials='EXPORT',export_tangents=triplanar_shader_source is not None)
+            export_cameras=False,export_vertex_color='NONE',export_materials='EXPORT',export_tangents=normal_map or triplanar_shader_source is not None)
         if standard and not glass:standard_sampler_glb(output/'preview.glb')
+        normal_name = None
+        if normal_map:
+            from unity_standard_normal import bake_normal, pack_normal
+            from merge_static_glb import read
+            from add_terrain_house import write_glb
+            normal_name, png = bake_normal(sources,material_plan,normal_reference)
+            doc,binary = read(output/'preview.glb')
+            binary = pack_normal(doc,binary,png)
+            (output/'preview.glb').unlink();write_glb(doc,binary,output/'preview.glb')
         if glass:
             from add_terrain_house import write_glb
             from merge_static_glb import read
@@ -199,11 +219,14 @@ def preview(source, prefab, output, base_color_preview, standard=False, *, plan_
         result = {'scope':'single source mesh, explicit standard PBR adaptation; no scene/collision/game adoption',
                   'scene_binding':scene_binding,'renderer':renderer if scene_binding else None,'canonical_mesh':bool(scene_binding),
                   'prefab':prefab,'model':model_name,'mesh_fileID':mesh_ref['fileID'],
+                  'normal_texture':normal_name,'texture_reference':normal_reference,
+                  'normal_scope':('reuse desktop RG reconstruction as RGB8; source compression, filtered sampling and Unity BRDF parity remain unproven' if normal_map else None),
                   'material':material_name,'base_color_texture':texture_name,'emissive_texture':emissive_name,'material_plan':material_plan,
                   'archive_sha256':sources.manifest['archive_sha256'],
                   'preview_sha256':hashlib.sha256((output/'preview.glb').read_bytes()).hexdigest(),
                   'source_vertices':len(mesh.data.vertices),'source_triangles':len(mesh.data.loop_triangles),
                   'blender':bpy.app.version_string,
+                  'legacy_axis_adaptation': ('explicit file-axis/unit conversion for importer v21; no additional Unity axis bake, independent geometry verification required' if legacy_axes else None),
                   'material_approximation':({'scope':material_plan['scope']} if standard else {'roughness':.8,'metallic':0,'omitted':'normal, metallic/smoothness, emission, shader-specific effects'}),
                   'full_scene_export':False,'game_adoption':False}
         (output/'conversion.json').write_text(json.dumps(result,indent=2)+'\n')
@@ -219,10 +242,12 @@ if __name__=='__main__':
     adaptation=parser.add_mutually_exclusive_group(required=True)
     adaptation.add_argument('--base-color-preview',action='store_true')
     adaptation.add_argument('--standard-material',action='store_true')
+    parser.add_argument('--standard-normal',action='store_true',help='Explicit active Standard normal-map adaptation')
+    parser.add_argument('--texture-reference',type=Path,help='Actual Unity effective sampler collector project')
     parser.add_argument('--draw-plan',type=Path);parser.add_argument('--instance',type=int);parser.add_argument('--renderer',type=int)
     parser.add_argument('--triplanar-shader-source',type=Path)
     parser.add_argument('--triplanar-texture-reference',type=Path)
     parser.add_argument('--glass-blend',action='store_true',help='Explicit portable approximation of untextured source glass')
     args=parser.parse_args()
     if any(v is not None for v in [args.draw_plan,args.instance,args.renderer]) and any(v is None for v in [args.draw_plan,args.instance,args.renderer]):parser.error('Supply draw plan, instance and renderer together')
-    print(json.dumps(preview(args.source,args.prefab,args.output,args.base_color_preview,args.standard_material,plan_path=args.draw_plan,instance=args.instance,renderer=args.renderer,triplanar_shader_source=args.triplanar_shader_source,triplanar_texture_reference=args.triplanar_texture_reference,glass=args.glass_blend),indent=2))
+    print(json.dumps(preview(args.source,args.prefab,args.output,args.base_color_preview,args.standard_material,plan_path=args.draw_plan,instance=args.instance,renderer=args.renderer,triplanar_shader_source=args.triplanar_shader_source,triplanar_texture_reference=args.triplanar_texture_reference,glass=args.glass_blend,normal_map=args.standard_normal,sampler_reference=args.texture_reference),indent=2))

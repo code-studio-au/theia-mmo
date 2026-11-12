@@ -53,7 +53,7 @@ def collision_mesh(document, binary, trunk_only=False):
     return json.dumps(dict(vertices=vertices, indices=indices), separators=(',', ':'), allow_nan=False).encode()
 
 
-def stage(batch, selection, output):
+def stage(batch, selection, output, prototypes=()):
     batch = batch.resolve(strict=True)
     selection = selection.resolve(strict=True)
     output = output.absolute()
@@ -62,7 +62,17 @@ def stage(batch, selection, output):
     chosen = json.loads(selection.read_bytes())
     if chosen['schema'] != 1 or not 1 <= len(chosen['assets']) <= 64:
         raise ValueError('Unsupported scenery selection')
-    records = json.loads((batch / 'batch.json').read_bytes())['converted']
+    records = [(r, batch / 'prototypes' / r['key'])
+               for r in json.loads((batch / 'batch.json').read_bytes())['converted']]
+    for prototype_path in prototypes:
+        root = Path(prototype_path).resolve(strict=True)
+        if root.is_relative_to(output):
+            raise ValueError('Use an output outside the prototype inputs')
+        conversion = json.loads((root / 'conversion.json').read_bytes())
+        if conversion.get('material_plan', {}).get('profile') != 'unity-standard-normal-v1':
+            raise ValueError('Standalone prototypes require the qualified Standard normal profile')
+        records.append((dict(source=conversion['prefab'], key=digest(root / 'conversion.json'),
+                             profile='standard-normal', prototype_sha256=conversion['preview_sha256']), root))
     prepared, used, total = [], set(), 0
     for item in chosen['assets']:
         identifier = item['id']
@@ -70,19 +80,18 @@ def stage(batch, selection, output):
             raise ValueError('Invalid or duplicate scenery ID')
         used.add(identifier)
         profile = item.get('profile', 'standard-opaque')
-        if profile not in ('standard-opaque', 'full-static'):
+        if profile not in ('standard-opaque', 'full-static', 'standard-normal'):
             raise ValueError('Unsupported scenery material profile')
         prototype = item.get('prototype')
         if prototype is not None and not re.fullmatch('[0-9a-f]{64}', prototype):
             raise ValueError('Invalid explicit prototype key')
-        matches = [r for r in records if Path(r['source']).stem == item['prefab']
+        matches = [(r, root) for r, root in records if Path(r['source']).stem == item['prefab']
                    and r.get('profile') == profile and (prototype is None or r['key'] == prototype)]
         if len(matches) != 1:
             raise ValueError(f'Expected one qualified material binding: {item["prefab"]}')
-        record = matches[0]
+        record, root = matches[0]
         if not re.fullmatch('[0-9a-f]{64}', record['key']):
             raise ValueError('Invalid prototype key')
-        root = batch / 'prototypes' / record['key']
         asset = root / 'preview.glb'
         size = asset.stat().st_size
         total += size
@@ -102,6 +111,13 @@ def stage(batch, selection, output):
         if not np.isfinite(bounds).all() or np.abs(bounds).max() > 128:
             raise ValueError('Scenery bounds exceed local prototype limits')
         conversion = json.loads((root / 'conversion.json').read_bytes())
+        if profile == 'standard-normal':
+            geometry = json.loads((root / 'canonical-reference.json').read_bytes())
+            if (conversion.get('material_plan', {}).get('profile') != 'unity-standard-normal-v1'
+                    or conversion.get('preview_sha256') != sha
+                    or geometry.get('passed') is not True or geometry.get('asset_sha256') != sha
+                    or 'normal' not in proof.get('verified_material', {})):
+                raise ValueError('Standard normal prototype lacks matching geometry/material evidence')
         if profile == 'full-static':
             if conversion.get('profile', {}).get('profile') != 'synty-full-static-foliage-v1' or conversion.get('canonical_mesh') is not True:
                 raise ValueError('Foliage needs the qualified canonical static profile')
@@ -124,6 +140,10 @@ def stage(batch, selection, output):
         if profile == 'full-static':
             entry['source']['limitations'] = ['Static rest geometry; source wind, gust highlights and LOD crossfade are unapplied']
             entry['source']['geometry_reference_sha256'] = digest(root / 'geometry-reference.json')
+            entry['source']['conversion_sha256'] = digest(root / 'conversion.json')
+        if profile == 'standard-normal':
+            entry['source']['limitations'] = [conversion['normal_scope'], conversion['material_plan']['scope']]
+            entry['source']['geometry_reference_sha256'] = digest(root / 'canonical-reference.json')
             entry['source']['conversion_sha256'] = digest(root / 'conversion.json')
         choice = item.get('collision')
         collision = None
@@ -172,5 +192,7 @@ if __name__ == '__main__':
     parser.add_argument('batch', type=Path)
     parser.add_argument('selection', type=Path)
     parser.add_argument('output', type=Path)
+    parser.add_argument('--prototype', action='append', type=Path, default=[],
+                        help='additional independently verified Standard normal prototype directory')
     args = parser.parse_args()
-    print(json.dumps(stage(args.batch, args.selection, args.output), indent=2))
+    print(json.dumps(stage(args.batch, args.selection, args.output, args.prototype), indent=2))

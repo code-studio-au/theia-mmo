@@ -35,7 +35,7 @@ def scenery_arguments(arguments, root=ROOT, enabled=True):
     """Use the local qualified starter library unless the caller chooses otherwise."""
     if not enabled or any(arg.split('=', 1)[0] == '--scenery-library' for arg in arguments):
         return list(arguments)
-    for relative in ['build/starter-valley-scenery-v1/catalog.json', 'build/starter-forest-scenery-v2/catalog.json']:
+    for relative in ['build/starter-valley-scenery-v2/catalog.json', 'build/starter-valley-scenery-v1/catalog.json', 'build/starter-forest-scenery-v2/catalog.json']:
         catalog = root / relative
         if catalog.is_file():
             return [*arguments, '--scenery-library', str(catalog)]

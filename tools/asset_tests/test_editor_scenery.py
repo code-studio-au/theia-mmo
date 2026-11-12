@@ -149,3 +149,41 @@ class EditorSceneryTests(unittest.TestCase):
         (self.prototype / 'conversion.json').write_text(json.dumps(dict(profile={'profile':'unknown'})))
         with self.assertRaisesRegex(ValueError, 'qualified canonical'):
             stage(self.batch, self.selection, self.output)
+
+    def normal_prototype(self):
+        import shutil
+        root = self.root / 'normal'
+        shutil.copytree(self.prototype, root)
+        sha = hashlib.sha256(self.original).hexdigest()
+        (root / 'conversion.json').write_text(json.dumps(dict(
+            prefab='Assets/Hut.prefab', archive_sha256='c'*64, preview_sha256=sha,
+            material_plan=dict(profile='unity-standard-normal-v1', scope='Static PBR adaptation'),
+            normal_scope='RGB8 normals; source compression and shader parity unproven')))
+        proof = json.loads((root / 'independent-verification.json').read_text())
+        proof['verified_material'] = dict(normal={'maximum_vector_error':.005})
+        (root / 'independent-verification.json').write_text(json.dumps(proof))
+        (root / 'canonical-reference.json').write_text(json.dumps(dict(passed=True, asset_sha256=sha)))
+        selection = json.loads(self.selection.read_text())
+        selection['assets'].append(dict(id='theia.hut', name='Hut', category='Structures',
+                                        prefab='Hut', profile='standard-normal', collision='triangle_mesh'))
+        self.selection.write_text(json.dumps(selection))
+        return root
+
+    def test_mixed_packages_preserve_provenance_and_payloads(self):
+        root = self.normal_prototype()
+        result = stage(self.batch, self.selection, self.output, [root])
+        self.assertEqual(result['assets'], 2)
+        assets = json.loads((self.output / 'catalog.json').read_text())['assets']
+        self.assertEqual([a['source']['archive_sha256'] for a in assets], ['b'*64, 'c'*64])
+        self.assertEqual(assets[1]['source']['profile'], 'standard-normal')
+        self.assertIn('RGB8', assets[1]['source']['limitations'][0])
+        self.assertEqual((self.output / assets[1]['file']).read_bytes(), self.original)
+
+    def test_normal_prototype_stale_geometry_or_duplicate_binding_refuses(self):
+        root = self.normal_prototype()
+        with self.assertRaisesRegex(ValueError, 'one qualified'):
+            stage(self.batch, self.selection, self.output, [root, root])
+        (root / 'canonical-reference.json').write_text(json.dumps(dict(passed=True, asset_sha256='d'*64)))
+        with self.assertRaisesRegex(ValueError, 'matching geometry/material'):
+            stage(self.batch, self.selection, self.output, [root])
+        self.assertFalse(self.output.exists())

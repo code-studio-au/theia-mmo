@@ -195,3 +195,60 @@ The immutable staged payloads total 18,918,896 bytes. CPU asset loading/deletion
 actual offscreen GPU model/gizmo checks, and source-exact world export comparison
 pass. The selection and tools are tracked; GLBs, textures and collision payloads
 remain ignored under build. Village placements are still to be authored.
+
+### Kingdom huts in the integrated library
+
+P1-10 / P5-17, 12 November 2026: two optimized Kingdom huts now use ordinary
+Bevy/glTF opaque PBR materials, preserving source palette pixels and adapting the
+active Standard normal map to RGB8. The importer accepts only the explicit v21
+recycle-name ID table and inert standalone legacy prefab header; inherited or
+ambiguous ownership/mesh names still refuse. In particular, the blacksmith has a
+retired mesh name in its table and remains unconverted. It is not silently rebound.
+
+Both huts have independently checked geometry/UVs/winding/normals and an additional
+raw-ufbx point comparison (maximum 1.05 micrometres). An actual script-free Linux
+Unity 6000.6.6f1 batch import confirms both mesh IDs and source frame mappings
+(maximum 0.57 micrometres), with unchanged original model metadata. A separate
+texture collector confirms inherited bilinear/repeat sampler state; those defaults
+are not guessed from sentinel -1 metadata. The normal reconstruction's independent
+RGB8 vector error is 0.006283 against the 0.007 limit. Source DXT compression,
+filtered sampling and Unity lighting/BRDF parity are not claimed. These are static
+buildings with source visual triangles as collision, not qualified walkable interiors.
+
+The expanded library has 11 assets and 27,355,312 visual/collision bytes. Its
+selection is tracked; all supplied payloads and Unity projects stay under ignored
+build. Reproduce staging after conversion and verification:
+
+```sh
+build/asset-tools/bin/python tools/stage_editor_scenery.py \
+  build/synty-forest-static-batch-v2 \
+  content/scenery/starter-valley.selection.json \
+  build/starter-valley-scenery-v2 \
+  --prototype build/kingdom-hut01-v2 --prototype build/kingdom-hut02-v2
+```
+
+Each additional prototype requires `conversion.json`, hash-matching independent
+material/geometry verification and `canonical-reference.json` tied to the actual
+GLB. The conversion uses `preview_unity_static.py --standard-material
+--standard-normal --texture-reference build/kingdom-texture-reference-v1`, followed
+by `verify_unity_static.py` and `verify_unity_geometry.py canonical`. Original source
+prefabs are `Assets/PolygonFantasyKingdom/Prefabs/Buildings/Preset_Houses/` plus
+`SM_Bld_Preset_Hut_01_Optimized.prefab` or `SM_Bld_Preset_Hut_02_Optimized.prefab`.
+The source folder is `build/kingdom-village-source-v1`.
+
+All 244 asset-tool tests and eight launcher tests pass, as do formatting and strict
+workspace/all-target Clippy. CPU loading creates 12 primitive entities for the 11
+assets and deletes all descendants. Both-hut world export preserves attributes,
+indices, embedded images, normals, materials, samplers, transforms and collision
+exactly (`build/kingdom-export-source-comparison.json`). Actual offscreen GPU
+checks and subsequent valley dressing are recorded separately; no desktop is used.
+
+Both huts subsequently pass actual RX 7900 XTX / RADV NAVI31 / Mesa 26.2.6 Vulkan
+offscreen rendering with all three transform gizmos, ray-picked move/undo and
+preview cancellation. Images are `build/kingdom-hut0{1,2}-gpu/model-*.png`; final
+logs are `build/kingdom-hut0{1,2}-gpu-final.log`. An earlier missing capture-directory
+error was corrected before these final runs. Clipboard initialization warns because
+no desktop is available; there are no GPU errors in the final runs. No native
+interaction or Windows rendering claim. Hut 1 has an extended foundation/pier:
+place the intended ground/floor level, rather than blindly raising its bottom
+bound to the terrain for village dressing.
