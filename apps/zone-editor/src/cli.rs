@@ -29,6 +29,7 @@ pub struct Options {
     pub export: Option<PathBuf>,
     pub export_quest_areas: Option<PathBuf>,
     pub quest_catalog: Option<PathBuf>,
+    pub gameplay_template: Option<PathBuf>,
     pub content_id: Option<String>,
     pub revision: Option<u32>,
 }
@@ -91,6 +92,13 @@ impl Options {
                             .into(),
                     )
                 }
+                "--gameplay-template" => {
+                    result.gameplay_template = Some(
+                        args.next()
+                            .ok_or("--gameplay-template needs a manifest")?
+                            .into(),
+                    );
+                }
                 "--export" => {
                     result.export = Some(
                         args.next()
@@ -136,6 +144,9 @@ impl Options {
             return Err(
                 "Quest area export requires --quests and cannot combine with --export".into(),
             );
+        }
+        if result.gameplay_template.is_some() && result.export.is_none() {
+            return Err("--gameplay-template requires --export".into());
         }
         if result.quest_catalog.is_some() && result.export_quest_areas.is_none() {
             return Err("--quests requires --export-quest-areas".into());

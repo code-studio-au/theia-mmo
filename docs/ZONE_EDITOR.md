@@ -4036,3 +4036,32 @@ duplicate links are rejected immediately; catalog export checks reference
 existence. These minimap links are presentation links: the quest catalog's own
 reach-area objectives define authoritative area credit. No automatic quest
 rewriting occurs when an Area ID changes. Native interaction remains pending.
+
+## Combined gameplay publication — 12 November 2026
+
+P5-17 / P3-15 reuses the launcher's shared Rust gameplay validators. To export
+geometry and explicit quest areas together:
+
+```sh
+target/debug/theia-zone-editor \
+  --zone content/zones/quest-areas.zone.json \
+  --export build/starter-world-v1 \
+  --gameplay-template content/development-gameplay-classic-quest-areas.json \
+  --content-id theia.starter.authored --revision 1
+```
+
+The template must support areas (schema 16+). Export retains all other profile
+bytes, replaces its area role, updates bundle/catalog identity and revision, and
+validates the complete result before publishing. The output includes the normal
+world files plus `gameplay/gameplay.manifest.json`, consumable by the existing
+launcher's `--gameplay-manifest`. The authoring source includes the full areas;
+world export without a template still rejects them explicitly. Invalid references,
+unsupported world bounds and existing destinations refuse without replacing
+sources or leaving a partial published folder.
+
+The actual headless editor plus launcher snapshot passed four positive/rejection
+cases in `build/zone-gameplay-headless-20261112-v2/verification.json`. This does not
+prove connected quest credit, creature navigation, placed quest NPCs or pickups.
+The template retains its existing quest/contact/creature definitions; area editing
+does not automatically move those entities or rewrite quests. Native UI/GPU
+acceptance remains pending while the display is reserved.

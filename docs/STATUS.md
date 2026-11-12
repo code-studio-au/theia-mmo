@@ -1,3 +1,15 @@
+P5-17 / P3-15 combined world/gameplay export, 12 November 2026:
+`--export NEW_FOLDER --gameplay-template MANIFEST` now publishes terrain/collision,
+particles when present, full authoring source and a validated gameplay copy with
+the authored quest-area catalog. Other gameplay profiles retain exact validated
+bytes; source files and existing destinations remain unchanged. All 22 export
+checks pass, including the existing connected geometry test; the combined
+artifact also passed the actual launcher snapshot path headlessly
+(`build/zone-gameplay-headless-20261112-v2/verification.json`). Staged failures
+clean up without publishing. This is artifact/launcher validation, not connected
+quest-credit or native rendering evidence. GUI template selection is next; NPC
+markers and world pickups are not made executable by this slice.
+
 P5-17 / P3-15 gameplay-publication prerequisite, 12 November 2026: offline
 manifest validation now lives in `theia_network::gameplay_bundle`; the existing
 validator CLI uses the same implementation. A validated snapshot retains the

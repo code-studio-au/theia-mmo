@@ -9,6 +9,7 @@ mod exit_dialog;
 mod export;
 mod export_dialog;
 mod file_picker;
+mod gameplay_export;
 mod gizmo;
 #[cfg(test)]
 mod headless_ui;
@@ -564,11 +565,12 @@ fn run() -> Result<(), String> {
         return Ok(());
     }
     if let Some(path) = &options.export {
-        let report = export::publish(
+        let report = export::publish_with_gameplay(
             editor.zone(),
             path,
             options.content_id.as_deref().expect("Checked export ID"),
             options.revision.expect("Checked export revision"),
+            options.gameplay_template.as_deref(),
         )?;
         println!(
             "{}",

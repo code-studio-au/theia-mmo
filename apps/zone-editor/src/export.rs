@@ -366,13 +366,10 @@ fn cylinder_segments(radius: f64) -> u32 {
         .ceil()
         .max(32.) as u32
 }
-fn geometry(zone: &Zone) -> Result<(Vec<u8>, Value, Value), String> {
+fn geometry(zone: &Zone, gameplay_areas: bool) -> Result<(Vec<u8>, Value, Value), String> {
     zone.validate()?;
-    if !zone.quest_areas.is_empty() {
-        return Err(
-            "Quest area drafts require gameplay catalog export; world export is not connected yet"
-                .into(),
-        );
+    if !zone.quest_areas.is_empty() && !gameplay_areas {
+        return Err("Quest area drafts require --gameplay-template for world export".into());
     }
     let guide_kinds = [
         zone.paths
@@ -505,16 +502,47 @@ fn publish_in(
     revision: u32,
     library: &Path,
 ) -> Result<Value, String> {
+    publish_combined(zone, path, content_id, revision, library, None)
+}
+
+pub(super) fn publish_with_gameplay(
+    zone: &Zone,
+    path: &Path,
+    content_id: &str,
+    revision: u32,
+    template: Option<&Path>,
+) -> Result<Value, String> {
+    publish_combined(
+        zone,
+        path,
+        content_id,
+        revision,
+        &bevy_sprinkles_editor::io::data_dir(),
+        template,
+    )
+}
+
+fn publish_combined(
+    zone: &Zone,
+    path: &Path,
+    content_id: &str,
+    revision: u32,
+    library: &Path,
+    template: Option<&Path>,
+) -> Result<Value, String> {
     if path.exists() {
         return Err("Export requires a new output directory".into());
     }
     zone.validate()?;
+    let gameplay = template
+        .map(|path| crate::gameplay_export::Draft::prepare(zone, path, content_id, revision))
+        .transpose()?;
     let particle = if zone.particles.is_empty() {
         None
     } else {
         Some(crate::particle_export::draft(zone, library)?)
     };
-    let (visual, profile, mut report) = geometry(zone)?;
+    let (visual, profile, mut report) = geometry(zone, gameplay.is_some())?;
     let profile = serde_json::to_vec(&profile).map_err(|e| e.to_string())?;
     // Run the actual headless runtime decoder/spawn validator before writing.
     let terrain = Terrain::decode(&profile).map_err(|e| e.to_string())?;
@@ -530,7 +558,7 @@ fn publish_in(
         report["particles"] = json!({"placements": zone.particles.len(), "effects": draft.effects.len(),
             "texture_variants": draft.textures.len(), "source_textures": summary.textures,
             "particle_slots": summary.particle_slots, "vertices": summary.vertices,
-            "client_playback": "bounded monolithic worlds; world-space effects reset on origin shifts"});
+            "client_playback": "bounded monolithic worlds; runtime playback qualified separately"});
     }
     let manifest = serde_json::to_vec_pretty(&manifest).map_err(|e| e.to_string())?;
     let checked = Manifest::decode(&manifest).map_err(|e| e.to_string())?;
@@ -555,6 +583,11 @@ fn publish_in(
     fs::create_dir(&stage).map_err(|e| e.to_string())?;
     let mut destination_created = false;
     let result: Result<(), String> = (|| {
+        if let Some(gameplay) = &gameplay {
+            let checked = gameplay.write(&stage.join("gameplay"))?;
+            report["gameplay"] = serde_json::to_value(checked).map_err(|e| e.to_string())?;
+            report["quest_areas"] = json!(zone.quest_areas.len());
+        }
         if let Some((_, draft)) = &particle {
             let root = stage.join("particles");
             let effects = root.join("effects");
@@ -602,6 +635,9 @@ fn publish_in(
         // Move verified artifacts first and publish the required manifest last.
         fs::create_dir(path).map_err(|e| e.to_string())?;
         destination_created = true;
+        if gameplay.is_some() {
+            fs::rename(stage.join("gameplay"), path.join("gameplay")).map_err(|e| e.to_string())?;
+        }
         if particle.is_some() {
             fs::rename(stage.join("particles"), path.join("particles"))
                 .map_err(|e| e.to_string())?;
@@ -825,7 +861,7 @@ mod tests {
     fn cylinder_collision_copy_is_closed_and_export_is_deterministic() {
         let folder = Folder::new();
         let zone = fixture();
-        let (_, profile, _) = geometry(&zone).unwrap();
+        let (_, profile, _) = geometry(&zone, false).unwrap();
         for mesh in profile["static_shapes"]["meshes"].as_array().unwrap() {
             let vertices = mesh["vertices"].as_array().unwrap();
             let mut edges = std::collections::BTreeMap::new();
@@ -962,7 +998,7 @@ mod tests {
                 ],
             })
             .unwrap();
-        let (_, profile, report) = geometry(editor.zone()).unwrap();
+        let (_, profile, report) = geometry(editor.zone(), false).unwrap();
         assert_eq!(profile["triangles"].as_array().unwrap().len(), 8192);
         assert_eq!(report["terrain_sample_metres"], 2.);
         let folder = Folder::new();
@@ -983,7 +1019,7 @@ mod tests {
         let mut zone = fixture();
         zone.schema = 2;
         zone.terrain = Some(theia_zone::terrain::HeightPatch::flat([0, 0]));
-        let (base, profile, _) = geometry(&zone).unwrap();
+        let (base, profile, _) = geometry(&zone, false).unwrap();
         let mut editor = Editor::new(zone).unwrap();
         editor
             .execute(Command::Apply {
@@ -998,7 +1034,7 @@ mod tests {
                 }],
             })
             .unwrap();
-        let (visual, after, report) = geometry(editor.zone()).unwrap();
+        let (visual, after, report) = geometry(editor.zone(), false).unwrap();
         assert_ne!(visual, base);
         assert_eq!(profile["triangles"], after["triangles"]);
         assert_eq!(profile["static_shapes"], after["static_shapes"]);
@@ -1044,7 +1080,7 @@ mod tests {
     #[test]
     fn greybox_vegetation_exports_standard_visuals_and_unchanged_collision() {
         let mut zone = fixture();
-        let (before, profile, report) = geometry(&zone).unwrap();
+        let (before, profile, report) = geometry(&zone, false).unwrap();
         zone.schema = 5;
         zone.plants = vec![
             theia_zone::vegetation::Plant {
@@ -1064,7 +1100,7 @@ mod tests {
                 scale: 1.5,
             },
         ];
-        let (after, after_profile, after_report) = geometry(&zone).unwrap();
+        let (after, after_profile, after_report) = geometry(&zone, false).unwrap();
         assert_ne!(before, after);
         assert_eq!(profile["static_shapes"], after_profile["static_shapes"]);
         assert_eq!(profile["triangles"], after_profile["triangles"]);
@@ -1118,7 +1154,7 @@ mod tests {
     #[test]
     fn markers_preserve_authoring_metadata_without_publishing_gameplay_or_geometry() {
         let mut zone = fixture();
-        let (visual, profile, _) = geometry(&zone).unwrap();
+        let (visual, profile, _) = geometry(&zone, false).unwrap();
         zone.schema = 4;
         zone.markers = vec![theia_zone::markers::Marker {
             id: 500,
@@ -1129,7 +1165,7 @@ mod tests {
             radius_metres: 1.,
             definition: Some("human.guide".into()),
         }];
-        let (after, after_profile, report) = geometry(&zone).unwrap();
+        let (after, after_profile, report) = geometry(&zone, false).unwrap();
         assert_eq!(after, visual);
         assert_eq!(after_profile, profile);
         assert_eq!(report["authoring_markers"], 1);
@@ -1147,7 +1183,7 @@ mod tests {
         use theia_network::kinematic::{self, Motion};
         use theia_zone::paths::{GuidePath, PathKind};
         let mut zone = fixture();
-        let (_, base_profile, base_report) = geometry(&zone).unwrap();
+        let (_, base_profile, base_report) = geometry(&zone, false).unwrap();
         zone.schema = 3;
         zone.paths = vec![
             GuidePath {
@@ -1165,7 +1201,7 @@ mod tests {
                 points: vec![[-3., 1., 2.], [3., 1., 2.]],
             },
         ];
-        let (_, profile, report) = geometry(&zone).unwrap();
+        let (_, profile, report) = geometry(&zone, false).unwrap();
         assert_eq!(report["guide_paths"], 2);
         assert_eq!(
             report["visual_triangles"].as_u64().unwrap(),
@@ -1311,6 +1347,94 @@ mod tests {
         server.await.unwrap().unwrap();
     }
     #[test]
+    fn combined_gameplay_export_retains_source_and_exact_other_roles_and_rejects_missing_links() {
+        use theia_network::gameplay_bundle;
+        let root = Folder::new();
+        let template = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../content/development-gameplay-classic-quest-areas.json");
+        let original = gameplay_bundle::snapshot(&template).unwrap();
+        let mut zone: Zone = serde_json::from_slice(include_bytes!(
+            "../../../content/zones/quest-areas.zone.json"
+        ))
+        .unwrap();
+        zone.quest_areas[0].min[0] += 0.125;
+        let output = root.0.join("world");
+        let report =
+            publish_with_gameplay(&zone, &output, "theia.starter.export", 3, Some(&template))
+                .unwrap();
+        assert_eq!(report["quest_areas"], 1);
+        let published =
+            gameplay_bundle::snapshot(&output.join("gameplay/gameplay.manifest.json")).unwrap();
+        assert_eq!(published.report().id, "theia.starter.export");
+        assert_eq!(published.report().revision, 3);
+        for record in &original.report().profiles {
+            if record.kind != "quest_areas" {
+                assert_eq!(
+                    original.profile(&record.kind),
+                    published.profile(&record.kind)
+                );
+            }
+        }
+        let areas = theia_core::quests::areas::Catalog::from_json(
+            published.profile("quest_areas").unwrap(),
+        )
+        .unwrap();
+        assert_eq!(
+            areas.areas().next().unwrap().min().metres(),
+            zone.quest_areas[0].min
+        );
+        assert_eq!(
+            Zone::load(&output.join("authoring.zone.json")).unwrap(),
+            zone
+        );
+        Terrain::load(&output.join("terrain.json"))
+            .unwrap()
+            .verify_visual(&output.join("terrain.glb"))
+            .unwrap();
+        assert_eq!(
+            original.report(),
+            &gameplay_bundle::validate(&template).unwrap()
+        );
+        assert!(
+            publish_with_gameplay(&zone, &output, "theia.starter.export", 3, Some(&template))
+                .is_err()
+        );
+        assert_eq!(
+            published.report(),
+            &gameplay_bundle::validate(&output.join("gameplay/gameplay.manifest.json")).unwrap()
+        );
+        zone.quest_areas[0].definition = "theia.area.wrong".into();
+        assert!(
+            publish_with_gameplay(
+                &zone,
+                &root.0.join("invalid"),
+                "theia.starter.export",
+                3,
+                Some(&template)
+            )
+            .is_err()
+        );
+        assert!(!root.0.join("invalid").exists());
+        // Shared world validation can reject a draft after staging starts.
+        zone.origin = [0.; 3];
+        zone.spawn = [0., 0.1, 0.];
+        zone.quest_areas[0].definition = "theia.dev.area.western-overlook".into();
+        zone.quest_areas[0].min = [-32., -4., -32.];
+        zone.quest_areas[0].max = [-8., 4., -8.];
+        let error = publish_with_gameplay(
+            &zone,
+            &root.0.join("outside"),
+            "theia.starter.export",
+            3,
+            Some(&template),
+        )
+        .unwrap_err();
+        assert!(error.contains("continental bounds"));
+        assert!(!root.0.join("outside").exists());
+        assert_eq!(fs::read_dir(&root.0).unwrap().count(), 1);
+    }
+
+    #[test]
     fn gameplay_area_drafts_cannot_be_silently_omitted_from_world_export() {
         let mut zone = Zone {
             schema: 9,
@@ -1325,9 +1449,9 @@ mod tests {
             map_objectives: vec![],
         });
         assert!(
-            geometry(&zone)
+            geometry(&zone, false)
                 .unwrap_err()
-                .contains("gameplay catalog export")
+                .contains("--gameplay-template")
         );
     }
 }
