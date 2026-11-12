@@ -1073,3 +1073,87 @@ fn spawn_boundary_navigation_commits_pending_field_before_changing_vertex() {
         8.
     );
 }
+
+#[test]
+fn spawn_creature_assignment_commits_pending_fields_and_refreshes_loaded_context_feedback() {
+    let (mut app, _) = super::tests::fixture([0.; 3], 0);
+    app.insert_resource(View {
+        target: Vec3::ZERO,
+        yaw: 0.6,
+        pitch: 0.8,
+        distance: 32.,
+        preset: camera_views::Preset::Perspective,
+        show_grid: true,
+    });
+    {
+        let mut session = app.world_mut().resource_mut::<Session>();
+        spawn_groups::add(&mut session);
+        let mut group = session.editor.zone().spawn_groups[0].clone();
+        group.creature = "theia.creature.unresolved".into();
+        session.edit(vec![Edit::PutSpawnGroup { group }]);
+        session.quest_context = Some(
+            crate::quest_inspector::Context::load(
+                &std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("../../content/development-gameplay-classic-quest-areas.json"),
+            )
+            .unwrap(),
+        );
+    }
+    app.update();
+    assert!(
+        app.world_mut()
+            .query::<&Text>()
+            .iter(app.world())
+            .any(|text| text.0.contains("does not match"))
+    );
+    let input = open(&mut app, 0);
+    type_value(&mut app, input, "-7.5");
+    app.world_mut()
+        .resource_scope(|world, mut session: Mut<Session>| {
+            let mut view = world.resource_mut::<View>();
+            perform(Action::BindSpawnCreature, &mut session, &mut view);
+            assert_eq!(
+                session.editor.zone().spawn_groups[0].creature,
+                "theia.creature.unresolved"
+            );
+        });
+    app.update();
+    {
+        let session = app.world().resource::<Session>();
+        let group = &session.editor.zone().spawn_groups[0];
+        assert_eq!(spawn_groups::centre(group)[0], -7.5);
+        assert_eq!(
+            group.creature,
+            session
+                .quest_context
+                .as_ref()
+                .unwrap()
+                .creature()
+                .id()
+                .as_str()
+        );
+    }
+    app.update();
+    assert!(
+        app.world_mut()
+            .query::<&Text>()
+            .iter(app.world())
+            .any(|text| text
+                .0
+                .contains("aggressive creature definitions are unsupported"))
+    );
+    // Context removal alone must refresh the cached inspection, without a zone edit.
+    let revision = app.world().resource::<Session>().editor.revision();
+    app.world_mut().resource_mut::<Session>().quest_context = None;
+    app.update();
+    assert_eq!(
+        app.world().resource::<Session>().editor.revision(),
+        revision
+    );
+    assert!(
+        app.world_mut()
+            .query::<&Text>()
+            .iter(app.world())
+            .any(|text| text.0.contains("Load gameplay to inspect"))
+    );
+}

@@ -569,6 +569,7 @@ enum Action {
     AddQuestArea,
     AddSpawnGroup,
     ToggleSpawnGroup,
+    BindSpawnCreature,
     SpawnBoundaryPoint(i8),
     SpawnBoundaryWhole,
     SpawnBoundaryInsert,
@@ -1110,6 +1111,7 @@ fn perform(action: Action, session: &mut Session, view: &mut View) {
         Action::AddQuestArea => quest_area_authoring::add(session),
         Action::AddSpawnGroup => spawn_groups::add(session),
         Action::ToggleSpawnGroup => spawn_groups::toggle(session),
+        Action::BindSpawnCreature => spawn_groups::bind_creature(session),
         Action::SpawnBoundaryPoint(direction) => spawn_groups::boundary_action(
             session,
             workspace::Control::SpawnBoundaryPoint(direction),

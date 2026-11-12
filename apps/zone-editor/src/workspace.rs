@@ -628,6 +628,7 @@ impl Control {
                     && session.editor.zone().test_players.iter().any(|p| p.enabled)
             }
             Self::Command(Action::Play) => !session.network_active,
+            Self::Command(Action::BindSpawnCreature) => spawn_groups::can_bind_creature(session),
             Self::AssetPlace => session.ui.assets_open && session.assets.selected.is_some(),
             Self::Command(Action::CreateStarterBasin | Action::CreateStarterValley) => {
                 theia_zone::starter_basin::available(session.editor.zone())

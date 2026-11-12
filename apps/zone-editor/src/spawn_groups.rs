@@ -2,6 +2,64 @@
 use super::*;
 use theia_zone::spawn_groups::SpawnGroup;
 
+pub(super) fn can_bind_creature(session: &Session) -> bool {
+    session.play.is_none()
+        && session.quest_context.as_ref().is_some_and(|context| {
+            session.editor.zone().spawn_groups.iter().any(|g| {
+                Some(g.id) == session.spawn_group_selected
+                    && g.creature != context.creature().id().as_str()
+            })
+        })
+}
+pub(super) fn bind_creature(session: &mut Session) {
+    if !can_bind_creature(session) {
+        return;
+    }
+    let creature = session
+        .quest_context
+        .as_ref()
+        .unwrap()
+        .creature()
+        .id()
+        .as_str()
+        .to_owned();
+    let mut group = session
+        .editor
+        .zone()
+        .spawn_groups
+        .iter()
+        .find(|g| Some(g.id) == session.spawn_group_selected)
+        .unwrap()
+        .clone();
+    group.creature = creature;
+    session.edit(vec![Edit::PutSpawnGroup { group }]);
+}
+pub(super) fn inspection(session: &Session) -> String {
+    inspect_binding(
+        session.editor.zone(),
+        session.spawn_group_selected,
+        session.quest_context.as_ref().map(|c| c.creature()),
+    )
+}
+fn inspect_binding(
+    zone: &Zone,
+    id: Option<u64>,
+    definition: Option<&theia_network::simulation::creatures::Definition>,
+) -> String {
+    let Some(id) = id else {
+        return String::new();
+    };
+    let Some(definition) = definition else {
+        return "Load gameplay to inspect or assign its creature definition".into();
+    };
+    let mut report = format!("Loaded creature: {}", definition.id().as_str());
+    match theia_network::simulation::population::authoring::binding(zone, id, definition.clone()) {
+        Ok(binding) => report.push_str(&format!("\nPassive definition resolved · respawn {} s\nPlacement still needs world/navigation checks", binding.respawn_ms() / 1000)),
+        Err(error) => report.push_str(&format!("\nPopulation: {error}")),
+    }
+    report
+}
+
 pub(super) fn bounds(group: &SpawnGroup) -> ([f64; 3], [f64; 3]) {
     let points = group.volume.polygon();
     let min = [
@@ -73,7 +131,7 @@ pub(super) fn add(session: &mut Session) {
         session.spawn_group_selected = Some(id);
         session.ui.properties_collapsed = false;
         session.status =
-            "NPC spawn draft added · configure in Attributes; live population is not connected"
+            "NPC spawn draft added · configure in Attributes; editor Play/export is not connected"
                 .into();
     }
 }
@@ -283,6 +341,85 @@ impl Report<'_, '_> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn loaded_creature_assignment_is_explicit_undoable_and_preserves_other_group_fields() {
+        let mut session = session([0.; 3], 0.);
+        add(&mut session);
+        assert!(!can_bind_creature(&session));
+        assert!(inspection(&session).contains("Load gameplay"));
+        session.quest_context = Some(
+            quest_inspector::Context::load(
+                &std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("../../content/development-gameplay-classic-quest-areas.json"),
+            )
+            .unwrap(),
+        );
+        let mut group = session.editor.zone().spawn_groups[0].clone();
+        group.creature = "theia.creature.unresolved".into();
+        session.edit(vec![Edit::PutSpawnGroup {
+            group: group.clone(),
+        }]);
+        assert!(can_bind_creature(&session));
+        assert!(inspection(&session).contains("does not match"));
+        let saved = session.saved_zone.clone();
+        let mut view = View {
+            target: Vec3::ZERO,
+            yaw: 0.6,
+            pitch: 0.8,
+            distance: 32.,
+            preset: camera_views::Preset::Perspective,
+            show_grid: true,
+        };
+        perform(Action::BindSpawnCreature, &mut session, &mut view);
+        let expected = session
+            .quest_context
+            .as_ref()
+            .unwrap()
+            .creature()
+            .id()
+            .as_str();
+        let mut changed = group.clone();
+        changed.creature = expected.into();
+        assert_eq!(session.editor.zone().spawn_groups[0], changed);
+        assert!(!can_bind_creature(&session));
+        assert!(inspection(&session).contains("aggressive creature definitions are unsupported"));
+        assert_eq!(session.saved_zone, saved);
+        session.execute(Command::Undo {
+            expected_revision: session.editor.revision(),
+        });
+        assert_eq!(session.editor.zone().spawn_groups[0], group);
+        session.spawn_group_selected = None;
+        assert!(!can_bind_creature(&session));
+    }
+    #[test]
+    fn population_inspection_reports_runtime_limits_without_changing_authoring() {
+        let mut session = session([0.; 3], 0.);
+        add(&mut session);
+        let definition = theia_network::simulation::creatures::Profile::from_json(include_bytes!(
+            "../../../content/gameplay/development-creature-patrol.json"
+        ))
+        .unwrap()
+        .definition()
+        .clone();
+        let mut zone = session.editor.zone().clone();
+        let id = session.spawn_group_selected;
+        assert!(
+            inspect_binding(&zone, id, Some(&definition)).contains("Passive definition resolved")
+        );
+        zone.spawn_groups[0].model = Some("theia.model.wolf".into());
+        assert!(
+            inspect_binding(&zone, id, Some(&definition))
+                .contains("model binding is not connected")
+        );
+        zone.spawn_groups[0].model = None;
+        zone.spawn_groups[0].target_alive = 17;
+        assert!(inspect_binding(&zone, id, Some(&definition)).contains("16-target"));
+        zone.spawn_groups[0].target_alive = 5;
+        zone.spawn_groups[0].enabled = false;
+        assert!(inspect_binding(&zone, id, Some(&definition)).contains("disabled"));
+        assert!(session.editor.zone().spawn_groups[0].enabled);
+        assert_eq!(session.editor.zone().spawn_groups[0].target_alive, 3);
+    }
     fn session(origin: [f64; 3], offset: f64) -> Session {
         let zone = Zone {
             origin,

@@ -10,6 +10,15 @@ enum Group {
 }
 #[derive(Component)]
 pub(super) struct TextField;
+#[derive(Component)]
+struct PopulationStatus;
+#[derive(PartialEq)]
+struct PopulationKey {
+    document: u64,
+    revision: u64,
+    group: Option<u64>,
+    context: Option<u64>,
+}
 
 pub(super) fn spawn(parent: &mut ChildSpawnerCommands) {
     spawn_group(parent, Group::Area);
@@ -63,6 +72,15 @@ fn spawn_group(parent: &mut ChildSpawnerCommands, group: Group) {
             ));
             if spawn {
                 theme::checkbox::spawn(group, workspace::Control::SpawnEnabled, "Enabled");
+                group.spawn(workspace::button(
+                    workspace::Control::Command(Action::BindSpawnCreature),
+                    "Use loaded creature",
+                ));
+                group.spawn((
+                    PopulationStatus,
+                    theme::label("", 11., theme::MUTED),
+                    Pickable::IGNORE,
+                ));
                 group
                     .spawn(Node {
                         flex_wrap: FlexWrap::Wrap,
@@ -109,7 +127,7 @@ fn spawn_group(parent: &mut ChildSpawnerCommands, group: Group) {
             group.spawn((
                 theme::label(
                     if spawn {
-                        "Draft only · live population is not connected"
+                        "Editor Play/export population is not connected yet"
                     } else if marker {
                         "Blank leaves this marker unbound"
                     } else {
@@ -133,8 +151,25 @@ fn sync(
     mut fields: Query<(Entity, &inline::Input, &mut EditableText), With<TextField>>,
     focus: Res<InputFocus>,
     editing: Res<inline::State>,
+    mut population_status: Query<&mut Text, With<PopulationStatus>>,
+    mut population_key: Local<Option<PopulationKey>>,
 ) {
     let snapshot = summary::snapshot(&session);
+    let key = PopulationKey {
+        document: session.document_id,
+        revision: session.editor.revision(),
+        group: session.spawn_group_selected,
+        context: session.quest_context.as_ref().map(|c| c.generation()),
+    };
+    if population_key.as_ref() != Some(&key) && !population_status.is_empty() {
+        let status = crate::spawn_groups::inspection(&session);
+        for mut text in &mut population_status {
+            if text.0 != status {
+                text.0.clone_from(&status);
+            }
+        }
+        *population_key = Some(key);
+    }
     for (group, mut node, mut visibility) in &mut groups {
         let visible = snapshot.as_ref().is_some_and(|(_, target, _)| {
             matches!(

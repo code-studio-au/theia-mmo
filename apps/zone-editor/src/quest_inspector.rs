@@ -24,6 +24,7 @@ pub(super) struct Context {
     generation: u64,
     catalog: Catalog,
     rewards: Option<item_rewards::Catalog>,
+    creature: theia_network::simulation::creatures::Definition,
 }
 impl Context {
     pub fn load(path: &Path) -> Result<Self, String> {
@@ -44,12 +45,27 @@ impl Context {
             })
             .transpose()?;
         static NEXT: AtomicU64 = AtomicU64::new(1);
+        let creature = theia_network::simulation::creatures::Profile::from_json(
+            snapshot
+                .profile("creature")
+                .ok_or("Template has no creature definition")?,
+        )
+        .map_err(|e| e.to_string())?
+        .definition()
+        .clone();
         Ok(Self {
             path: path.canonicalize().map_err(|e| e.to_string())?,
             generation: NEXT.fetch_add(1, Ordering::Relaxed),
             catalog,
             rewards,
+            creature,
         })
+    }
+    pub fn creature(&self) -> &theia_network::simulation::creatures::Definition {
+        &self.creature
+    }
+    pub fn generation(&self) -> u64 {
+        self.generation
     }
     fn cards(&self, npc: &str) -> Vec<Card> {
         self.catalog
@@ -491,6 +507,7 @@ mod tests {
         .unwrap();
         split["quests"][0]["turn_in"] = serde_json::json!("theia.other.npc");
         let split = Context {
+            creature: context.creature.clone(),
             catalog: Catalog::from_json(&serde_json::to_vec(&split).unwrap()).unwrap(),
             rewards: None,
             path: PathBuf::new(),

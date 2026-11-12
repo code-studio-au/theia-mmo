@@ -1,3 +1,21 @@
+P3-07 / P5-17 editor creature assignment and population inspection, 13 November 2026:
+Loaded gameplay context now retains its validated creature definition. Spawn-zone
+Attributes offers Use loaded creature, assigning only that logical reference via
+normal command/history and committing pending inline fields first. Loaded content
+never changes source files automatically. Missing selection/context and same-reference controls
+remain inert; undo restores the prior reference and other group fields are retained.
+Inspection uses the actual runtime binding validator for unknown/mismatched IDs,
+aggressive definitions, unresolved model references, disabled groups and the current
+16-actor ceiling. A resolved passive definition still explicitly needs placement
+checks. Cache by document/revision/selection/gameplay generation so full zone
+validation is not repeated every UI frame. Gameplay context changes refresh feedback
+without editing the zone. Editor Play/export remains explicitly unconnected.
+228 full editor tests pass with seven optional tests skipped; the added actual
+headless panel/pending-edit/context-refresh test also passes (229 total). Strict
+workspace/all-target Clippy, fmt and diff checks pass. Evidence:
+build/population-editor-binding-{tests,panel,clippy}.log. No mouse/display used;
+native layout/input/GPU checks remain pending under the user's restriction.
+
 P3-07 development launcher population integration, 13 November 2026:
 tools/play.py now accepts --population-config with an authored world, implies
 Classic combat, and forwards the exact resolved configuration to server and every
